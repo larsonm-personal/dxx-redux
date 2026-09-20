@@ -34,6 +34,42 @@
       "powerups": 253,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "finished_date",
+          "value": "8-20-1998",
+          "sources": [
+            "GRADIUS.TXT"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1998,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1998,
+          1998
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "GRADIUS.HOG",
+          "modified": "1998-08-20",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "GRADIUS.MN2",
+          "modified": "1998-08-20",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -114,6 +150,50 @@
         "filename": "game06.hmp",
         "format": "hmp",
         "length_s": 153
+      },
+      {
+        "track": 11,
+        "name": "MIDI Track 7",
+        "filename": "game01.hmq",
+        "format": "hmq",
+        "length_s": 157
+      },
+      {
+        "track": 12,
+        "name": "MIDI Track 8",
+        "filename": "game02.hmq",
+        "format": "hmq",
+        "length_s": 282
+      },
+      {
+        "track": 13,
+        "name": "MIDI Track 9",
+        "filename": "game03.hmq",
+        "format": "hmq",
+        "length_s": 278
+      },
+      {
+        "track": 14,
+        "name": "MIDI Track 10",
+        "filename": "game04.hmq",
+        "format": "hmq",
+        "length_s": 188
+      },
+      {
+        "track": 15,
+        "name": "MIDI Track 11",
+        "filename": "game05.hmq",
+        "format": "hmq",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
+      },
+      {
+        "track": 16,
+        "name": "MIDI Track 12",
+        "filename": "game06.hmq",
+        "format": "hmq",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       }
     ],
     "level_count": 6,
@@ -123,6 +203,29 @@
         "secret": false,
         "level_name": "Gradius 3D",
         "level_file": "gradius1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 450,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 453,
         "wall_count": 108,
         "trigger_count": 1,
@@ -353,6 +456,29 @@
         "secret": false,
         "level_name": "Gradius 3D",
         "level_file": "gradius2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 747,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 780,
         "wall_count": 167,
         "trigger_count": 2,
@@ -498,6 +624,29 @@
         "secret": false,
         "level_name": "aquatica ore mine",
         "level_file": "aquatica.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 15,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 803,
         "wall_count": 163,
         "trigger_count": 4,
@@ -618,6 +767,29 @@
         "secret": false,
         "level_name": "galactic greenhouse",
         "level_file": "grnhouse.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 33,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 783,
         "wall_count": 82,
         "trigger_count": 3,
@@ -738,6 +910,29 @@
         "secret": false,
         "level_name": "Ice Caves",
         "level_file": "ice.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 745,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 757,
         "wall_count": 98,
         "trigger_count": 1,
@@ -859,6 +1054,29 @@
         "secret": false,
         "level_name": "Iwihml Base",
         "level_file": "iwihml.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 493,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 634,
         "wall_count": 110,
         "trigger_count": 1,

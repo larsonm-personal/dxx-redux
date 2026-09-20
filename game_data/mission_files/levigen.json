@@ -34,6 +34,34 @@
       "powerups": 583,
       "reactors": 9
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2025,
+          2026
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "missions/levigen.hog",
+          "modified": "2026-05-01",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "missions/levigen.mn2",
+          "modified": "2025-12-02",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +137,30 @@
         "secret": false,
         "level_name": "vennlig generator",
         "level_file": "lvn-ven.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 31,
+              "segment": 636,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 773,
         "wall_count": 254,
         "trigger_count": 38,
@@ -253,6 +305,30 @@
         "secret": false,
         "level_name": "rutsche-toyen delta",
         "level_file": "lvn-toy.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 586,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 899,
         "wall_count": 196,
         "trigger_count": 19,
@@ -421,6 +497,30 @@
         "secret": false,
         "level_name": "pyralcor p9190 hysr",
         "level_file": "lvn-hyp.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 17,
+              "segment": 785,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 899,
         "wall_count": 253,
         "trigger_count": 39,
@@ -757,6 +857,30 @@
         "secret": false,
         "level_name": "irradiated basin",
         "level_file": "lvn-irr.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 450,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 899,
         "wall_count": 248,
         "trigger_count": 55,
@@ -817,6 +941,30 @@
         "secret": false,
         "level_name": "U-29 Derelict Sector",
         "level_file": "lvn-der.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 384,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 423,
         "wall_count": 101,
         "trigger_count": 15,
@@ -1026,6 +1174,30 @@
         "secret": false,
         "level_name": "scrap incinerator",
         "level_file": "lvn-scr.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 24,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 899,
         "wall_count": 254,
         "trigger_count": 40,
@@ -1405,6 +1577,30 @@
         "secret": false,
         "level_name": "ion island",
         "level_file": "lvn-ion.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 118,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 299,
         "wall_count": 74,
         "trigger_count": 20,
@@ -1587,6 +1783,30 @@
         "secret": false,
         "level_name": "deployment base dc07",
         "level_file": "lvn-dep.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 866,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 898,
         "wall_count": 251,
         "trigger_count": 43,
@@ -1797,6 +2017,29 @@
         "secret": false,
         "level_name": "Skyrun-1 Warp Prototype",
         "level_file": "lvn-sky.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 537,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 899,
         "wall_count": 254,
         "trigger_count": 23,

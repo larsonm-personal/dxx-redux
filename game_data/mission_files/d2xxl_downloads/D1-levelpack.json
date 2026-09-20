@@ -34,6 +34,34 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "arakian.hog",
+          "modified": "1997-05-14",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "arakian.msn",
+          "modified": "1997-05-13",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -233,6 +261,29 @@
         "secret": false,
         "level_name": "Arakian Mine 1",
         "level_file": "arakian.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 652,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 697,
         "wall_count": 118,
         "trigger_count": 6,
@@ -380,6 +431,94 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Solrazor",
+          "sources": [
+            "aur.msn",
+            "aur.hog/aur.txt"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.descent-3.com/solrazor",
+          "sources": [
+            "aur.msn",
+            "aur.hog/aur.txt"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "kyouryuu@myway.com",
+          "sources": [
+            "aur.msn",
+            "aur.hog/aur.txt"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "4/20/03",
+          "sources": [
+            "aur.msn"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "DMB2, DBB21, Yahoma, Hoggle, PSP7",
+          "sources": [
+            "aur.msn"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "15 hours",
+          "sources": [
+            "aur.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "aur.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "April 22nd, 2003",
+          "sources": [
+            "aur.hog/aur.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2003,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2003,
+          2003
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "aur.hog",
+          "modified": "2003-04-22",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "aur.msn",
+          "modified": "2003-04-22",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -580,6 +719,35 @@
         "secret": false,
         "level_name": "Aurora Outpost",
         "level_file": "aurora.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.723,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.723
+          },
+          "presentation": {
+            "status": "present",
+            "file": "aurora.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 275,
+              "side": 2,
+              "seconds": 13.723,
+              "status": "estimated",
+              "tunnel_units": 436.133,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 472,
         "wall_count": 120,
         "trigger_count": 7,
@@ -738,6 +906,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1995,
+          2007
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "CAVERN11.MSN",
+          "modified": "1995-10-17",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "cavern11.hog",
+          "modified": "2007-06-11",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -938,6 +1134,30 @@
         "secret": false,
         "level_name": "Spelunker's Splatterfest",
         "level_file": "cavern11.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 355,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 755,
         "wall_count": 168,
         "trigger_count": 5,
@@ -1167,6 +1387,70 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "finished_date",
+          "value": "10/95",
+          "sources": [
+            "CHARLIE.TXT"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Byron Knibb",
+          "sources": [
+            "CHARLIE.TXT"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "knib0001@maroon.tc.umn.edu",
+          "sources": [
+            "CHARLIE.TXT"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "50+ Hours",
+          "sources": [
+            "CHARLIE.TXT"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Devil 1.02",
+          "sources": [
+            "CHARLIE.TXT"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1995,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1995,
+          1995
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "CHARLIE.MSN",
+          "modified": "1995-10-09",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "charlie.hog",
+          "modified": "1995-10-09",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -1366,6 +1650,30 @@
         "secret": false,
         "level_name": "checkpoint charlie",
         "level_file": "CHARLIE.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 8,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 174,
         "trigger_count": 13,
@@ -1441,6 +1749,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 1995,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1995,
+          1995
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "CORKSCRW.MSN",
+          "modified": "1995-10-17",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "corkscrw.hog",
+          "modified": "1995-10-17",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -1641,6 +1977,30 @@
         "secret": false,
         "level_name": "The Corkscrew",
         "level_file": "CORKSCRW.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 519,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 757,
         "wall_count": 168,
         "trigger_count": 21,
@@ -1893,6 +2253,34 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1996,
+          2007
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "DISCS.MSN",
+          "modified": "1996-02-12",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "discs.hog",
+          "modified": "2007-06-11",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -2092,6 +2480,30 @@
         "secret": false,
         "level_name": "Ptmc secret outpost",
         "level_file": "DISCS.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 20,
+              "segment": 85,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 552,
         "wall_count": 174,
         "trigger_count": 37,
@@ -2266,6 +2678,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 1996,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1996,
+          1996
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "DRAGON.MSN",
+          "modified": "1996-11-10",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "dragon.hog",
+          "modified": "1996-11-10",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -2466,6 +2906,30 @@
         "secret": false,
         "level_name": "Dragon Fortress",
         "level_file": "DRAGON.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 17,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 733,
         "wall_count": 74,
         "trigger_count": 1,
@@ -2668,6 +3132,63 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "finished_date",
+          "value": "12/16",
+          "sources": [
+            "ERTHSTRK.TXT"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Mike Rosack",
+          "sources": [
+            "ERTHSTRK.TXT"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "About 30 Hours",
+          "sources": [
+            "ERTHSTRK.TXT"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Devil Level Editor v1.02",
+          "sources": [
+            "ERTHSTRK.TXT"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1995,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1995,
+          1995
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "ERTHSTRK.MSN",
+          "modified": "1995-12-16",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "erthstrk.hog",
+          "modified": "1995-12-17",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -2867,6 +3388,37 @@
         "secret": false,
         "level_name": "Earth Strike",
         "level_file": "level01.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_endlevel_data",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "invalid_endlevel_data",
+            "file": "level01.txb"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 133,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 13
+            },
+            {
+              "trigger": 9,
+              "segment": 87,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 499,
         "wall_count": 94,
         "trigger_count": 10,
@@ -3072,6 +3624,42 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Colin Krawcyk",
+          "sources": [
+            "GALILEO.TXT"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1996,
+          2007
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "GALILEO.MSN",
+          "modified": "1996-02-16",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "galileo.hog",
+          "modified": "2007-06-11",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -3271,6 +3859,36 @@
         "secret": false,
         "level_name": "Galileo Orbiter",
         "level_file": "galileo.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 56,
+              "segment": 0,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 55,
+              "segment": 231,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 773,
         "wall_count": 104,
         "trigger_count": 57,
@@ -3522,6 +4140,49 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Sirius",
+          "sources": [
+            "helium.txt"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "15/9/03",
+          "sources": [
+            "helium.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2003,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2003,
+          2003
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "helium.hog",
+          "modified": "2003-09-14",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "helium.mn2",
+          "modified": "2003-09-14",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -3597,6 +4258,30 @@
         "secret": false,
         "level_name": "Helium",
         "level_file": "helium.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 194,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 329,
         "wall_count": 47,
         "trigger_count": 2,
@@ -3706,6 +4391,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1996,
+          2007
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "MIASMAM.MSN",
+          "modified": "1996-02-11",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "miasmam.hog",
+          "modified": "2007-06-11",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -3906,6 +4619,30 @@
         "secret": false,
         "level_name": "The Miasma Mausoleum",
         "level_file": "MIASMAM.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 115,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 316,
         "wall_count": 80,
         "trigger_count": 4,
@@ -4053,6 +4790,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 1996,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1996,
+          1996
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "nwo.hog",
+          "modified": "1996-02-20",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "nwo.msn",
+          "modified": "1996-02-20",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -4253,6 +5018,30 @@
         "secret": false,
         "level_name": "Orion SMA",
         "level_file": "nwo.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 15,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 698,
         "wall_count": 86,
         "trigger_count": 11,
@@ -4400,6 +5189,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1995,
+          2007
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "SATURN15.MSN",
+          "modified": "1995-09-05",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "saturn15.hog",
+          "modified": "2007-06-11",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -4600,6 +5417,30 @@
         "secret": false,
         "level_name": "Destination Saturn",
         "level_file": "saturn15.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 66,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 287,
         "wall_count": 96,
         "trigger_count": 11,
@@ -4774,6 +5615,70 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "finished_date",
+          "value": "1-5-96",
+          "sources": [
+            "SHOKWAVE.TXT"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Tom and Joe Nelson",
+          "sources": [
+            "SHOKWAVE.TXT"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "tnelson@InnovSoftD.com",
+          "sources": [
+            "SHOKWAVE.TXT"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "Couple of weeks",
+          "sources": [
+            "SHOKWAVE.TXT"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "DEVIL",
+          "sources": [
+            "SHOKWAVE.TXT"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1996,
+          2007
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "SHOKWAVE.MSN",
+          "modified": "1996-01-05",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "shokwave.hog",
+          "modified": "2007-06-11",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -4974,6 +5879,36 @@
         "secret": false,
         "level_name": "Shokwave",
         "level_file": "SHOKWAVE.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 721,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 16
+            },
+            {
+              "trigger": 17,
+              "segment": 722,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 791,
         "wall_count": 134,
         "trigger_count": 36,
@@ -5617,6 +6552,42 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "SUPER_S.TXT"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1995,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1995,
+          1995
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "SUPER_S.MSN",
+          "modified": "1995-10-25",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "super_s.hog",
+          "modified": "1995-10-25",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -5816,6 +6787,30 @@
         "secret": false,
         "level_name": "Super Station",
         "level_file": "super_s.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 28,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 677,
         "wall_count": 74,
         "trigger_count": 12,
@@ -5976,6 +6971,70 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "finished_date",
+          "value": "9/95",
+          "sources": [
+            "TRIBYSS.TXT"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Byron Knibb",
+          "sources": [
+            "TRIBYSS.TXT"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "knib0001@maroon.tc.umn.edu",
+          "sources": [
+            "TRIBYSS.TXT"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "60+ Hours",
+          "sources": [
+            "TRIBYSS.TXT"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Devil 1.02",
+          "sources": [
+            "TRIBYSS.TXT"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1995,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1995,
+          1995
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "TRIBYSS.MSN",
+          "modified": "1995-09-14",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "tribyss.hog",
+          "modified": "1995-09-14",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -6176,6 +7235,30 @@
         "secret": false,
         "level_name": "tribyss omega",
         "level_file": "TRIBYSS.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 38,
+              "segment": 132,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 791,
         "wall_count": 172,
         "trigger_count": 41,
@@ -6323,6 +7406,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1995,
+          2007
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "TURNCOAT.MSN",
+          "modified": "1995-10-17",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "turncoat.hog",
+          "modified": "2007-06-11",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -6523,6 +7634,30 @@
         "secret": false,
         "level_name": "Turncoat",
         "level_file": "turncoat.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 353,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 752,
         "wall_count": 172,
         "trigger_count": 24,
@@ -6534,7 +7669,7 @@
         "reactors": 0,
         "robots": 112,
         "hostages": 5,
-        "secrets": 3,
+        "secrets": 6,
         "matcens": 11,
         "energy_centers": 3,
         "mine_volume": 36302600.0,

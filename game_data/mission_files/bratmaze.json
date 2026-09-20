@@ -34,6 +34,56 @@
       "powerups": 658,
       "reactors": 4
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE",
+          "sources": [
+            "bratmaze.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "17 may 2015",
+          "sources": [
+            "bratmaze.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "bratmaze.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2015,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2015,
+          2015
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "bratmaze.hog",
+          "modified": "2015-05-17",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "bratmaze.msn",
+          "modified": "2015-05-17",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -233,6 +283,29 @@
         "secret": false,
         "level_name": "the pits",
         "level_file": "pits.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 712,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 759,
         "wall_count": 112,
         "trigger_count": 21,
@@ -472,6 +545,29 @@
         "secret": false,
         "level_name": "panic",
         "level_file": "panic.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 406,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 434,
         "wall_count": 115,
         "trigger_count": 44,
@@ -571,6 +667,29 @@
         "secret": false,
         "level_name": "rat's maze",
         "level_file": "ratmaze.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 22,
+              "segment": 784,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 789,
         "wall_count": 174,
         "trigger_count": 25,
@@ -742,6 +861,29 @@
         "secret": false,
         "level_name": "the gauntlet",
         "level_file": "gauntlet.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 17,
+              "segment": 784,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 799,
         "wall_count": 171,
         "trigger_count": 20,
@@ -1119,6 +1261,22 @@
         "secret": false,
         "level_name": "serenity",
         "level_file": "serenity.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_normal_exit_trigger",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "absent",
+          "tunnel": {
+            "status": "no_exit_trigger"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": []
+        },
         "segment_count": 719,
         "wall_count": 110,
         "trigger_count": 100,

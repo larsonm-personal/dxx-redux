@@ -34,6 +34,19 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -233,6 +246,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "1sttrial.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 466,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 5,
+              "segment": 467,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 568,
         "wall_count": 86,
         "trigger_count": 33,
@@ -363,6 +406,19 @@
       "guidebots": 0,
       "powerups": 85,
       "reactors": 4
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -563,6 +619,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "alpha001.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 10,
+              "segment": 195,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            },
+            {
+              "trigger": 11,
+              "segment": 151,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 287,
         "wall_count": 70,
         "trigger_count": 12,
@@ -680,6 +766,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "alpha002.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 12,
+              "segment": 137,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 13,
+              "segment": 350,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 351,
         "wall_count": 72,
         "trigger_count": 14,
@@ -797,6 +913,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "alpha003.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 31,
+              "segment": 447,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            },
+            {
+              "trigger": 32,
+              "segment": 221,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 461,
         "wall_count": 124,
         "trigger_count": 33,
@@ -925,6 +1071,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "alpha004.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 26,
+              "segment": 208,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 14
+            },
+            {
+              "trigger": 27,
+              "segment": 212,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 455,
         "wall_count": 128,
         "trigger_count": 28,
@@ -1112,6 +1288,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -1312,6 +1501,30 @@
         "secret": false,
         "level_name": "Battle Grounds",
         "level_file": "BATTLE.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 180,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 210,
         "wall_count": 12,
         "trigger_count": 2,
@@ -1407,6 +1620,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -1607,6 +1833,36 @@
         "secret": false,
         "level_name": "Tournament Qualifier",
         "level_file": "bdrome10.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 463,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 7
+            },
+            {
+              "trigger": 2,
+              "segment": 462,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 491,
         "wall_count": 64,
         "trigger_count": 5,
@@ -1819,6 +2075,19 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -2018,6 +2287,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "beta1.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 53,
+              "segment": 45,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            },
+            {
+              "trigger": 52,
+              "segment": 16,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 230,
         "wall_count": 58,
         "trigger_count": 54,
@@ -2162,6 +2461,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -2362,6 +2674,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "block.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 16,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 10
+            },
+            {
+              "trigger": 1,
+              "segment": 15,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 142,
         "wall_count": 22,
         "trigger_count": 3,
@@ -2466,6 +2808,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -2666,6 +3021,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "borg47.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 27,
+              "segment": 281,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 28,
+              "segment": 77,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 481,
         "wall_count": 48,
         "trigger_count": 29,
@@ -2815,6 +3200,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -3015,6 +3413,30 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "boydsend.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 69,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 116,
         "wall_count": 24,
         "trigger_count": 6,
@@ -3133,6 +3555,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -3333,6 +3768,30 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "bri1.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 325,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 467,
         "wall_count": 94,
         "trigger_count": 3,
@@ -3479,6 +3938,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -3679,6 +4151,36 @@
         "secret": false,
         "level_name": "Trading Outpost",
         "level_file": "brtrade.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 288,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 16
+            },
+            {
+              "trigger": 4,
+              "segment": 233,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 337,
         "wall_count": 66,
         "trigger_count": 8,
@@ -3903,6 +4405,19 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -4102,6 +4617,29 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "cbox_x.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 25,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 425,
         "wall_count": 86,
         "trigger_count": 3,
@@ -4248,6 +4786,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -4448,6 +4999,30 @@
         "secret": false,
         "level_name": "Mount slagel",
         "level_file": "chii-1.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 193,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 258,
         "wall_count": 104,
         "trigger_count": 1,
@@ -4552,6 +5127,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -4752,6 +5340,36 @@
         "secret": false,
         "level_name": "Class 1 Drone Land",
         "level_file": "CLASS1.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 14,
+              "segment": 136,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 4
+            },
+            {
+              "trigger": 15,
+              "segment": 3,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 183,
         "wall_count": 154,
         "trigger_count": 18,
@@ -4915,6 +5533,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -5115,6 +5746,29 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "Cobalt.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 103,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 133,
         "wall_count": 40,
         "trigger_count": 5,
@@ -5233,6 +5887,19 @@
       "guidebots": 0,
       "powerups": 114,
       "reactors": 4
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -5433,6 +6100,41 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "coral1.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 141,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 288,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 6,
+              "segment": 259,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 312,
         "wall_count": 84,
         "trigger_count": 9,
@@ -5613,6 +6315,29 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "coral2.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 314,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 419,
         "wall_count": 38,
         "trigger_count": 4,
@@ -5746,6 +6471,30 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "coral3.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 294,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 326,
         "wall_count": 68,
         "trigger_count": 4,
@@ -5944,6 +6693,30 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "coral4.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 424,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 594,
         "wall_count": 44,
         "trigger_count": 2,
@@ -6117,6 +6890,19 @@
       "guidebots": 0,
       "powerups": 37,
       "reactors": 2
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -6317,6 +7103,35 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "dark001.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 174,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 14,
+              "segment": 184,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 194,
         "wall_count": 58,
         "trigger_count": 16,
@@ -6389,6 +7204,35 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "dark002.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 18,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 8,
+              "segment": 28,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 190,
         "wall_count": 56,
         "trigger_count": 30,
@@ -6562,6 +7406,19 @@
       "guidebots": 0,
       "powerups": 3,
       "reactors": 1
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -6762,6 +7619,30 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "demo.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 14,
+              "segment": 110,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 147,
         "wall_count": 20,
         "trigger_count": 17,
@@ -6834,6 +7715,22 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "my_demo.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_normal_exit_trigger",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "absent",
+          "tunnel": {
+            "status": "no_exit_trigger"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": []
+        },
         "segment_count": 198,
         "wall_count": 0,
         "trigger_count": 2,
@@ -6912,6 +7809,19 @@
       "guidebots": 0,
       "powerups": 23,
       "reactors": 2
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -7112,6 +8022,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "snipe1.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 17,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 18
+            },
+            {
+              "trigger": 5,
+              "segment": 18,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 232,
         "wall_count": 44,
         "trigger_count": 6,
@@ -7199,6 +8139,35 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "snipe2.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 10,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 7,
+              "segment": 11,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 135,
         "wall_count": 48,
         "trigger_count": 13,
@@ -7332,6 +8301,19 @@
       "guidebots": 0,
       "powerups": 70,
       "reactors": 2
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -7532,6 +8514,35 @@
         "secret": false,
         "level_name": "The begining",
         "level_file": "eye.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 200,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 8,
+              "segment": 201,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 207,
         "wall_count": 38,
         "trigger_count": 9,
@@ -7604,6 +8615,30 @@
         "secret": false,
         "level_name": "The Scourge",
         "level_file": "eye002.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 26,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 184,
         "wall_count": 22,
         "trigger_count": 7,
@@ -7708,6 +8743,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -7908,6 +8956,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "insane.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 14,
+              "segment": 300,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 10
+            },
+            {
+              "trigger": 15,
+              "segment": 299,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 302,
         "wall_count": 76,
         "trigger_count": 18,
@@ -8133,6 +9211,19 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -8332,6 +9423,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "josha25.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 188,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 7
+            },
+            {
+              "trigger": 2,
+              "segment": 187,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 198,
         "wall_count": 36,
         "trigger_count": 8,
@@ -8450,6 +9571,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -8650,6 +9784,29 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "joust.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 303,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 342,
         "wall_count": 32,
         "trigger_count": 1,
@@ -8754,6 +9911,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -8954,6 +10124,22 @@
         "secret": false,
         "level_name": "Monster Bash",
         "level_file": "karlmb01.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_normal_exit_trigger",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "absent",
+          "tunnel": {
+            "status": "no_exit_trigger"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": []
+        },
         "segment_count": 303,
         "wall_count": 42,
         "trigger_count": 4,
@@ -9148,6 +10334,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -9348,6 +10547,30 @@
         "secret": false,
         "level_name": "!!!LAVA!!!",
         "level_file": "lava.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 101,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 159,
         "wall_count": 30,
         "trigger_count": 3,
@@ -9452,6 +10675,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -9652,6 +10888,30 @@
         "secret": false,
         "level_name": "4D",
         "level_file": "lava4d.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 29,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 73,
         "wall_count": 28,
         "trigger_count": 8,
@@ -9756,6 +11016,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -9956,6 +11229,29 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "maze.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 107,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 539,
         "wall_count": 26,
         "trigger_count": 2,
@@ -10102,6 +11398,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -10302,6 +11611,30 @@
         "secret": false,
         "level_name": "Mega-Death",
         "level_file": "MEGADETH.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 128,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 160,
         "wall_count": 10,
         "trigger_count": 2,
@@ -10406,6 +11739,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -10606,6 +11952,29 @@
         "secret": false,
         "level_name": "Munitions R&D",
         "level_file": "HOPE.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 19,
+              "segment": 11,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 312,
         "wall_count": 114,
         "trigger_count": 22,
@@ -10617,7 +11986,7 @@
         "reactors": 1,
         "robots": 81,
         "hostages": 7,
-        "secrets": 2,
+        "secrets": 3,
         "matcens": 4,
         "energy_centers": 1,
         "mine_volume": 2548680.0,
@@ -10838,6 +12207,19 @@
       "powerups": 117,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -11037,6 +12419,36 @@
         "secret": false,
         "level_name": "Trading Outpost",
         "level_file": "BRINSANE.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 187,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 16
+            },
+            {
+              "trigger": 4,
+              "segment": 132,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 236,
         "wall_count": 46,
         "trigger_count": 7,
@@ -11102,6 +12514,36 @@
         "secret": false,
         "level_name": "Spiral Outpost",
         "level_file": "BRSPIRAL.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 209,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 242,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 32
+            }
+          ]
+        },
         "segment_count": 337,
         "wall_count": 64,
         "trigger_count": 13,
@@ -11216,6 +12658,36 @@
         "secret": false,
         "level_name": "Lake Outpost",
         "level_file": "BRATTICA.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 14,
+              "segment": 375,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 15,
+              "segment": 376,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 33
+            }
+          ]
+        },
         "segment_count": 388,
         "wall_count": 40,
         "trigger_count": 17,
@@ -11330,6 +12802,36 @@
         "secret": false,
         "level_name": "Trading Outpost",
         "level_file": "BRTRADE.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 288,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 16
+            },
+            {
+              "trigger": 4,
+              "segment": 233,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 337,
         "wall_count": 66,
         "trigger_count": 8,
@@ -11554,6 +13056,19 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -11753,6 +13268,36 @@
         "secret": false,
         "level_name": "Razor Class StarShip",
         "level_file": "razor.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 67,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 129,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 149,
         "wall_count": 32,
         "trigger_count": 4,
@@ -11857,6 +13402,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -12057,6 +13615,30 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "realsmal.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 82,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 93,
         "wall_count": 16,
         "trigger_count": 2,
@@ -12189,6 +13771,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -12389,6 +13984,29 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "rooms.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 15,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 714,
         "wall_count": 66,
         "trigger_count": 7,
@@ -12548,6 +14166,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -12748,6 +14379,30 @@
         "secret": false,
         "level_name": "Rough Ridin'",
         "level_file": "ROUGH.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 123,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 221,
         "wall_count": 18,
         "trigger_count": 3,
@@ -12843,6 +14498,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -13043,6 +14711,35 @@
         "secret": false,
         "level_name": "The Rubicon",
         "level_file": "level01.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.061,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.061
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level01.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 3,
+              "side": 2,
+              "seconds": 14.061,
+              "status": "estimated",
+              "tunnel_units": 453.057,
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 553,
         "wall_count": 42,
         "trigger_count": 7,
@@ -13189,6 +14886,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -13389,6 +15099,35 @@
         "secret": false,
         "level_name": "Level 2: Scar Trek",
         "level_file": "scartrek.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 76,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 12,
+              "segment": 77,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 608,
         "wall_count": 118,
         "trigger_count": 16,
@@ -13400,7 +15139,7 @@
         "reactors": 1,
         "robots": 69,
         "hostages": 2,
-        "secrets": 1,
+        "secrets": 2,
         "matcens": 4,
         "energy_centers": 3,
         "mine_volume": 5597170.0,
@@ -13674,6 +15413,19 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -13873,6 +15625,36 @@
         "secret": false,
         "level_name": "Steve's Level",
         "level_file": "sjb_lev1.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 44,
+              "segment": 77,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 45,
+              "segment": 76,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 435,
         "wall_count": 106,
         "trigger_count": 55,
@@ -14090,6 +15872,19 @@
       "powerups": 242,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -14289,6 +16084,30 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "slayer01.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 104,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 313,
         "wall_count": 40,
         "trigger_count": 7,
@@ -14431,6 +16250,30 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "slayer02.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 0,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 814,
         "wall_count": 70,
         "trigger_count": 8,
@@ -14561,6 +16404,30 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "slayer03.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 24,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 841,
         "wall_count": 14,
         "trigger_count": 7,
@@ -14707,6 +16574,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -14907,6 +16787,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "snipe1.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 17,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 18
+            },
+            {
+              "trigger": 5,
+              "segment": 18,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 232,
         "wall_count": 44,
         "trigger_count": 6,
@@ -15026,6 +16936,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "7",
     "track_names": [
@@ -15226,6 +17149,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "spiral.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 209,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 242,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 32
+            }
+          ]
+        },
         "segment_count": 337,
         "wall_count": 64,
         "trigger_count": 13,
@@ -15372,6 +17325,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -15572,6 +17538,36 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "spooge.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 317,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 20
+            },
+            {
+              "trigger": 7,
+              "segment": 154,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 395,
         "wall_count": 48,
         "trigger_count": 13,
@@ -15745,6 +17741,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -15945,6 +17954,29 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "SQUEEZER.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 122,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 129,
         "wall_count": 24,
         "trigger_count": 2,
@@ -16049,6 +18081,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -16249,6 +18294,29 @@
         "secret": false,
         "level_name": "Training Camp",
         "level_file": "tcamp.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 68,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 515,
         "wall_count": 78,
         "trigger_count": 3,
@@ -16353,6 +18421,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -16553,6 +18634,30 @@
         "secret": false,
         "level_name": "turners",
         "level_file": "turners.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 183,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 467,
         "wall_count": 64,
         "trigger_count": 1,
@@ -16657,6 +18762,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -16857,6 +18975,29 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "twisty.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 209,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 374,
         "wall_count": 44,
         "trigger_count": 16,
@@ -17016,6 +19157,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -17216,6 +19370,30 @@
         "secret": false,
         "level_name": "Viper Station",
         "level_file": "Viper.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 199,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 214,
         "wall_count": 8,
         "trigger_count": 2,
@@ -17320,6 +19498,19 @@
       "guidebots": 0,
       "powerups": 187,
       "reactors": 2
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -17520,6 +19711,30 @@
         "secret": false,
         "level_name": "Wild Luner Outpost",
         "level_file": "level01x.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 69,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 285,
         "wall_count": 30,
         "trigger_count": 1,
@@ -17607,6 +19822,30 @@
         "secret": false,
         "level_name": "Wild Mercury core",
         "level_file": "level07x.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 456,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 786,
         "wall_count": 144,
         "trigger_count": 5,
@@ -17698,6 +19937,30 @@
         "secret": false,
         "level_name": "Wild last level",
         "level_file": "level27x.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 293,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 313,
         "wall_count": 94,
         "trigger_count": 1,
@@ -17821,6 +20084,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -18021,6 +20297,30 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "ziv4.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 120,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 183,
         "wall_count": 74,
         "trigger_count": 2,
@@ -18167,6 +20467,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -18367,6 +20680,22 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "zoo5.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_normal_exit_trigger",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "absent",
+          "tunnel": {
+            "status": "no_exit_trigger"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": []
+        },
         "segment_count": 71,
         "wall_count": 48,
         "trigger_count": 1,

@@ -34,6 +34,77 @@
       "powerups": 2183,
       "reactors": 22
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE",
+          "sources": [
+            "REBIRTH/ULTERIOR.MN2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "930 h",
+          "sources": [
+            "REBIRTH/ULTERIOR.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "25 jun 2019",
+          "sources": [
+            "REBIRTH/ULTERIOR.MN2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0.6b",
+          "sources": [
+            "REBIRTH/ULTERIOR.MN2"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Parabolicus",
+          "sources": [
+            "REBIRTH/ULTERIOR.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "https://descentbb.net/viewtopic.php?f=3&p=389416",
+          "sources": [
+            "REBIRTH/ULTERIOR.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2020,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2020,
+          2020
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "REBIRTH/ULTERIOR.HOG",
+          "modified": "2020-10-25",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "REBIRTH/ULTERIOR.MN2",
+          "modified": "2020-10-25",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -240,6 +311,37 @@
         "secret": false,
         "level_name": "Five Red Lights",
         "level_file": "lvl01.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 645,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 1
+            },
+            {
+              "trigger": 6,
+              "segment": 646,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 710,
         "wall_count": 148,
         "trigger_count": 10,
@@ -534,6 +636,44 @@
         "secret": false,
         "level_name": "Turbulent Flow",
         "level_file": "lvl02.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.78,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.78
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl02.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 568,
+              "side": 4,
+              "seconds": 15.78,
+              "status": "estimated",
+              "tunnel_units": 538.995,
+              "tunnel_segments": 22
+            },
+            {
+              "trigger": 8,
+              "segment": 566,
+              "side": 1,
+              "seconds": 10.9,
+              "status": "estimated",
+              "tunnel_units": 295.0,
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 849,
         "wall_count": 180,
         "trigger_count": 13,
@@ -701,6 +841,35 @@
         "secret": false,
         "level_name": "Blast Furnace",
         "level_file": "lvl03.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.2,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.2
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl03.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 783,
+              "side": 1,
+              "seconds": 14.2,
+              "status": "estimated",
+              "tunnel_units": 460.0,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 846,
         "wall_count": 222,
         "trigger_count": 12,
@@ -844,6 +1013,44 @@
         "secret": false,
         "level_name": "Line of Sight",
         "level_file": "lvl04.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 21.08,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 21.08
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl04.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 267,
+              "side": 4,
+              "seconds": 21.08,
+              "status": "estimated",
+              "tunnel_units": 803.989,
+              "tunnel_segments": 30
+            },
+            {
+              "trigger": 13,
+              "segment": 285,
+              "side": 4,
+              "seconds": 12.2,
+              "status": "estimated",
+              "tunnel_units": 360.0,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 565,
         "wall_count": 184,
         "trigger_count": 14,
@@ -962,6 +1169,35 @@
         "secret": false,
         "level_name": "Shifting Sands",
         "level_file": "lvl05.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.915,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.915
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl05.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 488,
+              "side": 4,
+              "seconds": 12.915,
+              "status": "estimated",
+              "tunnel_units": 395.726,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 559,
         "wall_count": 97,
         "trigger_count": 9,
@@ -1080,6 +1316,44 @@
         "secret": false,
         "level_name": "Lost on the Farthest Moon",
         "level_file": "lvl06.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 21.601,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 21.601
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl06.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 395,
+              "side": 4,
+              "seconds": 21.601,
+              "status": "estimated",
+              "tunnel_units": 830.042,
+              "tunnel_segments": 27
+            },
+            {
+              "trigger": 13,
+              "segment": 284,
+              "side": 1,
+              "seconds": 12.0,
+              "status": "estimated",
+              "tunnel_units": 350.0,
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 711,
         "wall_count": 143,
         "trigger_count": 15,
@@ -1237,6 +1511,35 @@
         "secret": false,
         "level_name": "Temporal distributive",
         "level_file": "lvl07.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.8,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.8
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl07.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 599,
+              "side": 2,
+              "seconds": 14.8,
+              "status": "estimated",
+              "tunnel_units": 490.0,
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 732,
         "wall_count": 122,
         "trigger_count": 11,
@@ -1248,7 +1551,7 @@
         "reactors": 1,
         "robots": 100,
         "hostages": 4,
-        "secrets": 7,
+        "secrets": 9,
         "matcens": 2,
         "energy_centers": 3,
         "mine_volume": 45066500.0,
@@ -1455,6 +1758,35 @@
         "secret": false,
         "level_name": "Thymiaterion",
         "level_file": "lvl08.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 18.546,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 18.546
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl08.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 673,
+              "side": 2,
+              "seconds": 18.546,
+              "status": "estimated",
+              "tunnel_units": 677.324,
+              "tunnel_segments": 27
+            }
+          ]
+        },
         "segment_count": 895,
         "wall_count": 145,
         "trigger_count": 17,
@@ -1598,6 +1930,44 @@
         "secret": false,
         "level_name": "Glace superionique",
         "level_file": "lvl09.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.571,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.571
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl09.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 453,
+              "side": 5,
+              "seconds": 17.571,
+              "status": "estimated",
+              "tunnel_units": 628.526,
+              "tunnel_segments": 24
+            },
+            {
+              "trigger": 15,
+              "segment": 467,
+              "side": 5,
+              "seconds": 12.1,
+              "status": "estimated",
+              "tunnel_units": 355.0,
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 773,
         "wall_count": 185,
         "trigger_count": 18,
@@ -1740,6 +2110,35 @@
         "secret": false,
         "level_name": "Hwt-kA-ptH",
         "level_file": "lvl10.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.152,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.152
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl10.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 512,
+              "side": 4,
+              "seconds": 15.152,
+              "status": "estimated",
+              "tunnel_units": 507.622,
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 611,
         "wall_count": 169,
         "trigger_count": 15,
@@ -1858,6 +2257,44 @@
         "secret": false,
         "level_name": "Airworthiness Directive",
         "level_file": "lvl11.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.866,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.866
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl11.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 773,
+              "side": 5,
+              "seconds": 19.866,
+              "status": "estimated",
+              "tunnel_units": 743.312,
+              "tunnel_segments": 33
+            },
+            {
+              "trigger": 8,
+              "segment": 745,
+              "side": 5,
+              "seconds": 10.3,
+              "status": "estimated",
+              "tunnel_units": 265.0,
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 802,
         "wall_count": 120,
         "trigger_count": 10,
@@ -1976,6 +2413,35 @@
         "secret": false,
         "level_name": "flow control",
         "level_file": "lvl12.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.8,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.8
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl12.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 466,
+              "side": 4,
+              "seconds": 14.8,
+              "status": "estimated",
+              "tunnel_units": 490.0,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 761,
         "wall_count": 206,
         "trigger_count": 26,
@@ -2318,6 +2784,44 @@
         "secret": false,
         "level_name": "Remember Your Mantra",
         "level_file": "lvl13.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.337,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.337
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl13.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 262,
+              "side": 4,
+              "seconds": 16.337,
+              "status": "estimated",
+              "tunnel_units": 566.866,
+              "tunnel_segments": 24
+            },
+            {
+              "trigger": 3,
+              "segment": 500,
+              "side": 2,
+              "seconds": 10.105,
+              "status": "estimated",
+              "tunnel_units": 255.227,
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 861,
         "wall_count": 146,
         "trigger_count": 13,
@@ -2436,6 +2940,44 @@
         "secret": false,
         "level_name": "Submetallic Lustre",
         "level_file": "lvl14.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.8,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.8
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl14.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 632,
+              "side": 1,
+              "seconds": 16.8,
+              "status": "estimated",
+              "tunnel_units": 590.0,
+              "tunnel_segments": 22
+            },
+            {
+              "trigger": 1,
+              "segment": 579,
+              "side": 1,
+              "seconds": 11.8,
+              "status": "estimated",
+              "tunnel_units": 340.0,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 726,
         "wall_count": 183,
         "trigger_count": 16,
@@ -2554,6 +3096,44 @@
         "secret": false,
         "level_name": "pratityasamutpada",
         "level_file": "lvl15.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.1,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.1
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl15.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 239,
+              "side": 1,
+              "seconds": 17.1,
+              "status": "estimated",
+              "tunnel_units": 605.0,
+              "tunnel_segments": 24
+            },
+            {
+              "trigger": 1,
+              "segment": 197,
+              "side": 1,
+              "seconds": 11.8,
+              "status": "estimated",
+              "tunnel_units": 340.0,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 569,
         "wall_count": 138,
         "trigger_count": 13,
@@ -2672,6 +3252,44 @@
         "secret": false,
         "level_name": "Subterfuge",
         "level_file": "lvl16.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.134,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.134
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl16.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 488,
+              "side": 4,
+              "seconds": 8.6,
+              "status": "estimated",
+              "tunnel_units": 180.0,
+              "tunnel_segments": 14
+            },
+            {
+              "trigger": 13,
+              "segment": 521,
+              "side": 4,
+              "seconds": 13.134,
+              "status": "estimated",
+              "tunnel_units": 406.707,
+              "tunnel_segments": 29
+            }
+          ]
+        },
         "segment_count": 685,
         "wall_count": 179,
         "trigger_count": 22,
@@ -2825,6 +3443,44 @@
         "secret": false,
         "level_name": "the bulkhead",
         "level_file": "lvl17.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.593,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.593
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl17.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 633,
+              "side": 2,
+              "seconds": 13.593,
+              "status": "estimated",
+              "tunnel_units": 429.648,
+              "tunnel_segments": 20
+            },
+            {
+              "trigger": 6,
+              "segment": 613,
+              "side": 1,
+              "seconds": 9.4,
+              "status": "estimated",
+              "tunnel_units": 220.0,
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 802,
         "wall_count": 158,
         "trigger_count": 23,
@@ -3072,6 +3728,44 @@
         "secret": false,
         "level_name": "polystyle chamber",
         "level_file": "lvl18.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.371,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.371
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl18.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 609,
+              "side": 2,
+              "seconds": 19.371,
+              "status": "estimated",
+              "tunnel_units": 718.572,
+              "tunnel_segments": 33
+            },
+            {
+              "trigger": 4,
+              "segment": 669,
+              "side": 0,
+              "seconds": 12.8,
+              "status": "estimated",
+              "tunnel_units": 390.0,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 881,
         "wall_count": 196,
         "trigger_count": 28,
@@ -3275,6 +3969,35 @@
         "secret": false,
         "level_name": "nan2 ke1 yi1 meng4",
         "level_file": "lvl19.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.574,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.574
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl19.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 484,
+              "side": 1,
+              "seconds": 13.574,
+              "status": "estimated",
+              "tunnel_units": 428.717,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 770,
         "wall_count": 159,
         "trigger_count": 17,
@@ -3393,6 +4116,44 @@
         "secret": false,
         "level_name": "Creme de Menthe",
         "level_file": "lvl20.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.001,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.001
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl20.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 715,
+              "side": 0,
+              "seconds": 20.001,
+              "status": "estimated",
+              "tunnel_units": 750.046,
+              "tunnel_segments": 36
+            },
+            {
+              "trigger": 5,
+              "segment": 741,
+              "side": 3,
+              "seconds": 9.371,
+              "status": "estimated",
+              "tunnel_units": 218.563,
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 799,
         "wall_count": 159,
         "trigger_count": 21,
@@ -3511,6 +4272,44 @@
         "secret": false,
         "level_name": "Schleifenquadrat",
         "level_file": "lvl21.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 22.866,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 22.866
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl21.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 17,
+              "segment": 585,
+              "side": 4,
+              "seconds": 22.866,
+              "status": "estimated",
+              "tunnel_units": 893.324,
+              "tunnel_segments": 40
+            },
+            {
+              "trigger": 0,
+              "segment": 574,
+              "side": 1,
+              "seconds": 10.81,
+              "status": "estimated",
+              "tunnel_units": 290.502,
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 741,
         "wall_count": 176,
         "trigger_count": 19,
@@ -3764,6 +4563,29 @@
         "secret": false,
         "level_name": "Primum Mobile",
         "level_file": "lvl22a.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 560,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 696,
         "wall_count": 188,
         "trigger_count": 39,
@@ -4090,6 +4912,35 @@
         "secret": false,
         "level_name": "pohjannaula",
         "level_file": "lvl22b.rl2",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.995,
+          "status": "estimated",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.995
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvl22b.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 687,
+              "side": 4,
+              "seconds": 17.995,
+              "status": "estimated",
+              "tunnel_units": 649.762,
+              "tunnel_segments": 35
+            }
+          ]
+        },
         "segment_count": 875,
         "wall_count": 215,
         "trigger_count": 28,
@@ -4101,7 +4952,7 @@
         "reactors": 1,
         "robots": 124,
         "hostages": 0,
-        "secrets": 1,
+        "secrets": 3,
         "matcens": 6,
         "energy_centers": 3,
         "mine_volume": 50884100.0,
@@ -4299,6 +5150,71 @@
         "secret": true,
         "level_name": "se eftcyme",
         "level_file": "lvl97.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 243,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 0,
+              "segment": 0,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 166,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 1,
+              "segment": 296,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 42,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 9,
+              "segment": 437,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 16,
+              "segment": 509,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 17,
+              "segment": 530,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 549,
         "wall_count": 142,
         "trigger_count": 20,
@@ -4505,6 +5421,53 @@
         "secret": true,
         "level_name": "the octahedron",
         "level_file": "lvl98.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 180,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 1,
+              "segment": 182,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 19,
+              "segment": 533,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 21,
+              "segment": 559,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 26,
+              "segment": 566,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 602,
         "wall_count": 173,
         "trigger_count": 29,
@@ -4695,6 +5658,47 @@
         "secret": true,
         "level_name": "Hyphae",
         "level_file": "lvl99.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 0,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 1,
+              "segment": 354,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 363,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 398,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 468,
         "wall_count": 78,
         "trigger_count": 8,

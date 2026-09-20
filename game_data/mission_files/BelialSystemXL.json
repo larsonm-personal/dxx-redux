@@ -34,6 +34,56 @@
       "powerups": 816,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "BelialSystemXL/belialxl.mn2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "23 jul 2008",
+          "sources": [
+            "BelialSystemXL/belialxl.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "BelialSystemXL/belialxl.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2008,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2008,
+          2008
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "BelialSystemXL/belialxl.hog",
+          "modified": "2008-08-27",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "BelialSystemXL/belialxl.mn2",
+          "modified": "2008-08-23",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -109,6 +159,30 @@
         "secret": false,
         "level_name": "leon - mirrormoon mine",
         "level_file": "01mirror.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 642,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 760,
         "wall_count": 152,
         "trigger_count": 15,
@@ -286,6 +360,30 @@
         "secret": false,
         "level_name": "punar - volta caverns",
         "level_file": "02volta.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 158,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 840,
         "wall_count": 207,
         "trigger_count": 18,
@@ -523,6 +621,30 @@
         "secret": false,
         "level_name": "leon - castor powerplant",
         "level_file": "03castor.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 157,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 805,
         "wall_count": 202,
         "trigger_count": 24,
@@ -816,6 +938,30 @@
         "secret": false,
         "level_name": "punar - electra station",
         "level_file": "04leccie.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 539,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 676,
         "wall_count": 145,
         "trigger_count": 12,
@@ -1004,6 +1150,30 @@
         "secret": false,
         "level_name": "leon - red demon complex",
         "level_file": "05cabee.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 611,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 649,
         "wall_count": 183,
         "trigger_count": 14,
@@ -1241,6 +1411,30 @@
         "secret": false,
         "level_name": "tygar - trial underground maze",
         "level_file": "06trial.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 469,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 865,
         "wall_count": 216,
         "trigger_count": 24,
@@ -1481,6 +1675,29 @@
         "secret": false,
         "level_name": "leon - mines of methalon",
         "level_file": "07meth.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 681,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 768,
         "wall_count": 157,
         "trigger_count": 8,
@@ -1779,6 +1996,30 @@
         "secret": false,
         "level_name": "leon - fortress of methalon",
         "level_file": "08fmeth.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 460,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 773,
         "wall_count": 145,
         "trigger_count": 14,
@@ -2028,6 +2269,30 @@
         "secret": false,
         "level_name": "tygar -  t.i.m.a. bionic core",
         "level_file": "09core.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 16,
+              "segment": 702,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 717,
         "wall_count": 160,
         "trigger_count": 18,
@@ -2039,7 +2304,7 @@
         "reactors": 0,
         "robots": 142,
         "hostages": 3,
-        "secrets": 3,
+        "secrets": 4,
         "matcens": 4,
         "energy_centers": 5,
         "mine_volume": 33557000.0,
@@ -2237,6 +2502,30 @@
         "secret": false,
         "level_name": "punar - dome of ragnarar",
         "level_file": "10dome.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 747,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 841,
         "wall_count": 183,
         "trigger_count": 14,
@@ -2387,6 +2676,30 @@
         "secret": false,
         "level_name": "tygar - robotic abscess",
         "level_file": "11roboa.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 12,
+              "segment": 755,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 876,
         "wall_count": 158,
         "trigger_count": 20,
@@ -2654,6 +2967,29 @@
         "secret": false,
         "level_name": "nemesis headquarters",
         "level_file": "13final.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 813,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 894,
         "wall_count": 182,
         "trigger_count": 17,
@@ -2951,6 +3287,29 @@
         "secret": false,
         "level_name": "doomsday sphere",
         "level_file": "15doom.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 572,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 770,
         "wall_count": 201,
         "trigger_count": 19,
@@ -3254,6 +3613,29 @@
         "secret": true,
         "level_name": "martina military base",
         "level_file": "marti.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 21,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 365,
         "wall_count": 61,
         "trigger_count": 8,
@@ -3319,6 +3701,29 @@
         "secret": true,
         "level_name": "cargos castaway",
         "level_file": "cargoca.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 135,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 208,
         "wall_count": 59,
         "trigger_count": 8,
@@ -3533,6 +3938,29 @@
         "secret": true,
         "level_name": "the narrow way",
         "level_file": "narrow.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 36,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 372,
         "wall_count": 57,
         "trigger_count": 6,
@@ -3609,6 +4037,29 @@
         "secret": true,
         "level_name": "lunas labyrinth",
         "level_file": "luna.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 57,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 474,
         "wall_count": 168,
         "trigger_count": 9,

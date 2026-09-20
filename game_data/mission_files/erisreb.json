@@ -34,6 +34,34 @@
       "powerups": 363,
       "reactors": 9
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2017,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2017,
+          2017
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "erisreb.hog",
+          "modified": "2017-08-17",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "erisreb.msn",
+          "modified": "2017-08-17",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +261,35 @@
         "secret": false,
         "level_name": "Eris volatile mine",
         "level_file": "eris0001.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.494,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.494
+          },
+          "presentation": {
+            "status": "present",
+            "file": "eris0001.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 322,
+              "side": 5,
+              "seconds": 15.494,
+              "status": "estimated",
+              "tunnel_units": 524.716,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 770,
         "wall_count": 126,
         "trigger_count": 7,
@@ -347,6 +404,35 @@
         "secret": false,
         "level_name": "Eris power plant",
         "level_file": "eris0002.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.494,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.494
+          },
+          "presentation": {
+            "status": "present",
+            "file": "eris0002.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 482,
+              "side": 0,
+              "seconds": 16.494,
+              "status": "estimated",
+              "tunnel_units": 574.689,
+              "tunnel_segments": 26
+            }
+          ]
+        },
         "segment_count": 749,
         "wall_count": 124,
         "trigger_count": 9,
@@ -461,6 +547,35 @@
         "secret": false,
         "level_name": "Eris headquarter",
         "level_file": "eris0003.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.991,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.991
+          },
+          "presentation": {
+            "status": "present",
+            "file": "eris0003.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 214,
+              "side": 1,
+              "seconds": 12.991,
+              "status": "estimated",
+              "tunnel_units": 399.552,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 587,
         "wall_count": 104,
         "trigger_count": 3,
@@ -575,6 +690,35 @@
         "secret": false,
         "level_name": "Hydrocarbon mine",
         "level_file": "eris0004.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.789,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.789
+          },
+          "presentation": {
+            "status": "present",
+            "file": "eris0004.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 390,
+              "side": 4,
+              "seconds": 11.789,
+              "status": "estimated",
+              "tunnel_units": 339.425,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 710,
         "wall_count": 126,
         "trigger_count": 13,
@@ -586,7 +730,7 @@
         "reactors": 1,
         "robots": 110,
         "hostages": 6,
-        "secrets": 5,
+        "secrets": 6,
         "matcens": 5,
         "energy_centers": 2,
         "mine_volume": 13242300.0,
@@ -689,6 +833,35 @@
         "secret": false,
         "level_name": "Dysnomia research lab",
         "level_file": "eris0005.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.053,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.053
+          },
+          "presentation": {
+            "status": "present",
+            "file": "eris0005.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 404,
+              "side": 0,
+              "seconds": 13.053,
+              "status": "estimated",
+              "tunnel_units": 402.653,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 752,
         "wall_count": 66,
         "trigger_count": 6,
@@ -803,6 +976,35 @@
         "secret": false,
         "level_name": "Eris colonial outpost",
         "level_file": "eris0006.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.22,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.22
+          },
+          "presentation": {
+            "status": "present",
+            "file": "eris0006.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 83,
+              "side": 2,
+              "seconds": 12.22,
+              "status": "estimated",
+              "tunnel_units": 360.991,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 763,
         "wall_count": 110,
         "trigger_count": 13,
@@ -917,6 +1119,35 @@
         "secret": false,
         "level_name": "old smelter",
         "level_file": "eris0007.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.625,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.625
+          },
+          "presentation": {
+            "status": "present",
+            "file": "eris0007.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 403,
+              "side": 4,
+              "seconds": 12.625,
+              "status": "estimated",
+              "tunnel_units": 381.226,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 549,
         "wall_count": 146,
         "trigger_count": 4,
@@ -1033,6 +1264,35 @@
         "secret": false,
         "level_name": "Organic compound mine",
         "level_file": "eris0008.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.926,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.926
+          },
+          "presentation": {
+            "status": "present",
+            "file": "eris0008.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 716,
+              "side": 2,
+              "seconds": 11.926,
+              "status": "estimated",
+              "tunnel_units": 346.303,
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 120,
         "trigger_count": 19,
@@ -1147,6 +1407,35 @@
         "secret": false,
         "level_name": "Rebel command post",
         "level_file": "eris0009.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.379,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.379
+          },
+          "presentation": {
+            "status": "present",
+            "file": "eris0009.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 274,
+              "side": 2,
+              "seconds": 11.379,
+              "status": "estimated",
+              "tunnel_units": 318.938,
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 714,
         "wall_count": 68,
         "trigger_count": 5,

@@ -64,6 +64,7 @@ internal data class LevelMetadataTarget(
     val archivePath: String? = null,
     val archiveEntries: List<String> = emptyList(),
     val missionAssetContext: String = "",
+    val provenanceDates: List<ArchiveProvenanceDate> = emptyList(),
 )
 
 internal data class LevelMetadataCheckpointUpdate(
@@ -485,6 +486,7 @@ internal data class LevelMetadataResult(
     val failureKind: String = "",
     val missionIntent: MissionIntentSummary? = null,
     val nativeJson: String = "",
+    val provenance: JSONObject? = null,
 ) {
     companion object {
         fun fromJson(text: String): LevelMetadataResult {
@@ -605,6 +607,7 @@ internal data class LevelMetadataResult(
                 failureKind = obj.optString("failure_kind"),
                 missionIntent = obj.optMissionIntent("mission_intent"),
                 nativeJson = text,
+                provenance = obj.optJSONObject("provenance"),
             )
         }
 
@@ -974,13 +977,35 @@ internal object LevelMetadataTargets {
     ): LevelMetadataTarget? {
         val store = missionZipExtractedStoreForArchivePath(archivePath) ?: return null
         val extracted = store.extractedEntryForArchiveEntry(archivePath, constituent.path) ?: return null
+        val record = store.reusableRecord(File(archivePath).name, File(archivePath))
+
+        fun withProvenance(target: LevelMetadataTarget): LevelMetadataTarget {
+            val files =
+                (target.hogFiles + listOfNotNull(target.missionFilename))
+                    .map {
+                        File(target.sourcePath.orEmpty(), it).absolutePath
+                    }.toSet()
+            val paths =
+                record
+                    ?.files
+                    .orEmpty()
+                    .filter {
+                        File(record?.rootDir, it.relativePath).absolutePath in files
+                    }.map { it.entryPath }
+                    .toSet()
+            return target.copy(provenanceDates = record?.provenanceDates(paths).orEmpty())
+        }
         val ext = GameFileFormats.extensionOf(constituent.name)
         val game = gameForFile(constituent.name, metadata?.contents?.map { it.name }.orEmpty()) ?: return null
         if (GameFileFormats.isMissionDescriptor(constituent.name)) {
-            extractedDescriptorTarget(store, archivePath, setDir, constituent, extracted, game)?.let { return it }
+            extractedDescriptorTarget(store, archivePath, setDir, constituent, extracted, game)?.let {
+                return withProvenance(it)
+            }
         }
         if (ext == "hog" && !isBaseHog(constituent.name)) {
-            extractedHogTarget(store, archivePath, setDir, constituent, extracted, game)?.let { return it }
+            extractedHogTarget(store, archivePath, setDir, constituent, extracted, game)?.let {
+                return withProvenance(it)
+            }
             return directFile(extracted.file, setDir, metadata)
         }
         return null
@@ -1803,6 +1828,7 @@ internal object LevelMetadataAnalyzer {
             .put("hog_paths", JSONArray(prepared.hogPaths))
             .put("normal_level_files", JSONArray(prepared.normalLevelFiles))
             .put("secret_level_files", JSONArray(prepared.secretLevelFiles))
+            .put("provenance_file_dates", provenanceDatesJson(prepared.provenanceDates))
     }
 
     private data class PreparedTarget(
@@ -1818,6 +1844,7 @@ internal object LevelMetadataAnalyzer {
         val hogPaths: List<String>,
         val normalLevelFiles: List<String>,
         val secretLevelFiles: List<String>,
+        val provenanceDates: List<ArchiveProvenanceDate> = emptyList(),
     )
 
     private fun prepareTarget(
@@ -1826,7 +1853,7 @@ internal object LevelMetadataAnalyzer {
     ): PreparedTarget {
         val archivePath = target.archivePath
         if (archivePath != null) {
-            stageArchiveEntries(File(archivePath), target.archiveEntries, stageDir)
+            val dates = stageArchiveEntries(File(archivePath), target.archiveEntries, stageDir)
             val stagedHog =
                 target.hogFile
                     ?.takeIf { target.sourceType == "hog" }
@@ -1846,6 +1873,7 @@ internal object LevelMetadataAnalyzer {
                 levelFile = target.levelFile.orEmpty(),
                 levelNum = target.levelNum,
                 hogPath = stagedHog,
+                provenanceDates = dates,
                 hogPaths = stagedHogs,
                 normalLevelFiles = target.normalLevelFiles,
                 secretLevelFiles = target.secretLevelFiles,
@@ -1861,6 +1889,7 @@ internal object LevelMetadataAnalyzer {
                 sourceType = target.sourceType,
                 dataDir = target.dataDir.orEmpty(),
                 extraDataDir = source.absolutePath,
+                provenanceDates = target.provenanceDates,
                 missionName = target.missionName.orEmpty(),
                 missionDisplayName = target.missionDisplayName.orEmpty(),
                 missionFilename = target.missionFilename.orEmpty(),
@@ -1892,7 +1921,8 @@ internal object LevelMetadataAnalyzer {
         archive: File,
         entryPaths: List<String>,
         stageDir: File,
-    ) {
+    ): List<ArchiveProvenanceDate> {
+        val dates = mutableListOf<ArchiveProvenanceDate>()
         if (!archive.isFile) throw IllegalArgumentException("Mission archive is missing")
         if (entryPaths.size > LEVEL_METADATA_MAX_ZIP_FILES) throw IllegalArgumentException("Too many archive entries")
         stageDir.mkdirs()
@@ -1900,12 +1930,22 @@ internal object LevelMetadataAnalyzer {
         val buffer = ByteArray(8192)
         val usedNames = mutableSetOf<String>()
         ArchiveFiles.open(archive).use { source ->
+            val documentPaths =
+                entryPaths.filter(GameFileFormats::isMissionDescriptor).mapNotNull {
+                    source
+                        .findEntry(it.substringBeforeLast('.') + ".txt")
+                        ?.takeIf { entry ->
+                            !entry.isDirectory && entry.sizeBytes <= 65_536
+                        }?.path
+                }
+            val selectedPaths = (entryPaths + documentPaths).distinct()
+            require(selectedPaths.size <= LEVEL_METADATA_MAX_ZIP_FILES) { "Too many archive entries" }
             ImportStorageGuard.requireFreeSpace(
                 stageDir,
-                levelMetadataArchiveStageBytes(source, entryPaths),
+                levelMetadataArchiveStageBytes(source, selectedPaths),
                 "stage level metadata files",
             )
-            entryPaths.forEach { path ->
+            selectedPaths.forEach { path ->
                 val entry = source.findEntry(path) ?: throw IllegalArgumentException("Archive entry is missing: $path")
                 if (entry.isDirectory) return@forEach
                 val leaf = path.substringAfterLast('/').substringAfterLast('\\')
@@ -1924,6 +1964,14 @@ internal object LevelMetadataAnalyzer {
                     throw IllegalArgumentException("Mission archive is too large")
                 }
                 val out = File(stageDir, leaf)
+                entry.modifiedDate?.let {
+                    dates +=
+                        ArchiveProvenanceDate(
+                            entry.path,
+                            it,
+                            "${source.format}_entry_mtime",
+                        )
+                }
                 var copied = 0L
                 source.openInputStream(entry).use { input ->
                     out.outputStream().use { output ->
@@ -1952,6 +2000,7 @@ internal object LevelMetadataAnalyzer {
                 total += copied
             }
         }
+        return dates
     }
 
     private fun copyStageAlias(

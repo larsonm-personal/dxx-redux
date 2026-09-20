@@ -34,6 +34,112 @@
       "powerups": 405,
       "reactors": 1
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "SDLDevil, DLE",
+          "sources": [
+            "KCXF2RM.mn2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "8 Months",
+          "sources": [
+            "KCXF2RM.mn2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "June 2026",
+          "sources": [
+            "KCXF2RM.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "KCXF2RM.mn2"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "PuMo",
+          "sources": [
+            "KCXF2RM.mn2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "pumo@pumosoftware.com",
+          "sources": [
+            "KCXF2RM.mn2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "pumosoftware.com",
+          "sources": [
+            "KCXF2RM.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.1",
+          "sources": [
+            "KCXF2RM.txt"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "PuMo / Pumo Software",
+          "sources": [
+            "KCXF2RM.txt"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "https://pumosoftware.com",
+          "sources": [
+            "KCXF2RM.txt"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "June 2026",
+          "sources": [
+            "KCXF2RM.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2026,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          2026,
+          2026
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "KCXF2RM.hog",
+          "modified": "2026-06-16",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "KCXF2RM.mn2",
+          "modified": "2026-06-12",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -122,6 +228,30 @@
         "secret": false,
         "level_name": "Surface Outpost",
         "level_file": "kcxf2_n1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 192,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 502,
         "wall_count": 109,
         "trigger_count": 4,
@@ -345,6 +475,29 @@
         "secret": false,
         "level_name": "Aquabed Borehole",
         "level_file": "kcxf2_n2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 16,
+              "segment": 896,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 176,
         "trigger_count": 20,
@@ -356,7 +509,7 @@
         "reactors": 0,
         "robots": 53,
         "hostages": 3,
-        "secrets": 6,
+        "secrets": 7,
         "matcens": 4,
         "energy_centers": 11,
         "mine_volume": 24128600.0,
@@ -753,6 +906,41 @@
         "secret": false,
         "level_name": "The Rise of Matter",
         "level_file": "kcxf2_n3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 25,
+              "segment": 34,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 24,
+              "segment": 33,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 23,
+              "segment": 35,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 638,
         "wall_count": 183,
         "trigger_count": 28,
@@ -1220,6 +1408,41 @@
         "secret": false,
         "level_name": "'Turtleshell' Deep Complex",
         "level_file": "kcxf2_n4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 32,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 34,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 1,
+              "segment": 33,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 748,
         "wall_count": 171,
         "trigger_count": 21,
@@ -1367,6 +1590,29 @@
         "secret": false,
         "level_name": "KCX-F2 'Atman' R&D Center",
         "level_file": "kcxf2_n5.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 895,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 253,
         "trigger_count": 24,
@@ -1530,6 +1776,29 @@
         "secret": false,
         "level_name": "Sahasrara Containment Core",
         "level_file": "kcxf2_n6.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 551,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 597,
         "wall_count": 222,
         "trigger_count": 20,
@@ -1857,6 +2126,11 @@
         "secret": true,
         "level_name": "",
         "level_file": "kcxf2_s0.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "level_not_loaded"
+        },
         "segment_count": 0,
         "wall_count": 0,
         "trigger_count": 0,
@@ -1895,6 +2169,53 @@
         "secret": true,
         "level_name": "Experimental Research Depot",
         "level_file": "kcxf2_sc.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 147,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 0,
+              "segment": 336,
+              "side": 3,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 1,
+              "segment": 337,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 12,
+              "segment": 631,
+              "side": 3,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 15,
+              "segment": 679,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 747,
         "wall_count": 153,
         "trigger_count": 24,

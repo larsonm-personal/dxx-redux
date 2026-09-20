@@ -34,6 +34,70 @@
       "powerups": 0,
       "reactors": 1
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DMB II",
+          "sources": [
+            "MUSTFIND.MN2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "MUSTFIND.MN2"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "J.P",
+          "sources": [
+            "MUSTFIND.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "www.xmail.net/descer/index.html",
+          "sources": [
+            "MUSTFIND.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "jpiis@hotmail.com",
+          "sources": [
+            "MUSTFIND.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2006,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2006,
+          2006
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "MUSTFIND.HOG",
+          "modified": "2006-05-02",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "MUSTFIND.MN2",
+          "modified": "2006-05-02",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -109,6 +173,30 @@
         "secret": false,
         "level_name": "Locked door",
         "level_file": "lockdoor.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 56,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 3
+            }
+          ]
+        },
         "segment_count": 315,
         "wall_count": 10,
         "trigger_count": 2,
@@ -155,6 +243,29 @@
         "secret": true,
         "level_name": "The Level",
         "level_file": "level.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 715,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 222,
         "trigger_count": 9,

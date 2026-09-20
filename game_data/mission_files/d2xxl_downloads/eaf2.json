@@ -34,6 +34,129 @@
       "powerups": 299,
       "reactors": 8
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Ellusion Design / Project Leader: Kam Sheffield",
+          "sources": [
+            "missions/single/eaf2.mn2",
+            "missions/single/eaf2.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "sheffhorn@email.msn.com",
+          "sources": [
+            "missions/single/eaf2.mn2",
+            "missions/single/eaf2.hog/enc2-1.aut",
+            "missions/single/eaf2.hog/enc2-2.aut",
+            "missions/single/eaf2.hog/enc2-3.aut",
+            "missions/single/eaf2.hog/enc2-4.aut",
+            "missions/single/eaf2.hog/enc2-5.aut",
+            "missions/single/eaf2.hog/enc2-6.aut",
+            "missions/single/eaf2.hog/enc2-7.aut",
+            "missions/single/eaf2.hog/enc2-8.aut",
+            "missions/single/eaf2.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.descent-3.com/ellusion/",
+          "sources": [
+            "missions/single/eaf2.mn2",
+            "missions/single/eaf2.hog/eaf2.MN2",
+            "missions/single/eaf2.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "2/7/99",
+          "sources": [
+            "missions/single/eaf2.mn2",
+            "missions/single/eaf2.hog/eaf2.MN2",
+            "missions/single/eaf2.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "missions/single/eaf2.mn2",
+            "missions/single/eaf2.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Ellusion Design",
+          "sources": [
+            "missions/single/eaf2.hog/eaf2.MN2"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "Diocon",
+          "sources": [
+            "missions/single/eaf2.hog/enc2-1.aut",
+            "missions/single/eaf2.hog/enc2-2.aut",
+            "missions/single/eaf2.hog/enc2-3.aut",
+            "missions/single/eaf2.hog/enc2-4.aut",
+            "missions/single/eaf2.hog/enc2-5.aut",
+            "missions/single/eaf2.hog/enc2-6.aut",
+            "missions/single/eaf2.hog/enc2-7.aut",
+            "missions/single/eaf2.hog/enc2-8.aut",
+            "missions/single/eaf2.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Ellusion Design / Project Leader: Kam Sheffield",
+          "sources": [
+            "missions/single/eaf2.hog/enc2-1.aut",
+            "missions/single/eaf2.hog/enc2-2.aut",
+            "missions/single/eaf2.hog/enc2-3.aut",
+            "missions/single/eaf2.hog/enc2-4.aut",
+            "missions/single/eaf2.hog/enc2-5.aut",
+            "missions/single/eaf2.hog/enc2-6.aut",
+            "missions/single/eaf2.hog/enc2-7.aut",
+            "missions/single/eaf2.hog/enc2-8.aut",
+            "missions/single/eaf2.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "2/7/99",
+          "sources": [
+            "missions/single/eaf2.hog/mission.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2007,
+          2015
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "missions/single/eaf2.hog",
+          "modified": "2015-08-09",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "missions/single/eaf2.mn2",
+          "modified": "2007-03-14",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -137,6 +260,29 @@
         "secret": false,
         "level_name": "Aquaticus Power Storage",
         "level_file": "Enc2-1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 490,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 494,
         "wall_count": 75,
         "trigger_count": 6,
@@ -320,6 +466,29 @@
         "secret": false,
         "level_name": "Aquaticus Fusion Core",
         "level_file": "Enc2-2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 548,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 619,
         "wall_count": 107,
         "trigger_count": 14,
@@ -651,6 +820,29 @@
         "secret": false,
         "level_name": "Antimatter Containment",
         "level_file": "Enc2-3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 607,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 681,
         "wall_count": 117,
         "trigger_count": 16,
@@ -957,6 +1149,29 @@
         "secret": false,
         "level_name": "Lavus Power Plant",
         "level_file": "Enc2-4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 18,
+              "segment": 879,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 882,
         "wall_count": 129,
         "trigger_count": 19,
@@ -1189,6 +1404,29 @@
         "secret": false,
         "level_name": "Nivalus Command Station",
         "level_file": "Enc2-5.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 31,
+              "segment": 827,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 830,
         "wall_count": 136,
         "trigger_count": 32,
@@ -1515,6 +1753,29 @@
         "secret": false,
         "level_name": "Antimatter Physics",
         "level_file": "Enc2-6.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 669,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 675,
         "wall_count": 100,
         "trigger_count": 19,
@@ -1686,6 +1947,29 @@
         "secret": false,
         "level_name": "Molecular Diffusion",
         "level_file": "Enc2-7.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 26,
+              "segment": 812,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 815,
         "wall_count": 111,
         "trigger_count": 27,
@@ -1942,6 +2226,29 @@
         "secret": false,
         "level_name": "The Great Machine",
         "level_file": "Enc2-8.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 25,
+              "segment": 810,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 874,
         "wall_count": 130,
         "trigger_count": 26,
@@ -2215,6 +2522,35 @@
         "secret": true,
         "level_name": "Hydro Processing",
         "level_file": "Enc2-s1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 1,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 10,
+              "segment": 38,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 892,
         "wall_count": 117,
         "trigger_count": 23,
@@ -2399,6 +2735,35 @@
         "secret": true,
         "level_name": "Auxilary Power Station",
         "level_file": "Enc2-s2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 1,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 7,
+              "segment": 60,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 547,
         "wall_count": 92,
         "trigger_count": 10,

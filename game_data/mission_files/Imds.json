@@ -34,6 +34,84 @@
       "powerups": 24,
       "reactors": 1
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Jay Hoeberechts",
+          "sources": [
+            "imds.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://members.tripod.com/~DCentral/",
+          "sources": [
+            "imds.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "ppakvis@julian.uwo.ca",
+          "sources": [
+            "imds.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "05/14/98",
+          "sources": [
+            "imds.MN2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Too many to list, Hoggle",
+          "sources": [
+            "imds.MN2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "~30 hours for everything",
+          "sources": [
+            "imds.MN2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "v1.0",
+          "sources": [
+            "imds.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1998,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1998,
+          1998
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "imds.MN2",
+          "modified": "1998-05-14",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "imds.hog",
+          "modified": "1998-05-14",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -109,6 +187,29 @@
         "secret": false,
         "level_name": "IMD Volcano Mine 018b",
         "level_file": "Volcano.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 242,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 249,
         "wall_count": 93,
         "trigger_count": 14,
@@ -362,6 +463,29 @@
         "secret": true,
         "level_name": "Nukes 'R' Us! :)",
         "level_file": "Secret.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 77,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 82,
         "wall_count": 21,
         "trigger_count": 2,

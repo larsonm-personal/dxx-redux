@@ -34,6 +34,19 @@
       "powerups": 1367,
       "reactors": 20
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-6",
     "track_names": [
       {
@@ -109,6 +122,30 @@
         "secret": false,
         "level_name": "deep kraeg tunnel system",
         "level_file": "d2xlvl01.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 243,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 289,
         "wall_count": 106,
         "trigger_count": 11,
@@ -213,6 +250,30 @@
         "secret": false,
         "level_name": "transmode containment 2112",
         "level_file": "d2xlvl02.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 283,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 406,
         "wall_count": 192,
         "trigger_count": 18,
@@ -411,6 +472,30 @@
         "secret": false,
         "level_name": "collision dome excavation",
         "level_file": "d2xlvl03.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 315,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 336,
         "wall_count": 105,
         "trigger_count": 11,
@@ -529,6 +614,30 @@
         "secret": false,
         "level_name": "ptmc heavy water abyss",
         "level_file": "d2xlvl04.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 509,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 558,
         "wall_count": 149,
         "trigger_count": 16,
@@ -695,6 +804,30 @@
         "secret": false,
         "level_name": "artifact research station",
         "level_file": "d2xlvl05.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 402,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 452,
         "wall_count": 118,
         "trigger_count": 18,
@@ -813,6 +946,30 @@
         "secret": false,
         "level_name": "krell shaft facility",
         "level_file": "d2xlvl06.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 103,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 398,
         "wall_count": 157,
         "trigger_count": 21,
@@ -931,6 +1088,30 @@
         "secret": false,
         "level_name": "kanroku ore mine",
         "level_file": "d2xlvl07.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 400,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 451,
         "wall_count": 146,
         "trigger_count": 18,
@@ -1151,6 +1332,30 @@
         "secret": false,
         "level_name": "archangel falls mine",
         "level_file": "d2xlvl08.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 435,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 462,
         "wall_count": 152,
         "trigger_count": 17,
@@ -1269,6 +1474,30 @@
         "secret": false,
         "level_name": "metacave weapons research",
         "level_file": "d2xlvl09.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 203,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 343,
         "wall_count": 147,
         "trigger_count": 21,
@@ -1387,6 +1616,30 @@
         "secret": false,
         "level_name": "citadel station",
         "level_file": "d2xlvl10.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 413,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 430,
         "wall_count": 141,
         "trigger_count": 16,
@@ -1505,6 +1758,30 @@
         "secret": false,
         "level_name": "urgian kiln",
         "level_file": "d2xlvl11.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 18,
+              "segment": 482,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 509,
         "wall_count": 228,
         "trigger_count": 22,
@@ -1688,6 +1965,30 @@
         "secret": false,
         "level_name": "exodus research facility",
         "level_file": "d2xlvl12.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 253,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 380,
         "wall_count": 141,
         "trigger_count": 21,
@@ -1806,6 +2107,30 @@
         "secret": false,
         "level_name": "ptmc geothermal no. 1a574",
         "level_file": "d2xlvl13.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 242,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 440,
         "wall_count": 117,
         "trigger_count": 24,
@@ -1924,6 +2249,30 @@
         "secret": false,
         "level_name": "living water catacombs",
         "level_file": "d2xlvl14.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 18,
+              "segment": 344,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 355,
         "wall_count": 148,
         "trigger_count": 20,
@@ -2042,6 +2391,30 @@
         "secret": false,
         "level_name": "frisia gas mine",
         "level_file": "d2xlvl15.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 133,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 337,
         "wall_count": 90,
         "trigger_count": 8,
@@ -2185,6 +2558,30 @@
         "secret": false,
         "level_name": "Fold Zandura",
         "level_file": "d2xlvl16.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 284,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 320,
         "wall_count": 138,
         "trigger_count": 24,
@@ -2196,7 +2593,7 @@
         "reactors": 1,
         "robots": 59,
         "hostages": 4,
-        "secrets": 7,
+        "secrets": 8,
         "matcens": 0,
         "energy_centers": 1,
         "mine_volume": 11336400.0,
@@ -2383,6 +2780,30 @@
         "secret": false,
         "level_name": "Gippan ore refinery",
         "level_file": "d2xlvl17.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 160,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 207,
         "wall_count": 119,
         "trigger_count": 15,
@@ -2394,7 +2815,7 @@
         "reactors": 1,
         "robots": 51,
         "hostages": 3,
-        "secrets": 1,
+        "secrets": 2,
         "matcens": 2,
         "energy_centers": 2,
         "mine_volume": 15557200.0,
@@ -2615,6 +3036,30 @@
         "secret": false,
         "level_name": "magma tower complex",
         "level_file": "d2xlvl18.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 159,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 430,
         "wall_count": 101,
         "trigger_count": 17,
@@ -2812,6 +3257,30 @@
         "secret": false,
         "level_name": "Morabi milk mine",
         "level_file": "d2xlvl19.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 55,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 183,
         "wall_count": 81,
         "trigger_count": 10,
@@ -2932,6 +3401,30 @@
         "secret": false,
         "level_name": "vertigo research station",
         "level_file": "d2xlvl20.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 202,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 330,
         "wall_count": 130,
         "trigger_count": 26,
@@ -3076,6 +3569,53 @@
         "secret": true,
         "level_name": "fort pyr security training post",
         "level_file": "d2xlvls1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 27,
+              "segment": 52,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 5,
+              "segment": 207,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 12,
+              "segment": 271,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 15,
+              "segment": 305,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 16,
+              "segment": 163,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 334,
         "wall_count": 169,
         "trigger_count": 28,
@@ -3152,6 +3692,53 @@
         "secret": true,
         "level_name": "goth-9 waste recycling facility",
         "level_file": "d2xlvls2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 21,
+              "segment": 185,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 20,
+              "segment": 187,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 22,
+              "segment": 117,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 19,
+              "segment": 189,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 32,
+              "segment": 370,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 373,
         "wall_count": 209,
         "trigger_count": 33,
@@ -3258,6 +3845,47 @@
         "secret": true,
         "level_name": "brizzna babrenna ice base",
         "level_file": "d2xlvls3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 20,
+              "segment": 117,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 7,
+              "segment": 190,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 23,
+              "segment": 192,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 19,
+              "segment": 204,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 239,
         "wall_count": 122,
         "trigger_count": 26,
@@ -3510,6 +4138,19 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -3585,6 +4226,29 @@
         "secret": false,
         "level_name": "Tutorial #7",
         "level_file": "tutorial.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 24,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 83,
         "wall_count": 13,
         "trigger_count": 2,

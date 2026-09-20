@@ -34,6 +34,56 @@
       "powerups": 525,
       "reactors": 10
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DMB2, TEXFIX",
+          "sources": [
+            "VERT.MSN"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "two days",
+          "sources": [
+            "VERT.MSN"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Many",
+          "sources": [
+            "VERT.MSN"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2000,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2000,
+          2000
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "VERT.HOG",
+          "modified": "2000-06-20",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "VERT.MSN",
+          "modified": "2000-06-20",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +283,35 @@
         "secret": false,
         "level_name": "Deep Kraeg Tunnel System",
         "level_file": "vert1.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.399,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.399
+          },
+          "presentation": {
+            "status": "present",
+            "file": "vert1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 243,
+              "side": 4,
+              "seconds": 15.399,
+              "status": "estimated",
+              "tunnel_units": 519.926,
+              "tunnel_segments": 26
+            }
+          ]
+        },
         "segment_count": 308,
         "wall_count": 86,
         "trigger_count": 7,
@@ -333,6 +412,35 @@
         "secret": false,
         "level_name": "Exodus Research Station",
         "level_file": "vert2.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.39,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.39
+          },
+          "presentation": {
+            "status": "present",
+            "file": "vert2.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 251,
+              "side": 4,
+              "seconds": 11.39,
+              "status": "estimated",
+              "tunnel_units": 319.495,
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 380,
         "wall_count": 101,
         "trigger_count": 14,
@@ -447,6 +555,35 @@
         "secret": false,
         "level_name": "Frisia Gas Mine",
         "level_file": "vert3.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.197,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.197
+          },
+          "presentation": {
+            "status": "present",
+            "file": "vert3.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 131,
+              "side": 4,
+              "seconds": 12.197,
+              "status": "estimated",
+              "tunnel_units": 359.866,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 346,
         "wall_count": 73,
         "trigger_count": 10,
@@ -561,6 +698,35 @@
         "secret": false,
         "level_name": "N'neri Ring",
         "level_file": "vert4.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.571,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.571
+          },
+          "presentation": {
+            "status": "present",
+            "file": "vert4.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 297,
+              "side": 4,
+              "seconds": 11.571,
+              "status": "estimated",
+              "tunnel_units": 328.571,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 391,
         "wall_count": 100,
         "trigger_count": 7,
@@ -661,6 +827,35 @@
         "secret": false,
         "level_name": "Magnacore Station",
         "level_file": "vert5.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.594,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.594
+          },
+          "presentation": {
+            "status": "present",
+            "file": "vert5.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 17,
+              "side": 4,
+              "seconds": 12.594,
+              "status": "estimated",
+              "tunnel_units": 379.679,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 490,
         "wall_count": 138,
         "trigger_count": 10,
@@ -775,6 +970,35 @@
         "secret": false,
         "level_name": "Fold Zandura",
         "level_file": "vert6.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.596,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.596
+          },
+          "presentation": {
+            "status": "present",
+            "file": "vert6.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 283,
+              "side": 4,
+              "seconds": 14.596,
+              "status": "estimated",
+              "tunnel_units": 479.798,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 332,
         "wall_count": 90,
         "trigger_count": 7,
@@ -916,6 +1140,35 @@
         "secret": false,
         "level_name": "Gippan Ore Refinery",
         "level_file": "vert7.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.594,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.594
+          },
+          "presentation": {
+            "status": "present",
+            "file": "vert7.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 158,
+              "side": 4,
+              "seconds": 14.594,
+              "status": "estimated",
+              "tunnel_units": 479.695,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 220,
         "wall_count": 89,
         "trigger_count": 14,
@@ -1030,6 +1283,35 @@
         "secret": false,
         "level_name": "Archangel Falls Mine",
         "level_file": "vert8.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.598,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.598
+          },
+          "presentation": {
+            "status": "present",
+            "file": "vert8.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 117,
+              "side": 4,
+              "seconds": 12.598,
+              "status": "estimated",
+              "tunnel_units": 379.899,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 467,
         "wall_count": 137,
         "trigger_count": 14,
@@ -1144,6 +1426,35 @@
         "secret": false,
         "level_name": "Naobi Milk Mine",
         "level_file": "vert9.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.394,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.394
+          },
+          "presentation": {
+            "status": "present",
+            "file": "vert9.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 55,
+              "side": 4,
+              "seconds": 11.394,
+              "status": "estimated",
+              "tunnel_units": 319.698,
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 188,
         "wall_count": 64,
         "trigger_count": 3,
@@ -1244,6 +1555,35 @@
         "secret": false,
         "level_name": "Vertigo Weapons Center",
         "level_file": "vert10.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.597,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.597
+          },
+          "presentation": {
+            "status": "present",
+            "file": "vert10.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 163,
+              "side": 4,
+              "seconds": 14.597,
+              "status": "estimated",
+              "tunnel_units": 479.84,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 345,
         "wall_count": 75,
         "trigger_count": 6,
@@ -1344,6 +1684,35 @@
         "secret": true,
         "level_name": "Centroid Base",
         "level_file": "secret.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.015,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.015
+          },
+          "presentation": {
+            "status": "present",
+            "file": "secret.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 260,
+              "side": 5,
+              "seconds": 14.015,
+              "status": "estimated",
+              "tunnel_units": 450.743,
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 290,
         "wall_count": 48,
         "trigger_count": 3,

@@ -34,6 +34,34 @@
       "powerups": 25,
       "reactors": 9
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2014,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2014,
+          2014
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "trainng.MSN",
+          "modified": "2014-08-27",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "trainng.hog",
+          "modified": "2014-08-28",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -233,6 +261,29 @@
         "secret": false,
         "level_name": "Doors are open wide",
         "level_file": "08thdrs.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 0,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 68,
         "wall_count": 26,
         "trigger_count": 1,
@@ -408,6 +459,29 @@
         "secret": false,
         "level_name": "Easy Target",
         "level_file": "01easytr.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 7,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 25,
         "wall_count": 12,
         "trigger_count": 2,
@@ -510,6 +584,29 @@
         "secret": false,
         "level_name": "Easy Revisited",
         "level_file": "09easyrv.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 4,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 24,
         "wall_count": 12,
         "trigger_count": 2,
@@ -612,6 +709,29 @@
         "secret": false,
         "level_name": "Going round in circles",
         "level_file": "05gngrnd.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 0,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 37,
         "wall_count": 36,
         "trigger_count": 9,
@@ -884,6 +1004,29 @@
         "secret": false,
         "level_name": "Dodging",
         "level_file": "02ddgng1.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 8,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 68,
         "wall_count": 38,
         "trigger_count": 8,
@@ -1076,6 +1219,29 @@
         "secret": false,
         "level_name": "Straight Forward",
         "level_file": "03strght.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 0,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 79,
         "wall_count": 22,
         "trigger_count": 9,
@@ -1118,6 +1284,29 @@
         "secret": false,
         "level_name": "Dodge this",
         "level_file": "06ddgths.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 0,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 48,
         "wall_count": 34,
         "trigger_count": 6,
@@ -1315,6 +1504,29 @@
         "secret": false,
         "level_name": "Bumpy Ride",
         "level_file": "04bmpyrd.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 0,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 108,
         "wall_count": 12,
         "trigger_count": 4,
@@ -1357,6 +1569,29 @@
         "secret": false,
         "level_name": "Just going round the corner",
         "level_file": "07cornrs.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 0,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 41,
         "wall_count": 20,
         "trigger_count": 5,

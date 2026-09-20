@@ -34,6 +34,75 @@
       "powerups": 538,
       "reactors": 4
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Norbert Schuster (LL)Dark",
+          "sources": [
+            "SATURN_E.MN2",
+            "SATURN_E.HOG/SATURN_E.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "dark@levellords.de",
+          "sources": [
+            "SATURN_E.MN2",
+            "SATURN_E.HOG/SATURN_E.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "15.11.00",
+          "sources": [
+            "SATURN_E.MN2",
+            "SATURN_E.HOG/SATURN_E.MN2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.3",
+          "sources": [
+            "SATURN_E.MN2",
+            "SATURN_E.HOG/SATURN_E.MN2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Yahoma 2.0,Devil2.2K,DTX2 V1.02,BriefeditV1.0,roboedit1.3",
+          "sources": [
+            "SATURN_E.MN2",
+            "SATURN_E.HOG/SATURN_E.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2000,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2000,
+          2000
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "SATURN_E.HOG",
+          "modified": "2000-11-15",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "SATURN_E.MN2",
+          "modified": "2000-11-15",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +178,29 @@
         "secret": false,
         "level_name": "Mienen-Controll-Station",
         "level_file": "SATELIT.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 10,
+              "segment": 555,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 899,
         "wall_count": 174,
         "trigger_count": 16,
@@ -242,6 +334,30 @@
         "secret": false,
         "level_name": "Prometheus Nord-Ost Mine",
         "level_file": "PROM-NO.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 21,
+              "segment": 430,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 3
+            }
+          ]
+        },
         "segment_count": 895,
         "wall_count": 210,
         "trigger_count": 60,
@@ -253,7 +369,7 @@
         "reactors": 1,
         "robots": 90,
         "hostages": 3,
-        "secrets": 1,
+        "secrets": 2,
         "matcens": 13,
         "energy_centers": 4,
         "mine_volume": 42958700.0,
@@ -282,6 +398,30 @@
         "secret": false,
         "level_name": "Sonnenwindpassage",
         "level_file": "TUNNEL.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 45,
+              "segment": 830,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 180,
         "trigger_count": 52,
@@ -717,6 +857,35 @@
         "secret": false,
         "level_name": "Prometheus Sued-West Mine",
         "level_file": "PROM-SW.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 37,
+              "segment": 866,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 36,
+              "segment": 867,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 898,
         "wall_count": 248,
         "trigger_count": 60,
@@ -728,7 +897,7 @@
         "reactors": 1,
         "robots": 148,
         "hostages": 3,
-        "secrets": 1,
+        "secrets": 2,
         "matcens": 20,
         "energy_centers": 3,
         "mine_volume": 56923800.0,
@@ -1114,6 +1283,47 @@
         "secret": false,
         "level_name": "1980 S6 Transporterstation",
         "level_file": "TRANSPO.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 236,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 8,
+              "segment": 225,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 10,
+              "segment": 239,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 9,
+              "segment": 230,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 703,
         "wall_count": 124,
         "trigger_count": 17,
@@ -1175,6 +1385,29 @@
         "secret": false,
         "level_name": "PTMC-Mondbasis auf Titan",
         "level_file": "MOND-TIT.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 26,
+              "segment": 494,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 254,
         "trigger_count": 37,
@@ -1316,6 +1549,36 @@
         "secret": true,
         "level_name": "Waffenlager auf Telesto",
         "level_file": "SECRET1.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 544,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 9
+            },
+            {
+              "trigger": 6,
+              "segment": 380,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 584,
         "wall_count": 253,
         "trigger_count": 11,

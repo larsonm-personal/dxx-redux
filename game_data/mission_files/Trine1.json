@@ -34,6 +34,56 @@
       "powerups": 461,
       "reactors": 8
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE and Inferno",
+          "sources": [
+            "trine1.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "16 Dec 2023",
+          "sources": [
+            "trine1.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "trine1.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2023,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2023,
+          2023
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "trine1.hog",
+          "modified": "2023-12-30",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "trine1.msn",
+          "modified": "2023-12-16",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -142,6 +192,35 @@
         "secret": false,
         "level_name": "Praeludium",
         "level_file": "e1m1.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.885,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.885
+          },
+          "presentation": {
+            "status": "present",
+            "file": "e1m1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 185,
+              "side": 2,
+              "seconds": 12.885,
+              "status": "estimated",
+              "tunnel_units": 394.229,
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 398,
         "wall_count": 70,
         "trigger_count": 1,
@@ -228,6 +307,35 @@
         "secret": false,
         "level_name": "Intrusion",
         "level_file": "e1m2.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.277,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.277
+          },
+          "presentation": {
+            "status": "present",
+            "file": "e1m2.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 268,
+              "side": 0,
+              "seconds": 16.277,
+              "status": "estimated",
+              "tunnel_units": 563.844,
+              "tunnel_segments": 37
+            }
+          ]
+        },
         "segment_count": 465,
         "wall_count": 79,
         "trigger_count": 2,
@@ -328,6 +436,35 @@
         "secret": false,
         "level_name": "Excursion",
         "level_file": "e1m3.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 18.156,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 18.156
+          },
+          "presentation": {
+            "status": "present",
+            "file": "e1m3.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 553,
+              "side": 5,
+              "seconds": 18.156,
+              "status": "estimated",
+              "tunnel_units": 657.805,
+              "tunnel_segments": 38
+            }
+          ]
+        },
         "segment_count": 666,
         "wall_count": 82,
         "trigger_count": 17,
@@ -442,6 +579,35 @@
         "secret": false,
         "level_name": "Vespertine",
         "level_file": "e1m4.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.125,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.125
+          },
+          "presentation": {
+            "status": "present",
+            "file": "e1m4.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 684,
+              "side": 1,
+              "seconds": 15.125,
+              "status": "estimated",
+              "tunnel_units": 506.248,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 704,
         "wall_count": 148,
         "trigger_count": 17,
@@ -556,6 +722,35 @@
         "secret": false,
         "level_name": "Convergence",
         "level_file": "e1m5.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.822,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.822
+          },
+          "presentation": {
+            "status": "present",
+            "file": "e1m5.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 12,
+              "segment": 686,
+              "side": 2,
+              "seconds": 14.822,
+              "status": "estimated",
+              "tunnel_units": 491.086,
+              "tunnel_segments": 26
+            }
+          ]
+        },
         "segment_count": 786,
         "wall_count": 175,
         "trigger_count": 14,
@@ -670,6 +865,35 @@
         "secret": false,
         "level_name": "Nightingale",
         "level_file": "e1m6.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.553,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.553
+          },
+          "presentation": {
+            "status": "present",
+            "file": "e1m6.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 743,
+              "side": 4,
+              "seconds": 15.553,
+              "status": "estimated",
+              "tunnel_units": 527.634,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 790,
         "wall_count": 173,
         "trigger_count": 15,
@@ -740,6 +964,35 @@
         "secret": false,
         "level_name": "Endogenesis",
         "level_file": "e1m7.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.735,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.735
+          },
+          "presentation": {
+            "status": "present",
+            "file": "e1m7.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 10,
+              "segment": 560,
+              "side": 2,
+              "seconds": 16.735,
+              "status": "estimated",
+              "tunnel_units": 586.746,
+              "tunnel_segments": 29
+            }
+          ]
+        },
         "segment_count": 763,
         "wall_count": 175,
         "trigger_count": 30,
@@ -904,6 +1157,35 @@
         "secret": false,
         "level_name": "Conflagration",
         "level_file": "e1m8.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.891,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.891
+          },
+          "presentation": {
+            "status": "present",
+            "file": "e1m8.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 114,
+              "side": 5,
+              "seconds": 13.891,
+              "status": "estimated",
+              "tunnel_units": 444.551,
+              "tunnel_segments": 23
+            }
+          ]
+        },
         "segment_count": 756,
         "wall_count": 173,
         "trigger_count": 20,
@@ -1068,6 +1350,35 @@
         "secret": false,
         "level_name": "Tolstoj",
         "level_file": "e1m9.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.419,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.419
+          },
+          "presentation": {
+            "status": "present",
+            "file": "e1m9.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 187,
+              "side": 2,
+              "seconds": 15.419,
+              "status": "estimated",
+              "tunnel_units": 520.948,
+              "tunnel_segments": 31
+            }
+          ]
+        },
         "segment_count": 477,
         "wall_count": 91,
         "trigger_count": 14,
@@ -1079,7 +1390,7 @@
         "reactors": 0,
         "robots": 56,
         "hostages": 0,
-        "secrets": 0,
+        "secrets": 2,
         "matcens": 5,
         "energy_centers": 3,
         "mine_volume": 12230600.0,
@@ -1193,6 +1504,35 @@
         "secret": true,
         "level_name": "Heptagonal",
         "level_file": "e1m10.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.884,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.884
+          },
+          "presentation": {
+            "status": "present",
+            "file": "e1m10.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 366,
+              "side": 0,
+              "seconds": 11.884,
+              "status": "estimated",
+              "tunnel_units": 344.197,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 545,
         "wall_count": 171,
         "trigger_count": 9,

@@ -234,6 +234,39 @@ static int classification(void)
 	CHECK(scan(&f) == 1 && !state.secrets[0].liquid_only && state.secrets[0].segment_count == 2);
 	return 0;
 }
+static int nested_progression_closet(void)
+{
+	fixture f;
+	int type;
+	for (type = 0; type < 3; ++type) {
+		init(&f, 4);
+		connect(&f, 0, 0, 1, 0, DOOR, 0);
+		connect(&f, 1, 1, 2, 0, 0, 0);
+		connect(&f, 2, 1, 3, 0, DOOR, 0);
+		f.object[1] = type == 0 ? HOSTAGE : type == 1 ? POWERUP
+		                                              : REACTOR;
+		f.id[1] = 10;
+		f.object[3] = POWERUP;
+		f.id[3] = 100;
+		CHECK(scan(&f) == 1);
+		CHECK(!state.secrets[0].liquid_only && state.secrets[0].segment_count == 1);
+		CHECK(state.segments[0] == 3 && state.segment_to_secret[1] == 0 && state.segment_to_secret[2] == 0);
+		CHECK(state.secrets[0].entry_seg == 2 && state.secrets[0].entry_side == 1);
+		CHECK(state.secrets[0].entrance_count == 1 && state.secrets[0].entrances[0].secret_seg == 3);
+		CHECK(state.secrets[0].item_count == 1);
+		CHECK(secret_area_mark_segment_entered(&state, 2) == 0);
+		CHECK(secret_area_mark_segment_entered(&state, 3) == 1);
+		/* An ordinary alternate entrance still disqualifies the closet */
+		connect(&f, 0, 1, 3, 1, 0, 0);
+		CHECK(scan(&f) == 0);
+		f.child[0][1] = f.child[3][1] = -1;
+		/* Progression objects in a disconnected region do not grant reachability */
+		f.child[0][0] = f.child[1][0] = -1;
+		CHECK(scan(&f) == 0);
+	}
+	return 0;
+}
+
 static int persistence(void)
 {
 	fixture f;
@@ -300,7 +333,7 @@ static int budget(void)
 }
 int main(void)
 {
-	if (classification() || persistence() || budget()) return 1;
+	if (classification() || nested_progression_closet() || persistence() || budget()) return 1;
 	puts("secret liquid classification and identity serialization passed");
 	return 0;
 }

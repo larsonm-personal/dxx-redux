@@ -34,6 +34,34 @@
       "powerups": 634,
       "reactors": 14
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2022,
+          2024
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "missions/nefarius.hog",
+          "modified": "2024-04-09",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "missions/nefarius.msn",
+          "modified": "2022-04-22",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +261,35 @@
         "secret": false,
         "level_name": "Liquid Containment Tubes",
         "level_file": "nefar01.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.08,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.08
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar01.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 326,
+              "side": 0,
+              "seconds": 19.08,
+              "status": "estimated",
+              "tunnel_units": 704.002,
+              "tunnel_segments": 35
+            }
+          ]
+        },
         "segment_count": 519,
         "wall_count": 123,
         "trigger_count": 5,
@@ -289,6 +346,35 @@
         "secret": false,
         "level_name": "Coralinus Reservoir",
         "level_file": "nefar02.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.2,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.2
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar02.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 357,
+              "side": 2,
+              "seconds": 12.2,
+              "status": "estimated",
+              "tunnel_units": 360.0,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 520,
         "wall_count": 80,
         "trigger_count": 6,
@@ -430,6 +516,35 @@
         "secret": false,
         "level_name": "Water Pumping Plant",
         "level_file": "nefar03.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.338,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.338
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar03.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 373,
+              "side": 2,
+              "seconds": 17.338,
+              "status": "estimated",
+              "tunnel_units": 616.882,
+              "tunnel_segments": 31
+            }
+          ]
+        },
         "segment_count": 578,
         "wall_count": 100,
         "trigger_count": 11,
@@ -441,7 +556,7 @@
         "reactors": 1,
         "robots": 48,
         "hostages": 4,
-        "secrets": 0,
+        "secrets": 1,
         "matcens": 3,
         "energy_centers": 1,
         "mine_volume": 6685460.0,
@@ -598,6 +713,35 @@
         "secret": false,
         "level_name": "Base Dreena",
         "level_file": "nefar04.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.3,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.3
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar04.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 330,
+              "side": 5,
+              "seconds": 14.3,
+              "status": "estimated",
+              "tunnel_units": 464.991,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 409,
         "wall_count": 88,
         "trigger_count": 3,
@@ -713,6 +857,35 @@
         "secret": false,
         "level_name": "Fire Pit Hephaestus",
         "level_file": "nefar05.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.8,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.8
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar05.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 70,
+              "side": 1,
+              "seconds": 11.8,
+              "status": "estimated",
+              "tunnel_units": 340.0,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 485,
         "wall_count": 110,
         "trigger_count": 12,
@@ -931,6 +1104,35 @@
         "secret": false,
         "level_name": "Hell Falcon Launch Bay",
         "level_file": "nefar06.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.9,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.9
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar06.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 230,
+              "side": 1,
+              "seconds": 12.9,
+              "status": "estimated",
+              "tunnel_units": 394.977,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 528,
         "wall_count": 88,
         "trigger_count": 7,
@@ -1061,6 +1263,35 @@
         "secret": false,
         "level_name": "Seraph Mine",
         "level_file": "nefar07.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.9,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.9
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar07.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 593,
+              "side": 4,
+              "seconds": 17.9,
+              "status": "estimated",
+              "tunnel_units": 644.998,
+              "tunnel_segments": 33
+            }
+          ]
+        },
         "segment_count": 651,
         "wall_count": 174,
         "trigger_count": 9,
@@ -1072,7 +1303,7 @@
         "reactors": 1,
         "robots": 68,
         "hostages": 4,
-        "secrets": 4,
+        "secrets": 5,
         "matcens": 4,
         "energy_centers": 3,
         "mine_volume": 12338800.0,
@@ -1229,6 +1460,35 @@
         "secret": false,
         "level_name": "Dragon Pit Outpost",
         "level_file": "nefar08.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar08.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 519,
+              "side": 0,
+              "seconds": 16.6,
+              "status": "estimated",
+              "tunnel_units": 579.999,
+              "tunnel_segments": 29
+            }
+          ]
+        },
         "segment_count": 645,
         "wall_count": 134,
         "trigger_count": 11,
@@ -1240,7 +1500,7 @@
         "reactors": 0,
         "robots": 43,
         "hostages": 2,
-        "secrets": 3,
+        "secrets": 4,
         "matcens": 3,
         "energy_centers": 2,
         "mine_volume": 8580300.0,
@@ -1359,6 +1619,35 @@
         "secret": false,
         "level_name": "Glacier Road",
         "level_file": "nefar09.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.565,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.565
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar09.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 653,
+              "side": 4,
+              "seconds": 14.565,
+              "status": "estimated",
+              "tunnel_units": 478.274,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 821,
         "wall_count": 45,
         "trigger_count": 2,
@@ -1459,6 +1748,35 @@
         "secret": false,
         "level_name": "Mount Dawn",
         "level_file": "nefar10.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.8,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.8
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar10.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 539,
+              "side": 1,
+              "seconds": 13.8,
+              "status": "estimated",
+              "tunnel_units": 440.0,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 629,
         "wall_count": 101,
         "trigger_count": 6,
@@ -1600,6 +1918,35 @@
         "secret": false,
         "level_name": "Frosticus Chamber",
         "level_file": "nefar11.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar11.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 362,
+              "side": 1,
+              "seconds": 15.0,
+              "status": "estimated",
+              "tunnel_units": 499.999,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 490,
         "wall_count": 89,
         "trigger_count": 13,
@@ -1774,6 +2121,35 @@
         "secret": false,
         "level_name": "Snow Fort Khione",
         "level_file": "nefar12.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.052,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.052
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar12.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 603,
+              "side": 5,
+              "seconds": 11.052,
+              "status": "estimated",
+              "tunnel_units": 302.592,
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 720,
         "wall_count": 58,
         "trigger_count": 9,
@@ -1914,6 +2290,35 @@
         "secret": false,
         "level_name": "High Security Complex Theta",
         "level_file": "nefar13.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.4,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.4
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar13.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 12,
+              "segment": 305,
+              "side": 0,
+              "seconds": 13.4,
+              "status": "estimated",
+              "tunnel_units": 419.999,
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 401,
         "wall_count": 116,
         "trigger_count": 20,
@@ -1925,7 +2330,7 @@
         "reactors": 1,
         "robots": 38,
         "hostages": 3,
-        "secrets": 5,
+        "secrets": 7,
         "matcens": 12,
         "energy_centers": 2,
         "mine_volume": 3081140.0,
@@ -2098,6 +2503,35 @@
         "secret": false,
         "level_name": "Iron Sulfur Corridor",
         "level_file": "nefar14.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.2,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.2
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar14.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 534,
+              "side": 3,
+              "seconds": 14.2,
+              "status": "estimated",
+              "tunnel_units": 459.999,
+              "tunnel_segments": 23
+            }
+          ]
+        },
         "segment_count": 719,
         "wall_count": 72,
         "trigger_count": 11,
@@ -2252,6 +2686,35 @@
         "secret": false,
         "level_name": "\"The Shadow Conduit\"",
         "level_file": "nefar15.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.5,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.5
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar15.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 255,
+              "side": 1,
+              "seconds": 17.5,
+              "status": "estimated",
+              "tunnel_units": 624.999,
+              "tunnel_segments": 29
+            }
+          ]
+        },
         "segment_count": 517,
         "wall_count": 69,
         "trigger_count": 7,
@@ -2294,6 +2757,35 @@
         "secret": false,
         "level_name": "Umbrin Nexus",
         "level_file": "nefar16.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefar16.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 54,
+              "side": 4,
+              "seconds": 9.0,
+              "status": "estimated",
+              "tunnel_units": 200.0,
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 658,
         "wall_count": 109,
         "trigger_count": 8,
@@ -2437,6 +2929,35 @@
         "secret": true,
         "level_name": "Waste Containement 25",
         "level_file": "nefars1.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.2,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.2
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefars1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 231,
+              "side": 2,
+              "seconds": 14.2,
+              "status": "estimated",
+              "tunnel_units": 459.998,
+              "tunnel_segments": 23
+            }
+          ]
+        },
         "segment_count": 744,
         "wall_count": 97,
         "trigger_count": 8,
@@ -2604,6 +3125,35 @@
         "secret": true,
         "level_name": "Abandoned Facility E17",
         "level_file": "nefars2.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.504,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.504
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefars2.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 590,
+              "side": 3,
+              "seconds": 17.504,
+              "status": "estimated",
+              "tunnel_units": 625.207,
+              "tunnel_segments": 27
+            }
+          ]
+        },
         "segment_count": 742,
         "wall_count": 87,
         "trigger_count": 4,
@@ -2732,6 +3282,35 @@
         "secret": true,
         "level_name": "Unknown Prison",
         "level_file": "nefars3.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.3,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.3
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nefars3.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 412,
+              "side": 1,
+              "seconds": 14.3,
+              "status": "estimated",
+              "tunnel_units": 464.999,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 510,
         "wall_count": 108,
         "trigger_count": 17,

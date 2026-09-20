@@ -34,6 +34,34 @@
       "powerups": 698,
       "reactors": 18
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2015,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2015,
+          2015
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "revodrav.hog",
+          "modified": "2015-01-15",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "revodrav.msn",
+          "modified": "2015-01-15",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +261,35 @@
         "secret": false,
         "level_name": "PTMC Training Facility",
         "level_file": "drav01.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.065,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.065
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav01.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 85,
+              "side": 4,
+              "seconds": 14.065,
+              "status": "estimated",
+              "tunnel_units": 453.246,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 142,
         "wall_count": 38,
         "trigger_count": 1,
@@ -319,6 +376,35 @@
         "secret": false,
         "level_name": "Lunar Modular Station",
         "level_file": "drav02.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.28,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.28
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav02.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 42,
+              "side": 1,
+              "seconds": 13.28,
+              "status": "estimated",
+              "tunnel_units": 414.0,
+              "tunnel_segments": 23
+            }
+          ]
+        },
         "segment_count": 208,
         "wall_count": 47,
         "trigger_count": 2,
@@ -419,6 +505,35 @@
         "secret": false,
         "level_name": "Lunar Robot Maintenance",
         "level_file": "drav03.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.755,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.755
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav03.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 269,
+              "side": 5,
+              "seconds": 10.755,
+              "status": "estimated",
+              "tunnel_units": 287.754,
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 270,
         "wall_count": 60,
         "trigger_count": 7,
@@ -608,6 +723,35 @@
         "secret": false,
         "level_name": "Lunar Command Post",
         "level_file": "drav04.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.08,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.08
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav04.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 104,
+              "side": 1,
+              "seconds": 12.08,
+              "status": "estimated",
+              "tunnel_units": 353.989,
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 256,
         "wall_count": 50,
         "trigger_count": 4,
@@ -726,6 +870,35 @@
         "secret": false,
         "level_name": "Mercury Coal-Sulfur Mine",
         "level_file": "drav05.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.681,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.681
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav05.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 70,
+              "side": 0,
+              "seconds": 13.681,
+              "status": "estimated",
+              "tunnel_units": 434.055,
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 283,
         "wall_count": 49,
         "trigger_count": 4,
@@ -865,6 +1038,35 @@
         "secret": false,
         "level_name": "Mercury Tunnel Network",
         "level_file": "drav06.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.826,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.826
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav06.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 166,
+              "side": 1,
+              "seconds": 13.826,
+              "status": "estimated",
+              "tunnel_units": 441.286,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 270,
         "wall_count": 38,
         "trigger_count": 3,
@@ -979,6 +1181,35 @@
         "secret": false,
         "level_name": "Mercury Geothermal Lab",
         "level_file": "drav07.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.335,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.335
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav07.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 119,
+              "side": 1,
+              "seconds": 16.335,
+              "status": "estimated",
+              "tunnel_units": 566.769,
+              "tunnel_segments": 34
+            }
+          ]
+        },
         "segment_count": 382,
         "wall_count": 93,
         "trigger_count": 4,
@@ -990,7 +1221,7 @@
         "reactors": 1,
         "robots": 37,
         "hostages": 6,
-        "secrets": 2,
+        "secrets": 4,
         "matcens": 1,
         "energy_centers": 1,
         "mine_volume": 3469500.0,
@@ -1120,6 +1351,35 @@
         "secret": false,
         "level_name": "Mercury Deep Volcanic Bore",
         "level_file": "drav08.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.116,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.116
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav08.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 98,
+              "side": 0,
+              "seconds": 17.116,
+              "status": "estimated",
+              "tunnel_units": 605.82,
+              "tunnel_segments": 29
+            }
+          ]
+        },
         "segment_count": 217,
         "wall_count": 62,
         "trigger_count": 1,
@@ -1238,6 +1498,35 @@
         "secret": false,
         "level_name": "Umbriel Plasma Processing",
         "level_file": "drav09.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.65,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.65
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav09.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 24,
+              "side": 4,
+              "seconds": 13.65,
+              "status": "estimated",
+              "tunnel_units": 432.5,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 343,
         "wall_count": 94,
         "trigger_count": 4,
@@ -1352,6 +1641,35 @@
         "secret": false,
         "level_name": "Sycorax Military Compound",
         "level_file": "drav10.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 18.165,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 18.165
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav10.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 93,
+              "side": 1,
+              "seconds": 18.165,
+              "status": "estimated",
+              "tunnel_units": 658.251,
+              "tunnel_segments": 33
+            }
+          ]
+        },
         "segment_count": 322,
         "wall_count": 64,
         "trigger_count": 4,
@@ -1516,6 +1834,35 @@
         "secret": false,
         "level_name": "Titania Weapons Testing Lab",
         "level_file": "drav11.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.51,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.51
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav11.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 46,
+              "side": 5,
+              "seconds": 16.51,
+              "status": "estimated",
+              "tunnel_units": 575.517,
+              "tunnel_segments": 30
+            }
+          ]
+        },
         "segment_count": 307,
         "wall_count": 49,
         "trigger_count": 9,
@@ -1586,6 +1933,35 @@
         "secret": false,
         "level_name": "Oberon H2O Mine",
         "level_file": "drav12.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.98,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.98
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav12.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 7,
+              "side": 1,
+              "seconds": 15.98,
+              "status": "estimated",
+              "tunnel_units": 549.0,
+              "tunnel_segments": 27
+            }
+          ]
+        },
         "segment_count": 437,
         "wall_count": 130,
         "trigger_count": 8,
@@ -1704,6 +2080,35 @@
         "secret": false,
         "level_name": "Naiad Storage Caverns",
         "level_file": "drav13.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 18.12,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 18.12
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav13.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 78,
+              "side": 0,
+              "seconds": 18.12,
+              "status": "estimated",
+              "tunnel_units": 656.0,
+              "tunnel_segments": 47
+            }
+          ]
+        },
         "segment_count": 302,
         "wall_count": 61,
         "trigger_count": 5,
@@ -1818,6 +2223,35 @@
         "secret": false,
         "level_name": "Psamathe Ore Tunnels",
         "level_file": "drav14.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.83,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.83
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav14.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 336,
+              "side": 5,
+              "seconds": 12.83,
+              "status": "estimated",
+              "tunnel_units": 391.524,
+              "tunnel_segments": 31
+            }
+          ]
+        },
         "segment_count": 406,
         "wall_count": 65,
         "trigger_count": 4,
@@ -1829,7 +2263,7 @@
         "reactors": 1,
         "robots": 56,
         "hostages": 4,
-        "secrets": 3,
+        "secrets": 4,
         "matcens": 1,
         "energy_centers": 1,
         "mine_volume": 4340400.0,
@@ -1957,6 +2391,35 @@
         "secret": false,
         "level_name": "Galatea Military Defense",
         "level_file": "drav15.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.714,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.714
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav15.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 56,
+              "side": 5,
+              "seconds": 12.714,
+              "status": "estimated",
+              "tunnel_units": 385.709,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 326,
         "wall_count": 67,
         "trigger_count": 6,
@@ -1968,7 +2431,7 @@
         "reactors": 1,
         "robots": 53,
         "hostages": 2,
-        "secrets": 1,
+        "secrets": 2,
         "matcens": 2,
         "energy_centers": 1,
         "mine_volume": 5761150.0,
@@ -2071,6 +2534,35 @@
         "secret": false,
         "level_name": "Triton Hydrogen Mine",
         "level_file": "drav16.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.561,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.561
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav16.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 249,
+              "side": 1,
+              "seconds": 15.561,
+              "status": "estimated",
+              "tunnel_units": 528.026,
+              "tunnel_segments": 26
+            }
+          ]
+        },
         "segment_count": 525,
         "wall_count": 116,
         "trigger_count": 1,
@@ -2189,6 +2681,31 @@
         "secret": false,
         "level_name": "Huya Helical Shafts",
         "level_file": "drav17.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_tunnel",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav17.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 369,
+              "side": 5,
+              "status": "cyclic_tunnel"
+            }
+          ]
+        },
         "segment_count": 533,
         "wall_count": 84,
         "trigger_count": 3,
@@ -2303,6 +2820,35 @@
         "secret": false,
         "level_name": "Varuna Mineral Research",
         "level_file": "drav18.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.4,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.4
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav18.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 524,
+              "side": 1,
+              "seconds": 14.4,
+              "status": "estimated",
+              "tunnel_units": 470.0,
+              "tunnel_segments": 32
+            }
+          ]
+        },
         "segment_count": 663,
         "wall_count": 129,
         "trigger_count": 2,
@@ -2417,6 +2963,35 @@
         "secret": false,
         "level_name": "Orcus Weapons Manufactory",
         "level_file": "drav19.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.184,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.184
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav19.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 33,
+              "side": 5,
+              "seconds": 14.184,
+              "status": "estimated",
+              "tunnel_units": 459.191,
+              "tunnel_segments": 40
+            }
+          ]
+        },
         "segment_count": 798,
         "wall_count": 149,
         "trigger_count": 7,
@@ -2531,6 +3106,35 @@
         "secret": false,
         "level_name": "Haumea Robot Factory",
         "level_file": "drav20.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.312,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.312
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav20.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 81,
+              "segment": 279,
+              "side": 0,
+              "seconds": 17.312,
+              "status": "estimated",
+              "tunnel_units": 615.62,
+              "tunnel_segments": 32
+            }
+          ]
+        },
         "segment_count": 406,
         "wall_count": 128,
         "trigger_count": 87,
@@ -2650,6 +3254,31 @@
         "secret": false,
         "level_name": "Hydra PTMC Fortress",
         "level_file": "drav21.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_tunnel",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav21.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 137,
+              "side": 3,
+              "status": "cyclic_tunnel"
+            }
+          ]
+        },
         "segment_count": 469,
         "wall_count": 70,
         "trigger_count": 2,
@@ -2764,6 +3393,35 @@
         "secret": false,
         "level_name": "Kerberos Siege Outpost",
         "level_file": "drav22.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.4,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.4
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav22.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 299,
+              "side": 1,
+              "seconds": 19.4,
+              "status": "estimated",
+              "tunnel_units": 720.0,
+              "tunnel_segments": 39
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 170,
         "trigger_count": 14,
@@ -2903,6 +3561,35 @@
         "secret": false,
         "level_name": "Nix Fusion R&D Center",
         "level_file": "drav23.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 22.698,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 22.698
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav23.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 75,
+              "side": 2,
+              "seconds": 22.698,
+              "status": "estimated",
+              "tunnel_units": 884.903,
+              "tunnel_segments": 53
+            }
+          ]
+        },
         "segment_count": 448,
         "wall_count": 84,
         "trigger_count": 5,
@@ -3042,6 +3729,35 @@
         "secret": false,
         "level_name": "Pluto Nuclear Core",
         "level_file": "drav24.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 28.952,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 28.952
+          },
+          "presentation": {
+            "status": "present",
+            "file": "drav24.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 329,
+              "side": 1,
+              "seconds": 28.952,
+              "status": "estimated",
+              "tunnel_units": 1197.623,
+              "tunnel_segments": 65
+            }
+          ]
+        },
         "segment_count": 701,
         "wall_count": 157,
         "trigger_count": 2,
@@ -3187,6 +3903,35 @@
         "secret": true,
         "level_name": "Lunar Weapons Facility",
         "level_file": "dravs1.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.902,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.902
+          },
+          "presentation": {
+            "status": "present",
+            "file": "dravs1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 127,
+              "side": 4,
+              "seconds": 12.902,
+              "status": "estimated",
+              "tunnel_units": 395.102,
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 175,
         "wall_count": 46,
         "trigger_count": 1,
@@ -3259,6 +4004,31 @@
         "secret": true,
         "level_name": "Solar Fusion Energy Plant",
         "level_file": "dravs2.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_tunnel",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "present",
+            "file": "dravs2.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 199,
+              "side": 3,
+              "status": "cyclic_tunnel"
+            }
+          ]
+        },
         "segment_count": 301,
         "wall_count": 56,
         "trigger_count": 1,
@@ -3373,6 +4143,35 @@
         "secret": true,
         "level_name": "Ariel Nuclear Stronghold",
         "level_file": "dravs3.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.547,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.547
+          },
+          "presentation": {
+            "status": "present",
+            "file": "dravs3.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 143,
+              "side": 5,
+              "seconds": 13.547,
+              "status": "estimated",
+              "tunnel_units": 427.331,
+              "tunnel_segments": 28
+            }
+          ]
+        },
         "segment_count": 258,
         "wall_count": 18,
         "trigger_count": 1,
@@ -3445,6 +4244,35 @@
         "secret": true,
         "level_name": "Proteus Weapons Bunker",
         "level_file": "dravs4.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.47,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.47
+          },
+          "presentation": {
+            "status": "present",
+            "file": "dravs4.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 14,
+              "segment": 445,
+              "side": 5,
+              "seconds": 13.47,
+              "status": "estimated",
+              "tunnel_units": 423.5,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 464,
         "wall_count": 105,
         "trigger_count": 18,
@@ -3456,7 +4284,7 @@
         "reactors": 1,
         "robots": 37,
         "hostages": 7,
-        "secrets": 1,
+        "secrets": 2,
         "matcens": 1,
         "energy_centers": 1,
         "mine_volume": 4827900.0,
@@ -3897,6 +4725,35 @@
         "secret": true,
         "level_name": "Vanth PTMC Headquarters",
         "level_file": "dravs5.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 21.756,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 21.756
+          },
+          "presentation": {
+            "status": "present",
+            "file": "dravs5.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 255,
+              "side": 5,
+              "seconds": 21.756,
+              "status": "estimated",
+              "tunnel_units": 837.794,
+              "tunnel_segments": 34
+            }
+          ]
+        },
         "segment_count": 392,
         "wall_count": 31,
         "trigger_count": 5,
@@ -3939,6 +4796,35 @@
         "secret": true,
         "level_name": "Styx Automated Stronghold",
         "level_file": "dravs6.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.738,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.738
+          },
+          "presentation": {
+            "status": "present",
+            "file": "dravs6.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 374,
+              "side": 1,
+              "seconds": 19.738,
+              "status": "estimated",
+              "tunnel_units": 736.922,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 438,
         "wall_count": 86,
         "trigger_count": 3,

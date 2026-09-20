@@ -34,6 +34,136 @@
       "powerups": 238,
       "reactors": 5
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Razor Blade",
+          "sources": [
+            "MANDRILL.MN2",
+            "MANDRILL.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.descent2.com/mandrill",
+          "sources": [
+            "MANDRILL.MN2",
+            "MANDRILL.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "jamr@teleport.com",
+          "sources": [
+            "MANDRILL.MN2",
+            "MANDRILL.HOG/mandrill.txt",
+            "MANDRILL.HOG/mission.aut",
+            "MANDRILL.HOG/mplevel1.aut",
+            "MANDRILL.HOG/mplevel2.aut",
+            "MANDRILL.HOG/mplevel3.aut",
+            "MANDRILL.HOG/mplevel4.aut",
+            "MANDRILL.HOG/mplevel5.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "5/10/1998",
+          "sources": [
+            "MANDRILL.MN2",
+            "MANDRILL.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Devil 2.1h, Devil 2.2l, Descent Mission Builder 2, Hoggle, DTX2, Descent Manager",
+          "sources": [
+            "MANDRILL.MN2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "Countless hours",
+          "sources": [
+            "MANDRILL.MN2",
+            "MANDRILL.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "MANDRILL.MN2",
+            "MANDRILL.HOG/mandrill.txt",
+            "MANDRILL.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "5/10/98",
+          "sources": [
+            "MANDRILL.HOG/mandrill.txt",
+            "MANDRILL.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "Razor Blade",
+          "sources": [
+            "MANDRILL.HOG/mission.aut",
+            "MANDRILL.HOG/mplevel1.aut",
+            "MANDRILL.HOG/mplevel2.aut",
+            "MANDRILL.HOG/mplevel3.aut",
+            "MANDRILL.HOG/mplevel4.aut",
+            "MANDRILL.HOG/mplevel5.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Razor Blade",
+          "sources": [
+            "MANDRILL.HOG/mission.aut",
+            "MANDRILL.HOG/mplevel1.aut",
+            "MANDRILL.HOG/mplevel2.aut",
+            "MANDRILL.HOG/mplevel3.aut",
+            "MANDRILL.HOG/mplevel4.aut",
+            "MANDRILL.HOG/mplevel5.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "5/10/1998",
+          "sources": [
+            "MANDRILL.HOG/mission.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1998,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1998,
+          1998
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "MANDRILL.HOG",
+          "modified": "1998-05-11",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "MANDRILL.MN2",
+          "modified": "1998-05-10",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -116,6 +246,30 @@
         "secret": false,
         "level_name": "Dredcon Hangar",
         "level_file": "mplevel1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 251,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 290,
         "wall_count": 72,
         "trigger_count": 4,
@@ -249,6 +403,30 @@
         "secret": false,
         "level_name": "Centroid Military Base",
         "level_file": "mplevel2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 260,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 283,
         "wall_count": 63,
         "trigger_count": 9,
@@ -260,7 +438,7 @@
         "reactors": 1,
         "robots": 75,
         "hostages": 3,
-        "secrets": 2,
+        "secrets": 4,
         "matcens": 0,
         "energy_centers": 1,
         "mine_volume": 10797100.0,
@@ -448,6 +626,30 @@
         "secret": false,
         "level_name": "Murdock Tower Colony",
         "level_file": "mplevel3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 319,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 339,
         "wall_count": 102,
         "trigger_count": 6,
@@ -459,7 +661,7 @@
         "reactors": 1,
         "robots": 61,
         "hostages": 4,
-        "secrets": 3,
+        "secrets": 4,
         "matcens": 2,
         "energy_centers": 3,
         "mine_volume": 14508900.0,
@@ -663,6 +865,30 @@
         "secret": false,
         "level_name": "Icestorm Mine",
         "level_file": "mplevel4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 462,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 578,
         "wall_count": 197,
         "trigger_count": 40,
@@ -869,6 +1095,30 @@
         "secret": false,
         "level_name": "Mandrill Battleship",
         "level_file": "mplevel5.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 6,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 352,
         "wall_count": 131,
         "trigger_count": 8,
@@ -1193,6 +1443,35 @@
         "secret": true,
         "level_name": "Tolkka Sewer Facility",
         "level_file": "mpslvl1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 19,
+              "segment": 0,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 0,
+              "segment": 332,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 391,
         "wall_count": 157,
         "trigger_count": 20,
@@ -1308,6 +1587,35 @@
         "secret": true,
         "level_name": "The Cauldron",
         "level_file": "mpslvl2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 0,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 1,
+              "segment": 353,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 366,
         "wall_count": 193,
         "trigger_count": 30,

@@ -34,6 +34,70 @@
       "powerups": 69,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Lars Christensen",
+          "sources": [
+            "SIRIUS2.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "Lars.Christensen@geoteknisk.dk",
+          "sources": [
+            "SIRIUS2.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.geocities.com/SiliconValley/Vista/3653/",
+          "sources": [
+            "SIRIUS2.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "97-07-31",
+          "sources": [
+            "SIRIUS2.MN2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1",
+          "sources": [
+            "SIRIUS2.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "SIRIUS2.HOG",
+          "modified": "1997-08-21",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "SIRIUS2.MN2",
+          "modified": "1997-07-31",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +173,47 @@
         "secret": false,
         "level_name": "Sirius I",
         "level_file": "Sirius1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 4,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 1,
+              "segment": 4,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 4,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 4,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 250,
         "wall_count": 64,
         "trigger_count": 4,
@@ -199,6 +304,48 @@
         "secret": false,
         "level_name": "Sirius II",
         "level_file": "Sirius2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_endlevel_data",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "invalid_endlevel_data",
+            "file": "Sirius2.txb"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 4,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 1,
+              "segment": 4,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 4,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 4,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 361,
         "wall_count": 84,
         "trigger_count": 4,
@@ -317,6 +464,47 @@
         "secret": false,
         "level_name": "Sirius III",
         "level_file": "Sirius3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 4,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 1,
+              "segment": 4,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 4,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 4,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 701,
         "wall_count": 100,
         "trigger_count": 5,

@@ -34,6 +34,85 @@
       "powerups": 246,
       "reactors": 5
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "outerrch.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "April 6, 2012",
+          "sources": [
+            "outerrch.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.1",
+          "sources": [
+            "outerrch.msn"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "NaphthaTurisas",
+          "sources": [
+            "outerrch.msn",
+            "outerrch.txt"
+          ]
+        },
+        {
+          "field": "started_date",
+          "value": "February 4, 2012",
+          "sources": [
+            "outerrch.txt"
+          ]
+        },
+        {
+          "field": "finished_date",
+          "value": "April 6, 2012",
+          "sources": [
+            "outerrch.txt"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "DLE-XP, versions 1.8.92 up to 1.9.14",
+          "sources": [
+            "outerrch.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2012,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          2012,
+          2012
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "outerrch.hog",
+          "modified": "2012-04-06",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "outerrch.msn",
+          "modified": "2012-04-06",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "3",
     "track_names": [
       {
@@ -233,6 +312,35 @@
         "secret": false,
         "level_name": "The Cold Open",
         "level_file": "coldopen.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.872,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.872
+          },
+          "presentation": {
+            "status": "present",
+            "file": "coldopen.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 86,
+              "side": 0,
+              "seconds": 16.872,
+              "status": "estimated",
+              "tunnel_units": 593.589,
+              "tunnel_segments": 32
+            }
+          ]
+        },
         "segment_count": 187,
         "wall_count": 54,
         "trigger_count": 5,
@@ -319,6 +427,35 @@
         "secret": false,
         "level_name": "Haimaul Caverns",
         "level_file": "haimaul.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.69,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.69
+          },
+          "presentation": {
+            "status": "present",
+            "file": "haimaul.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 388,
+              "side": 2,
+              "seconds": 11.69,
+              "status": "estimated",
+              "tunnel_units": 334.515,
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 478,
         "wall_count": 44,
         "trigger_count": 20,
@@ -446,6 +583,35 @@
         "secret": false,
         "level_name": "Defense Outpost for Orcean Militaries",
         "level_file": "doom.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.39,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.39
+          },
+          "presentation": {
+            "status": "present",
+            "file": "doom.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 13,
+              "side": 4,
+              "seconds": 14.39,
+              "status": "estimated",
+              "tunnel_units": 469.5,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 464,
         "wall_count": 171,
         "trigger_count": 8,
@@ -546,6 +712,35 @@
         "secret": false,
         "level_name": "Alien Life Investigation Hangar",
         "level_file": "hangar18.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.8,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.8
+          },
+          "presentation": {
+            "status": "present",
+            "file": "hangar18.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 14,
+              "segment": 360,
+              "side": 2,
+              "seconds": 13.8,
+              "status": "estimated",
+              "tunnel_units": 440.0,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 436,
         "wall_count": 172,
         "trigger_count": 15,
@@ -752,6 +947,35 @@
         "secret": false,
         "level_name": "What Lies Beneath",
         "level_file": "beneath.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.528,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.528
+          },
+          "presentation": {
+            "status": "present",
+            "file": "beneath.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 244,
+              "side": 0,
+              "seconds": 16.528,
+              "status": "estimated",
+              "tunnel_units": 576.407,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 478,
         "wall_count": 115,
         "trigger_count": 19,
@@ -920,6 +1144,35 @@
         "secret": false,
         "level_name": "This Side of the Universe",
         "level_file": "universe.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.4,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.4
+          },
+          "presentation": {
+            "status": "present",
+            "file": "universe.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 564,
+              "side": 5,
+              "seconds": 13.4,
+              "status": "estimated",
+              "tunnel_units": 420.0,
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 589,
         "wall_count": 84,
         "trigger_count": 5,
@@ -1038,6 +1291,35 @@
         "secret": true,
         "level_name": "Infernal Maze",
         "level_file": "infernal.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.035,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.035
+          },
+          "presentation": {
+            "status": "present",
+            "file": "infernal.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 271,
+              "side": 5,
+              "seconds": 14.035,
+              "status": "estimated",
+              "tunnel_units": 451.743,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 522,
         "wall_count": 170,
         "trigger_count": 19,

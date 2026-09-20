@@ -34,6 +34,34 @@
       "powerups": 226,
       "reactors": 4
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 1998,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1998,
+          1998
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "KKR.HOG",
+          "modified": "1998-10-24",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "KKR.MN2",
+          "modified": "1998-10-24",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -109,6 +137,30 @@
         "secret": false,
         "level_name": "Aquarius Asteroid Base",
         "level_file": "kk1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 244,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 536,
         "wall_count": 181,
         "trigger_count": 17,
@@ -120,7 +172,7 @@
         "reactors": 1,
         "robots": 63,
         "hostages": 4,
-        "secrets": 0,
+        "secrets": 2,
         "matcens": 3,
         "energy_centers": 2,
         "mine_volume": 12026300.0,
@@ -375,6 +427,29 @@
         "secret": false,
         "level_name": "Web Works Power Plant",
         "level_file": "kk2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 474,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 519,
         "wall_count": 105,
         "trigger_count": 20,
@@ -683,6 +758,29 @@
         "secret": false,
         "level_name": "Fervid Falls",
         "level_file": "kk3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 233,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 507,
         "wall_count": 187,
         "trigger_count": 5,
@@ -853,6 +951,41 @@
         "secret": false,
         "level_name": "Vanadium Volatile Mine",
         "level_file": "kk4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 664,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 8,
+              "segment": 665,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 7,
+              "segment": 666,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 810,
         "wall_count": 195,
         "trigger_count": 23,
@@ -864,7 +997,7 @@
         "reactors": 1,
         "robots": 85,
         "hostages": 3,
-        "secrets": 0,
+        "secrets": 3,
         "matcens": 2,
         "energy_centers": 4,
         "mine_volume": 41454100.0,
@@ -1101,6 +1234,29 @@
         "secret": false,
         "level_name": "Kryllidian Kore Base",
         "level_file": "kk5.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 385,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 396,
         "wall_count": 100,
         "trigger_count": 6,
@@ -1349,6 +1505,35 @@
         "secret": true,
         "level_name": "Kallipso Ammo Depot",
         "level_file": "secret1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 274,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 10,
+              "segment": 316,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 318,
         "wall_count": 172,
         "trigger_count": 14,

@@ -34,6 +34,34 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2000,
+          2015
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "missions/single/darkmatr.hog",
+          "modified": "2015-08-09",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "missions/single/darkmatr.mn2",
+          "modified": "2000-02-18",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -141,6 +169,30 @@
         "secret": false,
         "level_name": "Dark Matter",
         "level_file": "darkmatr.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 259,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 531,
         "wall_count": 175,
         "trigger_count": 1,
@@ -220,6 +272,49 @@
       "guidebots": 35,
       "powerups": 386,
       "reactors": 6
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "date",
+          "value": "02-18-2000",
+          "sources": [
+            "missions/single/pluton2.mn2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Hoggle",
+          "sources": [
+            "missions/single/pluton2.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2015,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2015,
+          2015
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "missions/single/pluton2.hog",
+          "modified": "2015-08-09",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "missions/single/pluton2.mn2",
+          "modified": "2015-08-09",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -325,6 +420,29 @@
         "secret": false,
         "level_name": "Recon Ship-Eliter",
         "level_file": "eliter.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 181,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 441,
         "wall_count": 45,
         "trigger_count": 2,
@@ -454,6 +572,29 @@
         "secret": false,
         "level_name": "Titan",
         "level_file": "titan.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 234,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 693,
         "wall_count": 72,
         "trigger_count": 5,
@@ -725,6 +866,29 @@
         "secret": false,
         "level_name": "Starmeddagon",
         "level_file": "ship4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 570,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 708,
         "wall_count": 119,
         "trigger_count": 8,
@@ -973,6 +1137,29 @@
         "secret": false,
         "level_name": "Mammoth",
         "level_file": "mam.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 319,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 613,
         "wall_count": 125,
         "trigger_count": 12,
@@ -1192,6 +1379,29 @@
         "secret": false,
         "level_name": "DeathCrusher",
         "level_file": "shi5.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 373,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 662,
         "wall_count": 154,
         "trigger_count": 9,
@@ -1435,6 +1645,29 @@
         "secret": false,
         "level_name": "Asteriod Attack",
         "level_file": "asteroid.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 4,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 377,
         "wall_count": 36,
         "trigger_count": 7,
@@ -1483,6 +1716,29 @@
         "secret": false,
         "level_name": "Lucifer",
         "level_file": "lucifer.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 832,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 836,
         "wall_count": 189,
         "trigger_count": 9,
@@ -1760,6 +2016,59 @@
         "secret": false,
         "level_name": "The Destruction Of the Lucifer",
         "level_file": "escape.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 213,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 222,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 5,
+              "segment": 161,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 174,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 1,
+              "segment": 118,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 0,
+              "segment": 95,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 747,
         "wall_count": 17,
         "trigger_count": 6,
@@ -1836,6 +2145,30 @@
         "secret": true,
         "level_name": "Moon Base Verta",
         "level_file": "mp.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 49,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 172,
         "wall_count": 52,
         "trigger_count": 1,
@@ -1946,6 +2279,49 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "date",
+          "value": "02-18-2000",
+          "sources": [
+            "missions/single/space1.mn2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Hoggle",
+          "sources": [
+            "missions/single/space1.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2000,
+          2015
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "missions/single/space1.hog",
+          "modified": "2015-08-09",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "missions/single/space1.mn2",
+          "modified": "2000-02-18",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -2053,6 +2429,22 @@
         "secret": false,
         "level_name": "Vanhuta Tower",
         "level_file": "van.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_normal_exit_trigger",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "absent",
+          "tunnel": {
+            "status": "no_exit_trigger"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": []
+        },
         "segment_count": 573,
         "wall_count": 137,
         "trigger_count": 0,

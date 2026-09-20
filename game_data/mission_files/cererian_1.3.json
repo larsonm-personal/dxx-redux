@@ -34,6 +34,70 @@
       "powerups": 323,
       "reactors": 6
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE",
+          "sources": [
+            "cererian.msn"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "60 hours",
+          "sources": [
+            "cererian.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "14 apr 2018",
+          "sources": [
+            "cererian.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.3",
+          "sources": [
+            "cererian.msn"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Parabolicus",
+          "sources": [
+            "cererian.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2018,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2018,
+          2018
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "cererian.hog",
+          "modified": "2018-04-13",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "cererian.msn",
+          "modified": "2018-04-13",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -121,6 +185,35 @@
         "secret": false,
         "level_name": "thetis outpost",
         "level_file": "lv1_1.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv1_1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 296,
+              "side": 1,
+              "seconds": 10.6,
+              "status": "estimated",
+              "tunnel_units": 280.0,
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 319,
         "wall_count": 48,
         "trigger_count": 1,
@@ -207,6 +300,35 @@
         "secret": false,
         "level_name": "pallas carbon mine",
         "level_file": "lv1_2.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.2,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.2
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv1_2.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 173,
+              "side": 2,
+              "seconds": 13.2,
+              "status": "estimated",
+              "tunnel_units": 410.0,
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 401,
         "wall_count": 80,
         "trigger_count": 3,
@@ -307,6 +429,35 @@
         "secret": false,
         "level_name": "hygiea sulfur mine",
         "level_file": "lv1_3.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.8,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.8
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv1_3.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 141,
+              "side": 4,
+              "seconds": 16.8,
+              "status": "estimated",
+              "tunnel_units": 590.0,
+              "tunnel_segments": 28
+            }
+          ]
+        },
         "segment_count": 670,
         "wall_count": 128,
         "trigger_count": 12,
@@ -421,6 +572,35 @@
         "secret": false,
         "level_name": "metis mineral refinery",
         "level_file": "lv1_4.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 18.002,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 18.002
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv1_4.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 612,
+              "side": 4,
+              "seconds": 18.002,
+              "status": "estimated",
+              "tunnel_units": 650.097,
+              "tunnel_segments": 33
+            }
+          ]
+        },
         "segment_count": 735,
         "wall_count": 118,
         "trigger_count": 11,
@@ -535,6 +715,44 @@
         "secret": false,
         "level_name": "vesta silicon mine",
         "level_file": "lv1_5.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 21.517,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 21.517
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv1_5.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 473,
+              "side": 1,
+              "seconds": 9.8,
+              "status": "estimated",
+              "tunnel_units": 240.0,
+              "tunnel_segments": 12
+            },
+            {
+              "trigger": 1,
+              "segment": 213,
+              "side": 2,
+              "seconds": 21.517,
+              "status": "estimated",
+              "tunnel_units": 825.857,
+              "tunnel_segments": 33
+            }
+          ]
+        },
         "segment_count": 554,
         "wall_count": 106,
         "trigger_count": 11,
@@ -649,6 +867,35 @@
         "secret": false,
         "level_name": "ceres military base",
         "level_file": "lv1_6.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 23.58,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 23.58
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv1_6.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 514,
+              "side": 5,
+              "seconds": 23.58,
+              "status": "estimated",
+              "tunnel_units": 928.991,
+              "tunnel_segments": 34
+            }
+          ]
+        },
         "segment_count": 681,
         "wall_count": 60,
         "trigger_count": 6,
@@ -763,6 +1010,35 @@
         "secret": true,
         "level_name": "kalliope storage depot",
         "level_file": "lvsecret.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.14,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.14
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lvsecret.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 210,
+              "side": 4,
+              "seconds": 19.14,
+              "status": "estimated",
+              "tunnel_units": 707.0,
+              "tunnel_segments": 26
+            }
+          ]
+        },
         "segment_count": 369,
         "wall_count": 92,
         "trigger_count": 1,

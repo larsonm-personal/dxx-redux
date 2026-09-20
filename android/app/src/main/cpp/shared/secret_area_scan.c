@@ -746,6 +746,17 @@ static void maybe_update_summary_entry(candidate_summary *candidate, int distanc
 	}
 }
 
+static int candidate_entrance_distance(int seg)
+{
+	const candidate_summary *summary;
+	if (progression_distance[seg] >= 0)
+		return progression_distance[seg];
+	summary = &candidate_summaries[component_id[seg]];
+	/* Hidden access does not make a hostage/key/reactor area a secret itself
+	 * Allow its reachable interior to expose a separate optional compartment */
+	return summary->contains_progress_item && summary->hidden_reachable ? hidden_distance[seg] : -1;
+}
+
 static int collect_raw_candidates(const secret_area_scan_view *view)
 {
 	int seg;
@@ -753,7 +764,8 @@ static int collect_raw_candidates(const secret_area_scan_view *view)
 
 	for (seg = 0; seg < view->num_segments; ++seg) {
 		int side;
-		if (progression_distance[seg] < 0)
+		int distance = candidate_entrance_distance(seg);
+		if (distance < 0)
 			continue;
 		for (side = 0; side < SECRET_AREA_MAX_SIDES; ++side) {
 			int child = view->segment_child(view->user, seg, side);
@@ -771,7 +783,7 @@ static int collect_raw_candidates(const secret_area_scan_view *view)
 				candidate->present = 1;
 				count++;
 			}
-			maybe_update_summary_entry(candidate, progression_distance[seg], seg, side);
+			maybe_update_summary_entry(candidate, distance, seg, side);
 			if (!is_only_marginal_trigger_edge(view, seg, side, child))
 				candidate->has_non_marginal_entrance = 1;
 		}
@@ -903,7 +915,7 @@ static void collect_selected_candidate_entrances(const secret_area_scan_view *vi
 
 	for (seg = 0; seg < view->num_segments; ++seg) {
 		int side;
-		if (progression_distance[seg] < 0)
+		if (candidate_entrance_distance(seg) < 0)
 			continue;
 		for (side = 0; side < SECRET_AREA_MAX_SIDES; ++side) {
 			int child = view->segment_child(view->user, seg, side);

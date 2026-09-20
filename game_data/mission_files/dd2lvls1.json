@@ -34,6 +34,50 @@
       "powerups": 472,
       "reactors": 9
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "website",
+          "value": "www.xmail.net/descer/index.html",
+          "sources": [
+            "DD2LVLS1.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "jpiis@hotmail.com",
+          "sources": [
+            "DD2LVLS1.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2013,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2013,
+          2013
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "DD2LVLS1.HOG",
+          "modified": "2013-05-22",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "DD2LVLS1.MN2",
+          "modified": "1991-01-10",
+          "kind": "zip_entry_mtime",
+          "excluded": "invalid_or_implausible_year"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +153,29 @@
         "secret": false,
         "level_name": "Sif Copper Mine",
         "level_file": "sifcom.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 186,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 551,
         "wall_count": 235,
         "trigger_count": 4,
@@ -331,6 +398,30 @@
         "secret": false,
         "level_name": "PikuIem Strontium Mine",
         "level_file": "pikustro.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 261,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 567,
         "wall_count": 178,
         "trigger_count": 3,
@@ -474,6 +565,30 @@
         "secret": false,
         "level_name": "Lumodya Iron Mine",
         "level_file": "lumodya.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 58,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 3
+            }
+          ]
+        },
         "segment_count": 568,
         "wall_count": 146,
         "trigger_count": 1,
@@ -593,6 +708,30 @@
         "secret": false,
         "level_name": "Hydnes Water Purification",
         "level_file": "hywapup.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 275,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 3
+            }
+          ]
+        },
         "segment_count": 678,
         "wall_count": 240,
         "trigger_count": 3,
@@ -745,6 +884,30 @@
         "secret": false,
         "level_name": "Kerotone Cadmium",
         "level_file": "euglac.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 462,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 523,
         "wall_count": 145,
         "trigger_count": 4,
@@ -945,6 +1108,30 @@
         "secret": false,
         "level_name": "Karzhof Cobolt Mine",
         "level_file": "karzco.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 117,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 824,
         "wall_count": 226,
         "trigger_count": 7,
@@ -1157,6 +1344,30 @@
         "secret": false,
         "level_name": "Kidermin Hotspot Side Fork",
         "level_file": "hotspot.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 63,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 406,
         "wall_count": 117,
         "trigger_count": 4,
@@ -1328,6 +1539,29 @@
         "secret": false,
         "level_name": "Enrik Frost Area",
         "level_file": "enfo.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 446,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 487,
         "wall_count": 106,
         "trigger_count": 1,
@@ -1446,6 +1680,30 @@
         "secret": false,
         "level_name": "Kerotone Cadmium",
         "level_file": "kercad.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 462,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 523,
         "wall_count": 145,
         "trigger_count": 4,

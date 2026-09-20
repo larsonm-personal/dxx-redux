@@ -34,6 +34,77 @@
       "powerups": 1592,
       "reactors": 11
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE",
+          "sources": [
+            "eq-set.mn2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "time times and half a time",
+          "sources": [
+            "eq-set.mn2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "1 apr 2016",
+          "sources": [
+            "eq-set.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.1.1",
+          "sources": [
+            "eq-set.mn2"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "??????Z???G???",
+          "sources": [
+            "eq-set.mn2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "syzygysaj@gmail.com",
+          "sources": [
+            "eq-set.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2022,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2022,
+          2022
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "eq-set.hog",
+          "modified": "2022-08-26",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "eq-set.mn2",
+          "modified": "2022-08-22",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +180,29 @@
         "secret": false,
         "level_name": "EVO",
         "level_file": "megabloc.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 17,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 25,
         "wall_count": 14,
         "trigger_count": 2,
@@ -209,6 +303,30 @@
         "secret": false,
         "level_name": "EVA",
         "level_file": "second.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 122,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 395,
         "wall_count": 174,
         "trigger_count": 29,
@@ -898,6 +1016,29 @@
         "secret": false,
         "level_name": "Forest Entry",
         "level_file": "castle.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 420,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 870,
         "wall_count": 252,
         "trigger_count": 27,
@@ -1152,6 +1293,29 @@
         "secret": false,
         "level_name": "EVU",
         "level_file": "evu.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 8,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 223,
         "wall_count": 19,
         "trigger_count": 2,
@@ -1272,6 +1436,29 @@
         "secret": false,
         "level_name": "ERO",
         "level_file": "ero.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 208,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 361,
         "wall_count": 57,
         "trigger_count": 7,
@@ -1504,6 +1691,29 @@
         "secret": false,
         "level_name": "EVS",
         "level_file": "evs.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 14,
+              "segment": 415,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 444,
         "wall_count": 72,
         "trigger_count": 24,
@@ -1722,6 +1932,29 @@
         "secret": false,
         "level_name": "EzzFF",
         "level_file": "eff.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 199,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 426,
         "wall_count": 16,
         "trigger_count": 3,
@@ -1798,6 +2031,29 @@
         "secret": false,
         "level_name": "Quarter Round",
         "level_file": "ebgb.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 588,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 715,
         "wall_count": 182,
         "trigger_count": 30,
@@ -2545,6 +2801,29 @@
         "secret": false,
         "level_name": "eMCee",
         "level_file": "emcee.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 20,
+              "segment": 491,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 862,
         "wall_count": 155,
         "trigger_count": 21,
@@ -2872,6 +3151,29 @@
         "secret": false,
         "level_name": "EVE Rules",
         "level_file": "eve.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 74,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 741,
         "wall_count": 190,
         "trigger_count": 38,
@@ -3635,6 +3937,29 @@
         "secret": false,
         "level_name": "eadgbe",
         "level_file": "eadgbe.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 143,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 401,
         "wall_count": 73,
         "trigger_count": 10,
@@ -3970,6 +4295,29 @@
         "secret": false,
         "level_name": "cypher",
         "level_file": "ecypher2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 16,
+              "segment": 656,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 706,
         "wall_count": 222,
         "trigger_count": 19,

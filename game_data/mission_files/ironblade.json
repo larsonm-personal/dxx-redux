@@ -34,6 +34,34 @@
       "powerups": 494,
       "reactors": 7
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2000,
+          2008
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "IRONBL01.HOG",
+          "modified": "2008-09-22",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "IRONBL01.MSN",
+          "modified": "2000-03-21",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -233,6 +261,35 @@
         "secret": false,
         "level_name": "Nemesis PWR-Station",
         "level_file": "nemesis.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.567,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.567
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nemesis.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 30,
+              "side": 2,
+              "seconds": 19.567,
+              "status": "estimated",
+              "tunnel_units": 728.331,
+              "tunnel_segments": 28
+            }
+          ]
+        },
         "segment_count": 456,
         "wall_count": 82,
         "trigger_count": 2,
@@ -335,6 +392,35 @@
         "secret": false,
         "level_name": "Arkon 01",
         "level_file": "arkon01.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.229,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.229
+          },
+          "presentation": {
+            "status": "present",
+            "file": "arkon01.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 27,
+              "segment": 644,
+              "side": 4,
+              "seconds": 11.229,
+              "status": "estimated",
+              "tunnel_units": 311.456,
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 647,
         "wall_count": 102,
         "trigger_count": 28,
@@ -474,6 +560,35 @@
         "secret": false,
         "level_name": "Hostage Hell 1.0",
         "level_file": "hosthell.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 8.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 8.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "hosthell.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 644,
+              "side": 4,
+              "seconds": 8.0,
+              "status": "estimated",
+              "tunnel_units": 150.0,
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 167,
         "trigger_count": 6,
@@ -485,7 +600,7 @@
         "reactors": 1,
         "robots": 119,
         "hostages": 16,
-        "secrets": 1,
+        "secrets": 3,
         "matcens": 5,
         "energy_centers": 1,
         "mine_volume": 30039900.0,
@@ -508,6 +623,35 @@
         "secret": false,
         "level_name": "New level",
         "level_file": "arkon02.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.233,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.233
+          },
+          "presentation": {
+            "status": "present",
+            "file": "arkon02.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 496,
+              "side": 0,
+              "seconds": 11.233,
+              "status": "estimated",
+              "tunnel_units": 311.662,
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 631,
         "wall_count": 148,
         "trigger_count": 24,
@@ -676,6 +820,35 @@
         "secret": false,
         "level_name": "Nemesis Supply",
         "level_file": "nemsup.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.189,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.189
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nemsup.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 33,
+              "side": 3,
+              "seconds": 13.189,
+              "status": "estimated",
+              "tunnel_units": 409.426,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 710,
         "wall_count": 111,
         "trigger_count": 19,
@@ -843,6 +1016,35 @@
         "secret": false,
         "level_name": "- ARKON 03 -",
         "level_file": "arkon03.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.22,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.22
+          },
+          "presentation": {
+            "status": "present",
+            "file": "arkon03.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 606,
+              "side": 4,
+              "seconds": 11.22,
+              "status": "estimated",
+              "tunnel_units": 311.002,
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 636,
         "wall_count": 118,
         "trigger_count": 19,
@@ -854,7 +1056,7 @@
         "reactors": 1,
         "robots": 98,
         "hostages": 4,
-        "secrets": 9,
+        "secrets": 10,
         "matcens": 5,
         "energy_centers": 2,
         "mine_volume": 11318400.0,
@@ -1038,6 +1240,35 @@
         "secret": false,
         "level_name": "IronBlade",
         "level_file": "ironbla2.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 8.761,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 8.761
+          },
+          "presentation": {
+            "status": "present",
+            "file": "ironbla2.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 1,
+              "side": 1,
+              "seconds": 8.761,
+              "status": "estimated",
+              "tunnel_units": 188.048,
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 670,
         "wall_count": 175,
         "trigger_count": 18,
@@ -1454,6 +1685,31 @@
         "secret": true,
         "level_name": "Fadeout 0.1",
         "level_file": "fadeout1.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_tunnel",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "present",
+            "file": "fadeout1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 669,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 676,
         "wall_count": 101,
         "trigger_count": 3,

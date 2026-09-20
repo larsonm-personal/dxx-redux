@@ -34,6 +34,70 @@
       "powerups": 395,
       "reactors": 8
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DMB2",
+          "sources": [
+            "DRILLER2.MN2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "DRILLER2.MN2"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Descer",
+          "sources": [
+            "DRILLER2.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "www.xmail.net/descer/drillers.html",
+          "sources": [
+            "DRILLER2.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "jpiis@hotmail.com",
+          "sources": [
+            "DRILLER2.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2003,
+          2006
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "DRILLER2.HOG",
+          "modified": "2003-11-23",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "DRILLER2.MN2",
+          "modified": "2006-05-02",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +173,29 @@
         "secret": false,
         "level_name": "Mercury Uranium mine",
         "level_file": "meru.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 634,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 642,
         "wall_count": 161,
         "trigger_count": 2,
@@ -254,6 +341,30 @@
         "secret": false,
         "level_name": "Driller Testing center",
         "level_file": "dtest.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 394,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 423,
         "wall_count": 137,
         "trigger_count": 2,
@@ -373,6 +484,30 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "lunp.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 574,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 620,
         "wall_count": 119,
         "trigger_count": 6,
@@ -515,6 +650,30 @@
         "secret": false,
         "level_name": "Mars Iron-nickel mine",
         "level_file": "marin.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 677,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 840,
         "wall_count": 224,
         "trigger_count": 6,
@@ -684,6 +843,30 @@
         "secret": false,
         "level_name": "Io Rock mine",
         "level_file": "irock.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 181,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 782,
         "wall_count": 181,
         "trigger_count": 6,
@@ -853,6 +1036,30 @@
         "secret": false,
         "level_name": "Mimas Multi-mineral mine",
         "level_file": "mimu.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 196,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 452,
         "wall_count": 175,
         "trigger_count": 12,
@@ -971,6 +1178,30 @@
         "secret": false,
         "level_name": "Titania Titanium mine",
         "level_file": "titi.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 261,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 297,
         "wall_count": 115,
         "trigger_count": 3,
@@ -1197,6 +1428,30 @@
         "secret": false,
         "level_name": "Nereid Space ship Dock",
         "level_file": "nes.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 730,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 771,
         "wall_count": 202,
         "trigger_count": 1,
@@ -1317,6 +1572,29 @@
         "secret": false,
         "level_name": "Queen's Palace",
         "level_file": "palace.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 514,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 899,
         "wall_count": 253,
         "trigger_count": 8,
@@ -1462,6 +1740,35 @@
         "secret": true,
         "level_name": "Vesta Wolfram mine",
         "level_file": "veswo.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 33,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 445,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 447,
         "wall_count": 155,
         "trigger_count": 9,

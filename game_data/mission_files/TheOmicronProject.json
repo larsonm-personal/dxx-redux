@@ -34,6 +34,191 @@
       "powerups": 657,
       "reactors": 7
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "version",
+          "value": "1.4c",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.MN2",
+            "TheOmicronProject/OMICPROJ.HOG/MISSION.AUT"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "6/26/1998",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.MN2",
+            "TheOmicronProject/OMICPROJ.HOG/MISSION.AUT"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Magic101",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.MN2",
+            "TheOmicronProject/OMICPROJ.HOG/MISSION.AUT"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "koppes@bright.net",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.MN2",
+            "TheOmicronProject/OMICPROJ.HOG/MISSION.AUT",
+            "TheOmicronProject/OMICPROJ.HOG/darknite.aut",
+            "TheOmicronProject/OMICPROJ.HOG/dartdet2.aut",
+            "TheOmicronProject/OMICPROJ.HOG/omicron.aut",
+            "TheOmicronProject/OMICPROJ.HOG/pyromax.aut",
+            "TheOmicronProject/OMICPROJ.HOG/shakoram.aut",
+            "TheOmicronProject/OMICPROJ.HOG/shi4evr.aut",
+            "TheOmicronProject/OMICPROJ.HOG/virus2.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.descent2.com/omicron",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.MN2",
+            "TheOmicronProject/OMICPROJ.HOG/MISSION.AUT"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "6/26/1998",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/MISSION.AUT"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "Magic101",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/MISSION.AUT",
+            "TheOmicronProject/OMICPROJ.HOG/darknite.aut",
+            "TheOmicronProject/OMICPROJ.HOG/dartdet2.aut",
+            "TheOmicronProject/OMICPROJ.HOG/omicron.aut",
+            "TheOmicronProject/OMICPROJ.HOG/pyromax.aut",
+            "TheOmicronProject/OMICPROJ.HOG/shakoram.aut",
+            "TheOmicronProject/OMICPROJ.HOG/shi4evr.aut",
+            "TheOmicronProject/OMICPROJ.HOG/virus2.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Stephen Koppes",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/MISSION.AUT",
+            "TheOmicronProject/OMICPROJ.HOG/darknite.aut",
+            "TheOmicronProject/OMICPROJ.HOG/dartdet2.aut",
+            "TheOmicronProject/OMICPROJ.HOG/omicron.aut",
+            "TheOmicronProject/OMICPROJ.HOG/pyromax.aut",
+            "TheOmicronProject/OMICPROJ.HOG/shakoram.aut",
+            "TheOmicronProject/OMICPROJ.HOG/shi4evr.aut",
+            "TheOmicronProject/OMICPROJ.HOG/virus2.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "2.3e",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/darknite.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "5/13/1998",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/darknite.aut",
+            "TheOmicronProject/OMICPROJ.HOG/omicron.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "2.1a",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/dartdet2.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "5/11/1998",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/dartdet2.aut",
+            "TheOmicronProject/OMICPROJ.HOG/shakoram.aut",
+            "TheOmicronProject/OMICPROJ.HOG/shi4evr.aut",
+            "TheOmicronProject/OMICPROJ.HOG/virus2.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.2d",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/omicron.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.1f",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/pyromax.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "5/12/1998",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/pyromax.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.57c",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/shakoram.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.55d",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/shi4evr.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.01a",
+          "sources": [
+            "TheOmicronProject/OMICPROJ.HOG/virus2.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1998,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          2024,
+          2024
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "TheOmicronProject/OMICPROJ.HOG",
+          "modified": "2024-11-05",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "TheOmicronProject/OMICPROJ.MN2",
+          "modified": "2024-11-05",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -130,6 +315,30 @@
         "secret": false,
         "level_name": "VIRUS! 2",
         "level_file": "virus2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 194,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 345,
         "wall_count": 68,
         "trigger_count": 15,
@@ -248,6 +457,30 @@
         "secret": false,
         "level_name": "dark night",
         "level_file": "darknite.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 33,
+              "segment": 682,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 690,
         "wall_count": 195,
         "trigger_count": 34,
@@ -606,6 +839,30 @@
         "secret": false,
         "level_name": "Shak'O'Rama: Storage Base",
         "level_file": "shakoram.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 18,
+              "segment": 97,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 466,
         "wall_count": 162,
         "trigger_count": 25,
@@ -724,6 +981,30 @@
         "secret": false,
         "level_name": "OMICRON",
         "level_file": "omicron.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 44,
+              "segment": 594,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 631,
         "wall_count": 247,
         "trigger_count": 45,
@@ -1046,6 +1327,29 @@
         "secret": false,
         "level_name": "Shishomi Forever",
         "level_file": "shi4evr.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 504,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 748,
         "wall_count": 249,
         "trigger_count": 30,
@@ -1207,6 +1511,30 @@
         "secret": false,
         "level_name": "Darts Deathmatch 2",
         "level_file": "dartdet2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 372,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 802,
         "wall_count": 193,
         "trigger_count": 13,
@@ -1218,7 +1546,7 @@
         "reactors": 1,
         "robots": 137,
         "hostages": 7,
-        "secrets": 0,
+        "secrets": 3,
         "matcens": 0,
         "energy_centers": 8,
         "mine_volume": 77732600.0,
@@ -1378,6 +1706,30 @@
         "secret": false,
         "level_name": "PYROMAX: Alpha Outpost",
         "level_file": "pyromax.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 23,
+              "segment": 333,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 334,
         "wall_count": 193,
         "trigger_count": 24,

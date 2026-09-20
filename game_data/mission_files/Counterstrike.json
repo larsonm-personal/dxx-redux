@@ -33,6 +33,19 @@
     "powerups": 2244,
     "reactors": 24
   },
+  "provenance": {
+    "credits": [],
+    "date_estimate": {
+      "year": null,
+      "basis": "unknown",
+      "confidence": "unknown"
+    },
+    "file_dates": [],
+    "notes": [
+      "File dates describe modification, not verified creation or release",
+      "D1/D2 HOG entries do not store individual asset timestamps"
+    ]
+  },
   "coop_starts": "1-5",
   "track_names": [
     {
@@ -108,6 +121,34 @@
       "secret": false,
       "level_name": "Ahayweh Gate",
       "level_file": "d2leva-1.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.016,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.016,
+          "status": "measured",
+          "file": "esa.mve",
+          "frames": 255
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 150,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 11
+          }
+        ]
+      },
       "segment_count": 228,
       "wall_count": 86,
       "trigger_count": 13,
@@ -198,6 +239,34 @@
       "secret": false,
       "level_name": "Turnabout Bore",
       "level_file": "d2leva-2.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.082,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.082,
+          "status": "measured",
+          "file": "esb.mve",
+          "frames": 256
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 2,
+            "segment": 77,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 17
+          }
+        ]
+      },
       "segment_count": 457,
       "wall_count": 213,
       "trigger_count": 39,
@@ -209,7 +278,7 @@
       "reactors": 1,
       "robots": 69,
       "hostages": 4,
-      "secrets": 6,
+      "secrets": 7,
       "matcens": 3,
       "energy_centers": 3,
       "mine_volume": 8650960.0,
@@ -492,6 +561,34 @@
       "secret": false,
       "level_name": "wenl mine",
       "level_file": "d2leva-3.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.016,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.016,
+          "status": "measured",
+          "file": "esc.mve",
+          "frames": 255
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 301,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 19
+          }
+        ]
+      },
       "segment_count": 336,
       "wall_count": 137,
       "trigger_count": 19,
@@ -639,6 +736,34 @@
       "secret": false,
       "level_name": "Robby Station",
       "level_file": "d2leva-4.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.016,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.016,
+          "status": "measured",
+          "file": "esa.mve",
+          "frames": 255
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 161,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 13
+          }
+        ]
+      },
       "segment_count": 266,
       "wall_count": 156,
       "trigger_count": 26,
@@ -963,6 +1088,34 @@
       "secret": false,
       "level_name": "Seaspring Gorge",
       "level_file": "d2levb-1.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.149,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.149,
+          "status": "measured",
+          "file": "esd.mve",
+          "frames": 257
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 401,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 7
+          }
+        ]
+      },
       "segment_count": 552,
       "wall_count": 177,
       "trigger_count": 24,
@@ -1197,6 +1350,34 @@
       "secret": false,
       "level_name": "the well",
       "level_file": "d2levb-2.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.082,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.082,
+          "status": "measured",
+          "file": "esf.mve",
+          "frames": 256
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 1,
+            "segment": 231,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 11
+          }
+        ]
+      },
       "segment_count": 268,
       "wall_count": 101,
       "trigger_count": 14,
@@ -1208,7 +1389,7 @@
       "reactors": 1,
       "robots": 57,
       "hostages": 3,
-      "secrets": 3,
+      "secrets": 4,
       "matcens": 1,
       "energy_centers": 1,
       "mine_volume": 5382040.0,
@@ -1357,6 +1538,34 @@
       "secret": false,
       "level_name": "coralbank quarry",
       "level_file": "d2levb-3.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.149,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.149,
+          "status": "measured",
+          "file": "esd.mve",
+          "frames": 257
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 3,
+            "segment": 206,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 19
+          }
+        ]
+      },
       "segment_count": 658,
       "wall_count": 180,
       "trigger_count": 18,
@@ -1499,6 +1708,34 @@
       "secret": false,
       "level_name": "riverbed mine",
       "level_file": "d2levb-4.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.082,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.082,
+          "status": "measured",
+          "file": "esf.mve",
+          "frames": 256
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 13,
+            "segment": 319,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 10
+          }
+        ]
+      },
       "segment_count": 413,
       "wall_count": 224,
       "trigger_count": 44,
@@ -1510,7 +1747,7 @@
       "reactors": 1,
       "robots": 61,
       "hostages": 3,
-      "secrets": 10,
+      "secrets": 11,
       "matcens": 6,
       "energy_centers": 2,
       "mine_volume": 16009700.0,
@@ -1647,6 +1884,34 @@
       "secret": false,
       "level_name": "Firewalker Mine",
       "level_file": "d2levc-1.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.016,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.016,
+          "status": "measured",
+          "file": "esg.mve",
+          "frames": 255
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 38,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 17
+          }
+        ]
+      },
       "segment_count": 581,
       "wall_count": 201,
       "trigger_count": 20,
@@ -1885,6 +2150,34 @@
       "secret": false,
       "level_name": "lavafalls extraction ctr.",
       "level_file": "d2levc-2.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 16.999,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 16.999,
+          "status": "measured",
+          "file": "esh.mve",
+          "frames": 255
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 393,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 14
+          }
+        ]
+      },
       "segment_count": 501,
       "wall_count": 194,
       "trigger_count": 27,
@@ -2085,6 +2378,34 @@
       "secret": false,
       "level_name": "coalbank shaft",
       "level_file": "d2levc-3.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 16.999,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 16.999,
+          "status": "measured",
+          "file": "esi.mve",
+          "frames": 255
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 200,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 14
+          }
+        ]
+      },
       "segment_count": 532,
       "wall_count": 249,
       "trigger_count": 39,
@@ -2378,6 +2699,34 @@
       "secret": false,
       "level_name": "MAgnacore station",
       "level_file": "d2levc-4.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.016,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.016,
+          "status": "measured",
+          "file": "esg.mve",
+          "frames": 255
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 17,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 14
+          }
+        ]
+      },
       "segment_count": 489,
       "wall_count": 201,
       "trigger_count": 33,
@@ -2389,7 +2738,7 @@
       "reactors": 1,
       "robots": 120,
       "hostages": 6,
-      "secrets": 18,
+      "secrets": 20,
       "matcens": 8,
       "energy_centers": 6,
       "mine_volume": 59912800.0,
@@ -2545,6 +2894,34 @@
       "secret": false,
       "level_name": "sleetstone tunnels",
       "level_file": "d2levd-1.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.149,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.149,
+          "status": "measured",
+          "file": "esj.mve",
+          "frames": 257
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 9,
+            "segment": 189,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 15
+          }
+        ]
+      },
       "segment_count": 320,
       "wall_count": 169,
       "trigger_count": 18,
@@ -2663,6 +3040,34 @@
       "secret": false,
       "level_name": "arcticon corridor",
       "level_file": "d2levd-2.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.149,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.149,
+          "status": "measured",
+          "file": "esk.mve",
+          "frames": 257
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 6,
+            "segment": 299,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 11
+          }
+        ]
+      },
       "segment_count": 420,
       "wall_count": 161,
       "trigger_count": 15,
@@ -2674,7 +3079,7 @@
       "reactors": 1,
       "robots": 88,
       "hostages": 4,
-      "secrets": 7,
+      "secrets": 8,
       "matcens": 2,
       "energy_centers": 2,
       "mine_volume": 21182900.0,
@@ -2847,6 +3252,34 @@
       "secret": false,
       "level_name": "icehammer caverns",
       "level_file": "d2levd-3.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.349,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.349,
+          "status": "measured",
+          "file": "esl.mve",
+          "frames": 260
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 125,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 14
+          }
+        ]
+      },
       "segment_count": 592,
       "wall_count": 220,
       "trigger_count": 22,
@@ -2965,6 +3398,34 @@
       "secret": false,
       "level_name": "terrafrost catacombs",
       "level_file": "d2levd-4.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.149,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.149,
+          "status": "measured",
+          "file": "esj.mve",
+          "frames": 257
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 576,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 12
+          }
+        ]
+      },
       "segment_count": 663,
       "wall_count": 253,
       "trigger_count": 32,
@@ -3202,6 +3663,34 @@
       "secret": false,
       "level_name": "Y'tor III",
       "level_file": "d2leve-1.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 16.933,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 16.933,
+          "status": "measured",
+          "file": "esm.mve",
+          "frames": 254
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 262,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 14
+          }
+        ]
+      },
       "segment_count": 447,
       "wall_count": 173,
       "trigger_count": 33,
@@ -3404,6 +3893,34 @@
       "secret": false,
       "level_name": "Drec'nilbie K'luh",
       "level_file": "d2leve-2.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 16.949,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 16.949,
+          "status": "measured",
+          "file": "eso.mve",
+          "frames": 254
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 418,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 14
+          }
+        ]
+      },
       "segment_count": 484,
       "wall_count": 144,
       "trigger_count": 22,
@@ -3578,6 +4095,34 @@
       "secret": false,
       "level_name": "Nep-Hilim S'crub",
       "level_file": "d2leve-3.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 16.933,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 16.933,
+          "status": "measured",
+          "file": "esm.mve",
+          "frames": 254
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 327,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 15
+          }
+        ]
+      },
       "segment_count": 372,
       "wall_count": 131,
       "trigger_count": 19,
@@ -3696,6 +4241,34 @@
       "secret": false,
       "level_name": "Gytowt Station",
       "level_file": "d2leve-4.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 16.949,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 16.949,
+          "status": "measured",
+          "file": "eso.mve",
+          "frames": 254
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 30,
+            "segment": 337,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 16
+          }
+        ]
+      },
       "segment_count": 464,
       "wall_count": 215,
       "trigger_count": 44,
@@ -3920,6 +4493,34 @@
       "secret": false,
       "level_name": "N'neri Ring",
       "level_file": "d2levf-1.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.066,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.066,
+          "status": "measured",
+          "file": "esp.mve",
+          "frames": 256
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 297,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 12
+          }
+        ]
+      },
       "segment_count": 387,
       "wall_count": 151,
       "trigger_count": 17,
@@ -4079,6 +4680,34 @@
       "secret": false,
       "level_name": "Kwod A'rior",
       "level_file": "d2levf-2.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.082,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.082,
+          "status": "measured",
+          "file": "esq.mve",
+          "frames": 256
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 3,
+            "segment": 353,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 18
+          }
+        ]
+      },
       "segment_count": 384,
       "wall_count": 110,
       "trigger_count": 13,
@@ -4278,6 +4907,34 @@
       "secret": false,
       "level_name": "Iwihml",
       "level_file": "d2levf-3.rl2",
+      "flyout": {
+        "kind": "video",
+        "seconds": 17.066,
+        "status": "measured",
+        "movie": {
+          "kind": "video",
+          "seconds": 17.066,
+          "status": "measured",
+          "file": "esp.mve",
+          "frames": 256
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 222,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 12
+          }
+        ]
+      },
       "segment_count": 279,
       "wall_count": 108,
       "trigger_count": 18,
@@ -4289,7 +4946,7 @@
       "reactors": 1,
       "robots": 54,
       "hostages": 0,
-      "secrets": 0,
+      "secrets": 2,
       "matcens": 0,
       "energy_centers": 0,
       "mine_volume": 8900320.0,
@@ -4630,6 +5287,30 @@
       "secret": false,
       "level_name": "Tycho Brahe",
       "level_file": "d2levf-4.rl2",
+      "flyout": {
+        "kind": "none",
+        "seconds": null,
+        "status": "campaign_ending_instead",
+        "movie": {
+          "status": "campaign_ending_instead"
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 8,
+            "segment": 154,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 15
+          }
+        ]
+      },
       "segment_count": 359,
       "wall_count": 171,
       "trigger_count": 40,
@@ -4797,6 +5478,48 @@
       "secret": true,
       "level_name": "Segment City",
       "level_file": "d2leva-s.rl2",
+      "flyout": {
+        "kind": "none",
+        "seconds": null,
+        "status": "tunnel_present_exterior_missing",
+        "movie": {
+          "status": "not_selected_for_level"
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 4,
+            "segment": 97,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 2
+          },
+          {
+            "trigger": 15,
+            "segment": 323,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 14,
+            "segment": 331,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 28,
+            "segment": 335,
+            "side": 4,
+            "status": "invalid_exit"
+          }
+        ]
+      },
       "segment_count": 337,
       "wall_count": 155,
       "trigger_count": 31,
@@ -4913,6 +5636,42 @@
       "secret": true,
       "level_name": "Hurdle Chase",
       "level_file": "d2levb-s.rl2",
+      "flyout": {
+        "kind": "none",
+        "seconds": null,
+        "status": "tunnel_present_exterior_missing",
+        "movie": {
+          "status": "not_selected_for_level"
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 12,
+            "segment": 33,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 2
+          },
+          {
+            "trigger": 15,
+            "segment": 263,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 16,
+            "segment": 210,
+            "side": 4,
+            "status": "invalid_exit"
+          }
+        ]
+      },
       "segment_count": 264,
       "wall_count": 124,
       "trigger_count": 17,
@@ -4989,6 +5748,41 @@
       "secret": true,
       "level_name": "mephisto hardcore",
       "level_file": "d2levc-s.rl2",
+      "flyout": {
+        "kind": "none",
+        "seconds": null,
+        "status": "no_valid_tunnel_exterior_missing",
+        "movie": {
+          "status": "not_selected_for_level"
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "no_valid_route"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 0,
+            "segment": 35,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 8,
+            "segment": 463,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 7,
+            "segment": 56,
+            "side": 4,
+            "status": "invalid_exit"
+          }
+        ]
+      },
       "segment_count": 467,
       "wall_count": 234,
       "trigger_count": 9,
@@ -5065,6 +5859,53 @@
       "secret": true,
       "level_name": "Galacia caverns",
       "level_file": "d2levd-s.rl2",
+      "flyout": {
+        "kind": "none",
+        "seconds": null,
+        "status": "no_valid_tunnel_exterior_missing",
+        "movie": {
+          "status": "not_selected_for_level"
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "no_valid_route"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 7,
+            "segment": 49,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 5,
+            "segment": 45,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 6,
+            "segment": 59,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 8,
+            "segment": 402,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 9,
+            "segment": 438,
+            "side": 4,
+            "status": "invalid_exit"
+          }
+        ]
+      },
       "segment_count": 440,
       "wall_count": 122,
       "trigger_count": 10,
@@ -5141,6 +5982,36 @@
       "secret": true,
       "level_name": "Ascent Level 1",
       "level_file": "d2leve-s.rl2",
+      "flyout": {
+        "kind": "none",
+        "seconds": null,
+        "status": "tunnel_present_exterior_missing",
+        "movie": {
+          "status": "not_selected_for_level"
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "present"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 12,
+            "segment": 55,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 4,
+            "segment": 369,
+            "side": 4,
+            "status": "present",
+            "tunnel_segments": 2
+          }
+        ]
+      },
       "segment_count": 432,
       "wall_count": 177,
       "trigger_count": 22,
@@ -5297,6 +6168,53 @@
       "secret": true,
       "level_name": "Chain Reaction",
       "level_file": "d2levf-s.rl2",
+      "flyout": {
+        "kind": "none",
+        "seconds": null,
+        "status": "no_valid_tunnel_exterior_missing",
+        "movie": {
+          "status": "not_selected_for_level"
+        },
+        "exit_trigger": "present",
+        "tunnel": {
+          "status": "no_valid_route"
+        },
+        "presentation": {
+          "status": "missing_endlevel_data"
+        },
+        "routes": [
+          {
+            "trigger": 2,
+            "segment": 57,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 3,
+            "segment": 130,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 0,
+            "segment": 93,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 1,
+            "segment": 195,
+            "side": 4,
+            "status": "invalid_exit"
+          },
+          {
+            "trigger": 4,
+            "segment": 236,
+            "side": 4,
+            "status": "invalid_exit"
+          }
+        ]
+      },
       "segment_count": 238,
       "wall_count": 18,
       "trigger_count": 5,

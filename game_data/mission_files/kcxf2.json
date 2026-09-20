@@ -34,6 +34,34 @@
       "powerups": 335,
       "reactors": 4
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2007,
+          2008
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "KCXF2.HOG",
+          "modified": "2008-02-18",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "KCXF2.MN2",
+          "modified": "2007-03-22",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -116,6 +144,36 @@
         "secret": false,
         "level_name": "Surface Outpost",
         "level_file": "kcxf201.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 186,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 185,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 191,
         "wall_count": 56,
         "trigger_count": 4,
@@ -238,6 +296,30 @@
         "secret": false,
         "level_name": "Aquabed Station",
         "level_file": "kcxf202.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 585,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 597,
         "wall_count": 54,
         "trigger_count": 9,
@@ -470,6 +552,30 @@
         "secret": false,
         "level_name": "The Rise",
         "level_file": "kcxf203.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 357,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 376,
         "wall_count": 63,
         "trigger_count": 14,
@@ -748,6 +854,29 @@
         "secret": false,
         "level_name": "turtleshell outpost",
         "level_file": "kcxf204.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 23,
+              "segment": 314,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 416,
         "wall_count": 112,
         "trigger_count": 25,
@@ -919,6 +1048,29 @@
         "secret": false,
         "level_name": "The Cavern Station",
         "level_file": "kcxf205.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 31,
+              "segment": 786,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 872,
         "wall_count": 203,
         "trigger_count": 32,

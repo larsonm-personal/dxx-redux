@@ -34,6 +34,100 @@
       "powerups": 503,
       "reactors": 23
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "vignette.msn",
+            "vignette.txt"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "Over 50 hours!",
+          "sources": [
+            "vignette.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "15 Aug 2009",
+          "sources": [
+            "vignette.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "vignette.msn"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "DFW, Sirius, Pumo",
+          "sources": [
+            "vignette.msn"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "darkflamewolf@yahoo.com",
+          "sources": [
+            "vignette.msn",
+            "vignette.txt"
+          ]
+        },
+        {
+          "field": "started_date",
+          "value": "Sep 28, 2008",
+          "sources": [
+            "vignette.txt"
+          ]
+        },
+        {
+          "field": "finished_date",
+          "value": "Aug 14, 2009",
+          "sources": [
+            "vignette.txt"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "DarkflameWolf, Sirius (2 levels), Pumo (1 level)",
+          "sources": [
+            "vignette.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "vignette.hog",
+          "modified": "2009-08-30",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "vignette.msn",
+          "modified": "2009-08-13",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +327,35 @@
         "secret": false,
         "level_name": "Shaft Complex",
         "level_file": "level01.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level01.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 132,
+              "side": 4,
+              "seconds": 13.0,
+              "status": "estimated",
+              "tunnel_units": 400.0,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 233,
         "wall_count": 87,
         "trigger_count": 3,
@@ -319,6 +442,35 @@
         "secret": false,
         "level_name": "The Pit",
         "level_file": "level02.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.023,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.023
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level02.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 110,
+              "side": 4,
+              "seconds": 13.023,
+              "status": "estimated",
+              "tunnel_units": 401.16,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 211,
         "wall_count": 68,
         "trigger_count": 2,
@@ -405,6 +557,35 @@
         "secret": false,
         "level_name": "Prison Compound",
         "level_file": "level05.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.784,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.784
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level05.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 421,
+              "side": 4,
+              "seconds": 12.784,
+              "status": "estimated",
+              "tunnel_units": 389.189,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 440,
         "wall_count": 122,
         "trigger_count": 3,
@@ -532,6 +713,35 @@
         "secret": false,
         "level_name": "Dropshaft",
         "level_file": "level09.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.54,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.54
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level09.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 347,
+              "side": 1,
+              "seconds": 13.54,
+              "status": "estimated",
+              "tunnel_units": 427.0,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 397,
         "wall_count": 145,
         "trigger_count": 8,
@@ -646,6 +856,35 @@
         "secret": false,
         "level_name": "Grated Catwalk",
         "level_file": "level10.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.171,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.171
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level10.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 198,
+              "side": 5,
+              "seconds": 13.171,
+              "status": "estimated",
+              "tunnel_units": 408.528,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 310,
         "wall_count": 119,
         "trigger_count": 7,
@@ -760,6 +999,35 @@
         "secret": false,
         "level_name": "Submerged",
         "level_file": "level11.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level11.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 274,
+              "side": 3,
+              "seconds": 13.0,
+              "status": "estimated",
+              "tunnel_units": 400.001,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 337,
         "wall_count": 48,
         "trigger_count": 4,
@@ -871,6 +1139,35 @@
         "secret": false,
         "level_name": "Inner Tubing",
         "level_file": "level12.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.085,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.085
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level12.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 226,
+              "side": 2,
+              "seconds": 14.085,
+              "status": "estimated",
+              "tunnel_units": 454.266,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 310,
         "wall_count": 106,
         "trigger_count": 8,
@@ -1009,6 +1306,35 @@
         "secret": false,
         "level_name": "The Sewers",
         "level_file": "level15.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level15.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 233,
+              "side": 5,
+              "seconds": 12.6,
+              "status": "estimated",
+              "tunnel_units": 379.999,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 273,
         "wall_count": 99,
         "trigger_count": 6,
@@ -1109,6 +1435,35 @@
         "secret": false,
         "level_name": "The Riverbed",
         "level_file": "level18.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level18.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 105,
+              "side": 2,
+              "seconds": 13.0,
+              "status": "estimated",
+              "tunnel_units": 399.999,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 328,
         "wall_count": 120,
         "trigger_count": 3,
@@ -1223,6 +1578,31 @@
         "secret": false,
         "level_name": "The Great Escape",
         "level_file": "level20.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_tunnel",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level20.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 505,
+              "side": 0,
+              "status": "cyclic_tunnel"
+            }
+          ]
+        },
         "segment_count": 532,
         "wall_count": 172,
         "trigger_count": 5,
@@ -1337,6 +1717,35 @@
         "secret": false,
         "level_name": "Under Tuck",
         "level_file": "level22.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.643,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.643
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level22.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 164,
+              "side": 5,
+              "seconds": 13.643,
+              "status": "estimated",
+              "tunnel_units": 432.175,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 254,
         "wall_count": 70,
         "trigger_count": 10,
@@ -1423,6 +1832,35 @@
         "secret": false,
         "level_name": "Roundabout",
         "level_file": "level23.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level23.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 358,
+              "side": 5,
+              "seconds": 13.0,
+              "status": "estimated",
+              "tunnel_units": 399.991,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 420,
         "wall_count": 158,
         "trigger_count": 7,
@@ -1523,6 +1961,35 @@
         "secret": false,
         "level_name": "The Black Rock",
         "level_file": "level24.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level24.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 157,
+              "side": 5,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 479.999,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 543,
         "wall_count": 162,
         "trigger_count": 4,
@@ -1623,6 +2090,35 @@
         "secret": false,
         "level_name": "Into The Fire",
         "level_file": "level25.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.13,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.13
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level25.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 266,
+              "side": 2,
+              "seconds": 14.13,
+              "status": "estimated",
+              "tunnel_units": 456.49,
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 419,
         "wall_count": 49,
         "trigger_count": 2,
@@ -1713,6 +2209,35 @@
         "secret": false,
         "level_name": "Stalactite Volcano",
         "level_file": "level26.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level26.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 60,
+              "side": 1,
+              "seconds": 13.0,
+              "status": "estimated",
+              "tunnel_units": 399.998,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 365,
         "wall_count": 120,
         "trigger_count": 4,
@@ -1827,6 +2352,35 @@
         "secret": false,
         "level_name": "To The Top",
         "level_file": "level30.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.735,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.735
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level30.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 383,
+              "side": 4,
+              "seconds": 13.735,
+              "status": "estimated",
+              "tunnel_units": 436.768,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 732,
         "wall_count": 174,
         "trigger_count": 9,
@@ -1838,7 +2392,7 @@
         "reactors": 1,
         "robots": 64,
         "hostages": 4,
-        "secrets": 0,
+        "secrets": 1,
         "matcens": 4,
         "energy_centers": 3,
         "mine_volume": 33954200.0,
@@ -1966,6 +2520,35 @@
         "secret": false,
         "level_name": "Observatory Row",
         "level_file": "level31.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.5,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.5
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level31.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 351,
+              "side": 4,
+              "seconds": 13.5,
+              "status": "estimated",
+              "tunnel_units": 425.0,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 500,
         "wall_count": 175,
         "trigger_count": 4,
@@ -2052,6 +2635,35 @@
         "secret": false,
         "level_name": "Ice Tower",
         "level_file": "level33.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.76,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.76
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level33.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 10,
+              "segment": 306,
+              "side": 3,
+              "seconds": 13.76,
+              "status": "estimated",
+              "tunnel_units": 437.999,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 395,
         "wall_count": 134,
         "trigger_count": 11,
@@ -2178,6 +2790,35 @@
         "secret": false,
         "level_name": "The Central Pillar",
         "level_file": "level36.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.4,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.4
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level36.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 242,
+              "side": 5,
+              "seconds": 13.4,
+              "status": "estimated",
+              "tunnel_units": 419.999,
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 451,
         "wall_count": 152,
         "trigger_count": 11,
@@ -2292,6 +2933,35 @@
         "secret": false,
         "level_name": "Command Post",
         "level_file": "level37.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.5,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.5
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level37.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 168,
+              "side": 4,
+              "seconds": 12.5,
+              "status": "estimated",
+              "tunnel_units": 375.0,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 280,
         "wall_count": 82,
         "trigger_count": 3,
@@ -2406,6 +3076,35 @@
         "secret": false,
         "level_name": "Vertigo Tube",
         "level_file": "level43.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.98,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.98
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level43.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 307,
+              "side": 1,
+              "seconds": 12.98,
+              "status": "estimated",
+              "tunnel_units": 399.0,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 464,
         "wall_count": 85,
         "trigger_count": 2,
@@ -2506,6 +3205,35 @@
         "secret": false,
         "level_name": "Alien Tunnels",
         "level_file": "level44.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level44.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 74,
+              "side": 1,
+              "seconds": 13.0,
+              "status": "estimated",
+              "tunnel_units": 400.0,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 306,
         "wall_count": 100,
         "trigger_count": 4,
@@ -2606,6 +3334,35 @@
         "secret": false,
         "level_name": "Grand Hall",
         "level_file": "level46.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.8,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.8
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level46.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 396,
+              "side": 4,
+              "seconds": 12.8,
+              "status": "estimated",
+              "tunnel_units": 389.999,
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 432,
         "wall_count": 106,
         "trigger_count": 3,
@@ -2720,6 +3477,35 @@
         "secret": false,
         "level_name": "Forgotten Fortress",
         "level_file": "level49.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.843,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.843
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level49.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 658,
+              "side": 0,
+              "seconds": 12.843,
+              "status": "estimated",
+              "tunnel_units": 392.159,
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 732,
         "wall_count": 76,
         "trigger_count": 7,
@@ -2834,6 +3620,35 @@
         "secret": false,
         "level_name": "Claustrophobia",
         "level_file": "level50.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 29.656,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 29.656
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level50.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 254,
+              "side": 4,
+              "seconds": 29.656,
+              "status": "estimated",
+              "tunnel_units": 1232.819,
+              "tunnel_segments": 38
+            }
+          ]
+        },
         "segment_count": 624,
         "wall_count": 96,
         "trigger_count": 5,
@@ -2845,7 +3660,7 @@
         "reactors": 0,
         "robots": 62,
         "hostages": 4,
-        "secrets": 0,
+        "secrets": 1,
         "matcens": 1,
         "energy_centers": 4,
         "mine_volume": 346039000.0,
@@ -2982,6 +3797,35 @@
         "secret": true,
         "level_name": "Dwelling of the Gods",
         "level_file": "slevel.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "slevel.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 339,
+              "side": 4,
+              "seconds": 15.0,
+              "status": "estimated",
+              "tunnel_units": 499.998,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 563,
         "wall_count": 169,
         "trigger_count": 3,
@@ -3120,6 +3964,35 @@
         "secret": true,
         "level_name": "Core Reactor",
         "level_file": "slevel2.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.1,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.1
+          },
+          "presentation": {
+            "status": "present",
+            "file": "slevel2.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 670,
+              "side": 0,
+              "seconds": 13.1,
+              "status": "estimated",
+              "tunnel_units": 404.999,
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 153,
         "trigger_count": 10,

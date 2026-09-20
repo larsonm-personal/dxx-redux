@@ -221,7 +221,7 @@ Assert-True ((New-GuidebotMissionSimulationRecord -Mission $emptyMission -Levels
 # Exercise the actual finalization writer without launching any engine processes
 $runnerPath = Join-Path $repoRoot 'android\helpers\regenerate_all_guidebot_simulations.ps1'
 $runnerAst = [Management.Automation.Language.Parser]::ParseFile($runnerPath, [ref]$null, [ref]$null)
-foreach ($functionName in @('Get-GuidebotMissionEntries', 'Get-ExistingGuidebotLevelMap', 'Write-GuidebotSimulationFile', 'New-GuidebotInfrastructureErrorResult')) {
+foreach ($functionName in @('Get-GuidebotMissionEntries', 'Get-ExistingGuidebotLevelMap', 'Write-GuidebotSimulationFile', 'New-GuidebotInfrastructureErrorResult', 'Test-GuidebotExpectedProcessTimeout')) {
     $definition = $runnerAst.Find({
             param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName
@@ -292,6 +292,26 @@ foreach ($case in $failureCases) {
     if ($case.ContainsKey('Exit')) { Assert-True ($firstFailure.exit_code -eq $case.Exit) 'native exit code was lost' }
     if ($case.ContainsKey('Timeout')) { Assert-True ($firstFailure.timeout_seconds -eq $case.Timeout) 'timeout budget was lost' }
 }
+
+# The known large-level timeout must not hide unrelated infrastructure failures
+$uneasyIdentity = 'Uneasy4.json|0|0|Uneasy4.rl2'
+$uneasyTimeout = "Route engine process timeout after 360 seconds for $uneasyIdentity, log=fixture.log"
+Assert-True (Test-GuidebotExpectedProcessTimeout -Identity $uneasyIdentity -Problems @($uneasyTimeout)) `
+    'Uneasy4 process timeout must be accepted'
+Assert-True (Test-GuidebotExpectedProcessTimeout -Identity $uneasyIdentity -Problems @($uneasyTimeout, $uneasyTimeout)) `
+    'Repeated Uneasy4 timeouts must be accepted'
+foreach ($identity in @('Counterstrike.json|0|1|d2leva-1.rl2', 'Uneasy4.json|1|0|Uneasy4.rl2', 'Uneasy4.json|0|1|Uneasy4.rl2')) {
+    Assert-True (-not (Test-GuidebotExpectedProcessTimeout -Identity $identity -Problems @($uneasyTimeout))) `
+        'Timeout exception escaped the exact Uneasy4 level'
+}
+foreach ($problem in @('Route engine could not start', 'Route engine result could not be read', 'Route engine infrastructure failure for fixture, exit 1, log=fixture.log', 'Could not stage mission')) {
+    Assert-True (-not (Test-GuidebotExpectedProcessTimeout -Identity $uneasyIdentity -Problems @($problem))) `
+        'Uneasy4 non-timeout failure must remain fatal'
+    Assert-True (-not (Test-GuidebotExpectedProcessTimeout -Identity $uneasyIdentity -Problems @($uneasyTimeout, $problem))) `
+        'An accepted timeout must not hide a different failure on a repeat'
+}
+Assert-True (-not (Test-GuidebotExpectedProcessTimeout -Identity $uneasyIdentity -Problems @())) `
+    'Successful Uneasy4 runs must not be classified as expected timeouts'
 
 # Escape timing is advisory and must not turn a physically confirmed route into a failure
 foreach ($case in @(

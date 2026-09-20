@@ -34,6 +34,162 @@
       "powerups": 410,
       "reactors": 7
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "version",
+          "value": "2.01",
+          "sources": [
+            "ORION-D2.MN2",
+            "ORION-D2.HOG/level04.aut",
+            "ORION-D2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "10/27/1997",
+          "sources": [
+            "ORION-D2.MN2",
+            "ORION-D2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "ONP team",
+          "sources": [
+            "ORION-D2.MN2",
+            "ORION-D2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "ptmc@warpcore.org",
+          "sources": [
+            "ORION-D2.MN2",
+            "ORION-D2.HOG/level02.aut",
+            "ORION-D2.HOG/level07.aut",
+            "ORION-D2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.descent2.com/orion",
+          "sources": [
+            "ORION-D2.MN2",
+            "ORION-D2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Mike Sunderman",
+          "sources": [
+            "ORION-D2.HOG/level01.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "2.0",
+          "sources": [
+            "ORION-D2.HOG/level01.aut",
+            "ORION-D2.HOG/level02.aut",
+            "ORION-D2.HOG/level03.aut",
+            "ORION-D2.HOG/level05.aut",
+            "ORION-D2.HOG/level06.aut",
+            "ORION-D2.HOG/level07.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "2/4/1997",
+          "sources": [
+            "ORION-D2.HOG/level01.aut",
+            "ORION-D2.HOG/level02.aut",
+            "ORION-D2.HOG/level03.aut",
+            "ORION-D2.HOG/level05.aut",
+            "ORION-D2.HOG/level06.aut",
+            "ORION-D2.HOG/level07.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "ONP team",
+          "sources": [
+            "ORION-D2.HOG/level02.aut",
+            "ORION-D2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "Vizor",
+          "sources": [
+            "ORION-D2.HOG/level03.aut",
+            "ORION-D2.HOG/level04.aut",
+            "ORION-D2.HOG/level05.aut",
+            "ORION-D2.HOG/level06.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "last@uci.edu",
+          "sources": [
+            "ORION-D2.HOG/level03.aut",
+            "ORION-D2.HOG/level04.aut",
+            "ORION-D2.HOG/level05.aut",
+            "ORION-D2.HOG/level06.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Luke Schneider",
+          "sources": [
+            "ORION-D2.HOG/level03.aut",
+            "ORION-D2.HOG/level04.aut",
+            "ORION-D2.HOG/level05.aut",
+            "ORION-D2.HOG/level06.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "10/27/1997",
+          "sources": [
+            "ORION-D2.HOG/level04.aut",
+            "ORION-D2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Bradley Schneider",
+          "sources": [
+            "ORION-D2.HOG/level07.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "ORION-D2.HOG",
+          "modified": "1997-10-27",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "ORION-D2.MN2",
+          "modified": "1997-10-27",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4-5",
     "track_names": [
       {
@@ -130,6 +286,36 @@
         "secret": false,
         "level_name": "POMAT Laboratory",
         "level_file": "level01.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 127,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 24
+            },
+            {
+              "trigger": 8,
+              "segment": 128,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 899,
         "wall_count": 251,
         "trigger_count": 19,
@@ -190,6 +376,35 @@
         "secret": false,
         "level_name": "Alpha Pavonis Storage Base",
         "level_file": "level02.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 0,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 109,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 487,
         "wall_count": 62,
         "trigger_count": 4,
@@ -334,6 +549,30 @@
         "secret": false,
         "level_name": "Defense Outpost",
         "level_file": "level03.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 275,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 493,
         "wall_count": 73,
         "trigger_count": 4,
@@ -438,6 +677,30 @@
         "secret": false,
         "level_name": "Pavonis Orium Mine ON701",
         "level_file": "level04.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 347,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 542,
         "wall_count": 148,
         "trigger_count": 3,
@@ -556,6 +819,30 @@
         "secret": false,
         "level_name": "Training HeadQuarters",
         "level_file": "level05.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 188,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 234,
         "wall_count": 58,
         "trigger_count": 1,
@@ -674,6 +961,30 @@
         "secret": false,
         "level_name": "Pavonis Orium Mine ON702",
         "level_file": "level06.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 166,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 369,
         "wall_count": 70,
         "trigger_count": 1,
@@ -846,6 +1157,30 @@
         "secret": false,
         "level_name": "Defense Deployment Base",
         "level_file": "level07.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 423,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 898,
         "wall_count": 180,
         "trigger_count": 9,
@@ -964,6 +1299,35 @@
         "secret": true,
         "level_name": "Alien Asteroid Base",
         "level_file": "level1s.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 0,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 7,
+              "segment": 277,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 839,
         "wall_count": 217,
         "trigger_count": 9,

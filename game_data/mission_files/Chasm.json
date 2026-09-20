@@ -34,6 +34,135 @@
       "powerups": 109,
       "reactors": 5
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "build_time",
+          "value": "You don't wanna' know",
+          "sources": [
+            "CHASM.MN2",
+            "CHASM.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "CHASM.MN2",
+            "CHASM.HOG/chasm.txt",
+            "CHASM.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Razor Blade",
+          "sources": [
+            "CHASM.MN2",
+            "CHASM.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.descent2.com/chasm",
+          "sources": [
+            "CHASM.MN2",
+            "CHASM.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "jamr@teleport.com",
+          "sources": [
+            "CHASM.MN2",
+            "CHASM.HOG/aquachsm.aut",
+            "CHASM.HOG/chasm.txt",
+            "CHASM.HOG/icechsm.aut",
+            "CHASM.HOG/keylark.aut",
+            "CHASM.HOG/lavachsm.aut",
+            "CHASM.HOG/mission.aut",
+            "CHASM.HOG/refinery.aut",
+            "CHASM.HOG/secret1a.aut",
+            "CHASM.HOG/secret2a.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "6/1/1997",
+          "sources": [
+            "CHASM.MN2",
+            "CHASM.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "Razor Blade",
+          "sources": [
+            "CHASM.HOG/aquachsm.aut",
+            "CHASM.HOG/icechsm.aut",
+            "CHASM.HOG/keylark.aut",
+            "CHASM.HOG/lavachsm.aut",
+            "CHASM.HOG/mission.aut",
+            "CHASM.HOG/refinery.aut",
+            "CHASM.HOG/secret1a.aut",
+            "CHASM.HOG/secret2a.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Razor Blade",
+          "sources": [
+            "CHASM.HOG/aquachsm.aut",
+            "CHASM.HOG/icechsm.aut",
+            "CHASM.HOG/keylark.aut",
+            "CHASM.HOG/lavachsm.aut",
+            "CHASM.HOG/mission.aut",
+            "CHASM.HOG/refinery.aut",
+            "CHASM.HOG/secret1a.aut",
+            "CHASM.HOG/secret2a.aut"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Devil 2.1g (Aqua Chasm)",
+          "sources": [
+            "CHASM.HOG/chasm.txt",
+            "CHASM.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "6/1/1997",
+          "sources": [
+            "CHASM.HOG/mission.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "CHASM.HOG",
+          "modified": "1997-10-23",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "CHASM.MN2",
+          "modified": "1997-10-23",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -107,6 +236,41 @@
         "filename": "game05.hmp",
         "format": "hmp",
         "length_s": 114
+      },
+      {
+        "track": 10,
+        "name": "MIDI Track 6",
+        "filename": "game01.hmq",
+        "format": "hmq",
+        "length_s": 132
+      },
+      {
+        "track": 11,
+        "name": "MIDI Track 7",
+        "filename": "game02.hmq",
+        "format": "hmq",
+        "length_s": 183
+      },
+      {
+        "track": 12,
+        "name": "MIDI Track 8",
+        "filename": "game03.hmq",
+        "format": "hmq",
+        "length_s": 219
+      },
+      {
+        "track": 13,
+        "name": "MIDI Track 9",
+        "filename": "game04.hmq",
+        "format": "hmq",
+        "length_s": 293
+      },
+      {
+        "track": 14,
+        "name": "MIDI Track 10",
+        "filename": "game05.hmq",
+        "format": "hmq",
+        "length_s": 114
       }
     ],
     "level_count": 7,
@@ -116,6 +280,30 @@
         "secret": false,
         "level_name": "Keylark Outpost",
         "level_file": "keylark.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 24,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 182,
         "wall_count": 46,
         "trigger_count": 3,
@@ -265,6 +453,30 @@
         "secret": false,
         "level_name": "Aqua Chasm",
         "level_file": "aquachsm.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 492,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 529,
         "wall_count": 172,
         "trigger_count": 12,
@@ -543,6 +755,41 @@
         "secret": false,
         "level_name": "Lava Chasm",
         "level_file": "lavachsm.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 373,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 463,
+              "side": 3,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 470,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 517,
         "wall_count": 145,
         "trigger_count": 6,
@@ -691,6 +938,30 @@
         "secret": false,
         "level_name": "Ice Chasm",
         "level_file": "icechsm.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 362,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 391,
         "wall_count": 105,
         "trigger_count": 10,
@@ -865,6 +1136,30 @@
         "secret": false,
         "level_name": "Tridium Refinery",
         "level_file": "refinery.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 190,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 206,
         "wall_count": 16,
         "trigger_count": 1,
@@ -941,6 +1236,30 @@
         "secret": true,
         "level_name": "Seamist Passage",
         "level_file": "secret1a.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 0,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 466,
         "wall_count": 96,
         "trigger_count": 7,
@@ -1119,6 +1438,30 @@
         "secret": true,
         "level_name": "Battledrome",
         "level_file": "secret2a.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 30,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 51,
         "wall_count": 8,
         "trigger_count": 1,

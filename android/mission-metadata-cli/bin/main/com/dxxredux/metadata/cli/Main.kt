@@ -1,5 +1,6 @@
 package com.dxxredux.metadata.cli
 
+import com.dxxredux.app.ArchiveEntryDates
 import com.dxxredux.app.MISSION_VARIANT_MASK_PRECEDENCE
 import com.dxxredux.app.MissionDescriptorPolicy
 import com.dxxredux.app.MissionMetadataProjection
@@ -17,6 +18,10 @@ import kotlinx.serialization.json.put
 import java.io.File
 
 fun main(args: Array<String>) {
+    if (args.size == 2 && args[0] == "--archive-dates") {
+        println(Json.encodeToString(ArchiveEntryDates.read(File(args[1]))))
+        return
+    }
     if (args.firstOrNull() == "--select-archive-variant") {
         val selected = selectPreferredMissionVariant(args.drop(1), ::missionVariantForArchiveFilename)
         if (selected?.preference?.supportedByRedux == true) println("DXXVARIANT\t${selected.value}")
@@ -39,6 +44,10 @@ fun main(args: Array<String>) {
             val op = request["op"]?.jsonPrimitive?.contentOrNull
             val response =
                 when (op) {
+                    "archive_dates" -> {
+                        ArchiveEntryDates.read(File(request.getValue("path").jsonPrimitive.content))
+                    }
+
                     "descriptor" -> {
                         descriptorJson(File(request.getValue("path").jsonPrimitive.content))
                     }
@@ -68,7 +77,8 @@ fun main(args: Array<String>) {
         return
     }
     error(
-        "usage: mission-metadata-cli --capabilities|--directory-precedence|--select-archive-variant [names...]|--server",
+        "usage: mission-metadata-cli --capabilities|--directory-precedence|" +
+            "--select-archive-variant [names...]|--archive-dates path|--server",
     )
 }
 

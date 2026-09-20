@@ -34,6 +34,34 @@
       "powerups": 1405,
       "reactors": 15
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2002,
+          2004
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "af.hog",
+          "modified": "2004-09-05",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "af.mn2",
+          "modified": "2002-02-12",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +137,30 @@
         "secret": false,
         "level_name": "Storage Depot G22",
         "level_file": "sdg22.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 234,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 310,
         "wall_count": 83,
         "trigger_count": 12,
@@ -213,6 +265,30 @@
         "secret": false,
         "level_name": "Essonapri Mine",
         "level_file": "esonapri.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 382,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 456,
         "wall_count": 107,
         "trigger_count": 7,
@@ -342,6 +418,30 @@
         "secret": false,
         "level_name": "Serduta Munitions Bunker",
         "level_file": "serduta.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 18,
+              "segment": 820,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 3
+            }
+          ]
+        },
         "segment_count": 839,
         "wall_count": 231,
         "trigger_count": 32,
@@ -672,6 +772,29 @@
         "secret": false,
         "level_name": "Cha'cshir Verahn",
         "level_file": "chacshir.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 89,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 424,
         "wall_count": 84,
         "trigger_count": 15,
@@ -913,6 +1036,30 @@
         "secret": false,
         "level_name": "Tefoleg Crater Dig",
         "level_file": "tefoleg.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 307,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 743,
         "wall_count": 208,
         "trigger_count": 13,
@@ -1184,6 +1331,30 @@
         "secret": false,
         "level_name": "Alarlof Kiln",
         "level_file": "alarlof.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 752,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 803,
         "wall_count": 202,
         "trigger_count": 16,
@@ -1352,6 +1523,29 @@
         "secret": false,
         "level_name": "Cefispar Mine",
         "level_file": "cefispar.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 598,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 797,
         "wall_count": 188,
         "trigger_count": 20,
@@ -1576,6 +1770,30 @@
         "secret": false,
         "level_name": "Ganesh Dungeon",
         "level_file": "ganeshd.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 87,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 789,
         "wall_count": 223,
         "trigger_count": 34,
@@ -1719,6 +1937,30 @@
         "secret": false,
         "level_name": "Lakshmi Dungeon",
         "level_file": "lakshmid.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 196,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 791,
         "wall_count": 250,
         "trigger_count": 30,
@@ -1911,6 +2153,30 @@
         "secret": false,
         "level_name": "Firehand Basin",
         "level_file": "fbasin.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 77,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 386,
         "wall_count": 116,
         "trigger_count": 16,
@@ -2078,6 +2344,30 @@
         "secret": false,
         "level_name": "Aurora Abyss",
         "level_file": "aurabyss.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 47,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 751,
         "wall_count": 190,
         "trigger_count": 19,
@@ -2313,6 +2603,29 @@
         "secret": false,
         "level_name": "Ursula Asteroid",
         "level_file": "ursula.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 416,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 478,
         "wall_count": 40,
         "trigger_count": 4,
@@ -2443,6 +2756,30 @@
         "secret": false,
         "level_name": "Lvoxo'nubet H'cehrok",
         "level_file": "lvoxonbt.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 778,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 801,
         "wall_count": 167,
         "trigger_count": 17,
@@ -2556,6 +2893,30 @@
         "secret": false,
         "level_name": "Laradhe'ehs Core",
         "level_file": "laradhes.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 780,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 3
+            }
+          ]
+        },
         "segment_count": 799,
         "wall_count": 229,
         "trigger_count": 20,
@@ -2754,6 +3115,29 @@
         "secret": false,
         "level_name": "Thorium Core",
         "level_file": "thorium.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 611,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 163,
         "trigger_count": 20,
@@ -2765,7 +3149,7 @@
         "reactors": 1,
         "robots": 93,
         "hostages": 0,
-        "secrets": 1,
+        "secrets": 5,
         "matcens": 2,
         "energy_centers": 11,
         "mine_volume": 30939800.0,

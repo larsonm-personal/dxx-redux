@@ -41,6 +41,7 @@ object MissionMetadataProjection {
             copy(raw, "game", "")
             copy(raw, "mission_name", "")
             put("mission_filename", overrides.missionFilename.ifBlank { raw.string("mission_filename") })
+            raw["provenance"]?.takeUnless { it is JsonNull }?.let { put("provenance", it) }
             raw["mission_intent"]?.takeUnless { it is JsonNull }?.let { put("mission_intent", it) }
             putIfNonBlank("coop_starts", raw.string("coop_starts"))
             val tracks = raw.array("music_tracks")
@@ -85,6 +86,7 @@ object MissionMetadataProjection {
                     "secret",
                     "level_name",
                     "level_file",
+                    "flyout",
                     "segment_count",
                     "wall_count",
                     "trigger_count",

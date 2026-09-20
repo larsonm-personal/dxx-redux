@@ -1371,6 +1371,29 @@ private fun DebugLoggingSection(initialLogFiles: List<File>) {
     Text("Debug Logging Categories", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(8.dp))
 
+    var showTapFeedback by remember {
+        mutableStateOf(prefs.getBoolean(PREF_SHOW_TAP_FEEDBACK, false))
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Show tap feedback", fontSize = 13.sp)
+            Text(
+                "Show each finger-down for half a second in game menus and gameplay",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(
+            checked = showTapFeedback,
+            onCheckedChange = { enabled ->
+                showTapFeedback = enabled
+                prefs.edit().putBoolean(PREF_SHOW_TAP_FEEDBACK, enabled).apply()
+            },
+            modifier = Modifier.tvFocusBorder(),
+        )
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+
     var automaticSlowdownCapture by remember {
         mutableStateOf(prefs.getBoolean(PREF_AUTOMATIC_SLOWDOWN_CAPTURE, false))
     }

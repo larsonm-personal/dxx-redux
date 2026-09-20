@@ -378,16 +378,16 @@ static int menu_scale_rect_contains(int x, int y, int rx, int ry, int rw, int rh
 	return rw > 0 && rh > 0 && x >= rx && x < rx + rw && y >= ry && y < ry + rh;
 }
 
-static void menu_scale_touch_store_rect(void)
+static void menu_scale_touch_store_rect(const android_menu_scale_result *scale)
 {
-	g_menu_scale_touch_src_x = g_menu_scale_src_x;
-	g_menu_scale_touch_src_y = g_menu_scale_src_y;
-	g_menu_scale_touch_src_w = g_menu_scale_src_w;
-	g_menu_scale_touch_src_h = g_menu_scale_src_h;
-	g_menu_scale_touch_dst_x = g_menu_scale_dst_x;
-	g_menu_scale_touch_dst_y = g_menu_scale_dst_y;
-	g_menu_scale_touch_dst_w = g_menu_scale_dst_w;
-	g_menu_scale_touch_dst_h = g_menu_scale_dst_h;
+	g_menu_scale_touch_src_x = scale->src.x;
+	g_menu_scale_touch_src_y = scale->src.y;
+	g_menu_scale_touch_src_w = scale->src.w;
+	g_menu_scale_touch_src_h = scale->src.h;
+	g_menu_scale_touch_dst_x = scale->dst.x;
+	g_menu_scale_touch_dst_y = scale->dst.y;
+	g_menu_scale_touch_dst_w = scale->dst.w;
+	g_menu_scale_touch_dst_h = scale->dst.h;
 }
 
 static int remap_touch_from_rect(int *gx, int *gy,
@@ -409,6 +409,24 @@ static int remap_touch_from_rect(int *gx, int *gy,
 static int remap_touch(int action, int *gx, int *gy)
 {
 	int remapped = 0;
+	android_menu_interaction_state interaction;
+	android_menu_scale_result scale;
+
+	/* Rendering visits background menus too. Only the front menu publishes
+	 * this synchronized interaction snapshot; the render globals can briefly
+	 * describe a different menu while the UI thread delivers a tap */
+	android_menu_interaction_get_state(&interaction);
+	if (interaction.active)
+		scale = interaction.scale;
+	else
+		android_menu_scale_get_state(&scale);
+	if (action == 0 && interaction.active && g_touch_diag_count < 160) {
+		debug_log(DLOG_GAME,
+		          "[touch-menu-scale] generation=%u active=%d src=(%d,%d %dx%d) dst=(%d,%d %dx%d)\n",
+		          interaction.generation, scale.active,
+		          scale.src.x, scale.src.y, scale.src.w, scale.src.h,
+		          scale.dst.x, scale.dst.y, scale.dst.w, scale.dst.h);
+	}
 
 	if (action == 0)
 		g_menu_scale_touch_locked = 0;
@@ -427,13 +445,11 @@ static int remap_touch(int action, int *gx, int *gy)
 		                                 g_menu_scale_touch_dst_y,
 		                                 g_menu_scale_touch_dst_w,
 		                                 g_menu_scale_touch_dst_h);
-	} else if (g_menu_scale_active &&
+	} else if (scale.active &&
 	           menu_scale_rect_contains(*gx, *gy,
-	                                    g_menu_scale_dst_x,
-	                                    g_menu_scale_dst_y,
-	                                    g_menu_scale_dst_w,
-	                                    g_menu_scale_dst_h)) {
-		menu_scale_touch_store_rect();
+	                                    scale.dst.x, scale.dst.y,
+	                                    scale.dst.w, scale.dst.h)) {
+		menu_scale_touch_store_rect(&scale);
 		g_menu_scale_touch_locked = 1;
 		remapped = remap_touch_from_rect(gx, gy,
 		                                 g_menu_scale_touch_src_x,

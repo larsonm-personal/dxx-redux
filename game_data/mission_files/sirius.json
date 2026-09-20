@@ -34,6 +34,143 @@
       "powerups": 63,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Lars Christensen",
+          "sources": [
+            "SIRIUS.MSN",
+            "SIRIUS.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.geocities.com/SiliconValley/Vista/3653",
+          "sources": [
+            "SIRIUS.MSN",
+            "SIRIUS.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "Lars.Christensen@geoteknisk.dk",
+          "sources": [
+            "SIRIUS.MSN",
+            "SIRIUS.HOG/mission.aut",
+            "SIRIUS.HOG/sirius1.aut",
+            "SIRIUS.HOG/sirius2.aut",
+            "SIRIUS.HOG/sirius3.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "4/1/1997",
+          "sources": [
+            "SIRIUS.MSN",
+            "SIRIUS.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Descent manager",
+          "sources": [
+            "SIRIUS.MSN"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "March-1997",
+          "sources": [
+            "SIRIUS.MSN",
+            "SIRIUS.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.2",
+          "sources": [
+            "SIRIUS.MSN",
+            "SIRIUS.HOG/mission.aut",
+            "SIRIUS.HOG/sirius2.aut",
+            "SIRIUS.HOG/sirius3.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "4/1/1997",
+          "sources": [
+            "SIRIUS.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.1",
+          "sources": [
+            "SIRIUS.HOG/sirius.txt"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.20",
+          "sources": [
+            "SIRIUS.HOG/sirius1.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "6/24/1997",
+          "sources": [
+            "SIRIUS.HOG/sirius1.aut",
+            "SIRIUS.HOG/sirius2.aut",
+            "SIRIUS.HOG/sirius3.aut"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "Loke",
+          "sources": [
+            "SIRIUS.HOG/sirius1.aut",
+            "SIRIUS.HOG/sirius2.aut",
+            "SIRIUS.HOG/sirius3.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Lars Christensen",
+          "sources": [
+            "SIRIUS.HOG/sirius1.aut",
+            "SIRIUS.HOG/sirius2.aut",
+            "SIRIUS.HOG/sirius3.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "SIRIUS.HOG",
+          "modified": "1997-07-30",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "SIRIUS.MSN",
+          "modified": "1997-06-24",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +370,35 @@
         "secret": false,
         "level_name": "Sirius I",
         "level_file": "sirius1.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.199,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.199
+          },
+          "presentation": {
+            "status": "present",
+            "file": "sirius1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 176,
+              "side": 4,
+              "seconds": 10.199,
+              "status": "estimated",
+              "tunnel_units": 259.965,
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 249,
         "wall_count": 54,
         "trigger_count": 1,
@@ -319,6 +485,35 @@
         "secret": false,
         "level_name": "Sirius II",
         "level_file": "sirius2.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.794,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.794
+          },
+          "presentation": {
+            "status": "present",
+            "file": "sirius2.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 317,
+              "side": 5,
+              "seconds": 14.794,
+              "status": "estimated",
+              "tunnel_units": 489.712,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 368,
         "wall_count": 74,
         "trigger_count": 1,
@@ -433,6 +628,35 @@
         "secret": false,
         "level_name": "Sirius III",
         "level_file": "sirius3.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.998,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.998
+          },
+          "presentation": {
+            "status": "present",
+            "file": "sirius3.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 569,
+              "side": 2,
+              "seconds": 12.998,
+              "status": "estimated",
+              "tunnel_units": 399.882,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 700,
         "wall_count": 90,
         "trigger_count": 2,

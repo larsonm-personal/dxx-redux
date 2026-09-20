@@ -34,6 +34,19 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +246,30 @@
         "secret": false,
         "level_name": "Combat Deluxe",
         "level_file": "SECHRIST.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 325,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 387,
         "wall_count": 88,
         "trigger_count": 5,
@@ -337,6 +374,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -537,6 +587,36 @@
         "secret": false,
         "level_name": "Corridor Nine 1.1",
         "level_file": "CORR11.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 9,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 5
+            },
+            {
+              "trigger": 3,
+              "segment": 10,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 163,
         "wall_count": 58,
         "trigger_count": 5,
@@ -686,6 +766,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -886,6 +979,36 @@
         "secret": false,
         "level_name": "Demon Bridge",
         "level_file": "demonbrg.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 4,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 5,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 417,
         "wall_count": 36,
         "trigger_count": 3,
@@ -1019,6 +1142,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -1219,6 +1355,36 @@
         "secret": false,
         "level_name": "Outpost Death",
         "level_file": "dethpost.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 14,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 9,
+              "segment": 167,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 179,
         "wall_count": 18,
         "trigger_count": 10,
@@ -1367,6 +1533,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -1567,6 +1746,42 @@
         "secret": false,
         "level_name": "Earth Strike",
         "level_file": "level01.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.195,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.195
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level01.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 133,
+              "side": 5,
+              "seconds": 10.195,
+              "status": "estimated",
+              "tunnel_units": 259.74,
+              "tunnel_segments": 13
+            },
+            {
+              "trigger": 9,
+              "segment": 87,
+              "side": 5,
+              "seconds": null,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 499,
         "wall_count": 94,
         "trigger_count": 10,
@@ -1771,6 +1986,19 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -1970,6 +2198,36 @@
         "secret": false,
         "level_name": "Firebase Omega",
         "level_file": "fbomega.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 15,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            },
+            {
+              "trigger": 2,
+              "segment": 2,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 343,
         "wall_count": 74,
         "trigger_count": 6,
@@ -2105,6 +2363,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -2305,6 +2576,35 @@
         "secret": false,
         "level_name": "Humility ver1.2",
         "level_file": "humility.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.756,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.756
+          },
+          "presentation": {
+            "status": "present",
+            "file": "humility.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 178,
+              "side": 2,
+              "seconds": 10.756,
+              "status": "estimated",
+              "tunnel_units": 287.817,
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 508,
         "wall_count": 74,
         "trigger_count": 2,
@@ -2451,6 +2751,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -2651,6 +2964,30 @@
         "secret": false,
         "level_name": "Lunar Surface Outpost",
         "level_file": "LUNAPOST.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 165,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 32
+            }
+          ]
+        },
         "segment_count": 700,
         "wall_count": 142,
         "trigger_count": 13,
@@ -2662,7 +2999,7 @@
         "reactors": 1,
         "robots": 128,
         "hostages": 4,
-        "secrets": 5,
+        "secrets": 7,
         "matcens": 1,
         "energy_centers": 3,
         "mine_volume": 35219500.0,
@@ -2927,6 +3264,19 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -3126,6 +3476,36 @@
         "secret": false,
         "level_name": "Mad Decorator!",
         "level_file": "mad.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 819,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 5,
+              "segment": 818,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 835,
         "wall_count": 106,
         "trigger_count": 9,
@@ -3299,6 +3679,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -3499,6 +3892,35 @@
         "secret": false,
         "level_name": "Magnum Four",
         "level_file": "MAG4.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.039,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.039
+          },
+          "presentation": {
+            "status": "present",
+            "file": "MAG4.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 548,
+              "side": 5,
+              "seconds": 19.039,
+              "status": "estimated",
+              "tunnel_units": 701.973,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 553,
         "wall_count": 68,
         "trigger_count": 16,
@@ -3670,6 +4092,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -3870,6 +4305,29 @@
         "secret": false,
         "level_name": "The Newest Threat",
         "level_file": "newest.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 459,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 671,
         "wall_count": 86,
         "trigger_count": 3,
@@ -4016,6 +4474,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -4216,6 +4687,36 @@
         "secret": false,
         "level_name": "The Observatory 1.3",
         "level_file": "obsrv13.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 55,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 54,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 175,
         "wall_count": 96,
         "trigger_count": 10,
@@ -4388,6 +4889,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -4588,6 +5102,36 @@
         "secret": false,
         "level_name": "Awesome",
         "level_file": "retrib10.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 99,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 17
+            },
+            {
+              "trigger": 3,
+              "segment": 98,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 376,
         "wall_count": 132,
         "trigger_count": 7,
@@ -4785,6 +5329,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -4985,6 +5542,36 @@
         "secret": false,
         "level_name": "Labor Camp",
         "level_file": "retrib11.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 99,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 17
+            },
+            {
+              "trigger": 3,
+              "segment": 98,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 376,
         "wall_count": 132,
         "trigger_count": 7,
@@ -5182,6 +5769,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -5382,6 +5982,30 @@
         "secret": false,
         "level_name": "serenity",
         "level_file": "serenity.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 467,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 734,
         "wall_count": 86,
         "trigger_count": 3,
@@ -5393,7 +6017,7 @@
         "reactors": 1,
         "robots": 65,
         "hostages": 4,
-        "secrets": 5,
+        "secrets": 6,
         "matcens": 0,
         "energy_centers": 2,
         "mine_volume": 20067700.0,
@@ -5555,6 +6179,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -5755,6 +6392,30 @@
         "secret": false,
         "level_name": "Super Station",
         "level_file": "super_s.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 28,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 677,
         "wall_count": 74,
         "trigger_count": 12,
@@ -5914,6 +6575,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -6114,6 +6788,30 @@
         "secret": false,
         "level_name": "Terminus",
         "level_file": "terminus.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 671,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 711,
         "wall_count": 174,
         "trigger_count": 23,
@@ -6287,6 +6985,19 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -6487,6 +7198,36 @@
         "secret": false,
         "level_name": "Sea of Tranquility",
         "level_file": "tranquil.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 112,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 15
+            },
+            {
+              "trigger": 9,
+              "segment": 47,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 712,
         "wall_count": 114,
         "trigger_count": 11,
@@ -6498,7 +7239,7 @@
         "reactors": 1,
         "robots": 57,
         "hostages": 6,
-        "secrets": 0,
+        "secrets": 6,
         "matcens": 0,
         "energy_centers": 2,
         "mine_volume": 17690400.0,

@@ -34,6 +34,19 @@
       "powerups": 2724,
       "reactors": 12
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -109,6 +122,29 @@
         "secret": false,
         "level_name": "Connection Center",
         "level_file": "PDL8.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 477,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 491,
         "wall_count": 97,
         "trigger_count": 23,
@@ -120,7 +156,7 @@
         "reactors": 0,
         "robots": 125,
         "hostages": 6,
-        "secrets": 3,
+        "secrets": 4,
         "matcens": 2,
         "energy_centers": 2,
         "mine_volume": 8165740.0,
@@ -302,6 +338,29 @@
         "secret": false,
         "level_name": "Perspiration-Provokation",
         "level_file": "PDL9.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 29,
+              "segment": 567,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 576,
         "wall_count": 131,
         "trigger_count": 32,
@@ -634,6 +693,29 @@
         "secret": false,
         "level_name": "Battlefield of Desperation",
         "level_file": "PDL10.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 134,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 140,
         "wall_count": 17,
         "trigger_count": 9,
@@ -712,6 +794,29 @@
         "secret": false,
         "level_name": "Mosquito-Net",
         "level_file": "PDL11.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 21,
+              "segment": 434,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 442,
         "wall_count": 122,
         "trigger_count": 24,
@@ -723,7 +828,7 @@
         "reactors": 0,
         "robots": 62,
         "hostages": 7,
-        "secrets": 7,
+        "secrets": 9,
         "matcens": 2,
         "energy_centers": 4,
         "mine_volume": 11246400.0,
@@ -774,6 +879,29 @@
         "secret": false,
         "level_name": "Highland Station",
         "level_file": "PDL12.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 381,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 518,
         "wall_count": 162,
         "trigger_count": 34,
@@ -1089,6 +1217,29 @@
         "secret": false,
         "level_name": "Fireworld",
         "level_file": "PDL13.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 344,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 367,
         "wall_count": 64,
         "trigger_count": 15,
@@ -1228,6 +1379,29 @@
         "secret": false,
         "level_name": "Dark Underground",
         "level_file": "PDL14.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 35,
+              "segment": 781,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 791,
         "wall_count": 183,
         "trigger_count": 36,
@@ -1448,6 +1622,29 @@
         "secret": false,
         "level_name": "Castle of Fear",
         "level_file": "PDL15.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 585,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 611,
         "wall_count": 81,
         "trigger_count": 15,
@@ -1554,6 +1751,29 @@
         "secret": false,
         "level_name": "Cave of Eternity",
         "level_file": "PDL16.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 26,
+              "segment": 491,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 503,
         "wall_count": 107,
         "trigger_count": 27,
@@ -1739,6 +1959,29 @@
         "secret": false,
         "level_name": "Katakombe",
         "level_file": "PDL17.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 464,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 502,
         "wall_count": 116,
         "trigger_count": 11,
@@ -1877,6 +2120,29 @@
         "secret": false,
         "level_name": "Producing Center",
         "level_file": "PDL18.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 1,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 152,
         "wall_count": 59,
         "trigger_count": 10,
@@ -1977,6 +2243,29 @@
         "secret": false,
         "level_name": "Danger City",
         "level_file": "PDL19.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 57,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 124,
         "wall_count": 14,
         "trigger_count": 13,
@@ -2055,6 +2344,30 @@
         "secret": false,
         "level_name": "Pestilent Paradise",
         "level_file": "PDL20.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 100,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 199,
         "wall_count": 34,
         "trigger_count": 3,
@@ -2176,6 +2489,29 @@
         "secret": false,
         "level_name": "* Tomb *",
         "level_file": "PDL21.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 356,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 388,
         "wall_count": 61,
         "trigger_count": 5,
@@ -2313,6 +2649,29 @@
         "secret": false,
         "level_name": ">> Quarry <<",
         "level_file": "PDL22.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 582,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 594,
         "wall_count": 168,
         "trigger_count": 16,
@@ -2544,6 +2903,29 @@
         "secret": false,
         "level_name": "Joker's Headquarter",
         "level_file": "PDL23.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 659,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 673,
         "wall_count": 74,
         "trigger_count": 6,
@@ -2711,6 +3093,29 @@
         "secret": false,
         "level_name": "Cosmodrom",
         "level_file": "PDL24.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 17,
+              "segment": 798,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 824,
         "wall_count": 113,
         "trigger_count": 18,
@@ -2886,6 +3291,30 @@
         "secret": false,
         "level_name": "Aquaphoenix",
         "level_file": "AQUAPHNX.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 249,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 257,
         "wall_count": 138,
         "trigger_count": 2,
@@ -2962,6 +3391,29 @@
         "secret": false,
         "level_name": "The Capital (Part I)",
         "level_file": "PDL25-1.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 10,
+              "segment": 688,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 132,
         "trigger_count": 12,
@@ -3165,6 +3617,29 @@
         "secret": false,
         "level_name": "The Capital (Part II)",
         "level_file": "PDL25-2.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 655,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 831,
         "wall_count": 102,
         "trigger_count": 8,
@@ -3281,6 +3756,35 @@
         "secret": false,
         "level_name": "little big Walhalla",
         "level_file": "PDL26.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 40,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 0,
+              "segment": 47,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 126,
         "wall_count": 21,
         "trigger_count": 5,
@@ -3359,6 +3863,29 @@
         "secret": false,
         "level_name": "Planet Freak",
         "level_file": "PDL27.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 32,
+              "segment": 604,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 607,
         "wall_count": 133,
         "trigger_count": 39,
@@ -3515,6 +4042,29 @@
         "secret": false,
         "level_name": "Thief's wild Nirvana",
         "level_file": "PDL28.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 22,
+              "segment": 515,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 517,
         "wall_count": 116,
         "trigger_count": 23,
@@ -3803,6 +4353,29 @@
         "secret": false,
         "level_name": "Dirty Dump",
         "level_file": "PDL29.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 532,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 582,
         "wall_count": 94,
         "trigger_count": 11,
@@ -4044,6 +4617,29 @@
         "secret": false,
         "level_name": "Lost World",
         "level_file": "PDL30.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 18,
+              "segment": 614,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 633,
         "wall_count": 141,
         "trigger_count": 19,
@@ -4350,6 +4946,29 @@
         "secret": false,
         "level_name": "high-safety Prison",
         "level_file": "PDL31.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 12,
+              "segment": 283,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 299,
         "wall_count": 81,
         "trigger_count": 15,
@@ -4525,6 +5144,29 @@
         "secret": false,
         "level_name": "randy Base to rampage",
         "level_file": "PDL32.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 648,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 681,
         "wall_count": 79,
         "trigger_count": 17,

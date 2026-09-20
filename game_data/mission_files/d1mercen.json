@@ -34,6 +34,34 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "MERC01.HOG",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "merc01.msn",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -233,6 +261,30 @@
         "secret": false,
         "level_name": "PTMC Smelting Facility",
         "level_file": "merc01.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 90,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 362,
         "wall_count": 99,
         "trigger_count": 2,
@@ -380,6 +432,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "MERC02.HOG",
+          "modified": "2009-07-30",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "merc02.msn",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -580,6 +660,30 @@
         "secret": false,
         "level_name": "ptmc particle research",
         "level_file": "merc02.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 91,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 28
+            }
+          ]
+        },
         "segment_count": 190,
         "wall_count": 17,
         "trigger_count": 6,
@@ -713,6 +817,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "MERC03.HOG",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "merc03.msn",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -913,6 +1045,30 @@
         "secret": false,
         "level_name": "callisto terra-firma lab",
         "level_file": "merc03.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 236,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 313,
         "wall_count": 23,
         "trigger_count": 2,
@@ -1046,6 +1202,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "MERC04.HOG",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "merc04.msn",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -1246,6 +1430,30 @@
         "secret": false,
         "level_name": "ptmc weapons testing",
         "level_file": "merc04.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 231,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 301,
         "wall_count": 32,
         "trigger_count": 3,
@@ -1420,6 +1628,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "MERC05.HOG",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "merc05.msn",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -1620,6 +1856,30 @@
         "secret": false,
         "level_name": "aukidanus water tunnels",
         "level_file": "merc05.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 95,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 112,
         "wall_count": 18,
         "trigger_count": 1,
@@ -1725,6 +1985,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "MERC06.HOG",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "merc06.msn",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -1925,6 +2213,30 @@
         "secret": false,
         "level_name": "oberon military post",
         "level_file": "merc06.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 213,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 284,
         "wall_count": 89,
         "trigger_count": 2,
@@ -2000,6 +2312,34 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "MERC07.HOG",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "merc07.msn",
+          "modified": "2009-03-29",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "1",
     "track_names": [
@@ -2200,6 +2540,30 @@
         "secret": false,
         "level_name": "europa tower colony",
         "level_file": "merc07.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 244,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 363,
         "wall_count": 48,
         "trigger_count": 3,

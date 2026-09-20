@@ -34,6 +34,34 @@
       "powerups": 67,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2010,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2010,
+          2010
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "HDVBETA2.hog",
+          "modified": "2010-06-30",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "HDVBETA2.msn",
+          "modified": "2010-06-30",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +261,35 @@
         "secret": false,
         "level_name": "Tricerius: Research Base",
         "level_file": "level01.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.8,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.8
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level01.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 334,
+              "side": 4,
+              "seconds": 15.8,
+              "status": "estimated",
+              "tunnel_units": 539.998,
+              "tunnel_segments": 27
+            }
+          ]
+        },
         "segment_count": 363,
         "wall_count": 78,
         "trigger_count": 1,
@@ -319,6 +376,35 @@
         "secret": false,
         "level_name": "Tricerius: Cropire Mine",
         "level_file": "level02.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level02.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 462,
+              "side": 4,
+              "seconds": 17.0,
+              "status": "estimated",
+              "tunnel_units": 600.0,
+              "tunnel_segments": 30
+            }
+          ]
+        },
         "segment_count": 672,
         "wall_count": 144,
         "trigger_count": 8,
@@ -455,6 +541,35 @@
         "secret": false,
         "level_name": "Tricerius: Gore Acterain Test Facility",
         "level_file": "level03.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.66,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.66
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level03.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 421,
+              "side": 4,
+              "seconds": 10.66,
+              "status": "estimated",
+              "tunnel_units": 282.999,
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 436,
         "wall_count": 87,
         "trigger_count": 5,

@@ -34,6 +34,56 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "megalo01.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "26 dec 2009",
+          "sources": [
+            "megalo01.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "megalo01.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "megalo01.hog",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "megalo01.msn",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +283,29 @@
         "secret": false,
         "level_name": "Capella IV Au Mine",
         "level_file": "megaloma.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 461,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 796,
         "wall_count": 30,
         "trigger_count": 1,
@@ -366,6 +439,56 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "megalo02.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "17 oct 2009",
+          "sources": [
+            "megalo02.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "megalo02.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "megalo02.hog",
+          "modified": "2009-10-17",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "megalo02.msn",
+          "modified": "2009-10-17",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -566,6 +689,29 @@
         "secret": false,
         "level_name": "Capella IV Refinery",
         "level_file": "megaloma.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 47,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 517,
         "wall_count": 32,
         "trigger_count": 1,
@@ -699,6 +845,56 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "megalo03.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "26 dec 2009",
+          "sources": [
+            "megalo03.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "megalo03.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "megalo03.hog",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "megalo03.msn",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -899,6 +1095,29 @@
         "secret": false,
         "level_name": "Onkerfeldt Generating Station",
         "level_file": "megaloma.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 161,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 736,
         "wall_count": 156,
         "trigger_count": 23,
@@ -1049,6 +1268,56 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "megalo04.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "26 dec 2009",
+          "sources": [
+            "megalo04.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "megalo04.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "megalo04.hog",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "megalo04.msn",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -1249,6 +1518,29 @@
         "secret": false,
         "level_name": "Aquincum",
         "level_file": "megaloma.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 123,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 265,
         "wall_count": 76,
         "trigger_count": 7,
@@ -1358,6 +1650,56 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "megalo05.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "26 dec 2009",
+          "sources": [
+            "megalo05.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "megalo05.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "megalo05.hog",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "megalo05.msn",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -1558,6 +1900,29 @@
         "secret": false,
         "level_name": "Pegasus MHD Lab",
         "level_file": "megaloma.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 453,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 597,
         "wall_count": 64,
         "trigger_count": 3,
@@ -1705,6 +2070,56 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "megalo06.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "26 dec 2009",
+          "sources": [
+            "megalo06.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "megalo06.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "megalo06.hog",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "megalo06.msn",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -1905,6 +2320,29 @@
         "secret": false,
         "level_name": "Heaviside Missile Base",
         "level_file": "megaloma.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 265,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 669,
         "wall_count": 101,
         "trigger_count": 8,
@@ -2052,6 +2490,56 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "megalo07.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "26 dec 2009",
+          "sources": [
+            "megalo07.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "megalo07.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "megalo07.hog",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "megalo07.msn",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -2252,6 +2740,29 @@
         "secret": false,
         "level_name": "Kliskowsky Shield Battery",
         "level_file": "megaloma.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 21,
+              "segment": 243,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 370,
         "wall_count": 97,
         "trigger_count": 22,
@@ -2454,6 +2965,56 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "megalo08.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "26 apr 2009",
+          "sources": [
+            "megalo08.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "megalo08.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "megalo08.hog",
+          "modified": "2009-04-26",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "megalo08.msn",
+          "modified": "2009-04-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -2653,6 +3214,29 @@
         "secret": false,
         "level_name": "Amberstream",
         "level_file": "megaloma.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 534,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 551,
         "wall_count": 114,
         "trigger_count": 1,
@@ -2758,6 +3342,56 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "megalo09.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "26 dec 2009",
+          "sources": [
+            "megalo09.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "megalo09.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "megalo09.hog",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "megalo09.msn",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -2958,6 +3592,29 @@
         "secret": false,
         "level_name": "Anomaly 12 Observation Vessel",
         "level_file": "megaloma.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 257,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 289,
         "wall_count": 155,
         "trigger_count": 50,
@@ -3428,6 +4085,56 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "megalo10.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "26 dec 2009",
+          "sources": [
+            "megalo10.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "megalo10.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "megalo10.hog",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "megalo10.msn",
+          "modified": "2009-12-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -3627,6 +4334,29 @@
         "secret": false,
         "level_name": "Atsutomo Robot Factory",
         "level_file": "megaloma.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 61,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 731,
         "wall_count": 92,
         "trigger_count": 47,
@@ -3774,6 +4504,56 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "megalo11.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "25 may 2009",
+          "sources": [
+            "megalo11.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "megalo11.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "megalo11.hog",
+          "modified": "2009-09-27",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "megalo11.msn",
+          "modified": "2009-05-25",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -3974,6 +4754,29 @@
         "secret": false,
         "level_name": "Uaxactunia",
         "level_file": "megaloma.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 227,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 788,
         "wall_count": 69,
         "trigger_count": 10,
@@ -4091,6 +4894,56 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "megalo12.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "30 apr 2009",
+          "sources": [
+            "megalo12.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "megalo12.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "megalo12.hog",
+          "modified": "2009-04-30",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "megalo12.msn",
+          "modified": "2009-04-30",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -4291,6 +5144,29 @@
         "secret": false,
         "level_name": "Progenitor",
         "level_file": "megaloma.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 29,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 214,
         "wall_count": 35,
         "trigger_count": 2,

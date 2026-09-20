@@ -34,6 +34,56 @@
       "powerups": 161,
       "reactors": 4
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Maki",
+          "sources": [
+            "mna.mn2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Inferno Editor",
+          "sources": [
+            "mna.mn2"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "6/27/2023",
+          "sources": [
+            "mna.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2023,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          2023,
+          2023
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "mna.hog",
+          "modified": "2023-06-27",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "mna.mn2",
+          "modified": "2023-06-27",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -109,6 +159,30 @@
         "secret": false,
         "level_name": "Spillway",
         "level_file": "mnalvl1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 502,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 519,
         "wall_count": 103,
         "trigger_count": 6,
@@ -378,6 +452,30 @@
         "secret": false,
         "level_name": "Foundry",
         "level_file": "mnalvl2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 429,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 641,
         "wall_count": 138,
         "trigger_count": 12,
@@ -507,6 +605,30 @@
         "secret": false,
         "level_name": "Quarry",
         "level_file": "mnalvl3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 79,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 461,
         "wall_count": 134,
         "trigger_count": 9,
@@ -760,6 +882,30 @@
         "secret": false,
         "level_name": "Excavation",
         "level_file": "mnalvl4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 338,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 678,
         "wall_count": 208,
         "trigger_count": 13,
@@ -1054,6 +1200,30 @@
         "secret": true,
         "level_name": "Mystery",
         "level_file": "mnalvls.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 124,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 199,
         "wall_count": 58,
         "trigger_count": 7,

@@ -34,6 +34,70 @@
       "powerups": 618,
       "reactors": 11
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "finished_date",
+          "value": "08/24/96",
+          "sources": [
+            "galmond2.txt"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Kevin Lee",
+          "sources": [
+            "galmond2.txt"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "klee700370@aol.com",
+          "sources": [
+            "galmond2.txt"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "1+ Hours",
+          "sources": [
+            "galmond2.txt"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Devil v2.1g, 21h, and 22b D2 configuration",
+          "sources": [
+            "galmond2.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1996,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1996,
+          1996
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "galmond2.hog",
+          "modified": "1996-08-24",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "galmond2.mn2",
+          "modified": "1996-08-24",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -109,6 +173,30 @@
         "secret": false,
         "level_name": "Galaxy Moon 2 Callisto 19",
         "level_file": "CALSTO19.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 428,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 499,
         "wall_count": 80,
         "trigger_count": 8,
@@ -317,6 +405,36 @@
         "secret": false,
         "level_name": "Galaxy Moons 2 Pan 20",
         "level_file": "PAN20.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 125,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 6
+            },
+            {
+              "trigger": 6,
+              "segment": 127,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 346,
         "wall_count": 94,
         "trigger_count": 10,
@@ -666,6 +784,36 @@
         "secret": false,
         "level_name": "Galaxy 2 Ariel 21",
         "level_file": "ARIEL21.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 14,
+              "segment": 609,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            },
+            {
+              "trigger": 15,
+              "segment": 610,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 622,
         "wall_count": 178,
         "trigger_count": 21,
@@ -905,6 +1053,36 @@
         "secret": false,
         "level_name": "Galaxy Moon Pandora 22",
         "level_file": "PANDOR22.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 379,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 7,
+              "segment": 231,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 483,
         "wall_count": 91,
         "trigger_count": 9,
@@ -1170,6 +1348,36 @@
         "secret": false,
         "level_name": "Galaxy Moon 2 Thebe 23",
         "level_file": "THEBE23.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 626,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 8,
+              "segment": 625,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 634,
         "wall_count": 154,
         "trigger_count": 9,
@@ -1491,6 +1699,36 @@
         "secret": false,
         "level_name": "Galaxy Mn Calypso 24",
         "level_file": "CALYPS24.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 192,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 4
+            },
+            {
+              "trigger": 1,
+              "segment": 193,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 572,
         "wall_count": 129,
         "trigger_count": 9,
@@ -1725,6 +1963,30 @@
         "secret": false,
         "level_name": "Galaxy Mn Galatea 25",
         "level_file": "GALTEA25.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 458,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 550,
         "wall_count": 156,
         "trigger_count": 7,
@@ -1763,6 +2025,36 @@
         "secret": false,
         "level_name": "Galaxy Mn Miranda 26",
         "level_file": "MIRAND26.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 560,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 9
+            },
+            {
+              "trigger": 0,
+              "segment": 704,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 775,
         "wall_count": 160,
         "trigger_count": 22,
@@ -2082,6 +2374,36 @@
         "secret": false,
         "level_name": "Galaxy Mn Leda 27 alld2",
         "level_file": "LEDA27.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 585,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 5
+            },
+            {
+              "trigger": 7,
+              "segment": 586,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 597,
         "wall_count": 116,
         "trigger_count": 14,
@@ -2311,6 +2633,36 @@
         "secret": false,
         "level_name": "Galaxy Mn Atlas 28 ALD2",
         "level_file": "ATLAS28.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 583,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            },
+            {
+              "trigger": 5,
+              "segment": 584,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 693,
         "wall_count": 154,
         "trigger_count": 9,
@@ -2322,7 +2674,7 @@
         "reactors": 1,
         "robots": 73,
         "hostages": 4,
-        "secrets": 0,
+        "secrets": 1,
         "matcens": 3,
         "energy_centers": 2,
         "mine_volume": 19824600.0,
@@ -2594,6 +2946,36 @@
         "secret": false,
         "level_name": "Galaxy Mn Triton29 ALD2",
         "level_file": "TRITON29.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 528,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 5
+            },
+            {
+              "trigger": 1,
+              "segment": 529,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 583,
         "wall_count": 146,
         "trigger_count": 10,
@@ -2605,7 +2987,7 @@
         "reactors": 1,
         "robots": 66,
         "hostages": 3,
-        "secrets": 0,
+        "secrets": 3,
         "matcens": 7,
         "energy_centers": 2,
         "mine_volume": 13310900.0,
@@ -2841,6 +3223,30 @@
         "secret": false,
         "level_name": "Galaxy Mn Phoebe 30",
         "level_file": "PHOEBE30.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 257,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 525,
         "wall_count": 109,
         "trigger_count": 6,

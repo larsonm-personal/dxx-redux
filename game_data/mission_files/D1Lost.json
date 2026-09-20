@@ -34,6 +34,42 @@
       "powerups": 870,
       "reactors": 16
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "email",
+          "value": "eifel1@pacbell.net",
+          "sources": [
+            "D1LOST.TXT"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2000,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2000,
+          2000
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "D1LOST.HOG",
+          "modified": "2000-09-27",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "D1LOST.MSN",
+          "modified": "2000-09-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +269,35 @@
         "secret": false,
         "level_name": "Triton VII",
         "level_file": "lost01.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost01.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 172,
+              "side": 1,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 480.001,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 202,
         "wall_count": 45,
         "trigger_count": 4,
@@ -345,6 +410,35 @@
         "secret": false,
         "level_name": "Patheus III",
         "level_file": "lost02.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost02.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 297,
+              "side": 5,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 480.001,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 367,
         "wall_count": 70,
         "trigger_count": 5,
@@ -445,6 +539,35 @@
         "secret": false,
         "level_name": "Talamir VI",
         "level_file": "lost03.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost03.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 429,
+              "side": 1,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 479.999,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 527,
         "wall_count": 54,
         "trigger_count": 5,
@@ -559,6 +682,35 @@
         "secret": false,
         "level_name": "Mystery Grove",
         "level_file": "lost04.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost04.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 365,
+              "side": 1,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 479.998,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 394,
         "wall_count": 65,
         "trigger_count": 4,
@@ -699,6 +851,35 @@
         "secret": false,
         "level_name": "Fearon Clearing",
         "level_file": "lost05.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost05.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 489,
+              "side": 5,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 480.0,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 519,
         "wall_count": 85,
         "trigger_count": 8,
@@ -813,6 +994,35 @@
         "secret": false,
         "level_name": "CarlsBad Grotto",
         "level_file": "lost06.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost06.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 691,
+              "side": 1,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 480.001,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 775,
         "wall_count": 96,
         "trigger_count": 9,
@@ -927,6 +1137,35 @@
         "secret": false,
         "level_name": "Magma Caverns",
         "level_file": "lost07.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost07.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 714,
+              "side": 2,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 479.999,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 743,
         "wall_count": 116,
         "trigger_count": 7,
@@ -1067,6 +1306,35 @@
         "secret": false,
         "level_name": "Lava Tubes",
         "level_file": "lost08.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost08.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 568,
+              "side": 0,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 480.0,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 645,
         "wall_count": 94,
         "trigger_count": 5,
@@ -1208,6 +1476,35 @@
         "secret": false,
         "level_name": "The Crescent",
         "level_file": "lost09.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost09.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 35,
+              "side": 1,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 479.999,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 634,
         "wall_count": 108,
         "trigger_count": 17,
@@ -1352,6 +1649,35 @@
         "secret": false,
         "level_name": "Frost Kru'eng",
         "level_file": "lost10.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost10.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 504,
+              "side": 1,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 479.999,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 574,
         "wall_count": 133,
         "trigger_count": 14,
@@ -1466,6 +1792,35 @@
         "secret": false,
         "level_name": "Ice House",
         "level_file": "lost11.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost11.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 156,
+              "side": 0,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 479.999,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 375,
         "wall_count": 63,
         "trigger_count": 8,
@@ -1605,6 +1960,35 @@
         "secret": false,
         "level_name": "Icicle Caverns",
         "level_file": "lost12.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost12.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 160,
+              "side": 2,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 480.0,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 730,
         "wall_count": 113,
         "trigger_count": 10,
@@ -1616,7 +2000,7 @@
         "reactors": 1,
         "robots": 143,
         "hostages": 2,
-        "secrets": 9,
+        "secrets": 10,
         "matcens": 5,
         "energy_centers": 5,
         "mine_volume": 36298800.0,
@@ -1772,6 +2156,35 @@
         "secret": false,
         "level_name": "Notami Quixon",
         "level_file": "lost13.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost13.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 188,
+              "side": 0,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 479.999,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 386,
         "wall_count": 143,
         "trigger_count": 14,
@@ -1912,6 +2325,35 @@
         "secret": false,
         "level_name": "Nephilite G'run",
         "level_file": "lost14.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost14.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 462,
+              "side": 1,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 480.0,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 518,
         "wall_count": 149,
         "trigger_count": 2,
@@ -2026,6 +2468,35 @@
         "secret": false,
         "level_name": "Y'nori Luhk",
         "level_file": "lost15.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost15.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 635,
+              "side": 1,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 479.999,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 661,
         "wall_count": 65,
         "trigger_count": 4,
@@ -2140,6 +2611,35 @@
         "secret": false,
         "level_name": "The Matrix",
         "level_file": "lost16.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lost16.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 98,
+              "side": 1,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 480.0,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 146,
         "wall_count": 10,
         "trigger_count": 1,

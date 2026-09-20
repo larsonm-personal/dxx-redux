@@ -34,6 +34,19 @@
       "powerups": 743,
       "reactors": 15
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +246,35 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "level01.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.199,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.199
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level01.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 69,
+              "side": 4,
+              "seconds": 10.199,
+              "status": "estimated",
+              "tunnel_units": 259.965,
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 285,
         "wall_count": 30,
         "trigger_count": 1,
@@ -319,6 +361,35 @@
         "secret": false,
         "level_name": "Lunar scilab",
         "level_file": "level02.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.794,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.794
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level02.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 319,
+              "side": 4,
+              "seconds": 14.794,
+              "status": "estimated",
+              "tunnel_units": 489.712,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 403,
         "wall_count": 66,
         "trigger_count": 1,
@@ -419,6 +490,35 @@
         "secret": false,
         "level_name": "Lunar military base",
         "level_file": "level03.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.998,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.998
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level03.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 353,
+              "side": 4,
+              "seconds": 12.998,
+              "status": "estimated",
+              "tunnel_units": 399.882,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 498,
         "wall_count": 70,
         "trigger_count": 6,
@@ -533,6 +633,35 @@
         "secret": false,
         "level_name": "Venus atmospheric lab",
         "level_file": "level04.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level04.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 222,
+              "side": 4,
+              "seconds": 14.6,
+              "status": "estimated",
+              "tunnel_units": 479.996,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 384,
         "wall_count": 62,
         "trigger_count": 3,
@@ -647,6 +776,35 @@
         "secret": false,
         "level_name": "Venus nickel-iron mine",
         "level_file": "level05.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level05.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 587,
+              "side": 4,
+              "seconds": 12.0,
+              "status": "estimated",
+              "tunnel_units": 349.975,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 733,
         "wall_count": 80,
         "trigger_count": 4,
@@ -761,6 +919,35 @@
         "secret": false,
         "level_name": "mercury solar lab",
         "level_file": "level06.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.999,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.999
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level06.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 453,
+              "side": 4,
+              "seconds": 11.999,
+              "status": "estimated",
+              "tunnel_units": 349.951,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 584,
         "wall_count": 90,
         "trigger_count": 6,
@@ -875,6 +1062,35 @@
         "secret": false,
         "level_name": "Mercury core",
         "level_file": "level07.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.999,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.999
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level07.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 456,
+              "side": 4,
+              "seconds": 9.999,
+              "status": "estimated",
+              "tunnel_units": 249.957,
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 786,
         "wall_count": 144,
         "trigger_count": 5,
@@ -989,6 +1205,35 @@
         "secret": false,
         "level_name": "mars processing station",
         "level_file": "level08.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.597,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.597
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level08.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 163,
+              "side": 4,
+              "seconds": 12.597,
+              "status": "estimated",
+              "tunnel_units": 379.851,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 558,
         "wall_count": 98,
         "trigger_count": 9,
@@ -1103,6 +1348,35 @@
         "secret": false,
         "level_name": "mars military dig",
         "level_file": "level09.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.194,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.194
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level09.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 519,
+              "side": 4,
+              "seconds": 9.194,
+              "status": "estimated",
+              "tunnel_units": 209.705,
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 591,
         "wall_count": 106,
         "trigger_count": 9,
@@ -1217,6 +1491,35 @@
         "secret": false,
         "level_name": "mars military base",
         "level_file": "level10.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.599,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.599
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level10.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 345,
+              "side": 4,
+              "seconds": 9.599,
+              "status": "estimated",
+              "tunnel_units": 229.972,
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 467,
         "wall_count": 130,
         "trigger_count": 14,
@@ -1383,6 +1686,35 @@
         "secret": false,
         "level_name": "io sulfur mine",
         "level_file": "level11.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.999,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.999
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level11.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 347,
+              "side": 4,
+              "seconds": 10.999,
+              "status": "estimated",
+              "tunnel_units": 299.936,
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 438,
         "wall_count": 54,
         "trigger_count": 5,
@@ -1497,6 +1829,35 @@
         "secret": false,
         "level_name": "callisto tower colony",
         "level_file": "level12.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level12.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 336,
+              "side": 4,
+              "seconds": 9.0,
+              "status": "estimated",
+              "tunnel_units": 199.981,
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 350,
         "wall_count": 132,
         "trigger_count": 6,
@@ -1611,6 +1972,35 @@
         "secret": false,
         "level_name": "europa mining colony",
         "level_file": "level13.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.794,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.794
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level13.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 360,
+              "side": 4,
+              "seconds": 9.794,
+              "status": "estimated",
+              "tunnel_units": 239.713,
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 465,
         "wall_count": 94,
         "trigger_count": 3,
@@ -1725,6 +2115,35 @@
         "secret": false,
         "level_name": "europa co2 mine",
         "level_file": "level14.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.799,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.799
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level14.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 376,
+              "side": 4,
+              "seconds": 9.799,
+              "status": "estimated",
+              "tunnel_units": 239.968,
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 702,
         "wall_count": 96,
         "trigger_count": 5,
@@ -1839,6 +2258,35 @@
         "secret": false,
         "level_name": "Destination Saturn",
         "level_file": "saturn15.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 8.994,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 8.994
+          },
+          "presentation": {
+            "status": "present",
+            "file": "saturn15.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 66,
+              "side": 4,
+              "seconds": 8.994,
+              "status": "estimated",
+              "tunnel_units": 199.685,
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 287,
         "wall_count": 96,
         "trigger_count": 11,
@@ -1980,6 +2428,35 @@
         "secret": true,
         "level_name": "asteroid secret base",
         "level_file": "levels1.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.919,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.919
+          },
+          "presentation": {
+            "status": "present",
+            "file": "levels1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 151,
+              "side": 4,
+              "seconds": 9.919,
+              "status": "estimated",
+              "tunnel_units": 245.937,
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 399,
         "wall_count": 76,
         "trigger_count": 4,

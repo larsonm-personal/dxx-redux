@@ -34,6 +34,34 @@
       "powerups": 169,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2004,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2004,
+          2004
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "GNOMES.HOG",
+          "modified": "2004-11-30",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "GNOMES.MSN",
+          "modified": "2004-11-25",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +261,35 @@
         "secret": false,
         "level_name": "Lunar Comet Laboratory",
         "level_file": "cometlab.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.135,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.135
+          },
+          "presentation": {
+            "status": "present",
+            "file": "cometlab.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 184,
+              "side": 1,
+              "seconds": 9.135,
+              "status": "estimated",
+              "tunnel_units": 206.764,
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 417,
         "wall_count": 152,
         "trigger_count": 1,
@@ -347,6 +404,35 @@
         "secret": false,
         "level_name": "Garbon Refinery",
         "level_file": "carbon.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.439,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.439
+          },
+          "presentation": {
+            "status": "present",
+            "file": "carbon.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 413,
+              "side": 4,
+              "seconds": 10.439,
+              "status": "estimated",
+              "tunnel_units": 271.939,
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 560,
         "wall_count": 132,
         "trigger_count": 1,
@@ -462,6 +548,35 @@
         "secret": false,
         "level_name": "Garbain Warehouse",
         "level_file": "warehos.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.927,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.927
+          },
+          "presentation": {
+            "status": "present",
+            "file": "warehos.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 389,
+              "side": 3,
+              "seconds": 19.927,
+              "status": "estimated",
+              "tunnel_units": 746.327,
+              "tunnel_segments": 37
+            }
+          ]
+        },
         "segment_count": 510,
         "wall_count": 59,
         "trigger_count": 8,
@@ -626,6 +741,35 @@
         "secret": false,
         "level_name": "Home Cave",
         "level_file": "homecave.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 29.151,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 29.151
+          },
+          "presentation": {
+            "status": "present",
+            "file": "homecave.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 115,
+              "side": 3,
+              "seconds": 29.151,
+              "status": "estimated",
+              "tunnel_units": 1207.553,
+              "tunnel_segments": 63
+            }
+          ]
+        },
         "segment_count": 739,
         "wall_count": 140,
         "trigger_count": 1,

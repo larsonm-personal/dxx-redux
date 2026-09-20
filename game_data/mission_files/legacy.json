@@ -34,6 +34,49 @@
       "powerups": 297,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Sirius (with some minor contributions from Darkhorse)",
+          "sources": [
+            "legacy.txt"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "27 June 2005",
+          "sources": [
+            "legacy.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2005,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2005,
+          2005
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "legacy.hog",
+          "modified": "2005-06-26",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "legacy.mn2",
+          "modified": "2005-06-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +152,30 @@
         "secret": false,
         "level_name": "Pyrite Station",
         "level_file": "pyrstatn.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 380,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 388,
         "wall_count": 133,
         "trigger_count": 14,
@@ -418,6 +485,30 @@
         "secret": false,
         "level_name": "Trident Smelting Facility",
         "level_file": "trident.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 14,
+              "segment": 511,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 518,
         "wall_count": 115,
         "trigger_count": 16,
@@ -747,6 +838,30 @@
         "secret": false,
         "level_name": "Incineration Facility",
         "level_file": "incnratn.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 10,
+              "segment": 668,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 785,
         "wall_count": 240,
         "trigger_count": 21,

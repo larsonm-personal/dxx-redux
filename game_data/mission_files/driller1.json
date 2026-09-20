@@ -34,6 +34,70 @@
       "powerups": 374,
       "reactors": 9
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "Descent Mission Builder II",
+          "sources": [
+            "DRILLER1.MSN"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "DRILLER1.MSN"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Descer",
+          "sources": [
+            "DRILLER1.MSN"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "www.xmail.net/descer/drillers.html",
+          "sources": [
+            "DRILLER1.MSN"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "jpiis@hotmail.com",
+          "sources": [
+            "DRILLER1.MSN"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2003,
+          2006
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "DRILLER1.HOG",
+          "modified": "2003-05-10",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "DRILLER1.MSN",
+          "modified": "2006-05-02",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +297,35 @@
         "secret": false,
         "level_name": "Mercury Uranium mine",
         "level_file": "meru.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.091,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.091
+          },
+          "presentation": {
+            "status": "present",
+            "file": "meru.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 634,
+              "side": 1,
+              "seconds": 10.091,
+              "status": "estimated",
+              "tunnel_units": 254.536,
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 647,
         "wall_count": 159,
         "trigger_count": 2,
@@ -374,6 +467,35 @@
         "secret": false,
         "level_name": "Driller Testing center",
         "level_file": "dtest.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.828,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.828
+          },
+          "presentation": {
+            "status": "present",
+            "file": "dtest.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 394,
+              "side": 1,
+              "seconds": 15.828,
+              "status": "estimated",
+              "tunnel_units": 541.423,
+              "tunnel_segments": 26
+            }
+          ]
+        },
         "segment_count": 442,
         "wall_count": 135,
         "trigger_count": 2,
@@ -489,6 +611,35 @@
         "secret": false,
         "level_name": "Lunar Outpost",
         "level_file": "lunp.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.961,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.961
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lunp.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 574,
+              "side": 0,
+              "seconds": 11.961,
+              "status": "estimated",
+              "tunnel_units": 348.048,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 627,
         "wall_count": 110,
         "trigger_count": 3,
@@ -603,6 +754,35 @@
         "secret": false,
         "level_name": "Mars Iron-nickel mine",
         "level_file": "marin.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.529,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.529
+          },
+          "presentation": {
+            "status": "present",
+            "file": "marin.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 696,
+              "side": 1,
+              "seconds": 11.529,
+              "status": "estimated",
+              "tunnel_units": 326.461,
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 708,
         "wall_count": 173,
         "trigger_count": 3,
@@ -718,6 +898,35 @@
         "secret": false,
         "level_name": "Io Rock mine",
         "level_file": "irock.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 8.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 8.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "irock.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 181,
+              "side": 1,
+              "seconds": 8.6,
+              "status": "estimated",
+              "tunnel_units": 180.0,
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 781,
         "wall_count": 137,
         "trigger_count": 6,
@@ -883,6 +1092,35 @@
         "secret": false,
         "level_name": "Mimas Multi-mineral mine",
         "level_file": "mimu.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 22.095,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 22.095
+          },
+          "presentation": {
+            "status": "present",
+            "file": "mimu.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 196,
+              "side": 5,
+              "seconds": 22.095,
+              "status": "estimated",
+              "tunnel_units": 854.74,
+              "tunnel_segments": 44
+            }
+          ]
+        },
         "segment_count": 490,
         "wall_count": 173,
         "trigger_count": 12,
@@ -997,6 +1235,35 @@
         "secret": false,
         "level_name": "Titania Titanium mine",
         "level_file": "titi.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.232,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.232
+          },
+          "presentation": {
+            "status": "present",
+            "file": "titi.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 265,
+              "side": 5,
+              "seconds": 17.232,
+              "status": "estimated",
+              "tunnel_units": 611.584,
+              "tunnel_segments": 30
+            }
+          ]
+        },
         "segment_count": 317,
         "wall_count": 110,
         "trigger_count": 1,
@@ -1138,6 +1405,35 @@
         "secret": false,
         "level_name": "Nereid Space ship Dock",
         "level_file": "nes.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.071,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.071
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nes.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 736,
+              "side": 2,
+              "seconds": 9.071,
+              "status": "estimated",
+              "tunnel_units": 203.527,
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 777,
         "wall_count": 140,
         "trigger_count": 1,
@@ -1254,6 +1550,35 @@
         "secret": false,
         "level_name": "Queen's Palace",
         "level_file": "palace.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.2,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.2
+          },
+          "presentation": {
+            "status": "present",
+            "file": "palace.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 619,
+              "side": 1,
+              "seconds": 10.2,
+              "status": "estimated",
+              "tunnel_units": 260.0,
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 789,
         "wall_count": 171,
         "trigger_count": 4,
@@ -1351,6 +1676,35 @@
         "secret": true,
         "level_name": "Vesta Wolfram mine",
         "level_file": "veswo.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 22.928,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 22.928
+          },
+          "presentation": {
+            "status": "present",
+            "file": "veswo.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 458,
+              "side": 0,
+              "seconds": 22.928,
+              "status": "estimated",
+              "tunnel_units": 896.396,
+              "tunnel_segments": 44
+            }
+          ]
+        },
         "segment_count": 490,
         "wall_count": 148,
         "trigger_count": 3,

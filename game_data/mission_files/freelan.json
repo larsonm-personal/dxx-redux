@@ -34,6 +34,34 @@
       "powerups": 228,
       "reactors": 6
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2007,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2007,
+          2007
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "FREELAN.HOG",
+          "modified": "2007-05-31",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "FREELAN.MSN",
+          "modified": "2007-05-22",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +261,35 @@
         "secret": false,
         "level_name": "Koktai Moon Colony",
         "level_file": "kokcol.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.535,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.535
+          },
+          "presentation": {
+            "status": "present",
+            "file": "kokcol.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 308,
+              "side": 0,
+              "seconds": 9.535,
+              "status": "estimated",
+              "tunnel_units": 226.765,
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 631,
         "wall_count": 70,
         "trigger_count": 5,
@@ -335,6 +392,35 @@
         "secret": false,
         "level_name": "Koktai Research Laboratory",
         "level_file": "koklab.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.845,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.845
+          },
+          "presentation": {
+            "status": "present",
+            "file": "koklab.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 27,
+              "side": 4,
+              "seconds": 9.845,
+              "status": "estimated",
+              "tunnel_units": 242.253,
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 317,
         "wall_count": 112,
         "trigger_count": 1,
@@ -449,6 +535,35 @@
         "secret": false,
         "level_name": "Koktai Outpost",
         "level_file": "kokout.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.564,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.564
+          },
+          "presentation": {
+            "status": "present",
+            "file": "kokout.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 124,
+              "side": 5,
+              "seconds": 12.564,
+              "status": "estimated",
+              "tunnel_units": 378.178,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 639,
         "wall_count": 144,
         "trigger_count": 1,
@@ -563,6 +678,35 @@
         "secret": false,
         "level_name": "Durmian Spaceship Port",
         "level_file": "shipport.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.32,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.32
+          },
+          "presentation": {
+            "status": "present",
+            "file": "shipport.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 389,
+              "side": 0,
+              "seconds": 15.32,
+              "status": "estimated",
+              "tunnel_units": 515.975,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 553,
         "wall_count": 80,
         "trigger_count": 1,
@@ -677,6 +821,35 @@
         "secret": false,
         "level_name": "Durmian Abonded Base",
         "level_file": "abbase.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.631,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.631
+          },
+          "presentation": {
+            "status": "present",
+            "file": "abbase.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 273,
+              "side": 3,
+              "seconds": 20.631,
+              "status": "estimated",
+              "tunnel_units": 781.543,
+              "tunnel_segments": 35
+            }
+          ]
+        },
         "segment_count": 460,
         "wall_count": 85,
         "trigger_count": 2,
@@ -817,6 +990,35 @@
         "secret": false,
         "level_name": "Gyfoppes Residential Area",
         "level_file": "gyres.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.873,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.873
+          },
+          "presentation": {
+            "status": "present",
+            "file": "gyres.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 282,
+              "side": 5,
+              "seconds": 16.873,
+              "status": "estimated",
+              "tunnel_units": 593.674,
+              "tunnel_segments": 30
+            }
+          ]
+        },
         "segment_count": 493,
         "wall_count": 60,
         "trigger_count": 3,
@@ -981,6 +1183,35 @@
         "secret": false,
         "level_name": "Durmian Headquarters",
         "level_file": "headquar.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 22.752,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 22.752
+          },
+          "presentation": {
+            "status": "present",
+            "file": "headquar.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 136,
+              "side": 1,
+              "seconds": 22.752,
+              "status": "estimated",
+              "tunnel_units": 887.583,
+              "tunnel_segments": 44
+            }
+          ]
+        },
         "segment_count": 732,
         "wall_count": 156,
         "trigger_count": 3,

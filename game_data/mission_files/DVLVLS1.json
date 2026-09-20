@@ -34,6 +34,49 @@
       "powerups": 535,
       "reactors": 11
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "website",
+          "value": "www.xmail.com/descer/index.html",
+          "sources": [
+            "DVLVLS1.TXT"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "jpiis@hotmail.com",
+          "sources": [
+            "DVLVLS1.TXT"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2016,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2016,
+          2016
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "DVLVLS1.HOG",
+          "modified": "2016-07-26",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "DVLVLS1.MN2",
+          "modified": "2016-01-05",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -109,6 +152,30 @@
         "secret": false,
         "level_name": "Suxdom Sapphire Mine",
         "level_file": "susami.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 494,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 566,
         "wall_count": 110,
         "trigger_count": 5,
@@ -252,6 +319,29 @@
         "secret": false,
         "level_name": "Nightmare Barell",
         "level_file": "barell.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 447,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 508,
         "wall_count": 128,
         "trigger_count": 1,
@@ -370,6 +460,29 @@
         "secret": false,
         "level_name": "Ephesos Plant Germinations",
         "level_file": "EPPLAGER.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 561,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 741,
         "wall_count": 199,
         "trigger_count": 4,
@@ -513,6 +626,30 @@
         "secret": false,
         "level_name": "Figaro's Tunnels",
         "level_file": "figatuns.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 203,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 438,
         "wall_count": 122,
         "trigger_count": 1,
@@ -631,6 +768,30 @@
         "secret": false,
         "level_name": "Cyphen Alkali Mine",
         "level_file": "cypal.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 30,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 3
+            }
+          ]
+        },
         "segment_count": 776,
         "wall_count": 198,
         "trigger_count": 3,
@@ -749,6 +910,30 @@
         "secret": false,
         "level_name": "Likita Phosphoros Mine",
         "level_file": "likipho.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 58,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 450,
         "wall_count": 190,
         "trigger_count": 3,
@@ -953,6 +1138,29 @@
         "secret": false,
         "level_name": "Giurix Uranium Mine",
         "level_file": "giurmi.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 232,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 610,
         "wall_count": 128,
         "trigger_count": 3,
@@ -1116,6 +1324,30 @@
         "secret": false,
         "level_name": "Sejabih Constrution Site",
         "level_file": "scs.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 293,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 388,
         "wall_count": 190,
         "trigger_count": 5,
@@ -1283,6 +1515,29 @@
         "secret": false,
         "level_name": "Dalkumguc Volcanic Complex",
         "level_file": "dalvol.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 22,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 536,
         "wall_count": 233,
         "trigger_count": 9,
@@ -1604,6 +1859,30 @@
         "secret": false,
         "level_name": "Ilios Hydroxide Mine",
         "level_file": "ilhym.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 25,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 3
+            }
+          ]
+        },
         "segment_count": 587,
         "wall_count": 226,
         "trigger_count": 3,
@@ -1817,6 +2096,30 @@
         "secret": false,
         "level_name": "Zion Tellurium Mine",
         "level_file": "sitem.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 400,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 3
+            }
+          ]
+        },
         "segment_count": 479,
         "wall_count": 107,
         "trigger_count": 2,

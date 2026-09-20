@@ -34,6 +34,106 @@
       "powerups": 275,
       "reactors": 2
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DMB2.6",
+          "sources": [
+            "Drmsaga.mn2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "100s",
+          "sources": [
+            "Drmsaga.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "0",
+          "sources": [
+            "Drmsaga.mn2"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Cameron \"Stryker\" Fultz",
+          "sources": [
+            "Drmsaga.mn2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "CMFultz@aol.com",
+          "sources": [
+            "Drmsaga.mn2",
+            "drmsaga.txt"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "3-29-98",
+          "sources": [
+            "Drmsaga.mn2"
+          ]
+        },
+        {
+          "field": "finished_date",
+          "value": "4-11-98",
+          "sources": [
+            "drmsaga.txt"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "4-11-98",
+          "sources": [
+            "drmsaga.txt"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Cameron Fultz",
+          "sources": [
+            "drmsaga.txt"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "Stryker",
+          "sources": [
+            "drmsaga.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1998,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1998,
+          1998
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "Drmsaga.mn2",
+          "modified": "1998-03-31",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "drmsaga.hog",
+          "modified": "1998-04-11",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +209,30 @@
         "secret": false,
         "level_name": "The Tower of Dr. Moreau",
         "level_file": "drmtower.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 390,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 600,
         "wall_count": 205,
         "trigger_count": 31,
@@ -314,6 +438,30 @@
         "secret": false,
         "level_name": "Dr. Moreau's Vertigo Lab2",
         "level_file": "drmrvrt2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 1,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 431,
         "wall_count": 167,
         "trigger_count": 33,
@@ -501,6 +649,30 @@
         "secret": false,
         "level_name": "Dr. Moreau's Robot Carnival",
         "level_file": "drmorcrn.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 154,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 400,
         "wall_count": 203,
         "trigger_count": 12,
@@ -619,6 +791,29 @@
         "secret": false,
         "level_name": "Area 51: Earth Invasion",
         "level_file": "area51.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 1,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 500,
         "wall_count": 160,
         "trigger_count": 11,
@@ -657,6 +852,29 @@
         "secret": true,
         "level_name": "AREA 51: secret level",
         "level_file": "ar51scrt.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 37,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 678,
         "wall_count": 214,
         "trigger_count": 20,

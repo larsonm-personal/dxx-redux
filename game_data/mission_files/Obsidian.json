@@ -34,6 +34,42 @@
       "powerups": 1037,
       "reactors": 14
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Ellusion Design",
+          "sources": [
+            "obsidian.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2006,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2006,
+          2006
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "obsidian.hog",
+          "modified": "2006-01-06",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "obsidian.mn2",
+          "modified": "2006-01-06",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -144,6 +180,30 @@
         "secret": false,
         "level_name": "Argon Entrance",
         "level_file": "argnentr.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 312,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 350,
         "wall_count": 115,
         "trigger_count": 10,
@@ -323,6 +383,30 @@
         "secret": false,
         "level_name": "Acceleration",
         "level_file": "acclrtn.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 210,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 345,
         "wall_count": 168,
         "trigger_count": 12,
@@ -496,6 +580,30 @@
         "secret": false,
         "level_name": "Argent in the Rough",
         "level_file": "argntitr.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 20,
+              "segment": 539,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 569,
         "wall_count": 207,
         "trigger_count": 34,
@@ -1106,6 +1214,30 @@
         "secret": false,
         "level_name": "Pleiades Iron-Ore Mine",
         "level_file": "pliom.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 60,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 374,
         "wall_count": 124,
         "trigger_count": 23,
@@ -1378,6 +1510,30 @@
         "secret": false,
         "level_name": "Magma V Outpost",
         "level_file": "magmav.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 262,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 289,
         "wall_count": 119,
         "trigger_count": 16,
@@ -1680,6 +1836,30 @@
         "secret": false,
         "level_name": "Brazen Vortex",
         "level_file": "brznvrtx.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 456,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 802,
         "wall_count": 175,
         "trigger_count": 23,
@@ -1935,6 +2115,30 @@
         "secret": false,
         "level_name": "Beryllium",
         "level_file": "berylium.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 9,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 782,
         "wall_count": 173,
         "trigger_count": 21,
@@ -2232,6 +2436,30 @@
         "secret": false,
         "level_name": "Pelorus",
         "level_file": "pelorus.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 96,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 652,
         "wall_count": 149,
         "trigger_count": 15,
@@ -2378,6 +2606,30 @@
         "secret": false,
         "level_name": "Cerulea",
         "level_file": "cerulea.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 448,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 669,
         "wall_count": 164,
         "trigger_count": 21,
@@ -2657,6 +2909,30 @@
         "secret": false,
         "level_name": "Aquarius Falls",
         "level_file": "aquarius.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 227,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 531,
         "wall_count": 157,
         "trigger_count": 15,
@@ -2975,6 +3251,30 @@
         "secret": false,
         "level_name": "Quoxir",
         "level_file": "quoxir.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 16,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 317,
         "wall_count": 109,
         "trigger_count": 20,
@@ -3484,6 +3784,30 @@
         "secret": false,
         "level_name": "Lusus Flagship",
         "level_file": "lususfls.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 17,
+              "segment": 306,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 771,
         "wall_count": 170,
         "trigger_count": 22,
@@ -3892,6 +4216,30 @@
         "secret": false,
         "level_name": "Obsidian 3 TCG Depot",
         "level_file": "o3tdepot.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 19,
+              "segment": 419,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 447,
         "wall_count": 89,
         "trigger_count": 21,
@@ -4223,6 +4571,29 @@
         "secret": false,
         "level_name": "Excidium Defence Cruiser",
         "level_file": "excidium.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 426,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 693,
         "wall_count": 164,
         "trigger_count": 30,
@@ -4540,6 +4911,29 @@
         "secret": false,
         "level_name": "Gaussian Blur",
         "level_file": "gausblur.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 29,
+              "segment": 561,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 564,
         "wall_count": 129,
         "trigger_count": 32,
@@ -4632,6 +5026,47 @@
         "secret": true,
         "level_name": "Lapis Lazuli",
         "level_file": "lpslazli.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 116,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 158,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 7,
+              "segment": 356,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 19,
+              "segment": 305,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 454,
         "wall_count": 89,
         "trigger_count": 20,
@@ -4757,6 +5192,41 @@
         "secret": true,
         "level_name": "Water Garden",
         "level_file": "watrgrdn.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 1,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 8,
+              "segment": 148,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 9,
+              "segment": 233,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 341,
         "wall_count": 133,
         "trigger_count": 17,
@@ -4833,6 +5303,71 @@
         "secret": true,
         "level_name": "Syenite",
         "level_file": "syenite.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 0,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 171,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 210,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 283,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 5,
+              "segment": 264,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 6,
+              "segment": 372,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 8,
+              "segment": 521,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 9,
+              "segment": 534,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 544,
         "wall_count": 145,
         "trigger_count": 14,

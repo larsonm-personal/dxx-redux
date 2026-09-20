@@ -34,6 +34,77 @@
       "powerups": 116,
       "reactors": 1
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DMB 2",
+          "sources": [
+            "TYRSIS.MN2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "1 week",
+          "sources": [
+            "TYRSIS.MN2"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Wyvern",
+          "sources": [
+            "TYRSIS.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://130.89.228.22",
+          "sources": [
+            "TYRSIS.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "f.g.vandevoorde@student.utwente.nl",
+          "sources": [
+            "TYRSIS.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "04-23-98",
+          "sources": [
+            "TYRSIS.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1998,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1998,
+          1998
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "TYRSIS.MN2",
+          "modified": "1998-04-23",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "Tyrsis.hog",
+          "modified": "1998-04-23",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +180,30 @@
         "secret": false,
         "level_name": "Myrian",
         "level_file": "myrian1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 17,
+              "segment": 428,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 490,
         "wall_count": 134,
         "trigger_count": 25,
@@ -302,6 +397,30 @@
         "secret": false,
         "level_name": "Aerillia",
         "level_file": "aerillia.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 457,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 548,
         "wall_count": 158,
         "trigger_count": 17,

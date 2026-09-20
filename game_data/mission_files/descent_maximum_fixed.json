@@ -34,6 +34,34 @@
       "powerups": 851,
       "reactors": 24
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2015,
+          2018
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "max_f.hog",
+          "modified": "2018-02-23",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "max_f.mn2",
+          "modified": "2015-12-09",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-5",
     "track_names": [
       {
@@ -109,6 +137,30 @@
         "secret": false,
         "level_name": "Petra",
         "level_file": "psx01.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 93,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 116,
         "wall_count": 18,
         "trigger_count": 1,
@@ -199,6 +251,30 @@
         "secret": false,
         "level_name": "Agartha",
         "level_file": "psx02.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 117,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 157,
         "wall_count": 58,
         "trigger_count": 7,
@@ -328,6 +404,30 @@
         "secret": false,
         "level_name": "Reuchlin",
         "level_file": "psx03.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 106,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 138,
         "wall_count": 61,
         "trigger_count": 4,
@@ -446,6 +546,30 @@
         "secret": false,
         "level_name": "Ako",
         "level_file": "psx04.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 161,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 200,
         "wall_count": 88,
         "trigger_count": 7,
@@ -457,7 +581,7 @@
         "reactors": 1,
         "robots": 29,
         "hostages": 4,
-        "secrets": 3,
+        "secrets": 4,
         "matcens": 0,
         "energy_centers": 3,
         "mine_volume": 9625760.0,
@@ -594,6 +718,30 @@
         "secret": false,
         "level_name": "Lilofee",
         "level_file": "psx05.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 7,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 206,
         "wall_count": 67,
         "trigger_count": 8,
@@ -712,6 +860,30 @@
         "secret": false,
         "level_name": "Lomonosowa",
         "level_file": "psx06.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 25,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 302,
         "wall_count": 85,
         "trigger_count": 10,
@@ -723,7 +895,7 @@
         "reactors": 1,
         "robots": 28,
         "hostages": 2,
-        "secrets": 0,
+        "secrets": 3,
         "matcens": 2,
         "energy_centers": 1,
         "mine_volume": 6452840.0,
@@ -895,6 +1067,30 @@
         "secret": false,
         "level_name": "Ausonia",
         "level_file": "psx07.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 92,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 223,
         "wall_count": 90,
         "trigger_count": 10,
@@ -1013,6 +1209,30 @@
         "secret": false,
         "level_name": "Xosa XII",
         "level_file": "psx08.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 165,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 277,
         "wall_count": 116,
         "trigger_count": 13,
@@ -1024,7 +1244,7 @@
         "reactors": 1,
         "robots": 31,
         "hostages": 4,
-        "secrets": 4,
+        "secrets": 5,
         "matcens": 0,
         "energy_centers": 2,
         "mine_volume": 11157800.0,
@@ -1171,6 +1391,30 @@
         "secret": false,
         "level_name": "Sinha",
         "level_file": "psx09.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 154,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 274,
         "wall_count": 107,
         "trigger_count": 12,
@@ -1458,6 +1702,30 @@
         "secret": false,
         "level_name": "Orlock",
         "level_file": "psx10.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 160,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 276,
         "wall_count": 105,
         "trigger_count": 7,
@@ -1469,7 +1737,7 @@
         "reactors": 1,
         "robots": 31,
         "hostages": 2,
-        "secrets": 2,
+        "secrets": 3,
         "matcens": 0,
         "energy_centers": 2,
         "mine_volume": 11336500.0,
@@ -1685,6 +1953,30 @@
         "secret": false,
         "level_name": "Fuld",
         "level_file": "psx11.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 87,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 211,
         "wall_count": 84,
         "trigger_count": 13,
@@ -1903,6 +2195,30 @@
         "secret": false,
         "level_name": "Thraen",
         "level_file": "psx12.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 189,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 263,
         "wall_count": 85,
         "trigger_count": 7,
@@ -2165,6 +2481,30 @@
         "secret": false,
         "level_name": "Widorn",
         "level_file": "psx13.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 157,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 174,
         "wall_count": 49,
         "trigger_count": 3,
@@ -2312,6 +2652,30 @@
         "secret": false,
         "level_name": "Ate CXI",
         "level_file": "psx14.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 42,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 261,
         "wall_count": 71,
         "trigger_count": 4,
@@ -2460,6 +2824,30 @@
         "secret": false,
         "level_name": "Rog",
         "level_file": "psx15.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 212,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 229,
         "wall_count": 80,
         "trigger_count": 8,
@@ -2632,6 +3020,30 @@
         "secret": false,
         "level_name": "Eilers",
         "level_file": "psx16.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 52,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 163,
         "wall_count": 76,
         "trigger_count": 12,
@@ -2908,6 +3320,30 @@
         "secret": false,
         "level_name": "Porphyro",
         "level_file": "psx17.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 236,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 313,
         "wall_count": 82,
         "trigger_count": 13,
@@ -3058,6 +3494,30 @@
         "secret": false,
         "level_name": "Rosalinde",
         "level_file": "psx18.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 36,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 212,
         "wall_count": 65,
         "trigger_count": 8,
@@ -3236,6 +3696,30 @@
         "secret": false,
         "level_name": "Efremiana",
         "level_file": "psx19.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 153,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 178,
         "wall_count": 94,
         "trigger_count": 14,
@@ -3477,6 +3961,30 @@
         "secret": false,
         "level_name": "Semele",
         "level_file": "psx20.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 338,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 343,
         "wall_count": 47,
         "trigger_count": 5,
@@ -3731,6 +4239,30 @@
         "secret": false,
         "level_name": "Eurykleia",
         "level_file": "psx21.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 341,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 436,
         "wall_count": 99,
         "trigger_count": 9,
@@ -3742,7 +4274,7 @@
         "reactors": 1,
         "robots": 30,
         "hostages": 0,
-        "secrets": 2,
+        "secrets": 4,
         "matcens": 0,
         "energy_centers": 1,
         "mine_volume": 8969120.0,
@@ -3947,6 +4479,30 @@
         "secret": false,
         "level_name": "Nipponia",
         "level_file": "psx22.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 319,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 483,
         "wall_count": 132,
         "trigger_count": 28,
@@ -4234,6 +4790,30 @@
         "secret": false,
         "level_name": "Taranis",
         "level_file": "psx23.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 144,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 150,
         "wall_count": 103,
         "trigger_count": 17,
@@ -4245,7 +4825,7 @@
         "reactors": 1,
         "robots": 36,
         "hostages": 0,
-        "secrets": 3,
+        "secrets": 4,
         "matcens": 0,
         "energy_centers": 2,
         "mine_volume": 6377460.0,
@@ -4441,6 +5021,30 @@
         "secret": false,
         "level_name": "Shajan",
         "level_file": "psx24.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 41,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 375,
         "wall_count": 70,
         "trigger_count": 10,
@@ -4591,6 +5195,30 @@
         "secret": true,
         "level_name": "Sibilant Station",
         "level_file": "psxs1a.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 100,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 144,
         "wall_count": 88,
         "trigger_count": 10,
@@ -4741,6 +5369,36 @@
         "secret": true,
         "level_name": "Echo Base",
         "level_file": "psxs2a.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 237,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            },
+            {
+              "trigger": 6,
+              "segment": 200,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 249,
         "wall_count": 90,
         "trigger_count": 7,
@@ -4902,6 +5560,30 @@
         "secret": true,
         "level_name": "Cragg Center",
         "level_file": "psxs3a.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 252,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 258,
         "wall_count": 58,
         "trigger_count": 12,
@@ -5106,6 +5788,36 @@
         "secret": true,
         "level_name": "Refractory Factory",
         "level_file": "psxs4a.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 89,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            },
+            {
+              "trigger": 6,
+              "segment": 99,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 120,
         "wall_count": 77,
         "trigger_count": 9,
@@ -5364,6 +6076,30 @@
         "secret": true,
         "level_name": "Epiglottis Shaft",
         "level_file": "psxs5a.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 182,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 193,
         "wall_count": 51,
         "trigger_count": 5,
@@ -5466,6 +6202,30 @@
         "secret": true,
         "level_name": "The Subtle Body",
         "level_file": "psxs6a.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 170,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 195,
         "wall_count": 38,
         "trigger_count": 7,
@@ -5681,6 +6441,34 @@
       "powerups": 131,
       "reactors": 6
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2015,
+          2018
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "maxlnk_f.hog",
+          "modified": "2018-02-23",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "maxlnk_f.mn2",
+          "modified": "2015-12-09",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "track_names": [
       {
         "track": 0,
@@ -5755,6 +6543,30 @@
         "secret": false,
         "level_name": "Combat Center",
         "level_file": "psxlink1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 56,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 97,
         "wall_count": 23,
         "trigger_count": 2,
@@ -5856,6 +6668,29 @@
         "secret": false,
         "level_name": "Old Friend",
         "level_file": "psxlink2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 10,
+              "segment": 18,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 160,
         "wall_count": 53,
         "trigger_count": 11,
@@ -5962,6 +6797,30 @@
         "secret": false,
         "level_name": "Milestone",
         "level_file": "psxlink3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 104,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 129,
         "wall_count": 47,
         "trigger_count": 5,
@@ -6063,6 +6922,30 @@
         "secret": false,
         "level_name": "Bandit's Cove",
         "level_file": "psxlink4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 85,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 101,
         "wall_count": 34,
         "trigger_count": 1,
@@ -6139,6 +7022,30 @@
         "secret": false,
         "level_name": "Attack Run",
         "level_file": "psxlink5.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 124,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 136,
         "wall_count": 38,
         "trigger_count": 3,
@@ -6240,6 +7147,30 @@
         "secret": false,
         "level_name": "Tactics XIII",
         "level_file": "psxlink6.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 202,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 278,
         "wall_count": 47,
         "trigger_count": 2,

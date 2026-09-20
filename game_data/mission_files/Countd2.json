@@ -34,6 +34,56 @@
       "powerups": 500,
       "reactors": 7
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE",
+          "sources": [
+            "Countd2.mn2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "18 may 2019",
+          "sources": [
+            "Countd2.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "Countd2.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2019,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2019,
+          2019
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "Countd2.hog",
+          "modified": "2019-05-18",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "Countd2.mn2",
+          "modified": "2019-05-18",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -130,6 +180,30 @@
         "secret": false,
         "level_name": "Zeta Outpost",
         "level_file": "level01.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 69,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 312,
         "wall_count": 47,
         "trigger_count": 2,
@@ -220,6 +294,30 @@
         "secret": false,
         "level_name": "Cyro laboratory",
         "level_file": "level02.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 319,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 462,
         "wall_count": 80,
         "trigger_count": 3,
@@ -324,6 +422,30 @@
         "secret": false,
         "level_name": "Amalthea Firecrystal mine",
         "level_file": "level03.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 353,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 543,
         "wall_count": 96,
         "trigger_count": 8,
@@ -429,6 +551,29 @@
         "secret": false,
         "level_name": "Quartzon Military Base",
         "level_file": "level04.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 222,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 522,
         "wall_count": 86,
         "trigger_count": 5,
@@ -534,6 +679,29 @@
         "secret": false,
         "level_name": "The Shadow Nodes",
         "level_file": "level05.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 587,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 827,
         "wall_count": 100,
         "trigger_count": 7,
@@ -653,6 +821,30 @@
         "secret": false,
         "level_name": "Driller testing lab",
         "level_file": "level06.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 453,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 669,
         "wall_count": 135,
         "trigger_count": 10,
@@ -771,6 +963,30 @@
         "secret": false,
         "level_name": "Fatty's Sandpit",
         "level_file": "level07.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 456,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 852,
         "wall_count": 180,
         "trigger_count": 12,

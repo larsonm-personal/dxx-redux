@@ -57,9 +57,11 @@ extern "C" {
 }
 
 #include "level_statistics.hpp"
+#include "flyout_metadata.hpp"
 #include "level_texture_diagnostics.h"
 #include "midi_metadata_json.hpp"
 #include "mission_intent_classification.hpp"
+#include "mission_provenance.hpp"
 
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" void piggy_init_pigfile(char *filename);
@@ -591,6 +593,7 @@ class LevelMetadataRequestMounts
 static json finish_levelmeta_request(LevelMetadataRequestMounts &mounts, const json &request,
                                      json result, char *error, size_t error_size)
 {
+	result["provenance"] = mission_provenance::collect(request, result);
 	if (mounts.finish(error, error_size))
 		return result;
 	levelmeta_runtime_poisoned = 1;
@@ -923,6 +926,7 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 	    sizeof(display_level_name));
 	row["level_name"] = display_level_name;
 	row["level_file"] = level_file ? level_file : "";
+	row["flyout"] = flyout_metadata::collect(level_num, level_file);
 	row["segment_count"] = statistics.segment_count;
 	row["wall_count"] = statistics.wall_count;
 	row["trigger_count"] = statistics.trigger_count;
@@ -1125,6 +1129,7 @@ static json failed_level_row(int level_num, const char *level_file,
 	row["mine_volume_text"] = "";
 	row["travel_distance"] = 0.0;
 	row["travel_time_seconds"] = 0;
+	row["flyout"] = flyout_metadata::unavailable("level_not_loaded");
 	row["travel_time_text"] = format_levelmeta_time(0);
 	row["guidebot_count"] = 0;
 	row["guidebot_placed"] = false;
@@ -1396,6 +1401,10 @@ static json analyze_request(levelmeta_env env, levelmeta_context context, const 
 	if (!init_levelmeta_runtime(env, context, request, error, sizeof(error)))
 		return failed_result(request, error);
 	LevelMetadataRequestMounts mounts;
+	const std::string flyout_movie_library = request.value("flyout_movie_library", "");
+	if (!flyout_movie_library.empty() && !mounts.mount(flyout_movie_library))
+		return finish_levelmeta_request(mounts, request,
+		                                failed_result(request, "could not mount fly-out movie library"), error, sizeof(error));
 	if (!mount_request_extra_dir(request, mounts, error, sizeof(error)))
 		return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
 	if (source_type == "hog") {

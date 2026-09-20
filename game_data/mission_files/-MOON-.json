@@ -34,6 +34,94 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "version",
+          "value": "2.2",
+          "sources": [
+            "-moon01-.mn2",
+            "-moon01-.hog/moon01.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "12/15/1996",
+          "sources": [
+            "-moon01-.mn2",
+            "-moon01-.hog/moon01.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Robert Petersen",
+          "sources": [
+            "-moon01-.mn2",
+            "-moon01-.hog/moon01.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "rob.petersen@t-online.de",
+          "sources": [
+            "-moon01-.mn2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-moon01-.mn2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "u.demesmaeker@rendsburg.netsurf.de",
+          "sources": [
+            "-moon01-.hog/moon01.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.gc-system.de/UweD/Index.htm",
+          "sources": [
+            "-moon01-.hog/moon01.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "12/15/1996",
+          "sources": [
+            "-moon01-.hog/moon01.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1996,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-moon01-.hog",
+          "modified": "1997-08-30",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-moon01-.mn2",
+          "modified": "1997-12-20",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +197,30 @@
         "secret": false,
         "level_name": "Mond 7",
         "level_file": "MOON01.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 36,
+              "segment": 82,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 788,
         "wall_count": 144,
         "trigger_count": 38,
@@ -315,6 +427,94 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "version",
+          "value": "2.0",
+          "sources": [
+            "-MOON02-.MN2",
+            "-MOON02-.HOG/moon02.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "12/16/1996",
+          "sources": [
+            "-MOON02-.MN2",
+            "-MOON02-.HOG/moon02.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Robert Petersen",
+          "sources": [
+            "-MOON02-.MN2",
+            "-MOON02-.HOG/moon02.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "rob.petersen@t-online.de",
+          "sources": [
+            "-MOON02-.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-MOON02-.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "u.demesmaeker@rendsburg.netsurf.de",
+          "sources": [
+            "-MOON02-.HOG/moon02.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.gc-system.de/UweD/Index.htm",
+          "sources": [
+            "-MOON02-.HOG/moon02.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "12/16/1996",
+          "sources": [
+            "-MOON02-.HOG/moon02.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1996,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-MOON02-.HOG",
+          "modified": "1997-08-30",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-MOON02-.MN2",
+          "modified": "1997-12-20",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "5",
     "track_names": [
       {
@@ -390,6 +590,30 @@
         "secret": false,
         "level_name": "Mond 8",
         "level_file": "MOON02.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 25,
+              "segment": 623,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 666,
         "wall_count": 167,
         "trigger_count": 32,
@@ -1063,6 +1287,94 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "version",
+          "value": "2.0",
+          "sources": [
+            "-MOON03-.MN2",
+            "-MOON03-.HOG/moon03.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "7/8/1997",
+          "sources": [
+            "-MOON03-.MN2",
+            "-MOON03-.HOG/moon03.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Robert Petersen",
+          "sources": [
+            "-MOON03-.MN2",
+            "-MOON03-.HOG/moon03.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "rob.petersen@t-online.de",
+          "sources": [
+            "-MOON03-.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-MOON03-.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "u.demesmaeker@rendsburg.netsurf.de",
+          "sources": [
+            "-MOON03-.HOG/moon03.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.gc-system.de/UweD/Index.htm",
+          "sources": [
+            "-MOON03-.HOG/moon03.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "7/8/1997",
+          "sources": [
+            "-MOON03-.HOG/moon03.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-MOON03-.HOG",
+          "modified": "1997-08-30",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-MOON03-.MN2",
+          "modified": "1997-12-20",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -1138,6 +1450,30 @@
         "secret": false,
         "level_name": "Pluto the dog",
         "level_file": "MOON03.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 21,
+              "segment": 765,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 786,
         "wall_count": 129,
         "trigger_count": 26,
@@ -1149,7 +1485,7 @@
         "reactors": 0,
         "robots": 177,
         "hostages": 7,
-        "secrets": 2,
+        "secrets": 3,
         "matcens": 2,
         "energy_centers": 3,
         "mine_volume": 26396900.0,
@@ -1219,6 +1555,94 @@
       "guidebots": 0,
       "powerups": 0,
       "reactors": 0
+    },
+    "provenance": {
+      "credits": [
+        {
+          "field": "version",
+          "value": "1.2",
+          "sources": [
+            "-MOON04-.MN2",
+            "-MOON04-.HOG/-moon04-.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "7/8/1997",
+          "sources": [
+            "-MOON04-.MN2",
+            "-MOON04-.HOG/-moon04-.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Robert Petersen",
+          "sources": [
+            "-MOON04-.MN2",
+            "-MOON04-.HOG/-moon04-.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "rob.petersen@t-online.de",
+          "sources": [
+            "-MOON04-.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-MOON04-.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "u.demesmaeker@rendsburg.netsurf.de",
+          "sources": [
+            "-MOON04-.HOG/-moon04-.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.gc-system.de/UweD/Index.htm",
+          "sources": [
+            "-MOON04-.HOG/-moon04-.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "7/8/1997",
+          "sources": [
+            "-MOON04-.HOG/-moon04-.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-MOON04-.HOG",
+          "modified": "1997-08-30",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-MOON04-.MN2",
+          "modified": "1997-12-20",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
     },
     "coop_starts": "4",
     "track_names": [
@@ -1295,6 +1719,42 @@
         "secret": false,
         "level_name": "Mond 9",
         "level_file": "-MOON04-.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 0,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 26
+            },
+            {
+              "trigger": 34,
+              "segment": 494,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 35,
+              "segment": 656,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 658,
         "wall_count": 154,
         "trigger_count": 36,
@@ -1306,7 +1766,7 @@
         "reactors": 1,
         "robots": 110,
         "hostages": 3,
-        "secrets": 7,
+        "secrets": 8,
         "matcens": 9,
         "energy_centers": 3,
         "mine_volume": 18311400.0,
@@ -1667,6 +2127,101 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "-MOON05-.MN2",
+            "-MOON05-.HOG/-moon05-.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "9/9/1997",
+          "sources": [
+            "-MOON05-.MN2",
+            "-MOON05-.HOG/-moon05-.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Robert Petersen",
+          "sources": [
+            "-MOON05-.MN2",
+            "-MOON05-.HOG/-moon05-.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "rob.petersen@t-online.de",
+          "sources": [
+            "-MOON05-.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-MOON05-.MN2"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "9/9/1997",
+          "sources": [
+            "-MOON05-.HOG/-moon05-.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "u.demesmaeker@rendsburg.netsurf.de",
+          "sources": [
+            "-MOON05-.HOG/-moon05-.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Robert Petersen",
+          "sources": [
+            "-MOON05-.HOG/-moon05-.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.gc-system.de/uwed/index.htm",
+          "sources": [
+            "-MOON05-.HOG/-moon05-.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-MOON05-.HOG",
+          "modified": "1997-09-09",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-MOON05-.MN2",
+          "modified": "1997-12-20",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -1742,6 +2297,30 @@
         "secret": false,
         "level_name": "MOON Serie",
         "level_file": "-moon05-.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 27,
+              "segment": 406,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 438,
         "wall_count": 129,
         "trigger_count": 30,
@@ -2044,6 +2623,94 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "version",
+          "value": "1.2",
+          "sources": [
+            "-MOON06-.MN2",
+            "-MOON06-.HOG/-moon06-.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "8/26/1997",
+          "sources": [
+            "-MOON06-.MN2",
+            "-MOON06-.HOG/-moon06-.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Robert Petersen",
+          "sources": [
+            "-MOON06-.MN2",
+            "-MOON06-.HOG/-moon06-.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "rob.petersen@t-online.de",
+          "sources": [
+            "-MOON06-.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-MOON06-.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "u.demesmaeker@rendsburg.netsurf.de",
+          "sources": [
+            "-MOON06-.HOG/-moon06-.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.gc-system.de/UweD/Index.htm",
+          "sources": [
+            "-MOON06-.HOG/-moon06-.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "8/26/1997",
+          "sources": [
+            "-MOON06-.HOG/-moon06-.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-MOON06-.HOG",
+          "modified": "1997-08-30",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-MOON06-.MN2",
+          "modified": "1997-12-20",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -2119,6 +2786,30 @@
         "secret": false,
         "level_name": "- MOON Serie -",
         "level_file": "-MOON06-.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 20,
+              "segment": 46,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 771,
         "wall_count": 122,
         "trigger_count": 39,
@@ -2614,6 +3305,109 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "Devil2.2l; DMB2",
+          "sources": [
+            "-MOON07-.MN2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "30 days",
+          "sources": [
+            "-MOON07-.MN2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "-MOON07-.MN2",
+            "-MOON07-.HOG/-moon07-.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Robert Petersen",
+          "sources": [
+            "-MOON07-.MN2",
+            "-MOON07-.HOG/-moon07-.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-MOON07-.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "rob.petersen@t-online.de",
+          "sources": [
+            "-MOON07-.MN2",
+            "-MOON07-.HOG/-moon07-.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "20.10.1997",
+          "sources": [
+            "-MOON07-.MN2",
+            "-MOON07-.HOG/-moon07-.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Robert Petersen",
+          "sources": [
+            "-MOON07-.HOG/-moon07-.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.gc-system.de/uwed/index.htm",
+          "sources": [
+            "-MOON07-.HOG/-moon07-.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "20.10.1997",
+          "sources": [
+            "-MOON07-.HOG/-moon07-.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-MOON07-.HOG",
+          "modified": "1997-10-22",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-MOON07-.MN2",
+          "modified": "1997-12-20",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -2689,6 +3483,29 @@
         "secret": false,
         "level_name": "-Moon07-",
         "level_file": "-moon07-.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 27,
+              "segment": 778,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 813,
         "wall_count": 204,
         "trigger_count": 33,
@@ -3056,6 +3873,117 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DMB2.6",
+          "sources": [
+            "-MOON08-.MN2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "60 hours",
+          "sources": [
+            "-MOON08-.MN2",
+            "-MOON08-.hog/-moon08-.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "-MOON08-.MN2",
+            "-MOON08-.hog/-moon08-.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Robert Petersen",
+          "sources": [
+            "-MOON08-.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-MOON08-.MN2",
+            "-MOON08-.hog/-moon08-.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "rob.petersen@t-online.de",
+          "sources": [
+            "-MOON08-.MN2",
+            "-MOON08-.hog/-moon08-.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "30.12.97",
+          "sources": [
+            "-MOON08-.MN2",
+            "-MOON08-.hog/-moon08-.aut"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "ATAAN",
+          "sources": [
+            "-MOON08-.hog/-moon08-.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Robert Petersen",
+          "sources": [
+            "-MOON08-.hog/-moon08-.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "ATAAN",
+          "sources": [
+            "-MOON08-.hog/-moon08-.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "30.12.97",
+          "sources": [
+            "-MOON08-.hog/-moon08-.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1998,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1998,
+          1998
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-MOON08-.MN2",
+          "modified": "1998-01-11",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-MOON08-.hog",
+          "modified": "1998-01-18",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -3131,6 +4059,31 @@
         "secret": false,
         "level_name": "mars02",
         "level_file": "-moon08-.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_endlevel_data",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "invalid_endlevel_data",
+            "file": "-moon08-.txb"
+          },
+          "routes": [
+            {
+              "trigger": 36,
+              "segment": 749,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 774,
         "wall_count": 169,
         "trigger_count": 38,
@@ -3507,6 +4460,97 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DMB2.6",
+          "sources": [
+            "-MOON09-.MN2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "40 hours",
+          "sources": [
+            "-MOON09-.MN2",
+            "-moon09-.hog/-moon09-.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "-MOON09-.MN2",
+            "-moon09-.hog/-moon09-.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "ATAAN",
+          "sources": [
+            "-MOON09-.MN2",
+            "-moon09-.hog/-moon09-.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-MOON09-.MN2",
+            "-moon09-.hog/-moon09-.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "rob.petersen@t-online.de",
+          "sources": [
+            "-MOON09-.MN2",
+            "-moon09-.hog/-moon09-.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "2/16/1998",
+          "sources": [
+            "-MOON09-.MN2",
+            "-moon09-.hog/-moon09-.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "2/16/1998",
+          "sources": [
+            "-moon09-.hog/-moon09-.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1998,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1998,
+          1998
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-MOON09-.MN2",
+          "modified": "1998-02-22",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-moon09-.hog",
+          "modified": "1998-02-16",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -3582,6 +4626,30 @@
         "secret": false,
         "level_name": "- Moon09 -",
         "level_file": "-moon09-.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 10,
+              "segment": 843,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 887,
         "wall_count": 211,
         "trigger_count": 30,
@@ -3593,7 +4661,7 @@
         "reactors": 0,
         "robots": 118,
         "hostages": 4,
-        "secrets": 12,
+        "secrets": 16,
         "matcens": 8,
         "energy_centers": 3,
         "mine_volume": 49149800.0,
@@ -4181,6 +5249,84 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DMB2.6",
+          "sources": [
+            "-MOON10-.MN2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "40 hours",
+          "sources": [
+            "-MOON10-.MN2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.1",
+          "sources": [
+            "-MOON10-.MN2"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Robert Petersen",
+          "sources": [
+            "-MOON10-.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-MOON10-.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "rob.petersen@t-online.de",
+          "sources": [
+            "-MOON10-.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "4/17/98",
+          "sources": [
+            "-MOON10-.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1998,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1998,
+          1998
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-MOON10-.MN2",
+          "modified": "1998-04-21",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-moon10-.hog",
+          "modified": "1998-04-19",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -4256,6 +5402,31 @@
         "secret": false,
         "level_name": "MOON10",
         "level_file": "-moon10-.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_endlevel_data",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "invalid_endlevel_data",
+            "file": "-moon10-.txb"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 146,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 705,
         "wall_count": 193,
         "trigger_count": 29,
@@ -4597,6 +5768,95 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "(LL)ATAN",
+          "sources": [
+            "-MOON11-.MN2",
+            "-moon11-.hog/-MOON11-.MN2",
+            "-moon11-.hog/moon11.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "taan@iname.com",
+          "sources": [
+            "-MOON11-.MN2",
+            "-moon11-.hog/-MOON11-.MN2",
+            "-moon11-.hog/-moon11-.txt",
+            "-moon11-.hog/moon11.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.levellords.de",
+          "sources": [
+            "-MOON11-.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "03/16/99",
+          "sources": [
+            "-MOON11-.MN2",
+            "-moon11-.hog/-MOON11-.MN2",
+            "-moon11-.hog/moon11.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "-MOON11-.MN2",
+            "-moon11-.hog/-MOON11-.MN2",
+            "-moon11-.hog/moon11.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-moon11-.hog/-MOON11-.MN2",
+            "-moon11-.hog/-moon11-.txt",
+            "-moon11-.hog/moon11.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "03/16/99",
+          "sources": [
+            "-moon11-.hog/moon11.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1999,
+          2000
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-MOON11-.MN2",
+          "modified": "2000-02-21",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-moon11-.hog",
+          "modified": "1999-03-20",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -4672,6 +5932,29 @@
         "secret": false,
         "level_name": "- MOON 11 -",
         "level_file": "moon11.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 43,
+              "segment": 279,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 657,
         "wall_count": 150,
         "trigger_count": 48,
@@ -4683,7 +5966,7 @@
         "reactors": 1,
         "robots": 53,
         "hostages": 4,
-        "secrets": 2,
+        "secrets": 3,
         "matcens": 12,
         "energy_centers": 5,
         "mine_volume": 27014800.0,
@@ -4879,6 +6162,115 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "(LL)ATAN",
+          "sources": [
+            "-Moon12-.MN2",
+            "-Moon12-.hog/-moon12-.mn2",
+            "-Moon12-.hog/moon12.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "taan@iname.com",
+          "sources": [
+            "-Moon12-.MN2",
+            "-Moon12-.hog/-moon12-.mn2",
+            "-Moon12-.hog/-moon12-.txt",
+            "-Moon12-.hog/moon12.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.levellords.de",
+          "sources": [
+            "-Moon12-.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "=04.04.99",
+          "sources": [
+            "-Moon12-.MN2",
+            "-Moon12-.hog/-moon12-.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "-Moon12-.MN2",
+            "-Moon12-.hog/-moon12-.mn2",
+            "-Moon12-.hog/moon12.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-Moon12-.hog/-moon12-.mn2",
+            "-Moon12-.hog/-moon12-.txt",
+            "-Moon12-.hog/moon12.aut"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "(LL)ATAN",
+          "sources": [
+            "-Moon12-.hog/moon12.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Robert Petersen",
+          "sources": [
+            "-Moon12-.hog/moon12.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "04.04.99",
+          "sources": [
+            "-Moon12-.hog/moon12.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "04.04.99",
+          "sources": [
+            "-Moon12-.hog/moon12.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1999,
+          2000
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-Moon12-.MN2",
+          "modified": "2000-02-21",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-Moon12-.hog",
+          "modified": "1999-04-04",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -4954,6 +6346,30 @@
         "secret": false,
         "level_name": "- MOON 12 -",
         "level_file": "moon12.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 64,
+              "segment": 579,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 597,
         "wall_count": 189,
         "trigger_count": 72,
@@ -4965,7 +6381,7 @@
         "reactors": 1,
         "robots": 116,
         "hostages": 7,
-        "secrets": 12,
+        "secrets": 19,
         "matcens": 7,
         "energy_centers": 3,
         "mine_volume": 13613600.0,
@@ -5320,6 +6736,88 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "(LL)ATAN",
+          "sources": [
+            "-MOON13-.MN2",
+            "-MOON13-.HOG/moon13.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "taan@iname.com",
+          "sources": [
+            "-MOON13-.MN2",
+            "-MOON13-.HOG/moon13.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.levellords.de",
+          "sources": [
+            "-MOON13-.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "=07.10.99",
+          "sources": [
+            "-MOON13-.MN2",
+            "-MOON13-.HOG/moon13.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "-MOON13-.MN2",
+            "-MOON13-.HOG/moon13.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "-MOON13-.HOG/moon13.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "=07.10.99",
+          "sources": [
+            "-MOON13-.HOG/moon13.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1999,
+          2000
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-MOON13-.HOG",
+          "modified": "1999-07-13",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-MOON13-.MN2",
+          "modified": "2000-02-21",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -5395,6 +6893,30 @@
         "secret": false,
         "level_name": "Moon 13",
         "level_file": "MOON13.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 29,
+              "segment": 380,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 632,
         "wall_count": 184,
         "trigger_count": 35,
@@ -5805,6 +7327,88 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "(LL)ATAN",
+          "sources": [
+            "-MOON14-.MN2",
+            "-MOON14-.hog/moon14.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "taan@iname.com",
+          "sources": [
+            "-MOON14-.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.levellords.de",
+          "sources": [
+            "-MOON14-.MN2",
+            "-MOON14-.hog/moon14.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "=08.23.2000",
+          "sources": [
+            "-MOON14-.MN2",
+            "-MOON14-.hog/moon14.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "-MOON14-.MN2",
+            "-MOON14-.hog/moon14.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "atan@levellords.de",
+          "sources": [
+            "-MOON14-.hog/moon14.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "=08.23.2000",
+          "sources": [
+            "-MOON14-.hog/moon14.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2000,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          2000,
+          2000
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "-MOON14-.MN2",
+          "modified": "2000-08-23",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "-MOON14-.hog",
+          "modified": "2000-08-23",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -5880,6 +7484,30 @@
         "secret": false,
         "level_name": "- MOON 14 -",
         "level_file": "MOON14.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 736,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 854,
         "wall_count": 189,
         "trigger_count": 34,

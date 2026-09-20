@@ -34,6 +34,133 @@
       "powerups": 409,
       "reactors": 5
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "ENTROPY2.MN2",
+            "ENTROPY2.HOG/e2v-1.aut",
+            "ENTROPY2.HOG/e2v-2.aut",
+            "ENTROPY2.HOG/e2v-3.aut",
+            "ENTROPY2.HOG/e2v-4.aut",
+            "ENTROPY2.HOG/e2v-5.aut",
+            "ENTROPY2.HOG/e2v-6.aut",
+            "ENTROPY2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "11/23/1997",
+          "sources": [
+            "ENTROPY2.MN2",
+            "ENTROPY2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Luke Schneider",
+          "sources": [
+            "ENTROPY2.MN2",
+            "ENTROPY2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "last@uci.edu",
+          "sources": [
+            "ENTROPY2.MN2",
+            "ENTROPY2.HOG/e2v-1.aut",
+            "ENTROPY2.HOG/e2v-2.aut",
+            "ENTROPY2.HOG/e2v-3.aut",
+            "ENTROPY2.HOG/e2v-4.aut",
+            "ENTROPY2.HOG/e2v-5.aut",
+            "ENTROPY2.HOG/e2v-6.aut",
+            "ENTROPY2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "about 200 hours (170 of these in 2 weeks!!)",
+          "sources": [
+            "ENTROPY2.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.ics.uci.edu/~lschneid",
+          "sources": [
+            "ENTROPY2.MN2",
+            "ENTROPY2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "Vizor",
+          "sources": [
+            "ENTROPY2.HOG/e2v-1.aut",
+            "ENTROPY2.HOG/e2v-2.aut",
+            "ENTROPY2.HOG/e2v-3.aut",
+            "ENTROPY2.HOG/e2v-4.aut",
+            "ENTROPY2.HOG/e2v-5.aut",
+            "ENTROPY2.HOG/e2v-6.aut",
+            "ENTROPY2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Luke Schneider",
+          "sources": [
+            "ENTROPY2.HOG/e2v-1.aut",
+            "ENTROPY2.HOG/e2v-2.aut",
+            "ENTROPY2.HOG/e2v-3.aut",
+            "ENTROPY2.HOG/e2v-4.aut",
+            "ENTROPY2.HOG/e2v-5.aut",
+            "ENTROPY2.HOG/e2v-6.aut",
+            "ENTROPY2.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "11/23/1997",
+          "sources": [
+            "ENTROPY2.HOG/e2v-1.aut",
+            "ENTROPY2.HOG/e2v-2.aut",
+            "ENTROPY2.HOG/e2v-3.aut",
+            "ENTROPY2.HOG/e2v-4.aut",
+            "ENTROPY2.HOG/e2v-5.aut",
+            "ENTROPY2.HOG/e2v-6.aut",
+            "ENTROPY2.HOG/mission.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "ENTROPY2.HOG",
+          "modified": "1997-09-28",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "ENTROPY2.MN2",
+          "modified": "1997-09-24",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +236,30 @@
         "secret": false,
         "level_name": "Decahedron Outpost",
         "level_file": "e2v-1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 343,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 351,
         "wall_count": 97,
         "trigger_count": 17,
@@ -299,6 +450,30 @@
         "secret": false,
         "level_name": "The Armadillo",
         "level_file": "e2v-2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 414,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 418,
         "wall_count": 99,
         "trigger_count": 21,
@@ -475,6 +650,30 @@
         "secret": false,
         "level_name": "Gauss in the Shell",
         "level_file": "e2v-3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 80,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 313,
         "wall_count": 98,
         "trigger_count": 14,
@@ -486,7 +685,7 @@
         "reactors": 1,
         "robots": 59,
         "hostages": 0,
-        "secrets": 1,
+        "secrets": 2,
         "matcens": 0,
         "energy_centers": 1,
         "mine_volume": 33368500.0,
@@ -575,6 +774,30 @@
         "secret": false,
         "level_name": "Vermillion Caverns",
         "level_file": "e2v-4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 108,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 415,
         "wall_count": 79,
         "trigger_count": 14,
@@ -801,6 +1024,30 @@
         "secret": false,
         "level_name": "Monster City",
         "level_file": "e2v-5.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 363,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 610,
         "wall_count": 188,
         "trigger_count": 29,
@@ -1047,6 +1294,30 @@
         "secret": false,
         "level_name": "Singularity",
         "level_file": "e2v-6.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 173,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 529,
         "wall_count": 131,
         "trigger_count": 24,

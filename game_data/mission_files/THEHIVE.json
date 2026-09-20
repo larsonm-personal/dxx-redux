@@ -34,6 +34,70 @@
       "powerups": 79,
       "reactors": 8
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "started_date",
+          "value": "Aug 14, 2009",
+          "sources": [
+            "thehive.txt"
+          ]
+        },
+        {
+          "field": "finished_date",
+          "value": "Currently incomplete",
+          "sources": [
+            "thehive.txt"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Echo",
+          "sources": [
+            "thehive.txt"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "DEVIL",
+          "sources": [
+            "thehive.txt"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "adz@adamhaskell.net",
+          "sources": [
+            "thehive.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "THEHIVE.HOG",
+          "modified": "2009-11-29",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "THEHIVE.MSN",
+          "modified": "2009-11-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -233,6 +297,29 @@
         "secret": false,
         "level_name": "The Entrance",
         "level_file": "THEHIVE1.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 307,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 309,
         "wall_count": 120,
         "trigger_count": 1,
@@ -346,6 +433,35 @@
         "secret": false,
         "level_name": "Lower Sector",
         "level_file": "THEHIVE2.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 248,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 157,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 260,
         "wall_count": 70,
         "trigger_count": 5,
@@ -432,6 +548,35 @@
         "secret": false,
         "level_name": "Basement 1.4",
         "level_file": "THEHIVE3.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 260,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 258,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 273,
         "wall_count": 44,
         "trigger_count": 6,
@@ -532,6 +677,35 @@
         "secret": false,
         "level_name": "Lower Sector - 2nd pass",
         "level_file": "THEHIVE4.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 144,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 6,
+              "segment": 265,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 283,
         "wall_count": 78,
         "trigger_count": 7,
@@ -997,6 +1171,35 @@
         "secret": false,
         "level_name": "Caverns",
         "level_file": "THEHIVE5.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 150,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 5,
+              "segment": 13,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 159,
         "wall_count": 32,
         "trigger_count": 7,
@@ -1111,6 +1314,35 @@
         "secret": false,
         "level_name": "Lower Sector - 3rd pass",
         "level_file": "THEHIVE6.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 412,
+              "side": 3,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 453,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 461,
         "wall_count": 118,
         "trigger_count": 5,
@@ -1225,6 +1457,35 @@
         "secret": false,
         "level_name": "Lady Meiyo-ko Halls",
         "level_file": "THEHIVE7.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 437,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 438,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 440,
         "wall_count": 160,
         "trigger_count": 5,
@@ -1339,6 +1600,35 @@
         "secret": false,
         "level_name": "The Entrance - 2nd pass",
         "level_file": "THEHIVE8.RDL",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 426,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 425,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 440,
         "wall_count": 118,
         "trigger_count": 4,

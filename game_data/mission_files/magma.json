@@ -34,6 +34,56 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Goat",
+          "sources": [
+            "magma.mn2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Inferno",
+          "sources": [
+            "magma.mn2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "goat@aegir.tech",
+          "sources": [
+            "magma.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2022,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2022,
+          2022
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "magma.hog",
+          "modified": "2022-07-27",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "magma.mn2",
+          "modified": "2022-07-19",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -109,6 +159,35 @@
         "secret": false,
         "level_name": "Magma Facility",
         "level_file": "magma.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 1016,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 1008,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 1027,
         "wall_count": 253,
         "trigger_count": 3,
@@ -189,6 +268,34 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2022,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2022,
+          2022
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "mmagma.hog",
+          "modified": "2022-08-01",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "mmagma.mn2",
+          "modified": "2022-07-19",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -264,6 +371,35 @@
         "secret": false,
         "level_name": "Mini Magma Facility",
         "level_file": "mmagma.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 492,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 1,
+              "segment": 484,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 584,
         "wall_count": 166,
         "trigger_count": 2,

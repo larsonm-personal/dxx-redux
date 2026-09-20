@@ -3579,11 +3579,16 @@ private fun LevelMetadataResultContent(
 ) {
     var showMusicMetadata by remember(result) { mutableStateOf(false) }
     var showMissionIntent by remember(result) { mutableStateOf(false) }
+    var showProvenance by remember(result) { mutableStateOf(false) }
     if (result == null) {
         ModDetailLine("No analysis result", color = MaterialTheme.colorScheme.error)
         return
     }
     DetailRow("Status", result.status.replaceFirstChar { it.uppercase() })
+    result.provenance?.let { provenance ->
+        TextButton(onClick = { showProvenance = true }) { Text("Provenance") }
+        if (showProvenance) MissionProvenanceDialog(provenance) { showProvenance = false }
+    }
     if (result.game.isNotBlank()) {
         DetailRow("Game", result.game.uppercase(Locale.US))
     }

@@ -52,6 +52,7 @@ extern "C" {
 }
 
 #include "level_statistics.hpp"
+#include "flyout_metadata.hpp"
 #include "route_planner.h"
 #include "midi_metadata_json.hpp"
 #include "mission_intent_classification.hpp"
@@ -1072,6 +1073,7 @@ static nlohmann::ordered_json serialize_current_level(
 	result["mine_volume_normalized"] = metadata ? metadata->mine_volume_normalized : 0.0;
 	result["travel_distance"] = metadata ? metadata->travel_distance : 0.0;
 	result["travel_time_seconds"] = metadata ? metadata->travel_time_seconds : 0;
+	result["flyout"] = flyout_metadata::collect(level_num, level_file);
 	result["notes"] = serialize_metadata_notes(metadata);
 	result["guidebot_count"] = metadata ? metadata->guidebot_count : 0;
 	result["guidebot_placed"] = metadata && metadata->guidebot_placed != 0;
@@ -1141,6 +1143,7 @@ static nlohmann::ordered_json serialize_failed_level(int level_num, const char *
 	result["mine_volume_normalized"] = 0.0;
 	result["travel_distance"] = 0.0;
 	result["travel_time_seconds"] = 0;
+	result["flyout"] = flyout_metadata::unavailable("level_not_loaded");
 	result["notes"] = nlohmann::ordered_json::array();
 	result["guidebot_count"] = 0;
 	result["guidebot_placed"] = false;

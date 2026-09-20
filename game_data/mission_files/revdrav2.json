@@ -34,6 +34,49 @@
       "powerups": 129,
       "reactors": 4
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE",
+          "sources": [
+            "revdrav2.mn2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "1 oct 2015",
+          "sources": [
+            "revdrav2.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2016,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2016,
+          2016
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "revdrav2.hog",
+          "modified": "2016-01-14",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "revdrav2.mn2",
+          "modified": "2016-01-04",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -109,6 +152,29 @@
         "secret": false,
         "level_name": "Alien Laser Lab",
         "level_file": "2drav1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 40,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 234,
         "wall_count": 75,
         "trigger_count": 4,
@@ -199,6 +265,29 @@
         "secret": false,
         "level_name": "The Temple",
         "level_file": "2drav2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 277,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 333,
         "wall_count": 63,
         "trigger_count": 2,
@@ -303,6 +392,29 @@
         "secret": false,
         "level_name": "Frozen Wasteland",
         "level_file": "2drav3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 365,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 427,
         "wall_count": 119,
         "trigger_count": 6,
@@ -494,6 +606,29 @@
         "secret": false,
         "level_name": "PTMC Heating Facility",
         "level_file": "2drav4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 357,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 550,
         "wall_count": 138,
         "trigger_count": 7,
@@ -617,6 +752,29 @@
         "secret": false,
         "level_name": "PTMC Water Facility",
         "level_file": "2drav5.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 188,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 586,
         "wall_count": 166,
         "trigger_count": 12,
@@ -737,6 +895,29 @@
         "secret": true,
         "level_name": "Ko'Regar Sewers",
         "level_file": "2dravs1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 158,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 184,
         "wall_count": 51,
         "trigger_count": 2,

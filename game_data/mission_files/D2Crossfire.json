@@ -34,6 +34,42 @@
       "powerups": 153,
       "reactors": 7
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DMB2, HXMEdit",
+          "sources": [
+            "crosfire.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "crosfire.hog",
+          "modified": "2009-08-03",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "crosfire.mn2",
+          "modified": "2009-08-01",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -109,6 +145,30 @@
         "secret": false,
         "level_name": "Criksha Gully",
         "level_file": "crikgul.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 64,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 562,
         "wall_count": 42,
         "trigger_count": 3,
@@ -171,6 +231,29 @@
         "secret": false,
         "level_name": "Polures Ravine ",
         "level_file": "polrav.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 191,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 752,
         "wall_count": 47,
         "trigger_count": 3,
@@ -346,6 +429,30 @@
         "secret": false,
         "level_name": "Reput' Moc Basin",
         "level_file": "rembasin.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 475,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 543,
         "wall_count": 69,
         "trigger_count": 7,
@@ -572,6 +679,30 @@
         "secret": false,
         "level_name": "Larwec' Gafehl V",
         "level_file": "largafv.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 93,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 582,
         "wall_count": 42,
         "trigger_count": 3,
@@ -678,6 +809,30 @@
         "secret": false,
         "level_name": "Kraeg III Research Base",
         "level_file": "k3reb.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 167,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 360,
         "wall_count": 44,
         "trigger_count": 16,
@@ -874,6 +1029,30 @@
         "secret": false,
         "level_name": "Qu'Voxa Shaft Facility",
         "level_file": "qvshfa.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 69,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 561,
         "wall_count": 80,
         "trigger_count": 19,
@@ -942,6 +1121,30 @@
         "secret": false,
         "level_name": "Drub' Dehad II",
         "level_file": "drbdeh2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 34,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 369,
         "wall_count": 45,
         "trigger_count": 2,
@@ -1009,6 +1212,30 @@
         "secret": false,
         "level_name": "Serropa VI",
         "level_file": "serropa.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 346,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 863,
         "wall_count": 149,
         "trigger_count": 14,
@@ -1248,6 +1475,30 @@
         "secret": false,
         "level_name": "Vunebyr' Laekeo",
         "level_file": "vunlak.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 27,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 261,
         "wall_count": 79,
         "trigger_count": 7,
@@ -1296,6 +1547,30 @@
         "secret": false,
         "level_name": "Fahra' Hyshola",
         "level_file": "fahrhysh.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 184,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 232,
         "wall_count": 2,
         "trigger_count": 1,
@@ -1374,6 +1649,30 @@
         "secret": false,
         "level_name": "Queltoga Military Base",
         "level_file": "quetga.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 237,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 254,
         "wall_count": 33,
         "trigger_count": 7,
@@ -1475,6 +1774,30 @@
         "secret": false,
         "level_name": "PTMC Command Station 1",
         "level_file": "ptmc1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 404,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 406,
         "wall_count": 112,
         "trigger_count": 1,
@@ -1597,6 +1920,30 @@
         "secret": false,
         "level_name": "Uluhe' Naicia",
         "level_file": "uluhnac.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 44,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 376,
         "wall_count": 28,
         "trigger_count": 3,
@@ -1736,6 +2083,59 @@
         "secret": false,
         "level_name": "Xao' Taueif",
         "level_file": "xaotau.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 361,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 1,
+              "segment": 359,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 342,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 348,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 345,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 5,
+              "segment": 350,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 371,
         "wall_count": 96,
         "trigger_count": 6,
@@ -1842,6 +2242,30 @@
         "secret": false,
         "level_name": "Ollurys Magma Falls",
         "level_file": "magfall.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 117,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 467,
         "wall_count": 142,
         "trigger_count": 17,
@@ -1960,6 +2384,30 @@
         "secret": false,
         "level_name": "Nykaye Training Outpost",
         "level_file": "nytro.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 531,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 539,
         "wall_count": 44,
         "trigger_count": 9,
@@ -2200,6 +2648,30 @@
         "secret": false,
         "level_name": "Dhukarn Research Labs",
         "level_file": "dhulabs.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 95,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 243,
         "wall_count": 27,
         "trigger_count": 12,
@@ -2363,6 +2835,30 @@
         "secret": false,
         "level_name": "Deiklastis Unnilhexium Mine",
         "level_file": "unnil.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 27,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 279,
         "wall_count": 39,
         "trigger_count": 10,
@@ -2521,6 +3017,29 @@
         "secret": false,
         "level_name": "ExoCorp Execution Center",
         "level_file": "exoexec.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 274,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 294,
         "wall_count": 46,
         "trigger_count": 14,

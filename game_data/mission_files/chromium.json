@@ -34,6 +34,34 @@
       "powerups": 102,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2006,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2006,
+          2006
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "CHROMIUM.HOG",
+          "modified": "2006-10-17",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "CHROMIUM.MSN",
+          "modified": "2006-10-03",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +261,35 @@
         "secret": false,
         "level_name": "Uridim",
         "level_file": "Uridim.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.404,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.404
+          },
+          "presentation": {
+            "status": "present",
+            "file": "Uridim.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 346,
+              "side": 4,
+              "seconds": 13.404,
+              "status": "estimated",
+              "tunnel_units": 420.197,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 391,
         "wall_count": 88,
         "trigger_count": 1,
@@ -374,6 +431,35 @@
         "secret": false,
         "level_name": "Kaylar",
         "level_file": "kaylar.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.891,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.891
+          },
+          "presentation": {
+            "status": "present",
+            "file": "kaylar.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 265,
+              "side": 3,
+              "seconds": 15.891,
+              "status": "estimated",
+              "tunnel_units": 544.54,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 443,
         "wall_count": 82,
         "trigger_count": 2,
@@ -488,6 +574,35 @@
         "secret": false,
         "level_name": "Deneb",
         "level_file": "deneb.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.244,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.244
+          },
+          "presentation": {
+            "status": "present",
+            "file": "deneb.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 504,
+              "side": 2,
+              "seconds": 19.244,
+              "status": "estimated",
+              "tunnel_units": 712.202,
+              "tunnel_segments": 35
+            }
+          ]
+        },
         "segment_count": 564,
         "wall_count": 152,
         "trigger_count": 1,
@@ -602,6 +717,35 @@
         "secret": true,
         "level_name": "Ifpun",
         "level_file": "ifpun.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 18.449,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 18.449
+          },
+          "presentation": {
+            "status": "present",
+            "file": "ifpun.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 269,
+              "side": 2,
+              "seconds": 18.449,
+              "status": "estimated",
+              "tunnel_units": 672.443,
+              "tunnel_segments": 32
+            }
+          ]
+        },
         "segment_count": 394,
         "wall_count": 95,
         "trigger_count": 4,

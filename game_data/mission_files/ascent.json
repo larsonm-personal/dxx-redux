@@ -34,6 +34,70 @@
       "powerups": 192,
       "reactors": 13
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "Yahoma 2.0, DMB2",
+          "sources": [
+            "ascent.mn2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "3 weeks",
+          "sources": [
+            "ascent.mn2"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "gameaddict11707",
+          "sources": [
+            "ascent.mn2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "mormudd@gmail.com",
+          "sources": [
+            "ascent.mn2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "11/14/2009",
+          "sources": [
+            "ascent.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "ASCENT.HOG",
+          "modified": "2009-12-13",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "ascent.mn2",
+          "modified": "2009-11-27",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -109,6 +173,30 @@
         "secret": false,
         "level_name": "Callisto Industrial Complex",
         "level_file": "as01.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 249,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 558,
         "wall_count": 97,
         "trigger_count": 4,
@@ -239,6 +327,30 @@
         "secret": false,
         "level_name": "Callisto Water Treatment",
         "level_file": "as02.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 282,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 389,
         "wall_count": 156,
         "trigger_count": 3,
@@ -419,6 +531,29 @@
         "secret": false,
         "level_name": "Lunar Outpost MN0348",
         "level_file": "as03.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 9,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 837,
         "wall_count": 138,
         "trigger_count": 5,
@@ -554,6 +689,30 @@
         "secret": false,
         "level_name": "Io Outpost TF-9802J",
         "level_file": "as04.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 40,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 348,
         "wall_count": 103,
         "trigger_count": 6,
@@ -756,6 +915,30 @@
         "secret": false,
         "level_name": "Europa Mineral Dig Tau",
         "level_file": "as05.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 10,
+              "segment": 82,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 654,
         "wall_count": 133,
         "trigger_count": 12,
@@ -1028,6 +1211,30 @@
         "secret": false,
         "level_name": "Nereid Uranium Storage",
         "level_file": "as06.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 277,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 399,
         "wall_count": 113,
         "trigger_count": 2,
@@ -1142,6 +1349,30 @@
         "secret": false,
         "level_name": "Tethys Nickel-Radon Mine",
         "level_file": "as07.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 38,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 465,
         "wall_count": 102,
         "trigger_count": 1,
@@ -1289,6 +1520,30 @@
         "secret": false,
         "level_name": "Boloar Military Base",
         "level_file": "as08.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 171,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 323,
         "wall_count": 159,
         "trigger_count": 2,
@@ -1423,6 +1678,29 @@
         "secret": false,
         "level_name": "Quartzon Test Labs",
         "level_file": "as09.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 31,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 399,
         "wall_count": 158,
         "trigger_count": 8,
@@ -1735,6 +2013,30 @@
         "secret": false,
         "level_name": "Nix'Lulye Hadoc",
         "level_file": "as10.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 221,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 228,
         "wall_count": 11,
         "trigger_count": 1,
@@ -1813,6 +2115,30 @@
         "secret": false,
         "level_name": "Limefrost Spiral Military Base",
         "level_file": "as11.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 113,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 460,
         "wall_count": 130,
         "trigger_count": 5,
@@ -2083,6 +2409,41 @@
         "secret": false,
         "level_name": "Limefrost Spiral Excavation",
         "level_file": "as12.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 256,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 7,
+              "segment": 254,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 8,
+              "segment": 258,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 406,
         "wall_count": 128,
         "trigger_count": 10,
@@ -2258,6 +2619,30 @@
         "secret": false,
         "level_name": "Brimspark SunChambers",
         "level_file": "as13.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 84,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 478,
         "wall_count": 168,
         "trigger_count": 17,
@@ -2403,6 +2788,30 @@
         "secret": false,
         "level_name": "Lion's Den",
         "level_file": "as14.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 0,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 246,
         "wall_count": 23,
         "trigger_count": 8,
@@ -2516,6 +2925,30 @@
         "secret": false,
         "level_name": "Trident Colony",
         "level_file": "as15.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 187,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 285,
         "wall_count": 58,
         "trigger_count": 2,
@@ -2594,6 +3027,30 @@
         "secret": false,
         "level_name": "Upsilon Beta III",
         "level_file": "as16.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 18,
+              "segment": 397,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 409,
         "wall_count": 142,
         "trigger_count": 19,
@@ -2825,6 +3282,30 @@
         "secret": false,
         "level_name": "Ensi'Veru Boring Hole",
         "level_file": "as17.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 362,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 374,
         "wall_count": 135,
         "trigger_count": 2,
@@ -2970,6 +3451,30 @@
         "secret": false,
         "level_name": "Nai'Tunsberi",
         "level_file": "as18.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 270,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 385,
         "wall_count": 44,
         "trigger_count": 3,
@@ -3201,6 +3706,29 @@
         "secret": false,
         "level_name": "Omega Production Plant",
         "level_file": "as19.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 17,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 267,
         "wall_count": 82,
         "trigger_count": 5,
@@ -3381,6 +3909,30 @@
         "secret": false,
         "level_name": "Amazon Station",
         "level_file": "as20.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 361,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 373,
         "wall_count": 82,
         "trigger_count": 10,
@@ -3520,6 +4072,29 @@
         "secret": false,
         "level_name": "The Nexus Gateway",
         "level_file": "as21.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 288,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 289,
         "wall_count": 33,
         "trigger_count": 10,
@@ -3838,6 +4413,35 @@
         "secret": false,
         "level_name": "Prisoner Exodus",
         "level_file": "as22.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 1,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 0,
+              "segment": 3,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 204,
         "wall_count": 32,
         "trigger_count": 4,
@@ -4017,6 +4621,29 @@
         "secret": false,
         "level_name": "Puuma Sphere Mil. Base",
         "level_file": "as23.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 244,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 528,
         "wall_count": 163,
         "trigger_count": 16,
@@ -4055,6 +4682,30 @@
         "secret": false,
         "level_name": "Frisia Research Facility",
         "level_file": "as24.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 293,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 307,
         "wall_count": 133,
         "trigger_count": 3,
@@ -4142,6 +4793,29 @@
         "secret": false,
         "level_name": "Under The Radar",
         "level_file": "as25.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 136,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 183,
         "wall_count": 45,
         "trigger_count": 7,
@@ -4331,6 +5005,30 @@
         "secret": false,
         "level_name": "Out of the Frying Pan",
         "level_file": "as26.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 223,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 240,
         "wall_count": 59,
         "trigger_count": 6,
@@ -4480,6 +5178,29 @@
         "secret": false,
         "level_name": "Call of the Reaper",
         "level_file": "as27.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 380,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 389,
         "wall_count": 8,
         "trigger_count": 2,
@@ -4572,6 +5293,30 @@
         "secret": true,
         "level_name": "frisia gas mine",
         "level_file": "ascrt.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 133,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 337,
         "wall_count": 90,
         "trigger_count": 8,

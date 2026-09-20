@@ -34,6 +34,34 @@
       "powerups": 176,
       "reactors": 8
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1998,
+          2008
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "GUM.HOG",
+          "modified": "2008-09-24",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "GUM.MSN",
+          "modified": "1998-09-29",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -233,6 +261,35 @@
         "secret": false,
         "level_name": "Grant's Zoo",
         "level_file": "zoo.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.598,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.598
+          },
+          "presentation": {
+            "status": "present",
+            "file": "zoo.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 606,
+              "side": 1,
+              "seconds": 12.598,
+              "status": "estimated",
+              "tunnel_units": 379.903,
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 717,
         "wall_count": 158,
         "trigger_count": 16,
@@ -347,6 +404,35 @@
         "secret": false,
         "level_name": "Deneb alpha",
         "level_file": "deneb.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.502,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.502
+          },
+          "presentation": {
+            "status": "present",
+            "file": "deneb.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 240,
+              "side": 5,
+              "seconds": 12.502,
+              "status": "estimated",
+              "tunnel_units": 375.113,
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 446,
         "wall_count": 76,
         "trigger_count": 3,
@@ -464,6 +550,35 @@
         "secret": false,
         "level_name": "Escape",
         "level_file": "escape3.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.681,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.681
+          },
+          "presentation": {
+            "status": "present",
+            "file": "escape3.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 318,
+              "side": 2,
+              "seconds": 20.681,
+              "status": "estimated",
+              "tunnel_units": 784.053,
+              "tunnel_segments": 28
+            }
+          ]
+        },
         "segment_count": 480,
         "wall_count": 71,
         "trigger_count": 6,
@@ -554,6 +669,35 @@
         "secret": false,
         "level_name": "Grant's Remorse 1.1",
         "level_file": "remors11.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.647,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.647
+          },
+          "presentation": {
+            "status": "present",
+            "file": "remors11.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 181,
+              "side": 1,
+              "seconds": 10.647,
+              "status": "estimated",
+              "tunnel_units": 282.343,
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 594,
         "wall_count": 174,
         "trigger_count": 9,
@@ -657,6 +801,35 @@
         "secret": false,
         "level_name": "Epsilon 0.6",
         "level_file": "epsilon.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.886,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.886
+          },
+          "presentation": {
+            "status": "present",
+            "file": "epsilon.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 0,
+              "side": 5,
+              "seconds": 11.886,
+              "status": "estimated",
+              "tunnel_units": 344.3,
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 478,
         "wall_count": 141,
         "trigger_count": 4,
@@ -849,6 +1022,35 @@
         "secret": false,
         "level_name": "chapel 1.2",
         "level_file": "chapel.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.042,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.042
+          },
+          "presentation": {
+            "status": "present",
+            "file": "chapel.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 18,
+              "segment": 266,
+              "side": 1,
+              "seconds": 9.042,
+              "status": "estimated",
+              "tunnel_units": 202.103,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 777,
         "wall_count": 171,
         "trigger_count": 19,
@@ -1018,6 +1220,35 @@
         "secret": false,
         "level_name": "Alpha Centauri B",
         "level_file": "alpha-h.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.699,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.699
+          },
+          "presentation": {
+            "status": "present",
+            "file": "alpha-h.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 679,
+              "side": 4,
+              "seconds": 10.699,
+              "status": "estimated",
+              "tunnel_units": 284.953,
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 742,
         "wall_count": 132,
         "trigger_count": 13,
@@ -1029,7 +1260,7 @@
         "reactors": 1,
         "robots": 184,
         "hostages": 4,
-        "secrets": 8,
+        "secrets": 9,
         "matcens": 1,
         "energy_centers": 3,
         "mine_volume": 24526900.0,
@@ -1214,6 +1445,35 @@
         "secret": false,
         "level_name": "Starship \"Ironstar\"",
         "level_file": "ironstr1.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.531,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.531
+          },
+          "presentation": {
+            "status": "present",
+            "file": "zoo.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 510,
+              "side": 2,
+              "seconds": 11.531,
+              "status": "estimated",
+              "tunnel_units": 326.546,
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 174,
         "trigger_count": 12,
@@ -1429,6 +1689,35 @@
         "secret": true,
         "level_name": "dropshaft 8",
         "level_file": "dropshf8.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.838,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.838
+          },
+          "presentation": {
+            "status": "present",
+            "file": "dropshf8.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 167,
+              "side": 3,
+              "seconds": 10.838,
+              "status": "estimated",
+              "tunnel_units": 291.902,
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 410,
         "wall_count": 175,
         "trigger_count": 14,
@@ -1614,6 +1903,35 @@
         "secret": true,
         "level_name": "Badlands 1.1",
         "level_file": "badland.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.575,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.575
+          },
+          "presentation": {
+            "status": "present",
+            "file": "badland.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 649,
+              "side": 1,
+              "seconds": 12.575,
+              "status": "estimated",
+              "tunnel_units": 378.764,
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 173,
         "trigger_count": 20,
@@ -1728,6 +2046,35 @@
         "secret": true,
         "level_name": "Nowhere 0.2",
         "level_file": "nowhere.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.707,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.707
+          },
+          "presentation": {
+            "status": "present",
+            "file": "nowhere.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 176,
+              "side": 3,
+              "seconds": 12.707,
+              "status": "estimated",
+              "tunnel_units": 385.365,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 538,
         "wall_count": 98,
         "trigger_count": 4,

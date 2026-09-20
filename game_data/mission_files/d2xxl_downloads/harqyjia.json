@@ -34,6 +34,157 @@
       "powerups": 481,
       "reactors": 2
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "(LL)ATAN",
+          "sources": [
+            "harqyjia.MN2",
+            "harqyjia.hog/harqyjia.MN2",
+            "harqyjia.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "taan@iname.com",
+          "sources": [
+            "harqyjia.MN2",
+            "harqyjia.hog/harqyj01.aut",
+            "harqyjia.hog/harqyj02.aut",
+            "harqyjia.hog/harqyj03.aut",
+            "harqyjia.hog/harqyj04.aut",
+            "harqyjia.hog/harqyjia.MN2",
+            "harqyjia.hog/harqyjia.txt",
+            "harqyjia.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.levellords.de",
+          "sources": [
+            "harqyjia.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "02/12/99",
+          "sources": [
+            "harqyjia.MN2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.10",
+          "sources": [
+            "harqyjia.MN2",
+            "harqyjia.hog/harqyjia.MN2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.1",
+          "sources": [
+            "harqyjia.hog/harqyj01.aut",
+            "harqyjia.hog/harqyj02.aut",
+            "harqyjia.hog/harqyj03.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "02/12/1999",
+          "sources": [
+            "harqyjia.hog/harqyj01.aut",
+            "harqyjia.hog/harqyj02.aut",
+            "harqyjia.hog/harqyj03.aut"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "(LL)ATAN",
+          "sources": [
+            "harqyjia.hog/harqyj01.aut",
+            "harqyjia.hog/harqyj02.aut",
+            "harqyjia.hog/harqyj03.aut",
+            "harqyjia.hog/harqyj04.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Robert Petersen",
+          "sources": [
+            "harqyjia.hog/harqyj01.aut",
+            "harqyjia.hog/harqyj02.aut",
+            "harqyjia.hog/harqyj03.aut",
+            "harqyjia.hog/harqyj04.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "harqyjia.hog/harqyj04.aut",
+            "harqyjia.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "12/15/1998",
+          "sources": [
+            "harqyjia.hog/harqyj04.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://homes.cls.net/~DEMES/",
+          "sources": [
+            "harqyjia.hog/harqyjia.MN2",
+            "harqyjia.hog/harqyjia.txt",
+            "harqyjia.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "12/06/98",
+          "sources": [
+            "harqyjia.hog/harqyjia.MN2",
+            "harqyjia.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "12/06/98",
+          "sources": [
+            "harqyjia.hog/mission.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1999,
+          2000
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "harqyjia.MN2",
+          "modified": "2000-02-21",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "harqyjia.hog",
+          "modified": "1999-02-12",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -109,6 +260,30 @@
         "secret": false,
         "level_name": "- HAR01-",
         "level_file": "HARQYJ01.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 46,
+              "segment": 560,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 672,
         "wall_count": 244,
         "trigger_count": 54,
@@ -120,7 +295,7 @@
         "reactors": 1,
         "robots": 84,
         "hostages": 9,
-        "secrets": 1,
+        "secrets": 13,
         "matcens": 8,
         "energy_centers": 5,
         "mine_volume": 9873750.0,
@@ -585,6 +760,30 @@
         "secret": false,
         "level_name": "- har02 -",
         "level_file": "HARQYJ02.RL2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 56,
+              "segment": 853,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 879,
         "wall_count": 239,
         "trigger_count": 64,
@@ -1335,6 +1534,30 @@
         "secret": false,
         "level_name": "- HAR03 -",
         "level_file": "harqyj03.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 52,
+              "segment": 607,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 780,
         "wall_count": 247,
         "trigger_count": 55,
@@ -1625,6 +1848,30 @@
         "secret": false,
         "level_name": "- HAR 04 -",
         "level_file": "harqyj04.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 32,
+              "segment": 768,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 3
+            }
+          ]
+        },
         "segment_count": 856,
         "wall_count": 220,
         "trigger_count": 66,
@@ -1898,6 +2145,79 @@
         "secret": true,
         "level_name": "- HAR05 -",
         "level_file": "HARQYJIA.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_endlevel_data",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "invalid_endlevel_data",
+            "file": "HARQYJIA.txb"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 87,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 0,
+              "segment": 91,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 90,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 1
+            },
+            {
+              "trigger": 3,
+              "segment": 86,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 212,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 5,
+              "segment": 506,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 11,
+              "segment": 535,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 12,
+              "segment": 282,
+              "side": 1,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 13,
+              "segment": 360,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 546,
         "wall_count": 85,
         "trigger_count": 22,

@@ -34,6 +34,84 @@
       "powerups": 372,
       "reactors": 8
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "Dmb2,Hoggle,Hamm,Yahoma",
+          "sources": [
+            "plutonionOutbreak/missions/single/pluton.msn"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "3 weeks",
+          "sources": [
+            "plutonionOutbreak/missions/single/pluton.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "v1.1",
+          "sources": [
+            "plutonionOutbreak/missions/single/pluton.msn"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "{EDB}'s Deathwinger and HellCrushr",
+          "sources": [
+            "plutonionOutbreak/missions/single/pluton.msn"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.geocities.com/timessquare/maze/4371/",
+          "sources": [
+            "plutonionOutbreak/missions/single/pluton.msn"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "mailto:deathwinger2@hotmail.com",
+          "sources": [
+            "plutonionOutbreak/missions/single/pluton.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "28/7/98",
+          "sources": [
+            "plutonionOutbreak/missions/single/pluton.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1998,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1998,
+          1998
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "plutonionOutbreak/missions/single/pluton.hog",
+          "modified": "1998-07-29",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "plutonionOutbreak/missions/single/pluton.msn",
+          "modified": "1998-07-29",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +311,35 @@
         "secret": false,
         "level_name": "Welcome to Pluto Fanansa",
         "level_file": "p1.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.2,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.2
+          },
+          "presentation": {
+            "status": "present",
+            "file": "p1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 293,
+              "side": 4,
+              "seconds": 12.2,
+              "status": "estimated",
+              "tunnel_units": 359.999,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 312,
         "wall_count": 32,
         "trigger_count": 1,
@@ -333,6 +440,35 @@
         "secret": false,
         "level_name": "Garcia's Outworld",
         "level_file": "p2.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.78,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.78
+          },
+          "presentation": {
+            "status": "present",
+            "file": "p1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 320,
+              "side": 4,
+              "seconds": 15.78,
+              "status": "estimated",
+              "tunnel_units": 539.01,
+              "tunnel_segments": 27
+            }
+          ]
+        },
         "segment_count": 367,
         "wall_count": 71,
         "trigger_count": 8,
@@ -447,6 +583,35 @@
         "secret": false,
         "level_name": "Dark Side of Pluto",
         "level_file": "p3.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.16,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.16
+          },
+          "presentation": {
+            "status": "present",
+            "file": "p1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 66,
+              "side": 1,
+              "seconds": 9.16,
+              "status": "estimated",
+              "tunnel_units": 208.0,
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 501,
         "wall_count": 131,
         "trigger_count": 3,
@@ -561,6 +726,35 @@
         "secret": false,
         "level_name": "Pluto Warehouse",
         "level_file": "p4.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.02,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.02
+          },
+          "presentation": {
+            "status": "present",
+            "file": "p1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 230,
+              "side": 0,
+              "seconds": 15.02,
+              "status": "estimated",
+              "tunnel_units": 501.0,
+              "tunnel_segments": 28
+            }
+          ]
+        },
         "segment_count": 351,
         "wall_count": 92,
         "trigger_count": 3,
@@ -675,6 +869,35 @@
         "secret": false,
         "level_name": "Pluto's supply depot",
         "level_file": "p5.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 8.74,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 8.74
+          },
+          "presentation": {
+            "status": "present",
+            "file": "p1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 416,
+              "side": 1,
+              "seconds": 8.74,
+              "status": "estimated",
+              "tunnel_units": 187.0,
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 451,
         "wall_count": 54,
         "trigger_count": 3,
@@ -789,6 +1012,35 @@
         "secret": false,
         "level_name": "Pluto Outpost",
         "level_file": "p6.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 8.32,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 8.32
+          },
+          "presentation": {
+            "status": "present",
+            "file": "p1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 108,
+              "side": 1,
+              "seconds": 8.32,
+              "status": "estimated",
+              "tunnel_units": 166.0,
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 471,
         "wall_count": 124,
         "trigger_count": 6,
@@ -928,6 +1180,35 @@
         "secret": false,
         "level_name": "Pluto's Arcansoyas",
         "level_file": "p7.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.8,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.8
+          },
+          "presentation": {
+            "status": "present",
+            "file": "p1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 767,
+              "side": 4,
+              "seconds": 11.8,
+              "status": "estimated",
+              "tunnel_units": 340.0,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 69,
         "trigger_count": 2,
@@ -1042,6 +1323,35 @@
         "secret": false,
         "level_name": "Pluto Main Gate",
         "level_file": "p8.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 8.72,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 8.72
+          },
+          "presentation": {
+            "status": "present",
+            "file": "p1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 403,
+              "side": 4,
+              "seconds": 8.72,
+              "status": "estimated",
+              "tunnel_units": 186.0,
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 448,
         "wall_count": 117,
         "trigger_count": 2,
@@ -1156,6 +1466,35 @@
         "secret": false,
         "level_name": "Ptmc Headquarters",
         "level_file": "p9.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.784,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.784
+          },
+          "presentation": {
+            "status": "present",
+            "file": "p1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 284,
+              "side": 3,
+              "seconds": 11.784,
+              "status": "estimated",
+              "tunnel_units": 339.189,
+              "tunnel_segments": 3
+            }
+          ]
+        },
         "segment_count": 415,
         "wall_count": 58,
         "trigger_count": 1,
@@ -1270,6 +1609,35 @@
         "secret": true,
         "level_name": "Pluto Inner Core",
         "level_file": "s1.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.039,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.039
+          },
+          "presentation": {
+            "status": "present",
+            "file": "p1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 459,
+              "side": 4,
+              "seconds": 13.039,
+              "status": "estimated",
+              "tunnel_units": 401.931,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 482,
         "wall_count": 90,
         "trigger_count": 1,

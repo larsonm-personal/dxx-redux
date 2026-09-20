@@ -34,6 +34,75 @@
       "powerups": 1412,
       "reactors": 8
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "worldoffood",
+          "sources": [
+            "entropy.MN2",
+            "entropy.hog/entropy.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "worldoffood@gmail.com",
+          "sources": [
+            "entropy.MN2",
+            "entropy.hog/entropy.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "https://twitter.com/worldoffood23",
+          "sources": [
+            "entropy.MN2",
+            "entropy.hog/entropy.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "11/12/2020",
+          "sources": [
+            "entropy.MN2",
+            "entropy.hog/entropy.MN2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "entropy.MN2",
+            "entropy.hog/entropy.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2020,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2020,
+          2020
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "entropy.MN2",
+          "modified": "2020-11-12",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "entropy.hog",
+          "modified": "2020-12-22",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -109,6 +178,30 @@
         "secret": false,
         "level_name": "Entry Point",
         "level_file": "level1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 145,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 881,
         "wall_count": 137,
         "trigger_count": 48,
@@ -313,6 +406,30 @@
         "secret": false,
         "level_name": "Neptune Cliffside",
         "level_file": "level2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 206,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 897,
         "wall_count": 176,
         "trigger_count": 12,
@@ -674,6 +791,30 @@
         "secret": false,
         "level_name": "Jupiter Lower Tunnels",
         "level_file": "level3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 775,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 864,
         "wall_count": 254,
         "trigger_count": 27,
@@ -1173,6 +1314,30 @@
         "secret": false,
         "level_name": "Corkskrew pt.1",
         "level_file": "corkskre.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 285,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 695,
         "wall_count": 126,
         "trigger_count": 14,
@@ -1327,6 +1492,30 @@
         "secret": false,
         "level_name": "Corkskrew pt.2",
         "level_file": "csparto.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 241,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 253,
         "wall_count": 61,
         "trigger_count": 10,
@@ -1514,6 +1703,30 @@
         "secret": false,
         "level_name": "Lunar Research Lab",
         "level_file": "space.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 793,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 218,
         "trigger_count": 9,
@@ -1674,6 +1887,30 @@
         "secret": false,
         "level_name": "Abandoned Mine",
         "level_file": "abandon.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 246,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 3
+            }
+          ]
+        },
         "segment_count": 885,
         "wall_count": 143,
         "trigger_count": 27,
@@ -1847,6 +2084,30 @@
         "secret": false,
         "level_name": "Power Core pt.1",
         "level_file": "pwrcore.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 485,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 509,
         "wall_count": 106,
         "trigger_count": 17,
@@ -2296,6 +2557,30 @@
         "secret": false,
         "level_name": "Power Core pt.2",
         "level_file": "pwrcore2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 340,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 525,
         "wall_count": 110,
         "trigger_count": 17,
@@ -2589,6 +2874,30 @@
         "secret": false,
         "level_name": "Raided Tomb",
         "level_file": "traider.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 21,
+              "segment": 2,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 193,
         "trigger_count": 26,
@@ -2836,6 +3145,30 @@
         "secret": false,
         "level_name": "Ground Zero",
         "level_file": "finisis.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 410,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 798,
         "wall_count": 212,
         "trigger_count": 20,
@@ -2847,7 +3180,7 @@
         "reactors": 0,
         "robots": 129,
         "hostages": 4,
-        "secrets": 7,
+        "secrets": 11,
         "matcens": 5,
         "energy_centers": 6,
         "mine_volume": 58619300.0,
@@ -3078,6 +3411,30 @@
         "secret": true,
         "level_name": "Ancient Temple",
         "level_file": "secret1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 736,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 899,
         "wall_count": 131,
         "trigger_count": 18,

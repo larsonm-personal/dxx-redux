@@ -34,6 +34,34 @@
       "powerups": 546,
       "reactors": 11
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "series.hog",
+          "modified": "2009-09-09",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "series.msn",
+          "modified": "2009-09-06",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -233,6 +261,30 @@
         "secret": false,
         "level_name": "Lunar Observatory",
         "level_file": "series01.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 323,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 350,
         "wall_count": 47,
         "trigger_count": 1,
@@ -319,6 +371,30 @@
         "secret": false,
         "level_name": "Lunar Ore Repository",
         "level_file": "series02.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 291,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 466,
         "wall_count": 95,
         "trigger_count": 3,
@@ -419,6 +495,30 @@
         "secret": false,
         "level_name": "Venus co2 Mine",
         "level_file": "series03.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 295,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 628,
         "wall_count": 96,
         "trigger_count": 16,
@@ -533,6 +633,30 @@
         "secret": false,
         "level_name": "Venus Sulfer Mine",
         "level_file": "series04.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 313,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 586,
         "wall_count": 104,
         "trigger_count": 15,
@@ -647,6 +771,30 @@
         "secret": false,
         "level_name": "Mercury Experimental Base",
         "level_file": "series05.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 175,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 296,
         "wall_count": 49,
         "trigger_count": 36,
@@ -738,6 +886,30 @@
         "secret": false,
         "level_name": "Mars Iron Mine",
         "level_file": "series06.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 719,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 785,
         "wall_count": 101,
         "trigger_count": 8,
@@ -852,6 +1024,30 @@
         "secret": false,
         "level_name": "Deimos Excavation Labratory",
         "level_file": "series07.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 539,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 763,
         "wall_count": 153,
         "trigger_count": 6,
@@ -1031,6 +1227,30 @@
         "secret": false,
         "level_name": "Ganymede Military Base",
         "level_file": "series08.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 410,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 789,
         "wall_count": 133,
         "trigger_count": 10,
@@ -1232,6 +1452,30 @@
         "secret": false,
         "level_name": "Io Volcanic Shaft",
         "level_file": "series09.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 357,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 732,
         "wall_count": 124,
         "trigger_count": 10,
@@ -1346,6 +1590,30 @@
         "secret": false,
         "level_name": "Atlas Biodome Labratory",
         "level_file": "series10.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 243,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 172,
         "trigger_count": 1,
@@ -1357,7 +1625,7 @@
         "reactors": 1,
         "robots": 154,
         "hostages": 5,
-        "secrets": 1,
+        "secrets": 2,
         "matcens": 0,
         "energy_centers": 3,
         "mine_volume": 9474300.0,
@@ -1513,6 +1781,30 @@
         "secret": false,
         "level_name": "Titan Research Mine",
         "level_file": "series11.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 75,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 754,
         "wall_count": 169,
         "trigger_count": 10,
@@ -1555,6 +1847,30 @@
         "secret": false,
         "level_name": "Ophelia Mining Colony",
         "level_file": "series12.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 336,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 690,
         "wall_count": 139,
         "trigger_count": 5,
@@ -1674,6 +1990,30 @@
         "secret": false,
         "level_name": "Neried Space Vaults",
         "level_file": "series13.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 304,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 709,
         "wall_count": 175,
         "trigger_count": 5,
@@ -1788,6 +2128,30 @@
         "secret": false,
         "level_name": "Triton Ice Mine",
         "level_file": "series14.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 493,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 796,
         "wall_count": 172,
         "trigger_count": 1,
@@ -1906,6 +2270,30 @@
         "secret": false,
         "level_name": "Charon",
         "level_file": "series15.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 19,
+              "segment": 729,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 748,
         "wall_count": 174,
         "trigger_count": 20,

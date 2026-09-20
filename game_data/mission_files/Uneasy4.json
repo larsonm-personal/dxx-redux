@@ -34,6 +34,49 @@
       "powerups": 0,
       "reactors": 0
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Blarget 2 and Nightsurfer",
+          "sources": [
+            "Uneasy4.mn2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Inferno 1.0.22",
+          "sources": [
+            "Uneasy4.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2025,
+          2026
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "Uneasy4.hog",
+          "modified": "2026-05-18",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "Uneasy4.mn2",
+          "modified": "2025-11-06",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -109,6 +152,29 @@
         "secret": false,
         "level_name": "Uneasy 4",
         "level_file": "Uneasy4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 8544,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 9000,
         "wall_count": 253,
         "trigger_count": 23,

@@ -34,6 +34,137 @@
       "powerups": 140,
       "reactors": 4
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Razor Blade",
+          "sources": [
+            "missions/single/phobos-e.mn2",
+            "missions/single/phobos-e.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.descent2.com/phobos/",
+          "sources": [
+            "missions/single/phobos-e.mn2",
+            "missions/single/phobos-e.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "jamr@teleport.com",
+          "sources": [
+            "missions/single/phobos-e.mn2",
+            "missions/single/phobos-e.hog/mission.aut",
+            "missions/single/phobos-e.hog/phobos-e.txt",
+            "missions/single/phobos-e.hog/phobos1.aut",
+            "missions/single/phobos-e.hog/phobos2.aut",
+            "missions/single/phobos-e.hog/phobos3.aut",
+            "missions/single/phobos-e.hog/phobos4.aut",
+            "missions/single/phobos-e.hog/phoscrt1.aut",
+            "missions/single/phobos-e.hog/phoscrt2.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "09/19/1997",
+          "sources": [
+            "missions/single/phobos-e.mn2",
+            "missions/single/phobos-e.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Devil 2.1h, Devil 2.2l, Descent Mission Builder v2.6, Hoggle",
+          "sources": [
+            "missions/single/phobos-e.mn2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "Countless hours",
+          "sources": [
+            "missions/single/phobos-e.mn2",
+            "missions/single/phobos-e.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "missions/single/phobos-e.mn2",
+            "missions/single/phobos-e.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "Razor Blade",
+          "sources": [
+            "missions/single/phobos-e.hog/mission.aut",
+            "missions/single/phobos-e.hog/phobos1.aut",
+            "missions/single/phobos-e.hog/phobos2.aut",
+            "missions/single/phobos-e.hog/phobos3.aut",
+            "missions/single/phobos-e.hog/phobos4.aut",
+            "missions/single/phobos-e.hog/phoscrt1.aut",
+            "missions/single/phobos-e.hog/phoscrt2.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Razor Blade",
+          "sources": [
+            "missions/single/phobos-e.hog/mission.aut",
+            "missions/single/phobos-e.hog/phobos1.aut",
+            "missions/single/phobos-e.hog/phobos2.aut",
+            "missions/single/phobos-e.hog/phobos3.aut",
+            "missions/single/phobos-e.hog/phobos4.aut",
+            "missions/single/phobos-e.hog/phoscrt1.aut",
+            "missions/single/phobos-e.hog/phoscrt2.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "09/19/1997",
+          "sources": [
+            "missions/single/phobos-e.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "Beta 0.6",
+          "sources": [
+            "missions/single/phobos-e.hog/phobos-e.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          2015
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "missions/single/phobos-e.hog",
+          "modified": "2015-08-09",
+          "kind": "7z_entry_mtime"
+        },
+        {
+          "file": "missions/single/phobos-e.mn2",
+          "modified": "1997-09-20",
+          "kind": "7z_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +240,30 @@
         "secret": false,
         "level_name": "TRAC Research Complex",
         "level_file": "phobos1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 74,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 355,
         "wall_count": 74,
         "trigger_count": 4,
@@ -256,6 +411,30 @@
         "secret": false,
         "level_name": "Altaridge Falls Mine",
         "level_file": "phobos2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 401,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 506,
         "wall_count": 122,
         "trigger_count": 7,
@@ -374,6 +553,30 @@
         "secret": false,
         "level_name": "Magmarok Excavation",
         "level_file": "phobos3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 227,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 387,
         "wall_count": 144,
         "trigger_count": 9,
@@ -590,6 +793,30 @@
         "secret": false,
         "level_name": "Phobos Command Center",
         "level_file": "phobos4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 333,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 370,
         "wall_count": 65,
         "trigger_count": 3,
@@ -683,6 +910,29 @@
         "secret": true,
         "level_name": "Tryhys Zinkor",
         "level_file": "phoscrt1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 204,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 221,
         "wall_count": 60,
         "trigger_count": 5,
@@ -759,6 +1009,30 @@
         "secret": true,
         "level_name": "Gamma-1 Storage Depot",
         "level_file": "phoscrt2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 315,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 323,
         "wall_count": 93,
         "trigger_count": 2,

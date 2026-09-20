@@ -34,6 +34,72 @@
       "powerups": 126,
       "reactors": 10
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DMB2",
+          "sources": [
+            "d2disint.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.3",
+          "sources": [
+            "d2disint.mn2"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "gameaddict11707",
+          "sources": [
+            "d2disint.mn2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "gameaddict7.blogspot.com",
+          "sources": [
+            "d2disint.mn2",
+            "d2disint.txt"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "mormudd@gmail.com",
+          "sources": [
+            "d2disint.mn2",
+            "d2disint.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2010,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2010,
+          2010
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "D2DISINT.HOG",
+          "modified": "2010-03-28",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "d2disint.mn2",
+          "modified": "2010-03-27",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -214,6 +280,29 @@
         "secret": false,
         "level_name": "Xenith: Carbonia",
         "level_file": "01carbo.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 129,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 169,
         "wall_count": 93,
         "trigger_count": 5,
@@ -452,6 +541,29 @@
         "secret": false,
         "level_name": "Xenith: Egreon",
         "level_file": "02egre.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 297,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 330,
         "wall_count": 127,
         "trigger_count": 5,
@@ -609,6 +721,29 @@
         "secret": false,
         "level_name": "Xenith: Outpost VI",
         "level_file": "03post.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 239,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 256,
         "wall_count": 129,
         "trigger_count": 18,
@@ -824,6 +959,29 @@
         "secret": false,
         "level_name": "Xenith: Illucidium",
         "level_file": "04illu.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 208,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 448,
         "wall_count": 199,
         "trigger_count": 10,
@@ -1064,6 +1222,30 @@
         "secret": false,
         "level_name": "Xenith: Exterior Caves",
         "level_file": "05extc.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 221,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 493,
         "wall_count": 194,
         "trigger_count": 4,
@@ -1286,6 +1468,41 @@
         "secret": false,
         "level_name": "Xenith: Hangar Delta",
         "level_file": "06delta.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 194,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 7,
+              "segment": 195,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 8,
+              "segment": 302,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 328,
         "wall_count": 74,
         "trigger_count": 9,
@@ -1372,6 +1589,30 @@
         "secret": false,
         "level_name": "Aquarion: Gerlamet",
         "level_file": "11grlm.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 102,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 622,
         "wall_count": 161,
         "trigger_count": 8,
@@ -1418,6 +1659,29 @@
         "secret": false,
         "level_name": "Aquarion: Bauer's Gorge",
         "level_file": "12bgorg.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 274,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 478,
         "wall_count": 115,
         "trigger_count": 4,
@@ -1587,6 +1851,29 @@
         "secret": false,
         "level_name": "Aquarion: Ipsum BioLab",
         "level_file": "13ipbl.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 58,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 540,
         "wall_count": 160,
         "trigger_count": 12,
@@ -1785,6 +2072,29 @@
         "secret": false,
         "level_name": "Aquarion: Selenium Mine",
         "level_file": "14sele.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 292,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 551,
         "wall_count": 125,
         "trigger_count": 17,
@@ -1968,6 +2278,29 @@
         "secret": false,
         "level_name": "Aquarion: Iridescent",
         "level_file": "15irid.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 150,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 499,
         "wall_count": 72,
         "trigger_count": 7,
@@ -2072,6 +2405,30 @@
         "secret": false,
         "level_name": "Aquarion: Corrugation",
         "level_file": "16corrug.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 44,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 453,
         "wall_count": 138,
         "trigger_count": 6,
@@ -2326,6 +2683,30 @@
         "secret": false,
         "level_name": "Ishtar: Controlled Burn",
         "level_file": "21burn.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 85,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 431,
         "wall_count": 87,
         "trigger_count": 14,
@@ -2523,6 +2904,53 @@
         "secret": true,
         "level_name": "Antigravity Testing",
         "level_file": "0sone.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 7,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 0,
+              "segment": 6,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 4,
+              "segment": 83,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 81,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 85,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 103,
         "wall_count": 50,
         "trigger_count": 7,
@@ -2633,6 +3061,29 @@
         "secret": true,
         "level_name": "Hangar Storage",
         "level_file": "0stwo.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 1,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 26,
         "wall_count": 12,
         "trigger_count": 3,
@@ -2760,6 +3211,29 @@
         "secret": true,
         "level_name": "The Deep",
         "level_file": "1sone.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 187,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 212,
         "wall_count": 3,
         "trigger_count": 1,
@@ -2825,6 +3299,22 @@
         "secret": true,
         "level_name": "Aquarion: Sewers",
         "level_file": "1stwo.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_normal_exit_trigger",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "absent",
+          "tunnel": {
+            "status": "no_exit_trigger"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": []
+        },
         "segment_count": 47,
         "wall_count": 9,
         "trigger_count": 0,

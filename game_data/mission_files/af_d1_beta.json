@@ -34,6 +34,70 @@
       "powerups": 761,
       "reactors": 10
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "af_d1.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "21 Sep 2012",
+          "sources": [
+            "af_d1.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "af_d1.msn"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Darkflamewolf,Sirius,Darkhorse",
+          "sources": [
+            "af_d1.msn"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "Darkflamewolf@yahoo.com",
+          "sources": [
+            "af_d1.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2012,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2012,
+          2012
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "af_d1.hog",
+          "modified": "2012-09-21",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "af_d1.msn",
+          "modified": "2012-09-21",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +297,35 @@
         "secret": false,
         "level_name": "Storage Depot G22",
         "level_file": "sdg22.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.4,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.4
+          },
+          "presentation": {
+            "status": "present",
+            "file": "sdg22.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 234,
+              "side": 1,
+              "seconds": 14.4,
+              "status": "estimated",
+              "tunnel_units": 470.0,
+              "tunnel_segments": 23
+            }
+          ]
+        },
         "segment_count": 325,
         "wall_count": 80,
         "trigger_count": 9,
@@ -333,6 +426,35 @@
         "secret": false,
         "level_name": "Essonapri Mine",
         "level_file": "esonapri.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "esonapri.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 382,
+              "side": 1,
+              "seconds": 16.6,
+              "status": "estimated",
+              "tunnel_units": 579.999,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 475,
         "wall_count": 109,
         "trigger_count": 8,
@@ -458,6 +580,35 @@
         "secret": false,
         "level_name": "Serduta Muitions Bunker",
         "level_file": "sedurta.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.4,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.4
+          },
+          "presentation": {
+            "status": "present",
+            "file": "sedurta.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 268,
+              "side": 0,
+              "seconds": 9.4,
+              "status": "estimated",
+              "tunnel_units": 220.0,
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 796,
         "wall_count": 156,
         "trigger_count": 20,
@@ -572,6 +723,35 @@
         "secret": false,
         "level_name": "Cha'cshir Verahn",
         "level_file": "chacshir.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.175,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.175
+          },
+          "presentation": {
+            "status": "present",
+            "file": "chacshir.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 89,
+              "side": 2,
+              "seconds": 15.175,
+              "status": "estimated",
+              "tunnel_units": 508.731,
+              "tunnel_segments": 26
+            }
+          ]
+        },
         "segment_count": 447,
         "wall_count": 69,
         "trigger_count": 5,
@@ -711,6 +891,35 @@
         "secret": false,
         "level_name": "Tefalog Crater Dig",
         "level_file": "tefalog.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.4,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.4
+          },
+          "presentation": {
+            "status": "present",
+            "file": "tefalog.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 307,
+              "side": 4,
+              "seconds": 15.4,
+              "status": "estimated",
+              "tunnel_units": 519.999,
+              "tunnel_segments": 23
+            }
+          ]
+        },
         "segment_count": 759,
         "wall_count": 173,
         "trigger_count": 6,
@@ -825,6 +1034,35 @@
         "secret": false,
         "level_name": "Alarlof Kiln",
         "level_file": "alarlof.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.266,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.266
+          },
+          "presentation": {
+            "status": "present",
+            "file": "alarlof.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 771,
+              "side": 2,
+              "seconds": 13.266,
+              "status": "estimated",
+              "tunnel_units": 413.286,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 791,
         "wall_count": 175,
         "trigger_count": 5,
@@ -939,6 +1177,35 @@
         "secret": false,
         "level_name": "Cefispar Mine",
         "level_file": "cefispar.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "cefispar.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 768,
+              "side": 0,
+              "seconds": 17.0,
+              "status": "estimated",
+              "tunnel_units": 599.996,
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 782,
         "wall_count": 152,
         "trigger_count": 14,
@@ -1054,6 +1321,35 @@
         "secret": false,
         "level_name": "Ganesh Dungeon",
         "level_file": "ganeshd.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.15,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.15
+          },
+          "presentation": {
+            "status": "present",
+            "file": "ganeshd.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 87,
+              "side": 5,
+              "seconds": 11.15,
+              "status": "estimated",
+              "tunnel_units": 307.5,
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 775,
         "wall_count": 171,
         "trigger_count": 15,
@@ -1195,6 +1491,35 @@
         "secret": false,
         "level_name": "Lakshmi Dungeon",
         "level_file": "lakshmid.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.925,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.925
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lakshmid.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 196,
+              "side": 2,
+              "seconds": 13.925,
+              "status": "estimated",
+              "tunnel_units": 446.235,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 765,
         "wall_count": 174,
         "trigger_count": 9,
@@ -1309,6 +1634,35 @@
         "secret": false,
         "level_name": "Firehand Basin",
         "level_file": "fbasin.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.682,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.682
+          },
+          "presentation": {
+            "status": "present",
+            "file": "fbasin.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 77,
+              "side": 2,
+              "seconds": 12.682,
+              "status": "estimated",
+              "tunnel_units": 384.076,
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 389,
         "wall_count": 101,
         "trigger_count": 8,

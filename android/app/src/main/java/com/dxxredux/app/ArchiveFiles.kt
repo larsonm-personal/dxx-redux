@@ -26,6 +26,7 @@ internal data class ArchiveFileEntry(
     val sizeBytes: Long,
     val compressedSizeBytes: Long?,
     internal val handle: Any,
+    val modifiedDate: String? = null,
 ) {
     val name: String get() = path.substringAfterLast('/').substringAfterLast('\\')
 }
@@ -165,6 +166,7 @@ private class ZipReadableArchive(
                             sizeBytes = entry.size.coerceAtLeast(0),
                             compressedSizeBytes = entry.compressedSize.takeIf { it >= 0 },
                             handle = entry,
+                            modifiedDate = ArchiveEntryDates.zip(entry),
                         ).also {
                             budget.registerEntry(
                                 if (it.isDirectory) 0 else it.sizeBytes,
@@ -206,6 +208,7 @@ private class SevenZReadableArchive(
                         // Actual-byte limits still apply when the entry is materialized.
                         compressedSizeBytes = null,
                         handle = entry,
+                        modifiedDate = ArchiveEntryDates.sevenZ(entry),
                     ).also {
                         budget.registerEntry(
                             if (it.isDirectory) 0 else it.sizeBytes,
@@ -241,6 +244,7 @@ private class ExtractedReadableArchive(
 
     init {
         try {
+            val originalDates = readRarModificationDates(file)
             extractRarArchiveToDirectory(file, root)
             val budget = ExtractionBudget()
             entries =
@@ -260,6 +264,7 @@ private class ExtractedReadableArchive(
                             sizeBytes = if (child.isFile) child.length() else 0L,
                             compressedSizeBytes = null,
                             handle = child,
+                            modifiedDate = originalDates[relative],
                         ).also {
                             budget.registerEntry(
                                 if (it.isDirectory) 0 else it.sizeBytes,
@@ -280,6 +285,27 @@ private class ExtractedReadableArchive(
         root.deleteRecursively()
     }
 }
+
+// Read the catalog before extraction; fallback extractors do not guarantee stored timestamps
+private fun readRarModificationDates(file: File): Map<String, String> =
+    runCatching {
+        RandomAccessFile(file, "r").use { input ->
+            val stream = RandomAccessFileInStream(input)
+            val archive = SevenZip.openInArchive(null, stream)
+            try {
+                buildMap {
+                    for (index in 0 until archive.getNumberOfItems()) {
+                        val name = archive.getStringProperty(index, PropID.PATH) ?: continue
+                        val timestamp = archive.getProperty(index, PropID.LAST_MODIFICATION_TIME)
+                        val date = timestamp as? java.util.Date ?: continue
+                        put(normalizeArchivePath(name), ArchiveEntryDates.utc(date))
+                    }
+                }
+            } finally {
+                archive.close()
+            }
+        }
+    }.getOrDefault(emptyMap())
 
 internal fun extractRarArchiveToDirectory(
     archive: File,

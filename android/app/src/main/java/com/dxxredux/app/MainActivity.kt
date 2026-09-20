@@ -487,6 +487,7 @@ class MainActivity :
     external fun nativeGetWeaponState(): IntArray
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        tapFeedbackOverlay?.observe(event)
         if (::skipButton.isInitialized && skipButton.handleGlobalTouch(event)) {
             return true
         }
@@ -766,6 +767,7 @@ class MainActivity :
     external fun nativeSetGuidebotInfoVisible(visible: Boolean)
 
     private var videoInfoOverlay: VideoInfoOverlay? = null
+    private var tapFeedbackOverlay: TapFeedbackOverlay? = null
     private var loadingProgressOverlay: LoadingProgressOverlayView? = null
     private var warpButtonOverlay: WarpButtonOverlay? = null
     private var netEventsManualToggle = false
@@ -2171,6 +2173,8 @@ class MainActivity :
     }
 
     override fun onPause() {
+        tapFeedbackOverlay?.dispose()
+        tapFeedbackOverlay = null
         DebugLog.log(
             DebugLogCategory.GAME,
             "game activity onPause finishing=$isFinishing " +
@@ -2227,6 +2231,17 @@ class MainActivity :
         }
         // Re-read preference (user may have toggled in SetupActivity)
         val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+        tapFeedbackOverlay?.dispose()
+        tapFeedbackOverlay =
+            if (prefs.getBoolean(
+                    PREF_SHOW_TAP_FEEDBACK,
+                    false,
+                )
+            ) {
+                TapFeedbackOverlay(window.decorView as android.view.ViewGroup)
+            } else {
+                null
+            }
         loadMetaBindings()
         // Default to enabled when touch controls are needed or when the no-touch menu layout is active.
         val hasController = hasWorkingControllerDevice()

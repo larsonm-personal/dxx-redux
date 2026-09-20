@@ -34,6 +34,56 @@
       "powerups": 91,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "lseries.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "19 sep 2013",
+          "sources": [
+            "lseries.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "lseries.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2013,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2013,
+          2013
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "lseries.hog",
+          "modified": "2013-09-19",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "lseries.msn",
+          "modified": "2013-09-19",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +283,29 @@
         "secret": false,
         "level_name": "lo",
         "level_file": "lo.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 514,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 607,
         "wall_count": 48,
         "trigger_count": 1,
@@ -319,6 +392,29 @@
         "secret": false,
         "level_name": "lsl",
         "level_file": "lsl.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 599,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 686,
         "wall_count": 74,
         "trigger_count": 1,
@@ -419,6 +515,29 @@
         "secret": false,
         "level_name": "lmb",
         "level_file": "lmb.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 555,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 793,
         "wall_count": 73,
         "trigger_count": 9,

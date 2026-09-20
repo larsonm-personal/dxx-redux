@@ -34,6 +34,178 @@
       "powerups": 384,
       "reactors": 7
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "version",
+          "value": "1.01",
+          "sources": [
+            "Orion.msn",
+            "Orion.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "10/26/1997",
+          "sources": [
+            "Orion.msn",
+            "Orion.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "ONP team",
+          "sources": [
+            "Orion.msn",
+            "Orion.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "ptmc@warpcore.org",
+          "sources": [
+            "Orion.msn",
+            "Orion.hog/level01s.aut",
+            "Orion.hog/level02.aut",
+            "Orion.hog/level07.aut",
+            "Orion.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.descent2.com/orion",
+          "sources": [
+            "Orion.msn",
+            "Orion.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Mike Sunderman",
+          "sources": [
+            "Orion.hog/level01.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "Orion.hog/level01.aut",
+            "Orion.hog/level02.aut",
+            "Orion.hog/level03.aut",
+            "Orion.hog/level04.aut",
+            "Orion.hog/level05.aut",
+            "Orion.hog/level06.aut",
+            "Orion.hog/level07.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "10/27/1997",
+          "sources": [
+            "Orion.hog/level01.aut",
+            "Orion.hog/level02.aut",
+            "Orion.hog/level03.aut",
+            "Orion.hog/level04.aut",
+            "Orion.hog/level05.aut",
+            "Orion.hog/level06.aut",
+            "Orion.hog/level07.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "ONP team",
+          "sources": [
+            "Orion.hog/level01s.aut",
+            "Orion.hog/level02.aut",
+            "Orion.hog/mission.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.00",
+          "sources": [
+            "Orion.hog/level01s.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "10/15/1997",
+          "sources": [
+            "Orion.hog/level01s.aut"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "Vizor",
+          "sources": [
+            "Orion.hog/level03.aut",
+            "Orion.hog/level04.aut",
+            "Orion.hog/level05.aut",
+            "Orion.hog/level06.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "last@uci.edu",
+          "sources": [
+            "Orion.hog/level03.aut",
+            "Orion.hog/level04.aut",
+            "Orion.hog/level05.aut",
+            "Orion.hog/level06.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Luke Schneider",
+          "sources": [
+            "Orion.hog/level03.aut",
+            "Orion.hog/level04.aut",
+            "Orion.hog/level05.aut",
+            "Orion.hog/level06.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Bradley Schneider",
+          "sources": [
+            "Orion.hog/level07.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "10/26/1997",
+          "sources": [
+            "Orion.hog/mission.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "Orion.hog",
+          "modified": "1997-10-27",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "Orion.msn",
+          "modified": "1997-10-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +405,42 @@
         "secret": false,
         "level_name": "POMAT Laboratory",
         "level_file": "level01.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.38,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.38
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level01.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 22,
+              "side": 4,
+              "seconds": 14.38,
+              "status": "estimated",
+              "tunnel_units": 469.0,
+              "tunnel_segments": 24
+            },
+            {
+              "trigger": 2,
+              "segment": 23,
+              "side": 5,
+              "seconds": null,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 720,
         "wall_count": 174,
         "trigger_count": 11,
@@ -289,6 +497,35 @@
         "secret": false,
         "level_name": "Alpha Pavonis Storage Base",
         "level_file": "level02.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.52,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.52
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level02.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 62,
+              "side": 4,
+              "seconds": 10.52,
+              "status": "estimated",
+              "tunnel_units": 275.999,
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 499,
         "wall_count": 64,
         "trigger_count": 3,
@@ -429,6 +666,35 @@
         "secret": false,
         "level_name": "Defense Outpost",
         "level_file": "level03.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.277,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.277
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level03.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 278,
+              "side": 1,
+              "seconds": 11.277,
+              "status": "estimated",
+              "tunnel_units": 313.835,
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 496,
         "wall_count": 72,
         "trigger_count": 2,
@@ -529,6 +795,35 @@
         "secret": false,
         "level_name": "Pavonis Orium Mine ON701",
         "level_file": "level04.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.946,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.946
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level04.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 347,
+              "side": 5,
+              "seconds": 11.946,
+              "status": "estimated",
+              "tunnel_units": 347.315,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 542,
         "wall_count": 148,
         "trigger_count": 6,
@@ -643,6 +938,35 @@
         "secret": false,
         "level_name": "Training HeadQuarters",
         "level_file": "level05.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.163,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.163
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level05.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 188,
+              "side": 0,
+              "seconds": 12.163,
+              "status": "estimated",
+              "tunnel_units": 358.136,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 234,
         "wall_count": 58,
         "trigger_count": 2,
@@ -757,6 +1081,35 @@
         "secret": false,
         "level_name": "Pavonis Orium Mine ON702",
         "level_file": "level06.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 10.091,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 10.091
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level06.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 166,
+              "side": 4,
+              "seconds": 10.091,
+              "status": "estimated",
+              "tunnel_units": 254.544,
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 369,
         "wall_count": 70,
         "trigger_count": 1,
@@ -925,6 +1278,42 @@
         "secret": false,
         "level_name": "Defense Deployment Base",
         "level_file": "level07.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 9.189,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 9.189
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level07.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 291,
+              "side": 1,
+              "seconds": 9.189,
+              "status": "estimated",
+              "tunnel_units": 209.455,
+              "tunnel_segments": 11
+            },
+            {
+              "trigger": 5,
+              "segment": 775,
+              "side": 5,
+              "seconds": null,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 786,
         "wall_count": 148,
         "trigger_count": 6,
@@ -1039,6 +1428,35 @@
         "secret": true,
         "level_name": "Alien Asteroid Base",
         "level_file": "level01s.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.099,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.099
+          },
+          "presentation": {
+            "status": "present",
+            "file": "level01s.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 156,
+              "side": 2,
+              "seconds": 11.099,
+              "status": "estimated",
+              "tunnel_units": 304.933,
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 765,
         "wall_count": 164,
         "trigger_count": 5,

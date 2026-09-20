@@ -34,6 +34,65 @@
       "powerups": 243,
       "reactors": 4
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE",
+          "sources": [
+            "sens9.mn2",
+            "sens9.txt"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "28 Feb 2017",
+          "sources": [
+            "sens9.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "sens9.mn2",
+            "sens9.txt"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "phatkid@phatkid.net",
+          "sources": [
+            "sens9.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2017,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2017,
+          2017
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "sens9.hog",
+          "modified": "2017-02-28",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "sens9.mn2",
+          "modified": "2017-02-28",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-8",
     "track_names": [
       {
@@ -109,6 +168,30 @@
         "secret": false,
         "level_name": "Clone Guidepost",
         "level_file": "guide.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 56,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 269,
         "wall_count": 92,
         "trigger_count": 11,
@@ -155,6 +238,30 @@
         "secret": false,
         "level_name": "Broadcast Station",
         "level_file": "vert.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 42,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 448,
         "wall_count": 133,
         "trigger_count": 22,
@@ -375,6 +482,30 @@
         "secret": false,
         "level_name": "Sativensis Station",
         "level_file": "sativa.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 10,
+              "segment": 218,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 412,
         "wall_count": 164,
         "trigger_count": 20,
@@ -818,6 +949,30 @@
         "secret": false,
         "level_name": "Dropship Loading II",
         "level_file": "flw.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 12,
+              "segment": 503,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 531,
         "wall_count": 151,
         "trigger_count": 13,
@@ -1197,6 +1352,30 @@
         "secret": true,
         "level_name": "Terpine Point",
         "level_file": "hash.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 4,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 58,
         "wall_count": 27,
         "trigger_count": 12,

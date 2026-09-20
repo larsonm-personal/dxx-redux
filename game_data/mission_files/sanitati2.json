@@ -34,6 +34,56 @@
       "powerups": 281,
       "reactors": 4
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "sanitati.mn2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "26 may 2010",
+          "sources": [
+            "sanitati.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "sanitati.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2010,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2010,
+          2010
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "sanitati.hog",
+          "modified": "2010-07-13",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "sanitati.mn2",
+          "modified": "2010-07-13",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +159,29 @@
         "secret": false,
         "level_name": "Eirefire Refinery",
         "level_file": "eirefire.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 413,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 766,
         "wall_count": 75,
         "trigger_count": 14,
@@ -241,6 +314,29 @@
         "secret": false,
         "level_name": "Bunsen Rubidium Mine",
         "level_file": "rubidium.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 12,
+              "segment": 795,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 879,
         "wall_count": 102,
         "trigger_count": 15,
@@ -252,7 +348,7 @@
         "reactors": 1,
         "robots": 25,
         "hostages": 3,
-        "secrets": 3,
+        "secrets": 5,
         "matcens": 3,
         "energy_centers": 4,
         "mine_volume": 31551600.0,
@@ -406,6 +502,29 @@
         "secret": false,
         "level_name": "Verne Caves",
         "level_file": "verne.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 635,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 885,
         "wall_count": 254,
         "trigger_count": 5,
@@ -524,6 +643,29 @@
         "secret": false,
         "level_name": "Kega Chemical Plant",
         "level_file": "kega.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 734,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 894,
         "wall_count": 128,
         "trigger_count": 9,

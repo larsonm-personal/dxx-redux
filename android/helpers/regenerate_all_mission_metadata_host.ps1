@@ -10,6 +10,7 @@ param(
     [string[]]$CdSourceIds,
     [switch]$IncludeBuiltInCounterstrike,
     [switch]$IncludeBuiltInFirstStrike,
+    [string]$FlyoutMovieLibrary,
     # Idle watchdog permits long parallel scans while native checkpoints advance
     [ValidateRange(1, [int]::MaxValue)][int]$ArchiveTimeoutSeconds = 360,
     [ValidateRange(0, 128)][int]$MaxParallel = 0,
@@ -34,6 +35,13 @@ $repoRoot = Split-Path -Parent $androidRoot
 . (Join-Path $scriptDir "headless_process_pool.ps1")
 Initialize-RegressionProcessLifetime
 $zipDir = Join-Path $repoRoot "game_data\mission_files"
+if (-not $FlyoutMovieLibrary) {
+    $candidateMovieLibrary = Join-Path $repoRoot 'game_data/d2 1.1 data tracks from cd image tool/OTHER-H.MVL'
+    if (Test-Path -LiteralPath $candidateMovieLibrary -PathType Leaf) { $FlyoutMovieLibrary = $candidateMovieLibrary }
+}
+if ($FlyoutMovieLibrary) {
+    $FlyoutMovieLibrary = (Resolve-Path -LiteralPath $FlyoutMovieLibrary -ErrorAction Stop).Path
+}
 $archiveSources = @()
 if (-not $CdSourcesOnly) {
     $archiveSources = @(Get-AvailableMissionArchiveSources -Sources (Get-MissionArchiveSources -RepoRoot $repoRoot))
@@ -557,7 +565,8 @@ function Copy-RawMissionFileSet {
     param(
         [Parameter(Mandatory = $true)][string]$RawDirPath,
         [Parameter(Mandatory = $true)][string]$StageDir,
-        [AllowNull()]$VariantSelection
+        [AllowNull()]$VariantSelection,
+        [hashtable]$ProvenanceDates = @{}
     )
 
     $stageFull = [IO.Path]::GetFullPath($StageDir)
@@ -573,6 +582,7 @@ function Copy-RawMissionFileSet {
         $VariantSelection = Get-MissionVariantMaskSelection -RawDirPath $RawDirPath
     }
     $used = @{}
+    $selectedDates = @()
     foreach ($file in Get-ChildItem -LiteralPath $RawDirPath -Recurse -File) {
         if ($VariantSelection -and @($VariantSelection.MaskedDirectories | Where-Object {
                     Test-FileUnderDirectory -FilePath $file.FullName -DirectoryPath $_
@@ -588,6 +598,8 @@ function Copy-RawMissionFileSet {
             continue
         }
         $used[$key] = $true
+        $relative = [IO.Path]::GetRelativePath($RawDirPath, $file.FullName).Replace('\', '/')
+        if ($ProvenanceDates.ContainsKey($relative)) { $selectedDates += $ProvenanceDates[$relative] }
         $target = Join-Path $StageDir $leaf
         Copy-Item -LiteralPath $file.FullName -Destination $target -Force
         $ext = [IO.Path]::GetExtension($leaf).ToLowerInvariant()
@@ -607,6 +619,7 @@ function Copy-RawMissionFileSet {
     if (-not $engineSongList -and $legacySongLists.Count -eq 1) {
         Copy-StageAlias -Source $legacySongLists[0].FullName -Target (Join-Path $StageDir "descent.sng")
     }
+    Write-JsonValue -Path (Join-Path $StageDir '.provenance-dates.json') -Value ([object[]]@($selectedDates | Sort-Object { $_.file }))
 }
 
 function Copy-CdMissionFileSet {
@@ -845,6 +858,8 @@ function Invoke-HeadlessScan {
         level_file = ''; level_num = 0; hog_path = ''; hog_paths = @($missionHogs)
         normal_level_files = @($descriptorInfo.NormalLevelFiles); secret_level_files = @($descriptorInfo.SecretLevelFiles)
     }
+    $dateManifest = Join-Path $StageDir '.provenance-dates.json'
+    if (Test-Path -LiteralPath $dateManifest) { $request.provenance_file_dates = @([IO.File]::ReadAllText($dateManifest) | ConvertFrom-Json) }
     return Invoke-MetadataWorker -Worker $Executables[$game] -Request $request -RawOutputPath $RawOutputPath -LogPath $LogPath -TimeoutSeconds $TimeoutSeconds
 }
 
@@ -865,6 +880,7 @@ function Invoke-BuiltinHeadlessScan {
         mission_type = 'normal'; mission_mode_flags = @(); level_file = ''; level_num = 0
         hog_path = ''; hog_paths = @(); normal_level_files = @(); secret_level_files = @()
     }
+    if ($Game -eq 'd2' -and $FlyoutMovieLibrary) { $request.flyout_movie_library = $FlyoutMovieLibrary }
     return Invoke-MetadataWorker -Worker $Executables[$Game] -Request $request -RawOutputPath $RawOutputPath -LogPath $LogPath
 }
 
@@ -906,6 +922,9 @@ Write-Status "D1 data: $($dataDirs.d1)"
 Write-Status "D1 hashes: $(($dataSelections.d1.Hashes.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', ')"
 Write-Status "D2 data: $($dataDirs.d2)"
 Write-Status "D2 hashes: $(($dataSelections.d2.Hashes.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', ')"
+if ($FlyoutMovieLibrary) {
+    Write-Status "Fly-out movies: $FlyoutMovieLibrary (SHA256 $((Get-FileHash -LiteralPath $FlyoutMovieLibrary -Algorithm SHA256).Hash.ToLowerInvariant()))"
+}
 
 $results = @()
 $batchStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
@@ -1188,7 +1207,10 @@ if (-not $CdSourcesOnly) {
                     }
                     Expand-MissionArchive -Archive $archive -RawArchiveDir $rawArchiveDir
                     $variantSelection = Get-MissionVariantMaskSelection -RawDirPath $rawArchiveDir
-                    Copy-RawMissionFileSet -RawDirPath $rawArchiveDir -StageDir $stageDir -VariantSelection $variantSelection
+                    $archiveDateResult = Invoke-MetadataKotlinWorker -Worker $script:metadataKotlinWorker -Request ([ordered]@{ op = 'archive_dates'; path = $archive.FullName })
+                    $archiveDates = @{}
+                    foreach ($property in $archiveDateResult.PSObject.Properties) { $archiveDates[$property.Name] = $property.Value }
+                    Copy-RawMissionFileSet -RawDirPath $rawArchiveDir -StageDir $stageDir -VariantSelection $variantSelection -ProvenanceDates $archiveDates
                     $descriptors = @(Get-MissionDescriptor -StageDir $stageDir)
                     if ($descriptors.Count -eq 0) {
                         $record["status"] = "skipped_no_descriptor"

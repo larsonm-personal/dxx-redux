@@ -34,6 +34,34 @@
       "powerups": 545,
       "reactors": 9
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2007,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2007,
+          2007
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "icerealm/icerealm.hog",
+          "modified": "2007-03-20",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "icerealm/icerealm.msn",
+          "modified": "2007-03-20",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -233,6 +261,36 @@
         "secret": false,
         "level_name": "Ice's Outpost I.",
         "level_file": "outpost1.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 49,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 83,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 293,
         "wall_count": 102,
         "trigger_count": 12,
@@ -333,6 +391,30 @@
         "secret": false,
         "level_name": "Ice's Sewers",
         "level_file": "sewers.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 39,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 563,
         "wall_count": 172,
         "trigger_count": 5,
@@ -447,6 +529,30 @@
         "secret": false,
         "level_name": "Ice's Towers",
         "level_file": "towers.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 39,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 23
+            }
+          ]
+        },
         "segment_count": 341,
         "wall_count": 116,
         "trigger_count": 3,
@@ -561,6 +667,30 @@
         "secret": false,
         "level_name": "Ice's Castle",
         "level_file": "castle.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 23,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 672,
         "wall_count": 146,
         "trigger_count": 16,
@@ -675,6 +805,30 @@
         "secret": false,
         "level_name": "Ice's Outpost II",
         "level_file": "outpost2.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 83,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 23
+            }
+          ]
+        },
         "segment_count": 398,
         "wall_count": 142,
         "trigger_count": 4,
@@ -686,7 +840,7 @@
         "reactors": 1,
         "robots": 62,
         "hostages": 5,
-        "secrets": 8,
+        "secrets": 11,
         "matcens": 0,
         "energy_centers": 4,
         "mine_volume": 5732380.0,
@@ -924,6 +1078,30 @@
         "secret": false,
         "level_name": "Ice's Ice House",
         "level_file": "icehouse.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 47,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 416,
         "wall_count": 78,
         "trigger_count": 4,
@@ -1038,6 +1216,30 @@
         "secret": false,
         "level_name": "Ice's Reactor",
         "level_file": "reactor.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 5,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 225,
         "wall_count": 36,
         "trigger_count": 3,
@@ -1152,6 +1354,30 @@
         "secret": false,
         "level_name": "Ice's Recycle Bin",
         "level_file": "recycle.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 2,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 601,
         "wall_count": 144,
         "trigger_count": 11,
@@ -1163,7 +1389,7 @@
         "reactors": 1,
         "robots": 67,
         "hostages": 10,
-        "secrets": 10,
+        "secrets": 11,
         "matcens": 3,
         "energy_centers": 2,
         "mine_volume": 10911400.0,
@@ -1345,6 +1571,30 @@
         "secret": false,
         "level_name": "Ice's Great Outdoors",
         "level_file": "canyon.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 0,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 494,
         "wall_count": 96,
         "trigger_count": 4,

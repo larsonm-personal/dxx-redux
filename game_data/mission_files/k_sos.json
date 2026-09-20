@@ -34,6 +34,56 @@
       "powerups": 243,
       "reactors": 6
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "kevin",
+          "sources": [
+            "k_sos.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "07-29-2007",
+          "sources": [
+            "k_sos.MN2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "DLE, DTX2",
+          "sources": [
+            "k_sos.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2018,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2018,
+          2018
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "k_sos.HOG",
+          "modified": "2018-07-21",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "k_sos.MN2",
+          "modified": "2018-07-21",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -123,6 +173,30 @@
         "secret": false,
         "level_name": "zeta outpost",
         "level_file": "level01.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 8,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 318,
         "wall_count": 88,
         "trigger_count": 19,
@@ -134,7 +208,7 @@
         "reactors": 1,
         "robots": 45,
         "hostages": 2,
-        "secrets": 1,
+        "secrets": 2,
         "matcens": 2,
         "energy_centers": 2,
         "mine_volume": 7829190.0,
@@ -213,6 +287,30 @@
         "secret": false,
         "level_name": "zeta labs",
         "level_file": "level02.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 201,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 464,
         "wall_count": 136,
         "trigger_count": 13,
@@ -436,6 +534,30 @@
         "secret": false,
         "level_name": "quartzon reservoir",
         "level_file": "level03.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 17,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 607,
         "wall_count": 183,
         "trigger_count": 26,
@@ -782,6 +904,30 @@
         "secret": false,
         "level_name": "quartzon filtering plant",
         "level_file": "level04.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 165,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 649,
         "wall_count": 188,
         "trigger_count": 33,
@@ -943,6 +1089,30 @@
         "secret": false,
         "level_name": "illudium borehole",
         "level_file": "level05.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 15,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 681,
         "wall_count": 141,
         "trigger_count": 22,
@@ -1101,6 +1271,30 @@
         "secret": false,
         "level_name": "brimspark command",
         "level_file": "level06.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 138,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 872,
         "wall_count": 220,
         "trigger_count": 11,
@@ -1293,6 +1487,36 @@
         "secret": true,
         "level_name": "Steel Ice",
         "level_file": "levels1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 24,
+              "segment": 0,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 0,
+              "segment": 187,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 380,
         "wall_count": 106,
         "trigger_count": 27,

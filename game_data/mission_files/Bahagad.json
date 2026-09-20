@@ -34,6 +34,70 @@
       "powerups": 739,
       "reactors": 8
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DMB2, DTX2, BREIFED, HOGGLE, RBOTEDIT.",
+          "sources": [
+            "BAHAGAD.MN2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "TOO LONG!",
+          "sources": [
+            "BAHAGAD.MN2"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "WOLF",
+          "sources": [
+            "BAHAGAD.MN2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://3dportal.com/darkflame/",
+          "sources": [
+            "BAHAGAD.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "eifel1@worldnet.att.net",
+          "sources": [
+            "BAHAGAD.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1999,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1999,
+          1999
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "BAHAGAD.HOG",
+          "modified": "1999-03-23",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "BAHAGAD.MN2",
+          "modified": "1999-03-11",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +173,30 @@
         "secret": false,
         "level_name": "Noami Ducren'uble",
         "level_file": "world1a.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 303,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 367,
         "wall_count": 185,
         "trigger_count": 15,
@@ -313,6 +401,30 @@
         "secret": false,
         "level_name": "Y'tor Du'crabni",
         "level_file": "world1b.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 353,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 373,
         "wall_count": 144,
         "trigger_count": 19,
@@ -577,6 +689,30 @@
         "secret": false,
         "level_name": "Nu'crow Duno'rble",
         "level_file": "world1c.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 538,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 555,
         "wall_count": 154,
         "trigger_count": 21,
@@ -881,6 +1017,30 @@
         "secret": false,
         "level_name": "Tomai Mun'cra",
         "level_file": "world1d.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 75,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 333,
         "wall_count": 99,
         "trigger_count": 16,
@@ -1119,6 +1279,30 @@
         "secret": false,
         "level_name": "PTMC Boring Hole",
         "level_file": "world2a.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 134,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 506,
         "wall_count": 154,
         "trigger_count": 22,
@@ -1327,6 +1511,30 @@
         "secret": false,
         "level_name": "Ma'kraeg Guard Tower",
         "level_file": "world2b.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 14,
+              "segment": 467,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 476,
         "wall_count": 153,
         "trigger_count": 16,
@@ -1474,6 +1682,30 @@
         "secret": false,
         "level_name": "PTMC Water Reservoir",
         "level_file": "world2c.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 235,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 754,
         "wall_count": 165,
         "trigger_count": 9,
@@ -1754,6 +1986,30 @@
         "secret": false,
         "level_name": "War Falcon",
         "level_file": "world2d.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 87,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 562,
         "wall_count": 104,
         "trigger_count": 18,
@@ -2089,6 +2345,35 @@
         "secret": true,
         "level_name": "Terra Firma Facility",
         "level_file": "world1s.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 125,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 16,
+              "segment": 124,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 131,
         "wall_count": 63,
         "trigger_count": 20,
@@ -2165,6 +2450,41 @@
         "secret": true,
         "level_name": "Subterranean Abyss",
         "level_file": "world2s.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 177,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 17,
+              "segment": 189,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 25,
+              "segment": 296,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 298,
         "wall_count": 177,
         "trigger_count": 26,

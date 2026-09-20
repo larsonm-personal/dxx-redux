@@ -216,10 +216,20 @@ extern int Kmatrix_nomovie_message;
 #define MOVIE_REQUIRED 1
 #endif
 
+/* Shared selection for playback and the metadata survey */
+const char *endlevel_movie_filename(int level)
+{
+	static char name[] = "esa.mve";
+	if (is_SHAREWARE || level <= 0 || level > (int) N_MOVIES ||
+	    (!is_D2_OEM && level == Last_level)) return NULL;
+	name[2] = movie_table[level - 1];
+	return name;
+}
+
 //returns movie played status.  see movie.h
 int start_endlevel_movie()
 {
-	char movie_name[] = "esa.mve";
+	const char *movie_name;
 	int r;
 	ubyte save_pal[768];
 
@@ -234,11 +244,8 @@ int start_endlevel_movie()
 		if (Current_level_num == Last_level)
 			return 1;   //don't play movie
 
-	if (Current_level_num > 0)
-		movie_name[2] = movie_table[Current_level_num-1];
-	else {
-		return 0;       //no escapes for secret level
-	}
+	movie_name = endlevel_movie_filename(Current_level_num);
+	if (!movie_name) return 0;
 
 	memcpy(save_pal,gr_palette,768);
 

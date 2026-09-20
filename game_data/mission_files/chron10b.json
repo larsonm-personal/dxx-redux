@@ -34,6 +34,98 @@
       "powerups": 219,
       "reactors": 2
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "david ricci",
+          "sources": [
+            "chron10b.mn2",
+            "chron10b.hog/chron10b.mn2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "phatkid@phatkid.net",
+          "sources": [
+            "chron10b.mn2",
+            "chron10b.txt",
+            "chron10b.hog/chron10b.mn2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "phatkid.net",
+          "sources": [
+            "chron10b.mn2",
+            "chron10b.hog/chron10b.mn2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "1/4/1999",
+          "sources": [
+            "chron10b.mn2",
+            "chron10b.hog/chron10b.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1b",
+          "sources": [
+            "chron10b.mn2",
+            "chron10b.hog/chron10b.mn2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Yahoma 2.0, DMBII, DLE",
+          "sources": [
+            "chron10b.mn2",
+            "chron10b.hog/chron10b.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0b",
+          "sources": [
+            "chron10b.txt"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Descent Mission Builder 2",
+          "sources": [
+            "chron10b.txt"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          1999,
+          2016
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "chron10b.hog",
+          "modified": "1999-01-29",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "chron10b.mn2",
+          "modified": "2016-04-25",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4-9",
     "track_names": [
       {
@@ -109,6 +201,30 @@
         "secret": false,
         "level_name": "Dropship Loading",
         "level_file": "dropship.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 6,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 623,
         "wall_count": 155,
         "trigger_count": 22,
@@ -420,6 +536,30 @@
         "secret": false,
         "level_name": "Reactor C",
         "level_file": "reactorc.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 2,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 14
+            }
+          ]
+        },
         "segment_count": 592,
         "wall_count": 185,
         "trigger_count": 27,
@@ -1011,6 +1151,30 @@
         "secret": false,
         "level_name": "Hydro Plant",
         "level_file": "specimen.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 14,
+              "segment": 4,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 563,
         "wall_count": 250,
         "trigger_count": 25,
@@ -1237,6 +1401,30 @@
         "secret": true,
         "level_name": "Fight or Flight",
         "level_file": "secret1a.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 55,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 57,
         "wall_count": 13,
         "trigger_count": 4,

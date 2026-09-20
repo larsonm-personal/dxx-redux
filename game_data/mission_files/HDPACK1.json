@@ -34,6 +34,75 @@
       "powerups": 26,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "hellbenderdescent",
+          "sources": [
+            "HDPACK1/HDPACK1.MSN",
+            "HDPACK1/HDPACK1.hog/HDPACK1.MSN"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "hellbenderdescent@hotmail.com",
+          "sources": [
+            "HDPACK1/HDPACK1.MSN",
+            "HDPACK1/HDPACK1.hog/HDPACK1.MSN"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "22/08/2009",
+          "sources": [
+            "HDPACK1/HDPACK1.MSN",
+            "HDPACK1/HDPACK1.hog/HDPACK1.MSN"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.00",
+          "sources": [
+            "HDPACK1/HDPACK1.MSN",
+            "HDPACK1/HDPACK1.hog/HDPACK1.MSN"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Yahoma 2.0, DLE-XP",
+          "sources": [
+            "HDPACK1/HDPACK1.MSN",
+            "HDPACK1/HDPACK1.hog/HDPACK1.MSN"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "HDPACK1/HDPACK1.MSN",
+          "modified": "2009-08-22",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "HDPACK1/HDPACK1.hog",
+          "modified": "2009-08-22",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -233,6 +302,30 @@
         "secret": false,
         "level_name": "Hellion Millitary Base",
         "level_file": "HELLION.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 124,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 202,
         "wall_count": 30,
         "trigger_count": 1,
@@ -347,6 +440,30 @@
         "secret": false,
         "level_name": "Hellion Outpost IV",
         "level_file": "hpostiv.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 203,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 237,
         "wall_count": 26,
         "trigger_count": 1,
@@ -462,6 +579,30 @@
         "secret": false,
         "level_name": "Lair of Death",
         "level_file": "LOD.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 440,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 517,
         "wall_count": 39,
         "trigger_count": 2,

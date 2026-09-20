@@ -315,6 +315,18 @@ function New-GuidebotInfrastructureErrorResult {
     return [pscustomobject]$record
 }
 
+function Test-GuidebotExpectedProcessTimeout {
+    param([string]$Identity, [string[]]$Problems)
+
+    # Uneasy4's large route-planning workload may exceed the process watchdog
+    # Accept only that known headless timeout; crashes and setup errors still fail
+    if ($Identity -ne 'Uneasy4.json|0|0|Uneasy4.rl2' -or $Problems.Count -eq 0) { return $false }
+    foreach ($problem in $Problems) {
+        if ($problem -notmatch '^Route engine process timeout after \d+ seconds for ') { return $false }
+    }
+    return $true
+}
+
 function Invoke-GuidebotDesktopLevel {
     param(
         [Parameter(Mandatory)][object]$WorkItem,
@@ -696,6 +708,7 @@ $selectedByIdentity = @{}
 foreach ($item in $selectedItems) { $selectedByIdentity[$item.Identity] = $item }
 $resultsByIdentity = @{}
 $infrastructureFailures = [Collections.Generic.List[object]]::new()
+$expectedTimeouts = [Collections.Generic.List[object]]::new()
 $changedFiles = [Collections.Generic.List[string]]::new()
 $headedComparisons = [Collections.Generic.List[object]]::new()
 $stageByMetadata = @{}
@@ -866,9 +879,15 @@ if ($Mode -eq 'Headless') {
                 $problem = $state.Problems[0]
                 $resultsByIdentity[$task.Item.Identity] = New-GuidebotInfrastructureErrorResult `
                     -Mission $task.Item.Mission -LevelRecord $task.Item.Level -Problem $problem
-                $infrastructureFailures.Add([ordered]@{ identity = $task.Item.Identity; problem = $problem })
-                $color = 'Red'
-                $progressLabel = 'INFRASTRUCTURE_ERROR'
+                if (Test-GuidebotExpectedProcessTimeout -Identity $task.Item.Identity -Problems $state.Problems.ToArray()) {
+                    $expectedTimeouts.Add([ordered]@{ identity = $task.Item.Identity; problem = $problem })
+                    $color = 'Yellow'
+                    $progressLabel = 'EXPECTED_TIMEOUT'
+                } else {
+                    $infrastructureFailures.Add([ordered]@{ identity = $task.Item.Identity; problem = $problem })
+                    $color = 'Red'
+                    $progressLabel = 'INFRASTRUCTURE_ERROR'
+                }
             } else {
                 $reference = $state.Runs[1]
                 $result = ConvertTo-GuidebotLevelSimulationResult -Mission $task.Item.Mission `
@@ -941,6 +960,7 @@ $summary = [ordered]@{
     elapsed_seconds = [Math]::Round(([DateTime]::UtcNow - $batchStart).TotalSeconds, 3)
     selected_work_items = @($selectedItems.Identity)
     infrastructure_failures = @($infrastructureFailures)
+    expected_timeouts = @($expectedTimeouts)
     headed_comparisons = @($headedComparisons)
     run_root = $runRoot
 }

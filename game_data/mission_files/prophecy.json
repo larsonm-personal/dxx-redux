@@ -34,6 +34,56 @@
       "powerups": 285,
       "reactors": 5
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Sapphire Wolf",
+          "sources": [
+            "PROPHECY.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "09-03-2005",
+          "sources": [
+            "PROPHECY.MN2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Hoggle v1.3",
+          "sources": [
+            "PROPHECY.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2007,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2007,
+          2007
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "PROPHECY.HOG",
+          "modified": "2007-06-16",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "PROPHECY.MN2",
+          "modified": "2007-06-16",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +159,30 @@
         "secret": false,
         "level_name": "Hydro Station Aquania",
         "level_file": "aqunia.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 377,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 389,
         "wall_count": 78,
         "trigger_count": 5,
@@ -355,6 +429,30 @@
         "secret": false,
         "level_name": "Magma Station Phoenix",
         "level_file": "phoenix.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 438,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 451,
         "wall_count": 79,
         "trigger_count": 8,
@@ -624,6 +722,30 @@
         "secret": false,
         "level_name": "Ice Station Auora",
         "level_file": "auora1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 533,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 628,
         "wall_count": 143,
         "trigger_count": 16,
@@ -821,6 +943,30 @@
         "secret": false,
         "level_name": "Delta Station",
         "level_file": "delta.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 348,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 477,
         "wall_count": 121,
         "trigger_count": 11,
@@ -1091,6 +1237,30 @@
         "secret": false,
         "level_name": "Omega Station Hyperion",
         "level_file": "hyperion.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 12,
+              "segment": 547,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 602,
         "wall_count": 182,
         "trigger_count": 24,

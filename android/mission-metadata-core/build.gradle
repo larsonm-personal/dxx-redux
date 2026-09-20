@@ -11,6 +11,8 @@ kotlin {
 }
 
 dependencies {
+    implementation "org.apache.commons:commons-compress:${toolVersions['COMMONS_COMPRESS_VERSION']}"
+    implementation "org.tukaani:xz:${toolVersions['XZ_VERSION']}"
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${toolVersions['KOTLINX_SERIALIZATION_VERSION']}"
     testImplementation "junit:junit:${toolVersions['JUNIT_VERSION']}"
 }

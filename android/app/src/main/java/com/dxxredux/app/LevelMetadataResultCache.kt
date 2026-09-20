@@ -6,7 +6,7 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.Locale
 
-private const val LEVEL_METADATA_RESULT_CACHE_SCHEMA = "dxx-level-metadata-result-cache-v4"
+private const val LEVEL_METADATA_RESULT_CACHE_SCHEMA = "dxx-level-metadata-result-cache-v5"
 private const val LEVEL_METADATA_RESULT_CACHE_MAX_FILES = 512
 private const val LEVEL_METADATA_RESULT_CACHE_MAX_BYTES = 256L * 1024L * 1024L
 private const val LEVEL_METADATA_RESULT_CACHE_FILE_MAX_BYTES = 32L * 1024L * 1024L
@@ -59,6 +59,7 @@ internal object LevelMetadataResultCache {
                 .put("normal_level_files", JSONArray(target.normalLevelFiles))
                 .put("secret_level_files", JSONArray(target.secretLevelFiles))
                 .put("archive_entries", JSONArray(target.archiveEntries))
+                .put("provenance_file_dates", provenanceDatesJson(target.provenanceDates))
                 .put("files", fileIdentities)
         return Identity(sha256(definition.toString().toByteArray(Charsets.UTF_8)), files.size, totalBytes)
     }

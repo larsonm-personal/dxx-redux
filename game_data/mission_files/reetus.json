@@ -34,6 +34,55 @@
       "powerups": 828,
       "reactors": 9
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "yes",
+          "sources": [
+            "reetus.hog/reetus.MSN"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "yes",
+          "sources": [
+            "reetus.hog/reetus.MSN"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "yes",
+          "sources": [
+            "reetus.hog/reetus.MSN"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "1/7/2007",
+          "sources": [
+            "reetus.hog/reetus.MSN"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "12/13/2006",
+          "sources": [
+            "reetus.hog/reetus.MSN"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "unknown",
+        "confidence": "unknown"
+      },
+      "file_dates": [],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -233,6 +282,30 @@
         "secret": false,
         "level_name": "Sewer Rats",
         "level_file": "r2.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 12,
+              "segment": 775,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 799,
         "wall_count": 131,
         "trigger_count": 45,
@@ -572,6 +645,29 @@
         "secret": false,
         "level_name": "dorren",
         "level_file": "dorren.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 790,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 796,
         "wall_count": 176,
         "trigger_count": 8,
@@ -686,6 +782,30 @@
         "secret": false,
         "level_name": "Up From The Deep",
         "level_file": "r1.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 71,
+              "segment": 741,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 173,
         "trigger_count": 72,
@@ -878,6 +998,30 @@
         "secret": false,
         "level_name": "bandor",
         "level_file": "bandor.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 101,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 96,
         "trigger_count": 1,
@@ -935,6 +1079,30 @@
         "secret": false,
         "level_name": "serega",
         "level_file": "serega.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 784,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 799,
         "wall_count": 47,
         "trigger_count": 4,
@@ -1152,6 +1320,30 @@
         "secret": false,
         "level_name": "painhex",
         "level_file": "painhex.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 665,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 154,
         "trigger_count": 29,
@@ -1472,6 +1664,30 @@
         "secret": false,
         "level_name": "bukibal",
         "level_file": "bukibal.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 677,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 143,
         "trigger_count": 25,
@@ -1803,6 +2019,29 @@
         "secret": false,
         "level_name": "Mask Of The Red Spiders",
         "level_file": "r3.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 50,
+              "segment": 792,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 799,
         "wall_count": 175,
         "trigger_count": 51,
@@ -1969,6 +2208,29 @@
         "secret": false,
         "level_name": "The Oven",
         "level_file": "r4.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 694,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 799,
         "wall_count": 170,
         "trigger_count": 21,
@@ -2083,6 +2345,30 @@
         "secret": false,
         "level_name": "rankor",
         "level_file": "rankor.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 280,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 796,
         "wall_count": 78,
         "trigger_count": 5,
@@ -2139,6 +2425,30 @@
         "secret": false,
         "level_name": "chirala",
         "level_file": "chirala.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 746,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 152,
         "trigger_count": 2,
@@ -2211,6 +2521,30 @@
         "secret": false,
         "level_name": "tindre",
         "level_file": "tindre.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 20,
+              "segment": 512,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 799,
         "wall_count": 172,
         "trigger_count": 27,
@@ -2757,6 +3091,30 @@
         "secret": false,
         "level_name": "barrel",
         "level_file": "barrel.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 68,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 174,
         "trigger_count": 9,
@@ -2839,6 +3197,30 @@
         "secret": false,
         "level_name": "ropo",
         "level_file": "ropo.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 705,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 2
+            }
+          ]
+        },
         "segment_count": 789,
         "wall_count": 141,
         "trigger_count": 8,
@@ -2953,6 +3335,29 @@
         "secret": false,
         "level_name": "Final Arena",
         "level_file": "r5.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 450,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 782,
         "wall_count": 163,
         "trigger_count": 6,
@@ -3030,6 +3435,30 @@
         "secret": true,
         "level_name": "SL01",
         "level_file": "sl01.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 25,
+              "segment": 584,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 631,
         "wall_count": 147,
         "trigger_count": 28,
@@ -3363,6 +3792,30 @@
         "secret": true,
         "level_name": "SL02",
         "level_file": "sl02.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 761,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 784,
         "wall_count": 175,
         "trigger_count": 4,
@@ -3440,6 +3893,30 @@
         "secret": true,
         "level_name": "SL03",
         "level_file": "sl03.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 781,
+              "side": 3,
+              "status": "present",
+              "tunnel_segments": 1
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 168,
         "trigger_count": 12,

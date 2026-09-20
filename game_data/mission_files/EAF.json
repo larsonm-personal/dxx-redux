@@ -34,6 +34,91 @@
       "powerups": 128,
       "reactors": 4
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "date",
+          "value": "03-17-1998",
+          "sources": [
+            "ENCOUN.MN2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Hoggle v1.2 Beta",
+          "sources": [
+            "ENCOUN.MN2"
+          ]
+        },
+        {
+          "field": "finished_date",
+          "value": "March 27th 98",
+          "sources": [
+            "ENCOUN.TXT"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "March 27 entered into the",
+          "sources": [
+            "ENCOUN.TXT"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Kam Sheffield",
+          "sources": [
+            "ENCOUN.TXT"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "Kamster",
+          "sources": [
+            "ENCOUN.TXT"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "Kam.dad2man@juno.com",
+          "sources": [
+            "ENCOUN.TXT"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.geocities.com/yosemite/gorge/1583/index.html",
+          "sources": [
+            "ENCOUN.TXT"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1998,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          1998,
+          1998
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "ENCOUN.HOG",
+          "modified": "1998-04-02",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "ENCOUN.MN2",
+          "modified": "1998-03-23",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -109,6 +194,29 @@
         "secret": false,
         "level_name": "Warp Core Generation",
         "level_file": "encoun1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 0,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 467,
         "wall_count": 60,
         "trigger_count": 8,
@@ -367,6 +475,29 @@
         "secret": false,
         "level_name": "Quasar Research",
         "level_file": "encoun2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 7,
+              "segment": 514,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 523,
         "wall_count": 88,
         "trigger_count": 8,
@@ -648,6 +779,29 @@
         "secret": false,
         "level_name": "Callisto Star Lab",
         "level_file": "encoun3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 13,
+              "segment": 701,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 719,
         "wall_count": 132,
         "trigger_count": 14,
@@ -865,6 +1019,29 @@
         "secret": false,
         "level_name": "Tri Frost Catacombs",
         "level_file": "encoun4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 6,
+              "segment": 504,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 517,
         "wall_count": 36,
         "trigger_count": 7,
@@ -1043,6 +1220,22 @@
         "secret": false,
         "level_name": "Farpiont Station",
         "level_file": "encoun5.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_normal_exit_trigger",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "absent",
+          "tunnel": {
+            "status": "no_exit_trigger"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": []
+        },
         "segment_count": 723,
         "wall_count": 48,
         "trigger_count": 0,

@@ -34,6 +34,63 @@
       "powerups": 977,
       "reactors": 9
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "The Nightmare Catbeast (Vertigo Fox/NebulaFang)",
+          "sources": [
+            "castaway.mn2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "don't even wanna check :)",
+          "sources": [
+            "castaway.mn2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "2025",
+          "sources": [
+            "castaway.mn2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Inferno and a bit of DLE",
+          "sources": [
+            "castaway.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": null,
+        "basis": "conflicting_dates",
+        "confidence": "unknown",
+        "file_year_range": [
+          2025,
+          2026
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "castaway.hog",
+          "modified": "2026-01-19",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "castaway.mn2",
+          "modified": "2025-10-10",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -146,6 +203,30 @@
         "secret": false,
         "level_name": "skorrpyo crater outpost",
         "level_file": "skorrpyo.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 124,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 669,
         "wall_count": 156,
         "trigger_count": 27,
@@ -318,6 +399,30 @@
         "secret": false,
         "level_name": "the nanoseal rupture",
         "level_file": "rupture.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 22,
+              "segment": 712,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 817,
         "wall_count": 225,
         "trigger_count": 33,
@@ -957,6 +1062,30 @@
         "secret": false,
         "level_name": "Sable Station",
         "level_file": "sable.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 8,
+              "segment": 669,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 23
+            }
+          ]
+        },
         "segment_count": 783,
         "wall_count": 167,
         "trigger_count": 24,
@@ -968,7 +1097,7 @@
         "reactors": 1,
         "robots": 62,
         "hostages": 4,
-        "secrets": 4,
+        "secrets": 5,
         "matcens": 5,
         "energy_centers": 2,
         "mine_volume": 10601800.0,
@@ -1100,6 +1229,30 @@
         "secret": false,
         "level_name": "antarctic bunker u0001b",
         "level_file": "u1bunker.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 62,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 734,
         "wall_count": 149,
         "trigger_count": 20,
@@ -1461,6 +1614,30 @@
         "secret": false,
         "level_name": "The Desolation",
         "level_file": "quarry.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 479,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 840,
         "wall_count": 195,
         "trigger_count": 31,
@@ -1812,6 +1989,30 @@
         "secret": false,
         "level_name": "cove scilab",
         "level_file": "cove.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 512,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 245,
         "trigger_count": 40,
@@ -2351,6 +2552,30 @@
         "secret": false,
         "level_name": "Sun-Swallower Station",
         "level_file": "swallow.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 273,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 877,
         "wall_count": 253,
         "trigger_count": 46,
@@ -2698,6 +2923,30 @@
         "secret": false,
         "level_name": "PTMC Metamorphic Metamorph",
         "level_file": "meta.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 62,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 20
+            }
+          ]
+        },
         "segment_count": 833,
         "wall_count": 242,
         "trigger_count": 51,
@@ -2709,7 +2958,7 @@
         "reactors": 1,
         "robots": 108,
         "hostages": 0,
-        "secrets": 3,
+        "secrets": 4,
         "matcens": 3,
         "energy_centers": 1,
         "mine_volume": 14044500.0,
@@ -3121,6 +3370,30 @@
         "secret": false,
         "level_name": "bioform x2ldi446q",
         "level_file": "bioform.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 258,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 796,
         "wall_count": 251,
         "trigger_count": 36,
@@ -3343,6 +3616,35 @@
         "secret": true,
         "level_name": "billion-year engine",
         "level_file": "devoured.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 255,
+              "side": 3,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 17,
+              "segment": 536,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 565,
         "wall_count": 162,
         "trigger_count": 30,

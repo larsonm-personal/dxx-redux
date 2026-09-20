@@ -34,6 +34,77 @@
       "powerups": 247,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "AlumiuN",
+          "sources": [
+            "anachron.msn"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "Way too long",
+          "sources": [
+            "anachron.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "2023",
+          "sources": [
+            "anachron.msn"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Inferno Editor",
+          "sources": [
+            "anachron.msn"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "ctalyst666@gmail.com",
+          "sources": [
+            "anachron.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.1",
+          "sources": [
+            "anachron.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2023,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2023,
+          2023
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "anachron.hog",
+          "modified": "2023-10-22",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "anachron.msn",
+          "modified": "2023-10-22",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +304,35 @@
         "secret": false,
         "level_name": "Curse Of The Red River",
         "level_file": "redriver.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.91,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.91
+          },
+          "presentation": {
+            "status": "present",
+            "file": "redriver.end",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 318,
+              "side": 4,
+              "seconds": 14.91,
+              "status": "estimated",
+              "tunnel_units": 495.501,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 147,
         "trigger_count": 5,
@@ -333,6 +433,35 @@
         "secret": false,
         "level_name": "Sick Transit",
         "level_file": "scktrnst.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.125,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.125
+          },
+          "presentation": {
+            "status": "present",
+            "file": "scktrnst.end",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 433,
+              "side": 1,
+              "seconds": 15.125,
+              "status": "estimated",
+              "tunnel_units": 506.251,
+              "tunnel_segments": 15
+            }
+          ]
+        },
         "segment_count": 888,
         "wall_count": 165,
         "trigger_count": 10,
@@ -447,6 +576,44 @@
         "secret": false,
         "level_name": "Appeasement Refinery",
         "level_file": "appease.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 28.563,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 28.563
+          },
+          "presentation": {
+            "status": "present",
+            "file": "appease.end",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 164,
+              "side": 0,
+              "seconds": 7.603,
+              "status": "estimated",
+              "tunnel_units": 130.146,
+              "tunnel_segments": 5
+            },
+            {
+              "trigger": 8,
+              "segment": 763,
+              "side": 0,
+              "seconds": 28.563,
+              "status": "estimated",
+              "tunnel_units": 1178.146,
+              "tunnel_segments": 33
+            }
+          ]
+        },
         "segment_count": 889,
         "wall_count": 161,
         "trigger_count": 12,

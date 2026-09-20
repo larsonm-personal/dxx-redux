@@ -34,6 +34,70 @@
       "powerups": 1020,
       "reactors": 22
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE",
+          "sources": [
+            "quotienc.msn"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "not tracked",
+          "sources": [
+            "quotienc.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "20 jan 2021",
+          "sources": [
+            "quotienc.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0.0",
+          "sources": [
+            "quotienc.msn"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Parabolicus",
+          "sources": [
+            "quotienc.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2021,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2021,
+          2021
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "quotienc.hog",
+          "modified": "2021-12-29",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "quotienc.msn",
+          "modified": "2021-12-29",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +297,35 @@
         "secret": false,
         "level_name": "Astraea Refinery",
         "level_file": "lv2_01.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.633,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.633
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_01.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 253,
+              "side": 4,
+              "seconds": 14.633,
+              "status": "estimated",
+              "tunnel_units": 481.65,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 461,
         "wall_count": 52,
         "trigger_count": 1,
@@ -319,6 +412,35 @@
         "secret": false,
         "level_name": "Sylvia Outpost",
         "level_file": "lv2_02.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.966,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.966
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_02.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 419,
+              "side": 4,
+              "seconds": 13.966,
+              "status": "estimated",
+              "tunnel_units": 448.284,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 690,
         "wall_count": 103,
         "trigger_count": 3,
@@ -419,6 +541,44 @@
         "secret": false,
         "level_name": "Nausikaa Port Compound",
         "level_file": "lv2_03.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.407,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.407
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_03.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 506,
+              "side": 1,
+              "seconds": 15.407,
+              "status": "estimated",
+              "tunnel_units": 520.332,
+              "tunnel_segments": 21
+            },
+            {
+              "trigger": 1,
+              "segment": 220,
+              "side": 0,
+              "seconds": 9.8,
+              "status": "estimated",
+              "tunnel_units": 240.0,
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 561,
         "wall_count": 122,
         "trigger_count": 6,
@@ -533,6 +693,35 @@
         "secret": false,
         "level_name": "hygiea saline mine",
         "level_file": "lv2_04.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.234,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.234
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_04.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 499,
+              "side": 1,
+              "seconds": 12.234,
+              "status": "estimated",
+              "tunnel_units": 361.712,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 577,
         "wall_count": 106,
         "trigger_count": 6,
@@ -647,6 +836,35 @@
         "secret": false,
         "level_name": "Hygiea Bauxite Mine",
         "level_file": "lv2_05.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.79,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.79
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_05.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 590,
+              "side": 2,
+              "seconds": 20.79,
+              "status": "estimated",
+              "tunnel_units": 789.499,
+              "tunnel_segments": 44
+            }
+          ]
+        },
         "segment_count": 669,
         "wall_count": 130,
         "trigger_count": 11,
@@ -761,6 +979,35 @@
         "secret": false,
         "level_name": "Hygiea Processing Plant",
         "level_file": "lv2_06.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.05,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.05
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_06.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 320,
+              "side": 0,
+              "seconds": 14.05,
+              "status": "estimated",
+              "tunnel_units": 452.5,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 702,
         "wall_count": 112,
         "trigger_count": 7,
@@ -875,6 +1122,35 @@
         "secret": false,
         "level_name": "egeria crew station",
         "level_file": "lv2_07.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.228,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.228
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_07.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 367,
+              "side": 5,
+              "seconds": 20.228,
+              "status": "estimated",
+              "tunnel_units": 761.418,
+              "tunnel_segments": 30
+            }
+          ]
+        },
         "segment_count": 707,
         "wall_count": 136,
         "trigger_count": 10,
@@ -1016,6 +1292,35 @@
         "secret": false,
         "level_name": "Pallas Storage Facility",
         "level_file": "lv2_08.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.034,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.034
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_08.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 479,
+              "side": 1,
+              "seconds": 19.034,
+              "status": "estimated",
+              "tunnel_units": 701.714,
+              "tunnel_segments": 35
+            }
+          ]
+        },
         "segment_count": 640,
         "wall_count": 120,
         "trigger_count": 9,
@@ -1130,6 +1435,35 @@
         "secret": false,
         "level_name": "Pallas Helium Extraction",
         "level_file": "lv2_09.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.018,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.018
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_09.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 257,
+              "side": 4,
+              "seconds": 15.018,
+              "status": "estimated",
+              "tunnel_units": 500.89,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 681,
         "wall_count": 120,
         "trigger_count": 5,
@@ -1244,6 +1578,35 @@
         "secret": false,
         "level_name": "Pallas Laboratory",
         "level_file": "lv2_10.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_10.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 633,
+              "side": 0,
+              "seconds": 16.0,
+              "status": "estimated",
+              "tunnel_units": 550.0,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 777,
         "wall_count": 139,
         "trigger_count": 7,
@@ -1358,6 +1721,35 @@
         "secret": false,
         "level_name": "Euphrosyne Military Base",
         "level_file": "lv2_11.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.797,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.797
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_11.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 484,
+              "side": 5,
+              "seconds": 20.797,
+              "status": "estimated",
+              "tunnel_units": 789.858,
+              "tunnel_segments": 34
+            }
+          ]
+        },
         "segment_count": 570,
         "wall_count": 118,
         "trigger_count": 11,
@@ -1472,6 +1864,35 @@
         "secret": false,
         "level_name": "Themis Mining Colony",
         "level_file": "lv2_12.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.929,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.929
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_12.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 298,
+              "side": 4,
+              "seconds": 20.929,
+              "status": "estimated",
+              "tunnel_units": 796.457,
+              "tunnel_segments": 28
+            }
+          ]
+        },
         "segment_count": 771,
         "wall_count": 123,
         "trigger_count": 5,
@@ -1586,6 +2007,35 @@
         "secret": false,
         "level_name": "Themis Transit Complex",
         "level_file": "lv2_13.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_13.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 400,
+              "side": 5,
+              "seconds": 13.6,
+              "status": "estimated",
+              "tunnel_units": 430.0,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 706,
         "wall_count": 151,
         "trigger_count": 9,
@@ -1700,6 +2150,35 @@
         "secret": false,
         "level_name": "Cybele Ammonia Mine",
         "level_file": "lv2_14.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.921,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.921
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_14.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 533,
+              "side": 1,
+              "seconds": 17.921,
+              "status": "estimated",
+              "tunnel_units": 646.072,
+              "tunnel_segments": 29
+            }
+          ]
+        },
         "segment_count": 570,
         "wall_count": 95,
         "trigger_count": 5,
@@ -1814,6 +2293,35 @@
         "secret": false,
         "level_name": "salacia iron mine",
         "level_file": "lv2_15.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 18.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 18.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_15.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 539,
+              "side": 4,
+              "seconds": 18.6,
+              "status": "estimated",
+              "tunnel_units": 680.0,
+              "tunnel_segments": 26
+            }
+          ]
+        },
         "segment_count": 675,
         "wall_count": 106,
         "trigger_count": 5,
@@ -1928,6 +2436,35 @@
         "secret": false,
         "level_name": "Vesta Power Station",
         "level_file": "lv2_16.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.4,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.4
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_16.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 184,
+              "side": 4,
+              "seconds": 17.4,
+              "status": "estimated",
+              "tunnel_units": 620.0,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 663,
         "wall_count": 125,
         "trigger_count": 3,
@@ -2042,6 +2579,44 @@
         "secret": false,
         "level_name": "Vesta Steel Foundry",
         "level_file": "lv2_17.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.295,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.295
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_17.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 117,
+              "side": 1,
+              "seconds": 10.595,
+              "status": "estimated",
+              "tunnel_units": 279.745,
+              "tunnel_segments": 14
+            },
+            {
+              "trigger": 0,
+              "segment": 304,
+              "side": 1,
+              "seconds": 16.295,
+              "status": "estimated",
+              "tunnel_units": 564.745,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 619,
         "wall_count": 175,
         "trigger_count": 7,
@@ -2156,6 +2731,35 @@
         "secret": false,
         "level_name": "Vesta Machine Factory",
         "level_file": "lv2_18.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.345,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.345
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_18.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 481,
+              "side": 5,
+              "seconds": 17.345,
+              "status": "estimated",
+              "tunnel_units": 617.269,
+              "tunnel_segments": 29
+            }
+          ]
+        },
         "segment_count": 763,
         "wall_count": 175,
         "trigger_count": 7,
@@ -2270,6 +2874,35 @@
         "secret": false,
         "level_name": "Ceres Platinum Mine",
         "level_file": "lv2_19.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.798,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.798
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_19.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 700,
+              "side": 1,
+              "seconds": 20.798,
+              "status": "estimated",
+              "tunnel_units": 789.887,
+              "tunnel_segments": 30
+            }
+          ]
+        },
         "segment_count": 775,
         "wall_count": 143,
         "trigger_count": 9,
@@ -2424,6 +3057,35 @@
         "secret": false,
         "level_name": "Ceres Control Center",
         "level_file": "lv2_20.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.656,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.656
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_20.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 614,
+              "side": 4,
+              "seconds": 16.656,
+              "status": "estimated",
+              "tunnel_units": 582.79,
+              "tunnel_segments": 28
+            }
+          ]
+        },
         "segment_count": 709,
         "wall_count": 143,
         "trigger_count": 12,
@@ -2538,6 +3200,35 @@
         "secret": false,
         "level_name": "Ceres Robot Depot",
         "level_file": "lv2_21.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.2,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.2
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_21.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 601,
+              "side": 4,
+              "seconds": 15.2,
+              "status": "estimated",
+              "tunnel_units": 510.0,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 729,
         "wall_count": 160,
         "trigger_count": 12,
@@ -2652,6 +3343,35 @@
         "secret": false,
         "level_name": "Interamnia Headquarters",
         "level_file": "lv2_22.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.957,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.957
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_22.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 379,
+              "side": 1,
+              "seconds": 19.957,
+              "status": "estimated",
+              "tunnel_units": 747.871,
+              "tunnel_segments": 31
+            }
+          ]
+        },
         "segment_count": 661,
         "wall_count": 120,
         "trigger_count": 6,
@@ -2793,6 +3513,35 @@
         "secret": true,
         "level_name": "the grand entrance",
         "level_file": "lv2_s1.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 21.4,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 21.4
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_s1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 414,
+              "side": 0,
+              "seconds": 21.4,
+              "status": "estimated",
+              "tunnel_units": 820.0,
+              "tunnel_segments": 29
+            }
+          ]
+        },
         "segment_count": 525,
         "wall_count": 97,
         "trigger_count": 4,
@@ -2907,6 +3656,35 @@
         "secret": true,
         "level_name": "sidereal laboratory",
         "level_file": "lv2_s2.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.8,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.8
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_s2.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 448,
+              "side": 5,
+              "seconds": 17.8,
+              "status": "estimated",
+              "tunnel_units": 640.0,
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 715,
         "wall_count": 134,
         "trigger_count": 10,
@@ -3021,6 +3799,35 @@
         "secret": true,
         "level_name": "Pandora's Vault",
         "level_file": "lv2_s3.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.937,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.937
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_s3.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 248,
+              "side": 5,
+              "seconds": 11.937,
+              "status": "estimated",
+              "tunnel_units": 346.875,
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 789,
         "wall_count": 175,
         "trigger_count": 14,
@@ -3032,7 +3839,7 @@
         "reactors": 1,
         "robots": 166,
         "hostages": 0,
-        "secrets": 6,
+        "secrets": 8,
         "matcens": 9,
         "energy_centers": 3,
         "mine_volume": 39149900.0,
@@ -3508,6 +4315,70 @@
       "powerups": 1104,
       "reactors": 22
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE",
+          "sources": [
+            "quotieny.msn"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "not tracked",
+          "sources": [
+            "quotieny.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "20 jan 2021",
+          "sources": [
+            "quotieny.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0.0",
+          "sources": [
+            "quotieny.msn"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Parabolicus",
+          "sources": [
+            "quotieny.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2021,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2021,
+          2021
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "quotieny.hog",
+          "modified": "2021-12-29",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "quotieny.msn",
+          "modified": "2021-12-29",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -3707,6 +4578,35 @@
         "secret": false,
         "level_name": "Astraea Refinery",
         "level_file": "lv2_01.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.633,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.633
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_01.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 253,
+              "side": 4,
+              "seconds": 14.633,
+              "status": "estimated",
+              "tunnel_units": 481.65,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 461,
         "wall_count": 52,
         "trigger_count": 1,
@@ -3793,6 +4693,35 @@
         "secret": false,
         "level_name": "Sylvia Outpost",
         "level_file": "lv2_02.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.966,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.966
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_02.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 419,
+              "side": 4,
+              "seconds": 13.966,
+              "status": "estimated",
+              "tunnel_units": 448.284,
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 690,
         "wall_count": 103,
         "trigger_count": 3,
@@ -3893,6 +4822,44 @@
         "secret": false,
         "level_name": "Nausikaa Port Compound",
         "level_file": "lv2_03.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.407,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.407
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_03.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 506,
+              "side": 1,
+              "seconds": 15.407,
+              "status": "estimated",
+              "tunnel_units": 520.332,
+              "tunnel_segments": 21
+            },
+            {
+              "trigger": 1,
+              "segment": 220,
+              "side": 0,
+              "seconds": 9.8,
+              "status": "estimated",
+              "tunnel_units": 240.0,
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 561,
         "wall_count": 124,
         "trigger_count": 8,
@@ -4007,6 +4974,35 @@
         "secret": false,
         "level_name": "hygiea saline mine",
         "level_file": "lv2_04.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 12.234,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 12.234
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_04.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 499,
+              "side": 1,
+              "seconds": 12.234,
+              "status": "estimated",
+              "tunnel_units": 361.712,
+              "tunnel_segments": 17
+            }
+          ]
+        },
         "segment_count": 577,
         "wall_count": 104,
         "trigger_count": 4,
@@ -4121,6 +5117,35 @@
         "secret": false,
         "level_name": "Hygiea Bauxite Mine",
         "level_file": "lv2_05.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.79,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.79
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_05.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 590,
+              "side": 2,
+              "seconds": 20.79,
+              "status": "estimated",
+              "tunnel_units": 789.499,
+              "tunnel_segments": 44
+            }
+          ]
+        },
         "segment_count": 669,
         "wall_count": 130,
         "trigger_count": 11,
@@ -4235,6 +5260,35 @@
         "secret": false,
         "level_name": "Hygiea Processing Plant",
         "level_file": "lv2_06.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 14.05,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 14.05
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_06.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 320,
+              "side": 0,
+              "seconds": 14.05,
+              "status": "estimated",
+              "tunnel_units": 452.5,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 702,
         "wall_count": 112,
         "trigger_count": 7,
@@ -4349,6 +5403,35 @@
         "secret": false,
         "level_name": "egeria crew station",
         "level_file": "lv2_07.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.228,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.228
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_07.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 367,
+              "side": 5,
+              "seconds": 20.228,
+              "status": "estimated",
+              "tunnel_units": 761.418,
+              "tunnel_segments": 30
+            }
+          ]
+        },
         "segment_count": 707,
         "wall_count": 136,
         "trigger_count": 10,
@@ -4490,6 +5573,35 @@
         "secret": false,
         "level_name": "Pallas Storage Facility",
         "level_file": "lv2_08.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.034,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.034
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_08.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 479,
+              "side": 1,
+              "seconds": 19.034,
+              "status": "estimated",
+              "tunnel_units": 701.714,
+              "tunnel_segments": 35
+            }
+          ]
+        },
         "segment_count": 640,
         "wall_count": 120,
         "trigger_count": 9,
@@ -4604,6 +5716,35 @@
         "secret": false,
         "level_name": "Pallas Helium Extraction",
         "level_file": "lv2_09.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.018,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.018
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_09.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 257,
+              "side": 4,
+              "seconds": 15.018,
+              "status": "estimated",
+              "tunnel_units": 500.89,
+              "tunnel_segments": 24
+            }
+          ]
+        },
         "segment_count": 681,
         "wall_count": 120,
         "trigger_count": 5,
@@ -4718,6 +5859,35 @@
         "secret": false,
         "level_name": "Pallas Laboratory",
         "level_file": "lv2_10.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.0,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.0
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_10.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 633,
+              "side": 0,
+              "seconds": 16.0,
+              "status": "estimated",
+              "tunnel_units": 550.0,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 777,
         "wall_count": 139,
         "trigger_count": 7,
@@ -4832,6 +6002,35 @@
         "secret": false,
         "level_name": "Euphrosyne Military Base",
         "level_file": "lv2_11.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.797,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.797
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_11.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 484,
+              "side": 5,
+              "seconds": 20.797,
+              "status": "estimated",
+              "tunnel_units": 789.858,
+              "tunnel_segments": 34
+            }
+          ]
+        },
         "segment_count": 570,
         "wall_count": 118,
         "trigger_count": 11,
@@ -4946,6 +6145,35 @@
         "secret": false,
         "level_name": "Themis Mining Colony",
         "level_file": "lv2_12.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.929,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.929
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_12.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 298,
+              "side": 4,
+              "seconds": 20.929,
+              "status": "estimated",
+              "tunnel_units": 796.457,
+              "tunnel_segments": 28
+            }
+          ]
+        },
         "segment_count": 771,
         "wall_count": 123,
         "trigger_count": 5,
@@ -5060,6 +6288,35 @@
         "secret": false,
         "level_name": "Themis Transit Complex",
         "level_file": "lv2_13.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 13.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 13.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_13.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 400,
+              "side": 5,
+              "seconds": 13.6,
+              "status": "estimated",
+              "tunnel_units": 430.0,
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 706,
         "wall_count": 151,
         "trigger_count": 8,
@@ -5174,6 +6431,35 @@
         "secret": false,
         "level_name": "Cybele Ammonia Mine",
         "level_file": "lv2_14.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.921,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.921
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_14.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 533,
+              "side": 1,
+              "seconds": 17.921,
+              "status": "estimated",
+              "tunnel_units": 646.072,
+              "tunnel_segments": 29
+            }
+          ]
+        },
         "segment_count": 570,
         "wall_count": 95,
         "trigger_count": 5,
@@ -5288,6 +6574,35 @@
         "secret": false,
         "level_name": "salacia iron mine",
         "level_file": "lv2_15.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 18.6,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 18.6
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_15.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 539,
+              "side": 4,
+              "seconds": 18.6,
+              "status": "estimated",
+              "tunnel_units": 680.0,
+              "tunnel_segments": 26
+            }
+          ]
+        },
         "segment_count": 678,
         "wall_count": 108,
         "trigger_count": 5,
@@ -5402,6 +6717,35 @@
         "secret": false,
         "level_name": "Vesta Power Station",
         "level_file": "lv2_16.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.4,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.4
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_16.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 184,
+              "side": 4,
+              "seconds": 17.4,
+              "status": "estimated",
+              "tunnel_units": 620.0,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 663,
         "wall_count": 125,
         "trigger_count": 3,
@@ -5516,6 +6860,44 @@
         "secret": false,
         "level_name": "Vesta Steel Foundry",
         "level_file": "lv2_17.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.295,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.295
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_17.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 117,
+              "side": 1,
+              "seconds": 10.595,
+              "status": "estimated",
+              "tunnel_units": 279.745,
+              "tunnel_segments": 14
+            },
+            {
+              "trigger": 0,
+              "segment": 304,
+              "side": 1,
+              "seconds": 16.295,
+              "status": "estimated",
+              "tunnel_units": 564.745,
+              "tunnel_segments": 22
+            }
+          ]
+        },
         "segment_count": 619,
         "wall_count": 175,
         "trigger_count": 7,
@@ -5630,6 +7012,35 @@
         "secret": false,
         "level_name": "Vesta Machine Factory",
         "level_file": "lv2_18.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.345,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.345
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_18.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 481,
+              "side": 5,
+              "seconds": 17.345,
+              "status": "estimated",
+              "tunnel_units": 617.269,
+              "tunnel_segments": 29
+            }
+          ]
+        },
         "segment_count": 763,
         "wall_count": 175,
         "trigger_count": 7,
@@ -5744,6 +7155,35 @@
         "secret": false,
         "level_name": "Ceres Platinum Mine",
         "level_file": "lv2_19.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 20.798,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 20.798
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_19.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 700,
+              "side": 1,
+              "seconds": 20.798,
+              "status": "estimated",
+              "tunnel_units": 789.887,
+              "tunnel_segments": 30
+            }
+          ]
+        },
         "segment_count": 775,
         "wall_count": 143,
         "trigger_count": 9,
@@ -5898,6 +7338,35 @@
         "secret": false,
         "level_name": "Ceres Control Center",
         "level_file": "lv2_20.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 16.656,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 16.656
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_20.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 614,
+              "side": 4,
+              "seconds": 16.656,
+              "status": "estimated",
+              "tunnel_units": 582.79,
+              "tunnel_segments": 28
+            }
+          ]
+        },
         "segment_count": 709,
         "wall_count": 143,
         "trigger_count": 12,
@@ -6012,6 +7481,35 @@
         "secret": false,
         "level_name": "Ceres Robot Depot",
         "level_file": "lv2_21.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 15.2,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 15.2
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_21.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 601,
+              "side": 4,
+              "seconds": 15.2,
+              "status": "estimated",
+              "tunnel_units": 510.0,
+              "tunnel_segments": 25
+            }
+          ]
+        },
         "segment_count": 729,
         "wall_count": 160,
         "trigger_count": 12,
@@ -6126,6 +7624,35 @@
         "secret": false,
         "level_name": "Interamnia Headquarters",
         "level_file": "lv2_22.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 19.957,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 19.957
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_22.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 379,
+              "side": 1,
+              "seconds": 19.957,
+              "status": "estimated",
+              "tunnel_units": 747.871,
+              "tunnel_segments": 31
+            }
+          ]
+        },
         "segment_count": 661,
         "wall_count": 120,
         "trigger_count": 6,
@@ -6267,6 +7794,35 @@
         "secret": true,
         "level_name": "the grand entrance",
         "level_file": "lv2_s1.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 21.4,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 21.4
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_s1.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 414,
+              "side": 0,
+              "seconds": 21.4,
+              "status": "estimated",
+              "tunnel_units": 820.0,
+              "tunnel_segments": 29
+            }
+          ]
+        },
         "segment_count": 525,
         "wall_count": 97,
         "trigger_count": 4,
@@ -6381,6 +7937,35 @@
         "secret": true,
         "level_name": "sidereal laboratory",
         "level_file": "lv2_s2.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 17.8,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 17.8
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_s2.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 448,
+              "side": 5,
+              "seconds": 17.8,
+              "status": "estimated",
+              "tunnel_units": 640.0,
+              "tunnel_segments": 21
+            }
+          ]
+        },
         "segment_count": 715,
         "wall_count": 134,
         "trigger_count": 10,
@@ -6495,6 +8080,35 @@
         "secret": true,
         "level_name": "Pandora's Vault",
         "level_file": "lv2_s3.rdl",
+        "flyout": {
+          "kind": "in_engine",
+          "seconds": 11.937,
+          "status": "estimated",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present",
+            "seconds": 11.937
+          },
+          "presentation": {
+            "status": "present",
+            "file": "lv2_s3.txb",
+            "asset_check": "presence_only"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 248,
+              "side": 5,
+              "seconds": 11.937,
+              "status": "estimated",
+              "tunnel_units": 346.875,
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 789,
         "wall_count": 175,
         "trigger_count": 14,
@@ -6506,7 +8120,7 @@
         "reactors": 1,
         "robots": 166,
         "hostages": 0,
-        "secrets": 6,
+        "secrets": 8,
         "matcens": 9,
         "energy_centers": 3,
         "mine_volume": 39149900.0,

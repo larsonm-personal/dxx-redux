@@ -34,6 +34,84 @@
       "powerups": 48,
       "reactors": 2
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "vela.mn2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "DLE-XP",
+          "sources": [
+            "vela.mn2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "11 dec 2007",
+          "sources": [
+            "vela.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.00",
+          "sources": [
+            "vela.mn2"
+          ]
+        },
+        {
+          "field": "author",
+          "value": "Rider Rockon",
+          "sources": [
+            "vela.mn2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "RiderRockon@hotmail.com",
+          "sources": [
+            "vela.mn2"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "Rider Rockon",
+          "sources": [
+            "vela.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2008,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2008,
+          2008
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "vela.hog",
+          "modified": "2008-03-06",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "vela.mn2",
+          "modified": "2008-03-06",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -109,6 +187,36 @@
         "secret": false,
         "level_name": "Robotic Research Lab",
         "level_file": "level01.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 45,
+              "segment": 884,
+              "side": 3,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 46,
+              "segment": 884,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 254,
         "trigger_count": 47,
@@ -731,6 +839,30 @@
         "secret": false,
         "level_name": "Mecha Construction Facility",
         "level_file": "level02.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 25,
+              "segment": 506,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 18
+            }
+          ]
+        },
         "segment_count": 706,
         "wall_count": 206,
         "trigger_count": 41,

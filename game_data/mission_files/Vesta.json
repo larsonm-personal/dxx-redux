@@ -34,6 +34,34 @@
       "powerups": 69,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [],
+      "date_estimate": {
+        "year": 2011,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2011,
+          2011
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "VESTA.HOG",
+          "modified": "2011-06-17",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "VESTA.MSN",
+          "modified": "2011-06-17",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -233,6 +261,29 @@
         "secret": false,
         "level_name": "Tellurium Processing Hub",
         "level_file": "level1.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 5,
+              "segment": 583,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 671,
         "wall_count": 124,
         "trigger_count": 6,
@@ -362,6 +413,29 @@
         "secret": false,
         "level_name": "Mining Research Station",
         "level_file": "level2.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 582,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 152,
         "trigger_count": 5,
@@ -519,6 +593,29 @@
         "secret": false,
         "level_name": "Chromite Smelting Facility",
         "level_file": "level3.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 230,
+              "side": 2,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 800,
         "wall_count": 116,
         "trigger_count": 3,
@@ -632,6 +729,29 @@
         "secret": true,
         "level_name": "Malachite Excavation Dig",
         "level_file": "slevel.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 9,
+              "segment": 74,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 658,
         "wall_count": 87,
         "trigger_count": 10,

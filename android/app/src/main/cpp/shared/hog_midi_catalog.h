@@ -70,7 +70,9 @@ static inline void hog_midi_catalog_free(struct hog_midi_catalog *catalog)
 	memset(catalog, 0, sizeof(*catalog));
 }
 
-static inline int hog_midi_catalog_load(const char *path, struct hog_midi_catalog *catalog)
+// Shared bounded HOG directory reader; callers choose which entries to retain
+static inline int hog_catalog_load_filtered(const char *path, struct hog_midi_catalog *catalog,
+                                            int (*accept_entry)(const char *name))
 {
 	FILE *file = NULL;
 	struct hog_midi_entry *entries = NULL;
@@ -113,8 +115,7 @@ static inline int hog_midi_catalog_load(const char *path, struct hog_midi_catalo
 		memcpy(name, header, 13);
 		name[13] = '\0';
 
-		if (hog_midi_has_extension(name, ".hmp") ||
-		    hog_midi_has_extension(name, ".mid")) {
+		if (accept_entry(name)) {
 			struct hog_midi_entry *grown;
 			size_t next_capacity;
 
@@ -165,6 +166,16 @@ done:
 		status = HOG_MIDI_CATALOG_IO_ERROR;
 	}
 	return status;
+}
+
+static inline int hog_midi_accept_entry(const char *name)
+{
+	return hog_midi_has_extension(name, ".hmp") || hog_midi_has_extension(name, ".mid");
+}
+
+static inline int hog_midi_catalog_load(const char *path, struct hog_midi_catalog *catalog)
+{
+	return hog_catalog_load_filtered(path, catalog, hog_midi_accept_entry);
 }
 
 static inline int hog_midi_catalog_read(const char *path,

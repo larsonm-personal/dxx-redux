@@ -12,7 +12,7 @@ internal const val MISSION_ZIP_EXTRACTED_DIR = ".extracted_mission_zips"
 internal const val MISSION_ZIP_GENERATED_MISSION_DIR = "missions"
 
 private const val MANIFEST_FILE = "manifest.json"
-private const val MANIFEST_SCHEMA = "dxx-mission-zip-extractions-v5"
+private const val MANIFEST_SCHEMA = "dxx-mission-zip-extractions-v6"
 private val MISSION_ZIP_SONG_LIST_FILES = setOf("descent.sng", "dxx-r.sng")
 
 internal data class MissionZipExtractedFile(
@@ -22,6 +22,7 @@ internal data class MissionZipExtractedFile(
     val contentSha256: String = "",
     val lastModifiedMs: Long = 0L,
     val sourceEntryPath: String = entryPath,
+    val archiveModifiedDate: String = "",
 )
 
 internal data class MissionZipExtractionRecord(
@@ -326,6 +327,7 @@ internal class MissionZipExtractionStore(
                 } ?: return null,
             sourceType = "mission_files",
             sourcePath = sourceLayout.root.absolutePath,
+            provenanceDates = record.provenanceDates(missionSet.constituents.map { it.path }.toSet()),
             dataDir = setDir.absolutePath,
             missionName =
                 mission.path
@@ -382,6 +384,7 @@ internal class MissionZipExtractionStore(
                                         contentSha256 = file.optString("sha256"),
                                         lastModifiedMs = file.getLong("last_modified_ms"),
                                         sourceEntryPath = file.getString("source_entry_path"),
+                                        archiveModifiedDate = file.getString("archive_modified_date"),
                                     ),
                                 )
                             }
@@ -433,6 +436,7 @@ internal class MissionZipExtractionStore(
                                     JSONObject()
                                         .put("entry_path", file.entryPath)
                                         .put("source_entry_path", file.sourceEntryPath)
+                                        .put("archive_modified_date", file.archiveModifiedDate)
                                         .put("relative_path", file.relativePath)
                                         .put("size_bytes", file.sizeBytes)
                                         .put("sha256", file.contentSha256)
@@ -462,6 +466,11 @@ private fun missionZipFileSha256(file: File): String {
     }
     return digest.digest().joinToString("") { "%02x".format(Locale.US, it) }
 }
+
+internal fun MissionZipExtractionRecord.provenanceDates(paths: Set<String>): List<ArchiveProvenanceDate> =
+    files.filter { it.entryPath in paths && it.archiveModifiedDate.isNotBlank() }.map {
+        ArchiveProvenanceDate(it.entryPath, it.archiveModifiedDate, "${archiveFormat}_entry_mtime")
+    }
 
 private fun MissionZipExtractionRecord.hasValidContentIdentity(): Boolean {
     if (!ownerSha256.isSha256() || ownerSizeBytes < 0L || files.isEmpty() || fileCount != files.size) return false
@@ -707,6 +716,7 @@ internal fun extractZipToRoot(
                     entryPath = normalized,
                     relativePath = relativePath,
                     sizeBytes = output.length(),
+                    archiveModifiedDate = entry.modifiedDate.orEmpty(),
                 )
         }
         plan.generatedSongListSource?.let { generatedSource ->

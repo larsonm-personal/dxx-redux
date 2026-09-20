@@ -34,6 +34,56 @@
       "powerups": 2757,
       "reactors": 25
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE",
+          "sources": [
+            "plutonia.mn2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "Nov 10, 2018",
+          "sources": [
+            "plutonia.mn2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "plutonia.mn2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2018,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2018,
+          2018
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "plutonia.hog",
+          "modified": "2018-11-10",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "plutonia.mn2",
+          "modified": "2018-11-05",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -291,6 +341,30 @@
         "secret": false,
         "level_name": "Infiltraitor",
         "level_file": "map01.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 61,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 250,
         "wall_count": 114,
         "trigger_count": 10,
@@ -533,6 +607,30 @@
         "secret": false,
         "level_name": "Pharyngeal Gorge",
         "level_file": "map02.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 92,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 529,
         "wall_count": 136,
         "trigger_count": 15,
@@ -718,6 +816,30 @@
         "secret": false,
         "level_name": "Nexus Complexus",
         "level_file": "map03.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 107,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 510,
         "wall_count": 192,
         "trigger_count": 16,
@@ -962,6 +1084,30 @@
         "secret": false,
         "level_name": "Opposing Forces",
         "level_file": "map04.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 32,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 510,
         "wall_count": 201,
         "trigger_count": 15,
@@ -1144,6 +1290,30 @@
         "secret": false,
         "level_name": "Subterranea",
         "level_file": "map05.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 147,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 577,
         "wall_count": 225,
         "trigger_count": 19,
@@ -1377,6 +1547,30 @@
         "secret": false,
         "level_name": "This Mortal Coil",
         "level_file": "map06.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 352,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 731,
         "wall_count": 206,
         "trigger_count": 22,
@@ -1562,6 +1756,30 @@
         "secret": false,
         "level_name": "Shellosseum",
         "level_file": "map07.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 17,
+              "segment": 463,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 554,
         "wall_count": 205,
         "trigger_count": 24,
@@ -1573,7 +1791,7 @@
         "reactors": 0,
         "robots": 84,
         "hostages": 0,
-        "secrets": 1,
+        "secrets": 2,
         "matcens": 0,
         "energy_centers": 4,
         "mine_volume": 16119300.0,
@@ -1911,6 +2129,30 @@
         "secret": false,
         "level_name": "Brimstone Park",
         "level_file": "map08.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 24,
+              "segment": 433,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 741,
         "wall_count": 244,
         "trigger_count": 50,
@@ -2456,6 +2698,30 @@
         "secret": false,
         "level_name": "Alembic Cut",
         "level_file": "map09.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 56,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 6
+            }
+          ]
+        },
         "segment_count": 548,
         "wall_count": 106,
         "trigger_count": 4,
@@ -2575,6 +2841,30 @@
         "secret": false,
         "level_name": "Target Acquired",
         "level_file": "map10.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 534,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 630,
         "wall_count": 222,
         "trigger_count": 24,
@@ -2744,6 +3034,30 @@
         "secret": false,
         "level_name": "Stygian Meander",
         "level_file": "map11.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 299,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 846,
         "wall_count": 233,
         "trigger_count": 25,
@@ -2905,6 +3219,30 @@
         "secret": false,
         "level_name": "Pyre of the Damned",
         "level_file": "map12.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 481,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 185,
         "trigger_count": 31,
@@ -3023,6 +3361,30 @@
         "secret": false,
         "level_name": "Antipode Outpost",
         "level_file": "map13.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 211,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 11
+            }
+          ]
+        },
         "segment_count": 894,
         "wall_count": 255,
         "trigger_count": 18,
@@ -3284,6 +3646,30 @@
         "secret": false,
         "level_name": "The Creeping Cascade",
         "level_file": "map14.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 673,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 764,
         "wall_count": 165,
         "trigger_count": 14,
@@ -3447,6 +3833,30 @@
         "secret": false,
         "level_name": "Frostadder",
         "level_file": "map15.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 480,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 632,
         "wall_count": 148,
         "trigger_count": 11,
@@ -3581,6 +3991,29 @@
         "secret": false,
         "level_name": "End of the Line",
         "level_file": "map16.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 18,
+              "segment": 666,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 845,
         "wall_count": 246,
         "trigger_count": 20,
@@ -4066,6 +4499,30 @@
         "secret": false,
         "level_name": "The Septic Dens",
         "level_file": "map17.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 54,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 639,
         "wall_count": 147,
         "trigger_count": 22,
@@ -4170,6 +4627,30 @@
         "secret": false,
         "level_name": "Circuit Station",
         "level_file": "map18.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 267,
+              "side": 5,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 810,
         "wall_count": 154,
         "trigger_count": 9,
@@ -4313,6 +4794,30 @@
         "secret": false,
         "level_name": "Whispering Spring",
         "level_file": "map19.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 3,
+              "segment": 772,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 9
+            }
+          ]
+        },
         "segment_count": 898,
         "wall_count": 188,
         "trigger_count": 14,
@@ -4324,7 +4829,7 @@
         "reactors": 1,
         "robots": 131,
         "hostages": 0,
-        "secrets": 0,
+        "secrets": 4,
         "matcens": 5,
         "energy_centers": 3,
         "mine_volume": 38511300.0,
@@ -4456,6 +4961,30 @@
         "secret": false,
         "level_name": "Soul Conspiracy",
         "level_file": "map20.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 108,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 773,
         "wall_count": 226,
         "trigger_count": 20,
@@ -4671,6 +5200,30 @@
         "secret": false,
         "level_name": "Fear Factory",
         "level_file": "map21.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 364,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 19
+            }
+          ]
+        },
         "segment_count": 715,
         "wall_count": 169,
         "trigger_count": 39,
@@ -4829,6 +5382,30 @@
         "secret": false,
         "level_name": "The Mind Hive",
         "level_file": "map22.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 784,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 892,
         "wall_count": 172,
         "trigger_count": 32,
@@ -4976,6 +5553,30 @@
         "secret": false,
         "level_name": "PTMC Research Mine MN1988",
         "level_file": "map23.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 328,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 900,
         "wall_count": 123,
         "trigger_count": 18,
@@ -4987,7 +5588,7 @@
         "reactors": 1,
         "robots": 137,
         "hostages": 3,
-        "secrets": 7,
+        "secrets": 8,
         "matcens": 6,
         "energy_centers": 1,
         "mine_volume": 41860500.0,
@@ -5309,6 +5910,30 @@
         "secret": false,
         "level_name": "Asphyxiated Bellows",
         "level_file": "map24.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 236,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 856,
         "wall_count": 245,
         "trigger_count": 31,
@@ -5626,6 +6251,30 @@
         "secret": false,
         "level_name": "The Octagon Panopticon",
         "level_file": "map25.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 43,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 806,
         "wall_count": 203,
         "trigger_count": 21,
@@ -5744,6 +6393,30 @@
         "secret": false,
         "level_name": "Bowler Pass",
         "level_file": "map26.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 469,
+              "side": 0,
+              "status": "present",
+              "tunnel_segments": 7
+            }
+          ]
+        },
         "segment_count": 743,
         "wall_count": 254,
         "trigger_count": 17,
@@ -5976,6 +6649,29 @@
         "secret": false,
         "level_name": "Perdition",
         "level_file": "map27.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 767,
+              "side": 0,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 772,
         "wall_count": 252,
         "trigger_count": 26,
@@ -6213,6 +6909,30 @@
         "secret": false,
         "level_name": "The Infernal Gate",
         "level_file": "map28.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 18,
+              "segment": 704,
+              "side": 1,
+              "status": "present",
+              "tunnel_segments": 5
+            }
+          ]
+        },
         "segment_count": 897,
         "wall_count": 254,
         "trigger_count": 33,
@@ -6417,6 +7137,30 @@
         "secret": false,
         "level_name": "The Devil's Cage",
         "level_file": "map29.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 780,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 10
+            }
+          ]
+        },
         "segment_count": 856,
         "wall_count": 237,
         "trigger_count": 16,
@@ -6537,6 +7281,30 @@
         "secret": false,
         "level_name": "Plutonian Dawn",
         "level_file": "map30.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 535,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 8
+            }
+          ]
+        },
         "segment_count": 703,
         "wall_count": 183,
         "trigger_count": 7,
@@ -6739,6 +7507,59 @@
         "secret": true,
         "level_name": "Chronosphere",
         "level_file": "map31.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 142,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 2,
+              "segment": 205,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 7,
+              "segment": 523,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 3,
+              "segment": 425,
+              "side": 3,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 8,
+              "segment": 482,
+              "side": 3,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 9,
+              "segment": 595,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 731,
         "wall_count": 121,
         "trigger_count": 15,
@@ -6845,6 +7666,59 @@
         "secret": true,
         "level_name": "A Familiar Gate",
         "level_file": "map32.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 32,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 7,
+              "segment": 324,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 9,
+              "segment": 354,
+              "side": 0,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 12,
+              "segment": 463,
+              "side": 2,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 23,
+              "segment": 664,
+              "side": 4,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 24,
+              "segment": 667,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 677,
         "wall_count": 196,
         "trigger_count": 25,

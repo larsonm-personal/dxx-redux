@@ -34,6 +34,77 @@
       "powerups": 296,
       "reactors": 3
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "\"Pumo\" Ruben Acevedo Mendez",
+          "sources": [
+            "TU.MN2"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "digipumo@hotmail.com",
+          "sources": [
+            "TU.MN2"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "10-14-1999",
+          "sources": [
+            "TU.MN2"
+          ]
+        },
+        {
+          "field": "editor",
+          "value": "Hoggle v1.2 Beta, Devil v2.2l, DTX 2, Hxmedit, Notepad & PSP5",
+          "sources": [
+            "TU.MN2"
+          ]
+        },
+        {
+          "field": "build_time",
+          "value": "3 days",
+          "sources": [
+            "TU.MN2"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "v1.0",
+          "sources": [
+            "TU.MN2"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2007,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2007,
+          2007
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "TU.HOG",
+          "modified": "2007-03-23",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "TU.MN2",
+          "modified": "2007-03-26",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -109,6 +180,30 @@
         "secret": false,
         "level_name": "Mercury X-Centric",
         "level_file": "mercury.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 4,
+              "segment": 1,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 13
+            }
+          ]
+        },
         "segment_count": 385,
         "wall_count": 96,
         "trigger_count": 7,
@@ -310,6 +405,30 @@
         "secret": false,
         "level_name": "Earth Laboratory",
         "level_file": "earth.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 16,
+              "segment": 216,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 4
+            }
+          ]
+        },
         "segment_count": 221,
         "wall_count": 111,
         "trigger_count": 17,
@@ -498,6 +617,30 @@
         "secret": false,
         "level_name": "Io Magmafall",
         "level_file": "io.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 142,
+              "side": 2,
+              "status": "present",
+              "tunnel_segments": 16
+            }
+          ]
+        },
         "segment_count": 294,
         "wall_count": 105,
         "trigger_count": 31,
@@ -766,6 +909,30 @@
         "secret": false,
         "level_name": "Umbriel Volatile Mine",
         "level_file": "umbriel.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "tunnel_present_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "present"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 12,
+              "segment": 372,
+              "side": 4,
+              "status": "present",
+              "tunnel_segments": 12
+            }
+          ]
+        },
         "segment_count": 385,
         "wall_count": 102,
         "trigger_count": 13,
@@ -942,6 +1109,30 @@
         "secret": false,
         "level_name": "Kochimo Station",
         "level_file": "end.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_endlevel_data",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "invalid_endlevel_data",
+            "file": "end.txb"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 8,
+              "side": 4,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 21,
         "wall_count": 2,
         "trigger_count": 1,
@@ -1018,6 +1209,29 @@
         "secret": true,
         "level_name": "Moon Control Station",
         "level_file": "moon.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 82,
+              "side": 3,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 85,
         "wall_count": 22,
         "trigger_count": 3,
@@ -1160,6 +1374,29 @@
         "secret": true,
         "level_name": "Europa Ice Station",
         "level_file": "europa.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 1,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 324,
         "wall_count": 84,
         "trigger_count": 1,

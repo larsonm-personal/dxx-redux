@@ -34,6 +34,56 @@
       "powerups": 43,
       "reactors": 2
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "editor",
+          "value": "DLE-XP",
+          "sources": [
+            "Descent- Invertaus 1.2/dinvert.msn"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "25 jan 2009",
+          "sources": [
+            "Descent- Invertaus 1.2/dinvert.msn"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.0",
+          "sources": [
+            "Descent- Invertaus 1.2/dinvert.msn"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 2009,
+        "basis": "archive_modification_dates",
+        "confidence": "low",
+        "file_year_range": [
+          2009,
+          2009
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "Descent- Invertaus 1.2/dinvert.hog",
+          "modified": "2009-01-28",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "Descent- Invertaus 1.2/dinvert.msn",
+          "modified": "2009-01-28",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-3",
     "track_names": [
       {
@@ -233,6 +283,29 @@
         "secret": false,
         "level_name": "Fuego",
         "level_file": "fuego.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 0,
+              "segment": 439,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 488,
         "wall_count": 61,
         "trigger_count": 4,
@@ -401,6 +474,29 @@
         "secret": false,
         "level_name": "Vulcan Mine",
         "level_file": "destirus.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 2,
+              "segment": 47,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 624,
         "wall_count": 48,
         "trigger_count": 3,
@@ -515,6 +611,29 @@
         "secret": false,
         "level_name": "Darrel Labs",
         "level_file": "darrel.rdl",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_applicable_d1"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 1,
+              "segment": 363,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 512,
         "wall_count": 51,
         "trigger_count": 2,

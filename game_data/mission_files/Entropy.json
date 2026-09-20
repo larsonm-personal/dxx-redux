@@ -34,6 +34,133 @@
       "powerups": 348,
       "reactors": 2
     },
+    "provenance": {
+      "credits": [
+        {
+          "field": "author",
+          "value": "Luke Schneider",
+          "sources": [
+            "ENTROPY.MN2",
+            "ENTROPY.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "email",
+          "value": "last@uci.edu",
+          "sources": [
+            "ENTROPY.MN2",
+            "ENTROPY.HOG/entropy1.aut",
+            "ENTROPY.HOG/entropy2.aut",
+            "ENTROPY.HOG/entropy3.aut",
+            "ENTROPY.HOG/entropy4.aut",
+            "ENTROPY.HOG/entropys.aut",
+            "ENTROPY.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "website",
+          "value": "http://www.descent2.com/entropy",
+          "sources": [
+            "ENTROPY.MN2",
+            "ENTROPY.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "date",
+          "value": "10/1/1997",
+          "sources": [
+            "ENTROPY.MN2",
+            "ENTROPY.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.01",
+          "sources": [
+            "ENTROPY.MN2",
+            "ENTROPY.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "version",
+          "value": "1.00",
+          "sources": [
+            "ENTROPY.HOG/entropy1.aut",
+            "ENTROPY.HOG/entropy2.aut",
+            "ENTROPY.HOG/entropy3.aut",
+            "ENTROPY.HOG/entropy4.aut",
+            "ENTROPY.HOG/entropys.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "5/13/1997",
+          "sources": [
+            "ENTROPY.HOG/entropy1.aut",
+            "ENTROPY.HOG/entropy2.aut",
+            "ENTROPY.HOG/entropy3.aut",
+            "ENTROPY.HOG/entropy4.aut",
+            "ENTROPY.HOG/entropys.aut"
+          ]
+        },
+        {
+          "field": "nickname",
+          "value": "Vizor",
+          "sources": [
+            "ENTROPY.HOG/entropy1.aut",
+            "ENTROPY.HOG/entropy2.aut",
+            "ENTROPY.HOG/entropy3.aut",
+            "ENTROPY.HOG/entropy4.aut",
+            "ENTROPY.HOG/entropys.aut",
+            "ENTROPY.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "real_name",
+          "value": "Luke Schneider",
+          "sources": [
+            "ENTROPY.HOG/entropy1.aut",
+            "ENTROPY.HOG/entropy2.aut",
+            "ENTROPY.HOG/entropy3.aut",
+            "ENTROPY.HOG/entropy4.aut",
+            "ENTROPY.HOG/entropys.aut",
+            "ENTROPY.HOG/mission.aut"
+          ]
+        },
+        {
+          "field": "release_date",
+          "value": "10/1/1997",
+          "sources": [
+            "ENTROPY.HOG/mission.aut"
+          ]
+        }
+      ],
+      "date_estimate": {
+        "year": 1997,
+        "basis": "declared_release_or_completion",
+        "confidence": "medium",
+        "file_year_range": [
+          1997,
+          1997
+        ]
+      },
+      "file_dates": [
+        {
+          "file": "ENTROPY.HOG",
+          "modified": "1997-10-01",
+          "kind": "zip_entry_mtime"
+        },
+        {
+          "file": "ENTROPY.MN2",
+          "modified": "1997-10-01",
+          "kind": "zip_entry_mtime"
+        }
+      ],
+      "notes": [
+        "File dates describe modification, not verified creation or release",
+        "D1/D2 HOG entries do not store individual asset timestamps"
+      ]
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -109,6 +236,29 @@
         "secret": false,
         "level_name": "Centurium",
         "level_file": "entropy1.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 11,
+              "segment": 43,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 309,
         "wall_count": 140,
         "trigger_count": 24,
@@ -500,6 +650,29 @@
         "secret": false,
         "level_name": "PCF Millenium",
         "level_file": "entropy2.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 24,
+              "segment": 28,
+              "side": 1,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 741,
         "wall_count": 232,
         "trigger_count": 28,
@@ -817,6 +990,29 @@
         "secret": false,
         "level_name": "Warp Distortion",
         "level_file": "entropy3.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 28,
+              "segment": 199,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 439,
         "wall_count": 206,
         "trigger_count": 29,
@@ -828,7 +1024,7 @@
         "reactors": 1,
         "robots": 103,
         "hostages": 0,
-        "secrets": 4,
+        "secrets": 6,
         "matcens": 0,
         "energy_centers": 1,
         "mine_volume": 33845400.0,
@@ -932,6 +1128,29 @@
         "secret": false,
         "level_name": "Dissention IV",
         "level_file": "entropy4.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 15,
+              "segment": 49,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 417,
         "wall_count": 96,
         "trigger_count": 21,
@@ -1292,6 +1511,41 @@
         "secret": true,
         "level_name": "XS0288 Epsilon",
         "level_file": "entropys.rl2",
+        "flyout": {
+          "kind": "none",
+          "seconds": null,
+          "status": "no_valid_tunnel_exterior_missing",
+          "movie": {
+            "status": "not_selected_for_level"
+          },
+          "exit_trigger": "present",
+          "tunnel": {
+            "status": "no_valid_route"
+          },
+          "presentation": {
+            "status": "missing_endlevel_data"
+          },
+          "routes": [
+            {
+              "trigger": 24,
+              "segment": 2,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 23,
+              "segment": 4,
+              "side": 5,
+              "status": "invalid_exit"
+            },
+            {
+              "trigger": 22,
+              "segment": 0,
+              "side": 5,
+              "status": "invalid_exit"
+            }
+          ]
+        },
         "segment_count": 245,
         "wall_count": 82,
         "trigger_count": 25,
