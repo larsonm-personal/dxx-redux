@@ -391,15 +391,6 @@ object DebugLog {
     }
 
     private fun pruneOldFiles(dir: File) {
-        val files =
-            dir
-                .listFiles()
-                ?.filter { it.isFile && it.name.startsWith("debuglog_") }
-                ?.sortedBy { it.lastModified() }
-                ?: return
-        val toDelete = files.size - (MAX_FILES - 1)
-        if (toDelete > 0) {
-            files.take(toDelete).forEach { it.delete() }
-        }
+        pruneOldLogFiles(dir, MAX_FILES - 1, matches = { it.name.startsWith("debuglog_") })
     }
 }

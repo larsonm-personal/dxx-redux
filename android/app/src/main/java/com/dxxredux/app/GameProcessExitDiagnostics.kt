@@ -84,6 +84,7 @@ internal object GameProcessExitDiagnostics {
                 marker.delete()
             }.onFailure(onFailure)
         }
+        CrashLog.pruneOldFiles(directory)
     }
 
     fun logRecent(context: Context) {

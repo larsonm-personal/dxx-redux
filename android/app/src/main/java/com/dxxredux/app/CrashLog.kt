@@ -20,6 +20,7 @@ import java.io.File
  * fallback report from the same export.
  */
 object CrashLog {
+    internal const val MAX_FILES = 5
     private const val TAG = "CrashLog"
     private const val TOMBSTONE_DIR_NAME = "tombstones"
     private const val HEADER_SECTION = "dxx-redux header"
@@ -46,6 +47,7 @@ object CrashLog {
     fun listCrashFiles(context: Context): List<File> {
         val appContext = context.applicationContext
         GameProcessExitDiagnostics.logRecent(appContext)
+        pruneOldFiles(getTombstoneDir(appContext))
         maybeBackfillMissingXCrashSections(appContext)
         return listCrashFilesRaw(appContext)
     }
@@ -59,6 +61,21 @@ object CrashLog {
             ?.filter(::isCrashReportFile)
             ?.sortedByDescending { it.lastModified() }
             ?: emptyList()
+    }
+
+    /** One retention limit across xCrash, fatal errors, exit reports, and recoveries */
+    internal fun pruneOldFiles(directory: File) {
+        pruneOldLogFiles(directory, MAX_FILES, matches = ::isCrashReportFile, delete = { file ->
+            val deleted =
+                if (file.name.startsWith("tombstone_")) {
+                    TombstoneManager.deleteTombstone(file)
+                } else {
+                    file.delete()
+                }
+            if (!deleted && file.exists()) {
+                Log.w(TAG, "Failed to delete old crash report ${file.absolutePath}")
+            }
+        })
     }
 
     /** Share a crash file via system share sheet. */
@@ -144,6 +161,7 @@ object CrashLog {
                 "xCrash callback could not append all custom sections to ${reportFile.absolutePath}",
             )
         }
+        pruneOldFiles(getTombstoneDir(appContext))
     }
 
     /**

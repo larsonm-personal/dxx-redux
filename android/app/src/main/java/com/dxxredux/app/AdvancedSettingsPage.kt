@@ -1044,7 +1044,10 @@ private fun RouteMetadataPrecomputeSection(
             OutlinedButton(
                 onClick = {
                     scope.launch {
-                        val ok = withContext(Dispatchers.IO) { saveToDownloads(ctx, monitor.logFile) }
+                        val ok =
+                            withContext(
+                                Dispatchers.IO,
+                            ) { saveToDownloads(ctx, monitor.logFile, includeGameFiles = true) }
                         Toast
                             .makeText(
                                 ctx,
@@ -1468,7 +1471,7 @@ private fun DebugLoggingSection(initialLogFiles: List<File>) {
                         scope.launch {
                             val ok =
                                 withContext(Dispatchers.IO) {
-                                    saveToDownloads(ctx, file) { progress ->
+                                    saveToDownloads(ctx, file, includeGameFiles = true) { progress ->
                                         mainHandler.post { transferProgress = progress }
                                     }
                                 }
@@ -1561,7 +1564,8 @@ private fun CrashReportsSection(initialCrashFiles: List<File>) {
     Text("Crash Reports", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
     Text(
-        "Reports include crashes, unexpected game exits, and save recoveries that discarded inconsistent gear",
+        "Only the latest ${CrashLog.MAX_FILES} reports are kept, including crashes, unexpected game exits, " +
+            "and save recoveries that discarded inconsistent gear",
         fontSize = 12.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -1616,7 +1620,7 @@ private fun CrashReportsSection(initialCrashFiles: List<File>) {
                         scope.launch {
                             val ok =
                                 withContext(Dispatchers.IO) {
-                                    saveToDownloads(ctx, file) { progress ->
+                                    saveToDownloads(ctx, file, includeGameFiles = true) { progress ->
                                         mainHandler.post { transferProgress = progress }
                                     }
                                 }
@@ -3042,7 +3046,12 @@ private fun copyFileToCache(
     file: File,
     dirName: String,
     onProgress: (LauncherCopyProgress) -> Unit = {},
-): Uri = FileProviderGrantStore.copy(context, file, dirName, onProgress)
+): Uri =
+    if (dirName == FileProviderGrantStore.CRASH_LOG_EXPORTS) {
+        FileProviderGrantStore.copyLogSnapshot(context, file, dirName, onProgress)
+    } else {
+        FileProviderGrantStore.copy(context, file, dirName, onProgress)
+    }
 
 private fun openTextFile(
     context: android.content.Context,
@@ -3123,9 +3132,16 @@ private fun saveToDownloads(
     context: android.content.Context,
     file: File,
     mimeType: String = "text/plain",
+    includeGameFiles: Boolean = false,
     onProgress: (LauncherCopyProgress) -> Unit = {},
 ): Boolean =
     try {
+        val exportFile =
+            if (includeGameFiles) {
+                FileProviderGrantStore.copyLogExportFile(context, file, FileProviderGrantStore.DEBUG_LOG_EXPORTS)
+            } else {
+                file
+            }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values =
                 ContentValues().apply {
@@ -3135,12 +3151,12 @@ private fun saveToDownloads(
             val uri =
                 context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                     ?: throw Exception("MediaStore insert failed")
-            LauncherFileCopy.copyFileToUri(context, file, uri, file.name, onProgress)
+            LauncherFileCopy.copyFileToUri(context, exportFile, uri, file.name, onProgress)
         } else {
             @Suppress("DEPRECATION")
             val dlDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             dlDir.mkdirs()
-            LauncherFileCopy.copyFileToFile(file, File(dlDir, file.name), file.name, onProgress = onProgress)
+            LauncherFileCopy.copyFileToFile(exportFile, File(dlDir, file.name), file.name, onProgress = onProgress)
         }
         true
     } catch (e: Exception) {

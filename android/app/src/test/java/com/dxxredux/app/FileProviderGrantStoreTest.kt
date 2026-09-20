@@ -9,6 +9,16 @@ import java.io.IOException
 
 class FileProviderGrantStoreTest {
     @Test
+    fun logAppendixIsExportedWithoutChangingSource() {
+        val root = testRoot("log-appendix")
+        val source = File(root.parentFile, "snapshot-debuglog.txt").apply { writeText("original log\n") }
+        val appendix = "\nCached assets: robot movie hash\n".toByteArray()
+        val published = FileProviderGrantStore.copyLogSnapshotFile(root, source, appendix)
+        assertEquals("original log\n" + appendix.toString(Charsets.UTF_8), published.readText())
+        assertEquals("original log\n", source.readText())
+    }
+
+    @Test
     fun growingLogExportsOnlyTheCapturedPrefix() {
         val root = testRoot("growing-log")
         val source = File(root.parentFile, "growing-debuglog.txt")

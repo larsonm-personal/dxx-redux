@@ -26,9 +26,9 @@ class DxxReduxApp : Application() {
                     .InitParameters()
                     .setAppVersion(buildXCrashVersion(appContext))
                     .setLogDir(logDir.absolutePath)
-                    .setJavaLogCountMax(5)
-                    .setNativeLogCountMax(5)
-                    .setAnrLogCountMax(3)
+                    .setJavaLogCountMax(CrashLog.MAX_FILES)
+                    .setNativeLogCountMax(CrashLog.MAX_FILES)
+                    .setAnrLogCountMax(CrashLog.MAX_FILES)
                     .setJavaCallback(crashCallback)
                     .setNativeCallback(crashCallback)
                     .setAnrCallback(crashCallback),
@@ -37,6 +37,8 @@ class DxxReduxApp : Application() {
         if (result != 0) {
             Log.w(TAG, "xCrash init returned $result")
         }
+        // Also clean up reports written by native exits that bypass the xCrash callback
+        CrashLog.pruneOldFiles(logDir)
     }
 
     private fun buildXCrashVersion(context: Context): String {

@@ -60,22 +60,37 @@ internal object FileProviderGrantStore {
         rootName: String,
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): Uri {
+        val published = copyLogExportFile(context, source, rootName, onProgress)
+        return FileProvider.getUriForFile(context, AUTHORITY, published)
+    }
+
+    fun copyLogExportFile(
+        context: Context,
+        source: File,
+        rootName: String,
+        onProgress: (LauncherCopyProgress) -> Unit = {},
+    ): File {
         require(rootName in roots) { "Unsupported FileProvider cache root" }
         DebugLog.flush()
-        val published = copyLogSnapshotFile(File(context.cacheDir, rootName), source, onProgress)
-        return FileProvider.getUriForFile(context, AUTHORITY, published)
+        return copyLogSnapshotFile(
+            File(context.cacheDir, rootName),
+            source,
+            LogAssetSnapshot.capture(context.filesDir).toByteArray(Charsets.UTF_8),
+            onProgress,
+        )
     }
 
     internal fun copyLogSnapshotFile(
         root: File,
         source: File,
+        appendix: ByteArray = byteArrayOf(),
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): File =
         FileInputStream(source).use { input ->
             // The launcher can still append after the game process exits
             // Capture once on the open file for both copy and publication validation
             val expectedBytes = input.channel.size()
-            publishFile(root, source.name, expectedBytes) { temporary ->
+            publishFile(root, source.name, expectedBytes + appendix.size) { temporary ->
                 FileOutputStream(temporary).use { output ->
                     LauncherFileCopy.copyStream(
                         input,
@@ -86,6 +101,7 @@ internal object FileProviderGrantStore {
                         stopAtExpectedSize = true,
                         onProgress = onProgress,
                     )
+                    output.write(appendix)
                 }
             }
         }
