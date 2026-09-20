@@ -2822,26 +2822,12 @@ class MainActivity :
                                 }
                             acceptJoinButton.callsign = joinCallsign
                             acceptJoinButton.visibility = if (joinCallsign.isNotEmpty()) View.VISIBLE else View.GONE
-                            // Auto-show/hide network events overlay during MP phases
-                            val mpState = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
-                            val netEventsEnabled =
-                                shouldEnableNetEventsControl(
-                                    isMultiplayerGame = isMultiplayerGame,
-                                    hasPendingLaunchInfo = mpState.gameLaunchInfo != null,
-                                )
-                            if (!netEventsEnabled) {
-                                resetSinglePlayerNetEventsIfNeeded()
+                            // Preserve the session toggle through player waits, briefings, and movies
+                            resetSinglePlayerNetEventsIfNeeded()
+                            if (netEventsManualToggle) {
+                                netEventsOverlay?.show()
                             } else {
-                                val showNetEvents =
-                                    netEventsManualToggle ||
-                                        hostSelecting ||
-                                        (isMultiplayerGame && !inGame) ||
-                                        (mpState.gameLaunchInfo != null && !inGame)
-                                if (showNetEvents) {
-                                    netEventsOverlay?.show()
-                                } else {
-                                    netEventsOverlay?.hide()
-                                }
+                                netEventsOverlay?.hide()
                             }
                         } catch (_: Exception) {
                             profileHadError = true
@@ -2856,10 +2842,12 @@ class MainActivity :
                             startGameButton.visibility = View.GONE
                             coopBriefingOverlay.update("")
                             acceptJoinButton.visibility = View.GONE
-                            // Still try to show net events overlay during MP connecting
-                            val mpState2 = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
-                            if (isMultiplayerGame || mpState2.gameLaunchInfo != null || netEventsManualToggle) {
+                            // Native polling failures must not override the session toggle
+                            resetSinglePlayerNetEventsIfNeeded()
+                            if (netEventsManualToggle) {
                                 netEventsOverlay?.show()
+                            } else {
+                                netEventsOverlay?.hide()
                             }
                         }
                     } else {
