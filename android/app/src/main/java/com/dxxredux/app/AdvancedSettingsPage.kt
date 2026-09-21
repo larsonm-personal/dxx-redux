@@ -1749,6 +1749,7 @@ private fun RecordedInputDemosSection(
     var deleteTarget by remember { mutableStateOf<StagedInputDemo?>(null) }
     var installTarget by remember { mutableStateOf<StagedInputDemo?>(null) }
     var installName by remember { mutableStateOf("") }
+    var shareFailure by remember { mutableStateOf<String?>(null) }
 
     val sharedPrefs = remember { ctx.getSharedPreferences("launcher_prefs", android.content.Context.MODE_PRIVATE) }
     var recordPerFrameState by remember {
@@ -1921,14 +1922,12 @@ private fun RecordedInputDemosSection(
                                 val exportedFiles = InputDemoManager.exportFiles(demo)
                                 val uris =
                                     withContext(Dispatchers.IO) {
-                                        exportedFiles.map { exportFile ->
-                                            copyFileToCache(
-                                                ctx,
-                                                exportFile,
-                                                FileProviderGrantStore.INPUT_DEMO_EXPORTS,
-                                            ) { progress ->
-                                                mainHandler.post { transferProgress = progress }
-                                            }
+                                        FileProviderGrantStore.copyFiles(
+                                            ctx,
+                                            exportedFiles,
+                                            FileProviderGrantStore.INPUT_DEMO_EXPORTS,
+                                        ) { progress ->
+                                            mainHandler.post { transferProgress = progress }
                                         }
                                     }
                                 transferProgress = null
@@ -1944,7 +1943,16 @@ private fun RecordedInputDemosSection(
                                 }
                             } catch (e: Exception) {
                                 transferProgress = null
-                                Toast.makeText(ctx, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                val fileDetails =
+                                    InputDemoManager
+                                        .exportFiles(
+                                            demo,
+                                        ).joinToString { "${it.name}:${it.length()}" }
+                                DebugLog.log(
+                                    DebugLogCategory.LAUNCHER,
+                                    "Demo share failed files=$fileDetails error=${e.message}",
+                                )
+                                shareFailure = e.message ?: "Could not share the recorded demo"
                             }
                         }
                     },
@@ -2001,6 +2009,17 @@ private fun RecordedInputDemosSection(
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
     ) {
         Text("Delete All Recorded Demos", fontSize = 12.sp)
+    }
+
+    shareFailure?.let { message ->
+        AlertDialog(
+            onDismissRequest = { shareFailure = null },
+            title = { Text("Share failed") },
+            text = { Text(message) },
+            confirmButton = {
+                TextButton(onClick = { shareFailure = null }) { Text("OK") }
+            },
+        )
     }
 
     if (deleteTarget != null) {

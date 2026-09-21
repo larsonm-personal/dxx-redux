@@ -21,6 +21,9 @@ internal object FileProviderGrantStore {
     internal const val RETENTION_MS = 24L * 60L * 60L * 1000L
     internal const val MAX_ROOT_BYTES = 64L * 1024L * 1024L
 
+    // Recorded demos and their trace sidecars can each exceed the ordinary export budget
+    internal const val MAX_DEMO_ROOT_BYTES = 4L * 1024L * 1024L * 1024L
+
     private val lock = Any()
     private val roots =
         setOf(
@@ -53,6 +56,44 @@ internal object FileProviderGrantStore {
             FileOutputStream(temporary).use { it.write(bytes) }
         }
     }
+
+    fun copyFiles(
+        context: Context,
+        sources: List<File>,
+        rootName: String,
+        onProgress: (LauncherCopyProgress) -> Unit = {},
+    ): List<Uri> =
+        synchronized(lock) {
+            require(rootName in roots) { "Unsupported FileProvider cache root" }
+            require(sources.isNotEmpty()) { "A share needs at least one file" }
+            val root = File(context.cacheDir, rootName)
+            val maxRootBytes = rootByteLimit(rootName)
+            val expectedBytes = sources.fold(0L) { total, source -> Math.addExact(total, source.length()) }
+            val nowMs = System.currentTimeMillis()
+            check(root.mkdirs() || root.isDirectory) { "Could not create grant cache" }
+            pruneExpired(root, RETENTION_MS, nowMs)
+            requireCapacity(root, expectedBytes, cacheBytes(root, maxRootBytes), maxRootBytes)
+            ImportStorageGuard.requireFreeSpace(root, expectedBytes, "Shared files")
+            val published = mutableListOf<File>()
+            try {
+                sources.forEach { source ->
+                    published +=
+                        publishFile(root, source.name, source.length(), maxRootBytes, nowMs = nowMs) { temporary ->
+                            LauncherFileCopy.copyFileToFile(
+                                source,
+                                temporary,
+                                maxBytes = maxRootBytes,
+                                onProgress = onProgress,
+                            )
+                        }
+                }
+                published.map { FileProvider.getUriForFile(context, AUTHORITY, it) }
+            } catch (failure: Throwable) {
+                // None of these files has been handed to another app yet
+                published.forEach { OwnedCacheDirectories.delete(root, it.parentFile!!) }
+                throw failure
+            }
+        }
 
     fun copyLogSnapshot(
         context: Context,
@@ -114,7 +155,14 @@ internal object FileProviderGrantStore {
         writer: (File) -> Unit,
     ): Uri {
         require(rootName in roots) { "Unsupported FileProvider cache root" }
-        val published = publishFile(File(context.cacheDir, rootName), displayName, expectedBytes, writer = writer)
+        val published =
+            publishFile(
+                File(context.cacheDir, rootName),
+                displayName,
+                expectedBytes,
+                rootByteLimit(rootName),
+                writer = writer,
+            )
         return FileProvider.getUriForFile(context, AUTHORITY, published)
     }
 
@@ -132,9 +180,7 @@ internal object FileProviderGrantStore {
             check(root.mkdirs() || root.isDirectory) { "Could not create grant cache" }
             pruneExpired(root, retentionMs, nowMs)
             val retainedBytes = cacheBytes(root, maxRootBytes)
-            if (expectedBytes > maxRootBytes || retainedBytes > maxRootBytes - expectedBytes) {
-                throw IOException("Shared-file cache is retaining unexpired grants")
-            }
+            requireCapacity(root, expectedBytes, retainedBytes, maxRootBytes)
 
             val generation = OwnedCacheDirectories.create(root)
             val target = File(generation, safeDisplayName(displayName))
@@ -150,9 +196,6 @@ internal object FileProviderGrantStore {
                 if (actualBytes != expectedBytes) {
                     throw IOException("Shared file changed during publication")
                 }
-                if (actualBytes > maxRootBytes || retainedBytes > maxRootBytes - actualBytes) {
-                    throw IOException("Shared-file cache is retaining unexpired grants")
-                }
                 check(temporary.renameTo(target)) { "Could not publish shared file" }
                 check(target.setLastModified(nowMs) && generation.setLastModified(nowMs)) {
                     "Could not timestamp shared file generation"
@@ -165,6 +208,32 @@ internal object FileProviderGrantStore {
                 temporary.delete()
             }
         }
+
+    private fun rootByteLimit(rootName: String): Long =
+        if (rootName == INPUT_DEMO_EXPORTS) MAX_DEMO_ROOT_BYTES else MAX_ROOT_BYTES
+
+    private fun requireCapacity(
+        root: File,
+        requestedBytes: Long,
+        retainedBytes: Long,
+        maxRootBytes: Long,
+    ) {
+        val fallback = if (root.name == INPUT_DEMO_EXPORTS) " Use Save, then share the files from Downloads" else ""
+        val requestedSize = formatBinarySize(requestedBytes)
+        val limitSize = formatBinarySize(maxRootBytes)
+        if (requestedBytes > maxRootBytes) {
+            throw IOException(
+                "Export size $requestedSize exceeds the $limitSize sharing limit.$fallback",
+            )
+        }
+        if (retainedBytes > maxRootBytes - requestedBytes) {
+            val availableBytes = (maxRootBytes - retainedBytes).coerceAtLeast(0L)
+            throw IOException(
+                "Sharing cache has ${formatBinarySize(availableBytes)} available of $limitSize; " +
+                    "this export needs $requestedSize. Previous shares are kept for 24 hours.$fallback",
+            )
+        }
+    }
 
     private fun pruneExpired(
         root: File,
