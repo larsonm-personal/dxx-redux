@@ -206,6 +206,13 @@ bool input_demo_file_to_text(const input_demo_file &demo,
                              std::string *text, std::string *error);
 bool input_demo_file_write(const char *path,
                            const input_demo_file &demo, std::string *error);
+bool input_demo_frame_to_json_line(const input_demo_file_frame &frame, int game,
+                                   std::string *line, std::string *error);
+// Recorder-only path: frame lines have already been encoded and validated at capture
+// The envelope supplies metadata, checkpoint and result; its frames must be empty
+bool input_demo_file_write_recorded(const char *path, const input_demo_file &envelope,
+                                    const std::vector<std::string> &frame_lines,
+                                    std::string *error);
 
 #endif
 

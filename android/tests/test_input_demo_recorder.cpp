@@ -11,6 +11,7 @@
 #endif
 
 #include <string>
+#include <chrono>
 
 #include "input_demo_fixture.h"
 #include "input_demo_recorder.h"
@@ -605,7 +606,7 @@ static int expect_truncate_recording(void)
 	remove(demo_path.c_str());
 	remove(trace_path.c_str());
 	remove_test_dir(dir);
-	if (parsed.frames.size() != 2 || parsed.metadata.frame_count != 2 || parsed.result.frame_count != 2 ||
+	if (parsed.metadata.version != 3 || parsed.frames.size() != 2 || parsed.metadata.frame_count != 2 || parsed.result.frame_count != 2 ||
 		parsed.frames[0].rng.state != 100 || parsed.frames[0].input.held.forward_thrust_time != 44 ||
 		parsed.frames[1].rng.state != 103 || !parsed.frames[0].events.empty() ||
 		!parsed.frames[1].events.empty())
@@ -971,6 +972,80 @@ static int expect_record_and_flush_diag(void)
 	return 0;
 }
 
+static int expect_long_recording(void)
+{
+	const char *path = "test_input_demo_long.dximdemo";
+	const unsigned int frame_count = 3000;
+	input_demo_recorder_settings settings;
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	input_demo_result snapshot;
+	input_demo_state_trace_diag diag = {};
+	input_demo_file parsed;
+	char error[256] = "";
+	std::string read_error;
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 7;
+	settings.rng_mode = input_demo_test_rng_mode();
+	settings.record_per_frame_state = 1;
+	input_demo_control_state_clear(&state);
+	input_demo_control_pulse_clear(&pulse);
+	fill_test_frame_state(&snapshot, 0);
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)))
+		return report_failure(error);
+	const auto start = std::chrono::steady_clock::now();
+	for (unsigned int i = 0; i < frame_count; ++i) {
+		diag.runtime_state_hash = i;
+		if (i == 37 && !input_demo_recorder_stage_frame_event_json("{\"kind\":\"staged\"}", error, sizeof(error)))
+			return report_failure(error);
+		if (!input_demo_recorder_capture_frame(6554, &state, &pulse, i, 1, i,
+		                                     &snapshot, &diag, error, sizeof(error)))
+			return report_failure(error);
+		if (i == 37 || i == frame_count - 1) {
+			if (!input_demo_recorder_append_frame_event_json("{\"kind\":\"late1\"}", error, sizeof(error)) ||
+			    !input_demo_recorder_append_frame_event_json("{\"kind\":\"late2\"}", error, sizeof(error)))
+				return report_failure(error);
+		}
+	}
+	// Rewind drops the last frame's late events and reuses the preceding input state
+	if (!input_demo_recorder_truncate(frame_count - 1) ||
+	    !input_demo_recorder_capture_frame(6554, &state, &pulse, frame_count - 1, 1, frame_count - 1,
+	                                      &snapshot, &diag, error, sizeof(error)))
+		return report_failure("long recording rewind failed");
+	// Opening a directory as a file must fail without consuming the recording
+	if (input_demo_recorder_flush(".", error, sizeof(error)) ||
+	    !input_demo_recorder_is_active() || input_demo_recorder_frame_count() != frame_count)
+		return report_failure("failed flush consumed the recording");
+	const auto captured = std::chrono::steady_clock::now();
+	if (!input_demo_recorder_flush(path, error, sizeof(error)))
+		return report_failure(error);
+	const auto flushed = std::chrono::steady_clock::now();
+	printf("3000 diagnostic frames: capture %.3f s, finalize %.3f s\n",
+	       std::chrono::duration<double>(captured - start).count(),
+	       std::chrono::duration<double>(flushed - captured).count());
+	if (!input_demo_file_read(path, &parsed, &read_error))
+		return report_failure_string(read_error);
+	remove(path);
+	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+	if (parsed.frames.size() != frame_count || parsed.result.frame_count != frame_count)
+		return report_failure("long recording frame count mismatch");
+	for (unsigned int i = 0; i < frame_count; ++i) {
+		if (!parsed.frames[i].has_diag || !parsed.frames[i].has_state ||
+		    parsed.frames[i].rng.state != i ||
+		    parsed.frames[i].input.has_frame_time != (i == 0) ||
+		    parsed.frames[i].events.size() != (i == 37 ? 3u : 0u) ||
+		    parsed.frames[i].diag_json.find("\"runtime_state_hash\":" + std::to_string(i) + ",") == std::string::npos)
+			return report_failure("long recording frame contents mismatch");
+	}
+	if (parsed.frames[37].events[0] != "{\"kind\":\"staged\"}" ||
+	    parsed.frames[37].events[1] != "{\"kind\":\"late1\"}" ||
+	    parsed.frames[37].events[2] != "{\"kind\":\"late2\"}")
+		return report_failure("long recording event order mismatch");
+	return 0;
+}
+
 int main(void)
 {
 	if (expect_record_and_flush())
@@ -986,6 +1061,8 @@ int main(void)
 	if (expect_record_and_flush_events())
 		return 1;
 	if (expect_record_and_flush_diag())
+		return 1;
+	if (expect_long_recording())
 		return 1;
 	puts("PASS");
 	return 0;

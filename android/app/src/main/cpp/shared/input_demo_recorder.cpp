@@ -20,6 +20,11 @@ namespace
 
 using ordered_json = nlohmann::ordered_json;
 
+enum {
+	INPUT_DEMO_RECORDED_DIAG = 1,
+	INPUT_DEMO_RECORDED_EVENTS = 2
+};
+
 #ifndef DXX_INPUT_DEMO_BUILD_NUMBERi
 #define DXX_INPUT_DEMO_BUILD_NUMBERi 0
 #endif
@@ -61,12 +66,8 @@ struct input_demo_recorder_session {
 	input_demo_checkpoint_thief_state checkpoint_thief_state;
 	bool record_per_frame_state;
 	std::vector<input_demo_control_frame> control_frames;
-	std::vector<input_demo_rng_frame> rng_frames;
-	std::vector<uint8_t> has_state_frames;
-	std::vector<input_demo_result> state_frames;
-	std::vector<uint8_t> has_diag_frames;
-	std::vector<std::string> diag_frames;
-	std::vector<std::vector<std::string>> frame_events;
+	std::vector<std::string> frame_lines;
+	std::vector<uint8_t> extended_frames;
 	std::vector<std::string> pending_frame_events;
 	input_demo_control_pulse pending_pulse;
 
@@ -159,24 +160,19 @@ static int input_demo_recorder_stage_direct_command_event(const ordered_json &ev
 	return input_demo_recorder_stage_canonical_frame_event(event.dump(), error, error_size);
 }
 
-static bool input_demo_recorder_session_has_events(const input_demo_recorder_session &session)
+static void input_demo_recorder_append_encoded_event(std::string &line, bool has_events,
+                                                     const std::string &event)
 {
-	size_t i;
-
-	for (i = 0; i != session.frame_events.size(); ++i)
-		if (!session.frame_events[i].empty())
-			return true;
-	return false;
-}
-
-static bool input_demo_recorder_session_has_diag(const input_demo_recorder_session &session)
-{
-	size_t i;
-
-	for (i = 0; i != session.has_diag_frames.size(); ++i)
-		if (session.has_diag_frames[i])
-			return true;
-	return false;
+	// Events are the last member so render-time diagnostics can extend the current frame
+	line.pop_back();
+	if (has_events) {
+		line.pop_back();
+		line.push_back(',');
+	} else {
+		line += ",\"events\":[";
+	}
+	line += event;
+	line += "]}";
 }
 
 static const char *input_demo_recorder_game_name(int game)
@@ -291,23 +287,19 @@ static void input_demo_recorder_build_result(input_demo_result *result,
 	result->frame_count = static_cast<uint32_t>(session.control_frames.size());
 }
 
-static bool input_demo_recorder_build_demo(input_demo_file *demo,
-                                           const input_demo_recorder_session &session,
-                                           const input_demo_result *result,
-                                           std::string *error)
+static bool input_demo_recorder_build_envelope(input_demo_file *demo,
+                                               const input_demo_recorder_session &session,
+                                               const input_demo_result *result,
+                                               std::string *error)
 {
-	input_demo_control_state previous_state;
-	std::string unused_text;
-	int have_previous_frame_time = 0;
-	int32_t previous_frame_time = 0;
-	size_t i;
-
 	if (!demo)
 		return false;
-	demo->metadata.version = input_demo_recorder_session_has_events(session) ||
-	                                 input_demo_recorder_session_has_diag(session)
-	                             ? 4
-	                             : 3;
+	demo->metadata.version = 3;
+	for (uint8_t extended : session.extended_frames)
+		if (extended) {
+			demo->metadata.version = 4;
+			break;
+		}
 	demo->metadata.game = input_demo_recorder_game_name(session.game);
 	demo->metadata.mission = session.mission;
 	demo->metadata.build_number = input_demo_recorder_build_number();
@@ -330,43 +322,7 @@ static bool input_demo_recorder_build_demo(input_demo_file *demo,
 	input_demo_result_clear(&demo->result);
 	input_demo_recorder_build_result(&demo->result, session, result);
 	demo->has_result = true;
-	input_demo_control_state_clear(&previous_state);
-	for (i = 0; i != session.control_frames.size(); ++i) {
-		input_demo_file_frame frame;
-
-		input_demo_control_record_clear(&frame.input);
-		frame.input.frame = static_cast<uint32_t>(i);
-		frame.input.has_frame_time = !have_previous_frame_time ||
-		                             session.control_frames[i].frame_time != previous_frame_time;
-		frame.input.frame_time = session.control_frames[i].frame_time;
-		input_demo_control_state_update_from_transition(&frame.input.held,
-		                                                &previous_state,
-		                                                &session.control_frames[i].state,
-		                                                session.game);
-		input_demo_control_pulse_update_from_pulse(&frame.input.pulse,
-		                                           &session.control_frames[i].pulse,
-		                                           session.game);
-
-		input_demo_rng_record_clear(&frame.rng);
-		frame.rng.frame = static_cast<uint32_t>(i);
-		frame.rng.state = session.rng_frames[i].state;
-		frame.rng.has_call_count = session.rng_frames[i].has_call_count;
-		frame.rng.call_count = session.rng_frames[i].call_count;
-		if (session.has_state_frames[i]) {
-			frame.has_state = true;
-			frame.state = session.state_frames[i];
-		}
-		if (session.has_diag_frames[i]) {
-			frame.has_diag = true;
-			frame.diag_json = session.diag_frames[i];
-		}
-		frame.events = session.frame_events[i];
-		demo->frames.push_back(frame);
-		previous_state = session.control_frames[i].state;
-		previous_frame_time = session.control_frames[i].frame_time;
-		have_previous_frame_time = 1;
-	}
-	return input_demo_file_to_text(*demo, &unused_text, error);
+	return true;
 }
 
 static void input_demo_recorder_reset_session(void)
@@ -419,12 +375,8 @@ int input_demo_recorder_truncate(uint32_t frame_count)
 	if (frame_count > g_input_demo_recorder_session.control_frames.size())
 		return 0;
 	g_input_demo_recorder_session.control_frames.resize(frame_count);
-	g_input_demo_recorder_session.rng_frames.resize(frame_count);
-	g_input_demo_recorder_session.has_state_frames.resize(frame_count);
-	g_input_demo_recorder_session.state_frames.resize(frame_count);
-	g_input_demo_recorder_session.has_diag_frames.resize(frame_count);
-	g_input_demo_recorder_session.diag_frames.resize(frame_count);
-	g_input_demo_recorder_session.frame_events.resize(frame_count);
+	g_input_demo_recorder_session.frame_lines.resize(frame_count);
+	g_input_demo_recorder_session.extended_frames.resize(frame_count);
 	g_input_demo_recorder_session.pending_frame_events.clear();
 	input_demo_control_pulse_clear(&g_input_demo_recorder_session.pending_pulse);
 	return 1;
@@ -504,46 +456,65 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
                                       char *error, size_t error_size)
 {
 	input_demo_control_frame control_frame;
-	input_demo_rng_frame rng_frame;
-	input_demo_result snapshot;
-	std::string diag_json;
-	std::string diag_error;
-	std::vector<std::string> frame_events;
+	input_demo_file_frame frame;
+	std::string line;
+	std::string shared_error;
+	auto &session = g_input_demo_recorder_session;
 
-	if (!g_input_demo_recorder_session.active)
+	if (!session.active)
 		return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
 	if (!state || !pulse)
 		return input_demo_recorder_copy_error("missing frame control state", error, error_size);
 
 	input_demo_control_frame_clear(&control_frame);
-	control_frame.frame = static_cast<uint32_t>(g_input_demo_recorder_session.control_frames.size());
+	control_frame.frame = static_cast<uint32_t>(session.control_frames.size());
 	control_frame.frame_time = frame_time;
 	control_frame.state = *state;
-	input_demo_recorder_accumulate_pulse(&control_frame.pulse, &g_input_demo_recorder_session.pending_pulse);
+	input_demo_recorder_accumulate_pulse(&control_frame.pulse, &session.pending_pulse);
 	input_demo_recorder_accumulate_pulse(&control_frame.pulse, pulse);
-	input_demo_control_pulse_clear(&g_input_demo_recorder_session.pending_pulse);
 
-	input_demo_rng_frame_clear(&rng_frame);
-	rng_frame.frame = control_frame.frame;
-	rng_frame.state = rng_state;
-	rng_frame.has_call_count = has_rng_call_count ? 1 : 0;
-	rng_frame.call_count = rng_call_count;
-	input_demo_result_clear(&snapshot);
-	if (frame_diag && g_input_demo_recorder_session.record_per_frame_state &&
-	    !input_demo_state_trace_diag_to_json_text(frame_diag, &diag_json, &diag_error))
-		return input_demo_recorder_copy_error(diag_error, error, error_size);
-	if (frame_state && g_input_demo_recorder_session.record_per_frame_state)
-		snapshot = *frame_state;
-	frame_events = g_input_demo_recorder_session.pending_frame_events;
-	g_input_demo_recorder_session.pending_frame_events.clear();
-
-	g_input_demo_recorder_session.control_frames.push_back(control_frame);
-	g_input_demo_recorder_session.rng_frames.push_back(rng_frame);
-	g_input_demo_recorder_session.has_state_frames.push_back((frame_state && g_input_demo_recorder_session.record_per_frame_state) ? 1 : 0);
-	g_input_demo_recorder_session.state_frames.push_back(snapshot);
-	g_input_demo_recorder_session.has_diag_frames.push_back((frame_diag && g_input_demo_recorder_session.record_per_frame_state) ? 1 : 0);
-	g_input_demo_recorder_session.diag_frames.push_back(diag_json);
-	g_input_demo_recorder_session.frame_events.push_back(std::move(frame_events));
+	input_demo_control_state previous_state;
+	input_demo_control_state_clear(&previous_state);
+	frame.input.frame = control_frame.frame;
+	frame.input.has_frame_time = session.control_frames.empty() ||
+	                             session.control_frames.back().frame_time != frame_time;
+	frame.input.frame_time = frame_time;
+	if (!session.control_frames.empty())
+		previous_state = session.control_frames.back().state;
+	input_demo_control_state_update_from_transition(&frame.input.held, &previous_state, state, session.game);
+	input_demo_control_pulse_update_from_pulse(&frame.input.pulse, &control_frame.pulse, session.game);
+	frame.rng.frame = control_frame.frame;
+	frame.rng.state = rng_state;
+	frame.rng.has_call_count = has_rng_call_count ? 1 : 0;
+	frame.rng.call_count = rng_call_count;
+	if (frame_state && session.record_per_frame_state) {
+		frame.has_state = true;
+		frame.state = *frame_state;
+	}
+	if (!input_demo_frame_to_json_line(frame, session.game, &line, &shared_error))
+		return input_demo_recorder_copy_error(shared_error, error, error_size);
+	const bool has_diag = frame_diag && session.record_per_frame_state;
+	if (has_diag) {
+		std::string diag_json;
+		if (!input_demo_state_trace_diag_to_json_text(frame_diag, &diag_json, &shared_error))
+			return input_demo_recorder_copy_error(shared_error, error, error_size);
+		// This object was just encoded by the engine; do not parse and rebuild it
+		line.pop_back();
+		line += ",\"diag\":";
+		line += diag_json;
+		line.push_back('}');
+	}
+	bool has_events = false;
+	for (const auto &event : session.pending_frame_events) {
+		input_demo_recorder_append_encoded_event(line, has_events, event);
+		has_events = true;
+	}
+	session.control_frames.push_back(control_frame);
+	session.frame_lines.push_back(std::move(line));
+	session.extended_frames.push_back((has_diag ? INPUT_DEMO_RECORDED_DIAG : 0) |
+	                                  (has_events ? INPUT_DEMO_RECORDED_EVENTS : 0));
+	session.pending_frame_events.clear();
+	input_demo_control_pulse_clear(&session.pending_pulse);
 	return 1;
 }
 
@@ -577,11 +548,14 @@ int input_demo_recorder_append_frame_event_json(const char *json_text,
 		return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
 	if (!g_input_demo_recorder_session.record_per_frame_state)
 		return 1;
-	if (g_input_demo_recorder_session.frame_events.empty())
+	if (g_input_demo_recorder_session.frame_lines.empty())
 		return input_demo_recorder_copy_error("input demo recorder has no current frame", error, error_size);
 	if (!input_demo_recorder_canonicalize_event_json(json_text, &canonical_json, &shared_error))
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
-	g_input_demo_recorder_session.frame_events.back().push_back(canonical_json);
+	input_demo_recorder_append_encoded_event(g_input_demo_recorder_session.frame_lines.back(),
+	                                         (g_input_demo_recorder_session.extended_frames.back() & INPUT_DEMO_RECORDED_EVENTS) != 0,
+	                                         canonical_json);
+	g_input_demo_recorder_session.extended_frames.back() |= INPUT_DEMO_RECORDED_EVENTS;
 	return 1;
 }
 
@@ -743,19 +717,11 @@ int input_demo_recorder_flush_with_result(const char *demo_path,
 		return input_demo_recorder_copy_error("missing demo file path", error, error_size);
 	if (g_input_demo_recorder_session.control_frames.empty())
 		return input_demo_recorder_copy_error("input demo recorder captured no frames", error, error_size);
-	if (g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.rng_frames.size())
+	if (g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.frame_lines.size())
 		return input_demo_recorder_copy_error("input demo recorder frame streams are out of sync", error, error_size);
-	if (g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.has_state_frames.size() ||
-	    g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.state_frames.size())
-		return input_demo_recorder_copy_error("input demo recorder state frames are out of sync", error, error_size);
-	if (g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.has_diag_frames.size() ||
-	    g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.diag_frames.size())
-		return input_demo_recorder_copy_error("input demo recorder diag frames are out of sync", error, error_size);
-	if (g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.frame_events.size())
-		return input_demo_recorder_copy_error("input demo recorder frame events are out of sync", error, error_size);
-	if (!input_demo_recorder_build_demo(&demo, g_input_demo_recorder_session, result, &shared_error))
+	if (!input_demo_recorder_build_envelope(&demo, g_input_demo_recorder_session, result, &shared_error))
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
-	if (!input_demo_file_write(demo_path, demo, &shared_error))
+	if (!input_demo_file_write_recorded(demo_path, demo, g_input_demo_recorder_session.frame_lines, &shared_error))
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
 	if (!input_demo_rng_trace_write_sidecar_for_demo(demo_path, error, error_size)) {
 		input_demo_recorder_reset_session();

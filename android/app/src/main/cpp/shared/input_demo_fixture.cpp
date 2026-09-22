@@ -955,11 +955,8 @@ static bool validate_frame_record(const input_demo_file_frame &frame, uint32_t e
 	return validate_rng_record(frame.rng, error);
 }
 
-static bool validate_demo_file(const input_demo_file &demo, std::string *error)
+static bool validate_demo_envelope(const input_demo_file &demo, size_t frame_count, std::string *error)
 {
-	int game;
-	size_t i;
-
 	if (!validate_metadata(demo.metadata, error))
 		return false;
 	if (demo.metadata.start_mode == "save_checkpoint") {
@@ -969,15 +966,21 @@ static bool validate_demo_file(const input_demo_file &demo, std::string *error)
 			return false;
 	} else if (demo.has_checkpoint)
 		return fail(error, "new_level demos must not include a checkpoint record");
-	game = game_id_from_name(demo.metadata.game);
-	if (!game)
-		return fail(error, "demo game must be d1 or d2");
-	if (demo.frames.size() != demo.metadata.frame_count)
+	if (frame_count != demo.metadata.frame_count)
 		return fail(error, "demo frame count does not match header");
 	if (!demo.has_result)
 		return fail(error, "demo file is missing result trailer");
 	if (demo.result.frame_count != demo.metadata.frame_count)
 		return fail(error, "demo result frame count does not match header");
+	return true;
+}
+
+static bool validate_demo_file(const input_demo_file &demo, std::string *error)
+{
+	if (!validate_demo_envelope(demo, demo.frames.size(), error))
+		return false;
+	const int game = game_id_from_name(demo.metadata.game);
+	size_t i;
 	for (i = 0; i != demo.frames.size(); ++i) {
 		if (!validate_frame_record(demo.frames[i], static_cast<uint32_t>(i), game, error))
 			return false;
@@ -1092,8 +1095,8 @@ static bool parse_frame_record(const ordered_json &root, int game, uint32_t expe
 	return validate_frame_record(*frame, expected_frame, game, error);
 }
 
-static bool frame_record_to_json_line(const input_demo_file_frame &frame, int game,
-                                      std::string *line, std::string *error)
+bool input_demo_frame_to_json_line(const input_demo_file_frame &frame, int game,
+                                   std::string *line, std::string *error)
 {
 	ordered_json root = ordered_json::object();
 	ordered_json input = ordered_json::object();
@@ -1110,6 +1113,10 @@ static bool frame_record_to_json_line(const input_demo_file_frame &frame, int ga
 	std::string state_line;
 	size_t event_index;
 
+	if (!line)
+		return fail(error, "missing demo frame text output");
+	if (!validate_frame_record(frame, frame.input.frame, game, error))
+		return false;
 	if (!input_demo_control_record_to_json_line(frame.input, game, &control_line, error))
 		return false;
 	if (!input_demo_rng_record_to_json_line(frame.rng, &rng_line, error))
@@ -1263,37 +1270,24 @@ bool input_demo_file_read(const char *path,
 	return input_demo_file_parse_text(text.str(), demo, error);
 }
 
-bool input_demo_file_to_text(const input_demo_file &demo,
-                             std::string *text, std::string *error)
+static bool input_demo_file_bookends(const input_demo_file &demo, size_t frame_count,
+                                     std::string *prefix, std::string *suffix, std::string *error)
 {
 	std::string line;
 	std::string result_text;
 	ordered_json result_record = ordered_json::object();
 	ordered_json result_json;
-	int game;
-	size_t i;
 
-	if (!text)
-		return fail(error, "missing demo file text output");
-	if (!validate_demo_file(demo, error))
+	if (!validate_demo_envelope(demo, frame_count, error))
 		return false;
-	game = game_id_from_name(demo.metadata.game);
-	text->clear();
-	if (!input_demo_metadata_to_header_line(demo.metadata, &line, error))
+	if (!input_demo_metadata_to_header_line(demo.metadata, prefix, error))
 		return false;
-	*text += line;
-	text->push_back('\n');
+	prefix->push_back('\n');
 	if (demo.has_checkpoint) {
 		if (!checkpoint_record_to_json_line(demo.checkpoint, &line, error))
 			return false;
-		*text += line;
-		text->push_back('\n');
-	}
-	for (i = 0; i != demo.frames.size(); ++i) {
-		if (!frame_record_to_json_line(demo.frames[i], game, &line, error))
-			return false;
-		*text += line;
-		text->push_back('\n');
+		*prefix += line;
+		prefix->push_back('\n');
 	}
 	if (!input_demo_result_to_json_text(demo.result, &result_text, error))
 		return false;
@@ -1304,8 +1298,54 @@ bool input_demo_file_to_text(const input_demo_file &demo,
 	}
 	result_record["type"] = "result";
 	result_record["result"] = std::move(result_json);
-	*text += result_record.dump();
-	text->push_back('\n');
+	*suffix = result_record.dump();
+	suffix->push_back('\n');
+	return true;
+}
+
+bool input_demo_file_to_text(const input_demo_file &demo,
+                             std::string *text, std::string *error)
+{
+	std::string line;
+	std::string suffix;
+	if (!text)
+		return fail(error, "missing demo file text output");
+	if (!validate_demo_file(demo, error) ||
+	    !input_demo_file_bookends(demo, demo.frames.size(), text, &suffix, error))
+		return false;
+	const int game = game_id_from_name(demo.metadata.game);
+	for (size_t i = 0; i != demo.frames.size(); ++i) {
+		if (!input_demo_frame_to_json_line(demo.frames[i], game, &line, error))
+			return false;
+		*text += line;
+		text->push_back('\n');
+	}
+	*text += suffix;
+	return true;
+}
+
+bool input_demo_file_write_recorded(const char *path, const input_demo_file &envelope,
+                                    const std::vector<std::string> &frame_lines,
+                                    std::string *error)
+{
+	std::string prefix;
+	std::string suffix;
+	if (!path || !path[0])
+		return fail(error, "missing demo file path");
+	if (!envelope.frames.empty())
+		return fail(error, "recorded demo envelope must not contain frames");
+	if (!input_demo_file_bookends(envelope, frame_lines.size(), &prefix, &suffix, error))
+		return false;
+	std::ofstream out(path, std::ios::out | std::ios::trunc | std::ios::binary);
+	if (!out)
+		return fail(error, std::string("could not open demo file: ") + path);
+	out << prefix;
+	for (const auto &line : frame_lines)
+		out << line << '\n';
+	out << suffix;
+	out.close();
+	if (!out)
+		return fail(error, std::string("could not finish demo file: ") + path);
 	return true;
 }
 
