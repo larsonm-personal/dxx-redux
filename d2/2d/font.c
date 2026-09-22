@@ -48,7 +48,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define MAX_OPEN_FONTS	50
 
 typedef struct openfont {
-	char filename[FILENAME_LEN];
+	char filename[PATH_MAX];
 	grs_font *ptr;
 	char *dataptr;
 } openfont;
@@ -1135,7 +1135,7 @@ grs_font * gr_init_font( const char * fontname )
 	for (fontnum=0;fontnum<MAX_OPEN_FONTS && open_font[fontnum].ptr!=NULL;fontnum++);
 	Assert(fontnum<MAX_OPEN_FONTS);	//did we find one?
 
-	strncpy(open_font[fontnum].filename,fontname,FILENAME_LEN);
+	snprintf(open_font[fontnum].filename, sizeof(open_font[fontnum].filename), "%s", fontname);
 
 	fontfile = PHYSFSX_openReadBuffered(fontname);
 

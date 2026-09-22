@@ -77,7 +77,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "switch.h"
 #include "palette.h"
 #include "gameseq.h"
-#include "d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2_semantics.h"
+#include "d1_in_d2/d1_in_d2_ai.h"
+#include "d1_in_d2/d1_in_d2_weapons.h"
 #include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
@@ -87,22 +89,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "editor/editor.h"
 #endif
 
-static vms_vector *d1_in_d2_badass_explosion_pos(object *weapon, vms_vector *collision_point)
-{
-	return d1_in_d2_use_d1_gameplay() ? &weapon->pos : collision_point;
-}
-
-static vms_vector *d1_in_d2_player_badass_explosion_pos(object *weapon, vms_vector *collision_point)
-{
-	if (d1_in_d2_use_d1_gameplay()) {
-		weapon->pos.x = collision_point->x;
-		weapon->pos.y = collision_point->y;
-		weapon->pos.z = collision_point->z;
-		return &weapon->pos;
-	}
-
-	return collision_point;
-}
 #include "collide.h"
 #include "escort.h"
 #include "multibot.h"
@@ -275,8 +261,7 @@ void apply_force_damage(object *obj,fix force,object *other_obj)
 				damage = fixmul(damage, FrameTime*2);
 
 			//	Make trainee easier.
-			if (!d1_in_d2_use_d1_gameplay() && Difficulty_level == 0)
-				damage /= 2;
+			damage = d1_in_d2_contact_damage(damage);
 
 			#ifdef NETWORK
 			if (obj->id == Player_num && Game_mode & GM_MULTI)
@@ -539,8 +524,7 @@ int check_volatile_wall(object *obj,int segnum,int sidenum,vms_vector *hitpt)
 			if (d > 0) {
 				fix damage = fixmul(d,FrameTime);
 
-				if (!d1_in_d2_use_d1_gameplay() && Difficulty_level == 0)
-					damage /= 2;
+				damage = d1_in_d2_contact_damage(damage);
 
 				if (!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE)) {
 					#ifdef NETWORK
@@ -762,6 +746,9 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 	int playernum;
 	int	robot_escort;
 
+	if (!d1_in_d2_weapon_wall_impact_allowed(weapon))
+		return;
+
 	fix volume = (is_observer() && Objects[weapon->ctype.laser_info.parent_num].type == OBJ_CNTRLCEN) ? F1_0 / 4 : F1_0;
 
 	if (weapon->id == OMEGA_ID)
@@ -887,7 +874,7 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 		weapon->flags |= OF_SHOULD_BE_DEAD;		//make flares die in lava
 
 	}
-	else if (!d1_in_d2_use_d1_gameplay() && ((TmapInfo[seg->sides[hitwall].tmap_num].flags & TMI_WATER) || (seg->sides[hitwall].tmap_num2 && (TmapInfo[seg->sides[hitwall].tmap_num2&0x3fff].flags & TMI_WATER)))) {
+	else if ((TmapInfo[seg->sides[hitwall].tmap_num].flags & TMI_WATER) || (seg->sides[hitwall].tmap_num2 && (TmapInfo[seg->sides[hitwall].tmap_num2&0x3fff].flags & TMI_WATER))) {
 		weapon_info *wi = &Weapon_info[weapon->id];
 
 		//we've hit water
@@ -1102,7 +1089,7 @@ void collide_robot_and_player( object * robot, object * playerobj, vms_vector *c
 		return;
 	}
 
-	if ((robot->flags & OF_EXPLODING) && !d1_in_d2_use_d1_gameplay()) {
+	if (!d1_in_d2_robot_contact_allowed(robot)) {
 		input_demo_debug_log_player_robot_contact_probe("robot_player_skip_exploding", (void *)playerobj, (void *)robot, (void *)collision_point, 0);
 		return;
 	}
@@ -1551,6 +1538,9 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 	newdemo_dump_note_robot_damage(robot, old_shields, damage);
 	input_demo_record_robot_damage_event(robot, damage, old_shields);
 	input_demo_log_replay_robot_damage(robot, damage, old_shields);
+	const int d1_boss_result = d1_in_d2_ai_finish_boss_damage(robot, killer_objnum);
+	if (d1_boss_result >= 0)
+		return d1_boss_result;
 	//	Do unspeakable hacks to make sure player doesn't die after killing boss.  Or before, sort of.
 	if (Robot_info[robot->id].boss_flag)
 		if (PLAYING_BUILTIN_MISSION && Current_level_num == Last_level)
@@ -1777,7 +1767,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 			return;
 		}
 
-	if (Robot_info[robot->id].boss_flag) {
+	if (!d1_in_d2_ai_boss_weapon_hit(robot) && Robot_info[robot->id].boss_flag) {
 		Boss_hit_time = GameTime64;
 		if (Robot_info[robot->id].boss_flag >= BOSS_D2) {
 			damage_flag = do_boss_weapon_collision(robot, weapon, collision_point);
@@ -2771,7 +2761,7 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 			vm_vec_scale_add(collision_point, &playerobj->pos, &player2weapon, fixdiv(playerobj->size, mag)); 
 		}
 		
-		explode_badass_weapon(weapon, d1_in_d2_player_badass_explosion_pos(weapon, collision_point));
+		explode_badass_weapon(weapon, d1_in_d2_prepare_player_explosion_pos(weapon, collision_point));
 
 	}
 

@@ -10,7 +10,7 @@
 #include "collide.h"
 #include "console.h"
 #include "controls.h"
-#include "d1_in_d2_input_demo.h"
+#include "d1_in_d2/d1_in_d2_input_demo.h"
 #include "endlevel.h"
 #include "fvi.h"
 #include "game.h"

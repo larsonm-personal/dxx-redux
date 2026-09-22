@@ -27,6 +27,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #include "gamefont.h"
 #include "config.h"
+#include "d1_in_d2/d1_in_d2_presentation.h"
 
 static const char Gamefont_filenames_l[][16] = {
 	"font1-1.fnt", // Font 0
@@ -43,6 +44,8 @@ static const char Gamefont_filenames_h[][16] = {
 	"font2-3h.fnt", // Font 3
 	"font3-1h.fnt"  // Font 4
 };
+
+static char Gamefont_fallback_names[MAX_FONTS][64];
 
 grs_font *Gamefonts[MAX_FONTS];
 
@@ -69,7 +72,7 @@ gamefont_conf font_conf[MAX_FONTS];
 
 const char *gamefont_curfontname(int gf){
 	if (font_conf[gf].cur<0)
-		return Gamefont_filenames_l[gf];
+		return Gamefont_fallback_names[gf];
 	else
 		return font_conf[gf].font[font_conf[gf].cur].f.name;
 }
@@ -90,7 +93,7 @@ static void gamefont_loadfont(int gf,int fi)
 		Gamefonts[gf]=gr_init_font(font_conf[gf].font[fi].f.name);
 	}else {
 		if (Gamefonts[gf]==NULL){
-			Gamefonts[gf]=gr_init_font(Gamefont_filenames_l[gf]);
+			Gamefonts[gf]=gr_init_font(Gamefont_fallback_names[gf]);
 			font_conf[gf].cur=-1;
 		}
 		return;
@@ -166,9 +169,12 @@ void gamefont_init()
 	for (i=0;i<MAX_FONTS;i++){
 		Gamefonts[i]=NULL;
 
+		char hires[64];
+		d1_in_d2_presentation_resource(Gamefont_filenames_h[i], hires, sizeof(hires));
+		d1_in_d2_presentation_resource(Gamefont_filenames_l[i], Gamefont_fallback_names[i], sizeof(Gamefont_fallback_names[i]));
 		if (GameArg.GfxHiresFNTAvailable)
-			addfontconf(i,640,480,Gamefont_filenames_h[i]); // ZICO - addition to use D2 fonts if available
-		addfontconf(i,320,200,Gamefont_filenames_l[i]);
+			addfontconf(i,640,480,hires); // ZICO - addition to use D2 fonts if available
+		addfontconf(i,320,200,Gamefont_fallback_names[i]);
 	}
 
 	gamefont_choose_game_font(grd_curscreen->sc_canvas.cv_bitmap.bm_w,grd_curscreen->sc_canvas.cv_bitmap.bm_h);
@@ -185,5 +191,6 @@ void gamefont_close()
 	for (i=0; i<MAX_FONTS; i++ )	{
 		gamefont_unloadfont(i);
 	}
+	memset(font_conf, 0, sizeof(font_conf));
 
 }

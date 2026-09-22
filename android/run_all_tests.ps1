@@ -24,6 +24,9 @@
 .PARAMETER Filter
     Glob filter for test names (e.g. "test_death*").
 
+.PARAMETER ReplayDemo
+    Open the interactive single-demo picker instead of running the suite.
+
 .PARAMETER IncludeManual
     Include tests that are normally skipped (dual-emu setup, manual tests).
 
@@ -79,10 +82,12 @@
     .\run_all_tests.ps1 -StopOnFail
     .\run_all_tests.ps1 -SkipDocker
     .\run_all_tests.ps1 -Target45Minutes
+    .\run_all_tests.ps1 -ReplayDemo
 #>
 
 param(
     [string]$Filter,
+    [switch]$ReplayDemo,
     [switch]$IncludeManual,
     [switch]$StopOnFail,
     [string]$ReportDir,
@@ -123,11 +128,17 @@ if (Test-RunAllTestsProfileMenuEnabled -ExplicitParameterCount $explicitParamete
         'Target45' { $Target45Minutes = $true }
         'Exhaustive' { $FullSuite = $true }
         'LevelMetadataBenchmark' { $Filter = 'test_level_metadata_benchmark' }
+        'ReplayDemo' { $ReplayDemo = $true }
         'Cancel' {
             Write-Host 'Test suite cancelled' -ForegroundColor Yellow
             exit 0
         }
     }
+}
+
+if ($ReplayDemo) {
+    & (Join-Path $scriptDir 'tests/run_input_demo_replay.ps1') -Interactive
+    exit $LASTEXITCODE
 }
 
 if ($FullSuite) { $FullRouteCorpus = $true }
@@ -445,6 +456,7 @@ $noInfraTests = @(
     "test_input_demo_determinism_matrix",
     "test_input_demo_regressions",
     "test_input_demo_regressions_graphics",
+    "test_input_demo_replay_menu",
     "test_input_demo_runtime_smoke",
     "test_level_metadata_benchmark",
     "test_native_host_unit_tests",

@@ -10,12 +10,22 @@ set(D2X_MAIN_SOURCES
     console.c
     controls.c
     credits.c
-    d1_custom.c
-    d1_in_d2.c
-    d1_in_d2_input_demo.c
-    d1_in_d2_semantics.c
-    d1_pig_validation.c
-    d1_save_translate.c
+    d1_in_d2/d1_custom.c
+    d1_in_d2/d1_in_d2.c
+    d1_in_d2/d1_in_d2_ai.c
+    d1_in_d2/d1_in_d2_ai_path.c
+    d1_in_d2/d1_in_d2_assets.c
+    d1_in_d2/d1_in_d2_bitmaps.c
+    d1_in_d2/d1_in_d2_briefing.c
+    d1_in_d2/d1_in_d2_cockpit.c
+    d1_in_d2/d1_in_d2_guidebot.c
+    d1_in_d2/d1_in_d2_input_demo.c
+    d1_in_d2/d1_in_d2_levels.c
+    d1_in_d2/d1_in_d2_presentation.c
+    d1_in_d2/d1_in_d2_semantics.c
+    d1_in_d2/d1_in_d2_weapons.c
+    d1_in_d2/d1_pig_validation.c
+    d1_in_d2/d1_save_translate.c
     digiobj.c
     dumpmine.c
     dxa_metadata_patch.cpp

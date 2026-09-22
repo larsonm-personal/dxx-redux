@@ -139,6 +139,10 @@ extern Mission *Current_mission; // current mission
 int load_mission_by_name (char *mission_name);
 int load_mission_by_name_from_current_dir(char *mission_name);
 
+/* D2 HAM/sound/extra-robot loading service; caller owns profile transition and
+ * has released old polygon models. Does not select or prepare D1 assets */
+int load_mission_ham(void);
+
 //Handles creating and selecting from the mission list.
 //Returns 1 if a mission was loaded.
 int select_mission (int anarchy_mode, char *message, int (*when_selected)(void));

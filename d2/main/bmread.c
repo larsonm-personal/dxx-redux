@@ -2120,8 +2120,9 @@ void bm_write_all(PHYSFS_file *fp)
 
 	t = N_D2_ROBOT_TYPES;
 	PHYSFS_write( fp, &t, sizeof(int), 1 );
-	PHYSFS_write( fp, Robot_info, sizeof(robot_info), t );
-	PHYSFSX_printf(tfile, "N_robot_types = %d, Robot_info array = %d\n", t, (int) sizeof(robot_info)*N_robot_types);
+	if (!robot_info_write_n(Robot_info, t, fp))
+		Error("Cannot write robot definitions in the original HAM format");
+	PHYSFSX_printf(tfile, "N_robot_types = %d, Robot_info array = %d\n", t, 480*N_robot_types);
 
 	t = N_D2_ROBOT_JOINTS;
 	PHYSFS_write( fp, &t, sizeof(int), 1 );
@@ -2213,7 +2214,8 @@ void bm_write_extra_robots()
 
 	t = N_robot_types - N_D2_ROBOT_TYPES;
 	PHYSFS_write( fp, &t, sizeof(int), 1);
-	PHYSFS_write( fp, &Robot_info[N_D2_ROBOT_TYPES], sizeof(robot_info), t);
+	if (!robot_info_write_n(&Robot_info[N_D2_ROBOT_TYPES], t, fp))
+		Error("Cannot write robot definitions in the original HAM format");
 
 	t = N_robot_joints - N_D2_ROBOT_JOINTS;
 	PHYSFS_write( fp, &t, sizeof(int), 1);

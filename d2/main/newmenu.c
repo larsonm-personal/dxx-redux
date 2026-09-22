@@ -253,6 +253,7 @@ void newmenu_free_background()	{
 void nm_draw_background1(char * filename)
 {
 	int pcx_error;
+	char resource[PATH_MAX];
 #ifdef ANDROID
 	extern int g_ogl_render_context;
 	int prev_context = g_ogl_render_context;
@@ -263,6 +264,8 @@ void nm_draw_background1(char * filename)
 
 	if (filename != NULL)
 	{
+		d1_in_d2_presentation_resource(filename, resource, sizeof(resource));
+		filename = resource;
 		if (nm_background1.bm_data != NULL && d_stricmp(nm_background1_filename, filename))
 		{
 			gr_free_bitmap_data(&nm_background1);
@@ -308,7 +311,7 @@ void nm_draw_background1(char * filename)
 
 #define MENU_BACKGROUND_BITMAP_HIRES (PHYSFSX_exists("scoresb.pcx",1)?"scoresb.pcx":"scores.pcx")
 #define MENU_BACKGROUND_BITMAP_LORES (PHYSFSX_exists("scores.pcx",1)?"scores.pcx":"scoresb.pcx")
-#define MENU_BACKGROUND_BITMAP (HIRESMODE?MENU_BACKGROUND_BITMAP_HIRES:MENU_BACKGROUND_BITMAP_LORES)
+#define MENU_BACKGROUND_BITMAP d1_in_d2_menu_resource(D1_MENU_FRAME, (HIRESMODE?MENU_BACKGROUND_BITMAP_HIRES:MENU_BACKGROUND_BITMAP_LORES))
 
 // Draws the frame background for menus
 void nm_draw_background(int x1, int y1, int x2, int y2 )

@@ -41,7 +41,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fireball.h"
 #include "game.h"
 #include "deterministic_math.h"
-#include "d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2_ai.h"
 #include "input_demo_hooks.h"
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 #include "escort.h"
@@ -127,11 +127,6 @@ void insert_center_points(point_seg *psegs, int *num_points)
 
 		psegs[2*i-1].segnum = psegs[2*i].segnum;
 		count++;
-	}
-
-	if (d1_in_d2_use_d1_gameplay()) {
-		*num_points = count;
-		return;
 	}
 
 	//	Now, remove unnecessary center points.
@@ -570,7 +565,7 @@ if (!guidebot_route && (objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavio
 	while (cur_seg != end_seg) {
 		segment	*segp = &Segments[cur_seg];
 
-		if (random_flag && !d1_in_d2_use_d1_gameplay()) {
+		if (random_flag) {
 			random_xlate_refresh_roll_count++;
 			// SIM RNG: this decides whether the live path perturbation basis is refreshed
 			if (d_rand() < 8192) {
@@ -833,6 +828,10 @@ cpp_done1: ;
 
 int create_path_points(object *objp, int start_seg, int end_seg, point_seg *psegs, short *num_points, int max_depth, int random_flag, int safety_flag, int avoid_seg)
 {
+	const int native = d1_in_d2_ai_create_path_points(objp, start_seg, end_seg, psegs,
+		num_points, max_depth, random_flag, safety_flag, avoid_seg);
+	if (native != D1_AI_PATH_NOT_APPLICABLE)
+		return native;
 	return create_path_points_avoiding(objp, start_seg, end_seg, psegs, num_points,
 	                                   max_depth, random_flag, safety_flag,
 	                                   avoid_seg, -1, -1, -1, -1, -1, 0);
@@ -1013,6 +1012,8 @@ void validate_all_paths(void)
 //	Change, 10/07/95: Used to create path to ConsoleObject->pos.  Now creates path to Believed_player_pos.
 void create_path_to_player(object *objp, int max_length, int safety_flag)
 {
+	if (d1_in_d2_ai_create_path_to_player(objp, max_length, safety_flag))
+		return;
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objp-Objects];
 	int			start_seg, end_seg;
@@ -1022,7 +1023,7 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 		max_length = MAX_DEPTH_TO_SEARCH_FOR_PLAYER;
 
 	ailp->time_player_seen = GameTime64;			//	Prevent from resetting path quickly.
-	ailp->goal_segment = d1_in_d2_use_d1_gameplay() ? ConsoleObject->segnum : Believed_player_seg;
+	ailp->goal_segment = Believed_player_seg;
 
 	start_seg = objp->segnum;
 	end_seg = ailp->goal_segment;
@@ -1034,8 +1035,7 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 		;
 	} else {
 		create_path_points(objp, start_seg, end_seg, Point_segs_free_ptr, &aip->path_length, max_length, 1, safety_flag, -1);
-		if (!d1_in_d2_use_d1_gameplay())
-			aip->path_length = polish_path(objp, Point_segs_free_ptr, aip->path_length);
+		aip->path_length = polish_path(objp, Point_segs_free_ptr, aip->path_length);
 		aip->hide_index = Point_segs_free_ptr - Point_segs;
 		aip->cur_path_index = 0;
 		Point_segs_free_ptr += aip->path_length;
@@ -1156,6 +1156,8 @@ int create_path_to_segment_avoiding_edges(object *objp, int goalseg, int max_len
 //			Point_segs_free_ptr				global pointer into Point_segs array
 void create_path_to_station(object *objp, int max_length)
 {
+	if (d1_in_d2_ai_create_path_to_station(objp, max_length))
+		return;
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objp-Objects];
 	int			start_seg, end_seg;
@@ -1172,8 +1174,7 @@ void create_path_to_station(object *objp, int max_length)
 		;
 	} else {
 		create_path_points(objp, start_seg, end_seg, Point_segs_free_ptr, &aip->path_length, max_length, 1, 1, -1);
-		if (!d1_in_d2_use_d1_gameplay())
-			aip->path_length = polish_path(objp, Point_segs_free_ptr, aip->path_length);
+		aip->path_length = polish_path(objp, Point_segs_free_ptr, aip->path_length);
 		aip->hide_index = Point_segs_free_ptr - Point_segs;
 		aip->cur_path_index = 0;
 
@@ -1201,6 +1202,8 @@ void create_path_to_station(object *objp, int max_length)
 //	Create a path of length path_length for an object, stuffing info in ai_info field.
 void create_n_segment_path(object *objp, int path_length, int avoid_seg)
 {
+	if (d1_in_d2_ai_create_random_path(objp, path_length, avoid_seg))
+		return;
 	ai_static	*aip=&objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objp-Objects];
 	int			requested_path_length = path_length;
@@ -1234,8 +1237,7 @@ void create_n_segment_path(object *objp, int path_length, int avoid_seg)
 
 	//	If this robot is visible (player_visibility is not available) and it's running away, move towards outside with
 	//	randomness to prevent a stream of bots from going away down the center of a corridor.
-	if (!d1_in_d2_use_d1_gameplay() &&
-	    Ai_local_info[objp-Objects].previous_visibility) {
+	if (Ai_local_info[objp-Objects].previous_visibility) {
 		if (aip->path_length) {
 			int	t_num_points = aip->path_length;
 			move_towards_outside(&Point_segs[aip->hide_index], &t_num_points, objp, 1);
@@ -1377,6 +1379,8 @@ static int guidebot_route_waypoint_reached(const object *objp,
 
 void ai_follow_path(object *objp, int player_visibility, int previous_visibility, vms_vector *vec_to_player)
 {
+	if (d1_in_d2_ai_follow_path(objp, player_visibility))
+		return;
 	ai_static		*aip = &objp->ctype.ai_info;
 
 	vms_vector	goal_point, new_goal_point;
@@ -1415,8 +1419,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	}
 
 	if (aip->path_length < 2) {
-		const int d2_snipe_behavior = !d1_in_d2_use_d1_gameplay() &&
-		                              (aip->behavior == AIB_SNIPE);
+		const int d2_snipe_behavior = aip->behavior == AIB_SNIPE;
 		if (d2_snipe_behavior || (ailp->mode == AIM_RUN_FROM_OBJECT)) {
 			if (ConsoleObject->segnum == objp->segnum) {
 				create_n_segment_path(objp, AVOID_SEG_LENGTH, -1);			//	Can't avoid segment player is in, robot is already in it! (That's what the -1 is for)
@@ -1786,7 +1789,7 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 	//	If evading player, use highest difficulty level speed, plus something based on diff level
 	max_speed = robptr->max_speed[Difficulty_level];
 	if ((Ai_local_info[objp-Objects].mode == AIM_RUN_FROM_OBJECT) ||
-	    (!d1_in_d2_use_d1_gameplay() && (objp->ctype.ai_info.behavior == AIB_SNIPE)))
+	    (objp->ctype.ai_info.behavior == AIB_SNIPE))
 		max_speed = max_speed*3/2;
 
 	vm_vec_sub(&norm_vec_to_goal, goal_point, &cur_pos);
@@ -1920,7 +1923,7 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 		dot /= -4;
 
 	//	If in snipe mode, can move fast even if not facing that direction.
-	if (!d1_in_d2_use_d1_gameplay() && (objp->ctype.ai_info.behavior == AIB_SNIPE))
+	if (objp->ctype.ai_info.behavior == AIB_SNIPE)
 		if (dot < F1_0/2)
 			dot = (dot + F1_0)/2;
 
@@ -1956,7 +1959,7 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 
 	if ((Ai_local_info[objp-Objects].mode == AIM_RUN_FROM_OBJECT) ||
 	    (robptr->companion == 1) ||
-	    (!d1_in_d2_use_d1_gameplay() && (objp->ctype.ai_info.behavior == AIB_SNIPE))) {
+	    (objp->ctype.ai_info.behavior == AIB_SNIPE)) {
 		if (Ai_local_info[objp-Objects].mode == AIM_SNIPE_RETREAT_BACKWARDS) {
 			if ((player_visibility) && (vec_to_player != NULL))
 				norm_vec_to_goal = *vec_to_player;

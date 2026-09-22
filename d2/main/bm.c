@@ -45,6 +45,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "powerup.h"
 #include "sounds.h"
 #include "piggy.h"
+#include "d1_in_d2/d1_in_d2.h"
 #include "aistruct.h"
 #include "robot.h"
 #include "weapon.h"
@@ -144,6 +145,8 @@ int gamedata_init()
 {
 	init_polygon_models();
 	init_endlevel();
+	if (d1_in_d2_prepare_base_assets())
+		return 0;
 
 #ifdef EDITOR
 	// The pc_shareware argument is currently unused for Descent 2,
@@ -159,6 +162,7 @@ int gamedata_init()
 	xmodel_load_all();
 #endif
 
+	d1_in_d2_note_d2_base_loaded();
 	return 0;
 }
 
@@ -517,6 +521,8 @@ int load_exit_models()
 {
 	PHYSFS_file *exit_hamfile;
 	int start_num;
+	if (d1_in_d2_has_native_assets())
+		return exit_modelnum >= 0 && destroyed_exit_modelnum >= 0;
 
 	Robot_replacements_loaded = 1; // extra robots need reloading even if exit assets are missing
 	bm_free_extra_models();

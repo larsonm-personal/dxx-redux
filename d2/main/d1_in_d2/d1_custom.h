@@ -19,8 +19,10 @@ typedef struct d1_custom_texture_stats {
 	int base_sound_skipped;
 } d1_custom_texture_stats;
 
-void d1_custom_load_data(char *level_name);
-void d1_custom_remove(void);
+struct d1_asset_generation;
+/* Applies optional PG1, DTX and HX1 assets only to an unpublished generation
+ * On failure the caller must discard that generation; live assets are untouched */
+int d1_custom_read_assets(struct d1_asset_generation *generation, const char *level_name, const char **error);
 void d1_custom_get_stats(d1_custom_texture_stats *stats);
 
 #endif

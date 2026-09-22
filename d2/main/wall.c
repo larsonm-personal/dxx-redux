@@ -51,7 +51,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "effects.h"
 #include "byteswap.h"
 #include "args.h"
-#include "d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2_semantics.h"
 #include "input_demo_replay.h"
 #if defined(__ANDROID__) || defined(NETWORK)
 #include "escort.h"
@@ -968,35 +968,15 @@ void do_door_close(int door_num)
 
 	w = &Walls[d->front_wallnum[0]];
 
-	//check for objects in doorway before closing
-	if (w->flags & WALL_DOOR_AUTO) {
-		if (d1_in_d2_use_d1_gameplay()) {
-			for (p=0;p<d->n_parts;p++) {
-				int Connectside, side;
-				segment *csegp, *seg;
-				int objnum;
-		
-				seg = &Segments[w->segnum];
-				side = w->sidenum;
-		
-				csegp = &Segments[seg->children[side]];
-				Connectside = find_connect_side(seg, csegp);
-				Assert(Connectside != -1);
-
-				for (objnum=seg->objects;objnum!=-1;objnum=Objects[objnum].next)
-					if (check_poke(objnum,seg-Segments,side))
-						return;
-
-				for (objnum=csegp->objects;objnum!=-1;objnum=Objects[objnum].next)
-					if (check_poke(objnum,csegp-Segments,Connectside))
-						return;
-			}
-		}
-		else if (!is_door_free(&Segments[w->segnum],w->sidenum)) {
-			digi_kill_sound_linked_to_segment(w->segnum,w->sidenum,-1);
-			wall_open_door(&Segments[w->segnum],w->sidenum);		//re-open door
-			return;
-		}
+	const int native_blocked = d1_in_d2_door_close_blocked(d);
+	if (native_blocked > 0)
+		return;
+	// D2 reopens an obstructed automatic door
+	if (native_blocked < 0 && (w->flags & WALL_DOOR_AUTO) &&
+	    !is_door_free(&Segments[w->segnum], w->sidenum)) {
+		digi_kill_sound_linked_to_segment(w->segnum, w->sidenum, -1);
+		wall_open_door(&Segments[w->segnum], w->sidenum);
+		return;
 	}
 
 	for (p=0;p<d->n_parts;p++) {
@@ -1425,7 +1405,8 @@ void wall_frame_process()
 			if (d->back_wallnum[0] > -1)
 				Walls[d->back_wallnum[0]].flags |= WALL_DOOR_OPENED;
 
-			if (d->time > DOOR_WAIT_TIME && (d1_in_d2_use_d1_gameplay() || is_door_free(&Segments[w->segnum],w->sidenum))) {
+			const int native_wait = d1_in_d2_door_wait_elapsed(d);
+			if (native_wait >= 0 ? native_wait : (d->time > DOOR_WAIT_TIME && is_door_free(&Segments[w->segnum],w->sidenum))) {
 				w->state = WALL_DOOR_CLOSING;
 				d->time = 0;
 			}

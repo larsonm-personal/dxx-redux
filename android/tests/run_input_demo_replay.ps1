@@ -3,6 +3,7 @@ param(
     [ValidateSet('none', 'address')][string]$Sanitizer = 'none',
     [string]$DemoPath,
     [string]$SearchRoot,
+    [switch]$Interactive,
     [ValidateSet('auto', 'd1', 'd2')]
     [string]$Game = 'auto',
     [ValidateSet('prompt', 'realtime', 'accelerated')]
@@ -48,6 +49,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/input_demo_replay_menu.ps1')
 $script:InputDemoSanitizer = $Sanitizer
 $outRoot = Join-Path $repoRoot 'temp\input_demo_runtime_wrapper'
 if ($Sanitizer -eq 'address') { $outRoot = Join-Path $repoRoot 'temp/input_demo_runtime_wrapper_asan' }
@@ -808,11 +810,15 @@ function Read-NumberedChoice {
     param(
         [string]$Prompt,
         [int]$OptionCount,
-        [int]$DefaultChoice = 1
+        [int]$DefaultChoice = 1,
+        [switch]$AllowCancel
     )
 
     while ($true) {
         $choice = Read-Host $Prompt
+        if ($AllowCancel -and $choice.Trim() -ieq 'q') {
+            return 0
+        }
         if ([string]::IsNullOrWhiteSpace($choice)) {
             return $DefaultChoice
         }
@@ -1033,13 +1039,19 @@ function Get-QuotedArgumentString {
 }
 
 function Get-DemoCandidates {
-    param([string]$RequestedRoot)
+    param(
+        [string]$RequestedRoot,
+        [ValidateSet('all', 'd1', 'd2')][string]$RecordedGame = 'all'
+    )
 
     $items = New-Object System.Collections.Generic.List[object]
 
     foreach ($root in (Get-SearchRoots -RequestedRoot $RequestedRoot)) {
         foreach ($file in (Get-ChildItem -LiteralPath $root -Recurse -Filter '*.dximdemo' -File -ErrorAction SilentlyContinue)) {
             $header = Get-DemoHeader -Path $file.FullName
+            if ($RecordedGame -ne 'all' -and $header.game -ne $RecordedGame) {
+                continue
+            }
             $items.Add([pscustomobject]@{
                     Path = $file.FullName
                     RelativePath = Get-RelativeRepoPath -Path $file.FullName
@@ -1083,14 +1095,16 @@ function Show-DemoCandidates {
 }
 
 function Select-DemoCandidate {
-    param([object[]]$Candidates)
+    param([object[]]$Candidates, [switch]$AllowCancel)
 
     if (-not $Candidates -or $Candidates.Count -eq 0) {
         throw 'No .dximdemo files are available to replay'
     }
 
     Show-DemoCandidates -Candidates $Candidates
-    $index = Read-NumberedChoice -Prompt 'Choose demo number' -OptionCount $Candidates.Count
+    $prompt = if ($AllowCancel) { 'Choose demo number (Q to cancel)' } else { 'Choose demo number' }
+    $index = Read-NumberedChoice -Prompt $prompt -OptionCount $Candidates.Count -AllowCancel:$AllowCancel
+    if ($index -eq 0) { return $null }
     return $Candidates[$index - 1]
 }
 
@@ -1369,13 +1383,22 @@ function Wait-ForReplayResult {
     return @{ ResultReady = (Test-Path -LiteralPath $ActualResultPath); Exited = $exited; ExitCode = if ($exited) { $Process.ExitCode } else { $null } }
 }
 
+if ($Interactive) {
+    $engineChoice = Select-InputDemoReplayEngine
+    if ($engineChoice -eq 'cancel') { exit 0 }
+    $D1InD2 = $engineChoice -eq 'd1-in-d2'
+    $Game = if ($D1InD2) { 'd2' } else { $engineChoice }
+    if (-not $SearchRoot) { $SearchRoot = Join-Path $repoRoot 'android/regression_demos' }
+}
+
 if (-not (Test-Path -LiteralPath $outRoot)) {
     New-Item -ItemType Directory -Path $outRoot -Force | Out-Null
 }
 
 $candidateList = @()
 if (-not $DemoPath -or $ListOnly) {
-    $candidateList = Get-DemoCandidates -RequestedRoot $SearchRoot
+    $candidateGame = if ($D1InD2) { 'd1' } elseif ($Game -ne 'auto') { $Game } else { 'all' }
+    $candidateList = @(Get-DemoCandidates -RequestedRoot $SearchRoot -RecordedGame $candidateGame)
 }
 if ($ListOnly) {
     Show-DemoCandidates -Candidates $candidateList
@@ -1389,8 +1412,20 @@ if ($DemoPath) {
     }
     $resolvedDemoPath = (Resolve-Path -LiteralPath $DemoPath).Path
 } else {
-    $selectedDemo = Select-DemoCandidate -Candidates $candidateList
+    $selectedDemo = Select-DemoCandidate -Candidates $candidateList -AllowCancel:$Interactive
+    if (-not $selectedDemo) { exit 0 }
     $resolvedDemoPath = $selectedDemo.Path
+}
+
+if ($Interactive) {
+    $displayChoice = Select-InputDemoReplayDisplay
+    if ($displayChoice -eq 'cancel') { exit 0 }
+    $Runner = if ($displayChoice -eq 'headed') { 'visual' } else { 'fast' }
+    $Mode = if ($displayChoice -eq 'headed') { 'realtime' } else { 'accelerated' }
+    $RenderProfile = 'default'
+    $ReplayRobotLabels = 'hide'
+    $NoRender = $false
+    $PreferHeadlessConsole = $false
 }
 
 $header = Get-DemoHeader -Path $resolvedDemoPath
@@ -1429,6 +1464,10 @@ if ($ResolveDataDirOnly) {
 $runnerPromptDefaults = Get-RunnerPromptDefaults -RequestedRunner $Runner -RequestedMode $Mode -RequestedProfile $RenderProfile
 $renderProfileSelection = Get-RenderProfile -RequestedProfile $runnerPromptDefaults.RenderProfile -RequestedMode $runnerPromptDefaults.Mode
 $launchMode = Get-LaunchMode -RequestedMode $runnerPromptDefaults.Mode -Path $resolvedDemoPath -Config $config
+if ($Interactive -and $Mode -eq 'realtime' -and -not $PSBoundParameters.ContainsKey('TimeoutSeconds')) {
+    # Allow the recording's viewing time plus startup/result handling
+    $TimeoutSeconds = [Math]::Max($TimeoutSeconds, [Math]::Ceiling($header.frame_count / $launchMode.MaxFps) + 120)
+}
 $shouldCompareStateTrace = $TraceState -or $CompareStateTrace
 $shouldCompareRngTrace = $TraceRng -or $CompareRngTrace
 $resolvedStateLogPath = $null

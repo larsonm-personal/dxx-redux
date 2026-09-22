@@ -44,6 +44,11 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 short highest_texture_num;
 int g3d_interp_outline;
 
+static int model_palette_color(ushort color)
+{
+	return (color & 0xff00) == G3_MODEL_COLOR_INDEXED ? color & 0xff : gr_find_closest_color_15bpp(color);
+}
+
 g3s_point *Interp_point_list = NULL;
 
 // Android port probe: polygon face counters for draw_polygon_model diagnostic
@@ -334,13 +339,13 @@ int g3_poly_get_color(ubyte *p)
 					int l;
 #endif
 #ifndef FADE_FLATPOLY
-					color = gr_find_closest_color_15bpp(w(p + 28));
+					color = model_palette_color(w(p + 28));
 #else
 					//l = (32 * model_light) >> 16;
 					l = f2i(fixmul(i2f(32), (model_light.r+model_light.g+model_light.b)/3));
 					if (l<0) l = 0;
 					else if (l>32) l = 32;
-					cc = gr_find_closest_color_15bpp(w(p+28));
+					cc = model_palette_color(w(p+28));
 					color = gr_fade_table[(l<<8)|cc];
 #endif
 				}
@@ -425,13 +430,13 @@ bool g3_draw_polygon_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim_
 //					gr_setcolor(w(p+28));
 					
 #ifndef FADE_FLATPOLY
-					gr_setcolor(gr_find_closest_color_15bpp(w(p + 28)));
+					gr_setcolor(model_palette_color(w(p + 28)));
 #else
 					//l = (32 * model_light) >> 16;
 					l = f2i(fixmul(i2f(32), (model_light.r+model_light.g+model_light.b)/3));
 					if (l<0) l = 0;
 					else if (l>32) l = 32;
-					cc = gr_find_closest_color_15bpp(w(p+28));
+					cc = model_palette_color(w(p+28));
 					c = gr_fade_table[(l<<8)|cc];
 					gr_setcolor(c);
 #endif
@@ -607,7 +612,7 @@ bool g3_draw_morphing_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim
 
 				if (nv < 3 || nv >= MAX_POINTS_PER_POLY)
 					return 0;
-				gr_setcolor(gr_find_closest_color_15bpp(w(p + 28)));
+				gr_setcolor(model_palette_color(w(p + 28)));
 				
 				for (i=0;i<2;i++)
 					point_list[i] = Interp_point_list + wp(p+30)[i];

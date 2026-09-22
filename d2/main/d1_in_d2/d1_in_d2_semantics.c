@@ -1,0 +1,367 @@
+/*
+THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
+SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
+END-USERS, AND SUBJECT TO ALL OF THE TERMS AND CONDITIONS HEREIN, GRANTS A
+ROYALTY-FREE, PERPETUAL LICENSE TO SUCH END-USERS FOR USE BY SUCH END-USERS
+IN USING, DISPLAYING,  AND CREATING DERIVATIVE WORKS THEREOF, SO LONG AS
+SUCH USE, DISPLAY OR CREATION IS FOR NON-COMMERCIAL, ROYALTY OR REVENUE
+FREE PURPOSES.  IN NO EVENT SHALL THE END-USER USE THE COMPUTER CODE
+CONTAINED HEREIN FOR REVENUE-BEARING PURPOSES.  THE END-USER UNDERSTANDS
+AND AGREES TO THE TERMS HEREIN AND ACCEPTS THE SAME BY USE OF THIS FILE.
+COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
+*/
+
+/*
+ *
+ * Small D1-in-D2 gameplay policy helpers.
+ *
+ */
+
+#include "d1_in_d2_semantics.h"
+
+#include <stdio.h>
+#include "d1_in_d2.h"
+#include "d1_in_d2_ai.h"
+#include "bm.h"
+#include "ai.h"
+#include "fireball.h"
+#include "fvi.h"
+#include "game.h"
+#include "gameseg.h"
+#include "object.h"
+#include "player.h"
+#include "powerup.h"
+#include "piggy.h"
+#include "rle.h"
+#include "textures.h"
+#include "texmerge.h"
+#include "wall.h"
+#include "weapon.h"
+#include "input_demo_hooks.h"
+#include "input_demo_debug_logging.h"
+#include "input_demo_replay.h"
+
+fix d1_in_d2_pickup_boost(fix base_boost)
+{
+	return !d1_in_d2_use_d1_gameplay() && Difficulty_level == 0 ? base_boost + base_boost / 2 : base_boost;
+}
+
+fix d1_in_d2_contact_damage(fix damage)
+{
+	return !d1_in_d2_use_d1_gameplay() && Difficulty_level == 0 ? damage / 2 : damage;
+}
+
+fix d1_in_d2_blast_damage(fix damage)
+{
+	return !d1_in_d2_use_d1_gameplay() && Difficulty_level == 0 ? damage / 4 : damage;
+}
+
+int d1_in_d2_robot_contact_allowed(const object *robot)
+{
+	return d1_in_d2_ai_actor_role(robot) == D1_AI_NATIVE_ENEMY || !(robot->flags & OF_EXPLODING);
+}
+
+int d1_in_d2_robot_pair_collides(const object *first, const object *second)
+{
+	/* Native D1 collides two melee robots. D2 disabled this to avoid clumping */
+	return d1_in_d2_ai_actor_role(first) == D1_AI_NATIVE_ENEMY &&
+	       d1_in_d2_ai_actor_role(second) == D1_AI_NATIVE_ENEMY &&
+	       Robot_info[first->id].attack_type && Robot_info[second->id].attack_type;
+}
+
+static int uses_native_physics(const object *obj)
+{
+	return d1_in_d2_use_d1_gameplay() &&
+	       (obj->type != OBJ_ROBOT || d1_in_d2_ai_actor_role(obj) == D1_AI_NATIVE_ENEMY);
+}
+
+int d1_in_d2_bounce_preserves_velocity(const object *obj)
+{
+	return !uses_native_physics(obj);
+}
+
+int d1_in_d2_door_wait_elapsed(const active_door *door)
+{
+	return d1_in_d2_use_d1_gameplay() ? door->time > DOOR_WAIT_TIME : -1;
+}
+
+int d1_in_d2_door_close_blocked(const active_door *door)
+{
+	int part;
+	const wall *front;
+	if (!d1_in_d2_use_d1_gameplay())
+		return -1;
+	front = &Walls[door->front_wallnum[0]];
+	if (!(front->flags & WALL_DOOR_AUTO))
+		return 0;
+	/* Native D1 checks the first doorway for linked parts, including weapons
+	 * and fireballs. Preserve that source behavior rather than D2's reopen rule */
+	for (part = 0; part < door->n_parts; ++part) {
+		segment *seg = &Segments[front->segnum];
+		segment *connected = &Segments[seg->children[front->sidenum]];
+		int back_side = find_connect_side(seg, connected);
+		int objnum;
+		for (objnum = seg->objects; objnum != -1; objnum = Objects[objnum].next)
+			if (check_poke(objnum, seg - Segments, front->sidenum))
+				return 1;
+		for (objnum = connected->objects; objnum != -1; objnum = Objects[objnum].next)
+			if (check_poke(objnum, connected - Segments, back_side))
+				return 1;
+	}
+	return 0;
+}
+
+/* Native d1/main/fireball.c::maybe_replace_powerup_with_energy, using the
+ * shared nearby-object query and existing player inventory */
+int d1_in_d2_replace_powerup(object *del_obj)
+{
+	int weapon_index = -1;
+	if (!d1_in_d2_use_d1_gameplay())
+		return 0;
+	if (del_obj->contains_type != OBJ_POWERUP)
+		return 1;
+	if (del_obj->contains_id == POW_CLOAK) {
+		if (weapon_nearby(del_obj, del_obj->contains_id))
+			del_obj->contains_count = 0;
+		return 1;
+	}
+	switch (del_obj->contains_id) {
+		case POW_VULCAN_WEAPON: weapon_index = VULCAN_INDEX; break;
+		case POW_SPREADFIRE_WEAPON: weapon_index = SPREADFIRE_INDEX; break;
+		case POW_PLASMA_WEAPON: weapon_index = PLASMA_INDEX; break;
+		case POW_FUSION_WEAPON: weapon_index = FUSION_INDEX; break;
+	}
+	// Don't drop vulcan ammo if player maxed out
+	if (((weapon_index == VULCAN_INDEX) || del_obj->contains_id == POW_VULCAN_AMMO) &&
+	    Players[Player_num].primary_ammo[VULCAN_INDEX] >= VULCAN_AMMO_MAX)
+		del_obj->contains_count = 0;
+	else if (weapon_index != -1) {
+		if ((player_has_weapon(Player_num, weapon_index, 0) & HAS_WEAPON_FLAG) || weapon_nearby(del_obj, del_obj->contains_id)) {
+			// SIM RNG: decides whether any duplicate-weapon replacement drops
+			if (d_rand() > 16384) {
+				del_obj->contains_count = 1;
+				del_obj->contains_type = OBJ_POWERUP;
+				del_obj->contains_id = weapon_index == VULCAN_INDEX ? POW_VULCAN_AMMO : POW_ENERGY;
+			} else
+				del_obj->contains_count = 0;
+		}
+	} else if (del_obj->contains_id == POW_QUAD_FIRE) {
+		if ((Players[Player_num].flags & PLAYER_FLAGS_QUAD_LASERS) || weapon_nearby(del_obj, del_obj->contains_id)) {
+			// SIM RNG: decides whether the duplicate-quad replacement drops
+			if (d_rand() > 16384) {
+				del_obj->contains_count = 1;
+				del_obj->contains_type = OBJ_POWERUP;
+				del_obj->contains_id = POW_ENERGY;
+			} else
+				del_obj->contains_count = 0;
+		}
+	}
+	// Gated robots must not fill the boss room with energy
+	if (del_obj->matcen_creator == BOSS_GATE_MATCEN_NUM &&
+	    del_obj->contains_id == POW_ENERGY && del_obj->contains_type == OBJ_POWERUP)
+		del_obj->contains_count = 0;
+	// Change multiplayer extra-lives into invulnerability
+	if ((Game_mode & GM_MULTI) && del_obj->contains_id == POW_EXTRA_LIFE)
+		del_obj->contains_id = POW_INVULNERABILITY;
+	return 1;
+}
+
+int d1_in_d2_reactor_countdown(int engine_seconds)
+{
+	return d1_in_d2_use_d1_gameplay() ? 50 - 5*Difficulty_level : engine_seconds;
+}
+
+int d1_in_d2_use_d2_resource_drop_suppression(const object *objp, int game_mode)
+{
+	return objp && !d1_in_d2_use_d1_gameplay() &&
+	       !(game_mode & GM_MULTI) && objp->type != OBJ_PLAYER;
+}
+
+vms_vector *d1_in_d2_badass_explosion_pos(object *weapon, vms_vector *collision_point)
+{
+	return d1_in_d2_use_d1_gameplay() ? &weapon->pos : collision_point;
+}
+
+vms_vector *d1_in_d2_prepare_player_explosion_pos(object *weapon, vms_vector *collision_point)
+{
+	if (d1_in_d2_use_d1_gameplay()) {
+		weapon->pos.x = collision_point->x;
+		weapon->pos.y = collision_point->y;
+		weapon->pos.z = collision_point->z;
+		return &weapon->pos;
+	}
+
+	return collision_point;
+}
+
+int d1_in_d2_integrate_rotation(object *obj, int count, fix k, fix drag)
+{
+	vms_vector accel;
+	if (!uses_native_physics(obj))
+		return 0;
+
+	if (obj->mtype.phys_info.flags & PF_USES_THRUST)
+		vm_vec_copy_scale(&accel,&obj->mtype.phys_info.rotthrust,fixdiv(f1_0,obj->mtype.phys_info.mass));
+
+	while (count--) {
+		if (obj->mtype.phys_info.flags & PF_USES_THRUST)
+			vm_vec_add2(&obj->mtype.phys_info.rotvel,&accel);
+
+		vm_vec_scale(&obj->mtype.phys_info.rotvel,f1_0-drag);
+	}
+
+	if (obj->mtype.phys_info.flags & PF_USES_THRUST)
+		vm_vec_scale_add2(&obj->mtype.phys_info.rotvel,&accel,k);
+	vm_vec_scale(&obj->mtype.phys_info.rotvel,f1_0-fixmul(k,drag));
+	return 1;
+}
+
+int d1_in_d2_robot_rotational_hit(object *obj, vms_vector *force_vec, fix rate, fix vecmag)
+{
+	int skip_before;
+	if (!uses_native_physics(obj))
+		return 0;
+	skip_before = obj->ctype.ai_info.SKIP_AI_COUNT;
+
+	obj->ctype.ai_info.SKIP_AI_COUNT = 2;
+	input_demo_record_phys_apply_rot_event(obj, force_vec,
+		skip_before, 2 - skip_before,
+		obj->ctype.ai_info.SKIP_AI_COUNT, rate, vecmag, 0);
+	input_demo_note_ai_schedule_phys_skip(obj, skip_before,
+		obj->ctype.ai_info.SKIP_AI_COUNT);
+	return 1;
+}
+
+void d1_in_d2_note_physics_result(const object *obj, const vms_vector *start,
+	int fate, int stopped, int bounced)
+{
+	if (d1_in_d2_use_d1_gameplay() && input_demo_debug_activity_probe_active() &&
+		obj->type == OBJ_ROBOT && ConsoleObject &&
+		vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos) < F1_0 * 100 &&
+		((fate == HIT_WALL) || (fate == HIT_OBJECT) || (fate == HIT_BAD_P0))) {
+		vms_vector moved_vec;
+		vms_vector movement_velocity;
+		vm_vec_sub(&moved_vec, &obj->pos, start);
+		vm_vec_copy_scale(&movement_velocity, &moved_vec, fixdiv(f1_0, FrameTime));
+		input_demo_debug_printf(
+			"Input demo d1-in-d2 physics final: mode=%s frame=%u gt=%lld obj=%d/%d sig=%d fate=%d stopped=%d bounced=%d pos=(%d,%d,%d) start=(%d,%d,%d) vel=(%d,%d,%d) movement_vel=(%d,%d,%d)\n",
+			input_demo_debug_activity_mode_name(), input_demo_debug_frame_index(),
+			(long long)GameTime64, (int)(obj - Objects), obj->id, obj->signature,
+			fate, stopped, bounced, obj->pos.x, obj->pos.y, obj->pos.z,
+			start->x, start->y, start->z, obj->mtype.phys_info.velocity.x,
+			obj->mtype.phys_info.velocity.y, obj->mtype.phys_info.velocity.z,
+			movement_velocity.x, movement_velocity.y, movement_velocity.z);
+	}
+}
+
+static int input_demo_fvi_boundary_probe_active(short objnum)
+{
+	object *objp;
+
+	if (!input_demo_replay_is_loaded() || !d1_in_d2_use_d1_gameplay() ||
+		!input_demo_debug_activity_probe_active() ||
+		objnum < 0 || objnum > Highest_object_index)
+		return 0;
+	objp = &Objects[objnum];
+	return objp->type == OBJ_WEAPON &&
+		objp->ctype.laser_info.parent_type == OBJ_PLAYER &&
+		!(objp->flags & (OF_SHOULD_BE_DEAD | OF_HARMLESS));
+}
+
+void d1_in_d2_note_wall_boundary(short objnum, int startseg, int side,
+	int face, int face_hit_type, int wid_flag, int startmask, int endmask,
+	int centermask, int flags, const vms_vector *p0, const vms_vector *p1,
+	const vms_vector *hit_point, fix rad)
+{
+	char probe[900];
+	segment *seg = &Segments[startseg];
+	int wall_num = seg->sides[side].wall_num;
+	int wall_type = -1;
+	int wall_state = -1;
+	int wall_flags = 0;
+
+	if (!input_demo_fvi_boundary_probe_active(objnum))
+		return;
+	if (wall_num >= 0 && wall_num < Num_walls) {
+		wall_type = Walls[wall_num].type;
+		wall_state = Walls[wall_num].state;
+		wall_flags = Walls[wall_num].flags;
+	}
+	snprintf(probe, sizeof(probe),
+		"start_seg=%d side=%d face=%d face_hit_type=%d wid=0x%x child=%d wall=%d wall_type=%d wall_state=%d wall_flags=0x%x startmask=0x%x endmask=0x%x centermask=0x%x flags=0x%x rad=%d p0=(%d,%d,%d) p1=(%d,%d,%d) hit=(%d,%d,%d)",
+		startseg, side, face, face_hit_type, wid_flag,
+		seg->children[side], wall_num, wall_type, wall_state, wall_flags,
+		startmask, endmask, centermask, flags, rad,
+		p0->x, p0->y, p0->z,
+		p1->x, p1->y, p1->z,
+		hit_point->x, hit_point->y, hit_point->z);
+	input_demo_append_replay_probe_message("fvi_boundary", &Objects[objnum], probe);
+}
+
+static int d1_in_d2_check_trans_wall(vms_vector *pnt, segment *seg, int sidenum,
+	int facenum, short objnum)
+{
+	grs_bitmap *bm;
+	side *side = &seg->sides[sidenum];
+	int bmx, bmy;
+	int direct_pixel, gpixel;
+	fix u, v;
+
+	find_hitpoint_uv(&u, &v, NULL, pnt, seg, sidenum, facenum);
+
+	if (side->tmap_num2 != 0) {
+		bm = texmerge_get_cached_bitmap(side->tmap_num, side->tmap_num2);
+	} else {
+		bm = &GameBitmaps[Textures[side->tmap_num].index];
+		PIGGY_PAGE_IN(Textures[side->tmap_num]);
+	}
+
+	if (bm->bm_flags & BM_FLAG_RLE)
+		bm = rle_expand_texture(bm);
+
+	bmx = ((unsigned)f2i(u * bm->bm_w)) % bm->bm_w;
+	bmy = ((unsigned)f2i(v * bm->bm_h)) % bm->bm_h;
+	direct_pixel = bm->bm_data[bmy * bm->bm_w + bmx];
+	gpixel = gr_gpixel(bm, bmx, bmy);
+	if (input_demo_fvi_boundary_probe_active(objnum)) {
+		char probe[512];
+		int wall_num = side->wall_num;
+		int clip_num = -1;
+		int clip_flags = 0;
+		int clip_frame0 = -1;
+
+		if (wall_num >= 0 && wall_num < Num_walls) {
+			clip_num = Walls[wall_num].clip_num;
+			if (clip_num >= 0 && clip_num < Num_wall_anims) {
+				clip_flags = WallAnims[clip_num].flags;
+				clip_frame0 = WallAnims[clip_num].frames[0];
+			}
+		}
+
+		snprintf(probe, sizeof(probe),
+			"seg=%d side=%d face=%d tmap=%d tmap2=%d wall=%d clip=%d clip_flags=0x%x clip_frame0=%d num_wall_anims=%d u=%d v=%d bmx=%d bmy=%d bm_w=%d bm_h=%d rowsize=%d flags=0x%x type=%d direct=%d gpixel=%d transparent=%d p=(%d,%d,%d)",
+			(int)(seg - Segments), sidenum, facenum,
+			side->tmap_num, side->tmap_num2, wall_num, clip_num, clip_flags,
+			clip_frame0, Num_wall_anims, u, v, bmx, bmy,
+			bm->bm_w, bm->bm_h, bm->bm_rowsize, bm->bm_flags, bm->bm_type,
+			direct_pixel, gpixel, gpixel == TRANSPARENCY_COLOR,
+			pnt->x, pnt->y, pnt->z);
+		input_demo_append_replay_probe_message("trans_wall_pixel",
+			&Objects[objnum], probe);
+	}
+
+	return gpixel == TRANSPARENCY_COLOR;
+}
+
+int d1_in_d2_transparent_wall_crossable(int wid_flag, segment *seg,
+	int side, int flags, vms_vector *hit_point, int face, short objnum)
+{
+	if (wid_flag != WID_TRANSPARENT_WALL)
+		return 0;
+	if (flags & FQ_TRANSWALL)
+		return 1;
+	if (!(flags & FQ_TRANSPOINT))
+		return 0;
+	/* Native D1 samples the visible pixels, including on a closed door */
+	return d1_in_d2_check_trans_wall(hit_point, seg, side, face, objnum);
+}

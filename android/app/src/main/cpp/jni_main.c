@@ -289,12 +289,17 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	char *resume_save_path = NULL;
 	char *resume_callsign = NULL;
 	char *pilot_callsign = NULL;
+	char *startup_profile = NULL;
 	char *argv_startup[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 	int argc = 1;
 	androidInit.jnienv = (void *) env;
 	androidInit.context = (void *) thiz; /* Activity is a valid Context */
 
 	argv_startup[0] = (char *) &androidInit;
+	startup_profile = android_consume_activity_string(env, thiz, "consumeStartupProfile");
+	if ((*env)->ExceptionCheck(env)) goto startup_failed;
+	if (startup_profile)
+		argv_startup[argc++] = startup_profile;
 	pilot_callsign = android_consume_activity_string(env, thiz, "consumePilotCallsign");
 	if ((*env)->ExceptionCheck(env)) goto startup_failed;
 	input_demo_replay_path = android_consume_activity_string(env, thiz, "consumeInputDemoReplayPath");
@@ -342,6 +347,7 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	free(resume_save_path);
 	free(resume_callsign);
 	free(pilot_callsign);
+	free(startup_profile);
 
 	atomic_store(&g_engine_state, ANDROID_ENGINE_TERMINATING);
 
@@ -369,6 +375,7 @@ startup_failed:
 	free(resume_save_path);
 	free(resume_callsign);
 	free(pilot_callsign);
+	free(startup_profile);
 	atomic_store(&g_engine_state, ANDROID_ENGINE_IDLE);
 }
 

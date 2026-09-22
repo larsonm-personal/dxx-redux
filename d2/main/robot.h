@@ -101,10 +101,12 @@ typedef struct robot_info {
 	sbyte   cloak_type;     //  0=never, 1=always, 2=except-when-firing
 	sbyte   attack_type;    //  0=firing, 1=charge (like green guy)
 
-	ubyte   see_sound;      //  sound robot makes when it first sees the player
-	ubyte   attack_sound;   //  sound robot makes when it attacks the player
-	ubyte   claw_sound;     //  sound robot makes as it claws you (attack_type should be 1)
-	ubyte   taunt_sound;    //  sound robot makes after you die
+	/* Runtime sound references may extend beyond the original byte namespace
+	 * HAM/HXM readers and writers retain their original 480-byte disk layout */
+	short   see_sound;      //  sound robot makes when it first sees the player
+	short   attack_sound;   //  sound robot makes when it attacks the player
+	short   claw_sound;     //  sound robot makes as it claws you (attack_type should be 1)
+	short   taunt_sound;    //  sound robot makes after you die
 
 	sbyte   boss_flag;      //  0 = not boss, 1 = boss.  Is that surprising?
 	sbyte   companion;      //  Companion robot, leads you to things.
@@ -120,7 +122,7 @@ typedef struct robot_info {
 	ubyte   flags;          // misc properties
 	ubyte   pad[3];         // alignment
 
-	ubyte   deathroll_sound;    // if has deathroll, what sound?
+	short   deathroll_sound;    // if has deathroll, what sound?
 	ubyte   glow;               // apply this light to robot itself. stored as 4:4 fixed-point
 	ubyte   behavior;           //  Default behavior.
 	ubyte   aim;                //  255 = perfect, less = more likely to miss.  0 != random, would look stupid.  0=45 degree spread.  Specify in bitmaps.tbl in range 0.0..1.0
@@ -179,6 +181,8 @@ extern int robot_get_anim_state(const jointpos **jp_list_ptr,int robot_type,int 
  * reads n robot_info structs from a PHYSFS_file
  */
 extern int robot_info_read_n(robot_info *ri, int n, PHYSFS_file *fp);
+/* Writes original disk records, rejecting unrepresentable runtime references */
+int robot_info_write_n(const robot_info *ri, int n, PHYSFS_file *fp);
 
 /*
  * reads n jointpos structs from a PHYSFS_file

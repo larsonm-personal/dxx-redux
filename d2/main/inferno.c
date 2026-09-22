@@ -81,6 +81,7 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "songs.h"
 #include "gameseq.h"
 #include "gamepal.h"
+#include "d1_in_d2/d1_in_d2.h"
 #include "movie.h"
 #include "playsave.h"
 #include "state.h"
@@ -141,6 +142,8 @@ void print_commandline_help()
 	printf( "  -nonicefps                    Don't free CPU-cycles\n");
 	printf( "  -maxfps <n>                   Set maximum framerate to <n>\n\t\t\t\t(default: %i, availble: 1-%i)\n", MAXIMUM_FPS, MAXIMUM_FPS);
 	printf( "  -hogdir <s>                   set shared data directory to <s>\n");
+	printf( "  -d1                          Start with original Descent 1 resources\n");
+	printf( "  -d2                          Start with Descent 2 resources\n");
 	printf( "  -nohogdir                     don't try to use shared data directory\n");
 	printf( "  -use_players_dir              put player files and saved games in Players subdirectory\n");
 	printf( "  -lowmem                       Lowers animation detail for better performance with\n\t\t\t\tlow memory\n");
@@ -452,8 +455,7 @@ int main(int argc, char *argv[])
 
 	CHECKPOINT("searching for hog files");
 
-	if (! PHYSFSX_contfile_init("descent2.hog", 1) &&
-		! PHYSFSX_contfile_init("d2demo.hog", 1)) {
+	if (!d1_in_d2_init_base_resources(startup_find_cmd_arg("-d1") ? 1 : startup_find_cmd_arg("-d2") ? 2 : 0)) {
 		char path[PATH_MAX];
 		snprintf(path, sizeof(path), "%s", PHYSFS_getWriteDir());
 		size_t len = strlen(path);
@@ -462,7 +464,7 @@ int main(int argc, char *argv[])
 		else if (len && (path[len - 1] == '/' || path[len - 1] == '\\'))
 			path[len - 1] = 0;
 #define DXX_NAME_NUMBER	"2"
-#define DXX_HOGFILE_NAMES	"descent2.hog or d2demo.hog"
+#define DXX_HOGFILE_NAMES	"descent.hog with descent.pig, descent2.hog, or d2demo.hog"
 #if defined(__APPLE__)
 #define DXX_HOGFILE_PROGRAM_DATA_DIRECTORY	\
 			      "\t%s\n" \
@@ -507,10 +509,10 @@ int main(int argc, char *argv[])
 
 	PHYSFSX_addArchiveContent();
 	if (startup_find_cmd_arg("-classicdemo-dump-json")) {
-		gr_use_palette_table(D2_DEFAULT_PALETTE);
+		gr_use_palette_table(d1_in_d2_startup_palette());
 		gamedata_init();
 		texmerge_init(10);
-		piggy_init_pigfile("groupa.pig");
+		d1_in_d2_init_startup_bitmaps();
 		init_game();
 		return maybe_dump_classic_demo_json();
 	}
@@ -530,7 +532,7 @@ int main(int argc, char *argv[])
 
 	// Load the palette stuff. Returns non-zero if error.
 	con_printf(CON_DEBUG, "Initializing palette system...\n" );
-	gr_use_palette_table(D2_DEFAULT_PALETTE );
+	gr_use_palette_table(d1_in_d2_startup_palette());
 	CHECKPOINT("palette loaded");
 
 	con_printf(CON_DEBUG, "Initializing font system...\n" );
@@ -548,7 +550,8 @@ int main(int argc, char *argv[])
 #endif
 
 	con_printf( CON_DEBUG, "Initializing movie libraries...\n" );
-	init_movies();		//init movie libraries
+	if (!d1_in_d2_use_d1_gameplay())
+		init_movies();		//init movie libraries
 	CHECKPOINT("movies init done");
 
 	if (!startup_find_cmd_arg("-resume-save")
@@ -581,7 +584,7 @@ int main(int argc, char *argv[])
 	texmerge_init( 10 );		// 10 cache bitmaps
 
 	CHECKPOINT("piggy_init_pigfile start");
-	piggy_init_pigfile("groupa.pig");	//get correct pigfile
+	d1_in_d2_init_startup_bitmaps();
 	CHECKPOINT("piggy_init_pigfile done");
 
 	con_printf( CON_DEBUG, "\nRunning game...\n" );

@@ -98,6 +98,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_input_demo_explicit_path'
             'test_input_demo_host_build_guard'
             'test_input_demo_regressions'
+            'test_input_demo_replay_menu'
             'test_input_demo_rng_trace_compare'
             'test_input_demo_runtime_smoke'
             'test_input_demo_state_trace_compare'

@@ -32,6 +32,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "text.h"
 #include "ai.h"
+#include "d1_in_d2/d1_in_d2_ai.h"
 #include "fireball.h"
 #include "aistruct.h"
 #include "robot.h"
@@ -1426,6 +1427,7 @@ multi_do_boss_actions(const ubyte *buf)
 			}
 			break;
 		case 2: // Cloak
+			d1_in_d2_ai_restore_boss_hit(0);
 			Boss_hit_time = -F1_0*10;
 			Boss_cloak_start_time = GameTime64;
 			Boss_cloak_end_time = GameTime64 + Boss_cloak_duration;
@@ -1441,8 +1443,9 @@ multi_do_boss_actions(const ubyte *buf)
 				}
 
 				// Gate one in!
-				if (gate_in_robot(secondary, segnum))
-					map_objnum_local_to_remote(Net_create_objnums[0], remote_objnum, pnum);
+				const int created = gate_in_robot(secondary, segnum);
+				if (created >= 0)
+					map_objnum_local_to_remote(created, remote_objnum, pnum);
 			}
 			break;
 		case 4: // Start effect

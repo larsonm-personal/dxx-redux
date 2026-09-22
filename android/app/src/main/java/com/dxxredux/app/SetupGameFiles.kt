@@ -130,8 +130,9 @@ internal fun launchDataReadyForGame(
     manifest: AssetManifest,
     safManifest: SafManifest,
 ): Boolean {
-    if (game == "d1" && isD1TestFlightSet(setDir, manifest, safManifest)) return false
-    val fileList = if (game == "d1") D1_FILES else detectD2FileList(setDir, safManifest)
+    val content = GameLaunchTarget.fromId(game).content
+    if (content == "d1" && isD1TestFlightSet(setDir, manifest, safManifest)) return false
+    val fileList = if (content == "d1") D1_FILES else detectD2FileList(setDir, safManifest)
     return checkFiles(setDir, fileList, manifest, safManifest)
         .filter { it.info.required }
         .all { it.found }
@@ -148,9 +149,9 @@ internal fun d1InD2Readiness(
     val needed = ModManager(filesDir, setDir = setDir).hasEnabledD1MissionZipForD2()
     return D1InD2Readiness(
         needed = needed,
-        ready = !needed || (d2Ready && d1Ready),
+        ready = d1Ready,
         degraded = needed && d2Ready && !d1Ready,
-        blocked = needed && !d2Ready,
+        blocked = !d1Ready && !d2Ready,
         d2Ready = d2Ready,
         d1AssetsReady = d1Ready,
         d1AssetStatuses = checkFiles(setDir, D1_FILES, manifest, safManifest),

@@ -42,7 +42,7 @@
 #include "input_demo_start_shared.h"
 
 #ifdef DXX_BUILD_DESCENT_II
-#include "d1_save_translate.h"
+#include "d1_in_d2/d1_save_translate.h"
 extern int state_restore_all_sub(char *filename, int multi);
 #else
 extern int state_restore_all_sub(char *filename);

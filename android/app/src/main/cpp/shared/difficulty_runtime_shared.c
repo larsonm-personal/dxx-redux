@@ -11,6 +11,9 @@
 #include "screens.h"
 #include "text.h"
 #include "window.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "d1_in_d2/d1_in_d2_ai.h"
+#endif
 
 extern fix Gate_interval;
 #ifdef DXX_BUILD_DESCENT_II
@@ -29,7 +32,7 @@ static int difficulty_clamp(int difficulty)
 void difficulty_refresh_runtime_parameters(void)
 {
 #ifdef DXX_BUILD_DESCENT_II
-	Gate_interval = F1_0 * 4 - Difficulty_level * i2f(2) / 3;
+	Gate_interval = d1_in_d2_ai_gate_interval(F1_0 * 4 - Difficulty_level * i2f(2) / 3);
 	Boss_invulnerable_dot = F1_0 / 4 - i2f(Difficulty_level) / 8;
 #else
 	Gate_interval = F1_0 * 5 - Difficulty_level * F1_0 / 2;

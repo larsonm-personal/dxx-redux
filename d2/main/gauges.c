@@ -29,6 +29,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "game.h"
 #include "screens.h"
 #include "gauges.h"
+#include "d1_in_d2/d1_in_d2_cockpit.h"
 #include "physics.h"
 #include "dxxerror.h"
 #include "menu.h"			// For the font.
@@ -1831,6 +1832,8 @@ void cockpit_decode_alpha(grs_bitmap *bm)
 
 void draw_wbu_overlay()
 {
+	if (d1_in_d2_draw_cockpit_window_overlay())
+		return;
 	unsigned cockpit_idx = PlayerCfg.CurrentCockpitMode+(HIRESMODE?(Num_cockpits/2):0);
 	PIGGY_PAGE_IN(cockpit_bitmap[cockpit_idx]);
 	grs_bitmap *bm = &GameBitmaps[cockpit_bitmap[cockpit_idx].index];
@@ -1845,6 +1848,7 @@ void draw_wbu_overlay()
 
 void close_gauges()
 {
+	d1_in_d2_close_cockpit();
 	if (WinBoxOverlay[0] != NULL)
 		gr_free_sub_bitmap(WinBoxOverlay[0]);
 	if (WinBoxOverlay[1] != NULL)
@@ -1855,6 +1859,7 @@ void close_gauges()
 
 void init_gauges()
 {
+	d1_in_d2_reset_cockpit();
 	old_laser_level	= 0;
 
 	old_weapon[0] = old_weapon[1] = -1;
@@ -4854,6 +4859,8 @@ void draw_hud()
 //print out some player statistics
 void render_gauges()
 {
+	if (d1_in_d2_render_gauges(&score_display, &score_time))
+		return;
 	int pnum = get_pnum_for_hud();
 
 	int energy = f2ir(Players[pnum].energy);
@@ -5012,7 +5019,7 @@ void do_cockpit_window_view(int win,object *viewer,int rear_view_flag,int user,c
 
 		gr_init_sub_canvas(&window_canv,&grd_curscreen->sc_canvas,window_x,window_y,w,h);
 	}
-	else {
+	else if (!d1_in_d2_cockpit_window_canvas(win, &window_canv)) {
 		if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT)
 			boxnum = (COCKPIT_PRIMARY_BOX)+win;
 		else if (PlayerCfg.CurrentCockpitMode == CM_STATUS_BAR)

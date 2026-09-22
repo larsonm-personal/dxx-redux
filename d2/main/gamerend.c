@@ -37,6 +37,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "robot.h"
 #include "game.h"
 #include "gauges.h"
+#include "d1_in_d2/d1_in_d2_cockpit.h"
 #include "gamefont.h"
 #include "newdemo.h"
 #include "text.h"
@@ -1091,7 +1092,7 @@ void update_cockpits()
 {
 	if (is_observer() && !can_draw_observer_cockpit()) {
 		// Do not draw cockpit.
-	} else {
+	} else if (!d1_in_d2_draw_cockpit()) {
 		grs_bitmap *bm;
 
 		if (PlayerCfg.CurrentCockpitMode < N_COCKPIT_BITMAPS/2) {

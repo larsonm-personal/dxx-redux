@@ -61,8 +61,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fuelcen.h"
 #include "controls.h"
 #include "kconfig.h"
-#include "d1_in_d2.h"
-#include "d1_in_d2_semantics.h"
+#include "d1_in_d2/d1_in_d2_ai.h"
 #include "input_demo_hooks.h"
 #include "route_confirmation.h"
 #ifdef __ANDROID__
@@ -248,6 +247,15 @@ static const sbyte Ai_transition_table[AI_MAX_EVENT][AI_MAX_STATE][AI_MAX_STATE]
 fix Dist_to_last_fired_upon_player_pos = 0;
 
 // ----------------------------------------------------------------------------
+/* Both native games use the same event/state transition table */
+int ai_transition_goal(int awareness, int current, int goal)
+{
+	Assert(awareness > 0 && awareness <= AI_MAX_EVENT);
+	Assert(current >= 0 && current < AI_MAX_STATE);
+	Assert(goal >= 0 && goal < AI_MAX_STATE);
+	return Ai_transition_table[awareness - 1][current][goal];
+}
+
 void init_ai_frame(void)
 {
 	int ab_state;
@@ -271,8 +279,6 @@ void init_ai_frame(void)
 // Ready to fire a weapon if next_fire <= 0 or next_fire2 <= 0.
 int ready_to_fire(robot_info *robptr, ai_local *ailp)
 {
-	if (d1_in_d2_use_d1_gameplay())
-		return (ailp->next_fire <= 0);
 	if (robptr->weapon_type2 != -1)
 		return (ailp->next_fire <= 0) || (ailp->next_fire2 <= 0);
 	else
@@ -309,33 +315,6 @@ void make_nearby_robot_snipe(void)
 }
 
 int Ai_last_missile_camera = -1;
-
-static void d1_in_d2_ai_turn_randomly(vms_vector *vec_to_player, object *obj, fix rate,
-	int previous_visibility)
-{
-	vms_vector curvec;
-
-	if (previous_visibility)
-		if (d_rand() > 0x7400) {
-			ai_turn_towards_vector(vec_to_player, obj, rate);
-			return;
-		}
-
-	curvec = obj->mtype.phys_info.rotvel;
-	curvec.y += F1_0/64;
-	curvec.x += curvec.y/6;
-	curvec.y += curvec.z/4;
-	curvec.z += curvec.x/10;
-
-	if (abs(curvec.x) > F1_0/8)
-		curvec.x /= 4;
-	if (abs(curvec.y) > F1_0/8)
-		curvec.y /= 4;
-	if (abs(curvec.z) > F1_0/8)
-		curvec.z /= 4;
-
-	obj->mtype.phys_info.rotvel = curvec;
-}
 
 // --------------------------------------------------------------------------------------------------------------------
 void do_ai_frame(object *obj)
@@ -375,20 +354,15 @@ void do_ai_frame(object *obj)
 	    Escort_owner_player == Player_num ||
 	        (Escort_owner_player == -1 && multi_i_am_master()));
 #endif
-	if (!d1_in_d2_use_d1_gameplay())
-		ailp->next_action_time -= FrameTime;
+	if (d1_in_d2_ai_run_frame(obj))
+		return;
+	ailp->next_action_time -= FrameTime;
 
 	if (aip->SKIP_AI_COUNT) {
 		input_demo_note_ai_schedule_skip_return(obj);
 		input_demo_log_ai_schedule_probe("skip_return_pre", obj, aip, ailp, 0,
 			ailp->previous_visibility, -1);
-		if (d1_in_d2_use_d1_gameplay() &&
-			(ailp->previous_visibility || ailp->player_awareness_type) &&
-			(aip->behavior != AIB_STILL) &&
-			(aip->behavior != AIB_SNIPE) &&
-			(aip->behavior != AIB_RUN_FROM) &&
-			(obj->id != ROBOT_BRAIN))
-			ailp->mode = AIM_CHASE_OBJECT;
+
 		aip->SKIP_AI_COUNT--;
 		if (obj->mtype.phys_info.flags & PF_USES_THRUST) {
 			obj->mtype.phys_info.rotthrust.x = (obj->mtype.phys_info.rotthrust.x * 15)/16;
@@ -417,7 +391,7 @@ void do_ai_frame(object *obj)
 	// Else, you can turn a big nasty robot into a wimp by firing flares at it.
 	// This also allows the player to see the cool flinch effect for mechs without unbalancing the game.
 	if ((aip->GOAL_STATE == AIS_FLIN) &&
-	    (d1_in_d2_use_d1_gameplay() ? (ailp->next_fire < 0) : ready_to_fire(robptr, ailp))) {
+	    ready_to_fire(robptr, ailp)) {
 		aip->GOAL_STATE = AIS_FIRE;
 	}
 
@@ -511,7 +485,7 @@ _exit_cheat:
 
 	// If this robot can fire, compute visibility from gun position.
 	// Don't want to compute visibility twice, as it is expensive.  (So is call to calc_gun_point).
-	if ((d1_in_d2_use_d1_gameplay() || previous_visibility || !(obj_ref & 3)) &&
+	if ((previous_visibility || !(obj_ref & 3)) &&
 	    ready_to_fire(robptr, ailp) && (dist_to_player < F1_0*200) &&
 	    (robptr->n_guns) && !(robptr->attack_type)) {
 		// Since we passed ready_to_fire(), either next_fire or next_fire2 <= 0.  calc_gun_point from relevant one.
@@ -613,10 +587,7 @@ _exit_cheat:
 					create_path_to_player(obj, 4 + Overall_agitation/8 + Difficulty_level, 1);
 					break;
 				case AIM_STILL:
-					if (d1_in_d2_use_d1_gameplay()) {
-						if (!((aip->behavior == AIB_STILL) || (aip->behavior == AIB_STATION)))
-							attempt_to_resume_path(obj);
-					} else if (robptr->attack_type)
+					if (robptr->attack_type)
 						move_towards_segment_center(obj);
 					else if (!((aip->behavior == AIB_STILL) || (aip->behavior == AIB_STATION) || (aip->behavior == AIB_FOLLOW)))    // Behavior is still, so don't follow path.
 						attempt_to_resume_path(obj);
@@ -658,10 +629,7 @@ _exit_cheat:
 	// - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  -
 	// If in materialization center, exit
 	if (!(Game_mode & GM_MULTI) && (Segment2s[obj->segnum].special == SEGMENT_IS_ROBOTMAKER)) {
-		if (d1_in_d2_use_d1_robot_aiming()) {
-			ai_follow_path(obj, 1, 1, NULL);    // 1 = player is visible, which might be a lie, but it works.
-			return;
-		} else if (Station[Segment2s[obj->segnum].value].Enabled) {
+		if (Station[Segment2s[obj->segnum].value].Enabled) {
 			ai_follow_path(obj, 1, 1, NULL);    // 1 = player is visible, which might be a lie, but it works.
 			return;
 		}
@@ -716,16 +684,10 @@ _exit_cheat:
 
 	// Make sure that if this guy got hit or bumped, then he's chasing player.
 	if ((ailp->player_awareness_type == PA_WEAPON_ROBOT_COLLISION) || (ailp->player_awareness_type >= PA_PLAYER_COLLISION)) {
-		if (d1_in_d2_use_d1_gameplay()) {
-			// AIB_SNIPE is the same numeric value as D1's AIB_FOLLOW_PATH.
-			if ((aip->behavior != AIB_STILL) && (aip->behavior != AIB_SNIPE) && (aip->behavior != AIB_RUN_FROM) && (obj->id != ROBOT_BRAIN))
-				ailp->mode = AIM_CHASE_OBJECT;
-		} else {
-			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
-			if (player_visibility == 1) // Only increase visibility if unobstructed, else claw guys attack through doors.
-				player_visibility = 2;
-		}
-	} else if (!d1_in_d2_use_d1_robot_aiming() && ((obj_ref&3) == 0) &&
+		compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
+		if (player_visibility == 1) // Only increase visibility if unobstructed, else claw guys attack through doors.
+			player_visibility = 2;
+	} else if (((obj_ref&3) == 0) &&
 	           !previous_visibility && (dist_to_player < F1_0*100)) {
 		fix sval, rval;
 		const int headlight_on = (Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT_ON) ? 1 : 0;
@@ -751,7 +713,6 @@ _exit_cheat:
 			rval, threshold, awareness_pass, headlight_on);
 	}
 
-
 	// - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  -
 	if ((aip->GOAL_STATE == AIS_FLIN) && (aip->CURRENT_STATE == AIS_FLIN))
 		aip->GOAL_STATE = AIS_LOCK;
@@ -775,12 +736,9 @@ _exit_cheat:
 
 	case 1:
 	case 2:
-		// FIXME!!!!
 		break;
 
 	default:
-		if (d1_in_d2_use_d1_gameplay())
-			break;
 		{
 			int	pv;
 
@@ -806,51 +764,7 @@ _exit_cheat:
 	// - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  -
 	// Time-slice, don't process all the time, purely an efficiency hack.
 	// Guys whose behavior is station and are not at their hide segment get processed anyway.
-	if (d1_in_d2_use_d1_robot_aiming()) {
-		if (ailp->player_awareness_type < PA_WEAPON_ROBOT_COLLISION-1) { // If robot got hit, he gets to attack player always!
-#ifndef NDEBUG
-			if (Break_on_object != objnum) {    // don't time slice if we're interested in this object.
-#endif
-				if ((dist_to_player > F1_0*250) && (ailp->time_since_processed <= F1_0*2)) {
-					input_demo_note_ai_schedule_timeslice_return(obj);
-					input_demo_note_ai_schedule_detail("d1_timeslice_return_250", obj,
-						previous_visibility, ailp->player_awareness_type,
-						ailp->player_awareness_time, aip->SKIP_AI_COUNT,
-						ailp->time_since_processed, schedule_dist_to_player,
-						obj_ref);
-					input_demo_log_ai_schedule_probe("d1_timeslice_return_250", obj, aip,
-						ailp, schedule_dist_to_player, previous_visibility, obj_ref);
-					return;
-				} else if (!((aip->behavior == AIB_STATION) && (ailp->mode == AIM_FOLLOW_PATH) && (aip->hide_segment != obj->segnum))) {
-					if ((dist_to_player > F1_0*150) && (ailp->time_since_processed <= F1_0)) {
-						input_demo_note_ai_schedule_timeslice_return(obj);
-						input_demo_note_ai_schedule_detail("d1_timeslice_return_150", obj,
-							previous_visibility, ailp->player_awareness_type,
-							ailp->player_awareness_time, aip->SKIP_AI_COUNT,
-							ailp->time_since_processed, schedule_dist_to_player,
-							obj_ref);
-						input_demo_log_ai_schedule_probe("d1_timeslice_return_150", obj,
-							aip, ailp, schedule_dist_to_player, previous_visibility,
-							obj_ref);
-						return;
-					} else if ((dist_to_player > F1_0*100) && (ailp->time_since_processed <= F1_0/2)) {
-						input_demo_note_ai_schedule_timeslice_return(obj);
-						input_demo_note_ai_schedule_detail("d1_timeslice_return_100", obj,
-							previous_visibility, ailp->player_awareness_type,
-							ailp->player_awareness_time, aip->SKIP_AI_COUNT,
-							ailp->time_since_processed, schedule_dist_to_player,
-							obj_ref);
-						input_demo_log_ai_schedule_probe("d1_timeslice_return_100", obj,
-							aip, ailp, schedule_dist_to_player, previous_visibility,
-							obj_ref);
-						return;
-					}
-				}
-#ifndef NDEBUG
-			}
-#endif
-		}
-	} else if (!((aip->behavior == AIB_SNIPE) && (ailp->mode != AIM_SNIPE_WAIT)) && !robptr->companion && !robptr->thief && (ailp->player_awareness_type < PA_WEAPON_ROBOT_COLLISION-1)) { // If robot got hit, he gets to attack player always!
+	if (!((aip->behavior == AIB_SNIPE) && (ailp->mode != AIM_SNIPE_WAIT)) && !robptr->companion && !robptr->thief && (ailp->player_awareness_type < PA_WEAPON_ROBOT_COLLISION-1)) { // If robot got hit, he gets to attack player always!
 #ifndef NDEBUG
 		if (Break_on_object != objnum) {    // don't time slice if we're interested in this object.
 #endif
@@ -1112,16 +1026,13 @@ _exit_cheat:
 				chase_path_pre_path_dir,
 				chase_path_pre_time_player_seen);
 
-			if ((!d1_in_d2_use_d1_gameplay() || !chase_path_gate_pass) &&
-				(player_visibility == 0) && (dist_to_player > F1_0*80) && (!(Game_mode & GM_MULTI))) {
+			if ((player_visibility == 0) && (dist_to_player > F1_0*80) && (!(Game_mode & GM_MULTI))) {
 				// If pretty far from the player, player cannot be seen
 				// (obstructed) and in chase mode, switch to follow path mode.
 				// This has one desirable benefit of avoiding physics retries.
 				if (aip->behavior == AIB_STATION) {
 					ailp->goal_segment = aip->hide_segment;
 					create_path_to_station(obj, 15);
-				} else if (d1_in_d2_use_d1_robot_aiming()) {
-					create_n_segment_path(obj, 5, -1);
 				}
 				break;
 			}
@@ -1162,9 +1073,6 @@ _exit_cheat:
 				if ((obj_ref & 1) && ((aip->GOAL_STATE == AIS_SRCH) || (aip->GOAL_STATE == AIS_LOCK))) {
 					if (player_visibility) // == 2)
 						ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
-					else if (d1_in_d2_use_d1_robot_aiming())
-						d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
-							robptr->turn_time[Difficulty_level], previous_visibility);
 				}
 
 				if (ai_evaded) {
@@ -1178,7 +1086,7 @@ _exit_cheat:
 			break;
 		}
 
-		case AIM_RUN_FROM_OBJECT:
+		case AIM_RUN_FROM_OBJECT: {
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 
 			if (player_visibility) {
@@ -1239,6 +1147,7 @@ _exit_cheat:
 			}
 			break;
 
+		}
 		case AIM_GOTO_PLAYER:
 		case AIM_GOTO_OBJECT: {
 #ifdef __ANDROID__
@@ -1309,10 +1218,7 @@ _exit_cheat:
 			else if (aip->CURRENT_STATE == AIS_FLIN)
 				aip->GOAL_STATE = AIS_LOCK;
 
-			if (d1_in_d2_use_d1_robot_aiming()) {
-				if ((aip->behavior != AIB_SNIPE) && (aip->behavior != AIB_RUN_FROM))
-					do_firing_stuff(obj, player_visibility, &vec_to_player);
-			} else if (aip->behavior != AIB_RUN_FROM)
+			if (aip->behavior != AIB_RUN_FROM)
 				do_firing_stuff(obj, player_visibility, &vec_to_player);
 
 			follow_path_visible_chase_pass =
@@ -1329,19 +1235,12 @@ _exit_cheat:
 					ailp->mode = AIM_CHASE_OBJECT;
 				// This should not just be distance based, but also time-since-player-seen based.
 			} else {
-				if (d1_in_d2_use_d1_robot_aiming()) {
-					follow_path_still_pass =
-						(player_visibility == 0) &&
-						(aip->behavior == AIB_NORMAL) &&
-						(ailp->mode == AIM_FOLLOW_PATH);
-				} else {
-					follow_path_still_pass =
-						(dist_to_player > F1_0*(20*(2*Difficulty_level + robptr->pursuit))) &&
-						(GameTime64 - ailp->time_player_seen > (F1_0/2*(Difficulty_level+robptr->pursuit))) &&
-						(player_visibility == 0) &&
-						(aip->behavior == AIB_NORMAL) &&
-						(ailp->mode == AIM_FOLLOW_PATH);
-				}
+				follow_path_still_pass =
+					(dist_to_player > F1_0*(20*(2*Difficulty_level + robptr->pursuit))) &&
+					(GameTime64 - ailp->time_player_seen > (F1_0/2*(Difficulty_level+robptr->pursuit))) &&
+					(player_visibility == 0) &&
+					(aip->behavior == AIB_NORMAL) &&
+					(ailp->mode == AIM_FOLLOW_PATH);
 
 				if (follow_path_still_pass) {
 					ailp->mode = AIM_STILL;
@@ -1429,10 +1328,7 @@ _exit_cheat:
 
 				// turn towards vector if visible this time or last time, or rand
 				// new!
-				if (d1_in_d2_use_d1_robot_aiming()
-				        ? ((player_visibility) || (previous_visibility) ||
-				           ((d_rand() > 0x4000) && !(Game_mode & GM_MULTI)))
-				        : ((player_visibility == 2) || (previous_visibility == 2))) { // -- MK, 06/09/95:  || ((d_rand() > 0x4000) && !(Game_mode & GM_MULTI))) {
+				if ((player_visibility == 2) || (previous_visibility == 2)) { // -- MK, 06/09/95:  || ((d_rand() > 0x4000) && !(Game_mode & GM_MULTI))) {
 					if (!ai_multiplayer_awareness(obj, 71)) {
 						if (maybe_ai_do_actual_firing_stuff(obj, aip))
 							ai_do_actual_firing_stuff(obj, aip, ailp, robptr, &vec_to_player, dist_to_player, &gun_point, player_visibility, object_animates, aip->CURRENT_GUN);
@@ -1443,7 +1339,7 @@ _exit_cheat:
 				}
 
 				do_firing_stuff(obj, player_visibility, &vec_to_player);
-				if (d1_in_d2_use_d1_robot_aiming() ? player_visibility : (player_visibility == 2)) { // Changed @mk, 09/21/95: Require that they be looking to evade.  Change, MK, 01/03/95 for Multiplayer reasons.  If robots can't see you (even with eyes on back of head), then don't do evasion.
+				if (player_visibility == 2) { // Changed @mk, 09/21/95: Require that they be looking to evade.  Change, MK, 01/03/95 for Multiplayer reasons.  If robots can't see you (even with eyes on back of head), then don't do evasion.
 					if (robptr->attack_type == 1) {
 						aip->behavior = AIB_NORMAL;
 						if (!ai_multiplayer_awareness(obj, 80)) {
@@ -1538,7 +1434,8 @@ _exit_cheat:
 	// Assert(player_visibility != -1); // Means it didn't get initialized!
 	compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 	if ((player_visibility == 2) && (aip->behavior != AIB_FOLLOW) && (!robptr->thief)) {
-		if ((ailp->player_awareness_type == 0) && (aip->SUB_FLAGS & SUB_FLAGS_CAMERA_AWAKE))
+		if ((ailp->player_awareness_type == 0) &&
+		    (aip->SUB_FLAGS & SUB_FLAGS_CAMERA_AWAKE))
 			aip->SUB_FLAGS &= ~SUB_FLAGS_CAMERA_AWAKE;
 		else if (ailp->player_awareness_type == 0)
 			ailp->player_awareness_type = PA_PLAYER_COLLISION;
@@ -1555,7 +1452,7 @@ _exit_cheat:
 
 	// - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  -
 	if (ailp->player_awareness_type) {
-		new_goal_state = Ai_transition_table[ailp->player_awareness_type-1][aip->CURRENT_STATE][aip->GOAL_STATE];
+		new_goal_state = ai_transition_goal(ailp->player_awareness_type, aip->CURRENT_STATE, aip->GOAL_STATE);
 		if (ailp->player_awareness_type == PA_WEAPON_ROBOT_COLLISION) {
 			// Decrease awareness, else this robot will flinch every frame.
 			ailp->player_awareness_type--;
@@ -1583,7 +1480,7 @@ _exit_cheat:
 
 	// - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  -
 	// Hack by mk on 01/04/94, if a guy hasn't animated to the firing state, but his next_fire says ok to fire, bash him there
-	if ((d1_in_d2_use_d1_gameplay() ? (ailp->next_fire < 0) : ready_to_fire(robptr, ailp)) &&
+	if (ready_to_fire(robptr, ailp) &&
 	    (aip->GOAL_STATE == AIS_FIRE))
 		aip->CURRENT_STATE = AIS_FIRE;
 
@@ -1611,12 +1508,10 @@ _exit_cheat:
 
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 
-			if (d1_in_d2_ai_visibility_turns_robot(player_visibility)) {
+			if (player_visibility == 2) {
 				ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
 				ai_multi_send_robot_position(objnum, -1);
-			} else if (d1_in_d2_ai_may_turn_randomly_without_visibility(Game_mode))
-				d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
-					robptr->turn_time[Difficulty_level], previous_visibility);
+			}
 			break;
 		case AIS_LOCK:
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
@@ -1625,18 +1520,16 @@ _exit_cheat:
 				if (!ai_multiplayer_awareness(obj, 68))
 					return;
 
-				if (d1_in_d2_ai_visibility_turns_robot(player_visibility)) {
+				if (player_visibility == 2) {
 					ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
 					ai_multi_send_robot_position(objnum, -1);
-				} else if (d1_in_d2_ai_may_turn_randomly_without_visibility(Game_mode))
-					d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
-						robptr->turn_time[Difficulty_level], previous_visibility);
+				}
 			}
 			break;
 		case AIS_FIRE:
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 
-			if (d1_in_d2_ai_visibility_turns_robot(player_visibility)) {
+			if (player_visibility == 2) {
 				if (!ai_multiplayer_awareness(obj, (ROBOT_FIRE_AGITATION-1))) {
 					if (Game_mode & GM_MULTI) {
 						ai_do_actual_firing_stuff(obj, aip, ailp, robptr, &vec_to_player, dist_to_player, &gun_point, player_visibility, object_animates, aip->CURRENT_GUN);
@@ -1645,9 +1538,6 @@ _exit_cheat:
 				}
 				ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
 				ai_multi_send_robot_position(objnum, -1);
-			} else if (d1_in_d2_ai_may_turn_randomly_without_visibility(Game_mode)) {
-				d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
-					robptr->turn_time[Difficulty_level], previous_visibility);
 			}
 
 			// Fire at player, if appropriate.
@@ -1657,14 +1547,11 @@ _exit_cheat:
 		case AIS_RECO:
 			if (!(obj_ref & 3)) {
 				compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
-				if (d1_in_d2_ai_visibility_turns_robot(player_visibility)) {
+				if (player_visibility == 2) {
 					if (!ai_multiplayer_awareness(obj, 69))
 						return;
 					ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
 					ai_multi_send_robot_position(objnum, -1);
-				} else if (d1_in_d2_ai_may_turn_randomly_without_visibility(Game_mode)) {
-					d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
-						robptr->turn_time[Difficulty_level], previous_visibility);
 				} // -- MK, 06/09/95: else if (!(Game_mode & GM_MULTI)) {
 			}
 			break;
@@ -1682,8 +1569,7 @@ _exit_cheat:
 		aip->CURRENT_GUN++;
 		if (aip->CURRENT_GUN >= Robot_info[obj->id].n_guns)
 		{
-			if (d1_in_d2_use_d1_gameplay() ||
-			    (robptr->n_guns == 1) || (robptr->weapon_type2 == -1))  // Two weapon types hack.
+			if ((robptr->n_guns == 1) || (robptr->weapon_type2 == -1))  // Two weapon types hack.
 				aip->CURRENT_GUN = 0;
 			else
 				aip->CURRENT_GUN = 1;
@@ -1772,14 +1658,13 @@ int add_awareness_event(object *objp, int type)
 // ----------------------------------------------------------------------------------
 // Robots will become aware of the player based on something that occurred.
 // The object (probably player or weapon) which created the awareness is objp.
-void create_awareness_event(object *objp, int type)
+void ai_create_awareness_event_common(object *objp, int type, int multiplayer_awareness_allowed)
 {
 	int num_awareness_before = Num_awareness_events;
 	int overall_agitation_before = Overall_agitation;
 	const char *source_tag = "unset";
 	int source_objnum = -1;
 	int aux_objnum = -1;
-	int multiplayer_awareness_allowed = (!(Game_mode & GM_MULTI) || (Game_mode & GM_MULTI_ROBOTS));
 	int awareness_added = 0;
 	int rng_gate_value = -1;
 	int rng_gate_pass = 0;
@@ -1828,7 +1713,7 @@ void create_awareness_event(object *objp, int type)
 		input_demo_log_awareness_probe(objp, type);
 	}
 
-	// If not in multiplayer, or in multiplayer with robots, do this, else unnecessary!
+	// The active game supplied admission before entering this shared producer
 	if (multiplayer_awareness_allowed) {
 		awareness_added = add_awareness_event(objp, type);
 		if (trace_awareness) {
@@ -1886,6 +1771,14 @@ void create_awareness_event(object *objp, int type)
 			multiplayer_awareness_allowed, rng_gate_value, rng_gate_pass);
 }
 
+void create_awareness_event(object *objp, int type)
+{
+	if (d1_in_d2_ai_create_awareness_event(objp, type))
+		return;
+	// If not in multiplayer, or in multiplayer with robots, do this, else unnecessary!
+	ai_create_awareness_event_common(objp, type, !(Game_mode & GM_MULTI) || (Game_mode & GM_MULTI_ROBOTS));
+}
+
 sbyte New_awareness[MAX_SEGMENTS];
 
 // ----------------------------------------------------------------------------------
@@ -1897,7 +1790,7 @@ void pae_aux(int segnum, int type, int level)
 		New_awareness[segnum] = type;
 
 	// Process children.
-	if (level <= (d1_in_d2_use_d1_gameplay() ? 4 : 3))
+	if (level <= 3)
 		for (j=0; j<MAX_SIDES_PER_SEGMENT; j++)
 			if (IS_CHILD(Segments[segnum].children[j]))
 			{
@@ -1929,6 +1822,9 @@ void process_awareness_events(void)
 void set_player_awareness_all(void)
 {
 	int i;
+
+	if (d1_in_d2_ai_deliver_awareness())
+		return;
 
 	process_awareness_events();
 
@@ -1979,8 +1875,6 @@ void turn_off_ai_dump(void)
 
 #endif
 
-extern void do_boss_dying_frame(object *objp);
-
 // ----------------------------------------------------------------------------------
 // Do things which need to get done for all AI objects each frame.
 // This includes:
@@ -2009,6 +1903,9 @@ void do_ai_frame_all(void)
 
 		input_demo_log_ai_frame_summary(traced_robot_count);
 	}
+
+	if (d1_in_d2_ai_finish_world_frame())
+		return;
 
 	if (Ai_last_missile_camera > -1) {
 		// Clear if supposed misisle camera is not a weapon, or just every so often, just in case.
@@ -2168,6 +2065,7 @@ int ai_save_state(PHYSFS_file *fp)
 		tmptime32 = F1_0*(-18000);
 	else
 		tmptime32 = Boss_hit_time - GameTime64;
+	tmptime32 = d1_in_d2_ai_save_boss_hit(tmptime32);
 	PHYSFS_write(fp, &tmptime32, sizeof(fix), 1);
 	PHYSFS_write(fp, &Escort_kill_object, sizeof(Escort_kill_object), 1);
 	if (Escort_last_path_created - GameTime64 < F1_0*(-18000))
@@ -2454,7 +2352,7 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap)
 	Boss_dying = PHYSFSX_readSXE32(fp, swap);
 	Boss_dying_sound_playing = PHYSFSX_readSXE32(fp, swap);
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Boss_hit_time = GameTime64 + (fix64)tmptime32;
+	Boss_hit_time = d1_in_d2_ai_restore_boss_hit_time(tmptime32);
 	// -- MK, 10/21/95, unused! -- PHYSFS_read(fp, &Boss_been_hit, sizeof(int), 1);
 
 	if (version >= 8) {

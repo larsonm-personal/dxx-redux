@@ -43,6 +43,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "textures.h"
 #include "slew.h"
 #include "gauges.h"
+#include "d1_in_d2/d1_in_d2_cockpit.h"
 #include "texmap.h"
 #include "3d.h"
 #include "effects.h"
@@ -263,14 +264,16 @@ void init_cockpit()
 	if ( Screen_mode == SCREEN_EDITOR )
 		PlayerCfg.CurrentCockpitMode = CM_FULL_SCREEN;
 
+	if (is_observer() && !can_draw_observer_cockpit())
+		PlayerCfg.CurrentCockpitMode = CM_FULL_SCREEN;
+	if (d1_in_d2_init_cockpit())
+		return;
+
 #ifndef OGL
 	if ( Game_screen_mode != (GameArg.GfxHiresGFXAvailable? SM(640,480) : SM(320,200)) && PlayerCfg.CurrentCockpitMode != CM_LETTERBOX) {
 		PlayerCfg.CurrentCockpitMode = CM_FULL_SCREEN;
 	}
 #endif
-
-	if (is_observer() && !can_draw_observer_cockpit())
-		PlayerCfg.CurrentCockpitMode = CM_FULL_SCREEN;
 
 	gr_set_current_canvas(NULL);
 

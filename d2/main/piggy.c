@@ -60,8 +60,12 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "makesig.h"
 #include "console.h"
 #include "effects.h"
-#include "d1_pig_validation.h"
+#include "d1_in_d2/d1_in_d2_bitmaps.h"
+#include "d1_in_d2/d1_in_d2.h"
 #include "dxa_metadata_patch.h"
+#ifdef OGL
+#include "ogl_init.h"
+#endif
 
 #ifdef ANDROID
 #include "android_log.h"
@@ -74,8 +78,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define DEFAULT_PIGFILE_SHAREWARE       "d2demo.pig"
 #define DEFAULT_HAMFILE_REGISTERED      "descent2.ham"
 #define DEFAULT_HAMFILE_SHAREWARE       "d2demo.ham"
-
-#define D1_PALETTE "palette.256"
 
 #define DEFAULT_SNDFILE ((Piggy_hamfile_version < 3)?DEFAULT_HAMFILE_SHAREWARE:(GameArg.SndDigiSampleRate==SAMPLE_RATE_22K)?"descent2.s22":"descent2.s11")
 
@@ -182,8 +184,6 @@ typedef struct DiskBitmapHeader {
 	int offset;
 } __pack__ DiskBitmapHeader;
 
-#define DISKBITMAPHEADER_D1_SIZE 17 // no wh_extra
-
 typedef struct DiskSoundHeader {
 	char name[8];
 	int length;
@@ -218,21 +218,6 @@ void DiskSoundHeader_read(DiskSoundHeader *dsh, PHYSFS_file *fp)
 	dsh->length = PHYSFSX_readInt(fp);
 	dsh->data_length = PHYSFSX_readInt(fp);
 	dsh->offset = PHYSFSX_readInt(fp);
-}
-
-/*
- * reads a descent 1 DiskBitmapHeader structure from a PHYSFS_file
- */
-void DiskBitmapHeader_d1_read(DiskBitmapHeader *dbh, PHYSFS_file *fp)
-{
-	PHYSFS_read(fp, dbh->name, 8, 1);
-	dbh->dflags = PHYSFSX_readByte(fp);
-	dbh->width = PHYSFSX_readByte(fp);
-	dbh->height = PHYSFSX_readByte(fp);
-	dbh->wh_extra = 0;
-	dbh->flags = PHYSFSX_readByte(fp);
-	dbh->avg_color = PHYSFSX_readByte(fp);
-	dbh->offset = PHYSFSX_readInt(fp);
 }
 
 int piggy_is_substitutable_bitmap( char * name, char * subst_name );
@@ -619,8 +604,6 @@ void piggy_init_pigfile(char *filename)
 extern int compute_average_pixel(grs_bitmap *new);
 
 ubyte *Bitmap_replacement_data = NULL;
-static ubyte *Bitmap_replacement_next = NULL;
-static ubyte *Bitmap_replacement_end = NULL;
 
 //reads in a new pigfile (for new palette)
 //returns the size of all the bitmap data
@@ -1117,9 +1100,8 @@ int read_sndfile()
 	return 1;
 }
 
-int properties_init(void)
+static void piggy_init_registry(void)
 {
-	int ham_ok=0,snd_ok=0;
 	int i;
 
 	hashtable_init( &AllBitmapsNames, MAX_BITMAP_FILES );
@@ -1153,6 +1135,13 @@ int properties_init(void)
 		bogus_sound.data = bogus_data;
 		GameBitmapOffset[0] = 0;
 	}
+}
+
+int properties_init(void)
+{
+	int ham_ok=0,snd_ok=0;
+
+	piggy_init_registry();
 
 	snd_ok = ham_ok = read_hamfile();
 
@@ -1164,6 +1153,23 @@ int properties_init(void)
 	}
 
 	return (ham_ok && snd_ok);               //read ok
+}
+
+void piggy_load_mission_data(void)
+{
+	const int load_embedded_sounds = ham_sound_headers_once;
+
+	if (!read_hamfile())
+		Error("Cannot open HAM file for the selected mission");
+	if (Piggy_hamfile_version < 3) {
+		/* read_hamfile registers offsets; a fresh registry also needs samples */
+		if (load_embedded_sounds)
+			piggy_read_sounds();
+	} else if (sndfile_dir_changed()) {
+		read_sndfile();
+		piggy_read_sounds();
+		digi_free_cached_sounds();
+	}
 }
 
 int piggy_is_needed(int soundnum)
@@ -1682,6 +1688,7 @@ void piggy_close()
 {
 	int i;
 
+	d1_in_d2_release_assets();
 	piggy_close_file();
 
 	if (BitmapBits)
@@ -1699,6 +1706,36 @@ void piggy_close()
 
 	free_bitmap_replacements();
 	free_d1_tmap_nums();
+}
+
+/* The caller has stopped audio and released level users of the old registry
+ * Pixel buffers remain the responsibility of their bank/replacement owner */
+void piggy_reset_asset_registry(void)
+{
+	int i;
+
+	piggy_bitmap_page_out_all();
+	piggy_close();
+	for (i = 0; i < Num_bitmap_files; i++) {
+#ifdef OGL
+		/* Registry replacement also invalidates uploaded high-resolution images */
+		ogl_freebmtexture(&GameBitmaps[i]);
+#endif
+		gr_set_bitmap_data(&GameBitmaps[i], NULL);
+	}
+	Num_bitmap_files = Num_sound_files = 0;
+	Num_bitmap_files_new = Num_sound_files_new = 0;
+	Num_aliases = 0;
+	bogus_bitmap_initialized = Pigfile_initialized = 0;
+	ham_sound_headers_once = 1;
+	Piggy_bitmap_cache_data = NULL;
+	Piggy_bitmap_cache_next = Piggy_bitmap_cache_size = 0;
+	LastSndfileDir[0] = Current_pigfile[0] = 0;
+	memset(GameBitmaps, 0, sizeof(GameBitmaps));
+	memset(GameSounds, 0, sizeof(GameSounds));
+	memset(GameBitmapOffset, 0, sizeof(GameBitmapOffset));
+	memset(GameBitmapFlags, 0, sizeof(GameBitmapFlags));
+	piggy_init_registry();
 }
 
 #ifdef __ANDROID__
@@ -1793,11 +1830,10 @@ int piggy_is_substitutable_bitmap( char * name, char * subst_name )
 
 void free_bitmap_replacements()
 {
+	d1_in_d2_reset_bitmap_replacements();
 	if (Bitmap_replacement_data) {
 		d_free(Bitmap_replacement_data);
 		Bitmap_replacement_data = NULL;
-		Bitmap_replacement_next = NULL;
-		Bitmap_replacement_end = NULL;
 	}
 }
 
@@ -1944,186 +1980,6 @@ void load_bitmap_replacements(char *level_name)
 	}
 }
 
-/* calculate table to translate d1 bitmaps to current palette,
- * return -1 on error
- */
-int get_d1_colormap( ubyte *d1_palette, ubyte *colormap )
-{
-	int freq[256];
-	PHYSFS_file * palette_file = PHYSFSX_openReadBuffered(D1_PALETTE);
-	if (!palette_file || PHYSFS_fileLength(palette_file) != 9472)
-		return -1;
-	PHYSFS_read( palette_file, d1_palette, 256, 3 );
-	PHYSFS_close( palette_file );
-	build_colormap_good( d1_palette, colormap, freq );
-	// don't change transparencies:
-	colormap[254] = 254;
-	colormap[255] = 255;
-	return 0;
-}
-
-int bitmap_read_d1( grs_bitmap *bitmap, /* read into this bitmap */
-                     PHYSFS_file *d1_Piggy_fp, /* read from this file */
-                     int bitmap_data_start, /* specific to file */
-                     DiskBitmapHeader *bmh, /* header info for bitmap */
-                     ubyte **next_bitmap, /* where to write it (if 0, use malloc) */
-		     ubyte *bitmap_end, /* end of caller-owned replacement storage */
-		     ubyte *d1_palette, /* what palette the bitmap has */
-                     ubyte *colormap) /* how to translate bitmap's colors */
-{
-	PHYSFS_sint64 bitmap_offset, pigsize = PHYSFS_fileLength(d1_Piggy_fp);
-	int zsize, new_size, width, height;
-	size_t remapped_size = 0, remap_limit, work_size;
-	ubyte *data, *final_data;
-	ubyte mac_colormap[256];
-	ubyte *remap_colormap = colormap;
-	grs_bitmap staged_bitmap;
-
-	width = bmh->width + ((short) (bmh->wh_extra & 0x0f) << 8);
-	height = bmh->height + ((short) (bmh->wh_extra & 0xf0) << 4);
-	if (bitmap_data_start < 0 || bmh->offset < 0 || width <= 0 || height <= 0)
-		return 0;
-	bitmap_offset = (PHYSFS_sint64)bitmap_data_start + bmh->offset;
-	if (!d1_pig_validate_span(pigsize, bitmap_offset, 0))
-		return 0;
-	if (PHYSFSX_fseek(d1_Piggy_fp, (long)bitmap_offset, SEEK_SET))
-		return 0;
-	if (bmh->flags & BM_FLAG_RLE) {
-		if (pigsize - bitmap_offset < (PHYSFS_sint64)sizeof(int))
-			return 0;
-		zsize = PHYSFSX_readInt(d1_Piggy_fp);
-		if (PHYSFSX_fseek(d1_Piggy_fp, -(long)sizeof(int), SEEK_CUR))
-			return 0;
-	} else {
-		PHYSFS_sint64 uncompressed_size = (PHYSFS_sint64)width * height;
-		if (uncompressed_size <= 0 || uncompressed_size > 0x7fffffff)
-			return 0;
-		zsize = (int)uncompressed_size;
-	}
-	if (!d1_pig_validate_span(pigsize, bitmap_offset, zsize))
-		return 0;
-	work_size = zsize;
-	data = d_malloc(work_size);
-	if (!data)
-		return 0;
-
-	if (PHYSFS_read(d1_Piggy_fp, data, 1, zsize) != zsize) {
-		d_free(data);
-		return 0;
-	}
-	gr_init_bitmap(&staged_bitmap, 0, 0, 0, width, height, width, data);
-	staged_bitmap.avg_color = bmh->avg_color;
-	gr_set_bitmap_flags(&staged_bitmap, bmh->flags & BM_FLAGS_TO_COPY);
-	if (bmh->flags & BM_FLAG_RLE) {
-		if (!d1_pig_validate_rle(data, zsize, width, height, bmh->flags & BM_FLAG_RLE_BIG) ||
-		    (size_t)height > (SIZE_MAX - 4 - 30000) / ((size_t)width + 2)) {
-			d_free(data);
-			return 0;
-		}
-		remap_limit = 4 + ((size_t)width + 2) * height + 30000;
-	}
-	switch(pigsize) {
-	case D1_MAC_PIGSIZE:
-	case D1_MAC_SHARE_PIGSIZE:
-		if (bmh->flags & BM_FLAG_RLE) {
-			memcpy(mac_colormap, colormap, sizeof(mac_colormap));
-			mac_colormap[0] = colormap[255];
-			mac_colormap[255] = colormap[0];
-			remap_colormap = mac_colormap;
-		} else
-			swap_0_255(&staged_bitmap);
-	}
-	if (bmh->flags & BM_FLAG_RLE) {
-		if (!d1_pig_measure_remapped_rle(data, zsize, width, height,
-		                                   bmh->flags & BM_FLAG_RLE_BIG,
-		                                   remap_colormap, &remapped_size) ||
-		    remapped_size > remap_limit) {
-			d_free(data);
-			return 0;
-		}
-		if (remapped_size > work_size) {
-			ubyte *grown_data = d_realloc(data, remapped_size);
-			if (!grown_data) {
-				d_free(data);
-				return 0;
-			}
-			data = grown_data;
-			staged_bitmap.bm_data = data;
-			work_size = remapped_size;
-		}
-		rle_remap(&staged_bitmap, remap_colormap);
-	} else
-		gr_remap_bitmap_good(&staged_bitmap, d1_palette, TRANSPARENCY_COLOR, -1);
-	if (bmh->flags & BM_FLAG_RLE) { // size of bitmap could have changed!
-		memcpy(&new_size, staged_bitmap.bm_data, sizeof(new_size));
-		if (new_size <= 0 || (size_t)new_size > work_size) {
-			d_free(data);
-			return 0;
-		}
-	} else
-		new_size = zsize;
-	if (next_bitmap) {
-		if (!*next_bitmap || !bitmap_end || *next_bitmap > bitmap_end ||
-		    !d1_pig_validate_arena((size_t)(bitmap_end - *next_bitmap), new_size, 0)) {
-			d_free(data);
-			return 0;
-		}
-		final_data = *next_bitmap;
-		memcpy(final_data, data, new_size);
-		*next_bitmap += new_size;
-		d_free(data);
-	} else {
-		final_data = d_realloc(data, new_size);
-		if (!final_data)
-			final_data = data;
-	}
-	staged_bitmap.bm_data = final_data;
-	gr_set_bitmap_data(bitmap, NULL);	// free ogl texture
-	*bitmap = staged_bitmap;
-	return 1;
-}
-
-#define D1_MAX_TEXTURES 800
-#define D1_MAX_TMAP_NUM 1630 // 1621 in descent.pig Mac registered
-
-/* the inverse of the d2 Textures array, but for the descent 1 pigfile.
- * "Textures" looks up a d2 bitmap index given a d2 tmap_num.
- * "d1_tmap_nums" looks up a d1 tmap_num given a d1 bitmap. "-1" means "None".
- */
-short *d1_tmap_nums = NULL;
-static d1_bitmap_replacement_stats Last_d1_bitmap_replacement_stats;
-
-void free_d1_tmap_nums() {
-	if (d1_tmap_nums) {
-		d_free(d1_tmap_nums);
-		d1_tmap_nums = NULL;
-	}
-}
-
-void d1_bitmap_replacement_get_stats(d1_bitmap_replacement_stats *stats)
-{
-	if (stats)
-		*stats = Last_d1_bitmap_replacement_stats;
-}
-
-void bm_read_d1_tmap_nums(PHYSFS_file *d1pig)
-{
-	int i, d1_index;
-
-	free_d1_tmap_nums();
-	PHYSFSX_fseek(d1pig, 8, SEEK_SET);
-	MALLOC(d1_tmap_nums, short, D1_MAX_TMAP_NUM);
-	for (i = 0; i < D1_MAX_TMAP_NUM; i++)
-		d1_tmap_nums[i] = -1;
-	for (i = 0; i < D1_MAX_TEXTURES; i++) {
-		d1_index = PHYSFSX_readShort(d1pig);
-		Assert(d1_index >= 0 && d1_index < D1_MAX_TMAP_NUM);
-		d1_tmap_nums[d1_index] = i;
-		if (PHYSFS_eof(d1pig))
-			break;
-	}
-}
-
 void remove_char( char * s, char c )
 {
 	char *p;
@@ -2133,436 +1989,6 @@ void remove_char( char * s, char c )
 
 const char space[3] = " \t";
 const char equal_space[4] = " \t=";
-
-// this function is at the same position in the d1 shareware piggy loading 
-// algorithm as bm_load_sub in main/bmread.c
-int get_d1_bm_index(char *filename, PHYSFS_file *d1_pig) {
-	int i, N_bitmaps;
-	DiskBitmapHeader bmh;
-	if (strchr (filename, '.'))
-		*strchr (filename, '.') = '\0'; // remove extension
-	PHYSFSX_fseek (d1_pig, 0, SEEK_SET);
-	N_bitmaps = PHYSFSX_readInt (d1_pig);
-	PHYSFSX_fseek (d1_pig, 8, SEEK_SET);
-	for (i = 1; i <= N_bitmaps; i++) {
-		DiskBitmapHeader_d1_read(&bmh, d1_pig);
-		if (!d_strnicmp(bmh.name, filename, 8))
-			return i;
-	}
-	return -1;
-}
-
-// imitate the algorithm of gamedata_read_tbl in main/bmread.c
-void read_d1_tmap_nums_from_hog(PHYSFS_file *d1_pig)
-{
-#define LINEBUF_SIZE 600
-	int reading_textures = 0;
-	short texture_count = 0;
-	char inputline[LINEBUF_SIZE];
-	PHYSFS_file * bitmaps;
-	int bitmaps_tbl_is_binary = 0;
-	int i;
-
-	bitmaps = PHYSFSX_openReadBuffered ("bitmaps.tbl");
-	if (!bitmaps) {
-		bitmaps = PHYSFSX_openReadBuffered ("bitmaps.bin");
-		bitmaps_tbl_is_binary = 1;
-	}
-
-	if (!bitmaps) {
-		Warning ("Could not find bitmaps.* for reading d1 textures");
-		return;
-	}
-
-	free_d1_tmap_nums();
-	MALLOC(d1_tmap_nums, short, D1_MAX_TMAP_NUM);
-	for (i = 0; i < D1_MAX_TMAP_NUM; i++)
-		d1_tmap_nums[i] = -1;
-
-	while (PHYSFSX_fgets (inputline, LINEBUF_SIZE, bitmaps)) {
-		char *arg;
-
-		if (bitmaps_tbl_is_binary)
-			decode_text_line((inputline));
-		else
-			while (inputline[(i=strlen(inputline))-2]=='\\')
-				PHYSFSX_fgets(inputline+i-2,LINEBUF_SIZE-(i-2), bitmaps); // strip comments
-		REMOVE_EOL(inputline);
-                if (strchr(inputline, ';')!=NULL) REMOVE_COMMENTS(inputline);
-		if (strlen(inputline) == LINEBUF_SIZE-1) {
-			Warning("Possible line truncation in BITMAPS.TBL");
-			return;
-		}
-		arg = strtok( inputline, space );
-                if (arg && arg[0] == '@') {
-			arg++;
-			//Registered_only = 1;
-		}
-
-                while (arg != NULL) {
-			if (*arg == '$')
-				reading_textures = 0; // default
-			if (!strcmp(arg, "$TEXTURES")) // BM_TEXTURES
-				reading_textures = 1;
-			else if (! d_stricmp(arg, "$ECLIP") // BM_ECLIP
-				   || ! d_stricmp(arg, "$WCLIP")) // BM_WCLIP
-					texture_count++;
-			else // not a special token, must be a bitmap!
-				if (reading_textures) {
-					while (*arg == '\t' || *arg == ' ')
-						arg++;//remove unwanted blanks
-					if (*arg == '\0')
-						break;
-					{
-						int d1_index = get_d1_bm_index(arg, d1_pig);
-						if (d1_index >= 0 && d1_index < D1_MAX_TMAP_NUM)
-							d1_tmap_nums[d1_index] = texture_count;
-					}
-				Assert (texture_count < D1_MAX_TEXTURES);
-				texture_count++;
-			}
-
-			arg = strtok (NULL, equal_space);
-		}
-	}
-	PHYSFS_close (bitmaps);
-}
-
-/* If the given d1_index is used by a D1 texture, returns the D2 bitmap index
- * that should be replaced while emulating D1.
- * Returns -1 if the given d1_index is not used by a D1 texture.
- */
-int d2_index_for_d1_index(int d1_index)
-{
-	int d2_tmap_num;
-	int d2_bitmap_index;
-
-	if (d1_index < 0 || d1_index >= D1_MAX_TMAP_NUM || !d1_tmap_nums || d1_tmap_nums[d1_index] < 0)
-		return -1;
-	d2_tmap_num = convert_d1_tmap_num(d1_tmap_nums[d1_index]);
-	if (d2_tmap_num < 0 || d2_tmap_num >= NumTextures)
-		return -1;
-	d2_bitmap_index = Textures[d2_tmap_num].index;
-	if (d2_bitmap_index < 0 || d2_bitmap_index >= MAX_BITMAP_FILES)
-		return -1;
-
-	return d2_bitmap_index;
-}
-
-#define D1_BITMAPS_SIZE (5 * 1024 * 1024)
-void load_d1_bitmap_replacements()
-{
-	PHYSFS_file * d1_Piggy_fp;
-	DiskBitmapHeader bmh;
-	int pig_data_start, bitmap_header_start, bitmap_data_start;
-	int N_bitmaps;
-	PHYSFS_sint64 header_size;
-	short d1_index;
-	int d2_index;
-	ubyte colormap[256];
-	ubyte d1_palette[256*3];
-	char *p;
-	int pigsize;
-	ubyte is_effect[MAX_BITMAP_FILES] = {0};
-
-	memset(&Last_d1_bitmap_replacement_stats, 0, sizeof(Last_d1_bitmap_replacement_stats));
-	d1_Piggy_fp = PHYSFSX_openReadBuffered( D1_PIGFILE );
-
-#define D1_PIG_LOAD_FAILED "Failed loading " D1_PIGFILE
-	if (!d1_Piggy_fp) {
-		Warning(D1_PIG_LOAD_FAILED);
-		return;
-	}
-	Last_d1_bitmap_replacement_stats.pig_present = 1;
-
-	//first, free up data allocated for old bitmaps
-	free_bitmap_replacements();
-
-	if (get_d1_colormap( d1_palette, colormap ) != 0) {
-		Last_d1_bitmap_replacement_stats.colormap_failed = 1;
-		Warning("Could not load descent 1 color palette");
-	}
-
-	pigsize = PHYSFS_fileLength(d1_Piggy_fp);
-	Last_d1_bitmap_replacement_stats.pig_size = pigsize;
-	switch (pigsize) {
-	case D1_SHARE_BIG_PIGSIZE:
-	case D1_SHARE_10_PIGSIZE:
-	case D1_SHARE_PIGSIZE:
-	case D1_10_BIG_PIGSIZE:
-	case D1_10_PIGSIZE:
-		pig_data_start = 0;
-		// OK, now we need to read d1_tmap_nums by emulating d1's gamedata_read_tbl()
-		read_d1_tmap_nums_from_hog(d1_Piggy_fp);
-		break;
-
-	case D1_PIGSIZE:
-	case D1_OEM_PIGSIZE:
-	case D1_MAC_PIGSIZE:
-	case D1_MAC_SHARE_PIGSIZE:
-		pig_data_start = PHYSFSX_readInt(d1_Piggy_fp );
-		bm_read_d1_tmap_nums(d1_Piggy_fp); //was: bm_read_all_d1(fp);
-		//for (i = 0; i < 1800; i++) GameBitmapXlat[i] = PHYSFSX_readShort(d1_Piggy_fp);
-		break;
-
-	default:
-		pig_data_start = PHYSFSX_readInt(d1_Piggy_fp );
-		bm_read_d1_tmap_nums(d1_Piggy_fp);	
-	}
-
-	if (pig_data_start < 0 || pig_data_start > pigsize - 2 * (int)sizeof(int) ||
-	    PHYSFSX_fseek(d1_Piggy_fp, pig_data_start, SEEK_SET)) {
-		PHYSFS_close(d1_Piggy_fp);
-		Warning(D1_PIG_LOAD_FAILED ": invalid data offset");
-		return;
-	}
-	N_bitmaps = PHYSFSX_readInt(d1_Piggy_fp);
-	{
-		int N_sounds = PHYSFSX_readInt(d1_Piggy_fp);
-		header_size = (PHYSFS_sint64)N_bitmaps * DISKBITMAPHEADER_D1_SIZE
-			+ (PHYSFS_sint64)N_sounds * sizeof(DiskSoundHeader);
-		bitmap_header_start = pig_data_start + 2 * sizeof(int);
-		if (pig_data_start < 0 || N_bitmaps < 0 || N_bitmaps > D1_MAX_TMAP_NUM ||
-		    N_sounds < 0 || header_size < 0 ||
-		    (PHYSFS_sint64)bitmap_header_start + header_size > pigsize) {
-			PHYSFS_close(d1_Piggy_fp);
-			Warning(D1_PIG_LOAD_FAILED ": invalid bitmap table");
-			return;
-		}
-		bitmap_data_start = bitmap_header_start + (int)header_size;
-	}
-
-	MALLOC( Bitmap_replacement_data, ubyte, D1_BITMAPS_SIZE);
-	if (!Bitmap_replacement_data) {
-		PHYSFS_close(d1_Piggy_fp);
-		Warning(D1_PIG_LOAD_FAILED);
-		return;
-	}
-
-	// Leave effect frames and destroyed monitors to their dedicated asset paths
-	for (int ei = 0; ei < Num_effects && ei < MAX_EFFECTS; ei++) {
-		eclip *e = &Effects[ei];
-		for (int i = 0; i < e->vc.num_frames && i < VCLIP_MAX_FRAMES; i++)
-			if (e->vc.frames[i].index < MAX_BITMAP_FILES)
-				is_effect[e->vc.frames[i].index] = 1;
-		if (e->dest_bm_num >= 0 && e->dest_bm_num < NumTextures && e->dest_bm_num < MAX_TEXTURES &&
-		    Textures[e->dest_bm_num].index < MAX_BITMAP_FILES)
-			is_effect[Textures[e->dest_bm_num].index] = 1;
-	}
-
-	Bitmap_replacement_next = Bitmap_replacement_data;
-	Bitmap_replacement_end = Bitmap_replacement_data + D1_BITMAPS_SIZE;
-
-	for (d1_index = 1; d1_index <= N_bitmaps; d1_index++ ) {
-		d2_index = d2_index_for_d1_index(d1_index);
-		if (d2_index != -1 && !is_effect[d2_index]) {
-			Last_d1_bitmap_replacement_stats.wall_entries++;
-			PHYSFSX_fseek(d1_Piggy_fp, bitmap_header_start + (d1_index-1) * DISKBITMAPHEADER_D1_SIZE, SEEK_SET);
-			DiskBitmapHeader_d1_read(&bmh, d1_Piggy_fp);
-
-			if (!bitmap_read_d1(&GameBitmaps[d2_index], d1_Piggy_fp, bitmap_data_start,
-			                    &bmh, &Bitmap_replacement_next, Bitmap_replacement_end,
-			                    d1_palette, colormap)) {
-				Warning("Skipped invalid or over-limit D1 bitmap replacement %d", d1_index);
-				continue;
-			}
-			Last_d1_bitmap_replacement_stats.wall_applied++;
-			GameBitmapOffset[d2_index] = 0; // don't try to read bitmap from current d2 pigfile
-			GameBitmapFlags[d2_index] = bmh.flags;
-
-			if ( (p = strchr(AllBitmaps[d2_index].name, '#')) /* d2 BM is animated */
-			     && !(bmh.dflags & DBM_FLAG_ABM) ) { /* d1 bitmap is not animated */
-				int i, len = p - AllBitmaps[d2_index].name;
-				for (i = 0; i < Num_bitmap_files; i++)
-					if (i != d2_index && !is_effect[i] && ! memcmp(AllBitmaps[d2_index].name, AllBitmaps[i].name, len))
-					{
-						gr_set_bitmap_data(&GameBitmaps[i], NULL);	// free ogl texture
-						GameBitmaps[i] = GameBitmaps[d2_index];
-						GameBitmapOffset[i] = 0;
-						GameBitmapFlags[i] = bmh.flags;
-						Last_d1_bitmap_replacement_stats.animated_clones++;
-					}
-			}
-		}
-	}
-
-	PHYSFS_close(d1_Piggy_fp);
-
-	last_palette_loaded_pig[0]= 0;  //force pig re-load
-
-	texmerge_flush();       //for re-merging with new textures
-}
-
-int load_d1_bitmap_frame(short d1_index, bitmap_index d2_bitmap)
-{
-	PHYSFS_file *d1_Piggy_fp;
-	DiskBitmapHeader bmh;
-	ubyte colormap[256];
-	ubyte d1_palette[256*3];
-	int pig_data_start, bitmap_header_start, bitmap_data_start;
-	int N_bitmaps, N_sounds, pigsize;
-	PHYSFS_sint64 header_size;
-
-	if (!Bitmap_replacement_next || !Bitmap_replacement_end || d2_bitmap.index >= MAX_BITMAP_FILES)
-		return 0;
-
-	d1_Piggy_fp = PHYSFSX_openReadBuffered(D1_PIGFILE);
-	if (!d1_Piggy_fp)
-		return 0;
-
-	if (get_d1_colormap(d1_palette, colormap) != 0) {
-		PHYSFS_close(d1_Piggy_fp);
-		return 0;
-	}
-
-	pigsize = PHYSFS_fileLength(d1_Piggy_fp);
-	switch (pigsize) {
-	case D1_SHARE_BIG_PIGSIZE:
-	case D1_SHARE_10_PIGSIZE:
-	case D1_SHARE_PIGSIZE:
-	case D1_10_BIG_PIGSIZE:
-	case D1_10_PIGSIZE:
-		pig_data_start = 0;
-		break;
-	default:
-		pig_data_start = PHYSFSX_readInt(d1_Piggy_fp);
-		break;
-	}
-
-	if (pig_data_start < 0 || pig_data_start > pigsize - 2 * (int)sizeof(int) ||
-	    PHYSFSX_fseek(d1_Piggy_fp, pig_data_start, SEEK_SET)) {
-		PHYSFS_close(d1_Piggy_fp);
-		return 0;
-	}
-	N_bitmaps = PHYSFSX_readInt(d1_Piggy_fp);
-	N_sounds = PHYSFSX_readInt(d1_Piggy_fp);
-	if (d1_index <= 0 || d1_index > N_bitmaps) {
-		PHYSFS_close(d1_Piggy_fp);
-		return 0;
-	}
-
-	header_size = (PHYSFS_sint64)N_bitmaps * DISKBITMAPHEADER_D1_SIZE
-		+ (PHYSFS_sint64)N_sounds * sizeof(DiskSoundHeader);
-	bitmap_header_start = pig_data_start + 2 * sizeof(int);
-	if (pig_data_start < 0 || N_bitmaps < 0 || N_bitmaps > D1_MAX_TMAP_NUM ||
-	    N_sounds < 0 || header_size < 0 ||
-	    (PHYSFS_sint64)bitmap_header_start + header_size > pigsize) {
-		PHYSFS_close(d1_Piggy_fp);
-		return 0;
-	}
-	bitmap_data_start = bitmap_header_start + (int)header_size;
-	PHYSFSX_fseek(d1_Piggy_fp, bitmap_header_start + (d1_index - 1) * DISKBITMAPHEADER_D1_SIZE, SEEK_SET);
-	DiskBitmapHeader_d1_read(&bmh, d1_Piggy_fp);
-
-	if (!bitmap_read_d1(&GameBitmaps[d2_bitmap.index], d1_Piggy_fp, bitmap_data_start,
-	                    &bmh, &Bitmap_replacement_next, Bitmap_replacement_end,
-	                    d1_palette, colormap)) {
-		PHYSFS_close(d1_Piggy_fp);
-		return 0;
-	}
-	GameBitmapOffset[d2_bitmap.index] = 0;
-	GameBitmapFlags[d2_bitmap.index] = bmh.flags;
-
-	PHYSFS_close(d1_Piggy_fp);
-	return 1;
-}
-
-
-extern int extra_bitmap_num;
-
-/*
- * Find and load the named bitmap from descent.pig
- * similar to read_extra_bitmap_iff
- */
-bitmap_index read_extra_bitmap_d1_pig(char *name)
-{
-	bitmap_index bitmap_num;
-	grs_bitmap * n = &GameBitmaps[extra_bitmap_num];
-
-	bitmap_num.index = 0;
-
-	{
-		PHYSFS_file *d1_Piggy_fp;
-		DiskBitmapHeader bmh;
-		int pig_data_start, bitmap_header_start, bitmap_data_start;
-		int i, N_bitmaps;
-		ubyte colormap[256];
-		ubyte d1_palette[256*3];
-		int pigsize;
-
-		d1_Piggy_fp = PHYSFSX_openReadBuffered(D1_PIGFILE);
-
-		if (!d1_Piggy_fp)
-		{
-			Warning(D1_PIG_LOAD_FAILED);
-			return bitmap_num;
-		}
-
-		if (get_d1_colormap( d1_palette, colormap ) != 0)
-			Warning("Could not load descent 1 color palette");
-
-		pigsize = PHYSFS_fileLength(d1_Piggy_fp);
-		switch (pigsize) {
-		case D1_SHARE_BIG_PIGSIZE:
-		case D1_SHARE_10_PIGSIZE:
-		case D1_SHARE_PIGSIZE:
-		case D1_10_BIG_PIGSIZE:
-		case D1_10_PIGSIZE:
-			pig_data_start = 0;
-			break;
-		default:
-			Warning("Unknown size for " D1_PIGFILE);
-			Int3();
-			// fall through
-		case D1_PIGSIZE:
-		case D1_OEM_PIGSIZE:
-		case D1_MAC_PIGSIZE:
-		case D1_MAC_SHARE_PIGSIZE:
-			pig_data_start = PHYSFSX_readInt(d1_Piggy_fp );
-
-			break;
-		}
-
-		PHYSFSX_fseek( d1_Piggy_fp, pig_data_start, SEEK_SET );
-		N_bitmaps = PHYSFSX_readInt(d1_Piggy_fp);
-		{
-			int N_sounds = PHYSFSX_readInt(d1_Piggy_fp);
-			int header_size = N_bitmaps * DISKBITMAPHEADER_D1_SIZE
-				+ N_sounds * sizeof(DiskSoundHeader);
-			bitmap_header_start = pig_data_start + 2 * sizeof(int);
-			bitmap_data_start = bitmap_header_start + header_size;
-		}
-
-		for (i = 1; i <= N_bitmaps; i++)
-		{
-			DiskBitmapHeader_d1_read(&bmh, d1_Piggy_fp);
-			if (!d_strnicmp(bmh.name, name, 8))
-				break;
-		}
-
-		if (d_strnicmp(bmh.name, name, 8))
-		{
-			con_printf(CON_DEBUG, "could not find bitmap %s\n", name);
-			return bitmap_num;
-		}
-
-		if (!bitmap_read_d1(n, d1_Piggy_fp, bitmap_data_start, &bmh, NULL, NULL,
-		                    d1_palette, colormap)) {
-			PHYSFS_close(d1_Piggy_fp);
-			return bitmap_num;
-		}
-
-		PHYSFS_close(d1_Piggy_fp);
-	}
-
-	n->avg_color = 0;	//compute_average_pixel(n);
-
-	bitmap_num.index = extra_bitmap_num;
-
-	GameBitmaps[extra_bitmap_num++] = *n;
-
-	return bitmap_num;
-}
 
 /*
  * reads a bitmap_index structure from a PHYSFS_file

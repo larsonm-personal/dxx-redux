@@ -151,14 +151,14 @@ static int d1_model_word_at(const uint8_t *data, size_t size, size_t offset, uin
 }
 
 static int validate_d1_model_stream_inner(const uint8_t *data, size_t size, size_t offset, int depth,
-                                          size_t *remaining_steps)
+                                          size_t *remaining_steps, int texture_count)
 {
 	size_t cursor = offset;
 
 	if (depth > D1_MODEL_MAX_RECURSION || offset >= size || !remaining_steps)
 		return 0;
 	while (cursor < size) {
-		uint16_t opcode, count, branch;
+		uint16_t opcode, count, branch, texture;
 		size_t record_size;
 
 		if (!*remaining_steps)
@@ -187,6 +187,9 @@ static int validate_d1_model_stream_inner(const uint8_t *data, size_t size, size
 			case D1_MODEL_OP_TMAPPOLY:
 				if (!d1_model_word_at(data, size, cursor + 2, &count))
 					return 0;
+				if (texture_count >= 0 &&
+				    (!d1_model_word_at(data, size, cursor + 28, &texture) || texture >= texture_count))
+					return 0;
 				record_size = 30 + (size_t) ((count & ~1) + 1) * sizeof(uint16_t) +
 				              (size_t) count * 3 * D1_FIX_SIZE;
 				break;
@@ -195,15 +198,18 @@ static int validate_d1_model_stream_inner(const uint8_t *data, size_t size, size
 				    !d1_model_word_at(data, size, cursor + 28, &branch) || !branch ||
 				    branch >= size - cursor ||
 				    !validate_d1_model_stream_inner(data, size, cursor + branch, depth + 1,
-				                                    remaining_steps) ||
+				                                    remaining_steps, texture_count) ||
 				    !d1_model_word_at(data, size, cursor + 30, &branch) || !branch ||
 				    branch >= size - cursor ||
 				    !validate_d1_model_stream_inner(data, size, cursor + branch, depth + 1,
-				                                    remaining_steps))
+				                                    remaining_steps, texture_count))
 					return 0;
 				record_size = 32;
 				break;
 			case D1_MODEL_OP_RODBM:
+				if (texture_count >= 0 &&
+				    (!d1_model_word_at(data, size, cursor + 2, &texture) || texture >= texture_count))
+					return 0;
 				record_size = 36;
 				break;
 			case D1_MODEL_OP_SUBCALL:
@@ -211,7 +217,7 @@ static int validate_d1_model_stream_inner(const uint8_t *data, size_t size, size
 				    !d1_model_word_at(data, size, cursor + 16, &branch) || !branch ||
 				    branch >= size - cursor ||
 				    !validate_d1_model_stream_inner(data, size, cursor + branch, depth + 1,
-				                                    remaining_steps))
+				                                    remaining_steps, texture_count))
 					return 0;
 				record_size = 20;
 				break;
@@ -235,5 +241,15 @@ int d1_pig_validate_model_stream(const uint8_t *data, size_t size, size_t offset
 	if (size > (SIZE_MAX - 1) / 32)
 		return 0;
 	remaining_steps = size * 32 + 1;
-	return validate_d1_model_stream_inner(data, size, offset, 0, &remaining_steps);
+	return validate_d1_model_stream_inner(data, size, offset, 0, &remaining_steps, -1);
+}
+
+int d1_pig_validate_model_textures(const uint8_t *data, size_t size, size_t offset, int texture_count)
+{
+	size_t remaining_steps;
+
+	if (texture_count < 0 || size > (SIZE_MAX - 1) / 32)
+		return 0;
+	remaining_steps = size * 32 + 1;
+	return validate_d1_model_stream_inner(data, size, offset, 0, &remaining_steps, texture_count);
 }

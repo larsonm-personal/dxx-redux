@@ -982,6 +982,20 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         d1InD2Json.put("d1_assets_ready", d1InD2.d1AssetsReady)
         d1InD2Json.put("files", fileStatusArray(d1InD2.d1AssetStatuses))
         root.put("d1_in_d2", d1InD2Json)
+        root.put(
+            "launch_targets",
+            JSONArray().apply {
+                GameLaunchTarget.entries.forEach { target ->
+                    put(
+                        JSONObject()
+                            .put("id", target.id)
+                            .put("engine", target.engine)
+                            .put("content", target.content)
+                            .put("ready", target.filesReady(d1Ready, d2Ready)),
+                    )
+                }
+            },
+        )
 
         newestResumeCandidate?.let { root.put("resume_candidate", it.toJson()) }
 

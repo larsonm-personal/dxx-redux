@@ -62,8 +62,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_replay.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_energy_trace.h"
-#include "d1_in_d2.h"
-#include "d1_in_d2_semantics.h"
+#include "d1_in_d2/d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2_ai.h"
 #include "escort.h"
 
 #ifdef EDITOR
@@ -133,36 +133,45 @@ void init_ai_object(int objnum, int behavior, int hide_segment)
 
 	memset(ailp, 0, sizeof(ai_local));
 
-	if (behavior == 0) {
-		behavior = AIB_NORMAL;
-		aip->behavior = behavior;
-	}
+	if (!d1_in_d2_ai_initialize_behavior(objp, ailp, behavior, hide_segment)) {
+		if (behavior == 0) {
+			behavior = AIB_NORMAL;
+			aip->behavior = behavior;
+		}
 
-	//	mode is now set from the Robot dialog, so this should get overwritten.
-	ailp->mode = AIM_STILL;
+		//	mode is now set from the Robot dialog, so this should get overwritten.
+		ailp->mode = AIM_STILL;
 
-	ailp->previous_visibility = 0;
+		ailp->previous_visibility = 0;
 
-	if (behavior != -1) {
-		aip->behavior = behavior;
-		ailp->mode = ai_behavior_to_mode(aip->behavior);
-	} else if (!((aip->behavior >= MIN_BEHAVIOR) && (aip->behavior <= MAX_BEHAVIOR))) {
-		aip->behavior = AIB_NORMAL;
-	}
+		if (behavior != -1) {
+			aip->behavior = behavior;
+			ailp->mode = ai_behavior_to_mode(aip->behavior);
+		} else if (!((aip->behavior >= MIN_BEHAVIOR) && (aip->behavior <= MAX_BEHAVIOR))) {
+			aip->behavior = AIB_NORMAL;
+		}
 
-	if (robptr->companion) {
-		ailp->mode = AIM_GOTO_PLAYER;
-		Escort_kill_object = -1;
-	}
+		if (robptr->companion) {
+			ailp->mode = AIM_GOTO_PLAYER;
+			Escort_kill_object = -1;
+		}
 
-	if (robptr->thief) {
-		aip->behavior = AIB_SNIPE;
-		ailp->mode = AIM_THIEF_WAIT;
-	}
+		if (robptr->thief) {
+			aip->behavior = AIB_SNIPE;
+			ailp->mode = AIM_THIEF_WAIT;
+		}
 
-	if (robptr->attack_type) {
-		aip->behavior = AIB_NORMAL;
-		ailp->mode = ai_behavior_to_mode(aip->behavior);
+		if (robptr->attack_type) {
+			aip->behavior = AIB_NORMAL;
+			ailp->mode = ai_behavior_to_mode(aip->behavior);
+		}
+
+		if ((behavior == AIB_SNIPE) || (behavior == AIB_STATION) || (behavior == AIB_RUN_FROM) || (behavior == AIB_FOLLOW)) {
+			aip->hide_segment = hide_segment;
+			ailp->goal_segment = hide_segment;
+			aip->hide_index = -1;			// This means the path has not yet been created.
+			aip->cur_path_index = 0;
+		}
 	}
 
 	// This is astonishingly stupid!  This routine gets called by matcens! KILL KILL KILL!!! Point_segs_free_ptr = Point_segs;
@@ -176,13 +185,6 @@ void init_ai_object(int objnum, int behavior, int hide_segment)
 	ailp->time_player_seen = GameTime64;
 	ailp->next_misc_sound_time = GameTime64;
 	ailp->time_player_sound_attacked = GameTime64;
-
-	if ((behavior == AIB_SNIPE) || (behavior == AIB_STATION) || (behavior == AIB_RUN_FROM) || (behavior == AIB_FOLLOW)) {
-		aip->hide_segment = hide_segment;
-		ailp->goal_segment = hide_segment;
-		aip->hide_index = -1;			// This means the path has not yet been created.
-		aip->cur_path_index = 0;
-	}
 
 	aip->SKIP_AI_COUNT = 0;
 
@@ -368,11 +370,20 @@ void init_ai_objects(void)
 			init_ai_object(i, objp->ctype.ai_info.behavior, objp->ctype.ai_info.hide_segment);
 	}
 
-	init_boss_segments(Boss_gate_segs, &Num_boss_gate_segs, 0, 0);
+	if (!d1_in_d2_ai_initialize_boss()) {
+		init_boss_segments(Boss_gate_segs, &Num_boss_gate_segs, 0, 0);
+		init_boss_segments(Boss_teleport_segs, &Num_boss_teleport_segs, 1, 0);
+		if (Num_boss_teleport_segs == 1)
+			init_boss_segments(Boss_teleport_segs, &Num_boss_teleport_segs, 1, 1);
 
-	init_boss_segments(Boss_teleport_segs, &Num_boss_teleport_segs, 1, 0);
-	if (Num_boss_teleport_segs == 1)
-		init_boss_segments(Boss_teleport_segs, &Num_boss_teleport_segs, 1, 1);
+		if (Current_mission && (Current_level_num == Last_level)) {
+			Boss_teleport_interval = F1_0*10;
+			Boss_cloak_interval = F1_0*15;
+		} else {
+			Boss_teleport_interval = F1_0*7;
+			Boss_cloak_interval = F1_0*10;
+		}
+	}
 
 	Boss_dying_sound_playing = 0;
 	Boss_dying = 0;
@@ -385,15 +396,6 @@ void init_ai_objects(void)
 
 	init_buddy_for_level();
 
-	if (Current_mission && (Current_level_num == Last_level))
-	{
-		Boss_teleport_interval = F1_0*10;
-		Boss_cloak_interval = F1_0*15;					//	Time between cloaks
-	} else
-	{
-		Boss_teleport_interval = F1_0*7;
-		Boss_cloak_interval = F1_0*10;					//	Time between cloaks
-	}
 }
 
 //	----------------------------------------------------------------
@@ -421,7 +423,6 @@ void set_rotvel_and_saturate(fix *dest, fix delta)
 #define	BABY_SPIDER_ID	14
 #define	FIRE_AT_NEARBY_PLAYER_THRESHOLD	(F1_0*40)
 
-extern void physics_turn_towards_vector(vms_vector *goal_vector, object *obj, fix rate);
 extern fix Seismic_tremor_magnitude;
 
 //-------------------------------------------------------------------------------------------
@@ -537,7 +538,7 @@ int player_is_visible_from_object(object *objp, vms_vector *pos, fix field_of_vi
 	fq.rad					= F1_0/4;
 	fq.thisobjnum			= objp-Objects;
 	fq.ignore_obj_list	= NULL;
-	fq.flags					= d1_in_d2_use_d1_gameplay() ? (FQ_TRANSWALL | FQ_CHECK_OBJS) : FQ_TRANSWALL; // -- Why were we checking objects? | FQ_CHECK_OBJS;		//what about trans walls???
+	fq.flags					= FQ_TRANSWALL; // -- Why were we checking objects? | FQ_CHECK_OBJS;		//what about trans walls???
 
 	Hit_type = find_vector_intersection(&fq,&Hit_data);
 
@@ -547,8 +548,7 @@ int player_is_visible_from_object(object *objp, vms_vector *pos, fix field_of_vi
 	dot = 0;
 	visibility_result = 0;
 	// -- when we stupidly checked objects -- if ((Hit_type == HIT_NONE) || ((Hit_type == HIT_OBJECT) && (Hit_data.hit_object == Players[Player_num].objnum))) {
-	if ((Hit_type == HIT_NONE) ||
-	    (d1_in_d2_use_d1_gameplay() && (Hit_type == HIT_OBJECT) && (Hit_data.hit_object == Players[Player_num].objnum))) {
+	if (Hit_type == HIT_NONE) {
 		dot = vm_vec_dot(vec_to_player, &objp->orient.fvec);
 		if (dot > field_of_view - (Overall_agitation << 9)) {
 			visibility_result = 2;
@@ -760,19 +760,8 @@ void ai_frame_animation(object *objp)
 // ----------------------------------------------------------------------------------
 void set_next_fire_time(object *objp, ai_local *ailp, robot_info *robptr, int gun_num)
 {
-	if (d1_in_d2_use_d1_robot_aiming()) {
-		(void)objp;
-		(void)gun_num;
-		ailp->rapidfire_count++;
-
-		if (ailp->rapidfire_count < robptr->rapidfire_count[Difficulty_level]) {
-			ailp->next_fire = min(F1_0/8, robptr->firing_wait[Difficulty_level]/2);
-		} else {
-			ailp->rapidfire_count = 0;
-			ailp->next_fire = robptr->firing_wait[Difficulty_level];
-		}
+	if (d1_in_d2_ai_next_fire_time(objp, ailp, robptr))
 		return;
-	}
 
 	//	For guys in snipe mode, they have a 50% shot of getting this shot in free.
 	if ((gun_num != 0) || (robptr->weapon_type2 == -1))
@@ -1049,15 +1038,6 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 
 	//	Set position to fire at based on difficulty level and robot's aiming ability
 	aim = FIRE_K*F1_0 - (FIRE_K-1)*(robptr->aim << 8);	//	F1_0 in bitmaps.tbl = same as used to be.  Worst is 50% more error.
-	if (d1_in_d2_use_d1_robot_aiming()) {
-		aim = F1_0;	// D1 robots had no per-type aim byte, so use D1's exact spread scale.
-		bpp_diff.x = believed_player_pos->x + (d_rand()-16384) * (NDL-Difficulty_level-1) * 4;
-		bpp_diff.y = believed_player_pos->y + (d_rand()-16384) * (NDL-Difficulty_level-1) * 4;
-		bpp_diff.z = believed_player_pos->z + (d_rand()-16384) * (NDL-Difficulty_level-1) * 4;
-		(void)d_rand();
-		vm_vec_normalized_dir_quick(&fire_vec, &bpp_diff, fire_point);
-		goto player_led;
-	}
 
 	//	Robots aim more poorly during seismic disturbance.
 	if (Seismic_tremor_magnitude) {
@@ -1352,7 +1332,7 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 
 	//	If only allowed to do evade code, then done.
 	//	Hmm, perhaps brilliant insight.  If want claw-type guys to keep coming, don't return here after evasion.
-	if ((!robptr->attack_type) && (d1_in_d2_use_d1_gameplay() || !robptr->thief) && evade_only)
+	if ((!robptr->attack_type) && !robptr->thief && evade_only)
 		return;
 
 	//	If we fall out of above, then no object to be avoided.
@@ -1371,13 +1351,6 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 		} else {
 			move_towards_player(objp, vec_to_player);
 		}
-	} else if (d1_in_d2_use_d1_gameplay()) {
-		if (dist_to_player < circle_distance)
-			move_away_from_player(objp, vec_to_player, 0);
-		else if (dist_to_player < circle_distance * 2)
-			move_around_player(objp, vec_to_player, -1);
-		else
-			move_towards_player(objp, vec_to_player);
 	} else if (robptr->thief) {
 		move_towards_player(objp, vec_to_player);
 	} else {
@@ -1422,7 +1395,7 @@ int	Break_on_object = -1;
 
 void do_firing_stuff(object *obj, int player_visibility, vms_vector *vec_to_player)
 {
-	if (d1_in_d2_ai_nearby_fire_shortcut_active(Dist_to_last_fired_upon_player_pos, FIRE_AT_NEARBY_PLAYER_THRESHOLD) ||
+	if ((Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD) ||
 		(player_visibility >= 1)) {
 		//	Now, if in robot's field of view, lock onto player
 		fix	dot = vm_vec_dot(&obj->orient.fvec, vec_to_player);
@@ -1460,15 +1433,8 @@ void do_firing_stuff(object *obj, int player_visibility, vms_vector *vec_to_play
 void do_ai_robot_hit(object *objp, int type)
 {
 	if (objp->control_type == CT_AI) {
-		if (d1_in_d2_use_d1_gameplay()) {
-			if ((type == PA_WEAPON_ROBOT_COLLISION) || (type == PA_PLAYER_COLLISION))
-				switch (objp->ctype.ai_info.behavior) {
-					case AIM_STILL:
-						Ai_local_info[objp-Objects].mode = AIM_CHASE_OBJECT;
-						break;
-				}
+		if (d1_in_d2_ai_robot_hit(objp, type))
 			return;
-		}
 
 		if ((type == PA_WEAPON_ROBOT_COLLISION) || (type == PA_PLAYER_COLLISION))
 			switch (objp->ctype.ai_info.behavior) {
@@ -1599,8 +1565,7 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 
 		//	@mk, 09/21/95: If player view is not obstructed and awareness is at least as high as a nearby collision,
 		//	act is if robot is looking at player.
-		if (!d1_in_d2_use_d1_gameplay() &&
-			ailp->player_awareness_type >= PA_NEARBY_ROBOT_FIRED)
+		if (ailp->player_awareness_type >= PA_NEARBY_ROBOT_FIRED)
 			if (*player_visibility == 1)
 				*player_visibility = 2;
 				
@@ -1727,6 +1692,9 @@ static int ai_companion_has_key(int key_flag)
 //	objp == NULL means treat as buddy.
 int ai_door_is_openable(object *objp, segment *segp, int sidenum)
 {
+	const int native = d1_in_d2_ai_door_is_openable(objp, segp, sidenum);
+	if (native != D1_AI_NOT_APPLICABLE)
+		return native;
 	int	wall_num;
 	wall	*wallp;
 
@@ -2053,6 +2021,9 @@ void init_ai_for_ship(void)
 //	Return objnum if robot successfully created, else return -1
 int gate_in_robot(int type, int segnum)
 {
+	int result;
+	if (d1_in_d2_ai_gate_robot(type, segnum, &result))
+		return result;
 	if (segnum < 0)
 		// SIM RNG: this chooses the live gate-in segment for the spawned robot
 		segnum = Boss_gate_segs[(d_rand() * Num_boss_gate_segs) >> 15];
@@ -2365,7 +2336,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 		} while (0)
 
 	if ((player_visibility == 2) ||
-		d1_in_d2_ai_nearby_fire_shortcut_active(Dist_to_last_fired_upon_player_pos, FIRE_AT_NEARBY_PLAYER_THRESHOLD)) {
+		(Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD)) {
 		vms_vector	fire_pos;
 
 		fire_pos = Believed_player_pos;
@@ -2408,7 +2379,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 								return;
 							}
 							//	New, multi-weapon-type system, 06/05/95 (life is slipping away...)
-							if (!d1_in_d2_use_d1_gameplay() && gun_num != 0) {
+							if (gun_num != 0) {
 								if (ailp->next_fire <= 0) {
 									ai_fire_laser_at_player(obj, gun_point, gun_num, &fire_pos);
 									Last_fired_upon_player_pos = fire_pos;
@@ -2460,8 +2431,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 				aip->CURRENT_GUN++;
 				if (aip->CURRENT_GUN >= Robot_info[obj->id].n_guns)
 				{
-					if (d1_in_d2_use_d1_gameplay() ||
-					    (Robot_info[obj->id].n_guns == 1) || (Robot_info[obj->id].weapon_type2 == -1))
+					if ((Robot_info[obj->id].n_guns == 1) || (Robot_info[obj->id].weapon_type2 == -1))
 						aip->CURRENT_GUN = 0;
 					else
 						aip->CURRENT_GUN = 1;
@@ -2474,12 +2444,9 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 			REPLAY_LOG_FIRE_GATE("gate_direct_not_ready", gun_num,
 				-1, 7*F1_0/8, -1, -1, -1, -1);
 		}
-	} else if (d1_in_d2_use_d1_gameplay()
-			? (Weapon_info[Robot_info[obj->id].weapon_type].homing_flag == 1)
-			: (((!robptr->attack_type) && (Weapon_info[Robot_info[obj->id].weapon_type].homing_flag == 1)) || (((Robot_info[obj->id].weapon_type2 != -1) && (Weapon_info[Robot_info[obj->id].weapon_type2].homing_flag == 1))))) {
+	} else if ((((!robptr->attack_type) && (Weapon_info[Robot_info[obj->id].weapon_type].homing_flag == 1)) || (((Robot_info[obj->id].weapon_type2 != -1) && (Weapon_info[Robot_info[obj->id].weapon_type2].homing_flag == 1))))) {
 		const int hit_dist = vm_vec_dist_quick(&Hit_pos, &obj->pos);
-		const int ready_to_fire_homing = d1_in_d2_use_d1_gameplay() ? (ailp->next_fire <= 0) :
-			(((ailp->next_fire <= 0) && (aip->CURRENT_GUN != 0)) || ((ailp->next_fire2 <= 0) && (aip->CURRENT_GUN == 0)));
+		const int ready_to_fire_homing = (((ailp->next_fire <= 0) && (aip->CURRENT_GUN != 0)) || ((ailp->next_fire2 <= 0) && (aip->CURRENT_GUN == 0)));
 
 		if (((!object_animates) || (ailp->achieved_state[aip->CURRENT_GUN] == AIS_FIRE))
 					&& ready_to_fire_homing
@@ -2511,7 +2478,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 			if (aip->CURRENT_GUN >= Robot_info[obj->id].n_guns)
 				aip->CURRENT_GUN = 0;
 		}
-	} else if (!d1_in_d2_use_d1_gameplay()) {
+	} else {
 		// SIM RNG: this decides whether blind-fire logic attempts a live shot
 		const int blind_roll = d_rand()/2;
 		const int blind_threshold = fixmul(FrameTime,

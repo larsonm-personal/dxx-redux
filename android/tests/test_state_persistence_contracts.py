@@ -101,7 +101,7 @@ class StatePersistenceContractsTest(unittest.TestCase):
             self.assertLess(restore, missing_metadata)
 
     def test_d1_translation_accepts_only_its_decoded_layout(self) -> None:
-        source = (ROOT / "d2/main/d1_save_translate.c").read_text(encoding="utf-8")
+        source = (ROOT / "d2/main/d1_in_d2/d1_save_translate.c").read_text(encoding="utf-8")
         self.assertEqual("15", re.search(r"#define D1_SAVE_COMPATIBLE_VERSION\s+(\S+)", source).group(1))
         self.assertIn("version < D1_SAVE_COMPATIBLE_VERSION || version > D1_SAVE_VERSION", source)
         for token in (

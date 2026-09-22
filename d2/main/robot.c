@@ -287,10 +287,10 @@ int robot_info_read_n(robot_info *ri, int n, PHYSFS_file *fp)
 		ri[i].cloak_type = PHYSFSX_readByte(fp);
 		ri[i].attack_type = PHYSFSX_readByte(fp);
 
-		ri[i].see_sound = PHYSFSX_readByte(fp);
-		ri[i].attack_sound = PHYSFSX_readByte(fp);
-		ri[i].claw_sound = PHYSFSX_readByte(fp);
-		ri[i].taunt_sound = PHYSFSX_readByte(fp);
+		ri[i].see_sound = (ubyte)PHYSFSX_readByte(fp);
+		ri[i].attack_sound = (ubyte)PHYSFSX_readByte(fp);
+		ri[i].claw_sound = (ubyte)PHYSFSX_readByte(fp);
+		ri[i].taunt_sound = (ubyte)PHYSFSX_readByte(fp);
 
 		ri[i].boss_flag = PHYSFSX_readByte(fp);
 		ri[i].companion = PHYSFSX_readByte(fp);
@@ -305,7 +305,7 @@ int robot_info_read_n(robot_info *ri, int n, PHYSFS_file *fp)
 		ri[i].flags = PHYSFSX_readByte(fp);
 		PHYSFS_read(fp, ri[i].pad, 3, 1);
 
-		ri[i].deathroll_sound = PHYSFSX_readByte(fp);
+		ri[i].deathroll_sound = (ubyte)PHYSFSX_readByte(fp);
 		ri[i].glow = PHYSFSX_readByte(fp);
 		ri[i].behavior = PHYSFSX_readByte(fp);
 		ri[i].aim = PHYSFSX_readByte(fp);
@@ -330,4 +330,95 @@ int jointpos_read_n(jointpos *jp, int n, PHYSFS_file *fp)
 		PHYSFSX_readAngleVec(&jp[i].angles, fp);
 	}
 	return i;
+}
+
+/* Runtime structure widths need not match the original HAM/HXM disk record */
+static int robot_write_byte(PHYSFS_file *fp, int value)
+{
+	ubyte byte = (ubyte)value;
+	return PHYSFS_writeBytes(fp, &byte, 1) == 1;
+}
+
+int robot_info_write_n(const robot_info *ri, int n, PHYSFS_file *fp)
+{
+	int i, j, state;
+	if (!ri || !fp || n < 0)
+		return 0;
+	/* Check every narrowing conversion before writing any record */
+	for (i = 0; i < n; i++)
+		if (ri[i].see_sound < 0 || ri[i].see_sound > 255 ||
+		    ri[i].attack_sound < 0 || ri[i].attack_sound > 255 ||
+		    ri[i].claw_sound < 0 || ri[i].claw_sound > 255 ||
+		    ri[i].taunt_sound < 0 || ri[i].taunt_sound > 255 ||
+		    ri[i].deathroll_sound < 0 || ri[i].deathroll_sound > 255)
+			return 0;
+#define W8(field) if (!robot_write_byte(fp, ri[i].field)) return 0
+#define W16(field) if (!PHYSFS_writeSLE16(fp, ri[i].field)) return 0
+#define W32(field) if (!PHYSFS_writeSLE32(fp, ri[i].field)) return 0
+	for (i = 0; i < n; i++) {
+		W32(model_num);
+		for (j = 0; j < MAX_GUNS; j++) {
+			W32(gun_points[j].x);
+			W32(gun_points[j].y);
+			W32(gun_points[j].z);
+		}
+		for (j = 0; j < MAX_GUNS; j++) { W8(gun_submodels[j]); }
+		W16(exp1_vclip_num);
+		W16(exp1_sound_num);
+		W16(exp2_vclip_num);
+		W16(exp2_sound_num);
+		W8(weapon_type);
+		W8(weapon_type2);
+		W8(n_guns);
+		W8(contains_id);
+		W8(contains_count);
+		W8(contains_prob);
+		W8(contains_type);
+		W8(kamikaze);
+		W16(score_value);
+		W8(badass);
+		W8(energy_drain);
+		W32(lighting);
+		W32(strength);
+		W32(mass);
+		W32(drag);
+		for (j = 0; j < NDL; j++) { W32(field_of_view[j]); }
+		for (j = 0; j < NDL; j++) { W32(firing_wait[j]); }
+		for (j = 0; j < NDL; j++) { W32(firing_wait2[j]); }
+		for (j = 0; j < NDL; j++) { W32(turn_time[j]); }
+		for (j = 0; j < NDL; j++) { W32(max_speed[j]); }
+		for (j = 0; j < NDL; j++) { W32(circle_distance[j]); }
+		for (j = 0; j < NDL; j++) { W8(rapidfire_count[j]); }
+		for (j = 0; j < NDL; j++) { W8(evade_speed[j]); }
+		W8(cloak_type);
+		W8(attack_type);
+		W8(see_sound);
+		W8(attack_sound);
+		W8(claw_sound);
+		W8(taunt_sound);
+		W8(boss_flag);
+		W8(companion);
+		W8(smart_blobs);
+		W8(energy_blobs);
+		W8(thief);
+		W8(pursuit);
+		W8(lightcast);
+		W8(death_roll);
+		W8(flags);
+		for (j = 0; j < 3; j++) { W8(pad[j]); }
+		W8(deathroll_sound);
+		W8(glow);
+		W8(behavior);
+		W8(aim);
+		for (j = 0; j <= MAX_GUNS; j++)
+			for (state = 0; state < N_ANIM_STATES; state++) {
+				W16(anim_states[j][state].n_joints);
+				W16(anim_states[j][state].offset);
+			}
+		W32(always_0xabcd);
+	}
+#undef W8
+#undef W16
+#undef W32
+	return 1;
 }

@@ -28,6 +28,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "inferno.h"
 #include "text.h"
 #include "args.h"
+#include "d1_in_d2/d1_in_d2_presentation.h"
 
 #define SHAREWARE_TEXTSIZE  14677
 
@@ -37,8 +38,11 @@ char *Text_string[N_TEXT_STRINGS];
 
 void free_text()
 {
+	if (d1_in_d2_free_text())
+		return;
 	d_free(Text_string[350]);
 	d_free(text);
+	memset(Text_string, 0, sizeof(Text_string));
 }
 
 // rotates a byte left one bit, preserving the bit falling off the right
@@ -85,12 +89,18 @@ void load_text()
 	int len,i, have_binary = 0;
 	char *tptr;
 	char *filename="descent.tex";
+	char plain[PATH_MAX], binary[PATH_MAX];
+	if (d1_in_d2_load_text())
+		return;
+	d1_in_d2_presentation_resource("descent.tex", plain, sizeof(plain));
+	d1_in_d2_presentation_resource("descent.txb", binary, sizeof(binary));
+	filename = plain;
 
 	if (GameArg.DbgAltTex)
 		filename = GameArg.DbgAltTex;
 
 	if ((tfile = PHYSFSX_openReadBuffered(filename)) == NULL) {
-		filename="descent.txb";
+		filename=binary;
 		if ((ifile = PHYSFSX_openReadBuffered(filename)) == NULL) {
 			Error("Cannot open file DESCENT.TEX or DESCENT.TXB");
 			return;
@@ -205,6 +215,7 @@ void load_text()
 	}
 
 	//Assert(tptr==text+len || tptr==text+len-2);
+	d1_in_d2_note_d2_text_loaded();
 
 }
 

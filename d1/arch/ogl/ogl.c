@@ -2244,7 +2244,20 @@ void ogl_start_frame(void){
 	glClear(GL_DEPTH_BUFFER_BIT |
 	        (msaa_color_clear ? GL_COLOR_BUFFER_BIT : 0));
 #else
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	/* A cockpit camera clears only its own canvas, preserving the main view */
+	{
+		GLint scissor[4];
+		GLboolean scissor_enabled = glIsEnabled(GL_SCISSOR_TEST);
+		glGetIntegerv(GL_SCISSOR_BOX, scissor);
+		glEnable(GL_SCISSOR_TEST);
+		glScissor(grd_curcanv->cv_bitmap.bm_x,
+			grd_curscreen->sc_h - grd_curcanv->cv_bitmap.bm_y - Canvas_height,
+			Canvas_width, Canvas_height);
+		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+		glScissor(scissor[0], scissor[1], scissor[2], scissor[3]);
+		if (!scissor_enabled)
+			glDisable(GL_SCISSOR_TEST);
+	}
 #endif
 
 	glEnable(GL_CULL_FACE);

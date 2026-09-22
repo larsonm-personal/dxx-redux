@@ -7,10 +7,12 @@
 #include "cntrlcen.h"
 #include "console.h"
 #include "d1_save_translate.h"
+#include "d1_in_d2_ai.h"
 #include "effects.h"
 #include "fuelcen.h"
 #include "game.h"
 #include "gamemine.h"
+#include "d1_in_d2_levels.h"
 #include "laser.h"
 #include "morph.h"
 #include "object.h"
@@ -25,9 +27,10 @@
 #include "weapon.h"
 #include "vclip.h"
 
-#define D1_SAVE_VERSION 16
+#define D1_SAVE_VERSION 17
 #define D1_SAVE_COMPATIBLE_VERSION 15
 #define D1_SAVE_SECRET_IDENTITY_VERSION 16
+#define D1_SAVE_AUTOSELECT_VERSION 17
 #define D1_SAVE_DESC_LENGTH 20
 #define D1_SAVE_THUMBNAIL_W 100
 #define D1_SAVE_THUMBNAIL_H 50
@@ -99,6 +102,7 @@ typedef struct d1_save_translate_ai_state {
 	fix64 boss_dying_start_time;
 	int boss_dying;
 	sbyte boss_dying_sound_playing;
+	int boss_hit_pending;
 	int point_seg_free_index;
 	int awareness_count;
 	awareness_event awareness_events[D1_SAVE_MAX_AWARENESS_EVENTS];
@@ -122,9 +126,15 @@ typedef struct d1_save_translate_runtime_state {
 	object_runtime_state object_state;
 	laser_runtime_state laser_state;
 	ai_path_runtime_state ai_path_state;
+	int primary_picked_up;
+	int secondary_picked_up;
+	int delayed_primary;
+	int delayed_secondary;
 } d1_save_translate_runtime_state;
 
 extern int Do_appearance_effect;
+extern int delayed_primary_autoselect_weapon_index;
+extern int delayed_secondary_autoselect_weapon_index;
 extern void copy_defaults_to_robot(object *objp);
 
 static int d1_save_translate_skip(d1_save_translate_reader *reader, size_t count)
@@ -578,7 +588,7 @@ static int d1_save_translate_read_object_control(d1_save_translate_reader *reade
 		for (i = 0; i < MAX_AI_FLAGS; i++)
 			if (!d1_save_translate_read_s8(reader, &obj->ctype.ai_info.flags[i]))
 				return 0;
-		obj->ctype.ai_info.SUB_FLAGS = 0;
+		/* flags[4] is native D1 SUBMODE, not the D2 camera/wake bitset */
 		if (!d1_save_translate_read_s16(reader, &obj->ctype.ai_info.hide_segment) ||
 		    !d1_save_translate_read_s16(reader, &obj->ctype.ai_info.hide_index) ||
 		    !d1_save_translate_read_s16(reader, &obj->ctype.ai_info.path_length) ||
@@ -974,7 +984,8 @@ static int d1_save_translate_read_d1_ai_state(
 	    !d1_save_translate_read_s32(reader, &unused_s32))
 		return 0;
 	state->boss_dying_sound_playing = (sbyte) unused_s32;
-	if (!d1_save_translate_skip(reader, 2 * sizeof(int)) ||
+	if (!d1_save_translate_read_s32(reader, &state->boss_hit_pending) ||
+	    !d1_save_translate_skip(reader, sizeof(int)) ||
 	    !d1_save_translate_read_s32(reader, &state->point_seg_free_index))
 		return 0;
 	if (state->point_seg_free_index < 0 ||
@@ -1047,6 +1058,7 @@ static void d1_save_translate_commit_d1_ai_state(
 	Boss_dying_start_time = state->boss_dying_start_time;
 	Boss_dying = state->boss_dying;
 	Boss_dying_sound_playing = state->boss_dying_sound_playing;
+	d1_in_d2_ai_restore_boss_hit(state->boss_hit_pending);
 	Point_segs_free_ptr = &Point_segs[state->point_seg_free_index];
 	Num_awareness_events = state->awareness_count;
 	memcpy(Awareness_events, state->awareness_events,
@@ -1097,55 +1109,24 @@ static int d1_save_translate_read_d1_active_door(
 	       d1_save_translate_read_fix(reader, &out->time);
 }
 
-static ubyte d1_save_translate_trigger_type(short d1_flags)
-{
-	if (d1_flags & TRIGGER_EXIT)
-		return TT_EXIT;
-	if (d1_flags & TRIGGER_SECRET_EXIT)
-		return TT_SECRET_EXIT;
-	if (d1_flags & TRIGGER_CONTROL_DOORS)
-		return TT_OPEN_DOOR;
-	if (d1_flags & TRIGGER_MATCEN)
-		return TT_MATCEN;
-	if (d1_flags & TRIGGER_ILLUSION_ON)
-		return TT_ILLUSION_ON;
-	if (d1_flags & TRIGGER_ILLUSION_OFF)
-		return TT_ILLUSION_OFF;
-	return TT_OPEN_DOOR;
-}
-
 static int d1_save_translate_read_d1_trigger(d1_save_translate_reader *reader,
                                              trigger *out)
 {
-	int i;
-	sbyte unused_type;
-	sbyte unused_link_num;
-	short d1_flags;
-
-	if (!out)
+	v29_trigger source = {0};
+	if (!out || !d1_save_translate_read_s8(reader, &source.type) ||
+	    !d1_save_translate_read_s16(reader, &source.flags) ||
+	    !d1_save_translate_read_fix(reader, &source.value) ||
+	    !d1_save_translate_read_fix(reader, &source.time) ||
+	    !d1_save_translate_read_s8(reader, &source.link_num) ||
+	    !d1_save_translate_read_s16(reader, &source.num_links))
 		return 0;
-	memset(out, 0, sizeof(*out));
-	if (!d1_save_translate_read_s8(reader, &unused_type) ||
-	    !d1_save_translate_read_s16(reader, &d1_flags) ||
-	    !d1_save_translate_read_fix(reader, &out->value) ||
-	    !d1_save_translate_read_fix(reader, &out->time) ||
-	    !d1_save_translate_read_s8(reader, &unused_link_num))
-		return 0;
-	out->type = d1_save_translate_trigger_type(d1_flags);
-	if (d1_flags & TRIGGER_ONE_SHOT)
-		out->flags |= TF_ONE_SHOT;
-	if (!(d1_flags & TRIGGER_ON))
-		out->flags |= TF_DISABLED;
-	if (!d1_save_translate_read_s16(reader, &d1_flags))
-		return 0;
-	out->num_links = (sbyte) d1_flags;
-	for (i = 0; i < MAX_WALLS_PER_LINK; i++)
-		if (!d1_save_translate_read_s16(reader, &out->seg[i]))
+	for (int i = 0; i < MAX_WALLS_PER_LINK; ++i)
+		if (!d1_save_translate_read_s16(reader, &source.seg[i]))
 			return 0;
-	for (i = 0; i < MAX_WALLS_PER_LINK; i++)
-		if (!d1_save_translate_read_s16(reader, &out->side[i]))
+	for (int i = 0; i < MAX_WALLS_PER_LINK; ++i)
+		if (!d1_save_translate_read_s16(reader, &source.side[i]))
 			return 0;
-	return 1;
+	return d1_in_d2_decode_trigger(out, &source, 1);
 }
 
 static int d1_save_translate_read_d1_matcen(d1_save_translate_reader *reader,
@@ -1332,9 +1313,10 @@ static int d1_save_translate_read_d1_world_state(
 			    !d1_save_translate_read_s16(reader,
 			                                &tmap_num2))
 				return 0;
-			state->sides[i][j].tmap_num = convert_d1_tmap_num(tmap_num);
-			state->sides[i][j].tmap_num2 =
-				tmap_num2 ? convert_d1_tmap_num(tmap_num2) : 0;
+			if (!d1_in_d2_decode_level_textures(&tmap_num, &tmap_num2, 1))
+				return 0;
+			state->sides[i][j].tmap_num = tmap_num;
+			state->sides[i][j].tmap_num2 = tmap_num2;
 		}
 	}
 
@@ -1584,6 +1566,25 @@ static int d1_save_translate_read_runtime_state(
 	} else if (!d1_save_translate_skip(reader,
 	                                   sizeof(int) + SECRET_AREA_MAX_GENERATED))
 		return 0;
+	state->delayed_primary = state->delayed_secondary = -1;
+	/* Native version 17 appends the four autoselect_runtime.h integers */
+	if (version >= D1_SAVE_AUTOSELECT_VERSION) {
+		if (!d1_save_translate_read_s32(reader, &state->primary_picked_up) ||
+		    !d1_save_translate_read_s32(reader, &state->secondary_picked_up) ||
+		    !d1_save_translate_read_s32(reader, &state->delayed_primary) ||
+		    !d1_save_translate_read_s32(reader, &state->delayed_secondary) ||
+		    state->primary_picked_up < 0 || state->primary_picked_up > 1 ||
+		    state->secondary_picked_up < 0 || state->secondary_picked_up > 1 ||
+		    state->delayed_primary < -1 ||
+		    (state->delayed_primary >= D1_SAVE_TRANSLATE_PRIMARY_WEAPONS &&
+		     state->delayed_primary != 16) ||
+		    state->delayed_secondary < -1 ||
+		    state->delayed_secondary >= D1_SAVE_TRANSLATE_SECONDARY_WEAPONS)
+			return 0;
+		/* Native D1 uses 16 for quad-laser selection; D2 selects its laser */
+		if (state->delayed_primary == 16)
+			state->delayed_primary = LASER_INDEX;
+	}
 	if (!d1_save_translate_validate_runtime_allocator(
 	        &state->object_state, objects, object_count))
 		return 0;
@@ -1620,6 +1621,10 @@ static void d1_save_translate_commit_runtime_state(
 	object_set_runtime_state(&state->object_state);
 	laser_set_runtime_state(&state->laser_state);
 	ai_path_set_runtime_state(&state->ai_path_state);
+	PrimaryWeaponPickedUp = state->primary_picked_up;
+	SecondaryWeaponPickedUp = state->secondary_picked_up;
+	delayed_primary_autoselect_weapon_index = state->delayed_primary;
+	delayed_secondary_autoselect_weapon_index = state->delayed_secondary;
 }
 
 static int d1_save_translate_validate_runtime_ai_path(

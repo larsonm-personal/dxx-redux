@@ -62,9 +62,12 @@ void coop_finish_secret_campaign(void);
 /* Frozen travel preparation: 0 waiting, 1 alive, 2 death settled */
 int coop_finish_death_for_travel(void);
 int coop_hold_death_for_travel(void);
+#endif
+
+/* Shared ship reset and world respawn services used by game progression */
 void init_player_stats_new_ship(ubyte pnum);
 void StartLevel(int random_flag);
-#endif
+void do_screen_message(char *fmt, ...);
 
 void InitPlayerObject();            //make sure player's object set up
 void init_player_stats_game(ubyte pnum);      //clear all stats

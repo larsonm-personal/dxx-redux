@@ -90,8 +90,8 @@ extern "C" {
 #include "guidebot_info_overlay.h"
 #include "route_confirmation.h"
 #include "multibot.h"
-#include "d1_custom.h"
-#include "d1_in_d2.h"
+#include "d1_in_d2/d1_custom.h"
+#include "d1_in_d2/d1_in_d2.h"
 #include "gamepal.h"
 #include "mission.h"
 #endif
@@ -586,6 +586,59 @@ static json serialize_position()
 		{ "physics_flags", (unsigned) ConsoleObject->mtype.phys_info.flags }
 	};
 	return pos;
+}
+
+/* -- Serialize nearby surfaces and reactor state ---------------------- */
+static json serialize_scene_point(const vms_vector &point)
+{
+	return { { "x", f2fl(point.x) }, { "y", f2fl(point.y) }, { "z", f2fl(point.z) } };
+}
+
+/* Read-only scene evidence for ordinary weapon, door and destruction tests */
+static json serialize_scene_segment(int segment_num)
+{
+	if (segment_num < 0 || segment_num > Highest_segment_index) return nullptr;
+	segment *seg = &Segments[segment_num];
+	json result = { { "index", segment_num }, { "vertices", json::array() }, { "sides", json::array() } };
+	for (int vertex = 0; vertex < MAX_VERTICES_PER_SEGMENT; ++vertex)
+		result["vertices"].push_back(serialize_scene_point(Vertices[seg->verts[vertex]]));
+	for (int side_num = 0; side_num < MAX_SIDES_PER_SEGMENT; ++side_num) {
+		const side &surface = seg->sides[side_num];
+		vms_vector center;
+		compute_center_point_on_side(&center, seg, side_num);
+		json face = { { "index", side_num }, { "child", seg->children[side_num] }, { "center", serialize_scene_point(center) }, { "base", surface.tmap_num }, { "overlay", (unsigned short) surface.tmap_num2 }, { "wall", surface.wall_num } };
+		const int textures[] = { surface.tmap_num, surface.tmap_num2 & 0x3fff };
+		const char *roles[] = { "base_asset", "overlay_asset" };
+		for (int layer = 0; layer < 2; ++layer) {
+			const int texture = textures[layer];
+			if (texture < 0 || texture >= NumTextures || (layer && !texture)) continue;
+			const int bitmap = Textures[texture].index;
+			if (bitmap < 0 || bitmap >= Num_bitmap_files) continue;
+			const char *name = piggy_game_bitmap_name(&GameBitmaps[bitmap]);
+			face[roles[layer]] = { { "bitmap", bitmap }, { "name", name ? name : "" }, { "effect", TmapInfo[texture].eclip_num }, { "damage", f2fl(TmapInfo[texture].damage) } };
+		}
+		if (surface.wall_num >= 0 && surface.wall_num < Num_walls) {
+			const wall &barrier = Walls[surface.wall_num];
+			face["wall_type"] = barrier.type;
+			face["wall_state"] = barrier.state;
+			face["wall_flags"] = barrier.flags;
+		}
+		result["sides"].push_back(std::move(face));
+	}
+	return result;
+}
+
+static json serialize_level_scene()
+{
+	json result = { { "segment", ConsoleObject ? serialize_scene_segment(ConsoleObject->segnum) : json(nullptr) },
+		            { "reactor_destroyed", Control_center_destroyed != 0 },
+		            { "reactors", json::array() } };
+	for (int i = 0; i <= Highest_object_index; ++i) {
+		const object &obj = Objects[i];
+		if (obj.type != OBJ_CNTRLCEN) continue;
+		result["reactors"].push_back({ { "object", i }, { "position", serialize_scene_point(obj.pos) }, { "radius", f2fl(obj.size) }, { "shields", f2fl(obj.shields) }, { "destroyed", (obj.flags & OF_DESTROYED) != 0 }, { "render_type", obj.render_type }, { "model", obj.render_type == RT_POLYOBJ ? json(obj.rtype.pobj_info.model_num) : json(nullptr) }, { "segment", serialize_scene_segment(obj.segnum) } });
+	}
+	return result;
 }
 
 /* -- Serialize generated secret areas --------------------------------- */
@@ -2519,13 +2572,13 @@ extern "C" char *game_introspect_get_state(void)
 	}
 #endif
 
-	/* -- Asset source trace for D1-in-D2 overlay compatibility -------- */
+	/* -- Active content and asset source trace ----------------------- */
 #ifdef DXX_BUILD_DESCENT_II
 	{
 		d1_bitmap_replacement_stats d1_walls;
 		d1_in_d2_asset_stats d1_compat;
 		d1_custom_texture_stats d1_custom;
-		const bool emulating_d1 = Current_mission && EMULATING_D1;
+		const bool emulating_d1 = d1_in_d2_use_d1_gameplay() != 0;
 
 		d1_bitmap_replacement_get_stats(&d1_walls);
 		d1_in_d2_get_stats(&d1_compat);
@@ -2779,6 +2832,7 @@ extern "C" char *game_introspect_get_state(void)
 	if (Current_level_num != 0) {
 		j["player"] = serialize_player();
 		j["position"] = serialize_position();
+		j["level_scene"] = serialize_level_scene();
 		j["secret_areas"] = serialize_secret_areas();
 #ifdef DXX_BUILD_DESCENT_II
 		j["guidebot"] = serialize_guidebot();
@@ -2793,6 +2847,7 @@ extern "C" char *game_introspect_get_state(void)
 	} else {
 		j["player"] = nullptr;
 		j["position"] = nullptr;
+		j["level_scene"] = nullptr;
 		j["secret_areas"] = nullptr;
 #ifdef DXX_BUILD_DESCENT_II
 		j["guidebot"] = nullptr;

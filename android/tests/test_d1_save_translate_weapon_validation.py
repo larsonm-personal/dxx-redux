@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SOURCE = (REPO_ROOT / "d2/main/d1_save_translate.c").read_text(encoding="utf-8")
+SOURCE = (REPO_ROOT / "d2/main/d1_in_d2/d1_save_translate.c").read_text(encoding="utf-8")
 
 
 class D1SaveTranslateWeaponValidationTest(unittest.TestCase):

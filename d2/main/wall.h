@@ -223,6 +223,8 @@ void do_door_open(int door_num);
 
 // Closes a door, including animation and other processing.
 void do_door_close(int door_num);
+/* Shared geometry test; game-specific obstruction policy lives with its caller */
+int check_poke(int objnum, int segnum, int side);
 
 // Opens a door
 extern void wall_open_door(segment *seg, int side);

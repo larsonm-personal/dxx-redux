@@ -96,8 +96,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "powerup.h"
 #include "text.h"
 #include "piggy.h"
-#include "d1_custom.h"
-#include "d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2_levels.h"
 #include "texmerge.h"
 #include "paging.h"
 #include "mission.h"
@@ -864,13 +864,13 @@ extern int Robot_replacements_loaded;
 void reset_level_robots_file(void)
 {
 	if (Robot_replacements_loaded) {
-		int load_mission_ham();
 		bm_free_extra_objbitmaps();
-		free_polygon_models();
 		if (Current_mission)
-			load_mission_ham();
-		else
+			d1_in_d2_load_mission_assets();
+		else {
+			free_polygon_models();
 			read_hamfile();
+		}
 		Robot_replacements_loaded = 0;
 	}
 }
@@ -878,6 +878,8 @@ void reset_level_robots_file(void)
 int load_level_robots_file(const char *level_name)
 {
 	int base_player_ship_radius;
+	if (d1_in_d2_has_native_assets())
+		return Polygon_models[Player_ship->model_num].rad;
 
 	reset_level_robots_file();
 	base_player_ship_radius = Polygon_models[Player_ship->model_num].rad;
@@ -923,6 +925,7 @@ void LoadLevel(int level_num,int page_in_textures)
 	char *level_name;
 	player save_player;
 	int load_ret;
+	int d1_assets;
 	const int skip_level_presentation = newdemo_dump_active() || GameArg.SysInputDemoNoRender;
 #ifdef __ANDROID__
 	struct android_profile_level_load_metrics load_profile = { 0 };
@@ -952,7 +955,9 @@ void LoadLevel(int level_num,int page_in_textures)
 		gr_clear_canvas(BM_XRGB(0, 0, 0));		//so palette switching is less obvious
 	}
 
-	reset_level_robots_file(); // restore mission models before initial object verification
+	d1_assets = d1_in_d2_prepare_level_assets(level_name);
+	if (!d1_assets)
+		reset_level_robots_file(); // restore mission models before initial object verification
 	load_ret = load_level(level_name);		//actually load the data from disk!
 
 	if (load_ret)
@@ -986,36 +991,14 @@ void LoadLevel(int level_num,int page_in_textures)
 	load_profile.endlevel_us = android_profile_take_elapsed_us(&load_profile_phase_us);
 #endif
 
-	d1_custom_remove();
-	if (EMULATING_D1) {
-		if (!d1_in_d2_validate_assets())
-			Error("Cannot load D1 assets: invalid %s in descent.pig", d1_in_d2_asset_validation_error());
-		if (!d1_in_d2_apply_sounds(1))
-			Error("Cannot load D1 assets: invalid %s", d1_in_d2_sound_validation_error());
-		d1_in_d2_prepare_guidebot_assets();
-		load_d1_bitmap_replacements();
-		d1_in_d2_apply_effects(1);
-		d1_in_d2_apply_powerup_vclips(1);
-		d1_in_d2_apply_wall_anims(1);
-		d1_in_d2_apply_cockpit(1);
-		d1_custom_load_data(level_name);
-	} else {
-		d1_in_d2_apply_robot_assets(0);
-		d1_in_d2_apply_wall_anims(0);
-		d1_in_d2_apply_powerup_vclips(0);
-		d1_in_d2_apply_effects(0);
-		d1_in_d2_apply_cockpit(0);
-		d1_in_d2_apply_sounds(0);
+	if (!d1_assets)
 		load_bitmap_replacements(level_name);
-	}
 #ifdef ANDROID
 	gameseq_log_multiplayer_texture_state("after-bitmap-replacements", level_name);
 	load_profile.replacements_us = android_profile_take_elapsed_us(&load_profile_phase_us);
 #endif
 
 	load_level_robots(level_num);
-	if (EMULATING_D1)
-		d1_in_d2_apply_robot_assets(1);
 #ifdef __ANDROID__
 	secret_area_prepare_current_level();
 	if (escort_route_metadata_request_allowed(
@@ -1195,18 +1178,18 @@ void DoEndLevelScoreGlitz(int network)
 	level_points = Players[Player_num].score-Players[Player_num].last_score;
 
 	if (!cheats.enabled) {
-		if (Difficulty_level > 1) {
-			skill_points = level_points*(Difficulty_level)/4;
-			skill_points -= skill_points % 100;
-		} else
-			skill_points = 0;
-
-		shield_points = f2i(Players[Player_num].shields) * 5 * mine_level;
-		energy_points = f2i(Players[Player_num].energy) * 2 * mine_level;
-		hostage_points = Players[Player_num].hostages_on_board * 500 * (Difficulty_level+1);
-
-		shield_points -= shield_points % 50;
-		energy_points -= energy_points % 50;
+		if (!d1_in_d2_level_bonuses(level_points, &skill_points, &shield_points, &energy_points)) {
+			if (Difficulty_level > 1) {
+				skill_points = level_points * Difficulty_level / 4;
+				skill_points -= skill_points % 100;
+			} else
+				skill_points = 0;
+			shield_points = f2i(Players[Player_num].shields) * 5 * mine_level;
+			energy_points = f2i(Players[Player_num].energy) * 2 * mine_level;
+			shield_points -= shield_points % 50;
+			energy_points -= energy_points % 50;
+		}
+		hostage_points = Players[Player_num].hostages_on_board * 500 * (Difficulty_level + 1);
 	} else {
 		skill_points = 0;
 		shield_points = 0;
@@ -1492,6 +1475,9 @@ int	Entered_from_level;
 //	Called from switch.c when player is on a secret level and hits exit to return to base level.
 void ExitSecretLevel(void)
 {
+	if (d1_in_d2_finish_level(0))
+		return;
+
 	if (Newdemo_state == ND_STATE_PLAYBACK)
 		return;
 
@@ -1553,6 +1539,9 @@ void do_cloak_invul_secret_stuff(fix64 old_gametime)
 //	Do a savegame.
 void EnterSecretLevel(void)
 {
+	if (d1_in_d2_finish_level(1))
+		return;
+
 	int i;
 
 	Assert(! (Game_mode & GM_MULTI) );
@@ -1583,17 +1572,7 @@ void EnterSecretLevel(void)
 	if (! (i<-Last_secret_level))		//didn't find level, so must be last
 		Next_level_num = Last_secret_level;
 
-	// NMN 04/09/07  Do a REAL start level routine if we are playing a D1 level so we have
-	//               briefings
-	if (EMULATING_D1)
-	{
-		set_screen_mode(SCREEN_MENU);
-		do_screen_message("Alternate Exit Found!\n\nProceeding to Secret Level!");
-		StartNewLevel(Next_level_num);
-	} else {
- 	   	StartNewLevelSecret(Next_level_num, 1);
-	}
-	// END NMN
+	StartNewLevelSecret(Next_level_num, 1);
 
 	// do_cloak_invul_stuff();
 	if (Game_wind)
@@ -1604,6 +1583,9 @@ void EnterSecretLevel(void)
 //called when the player has finished a level
 void PlayerFinishedLevel(int secret_flag)
 {
+	if (d1_in_d2_finish_level(secret_flag))
+		return;
+
 	Assert(!secret_flag);
 
 	if (Game_wind)
@@ -1786,15 +1768,7 @@ void AdvanceLevel(int secret_flag)
 		DoEndGame();
 
 	} else {
-		//NMN 04/08/07 If we are in a secret level and playing a D1
-		// 	       level, then use Entered_from_level # instead
-		if (Current_level_num < 0 && EMULATING_D1)
-		{
-		  Next_level_num = Entered_from_level+1;		//assume go to next normal level
-                } else {
-		  Next_level_num = Current_level_num+1;		//assume go to next normal level
-                }
-		// END NMN
+		Next_level_num = Current_level_num + 1;
 
 #ifdef __ANDROID__
 		if (Game_mode & GM_MULTI_COOP)
@@ -1865,7 +1839,9 @@ void DoPlayerDead()
 		}
 	}
 
-	if ( Control_center_destroyed ) {
+	if (d1_in_d2_finish_death()) {
+		/* Common sound/window/timing completion below */
+	} else if ( Control_center_destroyed ) {
 
 		//clear out stuff so no bonus
 		Players[Player_num].hostages_on_board = 0;
@@ -2284,6 +2260,7 @@ void ShowLevelIntro(int level_num)
 
 		ubyte save_pal[sizeof(gr_palette)];
 
+		d1_in_d2_prepare_intro_assets();
 		memcpy(save_pal,gr_palette,sizeof(gr_palette));
 
 		if (PLAYING_BUILTIN_MISSION) {

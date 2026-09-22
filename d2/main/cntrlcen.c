@@ -46,6 +46,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "rewind_file_compat.h"
 #include "input_demo_hooks.h"
+#include "d1_in_d2/d1_in_d2_semantics.h"
 #ifdef __ANDROID__
 #include "escort.h"
 #endif
@@ -308,6 +309,7 @@ void do_controlcen_destroyed_stuff(object *objp)
 	else
 		Total_countdown_time = Alan_pavlish_reactor_times[Difficulty_level];
 
+	Total_countdown_time = d1_in_d2_reactor_countdown(Total_countdown_time);
 	Countdown_timer = i2f(Total_countdown_time);
 
 	if (!Control_center_present || objp==NULL)

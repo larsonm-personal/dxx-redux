@@ -40,7 +40,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #include "render.h"
 #include "multi.h"
-#include "d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2.h"
 #ifdef OGL
 #include "ogl_init.h"
 #endif

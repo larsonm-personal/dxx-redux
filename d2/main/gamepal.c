@@ -49,6 +49,7 @@ char last_palette_loaded_pig[FILENAME_LEN]="";
 int load_palette(char *name,int used_for_level,int no_change_screen)
 {
 	char pigname[FILENAME_LEN];
+	char resource[PATH_MAX];
 	ubyte old_pal[256*3];
 
 	//special hack to tell that palette system about a pig that's been loaded elsewhere
@@ -78,7 +79,8 @@ int load_palette(char *name,int used_for_level,int no_change_screen)
 
 		strncpy(last_palette_loaded,name,sizeof(last_palette_loaded));
 
-		gr_use_palette_table(name);
+		d1_in_d2_presentation_resource(name, resource, sizeof(resource));
+		gr_use_palette_table(resource);
 
 		if (Game_wind && !no_change_screen)
 			gr_remap_bitmap_good( &grd_curscreen->sc_canvas.cv_bitmap, old_pal, -1, -1 );
@@ -109,4 +111,3 @@ int load_palette(char *name,int used_for_level,int no_change_screen)
 
 	return 1;
 }
-

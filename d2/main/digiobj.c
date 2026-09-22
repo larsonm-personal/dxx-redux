@@ -34,6 +34,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "text.h"
 #include "kconfig.h"
 #include "config.h"
+#include "d1_in_d2/d1_in_d2.h"
 
 #define SOF_USED				1 		// Set if this sample is used
 #define SOF_PLAYING			2		// Set if this sample is playing on a channel
@@ -80,6 +81,8 @@ int digi_xlat_sound(int soundno)
 {
 	if (soundno < 0)
 		return -1;
+	if (soundno >= MAX_SOUNDS)
+		return d1_in_d2_translate_extended_sound(soundno);
 
 	if (GameArg.SysLowMem)
 	{
@@ -98,7 +101,10 @@ int digi_xlat_sound(int soundno)
 int digi_unxlat_sound(int soundno)
 {
 	int i;
+	int extended = d1_in_d2_untranslate_extended_sound(soundno);
 	ubyte *table = (GameArg.SysLowMem?AltSounds:Sounds);
+	if (extended >= 0)
+		return extended;
 
 	if ( soundno < 0 ) return -1;
 

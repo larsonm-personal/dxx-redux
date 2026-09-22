@@ -27,7 +27,7 @@ class DTickStateValidationTest(unittest.TestCase):
             self.assertLess(validation, publication)
 
     def test_translation_validates_before_runtime_publication(self) -> None:
-        source = (REPO_ROOT / "d2/main/d1_save_translate.c").read_text(
+        source = (REPO_ROOT / "d2/main/d1_in_d2/d1_save_translate.c").read_text(
             encoding="utf-8"
         )
         validation = source.index("game_d_tick_state_is_valid")

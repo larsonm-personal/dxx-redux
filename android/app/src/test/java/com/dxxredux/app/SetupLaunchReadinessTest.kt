@@ -1,5 +1,6 @@
 package com.dxxredux.app
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -139,7 +140,7 @@ class SetupLaunchReadinessTest {
     }
 
     @Test
-    fun d1InD2ReadinessIsReadyWhenNoD1MissionZipIsEnabled() {
+    fun d2InstallationAloneDoesNotMakeD1InD2Ready() {
         val filesDir = createTempDirectory("d1-in-d2-not-needed").toFile()
         val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
         writeD2Files(setDir)
@@ -153,9 +154,34 @@ class SetupLaunchReadinessTest {
             )
 
         assertFalse(readiness.needed)
-        assertTrue(readiness.ready)
+        assertFalse(readiness.ready)
         assertFalse(readiness.degraded)
         assertFalse(readiness.blocked)
+    }
+
+    @Test
+    fun originalD1FilesLaunchInD2WithoutD2FilesOrMissionZips() {
+        val filesDir = createTempDirectory("d1-only-launch").toFile()
+        val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+        writeFile(setDir, "descent.hog")
+        writeFile(setDir, "descent.pig")
+        val manifest = AssetManifest(setDir)
+        val saf = SafManifest.forDir(setDir)
+
+        assertTrue(launchDataReadyForGame("d1-in-d2", setDir, manifest, saf))
+        assertFalse(launchDataReadyForGame("d2", setDir, manifest, saf))
+        val readiness = d1InD2Readiness(filesDir, setDir, manifest, saf)
+        assertTrue(readiness.ready)
+        assertFalse(readiness.needed)
+        assertFalse(readiness.d2Ready)
+        assertFalse(readiness.blocked)
+        val target = GameLaunchTarget.fromId("d1-in-d2")
+        assertEquals("d2", target.engine)
+        assertEquals("d1", target.content)
+        assertEquals("-d1", target.startupArgument)
+
+        File(setDir, "descent.pig").delete()
+        assertFalse(launchDataReadyForGame(target.id, setDir, AssetManifest(setDir), saf))
     }
 
     @Test

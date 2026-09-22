@@ -256,6 +256,14 @@ class MainActivity :
 
     external fun startGame()
 
+    // JNI reads this before main(), while profile-dependent resources are still unloaded
+    @androidx.annotation.Keep
+    fun consumeStartupProfile(): String =
+        GameLaunchTarget
+            .fromId(
+                intent.getStringExtra("launch_target") ?: intent.getStringExtra("game") ?: "d2",
+            ).startupArgument
+
     external fun nativeSetSurface(surface: Surface?)
 
     external fun nativeSetSurfaceSize(

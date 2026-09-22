@@ -52,6 +52,9 @@ int physics_lookahead(object *obj, fix t, int fvi_flags, fix *hit_time, fvi_info
 void phys_apply_force(object *obj, vms_vector *force_vec);
 void phys_apply_rot(object *obj, vms_vector *force_vec);
 
+// Set rotational velocity toward a direction using fixed-point angular motion
+void physics_turn_towards_vector(vms_vector *goal_vector, object *obj, fix rate);
+
 // this routine will set the thrust for an object to a value that will
 // (hopefully) maintain the object's current velocity
 void set_thrust_from_velocity(object *obj);

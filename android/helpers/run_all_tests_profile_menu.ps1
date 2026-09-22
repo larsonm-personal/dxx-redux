@@ -19,6 +19,7 @@ function Select-RunAllTestsProfile {
     Write-Host '  A. Run every retained unattended scenario and route case (long)'
     Write-Host '  T. Resumable hash-ring sample targeting 45 minutes'
     Write-Host '  B. Regenerate level metadata benchmark history'
+    Write-Host '  R. Replay a demo (choose engine, file and headed/headless)'
     Write-Host '  Q. Cancel'
     while ($true) {
         switch ((& $ReadChoice).Trim().ToLowerInvariant()) {
@@ -31,9 +32,11 @@ function Select-RunAllTestsProfile {
             'target' { return 'Target45' }
             'b' { return 'LevelMetadataBenchmark' }
             'benchmark' { return 'LevelMetadataBenchmark' }
+            'r' { return 'ReplayDemo' }
+            'replay' { return 'ReplayDemo' }
             'q' { return 'Cancel' }
             'quit' { return 'Cancel' }
-            default { Write-Host 'Enter 1, A, T, B, or Q' -ForegroundColor Yellow }
+            default { Write-Host 'Enter 1, A, T, B, R, or Q' -ForegroundColor Yellow }
         }
     }
 }

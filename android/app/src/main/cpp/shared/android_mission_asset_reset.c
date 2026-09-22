@@ -1,5 +1,6 @@
 /* Complete Android asset-context resets; do not retain filename/index-only caches */
 #include "android_mission_assets.h"
+#include "android_log.h"
 #include "args.h"
 #include "bm.h"
 #include "digi.h"
@@ -19,8 +20,7 @@ extern void ogl_init_prog(void);
 #endif
 #endif
 #ifdef DXX_BUILD_DESCENT_II
-#include "d1_custom.h"
-#include "gamepal.h"
+#include "d1_in_d2/d1_in_d2.h"
 #endif
 
 extern void piggy_android_reset_tables(void);
@@ -34,9 +34,6 @@ extern void digi_mixer_free_cached_sounds(void);
 #else
 extern void d1_in_d2_reset_asset_context(void);
 extern void free_bitmap_replacements(void);
-extern void piggy_init_pigfile(char *filename);
-extern char last_palette_loaded[];
-extern char last_palette_loaded_pig[];
 #endif
 
 void android_mission_asset_reset_before(void)
@@ -45,7 +42,6 @@ void android_mission_asset_reset_before(void)
 	digi_stop_digi_sounds();
 #ifdef DXX_BUILD_DESCENT_II
 	digi_free_cached_sounds();
-	d1_custom_remove();
 	d1_in_d2_reset_asset_context();
 	free_bitmap_replacements();
 #else
@@ -74,14 +70,13 @@ void android_mission_asset_reset_before(void)
 
 void android_mission_asset_reset_baseline(void)
 {
-	gamedata_init();
 #ifdef DXX_BUILD_DESCENT_II
-	char pigfile[] = "groupa.pig";
-	char palette[] = "groupa.256";
-	last_palette_loaded[0] = last_palette_loaded_pig[0] = 0;
-	piggy_init_pigfile(pigfile);
-	load_palette(palette, 1, 0);
+	debug_log_force(DLOG_GAME, "[ASSETS] baseline reset content=d%d mission='%s' native_d1=%d",
+	                d1_in_d2_use_d1_gameplay() ? 1 : 2,
+	                Current_mission ? Current_mission_filename : "", d1_in_d2_has_native_assets());
+	d1_in_d2_restore_base_resources();
 #else
+	gamedata_init();
 	gr_use_palette_table("palette.256");
 #endif
 }

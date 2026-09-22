@@ -30,8 +30,7 @@ static inline char *dxx_gettext(unsigned expr, const char *fmt)
 	(void)expr;
 	return (char *)fmt;
 #else
-	(void)fmt;
-	return (char *)Text_string[expr];
+	return Text_string[expr] ? Text_string[expr] : (char *)fmt;
 #endif
 }
 

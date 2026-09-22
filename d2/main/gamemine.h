@@ -127,8 +127,4 @@ extern vms_matrix Secret_return_orient;
 
 #define TMAP_NUM_MASK 0x3FFF
 
-/* stuff for loading descent.pig of descent 1 */
-extern short convert_d1_tmap_num(short d1_tmap_num);
-extern int d1_tmap_num_unique(short d1_tmap_num); //is d1_tmap_num's texture only in d1?
-
 #endif /* _GAMEMINE_H */

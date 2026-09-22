@@ -71,8 +71,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseq.h"
 #include "playsave.h"
 #include "timer.h"
-#include "d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2_ai.h"
 #include "homing_compat.h"
+#include "d1_in_d2/d1_in_d2_weapons.h"
 #include "input_demo_hooks.h"
 #include "input_demo_energy_trace.h"
 #include "input_demo_recorder.h"
@@ -2877,7 +2878,6 @@ int drop_marker_object(vms_vector *pos,int segnum,vms_matrix *orient, int marker
 	return objnum;	
 }
 
-extern int Ai_last_missile_camera;
 
 static int guided_missile_camera_is_valid(object *viewer)
 {
@@ -2974,6 +2974,8 @@ static int missile_camera_can_wake_robot(object *viewer, object *robot)
 		return 0;
 	if (robot->type != OBJ_ROBOT)
 		return 0;
+	if (!d1_in_d2_ai_camera_can_wake(robot))
+		return 0;
 	if (Ai_local_info[robot_objnum].player_awareness_type != 0)
 		return 0;
 	vm_vec_sub(&vec_to_robot, &robot->pos, &viewer->pos);
@@ -3004,8 +3006,6 @@ void wake_up_missile_camera_robots(void)
 	int fcval;
 	int i;
 
-	if (d1_in_d2_use_d1_gameplay())
-		return;
 	viewer = get_missile_camera_viewer();
 	fcval = d_tick_count & 3;
 	if (!viewer)
@@ -3156,24 +3156,22 @@ void object_rw_swap(object_rw *obj, int swap)
 }
 
 void set_homing_update_rate(int update_rate, int original_homing) {
-	const int d1_gameplay = d1_in_d2_use_d1_gameplay();
-	const fix acquisition_dot = homing_compat_acquisition_dot(
-		original_homing, d1_gameplay, MIN_TRACKABLE_DOT);
-
 	idealHomerFPS = update_rate;
 	idealHomerFrameTime = F1_0 / update_rate;
 	currentHomerFrameTime = 0;
 	originalHoming = original_homing;
-	Min_acquirable_dot = acquisition_dot;
 
 	//	Set value to determine whether homing missile can see target.
 	//	The lower frametime is, the more likely that it can see its target.
-	if (original_homing && !d1_gameplay)
-		Min_trackable_dot = homing_compat_d2_original_retention_dot(
-			idealHomerFrameTime, acquisition_dot);
-	else
-		Min_trackable_dot = homing_compat_d1_retention_dot(idealHomerFrameTime,
-			acquisition_dot);
+	if (!d1_in_d2_configure_homing(idealHomerFrameTime)) {
+		Min_acquirable_dot = MIN_TRACKABLE_DOT;
+		if (original_homing)
+			Min_trackable_dot = homing_compat_d2_original_retention_dot(
+				idealHomerFrameTime, Min_acquirable_dot);
+		else
+			Min_trackable_dot = homing_compat_d1_retention_dot(idealHomerFrameTime,
+				Min_acquirable_dot);
+	}
 
 	con_printf(CON_DEBUG, "Homing update rate: %d (%s)\n", update_rate,
 		original_homing ? "original" : "redux");

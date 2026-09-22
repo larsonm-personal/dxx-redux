@@ -97,9 +97,9 @@ typedef struct v30_trigger {
 //flags bits are exclusive of the others.
 typedef struct trigger {
 	ubyte   type;       //what this trigger does
-	ubyte   flags;      //currently unused
+	ubyte   flags;      //TF_* flags; bits 6/7 reserved by the D1 level codec
 	sbyte   num_links;  //how many doors, etc. linked to this
-	sbyte   pad;        //keep alignment
+	sbyte   pad;        //D1 action bits when flags has the native marker; otherwise alignment
 	fix     value;
 	fix     time;
 	short   seg[MAX_WALLS_PER_LINK];

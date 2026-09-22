@@ -24,7 +24,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #define D2_DEFAULT_PALETTE "default.256"
 #define D1_DEFAULT_PALETTE "palette.256"
-#define MENU_PALETTE    "default.256"
+#include "d1_in_d2/d1_in_d2_presentation.h"
+#define MENU_PALETTE d1_in_d2_menu_resource(D1_MENU_PALETTE, "default.256")
 
 extern char last_palette_loaded[FILENAME_LEN];
 extern char Current_level_palette[FILENAME_LEN];

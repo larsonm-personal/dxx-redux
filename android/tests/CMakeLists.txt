@@ -53,8 +53,9 @@ if(DXX_TEST_GAME STREQUAL "d2")
     target_include_directories(test_guidebot_goal_message PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}"
                                                                   ${SDL_INCLUDE_DIR})
     add_test(NAME test_guidebot_goal_message COMMAND test_guidebot_goal_message)
-    add_executable(test_d1_pig_validation test_d1_pig_validation.c
-                                          "${DXX_TEST_GAME_SOURCE_DIR}/main/d1_pig_validation.c")
+    add_executable(
+        test_d1_pig_validation test_d1_pig_validation.c
+                               "${DXX_TEST_GAME_SOURCE_DIR}/main/d1_in_d2/d1_pig_validation.c")
     target_include_directories(test_d1_pig_validation PRIVATE "${DXX_TEST_GAME_SOURCE_DIR}/main")
 endif()
 

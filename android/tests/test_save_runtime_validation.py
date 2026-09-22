@@ -13,7 +13,7 @@ D2_AI = (REPO_ROOT / "d2/main/ai.c").read_text(encoding="utf-8")
 D1_LASER = (REPO_ROOT / "d1/main/laser.c").read_text(encoding="utf-8")
 D2_LASER = (REPO_ROOT / "d2/main/laser.c").read_text(encoding="utf-8")
 D1_INPUT_DEMO = (REPO_ROOT / "d1/main/input_demo_hooks.c").read_text(encoding="utf-8")
-TRANSLATOR = (REPO_ROOT / "d2/main/d1_save_translate.c").read_text(encoding="utf-8")
+TRANSLATOR = (REPO_ROOT / "d2/main/d1_in_d2/d1_save_translate.c").read_text(encoding="utf-8")
 
 
 def function_body(source: str, name: str) -> str:

@@ -54,6 +54,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "text.h"
 #include "gamefont.h"
 #include "gamesave.h"
+#include "d1_in_d2/d1_in_d2_levels.h"
 #include "render.h"
 #include "gamepal.h"
 #include "laser.h"
@@ -305,14 +306,11 @@ void verify_object( object * obj )	{
 		obj->render_type = RT_POLYOBJ;
 		obj->control_type = CT_CNTRLCEN;
 
-		if (Gamesave_current_version <= 1) { // descent 1 reactor
-			obj->id = 0;                         // used to be only one kind of reactor
-			obj->rtype.pobj_info.model_num = Reactors[0].model_num;// descent 1 reactor
-		}
-
 		// Make sure model number is correct...
 		//obj->rtype.pobj_info.model_num = Reactors[obj->id].model_num;
 	}
+
+	d1_in_d2_fixup_level_object(obj, Gamesave_current_version);
 
 	if ( obj->type == OBJ_PLAYER )	{
 		//int i;
@@ -930,72 +928,21 @@ int load_game_data(PHYSFS_file *LoadFile)
 	{
 		if (game_top_fileinfo_version < 31)
 		{
-			v30_trigger trig;
-			int t,type;
-			int flags = 0;
-			type=0;
-
-			if (game_top_fileinfo_version < 30) {
-				v29_trigger trig29;
-				int t;
-				v29_trigger_read(&trig29, load_rewind_file);
-				trig.flags	= trig29.flags;
-				trig.num_links	= trig29.num_links;
-				trig.num_links	= trig29.num_links;
-				trig.value	= trig29.value;
-				trig.time	= trig29.time;
-
-				for (t=0;t<trig.num_links;t++) {
-					trig.seg[t]  = trig29.seg[t];
-					trig.side[t] = trig29.side[t];
-				}
+			v29_trigger source = {0};
+			if (game_top_fileinfo_version < 30)
+				v29_trigger_read(&source, load_rewind_file);
+			else {
+				v30_trigger old;
+				v30_trigger_read(&old, load_rewind_file);
+				source.flags = old.flags;
+				source.num_links = old.num_links;
+				source.value = old.value;
+				source.time = old.time;
+				memcpy(source.seg, old.seg, sizeof(source.seg));
+				memcpy(source.side, old.side, sizeof(source.side));
 			}
-			else
-				v30_trigger_read(&trig, load_rewind_file);
-
-			//Assert(trig.flags & TRIGGER_ON);
-			trig.flags &= ~TRIGGER_ON;
-
-			if (trig.flags & TRIGGER_CONTROL_DOORS)
-				type = TT_OPEN_DOOR;
-			else if (trig.flags & TRIGGER_SHIELD_DAMAGE)
-				Int3();
-			else if (trig.flags & TRIGGER_ENERGY_DRAIN)
-				Int3();
-			else if (trig.flags & TRIGGER_EXIT)
-				type = TT_EXIT;
-			//else if (trig.flags & TRIGGER_ONE_SHOT)
-			//	Int3();
-			else if (trig.flags & TRIGGER_MATCEN)
-				type = TT_MATCEN;
-			else if (trig.flags & TRIGGER_ILLUSION_OFF)
-				type = TT_ILLUSION_OFF;
-			else if (trig.flags & TRIGGER_SECRET_EXIT)
-				type = TT_SECRET_EXIT;
-			else if (trig.flags & TRIGGER_ILLUSION_ON)
-				type = TT_ILLUSION_ON;
-			else if (trig.flags & TRIGGER_UNLOCK_DOORS)
-				type = TT_UNLOCK_DOOR;
-			else if (trig.flags & TRIGGER_OPEN_WALL)
-				type = TT_OPEN_WALL;
-			else if (trig.flags & TRIGGER_CLOSE_WALL)
-				type = TT_CLOSE_WALL;
-			else if (trig.flags & TRIGGER_ILLUSORY_WALL)
-				type = TT_ILLUSORY_WALL;
-			else
-				Int3();
-			if (trig.flags & TRIGGER_ONE_SHOT)
-				flags = TF_ONE_SHOT;
-			Triggers[i].type        = type;
-			Triggers[i].flags       = flags;
-			Triggers[i].num_links   = trig.num_links;
-			Triggers[i].num_links   = trig.num_links;
-			Triggers[i].value       = trig.value;
-			Triggers[i].time        = trig.time;
-			for (t=0;t<trig.num_links;t++) {
-				Triggers[i].seg[t] = trig.seg[t];
-				Triggers[i].side[t] = trig.side[t];
-			}
+			if (!d1_in_d2_decode_trigger(&Triggers[i], &source, Gamesave_current_version <= 1))
+				return -1;
 		}
 		else
 			trigger_read(&Triggers[i], load_rewind_file);
@@ -1143,6 +1090,11 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 		for (t=0; t<Num_triggers; t++) {
 			int	l;
+			const int native_links = d1_in_d2_bind_trigger_links(t);
+			if (!native_links)
+				return -1;
+			if (native_links > 0)
+				continue;
 			for (l=0; l<Triggers[t].num_links; l++) {
 				int	seg_num, side_num, wall_num;
 
@@ -1232,7 +1184,6 @@ extern void ncache_flush();
 #endif
 
 extern int Slide_segs_computed;
-extern int d1_pig_present;
 
 int no_old_level_file_error=0;
 
@@ -1440,7 +1391,7 @@ int load_level(const char * filename_passed)
 		return 3;
 	}
 
-	// Gray rock (or something) fallback matches the D1/D2 mapping in convert_d1_tmap_num
+	// Gray rock (or something) fallback matches the legacy D1/D2 texture mapping
 	const int fallback_texture = 43;
 	// Repair invalid references before ambient sounds, collision, or rendering index their tables
 	for (int segnum = 0; segnum < Num_segments; ++segnum)
@@ -1467,7 +1418,7 @@ int load_level(const char * filename_passed)
 
 	#ifdef EDITOR
 	//If a Descent 1 level and the Descent 1 pig isn't present, pretend it's a Descent 2 level.
-	if (EditorWindow && (Gamesave_current_version <= 3) && !d1_pig_present)
+	if (EditorWindow && (Gamesave_current_version <= 3) && !PHYSFSX_exists(D1_PIGFILE, 1))
 	{
 		if (!no_old_level_file_error)
 			Warning("A Descent 1 level was loaded,\n"

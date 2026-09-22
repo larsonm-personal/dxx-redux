@@ -91,6 +91,7 @@ void compute_average_rgb(grs_bitmap *bm, fix *rgb);
 int gamedata_read_tbl(int pc_shareware);
 
 extern void bm_read_all(PHYSFS_file * fp);
+int tmap_info_read_n(tmap_info *ti, int n, PHYSFS_file *fp);
 
 int load_exit_models();
 

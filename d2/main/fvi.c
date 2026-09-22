@@ -39,10 +39,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "bm.h"
 #include "textures.h"
 #include "texmerge.h"
-#include "d1_in_d2.h"
-#include "input_demo_debug_logging.h"
+#include "d1_in_d2/d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2_semantics.h"
 #include "input_demo_hooks.h"
-#include "input_demo_replay.h"
 
 #define face_type_num(nfaces,face_num,tri_edge) ((nfaces==1)?0:(tri_edge*2 + face_num))
 
@@ -812,131 +811,6 @@ int obj_in_list(int objnum,int *obj_list)
 
 int check_trans_wall(vms_vector *pnt,segment *seg,int sidenum,int facenum);
 
-static int input_demo_fvi_boundary_probe_active(short objnum)
-{
-	object *objp;
-
-	if (!input_demo_replay_is_loaded() || !d1_in_d2_use_d1_gameplay() ||
-		!input_demo_debug_activity_probe_active() ||
-		objnum < 0 || objnum > Highest_object_index)
-		return 0;
-	objp = &Objects[objnum];
-	return objp->type == OBJ_WEAPON &&
-		objp->ctype.laser_info.parent_type == OBJ_PLAYER &&
-		!(objp->flags & (OF_SHOULD_BE_DEAD | OF_HARMLESS));
-}
-
-static void input_demo_log_fvi_boundary_probe(short objnum, int startseg, int side,
-	int face, int face_hit_type, int wid_flag, int startmask, int endmask,
-	int centermask, int flags, const vms_vector *p0, const vms_vector *p1,
-	const vms_vector *hit_point, fix rad)
-{
-	char probe[900];
-	segment *seg = &Segments[startseg];
-	int wall_num = seg->sides[side].wall_num;
-	int wall_type = -1;
-	int wall_state = -1;
-	int wall_flags = 0;
-
-	if (!input_demo_fvi_boundary_probe_active(objnum))
-		return;
-	if (wall_num >= 0 && wall_num < Num_walls) {
-		wall_type = Walls[wall_num].type;
-		wall_state = Walls[wall_num].state;
-		wall_flags = Walls[wall_num].flags;
-	}
-	snprintf(probe, sizeof(probe),
-		"start_seg=%d side=%d face=%d face_hit_type=%d wid=0x%x child=%d wall=%d wall_type=%d wall_state=%d wall_flags=0x%x startmask=0x%x endmask=0x%x centermask=0x%x flags=0x%x rad=%d p0=(%d,%d,%d) p1=(%d,%d,%d) hit=(%d,%d,%d)",
-		startseg, side, face, face_hit_type, wid_flag,
-		seg->children[side], wall_num, wall_type, wall_state, wall_flags,
-		startmask, endmask, centermask, flags, rad,
-		p0->x, p0->y, p0->z,
-		p1->x, p1->y, p1->z,
-		hit_point->x, hit_point->y, hit_point->z);
-	input_demo_append_replay_probe_message("fvi_boundary", &Objects[objnum], probe);
-}
-
-static int d1_in_d2_transparent_wall_point_blocks(segment *seg, int side)
-{
-	int wall_num;
-
-	wall_num = seg->sides[side].wall_num;
-	if (wall_num >= 0 && wall_num < Num_walls &&
-		Walls[wall_num].type == WALL_DOOR &&
-		Walls[wall_num].state == WALL_DOOR_CLOSED)
-		return 1;
-	return 0;
-}
-
-static int d1_in_d2_check_trans_wall(vms_vector *pnt, segment *seg, int sidenum,
-	int facenum, short objnum)
-{
-	grs_bitmap *bm;
-	side *side = &seg->sides[sidenum];
-	int bmx, bmy;
-	int direct_pixel, gpixel;
-	fix u, v;
-
-	find_hitpoint_uv(&u, &v, NULL, pnt, seg, sidenum, facenum);
-
-	if (side->tmap_num2 != 0) {
-		bm = texmerge_get_cached_bitmap(side->tmap_num, side->tmap_num2);
-	} else {
-		bm = &GameBitmaps[Textures[side->tmap_num].index];
-		PIGGY_PAGE_IN(Textures[side->tmap_num]);
-	}
-
-	if (bm->bm_flags & BM_FLAG_RLE)
-		bm = rle_expand_texture(bm);
-
-	bmx = ((unsigned)f2i(u * bm->bm_w)) % bm->bm_w;
-	bmy = ((unsigned)f2i(v * bm->bm_h)) % bm->bm_h;
-	direct_pixel = bm->bm_data[bmy * bm->bm_w + bmx];
-	gpixel = gr_gpixel(bm, bmx, bmy);
-	if (input_demo_fvi_boundary_probe_active(objnum)) {
-		char probe[512];
-		int wall_num = side->wall_num;
-		int clip_num = -1;
-		int clip_flags = 0;
-		int clip_frame0 = -1;
-
-		if (wall_num >= 0 && wall_num < Num_walls) {
-			clip_num = Walls[wall_num].clip_num;
-			if (clip_num >= 0 && clip_num < Num_wall_anims) {
-				clip_flags = WallAnims[clip_num].flags;
-				clip_frame0 = WallAnims[clip_num].frames[0];
-			}
-		}
-
-		snprintf(probe, sizeof(probe),
-			"seg=%d side=%d face=%d tmap=%d tmap2=%d wall=%d clip=%d clip_flags=0x%x clip_frame0=%d num_wall_anims=%d u=%d v=%d bmx=%d bmy=%d bm_w=%d bm_h=%d rowsize=%d flags=0x%x type=%d direct=%d gpixel=%d transparent=%d p=(%d,%d,%d)",
-			(int)(seg - Segments), sidenum, facenum,
-			side->tmap_num, side->tmap_num2, wall_num, clip_num, clip_flags,
-			clip_frame0, Num_wall_anims, u, v, bmx, bmy,
-			bm->bm_w, bm->bm_h, bm->bm_rowsize, bm->bm_flags, bm->bm_type,
-			direct_pixel, gpixel, gpixel == TRANSPARENCY_COLOR,
-			pnt->x, pnt->y, pnt->z);
-		input_demo_append_replay_probe_message("trans_wall_pixel",
-			&Objects[objnum], probe);
-	}
-
-	return gpixel == TRANSPARENCY_COLOR;
-}
-
-static int d1_in_d2_transparent_wall_crossable(int wid_flag, segment *seg,
-	int side, int flags, vms_vector *hit_point, int face, short objnum)
-{
-	if (wid_flag != WID_TRANSPARENT_WALL)
-		return 0;
-	if (flags & FQ_TRANSWALL)
-		return 1;
-	if (!(flags & FQ_TRANSPOINT))
-		return 0;
-	if (d1_in_d2_transparent_wall_point_blocks(seg, side))
-		return 0;
-	return d1_in_d2_check_trans_wall(hit_point, seg, side, face, objnum);
-}
-
 int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p1,fix rad,short thisobjnum,int *ignore_obj_list,int flags,int *seglist,int *n_segs,int entry_seg)
 {
 	segment *seg;				//the segment we're looking at
@@ -984,9 +858,7 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 				//	If this is a robot:robot collision, only do it if both of them have attack_type != 0 (eg, green guy)
 				if (Objects[thisobjnum].type == OBJ_ROBOT)
 					if (Objects[objnum].type == OBJ_ROBOT) {
-						if (!d1_in_d2_use_d1_gameplay() ||
-							!(Robot_info[Objects[objnum].id].attack_type &&
-								Robot_info[Objects[thisobjnum].id].attack_type))
+						if (!d1_in_d2_robot_pair_collides(&Objects[thisobjnum], &Objects[objnum]))
 							// -- MK: 11/18/95, 4claws glomming together...this is easy.  -- if (!(Robot_info[Objects[objnum].id].attack_type && Robot_info[Objects[thisobjnum].id].attack_type))
 							continue;
 					}
@@ -1081,7 +953,7 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 							wid_flag = WALL_IS_DOORWAY(seg, side);
 						}
 
-						input_demo_log_fvi_boundary_probe(thisobjnum, startseg, side, face,
+						d1_in_d2_note_wall_boundary(thisobjnum, startseg, side, face,
 							face_hit_type, wid_flag, startmask, endmask, centermask,
 							flags, p0, p1, &hit_point, rad);
 

@@ -128,7 +128,7 @@ internal fun launcherPreparationLabel(state: LauncherPreparationState): String =
         }
 
         LauncherPreparationPhase.STARTING_GAME -> {
-            "Starting ${if (state.game == "d1") "Descent 1" else "Descent 2"}"
+            "Starting ${GameLaunchTarget.fromId(state.game).displayName}"
         }
     }
 
@@ -473,7 +473,7 @@ class SetupActivity : ComponentActivity() {
             Log.w("DXX-RouteMetadata", "Ignoring duplicate game launch during route metadata handoff")
             return
         }
-        val game = intent.getStringExtra("game") ?: "d2"
+        val game = intent.getStringExtra("launch_target") ?: intent.getStringExtra("game") ?: "d2"
         if (launchPreparation.value == null && !beginLaunchPreparation(game, "game")) return
         updateLaunchPreparation(LauncherPreparationPhase.PAUSING_METADATA)
         routeMetadataLaunchJob =
@@ -502,7 +502,7 @@ class SetupActivity : ComponentActivity() {
             }
     }
 
-    private fun gameDisplayName(game: String): String = if (game == "d1") "Descent 1" else "Descent 2"
+    private fun gameDisplayName(game: String): String = GameLaunchTarget.fromId(game).displayName
 
     private fun hasLaunchDataForGame(game: String): Boolean {
         val fsm = FileSetManager(filesDir)
@@ -542,6 +542,7 @@ class SetupActivity : ComponentActivity() {
         resumeSavePath: String? = null,
         resumeCallsign: String? = null,
     ): Intent {
+        val target = GameLaunchTarget.fromId(game)
         val intent = Intent(this, MainActivity::class.java)
         val cleanInputDemoReplayPath = inputDemoReplayPath?.takeIf { it.isNotBlank() }
         val cleanResumeSavePath = resumeSavePath?.takeIf { it.isNotBlank() }
@@ -550,7 +551,8 @@ class SetupActivity : ComponentActivity() {
             cleanInputDemoReplayPath != null || cleanResumeSavePath != null
         val transientLaunchToken =
             if (hasTransientLaunchRequest) SystemClock.elapsedRealtimeNanos().toString() else null
-        intent.putExtra("game", game)
+        intent.putExtra("game", target.engine)
+        intent.putExtra("launch_target", target.id)
         DebugLog.currentFilePath()?.let { intent.putExtra("netlog_path", it) }
         cleanInputDemoReplayPath?.let {
             intent.putExtra("input_demo_replay", it)
@@ -575,7 +577,9 @@ class SetupActivity : ComponentActivity() {
         return intent
     }
 
-    private fun prepareGameLaunchFiles(game: String): String? {
+    private fun prepareGameLaunchFiles(launchId: String): String? {
+        val target = GameLaunchTarget.fromId(launchId)
+        val game = target.engine
         val startedAt = SystemClock.elapsedRealtime()
         var stepStartedAt = startedAt
 
@@ -599,6 +603,10 @@ class SetupActivity : ComponentActivity() {
         val activeSet = fileSetManager.getActive()
         val activeSetDir = fileSetManager.getSetDir(activeSet)
         val safManifest = fileSetManager.safManifestForSet(activeSet)
+        if (!launchDataReadyForGame(target.id, activeSetDir, AssetManifest(activeSetDir), safManifest)) {
+            return complete("${target.displayName} data is not ready")
+        }
+        LauncherDebugLog.log("launch-target id=${target.id} engine=${target.engine} content=${target.content}")
         val modManager = ModManager(filesDir, this, activeSetDir)
         val contentManager = FileSetContentManager(activeSetDir)
         val contentResult =
@@ -3146,6 +3154,7 @@ private fun SetupScreen(
         val saved = gamePrefs.getString("selected_game", null)
         mutableStateOf(
             when {
+                saved == "d1-in-d2" && d1RequiredOk -> "d1-in-d2"
                 saved == "d1" && d1RequiredOk -> "d1"
                 saved == "d2" && d2RequiredOk -> "d2"
                 d1RequiredOk && !d2RequiredOk -> "d1"
@@ -3156,9 +3165,10 @@ private fun SetupScreen(
     }
     // Auto-correct if readiness changes (e.g. user adds/removes files)
     LaunchedEffect(d1RequiredOk, d2RequiredOk) {
-        if (selectedGame == "d1" && !d1RequiredOk && d2RequiredOk) selectedGame = "d2"
+        if (GameLaunchTarget.fromId(selectedGame).content == "d1" && !d1RequiredOk && d2RequiredOk) selectedGame = "d2"
         if (selectedGame == "d2" && !d2RequiredOk && d1RequiredOk) selectedGame = "d1"
     }
+    val selectedEngine = GameLaunchTarget.fromId(selectedGame).engine
 
     var scanResults by remember { mutableStateOf<List<FoundFile>?>(null) }
     var scanning by remember { mutableStateOf(false) }
@@ -3752,7 +3762,7 @@ private fun SetupScreen(
                 dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration,
                 pressedButtons = pressedButtons,
-                gameVariant = selectedGame,
+                gameVariant = selectedEngine,
                 controllerNavigationActive = controllerNavigationActive,
                 onDialogGenericMotionEvent = { view, event -> activity.handleControllerMotion(view, event) },
                 onDialogViewChanged = { activity.controllerConfigDialogView = it },
@@ -3764,7 +3774,7 @@ private fun SetupScreen(
         if (showTouchEditorPage) {
             BackHandler { showTouchEditorPage = false }
             TouchEditorPage(
-                gameVariant = selectedGame,
+                gameVariant = selectedEngine,
                 onBack = { showTouchEditorPage = false },
             )
             return@LauncherTheme
@@ -3787,7 +3797,7 @@ private fun SetupScreen(
         if (showGraphicsPage) {
             BackHandler { showGraphicsPage = false }
             GraphicsSettingsPage(
-                gameVariant = selectedGame,
+                gameVariant = selectedEngine,
                 filesDir = filesDir,
                 controllerFocusActive = shouldSeedLauncherFocus,
                 onBack = { showGraphicsPage = false },
@@ -3797,7 +3807,7 @@ private fun SetupScreen(
         if (showEnginePrefsPage) {
             BackHandler { closeEnginePrefsPage() }
             EnginePreferencesPage(
-                gameVariant = selectedGame,
+                gameVariant = selectedEngine,
                 filesDir = filesDir,
                 controllerFocusActive = shouldSeedLauncherFocus,
                 onBack = { closeEnginePrefsPage() },
@@ -3816,7 +3826,7 @@ private fun SetupScreen(
         if (showAutoselectPage) {
             BackHandler { showAutoselectPage = false }
             AutoselectEditorPage(
-                gameVariant = selectedGame,
+                gameVariant = selectedEngine,
                 filesDir = filesDir.absolutePath,
                 onBack = { showAutoselectPage = false },
             )
@@ -5268,7 +5278,7 @@ private fun SetupScreen(
                         axisGeneration = axisGeneration,
                         pressedButtons = pressedButtons,
                         prefs = prefs,
-                        selectedGame = selectedGame,
+                        selectedGame = selectedEngine,
                         initialFocusRequester = if (shouldSeedLauncherFocus) initialFocus else null,
                         onDefineControls = { showControllerPage = true },
                         onEditTouchLayout = { showTouchEditorPage = true },
@@ -5281,28 +5291,23 @@ private fun SetupScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // -- Game selection toggle ----------------
-                    if (d1RequiredOk && d2RequiredOk) {
+                    if (d1RequiredOk) {
                         Text("Select Game", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(
-                                selected = selectedGame == "d1",
-                                onClick = {
-                                    selectedGame = "d1"
-                                    gamePrefs.edit().putString("selected_game", "d1").apply()
-                                },
-                                label = { Text("Descent 1") },
-                                modifier = Modifier.weight(1f).tvFocusBorder(),
-                            )
-                            FilterChip(
-                                selected = selectedGame == "d2",
-                                onClick = {
-                                    selectedGame = "d2"
-                                    gamePrefs.edit().putString("selected_game", "d2").apply()
-                                },
-                                label = { Text("Descent 2") },
-                                modifier = Modifier.weight(1f).tvFocusBorder(),
-                            )
+                            val availableTargets =
+                                GameLaunchTarget.entries.filter { it.filesReady(d1RequiredOk, d2RequiredOk) }
+                            availableTargets.forEach { target ->
+                                FilterChip(
+                                    selected = selectedGame == target.id,
+                                    onClick = {
+                                        selectedGame = target.id
+                                        gamePrefs.edit().putString("selected_game", target.id).apply()
+                                    },
+                                    label = { Text(target.displayName) },
+                                    modifier = Modifier.weight(1f).tvFocusBorder(),
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                     }
@@ -5361,8 +5366,7 @@ private fun SetupScreen(
                             text =
                                 when {
                                     gameRunning -> "Return to Game"
-                                    selectedGame == "d1" -> "Launch Descent 1"
-                                    else -> "Launch Descent 2"
+                                    else -> "Launch ${GameLaunchTarget.fromId(selectedGame).displayName}"
                                 },
                             fontSize = 18.sp,
                         )

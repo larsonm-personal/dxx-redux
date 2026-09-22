@@ -62,6 +62,9 @@ extern short Boss_teleport_segs[MAX_BOSS_TELEPORT_SEGS];
 extern fix64 Last_teleport_time;
 extern fix Boss_cloak_duration;
 extern int Boss_dying;
+/* Engine-actor boss completion; native bosses use their owned frame */
+void do_boss_dying_frame(object *obj);
+extern int Ai_last_missile_camera;
 
 extern ai_local Ai_local_info[MAX_OBJECTS];
 extern vms_vector Believed_player_pos;
@@ -69,6 +72,9 @@ extern int Believed_player_seg;
 
 extern void move_towards_segment_center(object *objp);
 extern int gate_in_robot(int type, int segnum);
+/* Shared destination traversal and placement geometry; callers select policy */
+void init_boss_segments(short segments[], int *count, int size_check, int one_wall_hack);
+int check_object_object_intersection(vms_vector *pos, fix size, segment *seg);
 extern void do_ai_movement(object *objp);
 extern void ai_move_to_new_segment( object * obj, short newseg, int first_time );
 // extern void ai_follow_path( object * obj, short newseg, int first_time );
@@ -78,6 +84,10 @@ extern void do_ai_frame(object *objp);
 extern void init_ai_object(int objnum, int initial_mode, int hide_segment);
 extern void update_player_awareness(object *objp, fix new_awareness);
 extern void create_awareness_event(object *objp, int type);         // object *objp can create awareness of player, amount based on "type"
+/* Shared event producer: observer filtering, cloak refresh, queue, agitation
+ * and diagnostics. The caller supplies game admission; it does not select D1
+ * D1/D2 use the same source Vulcan ID, queue limits and arithmetic here */
+void ai_create_awareness_event_common(object *obj, int type, int enabled);
 extern void do_ai_frame_all(void);
 extern void reset_ai_states(object *objp);
 extern int create_path_points(object *objp, int start_seg, int end_seg, point_seg *point_segs, short *num_points, int max_depth, int random_flag, int safety_flag, int avoid_seg);
@@ -133,6 +143,8 @@ extern void ai_open_doors_in_segment(object *robot);
 extern int ai_door_is_openable(object *objp, segment *segp, int sidenum);
 extern int player_is_visible_from_object(object *objp, vms_vector *pos, fix field_of_view, vms_vector *vec_to_player);
 extern void ai_reset_all_paths(void);   // Reset all paths.  Call at the start of a level.
+void maybe_ai_path_garbage_collect(void);
+void create_random_xlate(sbyte *order);
 extern int ai_multiplayer_awareness(object *objp, int awareness_level);
 
 // In escort.c
@@ -319,6 +331,9 @@ extern void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to
 extern void move_away_from_player(object *objp, vms_vector *vec_to_player, int attack_type);
 extern void move_towards_vector(object *objp, vms_vector *vec_goal, int dot_based);
 extern void init_ai_frame(void);
+extern int Animation_enabled;
+/* Pure shared event/state lookup; awareness is 1..AI_MAX_EVENT */
+extern int ai_transition_goal(int awareness, int current, int goal);
 
 extern void create_bfs_list(int start_seg, short bfs_list[], int *length, int max_segs);
 extern void init_thief_for_level();

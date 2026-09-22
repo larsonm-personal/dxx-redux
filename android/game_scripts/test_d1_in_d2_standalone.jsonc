@@ -1,0 +1,126 @@
+// Run with helpers/test_d1_in_d2_android.ps1; the runner isolates all app data
+[
+    {"action": "enter_launcher"},
+    {"action": "enter_game", "game": "d1-in-d2"},
+    {"action": "skip_intro", "timeout_ms": 30000},
+    {"action": "select", "text": "Ok", "timeout_ms": 15000, "optional": true},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 15000},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "select_mission", "text": "first strike", "timeout_ms": 10000},
+    {"action": "select", "text": "Ok", "timeout_ms": 10000},
+    {"action": "select", "text": "Trainee", "timeout_ms": 10000},
+    {"action": "skip_briefing", "timeout_ms": 60000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
+    {"action": "assert", "expect": {
+        "current_level_num": "1",
+        "asset_trace.runtime_engine": "d2",
+        "asset_trace.selected_base_game": "d1",
+        "asset_trace.mode": "d1-in-d2",
+        "asset_trace.d1_compat.sounds_active": "true",
+        "asset_trace.d1_compat.sound_files": "98",
+        "asset_trace.d1_compat.robot_models": "78",
+        "asset_trace.d1_compat.cockpit_frames_applied": "3",
+        "audio.mixer_open": "true",
+        "audio.osl_play_count": {"gt": 0}
+    }},
+    // Fresh pilot defaults bind accelerate to 102 and primary fire to 100
+    {"action": "send_button", "button": 102, "held": 1},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {"position.z": {"gt": 5}}},
+    {"action": "send_button", "button": 102, "pressed": 0},
+    {"action": "assert", "expect": {"position.z": {"gt": 5}}},
+    {"action": "send_button", "button": 100, "held": 1},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "player.energy": {"lt": 100},
+        "audio.sfx_probe_count": {"gt": 1}
+    }},
+    {"action": "send_button", "button": 100, "pressed": 0},
+    {"action": "assert", "expect": {
+        "player.energy": {"lt": 100},
+        "audio.sfx_probe_count": {"gt": 1},
+        "player_dead": false,
+        "current_level_num": 1
+    }},
+    // Shoot and cross an ordinary automatic door; the door behind spawn is locked
+    {"action": "pose_view", "segment": 100, "x": -257.55, "y": -143.61, "z": 226.84, "heading": 54672, "pitch": 449},
+    {"action": "assert", "expect": {
+        "level_scene.segment.sides[4].wall": 9,
+        "level_scene.segment.sides[4].wall_state": 0,
+        "level_scene.segment.sides[4].wall_flags": 16,
+        "level_scene.segment.sides[4].wall_type": 2
+    }},
+    {"action": "send_button", "button": 100, "held": 1},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {"level_scene.segment.sides[4].wall_state": {"gt": 0}}},
+    {"action": "send_button", "button": 100, "pressed": 0},
+    {"action": "send_button", "button": 102, "held": 1},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {"position.segment": 222}},
+    {"action": "send_button", "button": 102, "pressed": 0},
+    // Original D1 ceiling lights have no destruction replacement
+    {"action": "pose_view", "segment": 0, "x": 0, "y": 0, "z": 0, "pitch": 49152},
+    {"action": "send_button", "button": 100, "held": 1},
+    {"action": "wait_ms", "ms": 1000},
+    {"action": "send_button", "button": 100, "pressed": 0},
+    {"action": "assert", "expect": {
+        "level_scene.segment.sides[1].overlay": 281,
+        "level_scene.segment.sides[1].overlay_asset.name": "ceil024"
+    }},
+    // Animated D1 monitors retain their own destructible effect and destination
+    {"action": "pose_view", "segment": 11, "x": 0, "y": -20, "z": 120, "heading": 16384},
+    {"action": "assert", "expect": {"level_scene.segment.sides[0].overlay": 349}},
+    {"action": "send_button", "button": 100, "held": 1},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {"level_scene.segment.sides[0].overlay": 350}},
+    {"action": "send_button", "button": 100, "pressed": 0},
+    {"action": "wait_ms", "ms": 1000},
+    {"action": "introspect"},
+    {"action": "wait_ms", "ms": 5000},
+    // Source lava remains misc11, with original damage metadata
+    {"action": "pose_view", "segment": 186, "x": -22.82, "y": -41.69, "z": 588.71, "pitch": 16384},
+    {"action": "assert", "expect": {
+        "level_scene.segment.sides[3].base": 333,
+        "level_scene.segment.sides[3].base_asset.name": {"contains": "misc11#"},
+        "level_scene.segment.sides[3].base_asset.damage": "10.0"
+    }},
+    {"action": "introspect"},
+    {"action": "wait_ms", "ms": 5000},
+    // Position the ship in the reactor room; destruction still uses ordinary lasers
+    {"action": "pose_view", "segment": 73, "x": -254, "y": -183.6, "z": 80, "heading": 49152},
+    {"action": "assert", "expect": {
+        "level_scene.reactors[0].model": 39,
+        "level_scene.reactors[0].render_type": 1,
+        "level_scene.reactor_destroyed": false
+    }},
+    {"action": "send_button", "button": 100, "held": 1},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {"level_scene.reactor_destroyed": true}},
+    {"action": "send_button", "button": 100, "pressed": 0},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "level_scene.reactors[0].destroyed": true,
+        "level_scene.reactors[0].model": 40,
+        "level_scene.reactors[0].render_type": 1,
+        "reactor_countdown.active": true
+    }},
+    {"action": "wait_ms", "ms": 2000},
+    {"action": "assert", "expect": {"level_scene.reactors[0].model": 40, "level_scene.reactors[0].render_type": 1}},
+    {"action": "introspect"},
+    {"action": "wait_ms", "ms": 5000},
+    // Fly through the real exit trigger and let the rendered flyout finish
+    {"action": "pose_view", "segment": 69, "x": -150, "y": -202.5, "z": 80, "heading": 16384},
+    {"action": "send_button", "button": 102, "held": 1},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {"endlevel_sequence": {"gt": 0}}},
+    {"action": "send_button", "button": 102, "pressed": 0},
+    {"action": "wait_for", "timeout_ms": 45000, "expect": {"levelcomplete_active": true, "screen_advance_can_activate": true}},
+    {"action": "request_screen_advance", "generation": "current"},
+    {"action": "skip_briefing", "timeout_ms": 60000},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"current_level_num": 2, "game_window_is_front": true}},
+    {"action": "assert", "expect": {
+        "asset_trace.mode": "d1-in-d2",
+        "asset_trace.d1_compat.sound_files": 98,
+        "asset_trace.d1_compat.robot_models": 78,
+        "level_scene.reactor_destroyed": false,
+        "audio.mixer_open": true,
+        "audio.tsf_playing": true,
+        "audio.osl_enqueue_fail": 0,
+        "player_dead": false
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "First Strike passed door, light, monitor, lava, reactor wreck and normal exit to level 2"}
+]

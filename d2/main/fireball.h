@@ -64,6 +64,7 @@ void do_exploding_wall_frame(void);
 void init_exploding_walls(void);
 extern void maybe_drop_net_powerup(int powerup_type);
 extern void maybe_replace_powerup_with_energy(object *del_obj);
+int weapon_nearby(object *obj, int weapon_id);
 
 extern int get_explosion_vclip(object *obj, int stage);
 extern int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *pos, int segnum);

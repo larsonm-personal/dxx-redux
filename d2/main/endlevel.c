@@ -85,6 +85,7 @@ typedef struct flythrough_data {
 	fix			speed;			//how fast object is moving
 	vms_vector 	headvec;			//where we want to be pointing
 	int			first_time;		//flag for if first time through
+	int			transition_reached;	//remember a camera transition crossed within a slow frame
 	fix			offset_frac;	//how far off-center as portion of way
 	fix			offset_dist;	//how far currently off-center
 } flythrough_data;
@@ -773,7 +774,7 @@ void do_endlevel_frame()
 
 			do_endlevel_flythrough(0);
 
-			if (ConsoleObject->segnum == transition_segnum) {
+			if (fly_objects[0].transition_reached) {
 
 				if (PLAYING_BUILTIN_MISSION && endlevel_movie_played != MOVIE_NOT_PLAYED)
 					stop_endlevel_sequence();
@@ -1290,6 +1291,7 @@ void start_endlevel_flythrough(int n,object *obj,fix speed)
 	flydata->obj = obj;
 
 	flydata->first_time = 1;
+	flydata->transition_reached = 0;
 
 	flydata->speed = speed?speed:DEFAULT_SPEED;
 
@@ -1309,7 +1311,7 @@ static vms_angvec *angvec_add2_scale(vms_angvec *dest,vms_vector *src,fix s)
 
 #define MAX_SLIDE_PER_SEGMENT 0x10000
 
-void do_endlevel_flythrough(int n)
+static void do_endlevel_flythrough_step(int n, fix frame_time)
 {
 	object *obj;
 	segment *pseg;
@@ -1324,16 +1326,31 @@ void do_endlevel_flythrough(int n)
 
 	if (!flydata->first_time) {
 
-		vm_vec_scale_add2(&obj->pos,&flydata->step,FrameTime);
-		angvec_add2_scale(&flydata->angles,&flydata->angstep,FrameTime);
+		vm_vec_scale_add2(&obj->pos,&flydata->step,frame_time);
+		angvec_add2_scale(&flydata->angles,&flydata->angstep,frame_time);
 
 		vm_angles_2_matrix(&obj->orient,&flydata->angles);
 	}
 
 	//check new player seg
 
-	update_object_seg(obj);
+	{
+		const int located = update_object_seg(obj);
+#ifdef ANDROID
+		/* Android flyout diagnostics: record segment changes and first loss */
+		static int was_located[MAX_FLY_OBJECTS];
+		if (flydata->first_time || obj->segnum != old_player_seg || located != was_located[n])
+			debug_log(DLOG_GAME, "[FLYOUT] actor=%d state=%d old=%d seg=%d located=%d exit=%d transition=%d dt=%d movement_dt=%d pos=%d,%d,%d step=%d,%d,%d first=%d",
+				n, Endlevel_sequence, old_player_seg, obj->segnum, located, exit_segnum, transition_segnum, FrameTime, frame_time,
+				obj->pos.x, obj->pos.y, obj->pos.z, flydata->step.x, flydata->step.y, flydata->step.z, flydata->first_time);
+		was_located[n] = located;
+#else
+		(void)located;
+#endif
+	}
 	pseg = &Segments[obj->segnum];
+	if (obj->segnum == transition_segnum)
+		flydata->transition_reached = 1;
 
 	if (flydata->first_time || obj->segnum != old_player_seg) {		//moved into new seg
 		vms_vector curcenter,nextcenter;
@@ -1351,7 +1368,8 @@ void do_endlevel_flythrough(int n)
 		if (!flydata->first_time) {
 
 			entry_side = matt_find_connect_side(obj->segnum,old_player_seg);
-			exit_side = Side_opposite[entry_side];
+			if (entry_side != -1)
+				exit_side = Side_opposite[entry_side];
 		}
 
 		if (flydata->first_time || entry_side==-1 || pseg->children[exit_side]==-1)
@@ -1448,6 +1466,24 @@ void do_endlevel_flythrough(int n)
 	}
 
 	flydata->first_time=0;
+}
+
+void do_endlevel_flythrough(int n)
+{
+	fix remaining = FrameTime;
+	const fix max_step = F1_0 / 60;
+	/* Initialization does not move the object, as in the original sequence */
+	if (fly_objects[n].first_time || remaining <= max_step) {
+		do_endlevel_flythrough_step(n, remaining);
+		return;
+	}
+	/* Consume the whole frame while visiting the bends and exit in between
+	 * This changes only cinematic movement, not world updates or RNG */
+	while (remaining > 0) {
+		const fix step = min(remaining, max_step);
+		do_endlevel_flythrough_step(n, step);
+		remaining -= step;
+	}
 }
 
 #define JOY_NULL 15

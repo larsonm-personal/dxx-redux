@@ -41,6 +41,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_mission_assets.h"
 #endif
 #include "piggy.h"
+#include "d1_in_d2/d1_in_d2.h"
 
 //values that describe where a mission is located
 enum mle_loc
@@ -645,7 +646,7 @@ mle *build_mission_list(int anarchy_mode)
 {
 	mle *mission_list;
 	int top_place;
-    char	builtin_mission_filename[FILENAME_LEN];
+    char	builtin_mission_filename[FILENAME_LEN] = "";
 	char	search_str[PATH_MAX] = MISSION_DIR;
 
 	//now search for levels on disk
@@ -665,7 +666,8 @@ mle *build_mission_list(int anarchy_mode)
 	MALLOC(mission_list, mle, MAX_MISSIONS);
 	num_missions = 0;
 	
-	add_builtin_mission_to_list(mission_list + num_missions, builtin_mission_filename);  //read built-in first
+	if (PHYSFSX_exists("descent2.hog", 1) || PHYSFSX_exists("d2demo.hog", 1))
+		add_builtin_mission_to_list(mission_list + num_missions, builtin_mission_filename);  //read built-in first
 	add_d1_builtin_mission_to_list(mission_list + num_missions);
 	add_missions_to_list(mission_list, search_str, search_str + strlen(search_str), anarchy_mode);
 	
@@ -704,20 +706,13 @@ void free_mission_list(mle *mission_list)
 }
 
 void init_extra_robot_movie(char *filename);
-int read_hamfile();
 
 //values for built-in mission
 
 int load_mission_ham()
 {
 	void bm_read_extra_robots(const char *fname,int type);
-	read_hamfile();
-
-	if (sndfile_dir_changed()) {
-		read_sndfile();
-		piggy_read_sounds();
-		digi_free_cached_sounds();
-	}
+	piggy_load_mission_data();
 
 	if (Current_mission->enhanced == 3 && Current_mission->alternate_ham_file) {
 		/*
@@ -1062,9 +1057,7 @@ int load_mission(mle *mission)
 	}
 
 	// re-read default HAM file, in case this mission brings it's own version of it
-	free_polygon_models();
-
-	if (load_mission_ham())
+	if (d1_in_d2_load_mission_assets())
 		init_extra_robot_movie(Current_mission_filename);
 
 	return 1;

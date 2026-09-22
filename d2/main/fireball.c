@@ -56,8 +56,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "fuelcen.h"
 #include "cntrlcen.h"
-#include "d1_in_d2.h"
-#include "d1_in_d2_semantics.h"
+#include "d1_in_d2/d1_in_d2_ai.h"
+#include "d1_in_d2/d1_in_d2_semantics.h"
 #include "gameseg.h"
 #include "automap.h"
 #include "byteswap.h"
@@ -155,7 +155,7 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 								phys_apply_force(obj0p,&vforce);
 
 								//	If not a boss, stun for 2 seconds at 32 force, 1 second at 16 force
-								if (!d1_in_d2_use_d1_gameplay() && (objp != NULL) && (!Robot_info[obj0p->id].boss_flag) && (Weapon_info[objp->id].flash)) {
+								if (d1_in_d2_ai_flash_can_stun(obj0p) && (objp != NULL) && (!Robot_info[obj0p->id].boss_flag) && (Weapon_info[objp->id].flash)) {
 									ai_static	*aip = &obj0p->ctype.ai_info;
 									int			force_val = f2i(fixdiv(vm_vec_mag_quick(&vforce) * Weapon_info[objp->id].flash, FrameTime)/128) + 2;
 
@@ -183,9 +183,7 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 									phys_apply_rot(obj0p,&neg_vforce);
 								}
 								if ( obj0p->shields >= 0 ) {
-									if (Robot_info[obj0p->id].boss_flag)
-										if (Boss_invulnerable_matter[Robot_info[obj0p->id].boss_flag-BOSS_D2])
-											damage /= 4;
+									damage = d1_in_d2_ai_robot_blast_damage(obj0p, damage);
 
 									if (apply_damage_to_robot(obj0p, damage, parent))
 										if ((objp != NULL) && (parent == Players[Player_num].objnum)) {
@@ -250,8 +248,7 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 
 								phys_apply_force(obj0p,&vforce);
 								phys_apply_rot(obj0p,&vforce2);
-								if (!d1_in_d2_use_d1_gameplay() && Difficulty_level == 0)
-									damage /= 4;
+								damage = d1_in_d2_blast_damage(damage);
 								
 								if ( obj0p->shields >= 0) {
 
@@ -910,6 +907,8 @@ int weapon_nearby(object *objp, int weapon_id)
 //	------------------------------------------------------------------------------------------------------
 void maybe_replace_powerup_with_energy(object *del_obj)
 {
+	if (d1_in_d2_replace_powerup(del_obj))
+		return;
 	int	weapon_index=-1;
 
 	if (del_obj->contains_type != OBJ_POWERUP)
@@ -942,17 +941,7 @@ void maybe_replace_powerup_with_energy(object *del_obj)
 	else if (weapon_index != -1) {
 		if ((player_has_weapon(Player_num, weapon_index, 0) & HAS_WEAPON_FLAG) || weapon_nearby(del_obj, del_obj->contains_id)) {
 			// SIM RNG: this picks the actual replacement drop for duplicate weapons
-			if (d1_in_d2_use_d1_gameplay()) {
-				if (d_rand() > 16384) {
-					del_obj->contains_count = 1;
-					del_obj->contains_type = OBJ_POWERUP;
-					if (weapon_index == VULCAN_INDEX)
-						del_obj->contains_id = POW_VULCAN_AMMO;
-					else
-						del_obj->contains_id = POW_ENERGY;
-				} else
-					del_obj->contains_count = 0;
-			} else if (d_rand() > 16384) {
+			if (d_rand() > 16384) {
 				del_obj->contains_type = OBJ_POWERUP;
 				if (weapon_index == VULCAN_INDEX) {
 					del_obj->contains_id = POW_VULCAN_AMMO;
@@ -969,14 +958,7 @@ void maybe_replace_powerup_with_energy(object *del_obj)
 	} else if (del_obj->contains_id == POW_QUAD_FIRE)
 		if ((Players[Player_num].flags & PLAYER_FLAGS_QUAD_LASERS) || weapon_nearby(del_obj, del_obj->contains_id)) {
 			// SIM RNG: this picks the actual replacement drop for duplicate quads
-			if (d1_in_d2_use_d1_gameplay()) {
-				if (d_rand() > 16384) {
-					del_obj->contains_count = 1;
-					del_obj->contains_type = OBJ_POWERUP;
-					del_obj->contains_id = POW_ENERGY;
-				} else
-					del_obj->contains_count = 0;
-			} else if (d_rand() > 16384) {
+			if (d_rand() > 16384) {
 				del_obj->contains_type = OBJ_POWERUP;
 				del_obj->contains_id = POW_ENERGY;
 			} else {
@@ -1515,8 +1497,7 @@ void do_explosion_sequence(object *obj)
 
 		vclip_num = get_explosion_vclip(del_obj,1);
 
-		if (del_obj->type == OBJ_ROBOT && Robot_info[del_obj->id].badass &&
-			d1_in_d2_use_d2_badass_robot_explosion())
+		if (del_obj->type == OBJ_ROBOT && Robot_info[del_obj->id].badass)
 			expl_obj = object_create_badass_explosion( del_obj, del_obj->segnum, spawn_pos, fixmul(del_obj->size, EXPLOSION_SCALE), vclip_num, F1_0*Robot_info[del_obj->id].badass, i2f(4)*Robot_info[del_obj->id].badass, i2f(35)*Robot_info[del_obj->id].badass, -1 );
 		else
 			expl_obj = object_create_explosion( del_obj->segnum, spawn_pos, fixmul(del_obj->size, EXPLOSION_SCALE), vclip_num );

@@ -29,7 +29,7 @@
 #include "weapon.h"
 
 #ifdef DXX_BUILD_DESCENT_II
-#include "d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2.h"
 #endif
 
 #include "input_demo_hooks_shared.h"

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "d1_pig_validation.h"
+#include "d1_in_d2/d1_pig_validation.h"
 
 #define CHECK(condition)                                                            \
 	do {                                                                            \
@@ -81,6 +81,19 @@ int main(void)
 	put_word(model, 0, 99);
 	CHECK(!d1_pig_validate_model_stream(model, sizeof(model), 0));
 	CHECK(!d1_pig_validate_model_stream(model, sizeof(model), sizeof(model)));
+
+	/* A structurally valid textured polygon can still reference a missing texture */
+	memset(model, 0, sizeof(model));
+	put_word(model, 0, 3);
+	put_word(model, 28, 1);
+	CHECK(d1_pig_validate_model_stream(model, sizeof(model), 0));
+	CHECK(d1_pig_validate_model_textures(model, sizeof(model), 0, 2));
+	CHECK(!d1_pig_validate_model_textures(model, sizeof(model), 0, 1));
+	memset(model, 0, sizeof(model));
+	put_word(model, 0, 5);
+	put_word(model, 2, 0);
+	CHECK(d1_pig_validate_model_textures(model, sizeof(model), 0, 1));
+	CHECK(!d1_pig_validate_model_textures(model, sizeof(model), 0, 0));
 
 	puts("D1 PIG validation tests passed");
 	return 0;

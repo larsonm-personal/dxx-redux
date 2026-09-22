@@ -14,6 +14,11 @@
 
 //Object functions:
 
+/* Runtime flat-color encoding: RGB15 uses bits 0-14; an explicitly indexed
+ * color retains its palette slot across palette changes. Asset readers choose
+ * the encoding; the interpreter does not infer a game or source file format */
+#define G3_MODEL_COLOR_INDEXED 0x8000
+
 //gives the interpreter an array of points to use
 void g3_set_interp_points(g3s_point *pointlist);
 

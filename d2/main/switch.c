@@ -26,6 +26,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "newmenu.h"
 #include "game.h"
 #include "switch.h"
+#include "d1_in_d2/d1_in_d2_levels.h"
 #include "inferno.h"
 #include "segment.h"
 #include "dxxerror.h"
@@ -512,6 +513,14 @@ int check_trigger_sub(int trigger_num, int pnum,int shot)
 	if (coop_travel_handle_exit_trigger(trigger_num, pnum, shot))
 		return 1;
 #endif
+	const int native_result = d1_in_d2_activate_trigger(trigger_num, pnum);
+	if (native_result >= 0) {
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		if (!native_result)
+			escort_route_notify_trigger_changed(trigger_num);
+#endif
+		return native_result;
+	}
 	if (trig->flags & TF_DISABLED)
 		return 1;		//1 means don't send trigger hit to other players
 
@@ -710,7 +719,7 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 
 		trigger_num = Walls[wall_num].trigger;
 
-		if (trigger_num == -1) {
+		if (trigger_num < 0 || trigger_num >= Num_triggers) {
 			input_demo_log_trigger_probe("skip_no_trigger", seg, side, objnum, shot, -1);
 			return;
 		}
@@ -731,7 +740,10 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 			return;
 		#endif
 
-		if (check_trigger_sub(trigger_num, Player_num,shot)) {
+		int result = d1_in_d2_cross_trigger(trigger_num, seg, side, objnum, shot);
+		if (result < 0)
+			result = check_trigger_sub(trigger_num, Player_num, shot);
+		if (result) {
 			input_demo_log_trigger_probe("sub_returned_skip", seg, side, objnum, shot, trigger_num);
 			return;
 		}
@@ -848,7 +860,10 @@ void trigger_write(trigger *t, short version, PHYSFS_file *fp)
 	else if (version >= 31)
 		PHYSFSX_writeU8(fp, t->type);
 
-	if (version <= 30)
+	short source_flags;
+	if (version <= 30 && d1_in_d2_trigger_source_flags(t, &source_flags))
+		PHYSFS_writeSLE16(fp, source_flags);
+	else if (version <= 30)
 		switch (t->type)
 		{
 			case TT_OPEN_DOOR:

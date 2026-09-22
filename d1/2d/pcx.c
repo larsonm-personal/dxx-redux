@@ -59,6 +59,8 @@ int PCXHeader_read_n(PCXHeader *ph, int n, PHYSFS_file *fp)
 	int i;
 
 	for (i = 0; i < n; i++) {
+		if (PHYSFS_fileLength(fp) - PHYSFS_tell(fp) < PCXHEADER_SIZE)
+			return i;
 		ph->Manufacturer = PHYSFSX_readByte(fp);
 		ph->Version = PHYSFSX_readByte(fp);
 		ph->Encoding = PHYSFSX_readByte(fp);

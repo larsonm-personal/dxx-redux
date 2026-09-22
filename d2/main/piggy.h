@@ -65,6 +65,9 @@ typedef struct bitmap_index {
 
 int properties_init();
 void piggy_close();
+void piggy_reset_asset_registry(void);
+/* Reload HAM definitions and any newly selected sound bank */
+void piggy_load_mission_data(void);
 void piggy_dump_all();
 bitmap_index piggy_register_bitmap( grs_bitmap * bmp, char * name, int in_file );
 void piggy_register_virtual_bitmap_index(int bitmap_index);
@@ -126,6 +129,7 @@ void piggy_new_pigfile(char *pigname);
 
 //loads custom bitmaps for current level
 void load_bitmap_replacements(char *level_name);
+void free_bitmap_replacements(void);
 //if descent.pig exists, loads descent 1 texture bitmaps
 void load_d1_bitmap_replacements();
 int d2_index_for_d1_index(int d1_index);

@@ -56,7 +56,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multi.h"
 #include "playsave.h"
 #include "hudmsg.h"
-#include "d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2_weapons.h"
 #ifdef __ANDROID__
 #include "android_log.h"
 #endif
@@ -764,7 +764,7 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 		return objnum;
 	}
 
-	if (Objects[parent].type == OBJ_PLAYER) {
+	if (Objects[parent].type == OBJ_PLAYER && !d1_in_d2_initialize_player_weapon(obj, Fusion_charge, Game_mode)) {
 		if (weapon_type == FUSION_ID) {
 
 			if (Fusion_charge <= 0)
@@ -908,8 +908,8 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 	// Move 1 frame, so that the end-tip of the laser is touching the gun barrel.
 	// This also jitters the laser a bit so that it doesn't alias.
 	//	Don't do for weapons created by weapons.
-	if (((Objects[parent].type == OBJ_PLAYER) ||
-	     (d1_in_d2_use_d1_gameplay() && Objects[parent].type != OBJ_WEAPON)) &&
+	if (!d1_in_d2_position_weapon(obj, &Objects[parent], direction, laser_length) &&
+	    Objects[parent].type == OBJ_PLAYER &&
 	    (Weapon_info[weapon_type].render_type != WEAPON_RENDER_NONE) &&
 	    (weapon_type != FLARE_ID)) {
 		vms_vector	end_pos;
@@ -1129,6 +1129,9 @@ int call_find_homing_object_complete(object *tracker, vms_vector *curpos)
 //	Scan list of objects rendered last frame, find one that satisfies function of nearness to center and distance.
 int find_homing_object(vms_vector *curpos, object *tracker)
 {
+	const int d1_target = d1_in_d2_acquire_homing_target(curpos, tracker);
+	if (d1_target != D1_HOMING_NOT_HANDLED)
+		return d1_target;
 	int	i;
 	fix	max_dot = -F1_0*2;
 	int	best_objnum = -1;
@@ -1268,6 +1271,9 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 //	Make homing objects not track parent's prox bombs.
 int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_obj_type1, int track_obj_type2)
 {
+	const int d1_target = d1_in_d2_scan_homing_targets(curpos, tracker, track_obj_type1, track_obj_type2);
+	if (d1_target != D1_HOMING_NOT_HANDLED)
+		return d1_target;
 	int	objnum;
 	fix	max_dot = -F1_0*2;
 	int	best_objnum = -1;
@@ -1570,13 +1576,15 @@ int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_o
 //	Computes and returns a fairly precise dot product.
 int track_track_goal(int track_goal, object *tracker, fix *dot, unsigned int homerFrameCount, int original_homing)
 {
+	const int d1_target = d1_in_d2_track_homing_target(track_goal, tracker, dot, homerFrameCount, original_homing);
+	if (d1_target != D1_HOMING_NOT_HANDLED)
+		return d1_target;
 	const unsigned int scan_phase = original_homing ?
 		(unsigned int)((tracker - Objects) ^ homerFrameCount) :
 		homerFrameCount - tracker->ctype.laser_info.creation_framecount;
-	const int d2_original = original_homing && !d1_in_d2_use_d1_gameplay();
 
 	if (object_is_trackable(track_goal, tracker, dot) &&
-		(!d2_original || (scan_phase % 8) != 0)) {  // CED -- && (tracker - Objects) is useless
+		(!original_homing || (scan_phase % 8) != 0)) {  // CED -- && (tracker - Objects) is useless
 		return track_goal;
 	} else if ((scan_phase % 4) == 0)
 
@@ -1659,10 +1667,7 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 		spreadu, delay_time, make_sound, harmless, &shot_orientation);
 	input_demo_record_player_shot_event(obj, laser_type, gun_num, spreadr, spreadu, delay_time, make_sound, harmless);
 
-	if (!d1_in_d2_use_d1_gameplay()) {
-		input_demo_set_awareness_source("laser_player_fire", obj - Objects, laser_type);
-		create_awareness_event(obj, PA_WEAPON_WALL_COLLISION);
-	}
+	d1_in_d2_notify_player_fire(obj, laser_type);
 
 	// Find the initial position of the laser
 	pnt = &Player_ship->gun_points[gun_num];
@@ -1876,7 +1881,6 @@ void Flare_create(object *obj)
 }
 
 #define	HOMING_MISSILE_SCALE	16
-#define	D1_HOMING_MISSILE_SCALE	8
 
 //--------------------------------------------------------------------
 //	Set object *objp's orientation to (or towards if I'm ambitious) its velocity.
@@ -1886,7 +1890,7 @@ void homing_missile_turn_towards_velocity(object *objp, vms_vector *norm_vel, fi
 
 	new_fvec = *norm_vel;
 
-	vm_vec_scale(&new_fvec, turn_time * (d1_in_d2_use_d1_gameplay() ? D1_HOMING_MISSILE_SCALE : HOMING_MISSILE_SCALE));
+	vm_vec_scale(&new_fvec, turn_time * HOMING_MISSILE_SCALE);
 	vm_vec_add2(&new_fvec, &objp->orient.fvec);
 	vm_vec_normalize_quick(&new_fvec);
 
@@ -2000,63 +2004,52 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
             // CED -- Slow guidance to idealHomerFPS
 			if (track_goal != -1 && doHomerFrame) {
 #ifdef NEWHOMER
-				vm_vec_sub(&vector_to_object, &Objects[track_goal].pos, &obj->pos);
+				if (!d1_in_d2_turn_homing_weapon(obj, track_goal, &dot, idealHomerFrameTime, original_homing)) {
+					vm_vec_sub(&vector_to_object, &Objects[track_goal].pos, &obj->pos);
 
-				vm_vec_normalize_quick(&vector_to_object);
-				temp_vec = obj->mtype.phys_info.velocity;
-				speed = vm_vec_normalize_quick(&temp_vec);
-				if (original_homing && d1_in_d2_use_d1_gameplay())
-					dot = vm_vec_dot(&temp_vec, &vector_to_object);
-				max_speed = Weapon_info[obj->id].speed[Difficulty_level];
-				if ((Game_mode & GM_MULTI) && Netgame.OriginalD1Weapons) {
-					if (obj->id == SPREADFIRE_ID) {
-						max_speed = 200 * F1_0;
-					}
-				}
-				if (speed+F1_0 < max_speed) {
-					speed += fixmul(max_speed, idealHomerFrameTime/2);
-					if (speed > max_speed)
-						speed = max_speed;
-				}
-
-				// Scale vector to object to current FrameTime.
-				// CED -- Frametime scaling Removed; this code is now frames-dependent 
-				//vm_vec_scale(&vector_to_object, F1_0/((float)(F1_0/homing_turn_base[Difficulty_level])/FrameTime));
-
-				vm_vec_add2(&temp_vec, &vector_to_object);
-				//	The boss' smart children track better...
-				if (Weapon_info[obj->id].render_type != WEAPON_RENDER_POLYMODEL)
-					vm_vec_add2(&temp_vec, &vector_to_object);
-				vm_vec_normalize_quick(&temp_vec);
-				vm_vec_scale(&temp_vec, speed);
-				obj->mtype.phys_info.velocity = temp_vec;
-
-				//	Subtract off life proportional to amount turned.
-				//	For hardest turn, it will lose 2 seconds per second.
-				{
-					fix	lifelost, absdot;
-
-					absdot = abs(F1_0 - dot);
-
-					if (original_homing && d1_in_d2_use_d1_gameplay()) {
-						if (absdot > F1_0/8) {
-							if (absdot > F1_0/4)
-								absdot = F1_0/4;
-							lifelost = fixmul(absdot*16, idealHomerFrameTime);
-							obj->lifeleft -= lifelost;
+					vm_vec_normalize_quick(&vector_to_object);
+					temp_vec = obj->mtype.phys_info.velocity;
+					speed = vm_vec_normalize_quick(&temp_vec);
+					max_speed = Weapon_info[obj->id].speed[Difficulty_level];
+					if ((Game_mode & GM_MULTI) && Netgame.OriginalD1Weapons) {
+						if (obj->id == SPREADFIRE_ID) {
+							max_speed = 200 * F1_0;
 						}
-					} else {
-						lifelost = fixmul(absdot*32,
-							original_homing || d1_in_d2_use_d1_gameplay() ?
-							idealHomerFrameTime : FrameTime);
+					}
+					if (speed+F1_0 < max_speed) {
+						speed += fixmul(max_speed, idealHomerFrameTime/2);
+						if (speed > max_speed)
+							speed = max_speed;
+					}
+
+					// Scale vector to object to current FrameTime.
+					// CED -- Frametime scaling Removed; this code is now frames-dependent
+					//vm_vec_scale(&vector_to_object, F1_0/((float)(F1_0/homing_turn_base[Difficulty_level])/FrameTime));
+
+					vm_vec_add2(&temp_vec, &vector_to_object);
+					//	The boss' smart children track better...
+					if (Weapon_info[obj->id].render_type != WEAPON_RENDER_POLYMODEL)
+						vm_vec_add2(&temp_vec, &vector_to_object);
+					vm_vec_normalize_quick(&temp_vec);
+					vm_vec_scale(&temp_vec, speed);
+					obj->mtype.phys_info.velocity = temp_vec;
+
+					//	Subtract off life proportional to amount turned.
+					//	For hardest turn, it will lose 2 seconds per second.
+					{
+						fix	lifelost, absdot;
+
+						absdot = abs(F1_0 - dot);
+
+						lifelost = fixmul(absdot*32, original_homing ? idealHomerFrameTime : FrameTime);
 						obj->lifeleft -= lifelost;
 					}
-				}
 
-				//	Only polygon objects have visible orientation, so only they should turn.
-				if (Weapon_info[obj->id].render_type == WEAPON_RENDER_POLYMODEL)
-					homing_missile_turn_towards_velocity(obj, &temp_vec,
-						original_homing ? idealHomerFrameTime : FrameTime);		//	temp_vec is normalized velocity.
+					//	Only polygon objects have visible orientation, so only they should turn.
+					if (Weapon_info[obj->id].render_type == WEAPON_RENDER_POLYMODEL)
+						homing_missile_turn_towards_velocity(obj, &temp_vec,
+							original_homing ? idealHomerFrameTime : FrameTime);		//	temp_vec is normalized velocity.
+				}
 #else // OLD - ORIGINAL - MISSILE TRACKING CODE
 				vm_vec_sub(&vector_to_object, &Objects[track_goal].pos, &obj->pos);
 
@@ -2102,7 +2095,7 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 	}
 
 	//	Make sure weapon is not moving faster than allowed speed.
-	if (!d1_in_d2_use_d1_gameplay() || Weapon_info[obj->id].thrust != 0) {
+	if (!d1_in_d2_limit_weapon_speed(obj)) {
 		fix	weapon_speed;
 
 		fix max_weapon_speed = Weapon_info[obj->id].speed[Difficulty_level];
@@ -2415,17 +2408,19 @@ int do_laser_firing(int objnum, int weapon_num, int level, int flags, int nfires
 			}
 			break;
 		}
-		case SPREADFIRE_INDEX:
+		case SPREADFIRE_INDEX: {
+			const int projectile = d1_in_d2_primary_projectile(SPREADFIRE_ID);
 			if (flags & LASER_SPREADFIRE_TOGGLED) {
-				Laser_player_fire_spread( objp, SPREADFIRE_ID, 6, F1_0/16, 0, 0, 0, shot_orientation);
-				Laser_player_fire_spread( objp, SPREADFIRE_ID, 6, -F1_0/16, 0, 0, 0, shot_orientation);
-				Laser_player_fire_spread( objp, SPREADFIRE_ID, 6, 0, 0, 1, 0, shot_orientation);
+				Laser_player_fire_spread( objp, projectile, 6, F1_0/16, 0, 0, 0, shot_orientation);
+				Laser_player_fire_spread( objp, projectile, 6, -F1_0/16, 0, 0, 0, shot_orientation);
+				Laser_player_fire_spread( objp, projectile, 6, 0, 0, 1, 0, shot_orientation);
 			} else {
-				Laser_player_fire_spread( objp, SPREADFIRE_ID, 6, 0, F1_0/16, 0, 0, shot_orientation);
-				Laser_player_fire_spread( objp, SPREADFIRE_ID, 6, 0, -F1_0/16, 0, 0, shot_orientation);
-				Laser_player_fire_spread( objp, SPREADFIRE_ID, 6, 0, 0, 1, 0, shot_orientation);
+				Laser_player_fire_spread( objp, projectile, 6, 0, F1_0/16, 0, 0, shot_orientation);
+				Laser_player_fire_spread( objp, projectile, 6, 0, -F1_0/16, 0, 0, shot_orientation);
+				Laser_player_fire_spread( objp, projectile, 6, 0, 0, 1, 0, shot_orientation);
 			}
 			break;
+		}
 
 		case PLASMA_INDEX:
 			Laser_player_fire( objp, PLASMA_ID, 0, 1, 0, shot_orientation);
@@ -2671,7 +2666,7 @@ void create_smart_children(object *objp, int num_smart_children)
 
 		//	Get type of weapon for child from parent.
 		if (objp->type == OBJ_WEAPON) {
-			blob_id = Weapon_info[objp->id].children;
+			blob_id = d1_in_d2_smart_child(objp, Weapon_info[objp->id].children);
 			Assert(blob_id != -1);		//	Hmm, missing data in bitmaps.tbl.  Need "children=NN" parameter.
 		} else {
 			Assert(objp->type == OBJ_ROBOT);
