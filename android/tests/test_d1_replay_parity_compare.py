@@ -209,6 +209,21 @@ class ParityTests(unittest.TestCase):
         self.mutate(b, lambda rows: rows[2].update(result=3))
         self.assertEqual(parity.compare_rng(a, b)["first_value_difference"]["event"], 1)
 
+    def test_effects_rng_is_checked_independently_of_simulation(self):
+        a, b = self.rng("a"), self.rng("b")
+        for path in (a, b):
+            self.mutate(path, lambda rows: rows[2].update(stream=1))
+        self.assertEqual(parity.compare_rng(a, b)["simulation_events_compared"], 1)
+        self.assertEqual(parity.compare_rng(a, b, stream=1)["effects_events_compared"], 1)
+        self.mutate(b, lambda rows: rows[2].update(result=3))
+        self.assertEqual(parity.compare_rng(a, b)["status"], "pass")
+        effects = parity.compare_rng(a, b, stream=1)
+        self.assertEqual(effects["status"], "fail")
+        self.assertEqual(effects["first_value_difference"]["event"], 0)
+        self.mutate(b, lambda rows: rows[2].pop("result"))
+        with self.assertRaises(parity.EvidenceError):
+            parity.compare_rng(a, b, stream=1)
+
     def test_missing_rng_values_and_unknown_streams_are_incomplete(self):
         for mutation in (lambda rows: rows[1].pop("result"),
                          lambda rows: rows[1].update(stream=2)):

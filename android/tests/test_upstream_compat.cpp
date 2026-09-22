@@ -20,6 +20,7 @@ extern "C" {
 #include "args.h"
 #include "ai.h"
 #include "bm.h"
+#include "boss_health_shared.h"
 #include "config.h"
 #include "collide.h"
 #include "cntrlcen.h"
@@ -82,6 +83,7 @@ void apply_force_damage(object *obj, fix force, object *other);
 void kill_stuck_objects(int wallnum);
 void InitWeaponOrdering(void);
 int object_create_egg(object *obj);
+int drop_powerup(int type, int id, int num, vms_vector *velocity, vms_vector *position, int segment);
 void collide_robot_and_player(object *robot, object *player, vms_vector *point);
 extern point_seg Point_segs[];
 extern point_seg *Point_segs_free_ptr;
@@ -5969,6 +5971,25 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		return result;
 	};
 	const json fresh_hidden_reactors = hidden_reactors();
+#ifdef DXX_BUILD_DESCENT_II
+	for (int segment = 0; segment <= Highest_segment_index; ++segment)
+		require(!(Segment2s[segment].s2_flags & (S2F_AMBIENT_LAVA | S2F_AMBIENT_WATER)),
+		        "loading an original D1 mine does not add D2's random water/lava sounds");
+#endif
+	for (int slot = 0; slot <= Highest_object_index; ++slot) {
+		const object &boss = Objects[slot];
+		if (boss.type != OBJ_ROBOT || !Robot_info[boss.id].boss_flag)
+			continue;
+		const fix strength = Robot_info[boss.id].strength;
+		require(boss.shields == strength, "fresh D1 bosses use their original full strength");
+		for (int difficulty = 0; difficulty < NDL; ++difficulty)
+			require(boss_health_maximum_for_difficulty(strength, difficulty) == strength,
+			        "native boss health maximum is independent of difficulty");
+		for (int difficulty = 0; difficulty < NDL; ++difficulty) {
+			difficulty_health_rescale_live_robots(Difficulty_level, difficulty);
+			require(Objects[slot].shields == strength, "live difficulty changes retain native boss health");
+		}
+	}
 	require(level == 1 ? !fresh_reactor_guns.empty() && fresh_hidden_reactors.empty()
 	                   : fresh_reactor_guns.empty() && fresh_hidden_reactors.size() == 1,
 	        "checkpoint mine contains the expected live or hidden reactor");
@@ -6164,9 +6185,43 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		}
 		cases.push_back({ { "scenario", scenario }, { "textures", restored_textures }, { "triggers", restored_triggers }, { "assets", restored_assets }, { "frames", frames } });
 	}
+	json boss_checkpoints = json::array();
+	if (level != 1) {
+		for (int difficulty = 0; difficulty < NDL; ++difficulty) {
+			for (int variant = 0; variant < 6; ++variant) {
+				char base[] = "baseline.sav", filename[32];
+				restore(base);
+				int boss_slot = -1;
+				for (int slot = 0; slot <= Highest_object_index; ++slot)
+					if (Objects[slot].type == OBJ_ROBOT && Robot_info[Objects[slot].id].boss_flag)
+						boss_slot = slot;
+				require(boss_slot >= 0, "checkpoint fixture contains a native boss");
+				const object original = Objects[boss_slot];
+				const fix strength = Robot_info[original.id].strength;
+				const fix health[] = { strength * 2, strength, strength / 2, 1, 0, -F1_0 };
+				std::snprintf(filename, sizeof(filename), "boss-%d-%d.sav", difficulty, variant);
+#ifndef DXX_BUILD_DESCENT_II
+				Difficulty_level = difficulty;
+				Objects[boss_slot].shields = health[variant];
+				Objects[boss_slot].mtype.phys_info.mass += F1_0;
+				Objects[boss_slot].mtype.phys_info.drag += 1;
+				require(state_save_all_sub(filename, description), "write native boss health and physics checkpoint");
+#endif
+				restore(filename);
+				const object &boss = Objects[boss_slot];
+				require(Difficulty_level == difficulty && boss.shields == health[variant],
+				        "native checkpoint retains exact boss health at every difficulty, including over-default and dying values");
+				require(boss.mtype.phys_info.mass == original.mtype.phys_info.mass + F1_0 &&
+				            boss.mtype.phys_info.drag == original.mtype.phys_info.drag + 1 && boss.size == original.size,
+				        "native checkpoint retains boss physics instead of copying definition defaults");
+				boss_checkpoints.push_back({ difficulty, variant, boss_slot, boss.id, boss.shields,
+				                             boss.mtype.phys_info.mass, boss.mtype.phys_info.drag, boss.size });
+			}
+		}
+	}
 	FILE *output = std::fopen("frames.json", "wb");
 	require(output != nullptr, "open restored frame trace");
-	const std::string result = json({ { "fresh_textures", fresh_textures }, { "fresh_triggers", fresh_triggers }, { "fresh_assets", fresh_assets }, { "reactor_guns", fresh_reactor_guns }, { "hidden_reactors", fresh_hidden_reactors }, { "cases", cases } }).dump(2) + "\n";
+	const std::string result = json({ { "fresh_textures", fresh_textures }, { "fresh_triggers", fresh_triggers }, { "fresh_assets", fresh_assets }, { "reactor_guns", fresh_reactor_guns }, { "hidden_reactors", fresh_hidden_reactors }, { "boss_checkpoints", boss_checkpoints }, { "cases", cases } }).dump(2) + "\n";
 	require(std::fwrite(result.data(), 1, result.size(), output) == result.size(), "write complete restored frame trace");
 	std::fclose(output);
 	std::puts("Restored robot frame trace passed");
@@ -6646,6 +6701,56 @@ static nlohmann::json exercise_weapon_drops(bool native)
 	return result;
 }
 
+static nlohmann::json exercise_robot_drops(bool native)
+{
+	auto result = nlohmann::json::array();
+	Game_mode = 0;
+	Player_num = 0;
+	for (const int id : { 0, 14, 20 })
+		for (const int count : { 0, 1, 3 })
+			for (const int seed : { 1, 123, 456 }) {
+				init_test_corridor();
+				Players[0].num_robots_level = Players[0].num_robots_total = 0;
+				vms_vector point = { F1_0, 0, 0 }, velocity = { 3 * F1_0, -2 * F1_0, F1_0 };
+				d_srand(seed);
+				d_srand_stream(D_RNG_FX, 789);
+				d_rand_reset_call_count();
+				d_rand_reset_stream_call_count(D_RNG_FX);
+				const int last = drop_powerup(OBJ_ROBOT, id, count, &velocity, &point, 0);
+				require(count ? last > 0 : last == (native ? 0 : -1), "robot egg return value preserves each engine's empty-drop contract");
+				auto objects = nlohmann::json::array();
+				int powerups = 0;
+				for (int i = 1; i <= Highest_object_index; ++i) {
+					const object &obj = Objects[i];
+					if (obj.type == OBJ_POWERUP) { ++powerups; continue; }
+					if (obj.type != OBJ_ROBOT) continue;
+#ifdef DXX_BUILD_DESCENT_II
+					if (!native) require(obj.size == Polygon_models[Robot_info[id].model_num].rad, "ordinary D2 robot egg uses its own model radius");
+#else
+					require(obj.size == Polygon_models[Robot_info[ObjId[OBJ_ROBOT]].model_num].rad, "native robot egg uses the original object-table radius");
+#endif
+					objects.push_back({ obj.id, obj.signature, obj.size, obj.shields, obj.rtype.pobj_info.model_num,
+						obj.pos.x, obj.pos.y, obj.pos.z, obj.mtype.phys_info.velocity.x,
+						obj.mtype.phys_info.velocity.y, obj.mtype.phys_info.velocity.z,
+						obj.mtype.phys_info.mass, obj.mtype.phys_info.drag, obj.mtype.phys_info.flags,
+						obj.ctype.ai_info.behavior, obj.ctype.ai_info.CURRENT_STATE,
+						obj.ctype.ai_info.GOAL_STATE, obj.ctype.ai_info.REMOTE_OWNER,
+						Ai_local_info[i].player_awareness_type, Ai_local_info[i].player_awareness_time });
+				}
+				require(objects.size() == static_cast<size_t>(count), "robot egg count is exact");
+				require(Players[0].num_robots_level == count && Players[0].num_robots_total == count, "robot eggs update both player counts");
+				require(d_rand_get_stream_call_count(D_RNG_FX) == 0, "robot eggs do not consume cosmetic RNG");
+				if (native) {
+					require(powerups == 0, "native robot eggs never add a bonus shield");
+					require(d_rand_get_call_count() == static_cast<unsigned>(3 * count), "native robot eggs consume only trajectory draws");
+				} else {
+					require(powerups <= 1 && d_rand_get_call_count() == static_cast<unsigned>(3 * count + 1 + 4 * powerups), "ordinary D2 keeps its shield chance, trajectory and lifetime draws");
+				}
+				result.push_back({ id, count, seed, last, objects, powerups, d_rand_get_call_count() });
+			}
+	return result;
+}
+
 static nlohmann::json exercise_secondary_explosions(bool native)
 {
 	auto result = nlohmann::json::array();
@@ -7119,6 +7224,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 	const auto robot_pairs = exercise_robot_pairs(native);
 	const auto resource_drops = exercise_resource_drops(native);
 	const auto weapon_drops = exercise_weapon_drops(native);
+	const auto robot_drops = exercise_robot_drops(native);
 	const auto reactor_frames = exercise_reactor_frames(native);
 	const auto secondary_explosions = exercise_secondary_explosions(native);
 	const auto volatile_impacts = exercise_volatile_impacts(native);
@@ -7272,7 +7378,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 					}
 				}
 	Game_mode = 0;
-	return { { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "powerup_animation", powerup_animation }, { "object_orientations", object_orientations }, { "small_fireballs", small_fireballs }, { "reactor_fireballs", reactor_fireballs }, { "volatile_impacts", volatile_impacts }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "weapon_drops", weapon_drops }, { "reactor_frames", reactor_frames }, { "secondary_explosions", secondary_explosions } };
+	return { { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "powerup_animation", powerup_animation }, { "object_orientations", object_orientations }, { "small_fireballs", small_fireballs }, { "reactor_fireballs", reactor_fireballs }, { "volatile_impacts", volatile_impacts }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "weapon_drops", weapon_drops }, { "robot_drops", robot_drops }, { "reactor_frames", reactor_frames }, { "secondary_explosions", secondary_explosions } };
 }
 
 static void write_gameplay_rules_trace(const char *directory, const char *d2_directory)
@@ -7310,6 +7416,14 @@ static void write_gameplay_rules_trace(const char *directory, const char *d2_dir
 		require(PHYSFS_mount(d2_directory, nullptr, 0) && PHYSFS_mount(d2_hog.c_str(), nullptr, 0), "mount D2 for ordinary-rule regression");
 		char d2_mission[] = "d2";
 		require(load_mission_by_name(d2_mission) && !d1_in_d2_use_d1_gameplay(), "ordinary D2 rules use an actual installed D2 bank");
+		const std::vector<segment2> previous_segments(Segment2s, Segment2s + Highest_segment_index + 1);
+		require(!d1_in_d2_initialize_level_ambience() &&
+		            std::memcmp(Segment2s, previous_segments.data(), previous_segments.size() * sizeof(segment2)) == 0,
+		        "D1 ambience preparation leaves ordinary D2 segment data intact");
+		const fix boss_health[] = { 500 * F1_0, 1250 * F1_0, 1500 * F1_0, 1750 * F1_0, 2000 * F1_0 };
+		for (int difficulty = 0; difficulty < NDL; ++difficulty)
+			require(boss_health_maximum_for_difficulty(2000 * F1_0, difficulty) == boss_health[difficulty],
+			        "ordinary D2 retains difficulty-scaled boss health");
 		const auto d2 = exercise_gameplay_rules(false);
 		for (size_t i = 0; i < native["damage"].size(); ++i) {
 			const auto &entry = native["damage"][i];

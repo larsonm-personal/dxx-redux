@@ -28,6 +28,10 @@ fix d1_in_d2_ai_gate_interval(fix engine_interval);
  * Returns zero when inactive without touching result/state/RNG; handled writes
  * the created object index, or -1 on failure, using the engine gate API contract */
 int d1_in_d2_ai_gate_robot(int type, int segment, int *result);
+/* Complete native robot egg creation, with original radius and RNG sequence
+ * Zero leaves D2/companion creation active without touching result/state/RNG */
+int d1_in_d2_ai_drop_robots(int id, int count, const vms_vector *velocity,
+	const vms_vector *position, int segment, int *result);
 /* Boss state belongs to the native phase; reset at level/session retirement
  * The save adapter tags its flag in D1 content's otherwise unused hit-time slot
  * Ordinary D2 values pass through unchanged; older untagged D1 saves have no hit */

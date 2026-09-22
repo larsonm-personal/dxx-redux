@@ -53,6 +53,16 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  * without a parallel trigger bank or a changed structure size */
 enum { D1_TRIGGER_RECORD = 128, D1_TRIGGER_ON = 64 };
 
+int d1_in_d2_initialize_level_ambience(void)
+{
+	int i;
+	if (!d1_in_d2_use_d1_gameplay())
+		return 0;
+	for (i = 0; i <= Highest_segment_index; ++i)
+		Segment2s[i].s2_flags &= ~(S2F_AMBIENT_LAVA | S2F_AMBIENT_WATER);
+	return 1;
+}
+
 int d1_in_d2_trigger_source_flags(const trigger *source, short *flags)
 {
 	if (!(source->flags & D1_TRIGGER_RECORD))

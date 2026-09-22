@@ -355,3 +355,9 @@ The regression directory now also contains two level-7 recordings from build 228
 The ongoing seven-demo sweep reports that failure rather than skipping the case;
 large-file ingestion and the expanded corpus must be closed before claiming all
 D1 demos pass
+
+The completed headed level-14 runs also pass strict terminal comparison in both
+engines. Each headed terminal result equals its no-render counterpart exactly
+(`temp/d1-homing-collector-visual14.log` and
+`temp/d1-homing-collector-{native,imported}-visual14-result.json`). No headed
+per-frame trace was collected in this check

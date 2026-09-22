@@ -1079,6 +1079,8 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 			break;
 
 		case OBJ_ROBOT:
+			if (d1_in_d2_ai_drop_robots(id, num, init_vel, pos, segnum, &objnum))
+				return objnum;
 			for (count=0; count<num; count++) {
 #ifdef NETWORK
 				if ((Game_mode & GM_MULTI) && Net_create_loc >= MAX_NET_CREATE_OBJECTS)

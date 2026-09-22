@@ -28,13 +28,12 @@ static const char *find_rng_mode_key(const char *text)
 	return NULL;
 }
 
-static const char *read_text_file(const char *path, char **text_out)
+/* The full parser validates the recording; RNG selection only needs its header */
+static const char *read_header(const char *path, char **text_out)
 {
 	FILE *f;
 	char *text;
 	long size;
-	size_t read_size;
-
 	*text_out = NULL;
 	if (!path)
 		return "missing demo file path";
@@ -58,20 +57,33 @@ static const char *read_text_file(const char *path, char **text_out)
 		fclose(f);
 		return "could not rewind demo file";
 	}
-	text = (char *) malloc((size_t) size + 1);
+	/* One extra byte distinguishes an oversized record from a full line plus LF */
+	text = (char *) malloc(INPUT_DEMO_RECORD_MAX_BYTES + 2u);
 	if (!text) {
 		fclose(f);
 		return "could not allocate demo file buffer";
 	}
-	read_size = fread(text, 1, (size_t) size, f);
-	fclose(f);
-	if (read_size != (size_t) size) {
-		free(text);
-		return "could not read demo file";
+	while (fgets(text, INPUT_DEMO_RECORD_MAX_BYTES + 2u, f)) {
+		const size_t length = strlen(text);
+		const size_t content = length && text[length - 1] == '\n' ? length - 1 : length;
+		const char *cursor = text;
+		if (!input_demo_record_size_supported(content)) {
+			free(text);
+			fclose(f);
+			return "demo record exceeds the supported size limit";
+		}
+		while (*cursor && isspace((unsigned char) *cursor))
+			cursor++;
+		if (!*cursor || (cursor[0] == '/' && cursor[1] == '/'))
+			continue;
+		fclose(f);
+		*text_out = text;
+		return NULL;
 	}
-	text[size] = '\0';
-	*text_out = text;
-	return NULL;
+	free(text);
+	const int read_failed = ferror(f);
+	fclose(f);
+	return read_failed ? "could not read demo file" : "demo file is missing header";
 }
 
 int input_demo_rng_mode_parse(const char *text)
@@ -172,7 +184,7 @@ const char *input_demo_rng_mode_validate_metadata_file(const char *path, int eng
                                                        int *mode)
 {
 	char *text;
-	const char *error = read_text_file(path, &text);
+	const char *error = read_header(path, &text);
 	if (error)
 		return error;
 	error = input_demo_rng_mode_validate_metadata_text(text, engine_mode, mode);

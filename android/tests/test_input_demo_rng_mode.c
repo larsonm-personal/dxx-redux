@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "input_demo_rng_mode.h"
+#include "input_demo_limits.h"
 
 static int report_failure(const char *message)
 {
@@ -86,6 +87,37 @@ int main(void)
 		return report_failure(error);
 	if (strcmp(matching_mode_name, mismatching_mode_name) == 0)
 		return report_failure("matching and mismatching rng_mode names collapsed");
+	{
+		char header[512];
+		snprintf(header, sizeof(header), "\r\n // rng_mode: \"invalid\"\r\n%s", matching_demo);
+		if (!write_text_file(demo_path, header))
+			return report_failure("could not write commented header fixture");
+		error = input_demo_rng_mode_validate_metadata_file(demo_path, engine_mode, &parsed_mode);
+		remove(demo_path);
+		if (error || parsed_mode != engine_mode)
+			return report_failure("RNG probe did not read the first non-comment header");
+		snprintf(header, sizeof(header), "%s%s", missing_demo, matching_demo);
+		if (!write_text_file(demo_path, header))
+			return report_failure("could not write missing header mode fixture");
+		error = input_demo_rng_mode_validate_metadata_file(demo_path, engine_mode, &parsed_mode);
+		remove(demo_path);
+		if (!error)
+			return report_failure("RNG probe accepted a mode from a later record");
+	}
+	{
+		FILE *file = fopen(demo_path, "wb");
+		unsigned int i;
+		if (!file)
+			return report_failure("could not write oversized header fixture");
+		fputs("//", file);
+		for (i = 2; i <= INPUT_DEMO_RECORD_MAX_BYTES; ++i)
+			fputc('x', file);
+		fclose(file);
+		error = input_demo_rng_mode_validate_metadata_file(demo_path, engine_mode, &parsed_mode);
+		remove(demo_path);
+		if (!error || !strstr(error, "record exceeds"))
+			return report_failure("oversized header was not rejected at its record boundary");
+	}
 
 #ifdef NO_WATCOM_RAND
 	if (engine_mode != D_RAND_REPLAY_MODE_LIBC_RESEED)

@@ -8,6 +8,7 @@
 
 #include "pstypes.h"
 #include "inferno.h"
+#include "dxxerror.h"
 #include "ai.h"
 #include "args.h"
 #include "object.h"
@@ -151,6 +152,12 @@ static d1_asset_generation *Pending_d1_robot_assets;
 static d1_asset_generation *Active_d1_assets;
 static const char *D1_asset_validation_error = "not validated";
 static const char *D1_sound_validation_error = "not validated";
+
+fix d1_in_d2_robot_drop_radius(void)
+{
+	Assert(Active_d1_assets != NULL);
+	return Polygon_models[Robot_info[Active_d1_assets->object_ids[OBJ_ROBOT]].model_num].rad;
+}
 
 static ushort model_word(ubyte *p)
 {
@@ -974,6 +981,8 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co
 		}
 	}
 	*error = "robot references";
+	if (generation->object_ids[OBJ_ROBOT] >= generation->num_robot_types)
+		return 0;
 	if (!validate_d1_robot_references(generation->robots, generation->num_robot_types,
 	                                  generation->models, generation->num_polygon_models,
 	                                  generation->vclips, generation->num_vclips,

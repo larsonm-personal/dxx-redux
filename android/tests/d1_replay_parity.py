@@ -195,7 +195,7 @@ def compare_frames(left, right, header, right_engine, recorded=False):
             "status": "fail" if first else "pass"}
 
 
-def rng_events(path):
+def rng_events(path, stream=0):
     count = 0
     meta = None
     for record in records(path):
@@ -209,15 +209,15 @@ def rng_events(path):
         if record.get("seq") != count:
             raise EvidenceError("RNG event sequence is incomplete")
         count += 1
-        # Compare simulation events. FX events have a separately seeded stream
+        # SIM and FX are independently seeded, but both traces must be complete
         if record.get("stream", 0) not in (0, 1):
             raise EvidenceError("Unsupported RNG stream")
-        if record.get("stream", 0) != 0:
+        if record.get("stream", 0) != stream:
             continue
         required = ("frame", "gt", "call_count", "state_before", "state_after",
                     "seed" if record["type"] == "srand" else "result")
         if not all(key in record for key in required):
-            raise EvidenceError("Incomplete simulation RNG event")
+            raise EvidenceError("Incomplete RNG event")
         # Global seq interleaves FX; source function/path/line are engine labels
         yield {key: value for key, value in record.items()
                if key not in ("seq", "file", "func", "line", "stream")}
@@ -225,11 +225,11 @@ def rng_events(path):
         raise EvidenceError("RNG trace event count is incomplete")
 
 
-def compare_rng(left, right):
+def compare_rng(left, right, stream=0):
     first = None
     first_values = None
     count = 0
-    for a, b in itertools.zip_longest(rng_events(left), rng_events(right)):
+    for a, b in itertools.zip_longest(rng_events(left, stream), rng_events(right, stream)):
         if first is None:
             found = difference(a, b)
             if found:
@@ -243,7 +243,8 @@ def compare_rng(left, right):
             if found:
                 first_values = {"event": count, **found}
         count += 1
-    return {"status": "fail" if first else "pass", "simulation_events_compared": count,
+    count_key = "simulation_events_compared" if stream == 0 else "effects_events_compared"
+    return {"status": "fail" if first else "pass", count_key: count,
             "first_difference": first, "first_value_difference": first_values}
 
 
@@ -356,6 +357,7 @@ def compare_pair(demo, left, right, engine, recorded=False):
         "terminal_result": safe_check(terminal),
         "frames": safe_check(lambda: compare_frames(left["state"], right["state"], header, engine, recorded)),
         "simulation_rng": safe_check(lambda: compare_rng(left["rng"], right["rng"])),
+        "effects_rng": safe_check(lambda: compare_rng(left["rng"], right["rng"], stream=1)),
     }
     if not recorded:
         checks["object_states"] = safe_check(lambda: compare_objects(left["state"], right["state"], header))

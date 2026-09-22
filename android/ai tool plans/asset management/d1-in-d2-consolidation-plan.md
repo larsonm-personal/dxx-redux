@@ -27,7 +27,7 @@ The implementation has moved well beyond the original D2-first overlay. Register
 | Native gameplay | AI frame/path/world operations, weapons, small collision/physics rules, triggers and single-player campaign operations have owners and focused native comparisons | Whole-recording exactness, checkpoint frame-zero equivalence, unexercised interactions and broader campaign/network behavior |
 | Presentation | Owned briefing session and cockpit/camera layout; ledger records 84 native/imported rendered-frame comparisons | Wider editions, audible output, interruptions/custom resources and full campaign presentation |
 | Optional Guide-Bot | Private source reader, dependency maps and combined publication are present. Normal session preparation still does not attach an optional package; old capture/append code remains | Coherent source selection, working actor and all hardcoded sound/flare/morph consumers, restore identity, safe retirement and removal of legacy capture |
-| Replay infrastructure | Existing `-D1InD2` runner, native checkpoint translator, result/state/RNG tooling and a five-demo D1 corpus | Strict native-versus-imported comparison, D1-only runner staging and explicit failure classification. Current runner success is not sufficient evidence of exact reproduction |
+| Replay infrastructure | Existing `-D1InD2` runner, native checkpoint translator, result/state/RNG tooling and an eight-demo D1 corpus | Strict native-versus-imported comparison, D1-only runner staging and explicit failure classification. Current runner success is not sufficient evidence of exact reproduction |
 | Supported scope | Strongest evidence is registered PC content on Windows host and Android x86-64; recordings originate on Android arm64 | Declare and exercise required shareware/OEM/Mac, platform and network scope before claiming full support or retiring native D1 |
 
 ### Delivery order and exit gates
@@ -35,7 +35,7 @@ The implementation has moved well beyond the original D2-first overlay. Register
 | Milestone | Work and ownership | Exit gate |
 | --- | --- | --- |
 | F0. Relocation | Completed mechanical move, explicit caller includes, build/test path updates; no gameplay edits | Byte-identical moved sources, ordinary/headless D2 builds, native-D1 shared-consumer build, host suites and Android compilation |
-| F1. Establish a strict replay oracle | Extend existing scripts/shared diagnostics; D1 format interpretation stays in `d1_save_translate` and `d1_in_d2_input_demo`. Use all five D1 demos through native D1 and D1-in-D2 | Reproducible corpus manifest; independent recorded/native/imported verdicts; frame-zero, per-frame and terminal comparisons; failures/skips cannot appear as a fidelity pass |
+| F1. Establish a strict replay oracle | Extend existing scripts/shared diagnostics; D1 format interpretation stays in `d1_save_translate` and `d1_in_d2_input_demo`. Use the entire D1 corpus (currently eight demos) through native D1 and D1-in-D2 | Reproducible corpus manifest; independent recorded/native/imported verdicts; frame-zero, per-frame and terminal comparisons; failures/skips cannot appear as a fidelity pass |
 | F2. Close baseline D1 divergences | Diagnose the earliest mismatch, then fix its asset/AI/weapon/level/semantics/restore owner. Companion off; use original D1 settings/data | Every supported corpus case has exact native/imported simulation reproduction; native-versus-recording failures separately resolved or explicitly left open. Add small integration cases for each root cause |
 | F3. Complete optional enhancements | Finish section 16 D1-D4 as one load/spawn/behavior/restore/retire lifecycle. Cameras retain cockpit ownership; assets owns optional content | D1 alone and D1 with D2 present produce the same baseline; cameras do not change simulation. Companion works from cold launch and after restore; isolated native enemies remain unchanged |
 | F4. Retire migration paths and close persistence | Section 16 E1-E5: remove old overlay/capture/backup APIs and test-only production paths; finish namespace/trigger/travel consumers | One resource lifecycle, documented serialized identities, actual save/reload/rewind and applicable network travel tests, no unexplained transitional owner/hook |
@@ -47,8 +47,8 @@ F1 is in progress. The paired runner now stages D1-only assets, pins its inputs 
 
 Use the existing `android/tests/test_input_demo_regressions.ps1` and `run_input_demo_replay.ps1` entry points. Do not build a second replay engine or a demo-specific approximation of D1. The imported run must execute the D2 binary, restore the D1 checkpoint through the existing adapter and use the normal D1 session lifecycle
 
-The D1 corpus now contains seven version-4, `lcg_state`, save-checkpoint recordings.
-The two level-7 cases were added while the homing work was in progress:
+The D1 corpus now contains eight version-4, `lcg_state`, save-checkpoint recordings.
+The three level-7 cases were added during the homing and boss-health work:
 
 | Recording suffix | Level | Frames | Recorded build / architecture |
 | --- | ---: | ---: | --- |
@@ -59,6 +59,7 @@ The two level-7 cases were added while the homing work was in progress:
 | `20260616_202713` | 5 | 2,430 | 16490 / arm64 |
 | `20260921_144212` | 7 | 16,873 | 22840 / arm64 |
 | `20260921_144813` | 7 | 2,253 | 22840 / arm64 |
+| `20260921_181652` | 7 | 2,849 | 22910 / arm64 |
 
 The 167 MiB level-14 recording is now admitted by the shared 256 MiB ceiling. The stocktake reran all five recordings in both engines after relocation:
 
@@ -104,6 +105,20 @@ overwriting the original D1 count. Egg finalization now belongs to the semantics
 owner, with real drop/pickup comparisons and a complete level-14 recapture proving
 that difference is gone. Long-run storage protections now bound paired history
 by count and bytes and enforce a free-space reserve; see the implementation ledger
+
+Latest level-7 follow-up: restored/fresh boss health now follows native D1, and
+the level owner suppresses D2's random water/lava ambience for D1. The short
+boss-room case matches all 2253 gameplay frames, 6818 SIM values and 2142 FX
+events; raw representation and terminal observations still prevent a strict
+pass. Large-demo ingestion now streams bounded records with a 1 GiB aggregate
+limit; the 513641705-byte recording completes its native strict terminal check.
+Its imported run now completes but exposes a robot-egg collision-radius and
+extra shield-drop RNG difference at frame 4040/4041. The native creation owner
+now passes 27 loaded comparisons and ordinary-D2 checks, but the long recording
+still has a remaining divergence under investigation. The full paired sweep was paused
+after level 14 to repair this root cause before recapturing the corpus.
+Earlier size and boss
+failures above describe the investigation baseline, not the current reader
 
 Implement F1 in this order:
 
@@ -159,6 +174,16 @@ All 1,200 loaded native/imported initialization and frame scenarios compare exac
 including projectiles, timers and both RNG states/counts; ordinary D2 assertions
 also pass. This is single-player operation evidence; multiplayer and full replay
 qualification retain their separate gates
+
+Boss-health follow-up: the short level-7 recording exposed saved boss health being
+replaced by D2's difficulty-scaled restore correction (2000 native shields became
+250). The D1 translator now preserves the saved value, while the semantics owner
+also supplies original maximum health for fresh bosses and live difficulty changes.
+Sixty boss-health checkpoints across levels 7/27 and all difficulties pass. The
+2253 imported gameplay-state frames and 6818 SIM values now match native D1;
+terminal metadata, D2-only ambient FX draws and full semantic mappings remain
+strict failures. See the ledger for the exact observations and the newly added
+eighth recording
 
 The subsequent complete level-14 paired run retains exact native/imported frame
 summaries, terminal results and SIM values, with no new named object differences.

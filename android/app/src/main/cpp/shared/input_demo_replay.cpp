@@ -5,6 +5,7 @@
 
 #include <fstream>
 #include <limits>
+#include <utility>
 
 #include <nlohmann/json.hpp>
 #include <zlib.h>
@@ -538,10 +539,10 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 	}
 	if (g_input_demo_replay_session.has_checkpoint)
 		load_legacy_fx_rng_seed_from_sidecar(demo_path, &g_input_demo_replay_session);
-	g_input_demo_replay_session.frames = frames;
-	g_input_demo_replay_session.frame_events.resize(frames.size());
+	g_input_demo_replay_session.frames = std::move(frames);
+	g_input_demo_replay_session.frame_events.resize(g_input_demo_replay_session.frames.size());
 	for (i = 0; i != demo.frames.size() && i != g_input_demo_replay_session.frame_events.size(); ++i)
-		g_input_demo_replay_session.frame_events[i] = demo.frames[i].events;
+		g_input_demo_replay_session.frame_events[i] = std::move(demo.frames[i].events);
 	g_input_demo_replay_session.final_game_time64 = replay_duration;
 	return 1;
 }

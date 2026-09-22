@@ -55,5 +55,6 @@ Write-Output "PASS: $($trace.reactor_frames.Count) reactor initialization and fi
 Write-Output "PASS: $($trace.object_orientations.Count) object initialization cases match native D1"
 Write-Output "PASS: $($trace.powerup_animation.Count) pickup animation steps match native D1"
 Write-Output "PASS: $($trace.weapon_drops.Count) actual weapon-drop and pickup cases match native D1"
+Write-Output "PASS: $($trace.robot_drops.Count) actual robot eggs match native D1, including radius, motion, AI state and RNG consumption"
 Write-Output "PASS: $($trace.volatile_impacts.Count) lava weapon impacts match native D1, including explosion size and robot blast motion"
 Write-Output "Gameplay traces: $outputPath"

@@ -44,6 +44,73 @@ static bool read_text_file(const char *path, std::string *text)
 	return true;
 }
 
+static int expect_streaming_demo(const std::string &text, const std::string &expected,
+                                  bool valid)
+{
+	const char *path = "test_input_demo_stream.dximdemo";
+	input_demo_file parsed;
+	std::string error, actual;
+	for (int from_file = 0; from_file != 2; ++from_file) {
+		// Failed ingestion must not replace a previously loaded recording
+		if (!input_demo_file_parse_text(expected, &parsed, &error))
+			return report_failure_string("stream test reference failed: " + error);
+		bool success;
+		if (from_file) {
+			FILE *file = fopen(path, "wb");
+			if (!file)
+				return report_failure("could not open streaming fixture");
+			const bool written = fwrite(text.data(), 1, text.size(), file) == text.size();
+			const int closed = fclose(file);
+			if (!written || closed)
+				return report_failure("could not write complete streaming fixture");
+			success = input_demo_file_read(path, &parsed, &error);
+			remove(path);
+		} else
+			success = input_demo_file_parse_text(text, &parsed, &error);
+		if (success != valid)
+			return report_failure_string("streaming fixture admission mismatch: " + error);
+		if (!input_demo_file_to_text(parsed, &actual, &error) || actual != expected)
+			return report_failure("streaming fixture changed recording contents");
+	}
+	return 0;
+}
+
+static int expect_streaming_boundaries(const std::string &expected)
+{
+	// Exercise delimiters on either side of a reader chunk, including EOF
+	for (size_t length : { size_t(65534), size_t(65535), size_t(65536), size_t(65537),
+	                      size_t(INPUT_DEMO_RECORD_MAX_BYTES) }) {
+		const std::string comment = "//" + std::string(length - 2, 'x');
+		if (expect_streaming_demo(comment + "\n" + expected, expected, true) ||
+		    expect_streaming_demo(expected + comment, expected, true))
+			return 1;
+	}
+	std::string crlf;
+	for (char c : expected) {
+		if (c == '\n') crlf += '\r';
+		crlf += c;
+	}
+	if (expect_streaming_demo("\r\n  // comment\r\n" + crlf, expected, true) ||
+	    expect_streaming_demo(expected.substr(0, expected.size() - 1), expected, true) ||
+	    expect_streaming_demo(expected + "{}\n", expected, false) ||
+	    expect_streaming_demo(expected.substr(0, expected.rfind("{\"type\":\"result\"")), expected, false) ||
+	    expect_streaming_demo("//" + std::string(INPUT_DEMO_RECORD_MAX_BYTES - 1, 'x'), expected, false))
+		return 1;
+	input_demo_file demo;
+	std::string error, large;
+	if (!input_demo_file_parse_text(expected, &demo, &error))
+		return report_failure_string(error);
+	demo.frames[0].has_diag = true;
+	demo.frames[0].diag_json = "{\"padding\":\"" + std::string(2 * 65536, 'x') + "\"}";
+	if (!input_demo_file_to_text(demo, &large, &error))
+		return report_failure_string(error);
+	if (expect_streaming_demo(large, large, true))
+		return 1;
+	if (input_demo_file_read(nullptr, &demo, &error))
+		return report_failure("missing stream path unexpectedly accepted");
+	return 0;
+}
+
 static const char *input_demo_test_game_name(void)
 {
 #if defined(INPUT_DEMO_TEST_D2)
@@ -287,6 +354,8 @@ static int expect_demo_file_output(void)
 	    "\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":2}}\n";
 	if (text != expected)
 		return report_failure_string(std::string("unexpected demo file text: ") + text);
+	if (expect_streaming_boundaries(expected))
+		return 1;
 	if (!input_demo_file_write(path, demo, &error))
 		return report_failure_string(std::string("demo file write failed: ") + error);
 	if (!read_text_file(path, &file_text)) {

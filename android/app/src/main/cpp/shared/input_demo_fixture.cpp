@@ -7,6 +7,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <utility>
 
 #include <nlohmann/json.hpp>
 
@@ -1168,12 +1169,39 @@ bool input_demo_frame_to_json_line(const input_demo_file_frame &frame, int game,
 	return true;
 }
 
-bool input_demo_file_parse_text(const std::string &text,
-                                input_demo_file *demo, std::string *error)
+// Bound the line before allocation, including malformed records without a newline
+// getline's count includes a consumed delimiter but excludes its terminating NUL
+static bool read_demo_line(std::istream &input, std::string *line,
+                           uint64_t *bytes_read, std::string *error)
 {
-	std::istringstream input(text);
+	char chunk[65536];
+	line->clear();
+	for (;;) {
+		input.getline(chunk, sizeof(chunk));
+		const auto count = input.gcount();
+		const bool delimiter = !input.fail() && !input.eof();
+		*bytes_read += static_cast<uint64_t>(count);
+		if (!input_demo_file_size_supported(*bytes_read))
+			return fail(error, "demo file exceeds the supported size limit");
+		if (input.bad() || (input.fail() && !input.eof() && !count))
+			return fail(error, "could not read demo file");
+		const auto length = static_cast<size_t>(count - (delimiter ? 1 : 0));
+		if (!input_demo_record_size_supported(line->size() + length))
+			return fail(error, "demo record exceeds the supported size limit");
+		line->append(chunk, length);
+		if (input.eof() || !input.fail())
+			return true;
+		// A full chunk without a delimiter continues the same record
+		input.clear(input.rdstate() & ~std::ios::failbit);
+	}
+}
+
+static bool input_demo_file_parse_stream(std::istream &input,
+                                         input_demo_file *demo, std::string *error)
+{
 	input_demo_file parsed;
 	std::string line;
+	uint64_t bytes_read = 0;
 	uint32_t expected_frame = 0;
 	unsigned int line_number = 0;
 	bool have_header = false;
@@ -1182,13 +1210,15 @@ bool input_demo_file_parse_text(const std::string &text,
 
 	if (!demo)
 		return fail(error, "missing demo file output");
-	if (!input_demo_file_size_supported(text.size()))
-		return fail(error, "demo file exceeds the supported size limit");
-	while (std::getline(input, line)) {
+	for (;;) {
 		ordered_json root;
 		std::string record_type;
 		std::string line_error;
 
+		if (!read_demo_line(input, &line, &bytes_read, error))
+			return false;
+		if (input.eof() && line.empty())
+			break;
 		line_number++;
 		if (is_blank_or_comment_line(line))
 			continue;
@@ -1210,9 +1240,11 @@ bool input_demo_file_parse_text(const std::string &text,
 		if (record_type == "frame") {
 			input_demo_file_frame frame;
 
+			if (expected_frame >= parsed.metadata.frame_count)
+				return fail(error, "demo frame count exceeds header");
 			if (!parse_frame_record(root, game_id_from_name(parsed.metadata.game), expected_frame, &frame, &line_error))
 				return fail(error, "demo line " + std::to_string(line_number) + ": " + line_error);
-			parsed.frames.push_back(frame);
+			parsed.frames.push_back(std::move(frame));
 			expected_frame++;
 		} else if (record_type == "checkpoint") {
 			if (have_checkpoint)
@@ -1238,21 +1270,29 @@ bool input_demo_file_parse_text(const std::string &text,
 		return fail(error, "demo file is missing header");
 	if (!validate_demo_file(parsed, error))
 		return false;
-	*demo = parsed;
+	*demo = std::move(parsed);
 	return true;
+}
+
+bool input_demo_file_parse_text(const std::string &text,
+                                input_demo_file *demo, std::string *error)
+{
+	if (!input_demo_file_size_supported(text.size()))
+		return fail(error, "demo file exceeds the supported size limit");
+	std::istringstream input(text);
+	return input_demo_file_parse_stream(input, demo, error);
 }
 
 bool input_demo_file_read(const char *path,
                           input_demo_file *demo, std::string *error)
 {
-	std::ifstream in(path, std::ios::in | std::ios::binary);
-	std::ostringstream text;
 	std::streamoff file_size;
 
 	if (!demo)
 		return fail(error, "missing demo file output");
 	if (!path || !path[0])
 		return fail(error, "missing demo file path");
+	std::ifstream in(path, std::ios::in | std::ios::binary);
 	if (!in)
 		return fail(error, std::string("could not open demo file: ") + path);
 	in.seekg(0, std::ios::end);
@@ -1264,10 +1304,7 @@ bool input_demo_file_read(const char *path,
 	in.seekg(0, std::ios::beg);
 	if (!in)
 		return fail(error, std::string("could not rewind demo file: ") + path);
-	text << in.rdbuf();
-	if (in.bad())
-		return fail(error, std::string("could not read demo file: ") + path);
-	return input_demo_file_parse_text(text.str(), demo, error);
+	return input_demo_file_parse_stream(in, demo, error);
 }
 
 static bool input_demo_file_bookends(const input_demo_file &demo, size_t frame_count,

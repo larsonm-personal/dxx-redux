@@ -50,6 +50,8 @@ int d1_in_d2_remove_obsolete_stuck_objects(void);
 int d1_in_d2_replace_powerup(struct object *container);
 
 int d1_in_d2_reactor_countdown(int engine_seconds);
+/* Native boss health is independent of difficulty, including live changes */
+fix d1_in_d2_boss_health_maximum(fix strength, fix engine_maximum);
 /* Complete native acquisition/fire frame; returns handled only in D1 gameplay */
 int d1_in_d2_reactor_frame(struct object *reactor);
 /* Original D1 level health; ordinary D2 retains its computed strength */

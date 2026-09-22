@@ -1811,21 +1811,8 @@ int d1_save_translate_apply_checkpoint_objects(
 	       (size_t)start->object_count * sizeof(*translated_objects));
 	Highest_object_index = start->object_count - 1;
 	d1_save_translate_commit_checkpoint_object_links();
-	for (i = 0; i <= Highest_object_index; i++) {
-		object *obj = &Objects[i];
-
-		if (obj->type == OBJ_NONE)
-			continue;
-		if (obj->type == OBJ_ROBOT && Robot_info[obj->id].boss_flag) {
-			fix save_shields = obj->shields;
-
-			copy_defaults_to_robot(obj);
-			if (save_shields > 0 && save_shields <= obj->shields)
-				obj->shields = save_shields;
-			else
-				obj->shields /= 2;
-		}
-	}
+	/* Native D1 restores boss health and physics verbatim, without D2's
+	 * difficulty-scaled default-health correction */
 	special_reset_objects();
 	d1_save_translate_commit_d1_world_state(world);
 	d1_save_translate_commit_d1_ai_state(ai);

@@ -1446,3 +1446,183 @@ corpus. True console-headless D1 startup still needs its D2-HOG dependency remov
 the tested no-render runner is the full game executable with draw/present bypassed.
 Initial/historical view inputs, strict F1 mappings/snapshots and the rest of F3-F5
 remain open. Native D1 remains the reference engine
+
+The final headed level-14 check also passed in both engines using `-Runner visual`
+and strict terminal comparison. Each headed terminal JSON is exactly equal to
+its corresponding no-render result. Evidence: `temp/d1-homing-collector-visual14.log`
+and `temp/d1-homing-collector-{native,imported}-visual14-result.json`. These runs
+did not capture headed per-frame state, so terminal equality is the scope of
+this additional evidence
+
+### 2026-09-21: level-7 boss health at restore and fresh load
+
+The short level-7 recording's first gameplay-summary difference is score at
+frame 1348 (native 51000, imported 56000), followed by different projectiles and
+eventually player damage/death. Named object records reveal the cause at frame
+zero: boss slot 71, robot 17, has 2000 shields natively and 250 when imported.
+The D1 translator had copied D2's post-restore boss-health correction, replacing
+the saved value with half a difficulty-scaled default. Native D1 has no such
+correction. The native reference repeats exactly over all 2253 frame observations,
+named-object records, 6818 SIM events and the complete terminal result
+
+The translator now preserves saved boss health and physics. The shared boss-health
+service also routes its maximum through the D1 semantics owner, so fresh bosses
+and live difficulty changes use native strength. Ordinary D2 retains its scaling.
+This requires no new decision tree in an original D2 file
+
+Checkpoint coverage now includes both boss levels, all five difficulties, and six
+health values (double default, full, half, one fixed-point unit, zero and negative),
+plus nondefault saved mass/drag. It also checks fresh health and live difficulty
+changes. Before the fix, native level 7 passed all 30 new checkpoint cases and
+the imported fixture failed its exact-health assertion. Evidence:
+`temp/d1-boss-checkpoint-before.log` and the native/imported fixture logs
+
+The initial paired report remains a strict failure, as required:
+`temp/d1_replay_parity_boss7_short/report.json`. Native gameplay-state frames and
+SIM events equal the recording, but its raw terminal `endlevel_completed` is true
+where the recorded trailer says false; old zero/unset motion diagnostics also
+differ. The imported run ends early at frame 1944. The wrapper's ordinary
+terminal-exit accommodation does not certify those differences. This boundary
+observation remains an F1 task, independent of the boss-health correction
+
+After the correction, both boss levels pass 30 health/physics checkpoints each,
+plus the existing seven route scenarios per level. All 112 CTests and the loaded
+native/imported gameplay-rule suite pass, including the ordinary-D2 health-scaling
+assertion. Both Windows builds complete without new compiler warnings. Evidence:
+`temp/d1-boss-health-build.log`, `temp/d1-boss-health-checkpoints.log`,
+`temp/d1-boss-health-ctest.log` and `temp/d1-boss-health-gameplay.log`
+
+The fresh short level-7 paired report is
+`temp/d1_replay_parity_boss7_fixed/report.json`. Native repeatability still passes;
+all 2253 imported gameplay-state/frame-time/RNG-header observations and all 6818
+SIM values now match native D1. The imported raw terminal differs by its additional
+`level_exit` marker. The strict report remains a failure, with all differences
+retained, rather than treating summary equality as full world-state equality
+
+The full object observer exposes a further presentation discrepancy: imported
+`do_ambient_sounds` consumes an extra FX draw at frame 1001. D1 has no equivalent
+ambient water/lava service, but D2's level loader generates its segment flags for
+D1 textures. FX state first differs in the frame-1002 snapshot, the boss's next
+sound time differs at frame 1004, and later cosmetic fireballs differ in size,
+position and segment linkage from frame 1931. Their SIM values and player-state
+equality do not excuse those original-look/sound differences. Remove D2 ambient
+flag generation for native D1 through the level owner, then repeat the paired
+FX/object comparison. The original native link and AI layout mappings remain
+separate F1 work
+
+Another recording, `d1_descent_level7_20260921_181652.dximdemo`, arrived during this
+work (2849 frames, build 22910, arm64, 95780424 bytes). The full corpus is now eight
+D1 demos; all corpus runners must continue discovering it dynamically
+
+The final eight-case imported regression sweep passes seven recordings, including
+both shorter level-7 cases. Its only wrapper failure is the 513641705-byte
+recording exceeding the existing reader limit. The aggregate exit remains 1.
+Evidence: `temp/d1-boss-health-regressions.log` and the seven raw results under
+`temp/d1-boss-health-regression-results`. These are ordinary wrapper checks with
+their terminal-exit accommodations; the paired strict failures above remain
+authoritative for fidelity. Native replay of the newest recording has not yet
+been captured. Large-file streaming ingestion, the ambient FX discrepancy and
+F1 terminal/snapshot semantics are still unfinished
+
+### 2026-09-21: original ambience and bounded large-recording ingestion
+
+The level owner now clears D2's random water/lava ambience flags for D1 gameplay.
+The original level loader dispatches once to that owner; ordinary D2 retains
+its existing flag generation. D1's original wall/effect sound sources remain
+active. Loaded level-7 checkpoints check every segment, and the ordinary-D2
+fixture checks that the inactive owner leaves all segment data unchanged
+
+The short level-7 recapture removes all observed FX state/count, boss sound-timer,
+fireball position/size and segment-link differences. All 2253 frame summaries and
+6818 SIM values still match. The independent FX comparator matches all 2142
+effects events, including their context. Previously its first event discrepancy
+was event 1014, native frame 1002 versus imported frame 1001. Evidence:
+`temp/d1_replay_parity_ambience7/report.json`, `temp/d1-ambience-fx-audit.json`,
+`temp/d1-ambience-loaded.log` and `temp/d1-ambience-build.log`. Thirteen raw object
+layout fields and the terminal exit marker remain different; this is not a full
+F1 qualification pass. The paired runner now reports SIM and FX independently
+
+The shared recording reader now streams bounded lines instead of constructing
+multiple whole-file text copies. It admits 1 GiB recordings with an 8 MiB record
+ceiling, preserving the 2 MiB decoded checkpoint limit. The RNG preflight reads
+only the header; parsed frames/events transfer by move into the replay session.
+Full record/order/checkpoint validation still completes before publication, and
+a failed read leaves the caller's previous parsed value intact. Parsed diagnostic
+strings still occupy memory during loading; this is not constant-memory playback
+
+Both Windows engines build successfully and all 112 CTests pass, including chunk
+boundaries, CRLF/comments, missing final newline, oversize records, malformed
+trailers and transactional failure coverage. The Python paired-oracle suite
+passes 18 tests. Evidence: `temp/d1-stream-reader-build.log` and
+`temp/d1-stream-reader-ctest.log`
+
+The formerly rejected 513641705-byte, 16873-frame level-7 recording completes in
+native D1 with strict terminal comparison passing, in 42.349 seconds. Evidence:
+`temp/d1-stream-large-native.log` and `temp/d1-stream-large-native.json`.
+The imported run also completes (82.039 seconds) but fails strict terminal
+comparison: score 15500 versus 49000, with different robot, hostage and powerup
+counts. This is a newly admitted gameplay divergence, not a passing large-file
+fidelity case. Evidence: `temp/d1-stream-large-imported.log` and
+`temp/d1-stream-large-imported.json`. A focused full-state/RNG capture is running
+to identify its first divergence. A live process sample observed a peak working
+set of 798216192 bytes for the imported run; this is an observation before exit,
+not a guaranteed final peak (`temp/d1-stream-memory-observations.json`)
+
+The eight-recording capture under `temp/d1_replay_parity_stream_corpus` was
+intentionally interrupted after the level-14 report and partial level-15 capture
+when the focused level-7 run identified a concrete cause. This is incomplete
+corpus coverage, not a passing sweep. Level 14 repeats exactly natively and
+matches imported gameplay summaries, 13172 SIM values, 5765 complete FX events
+and the terminal result. Raw object/context differences remain, including the
+known reactor identity mapping (native ID 8 versus imported ID 0 at slot 2)
+
+### 2026-09-21: long level-7 robot egg divergence
+
+The admitted long recording first differs in ship position at frame 4077, but
+its robot-state hash diverges at frame 4041. Native/imported object snapshots
+identify slot 144's newly spawned robot 14 (signature 2394): native radius
+368925, imported radius 227232. All other non-AI object fields agree at that
+observation. Native D1's egg code deliberately remains the reference, including
+its use of `Robot_info[ObjId[OBJ_ROBOT]].model_num` rather than the dropped
+robot's model for collision radius. The D1 asset generation already retains
+that object-ID table; do not hardcode the observed radius or robot identity
+
+The D2 egg branch also consumes an extra random shield-drop decision after
+spawning robots. SIM event 17321 demonstrates this directly: the imported
+draw occurs in frame 4040, while native's next draw is in frame 4041. The state,
+call count and result coincide, making the extra call's origin unambiguous.
+FX drift begins later, at event 4300/frame 4200. Evidence:
+`temp/d1-stream-large-{native,imported}-state.jsonl.gz`, the corresponding RNG
+logs, and the focused `*-robot-objects.json`/`*-robot-context.json` extracts
+
+Native robot egg creation now has one dispatch from `fireball.c` into the AI
+owner. It retains the original radius, trajectory draws, player robot counts
+and initial AI state, without D2's extra shield chance. The asset owner supplies
+the live radius from its validated object-ID table, so custom definitions also
+remain authoritative. Ordinary D2 and optional companion creation stay on the
+existing D2 path. The loaded gameplay fixture adds 27 real robot-drop cases,
+including zero/multiple drops, several IDs/seeds, state and RNG observations,
+and ordinary-D2 shield/radius assertions. Both builds, the loaded native/imported
+and ordinary-D2 gameplay comparisons, and all 112 CTests pass. The first fixture
+run exposed its incorrect assumption about empty D2 drops: D2 returns -1 while
+D1 returns 0. The assertion now checks those original contracts separately.
+Evidence: `temp/d1-robot-eggs-{build,final-build,loaded,ctest}.log`
+
+The post-fix long replay still fails its terminal comparison (score 18700 versus
+49000), so the confirmed egg repair is not a complete recording fix. Its
+no-trace result is `temp/d1-robot-eggs-large.json`. A fresh full imported capture
+is running at `temp/d1-robot-eggs-fixed-{state.jsonl.gz,rng.jsonl}` for comparison
+against the retained native capture. Keep investigating the earliest remaining
+object/RNG difference before resuming the complete eight-case sweep
+
+The native focused capture completed all 16873 frames and passed its strict
+terminal check in 197.958 seconds; the pre-fix imported traced run reproduces
+the same terminal failure as its no-trace run (351.351 seconds). Native versus
+recording matches all 58086 SIM and 17199 FX events, including contexts; evidence
+is `temp/d1-stream-large-native-rng-comparison.json`. All 16873 native gameplay
+summaries, frame times and RNG headers also equal the recording. Strict raw
+diagnostics still fail historical zero/unset fields, first `player_last_x` at
+frame zero; `temp/d1-stream-large-native-frames-comparison.json` retains the
+complete per-field inventory. F1 complete
+semantic observations/mappings and terminal boundaries, followed by F3-F5,
+remain unfinished

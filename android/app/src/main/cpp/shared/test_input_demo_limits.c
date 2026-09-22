@@ -29,9 +29,14 @@ int main(void)
 	    input_demo_file_size_supported((uint64_t) INPUT_DEMO_FILE_MAX_BYTES + 1u) ||
 	    input_demo_file_size_supported(UINT64_MAX))
 		return fail("demo file size boundary mismatch");
-	/* Size of the full-level D1 level 14 regression recorded on 2026-09-20 */
-	if (!input_demo_file_size_supported(175040129u))
+	/* Full-level D1 recordings with diagnostics, including the level-7 boss run */
+	if (!input_demo_file_size_supported(175040129u) ||
+	    !input_demo_file_size_supported(513641705u))
 		return fail("full-level diagnostic recording exceeds demo file limit");
+	if (!input_demo_record_size_supported(INPUT_DEMO_RECORD_MAX_BYTES) ||
+	    input_demo_record_size_supported((uint64_t) INPUT_DEMO_RECORD_MAX_BYTES + 1u) ||
+	    !input_demo_record_size_supported(INPUT_DEMO_CHECKPOINT_MAX_ENCODED_BYTES))
+		return fail("demo record size boundary mismatch");
 	if (!input_demo_level_in_mission(1, 24, -3) ||
 	    !input_demo_level_in_mission(24, 24, -3) ||
 	    !input_demo_level_in_mission(-1, 24, -3) ||

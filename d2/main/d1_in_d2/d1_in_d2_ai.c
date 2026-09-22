@@ -27,6 +27,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "dxxerror.h"
 #include "d1_in_d2.h"
 #include "d1_in_d2_ai.h"
+#include "d1_in_d2_assets.h"
 #include "d1_in_d2_ai_internal.h"
 #include "console.h"
 #include "segpoint.h"
@@ -54,6 +55,59 @@ static void compute_visibility(object *obj, vms_vector *pos, ai_local *local,
 enum { D1_AI_FRAME_READY = 0, D1_AI_FRAME_DEFER = 1 };
 
 static int Boss_hit_pending;
+
+int d1_in_d2_ai_drop_robots(int id, int count, const vms_vector *velocity,
+	const vms_vector *position, int segment, int *result)
+{
+	int i;
+	if (!d1_in_d2_use_d1_gameplay() || Robot_info[id].companion)
+		return 0;
+	*result = 0;
+	for (i = 0; i < count; ++i) {
+		vms_vector new_velocity = *velocity;
+		vms_vector new_position = *position;
+		const fix old_magnitude = vm_vec_mag_quick(velocity);
+		object *obj;
+#ifdef NETWORK
+		if ((Game_mode & GM_MULTI) && Net_create_loc >= MAX_NET_CREATE_OBJECTS) {
+			*result = -1;
+			return 1;
+		}
+#endif
+		vm_vec_normalize_quick(&new_velocity);
+		/* SIM RNG: native egg trajectories consume exactly these three draws */
+		new_velocity.x += (d_rand() - 16384) * 2;
+		new_velocity.y += (d_rand() - 16384) * 2;
+		new_velocity.z += (d_rand() - 16384) * 2;
+		vm_vec_normalize_quick(&new_velocity);
+		vm_vec_scale(&new_velocity, (F1_0 * 32 + old_magnitude) * 2);
+		*result = obj_create(OBJ_ROBOT, id, segment, &new_position, &vmd_identity_matrix,
+			d1_in_d2_robot_drop_radius(), CT_AI, MT_PHYSICS, RT_POLYOBJ);
+		if (*result < 0)
+			return 1;
+		Players[Player_num].num_robots_level++;
+		Players[Player_num].num_robots_total++;
+#ifdef NETWORK
+		if (Game_mode & GM_MULTI)
+			Net_create_objnums[Net_create_loc++] = *result;
+#endif
+		obj = &Objects[*result];
+		obj->rtype.pobj_info.model_num = Robot_info[id].model_num;
+		obj->rtype.pobj_info.subobj_flags = 0;
+		obj->mtype.phys_info.velocity = new_velocity;
+		obj->mtype.phys_info.mass = Robot_info[id].mass;
+		obj->mtype.phys_info.drag = Robot_info[id].drag;
+		obj->mtype.phys_info.flags |= PF_LEVELLING;
+		obj->shields = Robot_info[id].strength;
+		obj->ctype.ai_info.behavior = AIB_NORMAL;
+		Ai_local_info[*result].player_awareness_type = PA_WEAPON_ROBOT_COLLISION;
+		Ai_local_info[*result].player_awareness_time = F1_0 * 3;
+		obj->ctype.ai_info.CURRENT_STATE = AIS_LOCK;
+		obj->ctype.ai_info.GOAL_STATE = AIS_LOCK;
+		obj->ctype.ai_info.REMOTE_OWNER = -1;
+	}
+	return 1;
+}
 #ifdef NETWORK
 static int Boss_gate_effect_state;
 #endif

@@ -47,6 +47,9 @@ $cases = $trace.cases.Count
 Write-Output "PASS: $cases native checkpoint scenarios, $($cases * 4) restored robot frames match"
 Write-Output "PASS: $($trace.fresh_textures.Count) side texture pairs match after fresh load and each checkpoint restore"
 Write-Output "PASS: native trigger actions, source state, values and links match after fresh load and each checkpoint restore"
+if ($Level -ne 1) {
+    Write-Output "PASS: $($trace.boss_checkpoints.Count) boss checkpoints preserve exact health and physics across all difficulties"
+}
 Write-Output "PASS: $($trace.reactor_guns.Count) reactor gun positions and directions match after fresh load and every checkpoint restore"
 Write-Output "PASS: $($trace.hidden_reactors.Count) hidden boss-level reactors retain their type, control and presentation after every restore"
 if ($CustomAssets) {

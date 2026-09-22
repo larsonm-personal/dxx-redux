@@ -55,6 +55,11 @@ fix d1_in_d2_pickup_boost(fix base_boost)
 	return !d1_in_d2_use_d1_gameplay() && Difficulty_level == 0 ? base_boost + base_boost / 2 : base_boost;
 }
 
+fix d1_in_d2_boss_health_maximum(fix strength, fix engine_maximum)
+{
+	return d1_in_d2_use_d1_gameplay() ? strength : engine_maximum;
+}
+
 int d1_in_d2_prepare_vulcan_pickup(int weapon_index, int new_weapon, int duplicate_reward, int *ammo)
 {
 	if (!d1_in_d2_use_d1_gameplay() || weapon_index != VULCAN_INDEX)

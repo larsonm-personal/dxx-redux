@@ -17,6 +17,10 @@ short d1_in_d2_legacy_texture(short source, int d1_pig_present, int new_file_for
 /* Bind source object references after common model-name remapping */
 void d1_in_d2_fixup_level_object(object *obj, int level_version);
 
+/* D1 has its original sound sources, without D2's random water/lava ambience
+ * Returns 1 after preparing native flags, 0 for the engine's D2 preparation */
+int d1_in_d2_initialize_level_ambience(void);
+
 /* Decode old flag-based records without narrowing the source link count first
  * native_d1 selects D1 semantics explicitly; old D2 formats retain their adapter
  * Link segment bounds are checked against the loaded/restored world by its loader */

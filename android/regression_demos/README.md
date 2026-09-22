@@ -31,6 +31,11 @@ Use `-Game d2 -D1InD2` to watch that D1 recording in D2. The helper's
 recordings outside this corpus. Result comparisons still run after playback,
 so viewing a divergent recording can end with a nonzero test result
 
+The shared reader accepts recordings up to 1 GiB and reads bounded JSON lines
+(8 MiB per record), avoiding whole-file text copies. The decoded checkpoint
+limit remains 2 MiB. Parsed frame data still occupies memory until replay setup
+finishes; this is not a constant-memory replay engine
+
 # D1-in-D2 verification
 
 From the repository root, the existing runner can execute the D1 corpus in
@@ -70,7 +75,8 @@ The output also archives the working source patch and runner sources. State-trac
 metadata describes the recording in both engines; terminal results identify the
 executing engine. RNG reports retain context differences in their strict verdict
 and separately show the first value/timing/count difference, so an annotation
-cannot hide a later simulation difference
+cannot hide a later simulation difference. SIM and effects RNG streams have
+independent verdicts; matching simulation draws cannot conceal effects drift
 
 Frame reports also inventory every diagnostic field, including its compared and
 differing frame counts and first differing value. These entries supplement the

@@ -5,6 +5,9 @@
 #include "inferno.h"
 #include "object.h"
 #include "robot.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "d1_in_d2/d1_in_d2_semantics.h"
+#endif
 #ifdef __ANDROID__
 #include "android_log.h"
 #endif
@@ -16,7 +19,7 @@ int32_t boss_health_maximum_for_difficulty(int32_t strength, int difficulty)
 
 	if (difficulty == 0)
 		maximum /= 2;
-	return maximum;
+	return d1_in_d2_boss_health_maximum(strength, maximum);
 #else
 	(void) difficulty;
 	return strength;

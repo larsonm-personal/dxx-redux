@@ -1414,7 +1414,8 @@ int load_level(const char * filename_passed)
 
 	PHYSFS_close( LoadFile );
 
-	set_ambient_sound_flags();
+	if (!d1_in_d2_initialize_level_ambience())
+		set_ambient_sound_flags();
 
 	#ifdef EDITOR
 	//If a Descent 1 level and the Descent 1 pig isn't present, pretend it's a Descent 2 level.
