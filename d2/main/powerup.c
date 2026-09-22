@@ -527,6 +527,10 @@ int do_powerup(object *obj)
 			used = pick_up_primary(weapon_index);
 			duplicate_uses_single_player_reward = !used &&
 				duplicate_primary_uses_single_player_reward(weapon_index);
+			if (d1_in_d2_prepare_vulcan_pickup(weapon_index, used, duplicate_uses_single_player_reward, &ammo)) {
+				used = pick_up_vulcan_ammo(DROPPED_AMMO(obj, -1, ammo));
+				break;
+			}
 
 			//didn't get the weapon (because we already have it), but
 			//maybe snag some of the ammo.  if single-player, grab all the ammo

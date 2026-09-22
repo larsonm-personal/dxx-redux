@@ -37,6 +37,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "texmerge.h"
 #include "wall.h"
 #include "weapon.h"
+#include "multi.h"
 #include "input_demo_hooks.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_replay.h"
@@ -44,6 +45,44 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 fix d1_in_d2_pickup_boost(fix base_boost)
 {
 	return !d1_in_d2_use_d1_gameplay() && Difficulty_level == 0 ? base_boost + base_boost / 2 : base_boost;
+}
+
+int d1_in_d2_prepare_vulcan_pickup(int weapon_index, int new_weapon, int duplicate_reward, int *ammo)
+{
+	if (!d1_in_d2_use_d1_gameplay() || weapon_index != VULCAN_INDEX)
+		return 0;
+	if (!new_weapon && duplicate_reward) {
+		*ammo = VULCAN_AMMO_AMOUNT;
+		return 1;
+	}
+	if (new_weapon) {
+		if (*ammo < VULCAN_WEAPON_AMMO_AMOUNT)
+			*ammo = VULCAN_WEAPON_AMMO_AMOUNT;
+		if ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP) &&
+			Netgame.LowVulcan && *ammo > VULCAN_WEAPON_AMMO_AMOUNT / 2)
+			*ammo = VULCAN_WEAPON_AMMO_AMOUNT / 2;
+	}
+	return 0;
+}
+
+fix d1_in_d2_released_flare_lifetime(void)
+{
+	return d1_in_d2_use_d1_gameplay() ? F1_0 / 4 : F1_0 / 8;
+}
+
+int d1_in_d2_remove_obsolete_stuck_objects(void)
+{
+	stuckobj *entry;
+	if (!d1_in_d2_use_d1_gameplay())
+		return 0;
+	entry = &Stuck_objects[(unsigned)d_tick_count % MAX_STUCK_OBJECTS];
+	/* Native D1 retires the registry entry without shortening the object's life */
+	if (entry->wallnum != -1 &&
+		(entry->wallnum == 0 || Objects[entry->objnum].signature != entry->signature)) {
+		--Num_stuck_objects;
+		entry->wallnum = -1;
+	}
+	return 1;
 }
 
 fix d1_in_d2_contact_damage(fix damage)

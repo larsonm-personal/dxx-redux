@@ -8,6 +8,9 @@
 
 struct object;
 
+/* Native collision relationship; -1 leaves D2 handling active */
+int d1_in_d2_laser_are_related(int first, int second);
+
 /* For player firing only; accounting records and robot weapon IDs stay intact */
 int d1_in_d2_primary_projectile(int default_projectile);
 int d1_in_d2_initialize_player_weapon(struct object *weapon, fix fusion_charge, int game_mode);

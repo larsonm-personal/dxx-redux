@@ -1,8 +1,9 @@
 # Level 14 recording divergence investigation
 
 Recording: `d1_descent_level14_20260920_184354.dximdemo`, made on Android arm64
-on 2026-09-20. Native host replay and D1-in-D2 both currently diverge; their
-final results also differ from one another
+on 2026-09-20. Native host replay still diverges from the recording because of the homing
+acquisition issue below. After the compatibility fixes, D1-in-D2 matches the
+native replay across all 5,696 recorded frame summaries
 
 The user observes a small ship-angle mismatch after acquiring/using Spreadfire,
 followed by missed shots. Treat the recording as fresh evidence, and locate the
@@ -20,10 +21,16 @@ first state/RNG difference before attributing the cause to weapon selection
 
 ## Findings on 2026-09-21
 
+Follow-up implementation: trace native/imported player velocity and the full
+orientation matrix before frame 1519, identify the first different operation,
+place the behavior correction in the D1 compatibility owner, and verify the
+unchanged level-14 recording plus the existing native comparison tests. Compare
+against the native replay separately from its known recording/homing mismatch
+
 Native D1's failure is caused by replay-only homing acquisition. D1-in-D2 also
 has an earlier, independent drift. Spreadfire selection is not the first
-divergent event in either trace. No permanent engine change was made during
-this investigation
+divergent event in either trace. The initial investigation made no permanent engine changes; the subsequent
+compatibility repairs and their validation are recorded below
 
 ### Native D1: controlled reproduction
 
@@ -125,11 +132,11 @@ claim that Spreadfire is responsible based on the visible timing
 
 - Baseline native: `temp/level14-native-state.jsonl`,
   `temp/level14-native-rng.jsonl`, `temp/level14-native-replay.log`
-- Unmodified visual control: `temp/level14-visual-control-state.jsonl`,
+- Unmodified visual control: `temp/level14-visual-control-state.jsonl.gz`,
   `temp/level14-visual-control-replay.log`
-- Restored ordinary-acquisition experiment: `temp/level14-rendered-state.jsonl`,
+- Restored ordinary-acquisition experiment: `temp/level14-rendered-state.jsonl.gz`,
   `temp/level14-rendered-replay.log`
-- Imported baseline: `temp/level14-imported-state.jsonl`,
+- Imported baseline: `temp/level14-imported-state.jsonl.gz`,
   `temp/level14-imported-replay.log`
 - Baseline native and visual-control state trace SHA-256:
   `09d1181a3fbb2027ce4918e66255ff4d4d65b2c0698c6efca2659a0cf699ef75`
@@ -149,3 +156,69 @@ Runner arguments common to native runs:
 
 Use `-Runner fast` for the native no-render control. For imported playback,
 replace `-Game d1` with `-D1InD2` and use a separate state-log path
+
+
+## Compatibility repairs on 2026-09-21
+
+The follow-up isolates four ordinary gameplay differences and corrects them in
+`d2/main/d1_in_d2/`, with small dispatches at existing engine operation boundaries
+
+1. **Foreign projectile collision traversal.** D1 considers projectiles from
+   different shooters unrelated; D2 excludes most such pairs from FVI. At
+   processing frame 473, native laser 24 hits another projectile and continues
+   through a second fixed-point movement step. The D2 shortcut skips that step,
+   changing its rounded endpoint. A later missile explosion at frame 1518 then
+   pushes the player by a slightly different amount, producing the first velocity
+   mismatch at state frame 1519 and the eventual visible angle drift. Restoring
+   D1's relationship rules fixes the original drift without changing physics math
+2. **Released stuck flares.** Native door cleanup gives a released flare a quarter
+   second, versus D2's eighth second. D1 also retires obsolete registry entries
+   without shortening the object's life. Preserve both native rules in the
+   semantics owner; the earlier flare expiration/allocation discrepancy disappears
+3. **Vulcan pickup quantity.** A duplicate D1 Vulcan grants one ammo box, not all
+   ammo remaining inside the weapon pickup. First acquisition retains D1's minimum
+   allocation and competitive LowVulcan rule. This removes the frame-2097 ammo gap
+4. **Factory robot startup.** D1 retains the mode set while constructing a spawned
+   robot's exit path, except that toasters run away. D2 resets the mode from the
+   robot's behavior. Robot 33 (signature 2182) consequently chased rather than
+   followed its exit path in the imported run. Upon leaving the factory, processing
+   frame 5281 skipped one path-following turn: its firing dot product was 57326
+   instead of native 57395, straddling the 57344 threshold. The resulting AI/motion
+   difference eventually affected the player's shields and orientation. Preserve
+   the native startup mode in the AI owner
+
+### Verification and limits
+
+- `temp/level14-fixed-state.jsonl` matches `temp/level14-native-state.jsonl` for
+  every canonical frame `state` object across all 5,696 frames, including all
+  player fields, position, forward vector, time and level summary
+- The robot, weapon and fireball state hashes, object signature seed, live object
+  count and runtime state hash also match on every frame. This is stronger evidence
+  than final-result equality, but is not a complete comparison of every internal
+  struct, all RNG events, full orientation matrices or presentation output
+- Added real projectile/FVI, factory creation, stuck-flare cleanup and loaded-asset
+  Vulcan pickup coverage; native D1 and ordinary D2 are exercised alongside the
+  imported profile
+- The unchanged recording's expected result still fails in both engines because
+  of the separately demonstrated replay-only homing acquisition bug. These repairs
+  establish imported/native replay parity, not original-recording acceptance
+- No recording, expected result, RNG seed or replay correction was changed. All
+  temporary engine probes were removed. Small targeted evidence is retained in
+  `temp/level14-physics-probe/` and the sandbox `late-ai.txt` files
+
+
+Final checks:
+
+- Host builds: D1, D2 and D2 headless executables plus both compatibility test targets
+- CTest: 51/51 D1 and 59/59 D2 passed
+- Robot-frame comparison: 1,260 scenarios / 5,040 native/imported frames passed
+- Loaded-asset gameplay comparison passed, including all six added Vulcan pickup
+  cases and ordinary D2 rule assertions
+- Existing imported regression runner: levels 5, 15, 16 and 18 passed unchanged
+  (`temp/level14-imported-corpus.log`). These are existing runner verdicts, not new
+  strict per-frame or presentation-fidelity claims
+- Level-14 comparison report: `temp/level14-native-imported-comparison.json` checks
+  equal trace lengths, sequential frame indexes, exact canonical states and all six
+  selected diagnostics. Both traces contain exactly 5,696 frames
+- Scoped code-quality invocation and `git diff --check` passed. The quality script
+  excludes these C/C++ paths from formatting; original-file style was retained

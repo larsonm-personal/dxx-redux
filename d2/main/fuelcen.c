@@ -54,6 +54,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "escort.h"
 #include "byteswap.h"
 #include "matcen_mode.h"
+#include "d1_in_d2/d1_in_d2_ai.h"
 
 // The max number of fuel stations per mine.
 
@@ -366,7 +367,7 @@ object * create_morph_robot( segment *segp, vms_vector *object_pos, int object_i
 
 	create_n_segment_path(obj, 6, -1);		//	Create a 6 segment path from creation point.
 
-	Ai_local_info[objnum].mode = ai_behavior_to_mode(default_behavior);
+	Ai_local_info[objnum].mode = d1_in_d2_ai_morph_robot_mode(obj, ai_behavior_to_mode(default_behavior));
 
 	return obj;
 }

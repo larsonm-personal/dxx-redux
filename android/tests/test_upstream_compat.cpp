@@ -74,6 +74,8 @@ void start_endlevel_flythrough(int n, object *obj, fix speed);
 void gameseq_init_network_players(void);
 void do_endlevel_flythrough(int n);
 void apply_force_damage(object *obj, fix force, object *other);
+void kill_stuck_objects(int wallnum);
+void InitWeaponOrdering(void);
 int object_create_egg(object *obj);
 void collide_robot_and_player(object *robot, object *player, vms_vector *point);
 extern point_seg Point_segs[];
@@ -897,6 +899,22 @@ static void test_d1_follow_path_frame()
 			require(robot.ctype.ai_info.behavior == AIB_SNIPE && Ai_local_info[objnum].mode >= AIM_SNIPE_ATTACK && Ai_local_info[objnum].mode <= AIM_SNIPE_WAIT,
 			        "D2 content retains its sniper phase for the same serialized behavior code");
 #endif
+		// Exercise the factory's public creation path, including its final mode assignment
+		init_test_corridor(8);
+		Point_segs_free_ptr = Point_segs;
+		N_robot_types = 11;
+		Polygon_models[0].rad = F1_0;
+		Robot_info[10] = info;
+		for (const int id : { 0, 10 }) {
+#ifdef DXX_BUILD_DESCENT_II
+			Robot_info[id].behavior = id == 10 ? AIB_RUN_FROM : AIB_NORMAL;
+#endif
+			object *spawned = create_morph_robot(&Segments[1], &origin, id);
+			require(spawned && spawned->ctype.ai_info.path_length > 1, "factory spawn constructs a usable exit path");
+			const int expected_mode = id == 10 ? AIM_RUN_FROM_OBJECT : profile == 1 ? AIM_FOLLOW_PATH : AIM_CHASE_OBJECT;
+			require(Ai_local_info[spawned - Objects].mode == expected_mode,
+			        "native factory robots retain their exit path mode while D2 retains behavior-based startup");
+		}
 		FrameTime = old_frame;
 		Point_segs_free_ptr = Point_segs;
 	}
@@ -3205,6 +3223,101 @@ static void test_boss_frame_updates()
 	Current_level_num = old_level;
 	GameTime64 = old_time;
 	FrameTime = old_frame;
+#ifdef DXX_BUILD_DESCENT_II
+	Current_mission = nullptr;
+#endif
+}
+
+static void test_projectile_collision_relationships()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+	const int versions[] = { 2, 1, 2 };
+#else
+	const int versions[] = { 1 };
+#endif
+	for (const int version : versions) {
+#ifdef DXX_BUILD_DESCENT_II
+		mission.descent_version = version;
+#endif
+		init_test_corridor();
+		collide_init();
+		Game_mode = 0;
+		GameTime64 = 10 * F1_0;
+		vms_vector origin = { 0, 0, 0 }, crossing = { 0, 0, 4 * F1_0 }, end = { 0, 0, 8 * F1_0 };
+		const int first = obj_create(OBJ_WEAPON, 0, 0, &origin, &vmd_identity_matrix, F1_0 / 4, CT_WEAPON, MT_PHYSICS, RT_NONE);
+		const int second = obj_create(OBJ_WEAPON, 0, 0, &crossing, &vmd_identity_matrix, F1_0 / 4, CT_WEAPON, MT_PHYSICS, RT_NONE);
+		require(first >= 0 && second >= 0, "create crossing projectile scene");
+		object &a = Objects[first], &b = Objects[second];
+		a.ctype.laser_info.parent_num = 0;
+		a.ctype.laser_info.parent_signature = Objects[0].signature;
+		b.ctype.laser_info.parent_num = -1;
+		b.ctype.laser_info.parent_signature = Objects[0].signature + 100;
+		require(laser_are_related(first, second) == (version == 2), "foreign ordinary projectiles collide only in D1");
+		fvi_query query = {};
+		fvi_info hit = {};
+		query.p0 = &origin;
+		query.p1 = &end;
+		query.startseg = 0;
+		query.rad = a.size;
+		query.thisobjnum = first;
+		query.flags = FQ_CHECK_OBJS;
+		const int fate = find_vector_intersection(&query, &hit);
+		require(fate == (version == 1 ? HIT_OBJECT : HIT_NONE), "real collision traversal retains D1 foreign projectile contacts");
+		if (version == 1) require(hit.hit_object == second && hit.hit_pnt.z < end.z, "D1 movement must split at the crossing projectile");
+		b.ctype.laser_info.parent_signature = a.ctype.laser_info.parent_signature;
+		require(laser_are_related(first, second), "ordinary siblings ignore one another in both games");
+		a.id = PROXIMITY_ID;
+		a.ctype.laser_info.creation_time = b.ctype.laser_info.creation_time = GameTime64;
+		require(laser_are_related(first, second) == (version == 2), "D1 mines can collide with siblings immediately");
+		a.ctype.laser_info.creation_time = GameTime64 - 2 * F1_0;
+		require(laser_are_related(first, 0), "mine still ignores its owner at the grace boundary");
+		--a.ctype.laser_info.creation_time;
+		require(laser_are_related(first, 0) == (version == 2), "D1 mine owner grace expires just after two seconds");
+		a.ctype.laser_info.creation_time = GameTime64 - 5 * F1_0;
+		require(!laser_are_related(first, 0) && laser_are_related(0, first) == (version == 1), "native D1 preserves the directional parent check for old mines");
+		require(!laser_are_related(-1, first), "invalid object indices are unrelated");
+	}
+#ifdef DXX_BUILD_DESCENT_II
+	Current_mission = nullptr;
+#endif
+}
+
+static void test_stuck_projectiles()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+	const int versions[] = { 2, 1, 2 };
+#else
+	const int versions[] = { 1 };
+#endif
+	for (const int version : versions) {
+#ifdef DXX_BUILD_DESCENT_II
+		mission.descent_version = version;
+#endif
+		init_test_corridor();
+		Num_walls = 2;
+		Walls[1] = {};
+		Walls[1].state = WALL_DOOR_CLOSED;
+		Segments[0].sides[4].wall_num = 1;
+		vms_vector origin = {};
+		const int flare = obj_create(OBJ_WEAPON, FLARE_ID, 0, &origin, &vmd_identity_matrix, F1_0 / 4, CT_WEAPON, MT_PHYSICS, RT_NONE);
+		require(flare >= 0, "create flare stuck in a doorway");
+		for (auto &entry : Stuck_objects) entry.wallnum = -1;
+		Num_stuck_objects = 0;
+		add_stuck_object(&Objects[flare], 0, 4);
+		kill_stuck_objects(1);
+		require(!Num_stuck_objects && Objects[flare].lifeleft == (version == 1 ? F1_0 / 4 : F1_0 / 8), "opening a door preserves native flare retirement timing");
+		add_stuck_object(&Objects[flare], 0, 4);
+		++Objects[flare].signature;
+		Objects[flare].lifeleft = 10 * F1_0;
+		d_tick_count = 0;
+		remove_obsolete_stuck_objects();
+		require(!Num_stuck_objects && Stuck_objects[0].wallnum == -1, "retire stale stuck-object signature");
+		require(Objects[flare].lifeleft == (version == 1 ? 10 * F1_0 : F1_0 / 8), "native stale-entry cleanup leaves the replacement object's lifetime alone");
+	}
 #ifdef DXX_BUILD_DESCENT_II
 	Current_mission = nullptr;
 #endif
@@ -6527,7 +6640,31 @@ static nlohmann::json exercise_contact_motion(bool native)
 static nlohmann::json exercise_gameplay_rules(bool native)
 {
 	using nlohmann::json;
+	InitWeaponOrdering();
+	Game_mode = 0;
+	Player_num = 0;
+	Player_is_dead = 0;
 	json doors = json::array(), pickups = json::array(), damage = json::array(), drops = json::array();
+	json vulcan = json::array();
+	for (const bool owned : { false, true })
+		for (const int contents : { 0, VULCAN_AMMO_AMOUNT, VULCAN_WEAPON_AMMO_AMOUNT }) {
+			init_test_corridor();
+			Players[0].objnum = 0;
+			Players[0].flags = 0;
+			Players[0].primary_weapon_flags = 1 | (owned ? 1 << VULCAN_INDEX : 0);
+			Players[0].primary_weapon = 0;
+			Players[0].primary_ammo[VULCAN_INDEX] = 100;
+			Players[0].score = 0;
+			Players[0].shields = 100 * F1_0;
+			object pickup = {};
+			pickup.type = OBJ_POWERUP;
+			pickup.id = POW_VULCAN_WEAPON;
+			pickup.ctype.powerup_info.count = contents;
+			const int used = do_powerup(&pickup);
+			const int gain = native ? (owned ? VULCAN_AMMO_AMOUNT : VULCAN_WEAPON_AMMO_AMOUNT) : contents;
+			require(Players[0].primary_ammo[VULCAN_INDEX] == 100 + gain, "native Vulcan pickup grants its first-weapon minimum or one duplicate ammo box");
+			vulcan.push_back({ owned, contents, used, Players[0].primary_ammo[VULCAN_INDEX], pickup.ctype.powerup_info.count, Players[0].score });
+		}
 	json surfaces = json::array();
 	for (int i = 0; i < NumTextures; ++i) {
 		const auto &texture = TmapInfo[i];
@@ -6689,7 +6826,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 					}
 				}
 	Game_mode = 0;
-	return { { "doors", doors }, { "pickups", pickups }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "secondary_explosions", secondary_explosions } };
+	return { { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "secondary_explosions", secondary_explosions } };
 }
 
 static void write_gameplay_rules_trace(const char *directory, const char *d2_directory)
@@ -6821,6 +6958,8 @@ int main(int argc, char **argv)
 	test_boss_frame_updates();
 	std::fprintf(stderr, "Testing native homing acquisition and retention\n");
 	test_homing_targets();
+	test_projectile_collision_relationships();
+	test_stuck_projectiles();
 	test_autoselect();
 #ifdef DXX_BUILD_DESCENT_II
 	std::fprintf(stderr, "Testing mission robot reload\n");

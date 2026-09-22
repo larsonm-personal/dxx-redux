@@ -12,6 +12,7 @@ struct robot_info;
 enum d1_ai_actor_role { D1_AI_ENGINE_ACTOR, D1_AI_NATIVE_ENEMY };
 /* Select at an AI phase boundary; optional companions retain engine policy */
 enum d1_ai_actor_role d1_in_d2_ai_actor_role(const struct object *obj);
+int d1_in_d2_ai_morph_robot_mode(const struct object *obj, int engine_mode);
 /* HUD cameras may wake engine actors, never native enemies. The native hide
  * submode shares storage with D2 camera flags and must remain untouched */
 int d1_in_d2_ai_camera_can_wake(const struct object *obj);

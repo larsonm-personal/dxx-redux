@@ -163,6 +163,9 @@ void Laser_render(object *obj)
 //	Changed by MK on 06/06/95: Now must be 4.0 seconds old.  Much valid Net-complaining.
 int laser_are_related( int o1, int o2 )
 {
+	const int d1_related = d1_in_d2_laser_are_related(o1, o2);
+	if (d1_related >= 0)
+		return d1_related;
 	if ( (o1<0) || (o2<0) )
 		return 0;
 

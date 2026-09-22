@@ -934,3 +934,24 @@ Actual summary records identify native as `game=d1, mission=d1` and imported as 
 Artifacts: `temp/d1-finish-native-replays.log`, `temp/d1-finish-imported-replays.log`, and `temp/d1-finish-replay-results/{native,imported}/*.actual.json`. These runs do not establish strict reproduction: the existing runner normalizes identities and can reduce terminal-exit comparison, the native reference was not replayed twice here, and no paired per-frame/RNG trace comparison was run. Section 0 specifies a strict gate with separate recording/native-repeat/imported verdicts and forbids expected-value substitution or silent skips
 
 Next implementation milestone is F1's strict D1/native-versus-imported replay oracle, followed by F2's earliest-divergence fixes in the owning compatibility modules. Optional actor completion, legacy loader retirement, broader persistence/network/edition/platform coverage and native-engine retirement remain separate open gates
+
+
+## 2026-09-21: level-14 imported/native replay parity
+
+Corrected foreign-projectile collision relationships, released/obsolete stuck
+flare lifetimes, Vulcan pickup quantities and factory robot startup modes in the
+compatibility weapon, semantics and AI owners. Original engine files contain only
+small operation-boundary dispatches. The unchanged level-14 input stream now
+matches native D1's fast replay for all 5,696 canonical frame summaries and the
+compared robot/weapon/fireball/runtime hashes, allocation seed and live-object count
+
+This does not satisfy the original-recording acceptance gate: native D1's separate
+replay-only homing acquisition failure remains. See the
+[detailed diagnosis and validation](../input%20demo,%20replay,%20determinism/level14-20260920-divergence.md)
+for the causal experiments, scope of exact comparison and remaining work
+
+Validation: D1/D2/headless host builds succeeded; CTest passed 51/51 and 59/59;
+1,260 AI scenarios / 5,040 frame comparisons and the loaded gameplay-rule suite
+passed, including six new Vulcan cases. The other four imported D1 demos (5, 15,
+16, 18) passed the unchanged regression runner. Scoped quality and diff whitespace
+checks passed; temporary native engine probes were removed

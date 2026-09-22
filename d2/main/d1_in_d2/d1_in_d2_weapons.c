@@ -21,6 +21,31 @@
 #include "d1_in_d2.h"
 #include "d1_in_d2_weapons.h"
 
+int d1_in_d2_laser_are_related(int first, int second)
+{
+	const object *a, *b;
+	if (!d1_in_d2_use_d1_gameplay())
+		return -1;
+	if (first < 0 || second < 0)
+		return 0;
+	a = &Objects[first];
+	b = &Objects[second];
+	/* Preserve native D1's directional parent check and two-second mine grace */
+	if (a->type == OBJ_WEAPON && a->ctype.laser_info.parent_num == second &&
+		a->ctype.laser_info.parent_signature == b->signature)
+		return a->id != PROXIMITY_ID || a->ctype.laser_info.creation_time + F1_0 * 2 >= GameTime64;
+	if (b->type == OBJ_WEAPON && b->ctype.laser_info.parent_num == first &&
+		b->ctype.laser_info.parent_signature == a->signature)
+		return 1;
+	if (a->type != OBJ_WEAPON || b->type != OBJ_WEAPON)
+		return 0;
+	/* Unlike D2, foreign projectiles participate in collision traversal even
+	 * when the collision leaves both alive. Skipping it changes fixed-point travel */
+	if (a->ctype.laser_info.parent_signature != b->ctype.laser_info.parent_signature)
+		return 0;
+	return !is_proximity_bomb_or_smart_mine(a->id) && !is_proximity_bomb_or_smart_mine(b->id);
+}
+
 int d1_in_d2_configure_homing(fix turn_time)
 {
 	if (!d1_in_d2_use_d1_gameplay())

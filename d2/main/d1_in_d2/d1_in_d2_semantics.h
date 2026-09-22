@@ -17,6 +17,8 @@ struct active_door;
 fix d1_in_d2_pickup_boost(fix base_boost);
 fix d1_in_d2_contact_damage(fix damage);
 fix d1_in_d2_blast_damage(fix damage);
+/* Adjust native Vulcan contents; true requests an ordinary ammo-box pickup */
+int d1_in_d2_prepare_vulcan_pickup(int weapon_index, int new_weapon, int duplicate_reward, int *ammo);
 /* Native D1 still bumps an exploding robot; engine actors retain D2 filtering */
 int d1_in_d2_robot_contact_allowed(const struct object *robot);
 int d1_in_d2_robot_pair_collides(const struct object *first, const struct object *second);
@@ -28,6 +30,8 @@ int d1_in_d2_bounce_preserves_velocity(const struct object *obj);
  * Closing checks native obstruction without reopening or advancing animation */
 int d1_in_d2_door_close_blocked(const struct active_door *door);
 int d1_in_d2_door_wait_elapsed(const struct active_door *door);
+fix d1_in_d2_released_flare_lifetime(void);
+int d1_in_d2_remove_obsolete_stuck_objects(void);
 
 /* Own the complete native replacement/drop decision and its SIM RNG draws
  * Returns handled for D1; inactive leaves the object and RNG untouched */

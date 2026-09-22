@@ -1479,6 +1479,8 @@ void add_stuck_object(object *objp, int segnum, int sidenum)
 void remove_obsolete_stuck_objects(void)
 {
 	int	objnum;
+	if (d1_in_d2_remove_obsolete_stuck_objects())
+		return;
 
 	//	Safety and efficiency code.  If no stuck objects, should never get inside the IF, but this is faster.
 	if (!Num_stuck_objects)
@@ -1512,7 +1514,7 @@ void kill_stuck_objects(int wallnum)
 	for (i=0; i<MAX_STUCK_OBJECTS; i++)
 		if (Stuck_objects[i].wallnum == wallnum) {
 			if (Objects[Stuck_objects[i].objnum].type == OBJ_WEAPON) {
-				Objects[Stuck_objects[i].objnum].lifeleft = F1_0/8;
+				Objects[Stuck_objects[i].objnum].lifeleft = d1_in_d2_released_flare_lifetime();
 			}
 			Stuck_objects[i].wallnum = -1;
 		} else if (Stuck_objects[i].wallnum != -1) {

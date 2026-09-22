@@ -99,6 +99,14 @@ int d1_in_d2_ai_camera_can_wake(const object *obj)
 	return d1_in_d2_ai_actor_role(obj) != D1_AI_NATIVE_ENEMY;
 }
 
+int d1_in_d2_ai_morph_robot_mode(const object *obj, int engine_mode)
+{
+	if (d1_in_d2_ai_actor_role(obj) != D1_AI_NATIVE_ENEMY)
+		return engine_mode;
+	/* Native matcen robots keep the exit path's mode; only toasters run away */
+	return obj->id == 10 ? AIM_RUN_FROM_OBJECT : Ai_local_info[obj - Objects].mode;
+}
+
 int d1_in_d2_ai_flash_can_stun(const object *obj)
 {
 	return d1_in_d2_ai_actor_role(obj) != D1_AI_NATIVE_ENEMY;
