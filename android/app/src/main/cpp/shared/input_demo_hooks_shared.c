@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "args.h"
+#include "android_profile.h"
 #include "dxxerror.h"
 #include "render_gameplay_view.h"
 #include "ai.h"
@@ -458,6 +459,7 @@ void input_demo_record_game_frame(void)
 		return;
 	}
 	rng_call_count = d_rand_get_call_count();
+	android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_RECORD);
 	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
 	input_demo_capture_current_result(&frame_state);
 	if (input_demo_recorder_frame_count() == 0)
@@ -470,6 +472,7 @@ void input_demo_record_game_frame(void)
 		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
 		input_demo_recorder_cancel();
 	}
+	android_profile_bucket_end(ANDROID_PROFILE_BUCKET_RECORD);
 }
 
 void input_demo_update_rng_trace_context(void)

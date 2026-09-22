@@ -14,6 +14,7 @@
 #include <chrono>
 
 #include "input_demo_fixture.h"
+#include "input_demo_codec.h"
 #include "input_demo_recorder.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_result.h"
@@ -917,6 +918,15 @@ static int expect_record_and_flush_diag(void)
 	diag.ai_probe_phys_skip_obj = -1;
 	diag.ai_probe_phys_skip_sig = -1;
 	diag.ai_probe_phys_skip_id = -1;
+	std::string diag_text;
+	std::string diag_hash;
+	if (!input_demo_state_trace_diag_to_json_text(&diag, &diag_text, &read_error) ||
+	    !input_demo_sha256_hex(reinterpret_cast<const unsigned char *>(diag_text.data()),
+	                           diag_text.size(), &diag_hash, &read_error))
+		return report_failure_string(read_error);
+	// Preserve every diagnostic field and array, including canonical key order
+	if (diag_hash != "0f4d4f46a42cede41acb27d773a59861d792e73f0876e067bbd4bc10fbf04430")
+		return report_failure_string("diagnostic serialization changed: " + diag_hash);
 	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, &diag, error, sizeof(error))) {
 		input_demo_recorder_cancel();
 		remove_test_dir(dir);

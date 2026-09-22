@@ -184,6 +184,13 @@ add_executable(test_android_render_fov test_android_render_fov.c
                                        "${DXX_TEST_SHARED_SOURCE_DIR}/android_render_fov.c")
 target_include_directories(test_android_render_fov PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
+add_executable(test_ogl_gpu_timer test_ogl_gpu_timer.c
+                                  "${DXX_TEST_SHARED_SOURCE_DIR}/ogl_gpu_timer_android.c")
+target_compile_definitions(test_ogl_gpu_timer PRIVATE ANDROID)
+target_include_directories(
+    test_ogl_gpu_timer BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/gpu_timer_stubs"
+                                      "${DXX_TEST_SHARED_SOURCE_DIR}")
+
 add_executable(
     test_android_slowdown_detector test_android_slowdown_detector.c
                                    "${DXX_TEST_SHARED_SOURCE_DIR}/android_slowdown_detector.c")
@@ -413,6 +420,7 @@ set(DXX_HOST_TEST_TARGETS
     test_kconfig_android_shared
     test_android_rewind_policy
     test_android_render_fov
+    test_ogl_gpu_timer
     test_android_slowdown_detector
     test_net_udp_reconnect_auth
     test_net_udp_initial_sync_retry

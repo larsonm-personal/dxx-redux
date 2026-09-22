@@ -32,6 +32,9 @@ void android_ogl_gpu_timer_begin_frame(struct android_ogl_gpu_timer_state *state
 	if (!state || !state->queries || state->query_capacity <= 0 ||
 	    !state->query_write || !state->query_count || !state->query_in_flight)
 		return;
+	/* A game frame can start more than one 3D view before the single flip */
+	if (*state->query_in_flight)
+		return;
 
 	if (!state->queries[0])
 		glGenQueries(state->query_capacity, state->queries);
@@ -47,15 +50,10 @@ void android_ogl_gpu_timer_begin_frame(struct android_ogl_gpu_timer_state *state
 			glGetQueryObjectuiv(state->queries[read_idx], GL_QUERY_RESULT, &ns);
 			android_ogl_gpu_timer_store_result(state, ns);
 			(*state->query_count)--;
-		} else if (*state->query_count >= state->query_capacity - 1) {
-			GLuint ns = 0;
-
-			glGetQueryObjectuiv(state->queries[read_idx], GL_QUERY_RESULT, &ns);
-			android_ogl_gpu_timer_store_result(state, ns);
-			(*state->query_count)--;
 		}
 	}
 
+	/* Profiling must not wait for the GPU: skip a sample if every slot is busy */
 	if (*state->query_count < state->query_capacity) {
 		glBeginQuery(GL_TIME_ELAPSED_EXT, state->queries[*state->query_write]);
 		*state->query_in_flight = 1;

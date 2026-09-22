@@ -29,6 +29,7 @@ struct android_slowdown_frame {
 	int32_t total_us;
 	int32_t wait_us;
 	int32_t sim_us;
+	int32_t record_us; /* Recording diagnostics, included in sim_us */
 	int32_t render_us;
 	int32_t replay_us;
 	int32_t swap_us;

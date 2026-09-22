@@ -148,6 +148,7 @@ static const char *g_android_profile_bucket_names[ANDROID_PROFILE_BUCKET_COUNT] 
 	"sim",
 	"render",
 	"replay",
+	"record",
 };
 
 static const char *g_android_profile_gl_metric_names[ANDROID_PROFILE_GL_COUNT] = {
@@ -390,7 +391,7 @@ static void android_flight_append_frame(const char *type,
                                         const struct android_slowdown_frame *frame)
 {
 	android_flight_appendf(
-	    "prof_v=3 type=%s capture=%u frame=%u mono_us=%lld level=%d viewer_seg=%d begin_gap_us=%d flip_gap_us=%d sim_frame=%u frame_time_us=%d total_us=%d nonwait_us=%lld wait_us=%d sim_us=%d render_us=%d replay_us=%d swap_us=%d gpu_us=%d resolve_us=%d glerr_us=%d net_us=%d net_packets=%d net_bytes=%d remote_updates=%d robots_local=%d robots_remote=%d robots_stale=%d robots_age_unknown=%d max_robot_age_ms=%d objects_active=%d projectiles=%d reactors=%d tpolys=%d water_faces=%d texbinds=%d texreuse=%d shader_switches=%d mask_draws=%d mwall_hits=%d mwall_misses=%d object_draws=%d max_object_us=%d max_obj=%d max_type=%d max_id=%d max_render=%d max_model=%d max_fps=%d vsync=%d",
+	    "prof_v=3 type=%s capture=%u frame=%u mono_us=%lld level=%d viewer_seg=%d begin_gap_us=%d flip_gap_us=%d sim_frame=%u frame_time_us=%d total_us=%d nonwait_us=%lld wait_us=%d sim_us=%d record_us=%d render_us=%d replay_us=%d swap_us=%d gpu_us=%d resolve_us=%d glerr_us=%d net_us=%d net_packets=%d net_bytes=%d remote_updates=%d robots_local=%d robots_remote=%d robots_stale=%d robots_age_unknown=%d max_robot_age_ms=%d objects_active=%d projectiles=%d reactors=%d tpolys=%d water_faces=%d texbinds=%d texreuse=%d shader_switches=%d mask_draws=%d mwall_hits=%d mwall_misses=%d object_draws=%d max_object_us=%d max_obj=%d max_type=%d max_id=%d max_render=%d max_model=%d max_fps=%d vsync=%d",
 	    type,
 	    g_android_slowdown_detector.capture_id,
 	    frame->frame_id,
@@ -405,6 +406,7 @@ static void android_flight_append_frame(const char *type,
 	    android_flight_nonwait_us(frame),
 	    frame->wait_us,
 	    frame->sim_us,
+	    frame->record_us,
 	    frame->render_us,
 	    frame->replay_us,
 	    frame->swap_us,
@@ -1349,6 +1351,7 @@ void android_profile_frame_end(void)
 		flight_frame.total_us = (int) total_us;
 		flight_frame.wait_us = (int) g_android_profile_buckets[ANDROID_PROFILE_BUCKET_WAIT].frame_us;
 		flight_frame.sim_us = (int) g_android_profile_buckets[ANDROID_PROFILE_BUCKET_SIM].frame_us;
+		flight_frame.record_us = (int) g_android_profile_buckets[ANDROID_PROFILE_BUCKET_RECORD].frame_us;
 		flight_frame.render_us = (int) g_android_profile_buckets[ANDROID_PROFILE_BUCKET_RENDER].frame_us;
 		flight_frame.replay_us = (int) g_android_profile_buckets[ANDROID_PROFILE_BUCKET_REPLAY].frame_us;
 		flight_frame.swap_us = (int) g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_SWAP];
@@ -1402,7 +1405,7 @@ void android_profile_frame_end(void)
 	    now_us >= g_android_profile_next_slow_log_us) {
 		debug_log(
 		    DLOG_PROFILING,
-		    "prof_v=1 type=slow_frame game=%s frame=%u level=%d viewer_seg=%d total_us=%lld wait_us=%lld sim_us=%lld render_us=%lld replay_us=%lld swap_us=%lld gpu_us=%lld resolve_us=%lld glerr_us=%lld tpolys=%d water_faces=%d texbinds=%d texreuse=%d shader_switches=%d mask_draws=%d mwall_hits=%d mwall_misses=%d object_us=%lld object_draws=%d max_object_us=%lld max_obj=%d max_type=%d max_id=%d max_render=%d max_model=%d",
+		    "prof_v=1 type=slow_frame game=%s frame=%u level=%d viewer_seg=%d total_us=%lld wait_us=%lld sim_us=%lld record_us=%lld render_us=%lld replay_us=%lld swap_us=%lld gpu_us=%lld resolve_us=%lld glerr_us=%lld tpolys=%d water_faces=%d texbinds=%d texreuse=%d shader_switches=%d mask_draws=%d mwall_hits=%d mwall_misses=%d object_us=%lld object_draws=%d max_object_us=%lld max_obj=%d max_type=%d max_id=%d max_render=%d max_model=%d",
 		    g_android_profile_game,
 		    g_android_profile_frame_id,
 		    g_android_profile_level,
@@ -1410,6 +1413,7 @@ void android_profile_frame_end(void)
 		    total_us,
 		    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_WAIT].frame_us,
 		    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_SIM].frame_us,
+		    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_RECORD].frame_us,
 		    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_RENDER].frame_us,
 		    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_REPLAY].frame_us,
 		    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_SWAP],
@@ -1443,7 +1447,7 @@ void android_profile_frame_end(void)
 		g_android_profile_sample_max_us = total_us;
 	android_profile_commit_frame_metrics();
 	android_profile_appendf(
-	    "prof_v=1 type=frame sample=%u game=%s frame=%u frame_index=%u total_us=%lld wait_us=%lld sim_us=%lld render_us=%lld replay_us=%lld swap_us=%lld gpu_us=%lld resolve_us=%lld glerr_us=%lld tpolys=%d water_faces=%d texbinds=%d texreuse=%d shader_switches=%d mask_draws=%d mwall_hits=%d mwall_misses=%d",
+	    "prof_v=1 type=frame sample=%u game=%s frame=%u frame_index=%u total_us=%lld wait_us=%lld sim_us=%lld record_us=%lld render_us=%lld replay_us=%lld swap_us=%lld gpu_us=%lld resolve_us=%lld glerr_us=%lld tpolys=%d water_faces=%d texbinds=%d texreuse=%d shader_switches=%d mask_draws=%d mwall_hits=%d mwall_misses=%d",
 	    g_android_profile_sample_id,
 	    g_android_profile_game,
 	    g_android_profile_frame_id,
@@ -1451,6 +1455,7 @@ void android_profile_frame_end(void)
 	    total_us,
 	    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_WAIT].frame_us,
 	    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_SIM].frame_us,
+	    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_RECORD].frame_us,
 	    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_RENDER].frame_us,
 	    g_android_profile_buckets[ANDROID_PROFILE_BUCKET_REPLAY].frame_us,
 	    g_android_profile_gl_frame_us[ANDROID_PROFILE_GL_SWAP],

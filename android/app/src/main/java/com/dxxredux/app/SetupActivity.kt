@@ -890,7 +890,9 @@ class SetupActivity : ComponentActivity() {
                     "write_bool_pref" -> {
                         val key = intent.getStringExtra("key") ?: return
                         val value = intent.getBooleanExtra("value", false)
-                        val editor = getSharedPreferences("dxx_prefs", MODE_PRIVATE).edit().putBoolean(key, value)
+                        // Demo diagnostics are a launcher preference, unlike engine options
+                        val prefsName = if (key == PREF_DEMO_RECORD_PER_FRAME_STATE) "launcher_prefs" else "dxx_prefs"
+                        val editor = getSharedPreferences(prefsName, MODE_PRIVATE).edit().putBoolean(key, value)
                         if (key == PREF_SHOW_RESUME_OFFER) {
                             editor.putBoolean(PREF_SAVE_EXPLORER_PANEL_EXPANDED, value)
                         }
