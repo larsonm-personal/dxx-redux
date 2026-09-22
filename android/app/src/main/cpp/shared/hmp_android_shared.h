@@ -16,6 +16,8 @@ struct hmp_playback_info {
 	double end_ms;
 	int branch_loop;
 	int unsupported_branches;
+	int filtered_tracks;
+	int no_gm_arrangement;
 };
 
 int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,

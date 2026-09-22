@@ -1,0 +1,13 @@
+{
+  "description": "GOG DOS Descent 1.4 General MIDI, volume 8, title -> briefing -> Level 7 -> EOF restart",
+  "hmp": "game07.hmp",
+  "hmp_sha256": "f09a991e3fe76c17ba27a98db460ab8f30592fdc8e3779a94401f9d9cfbb3e0c",
+  "capture": "dos.mid",
+  "capture_sha256": "ed290aeb37dac007323f1b6bda73ba29fbbf1a4b4fd2df586fa69fc511c76ae0",
+  "reference_start_ms": 102306,
+  "duration_ms": 250000,
+  "legacy_duration_ms": 170000,
+  "tolerance_ms": 10,
+  "device_selection_negative_control": true,
+  "notes": "Device selection: tracks 6,9,10,11,12,13 plus timing track. EOF resets six channels; restart one tick later. Startup excludes previous-song reset messages. Local files under game_data/music/dos-references/descent14-game07."
+}

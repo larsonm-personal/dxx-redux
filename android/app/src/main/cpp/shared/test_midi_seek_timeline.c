@@ -310,6 +310,15 @@ static int test_hmp_song_state(const unsigned char *soundfont, int size)
 	tsf_channel_midi_control(synth, 15, 42, 127);
 	hmp_tsf_capture(synth, &state);
 	ok = ok && state.pan[0] == 0 && state.pan[15] == 16383;
+	/* EOF reset must retain bank/pan and clear the volume LSB before CC7=0 */
+	tsf_channel_set_bank(synth, 4, 2);
+	pan = tsf_channel_get_pan(synth, 4);
+	hmp_tsf_control(synth, 4, 121, 0);
+	hmp_tsf_control(synth, 4, 7, 0);
+	ok = ok && tsf_channel_get_preset_bank(synth, 4) == 2 &&
+	     tsf_channel_get_pan(synth, 4) == pan &&
+	     tsf_channel_get_preset_index(synth, 4) == preset &&
+	     tsf_channel_get_volume(synth, 4) < 0.0001f;
 	tsf_close(synth);
 	return ok;
 }

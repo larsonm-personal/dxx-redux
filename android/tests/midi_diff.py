@@ -114,13 +114,14 @@ def read_midi(path):
     return events, ms
 
 
-def window(events, start, duration, strip_initial_volume=False):
+def window(events, start, duration, strip_initial_state=False):
     selected = []
     initial = []
     for e in events:
         if start <= e.ms < start + duration:
             relative = Event(e.ms - start, e.status, e.data)
-            if strip_initial_volume and abs(relative.ms) < 0.001 and e.status & 240 == 176 and e.data == (7, 0):
+            startup = (e.status & 240 == 176 and e.data == (7, 0)) or (e.status & 240 == 224 and e.data == (64, 64))
+            if strip_initial_state and abs(relative.ms) < 0.001 and startup:
                 initial.append(relative)
             else:
                 selected.append(relative)
@@ -170,7 +171,7 @@ def note_states(events, start, duration):
 
 
 def compare(reference, candidate, reference_start=0, candidate_start=0,
-            duration=None, tolerance=10, candidate_initial_volume=False,
+            duration=None, tolerance=10, candidate_initial_state=False,
             shared_initial_state=False):
     ref, ref_end = read_midi(reference)
     got, got_end = read_midi(candidate)
@@ -181,7 +182,7 @@ def compare(reference, candidate, reference_start=0, candidate_start=0,
     if ref_end + 0.01 < reference_start + duration or got_end + 0.01 < candidate_start + duration:
         raise ValueError('Comparison window extends beyond a MIDI file; refusing a partial comparison')
     a, _ = window(ref, reference_start, duration)
-    b, init = window(got, candidate_start, duration, candidate_initial_volume)
+    b, init = window(got, candidate_start, duration, candidate_initial_state)
     volumes_a = note_volumes(ref, reference_start, duration)
     volumes_b = note_volumes(got, candidate_start, duration)
     states_a = note_states(ref, reference_start, duration)
@@ -220,7 +221,7 @@ def compare(reference, candidate, reference_start=0, candidate_start=0,
     sysex_ok = len(sysex_a) == len(sysex_b) and all(u.status == v.status and u.data == v.data and abs(u.ms - v.ms) <= tolerance for u, v in zip(sysex_a, sysex_b))
     return {'passed': bool(passed and sysex_ok), 'reference_start_ms': reference_start,
             'candidate_start_ms': candidate_start, 'duration_ms': duration,
-            'tolerance_ms': tolerance, 'candidate_initial_cc7_messages': len(init),
+            'tolerance_ms': tolerance, 'candidate_initial_state_messages': len(init),
             'candidate_retained_state_from_reference_prefix': shared_initial_state,
             'sysex_matches': sysex_ok, 'channels': channels}
 
@@ -234,7 +235,7 @@ def main():
     parser.add_argument('--candidate-start-ms', type=float, default=0)
     parser.add_argument('--duration-ms', type=float)
     parser.add_argument('--tolerance-ms', type=float, default=10)
-    parser.add_argument('--candidate-initial-volume', action='store_true', help='Separate synthetic time-zero CC7=0 from message diff; still check their effect on every note')
+    parser.add_argument('--candidate-initial-state', action='store_true', help='Separate synthetic time-zero CC7=0 and pitch=8256 from message diff; still check their effect on every note')
     parser.add_argument('--shared-initial-state', action='store_true', help='Prime candidate program/bank/pan from the reference prefix, matching the HMP song-transition helper; otherwise compare cold-start state')
     parser.add_argument('--report', type=Path)
     args = parser.parse_args()
@@ -246,7 +247,7 @@ def main():
         parser.error('candidate MIDI is required unless --dump-events is used')
     result = compare(args.reference, args.candidate, args.reference_start_ms,
                      args.candidate_start_ms, args.duration_ms, args.tolerance_ms,
-                     args.candidate_initial_volume, args.shared_initial_state)
+                     args.candidate_initial_state, args.shared_initial_state)
     output = json.dumps(result, indent=2) + '\n'
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)

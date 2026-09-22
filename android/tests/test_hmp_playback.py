@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 
-from midi_diff import compare, note_volumes, read_midi
+from midi_diff import compare, note_states, note_volumes, read_midi
 
 EXPORTER = None
 
@@ -108,6 +108,67 @@ class PlaybackTests(unittest.TestCase):
         for length in (0, 0x307, branch, len(original) - 1):
             result, _ = self.export(original[:length])
             self.assertNotEqual(result.returncode, 0)
+
+    def test_device_tracks_are_alternatives_not_layers(self):
+        data = bytearray(0x308)
+        data[:8] = b'HMIMIDIP'
+        # Timing, untagged, FM, GM, digital samples, mixed GM/FM, unknown
+        devices = [None, (), (0xa002,), (0xa000,), (0xa005,), (0xa002, 0xa000), (0xabcd,)]
+        struct.pack_into('<III', data, 0x30, len(devices), 120, 120)
+        for i, tags in enumerate(devices):
+            if i:
+                for j, device in enumerate(tags):
+                    struct.pack_into('<I', data, 0x94 + (i - 1) * 20 + j * 4, device)
+            payload = bytes.fromhex('80 ff 2f 00') if i == 0 else (
+                bytes([0x80, 0xb9, 7, 127, 0x80, 0x99, 35 + i, 100,
+                       0x8a, 0x99, 35 + i, 0, 0x8a, 0xff, 0x2f, 0]))
+            data += struct.pack('<III', i, len(payload) + 12, 9) + payload
+        result, output = self.export(data)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)['filtered_tracks'], 3)
+        events, _ = read_midi(output)
+        self.assertEqual([e.data[0] for e in events if e.status == 0x99 and e.data[1]],
+                         [36, 38, 40, 36, 38, 40])
+        # Excluding an FM-only loop-control track must not trigger its branch
+        data, _ = make_fixture()
+        struct.pack_into('<I', data, 0x94, 0xa002)
+        result, _ = self.export(data)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)['branch_loop'], 0)
+
+    def test_fm_only_file_keeps_explicit_approximate_fallback(self):
+        data, _ = make_fixture()
+        # Like stock HMQ: a GM-tagged loop track, FM-only musical content
+        struct.pack_into('<I', data, 0x94, 0xa000)
+        struct.pack_into('<I', data, 0x94 + 20, 0xa002)
+        result, output = self.export(data)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        info = json.loads(result.stdout)
+        self.assertEqual(info['no_gm_arrangement'], 1)
+        self.assertEqual(info['filtered_tracks'], 0)
+        events, duration = read_midi(output)
+        self.assertEqual(len(note_volumes(events, 0, duration)[4]), 4)
+
+    def test_eof_resets_channels_and_waits_one_tick(self):
+        data = bytearray(0x308)
+        data[:8] = b'HMIMIDIP'
+        struct.pack_into('<III', data, 0x30, 2, 120, 120)
+        for i, payload in enumerate((bytes.fromhex('80 ff 2f 00'),
+                                     bytes.fromhex('80 b9 07 7f 80 99 24 64 8a 99 24 00 80 ff 2f 00'))):
+            data += struct.pack('<III', i, len(payload) + 12, 9) + payload
+        result, output = self.export(data)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertAlmostEqual(json.loads(result.stdout)['repeat_ms'], 11 * 1000 / 120, places=5)
+        events, duration = read_midi(output)
+        notes = [e for e in events if e.status == 0x99 and e.data[1]]
+        self.assertEqual(len(notes), 2)
+        self.assertAlmostEqual(notes[1].ms, 11 * 1000 / 120, places=5)
+        resets = [e for e in events if e.status == 0xb9 and e.data == (123, 0)]
+        self.assertEqual(len(resets), 2)
+        self.assertAlmostEqual(resets[0].ms, 10 * 1000 / 120, places=5)
+        self.assertAlmostEqual(resets[1].ms, 21 * 1000 / 120, places=5)
+        self.assertAlmostEqual(duration, 22 * 1000 / 120, places=5)
+        self.assertTrue(all(n['pitch_bend'] == 8256 for n in note_states(events, 0, duration)[9]))
 
     def test_ended_track_not_reactivated_and_unsupported_loops_reported(self):
         data, _ = make_fixture(ended_track=True)

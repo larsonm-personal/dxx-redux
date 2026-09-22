@@ -28,7 +28,8 @@ def extract_member(hog, name):
     raise ValueError(f'{name} not found in {hog}')
 
 
-def prepare(source, output, executable, config_name, song=None, hog_name='DESCENT.HOG'):
+def prepare(source, output, executable, config_name, song=None, hog_name='DESCENT.HOG',
+            music_device='general-midi', mute_effects=False):
     source, output = source.resolve(), output.resolve()
     if output == source or source in output.parents:
         raise ValueError('Capture output must be outside the source runtime')
@@ -50,7 +51,11 @@ def prepare(source, output, executable, config_name, song=None, hog_name='DESCEN
         shutil.copy2(bundled, cfg)
     original = cfg.read_text(encoding='ascii')
     (output / 'original-game.cfg').write_text(original, encoding='ascii')
-    for name, value in (('MidiDeviceID', '0xa001'), ('MidiPort', '0x330'), ('MidiVolume', '8')):
+    device, port = ('0xa001', '0x330') if music_device == 'general-midi' else ('0xa009', '0x388')
+    settings = [('MidiDeviceID', device), ('MidiPort', port), ('MidiVolume', '8')]
+    if mute_effects:
+        settings.append(('DigiVolume', '0'))
+    for name, value in settings:
         original, count = re.subn(rf'(?m)^{name}=.*$', f'{name}={value}', original)
         if count != 1:
             raise ValueError(f'Expected one {name} setting in {config_name}')
@@ -78,7 +83,7 @@ hdma=5
 @echo off
 mount c "{game}"
 c:
-echo Press Ctrl-Alt-F8 to arm MIDI capture, then Space to launch
+echo Press {'Ctrl-Alt-F8 for MIDI' if music_device == 'general-midi' else 'Ctrl-F6 for WAV'}, then Space to launch
 pause
 {executable}
 exit
@@ -97,7 +102,8 @@ exit
         (output / 'song.json').write_text(json.dumps({'hog': hog_name, 'song': song,
                                                     'sha256': hashlib.sha256(data).hexdigest()}, indent=2) + '\n', encoding='utf8')
     print(f'Prepared {output}')
-    print('Arm Ctrl+Alt+F8 at the pause; stop with the same shortcut before exiting')
+    shortcut = 'Ctrl+Alt+F8' if music_device == 'general-midi' else 'Ctrl+F6'
+    print(f'Arm {shortcut} at the pause; stop with the same shortcut before exiting')
 
 
 def main():
@@ -108,6 +114,9 @@ def main():
     parser.add_argument('--config', default='DESCENT.CFG')
     parser.add_argument('--song', help='Also extract an HMP/HMQ member for the MIDI comparison; does not select it in game')
     parser.add_argument('--hog', default='DESCENT.HOG')
+    parser.add_argument('--music-device', choices=('general-midi', 'adlib'), default='general-midi',
+                        help='General MIDI capture or the GOG D1 AdLib/FM device (0xa009)')
+    parser.add_argument('--mute-effects', action='store_true', help='Set private game effects volume to zero for clean music WAVs')
     args = parser.parse_args()
     if Path(args.exe).name != args.exe or not re.fullmatch(r'[A-Za-z0-9_.]+', args.exe):
         parser.error('--exe must be a DOS executable basename')
@@ -115,7 +124,8 @@ def main():
         parser.error('--config must be a basename')
     if Path(args.hog).name != args.hog or (args.song and (Path(args.song).name != args.song or Path(args.song).suffix.lower() not in ('.hmp', '.hmq'))):
         parser.error('--hog and --song must be basenames; song must be HMP/HMQ')
-    prepare(args.source, args.output, args.exe, args.config, args.song, args.hog)
+    prepare(args.source, args.output, args.exe, args.config, args.song, args.hog,
+            args.music_device, args.mute_effects)
 
 
 if __name__ == '__main__':

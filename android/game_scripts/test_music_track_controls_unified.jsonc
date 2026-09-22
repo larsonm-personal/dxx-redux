@@ -116,6 +116,15 @@
     {"action": "wait_ms", "ms": 250},
     {"action": "assert", "expect": {"music.track": "5"}},
 
+    // D1 track 11 is Level 7: device-specific FM/GM arrangements must not layer
+    {"action": "music_control", "when": "d1", "operation": "play", "track": 11},
+    {"action": "wait_ms", "when": "d1", "ms": 1500},
+    {"action": "assert", "when": "d1", "expect": {
+        "music.track": "11",
+        "audio.tsf_playing": true,
+        "audio.tsf_peak_sample": {"gt": 0},
+        "audio.tsf_clip_count": "0"
+    }},
     {"action": "log", "message": "=== TEST: Shared music track controls -- COMPLETE ==="},
     {"action": "introspect"}
 ]

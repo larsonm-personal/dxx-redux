@@ -528,6 +528,13 @@ if(NOT MSVC)
     target_compile_options(hmp_midi_export PRIVATE -Wall -Wextra)
 endif()
 find_package(Python3 COMPONENTS Interpreter)
+add_executable(midi_tsf_render midi_tsf_render.c ../shared/midi_seek_timeline.c
+                               ../shared/tsf_impl.c)
+target_include_directories(midi_tsf_render PRIVATE ../shared ${tinysoundfont_test_SOURCE_DIR})
+if(NOT MSVC)
+    target_link_libraries(midi_tsf_render PRIVATE m)
+    target_compile_options(midi_tsf_render PRIVATE -Wall -Wextra)
+endif()
 if(Python3_Interpreter_FOUND)
     add_test(
         NAME hmp_playback_tests

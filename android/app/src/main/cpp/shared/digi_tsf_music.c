@@ -252,7 +252,7 @@ static void hmp_dispatch(void *context, const void *event)
 			tsf_channel_set_presetnumber(synth, m->channel, m->program, m->channel == 9);
 			break;
 		case TML_CONTROL_CHANGE:
-			tsf_channel_midi_control(synth, m->channel, m->control, m->control_value);
+			hmp_tsf_control(synth, m->channel, m->control, m->control_value);
 			break;
 		case TML_PITCH_BEND:
 			tsf_channel_set_pitchwheel(synth, m->channel, m->pitch_bend);
@@ -1089,6 +1089,8 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 		}
 		bufsize = (unsigned int) midi_len;
 		g_is_hmp = 1;
+		if (g_hmp_info.no_gm_arrangement)
+			TSFMUSIC_LOG("HMP %s has no GM notes; retaining approximate all-track playback", filename);
 		if (g_hmp_info.unsupported_branches)
 			TSFMUSIC_LOG("HMP %s has unsupported branches; using linear playback", filename);
 	} else {

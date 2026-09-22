@@ -48,4 +48,24 @@ static inline void hmp_tsf_begin(tsf *synth, const struct hmp_tsf_state *state)
 	}
 }
 
+static inline void hmp_tsf_control(tsf *synth, int channel, int control, int value)
+{
+	if (control == 121 && channel >= 0 && channel < 16) {
+		struct hmp_tsf_state state;
+		hmp_tsf_capture(synth, &state);
+		tsf_channel_midi_control(synth, channel, control, value);
+		/* TSF's CC121 also erases bank/pan and leaves sustain set. HMI EOF
+		 * resets need the same persistent bank/pan as explicit song changes.
+		 */
+		tsf_channel_set_bank(synth, channel, state.bank[channel]);
+		tsf_channel_midi_control(synth, channel, 10, (int) (state.pan[channel] >> 7));
+		tsf_channel_midi_control(synth, channel, 42, (int) (state.pan[channel] & 127));
+		tsf_channel_midi_control(synth, channel, 39, 0);
+		tsf_channel_set_sustain(synth, channel, 0);
+		tsf_channel_set_pitchwheel(synth, channel, 8192);
+	} else {
+		tsf_channel_midi_control(synth, channel, control, value);
+	}
+}
+
 #endif

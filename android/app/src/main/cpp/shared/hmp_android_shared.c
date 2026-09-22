@@ -355,6 +355,27 @@ static int hmp_play_emit(unsigned char **out, unsigned int *len, uint32_t *last,
 	return 1;
 }
 
+/* The timing track has no device record. Tracks 1..31 have 20-byte records
+ * at 0x90: a reserved word and four driver designators. An empty list is
+ * universal; otherwise the General MIDI synth must select 0xa000 tracks.
+ * Level 7 contains separate FM, GM/GUS and digital-sample arrangements.
+ */
+static int hmp_play_track_uses_gm(const unsigned char *data, int track)
+{
+	unsigned int i, any = 0;
+	const unsigned char *record;
+	if (!track)
+		return 1;
+	record = data + 0x94 + (track - 1) * 20;
+	for (i = 0; i < 4; i++) {
+		uint32_t device = hmp_read_le32(record + i * 4);
+		if (device == 0xa000)
+			return 1;
+		any |= device;
+	}
+	return !any;
+}
+
 int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
                          unsigned char **midi, int *midi_len,
                          struct hmp_playback_info *info)
@@ -371,6 +392,7 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 	uint32_t branch_tick[HMP_TRACKS] = { 0 };
 	uint32_t track_end[HMP_TRACKS] = { 0 };
 	unsigned char initial_shift[HMP_TRACKS] = { 0 };
+	unsigned char selected[HMP_TRACKS] = { 0 };
 	unsigned char *out = NULL;
 	unsigned int out_len = 0;
 	size_t count = 0, capacity, i, n, branch_pos;
@@ -400,6 +422,7 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 		const unsigned char *end;
 		uint32_t tick = 0;
 		int first = 1, ended = 0;
+		selected[track] = (unsigned char) hmp_play_track_uses_gm(data, track);
 		if (!p || !hmp->trks[track].len)
 			goto fail;
 		end = p + hmp->trks[track].len;
@@ -452,28 +475,44 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 			events[count].a = a;
 			events[count].b = b;
 			events[count].track = (unsigned char) track;
-			if ((status & 0xf0) == 0xb0) {
-				if (a == 109 && b == 128) {
-					loop_tick = tick;
-					start_count++;
-				}
-				if (a == 110 && b != 255)
-					unsupported = 1;
-				if (a == 111) {
-					if (b != 128)
-						unsupported = 1;
-					loop_end = tick - initial_shift[track];
-					end_order = (uint32_t) count;
-					loop_count++;
-				}
-			}
 			count++;
 		}
 		if (!ended)
 			goto fail;
 		track_end[track] = tick;
-		if (tick > end_tick)
-			end_tick = tick;
+	}
+	/* Some FM-only HMQ files tag a loop-control track as GM but have no GM
+	 * notes. Preserve the previous approximate playback for those files,
+	 * explicitly reporting that no GM arrangement exists rather than muting.
+	 */
+	for (i = 0; i < count; i++)
+		if (selected[events[i].track] && (events[i].status & 0xf0) == 0x90 && events[i].b)
+			break;
+	if (i == count) {
+		info->no_gm_arrangement = 1;
+		memset(selected, 1, sizeof(selected));
+	}
+	for (track = 0; track < hmp->num_trks; track++) {
+		if (!selected[track]) info->filtered_tracks++;
+		else if (track_end[track] > end_tick) end_tick = track_end[track];
+	}
+	for (i = 0, n = 0; i < count; i++)
+		if (selected[events[i].track]) events[n++] = events[i];
+	count = n;
+	for (i = 0; i < count; i++) {
+		const struct hmp_play_event *e = &events[i];
+		if ((e->status & 0xf0) != 0xb0) continue;
+		if (e->a == 109 && e->b == 128) {
+			loop_tick = e->tick;
+			start_count++;
+		}
+		if (e->a == 110 && e->b != 255) unsupported = 1;
+		if (e->a == 111) {
+			if (e->b != 128) unsupported = 1;
+			loop_end = e->tick - initial_shift[e->track];
+			end_order = (uint32_t) i;
+			loop_count++;
+		}
 	}
 	if (!count || !end_tick)
 		goto fail;
@@ -500,7 +539,7 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 					goto fail;
 				r = data + record;
 				controls = hmp_read_le32(r + 8);
-				if (r[4] != 128)
+				if (!selected[track] || r[4] != 128)
 					continue;
 				if (branch[track] || r[5] > 127 || (r[7] & 1) ||
 				    controls > (unsigned int) len || r[7] > (unsigned int) len - controls)
@@ -541,10 +580,12 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 	out[13] = (unsigned char) hmp->tempo;
 	/* New songs are silent until their first CC7. This is not replayed at a branch */
 	for (track = 0; track < 16; track++)
-		if (!hmp_play_emit(&out, &out_len, &last, 0, (unsigned char) (0xb0 + track), 7, 0))
+		/* Captured HMI reset sends bytes 64,64 (8256), not 0,64 (8192) */
+		if (!hmp_play_emit(&out, &out_len, &last, 0, (unsigned char) (0xe0 + track), 64, 64) ||
+		    !hmp_play_emit(&out, &out_len, &last, 0, (unsigned char) (0xb0 + track), 7, 0))
 			goto fail;
 	for (pass = 0; pass <= !!repeat; pass++) {
-		uint32_t base = pass ? end_tick : 0;
+		uint32_t base = pass ? end_tick + !have_loop : 0;
 		if (pass && have_loop) {
 			for (track = 0; track < hmp->num_trks; track++) {
 				const unsigned char *r = branch[track], *controls;
@@ -590,7 +631,25 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 			if (!hmp_play_emit(&out, &out_len, &last, e->tick, e->status, e->a, e->b))
 				goto fail;
 		}
+		if (!have_loop) {
+			unsigned int reset_channels = 0;
+			/* EOF restarts the song, unlike a branch. HMI stops/reset channels
+			 * at EOF and starts the next pass one driver tick later.
+			 */
+			for (i = 0; i < count; i++) {
+				unsigned char channel = events[i].status & 15;
+				unsigned char control = (unsigned char) (0xb0 + channel);
+				if (reset_channels & (1u << channel)) continue;
+				reset_channels |= 1u << channel;
+				if (!hmp_play_emit(&out, &out_len, &last, base + end_tick, control, 123, 0) ||
+				    !hmp_play_emit(&out, &out_len, &last, base + end_tick, control, 121, 0) ||
+				    !hmp_play_emit(&out, &out_len, &last, base + end_tick, (unsigned char) (0xe0 + channel), 64, 64) ||
+				    !hmp_play_emit(&out, &out_len, &last, base + end_tick, control, 7, 0))
+					goto fail;
+			}
+		}
 	}
+	if (!have_loop) end_tick++;
 	info->repeat_ms = repeat ? end_tick * (1000.0 / hmp->tempo) : 0;
 	if (repeat)
 		end_tick += have_loop ? end_tick - loop_tick : end_tick;

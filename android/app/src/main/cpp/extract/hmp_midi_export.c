@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 	if (ok) ok = export_loaded_events(argv[2], messages, info.end_ms);
 	tml_free(messages);
 	free(midi);
-	printf("{\"repeat_ms\":%.6f,\"end_ms\":%.6f,\"branch_loop\":%d,\"unsupported_branches\":%d}\n",
-	       info.repeat_ms, info.end_ms, info.branch_loop, info.unsupported_branches);
+	printf("{\"repeat_ms\":%.6f,\"end_ms\":%.6f,\"branch_loop\":%d,\"unsupported_branches\":%d,\"filtered_tracks\":%d,\"no_gm_arrangement\":%d}\n",
+	       info.repeat_ms, info.end_ms, info.branch_loop, info.unsupported_branches, info.filtered_tracks, info.no_gm_arrangement);
 	return ok ? 0 : 1;
 }

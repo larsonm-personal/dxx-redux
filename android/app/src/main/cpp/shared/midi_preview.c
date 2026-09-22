@@ -210,7 +210,10 @@ static void dispatch_midi_event(void *context, const void *event)
 			tsf_channel_set_presetnumber(synth, m->channel, m->program, (m->channel == 9));
 			break;
 		case TML_CONTROL_CHANGE:
-			tsf_channel_midi_control(synth, m->channel, m->control, m->control_value);
+			if (s_hmp_end_ms > 0)
+				hmp_tsf_control(synth, m->channel, m->control, m->control_value);
+			else
+				tsf_channel_midi_control(synth, m->channel, m->control, m->control_value);
 			break;
 		case TML_PITCH_BEND:
 			tsf_channel_set_pitchwheel(synth, m->channel, m->pitch_bend);
@@ -352,7 +355,10 @@ static void approximate_seek(int target_ms)
 					int control = (unsigned char) message->control;
 					int value = (unsigned char) message->control_value;
 					approximate_control_change(seek_channel, control, value);
-					tsf_channel_midi_control(s_tsf, channel, control, value);
+					if (s_hmp_end_ms > 0)
+						hmp_tsf_control(s_tsf, channel, control, value);
+					else
+						tsf_channel_midi_control(s_tsf, channel, control, value);
 					break;
 				}
 				case TML_PITCH_BEND:
@@ -690,6 +696,8 @@ int midi_preview_start(const unsigned char *data, int len,
 			return 0;
 		}
 		s_hmp_end_ms = hmp_info.end_ms;
+		if (hmp_info.no_gm_arrangement)
+			LOGI("HMP has no GM notes; retaining approximate all-track playback");
 	} else {
 		/* Standard MIDI: copy the data */
 		midi_data = (unsigned char *) d_malloc(len);
