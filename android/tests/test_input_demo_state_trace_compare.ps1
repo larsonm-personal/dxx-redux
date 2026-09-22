@@ -80,6 +80,21 @@ try {
         throw "mismatched object-state compare missed diagnostics`n$($objectStateMismatch.Output)"
     }
 
+    $plainActualPath = $actualPath
+    $actualPath = "$actualPath.gz"
+    foreach ($linkErrors in @(0, 1)) {
+        Write-FixtureTrace -Path $plainActualPath -SegmentLinkErrorCount $linkErrors
+        $stream = [IO.File]::Create($actualPath)
+        $gzip = [IO.Compression.GZipStream]::new($stream, [IO.Compression.CompressionMode]::Compress)
+        try {
+            $payload = [IO.File]::ReadAllBytes($plainActualPath)
+            $gzip.Write($payload, 0, $payload.Length)
+        } finally { $gzip.Dispose(); $stream.Dispose() }
+        $compressed = Invoke-CompareFixture
+        if ($compressed.ExitCode -ne $linkErrors) {
+            throw "Compressed state comparison returned $($compressed.ExitCode), expected $linkErrors`n$($compressed.Output)"
+        }
+    }
     Write-Host 'PASS'
 } finally {
     if (Test-Path -LiteralPath $fixtureDir) {

@@ -17,6 +17,14 @@ struct active_door;
 fix d1_in_d2_pickup_boost(fix base_boost);
 fix d1_in_d2_contact_damage(fix damage);
 fix d1_in_d2_blast_damage(fix damage);
+/* Native objects without a supplied orientation retain D1's cleared matrix */
+void d1_in_d2_initialize_object_orientation(struct object *obj, const vms_matrix *orientation);
+/* Native pickup animation; expiration remains in the shared powerup frame */
+int d1_in_d2_animate_powerup(struct object *obj);
+/* Preserve the source fireball radius with the caller's single FX draw */
+fix d1_in_d2_small_fireball_size(const struct object *obj, fix scale, int random_value);
+/* Complete native lava impact; zero leaves D2's powerful-weapon rules active */
+int d1_in_d2_volatile_weapon_impact(struct object *weapon, short segment, vms_vector *hit_point);
 /* Adjust native Vulcan contents; true requests an ordinary ammo-box pickup */
 int d1_in_d2_prepare_vulcan_pickup(int weapon_index, int new_weapon, int duplicate_reward, int *ammo);
 /* Native D1 still bumps an exploding robot; engine actors retain D2 filtering */
@@ -38,6 +46,8 @@ int d1_in_d2_remove_obsolete_stuck_objects(void);
 int d1_in_d2_replace_powerup(struct object *container);
 
 int d1_in_d2_reactor_countdown(int engine_seconds);
+/* Complete native dead-reactor burn phase; inactive consumes no RNG */
+int d1_in_d2_dead_reactor_effects(void);
 
 vms_vector *d1_in_d2_badass_explosion_pos(struct object *weapon, vms_vector *collision_point);
 vms_vector *d1_in_d2_prepare_player_explosion_pos(struct object *weapon, vms_vector *collision_point);

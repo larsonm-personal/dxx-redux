@@ -65,6 +65,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_coop_start_fanout_mapset'
             'test_counterstrike_level2_trigger21_route'
             'test_cue_iso'
+            'test_d1_in_d2_standalone'
             'test_d2xxl_sound_format'
             'test_d2xxl_tga_layout'
             'test_dep_platform'
@@ -96,6 +97,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_host_metadata_worker'
             'test_host_metadata_workspace'
             'test_input_demo_explicit_path'
+            'test_input_demo_comparison_policy'
             'test_input_demo_host_build_guard'
             'test_input_demo_regressions'
             'test_input_demo_replay_menu'
@@ -145,12 +147,15 @@ function Get-TestSuiteCoveragePolicy {
             'test_xfing_asset_validation'
         )
         explicit = @(
+            # Full semantic coverage is still incomplete; retain a nonzero gate
+            'test_d1_replay_parity'
             'test_dual_emu'
             'test_dual_emu_setup'
             'test_keyboard_manual'
             'test_lan_discovery'
             'test_level_metadata_benchmark'
             'test_manual_lan_coop'
+            'test_maximum_nested_secret'
             'test_skip_every_launch_button_manual_unified'
         )
         extended_graphics = @(
@@ -215,6 +220,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_level_metadata_result_cache_reuse'
             'test_lunar_series_revamped_metadata_only'
             'test_mission_launch_cache'
+            'test_mission_metadata_flyouts'
+            'test_mission_provenance'
             'test_route_metadata_background_priority'
             'test_route_metadata_import_handoff'
             'test_route_metadata_large_level_budget'
@@ -226,6 +233,7 @@ function Get-TestSuiteCoveragePolicy {
         )
         route_guidance = @(
             'test_guidebot_goal_message'
+            'test_guidebot_info_overlay'
             'test_guidebot_mission_metadata'
             'test_guidebot_simulation_headed_headless_parity'
             'test_obsidian_level1_objective_markers'

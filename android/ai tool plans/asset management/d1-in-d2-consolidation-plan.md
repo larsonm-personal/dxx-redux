@@ -41,7 +41,7 @@ The implementation has moved well beyond the original D2-first overlay. Register
 | F4. Retire migration paths and close persistence | Section 16 E1-E5: remove old overlay/capture/backup APIs and test-only production paths; finish namespace/trigger/travel consumers | One resource lifecycle, documented serialized identities, actual save/reload/rewind and applicable network travel tests, no unexplained transitional owner/hook |
 | F5. Release qualification | Section 16 E6 plus presentation/resource comparisons and platform matrix | Strict corpus passes on declared targets; D1-only cold startup/error/menu/shutdown; custom/stock and D1/D2 switching; ordinary D2 regression; explicit remaining unsupported scope |
 
-F1 is the next implementation priority. Do not postpone whole-game evidence until after optional features. Serialization and lifecycle checks run alongside F2/F3, not only in F4. Each fix keeps the source-owner boundary and removes its superseded body in the same review. Native D1 remains the reference engine; deleting it is a separate decision after F5
+F1 is in progress. The paired runner now stages D1-only assets, pins its inputs and binaries, captures two native runs and one imported run, and reports recording/native-repeat/imported relationships independently. Full semantic observations and cross-engine diagnostic mappings remain open, so it deliberately cannot report complete fidelity qualification. Do not postpone whole-game evidence until after optional features. Serialization and lifecycle checks run alongside F2/F3, not only in F4. Each fix keeps the source-owner boundary and removes its superseded body in the same review. Native D1 remains the reference engine; deleting it is a separate decision after F5
 
 ### Exact reproduction using the D1 regression demos
 
@@ -66,7 +66,33 @@ The 167 MiB level-14 recording is now admitted by the shared 256 MiB ceiling. Th
 
 These are today's result-summary comparisons, not strict per-frame certification. Both runs used byte-identical D1 HOG/PIG files, with D2 assets additionally available to the imported run. No native repeatability or per-frame/RNG comparison was performed in this stocktake. The native level-14 failure predates relocation; its additional cross-engine divergence remains a concrete F1/F2 investigation target. Logs and archived actual results are recorded in the ledger
 
-Level-14 follow-up: the [divergence investigation](../input%20demo,%20replay,%20determinism/level14-20260920-divergence.md) identifies a replay-only homing search as the native failure. A controlled rendered run using ordinary acquisition matches all recorded frame-state fields and the final result. Imported playback has a separate earlier positional drift and first angle mismatch at frame 3654; removing the homing substitution alone does not establish imported parity. The experiment was reverted pending a complete solution that also preserves targeting without rendering
+Level-14 follow-up: the [divergence investigation](../input%20demo,%20replay,%20determinism/level14-20260920-divergence.md) identifies a replay-only homing search as the native failure. A controlled rendered run using ordinary acquisition matches all recorded frame-state fields and the final result. The subsequent collision, flare, ammo and factory-mode fixes eliminate the imported drift: all 5,696 native/imported frame summaries and selected physical diagnostics match. That comparison does not yet cover every live field or establish recording fidelity. The homing experiment was reverted pending a complete solution that also preserves targeting without rendering
+
+Paired-corpus follow-up: the stricter observer exposed D2 small-fireball sizing,
+reactor burn scale and powerful-weapon lava impacts still leaking into D1. These
+now belong to the semantics owner. After those repairs, all five recordings
+match native D1 across 15,462 frame summaries, twelve physical/runtime diagnostics,
+full terminal results and 40,910 SIM RNG values, with repeatable native references
+and D1-only staged assets. Raw diagnostic/context differences and missing complete
+semantic snapshots still keep the full F1 gate incomplete; see the ledger for
+the exact compared fields, artifacts and remaining native recording failure
+
+The follow-up inventory checks all 360 emitted diagnostic fields independently,
+so the earliest whole-world hash difference cannot conceal later mismatches.
+It exposed newly allocated objects inheriting D2's identity orientation where
+D1 leaves a cleared matrix, first visible on a Vulcan round in level 14 frame
+467. Native initialization now belongs to the semantics owner, with real native,
+imported and ordinary-D2 allocation tests. This extends observed state coverage;
+it does not close the complete semantic-snapshot requirement
+
+Named-object follow-up: the shared observer now emits lossless slot records with
+active object fields, AI locals, allocator/segment links, clocks and both actual
+RNG streams. The first complete level-5 comparison exposed missing restored
+reactor gun caches and D2 pickup-animation speed/direction rules. Their fixes
+belong to the save translator and semantics owner, respectively, and pass stock/
+custom checkpoint and loaded-animation comparisons. The full pre-advance,
+pre-retirement and non-object world schemas remain open; the ledger records the
+precise coverage and raw representation differences
 
 Implement F1 in this order:
 
@@ -83,6 +109,8 @@ Implement F1 in this order:
 The equality target is exact canonical D1 simulation state and event order for identical inputs, not binary equality of different engine structs. Pixel/audio fidelity needs the separate matched-renderer/resource checks below. Record expected non-simulation metadata differences explicitly, and do not call a partial diagnostic projection a complete state comparison
 
 ### Existing runner gaps to fix in F1
+
+The table records the starting gaps. The current implementation fixes D1-only staging, deterministic reference identity validation, missing-reference rejection and comparison ordering. `-StrictComparison` disables terminal-result substitution; the paired runner independently compares the complete raw result. Its native-repeat/imported trace comparison retains every available diagnostic, including differences that still require a semantic mapping. Full restored/terminal snapshots remain unfinished
 
 | Current source behavior | Required change |
 | --- | --- |

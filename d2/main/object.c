@@ -72,6 +72,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "timer.h"
 #include "d1_in_d2/d1_in_d2_ai.h"
+#include "d1_in_d2/d1_in_d2_semantics.h"
 #include "homing_compat.h"
 #include "d1_in_d2/d1_in_d2_weapons.h"
 #include "input_demo_hooks.h"
@@ -832,7 +833,7 @@ void create_small_fireball_on_object(object *objp, fix size_scale, int sound_fla
 
 	vm_vec_add2(&pos, &rand_vec);
 
-	size = fixmul(size_scale, F1_0/2 + d_rand_fx()*4/2);
+	size = d1_in_d2_small_fireball_size(objp, size_scale, d_rand_fx());
 
 	segnum = find_point_seg(&pos, objp->segnum);
 	if (segnum != -1) {
@@ -1572,7 +1573,7 @@ int obj_create(enum object_type_t type,ubyte id,int segnum,const vms_vector *pos
 	//@@if (orient != NULL)
 	//@@	obj->orient 			= *orient;
 
-	obj->orient 				= orient?*orient:vmd_identity_matrix;
+	d1_in_d2_initialize_object_orientation(obj, orient);
 
 	obj->control_type 		= ctype;
 	obj->movement_type 		= mtype;

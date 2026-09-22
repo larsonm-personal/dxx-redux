@@ -3,7 +3,11 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <sstream>
 #include <vector>
+#include <zlib.h>
+#include "input_demo_object_trace.h"
+#include "input_demo_state_trace.h"
 #include <nlohmann/json.hpp>
 #include <SDL.h>
 #undef main
@@ -573,6 +577,54 @@ static void install_native_trigger(int index, short flags)
 	source.value = 3 * F1_0;
 	source.time = 9 * F1_0;
 #endif
+}
+
+static void test_object_state_trace()
+{
+	for (const char *path : { "object-state-test.jsonl", "object-state-test.jsonl.gz" }) {
+		init_test_corridor();
+		vms_vector point = {};
+		const int slot = obj_create(OBJ_WEAPON, VULCAN_ID, 0, &point, &vmd_identity_matrix, F1_0, CT_WEAPON, MT_PHYSICS, RT_NONE);
+		require(slot > 0, "create observed weapon");
+		const int signature = Objects[slot].signature;
+		char error[256] = {};
+		require(input_demo_state_trace_start(path, "replay", "d1", "d1", 1, 0, "save_checkpoint", 5, error, sizeof(error)), "open object trace");
+		const auto sim_calls = d_rand_get_call_count();
+		const auto fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		require(input_demo_object_trace_write(0, error, sizeof(error)), "initial object snapshot");
+		require(input_demo_object_trace_write(1, error, sizeof(error)), "unchanged object delta");
+		Objects[slot].orient.fvec.z = 123;
+		Objects[slot].mtype.phys_info.rotthrust.y = 456;
+		Objects[slot].ctype.laser_info.hitobj_list[MAX_OBJECTS - 1] = 1;
+		require(input_demo_object_trace_write(2, error, sizeof(error)), "object field delta");
+		obj_delete(slot);
+		require(input_demo_object_trace_write(3, error, sizeof(error)), "object deletion delta");
+		require(obj_create(OBJ_WEAPON, VULCAN_ID, 0, &point, &vmd_identity_matrix, F1_0, CT_WEAPON, MT_PHYSICS, RT_NONE) == slot, "reuse observed slot");
+		require(input_demo_object_trace_write(4, error, sizeof(error)), "object reuse delta");
+		input_demo_state_trace_stop();
+		require(sim_calls == d_rand_get_call_count() && fx_calls == d_rand_get_stream_call_count(D_RNG_FX), "object observation consumes no RNG");
+		gzFile file = gzopen(path, "rb");
+		require(file != nullptr, "read plain or compressed object trace");
+		std::string text;
+		char block[4096];
+		int size;
+		while ((size = gzread(file, block, sizeof(block))) > 0) text.append(block, size);
+		require(size == 0 && gzclose(file) == Z_OK, "object trace stream is complete");
+		std::remove(path);
+		std::istringstream lines(text);
+		std::string line;
+		std::vector<nlohmann::json> rows;
+		while (std::getline(lines, line)) rows.push_back(nlohmann::json::parse(line));
+		const auto key = std::to_string(slot);
+		require(rows.size() == 6 && rows[1]["reset"].is_boolean() && rows[1]["reset"].get<bool>(), "initial object trace is complete");
+		require(rows[1]["slots"][key]["signature"] == signature && rows[1]["slots"][key]["orient"][2][2] == F1_0, "trace retains source identity and orientation");
+		require(rows[2]["slots"].empty(), "unchanged slots are losslessly elided");
+		require(rows[3]["slots"][key]["orient"][2][2] == 123 && rows[3]["slots"][key]["physics"]["rotthrust"][1] == 456 &&
+			rows[3]["slots"][key]["weapon"]["hitobj_list"][MAX_OBJECTS - 1] == 1, "observe fields absent from old hashes");
+		require(rows[4]["slots"].contains(key) && rows[4]["slots"][key].is_null(), "deleted slots emit tombstones");
+		require(rows[5]["slots"][key]["signature"] != signature && rows[5]["slots"][key]["weapon"]["hitobj_list"][MAX_OBJECTS - 1] == 0, "reused slot replaces its complete state");
+		require(rows[5]["allocator"]["free_obj_list"].size() == MAX_OBJECTS && rows[5]["rng"].size() == 2, "allocator and both actual RNG streams are observed");
+	}
 }
 
 static short native_trigger_flags(int index)
@@ -5755,8 +5807,8 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 	init_player_stats_game(0);
 	Difficulty_level = 2;
 #ifdef DXX_BUILD_DESCENT_II
-	LoadLevel(1, 0);
-	gameseq_init_network_players();
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(1);
 #else
 	StartNewLevelSub(1, 0, 0);
 	char baseline[] = "baseline.sav";
@@ -5836,6 +5888,23 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 	};
 	const json fresh_textures = texture_references();
 	const json fresh_triggers = snapshot_native_triggers();
+	const auto reactor_guns = [] {
+		json guns = json::array();
+		for (int slot = 0; slot <= Highest_object_index; ++slot) {
+			const auto &obj = Objects[slot];
+			if (obj.type != OBJ_CNTRLCEN || obj.control_type != CT_CNTRLCEN || obj.render_type != RT_POLYOBJ)
+				continue;
+			const reactor *definition = get_reactor_definition(obj.id);
+			for (int gun = 0; gun < definition->n_guns; ++gun) {
+				const auto &position = obj.ctype.reactor_info.gun_pos[gun];
+				const auto &direction = obj.ctype.reactor_info.gun_dir[gun];
+				guns.push_back({ slot, gun, position.x, position.y, position.z, direction.x, direction.y, direction.z });
+			}
+		}
+		return guns;
+	};
+	const json fresh_reactor_guns = reactor_guns();
+	require(!fresh_reactor_guns.empty(), "checkpoint mine contains a live reactor with prepared guns");
 	const auto restore = [&](char *filename) {
 #ifdef DXX_BUILD_DESCENT_II
 		if (custom && std::strcmp(filename, "route-0.sav") == 0) {
@@ -5891,6 +5960,10 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 #endif
 		ConsoleObject = Viewer = &Objects[Players[Player_num].objnum];
 		FrameTime = F1_0 / 64;
+		const auto restored_reactor_guns = reactor_guns();
+		if (restored_reactor_guns != fresh_reactor_guns)
+			std::fprintf(stderr, "Reactor gun restore: fresh=%s restored=%s\n", fresh_reactor_guns.dump().c_str(), restored_reactor_guns.dump().c_str());
+		require(restored_reactor_guns == fresh_reactor_guns, "checkpoint rebuilds reactor gun positions and directions before simulation");
 	};
 	const auto vector = [](const vms_vector &v) { return json::array({ v.x, v.y, v.z }); };
 	json cases = json::array();
@@ -6013,7 +6086,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 	}
 	FILE *output = std::fopen("frames.json", "wb");
 	require(output != nullptr, "open restored frame trace");
-	const std::string result = json({ { "fresh_textures", fresh_textures }, { "fresh_triggers", fresh_triggers }, { "fresh_assets", fresh_assets }, { "cases", cases } }).dump(2) + "\n";
+	const std::string result = json({ { "fresh_textures", fresh_textures }, { "fresh_triggers", fresh_triggers }, { "fresh_assets", fresh_assets }, { "reactor_guns", fresh_reactor_guns }, { "cases", cases } }).dump(2) + "\n";
 	require(std::fwrite(result.data(), 1, result.size(), output) == result.size(), "write complete restored frame trace");
 	std::fclose(output);
 	std::puts("Restored robot frame trace passed");
@@ -6637,6 +6710,61 @@ static nlohmann::json exercise_contact_motion(bool native)
 
 // Compare complete shared-engine operations, including wall state and RNG, in
 // registered native/imported content. D2 also exercises its own installed bank.
+static nlohmann::json exercise_volatile_impacts(bool native)
+{
+	auto result = nlohmann::json::array();
+	const tmap_info original = TmapInfo[1];
+	TmapInfo[1].flags = TMI_VOLATILE;
+	TmapInfo[1].eclip_num = -1;
+	Game_mode = 0;
+	Player_num = 0;
+	collide_init();
+	for (const int id : { LASER_ID_L1, CONCUSSION_ID, MEGA_ID })
+		for (int difficulty = 0; difficulty < NDL; ++difficulty)
+			for (const int exploding : { 0, 1 }) {
+				init_test_corridor();
+				Difficulty_level = difficulty;
+				Players[0].objnum = 0;
+				Players[0].flags = PLAYER_FLAGS_INVULNERABLE;
+				Players[0].shields = ConsoleObject->shields = 100 * F1_0;
+				ConsoleObject->mtype.phys_info.mass = F1_0;
+				vms_vector point = { 0, 0, -5 * F1_0 };
+				const int target = obj_create(OBJ_ROBOT, 0, 0, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
+				require(target > 0, "create lava blast target");
+				object &robot = Objects[target];
+				robot.flags = exploding ? OF_EXPLODING : 0;
+				robot.shields = exploding ? -F1_0 : 1000 * F1_0;
+				robot.mtype.phys_info.mass = F1_0;
+				point.z = -9 * F1_0;
+				const int source = obj_create(OBJ_WEAPON, id, 0, &point, &vmd_identity_matrix, F1_0 / 4, CT_WEAPON, MT_NONE, RT_NONE);
+				require(source > 0, "create lava impact weapon");
+				object &weapon = Objects[source];
+				weapon.ctype.laser_info.parent_type = OBJ_PLAYER;
+				weapon.ctype.laser_info.parent_num = 0;
+				weapon.ctype.laser_info.parent_signature = ConsoleObject->signature;
+				weapon.ctype.laser_info.multiplier = F1_0;
+				weapon.shields = Weapon_info[id].strength[difficulty];
+				weapon.mtype.phys_info.velocity.z = -30 * F1_0;
+				d_srand(123);
+				d_srand_stream(D_RNG_FX, 456);
+				d_rand_reset_call_count();
+				d_rand_reset_stream_call_count(D_RNG_FX);
+				point.z = -10 * F1_0;
+				collide_object_with_wall(&weapon, F1_0, 0, 5, &point);
+				const object &explosion = Objects[source + 1];
+				require(explosion.type == OBJ_FIREBALL && (weapon.flags & OF_SHOULD_BE_DEAD), "real lava collision creates an explosion and retires the weapon");
+				const bool boosted = native || Weapon_info[id].damage_radius < 15 * F1_0;
+				require(explosion.size == Weapon_info[id].impact_size + (boosted ? 3 * F1_0 : 0), "native lava keeps its original impact size even for powerful weapons");
+				result.push_back({ id, difficulty, exploding, explosion.id, explosion.size, explosion.lifeleft,
+				                   explosion.pos.x, explosion.pos.y, explosion.pos.z, robot.shields,
+				                   robot.mtype.phys_info.velocity.x, robot.mtype.phys_info.velocity.y, robot.mtype.phys_info.velocity.z,
+				                   robot.mtype.phys_info.rotvel.x, robot.mtype.phys_info.rotvel.y, robot.mtype.phys_info.rotvel.z,
+				                   d_rand_get_call_count(), d_rand_get_stream_call_count(D_RNG_FX) });
+			}
+	TmapInfo[1] = original;
+	return result;
+}
+
 static nlohmann::json exercise_gameplay_rules(bool native)
 {
 	using nlohmann::json;
@@ -6646,6 +6774,93 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 	Player_is_dead = 0;
 	json doors = json::array(), pickups = json::array(), damage = json::array(), drops = json::array();
 	json vulcan = json::array();
+	json object_orientations = json::array();
+	json powerup_animation = json::array();
+	init_test_corridor();
+	for (int index = 0; index < 4; ++index) {
+		vms_vector point = {};
+		const int slot = obj_create(OBJ_POWERUP, POW_ENERGY, 0, &point, nullptr, F1_0, CT_POWERUP, MT_NONE, RT_POWERUP);
+		require(slot > 0, "create animated pickup");
+		auto &animation = Objects[slot].rtype.vclip_info;
+		animation.vclip_num = Powerup_info[POW_ENERGY].vclip_num;
+		const auto &clip = Vclip[animation.vclip_num];
+		require(clip.num_frames > 1 && clip.frame_time > 0, "pickup has original animation frames");
+		animation.frametime = clip.frame_time;
+		animation.framenum = static_cast<sbyte>(clip.num_frames - 1);
+		const auto sim_calls = d_rand_get_call_count(), fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		int step = 0;
+		for (const fix elapsed : { 0, clip.frame_time, 1, clip.frame_time * 3 + 1 }) {
+			FrameTime = elapsed;
+			do_powerup_frame(&Objects[slot]);
+			if (step == 2)
+				require(animation.framenum == (native || !(slot & 1) ? 0 : clip.num_frames - 2), "native pickups advance forward while ordinary D2 keeps alternating direction");
+			powerup_animation.push_back({ slot, step++, elapsed, animation.frametime, animation.framenum });
+		}
+		require(sim_calls == d_rand_get_call_count() && fx_calls == d_rand_get_stream_call_count(D_RNG_FX), "pickup animation consumes neither RNG stream");
+	}
+	for (const auto type : { OBJ_WEAPON, OBJ_FIREBALL, OBJ_POWERUP, OBJ_ROBOT }) {
+		for (const bool supplied : { false, true }) {
+			init_test_corridor();
+			vms_vector point = {};
+			vms_angvec angles = { 1000, 2000, 3000 };
+			vms_matrix orientation;
+			vm_angles_2_matrix(&orientation, &angles);
+			const int index = obj_create(type, type == OBJ_WEAPON ? VULCAN_ID : 0, 0, &point,
+				supplied ? &orientation : nullptr, F1_0, CT_NONE, MT_NONE, RT_NONE);
+			require(index > 0, "create object with optional orientation");
+			const vms_matrix zero = {};
+			const vms_matrix &expected = supplied ? orientation : native ? zero : vmd_identity_matrix;
+			const auto &actual = Objects[index].orient;
+			require(!std::memcmp(&actual, &expected, sizeof(actual)), "object initialization preserves the source orientation default");
+			object_orientations.push_back({ type, supplied, actual.rvec.x, actual.rvec.y, actual.rvec.z,
+				actual.uvec.x, actual.uvec.y, actual.uvec.z, actual.fvec.x, actual.fvec.y, actual.fvec.z });
+		}
+	}
+	json small_fireballs = json::array();
+	json reactor_fireballs = json::array();
+	for (const unsigned seed : { 1u, 456u }) {
+		init_test_corridor();
+		FrameTime = F1_0;
+		Control_center_destroyed = 0;
+		Countdown_seconds_left = 10;
+		vms_vector point = {};
+		Dead_controlcen_object_num = obj_create(OBJ_CNTRLCEN, 0, 0, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_NONE, RT_NONE);
+		require(Dead_controlcen_object_num > 0, "create burnt reactor");
+		d_srand_stream(D_RNG_FX, seed);
+		d_rand_reset_stream_call_count(D_RNG_FX);
+		const auto sim_calls = d_rand_get_call_count();
+		do_controlcen_dead_frame();
+		const int index = Objects[Dead_controlcen_object_num].attached_obj;
+		require(index > 0 && Objects[index].type == OBJ_FIREBALL, "dead reactor phase creates an attached burn effect");
+		const auto &fireball = Objects[index];
+		require(fireball.size >= (native ? 3 * F1_0 : F1_0 / 2) && fireball.size < (native ? 9 * F1_0 : 3 * F1_0 / 2),
+		        "reactor burn retains native source scale or ordinary D2 scale");
+		require(d_rand_get_call_count() == sim_calls, "reactor burn consumes only FX RNG");
+		reactor_fireballs.push_back({ seed, fireball.size, fireball.lifeleft, fireball.pos.x, fireball.pos.y, fireball.pos.z,
+		                             d_rand_get_stream_call_count(D_RNG_FX) });
+	}
+	Dead_controlcen_object_num = -1;
+	for (const auto type : { OBJ_PLAYER, OBJ_ROBOT, OBJ_CNTRLCEN })
+		for (const fix scale : { F1_0 / 2, F1_0, F1_0 * 3 })
+			for (const unsigned seed : { 1u, 456u }) {
+				init_test_corridor();
+				ConsoleObject->type = type;
+				ConsoleObject->id = 0;
+				ConsoleObject->size = F1_0;
+				d_srand_stream(D_RNG_FX, seed);
+				d_rand_reset_stream_call_count(D_RNG_FX);
+				const auto sim_calls = d_rand_get_call_count();
+				create_small_fireball_on_object(ConsoleObject, scale, 0);
+				const int index = ConsoleObject->attached_obj;
+				require(index > 0 && Objects[index].type == OBJ_FIREBALL, "small fireball is created and attached to its source");
+				const auto &fireball = Objects[index];
+				require(d_rand_get_call_count() == sim_calls, "attached fireball consumes only the FX stream");
+				require(fireball.size >= (native ? scale : scale / 2) && fireball.size < (native ? scale * 3 : scale * 3 / 2),
+				        "native fireball size range retains D1 presentation while ordinary D2 stays smaller");
+				small_fireballs.push_back({ type, scale, seed, fireball.size, fireball.lifeleft, fireball.flags,
+				                           fireball.pos.x, fireball.pos.y, fireball.pos.z, fireball.rtype.vclip_info.vclip_num,
+				                           d_rand_get_stream_call_count(D_RNG_FX) });
+			}
 	for (const bool owned : { false, true })
 		for (const int contents : { 0, VULCAN_AMMO_AMOUNT, VULCAN_WEAPON_AMMO_AMOUNT }) {
 			init_test_corridor();
@@ -6676,6 +6891,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 	const auto robot_pairs = exercise_robot_pairs(native);
 	const auto resource_drops = exercise_resource_drops(native);
 	const auto secondary_explosions = exercise_secondary_explosions(native);
+	const auto volatile_impacts = exercise_volatile_impacts(native);
 	Game_mode = 0;
 	Player_num = 0;
 	N_players = 1;
@@ -6826,7 +7042,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 					}
 				}
 	Game_mode = 0;
-	return { { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "secondary_explosions", secondary_explosions } };
+	return { { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "powerup_animation", powerup_animation }, { "object_orientations", object_orientations }, { "small_fireballs", small_fireballs }, { "reactor_fireballs", reactor_fireballs }, { "volatile_impacts", volatile_impacts }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "secondary_explosions", secondary_explosions } };
 }
 
 static void write_gameplay_rules_trace(const char *directory, const char *d2_directory)
@@ -6921,6 +7137,7 @@ int main(int argc, char **argv)
 #endif
 #endif
 	std::fprintf(stderr, "Testing life limits\n");
+	test_object_state_trace();
 	test_lives();
 	std::fprintf(stderr, "Testing wall crossing, door pixels and rotated RLE overlays\n");
 	test_endlevel_flythrough();

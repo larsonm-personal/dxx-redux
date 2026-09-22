@@ -33,6 +33,7 @@ param(
     [switch]$TraceRng,
     [switch]$CompareRngTrace,
     [switch]$SkipExpectedChecks,
+    [switch]$StrictComparison,
     [string]$ResultCopyPath,
     [string]$ReferenceResultPath,
     [switch]$D1InD2,
@@ -399,18 +400,10 @@ function Get-GameConfig {
 
 function Get-D1InD2GameConfig {
     $config = Get-GameConfig -Name 'd2'
-    $config.RequiredFiles = @(
-        'DESCENT2.HOG',
-        'DESCENT2.HAM',
-        'GROUPA.PIG',
-        'DESCENT.HOG',
-        'DESCENT.PIG'
-    )
-    $config.RequiredHashes = @()
-    $config.DefaultDataDirs = @(
-        (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'temp'),
-        (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'data')
-    ) + $config.DefaultDataDirs
+    $native = Get-GameConfig -Name 'd1'
+    $config.RequiredFiles = $native.RequiredFiles
+    $config.RequiredHashes = $native.RequiredHashes
+    $config.DefaultDataDirs = $native.DefaultDataDirs
     return $config
 }
 
@@ -1012,7 +1005,7 @@ function Get-LaunchArguments {
         $launchParameters += '-inputdemo-debug-log'
     }
     if ($D1InD2) {
-        $launchParameters += '-inputdemo-d1-in-d2'
+        $launchParameters += @('-d1', '-inputdemo-d1-in-d2')
     }
     if ($D1InD2StartFromLevel) {
         $launchParameters += '-inputdemo-d1-in-d2-start-from-level'
@@ -1132,15 +1125,22 @@ function Normalize-ExpectedResult {
 function Normalize-D1InD2ExpectedResult {
     param(
         [hashtable]$Expected,
-        [hashtable]$Actual
+        [hashtable]$Header
     )
 
-    $normalized = ConvertTo-DeepHashtableClone -Value $Expected
-    foreach ($key in @('game', 'mission')) {
-        if ($normalized.ContainsKey($key) -and $Actual.ContainsKey($key)) {
-            $normalized[$key] = $Actual[$key]
-        }
+    if ($Header.game -cne 'd1') { throw 'Imported comparison requires a D1 recording' }
+    $nativeMission = [string]$Header.mission
+    $importedMission = if ($nativeMission -cin @('', 'd1', 'descent')) { 'descent' } else { $nativeMission }
+    if ($Expected.game -ceq 'd1') {
+        if ($Expected.mission -cne $nativeMission) { throw 'Native reference mission does not match the recording' }
+    } elseif ($Expected.game -ceq 'd2') {
+        if ($Expected.mission -cne $importedMission) { throw 'Imported reference mission does not match the recording' }
+    } else {
+        throw 'Reference result has an unexpected engine identity'
     }
+    $normalized = ConvertTo-DeepHashtableClone -Value $Expected
+    $normalized.game = 'd2'
+    $normalized.mission = $importedMission
     return $normalized
 }
 
@@ -1453,6 +1453,9 @@ if ($D1InD2) {
     $config = Get-GameConfig -Name $resolvedGame
 }
 $resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
+if ($StrictComparison -and ($SkipExpectedChecks -or $AllowMissingActualResult -or $D1InD2StartFromLevel)) {
+    throw 'Strict comparison requires the unchanged start state, an actual result and enabled comparisons'
+}
 if ($ResolveDataDirOnly) {
     if ($D1InD2) {
         Write-Host "Resolved d1-in-d2 data dir: $resolvedDataDir"
@@ -1707,18 +1710,19 @@ $stateTraceCompareError = $null
 $stateTraceExpectedPath = $null
 $rngTraceCompareError = $null
 $rngTraceExpectedPath = $null
-if ($actualResult -and $D1InD2) {
-    $expectedForCompare = Normalize-D1InD2ExpectedResult -Expected $expectedForCompare -Actual $actualResult
-}
-if ($actualResult -and (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory -Expected $expectedForCompare -Actual $actualResult)) {
-    $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $expectedForCompare -Actual $actualResult
-}
 $resolvedReferenceResultPath = Resolve-AbsolutePath -Path $ReferenceResultPath
 if ($resolvedReferenceResultPath) {
     if (-not (Test-Path -LiteralPath $resolvedReferenceResultPath -PathType Leaf)) {
         throw "Reference replay result not found: $resolvedReferenceResultPath"
     }
     $expectedForCompare = Read-JsonFileAsHashtable -Path $resolvedReferenceResultPath
+}
+if ($D1InD2) {
+    $expectedForCompare = Normalize-D1InD2ExpectedResult -Expected $expectedForCompare -Header $header
+}
+if (-not $StrictComparison -and -not $resolvedReferenceResultPath -and $actualResult -and
+    (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory -Expected $expectedForCompare -Actual $actualResult)) {
+    $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $expectedForCompare -Actual $actualResult
 }
 if ($resolvedStateLogPath) {
     if (-not (Test-Path -LiteralPath $resolvedStateLogPath)) {
@@ -1824,7 +1828,11 @@ if ($compareError -or $stateTraceCompareError -or $rngTraceCompareError) {
 }
 
 Write-Host ''
-Write-Host 'RESULT: PASS' -ForegroundColor Green
+if ($SkipExpectedChecks) {
+    Write-Host 'RESULT: CAPTURED (expected-result comparison disabled)'
+} else {
+    Write-Host 'RESULT: PASS' -ForegroundColor Green
+}
 
 if (-not $KeepSandbox) {
     Remove-Item -LiteralPath $sandbox.Directory -Recurse -Force -ErrorAction SilentlyContinue

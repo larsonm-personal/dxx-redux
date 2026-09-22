@@ -44,6 +44,7 @@ $cases = $trace.cases.Count
 Write-Output "PASS: $cases native checkpoint scenarios, $($cases * 4) restored robot frames match"
 Write-Output "PASS: $($trace.fresh_textures.Count) side texture pairs match after fresh load and each checkpoint restore"
 Write-Output "PASS: native trigger actions, source state, values and links match after fresh load and each checkpoint restore"
+Write-Output "PASS: $($trace.reactor_guns.Count) reactor gun positions and directions match after fresh load and every checkpoint restore"
 if ($CustomAssets) {
     Write-Output "PASS: custom robot/model/joint definitions, pixels and samples match after fresh load and every checkpoint reload"
 }

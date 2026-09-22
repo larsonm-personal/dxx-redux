@@ -379,6 +379,8 @@ $testTimeouts = @{
     "test_vertigo_metadata_checkpoints"   = 600
     "test_input_demo_determinism_matrix"  = 600
     "test_input_demo_regressions"         = 1200
+    "test_d1_replay_parity"               = 1800
+    "test_d1_in_d2_standalone"            = 300
     "test_input_demo_regressions_graphics" = 900
     "test_level_metadata_benchmark"       = 300
     "test_launcher_dpad"                  = 180
@@ -457,6 +459,8 @@ $noInfraTests = @(
     "test_input_demo_regressions",
     "test_input_demo_regressions_graphics",
     "test_input_demo_replay_menu",
+    "test_input_demo_comparison_policy",
+    "test_d1_replay_parity",
     "test_input_demo_runtime_smoke",
     "test_level_metadata_benchmark",
     "test_native_host_unit_tests",

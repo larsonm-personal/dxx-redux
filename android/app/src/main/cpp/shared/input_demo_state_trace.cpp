@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <string>
+#include <zlib.h>
 
 #include <nlohmann/json.hpp>
 
@@ -25,6 +26,7 @@ enum {
 typedef struct input_demo_state_trace_session {
 	int active;
 	FILE *file;
+	gzFile compressed_file;
 	char source[INPUT_DEMO_STATE_TRACE_MAX_SOURCE];
 } input_demo_state_trace_session;
 
@@ -37,51 +39,14 @@ static int copy_error(const char *message, char *error, size_t error_size)
 	return 0;
 }
 
-static void write_json_string(FILE *out, const char *text)
-{
-	const unsigned char *cursor = (const unsigned char *) (text ? text : "");
-
-	fputc('"', out);
-	for (; *cursor; ++cursor) {
-		switch (*cursor) {
-			case '\\':
-				fputs("\\\\", out);
-				break;
-			case '"':
-				fputs("\\\"", out);
-				break;
-			case '\b':
-				fputs("\\b", out);
-				break;
-			case '\f':
-				fputs("\\f", out);
-				break;
-			case '\n':
-				fputs("\\n", out);
-				break;
-			case '\r':
-				fputs("\\r", out);
-				break;
-			case '\t':
-				fputs("\\t", out);
-				break;
-			default:
-				if (*cursor < 0x20)
-					fprintf(out, "\\u%04x", (unsigned int) *cursor);
-				else
-					fputc(*cursor, out);
-				break;
-		}
-	}
-	fputc('"', out);
-}
-
 static void reset_session(void)
 {
 	if (g_input_demo_state_trace_session.file) {
 		fclose(g_input_demo_state_trace_session.file);
 		g_input_demo_state_trace_session.file = NULL;
 	}
+	if (g_input_demo_state_trace_session.compressed_file)
+		gzclose(g_input_demo_state_trace_session.compressed_file);
 	memset(&g_input_demo_state_trace_session, 0, sizeof(g_input_demo_state_trace_session));
 }
 
@@ -685,8 +650,6 @@ int input_demo_state_trace_start(const char *path,
                                  char *error,
                                  size_t error_size)
 {
-	FILE *file;
-
 	if (!path || !path[0])
 		return copy_error("missing input demo state trace path", error, error_size);
 	if (!source || !source[0])
@@ -698,28 +661,27 @@ int input_demo_state_trace_start(const char *path,
 	if (!start_mode || !start_mode[0])
 		return copy_error("missing input demo state trace start_mode", error, error_size);
 	reset_session();
-	file = fopen(path, "wb");
-	if (!file)
+	const size_t length = strlen(path);
+	if (length >= 3 && strcmp(path + length - 3, ".gz") == 0)
+		g_input_demo_state_trace_session.compressed_file = gzopen(path, "wb1");
+	else
+		g_input_demo_state_trace_session.file = fopen(path, "wb");
+	if (!g_input_demo_state_trace_session.file && !g_input_demo_state_trace_session.compressed_file)
 		return copy_error("could not open input demo state trace file", error, error_size);
-	g_input_demo_state_trace_session.file = file;
 	g_input_demo_state_trace_session.active = 1;
 	snprintf(g_input_demo_state_trace_session.source,
 	         sizeof(g_input_demo_state_trace_session.source),
 	         "%s",
 	         source);
-	fputs("{\"type\":\"meta\",\"version\":1,\"source\":", file);
-	write_json_string(file, source);
-	fputs(",\"game\":", file);
-	write_json_string(file, game);
-	fputs(",\"mission\":", file);
-	write_json_string(file, mission);
-	fprintf(file,
-	        ",\"level\":%d,\"difficulty\":%d,\"start_mode\":",
-	        level,
-	        difficulty);
-	write_json_string(file, start_mode);
-	fprintf(file, ",\"frame_count\":%u}\n", frame_count);
-	fflush(file);
+	const ordered_json meta = {
+		{ "type", "meta" }, { "version", 1 }, { "source", source }, { "game", game },
+		{ "mission", mission }, { "level", level }, { "difficulty", difficulty },
+		{ "start_mode", start_mode }, { "frame_count", frame_count }
+	};
+	if (!input_demo_state_trace_write_json(meta.dump().c_str(), error, error_size)) {
+		reset_session();
+		return 0;
+	}
 	return 1;
 }
 
@@ -760,34 +722,35 @@ int input_demo_state_trace_write_frame(uint32_t frame,
                                        size_t error_size)
 {
 	char state_json[INPUT_DEMO_STATE_TRACE_MAX_STATE_JSON] = "";
-	FILE *file;
-	std::string diag_json;
-	std::string diag_error;
-
-	if (!g_input_demo_state_trace_session.active || !g_input_demo_state_trace_session.file)
-		return copy_error("input demo state trace is not active", error, error_size);
 	if (!state)
 		return copy_error("missing input demo state trace frame state", error, error_size);
 	if (!input_demo_result_snapshot_to_json_buffer(state, state_json, sizeof(state_json)))
 		return copy_error("could not encode input demo state trace frame state", error, error_size);
-	if (diag && !input_demo_state_trace_diag_to_json_text(diag, &diag_json, &diag_error))
-		return copy_error(diag_error.c_str(), error, error_size);
-	file = g_input_demo_state_trace_session.file;
-	fputs("{\"type\":\"frame_state\",\"source\":", file);
-	write_json_string(file, g_input_demo_state_trace_session.source);
-	fprintf(file,
-	        ",\"f\":%u,\"ft\":%d,\"rng\":{\"s\":%u",
-	        frame,
-	        frame_time,
-	        rng_state);
+	ordered_json frame_json = {
+		{ "type", "frame_state" }, { "source", g_input_demo_state_trace_session.source },
+		{ "f", frame }, { "ft", frame_time }, { "rng", { { "s", rng_state } } }
+	};
 	if (has_rng_call_count)
-		fprintf(file, ",\"c\":%u", rng_call_count);
-	fputs("}", file);
+		frame_json["rng"]["c"] = rng_call_count;
 	if (diag)
-		fprintf(file, ",\"diag\":%s", diag_json.c_str());
-	fprintf(file, ",\"state\":%s}\n", state_json);
-	if (fflush(file) != 0)
-		return copy_error("could not flush input demo state trace file", error, error_size);
+		frame_json["diag"] = input_demo_state_trace_build_diag_json(*diag);
+	frame_json["state"] = ordered_json::parse(state_json);
+	return input_demo_state_trace_write_json(frame_json.dump().c_str(), error, error_size);
+}
+
+int input_demo_state_trace_write_json(const char *json, char *error, size_t error_size)
+{
+	auto &session = g_input_demo_state_trace_session;
+	if (!session.active || !json)
+		return copy_error("input demo state trace is not active or record is missing", error, error_size);
+	std::string line(json);
+	line += '\n';
+	if (session.compressed_file) {
+		if (gzwrite(session.compressed_file, line.data(), static_cast<unsigned>(line.size())) != static_cast<int>(line.size()) ||
+			gzflush(session.compressed_file, Z_SYNC_FLUSH) != Z_OK)
+			return copy_error("could not write compressed input demo state trace", error, error_size);
+	} else if (!session.file || fwrite(line.data(), 1, line.size(), session.file) != line.size() || fflush(session.file) != 0)
+		return copy_error("could not write input demo state trace", error, error_size);
 	return 1;
 }
 }

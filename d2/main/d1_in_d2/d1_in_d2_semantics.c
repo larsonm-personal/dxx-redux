@@ -20,9 +20,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "d1_in_d2_semantics.h"
 
 #include <stdio.h>
+#include <string.h>
 #include "d1_in_d2.h"
 #include "d1_in_d2_ai.h"
 #include "bm.h"
+#include "cntrlcen.h"
 #include "ai.h"
 #include "fireball.h"
 #include "fvi.h"
@@ -37,6 +39,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "texmerge.h"
 #include "wall.h"
 #include "weapon.h"
+#include "vclip.h"
 #include "multi.h"
 #include "input_demo_hooks.h"
 #include "input_demo_debug_logging.h"
@@ -93,6 +96,67 @@ fix d1_in_d2_contact_damage(fix damage)
 fix d1_in_d2_blast_damage(fix damage)
 {
 	return !d1_in_d2_use_d1_gameplay() && Difficulty_level == 0 ? damage / 4 : damage;
+}
+
+void d1_in_d2_initialize_object_orientation(object *obj, const vms_matrix *orientation)
+{
+	if (orientation)
+		obj->orient = *orientation;
+	else if (d1_in_d2_use_d1_gameplay() &&
+		(obj->type != OBJ_ROBOT || d1_in_d2_ai_actor_role(obj) == D1_AI_NATIVE_ENEMY))
+		/* D1 leaves the newly cleared matrix alone when no orientation is supplied */
+		memset(&obj->orient, 0, sizeof(obj->orient));
+	else
+		obj->orient = vmd_identity_matrix;
+}
+
+int d1_in_d2_animate_powerup(object *obj)
+{
+	vclip_info *animation;
+	vclip *clip;
+	if (!d1_in_d2_use_d1_gameplay())
+		return 0;
+	animation = &obj->rtype.vclip_info;
+	clip = &Vclip[animation->vclip_num];
+	animation->frametime -= FrameTime;
+	while (animation->frametime < 0) {
+		animation->frametime += clip->frame_time;
+		if (++animation->framenum >= clip->num_frames)
+			animation->framenum = 0;
+	}
+	return 1;
+}
+
+fix d1_in_d2_small_fireball_size(const object *obj, fix scale, int random_value)
+{
+	const int native = d1_in_d2_use_d1_gameplay() &&
+		(obj->type != OBJ_ROBOT || d1_in_d2_ai_actor_role(obj) == D1_AI_NATIVE_ENEMY);
+	return fixmul(scale, native ? F1_0 + random_value * 4 : F1_0 / 2 + random_value * 2);
+}
+
+int d1_in_d2_volatile_weapon_impact(object *weapon, short segment, vms_vector *hit_point)
+{
+	weapon_info *wi;
+	if (!d1_in_d2_use_d1_gameplay())
+		return 0;
+	wi = &Weapon_info[weapon->id];
+	object_create_badass_explosion(weapon, segment, hit_point,
+		wi->impact_size + i2f(3), VCLIP_VOLATILE_WALL_HIT,
+		wi->strength[Difficulty_level] / 4 + i2f(10),
+		wi->damage_radius + i2f(30),
+		wi->strength[Difficulty_level] / 2 + i2f(5),
+		weapon->ctype.laser_info.parent_num);
+	return 1;
+}
+
+int d1_in_d2_dead_reactor_effects(void)
+{
+	if (!d1_in_d2_use_d1_gameplay())
+		return 0;
+	if (Dead_controlcen_object_num != -1 && Countdown_seconds_left > 0)
+		if (d_rand_fx() < FrameTime * 4)
+			create_small_fireball_on_object(&Objects[Dead_controlcen_object_num], F1_0 * 3, 1);
+	return 1;
 }
 
 int d1_in_d2_robot_contact_allowed(const object *robot)

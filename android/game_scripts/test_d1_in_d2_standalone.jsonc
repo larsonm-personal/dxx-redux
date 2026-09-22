@@ -1,5 +1,11 @@
 // Run with helpers/test_d1_in_d2_android.ps1; the runner isolates all app data
 [
+    {"_info": {
+        "description": "Original D1 assets and gameplay in an isolated D2-engine installation",
+        "games": ["d2"],
+        "_standalone": false,
+        "_owner": "test_d1_in_d2_standalone"
+    }},
     {"action": "enter_launcher"},
     {"action": "enter_game", "game": "d1-in-d2"},
     {"action": "skip_intro", "timeout_ms": 30000},

@@ -65,7 +65,8 @@ if ($D2DataDirectory) {
 foreach ($dataFile in $dataFiles) {
     if (-not (Test-Path -LiteralPath $dataFile -PathType Leaf)) { throw "Missing $dataFile" }
 }
-$steps = Get-Content (Join-Path $repo 'android/game_scripts/test_d1_in_d2_standalone.jsonc') -Raw | ConvertFrom-Json
+$steps = @(Get-Content (Join-Path $repo 'android/game_scripts/test_d1_in_d2_standalone.jsonc') -Raw | ConvertFrom-Json |
+        Where-Object { -not $_._info })
 if ($D2DataDirectory) {
     $steps[1].game = 'd2'
     # Prove the initial D2 bank before selecting First Strike, then prove the

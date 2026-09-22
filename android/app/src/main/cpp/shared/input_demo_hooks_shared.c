@@ -18,6 +18,7 @@
 #include "input_demo_result.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_state_trace.h"
+#include "input_demo_object_trace.h"
 #include "laser.h"
 #include "maths.h"
 #include "mission.h"
@@ -686,7 +687,8 @@ void input_demo_write_replay_frame_state_trace_shared(
 	                                       &diag,
 	                                       &actual_state,
 	                                       error,
-	                                       sizeof(error)))
+	                                       sizeof(error)) &&
+	    input_demo_object_trace_write(replay_frame->frame, error, sizeof(error)))
 		return;
 	if (!logged_state_trace_error || !*logged_state_trace_error)
 		con_printf(CON_NORMAL, "Input demo replay state trace write failed: %s\n", error);
@@ -743,6 +745,14 @@ void input_demo_capture_runtime_state_diag(input_demo_state_trace_diag *diag)
 	if (!diag)
 		return;
 
+	if (ConsoleObject) {
+		diag->player_vel_x = ConsoleObject->mtype.phys_info.velocity.x;
+		diag->player_vel_y = ConsoleObject->mtype.phys_info.velocity.y;
+		diag->player_vel_z = ConsoleObject->mtype.phys_info.velocity.z;
+		diag->player_last_x = ConsoleObject->last_pos.x;
+		diag->player_last_y = ConsoleObject->last_pos.y;
+		diag->player_last_z = ConsoleObject->last_pos.z;
+	}
 	object_get_runtime_state(&object_state);
 	laser_get_runtime_state(&laser_state);
 	free_start = object_state.num_objects;

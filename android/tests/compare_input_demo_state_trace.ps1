@@ -517,7 +517,15 @@ function Read-StateTraceFrames {
 
     $frames = [ordered]@{}
     $lastFrameTime = $null
-    foreach ($line in [System.IO.File]::ReadLines((Resolve-Path -LiteralPath $Path).Path)) {
+    $traceFile = [IO.File]::OpenRead((Resolve-Path -LiteralPath $Path).Path)
+    $reader = $null
+    try {
+        $stream = $traceFile
+        if ($Path.EndsWith('.gz', [StringComparison]::OrdinalIgnoreCase)) {
+            $stream = [IO.Compression.GZipStream]::new($traceFile, [IO.Compression.CompressionMode]::Decompress)
+        }
+        $reader = [IO.StreamReader]::new($stream)
+        while ($null -ne ($line = $reader.ReadLine())) {
         if (-not (Test-JsonRecordLine -Line $line)) {
             continue
         }
@@ -564,6 +572,10 @@ function Read-StateTraceFrames {
             continue
         }
         $frames[[string]$traceFrame] = $record
+    }
+    } finally {
+        if ($reader) { $reader.Dispose() }
+        $traceFile.Dispose()
     }
     return $frames
 }

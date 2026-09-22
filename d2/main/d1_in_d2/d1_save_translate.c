@@ -852,8 +852,17 @@ static int d1_save_translate_validate_object_references(object *objects,
 			}
 			obj->rtype.pobj_info.model_num = model_num;
 		}
-		if (obj->type == OBJ_CNTRLCEN)
+		if (obj->type == OBJ_CNTRLCEN) {
 			obj->id = 0;
+			/* Gun caches are derived, not serialized in native saves. Rebuild
+			 * them from the restored pose, just as D1's object restore does */
+			if (obj->control_type == CT_CNTRLCEN && obj->render_type == RT_POLYOBJ) {
+				reactor *definition = get_reactor_definition(obj->id);
+				int gun;
+				for (gun = 0; gun < definition->n_guns; ++gun)
+					calc_controlcen_gun_point(definition, obj, gun);
+			}
+		}
 		if (obj->attached_obj != -1 && objects[obj->attached_obj].type == OBJ_NONE) {
 			con_printf(CON_URGENT, "D1 checkpoint translation: stale attachment at object %d target=%d\n", i, obj->attached_obj);
 			return 0;

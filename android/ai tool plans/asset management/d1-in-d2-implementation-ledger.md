@@ -955,3 +955,255 @@ Validation: D1/D2/headless host builds succeeded; CTest passed 51/51 and 59/59;
 passed, including six new Vulcan cases. The other four imported D1 demos (5, 15,
 16, 18) passed the unchanged regression runner. Scoped quality and diff whitespace
 checks passed; temporary native engine probes were removed
+
+## 2026-09-21: strict paired replay evidence foundation
+
+Added `android/tests/test_d1_replay_parity.ps1` and its streaming Python comparator.
+Each selected D1 recording runs twice in native D1 and once in D1-in-D2, using
+unchanged checkpoints and an isolated directory containing only `descent.hog`
+and `descent.pig`. The existing replay wrapper now selects `-d1` explicitly and
+resolves D1 resources independently of D2 asset availability
+
+The manifest pins recordings/checkpoints, recorded RNG traces, player settings,
+asset hashes, executable hashes/architecture and launch settings. Runs archive
+commands, complete results, compressed state/RNG traces, the source patch and
+runner sources. A changing executable invalidates the capture. Recording/native,
+native-repeat and native/imported comparisons remain independent. Required
+missing references, malformed/truncated traces and missing frames are errors;
+wrong mission identities cannot be normalized from actual results. Strict result
+comparison never uses the legacy terminal-exit player/position substitution
+
+State-trace metadata describes the recording in both engines; terminal results
+describe the executing binary. This distinction is validated explicitly. All
+available diagnostics remain in the strict comparison. RNG output separately
+reports the first value/timing/count mismatch so an earlier object-context
+annotation cannot hide an algorithm difference. Context mismatches still fail
+the strict comparison
+
+The broader comparison exposed incomplete instrumentation: native D1 left six
+player velocity/previous-position diagnostics at zero, while D2 populated them.
+Moved the existing capture into the shared runtime observer and removed the D2
+duplicate. This changes observations only. Raw AI hashes still use different
+engine-specific field layouts, and native RNG object-context coverage is narrower
+than D2's. Those differences remain visible, not silently excluded
+
+Full fidelity qualification is deliberately incomplete and nonzero until the
+complete restored, per-frame and pre-retirement semantic schema is implemented.
+The runner is available through `run_all_tests.ps1 -Filter test_d1_replay_parity`
+as an explicit investigation. Its comparison-policy tests run in the normal
+suite. The existing Android D1-only scenario now has a top-level catalog owner;
+metadata is filtered before its step-index transformations. Missing existing
+coverage entries were registered so catalog validation no longer blocks replay
+test selection
+
+Validation completed so far: both host builds including D2 headless, 51/51 D1
+and 59/59 D2 CTests, all ten comparator tests, replay-menu and explicit-path tests,
+the filtered suite entry and catalog validation. The installed Android x86-64
+APK passed the isolated First Strike interaction/level-transition scenario
+(`temp/d1-launch-runtime-20260921-100440`), including original light/lava/reactor
+checks. This is device scenario evidence, not a new APK build for the observer edit
+
+The complete paired corpus was captured in `temp/d1_replay_parity_verified`.
+All five native repeats match, and native/imported frame summaries, terminal
+results and 40,910 SIM RNG values match across 15,462 frames. The twelve-field
+physical/runtime diagnostic projection also matches on levels 5, 14 and 16, but
+exposes additional fireball/robot motion differences on levels 15 and 18. These
+are investigated below; summary equality alone would have missed them
+
+The earlier `d1_replay_parity_corpus` attempt was interrupted after a rebuild
+invalidated its executable hashes; its rejected captures are not parity evidence.
+Older large level-14 state traces were losslessly compressed with SHA-256
+verification and are now at their original paths plus `.gz`
+
+### Additional native effect and lava-impact repairs
+
+- Level 15, frame 1886: the dying player's attached fireball radius was 55,606
+  instead of native 111,212. D2 halves the small-fireball size formula. The
+  semantics owner now selects the native formula for D1 actors using the same
+  single caller-supplied FX draw; optional engine actors retain D2 policy
+- Level 18, frame 1865: a lava impact produced a seven-unit explosion instead
+  of native ten, with different blast forces on dying robots 121 and 122.
+  D2 substitutes an ordinary explosion for powerful weapons hitting lava.
+  Native D1 always adds the lava impact size/range and uses its own damage/force
+  formula and clip. The semantics owner now handles that complete native impact;
+  the original collision function dispatches at the existing volatile-wall phase
+- The dead-reactor burn phase also passed D2's scale of one instead of D1's three.
+  It now dispatches to an owned native FX phase, including the unchanged cadence
+  draw and native fireball scale. Countdown control remains in the engine
+
+Added loaded-asset comparisons through the real fireball, reactor-frame and wall
+collision entry points: 18 attached-fireball cases, two reactor burns and 30 lava
+impacts, including alive/exploding robots across every difficulty. Native and
+imported output matches exactly, including radii, positions, damage, robot
+velocity/rotation and RNG counts. The ordinary D2 bank is exercised separately.
+The existing gameplay-rule comparison and all 110 host CTests pass. Both host
+builds succeed; scoped quality checks pass. The targeted level-18 object probe
+was removed from source after identifying the force/size difference
+
+The complete paired corpus with these repairs finished in
+`temp/d1_replay_parity_effects_fixed`: all fifteen captures succeeded without
+changing binaries or staged assets. Every native repeat matches. Native/imported
+frame summaries, full terminal results, all twelve selected physical/runtime
+diagnostics and all 40,910 SIM RNG values match across 15,462 frames
+
+| Level | Frames | SIM RNG events | Native/imported observed comparisons |
+| --- | ---: | ---: | --- |
+| 14 | 5,696 | 14,381 | Equal |
+| 15 | 2,006 | 3,941 | Equal |
+| 16 | 2,696 | 12,896 | Equal |
+| 18 | 2,634 | 3,809 | Equal |
+| 5 | 2,430 | 5,883 | Equal |
+
+`report.json` retains every unmapped diagnostic/context difference and the full
+qualification gaps; `observed-parity.json` names the exact twelve-field projection
+and its results. The strict runner still exits 1, not a full-fidelity pass.
+Native level 14 still differs from its recording because of the independently
+diagnosed homing-replay issue; the other four native terminal results match their
+recordings. Full semantic and presentation qualification remains open. No
+recorded expectation has been replaced
+
+### Diagnostic inventory and source object initialization
+
+The paired comparator now records each diagnostic field's first mismatch and
+number of differing frames, alongside its unchanged strict verdict. Previously,
+the first `live_object_hash` mismatch concealed later diagnostic differences in
+the report. Reanalysis of the pinned effects-fixed corpus examined all 360 fields
+in every frame (`temp/d1-parity-diagnostic-inventory.json`). It found a further
+weapon orientation difference in all five recordings: first at level 14 frame
+467, level 15 frame 1575, level 16 frame 2329, level 18 frame 494 and level 5
+frame 20. This inventory is diagnostic evidence, not full-state qualification
+
+At level 14 frame 467, weapon slot 27/signature 323 is a newly created Vulcan
+round (ID 11). Its native forward vector is zero; the imported forward vector is
+`(0, 0, 65536)`, with equal velocity and all previously hashed weapon fields.
+Native `obj_create` clears the structure and only copies an explicitly supplied
+orientation; D2 instead supplies the identity matrix. The semantics owner now
+initializes native objects with the original cleared default, retaining explicit
+orientations and ordinary D2/companion defaults. The original D2 allocation site
+has one operation call. This is a state-initialization repair, not evidence that
+Vulcan orientation caused the previously fixed ship-angle drift
+
+Eight real allocation cases cover weapons, fireballs, powerups and native robots,
+with absent and supplied non-identity matrices. Their native/imported results
+match; ordinary D2 retains its identity default. Both host builds and all 110
+CTests pass. The comparator's 12 tests include a later orientation mismatch hidden
+by an earlier unrelated field, a missing diagnostic key, and null diagnostic
+objects that must fail closed. Scoped mixed-language quality checks pass
+
+The remaining AI diagnostics require explicit schema work: the current hashes
+combine different engine fields and orders. Source inspection finds D1's
+`follow_path_start_seg`, `follow_path_end_seg`, `last_see_time` and
+`last_attack_time` in persistence/serialization code but no active simulation
+consumer; the translator currently discards them. Their populated values must
+still be accounted for in the semantic/persistence contract rather than silently
+removed from comparison. Whole-world hashes also remain unqualified until their
+individual objects and typed resource identities can be examined
+
+Final corpus after the initialization repair:
+`temp/d1_replay_parity_orientation_fixed/report.json`. All 15 captures completed
+with pinned binaries and D1-only assets; all native repeats match. Across all
+15,462 frames, the formerly differing weapon forward-vector components now
+match, as do frame summaries, full terminal results, the twelve previously
+tracked physical/runtime diagnostics and all 40,910 SIM RNG values/order/timing.
+Every one of the 360 emitted diagnostics was examined on every frame. Levels
+14/16/18 match 344 fields throughout; levels 15/5 match 345. The remaining 15 or
+16 fields are the AI and whole-world/slot/link diagnostics named in the report;
+they remain strict failures until explained by complete semantic observations
+
+The runner exits 1 as intended for those unresolved differences and still marks
+full qualification incomplete. Native-versus-recording terminal results remain
+equal on levels 5/15/16/18 and unequal on level 14. No expected recording was
+changed. Build/test logs: `temp/d1-orientation-build.log`,
+`temp/d1-orientation-tests.log`, `temp/d1-orientation-quality.log`; full corpus
+launch log: `temp/d1-orientation-parity.log`. The modified engine code was tested
+on the Windows host; this repair has not yet been built into a fresh Android APK
+
+### Named object observations and two further fidelity repairs
+
+`android/app/src/main/cpp/shared/input_demo_object_trace.cpp` now observes the
+actual live object table after every traced replay frame. Its version-1 records
+name common object fields and active physics/control/render fields, including
+all matrix components, thrust/rotational state, weapon hit history, animation
+state, reactor guns and per-robot AI locals. Full allocator order, segment heads,
+clocks and the actual states/counters of both RNG streams accompany every record.
+Unchanged slots are losslessly omitted; changed slots replace the complete
+object; deletion is an explicit null tombstone. This does not interpret padding
+or inactive unions. Retained ghost polygon data and morph AI data remain visible
+
+The observer is shared instrumentation, with one shared replay-hook call and one
+source-list entry per engine. It does not change the simulation or draw RNG.
+The state writer now accepts `.gz` paths and compresses as it writes; the paired
+runner requests this format and the existing PowerShell trace comparator reads
+it. The object comparator reconstructs every frame, rejects missing/order/reset/
+slot evidence, and reports each differing named field independently. Raw
+engine-specific fields and values remain archived; there is no reactor/AI mapping
+or exclusion list yet
+
+The initial named level-5 experiment is at
+`temp/d1_replay_parity_objects_level5/report.json`. Both native runs agree on all
+2,430 reconstructed object states, allocator/link/clock data and both RNG
+streams. In addition to known representation differences it exposed:
+
+- Reactor slot 161: native ID 26 versus translated resource ID 0, both using
+  model 39. This is concrete evidence for a pending typed-identity mapping,
+  rather than an explanation inferred solely from a differing hash
+- The imported reactor's four active gun positions/directions were all zero.
+  Native saves omit these derived caches, and native restore rebuilds them from
+  the restored pose. The translator now performs that same operation on its
+  private staged objects before committing the checkpoint, with the original
+  live-reactor/control/render guards. Rejected checkpoints remain non-mutating
+- Beginning at frame 1, native pickup animation diverged in frame/time. D2 adds
+  a slot-dependent time fudge and animates odd slots backward. Native D1 always
+  advances forward by `FrameTime`. The semantics owner now handles that native
+  animation operation; expiration remains in the common powerup frame
+
+The loaded rules fixture compares 16 animation steps across all four slot phases,
+including exact frame boundaries and multiple advances; ordinary D2 retains its
+speed/direction policy. Actual stock and custom checkpoint comparisons now check
+all four reactor guns after every restore (seven scenarios and 28 AI frames for
+each asset mode). Both pass exactly. The imported fixture's fresh baseline now
+uses `StartNewGame` instead of stopping at `LoadLevel`, so its derived state is
+initialized through the production lifecycle before comparison
+
+All 110 host CTests pass with the final repairs. The object observer's integration
+case exercises plain/gzip output, unchanged slots, previously unhashed fields,
+deletion/reuse and both RNG counters. The paired comparator has 15 passing tests;
+the PowerShell trace comparator also passes plain/gzip equality and mismatch
+cases. Both host builds and scoped quality checks pass. Logs include
+`temp/d1-object-state-fixes-build.log`, `temp/d1-object-final-d1-tests.log`,
+`temp/d1-object-final-d2-tests.log` and `temp/d1-object-checkpoint-final.log`
+
+F1 remains incomplete: these are post-frame object observations, not full
+pre-advance or pre-retirement world snapshots. Player/global/level state and
+semantic mappings still need their explicit schemas. Reactor firing behavior
+also needs an original-D1 operation audit beyond the now-restored gun caches;
+the D2 frame still has its own extra-shot loop. Full presentation and platform
+qualification remain open
+
+The old level-18 probe traces were losslessly compressed with decoded SHA-256
+verification and are now `temp/d1-level18-probe-{native,imported}.jsonl.gz`.
+The optional broad cleanup preview was stopped after targeted compression freed
+space; it performed no deletion
+
+Final named-object replay after both repairs:
+`temp/d1_replay_parity_objects_fixed_level5/report.json`. All three captures
+succeed with pinned binaries and D1-only assets. The two native runs match in
+every observed object field. Across all 2,430 native/imported frames, active
+reactor gun coordinates and pickup frame/time now match, along with the complete
+observed allocator/link/clock state and both actual RNG stream states/counters.
+Frame summaries, terminal result and all 5,883 SIM RNG events remain equal
+
+The 14 remaining named field differences are explicitly retained: native/D2 AI
+field layouts, reactor ID 26 versus 0, D2-only powerup creation fields, and reactor
+array capacities of four versus eight. These still require declared semantic
+mappings and preservation/accounting for populated native legacy fields. The
+strict runner exits 1 and full qualification stays incomplete. This final run
+covers level 5; the other four recordings have not yet been recaptured with the
+new named-object schema or these two latest fixes. No Android APK qualification
+is claimed for this phase
+
+Follow-up coverage from source inspection: the checkpoint validator currently
+treats every `OBJ_GHOST` ID as a player ID, while native boss levels retain a
+hidden `CT_CNTRLCEN`/`RT_NONE` placeholder. Add an actual boss-level checkpoint
+comparison before closing that validation boundary. It is separate from the
+live-reactor cache restoration tested here

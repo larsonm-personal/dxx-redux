@@ -2134,14 +2134,6 @@ void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag)
 	diag->ai_probe_phys_skip_before = -1;
 	diag->ai_probe_phys_skip_after = -1;
 	input_demo_capture_runtime_state_diag(diag);
-	if (ConsoleObject) {
-		diag->player_vel_x = ConsoleObject->mtype.phys_info.velocity.x;
-		diag->player_vel_y = ConsoleObject->mtype.phys_info.velocity.y;
-		diag->player_vel_z = ConsoleObject->mtype.phys_info.velocity.z;
-		diag->player_last_x = ConsoleObject->last_pos.x;
-		diag->player_last_y = ConsoleObject->last_pos.y;
-		diag->player_last_z = ConsoleObject->last_pos.z;
-	}
 	input_demo_capture_object_state_diag(diag);
 	input_demo_capture_robot_ai_local_diag(diag);
 	input_demo_capture_player_weapon_diag(diag);

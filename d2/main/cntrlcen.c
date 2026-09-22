@@ -179,9 +179,11 @@ void do_controlcen_dead_frame(void)
 		return;
 
 	// FX RNG: graphics only, this just varies dead-reactor burn fireball cadence
-	if ((Dead_controlcen_object_num != -1) && (Countdown_seconds_left > 0))
-		if (d_rand_fx() < FrameTime*4)
-			create_small_fireball_on_object(&Objects[Dead_controlcen_object_num], F1_0, 1);
+	if (!d1_in_d2_dead_reactor_effects()) {
+		if ((Dead_controlcen_object_num != -1) && (Countdown_seconds_left > 0))
+			if (d_rand_fx() < FrameTime*4)
+				create_small_fireball_on_object(&Objects[Dead_controlcen_object_num], F1_0, 1);
+	}
 
 	if (Control_center_destroyed && !Endlevel_sequence)
 		do_countdown_frame();

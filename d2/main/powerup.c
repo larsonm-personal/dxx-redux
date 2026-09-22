@@ -70,24 +70,26 @@ void do_powerup_frame(object *obj)
 	vclip_info *vci = &obj->rtype.vclip_info;
 	vclip *vc = &Vclip[vci->vclip_num];
 
-	fudge = (FrameTime * ((obj-Objects)&3)) >> 4;
-	
-	vci->frametime -= FrameTime+fudge;
-	
-	while (vci->frametime < 0 ) {
+	if (!d1_in_d2_animate_powerup(obj)) {
+		fudge = (FrameTime * ((obj-Objects)&3)) >> 4;
 
-		vci->frametime += vc->frame_time;
-		
-		if ((obj-Objects)&1)
-			vci->framenum--;
-		else
-			vci->framenum++;
+		vci->frametime -= FrameTime+fudge;
 
-		if (vci->framenum >= vc->num_frames)
-			vci->framenum=0;
+		while (vci->frametime < 0 ) {
 
-		if (vci->framenum < 0)
-			vci->framenum = vc->num_frames-1;
+			vci->frametime += vc->frame_time;
+
+			if ((obj-Objects)&1)
+				vci->framenum--;
+			else
+				vci->framenum++;
+
+			if (vci->framenum >= vc->num_frames)
+				vci->framenum=0;
+
+			if (vci->framenum < 0)
+				vci->framenum = vc->num_frames-1;
+		}
 	}
 
 	if (obj->lifeleft <= 0) {

@@ -387,6 +387,8 @@ typedef struct input_demo_state_trace_diag {
 } input_demo_state_trace_diag;
 
 int input_demo_state_trace_is_active(void);
+/* Append one already serialized JSON record; .gz paths compress at the source */
+int input_demo_state_trace_write_json(const char *json, char *error, size_t error_size);
 void input_demo_state_trace_stop(void);
 int input_demo_state_trace_start(const char *path,
                                  const char *source,

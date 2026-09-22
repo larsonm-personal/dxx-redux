@@ -140,8 +140,7 @@ if ($ReferenceResultRoot) {
     foreach ($demo in $demos) {
         $referencePath = Join-Path $ReferenceResultRoot "$($demo.Name).actual.json"
         if (-not (Test-Path -LiteralPath $referencePath -PathType Leaf)) {
-            Write-Host "RESULT: SKIP (primary replay result unavailable: $referencePath)"
-            exit 0
+            throw "Required primary replay result unavailable: $referencePath"
         }
     }
 }
