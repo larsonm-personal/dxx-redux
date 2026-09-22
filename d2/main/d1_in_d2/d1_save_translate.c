@@ -730,8 +730,16 @@ static int d1_save_translate_validate_object(const object *obj, int object_count
 		break;
 	case OBJ_PLAYER:
 	case OBJ_COOP:
-	case OBJ_GHOST:
 		if (obj->id >= MAX_PLAYERS)
+			return 0;
+		break;
+	case OBJ_GHOST:
+		/* Boss levels hide the original reactor without changing its source ID
+		 * Only this inert reactor form is exempt from player-slot validation */
+		if (obj->control_type == CT_CNTRLCEN) {
+			if (obj->render_type != RT_NONE || obj->movement_type != MT_NONE)
+				return 0;
+		} else if (obj->id >= MAX_PLAYERS)
 			return 0;
 		break;
 	case OBJ_WEAPON:

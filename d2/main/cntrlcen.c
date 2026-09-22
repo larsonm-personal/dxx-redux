@@ -328,6 +328,8 @@ fix	controlcen_death_silence = 0;
 void do_controlcen_frame(object *obj)
 {
 	int			best_gun_num;
+	if (d1_in_d2_reactor_frame(obj))
+		return;
 
 	//	If a boss level, then Control_center_present will be 0.
 	if (!Control_center_present)
@@ -538,6 +540,7 @@ void init_controlcen_for_level(void)
 		else {
 			objp->shields = i2f(Reactor_strength);
 		}
+		objp->shields = d1_in_d2_reactor_strength(objp->shields);
 
 	}
 

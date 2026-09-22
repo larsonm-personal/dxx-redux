@@ -29,6 +29,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define OBJS_PER_SEG          5
 #define N_EXTRA_OBJ_LISTS    50
 
+// CPU preparation services shared with the no-draw gameplay-view collector
+int render_setup_view(fix eye_offset);
+void build_object_lists(int n_segs);
+void build_segment_list(int start_seg_num, int window_num);
+
 extern int Render_depth; //how many segments deep to render
 extern int Max_perspective_depth; //	Deepest segment at which perspective extern interpolation will be used.
 extern int Max_linear_depth; //	Deepest segment at which linear extern interpolation will be used.

@@ -47,7 +47,8 @@ F1 is in progress. The paired runner now stages D1-only assets, pins its inputs 
 
 Use the existing `android/tests/test_input_demo_regressions.ps1` and `run_input_demo_replay.ps1` entry points. Do not build a second replay engine or a demo-specific approximation of D1. The imported run must execute the D2 binary, restore the D1 checkpoint through the existing adapter and use the normal D1 session lifecycle
 
-The current D1 corpus contains five version-4, `lcg_state`, save-checkpoint recordings:
+The D1 corpus now contains seven version-4, `lcg_state`, save-checkpoint recordings.
+The two level-7 cases were added while the homing work was in progress:
 
 | Recording suffix | Level | Frames | Recorded build / architecture |
 | --- | ---: | ---: | --- |
@@ -56,6 +57,8 @@ The current D1 corpus contains five version-4, `lcg_state`, save-checkpoint reco
 | `20260618_201843` | 16 | 2,696 | 16520 / arm64 |
 | `20260618_202117` | 18 | 2,634 | 16520 / arm64 |
 | `20260616_202713` | 5 | 2,430 | 16490 / arm64 |
+| `20260921_144212` | 7 | 16,873 | 22840 / arm64 |
+| `20260921_144813` | 7 | 2,253 | 22840 / arm64 |
 
 The 167 MiB level-14 recording is now admitted by the shared 256 MiB ceiling. The stocktake reran all five recordings in both engines after relocation:
 
@@ -66,7 +69,9 @@ The 167 MiB level-14 recording is now admitted by the shared 256 MiB ceiling. Th
 
 These are today's result-summary comparisons, not strict per-frame certification. Both runs used byte-identical D1 HOG/PIG files, with D2 assets additionally available to the imported run. No native repeatability or per-frame/RNG comparison was performed in this stocktake. The native level-14 failure predates relocation; its additional cross-engine divergence remains a concrete F1/F2 investigation target. Logs and archived actual results are recorded in the ledger
 
-Level-14 follow-up: the [divergence investigation](../input%20demo,%20replay,%20determinism/level14-20260920-divergence.md) identifies a replay-only homing search as the native failure. A controlled rendered run using ordinary acquisition matches all recorded frame-state fields and the final result. The subsequent collision, flare, ammo and factory-mode fixes eliminate the imported drift: all 5,696 native/imported frame summaries and selected physical diagnostics match. That comparison does not yet cover every live field or establish recording fidelity. The homing experiment was reverted pending a complete solution that also preserves targeting without rendering
+Level-14 follow-up: the [divergence investigation](../input%20demo,%20replay,%20determinism/level14-20260920-divergence.md) identifies the replay-only homing search as the native failure. That substitution is now removed. A shared CPU collector prepares the original main-view candidate list when drawing is disabled, with D1 object ordering owned by `d1_in_d2_render.c` and one dispatch in the original D2 renderer. All 304 draw/CPU/native/imported candidate-list cases match exactly. Fresh no-render level-14 captures match every recorded gameplay state field across all 5,696 frames and the full terminal result, using D1-only imported assets
+
+Strict diagnostics still report historical zero/unset motion fields, the one-frame danger-laser observation, and known cross-engine layouts. Full F1 snapshots/mappings, historical view-input coverage, and true console-headless D1 startup remain open. The expanded corpus also contains a 513,641,705-byte recording exceeding the current 256 MiB limit; it is a failure to fix, not a skipped qualification case. The seven-case sweep passes the original five in both engines; the short new boss-room recording passes native D1 but diverges when imported, while the larger recording is rejected by both. The ledger records these two concrete next failures and their artifacts
 
 Paired-corpus follow-up: the stricter observer exposed D2 small-fireball sizing,
 reactor burn scale and powerful-weapon lava impacts still leaking into D1. These
@@ -138,6 +143,27 @@ Existing baseline commands from the repository root (these exercise today's comp
 Retain prior artifacts with the repository helper before each new run. The strict paired runner should reuse these entry points and their result/trace producers. Keep comparison/orchestration in `android/tests`; game-format interpretation and fixes stay in the compatibility folder. The native/imported pair should not share mutable sandbox files
 
 ### Closing the gaps beyond the current corpus
+
+Boss-level restore follow-up: the actual checkpoint comparison now includes First
+Strike levels 7 and 27. It reproduced the hidden reactor being rejected as an
+out-of-range player ghost. The translator now distinguishes inert reactor ghosts
+from player ghosts; both boss-level comparisons pass before simulation and across
+repeated restores. Invalid player IDs and rendered/moving reactor ghosts remain
+rejected without mutating live objects. This closes that validator gap, not the
+remaining full-world checkpoint coverage or reactor firing audit
+
+Reactor operation follow-up: the semantics owner now contains the complete native
+acquisition/fire/death-silence frame behind one dispatch, plus original level-health
+selection. Shared gun selection and projectile creation remain engine services.
+All 1,200 loaded native/imported initialization and frame scenarios compare exactly,
+including projectiles, timers and both RNG states/counts; ordinary D2 assertions
+also pass. This is single-player operation evidence; multiplayer and full replay
+qualification retain their separate gates
+
+The subsequent complete level-14 paired run retains exact native/imported frame
+summaries, terminal results and SIM values, with no new named object differences.
+The existing representation gaps and native-versus-recording homing failure still
+prevent full qualification; see the latest ledger entry and report
 
 Start F2's restore review with source-confirmed omissions: `d1_save_translate_skip_weapon_fidelity_state` discards per-weapon state, `d1_save_translate_skip_morph_state` discards active morph payloads, and effect timing is read into unused locals. Audit each against the corresponding native save writer and the engine's existing restore services. Restore the necessary state through the proper domain boundary; do not add a special case for a particular demo or assert these are the cause of a measured mismatch before locating its first divergence
 

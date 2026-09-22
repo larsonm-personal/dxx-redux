@@ -1253,3 +1253,196 @@ the missing full-world observations are implemented. The separate native versus
 recording homing failure remains open. The final run occupies 439.9 MiB including
 all compressed traces, staged D1 assets and harness evidence. No Android
 qualification or full-corpus recapture is claimed for this drop fix
+
+### 2026-09-21: boss-level checkpoint ghost validation
+
+The actual native checkpoint fixture now accepts `-Level 1`, `-Level 7` or
+`-Level 27` through `android/helpers/test_d1_ai_checkpoints.ps1`. The default
+remains level 1; custom assets retain the authored level-1 fixture. The comparison
+checks hidden reactor type/control/render/movement, location, shields and retained
+model before simulation and after each restore, alongside the existing texture,
+trigger, asset and robot-frame comparisons
+
+The first level-7 import failed on object 13: native `OBJ_GHOST`, ID 25,
+`CT_CNTRLCEN`, `MT_NONE`, `RT_NONE`, model 39. The translator had applied the
+eight-player ID limit to every ghost. Native level initialization hides the
+reactor this way when a boss owns level destruction, retaining its source ID
+
+The save translator now distinguishes that inert reactor form from player ghosts.
+It preserves the source object rather than replacing it with a player or a live
+reactor. Non-reactor ghosts still require a valid player ID; rendered or moving
+reactor ghosts are rejected. Three malformed actual-checkpoint cases exercise
+those boundaries and verify that rejection leaves live objects and pending
+selection unchanged. No original D2 source file needed modification
+
+Both boss levels pass seven checkpoint scenarios and 28 restored robot frames
+each, including a second save/restore during execution. Stock and custom level-1
+comparisons also pass: 28 scenarios and 112 observed robot frames total. The
+authored endpoint-reversal assertion remains specific to level-1 geometry;
+all observed boss-level frame values are compared exactly against native D1
+
+Both host builds and all 110 host CTests pass. Scoped quality and diff checks
+pass, with no compiler warnings in the final incremental build. Evidence:
+`temp/d1-boss-checkpoint-fixed-build.log`, `temp/d1-boss-checkpoint-final.log`,
+`temp/d1-boss-checkpoint-ctest.log`, and the native/imported `frames.json` pairs
+under `temp/d1-ai-checkpoint-comparison-level7`,
+`temp/d1-ai-checkpoint-comparison-level27`, `temp/d1-ai-checkpoint-comparison`
+and `temp/d1-custom-checkpoint-comparison`
+
+This closes the previously identified hidden-reactor validation gap. Full semantic
+world snapshots, explicit cross-engine mappings, native level-14 homing acquisition,
+reactor firing rules, optional-feature lifecycle and final platform qualification
+remain open. No demo or expected result was changed, and no new whole-corpus or
+Android qualification is claimed for this phase
+
+### 2026-09-21: original reactor acquisition, firing and strength
+
+The reactor frame was still executing D2 rules during D1 gameplay. Source review
+identified D2's level-dependent extra-shot loop, different scatter scale, periodic
+visibility reset and extra trainee fire delay. The new loaded-asset fixture first
+passed all 960 native cases and failed the imported trainee-delay assertion before
+the fix. The extended fixture also covers original secret-level reactor health
+
+`d1_in_d2_reactor_frame` in the semantics owner now implements the entire native
+frame operation. Its body was compared with `d1/main/cntrlcen.c` and differs only
+in the inactive-profile guard, handled returns and trailing whitespace. Shared
+gun selection is declared in the existing reactor header; projectile creation,
+visibility and network send services remain in the engine. The original D2 frame
+has one dispatch, and initialization passes the computed health through the owned
+policy. Ordinary D2 keeps its original frame body and strength calculation
+
+D1 again permits at most one extra shot with the original quarter-probability
+roll and quarter-scale scatter, uses the native difficulty cadence, and keeps an
+active reactor awake until its original distance/death rules apply. On secret
+level -1, native reactor health is 300 rather than D2's 350. The initial acquisition
+test also retains D1's treatment of an exit side as non-isolated
+
+The final 1,200 cases use actual reactor gun definitions and actual projectile
+creation: three level numbers, all five difficulties, eight RNG seeds and ten
+frame states. Cases cover visible/believed targets, range rejection, acquisition
+tick gating, cooldown, death silence, absent reactors, occluded targets and an
+exit-only segment. Native/imported results compare projectile positions, forward
+vectors, velocities, lifetime, strength and ownership; reactor health/flags/timers;
+and both RNG stream states and call counts. Both one-shot and two-shot native
+bursts occur. Ordinary D2 runs against its own installed assets and retains its
+burst bounds, trainee delay, visibility reset and secret-level health
+
+The occlusion fixture initially left the believed target on the near side of the
+wall; the ordinary-D2 assertion exposed this test setup error. It now uses the real
+player location except in the explicit cloaked-target case. No production behavior
+was changed to accommodate that fixture correction
+
+Both host builds and all 110 host CTests pass. The complete loaded gameplay-rule
+comparison passes with the reactor cases included. Scoped quality and diff checks
+pass; the final production build has no compiler warnings. Evidence:
+`temp/d1-reactor-frame-fixed-build.log`,
+`temp/d1-reactor-frame-fixture-build.log`,
+`temp/d1-reactor-frame-final-tests.log`, `temp/d1-reactor-frame-ctest.log`, and
+the native/imported `rules.json` plus ordinary-D2 `rules-d2.json` under
+`temp/d1-gameplay-rules-comparison`
+
+Fresh paired level-14 evidence is complete at
+`temp/d1_replay_parity_reactor_level14/report.json`. All three captures succeed
+with pinned executables and D1-only assets. Native repeatability passes, with
+byte-identical compressed state traces. Native/imported frame summaries match
+across all 5,696 frames; terminal results and all 14,381 SIM RNG values/order/counts
+match. Allocator, segment links, clocks and both actual RNG stream states/counts
+also match. All 344 previously equal diagnostics remain equal out of 360
+
+The 14 named object-field differences are identical to the prior drop-fixed
+level-14 report, including their first values and frames. They are the existing
+AI layouts, reactor source/runtime ID and array capacities, and D2-only powerup
+fields. Raw diagnostic/RNG context differences remain explicit. The strict runner
+therefore exits 1 with incomplete qualification, and native versus recording
+retains the separately diagnosed homing failure. The run occupies 439.9 MiB;
+its producer and replay processes have finished
+
+This phase does not claim a new all-five-demo or Android qualification.
+Multiplayer reactor behavior, full semantic world observation/mappings, native
+level-14 homing acquisition and the remaining F3-F5 work retain their completion
+obligations
+
+### 2026-09-21: native main-view homing selection
+
+Ordinary D1-in-D2 acquisition still inherited D2's view-freshness, forward-view
+and viewer filters, with a complete scan or HUD-camera list as fallback. Native
+D1 uses its last main-view list directly. The weapon owner now follows that
+rule, retaining rear/external/empty main lists and excluding HUD-camera lists.
+No original engine file changed in this phase
+
+The native-reference homing fixture passes before the fix, while imported D1
+fails at stale main-view selection. After the fix, both pass all new assertions
+under both homing settings: wall-clock age, three view configurations with an
+eligible competing camera, empty lists and reverse-order equal-alignment ties.
+Existing range/cloak/visibility/network/ordinary-D2 cases remain active
+
+Both Windows builds and all 110 CTests pass, as do scoped quality and diff checks.
+Evidence: `temp/d1-homing-view-probe-build.log`,
+`temp/d1-homing-view-probe-tests.log`, `temp/d1-homing-view-fixed-build.log`, and
+`temp/d1-homing-view-ctest.log`. No compiler warnings were emitted by this change
+
+The replay-only full scan is deliberately still reported as an unresolved defect,
+not accepted as equivalent behavior. No fresh recording/corpus or Android pass is
+claimed. The expanded level-14 investigation records the next CPU-list preparation
+work, including actual D1/D2 object-order differences and missing historical view
+inputs. Supplying an exact no-render list, full F1 semantic observations and the
+remaining F2-F5 gates are still required
+
+### 2026-09-21: original homing candidates without rendering
+
+`g3_start_frame_projection` now exposes the existing CPU setup separately from
+backend startup, and each renderer reuses its extracted view setup. The shared
+`render_gameplay_view` collector calls the normal portal/object preparation and
+walks the same candidate rows without rasterization. D1 object migration, sorting
+limits and ClassicDepth priority live in the new `d1_in_d2_render` owner, behind
+one original-D2 object-builder dispatch. Ordinary D2 retains its own builder
+
+The new native/imported runner validates 304 actual-draw/CPU cases, including
+three levels, view sizes, rear views, stereo offsets and dense object lists.
+Every candidate and portal list matches, including order; CPU collection preserves
+live objects and both RNG states/counts. Fixture setup/reporting issues were fixed:
+the D2 level intro is explicitly skipped, and the shared public header avoids
+legacy struct-packing headers that corrupted C++ JSON layout under MSVC
+
+Both D1 acquisition paths now use the original candidate algorithm during replay.
+When drawing is omitted, the shared replay driver publishes the preceding main
+view after the simulation step. Automap/endlevel retain prior candidates; an
+uninitialized viewport fails explicitly. Both Windows builds, all 110 CTests,
+scoped quality and diff checks pass. The compatibility algorithm stays in its
+owner; original engine edits expose/reuse generic CPU services
+
+Fresh level-14 no-render native/imported captures match every recorded gameplay
+state field, frame index, frame time and frame RNG header across all 5,696 frames,
+and both full terminal results match. The imported capture uses D1-only assets.
+No recording or expectation was rewritten. The independent diagnostic inventory
+retains a strict fail: native/recorded differs in 26 old zero/unset motion/bump
+fields and six danger-laser fields for frame 1287; native/imported retains its
+sixteen known object/AI/layout/link diagnostic differences. SIM-event consumption
+and full semantic world observations are not newly certified by header equality
+
+Evidence: `temp/d1-render-candidates-final-comparison.log`,
+`temp/d1-render-candidate-comparison/{native,imported}/candidates.json`,
+`temp/d1-homing-collector-final-build.log`, `temp/d1-homing-collector-ctest.log`,
+`temp/d1-homing-collector-native14-frames.log`, and
+`temp/d1-homing-collector-frame-audit.json`, with the corresponding compressed
+native/imported state traces and terminal JSON files. The failed strict metadata
+comparison is retained in `temp/d1-homing-collector-native14.log`
+
+The full regression sweep now discovers seven D1 recordings. All five original
+cases pass their recorded terminal checks in both engines. Of the two new level-7
+cases, `20260921_144813` (2,253 frames) passes native D1 but fails imported playback:
+the imported player dies, reaches a different position and reports an extra
+`mine_exit` terminal marker. This is a new earliest-state/RNG investigation, not
+an expected-result update. `20260921_144212` (16,873 frames, 513,641,705 bytes)
+exceeds the shared 256 MiB reader ceiling in both engines. Aggregate sweep exits
+remain nonzero: native 6/7, imported 5/7. Evidence and archived raw results are
+`temp/d1-homing-collector-regressions.log` and
+`temp/d1-homing-collector-regressions/{native,imported}`
+
+Next: diagnose the short boss-room case through the paired observer; support the
+large recording with bounded streaming ingestion/ownership transfer rather than
+multiplying whole-file memory copies; repeat both new cases and the existing
+corpus. True console-headless D1 startup still needs its D2-HOG dependency removed;
+the tested no-render runner is the full game executable with draw/present bypassed.
+Initial/historical view inputs, strict F1 mappings/snapshots and the rest of F3-F5
+remain open. Native D1 remains the reference engine

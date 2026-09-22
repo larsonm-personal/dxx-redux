@@ -14,7 +14,6 @@
 #include "ai.h"
 #include "segpoint.h"
 #include "fvi.h"
-#include "timer.h"
 #include "dxxerror.h"
 #include "homing_compat.h"
 #include "input_demo_hooks.h"
@@ -138,7 +137,7 @@ int d1_in_d2_scan_homing_targets(vms_vector *position, object *tracker, int type
 
 int d1_in_d2_acquire_homing_target(vms_vector *position, object *tracker)
 {
-	int i, view = -1, best = -1;
+	int i, best = -1;
 	fix best_dot = -2 * F1_0;
 	if (!d1_in_d2_use_d1_gameplay())
 		return D1_HOMING_NOT_HANDLED;
@@ -151,19 +150,11 @@ int d1_in_d2_acquire_homing_target(vms_vector *position, object *tracker)
 	}
 	if (tracker->ctype.laser_info.parent_num != Players[Player_num].objnum)
 		return (Players[Player_num].flags & PLAYER_FLAGS_CLOAKED) ? -1 : (int)(ConsoleObject - Objects);
-	if (!input_demo_replay_is_loaded()) {
-		/* D2 exposes the main view separately from optional HUD cameras */
-		for (i = 0; i < MAX_RENDERED_WINDOWS; ++i)
-			if (Window_rendered_data[i].time >= timer_query() - 1 &&
-				Window_rendered_data[i].viewer == ConsoleObject && !Window_rendered_data[i].rear_view) {
-				view = i;
-				break;
-			}
-	}
-	if (view == -1)
-		return d1_in_d2_scan_homing_targets(position, tracker, OBJ_ROBOT, -1);
-	for (i = Window_rendered_data[view].num_objects - 1; i >= 0; --i) {
-		const int target = Window_rendered_data[view].rendered_objects[i];
+	/* Native D1 consumes the last main-view list, including rear/external views
+	 * Window zero is the main view; HUD cameras and elapsed wall time cannot
+	 * replace its candidates with another view or a complete-object scan */
+	for (i = Window_rendered_data[0].num_objects - 1; i >= 0; --i) {
+		const int target = Window_rendered_data[0].rendered_objects[i];
 		vms_vector direction;
 		fix dot;
 		if (target == Players[Player_num].objnum ||

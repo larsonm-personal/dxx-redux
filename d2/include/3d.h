@@ -95,6 +95,8 @@ typedef struct g3s_object {
 
 //start the frame
 void g3_start_frame(void);
+// CPU projection setup for visibility work that does not draw
+void g3_start_frame_projection(void);
 
 //set view from x,y,z & p,b,h, zoom.  Must call one of g3_set_view_*() 
 void g3_set_view_angles(const vms_vector *view_pos,const vms_angvec *view_orient,fix zoom);

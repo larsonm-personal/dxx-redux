@@ -26,6 +26,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "dxxerror.h"
 #include "bm.h"
 #include "texmap.h"
+#include "d1_in_d2/d1_in_d2_render.h"
 #include "render.h"
 #include "game.h"
 #include "object.h"
@@ -1648,6 +1649,8 @@ int sort_func(const sort_item *a,const sort_item *b)
 
 void build_object_lists(int n_segs)
 {
+	if (d1_in_d2_build_object_lists(n_segs, Render_list, render_obj_list, &Viewer_eye))
+		return;
 	int nn;
 
 	for (nn=0;nn<n_segs;nn++)
@@ -1825,32 +1828,10 @@ void start_lighting_frame(object *viewer);
 fix Zoom_factor=F1_0;
 #endif
 //renders onto current canvas
-void render_frame(fix eye_offset, int window_num)
+// Set up the current view and return its starting segment without drawing
+int render_setup_view(fix eye_offset)
 {
 	int start_seg_num;
-
-	if (Endlevel_sequence) {
-		render_endlevel_frame(eye_offset);
-		return;
-	}
-
-	if (
-#if defined(ANDROID) || defined(__ANDROID__)
-		!Android_visual_only_render_pass &&
-#endif
-		Newdemo_state == ND_STATE_RECORDING && eye_offset >= 0 )	{
-     
-      if (RenderingType==0)
-   		newdemo_record_start_frame(FrameTime );
-      if (RenderingType!=255)
-   		newdemo_record_viewer_object(Viewer);
-	}
-  
-   //Here:
-
-	start_lighting_frame(Viewer);		//this is for ugly light-smoothing hack
-  
-	g3_start_frame();
 
 	Viewer_eye = Viewer->pos;
 
@@ -1910,6 +1891,38 @@ void render_frame(fix eye_offset, int window_num)
 				   );
 #endif
 	}
+
+	return start_seg_num;
+}
+
+void render_frame(fix eye_offset, int window_num)
+{
+	int start_seg_num;
+
+	if (Endlevel_sequence) {
+		render_endlevel_frame(eye_offset);
+		return;
+	}
+
+	if (
+#if defined(ANDROID) || defined(__ANDROID__)
+		!Android_visual_only_render_pass &&
+#endif
+		Newdemo_state == ND_STATE_RECORDING && eye_offset >= 0 )	{
+
+      if (RenderingType==0)
+		newdemo_record_start_frame(FrameTime );
+      if (RenderingType!=255)
+		newdemo_record_viewer_object(Viewer);
+	}
+
+   //Here:
+
+	start_lighting_frame(Viewer);		//this is for ugly light-smoothing hack
+
+	g3_start_frame();
+
+	start_seg_num = render_setup_view(eye_offset);
 
 	if (Clear_window == 1) {
 		if (Clear_window_color == -1)

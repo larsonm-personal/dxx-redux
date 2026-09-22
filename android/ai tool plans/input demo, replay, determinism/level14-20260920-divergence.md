@@ -1,9 +1,10 @@
 # Level 14 recording divergence investigation
 
 Recording: `d1_descent_level14_20260920_184354.dximdemo`, made on Android arm64
-on 2026-09-20. Native host replay still diverges from the recording because of the homing
-acquisition issue below. After the compatibility fixes, D1-in-D2 matches the
-native replay across all 5,696 recorded frame summaries
+on 2026-09-20. The homing acquisition repair below now reproduces all 5,696 recorded gameplay
+frame states and the terminal result in native and imported no-render playback.
+Strict diagnostic qualification still has the explicitly listed historical and
+cross-engine differences
 
 The user observes a small ship-angle mismatch after acquiring/using Spreadfire,
 followed by missed shots. Treat the recording as fresh evidence, and locate the
@@ -222,3 +223,135 @@ Final checks:
   selected diagnostics. Both traces contain exactly 5,696 frames
 - Scoped code-quality invocation and `git diff --check` passed. The quality script
   excludes these C/C++ paths from formatting; original-file style was retained
+
+### Main-view acquisition policy and no-render prerequisites
+
+A follow-up native-reference fixture found another D2 rule in ordinary imported
+play: acquisition searched for a recent forward-facing player window, including
+HUD windows, and fell back to a complete scan if none qualified. Native D1 always
+consumes its retained main-view list. It does not expire that list, reject a rear
+or external main view, search another window, or replace an empty list with a
+complete scan. `d1_in_d2_acquire_homing_target` now uses window zero directly
+outside replay. The existing replay-only scan is still present in both engines;
+this change does not resolve the level-14 recording failure
+
+The actual native `find_homing_object` passes the new cases before the change;
+imported D1 fails the stale-view assertion. After the owner fix, both pass. Cases
+exercise an older main view, rear/external view metadata with a competing eligible
+HUD window, an empty main list and reversed equal-alignment candidates, under both
+homing settings. Existing range, cloak, wall, multiplayer and ordinary-D2 tests
+remain active. Both Windows builds and all 110 host CTests pass. Evidence:
+`temp/d1-homing-view-probe-tests.log`, `temp/d1-homing-view-fixed-build.log`, and
+`temp/d1-homing-view-ctest.log`
+
+The renderer audit narrows the next implementation step:
+
+- The candidate list is produced after simulation by the preceding main draw.
+  Native SDL no-render replay skips that draw entirely, and the headless runner
+  calls the replay step directly. A replacement must run at the same boundary,
+  with explicit initialization/restore/retirement behavior
+- Native candidates are collected before drawing each player/robot object, in
+  reverse segment traversal and linked object-list order. Polygon rasterization
+  is not needed to obtain the list, but portal projection and object ordering are
+- D1 and D2 currently have matching segment/object-list storage dimensions, but
+  their object builders are not equivalent: native D1 repeatedly migrates objects
+  using its original-segment side lookup, limits each sort to 49 objects, and only
+  applies fireball/weapon priority in ClassicDepth mode. D2 migrates once, exempts
+  robot 65, sorts up to 99 objects with overflow replacement, and uses different
+  fireball priority rules. Reusing D2's list unchanged is not a fidelity solution
+- Extract CPU view/list preparation from rasterization and retain a native-owned
+  object-order operation in the compatibility folder. Keep original render hooks
+  narrow and use the same list preparation for normal and no-render execution;
+  do not add a second approximation of the acquisition algorithm
+- `g3_start_frame` currently performs both pure projection setup and an OpenGL
+  start call. Calling it blindly in a headless collector would violate the
+  graphics-free contract. CPU projection setup needs a separate reusable entry
+- The old recording header does not capture viewport/cockpit/aspect/ClassicDepth
+  inputs. Android's optional FOV redraw preserves the base-view candidate list,
+  so that overlay must not become targeting input. Reconcile the base-view inputs
+  explicitly, and test view changes and recording/replay boundaries rather than
+  treating one matching default-window replay as general proof
+
+Next validation remains unchanged: compare actual prepared lists with native D1
+across geometry, ordering/capacity and viewport cases, then replay all five original
+recordings in native/imported headed and no-render modes. The fixture above tests
+selection from supplied candidates; it does not certify candidate generation
+
+### CPU candidate preparation implementation in progress
+
+The first implementation separates the existing `g3_start_frame_projection` from
+backend startup and extracts each renderer's unchanged `render_setup_view`.
+`render_collect_view_objects` in shared host code calls those CPU services, the
+existing portal traversal and the ordinary object-list builder, then gathers the
+same player/robot rows and preserves the historical upper-half overwrite rule.
+It does not call rasterization or supply a different homing search
+
+D2's object builder now dispatches the entire native operation to
+`d1_in_d2_render.c`. The owner receives the prepared segment list, object rows and
+eye position explicitly and retains D1 migration, 49-entry sorting and ClassicDepth
+priority. Its helper checks the extra-row allocation bound before indexing, without
+changing valid-list output. Ordinary D2 retains its existing builder
+
+The new `test_d1_render_candidates.ps1` runner exercises actual draw versus CPU
+collection and native versus imported lists. It covers three stock levels, rear
+views, viewport sizes, stereo offsets, ClassicDepth modes and dense mixed-object
+rows, and asserts no live-object or RNG mutation by CPU collection. Build/fixture
+validation and replay wiring are still in progress; this entry is not a pass claim
+
+### CPU collection verified and no-render level 14 repaired
+
+All 304 fixture cases pass native draw versus CPU, imported draw versus CPU, and
+native versus imported candidate/portal order. Cases include dense single-segment
+rows above D1's 49-entry sorting limit. The collector leaves objects and both RNG
+streams untouched. The public C/C++ header uses a fixed-width scalar and does not
+include legacy engine headers: importing the old packing pragma before a C++ JSON
+header caused a fixture reporting crash, diagnosed with a first-chance stack trace
+and corrected. The fixture also explicitly skips level intros; it does not bypass
+actual rendering in its draw/CPU comparison
+
+The replay-only D1 complete scan has now been removed in both engines. After each
+no-render replay simulation step, the shared driver prepares/publishes the same
+main-view candidates that an ordinary draw would provide for the next step.
+Automap/endlevel retain the previous list as ordinary drawing does. An invalid
+uninitialized main viewport fails explicitly. Both host builds and all 110 host
+CTests pass; the latest build adds no compiler warnings
+
+Fresh unchanged level-14 captures use native D1 and imported D1 in the full game
+binaries with draw/present disabled. Imported capture stages only D1 HOG/PIG data.
+Both terminal results match the recording. Every gameplay frame-state field,
+frame number, frame time and recorded frame RNG header matches across all 5,696
+frames, both recording/native and native/imported. This closes the homing-driven
+trajectory and final-result failure; header RNG equality is not an independent
+SIM-event-consumption check
+
+The strict diagnostic verdict remains fail and is retained in the audit:
+
+- Recording/native: 328 of 360 diagnostics match. Twenty-six motion/bump fields
+  contain the old recording's zero/unset values while the current observer fills
+  them. Six AI danger-laser diagnostics differ only at frame 1287, matching the
+  earlier rendered-control observation. No expected data was rewritten
+- Native/imported: 344 of 360 diagnostics match. The remaining sixteen fields are
+  the previously observed object/AI/layout/link hashes and legacy follow-path
+  fields. Full semantic mapping and pre-advance/pre-retirement observations remain
+  separate unfinished F1 requirements
+
+Evidence: `temp/d1-render-candidates-final-comparison.log`,
+`temp/d1-render-candidate-comparison/{native,imported}/candidates.json`,
+`temp/d1-homing-collector-final-build.log`, `temp/d1-homing-collector-ctest.log`,
+`temp/d1-homing-collector-native14-frames.log`, and
+`temp/d1-homing-collector-frame-audit.json`. Full traces and terminal results are
+`temp/d1-homing-collector-{native14,imported14}-state.jsonl.gz` and
+`temp/d1-homing-collector-{native14,imported14}-result.json`
+
+The dedicated headless-console runner still rejects D1-in-D2 and its startup still
+requires a D2 HOG; the tests above use windowed-no-present, not that unsupported
+runner. True console startup remains a separate lifecycle task. Historical view
+inputs/initial candidates are not recorded, so the passing corpus is not a proof
+of arbitrary viewport/first-frame cases
+
+The regression directory now also contains two level-7 recordings from build 22840:
+`20260921_144212` (16,873 frames, 513,641,705 bytes) and `20260921_144813`
+(2,253 frames). The larger recording exceeds the shared 256 MiB reader ceiling.
+The ongoing seven-demo sweep reports that failure rather than skipping the case;
+large-file ingestion and the expanded corpus must be closed before claiming all
+D1 demos pass

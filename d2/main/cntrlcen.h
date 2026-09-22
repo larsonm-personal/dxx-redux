@@ -90,6 +90,7 @@ extern void do_controlcen_frame(object *obj);
 // Call when a new level is started.
 extern void init_controlcen_for_level(void);
 extern void calc_controlcen_gun_point(reactor *reactor, object *obj,int gun_num);
+extern int calc_best_gun(int num_guns, const object *objreactor, const vms_vector *objpos);
 
 extern void do_controlcen_destroyed_stuff(object *objp);
 extern void do_controlcen_dead_frame(void);

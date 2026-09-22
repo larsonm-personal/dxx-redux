@@ -31,6 +31,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fireball.h"
 #include "fvi.h"
 #include "game.h"
+#include "gameseq.h"
 #include "laser.h"
 #include "gameseg.h"
 #include "object.h"
@@ -288,9 +289,144 @@ int d1_in_d2_replace_powerup(object *del_obj)
 	return 1;
 }
 
+/* Native acquisition, firing and death-silence order from d1/main/cntrlcen.c */
+int d1_in_d2_reactor_frame(object *obj)
+{
+	int			best_gun_num;
+	if (!d1_in_d2_use_d1_gameplay())
+		return 0;
+
+	//	If a boss level, then Control_center_present will be 0.
+	if (!Control_center_present)
+		return 1;
+
+#ifndef NDEBUG
+	if (cheats.robotfiringsuspended || (Game_suspended & SUSP_ROBOTS))
+		return 1;
+#else
+	if (cheats.robotfiringsuspended)
+		return 1;
+#endif
+
+	if (!(Control_center_been_hit || Control_center_player_been_seen)) {
+		if (!(d_tick_count % 8)) {		//	Do every so often...
+			vms_vector	vec_to_player;
+			fix			dist_to_player;
+			int			i;
+			segment		*segp = &Segments[obj->segnum];
+
+			// This is a hack.  Since the control center is not processed by
+			// ai_do_frame, it doesn't know to deal with cloaked dudes.  It
+			// seems to work in single-player mode because it is actually using
+			// the value of Believed_player_position that was set by the last
+			// person to go through ai_do_frame.  But since a no-robots game
+			// never goes through ai_do_frame, I'm making it so the control
+			// center can spot cloaked dudes.
+#ifdef NETWORK
+			if (Game_mode & GM_MULTI)
+				Believed_player_pos = Objects[Players[Player_num].objnum].pos;
+#endif
+			//	Hack for special control centers which are isolated and not reachable because the
+			//	real control center is inside the boss.
+			for (i=0; i<MAX_SIDES_PER_SEGMENT; i++)
+				if (segp->children[i] != -1)
+					break;
+			if (i == MAX_SIDES_PER_SEGMENT)
+				return 1;
+
+			vm_vec_sub(&vec_to_player, &ConsoleObject->pos, &obj->pos);
+			dist_to_player = vm_vec_normalize_quick(&vec_to_player);
+			if (dist_to_player < F1_0*200) {
+				Control_center_player_been_seen = player_is_visible_from_object(obj, &obj->pos, 0, &vec_to_player);
+				Control_center_next_fire_time = 0;
+			}
+		}
+
+		return 1;
+	}
+
+	if(is_observer()) {
+		Control_center_player_been_seen = 0;
+		return 1;
+	}
+
+	if (Player_is_dead)
+		controlcen_death_silence += FrameTime;
+	else
+		controlcen_death_silence = 0;
+
+	if ((Control_center_next_fire_time < 0) && !(controlcen_death_silence > F1_0*2)) {
+		reactor *reactor = get_reactor_definition(obj->id);
+		if (Players[Player_num].flags & PLAYER_FLAGS_CLOAKED)
+			best_gun_num = calc_best_gun(reactor->n_guns, obj, &Believed_player_pos);
+		else
+			best_gun_num = calc_best_gun(reactor->n_guns, obj, &ConsoleObject->pos);
+
+		if (best_gun_num != -1) {
+			vms_vector	vec_to_goal;
+			fix			dist_to_player;
+			fix			delta_fire_time;
+
+			if (Players[Player_num].flags & PLAYER_FLAGS_CLOAKED) {
+				vm_vec_sub(&vec_to_goal, &Believed_player_pos, &obj->ctype.reactor_info.gun_pos[best_gun_num]);
+				dist_to_player = vm_vec_normalize_quick(&vec_to_goal);
+			} else {
+				vm_vec_sub(&vec_to_goal, &ConsoleObject->pos, &obj->ctype.reactor_info.gun_pos[best_gun_num]);
+				dist_to_player = vm_vec_normalize_quick(&vec_to_goal);
+			}
+
+			if (dist_to_player > F1_0*300)
+			{
+				Control_center_been_hit = 0;
+				Control_center_player_been_seen = 0;
+				return 1;
+			}
+
+			#ifdef NETWORK
+			if (Game_mode & GM_MULTI)
+				multi_send_controlcen_fire(&vec_to_goal, best_gun_num, obj-Objects);
+			#endif
+			Laser_create_new_easy( &vec_to_goal, &obj->ctype.reactor_info.gun_pos[best_gun_num], obj-Objects, CONTROLCEN_WEAPON_NUM, 1);
+
+			//	1/4 of time, fire another thing, not directly at player, so it might hit him if he's constantly moving.
+			// SIM RNG: this decides whether the reactor fires an extra live shot
+			if (d_rand() < 32767/4) {
+				vms_vector	randvec;
+
+				make_random_vector(&randvec);
+				vm_vec_scale_add2(&vec_to_goal, &randvec, F1_0/4);
+				vm_vec_normalize_quick(&vec_to_goal);
+				#ifdef NETWORK
+				if (Game_mode & GM_MULTI)
+					multi_send_controlcen_fire(&vec_to_goal, best_gun_num, obj-Objects);
+				#endif
+				Laser_create_new_easy( &vec_to_goal, &obj->ctype.reactor_info.gun_pos[best_gun_num], obj-Objects, CONTROLCEN_WEAPON_NUM, 1);
+			}
+
+			delta_fire_time = (NDL - Difficulty_level) * F1_0/4;
+#ifdef NETWORK
+			if (Game_mode & GM_MULTI) // slow down rate of fire in multi player
+				delta_fire_time *= 2;
+#endif
+			Control_center_next_fire_time = delta_fire_time;
+
+		}
+	} else
+		Control_center_next_fire_time -= FrameTime;
+
+	return 1;
+}
+
 int d1_in_d2_reactor_countdown(int engine_seconds)
 {
 	return d1_in_d2_use_d1_gameplay() ? 50 - 5*Difficulty_level : engine_seconds;
+}
+
+fix d1_in_d2_reactor_strength(fix engine_strength)
+{
+	if (!d1_in_d2_use_d1_gameplay())
+		return engine_strength;
+	return F1_0 * 200 + Current_level_num * F1_0 * (Current_level_num >= 0 ? 50 : -100);
 }
 
 int d1_in_d2_use_d2_resource_drop_suppression(const object *objp, int game_mode)

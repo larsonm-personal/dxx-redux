@@ -80,6 +80,7 @@ set(D1X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/secret_area_item_names.c
     ../../android/app/src/main/cpp/shared/secret_area_scan.c
     ../../android/app/src/main/cpp/shared/input_demo_fp_env.c
+    ../../android/app/src/main/cpp/shared/render_gameplay_view.c
     ../../android/app/src/main/cpp/shared/input_demo_hooks_shared.c
     ../../android/app/src/main/cpp/shared/input_demo_object_trace.cpp
     ../../android/app/src/main/cpp/shared/input_demo_newdemo_shared.c

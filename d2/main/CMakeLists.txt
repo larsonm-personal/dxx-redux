@@ -22,6 +22,7 @@ set(D2X_MAIN_SOURCES
     d1_in_d2/d1_in_d2_input_demo.c
     d1_in_d2/d1_in_d2_levels.c
     d1_in_d2/d1_in_d2_presentation.c
+    d1_in_d2/d1_in_d2_render.c
     d1_in_d2/d1_in_d2_semantics.c
     d1_in_d2/d1_in_d2_weapons.c
     d1_in_d2/d1_pig_validation.c
@@ -105,6 +106,7 @@ set(D2X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/secret_area_item_names.c
     ../../android/app/src/main/cpp/shared/secret_area_scan.c
     ../../android/app/src/main/cpp/shared/input_demo_fp_env.c
+    ../../android/app/src/main/cpp/shared/render_gameplay_view.c
     ../../android/app/src/main/cpp/shared/input_demo_hooks_shared.c
     ../../android/app/src/main/cpp/shared/input_demo_object_trace.cpp
     ../../android/app/src/main/cpp/shared/input_demo_newdemo_shared.c

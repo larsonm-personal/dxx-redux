@@ -8,6 +8,7 @@
 #include <zlib.h>
 #include "input_demo_object_trace.h"
 #include "input_demo_state_trace.h"
+#include "render_gameplay_view.h"
 #include <nlohmann/json.hpp>
 #include <SDL.h>
 #undef main
@@ -3459,6 +3460,56 @@ static void test_homing_targets()
 			Ordered_rendered_object_list[0] = target;
 #endif
 			require(find_homing_object(&origin, &homer) == (version == 1 ? target : -1), "D1 rendered acquisition retains its original range while D2 keeps its distance cap");
+			if (version == 1) {
+				// Native D1 consumes the last main-view list, even after a pause or rear view
+				Objects[target].pos = { F1_0, 0, 8 * F1_0 };
+				Objects[better].pos = { 0, 0, 9 * F1_0 };
+				obj_relink(better, 0);
+				auto main_candidates = [&](std::initializer_list<int> candidates) {
+#ifdef DXX_BUILD_DESCENT_II
+					Window_rendered_data[0].num_objects = static_cast<int>(candidates.size());
+					std::copy(candidates.begin(), candidates.end(), Window_rendered_data[0].rendered_objects);
+#else
+					Num_rendered_objects = static_cast<int>(candidates.size());
+					std::copy(candidates.begin(), candidates.end(), Ordered_rendered_object_list);
+#endif
+				};
+				main_candidates({ target });
+#ifdef DXX_BUILD_DESCENT_II
+				Window_rendered_data[0].time = timer_query() - 2 * F1_0;
+#endif
+				require(find_homing_object(&origin, &homer) == target, "native main-view candidates do not expire with wall-clock time");
+				for (int view_case = 0; view_case < 3; ++view_case) {
+#ifdef DXX_BUILD_DESCENT_II
+					// Keep the HUD camera eligible under D2 rules; it must never replace the D1 main list
+					Window_rendered_data[1].time = timer_query() + F1_0;
+					Window_rendered_data[1].viewer = ConsoleObject;
+					Window_rendered_data[1].rear_view = 0;
+					Window_rendered_data[1].num_objects = 1;
+					Window_rendered_data[1].rendered_objects[0] = better;
+					Window_rendered_data[0].time = timer_query() + F1_0;
+					Window_rendered_data[0].rear_view = view_case == 1;
+					Window_rendered_data[0].viewer = view_case == 2 ? &Objects[better] : ConsoleObject;
+#endif
+					require(find_homing_object(&origin, &homer) == target, "native main-view candidates survive rear/external views and competing HUD cameras");
+					main_candidates({});
+					require(find_homing_object(&origin, &homer) == -1, "an empty native main list does not trigger a complete scan or a HUD-camera search");
+					main_candidates({ target });
+				}
+				Objects[better].pos = { -F1_0, 0, 8 * F1_0 };
+				main_candidates({ target, better });
+				require(find_homing_object(&origin, &homer) == better, "equal native alignments prefer the last candidate in render order");
+				main_candidates({ better, target });
+				require(find_homing_object(&origin, &homer) == target, "reversing equal candidates reverses the native winner");
+				main_candidates({ target });
+#ifdef DXX_BUILD_DESCENT_II
+				std::memset(Window_rendered_data, 0, sizeof(Window_rendered_data));
+#endif
+				// Restore the surrounding fixture's target and blocked second-segment candidate
+				Objects[target].pos = { 0, 0, 300 * F1_0 };
+				Objects[better].pos = { 0, 0, 20 * F1_0 };
+				obj_relink(better, 1);
+			}
 			homer.ctype.laser_info.parent_num = target;
 			homer.ctype.laser_info.parent_type = OBJ_ROBOT;
 			homer.ctype.laser_info.track_goal = -1;
@@ -5758,9 +5809,10 @@ static void write_checkpoint_custom_assets(int robot_id, int bitmap_id, const st
 
 // Use real native save/restore and the public import adapter, including a second
 // checkpoint taken during the route. The runner provides an isolated write dir
-static void write_checkpoint_frame_trace(const char *directory, const char *checkpoints, bool custom)
+static void write_checkpoint_frame_trace(const char *directory, const char *checkpoints, bool custom, int level)
 {
 	using nlohmann::json;
+	require((level == 1 || level == 7 || level == 27) && (!custom || level == 1), "select a supported checkpoint fixture level");
 	const std::string hog = std::string(directory) + "/DESCENT.HOG";
 	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "mount original resources for restored robot frames");
 	Game_mode = 0;
@@ -5795,7 +5847,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 	texmerge_init(10);
 	init_game();
 	require(load_mission_by_name(mission), "select First Strike for checkpoint frames");
-	const std::string level_name = Level_names[0];
+	const std::string level_name = Level_names[level - 1];
 	const std::string source_stem = level_name.substr(0, level_name.find_last_of('.'));
 	const std::string stem = custom ? "chklevel" : source_stem;
 	// These overlay names belong only to the runner's isolated write directory
@@ -5808,9 +5860,9 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 	Difficulty_level = 2;
 #ifdef DXX_BUILD_DESCENT_II
 	input_demo_set_skip_level_intro(1);
-	StartNewGame(1);
+	StartNewGame(level);
 #else
-	StartNewLevelSub(1, 0, 0);
+	StartNewLevelSub(level, 0, 0);
 	char baseline[] = "baseline.sav";
 	char description[21] = "AI checkpoint"; // native DESC_LENGTH is 20
 #endif
@@ -5904,7 +5956,22 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		return guns;
 	};
 	const json fresh_reactor_guns = reactor_guns();
-	require(!fresh_reactor_guns.empty(), "checkpoint mine contains a live reactor with prepared guns");
+	const auto hidden_reactors = [] {
+		json result = json::array();
+		for (int slot = 0; slot <= Highest_object_index; ++slot) {
+			const auto &obj = Objects[slot];
+			if (obj.type == OBJ_GHOST && obj.control_type == CT_CNTRLCEN) {
+				require(obj.render_type == RT_NONE && !Control_center_present, "boss reactor placeholder is hidden and inactive");
+				result.push_back({ slot, obj.type, obj.control_type, obj.render_type, obj.movement_type, obj.segnum,
+				                   obj.pos.x, obj.pos.y, obj.pos.z, obj.shields, obj.rtype.pobj_info.model_num });
+			}
+		}
+		return result;
+	};
+	const json fresh_hidden_reactors = hidden_reactors();
+	require(level == 1 ? !fresh_reactor_guns.empty() && fresh_hidden_reactors.empty()
+	                   : fresh_reactor_guns.empty() && fresh_hidden_reactors.size() == 1,
+	        "checkpoint mine contains the expected live or hidden reactor");
 	const auto restore = [&](char *filename) {
 #ifdef DXX_BUILD_DESCENT_II
 		if (custom && std::strcmp(filename, "route-0.sav") == 0) {
@@ -5937,17 +6004,28 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		if (std::strcmp(filename, "route-0.sav") == 0) {
 			const std::vector<object> previous_objects(Objects, Objects + Highest_object_index + 1);
 			const int previous_primary = delayed_primary_autoselect_weapon_index;
-			for (int invalid = 0; invalid < 4; ++invalid) {
+			for (int invalid = 0; invalid < 7; ++invalid) {
 				auto damaged = data;
 				if (!invalid)
 					damaged.pop_back();
-				else {
+				else if (invalid < 4) {
 					// Version 17 ends in the four autoselect_runtime.h integers
 					const size_t offset = damaged.size() - (invalid == 1 ? 16 : invalid == 2 ? 8
 					                                                                         : 4);
 					set_int(damaged, offset, invalid == 1 ? 2 : 5);
+				} else {
+					// Native object_rw starts with signature, type/id, links, then
+					// control/movement/render bytes; change the first player to an
+					// invalid ghost without changing the serialized record size
+					const size_t offset = start.object_stream_offset;
+					require(damaged.at(offset + 4) == OBJ_PLAYER, "invalid ghost fixture starts from the actual saved player");
+					damaged.at(offset + 4) = OBJ_GHOST;
+					damaged.at(offset + 5) = MAX_PLAYERS;
+					damaged.at(offset + 10) = invalid == 4 ? CT_NONE : CT_CNTRLCEN;
+					damaged.at(offset + 11) = invalid == 6 ? MT_PHYSICS : MT_NONE;
+					damaged.at(offset + 12) = invalid == 5 ? RT_POLYOBJ : RT_NONE;
 				}
-				require(!d1_save_translate_apply_checkpoint_objects(damaged.data(), damaged.size(), &start), "reject truncated or invalid native pending selection state");
+				require(!d1_save_translate_apply_checkpoint_objects(damaged.data(), damaged.size(), &start), "reject truncated checkpoints, invalid pending selection and invalid player/reactor ghosts");
 				require(std::memcmp(Objects, previous_objects.data(), previous_objects.size() * sizeof(object)) == 0 &&
 				            delayed_primary_autoselect_weapon_index == previous_primary,
 				        "rejected checkpoint leaves the current objects and pending selection intact");
@@ -5964,6 +6042,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		if (restored_reactor_guns != fresh_reactor_guns)
 			std::fprintf(stderr, "Reactor gun restore: fresh=%s restored=%s\n", fresh_reactor_guns.dump().c_str(), restored_reactor_guns.dump().c_str());
 		require(restored_reactor_guns == fresh_reactor_guns, "checkpoint rebuilds reactor gun positions and directions before simulation");
+		require(hidden_reactors() == fresh_hidden_reactors, "checkpoint preserves the hidden reactor instead of treating it as a player");
 	};
 	const auto vector = [](const vms_vector &v) { return json::array({ v.x, v.y, v.z }); };
 	json cases = json::array();
@@ -6064,7 +6143,8 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			do_ai_frame(&robot);
 			const ai_static &aip = robot.ctype.ai_info;
 			const ai_local &local = Ai_local_info[robot_index];
-			if (frame == 0 && (scenario == 3 || scenario == 4))
+			// This endpoint reversal is specific to the authored level-1 route
+			if (level == 1 && frame == 0 && (scenario == 3 || scenario == 4))
 				require(aip.PATH_DIR == (scenario == 3 ? -1 : 1), "restored follow route reverses at a blocked endpoint");
 			if (scenario == 0) {
 				const vms_vector zero = {};
@@ -6086,7 +6166,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 	}
 	FILE *output = std::fopen("frames.json", "wb");
 	require(output != nullptr, "open restored frame trace");
-	const std::string result = json({ { "fresh_textures", fresh_textures }, { "fresh_triggers", fresh_triggers }, { "fresh_assets", fresh_assets }, { "reactor_guns", fresh_reactor_guns }, { "cases", cases } }).dump(2) + "\n";
+	const std::string result = json({ { "fresh_textures", fresh_textures }, { "fresh_triggers", fresh_triggers }, { "fresh_assets", fresh_assets }, { "reactor_guns", fresh_reactor_guns }, { "hidden_reactors", fresh_hidden_reactors }, { "cases", cases } }).dump(2) + "\n";
 	require(std::fwrite(result.data(), 1, result.size(), output) == result.size(), "write complete restored frame trace");
 	std::fclose(output);
 	std::puts("Restored robot frame trace passed");
@@ -6821,6 +6901,98 @@ static nlohmann::json exercise_volatile_impacts(bool native)
 	return result;
 }
 
+static nlohmann::json exercise_reactor_frames(bool native)
+{
+	using nlohmann::json;
+	json result = json::array();
+	Game_mode = 0;
+	Player_num = 0;
+	Game_suspended = 0;
+	cheats.robotfiringsuspended = 0;
+	for (const int level : { 1, 14, -1 })
+		for (int difficulty = 0; difficulty < NDL; ++difficulty)
+			for (const int seed : { 1, 7, 23, 97, 123, 456, 789, 12345 })
+				for (int scenario = 0; scenario < 10; ++scenario) {
+					init_test_corridor(6);
+					for (int vertex = 0; vertex < Num_vertices; ++vertex)
+						vm_vec_scale(&Vertices[vertex], 4 * F1_0);
+					validate_segment_all();
+					Players[0].objnum = 0;
+					Players[0].flags = scenario == 1 ? PLAYER_FLAGS_CLOAKED : 0;
+					ConsoleObject = Viewer = &Objects[0];
+					ConsoleObject->pos = { 0, 0, (scenario == 2 ? 340 : 80) * F1_0 };
+					const int player_segment = find_point_seg(&ConsoleObject->pos, 0);
+					require(player_segment >= 0, "place reactor target in the test mine");
+					obj_relink(0, player_segment);
+					vms_vector center = {};
+					const int slot = obj_create(OBJ_CNTRLCEN, 0, 0, &center, &vmd_identity_matrix, F1_0, CT_CNTRLCEN, MT_NONE, RT_POLYOBJ);
+					require(slot > 0, "create reactor using loaded game definitions");
+					object &reactor_object = Objects[slot];
+					Current_level_num = level;
+					Difficulty_level = difficulty;
+#ifdef DXX_BUILD_DESCENT_II
+					Reactor_strength = -1;
+#endif
+					init_controlcen_for_level();
+					require(reactor_object.shields == 200 * F1_0 + level * F1_0 * (level >= 0 ? 50 : native ? -100 : -150),
+					        "reactor initialization retains original normal and secret-level health");
+					if (scenario == 8) {
+						Segments[0].children[4] = -1;
+						Segments[1].children[5] = -1;
+					}
+					if (scenario == 9) {
+						for (auto &child : Segments[0].children) child = -1;
+						Segments[0].children[4] = -2; // Original D1 treats an exit as a non-isolated side
+					}
+					FrameTime = F1_0 / 64;
+					GameTime64 = 10 * F1_0;
+					d_tick_count = scenario == 4 ? 1 : 8;
+					Control_center_present = scenario != 7;
+					Control_center_been_hit = scenario < 3 || scenario == 5 || scenario == 6 || scenario == 8;
+					Control_center_player_been_seen = 0;
+					Control_center_next_fire_time = scenario == 5 ? 0 : -1;
+					Player_is_dead = scenario == 6;
+					controlcen_death_silence = scenario == 6 ? 2 * F1_0 : 0;
+					Believed_player_pos = scenario == 1 ? vms_vector{ F1_0, 0, 40 * F1_0 } : ConsoleObject->pos;
+#ifdef DXX_BUILD_DESCENT_II
+					Last_time_cc_vis_check = 0;
+#endif
+					d_srand(seed);
+					d_srand_stream(D_RNG_FX, seed + 1);
+					d_rand_reset_call_count();
+					d_rand_reset_stream_call_count(D_RNG_FX);
+					do_controlcen_frame(&reactor_object);
+					json shots = json::array();
+					for (int i = 1; i <= Highest_object_index; ++i) {
+						const object &shot = Objects[i];
+						if (shot.type != OBJ_WEAPON) continue;
+						require(shot.id == CONTROLCEN_WEAPON_NUM && shot.ctype.laser_info.parent_num == slot, "reactor creates actual owned projectiles");
+						shots.push_back({ shot.id, shot.segnum, shot.pos.x, shot.pos.y, shot.pos.z,
+						                  shot.orient.fvec.x, shot.orient.fvec.y, shot.orient.fvec.z,
+						                  shot.mtype.phys_info.velocity.x, shot.mtype.phys_info.velocity.y, shot.mtype.phys_info.velocity.z,
+						                  shot.lifeleft, shot.shields, shot.ctype.laser_info.parent_type });
+					}
+					if (scenario < 2 || scenario == 8) {
+						require(!shots.empty(), "ready reactor fires at the visible or believed target");
+						require(shots.size() <= static_cast<size_t>(native ? 2 : 5), "reactor respects each game's burst limit");
+						require(Control_center_next_fire_time == (NDL - difficulty) * F1_0 / 4 + (!native && difficulty == 0 ? F1_0 / 2 : 0), "reactor uses its original difficulty fire delay");
+					} else
+						require(shots.empty(), "reactor acquisition, distance, cooldown and inactive phases do not fire early");
+					if (scenario == 8)
+						require(Control_center_been_hit == static_cast<int>(native), "only D2 periodically clears an active reactor's unseen target");
+					unsigned sim_state = 0, fx_state = 0;
+					const int sim_available = d_rand_get_stream_state(D_RNG_SIM, &sim_state);
+					const int fx_available = d_rand_get_stream_state(D_RNG_FX, &fx_state);
+					result.push_back({ { "level", level }, { "difficulty", difficulty }, { "seed", seed }, { "scenario", scenario },
+					                   { "shots", shots }, { "hit", Control_center_been_hit }, { "seen", Control_center_player_been_seen },
+					                   { "shields", reactor_object.shields }, { "sim_state", { sim_available, sim_state } }, { "fx_state", { fx_available, fx_state } },
+					                   { "next_fire", Control_center_next_fire_time }, { "death_silence", controlcen_death_silence },
+					                   { "sim_draws", d_rand_get_call_count() }, { "fx_draws", d_rand_get_stream_call_count(D_RNG_FX) } });
+				}
+	Player_is_dead = 0;
+	return result;
+}
+
 static nlohmann::json exercise_gameplay_rules(bool native)
 {
 	using nlohmann::json;
@@ -6947,6 +7119,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 	const auto robot_pairs = exercise_robot_pairs(native);
 	const auto resource_drops = exercise_resource_drops(native);
 	const auto weapon_drops = exercise_weapon_drops(native);
+	const auto reactor_frames = exercise_reactor_frames(native);
 	const auto secondary_explosions = exercise_secondary_explosions(native);
 	const auto volatile_impacts = exercise_volatile_impacts(native);
 	Game_mode = 0;
@@ -7099,7 +7272,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 					}
 				}
 	Game_mode = 0;
-	return { { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "powerup_animation", powerup_animation }, { "object_orientations", object_orientations }, { "small_fireballs", small_fireballs }, { "reactor_fireballs", reactor_fireballs }, { "volatile_impacts", volatile_impacts }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "weapon_drops", weapon_drops }, { "secondary_explosions", secondary_explosions } };
+	return { { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "powerup_animation", powerup_animation }, { "object_orientations", object_orientations }, { "small_fireballs", small_fireballs }, { "reactor_fireballs", reactor_fireballs }, { "volatile_impacts", volatile_impacts }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "weapon_drops", weapon_drops }, { "reactor_frames", reactor_frames }, { "secondary_explosions", secondary_explosions } };
 }
 
 static void write_gameplay_rules_trace(const char *directory, const char *d2_directory)
@@ -7150,6 +7323,128 @@ static void write_gameplay_rules_trace(const char *directory, const char *d2_dir
 	std::puts("Gameplay rules trace passed");
 }
 
+// Compare CPU collection against the actual draw, then export native/imported lists
+static void write_render_candidates_trace(const char *directory)
+{
+	using nlohmann::json;
+	const std::string hog = std::string(directory) + "/DESCENT.HOG";
+	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "mount original candidate-test resources");
+	GameArg.SndNoSound = GameArg.SndNoMusic = 1;
+	GameArg.SysWindow = GameCfg.WindowMode = 1;
+	GameCfg.AspectX = 4;
+	GameCfg.AspectY = 3;
+	GameCfg.TexFilt = 0;
+	Game_screen_mode = SM(640, 480);
+	digi_select_system(SDLAUDIO_SYSTEM);
+#ifdef DXX_BUILD_DESCENT_II
+	require(d1_in_d2_init_base_resources(1), "select D1 candidate-test resources");
+#endif
+	load_text();
+	require(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) == 0 && gr_init(Game_screen_mode) == 0, "initialize candidate-test renderer");
+	gr_use_palette_table("palette.256");
+	gamefont_init();
+	gamedata_init();
+#ifdef DXX_BUILD_DESCENT_II
+	d1_in_d2_init_startup_bitmaps();
+	char mission[] = "descent";
+#else
+	char mission[] = "";
+#endif
+	texmerge_init(10);
+	init_game();
+	require(load_mission_by_name(mission), "load candidate-test mission");
+	Player_num = 0;
+	N_players = 1;
+	std::strcpy(Players[0].callsign, "viewtest");
+	Difficulty_level = 2;
+	init_player_stats_game(0);
+	json trace = json::array();
+	auto check_view = [&](int scene, int pose, int width, int height, int rear, int classic, fix offset) {
+		std::fprintf(stderr, "Candidate draw scene=%d pose=%d viewport=%dx%d rear=%d classic=%d offset=%d\n", scene, pose, width, height, rear, classic, offset);
+		grs_canvas canvas;
+		gr_init_sub_canvas(&canvas, &grd_curscreen->sc_canvas, 0, 0, width, height);
+		gr_set_current_canvas(&canvas);
+		Rear_view = rear;
+		GameCfg.ClassicDepth = classic;
+		Endlevel_sequence = 0;
+		Player_fired_laser_this_frame = -1;
+#ifdef DXX_BUILD_DESCENT_II
+		update_rendered_data(0, Viewer, rear, 0);
+		render_frame(offset, 0);
+		const std::vector<short> drawn(Window_rendered_data[0].rendered_objects,
+		    Window_rendered_data[0].rendered_objects + Window_rendered_data[0].num_objects);
+#else
+		render_frame(offset);
+		const std::vector<short> drawn(Ordered_rendered_object_list, Ordered_rendered_object_list + Num_rendered_objects);
+#endif
+		const std::vector<object> before(Objects, Objects + Highest_object_index + 1);
+		const auto sim_calls = d_rand_get_call_count(), fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		unsigned sim_state = 0, fx_state = 0;
+		const int has_sim = d_rand_get_state(&sim_state), has_fx = d_rand_get_stream_state(D_RNG_FX, &fx_state);
+		short candidates[MAX_RENDERED_OBJECTS];
+		const int count = render_collect_view_objects(offset, candidates);
+		require(count >= 0 && std::vector<short>(candidates, candidates + count) == drawn, "CPU candidate list equals the actual renderer, including order");
+		require(!std::memcmp(before.data(), Objects, before.size() * sizeof(object)), "CPU candidate preparation does not mutate live objects");
+		unsigned after_sim = 0, after_fx = 0;
+		require(d_rand_get_state(&after_sim) == has_sim && d_rand_get_stream_state(D_RNG_FX, &after_fx) == has_fx &&
+		        after_sim == sim_state && after_fx == fx_state && sim_calls == d_rand_get_call_count() && fx_calls == d_rand_get_stream_call_count(D_RNG_FX),
+		        "CPU candidate preparation preserves both RNG states and counts");
+		trace.push_back({ { "scene", scene }, { "pose", pose }, { "width", width }, { "height", height },
+		    { "rear", rear }, { "classic", classic }, { "offset", offset }, { "candidates", drawn },
+		    { "segments", std::vector<short>(Render_list, Render_list + N_render_segs) } });
+		gr_set_current_canvas(nullptr);
+	};
+	for (const int level : { 1, 14, 27 }) {
+		std::fprintf(stderr, "Candidate level load %d\n", level);
+#ifdef DXX_BUILD_DESCENT_II
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(level);
+#else
+		StartNewLevelSub(level, 0, 0);
+#endif
+		Viewer = ConsoleObject = &Objects[Players[Player_num].objnum];
+		for (int pose = 0; pose < 8; ++pose) {
+			const int segment = pose * Highest_segment_index / 8;
+			compute_segment_center(&Viewer->pos, &Segments[segment]);
+			obj_relink(static_cast<int>(Viewer - Objects), segment);
+			vms_angvec angles = { static_cast<fixang>(pose * 1777), static_cast<fixang>(pose * 991), static_cast<fixang>(pose * 8191) };
+			vm_angles_2_matrix(&Viewer->orient, &angles);
+			for (const int classic : { 0, 1 })
+				for (const int rear : { 0, 1 })
+					for (const int viewport : { 0, 1, 2 })
+						check_view(level, pose, viewport == 0 ? 640 : 320, viewport == 2 ? 200 : 320, rear, classic, pose & 1 ? F1_0 / 4 : 0);
+		}
+	}
+	// Dense mixed rows hit D1's 49-object sort limit and linked-row migration
+	for (const int density : { 8, 48, 64, 96 }) {
+		init_test_corridor(3);
+		Viewer = ConsoleObject = &Objects[0];
+		Players[0].objnum = 0;
+		Viewer->type = OBJ_PLAYER;
+		Viewer->orient = vmd_identity_matrix;
+		for (int i = 0; i < density; ++i) {
+			const int segment = density >= 64 ? 0 : i % 3;
+			vms_vector position;
+			compute_segment_center(&position, &Segments[segment]);
+			position.x += (i % 5 - 2) * F1_0 / 4;
+			position.z += (i % 7 - 3) * F1_0;
+			const auto type = i % 4 == 0 ? OBJ_ROBOT : i % 4 == 1 ? OBJ_FIREBALL : OBJ_WEAPON;
+			require(obj_create(type, 0, segment, &position, &vmd_identity_matrix, (i % 3 + 1) * 4 * F1_0, CT_NONE, MT_NONE, RT_NONE) > 0, "create dense candidate scene");
+		}
+		for (const int classic : { 0, 1 })
+			for (const int rear : { 0, 1 })
+				check_view(-density, 0, 640, 480, rear, classic, 0);
+	}
+	short untouched[MAX_RENDERED_OBJECTS];
+	std::fill(std::begin(untouched), std::end(untouched), static_cast<short>(123));
+	Endlevel_sequence = 1;
+	require(render_collect_view_objects(0, untouched) == -1 && untouched[0] == 123, "endlevel retains the prior candidate list");
+	Endlevel_sequence = 0;
+	const std::string output = trace.dump(2) + "\n";
+	write_fixture("candidates.json", bytes(output.begin(), output.end()));
+	std::fprintf(stderr, "PASS: %zu CPU/renderer candidate lists match\n", trace.size());
+}
+
 void test_autoselect();
 
 int main(int argc, char **argv)
@@ -7159,6 +7454,10 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if (argc == 3 && std::strcmp(argv[1], "--render-candidates-trace") == 0) {
+		write_render_candidates_trace(argv[2]);
+		return 0;
+	}
 	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--gameplay-rules-trace") == 0) {
 		write_gameplay_rules_trace(argv[2], argc == 4 ? argv[3] : nullptr);
 		return 0;
@@ -7167,8 +7466,8 @@ int main(int argc, char **argv)
 		write_briefing_trace(argv[2], argc == 4 ? argv[3] : nullptr);
 		return 0;
 	}
-	if (argc == 4 && (std::strcmp(argv[1], "--checkpoint-frame-trace") == 0 || std::strcmp(argv[1], "--custom-checkpoint-frame-trace") == 0)) {
-		write_checkpoint_frame_trace(argv[2], argv[3], std::strcmp(argv[1], "--custom-checkpoint-frame-trace") == 0);
+	if ((argc == 4 || argc == 5) && (std::strcmp(argv[1], "--checkpoint-frame-trace") == 0 || std::strcmp(argv[1], "--custom-checkpoint-frame-trace") == 0)) {
+		write_checkpoint_frame_trace(argv[2], argv[3], std::strcmp(argv[1], "--custom-checkpoint-frame-trace") == 0, argc == 5 ? std::atoi(argv[4]) : 1);
 		return 0;
 	}
 	if (argc == 3 && std::strcmp(argv[1], "--campaign-trace") == 0) {

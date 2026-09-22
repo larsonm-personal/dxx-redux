@@ -32,8 +32,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "texmap.h"  // for init_interface_vars_to_assembler()
 #endif
 
-//start the frame
-void g3_start_frame(void)
+// Set up CPU projection without calling a graphics backend
+void g3_start_frame_projection(void)
 {
 	fix s;
 
@@ -61,6 +61,12 @@ void g3_start_frame(void)
 	Window_scale.z = f1_0;		//always 1
 
 	init_free_points();
+}
+
+//start the frame
+void g3_start_frame(void)
+{
+	g3_start_frame_projection();
 
 #ifdef OGL
 	ogl_start_frame();

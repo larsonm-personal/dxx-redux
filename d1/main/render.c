@@ -1515,29 +1515,10 @@ void start_lighting_frame(object *viewer);
 fix Zoom_factor=F1_0;
 #endif
 //renders onto current canvas
-void render_frame(fix eye_offset)
+// Set up the current view and return its starting segment without drawing
+int render_setup_view(fix eye_offset)
 {
 	int start_seg_num;
-
-	if (Endlevel_sequence) {
-		render_endlevel_frame(eye_offset);
-		return;
-	}
-
-	if (
-#if defined(ANDROID) || defined(__ANDROID__)
-		!Android_visual_only_render_pass &&
-#endif
-		Newdemo_state == ND_STATE_RECORDING )	{
-		if (eye_offset >= 0 )	{
-			newdemo_record_start_frame(FrameTime );
-			newdemo_record_viewer_object(Viewer);
-		}
-	}
-
-	start_lighting_frame(Viewer);		//this is for ugly light-smoothing hack
-
-	g3_start_frame();
 
 	Viewer_eye = Viewer->pos;
 
@@ -1597,6 +1578,35 @@ void render_frame(fix eye_offset)
 				   );
 #endif
 	}
+
+	return start_seg_num;
+}
+
+void render_frame(fix eye_offset)
+{
+	int start_seg_num;
+
+	if (Endlevel_sequence) {
+		render_endlevel_frame(eye_offset);
+		return;
+	}
+
+	if (
+#if defined(ANDROID) || defined(__ANDROID__)
+		!Android_visual_only_render_pass &&
+#endif
+		Newdemo_state == ND_STATE_RECORDING )	{
+		if (eye_offset >= 0 )	{
+			newdemo_record_start_frame(FrameTime );
+			newdemo_record_viewer_object(Viewer);
+		}
+	}
+
+	start_lighting_frame(Viewer);		//this is for ugly light-smoothing hack
+
+	g3_start_frame();
+
+	start_seg_num = render_setup_view(eye_offset);
 
 	if (Clear_window == 1) {
 		if (Clear_window_color == -1)

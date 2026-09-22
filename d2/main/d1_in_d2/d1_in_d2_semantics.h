@@ -50,6 +50,10 @@ int d1_in_d2_remove_obsolete_stuck_objects(void);
 int d1_in_d2_replace_powerup(struct object *container);
 
 int d1_in_d2_reactor_countdown(int engine_seconds);
+/* Complete native acquisition/fire frame; returns handled only in D1 gameplay */
+int d1_in_d2_reactor_frame(struct object *reactor);
+/* Original D1 level health; ordinary D2 retains its computed strength */
+fix d1_in_d2_reactor_strength(fix engine_strength);
 /* Complete native dead-reactor burn phase; inactive consumes no RNG */
 int d1_in_d2_dead_reactor_effects(void);
 
