@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "tsf.h"
+#include "hmp_tsf_state.h"
 
 enum test_event_type {
 	TEST_PROGRAM,
@@ -219,6 +220,100 @@ done:
 	return ok;
 }
 
+struct loop_probe {
+	int volume, note_count, frames;
+	int note_volume[8];
+};
+
+static void loop_dispatch(void *context, const void *event)
+{
+	struct loop_probe *probe = context;
+	const struct test_event *e = event;
+	if (e->type == TEST_CONTROL && e->first == 7)
+		probe->volume = e->second;
+	if (e->type == TEST_NOTE_ON && probe->note_count < 8)
+		probe->note_volume[probe->note_count++] = probe->volume;
+}
+
+static void loop_render(void *context, short *output, int frames)
+{
+	struct loop_probe *probe = context;
+	(void) output;
+	probe->frames += frames;
+}
+
+static int test_loop_range(void)
+{
+	struct test_event events[] = {
+		{ 0, TEST_CONTROL, 4, 7, 0, NULL },
+		{ 100, TEST_NOTE_ON, 4, 60, 100, NULL },
+		{ 200, TEST_CONTROL, 4, 7, 127, NULL },
+		{ 300, TEST_NOTE_ON, 4, 62, 100, NULL },
+		{ 400, TEST_PROGRAM, 4, 0, 0, NULL },
+		{ 500, TEST_NOTE_ON, 4, 60, 100, NULL }
+	};
+	const struct midi_seek_timeline_ops ops = {
+		test_event_time_ms, test_event_next, loop_dispatch, loop_render
+	};
+	struct midi_seek_timeline timeline;
+	struct loop_probe probe = { 0 };
+	int i;
+	for (i = 0; i < 5; i++) events[i].next = &events[i + 1];
+	midi_seek_timeline_init(&timeline, events, 1000, 2, &probe, &ops);
+	if (!midi_seek_timeline_set_range(&timeline, &events[4], 400, 800) ||
+	    midi_seek_timeline_render(&timeline, NULL, 1600) != 1600 ||
+	    probe.frames != 1600 || probe.note_count != 5 || probe.note_volume[0] != 0)
+		return 0;
+	for (i = 1; i < 5; i++)
+		if (probe.note_volume[i] != 127) return 0;
+	/* The last event is at 500 ms; the finite range must still render to 800 */
+	memset(&probe, 0, sizeof(probe));
+	midi_seek_timeline_init(&timeline, events, 1000, 2, &probe, &ops);
+	if (!midi_seek_timeline_set_range(&timeline, NULL, 0, 800) ||
+	    midi_seek_timeline_render(&timeline, NULL, 1000) != 800 ||
+	    midi_seek_timeline_render(&timeline, NULL, 1000) != 0 || probe.frames != 800)
+		return 0;
+	return !midi_seek_timeline_set_range(&timeline, events, 800, 800);
+}
+
+static int test_hmp_song_state(const unsigned char *soundfont, int size)
+{
+	tsf *synth = tsf_load_memory(soundfont, size);
+	struct hmp_tsf_state state = { 0 };
+	int preset, ok;
+	float pan;
+	if (!synth) return 0;
+	configure_synth(synth, 48000);
+	tsf_channel_set_presetnumber(synth, 4, 39, 0);
+	tsf_channel_midi_control(synth, 4, 10, 47);
+	tsf_channel_midi_control(synth, 4, 42, 31);
+	tsf_channel_midi_control(synth, 4, 7, 127);
+	preset = tsf_channel_get_preset_index(synth, 4);
+	pan = tsf_channel_get_pan(synth, 4);
+	hmp_tsf_capture(synth, &state);
+	tsf_reset(synth);
+	hmp_tsf_begin(synth, &state);
+	ok = tsf_channel_get_preset_index(synth, 4) == preset &&
+	     tsf_channel_get_pan(synth, 4) == pan &&
+	     tsf_channel_get_volume(synth, 4) < 0.0001f;
+	if (!ok)
+		fprintf(stderr, "HMP state preset %d/%d pan %.9f/%.9f raw %u volume %.9f\n", preset,
+		        tsf_channel_get_preset_index(synth, 4), pan, tsf_channel_get_pan(synth, 4),
+		        state.pan[4], tsf_channel_get_volume(synth, 4));
+	/* A subsequent LSB update must combine with the retained pan MSB */
+	tsf_channel_midi_control(synth, 4, 42, 32);
+	ok = ok && tsf_channel_get_pan(synth, 4) > pan && tsf_channel_get_pan(synth, 4) < pan + 0.0001f;
+	/* Cover the pinned getter's endpoint and unallocated-channel behavior */
+	tsf_channel_midi_control(synth, 0, 10, 0);
+	tsf_channel_midi_control(synth, 0, 42, 0);
+	tsf_channel_midi_control(synth, 15, 10, 127);
+	tsf_channel_midi_control(synth, 15, 42, 127);
+	hmp_tsf_capture(synth, &state);
+	ok = ok && state.pan[0] == 0 && state.pan[15] == 16383;
+	tsf_close(synth);
+	return ok;
+}
+
 int main(int argc, char **argv)
 {
 	struct test_event events[] = {
@@ -239,6 +334,10 @@ int main(int argc, char **argv)
 	int i;
 	int rate;
 	double target;
+	if (!test_loop_range()) {
+		fprintf(stderr, "MIDI loop state/end range test failed\n");
+		return 1;
+	}
 
 	if (argc != 2) {
 		fprintf(stderr, "usage: test_midi_seek_timeline <soundfont>\n");
@@ -250,6 +349,11 @@ int main(int argc, char **argv)
 	if (!soundfont) {
 		fprintf(stderr, "could not read soundfont\n");
 		return 2;
+	}
+	if (!test_hmp_song_state(soundfont, soundfont_size)) {
+		fprintf(stderr, "HMP transition state test failed\n");
+		free(soundfont);
+		return 1;
 	}
 	for (rate = 44100; rate <= 48000; rate += 3900) {
 		for (target = 700.0; target <= 2100.0; target += 700.0) {

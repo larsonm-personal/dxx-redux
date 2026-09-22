@@ -30,6 +30,7 @@
 #include "tsf.h"
 #define TML_NO_STDIO
 #include "tml.h"
+#include "hmp_tsf_state.h"
 
 #define TAG       "DXX-MidiPreview"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
@@ -108,6 +109,9 @@ static volatile int s_position_snapshot_ms = 0;
 static volatile int s_duration_snapshot_ms = 0;
 static double s_playback_msec = 0.0;
 static int s_duration_ms = 0;
+static double s_hmp_end_ms;
+static struct hmp_tsf_state s_hmp_saved_state;
+static struct hmp_tsf_state s_hmp_initial_state;
 static int s_output_rate = 48000;
 static float s_volume = 0.7f;
 static float s_gain_db = -10.0f;
@@ -230,6 +234,8 @@ static void reset_midi_timeline(void)
 		render_tsf_frames
 	};
 	midi_seek_timeline_init(&s_timeline, s_midi, s_output_rate, 2, s_tsf, &ops);
+	if (s_hmp_end_ms > 0)
+		midi_seek_timeline_set_range(&s_timeline, NULL, 0, s_hmp_end_ms);
 }
 
 static int render_midi_frames(short *out, int frames)
@@ -315,6 +321,8 @@ static void approximate_seek(int target_ms)
 	int notes = 0;
 
 	tsf_reset(s_tsf);
+	if (s_hmp_end_ms > 0)
+		hmp_tsf_begin(s_tsf, &s_hmp_initial_state);
 	tsf_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
 	tsf_set_max_voices(s_tsf, s_max_voices);
 	while (message && message->time <= (unsigned int) target_ms) {
@@ -656,6 +664,7 @@ int midi_preview_start(const unsigned char *data, int len,
 {
 	unsigned char *midi_data = NULL;
 	int midi_len = 0;
+	struct hmp_playback_info hmp_info;
 	pthread_mutex_lock(&s_control_mutex);
 
 	/* Stop any existing preview */
@@ -673,12 +682,14 @@ int midi_preview_start(const unsigned char *data, int len,
 	}
 
 	/* Convert HMP to MIDI if needed */
+	s_hmp_end_ms = 0;
 	if (is_hmp) {
-		if (!hmp2mid_mem(data, len, &midi_data, &midi_len)) {
+		if (!hmp2mid_playback_mem(data, len, 0, &midi_data, &midi_len, &hmp_info)) {
 			LOGE("HMP -> MIDI conversion failed");
 			pthread_mutex_unlock(&s_control_mutex);
 			return 0;
 		}
+		s_hmp_end_ms = hmp_info.end_ms;
 	} else {
 		/* Standard MIDI: copy the data */
 		midi_data = (unsigned char *) d_malloc(len);
@@ -700,7 +711,7 @@ int midi_preview_start(const unsigned char *data, int len,
 	}
 
 	/* Compute duration */
-	s_duration_ms = compute_midi_duration_ms(midi_data, midi_len);
+	s_duration_ms = is_hmp ? (int) (s_hmp_end_ms + 0.999999) : compute_midi_duration_ms(midi_data, midi_len);
 
 	s_midi_buf = midi_data;
 	s_midi_buf_len = midi_len;
@@ -713,6 +724,10 @@ int midi_preview_start(const unsigned char *data, int len,
 
 	/* Configure TSF */
 	tsf_reset(s_tsf);
+	if (is_hmp) {
+		s_hmp_initial_state = s_hmp_saved_state;
+		hmp_tsf_begin(s_tsf, &s_hmp_initial_state);
+	}
 	tsf_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
 	tsf_set_max_voices(s_tsf, s_max_voices);
 	reset_midi_timeline();
@@ -754,6 +769,8 @@ static void midi_preview_stop_internal(void)
 
 	pthread_mutex_lock(&s_playback_mutex);
 	if (s_midi) {
+		if (s_hmp_end_ms > 0 && s_tsf)
+			hmp_tsf_capture(s_tsf, &s_hmp_saved_state);
 		tml_free(s_midi);
 		s_midi = NULL;
 		s_timeline.event = NULL;
@@ -765,6 +782,7 @@ static void midi_preview_stop_internal(void)
 	}
 	rb_reset();
 	s_duration_ms = 0;
+	s_hmp_end_ms = 0;
 	s_playback_msec = 0.0;
 	publish_playback_state();
 	pthread_mutex_unlock(&s_playback_mutex);

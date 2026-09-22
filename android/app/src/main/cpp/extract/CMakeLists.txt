@@ -519,6 +519,23 @@ else()
     target_compile_options(test_hmp_android_shared PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME hmp_android_shared_tests COMMAND test_hmp_android_shared)
+add_executable(hmp_midi_export hmp_midi_export.c ../shared/hmp_android_shared.c
+                               ../shared/tsf_impl.c)
+target_include_directories(hmp_midi_export PRIVATE test_hmp_stubs ../shared
+                                                   ${tinysoundfont_test_SOURCE_DIR})
+if(NOT MSVC)
+    target_link_libraries(hmp_midi_export PRIVATE m)
+    target_compile_options(hmp_midi_export PRIVATE -Wall -Wextra)
+endif()
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_Interpreter_FOUND)
+    add_test(
+        NAME hmp_playback_tests
+        COMMAND
+            ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../tests/test_hmp_playback.py --exporter
+            $<TARGET_FILE:hmp_midi_export>)
+endif()
 add_executable(
     test_midi_metadata
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_midi_metadata.c

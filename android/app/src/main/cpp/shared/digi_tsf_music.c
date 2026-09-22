@@ -43,6 +43,9 @@
 
 #include "args.h"
 #include "hmp.h"
+#include "hmp_android_shared.h"
+#include "midi_seek_timeline.h"
+#include "hmp_tsf_state.h"
 #include "digi_mixer_music.h"
 #include "u_mem.h"
 #include "console.h"
@@ -52,6 +55,10 @@
 static tsf *g_tsf = NULL;              /* SoundFont synth instance       */
 static tml_message *g_midi = NULL;     /* parsed MIDI message list       */
 static tml_message *g_midi_cur = NULL; /* current playback cursor        */
+static int g_is_hmp;
+static struct hmp_playback_info g_hmp_info;
+static struct midi_seek_timeline g_hmp_timeline;
+static struct hmp_tsf_state g_hmp_saved_state;
 
 static unsigned char *g_midi_buf = NULL; /* raw MIDI bytes from hmp2mid    */
 
@@ -220,10 +227,75 @@ static int tsf_music_load_soundfont(void)
  * Returns the number of stereo frames actually rendered (may be less
  * than requested if the song ends without looping).
  */
+static unsigned int hmp_event_time(const void *event)
+{
+	return ((const tml_message *) event)->time;
+}
+
+static const void *hmp_event_next(const void *event)
+{
+	return ((const tml_message *) event)->next;
+}
+
+static void hmp_dispatch(void *context, const void *event)
+{
+	tsf *synth = context;
+	const tml_message *m = event;
+	switch (m->type) {
+		case TML_NOTE_ON:
+			tsf_channel_note_on(synth, m->channel, m->key, m->velocity / 127.0f);
+			break;
+		case TML_NOTE_OFF:
+			tsf_channel_note_off(synth, m->channel, m->key);
+			break;
+		case TML_PROGRAM_CHANGE:
+			tsf_channel_set_presetnumber(synth, m->channel, m->program, m->channel == 9);
+			break;
+		case TML_CONTROL_CHANGE:
+			tsf_channel_midi_control(synth, m->channel, m->control, m->control_value);
+			break;
+		case TML_PITCH_BEND:
+			tsf_channel_set_pitchwheel(synth, m->channel, m->pitch_bend);
+			break;
+		default:
+			break;
+	}
+}
+
+static void hmp_render(void *context, short *out, int frames)
+{
+	tsf_render_short(context, out, frames, 0);
+#ifdef ANDROID
+	{
+		int i;
+		__atomic_add_fetch(&g_render_pass_count, 1u, __ATOMIC_RELAXED);
+		for (i = 0; i < frames * 2; i++) {
+			int abs_val = out[i] < 0 ? -out[i] : out[i];
+			if (abs_val > tsf_atomic_load_int(&g_peak_sample))
+				tsf_atomic_store_int(&g_peak_sample, abs_val);
+			if (out[i] == 32767 || out[i] == -32768)
+				__atomic_add_fetch(&g_clip_count, 1, __ATOMIC_RELAXED);
+		}
+		__atomic_add_fetch(&g_sample_count_total, frames * 2, __ATOMIC_RELAXED);
+	}
+#endif
+}
+
+static const struct midi_seek_timeline_ops hmp_timeline_ops = {
+	hmp_event_time, hmp_event_next, hmp_dispatch, hmp_render
+};
+
 static int render_frames(short *out, int frames)
 {
 	double rate = (double) g_output_rate;
 	int rendered = 0;
+	if (g_is_hmp) {
+		rendered = midi_seek_timeline_render(&g_hmp_timeline, out, frames);
+		g_playback_msec = midi_seek_timeline_position_ms(&g_hmp_timeline);
+		if (rendered < frames)
+			tsf_atomic_store_int(&g_source_finished, 1);
+		return rendered;
+	}
 
 	/* Process in 256-frame blocks for adequate MIDI event timing */
 	enum { BLOCK = 256 };
@@ -996,21 +1068,29 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 		return 0;
 	}
 
-	/* Convert HMP -> MIDI in memory */
+	/* Convert HMP through the same bounded playback converter as preview/export */
+	g_is_hmp = 0;
 	if (!d_stricmp(fptr, ".hmp") || !d_stricmp(fptr, ".hmq")) {
-		size_t admitted_size;
-
-		hmp2mid(filename, &g_midi_buf, &bufsize);
-		if (!g_midi_buf ||
-		    !music_encoded_size_allowed((int64_t) bufsize,
-		                                MUSIC_MIDI_ENCODED_MAX_BYTES, &admitted_size)) {
-			con_printf(CON_CRITICAL, "TSF: hmp2mid failed for %s\n", filename);
-			if (g_midi_buf) {
-				d_free(g_midi_buf);
-				g_midi_buf = NULL;
-			}
+		size_t hmp_size = 0;
+		int midi_len = 0, converted;
+		PHYSFS_file *fh = PHYSFS_openRead(filename);
+		unsigned char *hmp_data;
+		if (!fh)
+			return 0;
+		hmp_data = music_read_physfs_bounded(fh, MUSIC_MIDI_ENCODED_MAX_BYTES, &hmp_size);
+		if (!hmp_data)
+			return 0;
+		converted = hmp2mid_playback_mem(hmp_data, (int) hmp_size, loop,
+		                                 &g_midi_buf, &midi_len, &g_hmp_info);
+		d_free(hmp_data);
+		if (!converted) {
+			con_printf(CON_CRITICAL, "TSF: HMP playback conversion failed for %s\n", filename);
 			return 0;
 		}
+		bufsize = (unsigned int) midi_len;
+		g_is_hmp = 1;
+		if (g_hmp_info.unsupported_branches)
+			TSFMUSIC_LOG("HMP %s has unsupported branches; using linear playback", filename);
 	} else {
 		/* For .mid files, read via PhysFS */
 		size_t midi_size = 0;
@@ -1049,6 +1129,19 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	tsf_reset(g_tsf);
 	tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
 	               tsf_atomic_load_float(&g_gain_db));
+	if (g_is_hmp) {
+		tml_message *repeat_event = NULL;
+		hmp_tsf_begin(g_tsf, &g_hmp_saved_state);
+		if (loop) {
+			for (repeat_event = g_midi; repeat_event; repeat_event = repeat_event->next)
+				if (repeat_event->time >= (unsigned int) g_hmp_info.repeat_ms)
+					break;
+		}
+		midi_seek_timeline_init(&g_hmp_timeline, g_midi, g_output_rate, 2,
+		                        g_tsf, &hmp_timeline_ops);
+		midi_seek_timeline_set_range(&g_hmp_timeline, repeat_event,
+		                             g_hmp_info.repeat_ms, g_hmp_info.end_ms);
+	}
 
 #ifdef ANDROID
 	/* Reset diagnostics for the new song */
@@ -1114,7 +1207,11 @@ void mix_free_music(void)
 	g_is_pcm = 0;
 
 	/* Clean up MIDI state */
+	if (g_is_hmp && g_tsf)
+		hmp_tsf_capture(g_tsf, &g_hmp_saved_state);
 	g_midi_cur = NULL;
+	g_is_hmp = 0;
+	memset(&g_hmp_timeline, 0, sizeof(g_hmp_timeline));
 
 	if (g_midi) {
 		crash_breadcrumb_v("mix_free: tml_free %p", (void *) g_midi);

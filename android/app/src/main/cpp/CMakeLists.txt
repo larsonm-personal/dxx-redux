@@ -602,8 +602,9 @@ get_target_property(_d1_arch_sdl_sources ${DXX_TARGET_PREFIX}arch_sdl SOURCES)
 list(FILTER _d1_arch_sdl_sources EXCLUDE REGEX "digi_mixer_music\\.c$")
 list(FILTER _d1_arch_sdl_sources EXCLUDE REGEX "rbaudio\\.c$")
 set_property(TARGET ${DXX_TARGET_PREFIX}arch_sdl PROPERTY SOURCES ${_d1_arch_sdl_sources})
-target_sources(${DXX_TARGET_PREFIX}arch_sdl
-               PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/digi_tsf_music.c)
+target_sources(
+    ${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/digi_tsf_music.c
+                                         ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_seek_timeline.c)
 target_sources(${DXX_TARGET_PREFIX}arch_sdl
                PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/rbaudio_bin.c)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${_TSF_DIR})
@@ -747,7 +748,6 @@ target_sources(
             # Launcher preview bridges load dxx-redux-d2 explicitly. Keep their state and JNI
             # symbols in one library so calls cannot split state.
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_seek_timeline.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata_physfs.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
@@ -791,8 +791,9 @@ get_target_property(_arch_sdl_sources ${DXX_TARGET_PREFIX}arch_sdl SOURCES)
 list(FILTER _arch_sdl_sources EXCLUDE REGEX "digi_mixer_music\\.c$")
 list(FILTER _arch_sdl_sources EXCLUDE REGEX "rbaudio\\.c$")
 set_property(TARGET ${DXX_TARGET_PREFIX}arch_sdl PROPERTY SOURCES ${_arch_sdl_sources})
-target_sources(${DXX_TARGET_PREFIX}arch_sdl
-               PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/digi_tsf_music.c)
+target_sources(
+    ${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/digi_tsf_music.c
+                                         ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_seek_timeline.c)
 target_sources(${DXX_TARGET_PREFIX}arch_sdl
                PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/rbaudio_bin.c)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${_TSF_DIR})

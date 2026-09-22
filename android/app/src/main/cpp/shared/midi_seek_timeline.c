@@ -31,6 +31,9 @@ void midi_seek_timeline_init(struct midi_seek_timeline *timeline,
 	timeline->sample_rate = sample_rate;
 	timeline->channels = channels;
 	timeline->context = context;
+	timeline->repeat_event = NULL;
+	timeline->repeat_frame = 0;
+	timeline->end_frame = 0;
 	if (ops)
 		timeline->ops = *ops;
 }
@@ -56,6 +59,24 @@ double midi_seek_timeline_position_ms(const struct midi_seek_timeline *timeline)
 	return (double) timeline->frame * 1000.0 / (double) timeline->sample_rate;
 }
 
+int midi_seek_timeline_set_range(struct midi_seek_timeline *timeline,
+                                 const void *repeat_event, double repeat_ms,
+                                 double end_ms)
+{
+	uint64_t start, end;
+	if (!timeline || timeline->sample_rate <= 0 || end_ms <= 0 ||
+	    repeat_ms < 0 || repeat_ms >= end_ms)
+		return 0;
+	start = midi_seek_timeline_frame_for_ms(repeat_ms, timeline->sample_rate);
+	end = midi_seek_timeline_frame_for_ms(end_ms, timeline->sample_rate);
+	if (start >= end)
+		return 0;
+	timeline->repeat_event = repeat_event;
+	timeline->repeat_frame = start;
+	timeline->end_frame = end;
+	return 1;
+}
+
 int midi_seek_timeline_render(struct midi_seek_timeline *timeline,
                               short *output, int frames)
 {
@@ -72,10 +93,18 @@ int midi_seek_timeline_render(struct midi_seek_timeline *timeline,
 		uint64_t available;
 		int block;
 
+		if (timeline->end_frame && timeline->frame >= timeline->end_frame) {
+			if (!timeline->repeat_event)
+				break;
+			timeline->frame = timeline->repeat_frame;
+			timeline->event = timeline->repeat_event;
+		}
 		midi_seek_timeline_dispatch_due(timeline);
-		if (!timeline->event)
+		if (!timeline->event && !timeline->end_frame)
 			break;
-		next_frame = midi_seek_event_frame(timeline);
+		next_frame = timeline->event ? midi_seek_event_frame(timeline) : timeline->end_frame;
+		if (timeline->end_frame && next_frame > timeline->end_frame)
+			next_frame = timeline->end_frame;
 		available = next_frame - timeline->frame;
 		block = available > (uint64_t) INT_MAX ? INT_MAX : (int) available;
 		if (block > frames)
@@ -89,7 +118,8 @@ int midi_seek_timeline_render(struct midi_seek_timeline *timeline,
 		frames -= block;
 		rendered += block;
 	}
-	midi_seek_timeline_dispatch_due(timeline);
+	if (!timeline->end_frame || timeline->frame < timeline->end_frame)
+		midi_seek_timeline_dispatch_due(timeline);
 	return rendered;
 }
 

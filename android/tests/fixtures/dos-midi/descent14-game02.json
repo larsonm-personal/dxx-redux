@@ -1,0 +1,12 @@
+{
+  "description": "GOG DOS Descent 1.4 General MIDI, volume 8, title -> briefing -> Level 2 -> first global loop",
+  "hmp": "game02.hmp",
+  "hmp_sha256": "b48bd17d70823784c1acfb77d15847204b55080f8be0c9bf9d3e888525306890",
+  "capture": "dos.mid",
+  "capture_sha256": "c1b39708d3d52815391fbf89ab3730814dc5080038805378d2e2a330252789fe",
+  "reference_start_ms": 59941,
+  "duration_ms": 279600,
+  "legacy_duration_ms": 210000,
+  "tolerance_ms": 10,
+  "notes": "Start excludes transition reset messages; note-state comparison reconstructs them from preceding capture events. Duration ends in a quiet gap before capture stop to avoid edge-window jitter. Files stay local under game_data/music/dos-references/descent14-game02."
+}

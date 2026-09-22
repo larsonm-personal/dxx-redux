@@ -253,6 +253,31 @@ int main(void)
 		return 1;
 	}
 
+	/* Playback conversion must also publish no partial output on allocation failure */
+	{
+		const unsigned char playable[] = { 0x80, 0x90, 60, 64, 0x81, 0xff, 0x2f, 0 };
+		struct hmp_playback_info info;
+		fail_allocation = -1;
+		hmp = make_hmp(playable, sizeof(playable), 2, &hmp_len);
+		if (!hmp) return 1;
+		for (failure = 0; failure < 256; failure++) {
+			allocation_count = 0;
+			fail_allocation = failure;
+			midi = (unsigned char *) (uintptr_t) 1;
+			midi_len = -1;
+			if (hmp2mid_playback_mem(hmp, (int) hmp_len, 1, &midi, &midi_len, &info)) {
+				free(midi);
+				break;
+			}
+			if (midi || midi_len || info.end_ms || info.repeat_ms) {
+				fprintf(stderr, "playback allocation failure %d published output\n", failure);
+				free(hmp);
+				return 1;
+			}
+		}
+		free(hmp);
+		if (failure == 256) return 1;
+	}
 	printf("HMP Android shared conversion tests passed\n");
 	return 0;
 }
