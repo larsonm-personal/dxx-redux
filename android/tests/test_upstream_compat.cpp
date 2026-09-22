@@ -6510,6 +6510,62 @@ static nlohmann::json exercise_resource_drops(bool native)
 	return result;
 }
 
+static nlohmann::json exercise_weapon_drops(bool native)
+{
+	auto result = nlohmann::json::array();
+	std::vector<int> ids = { POW_VULCAN_WEAPON };
+#ifdef DXX_BUILD_DESCENT_II
+	if (!native) {
+		ids.push_back(POW_GAUSS_WEAPON);
+		ids.push_back(POW_OMEGA_WEAPON);
+	}
+#endif
+	Game_mode = 0;
+	Player_num = 0;
+	for (const auto type : { OBJ_PLAYER, OBJ_ROBOT })
+		for (const int id : ids)
+			for (const int count : { 1, 2 }) {
+				init_test_corridor();
+				vms_vector point = {};
+				const int source = type == OBJ_PLAYER ? 0 : obj_create(type, 0, 0, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
+				require(source >= 0, "create weapon-drop source");
+				object &container = Objects[source];
+				container.contains_type = OBJ_POWERUP;
+				container.contains_id = id;
+				container.contains_count = count;
+				d_srand(123);
+				d_srand_stream(D_RNG_FX, 456);
+				d_rand_reset_call_count();
+				d_rand_reset_stream_call_count(D_RNG_FX);
+				const int last = object_create_egg(&container);
+				require(last > 0, "real weapon egg creates a pickup");
+				auto objects = nlohmann::json::array();
+				for (int i = 1; i <= Highest_object_index; ++i) {
+					object &pickup = Objects[i];
+					if (pickup.type != OBJ_POWERUP) continue;
+					int expected = !native && type == OBJ_ROBOT && i == last ? VULCAN_WEAPON_AMMO_AMOUNT : 1;
+#ifdef DXX_BUILD_DESCENT_II
+					if (id == POW_OMEGA_WEAPON && type == OBJ_ROBOT && i == last) expected = MAX_OMEGA_CHARGE;
+#endif
+					require(pickup.ctype.powerup_info.count == expected, "D1 eggs keep their original count; ordinary D2 retains weapon-specific contents");
+					if (id == POW_VULCAN_WEAPON) {
+						Players[0].objnum = 0;
+						Players[0].primary_weapon_flags = 1;
+						Players[0].primary_weapon = 0;
+						Players[0].primary_ammo[VULCAN_INDEX] = 100;
+						const int used = do_powerup(&pickup);
+						const int gain = native ? VULCAN_WEAPON_AMMO_AMOUNT : expected;
+						require(used && Players[0].primary_ammo[VULCAN_INDEX] == 100 + gain, "collect actual dropped Vulcan with original first-acquisition minimum");
+						require(pickup.ctype.powerup_info.count == expected - gain, "retain exact collected pickup contents until retirement");
+					}
+					objects.push_back({ pickup.id, expected, pickup.ctype.powerup_info.count });
+				}
+				require(objects.size() == static_cast<size_t>(count), "weapon egg preserves the full drop count");
+				result.push_back({ type, id, count, objects, d_rand_get_call_count(), d_rand_get_stream_call_count(D_RNG_FX) });
+			}
+	return result;
+}
+
 static nlohmann::json exercise_secondary_explosions(bool native)
 {
 	auto result = nlohmann::json::array();
@@ -6890,6 +6946,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 	const auto robot_blasts = exercise_robot_blasts(native);
 	const auto robot_pairs = exercise_robot_pairs(native);
 	const auto resource_drops = exercise_resource_drops(native);
+	const auto weapon_drops = exercise_weapon_drops(native);
 	const auto secondary_explosions = exercise_secondary_explosions(native);
 	const auto volatile_impacts = exercise_volatile_impacts(native);
 	Game_mode = 0;
@@ -7042,7 +7099,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 					}
 				}
 	Game_mode = 0;
-	return { { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "powerup_animation", powerup_animation }, { "object_orientations", object_orientations }, { "small_fireballs", small_fireballs }, { "reactor_fireballs", reactor_fireballs }, { "volatile_impacts", volatile_impacts }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "secondary_explosions", secondary_explosions } };
+	return { { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "powerup_animation", powerup_animation }, { "object_orientations", object_orientations }, { "small_fireballs", small_fireballs }, { "reactor_fireballs", reactor_fireballs }, { "volatile_impacts", volatile_impacts }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "weapon_drops", weapon_drops }, { "secondary_explosions", secondary_explosions } };
 }
 
 static void write_gameplay_rules_trace(const char *directory, const char *d2_directory)

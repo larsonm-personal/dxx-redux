@@ -18,6 +18,8 @@ param(
     [string[]]$Roots,
     [string[]]$FamilySeeds,
     [string[]]$ExcludePaths,
+    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_-]+[_-]$')][string]$DirectoryPrefix,
+    [ValidateRange(0, [long]::MaxValue)][long]$MaxFamilyBytes = 0,
     [switch]$IgnoreUnrecognizedFamilySeeds
 )
 
@@ -129,6 +131,8 @@ function Get-TimestampIdentity {
 
     # These are the timestamp forms emitted by current PowerShell producers
     $formats = @(
+        [pscustomobject]@{ Regex = '(?i)(^|[_.-])(?<stamp>\d{8}_\d{6}_\d{3})(?=$|[_.-])'; Format = 'yyyyMMdd_HHmmss_fff' },
+        [pscustomobject]@{ Regex = '(?i)(^|[_.-])(?<stamp>\d{8}-\d{6}-\d{3})(?=$|[_.-])'; Format = 'yyyyMMdd-HHmmss-fff' },
         [pscustomobject]@{ Regex = '(?i)(^|[_.-])(?<stamp>\d{8}_\d{6})(?=$|[_.-])'; Format = 'yyyyMMdd_HHmmss' },
         [pscustomobject]@{ Regex = '(?i)(^|[_.-])(?<stamp>\d{8}-\d{6})(?=$|[_.-])'; Format = 'yyyyMMdd-HHmmss' },
         [pscustomobject]@{ Regex = '(?i)(^|[_.-])(?<stamp>\d{4}-\d{2}-\d{2})(?=$|[_.-])'; Format = 'yyyy-MM-dd' },
@@ -185,6 +189,10 @@ function New-ObservedItem {
     )
 
     $identity = Get-TimestampIdentity -Name $Item.Name
+    if ($DirectoryPrefix -and $Item.PSIsContainer -and $Item.Name.StartsWith($DirectoryPrefix, $pathComparison)) {
+        # Explicit producer ownership also groups descriptive experiment names
+        $identity = [pscustomobject]@{ Timestamp = $Item.LastWriteTime; Template = "$DirectoryPrefix{generation}" }
+    }
     $isReparsePoint = [bool]($Item.Attributes -band [IO.FileAttributes]::ReparsePoint)
     $class = if ($isReparsePoint) {
         'reparse-point'
@@ -217,19 +225,21 @@ function New-ObservedItem {
 function Get-ObservedItems {
     param([Parameter(Mandatory)][string[]]$ScratchRoots)
 
-    $observed = @()
+    $observed = [Collections.Generic.List[object]]::new()
+    $seedParents = @($FamilySeeds | Where-Object { $_ } | ForEach-Object { [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($_)) })
     foreach ($root in $ScratchRoots) {
         foreach ($item in Get-ChildItem -LiteralPath $root -Force) {
             $record = New-ObservedItem -Item $item -Root $root
-            $observed += $record
-            if ($item.PSIsContainer -and -not $record.Identity -and -not $record.IsBoundary) {
+            $observed.Add($record)
+            if (-not $DirectoryPrefix -and $item.PSIsContainer -and -not $record.Identity -and -not $record.IsBoundary -and
+                (-not $FamilySeeds -or $item.FullName -in $seedParents)) {
                 foreach ($child in Get-ChildItem -LiteralPath $item.FullName -Force) {
-                    $observed += New-ObservedItem -Item $child -Root $root
+                    $observed.Add((New-ObservedItem -Item $child -Root $root))
                 }
             }
         }
     }
-    return $observed
+    return $observed.ToArray()
 }
 
 function Assert-DirectChildPath {
@@ -258,19 +268,35 @@ function Get-ArtifactStats {
     $latestWrite = $item.LastWriteTime
     $bytes = if ($item.PSIsContainer) { 0L } else { [long]$item.Length }
     $hasReparsePoint = [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint)
+    $protectedTree = $false
+    $count = 0L
     if ($item.PSIsContainer -and -not $hasReparsePoint) {
-        foreach ($child in Get-ChildItem -LiteralPath $item.FullName -Force -Recurse) {
-            if ($child.LastWriteTime -gt $latestWrite) { $latestWrite = $child.LastWriteTime }
-            if ($child.Attributes -band [IO.FileAttributes]::ReparsePoint) { $hasReparsePoint = $true }
-            if (-not $child.PSIsContainer) { $bytes += [long]$child.Length }
+        $pending = [Collections.Generic.Stack[IO.DirectoryInfo]]::new()
+        $pending.Push($item)
+        while ($pending.Count) {
+            foreach ($child in $pending.Pop().EnumerateFileSystemInfos()) {
+                if ($child.LastWriteTime -gt $latestWrite) { $latestWrite = $child.LastWriteTime }
+                if ($child.Attributes -band [IO.FileAttributes]::ReparsePoint) { $hasReparsePoint = $true; continue }
+                if ($child.Name -in @('.git', '.hg', '.svn')) { $protectedTree = $true; continue }
+                if ($child.Name -match '(\.(lock|lck)(\.json)?$|^\.ninja_lock$)') {
+                    if ($child -is [IO.DirectoryInfo]) { $protectedTree = $true; continue }
+                    try {
+                        $stream = [IO.File]::Open($child.FullName, 'Open', 'Read', 'None')
+                        $stream.Dispose()
+                    } catch { $protectedTree = $true; continue }
+                }
+                if ($child -is [IO.DirectoryInfo]) { $pending.Push($child) } else { $bytes += [long]$child.Length; $count++ }
+            }
         }
     }
-    return [pscustomobject]@{ Bytes = $bytes; LatestWriteTime = $latestWrite; HasReparsePoint = $hasReparsePoint }
+    return [pscustomobject]@{ Bytes = $bytes; Count = $count; LatestWriteTime = $latestWrite; HasReparsePoint = $hasReparsePoint; ProtectedTree = $protectedTree }
 }
 
 $scratchRoots = @(Resolve-ScratchRoots)
 $observed = @(Get-ObservedItems -ScratchRoots $scratchRoots)
-if ($FamilySeeds) {
+if ($DirectoryPrefix) {
+    $observed = @($observed | Where-Object { $_.Item.PSIsContainer -and $_.Item.Name.StartsWith($DirectoryPrefix, $pathComparison) })
+} elseif ($FamilySeeds) {
     $seedFamilies = @()
     foreach ($seedValue in $FamilySeeds) {
         $seedPath = [IO.Path]::GetFullPath($seedValue)
@@ -305,16 +331,34 @@ foreach ($className in @('timestamped-generation-directory', 'timestamped-output
     $keepCount = $artifactClasses[$className].Keep
     foreach ($family in @($observed | Where-Object Class -eq $className | Group-Object Family)) {
         $sorted = @($family.Group | Sort-Object @{ Expression = { $_.Identity.Timestamp }; Descending = $true }, @{ Expression = { $_.Item.LastWriteTime }; Descending = $true })
-        $kept += @($sorted | Select-Object -First $keepCount)
-        $candidates += @($sorted | Select-Object -Skip $keepCount)
+        $familyBytes = 0L
+        $familyCount = 0
+        foreach ($record in $sorted) {
+            $fits = $familyCount -lt $keepCount
+            if ($MaxFamilyBytes -gt 0 -and $fits) {
+                $stats = Get-ArtifactStats -Path $record.Item.FullName
+                $familyBytes += $stats.Bytes
+                $fits = $familyBytes -le $MaxFamilyBytes
+            }
+            if ($fits) { $kept += $record } else { $candidates += $record }
+            $familyCount++
+        }
     }
 }
 
-$gitProtected = @()
+$gitComparer = if ($pathComparison -eq [StringComparison]::Ordinal) { [StringComparer]::Ordinal } else { [StringComparer]::OrdinalIgnoreCase }
+$gitProtected = [Collections.Generic.HashSet[string]]::new($gitComparer)
 if (Test-Path -LiteralPath (Join-Path $RepositoryRoot '.git')) {
     $gitPaths = & git -C $RepositoryRoot -c core.quotepath=false ls-files --cached --others --exclude-standard -z
     if ($LASTEXITCODE -ne 0) { throw 'Cannot read Git protection before artifact retention' }
-    $gitProtected = @(($gitPaths -join "`n").Split([char]0) | Where-Object { $_ } | ForEach-Object { [IO.Path]::GetFullPath((Join-Path $RepositoryRoot $_)) })
+    foreach ($relative in ($gitPaths -join "`n").Split([char]0)) {
+        if (-not $relative) { continue }
+        $path = [IO.Path]::GetFullPath((Join-Path $RepositoryRoot $relative))
+        while ($path -and -not $path.Equals($RepositoryRoot, $pathComparison)) {
+            $null = $gitProtected.Add($path)
+            $path = [IO.Path]::GetDirectoryName($path)
+        }
+    }
 }
 $eligible = @()
 $protected = @()
@@ -329,14 +373,15 @@ foreach ($record in $candidates) {
         Root            = $record.Root
         IsDirectory     = [bool]$record.Item.PSIsContainer
         Bytes           = $stats.Bytes
+        Count           = $stats.Count
         LatestWriteTime = $stats.LatestWriteTime
         Reason          = ""
     }
-    if (@($gitProtected | Where-Object { $_.Equals($path, $pathComparison) -or (Test-PathWithinRoot -Path $_ -Root $path) }).Count) {
+    if ($gitProtected.Contains($path)) {
         $candidate.Reason = 'contains Git-visible files'
         $protected += $candidate
-    } elseif ($stats.HasReparsePoint) {
-        $candidate.Reason = 'contains a reparse point'
+    } elseif ($stats.HasReparsePoint -or $stats.ProtectedTree -or $record.IsBoundary) {
+        $candidate.Reason = 'contains a reparse point, nested repository, build boundary or held lock'
         $protected += $candidate
     } elseif ($MinimumAgeHours -gt 0 -and $stats.LatestWriteTime -gt $cutoff) {
         $candidate.Reason = "modified after $($cutoff.ToString('s'))"
@@ -380,8 +425,18 @@ foreach ($record in $eligible) {
     if (-not (Test-Path -LiteralPath $record.Path)) { continue }
     [void](Assert-SafeTreePath -Path $record.Root)
     $path = Assert-DirectChildPath -Path $record.Path -Parent $record.Parent -Root $record.Root
+    [void](Assert-SafeTreePath -Path $path)
+    if (Test-Path -LiteralPath (Join-Path $RepositoryRoot '.git')) {
+        $relative = $path.Substring($RepositoryRoot.TrimEnd($separators).Length + 1).Replace('\', '/')
+        $visible = & git -C $RepositoryRoot --literal-pathspecs ls-files --cached --others --exclude-standard -z -- $relative
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot recheck Git protection before artifact retention' }
+        if ($visible) { Write-Warning "Now protected by Git: $path"; continue }
+    }
     $currentStats = Get-ArtifactStats -Path $path
-    if ($currentStats.HasReparsePoint -or ($MinimumAgeHours -gt 0 -and $currentStats.LatestWriteTime -gt $cutoff)) {
+    if ($currentStats.HasReparsePoint -or $currentStats.ProtectedTree -or
+        $currentStats.Bytes -ne $record.Bytes -or $currentStats.Count -ne $record.Count -or
+        $currentStats.LatestWriteTime -ne $record.LatestWriteTime -or
+        ($MinimumAgeHours -gt 0 -and $currentStats.LatestWriteTime -gt $cutoff)) {
         Write-Warning "Changed since discovery; preserving $path"
         continue
     }

@@ -43,9 +43,10 @@ function New-FixtureFile {
 }
 
 try {
-    if (Test-Path -LiteralPath $fixtureRoot) {
-        Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
-    }
+    New-Item -ItemType Directory -Path $fixtureRoot | Out-Null
+    & git -C $fixtureRoot init --quiet
+    if ($LASTEXITCODE -ne 0) { throw 'Fixture Git init failed' }
+    [IO.File]::WriteAllText((Join-Path $fixtureRoot '.gitignore'), "temp/`nandroid/temp_TEST_ONLY/`nandroid/build-outputs/`n")
 
     foreach ($relativePath in @(
             "temp\TEST_ONLY_run_bucket\TEST_ONLY_run_20260101_010101",
@@ -114,6 +115,46 @@ try {
         if (-not (Test-Path -LiteralPath $path)) { throw 'Package startup retention removed a recent package' }
     }
 
+    # Milliseconds belong to the timestamp, not to a distinct family per run
+    foreach ($stamp in @('20260101_120000_111', '20260102_120000_222', '20260103_120000_333', '20260104_120000_444')) {
+        New-FixtureDirectory "temp/TEST_ONLY_millis_$stamp"
+    }
+    & $retentionHelper -RepositoryRoot $fixtureRoot -Artifacts (Join-Path $fixtureRoot 'temp/TEST_ONLY_millis_20260105_120000_555') -Keep 2 | Out-Null
+    Assert-Missing 'temp/TEST_ONLY_millis_20260101_120000_111'
+    Assert-Missing 'temp/TEST_ONLY_millis_20260102_120000_222'
+    Assert-Exists 'temp/TEST_ONLY_millis_20260103_120000_333'
+    Assert-Exists 'temp/TEST_ONLY_millis_20260104_120000_444'
+
+    # Explicit ownership groups descriptive names and caps bytes independently of count
+    foreach ($name in @('old', 'middle', 'new')) { New-FixtureDirectory "temp/TEST_ONLY_owned_$name" }
+    (Get-Item (Join-Path $fixtureRoot 'temp/TEST_ONLY_owned_old')).LastWriteTime = (Get-Date).AddDays(-3)
+    (Get-Item (Join-Path $fixtureRoot 'temp/TEST_ONLY_owned_middle')).LastWriteTime = (Get-Date).AddDays(-2)
+    $oneArtifactBytes = (Get-Item (Join-Path $fixtureRoot 'temp/TEST_ONLY_owned_new/TEST_ONLY_artifact.txt')).Length
+    & $retentionHelper -RepositoryRoot $fixtureRoot -Artifacts (Join-Path $fixtureRoot 'temp/TEST_ONLY_owned_planned') `
+        -DirectoryPrefix 'TEST_ONLY_owned_' -Keep 3 -MaxFamilyBytes $oneArtifactBytes | Out-Null
+    Assert-Missing 'temp/TEST_ONLY_owned_old'
+    Assert-Missing 'temp/TEST_ONLY_owned_middle'
+    Assert-Exists 'temp/TEST_ONLY_owned_new'
+    New-FixtureDirectory 'temp/TEST_ONLY_owned_active'
+    $leasePath = Join-Path $fixtureRoot 'temp/TEST_ONLY_owned_active/producer.lock'
+    $lease = [IO.File]::Open($leasePath, 'Create', 'Write', 'Read')
+    try {
+        & $retentionHelper -RepositoryRoot $fixtureRoot -Artifacts (Join-Path $fixtureRoot 'temp/TEST_ONLY_owned_planned') `
+            -DirectoryPrefix 'TEST_ONLY_owned_' -MaxFamilyBytes 1 | Out-Null
+        Assert-Exists 'temp/TEST_ONLY_owned_active'
+    } finally { $lease.Dispose() }
+    # A repository inside the explicit prefix is still protected
+    New-FixtureFile 'temp/TEST_ONLY_owned_vendor/.git/config'
+    & $retentionHelper -RepositoryRoot $fixtureRoot -Artifacts (Join-Path $fixtureRoot 'temp/TEST_ONLY_owned_planned') `
+        -DirectoryPrefix 'TEST_ONLY_owned_' -MaxFamilyBytes 1 | Out-Null
+    Assert-Exists 'temp/TEST_ONLY_owned_vendor/.git/config'
+    New-FixtureFile 'temp/TEST_ONLY_owned_tracked/notes.txt'
+    & git -C $fixtureRoot add -f temp/TEST_ONLY_owned_tracked/notes.txt
+    if ($LASTEXITCODE -ne 0) { throw 'Could not protect fixture notes' }
+    & $retentionHelper -RepositoryRoot $fixtureRoot -Artifacts (Join-Path $fixtureRoot 'temp/TEST_ONLY_owned_planned') `
+        -DirectoryPrefix 'TEST_ONLY_owned_' -MaxFamilyBytes 1 | Out-Null
+    Assert-Exists 'temp/TEST_ONLY_owned_tracked/notes.txt'
+
     $preview = & $helper -RepositoryRoot $fixtureRoot 2>&1 | Out-String
     foreach ($expected in @(
             'timestamped-generation-directory:',
@@ -163,6 +204,10 @@ try {
     Write-Output "PASS: class-based old artifact cleanup helper"
 } finally {
     if (Test-Path -LiteralPath $fixtureRoot) {
+        $expectedPrefix = [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) 'dxx-clean-old-artifacts-TEST_ONLY-'))
+        if (-not ([IO.Path]::GetFullPath($fixtureRoot)).StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'Unexpected artifact-retention fixture path'
+        }
         Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
     }
 }

@@ -14,6 +14,29 @@ import d1_replay_parity as parity
 
 
 class ParityTests(unittest.TestCase):
+    def test_disk_reserve_rejects_capture_before_creating_output(self):
+        args = argparse.Namespace(output=self.root / "capture", minimum_free_gb=4)
+        with mock.patch.object(parity.shutil, "disk_usage", return_value=mock.Mock(free=1024)):
+            with self.assertRaisesRegex(parity.EvidenceError, "Insufficient output disk space"):
+                parity.run(args)
+        self.assertFalse(args.output.exists())
+
+    def test_trace_compression_verified_and_failure_keeps_source(self):
+        source = self.root / "rng.jsonl"
+        original = b'{"value":123}\n' * 100
+        source.write_bytes(original)
+        compressed = parity.compress_trace(source)
+        with parity.gzip.open(compressed, "rb") as stream:
+            self.assertEqual(stream.read(), original)
+        self.assertFalse(source.exists())
+        source.write_bytes(original)
+        compressed.unlink()
+        with mock.patch.object(parity.shutil, "copyfileobj", side_effect=OSError("disk full")):
+            with self.assertRaises(OSError):
+                parity.compress_trace(source)
+        self.assertEqual(source.read_bytes(), original)
+        self.assertFalse(compressed.exists())
+
     def setUp(self):
         scratch = Path(__file__).resolve().parents[2] / "temp"
         scratch.mkdir(exist_ok=True)
@@ -200,7 +223,7 @@ class ParityTests(unittest.TestCase):
         for name in ("descent.hog", "descent.pig"):
             (data / name).write_bytes(b"isolated fixture")
         args = argparse.Namespace(repo=Path(__file__).resolve().parents[2], data=data,
-                                  output=self.root / "output", native=__file__, imported=__file__,
+                                  output=self.root / "output", native=__file__, imported=__file__, minimum_free_gb=0.01,
                                   demo=[self.root / "one.dximdemo", self.root / "two.dximdemo"])
         demo = {"header": self.header, "result": self.result}
         with mock.patch.object(parity, "read_demo", return_value=demo), \

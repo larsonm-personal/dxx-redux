@@ -190,7 +190,7 @@ foreach ($fixture in $fixtures) {
         $safeFixture = ([System.IO.Path]::GetFileNameWithoutExtension($fixture.DemoPath) -replace '[^A-Za-z0-9_.-]', '_')
         $safeVariant = ($variant.Name -replace '[^A-Za-z0-9_.-]', '_')
         $logPath = Join-Path $runDir ("{0}__{1}.log" -f $safeFixture, $safeVariant)
-        $statePath = Join-Path $runDir ("{0}__{1}.actual_state.jsonl" -f $safeFixture, $safeVariant)
+        $statePath = Join-Path $runDir ("{0}__{1}.actual_state.jsonl.gz" -f $safeFixture, $safeVariant)
 
         $arguments = @(
             '-NoProfile',

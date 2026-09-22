@@ -48,6 +48,16 @@ $protectedPaths = [Collections.Generic.HashSet[string]]::new($comparer)
 $buildGenerations = [Collections.Generic.List[object]]::new()
 $buildContainers = [Collections.Generic.HashSet[string]]::new($comparer)
 $registeredBuilds = [Collections.Generic.HashSet[string]]::new($comparer)
+$cleanupTimer = [Diagnostics.Stopwatch]::StartNew()
+$script:lastCleanupStatus = -5.0
+
+function Write-CleanupStatus {
+    param([string]$Message)
+    if ($cleanupTimer.Elapsed.TotalSeconds - $script:lastCleanupStatus -ge 2) {
+        Write-Host ('[{0:n0}s] {1}' -f $cleanupTimer.Elapsed.TotalSeconds, $Message)
+        $script:lastCleanupStatus = $cleanupTimer.Elapsed.TotalSeconds
+    }
+}
 
 function Format-CleanupBytes {
     param([long]$Bytes)
@@ -153,6 +163,7 @@ function Get-CleanupTreeInfo {
     $latest = [DateTime]::MinValue
     while ($stack.Count) {
         $item = $stack.Pop()
+        if ($count % 512 -eq 0) { Write-CleanupStatus "Inspecting $Path ($count files, $(Format-CleanupBytes $bytes))" }
         if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
             throw "Preserving tree containing a link: $($item.FullName)"
         }
@@ -292,6 +303,7 @@ function Find-TemporaryFiles {
     $pending.Push($RepositoryRoot)
     while ($pending.Count) {
         $directory = $pending.Pop()
+        Write-CleanupStatus "Discovering scratch roots in $directory"
         foreach ($item in Get-ChildItem -LiteralPath $directory -Force) {
             if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { continue }
             if ($item.PSIsContainer) {
@@ -451,6 +463,7 @@ $gitRoot = & git -C $RepositoryRoot rev-parse --show-toplevel
 if ($LASTEXITCODE -ne 0 -or -not ([IO.Path]::GetFullPath($gitRoot)).Equals($RepositoryRoot, $comparison)) {
     throw 'RepositoryRoot must be the root of a Git working tree'
 }
+Write-Host 'Reading Git protection list'
 Update-ProtectedPaths
 if (-not $dryRun) { Assert-CleanupIdle }
 if ($PayloadsOnly) { Find-RegressionPayloads }
@@ -542,7 +555,10 @@ foreach ($item in $ordered) { $totalBytes += $item.Bytes }
 Write-Host "Automatic cleanup: $($ordered.Count) artifacts ($(Format-CleanupBytes $totalBytes))"
 $removed = 0
 $reclaimed = 0L
+$processed = 0
 foreach ($candidate in $ordered) {
+    $processed++
+    Write-CleanupStatus "Checking artifact $processed/$($ordered.Count), removed $removed ($(Format-CleanupBytes $reclaimed)): $($candidate.Path)"
     Write-Verbose "[AUTO] $(Format-CleanupBytes $candidate.Bytes) | $($candidate.Category) | $($candidate.Path)"
     Write-Progress -Activity 'Removing generated artifacts' -Status $candidate.Path
     if ($dryRun) { continue }
@@ -567,6 +583,7 @@ foreach ($candidate in $ordered) {
         }
         if ($PSCmdlet.ShouldProcess($candidate.Path, 'Delete generated artifact')) {
             # The full tree and its ancestors were checked immediately above
+            Write-CleanupStatus "Deleting $(Format-CleanupBytes $current.Bytes), $($current.Count) files: $($candidate.Path)"
             Remove-Item -LiteralPath $candidate.Path -Recurse -Force -ErrorAction Stop
             $removed++
             $reclaimed += $current.Bytes

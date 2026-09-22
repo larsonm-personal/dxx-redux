@@ -94,6 +94,12 @@ custom checkpoint and loaded-animation comparisons. The full pre-advance,
 pre-retirement and non-object world schemas remain open; the ledger records the
 precise coverage and raw representation differences
 
+Level-14 named-object follow-up also exposed D2 robot-drop ammo initialization
+overwriting the original D1 count. Egg finalization now belongs to the semantics
+owner, with real drop/pickup comparisons and a complete level-14 recapture proving
+that difference is gone. Long-run storage protections now bound paired history
+by count and bytes and enforce a free-space reserve; see the implementation ledger
+
 Implement F1 in this order:
 
 1. **Pin the inputs.** Emit a manifest containing demo/checkpoint and source-asset hashes, mission/edition, executable revision/build/architecture, player configuration, RNG mode, render mode and feature settings. Stage identical D1 base/custom resources for both engines. Run sequentially in distinct clean sandboxes; archive results even when comparison fails

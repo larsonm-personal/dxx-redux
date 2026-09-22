@@ -1207,3 +1207,49 @@ treats every `OBJ_GHOST` ID as a player ID, while native boss levels retain a
 hidden `CT_CNTRLCEN`/`RT_NONE` placeholder. Add an actual boss-level checkpoint
 comparison before closing that validation boundary. It is separate from the
 live-reactor cache restoration tested here
+
+### 2026-09-21: disk protections and original robot-drop contents
+
+The [long-run storage work](../testing/long-run-disk-retention.md) fixes timestamp
+family splitting on milliseconds and adds explicit ownership/byte budgets for
+descriptive replay runs. Paired captures retain two prior runs within an 8 GiB
+history budget, protect an active producer lease, and maintain a 4 GiB output
+reserve during execution. Default and matrix state traces now use direct gzip
+as well. A real timeout test confirms that failure no longer leaves the copied
+engine sandbox behind. The original regression recordings remain untouched
+
+The resumed full level-14 comparison is archived under
+`temp/d1_replay_parity_storage_level14/report.json`: all three captures succeed,
+native repeatability is exact, native/imported terminal results and 14,381 SIM RNG
+values match. The raw strict comparison still fails on unmapped fields/context,
+and native versus recording retains the separately diagnosed homing failure
+
+Named object observations exposed one additional shared-field difference at
+frame 667, slot 175, signature 505: a collected Vulcan powerup has count -195
+in native D1 versus 0 when imported. Both objects are marked for deletion and
+retire at frame 668. D2's robot egg finalization had overwritten the initial
+count with 196, while D1 leaves the initialized count 1 and supplies the minimum
+ammo on first acquisition. This difference was invisible to the terminal summary
+
+`d1_in_d2_initialize_drop_contents` now owns finalization at the existing egg
+boundary. Native enemies keep original contents; ordinary D2 and engine actors
+retain the existing Vulcan/Gauss/Omega rules. The original `fireball.c` block is
+replaced by one operation call. Four real native/imported player/robot drop and
+pickup cases (one/two eggs), plus ordinary-D2 weapon cases, pass using loaded
+assets. Both host builds and all 110 host tests pass. Verification logs:
+`temp/d1-drop-build.log`, `temp/d1-drop-tests.log`,
+`temp/d1-drop-ctest-d1.log` and `temp/d1-drop-ctest-d2.log`
+
+Final replay: `temp/d1_replay_parity_drop_fixed_level14/report.json`. All three
+captures succeed. The two native runs match exactly; all 5,696 native/imported
+frame summaries, terminal results and 14,381 SIM values match. The powerup-count
+difference is gone across the entire recording. Allocator, segment links, clocks
+and both actual RNG streams also match. All 344 previously equal diagnostics
+remain equal out of 360; the remaining 14 named object paths are the existing
+AI layouts, reactor source/runtime ID and capacities, and D2-only powerup fields
+
+The strict result intentionally remains fail/incomplete until those mappings and
+the missing full-world observations are implemented. The separate native versus
+recording homing failure remains open. The final run occupies 439.9 MiB including
+all compressed traces, staged D1 assets and harness evidence. No Android
+qualification or full-corpus recapture is claimed for this drop fix

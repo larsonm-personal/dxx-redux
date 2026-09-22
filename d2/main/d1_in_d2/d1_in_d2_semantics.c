@@ -1,4 +1,19 @@
 /*
+THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
+SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
+END-USERS, AND SUBJECT TO ALL OF THE TERMS AND CONDITIONS HEREIN, GRANTS A
+ROYALTY-FREE, PERPETUAL LICENSE TO SUCH END-USERS FOR USE BY SUCH END-USERS
+IN USING, DISPLAYING,  AND CREATING DERIVATIVE WORKS THEREOF, SO LONG AS
+SUCH USE, DISPLAY OR CREATION IS FOR NON-COMMERCIAL, ROYALTY OR REVENUE
+FREE PURPOSES.  IN NO EVENT SHALL THE END-USER USE THE COMPUTER CODE
+CONTAINED HEREIN FOR REVENUE-BEARING PURPOSES.  THE END-USER UNDERSTANDS
+AND AGREES TO THE TERMS HEREIN AND ACCEPTS THE SAME BY USE OF THIS FILE.
+COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
+*/
+
+/* New file, largely derived from the original Parallax/Interplay Descent code */
+
+/*
  *
  * Small D1-in-D2 gameplay policy helpers.
  *
@@ -16,10 +31,12 @@
 #include "fireball.h"
 #include "fvi.h"
 #include "game.h"
+#include "laser.h"
 #include "gameseg.h"
 #include "object.h"
 #include "player.h"
 #include "powerup.h"
+#include "robot.h"
 #include "piggy.h"
 #include "rle.h"
 #include "textures.h"
@@ -53,6 +70,21 @@ int d1_in_d2_prepare_vulcan_pickup(int weapon_index, int new_weapon, int duplica
 			*ammo = VULCAN_WEAPON_AMMO_AMOUNT / 2;
 	}
 	return 0;
+}
+
+void d1_in_d2_initialize_robot_drop_count(const object *container, object *created)
+{
+	if (container->type != OBJ_ROBOT || container->contains_type != OBJ_POWERUP)
+		return;
+	/* D1 enemy drops keep obj_create's count; pickup supplies the ammo minimum
+	 * The optional D2 Guide-Bot still uses D2 drop rules in a D1 game */
+	if (d1_in_d2_use_d1_gameplay() && !Robot_info[container->id].companion)
+		return;
+	/* Ordinary D2 robots and the optional Guide-Bot use D2 ammo/charge counts */
+	if (container->contains_id == POW_VULCAN_WEAPON || container->contains_id == POW_GAUSS_WEAPON)
+		created->ctype.powerup_info.count = VULCAN_WEAPON_AMMO_AMOUNT;
+	else if (container->contains_id == POW_OMEGA_WEAPON)
+		created->ctype.powerup_info.count = MAX_OMEGA_CHARGE;
 }
 
 fix d1_in_d2_released_flare_lifetime(void)

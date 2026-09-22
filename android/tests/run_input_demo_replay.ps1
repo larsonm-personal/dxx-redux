@@ -11,6 +11,7 @@ param(
     [ValidateSet('auto', 'default', 'legacy-texmerge', 'compat-texture-formats', 'lowres-assets')]
     [string]$RenderProfile = 'auto',
     [int]$TimeoutSeconds = 300,
+    [ValidateRange(0.01, 1048576)][double]$MinimumFreeSpaceGB = 4,
     [Alias('HogDir')]
     [string]$DataDir,
     [string]$Pilot,
@@ -51,6 +52,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/input_demo_replay_menu.ps1')
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/output_disk_space.ps1')
 $script:InputDemoSanitizer = $Sanitizer
 $outRoot = Join-Path $repoRoot 'temp\input_demo_runtime_wrapper'
 if ($Sanitizer -eq 'address') { $outRoot = Join-Path $repoRoot 'temp/input_demo_runtime_wrapper_asan' }
@@ -1367,7 +1369,12 @@ function Wait-ForReplayResult {
     )
 
     $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    $nextSpaceCheck = [DateTime]::MinValue
     while ([DateTime]::UtcNow -lt $deadline) {
+        if ([DateTime]::UtcNow -ge $nextSpaceCheck) {
+            Assert-OutputDiskSpace -Paths $script:replayOutputPaths -MinimumFreeGB $MinimumFreeSpaceGB
+            $nextSpaceCheck = [DateTime]::UtcNow.AddSeconds(1)
+        }
         # Observe exit before checking the file: the final write can race this poll
         $exited = $Process.HasExited
         if (Test-Path -LiteralPath $ActualResultPath) {
@@ -1479,7 +1486,7 @@ if ($StateLogPath -or $TraceState -or $CompareStateTrace) {
     if ($StateLogPath) {
         $resolvedStateLogPath = Resolve-AbsolutePath -Path $StateLogPath
     } else {
-        $resolvedStateLogPath = Join-Path (Join-Path $repoRoot 'temp\input_demo_state_traces') ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath) + '.actual_state.jsonl')
+        $resolvedStateLogPath = Join-Path (Join-Path $repoRoot 'temp\input_demo_state_traces') ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath) + '.actual_state.jsonl.gz')
         $resolvedStateLogPath = [System.IO.Path]::GetFullPath($resolvedStateLogPath)
     }
     $stateLogDirectory = Split-Path -Path $resolvedStateLogPath -Parent
@@ -1540,7 +1547,10 @@ $sandboxName = [System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath)
 if ($SandboxSuffix) {
     $sandboxName = "${sandboxName}__${SandboxSuffix}"
 }
+$script:replayOutputPaths = @($outRoot, $resolvedStateLogPath, $resolvedRngLogPath, $ResultCopyPath) | Where-Object { $_ }
+Assert-OutputDiskSpace -Paths $script:replayOutputPaths -MinimumFreeGB $MinimumFreeSpaceGB
 $sandbox = New-LaunchSandbox -Config $config -SandboxName $sandboxName -ReuseSandbox:$ReuseSandbox -SkipExecutableCopy:$useHeadlessConsole
+try {
 $actualResultDirectory = Join-Path $sandbox.Directory 'results'
 if (-not (Test-Path -LiteralPath $actualResultDirectory)) {
     New-Item -ItemType Directory -Path $actualResultDirectory -Force | Out-Null
@@ -1821,9 +1831,6 @@ if ($compareError -or $stateTraceCompareError -or $rngTraceCompareError) {
     if ($rngTraceCompareError) {
         Write-Host $rngTraceCompareError
     }
-    if (-not $KeepSandbox) {
-        Remove-Item -LiteralPath $sandbox.Directory -Recurse -Force -ErrorAction SilentlyContinue
-    }
     exit 1
 }
 
@@ -1834,8 +1841,22 @@ if ($SkipExpectedChecks) {
     Write-Host 'RESULT: PASS' -ForegroundColor Green
 }
 
-if (-not $KeepSandbox) {
-    Remove-Item -LiteralPath $sandbox.Directory -Recurse -Force -ErrorAction SilentlyContinue
-}
-
 exit 0
+} finally {
+    if (-not $KeepSandbox -and (Test-Path -LiteralPath $sandbox.Directory)) {
+        # Delete only this runner's sandbox after its engine has been stopped
+        $sandboxPath = [IO.Path]::GetFullPath($sandbox.Directory)
+        $sandboxRoot = [IO.Path]::GetFullPath($outRoot).TrimEnd('\', '/')
+        if (-not $sandboxPath.StartsWith($sandboxRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Unexpected replay sandbox path: $sandboxPath"
+        }
+        $ancestor = $sandboxPath
+        while ($ancestor) {
+            if ((Get-Item -LiteralPath $ancestor -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw "Preserving replay sandbox through a link: $ancestor"
+            }
+            $ancestor = [IO.Path]::GetDirectoryName($ancestor)
+        }
+        Remove-Item -LiteralPath $sandboxPath -Recurse -Force -ErrorAction Continue
+    }
+}

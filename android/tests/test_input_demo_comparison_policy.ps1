@@ -40,5 +40,31 @@ foreach ($field in @('mission', 'shields', 'position.x')) {
     if (-not ($diffs -like "*$field*")) { throw "Comparison hid $field" }
 }
 Write-Host 'PASS: replay reference identities cannot be copied from actual results'
+. (Join-Path (Split-Path $PSScriptRoot) 'helpers/output_disk_space.ps1')
+$spaceRejected = $false
+try { Assert-OutputDiskSpace -Paths $PSScriptRoot -MinimumFreeGB 1048576 } catch {
+    $spaceRejected = $_.Exception.Message -like 'Insufficient output disk space*'
+    if (-not $spaceRejected) { throw }
+}
+if (-not $spaceRejected) { throw 'Replay disk reserve did not reject insufficient space' }
+$waitFunction = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Wait-ForReplayResult' }, $true)
+. ([scriptblock]::Create($waitFunction.Extent.Text))
+$script:spaceChecks = 0
+function Assert-OutputDiskSpace {
+    param($Paths, $MinimumFreeGB)
+    $script:spaceChecks++
+    if ($script:spaceChecks -ge 2) { throw 'synthetic reserve reached during replay' }
+}
+$script:replayOutputPaths = @($PSScriptRoot)
+$MinimumFreeSpaceGB = 4
+$spaceRejected = $false
+try {
+    Wait-ForReplayResult -Process (Get-Process -Id $PID) -ActualResultPath (Join-Path $PSScriptRoot 'missing-disk-guard-result.json') -TimeoutSeconds 5 | Out-Null
+} catch {
+    $spaceRejected = $_.Exception.Message -eq 'synthetic reserve reached during replay'
+    if (-not $spaceRejected) { throw }
+}
+if (-not $spaceRejected) { throw 'Replay did not check available space during its wait loop' }
+Write-Host 'PASS: replay rejects low space before launch and checks its reserve during execution'
 & python -m unittest discover -s $PSScriptRoot -p test_d1_replay_parity_compare.py
 if ($LASTEXITCODE -ne 0) { throw 'Paired replay evidence tests failed' }

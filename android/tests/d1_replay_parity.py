@@ -368,10 +368,30 @@ def compress_trace(path):
     if path.suffix == ".gz":
         return path
     target = path.with_suffix(path.suffix + ".gz")
-    with path.open("rb") as source, gzip.open(target, "wb", compresslevel=1) as output:
+    # A failed compression must leave the source intact, never a valid-looking
+    # truncated .gz beside it
+    partial = target.with_name(target.name + ".partial")
+    with path.open("rb") as source, gzip.open(partial, "wb", compresslevel=1) as output:
         shutil.copyfileobj(source, output)
+    with gzip.open(partial, "rb") as check:
+        actual = hashlib.sha256()
+        for block in iter(lambda: check.read(1024 * 1024), b""):
+            actual.update(block)
+    if actual.hexdigest() != digest(path):
+        raise EvidenceError(f"Trace compression verification failed: {path}")
+    partial.replace(target)
     path.unlink()
     return target
+
+
+def require_disk_space(path, minimum_gb):
+    directory = Path(path).resolve()
+    while not directory.exists():
+        directory = directory.parent
+    free = shutil.disk_usage(directory).free
+    if free < minimum_gb * 1024 ** 3:
+        raise EvidenceError(f"Insufficient output disk space at {directory}: "
+                            f"{free / 1024 ** 3:.2f} GiB free, {minimum_gb:g} GiB reserve required")
 
 
 def executable_info(path):
@@ -392,6 +412,8 @@ def executable_info(path):
 
 
 def capture(args, demo, directory, name, imported, assets, executable):
+    require_disk_space(args.output, args.minimum_free_gb)
+    require_disk_space(args.repo, args.minimum_free_gb)
     run = directory / name
     run.mkdir()
     paths = {key: run / filename for key, filename in
@@ -401,7 +423,7 @@ def capture(args, demo, directory, name, imported, assets, executable):
                "-RenderProfile", "default", "-ReplayRobotLabels", "hide", "-SkipExpectedChecks",
                "-SandboxSuffix", args.output.name + "-" + name, "-TimeoutSeconds", str(args.timeout),
                "-ResultCopyPath", str(paths["result"]), "-StateLogPath", str(paths["state"]),
-               "-RngLogPath", str(paths["rng"])]
+               "-RngLogPath", str(paths["rng"]), "-MinimumFreeSpaceGB", str(args.minimum_free_gb)]
     command += ["-D1InD2"] if imported else ["-Game", "d1"]
     info = {"command": command, "executable": executable, "artifacts": {key: str(path) for key, path in paths.items()}}
     write_json(run / "launch.json", info)
@@ -426,11 +448,25 @@ def capture(args, demo, directory, name, imported, assets, executable):
 
 
 def run(args):
+    require_disk_space(args.output, args.minimum_free_gb)
     args.output.mkdir(parents=True, exist_ok=False)
+    # Held for staging, captures and comparison. Retention skips open leases,
+    # including another run still comparing its completed engine captures
+    with (args.output / "producer.lock").open("w", encoding="ascii") as lease:
+        if sys.platform != "win32":
+            import fcntl
+            fcntl.flock(lease.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        lease.write("paired D1 replay capture and comparison\n")
+        lease.flush()
+        return run_with_lease(args)
+
+
+def run_with_lease(args):
     assets = args.output / "d1-assets"
     assets.mkdir()
     asset_manifest = []
     for name in ("descent.hog", "descent.pig"):
+        require_disk_space(args.output, args.minimum_free_gb)
         matches = [path for path in args.data.iterdir() if path.name.lower() == name and path.is_file()]
         if len(matches) != 1:
             raise EvidenceError(f"Exactly one {name} required in {args.data}")
@@ -454,6 +490,9 @@ def run(args):
     for name in ("d1_replay_parity.py", "test_d1_replay_parity.ps1", "run_input_demo_replay.ps1",
                  "input_demo_host_build_guard.ps1"):
         shutil.copyfile(args.repo / "android/tests" / name, harness / name)
+        manifest["harness_sha256"][name] = digest(harness / name)
+    for name in ("output_disk_space.ps1", "retain-recent-artifacts.ps1", "clean-old-artifacts.ps1"):
+        shutil.copyfile(args.repo / "android/helpers" / name, harness / name)
         manifest["harness_sha256"][name] = digest(harness / name)
     report = {"schema": 1, "cases": [], "qualification": "incomplete", "coverage_gaps": [
         "Existing frame diagnostics have not been fully mapped to a cross-engine semantic schema",
@@ -492,6 +531,7 @@ def run(args):
                 if right_name not in runs or (left_name is not None and left_name not in runs):
                     case[relationship] = {"status": "incomplete", "error": "Required capture failed"}
                 else:
+                    print(f"{directory.name}: comparing {relationship}", flush=True)
                     case[relationship] = compare_pair(demo, runs[left_name] if left_name else recorded,
                                                       runs[right_name], engine, left_name is None)
             case["status"] = "fail" if any(case[key]["status"] == "fail" for key in
@@ -517,8 +557,11 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--pwsh", required=True)
     parser.add_argument("--timeout", type=int, default=300)
+    parser.add_argument("--minimum-free-gb", type=float, default=4)
     parser.add_argument("--demo", type=Path, action="append", required=True)
     args = parser.parse_args()
+    if not 0.01 <= args.minimum_free_gb <= 1048576:
+        parser.error("--minimum-free-gb must be between 0.01 and 1048576")
     return run(args)
 
 

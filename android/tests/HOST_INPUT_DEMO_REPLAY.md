@@ -46,7 +46,7 @@ Notes:
 - If a raw run lands at `Enter your pilot name`, stop and go back to the wrapper instead of typing through it in the build output dir.
 - `-ReuseSandbox` preserves `Players/` and other sandbox state between runs. This is the safe way to keep a known-good pilot for repeated experiments.
 - `-Pilot <name>` tells the game which existing pilot to select inside the reused sandbox.
-- `-TraceState` writes `temp/input_demo_state_traces/*.actual_state.jsonl`, exports the expected trace, and runs the state-trace comparer automatically.
+- `-TraceState` writes `temp/input_demo_state_traces/*.actual_state.jsonl.gz`, exports the expected trace, and runs the state-trace comparer automatically. Default and determinism-matrix state traces use gzip directly; explicit `-StateLogPath` values retain their requested format.
 - `-StateLogPath <path>` lets you pick the actual replay trace output file explicitly. Add `-CompareStateTrace` if you also want the wrapper to run the compare helper.
 - `-TraceRng` writes `temp/input_demo_state_traces/*.actual_rngtrace.jsonl` and runs the RNG trace comparer automatically against `<demo>.rngtrace.jsonl`.
 - `-RngLogPath <path>` lets you pick the replay RNG trace output file explicitly. Add `-CompareRngTrace` if you want the wrapper to run only the compare step without the convenience alias.

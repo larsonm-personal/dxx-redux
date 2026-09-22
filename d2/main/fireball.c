@@ -1284,13 +1284,7 @@ int object_create_egg(object *objp)
 			mark_player_spew_objects(start_net_create_loc, rval);
 		#endif
 
-		if (objp->type == OBJ_ROBOT && objp->contains_type==OBJ_POWERUP)
-		{
-			if (objp->contains_id==POW_VULCAN_WEAPON || objp->contains_id==POW_GAUSS_WEAPON)
-				Objects[rval].ctype.powerup_info.count = VULCAN_WEAPON_AMMO_AMOUNT;
-			else if (objp->contains_id==POW_OMEGA_WEAPON)
-				Objects[rval].ctype.powerup_info.count = MAX_OMEGA_CHARGE;
-		}
+		d1_in_d2_initialize_robot_drop_count(objp, &Objects[rval]);
 	}
 
 	return rval;

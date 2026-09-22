@@ -44,6 +44,10 @@ created. No age threshold applies. Reusing an existing output does not create a
 fourth generation. The current/planned output is excluded from prior history,
 including when a wrapper and child runner share it.
 
+All callers of `retain-recent-artifacts.ps1` also check a 4 GiB output-volume
+reserve after retention, before producing new artifacts. This includes planned
+directories that do not exist yet. `-MinimumFreeSpaceGB` adjusts that reserve
+
 The shared `helpers/retain-recent-artifacts.ps1` accepts planned output paths.
 Hooks cover metadata and guidebot batches, regression/test reports, demo matrix
 outputs, warning logs, guidebot browser runs, and timestamped/deployment AAB copies.
@@ -57,3 +61,36 @@ build behavior; workspace native deletion currently requires Windows safety chec
 
 Manual cleanup still defaults to one newest generation. Producers keep three prior
 outputs so running them offers more history without requiring cleanup flags.
+
+Millisecond timestamps (`yyyyMMdd_HHmmss_fff`) now belong to the same family as
+second-resolution timestamps. Producers can explicitly group descriptive directory
+names with `-DirectoryPrefix` and impose `-MaxFamilyBytes` as well as `-Keep`.
+These limits apply to prior history; current/planned output is excluded. Protected
+files, nested repositories, build boundaries and held `.lock` files are preserved,
+even when this prevents meeting the budget. Retention reports those exceptions
+
+Paired D1 replay captures use the owned `d1_replay_parity_` prefix: at most two prior
+runs and 8 GiB of prior history, including descriptively named experiments under
+that prefix. `-RetainedHistoryGB` adjusts the byte budget. Custom paths outside the
+prefix retain the generic timestamp policy. A held `producer.lock` protects a run
+until both capture and comparison finish. Fixed-name files and unrelated scratch
+families are not removed by this producer
+
+Replay runners require 4 GiB free on output volumes before launch and check again
+once per second during execution (`-MinimumFreeSpaceGB`). A reserve failure stops
+the owned engine through the usual exception cleanup and reports an incomplete
+capture; it never blesses truncated traces or starts global workspace cleanup.
+Replay sandboxes are removed on exceptions and timeouts as well as success;
+`-KeepSandbox` explicitly retains them for debugging. External requested result
+and trace paths remain available, including incomplete captures
+The reserve is a guardrail, not reserved disk allocation: other processes and a
+single very large write can consume it between checks. Paired, default `-TraceState`
+and determinism-matrix state traces are written directly as gzip. Explicit trace
+paths keep their requested format. Post-capture RNG compression verifies the decoded bytes
+before replacing the source, keeping the original if compression fails
+
+Cleanup emits elapsed-time scan and deletion progress even when output is
+redirected. Its final small-file phase can be slower than large-file removal:
+every candidate still gets fresh process, Git, path and tree checks. Producer
+retention avoids scanning unrelated collections and uses a set of protected paths
+instead of comparing every candidate against every Git-visible file

@@ -53,5 +53,6 @@ Write-Output "PASS: $($trace.small_fireballs.Count) attached fireball cases matc
 Write-Output "PASS: $($trace.reactor_fireballs.Count) dead-reactor burn cases match native D1"
 Write-Output "PASS: $($trace.object_orientations.Count) object initialization cases match native D1"
 Write-Output "PASS: $($trace.powerup_animation.Count) pickup animation steps match native D1"
+Write-Output "PASS: $($trace.weapon_drops.Count) actual weapon-drop and pickup cases match native D1"
 Write-Output "PASS: $($trace.volatile_impacts.Count) lava weapon impacts match native D1, including explosion size and robot blast motion"
 Write-Output "Gameplay traces: $outputPath"

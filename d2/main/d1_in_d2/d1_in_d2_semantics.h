@@ -27,6 +27,10 @@ fix d1_in_d2_small_fireball_size(const struct object *obj, fix scale, int random
 int d1_in_d2_volatile_weapon_impact(struct object *weapon, short segment, vms_vector *hit_point);
 /* Adjust native Vulcan contents; true requests an ordinary ammo-box pickup */
 int d1_in_d2_prepare_vulcan_pickup(int weapon_index, int new_weapon, int duplicate_reward, int *ammo);
+/* Called for both games: D1 enemy drops retain the initialized count, while
+ * D2 robots (including an optional Guide-Bot in D1) receive D2 ammo/charge
+ * Non-robot and non-powerup drops are unchanged */
+void d1_in_d2_initialize_robot_drop_count(const struct object *container, struct object *created);
 /* Native D1 still bumps an exploding robot; engine actors retain D2 filtering */
 int d1_in_d2_robot_contact_allowed(const struct object *robot);
 int d1_in_d2_robot_pair_collides(const struct object *first, const struct object *second);
