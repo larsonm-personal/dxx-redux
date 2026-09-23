@@ -25,7 +25,9 @@ function Get-TestSuiteCoveragePolicy {
             'test_coop_save_compatibility'
         )
         audio_preferences = @(
+            'test_dos_midi_parity'
             'test_sound_trace'
+            'test_soundfont_download_catalog'
             'test_music_track_controls_unified'
             'test_music_save_source_restore_d2'
             'test_title_music_skip_pref_unified'
@@ -172,6 +174,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_d2_level7_reactor_water_profile'
             'test_death'
             'test_debug_log_refresh_button'
+            'test_input_demo_recording_profile'
             'test_levelcomplete_touch_skip'
             'test_quick_record_classic_sidecar'
         )
