@@ -24,13 +24,13 @@
 
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MidiPreviewBridge_nativeInit(
-    JNIEnv *env, jclass clazz, jobject assetManager, jstring jpath)
+    JNIEnv *env, jclass clazz, jobject assetManager, jstring jpath, jboolean preferFm)
 {
 	AAssetManager *mgr = AAssetManager_fromJava(env, assetManager);
 	char *path = NULL;
 	int result;
 	if (!dxx_jni_string_to_utf8(env, jpath, &path)) return JNI_FALSE;
-	result = midi_preview_init(mgr, path);
+	result = midi_preview_init(mgr, path, preferFm == JNI_TRUE);
 	free(path);
 	return result ? JNI_TRUE : JNI_FALSE;
 }
@@ -51,18 +51,27 @@ Java_com_dxxredux_app_MidiPreviewBridge_nativeValidateSoundfont(JNIEnv *env, jcl
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MidiPreviewBridge_nativeStart(
     JNIEnv *env, jclass clazz,
-    jbyteArray jdata, jboolean isHmp, jint sampleRate)
+    jbyteArray jdata, jboolean isHmp, jint sampleRate, jstring jhog, jstring jsong)
 {
 	jsize len;
 	jbyte *data;
 	int result;
+	char *hog = NULL, *song = NULL;
 	if (!jdata) return JNI_FALSE;
 	len = (*env)->GetArrayLength(env, jdata);
 	if ((*env)->ExceptionCheck(env)) return JNI_FALSE;
 	data = (*env)->GetByteArrayElements(env, jdata, NULL);
 	if (!data || (*env)->ExceptionCheck(env)) return JNI_FALSE;
+	if (!dxx_jni_string_to_utf8(env, jhog, &hog) || !dxx_jni_string_to_utf8(env, jsong, &song)) {
+		free(hog);
+		free(song);
+		(*env)->ReleaseByteArrayElements(env, jdata, data, JNI_ABORT);
+		return JNI_FALSE;
+	}
 	result = midi_preview_start((const unsigned char *) data, (int) len,
-	                            isHmp ? 1 : 0, (int) sampleRate);
+	                            isHmp ? 1 : 0, (int) sampleRate, hog, song);
+	free(hog);
+	free(song);
 	(*env)->ReleaseByteArrayElements(env, jdata, data, JNI_ABORT);
 	return result ? JNI_TRUE : JNI_FALSE;
 }
@@ -102,7 +111,7 @@ Java_com_dxxredux_app_MidiPreviewBridge_nativeGetState(
 	int pos = 0, dur = 0;
 	int state = midi_preview_get_state(&pos, &dur);
 	char buf[64];
-	snprintf(buf, sizeof(buf), "%d|%d|%d", state, pos, dur);
+	snprintf(buf, sizeof(buf), "%d|%d|%d|%s", state, pos, dur, midi_preview_is_fm() ? "ymfm" : "sf2");
 	return dxx_jni_string_from_utf8(env, buf);
 }
 

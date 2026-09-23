@@ -125,6 +125,15 @@
         "audio.tsf_peak_sample": {"gt": 0},
         "audio.tsf_clip_count": "0"
     }},
+    // D1 Level 8 has a separate HMQ arrangement for its FM banks
+    {"action": "music_control", "when": "d1", "operation": "play", "track": 12},
+    {"action": "wait_ms", "when": "d1", "ms": 1500},
+    {"action": "assert", "when": "d1", "expect": {
+        "music.track": "12",
+        "audio.tsf_playing": true,
+        "audio.tsf_peak_sample": {"gt": 0},
+        "audio.tsf_clip_count": "0"
+    }},
     {"action": "log", "message": "=== TEST: Shared music track controls -- COMPLETE ==="},
     {"action": "introspect"}
 ]

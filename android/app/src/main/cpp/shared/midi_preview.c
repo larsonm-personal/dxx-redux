@@ -13,6 +13,7 @@
 #include "hmp_android_shared.h"
 #include "hog_midi_catalog.h"
 #include "midi_seek_timeline.h"
+#include "music_decode_limits.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,7 +32,7 @@
 #define TML_NO_STDIO
 #include "tml.h"
 #include "hmp_tsf_state.h"
-#include "music_soundfont.h"
+#include "music_synth_hmp.h"
 
 #define TAG       "DXX-MidiPreview"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
@@ -96,8 +97,10 @@ static unsigned int rb_available(void)
 
 /* ── Playback state ──────────────────────────────────────────────────── */
 
-static tsf *s_tsf = NULL; /* SoundFont synth (persistent)    */
+static music_synth *s_tsf = NULL; /* SoundFont synth (persistent)    */
 static char *s_soundfont_path;
+static int s_prefer_fm;
+static int s_renderer_snapshot;
 static tml_message *s_midi = NULL;       /* parsed MIDI message list        */
 static unsigned char *s_midi_buf = NULL; /* raw MIDI bytes (owned)         */
 static int s_midi_buf_len = 0;
@@ -166,6 +169,30 @@ int hog_read_entry(const char *hog_path, const char *entry_name,
 	return result;
 }
 
+static int preview_accept_bank(const char *name)
+{
+	return hog_midi_has_extension(name, ".bnk") || hog_midi_has_extension(name, ".sng") ||
+	       hog_midi_has_extension(name, ".hmq");
+}
+static unsigned char *preview_read_bank(void *context, const char *name, size_t *size)
+{
+	struct hog_midi_catalog catalog;
+	unsigned char *data = NULL;
+	int length = 0;
+	const char *path = (const char *) context;
+	if (hog_catalog_load_filtered(path, &catalog, preview_accept_bank) != HOG_MIDI_CATALOG_OK) return NULL;
+	for (size_t i = 0; i < catalog.count; ++i) {
+		size_t limit = hog_midi_has_extension(name, ".hmq") ? MUSIC_MIDI_ENCODED_MAX_BYTES : 65536;
+		if (!hog_catalog_strcasecmp(catalog.entries[i].name, name) && catalog.entries[i].size <= limit) {
+			hog_midi_catalog_read(path, &catalog, i, &data, &length);
+			break;
+		}
+	}
+	hog_midi_catalog_free(&catalog);
+	*size = length;
+	return data;
+}
+
 /* ── MIDI duration calculation ───────────────────────────────────────── */
 
 static int compute_midi_duration_ms(const unsigned char *midi_data, int midi_len)
@@ -198,27 +225,27 @@ static const void *midi_event_next(const void *event)
 
 static void dispatch_midi_event(void *context, const void *event)
 {
-	tsf *synth = (tsf *) context;
+	music_synth *synth = (music_synth *) context;
 	const tml_message *m = (const tml_message *) event;
 
 	switch (m->type) {
 		case TML_NOTE_ON:
-			tsf_channel_note_on(synth, m->channel, m->key, m->velocity / 127.0f);
+			music_synth_channel_note_on(synth, m->channel, m->key, m->velocity / 127.0f);
 			break;
 		case TML_NOTE_OFF:
-			tsf_channel_note_off(synth, m->channel, m->key);
+			music_synth_channel_note_off(synth, m->channel, m->key);
 			break;
 		case TML_PROGRAM_CHANGE:
-			tsf_channel_set_presetnumber(synth, m->channel, m->program, (m->channel == 9));
+			music_synth_channel_set_presetnumber(synth, m->channel, m->program, (m->channel == 9));
 			break;
 		case TML_CONTROL_CHANGE:
 			if (s_hmp_end_ms > 0)
-				hmp_tsf_control(synth, m->channel, m->control, m->control_value);
+				music_synth_hmp_control(synth, m->channel, m->control, m->control_value);
 			else
-				tsf_channel_midi_control(synth, m->channel, m->control, m->control_value);
+				music_synth_channel_midi_control(synth, m->channel, m->control, m->control_value);
 			break;
 		case TML_PITCH_BEND:
-			tsf_channel_set_pitchwheel(synth, m->channel, m->pitch_bend);
+			music_synth_channel_set_pitchwheel(synth, m->channel, m->pitch_bend);
 			break;
 		default:
 			break;
@@ -227,7 +254,7 @@ static void dispatch_midi_event(void *context, const void *event)
 
 static void render_tsf_frames(void *context, short *output, int frames)
 {
-	tsf_render_short((tsf *) context, output, frames, 0);
+	music_synth_render_short((music_synth *) context, output, frames, 0);
 }
 
 static void reset_midi_timeline(void)
@@ -325,11 +352,11 @@ static void approximate_seek(int target_ms)
 	int key;
 	int notes = 0;
 
-	tsf_reset(s_tsf);
+	music_synth_reset(s_tsf);
 	if (s_hmp_end_ms > 0)
-		hmp_tsf_begin(s_tsf, &s_hmp_initial_state);
-	tsf_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
-	tsf_set_max_voices(s_tsf, s_max_voices);
+		music_synth_hmp_begin(s_tsf, &s_hmp_initial_state);
+	music_synth_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
+	music_synth_set_max_voices(s_tsf, s_max_voices);
 	while (message && message->time <= (unsigned int) target_ms) {
 		channel = (unsigned char) message->channel;
 		if (channel < 16) {
@@ -349,22 +376,22 @@ static void approximate_seek(int target_ms)
 					approximate_note_off(seek_channel, key);
 					break;
 				case TML_PROGRAM_CHANGE:
-					tsf_channel_set_presetnumber(s_tsf, channel,
-					                             (unsigned char) message->program,
-					                             channel == 9);
+					music_synth_channel_set_presetnumber(s_tsf, channel,
+					                                     (unsigned char) message->program,
+					                                     channel == 9);
 					break;
 				case TML_CONTROL_CHANGE: {
 					int control = (unsigned char) message->control;
 					int value = (unsigned char) message->control_value;
 					approximate_control_change(seek_channel, control, value);
 					if (s_hmp_end_ms > 0)
-						hmp_tsf_control(s_tsf, channel, control, value);
+						music_synth_hmp_control(s_tsf, channel, control, value);
 					else
-						tsf_channel_midi_control(s_tsf, channel, control, value);
+						music_synth_channel_midi_control(s_tsf, channel, control, value);
 					break;
 				}
 				case TML_PITCH_BEND:
-					tsf_channel_set_pitchwheel(s_tsf, channel, message->pitch_bend);
+					music_synth_channel_set_pitchwheel(s_tsf, channel, message->pitch_bend);
 					break;
 				default:
 					break;
@@ -376,8 +403,8 @@ static void approximate_seek(int target_ms)
 	for (channel = 0; channel < 16; channel++)
 		for (key = 0; key < 128; key++)
 			if (channels[channel].sounding[key]) {
-				tsf_channel_note_on(s_tsf, channel, key,
-				                    channels[channel].velocity[key] / 127.0f);
+				music_synth_channel_note_on(s_tsf, channel, key,
+				                            channels[channel].velocity[key] / 127.0f);
 				notes++;
 			}
 
@@ -629,18 +656,18 @@ static void osl_shutdown(void)
 
 static void midi_preview_stop_internal(void);
 
-int midi_preview_init(AAssetManager *mgr, const char *soundfont_path)
+int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer_fm)
 {
-	tsf *replacement;
+	music_synth *replacement;
 	char *path;
 	if (!soundfont_path) return 0;
 	pthread_mutex_lock(&s_control_mutex);
-	if (s_tsf && s_soundfont_path && !strcmp(s_soundfont_path, soundfont_path)) {
+	if (s_tsf && s_soundfont_path && s_prefer_fm == prefer_fm && !strcmp(s_soundfont_path, soundfont_path)) {
 		pthread_mutex_unlock(&s_control_mutex);
 		return 1;
 	}
 	path = strdup(soundfont_path);
-	replacement = path ? music_soundfont_load(mgr, path) : NULL;
+	replacement = path ? music_synth_load(mgr, path, prefer_fm) : NULL;
 	if (!replacement) {
 		free(path);
 		pthread_mutex_unlock(&s_control_mutex);
@@ -648,17 +675,20 @@ int midi_preview_init(AAssetManager *mgr, const char *soundfont_path)
 	}
 	/* Stop/join rendering before replacing its synth or freeing old samples */
 	midi_preview_stop_internal();
-	if (s_tsf) tsf_close(s_tsf);
+	if (s_tsf) music_synth_close(s_tsf);
 	free(s_soundfont_path);
 	s_tsf = replacement;
+	memset(&s_hmp_saved_state, 0, sizeof(s_hmp_saved_state));
+	memset(&s_hmp_initial_state, 0, sizeof(s_hmp_initial_state));
 	s_soundfont_path = path;
-	LOGI("SoundFont loaded (%d presets)", tsf_get_presetcount(s_tsf));
+	s_prefer_fm = prefer_fm;
+	LOGI("SoundFont loaded (%d presets)", music_synth_get_presetcount(s_tsf));
 	pthread_mutex_unlock(&s_control_mutex);
 	return 1;
 }
 
 int midi_preview_start(const unsigned char *data, int len,
-                       int is_hmp, int sample_rate)
+                       int is_hmp, int sample_rate, const char *hog_path, const char *song)
 {
 	unsigned char *midi_data = NULL;
 	int midi_len = 0;
@@ -679,14 +709,17 @@ int midi_preview_start(const unsigned char *data, int len,
 		return 0;
 	}
 
+	__atomic_store_n(&s_renderer_snapshot, music_synth_prepare(s_tsf, song, is_hmp && hog_path && *hog_path ? preview_read_bank : NULL, (void *) hog_path), __ATOMIC_RELEASE);
+
 	/* Convert HMP to MIDI if needed */
 	s_hmp_end_ms = 0;
 	if (is_hmp) {
-		if (!hmp2mid_playback_mem(data, len, 0, &midi_data, &midi_len, &hmp_info)) {
+		if (!music_synth_convert_hmp(s_tsf, data, len, 0, &midi_data, &midi_len, &hmp_info)) {
 			LOGE("HMP -> MIDI conversion failed");
 			pthread_mutex_unlock(&s_control_mutex);
 			return 0;
 		}
+		__atomic_store_n(&s_renderer_snapshot, music_synth_is_fm(s_tsf), __ATOMIC_RELEASE);
 		s_hmp_end_ms = hmp_info.end_ms;
 		if (hmp_info.no_gm_arrangement)
 			LOGI("HMP has no GM notes; retaining approximate all-track playback");
@@ -723,13 +756,13 @@ int midi_preview_start(const unsigned char *data, int len,
 	__atomic_store_n(&s_output_enabled, 1, __ATOMIC_RELEASE);
 
 	/* Configure TSF */
-	tsf_reset(s_tsf);
+	music_synth_reset(s_tsf);
 	if (is_hmp) {
 		s_hmp_initial_state = s_hmp_saved_state;
-		hmp_tsf_begin(s_tsf, &s_hmp_initial_state);
+		music_synth_hmp_begin(s_tsf, &s_hmp_initial_state);
 	}
-	tsf_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
-	tsf_set_max_voices(s_tsf, s_max_voices);
+	music_synth_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
+	music_synth_set_max_voices(s_tsf, s_max_voices);
 	reset_midi_timeline();
 	__atomic_store_n(&s_seek_target_ms, -1, __ATOMIC_RELEASE);
 	publish_playback_state();
@@ -770,7 +803,7 @@ static void midi_preview_stop_internal(void)
 	pthread_mutex_lock(&s_playback_mutex);
 	if (s_midi) {
 		if (s_hmp_end_ms > 0 && s_tsf)
-			hmp_tsf_capture(s_tsf, &s_hmp_saved_state);
+			music_synth_hmp_capture(s_tsf, &s_hmp_saved_state);
 		tml_free(s_midi);
 		s_midi = NULL;
 		s_timeline.event = NULL;
@@ -843,4 +876,9 @@ int midi_preview_get_state(int *out_position_ms, int *out_duration_ms)
 	if (playing && !paused) return MDP_PLAYING;
 	if (paused) return MDP_PAUSED;
 	return MDP_STOPPED;
+}
+
+int midi_preview_is_fm(void)
+{
+	return __atomic_load_n(&s_renderer_snapshot, __ATOMIC_ACQUIRE);
 }

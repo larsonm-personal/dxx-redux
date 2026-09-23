@@ -520,7 +520,7 @@ private fun MidiSection(filesDir: File) {
     }
 
     Text(
-        "MIDI music from game data files (HMP format, played via SoundFont synth)",
+        "MIDI music from game data files, played using the sound profile below",
         fontSize = 13.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -690,6 +690,7 @@ private fun MidiTrackPreviewDialog(
         detailLines = detailLines,
         isHmp = track.filename.lowercase().endsWith(".hmp") || track.filename.lowercase().endsWith(".hmq"),
         loadBytes = { MidiPreviewBridge.readHogEntry(source.hog, track.filename) },
+        hogPath = source.hog,
         loadMetadata = { track.metadata },
         onDismiss = onDismiss,
     )

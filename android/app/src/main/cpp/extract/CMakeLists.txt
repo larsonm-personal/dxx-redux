@@ -504,6 +504,22 @@ if(NOT MSVC)
 endif()
 add_test(NAME music_soundfont_tests COMMAND test_music_soundfont
                                             ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/gm.sf2)
+include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/ymfm-music.cmake)
+add_executable(
+    test_music_synth
+    test_music_synth.c ../shared/music_synth.cpp ../shared/music_soundfont.c ../shared/tsf_impl.c
+    ../shared/hmp_android_shared.c ../shared/midi_seek_timeline.c)
+target_include_directories(test_music_synth PRIVATE test_hmp_stubs ../shared
+                                                    ${tinysoundfont_test_SOURCE_DIR})
+target_link_libraries(test_music_synth PRIVATE music_ymfmidi)
+target_compile_definitions(test_music_synth PRIVATE DXX_MUSIC_SYNTH_TEST_TRACE)
+if(MSVC)
+    target_compile_options(test_music_synth PRIVATE /W4)
+else()
+    target_compile_options(test_music_synth PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME music_synth_tests COMMAND test_music_synth
+                                        ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/gm.sf2)
 add_executable(
     test_secret_area_scan_budget
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_secret_area_scan_budget.c

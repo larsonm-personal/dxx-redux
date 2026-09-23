@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import android.content.Context
 import android.graphics.Rect
+import android.os.Build
 import android.os.SystemClock
 import android.util.Log
 import android.view.MotionEvent
@@ -9,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.inputmethod.InputMethodManager
+import android.view.inspector.WindowInspector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -19,6 +21,15 @@ import java.io.File
 
 // Ordered setup broadcasts carry command failures back to launcher automation
 internal const val SETUP_COMMAND_RESULT_FAILED = 1
+
+// Compose dialogs have their own window; target the focused root rather than
+// discovering buttons or injecting gestures into the covered activity
+private fun SetupActivity.automationRootView(): View {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        WindowInspector.getGlobalWindowViews().lastOrNull { it.isShown && it.hasWindowFocus() }?.let { return it }
+    }
+    return window.decorView
+}
 
 /**
  * Walk the Compose accessibility node provider to discover all interactive
@@ -31,7 +42,7 @@ internal const val SETUP_COMMAND_RESULT_FAILED = 1
  * non-empty text and non-zero bounds.
  */
 internal fun SetupActivity.collectAccessibleButtons(): List<SetupActivity.ButtonInfo> {
-    val root = window.decorView
+    val root = automationRootView()
     val composeView = findComposeView(root)
     if (composeView == null) {
         Log.w("DXX-Buttons", "No ComposeView found in view tree")
@@ -195,7 +206,7 @@ internal suspend fun SetupActivity.injectTapAt(
     screenY: Float,
 ) {
     withContext(Dispatchers.Main) {
-        val decorView = window.decorView
+        val decorView = automationRootView()
         val loc = IntArray(2)
         decorView.getLocationOnScreen(loc)
         val localX = screenX - loc[0]
@@ -235,7 +246,7 @@ internal suspend fun SetupActivity.injectTapAt(
  * Returns true if the click was performed.
  */
 internal fun SetupActivity.performAccessibilityClick(buttonText: String): Boolean {
-    val root = window.decorView
+    val root = automationRootView()
     val composeView = findComposeView(root) ?: return false
     val provider = composeView.accessibilityNodeProvider ?: return false
 
@@ -306,7 +317,7 @@ private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean 
         val isLandscape =
             resources.configuration.orientation ==
                 android.content.res.Configuration.ORIENTATION_LANDSCAPE
-        val root = window.decorView
+        val root = automationRootView()
         val composeView = findComposeView(root)
         val provider = composeView?.accessibilityNodeProvider
         if (composeView != null && provider != null) {
@@ -393,7 +404,7 @@ private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean 
             }
         }
 
-        val decorView = window.decorView
+        val decorView = automationRootView()
         val startY = decorView.height * (if (forward) 0.62f else 0.44f)
         val endY = decorView.height * (if (forward) 0.44f else 0.62f)
         for (xFraction in scrollGestureXFractions(isLandscape)) {
@@ -1051,15 +1062,25 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         root.put("has_legacy_gog_audio", findGogPair(setDir) != null)
 
         val musicPreview = JSONObject()
-        val soundfont = SoundfontStore(filesDir).read()
+        val soundfont = SoundfontStore(this).read()
         root.put(
             "soundfont",
             JSONObject().apply {
                 put("selected", soundfont.selected)
+                put("renderer", soundfont.renderer)
                 put(
                     "fonts",
                     JSONArray().apply {
-                        soundfont.fonts.forEach { font -> put(JSONObject().put("id", font.id).put("name", font.name)) }
+                        soundfont.fonts.forEach { font ->
+                            put(
+                                JSONObject()
+                                    .put(
+                                        "id",
+                                        font.id,
+                                    ).put("name", font.name)
+                                    .put("download", font.download?.toJson()),
+                            )
+                        }
                     },
                 )
             },
@@ -1076,6 +1097,7 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         )
         midiObj.put("position_ms", midiState.positionMs)
         midiObj.put("duration_ms", midiState.durationMs)
+        midiObj.put("renderer", midiState.renderer)
         musicPreview.put("midi", midiObj)
         val cdState = CdPreviewBridge.getState()
         val cdObj = JSONObject()
@@ -1109,6 +1131,7 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
                 mso.put("id", ms.id)
                 mso.put("label", ms.label)
                 mso.put("track_count", ms.tracks.size)
+                mso.put("tracks", JSONArray(ms.tracks.map { it.filename }))
                 midiSrcArr.put(mso)
             }
             musicPreview.put("midi_sources", midiSrcArr)

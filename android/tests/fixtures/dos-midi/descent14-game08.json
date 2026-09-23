@@ -1,0 +1,13 @@
+{
+  "description": "GOG DOS Descent 1.4 General MIDI, volume 8, game08 HMP substituted as title; unattended capture using original GOG DOSBox 0.74",
+  "hmp": "game08.hmp",
+  "hmp_sha256": "7146050da4fe34b4af0484d0d1becf37682e66700de44669451b23311245b628",
+  "capture": "dos.mid",
+  "capture_sha256": "4c714e1fc51953618a4d05f4c4fb9e9e92e7be77e267e46072e7a9eeda62b187",
+  "reference_start_ms": 0,
+  "duration_ms": 50010,
+  "legacy_duration_ms": 50010,
+  "tolerance_ms": 10,
+  "shared_initial_state": false,
+  "notes": "Cold title startup, no preceding-song state needed. First captured HMP pitch reset at 0 ms; first notes at 125 ms. Window ends between events: note-off at DOS 49999 ms / TML 50000 ms is included. No tempo stretch or alignment. Opening-only fixture; does not cover the 173.9-second repeat."
+}

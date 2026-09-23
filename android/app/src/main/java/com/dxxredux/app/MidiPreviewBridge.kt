@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong
  * JNI bridge for MIDI/HMP preview playback in the launcher.
  *
  * Uses a standalone C player (midi_preview.c) that renders MIDI via
- * TinySoundFont and outputs through OpenSL ES -- no SDL required.
+ * TinySoundFont or ymfm and outputs through OpenSL ES -- no SDL required.
  */
 object MidiPreviewBridge {
     const val STATE_STOPPED = 0
@@ -27,6 +27,7 @@ object MidiPreviewBridge {
         val state: Int,
         val positionMs: Int,
         val durationMs: Int,
+        val renderer: String = "sf2",
     )
 
     fun getNativeSampleRate(context: Context): Int {
@@ -38,7 +39,8 @@ object MidiPreviewBridge {
     /** Resolve the same persisted instrument asset used at game startup. Call on IO. */
     fun init(context: Context): Boolean =
         synchronized(lifecycleLock) {
-            nativeInit(context.assets, SoundfontStore(context.filesDir).selectedPath())
+            val store = SoundfontStore(context)
+            nativeInit(context.assets, store.selectedPath(), store.read().renderer == "ymfm")
         }
 
     fun selectSoundfont(
@@ -46,10 +48,38 @@ object MidiPreviewBridge {
         id: String,
     ) = synchronized(lifecycleLock) {
         requestedGeneration.incrementAndGet()
-        SoundfontStore(context.filesDir).select(id) { nativeInit(context.assets, it) }
+        val store = SoundfontStore(context)
+        store.select(id) { nativeInit(context.assets, it, store.read().renderer == "ymfm") }
+    }
+
+    fun selectRenderer(
+        context: Context,
+        renderer: String,
+    ) = synchronized(lifecycleLock) {
+        requestedGeneration.incrementAndGet()
+        SoundfontStore(context).selectRenderer(renderer) { path, fm -> nativeInit(context.assets, path, fm) }
+    }
+
+    fun deleteSoundfont(
+        context: Context,
+        id: String,
+    ) = synchronized(lifecycleLock) {
+        val store = SoundfontStore(context)
+        store.delete(id) { path ->
+            requestedGeneration.incrementAndGet()
+            nativeInit(context.assets, path, store.read().renderer == "ymfm")
+        }
     }
 
     fun validateSoundfont(path: String): Boolean = nativeValidateSoundfont(path)
+
+    internal fun resetPreferences(
+        context: Context,
+        preset: GameSettingsPreset,
+    ) = synchronized(lifecycleLock) {
+        requestedGeneration.incrementAndGet()
+        preset.resetMidiPreferences(SoundfontStore(context)) { path, fm -> nativeInit(context.assets, path, fm) }
+    }
 
     /**
      * Start MIDI/HMP preview from raw file bytes.
@@ -68,11 +98,13 @@ object MidiPreviewBridge {
         data: ByteArray,
         isHmp: Boolean,
         sampleRate: Int,
+        hogPath: String = "",
+        song: String = "",
     ): Boolean =
         synchronized(lifecycleLock) {
             if (generation != requestedGeneration.get()) return@synchronized false
             synchronized(MidiEnumerationBridge.nativeDataLock) {
-                nativeStart(data, isHmp, sampleRate)
+                nativeStart(data, isHmp, sampleRate, hogPath, song)
             }
         }
 
@@ -91,11 +123,12 @@ object MidiPreviewBridge {
     fun getState(): PlaybackState {
         val raw = synchronized(lifecycleLock) { nativeGetState() }
         val parts = raw.split("|")
-        if (parts.size != 3) return PlaybackState(STATE_STOPPED, 0, 0)
+        if (parts.size != 4) return PlaybackState(STATE_STOPPED, 0, 0)
         return PlaybackState(
             state = parts[0].toIntOrNull() ?: STATE_STOPPED,
             positionMs = parts[1].toIntOrNull() ?: 0,
             durationMs = parts[2].toIntOrNull() ?: 0,
+            renderer = parts[3],
         )
     }
 
@@ -110,6 +143,7 @@ object MidiPreviewBridge {
     @JvmStatic private external fun nativeInit(
         assetManager: android.content.res.AssetManager,
         path: String,
+        preferFm: Boolean,
     ): Boolean
 
     @JvmStatic private external fun nativeValidateSoundfont(path: String): Boolean
@@ -118,6 +152,8 @@ object MidiPreviewBridge {
         data: ByteArray,
         isHmp: Boolean,
         sampleRate: Int,
+        hogPath: String,
+        song: String,
     ): Boolean
 
     @JvmStatic private external fun nativeStop()

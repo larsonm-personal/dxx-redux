@@ -37,13 +37,42 @@ static int sf_indices(struct sf_table a, size_t offset, struct sf_table b)
 	return 1;
 }
 
+static int sf_region_limit(const struct sf_table *tables)
+{
+	size_t i, regions = 0;
+	unsigned *sample_counts = calloc(tables[7].count, sizeof(*sample_counts));
+	int valid = 0;
+	if (!sample_counts) return 0;
+	/* TSF allocates a region for each sampleID, not each generator (envelope,
+	 * filter, key range, etc). Prefix counts keep repeated instruments cheap */
+	for (i = 1; i < tables[7].count; ++i)
+		sample_counts[i] = sample_counts[i - 1] + (sf16(tables[7].data + (i - 1) * 4) == 53);
+	for (i = 0; i + 1 < tables[3].count; ++i) {
+		const unsigned char *g = tables[3].data + i * 4;
+		if (sf16(g) == 41) {
+			unsigned inst = sf16(g + 2), first, last;
+			if (inst >= tables[4].count - 1) goto done;
+			first = sf16(tables[4].data + inst * 22 + 20);
+			last = sf16(tables[4].data + (inst + 1) * 22 + 20);
+			first = sf16(tables[5].data + first * 4);
+			last = sf16(tables[5].data + last * 4);
+			regions += sample_counts[last] - sample_counts[first];
+			if (regions > 65536) goto done;
+		}
+	}
+	valid = 1;
+done:
+	free(sample_counts);
+	return valid;
+}
+
 size_t music_soundfont_validate(const void *data, size_t size)
 {
 	static const char *names[] = { "phdr", "pbag", "pmod", "pgen", "inst", "ibag", "imod", "igen", "shdr" };
 	static const size_t strides[] = { 38, 4, 10, 4, 22, 4, 10, 4, 46 };
 	struct sf_table tables[9] = { { 0 } };
 	const unsigned char *bytes = data;
-	size_t pos, i, j, samples = 0, regions = 0;
+	size_t pos, i, j, samples = 0;
 	unsigned lists = 0, version = 0;
 	if (!data || size < 12 || size > MUSIC_SOUNDFONT_MAX_BYTES || memcmp(bytes, "RIFF", 4) ||
 	    sf32(bytes + 4) != size - 8 || memcmp(bytes + 8, "sfbk", 4)) return 0;
@@ -100,17 +129,7 @@ size_t music_soundfont_validate(const void *data, size_t size)
 		if (sf16(g) == 53 && sf16(g + 2) >= tables[8].count - 1) return 0;
 	}
 	/* Bound instrument expansion before the synth allocates preset regions */
-	for (i = 0; i + 1 < tables[3].count; ++i) {
-		const unsigned char *g = tables[3].data + i * 4;
-		if (sf16(g) == 41) {
-			unsigned inst = sf16(g + 2), first, last;
-			if (inst >= tables[4].count - 1) return 0;
-			first = sf16(tables[4].data + inst * 22 + 20);
-			last = sf16(tables[4].data + (inst + 1) * 22 + 20);
-			regions += sf16(tables[5].data + last * 4) - sf16(tables[5].data + first * 4);
-			if (regions > 65536) return 0;
-		}
-	}
+	if (!sf_region_limit(tables)) return 0;
 	return samples;
 }
 

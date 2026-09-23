@@ -4,7 +4,7 @@ param(
     [string]$BuildDirectory = 'android/build/host-extract-tests',
     [string]$ReferenceDirectory = 'game_data/music/dos-references',
     [string]$OutputDirectory = 'temp/midi-parity/reference',
-    [ValidateSet('all', '2', '7')][string]$Level = 'all',
+    [ValidateSet('all', '2', '7', '8')][string]$Level = 'all',
     [switch]$SkipBuild,
     [switch]$SyntheticOnly
 )
@@ -22,7 +22,7 @@ ctest --test-dir $BuildDirectory -C Release --output-on-failure -R '^(hmp_androi
 if ($LASTEXITCODE -ne 0) { throw 'Native MIDI tests failed' }
 if (-not $SyntheticOnly) {
     & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $OutputDirectory
-    $levels = if ($Level -eq 'all') { @(2, 7) } else { @([int]$Level) }
+    $levels = if ($Level -eq 'all') { @(2, 7, 8) } else { @([int]$Level) }
     foreach ($number in $levels) {
         $name = 'descent14-game{0:D2}' -f $number
         $reference = Join-Path $ReferenceDirectory $name

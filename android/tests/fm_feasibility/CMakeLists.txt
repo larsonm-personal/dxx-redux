@@ -39,7 +39,7 @@ target_include_directories(emu8950 SYSTEM PUBLIC "${FM_DEPS}/emu8950")
 add_executable(fm_probe probe.cpp)
 target_link_libraries(fm_probe PRIVATE ymfmidi emu8950)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS patch_live.py)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS patch_live.py patch_hmi.py hmi_pitch_table.inc)
 execute_process(
     COMMAND
         "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/patch_live.py"
@@ -61,10 +61,32 @@ target_include_directories(ymfmidi_hmi_pitch SYSTEM PUBLIC "${FM_DEPS}/ymfmidi/s
 target_link_libraries(ymfmidi_hmi_pitch PUBLIC ymfm)
 add_executable(fm_probe_hmi_pitch probe.cpp)
 target_link_libraries(fm_probe_hmi_pitch PRIVATE ymfmidi_hmi_pitch emu8950)
+set(hmi_player_dir "${CMAKE_CURRENT_BINARY_DIR}/hmi-driver")
+file(GLOB hmi_player_files "${FM_DEPS}/ymfmidi/src/*.h" "${FM_DEPS}/ymfmidi/src/*.cpp")
+foreach(source IN LISTS hmi_player_files)
+    get_filename_component(name "${source}" NAME)
+    configure_file("${source}" "${hmi_player_dir}/${name}" COPYONLY)
+endforeach()
+set(hmi_player_support)
+foreach(source IN LISTS ymfmidi_support)
+    get_filename_component(name "${source}" NAME)
+    list(APPEND hmi_player_support "${hmi_player_dir}/${name}")
+endforeach()
+execute_process(
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/patch_live.py"
+        "${CMAKE_CURRENT_BINARY_DIR}/player_baseline.cpp"
+        "${hmi_player_dir}/player.cpp" --hmi-pitch --hmi-driver --hmi-header "${hmi_player_dir}/player.h"
+        COMMAND_ERROR_IS_FATAL ANY)
+add_library(ymfmidi_hmi_driver STATIC "${hmi_player_dir}/player.cpp" ${hmi_player_support})
+target_include_directories(ymfmidi_hmi_driver SYSTEM PUBLIC "${hmi_player_dir}")
+target_link_libraries(ymfmidi_hmi_driver PUBLIC ymfm)
+add_executable(fm_probe_hmi_driver probe.cpp)
+target_link_libraries(fm_probe_hmi_driver PRIVATE ymfmidi_hmi_driver emu8950)
 if(MSVC)
     target_compile_definitions(ymfmidi PRIVATE _CRT_SECURE_NO_WARNINGS)
     target_compile_definitions(ymfmidi_live PRIVATE _CRT_SECURE_NO_WARNINGS)
     target_compile_definitions(ymfmidi_hmi_pitch PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(ymfmidi_hmi_driver PRIVATE _CRT_SECURE_NO_WARNINGS)
     target_compile_options(fm_probe PRIVATE /W4)
     target_compile_options(fm_probe_live_fix PRIVATE /W4)
     target_compile_options(fm_probe_hmi_pitch PRIVATE /W4)

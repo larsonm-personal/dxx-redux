@@ -24,4 +24,8 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
                          unsigned char **midi, int *midi_len,
                          struct hmp_playback_info *info);
 
+/* FM selects device 0xa002 and retains raw CC7 / neutral pitch initialization */
+int hmp2mid_playback_device_mem(const unsigned char *data, int len, int repeat, int fm,
+                                unsigned char **midi, int *midi_len, struct hmp_playback_info *info);
+
 #endif /* HMP_ANDROID_SHARED_H */

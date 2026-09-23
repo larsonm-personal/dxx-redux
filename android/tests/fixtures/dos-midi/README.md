@@ -3,6 +3,58 @@
 Run commands from the repository root. Captures and game assets stay local;
 the checked-in JSON manifest records their identity and comparison window.
 
+## Unattended GOG DOSBox capture on Windows
+
+The repository runner does not require the Computer Use desktop plugin. It
+launches a private DOSBox 0.74, identifies its game window (excluding the status
+console), checks process ownership and foreground focus before each key-down,
+arms recording, starts the prepared game, finalizes MIDI, and exits that process.
+It releases modifiers and terminates only its own process on failure. It requires
+an unlocked interactive Windows desktop and briefly focuses DOSBox at startup
+and shutdown. Avoid typing during those shortcuts. Missing focus, missing MIDI,
+unfinished tracks and short/empty recordings fail the run rather than passing.
+
+```powershell
+.\android\helpers\capture_dos_midi.ps1 `
+  -SourceDirectory temp/dos-midi-capture-20260921/gog `
+  -OutputDirectory temp/game08-gm-new-run `
+  -Song game08.hmp -SongAsTitle -MuteEffects -Unattended -Seconds 60
+```
+
+Use a fresh output directory. `-SongAsTitle` replaces only the first loose SNG
+entry in the private copy, so the selected song starts without menu navigation.
+The original game/HMI driver and GOG emulator are unchanged. Unattended mode
+currently supports GM MIDI capture, not FM/WAV recording. To rerun an existing
+prepared session directly, use `python android/helpers/run_dos_midi_capture.py
+--session PATH --seconds 60`; new MIDI filenames do not overwrite old captures.
+
+`unattended-capture.json` records completion, duration, message count, and hashes.
+The desktop plugin itself remains unavailable; this is an independent fallback
+requested by the user, not a repair to the plugin service.
+
+## Game08 GM reference
+
+`descent14-game08.json` identifies `descent14-game08/{dos.mid,game08.hmp}`.
+The 50.010-second opening window matches all 3,714 channel messages, all note
+states, and timing within 1 ms. The old converter fails as a negative control.
+No preceding-song state is borrowed. This fixture does not cover the loop.
+Run `test_dos_midi_parity.ps1 -Level 8 -SkipBuild` to repeat the check; `all` now
+includes levels 2, 7 and 8.
+
+Two independent unattended game08 captures also match over the first 30.010
+seconds. Original DOS GM rendered through the same bundled SF2 has essentially
+the same opening agogo level: production minus DOS is -0.0008 dB RMS. The whole
+mix differs by 0.0012 dB RMS. Both full mixes contain two clipped samples at the
+existing fixed renderer gain; neither clip was independently normalized.
+This establishes event parity, not SC-55 timbre or correct SF2 balance.
+
+```powershell
+python android/tests/render_game08_gm_reference.py --output temp/game08-gm-reference/comparison
+```
+
+The optional `--second-capture PATH` checks a second raw DOS capture against the
+retained reference before writing the listening page and measured audio report.
+
 ## Capture another song
 
 Use an installed/extracted GOG DOS runtime containing the game executable,
@@ -178,3 +230,12 @@ The optional AdLib WAV is captured from the original GOG DOS game, with effects
 muted. It includes a short briefing lead-in and keeps DOSBox's gain; it is not
 time-aligned or loudness-normalized against the GM clips. The raw recording and
 its provenance are retained locally under `descent14-game07/adlib`.
+# Game08 FM arrangement regression
+
+`descent14-game08-fm.json` identifies the local original-DOS OPL capture under
+`game_data/music/dos-references/descent14-game08/opl/`. All 666 captured note-ons
+match consecutive events from **game08.hmq**, starting at its first note. This
+exposed the prototype's incorrect pairing of game08.hmp with FM BNKs.
+Reproduce with `capture_dos_midi.ps1 -Song game08.hmp -SongAsTitle` and compare
+using `fm_feasibility/compare_opl.py --song game08.hmq`. The full capture commands
+and scope are in `android/ai tool plans/music/game08-investigation.md`.

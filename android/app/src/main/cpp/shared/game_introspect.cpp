@@ -255,6 +255,7 @@ void movie_get_playback_state(int *frame, int *paused, int *pause_window);
 /* -- Audio diagnostic accessors (defined in digi_tsf_music.c / SDL_androidaudio.c) -- */
 extern "C" {
 int tsf_music_get_output_rate(void);
+int music_get_fm_active(void);
 int tsf_music_get_playing(void);
 int tsf_music_get_paused(void);
 int tsf_music_get_cb_count(void);
@@ -2384,6 +2385,7 @@ extern "C" char *game_introspect_get_state(void)
 			{ "mixer_freq", freq },
 			{ "mixer_format", (int) fmt },
 			{ "mixer_channels", ch },
+			{ "midi_renderer", music_get_fm_active() ? "ymfm" : "sf2" },
 			{ "tsf_output_rate", tsf_music_get_output_rate() },
 			{ "tsf_playing", (bool) tsf_music_get_playing() },
 			{ "tsf_paused", (bool) tsf_music_get_paused() },

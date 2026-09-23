@@ -376,10 +376,15 @@ FetchContent_MakeAvailable(ktx_software)
 # ──────────────────────────────────────────────────────────────
 # 3c. TinySoundFont shared library  (MIDI synth, linked by both games)
 # ──────────────────────────────────────────────────────────────
-add_library(tsf SHARED ${CMAKE_CURRENT_SOURCE_DIR}/shared/tsf_impl.c
-                       ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_soundfont.c)
+include(${DXX_PROJECT_ROOT}/cmake/ymfm-music.cmake)
+
+add_library(
+    tsf SHARED
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/tsf_impl.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_soundfont.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_synth.cpp)
 target_include_directories(tsf PRIVATE ${_TSF_DIR})
-target_link_libraries(tsf android log)
+target_link_libraries(tsf android log music_ymfmidi)
 target_compile_options(tsf PRIVATE -w)
 
 # ──────────────────────────────────────────────────────────────

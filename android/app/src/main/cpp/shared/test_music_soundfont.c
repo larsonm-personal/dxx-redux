@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 	unsigned char *data;
 	tsf *synth;
 	short pcm[4096];
-	int i, audible = 0;
+	int i, p, block, audible = 0;
 	CHECK(argc == 2);
 	file = fopen(argv[1], "rb");
 	CHECK(file && !fseek(file, 0, SEEK_END));
@@ -39,10 +39,15 @@ int main(int argc, char **argv)
 	synth = music_soundfont_load(NULL, argv[1]);
 	CHECK(synth && tsf_get_presetcount(synth) > 0);
 	tsf_set_output(synth, TSF_STEREO_INTERLEAVED, 48000, -10);
-	tsf_channel_set_presetnumber(synth, 0, 0, 0);
-	tsf_channel_note_on(synth, 0, 60, 1.0f);
-	tsf_render_short(synth, pcm, 2048, 0);
-	for (i = 0; i < 4096; ++i) audible |= pcm[i] != 0;
+	/* Exercise every preset, including banks with offset/loop generators */
+	for (p = 0; p < tsf_get_presetcount(synth); ++p) {
+		tsf_reset(synth);
+		tsf_note_on(synth, p, 60, 1.0f);
+		for (block = 0; block < 32; ++block) {
+			tsf_render_short(synth, pcm, 2048, 0);
+			for (i = 0; i < 4096; ++i) audible |= pcm[i] != 0;
+		}
+	}
 	CHECK(audible);
 	tsf_close(synth);
 	CHECK(!music_soundfont_load(NULL, "missing-soundfont-test.sf2"));
@@ -56,6 +61,6 @@ int main(int argc, char **argv)
 	}
 	CHECK(i < size - 70);
 	free(data);
-	puts("PASS: bundled SF2 loads and renders; missing/truncated/oversized/corrupt fonts rejected");
+	puts("PASS: SF2 loads and all presets render; missing/truncated/oversized/corrupt fonts rejected");
 	return 0;
 }

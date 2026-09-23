@@ -31,7 +31,7 @@
  * A successful replacement stops playback; failure preserves the old synth.
  * Returns 1 on success, 0 on failure.
  */
-int midi_preview_init(AAssetManager *mgr, const char *soundfont_path);
+int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer_fm);
 
 /*
  * Start playback of MIDI data.
@@ -41,7 +41,7 @@ int midi_preview_init(AAssetManager *mgr, const char *soundfont_path);
  * Returns 1 on success, 0 on failure.
  */
 int midi_preview_start(const unsigned char *data, int len,
-                       int is_hmp, int sample_rate);
+                       int is_hmp, int sample_rate, const char *hog_path, const char *song);
 
 void midi_preview_stop(void);
 void midi_preview_pause(void);
@@ -59,6 +59,7 @@ int midi_preview_seek(float fraction);
  * Query the latest nonblocking playback-state snapshot.
  * Returns MDP_PLAYING, MDP_PAUSED, or MDP_STOPPED.
  */
+int midi_preview_is_fm(void);
 int midi_preview_get_state(int *out_position_ms, int *out_duration_ms);
 
 #endif /* MIDI_PREVIEW_H */

@@ -40,6 +40,8 @@ object ConfigImportExport {
             ExportedPreference("render_resolution", ExportedPreferenceType.STRING),
             ExportedPreference("game_orientation", ExportedPreferenceType.STRING),
             ExportedPreference("music_mode", ExportedPreferenceType.STRING),
+            ExportedPreference(SoundfontStore.PREF_RENDERER, ExportedPreferenceType.STRING),
+            ExportedPreference(SoundfontStore.PREF_SOUNDFONT, ExportedPreferenceType.STRING),
             ExportedPreference("touch_overlay_enabled", ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_SHOW_RESUME_OFFER, ExportedPreferenceType.BOOLEAN),
@@ -85,6 +87,14 @@ object ConfigImportExport {
             val value = json.get(pref.key)
             if (!pref.type.accepts(value)) {
                 return DecodedPreferences(error = "'${pref.key}' must be ${pref.type.displayName}")
+            }
+            if (pref.key == SoundfontStore.PREF_RENDERER && value !in SoundfontStore.RENDERERS) {
+                return DecodedPreferences(error = "Unknown MIDI renderer")
+            }
+            if (pref.key == SoundfontStore.PREF_SOUNDFONT && value != "" &&
+                !(value as String).matches(Regex("[0-9a-f]{64}"))
+            ) {
+                return DecodedPreferences(error = "Invalid soundfont identity")
             }
             decoded[pref] = value
         }

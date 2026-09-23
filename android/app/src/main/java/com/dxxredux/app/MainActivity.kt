@@ -251,7 +251,7 @@ class MainActivity :
         external fun nativeIsGameRunning(): Boolean
     }
 
-    // ── JNI declarations ────────────────────────────────────
+    // â”€â”€ JNI declarations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     external fun helloFromNative(): String
 
     external fun startGame()
@@ -502,7 +502,7 @@ class MainActivity :
         return super.dispatchTouchEvent(event)
     }
 
-    // ── Admin tray (android_input.c) ────────────────────────────────
+    // â”€â”€ Admin tray (android_input.c) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     external fun nativeCycleCockpit(direction: Int)
 
     external fun nativeToggleAutoLeveling()
@@ -535,7 +535,7 @@ class MainActivity :
 
     external fun nativeOpenGameMenuIfSafe(): Boolean
 
-    // ── Music track control (android_music_control.c) ────────────────
+    // â”€â”€ Music track control (android_music_control.c) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     external fun nativeNextTrack(): Int
 
     external fun nativePrevTrack(): Int
@@ -718,7 +718,7 @@ class MainActivity :
         startupScope.launch(Dispatchers.IO) { publishRouteMetadataCpuDuty() }
     }
 
-    // ── SAF leave-in-place: called from native via JNI (jni_saf.c) ───
+    // â”€â”€ SAF leave-in-place: called from native via JNI (jni_saf.c) â”€â”€â”€
     @Suppress("unused") // Called from native code
     fun openSafFile(contentUri: String): Int {
         return try {
@@ -821,7 +821,7 @@ class MainActivity :
 
     private var controllerBoundActions = emptySet<Int>()
 
-    // D-pad meta-action bindings: DPAD keycode → meta action ID
+    // D-pad meta-action bindings: DPAD keycode â†’ meta action ID
     private var dpadMetaBindings = mapOf<Int, Int>()
 
     // Half-axis combiners: (virtualAxis, posSourceAxis, negSourceAxis)
@@ -833,11 +833,11 @@ class MainActivity :
     // Input mixer: combines button/axis from touch, controller, gyro
     private lateinit var inputMixer: InputMixer
 
-    // Mixer button map: SDL button index → list of kc_joystick action indices
+    // Mixer button map: SDL button index â†’ list of kc_joystick action indices
     // Loaded from controller_config.json mixer_button_map_d1/d2
     private var mixerButtonMap = mapOf<Int, List<Int>>()
 
-    // ── Left-edge fling detection (→ setup screen) ────────────────────
+    // â”€â”€ Left-edge fling detection (â†’ setup screen) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private lateinit var edgeFlingDetector: android.view.GestureDetector
     private var edgeSwipeTracking = false
     private var edgeSwipeStartX = 0f
@@ -904,7 +904,10 @@ class MainActivity :
     }
 
     @androidx.annotation.Keep
-    fun getMidiSoundfontPath(): String = SoundfontStore(filesDir).selectedPath()
+    fun getMidiSoundfontPath(): String = SoundfontStore(this).selectedPath()
+
+    @androidx.annotation.Keep
+    fun getMidiPreferFm(): Boolean = SoundfontStore(this).read().renderer == "ymfm"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (BuildConfig.DEBUG) {
@@ -1065,7 +1068,7 @@ class MainActivity :
         // Draw behind system bars
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // Fling detector for left-edge swipe → open setup screen
+        // Fling detector for left-edge swipe â†’ open setup screen
         edgeFlingDetector =
             android.view.GestureDetector(
                 this,
@@ -2027,7 +2030,7 @@ class MainActivity :
         }
     }
 
-    // ── Immersive fullscreen helper ─────────────────────────
+    // â”€â”€ Immersive fullscreen helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private fun hideSystemBars() {
         val controller = WindowInsetsControllerCompat(window, window.decorView)
         controller.hide(WindowInsetsCompat.Type.systemBars())
@@ -2056,7 +2059,7 @@ class MainActivity :
         clearTransientLaunchExtrasFromIntent(intent)
     }
 
-    // ── SurfaceHolder.Callback ──────────────────────────────
+    // â”€â”€ SurfaceHolder.Callback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     override fun surfaceCreated(holder: SurfaceHolder) {
         nativeSetSurfaceSize(holder.surfaceFrame.width(), holder.surfaceFrame.height())
         nativeSetSurface(holder.surface)
@@ -2126,7 +2129,7 @@ class MainActivity :
         nativeSetSurface(null)
     }
 
-    // ── Lifecycle ────────────────────────────────────────────
+    // â”€â”€ Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private var backgroundPauseApplied = false
 
     // UI polling has not started until the first onResume call
@@ -2921,7 +2924,7 @@ class MainActivity :
         overlayPoller.post(pollRunnable)
     }
 
-    // ── Introspection (debug builds only) ────────────────────
+    // â”€â”€ Introspection (debug builds only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Trigger a game state dump to a file readable via adb:
     //   adb shell am broadcast -a com.dxxredux.INTROSPECT -n com.dxxredux.app/.MainActivity
     //   adb shell run-as com.dxxredux.app cat files/introspect.json
@@ -2934,11 +2937,11 @@ class MainActivity :
                 if (!gameStarted) return
                 publishDormancyUiPollCounters()
                 nativeRequestIntrospect()
-                Log.i("DXX-Introspect", "Introspection requested — will dump on next frame")
+                Log.i("DXX-Introspect", "Introspection requested â€” will dump on next frame")
             }
         }
 
-    // ── Automation (debug builds only) ───────────────────────
+    // â”€â”€ Automation (debug builds only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Load and run a JSON automation script:
     //   adb push script.json /data/local/tmp/script.json
     //   adb shell am broadcast -a com.dxxredux.AUTOMATE --es script /data/local/tmp/script.json
@@ -2973,7 +2976,7 @@ class MainActivity :
             }
         }
 
-    // ── Game command API (debug builds only) ─────────────────
+    // â”€â”€ Game command API (debug builds only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     //   adb shell am broadcast -a com.dxxredux.GAME_COMMAND --es command gain --ef value -20.0
     //   adb shell am broadcast -a com.dxxredux.GAME_COMMAND --es command voices --ei value 32
     private val gameCommandReceiver =
@@ -3095,7 +3098,7 @@ class MainActivity :
         super.onDestroy()
     }
 
-    // ── Touch → Mouse ───────────────────────────────────────
+    // â”€â”€ Touch â†’ Mouse â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private fun handleTouch(
         view: View,
         event: MotionEvent,
@@ -3103,7 +3106,7 @@ class MainActivity :
         val density = resources.displayMetrics.density
         val edgeThresholdPx = 40 * density // 40 dp from left edge
 
-        // ── Left-edge fling detection (→ setup screen) ──────
+        // â”€â”€ Left-edge fling detection (â†’ setup screen) â”€â”€â”€â”€â”€â”€
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 edgeSwipeTracking = event.x < edgeThresholdPx
@@ -3149,8 +3152,8 @@ class MainActivity :
             return true
         }
 
-        // ── Normal game touch handling ──────────────────────
-        // Map touch to normalised 0.0–1.0 coordinates.  The native side
+        // â”€â”€ Normal game touch handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Map touch to normalised 0.0â€“1.0 coordinates.  The native side
         // converts to engine resolution via grd_curscreen, so Kotlin
         // never needs to know the game resolution.
         val viewW = view.width.toFloat()
@@ -3201,7 +3204,7 @@ class MainActivity :
             else -> action.toString()
         }
 
-    // ── Keyboard & Gamepad buttons ────────────────────────────
+    // â”€â”€ Keyboard & Gamepad buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /** Resolve the best local IP for display in the net stats overlay. */
     private fun resolveLocalIp(): String? =
@@ -3387,7 +3390,7 @@ class MainActivity :
                 }
                 halfAxisCombiners = list
             }
-            // Mixer button map: SDL button → list of kc_joystick action indices
+            // Mixer button map: SDL button â†’ list of kc_joystick action indices
             val mapKey =
                 if (gameVariantId == "d1") "mixer_button_map_d1" else "mixer_button_map_d2"
             if (json.has(mapKey)) {
@@ -3924,7 +3927,7 @@ class MainActivity :
         return true
     }
 
-    // ── Gamepad analog axes ─────────────────────────────────
+    // â”€â”€ Gamepad analog axes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private val gamepadButtonEdgeTracker = GamepadButtonEdgeTracker()
 
     private var hatXState = 0 // -1, 0, +1
@@ -3976,7 +3979,7 @@ class MainActivity :
             }
             inputMixer.setAxes("ctrl", controllerAxes)
 
-            // D-pad reported as HAT axes → synthesize keyboard arrow keys
+            // D-pad reported as HAT axes â†’ synthesize keyboard arrow keys
             val hx = event.getAxisValue(MotionEvent.AXIS_HAT_X)
             val hy = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
             val newHatX =
@@ -4018,7 +4021,7 @@ class MainActivity :
         return super.onGenericMotionEvent(event)
     }
 
-    // ── Soft keyboard show/hide (called from JNI) ───────────
+    // â”€â”€ Soft keyboard show/hide (called from JNI) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private var keyboardPollRunnable: Runnable? = null
 
     private fun keyboardReferenceHeightPx(): Int {
@@ -4182,7 +4185,7 @@ class MainActivity :
         gameSurfaceView.requestFocus()
     }
 
-    // ── Music overlay helpers ─────────────────────────────────
+    // â”€â”€ Music overlay helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private fun scheduleMusicStateRefresh() {
         remainingMusicStateRefreshes = 40
         window.decorView.removeCallbacks(musicStateRefreshRunnable)
@@ -4293,7 +4296,7 @@ class MainActivity :
         syncAdminTrayPause(touchOverlay.isAdminTrayOpen())
     }
 
-    // ── Overlay toast lines (multi-line, each fades independently) ──
+    // â”€â”€ Overlay toast lines (multi-line, each fades independently) â”€â”€
     private fun showOverlayLine(text: String) {
         runOnUiThread {
             val tv =
@@ -4331,7 +4334,7 @@ class MainActivity :
         }
     }
 
-    // ── Track name overlay (called from JNI) ────────────────
+    // â”€â”€ Track name overlay (called from JNI) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @Suppress("unused")
     fun showTrackName(name: String) {
         showOverlayLine(name)
@@ -4355,13 +4358,13 @@ class MainActivity :
         }
     }
 
-    // ── Level name overlay (called from JNI) ────────────────
+    // â”€â”€ Level name overlay (called from JNI) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @Suppress("unused")
     fun showLevelName(name: String) {
         showOverlayLine(name)
     }
 
-    // ── Host migration notification (called from JNI on game thread) ──
+    // â”€â”€ Host migration notification (called from JNI on game thread) â”€â”€
     // android port: when this client becomes the new host after the original
     // host disconnects, send a cross-process broadcast so SetupActivity's
     // LobbyService can start LAN broadcasting for the migrated game.
@@ -4393,7 +4396,7 @@ class MainActivity :
         )
     }
 
-    // ── Debug log bridge (called from JNI on game thread) ──
+    // â”€â”€ Debug log bridge (called from JNI on game thread) â”€â”€
     @Suppress("unused")
     fun debugLogFromNative(
         category: Int,
@@ -4430,7 +4433,7 @@ class MainActivity :
         DebugLog.logBatchForcedAsync(this, category, payload)
     }
 
-    // ── Hidden keyboard proxy with InputConnection for soft keyboard ──
+    // â”€â”€ Hidden keyboard proxy with InputConnection for soft keyboard â”€â”€
     private inner class KeyboardInputView(
         context: Context,
     ) : androidx.appcompat.widget.AppCompatEditText(context) {
@@ -4450,7 +4453,7 @@ class MainActivity :
         }
     }
 
-    // ── GameSurfaceView render target ──
+    // â”€â”€ GameSurfaceView render target â”€â”€
     private inner class GameSurfaceView(
         context: Context,
     ) : SurfaceView(context) {
@@ -4473,10 +4476,10 @@ class MainActivity :
 
     /**
      * Routes soft-keyboard text input into the engine via JNI.
-     * commitText → nativeTextInput (one SDL key pair per character)
-     * sendKeyEvent(printable keys) → nativeTextInput / nativeKeyEvent
-     * performEditorAction(DONE) → Enter key
-     * deleteSurroundingText → Backspace key(s)
+     * commitText â†’ nativeTextInput (one SDL key pair per character)
+     * sendKeyEvent(printable keys) â†’ nativeTextInput / nativeKeyEvent
+     * performEditorAction(DONE) â†’ Enter key
+     * deleteSurroundingText â†’ Backspace key(s)
      */
     private inner class GameInputConnection(
         view: View,
@@ -4543,7 +4546,7 @@ class MainActivity :
         }
 
         override fun performEditorAction(actionCode: Int): Boolean {
-            // "Done" / Enter on the soft keyboard → inject Enter key
+            // "Done" / Enter on the soft keyboard â†’ inject Enter key
             nativeKeyEvent(0, KeyEvent.KEYCODE_ENTER, '\r'.code)
             nativeKeyEvent(1, KeyEvent.KEYCODE_ENTER, 0)
             return true

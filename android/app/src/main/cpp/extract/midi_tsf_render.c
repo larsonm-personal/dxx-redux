@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "tsf.h"
 #include "tml.h"
 #include "hmp_tsf_state.h"
@@ -11,6 +12,9 @@
 struct render_context {
 	tsf *synth;
 	int channel;
+	int key;
+	int gain_channel, gain_key;
+	float note_gain;
 };
 
 static void *read_file(const char *path, int *size)
@@ -56,8 +60,11 @@ static void dispatch(void *opaque, const void *event)
 	const tml_message *m = event;
 	tsf *synth = ctx->synth;
 	if (ctx->channel >= 0 && m->channel != ctx->channel) return;
+	if (ctx->key >= 0 && (m->type == TML_NOTE_ON || m->type == TML_NOTE_OFF) && m->key != ctx->key) return;
 	switch (m->type) {
-		case TML_NOTE_ON: tsf_channel_note_on(synth, m->channel, m->key, m->velocity / 127.0f); break;
+		case TML_NOTE_ON:
+			tsf_channel_note_on(synth, m->channel, m->key, m->velocity / 127.0f * (m->channel == ctx->gain_channel && m->key == ctx->gain_key ? ctx->note_gain : 1.0f));
+			break;
 		case TML_NOTE_OFF: tsf_channel_note_off(synth, m->channel, m->key); break;
 		case TML_PROGRAM_CHANGE: tsf_channel_set_presetnumber(synth, m->channel, m->program, m->channel == 9); break;
 		case TML_CONTROL_CHANGE: hmp_tsf_control(synth, m->channel, m->control, m->control_value); break;
@@ -89,7 +96,7 @@ int main(int argc, char **argv)
 {
 	const struct midi_seek_timeline_ops ops = { event_time, event_next, dispatch, render };
 	struct midi_seek_timeline timeline;
-	struct render_context ctx = { NULL, -1 };
+	struct render_context ctx = { NULL, -1, -1, -1, -1, 1.0f };
 	struct hmp_tsf_state retained = { 0 };
 	tml_message *messages = NULL, *context = NULL, *first;
 	unsigned char header[44] = "RIFF\0\0\0\0WAVEfmt ";
@@ -97,14 +104,23 @@ int main(int argc, char **argv)
 	void *sf;
 	FILE *out = NULL;
 	int size, start, duration, frames, i, ok = 0;
-	if (argc != 6 && argc != 7 && argc != 9) {
-		fprintf(stderr, "Usage: midi_tsf_render soundfont.sf2 input.mid output.wav start_ms duration_ms [channel|-1 [context.mid context_end_ms]]\n");
+	if (argc != 6 && argc != 7 && argc != 8 && argc != 9 && argc != 10) {
+		fprintf(stderr, "Usage: midi_tsf_render soundfont.sf2 input.mid output.wav start_ms duration_ms [channel|-1 [key|context.mid context_end_ms]]\n");
+		fprintf(stderr, "Or: ... start_ms duration_ms channel|-1 gain_channel gain_key gain_db (offline diagnostic)\n");
 		return 2;
 	}
 	start = atoi(argv[4]);
 	duration = atoi(argv[5]);
 	if (argc >= 7) ctx.channel = atoi(argv[6]);
-	if (start < 0 || start > 3600000 || duration <= 0 || duration > 600000 || ctx.channel < -1 || ctx.channel > 15)
+	if (argc == 8) ctx.key = atoi(argv[7]);
+	if (argc == 10) {
+		float db = (float) atof(argv[9]);
+		ctx.gain_channel = atoi(argv[7]);
+		ctx.gain_key = atoi(argv[8]);
+		if (!isfinite(db) || db < -60 || db > 0 || ctx.gain_channel < 0 || ctx.gain_channel > 15 || ctx.gain_key < 0 || ctx.gain_key > 127) return 2;
+		ctx.note_gain = powf(10.0f, db / 20.0f);
+	}
+	if (start < 0 || start > 3600000 || duration <= 0 || duration > 600000 || ctx.channel < -1 || ctx.channel > 15 || ctx.key < -1 || ctx.key > 127)
 		return 2;
 	sf = read_file(argv[1], &size);
 	ctx.synth = sf ? tsf_load_memory(sf, size) : NULL;

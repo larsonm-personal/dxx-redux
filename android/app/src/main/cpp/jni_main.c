@@ -44,6 +44,7 @@ jobject g_activity = NULL; /* Global ref to MainActivity */
 /* ── AAssetManager (used by digi_tsf_music.c to load the GM soundfont) ── */
 AAssetManager *g_asset_manager = NULL;
 char *g_music_soundfont_path = NULL;
+int g_music_prefer_fm;
 
 /* Guard against double-launch: two startGame() calls in the same :game
  * process corrupt SDL/OpenGL/PhysFS globals and crash.  This happens when
@@ -137,6 +138,9 @@ static int android_cache_asset_manager(JNIEnv *env, jobject activity)
 		free(g_music_soundfont_path);
 		g_music_soundfont_path = path;
 	}
+	method = (*env)->GetMethodID(env, cls, "getMidiPreferFm", "()Z");
+	if (!method || (*env)->ExceptionCheck(env)) return 0;
+	g_music_prefer_fm = (*env)->CallBooleanMethod(env, activity, method) == JNI_TRUE;
 	return g_asset_manager != NULL && !(*env)->ExceptionCheck(env);
 }
 

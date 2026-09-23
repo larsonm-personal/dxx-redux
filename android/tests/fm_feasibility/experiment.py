@@ -72,7 +72,7 @@ def hog_members(path):
 
 
 def read_bank(data):
-    if len(data) < 28 or data[2:8] != b'ADLIB-':
+    if len(data) < 28 or data[2:8] not in (b'ADLIB-', b'AMLIB-', b'ANLIB-'):
         raise ValueError('Not an AdLib BNK')
     used, count, names, records = struct.unpack_from('<HHII', data, 8)
     if used > count or not 1 <= count <= 128 or names < 28 or records < names + count * 12:
@@ -93,16 +93,17 @@ def read_bank(data):
         for op in range(2):
             p = raw[2 + op * 13:15 + op * 13]
             # Carrier feedback/connection fields contain unrelated bytes in HMI banks
-            mode = ((p[9] & 1) << 7 | (p[10] & 1) << 6 | (p[5] & 1) << 5 |
-                    (p[11] & 1) << 4 | (p[1] & 15))
-            ops.append([mode, (p[0] & 3) << 6 | p[8] & 63,
-                        (p[3] & 15) << 4 | p[6] & 15,
-                        (p[4] & 15) << 4 | p[7] & 15, raw[28 + op] & 3])
+            # DOS shifts whole bytes before truncation. Rhythm-flagged hamdrum
+            # entries contain noncanonical values whose high bits affect mode
+            mode = (p[9] << 7 | p[10] << 6 | p[5] << 5 | p[11] << 4 | p[1]) & 255
+            ops.append([mode, (p[0] << 6 | p[8]) & 255,
+                        (p[3] << 4 | p[6]) & 255,
+                        (p[4] << 4 | p[7]) & 255, raw[28 + op]])
         result.append({'program': program, 'data_index': index,
                        'name': data[pos + 3:pos + 12].split(b'\0')[0].decode('ascii'),
                        'mode': raw[0], 'voice': raw[1],
                        'fixed_note': fixed_note, 'operators': ops,
-                       'connection': (raw[4] & 7) << 1 | raw[14] & 1})
+                       'connection': (raw[4] << 1 | raw[14]) & 255})
     return result
 
 
@@ -113,7 +114,7 @@ def make_wopl(melodic, drums, invert_connection=False):
     for bank in (melodic, drums):
         for number in range(128):
             patch = bytearray(62)
-            if number >= len(bank) or bank[number]['mode']:
+            if number >= len(bank):
                 patch[39] = 4
             else:
                 source = bank[number]

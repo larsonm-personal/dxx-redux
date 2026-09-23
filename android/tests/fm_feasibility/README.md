@@ -264,3 +264,78 @@ used externally to capture reference behavior.
 The reader and WOPL writer were implemented for this experiment from format
 documentation, local game data and the pinned BSD reader, without importing a
 GPL converter or synth. Game data is kept local and is not checked into the repo.
+# Original-driver probes and candidate (2026-09-22)
+
+`hmi_probe.py` generates controlled HMP/HMQ sequences in a fresh private session
+prepared with `capture_dos_midi.ps1 -Song game07.hmp -SongAsTitle -MusicDevice
+adlib -OplCapture -MuteEffects`. Pass `--kind volume`, `voices`, `rhythm-ham` or
+`rhythm-rick`. Use separate sessions for each case. They retain original banks
+and executables; generated sequences and their hashes are in `probe.json`.
+
+`run_dos_midi_capture.py --session SESSION --seconds N --format opl` captures
+unattended, using process-owned window messages and SDL windib by default.
+Use at least 78 seconds for volume, 28 for voices and 39 for each rhythm case.
+The older foreground method is available explicitly with `--input foreground`.
+The runner never sends global input in its default window mode.
+
+For D2, prepare from the full original extracted GOG runtime with
+`-GameExecutable DESCENT2.EXE -Hog DESCENT2.HOG`. The preparer mounts the supplied
+GOG disc image and disables Redbook in the private copy. The wrapper's
+`-Unattended` mode dismisses startup movies at 5 and 8 seconds. When invoking the
+Python runner directly, add `--startup-escape-at 5 8`.
+
+Build `fm_probe_hmi_driver` in this CMake project, then compare the experimental
+driver's actual key-on registers against the original captures:
+
+```powershell
+python android/tests/fm_feasibility/verify_hmi_driver.py --renderer temp/fm-feasibility/host-vs/Release/fm_probe_hmi_driver.exe --case volume temp/fm-driver-probe --case voices temp/fm-driver-voices --case rhythm-ham temp/fm-driver-rhythm-ham --case rhythm-rick temp/fm-driver-rhythm-rick --output temp/fm-driver-candidate
+```
+
+Additional probe kinds include `channels`, `steal-spacing`, `steal-bend`,
+`steal-bent`, `steal-fallback`, `pitch`, `pitch-fine`, `pitch-scale`, and
+`controllers`. Capture at least the printed duration plus five seconds, with
+a minimum of twenty seconds. For repeat observations, capture two passes.
+
+The expanded suite passes 7,604 paired key-ons (thirteen probes plus three song
+excerpts), 6,232 probe key-on/off transitions, and 5,247 settled active-state
+snapshots. The verifier checks state after controllers as well as at key-on;
+this catches DOS's immediate post-key-on wheel adjustment. It records relative
+timing error without claiming sample-identical timing. Later DOS loops are
+excluded from the first-pass probe checks.
+
+Add `--song-case NAME HOG SONG DRO` for a capture beginning at the song's first
+note. Every captured key-on is compared in order, without motif matching or
+skipped mismatches. Add `--production-renderer PATH/test_music_synth.exe` to
+exercise the shared production converter, timeline and renderer for song cases.
+The native executable's optional ninth argument records OPL writes; Android
+builds do not include that test callback. The same production option also runs
+controlled probes through private generated HOGs containing the supplied local
+banks. All 7,604 key-on states and 5,247 settled-state checks pass through the
+shipping path. Add `--repeat-probes` for two passes, using a capture long enough
+to contain both; the `controllers`, declared-channel override and `pitch`
+repeat probes pass. `hmi_probe.py --declared-channel N` deliberately changes a
+single track's declared channel to distinguish EOF reset rules from event routing.
+
+Regenerate the measured pitch table with:
+
+```powershell
+python android/tests/fm_feasibility/measure_hmi_pitch.py --session temp/fm-driver-pitch-scale --output android/tests/fm_feasibility/hmi_pitch_table.inc
+```
+
+This records numeric chip behavior only, with source/capture hashes. Check the
+result against independent `pitch`, `pitch-fine` and `steal-bent` captures.
+The scale capture is derivation evidence, not an independent validation set.
+The measured allocation, volume, pan, pitch and sustain rules are now enabled
+in shared production code. See the plan below for completed release checks.
+
+`measure_hmi_volume.py --probe SESSION/probe.json --capture CAPTURE.dro --output
+OUTPUT` derives the attenuation table from the controlled velocity sweep and
+validates the other sweep cases. Add repeated `--reference HOG SONG DRO` groups
+to check held-out soundtracks. D1 game07/game08 and D2 game01 have zero level
+mismatches. D2 AMLIB/ANLIB banks use the same record layout in these comparisons.
+
+The five D1 entries marked rhythm are played in melodic mode by the original
+driver; no BD rhythm-enable writes occur. Full-byte field packing matters for
+their noncanonical values. This is original HMI behavior, not an implementation
+of generic BNK hardware-rhythm mode. Current evidence and completed production
+acceptance checks are in `android/ai tool plans/music/fm-driver-fidelity.md`.

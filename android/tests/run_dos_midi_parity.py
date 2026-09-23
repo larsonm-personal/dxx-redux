@@ -33,7 +33,7 @@ def run(exporter, fixture, reference, output):
                                 reference_start=spec['reference_start_ms'],
                                 duration=spec['duration_ms'] if playback else spec['legacy_duration_ms'],
                                 tolerance=spec['tolerance_ms'], candidate_initial_state=playback,
-                                shared_initial_state=playback)
+                                shared_initial_state=playback and spec.get('shared_initial_state', True))
         reports[mode]['converter'] = json.loads(result.stdout)
         (output / f'{mode}-diff.json').write_text(json.dumps(reports[mode], indent=2) + '\n', encoding='utf8')
     passed = reports['repeat']['passed'] and not reports['legacy']['passed']

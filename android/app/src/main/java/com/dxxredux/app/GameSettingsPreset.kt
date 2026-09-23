@@ -33,6 +33,13 @@ internal enum class GameSettingsPreset(
     val rewindEnabled: Boolean get() = helpersEnabled
     val serverCoopQol: Boolean get() = helpersEnabled
 
+    fun resetMidiPreferences(
+        store: SoundfontStore,
+        activate: (String, Boolean) -> Boolean,
+    ) {
+        store.resetPreferences(activate)
+    }
+
     val settings: List<PresetSettingPreview>
         get() =
             buildList {
@@ -49,6 +56,8 @@ internal enum class GameSettingsPreset(
                 add(PresetSettingPreview("Skip intro movie on launch", skipIntroMovie))
                 add(PresetSettingPreview("Autoselect Only Once", false))
                 add(PresetSettingPreview("Original homing (Single/Coop)", originalHoming))
+                add(PresetSettingPreview("MIDI renderer", value = "AdLib / Sound Blaster FM"))
+                add(PresetSettingPreview("MIDI soundfont fallback", value = "Bundled"))
                 if (this@GameSettingsPreset == DEFAULTS) {
                     add(PresetSettingPreview("HUD size", value = "Cockpit"))
                     add(PresetSettingPreview("Auto-level", true))

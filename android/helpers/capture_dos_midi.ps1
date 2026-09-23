@@ -14,18 +14,31 @@ param(
     [ValidateSet('general-midi', 'adlib')][string]$MusicDevice = 'general-midi',
     [switch]$MuteEffects,
     [switch]$OplCapture,
-    [switch]$Launch
+    [switch]$SongAsTitle,
+    [switch]$Launch,
+    [switch]$Unattended,
+    [ValidateRange(20, 600)][int]$Seconds = 60
 )
 $ErrorActionPreference = 'Stop'
+if ($Unattended -and ($Launch -or -not $SongAsTitle -or ($MusicDevice -eq 'adlib' -and -not $OplCapture))) {
+    throw '-Unattended requires -SongAsTitle and MIDI or OPL capture, and cannot be combined with -Launch'
+}
 & "$PSScriptRoot/retain-recent-artifacts.ps1" -Artifacts $OutputDirectory
 $captureArgs = @('--source', $SourceDirectory, '--output', $OutputDirectory, '--exe', $GameExecutable, '--config', $GameConfig, '--hog', $Hog)
 if ($Song) { $captureArgs += @('--song', $Song) }
 $captureArgs += @('--music-device', $MusicDevice)
 if ($MuteEffects) { $captureArgs += '--mute-effects' }
 if ($OplCapture) { $captureArgs += '--opl-capture' }
+if ($SongAsTitle) { $captureArgs += '--song-as-title' }
 python "$PSScriptRoot/dos_midi_capture.py" @captureArgs
 if ($LASTEXITCODE -ne 0) { throw 'DOS MIDI capture preparation failed' }
-if ($Launch) {
+if ($Unattended) {
+    $captureFormat = if ($OplCapture) { 'opl' } else { 'midi' }
+    $runArgs = @('--session', $OutputDirectory, '--seconds', $Seconds, '--format', $captureFormat)
+    if ($GameExecutable -ieq 'DESCENT2.EXE') { $runArgs += @('--startup-escape-at', '5', '8') }
+    python "$PSScriptRoot/run_dos_midi_capture.py" @runArgs
+    if ($LASTEXITCODE -ne 0) { throw 'Unattended DOS capture failed' }
+} elseif ($Launch) {
     $captureRoot = (Resolve-Path -LiteralPath $OutputDirectory).Path
     $dosboxPath = Join-Path $captureRoot 'game/DOSBOX/DOSBox.exe'
     $configPath = Join-Path $captureRoot 'capture.conf'

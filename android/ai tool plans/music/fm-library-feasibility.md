@@ -1,5 +1,19 @@
 # FM library feasibility experiments
 
+## Current increment: MIDI game preferences
+
+The user accepts the verified game08 GM/bell rendering; no attenuation change
+is warranted. Renderer and selected SF2 identity now use ordinary `dxx_prefs`
+preferences, separate from the imported instrument catalog. AdLib is the fresh
+default and the default applied by both Game Preferences reset presets. MIDI
+controls appear in Game Preferences and the MIDI music page, with selections
+included in config export/import. Imported fonts survive resets.
+
+See `midi-game-preferences.md` in this directory and
+`android/tests/midi-game-preferences.md` for scope, tests and asset licensing.
+Named variations and supported user tuning remain subsequent increments; do not
+introduce speculative bell corrections from the earlier listening trials.
+
 ## Scope
 
 Begin with offline Level 7 experiments, then integrate selectable sound profiles
@@ -222,3 +236,104 @@ Reproduction: `android/tests/soundfont-profiles.md`. Local integration evidence:
 soundfont compatibility are not established by the bundled-font-derived fixture.
 Next integration work is the ymfm/FM profile and its outstanding HMI driver
 behavior; percussion balance and other user tuning remain planned controls.
+
+## Phone prototype
+
+**Game08 follow-up correction:** the first prototype missed DOS's HMP-to-HMQ
+substitution for FM. Game08's original DOS OPL capture matches 666 consecutive
+HMQ note-ons, while using HMP with those banks gives incorrect instruments.
+The resolver now uses HMQ when present for both preview and gameplay. This also
+fixes the title/Level 1/Level 2 fallback described in the historical results
+below. See `game08-investigation.md` for evidence and reproduction.
+
+Continue to an installable ARM APK with a selectable experimental ymfm profile.
+Keep SF2 asset selection independent of renderer selection. Use the existing
+timeline, loop and seek machinery for both renderers, selecting the HMP FM
+arrangement before GM controller conversion. Resolve each song's original BNKs
+from its SNG and mounted assets, including launcher HOG previews. Support the
+validated D1 ADLIB banks first; explicitly label SF2 fallback for other bank
+formats and MIDI without bank context. No captured recordings replace synthesis.
+
+Use the pinned BSD ymfm and ymfmidi implementations from the experiments, with
+the documented live-event bookkeeping and neutral HMI pitch adjustments. This
+is an approximate FM driver, not a claim of complete DOS HMI parity. Preserve
+the remaining driver/panning/voice-allocation work as follow-up research.
+
+Acceptance: reproducible host rendering and arrangement tests; renderer
+selection persistence and switching; emulator preview/seek/pause and D1 Level 7
+gameplay; SF2/D2 regression coverage; successful ARM builds; a phone-installable
+APK with a checksum and concise test instructions. Physical phone testing is
+pending availability of a connected phone.
+
+### Prototype results (2026-09-22)
+
+- Added a persistent renderer choice independently of SF2 asset selection, shared
+  by preview and gameplay. The UI labels the actual preview renderer
+- Integrated pinned BSD ymfm/ymfmidi with original song-specific ADLIB banks;
+  included their notices in the APK and introduced no GPL/LGPL dependency
+- Shared HMP conversion now selects FM tracks and raw FM controllers before
+  synthesis, keeping the existing measured GM policy unchanged
+- Added runtime note clearing, sustain/expression and full chip-state reset to
+  the experimental driver variant. FM restart PCM is deterministic
+- Unsupported hardware-rhythm patches are detected across the entire sequence
+  before playback. Fallback reconverts the GM arrangement. This matters for the
+  D1 title and Level 2, which use unsupported patches beyond short clip coverage
+- Independent first-20-second event comparison passes for briefing and Levels
+  3, 4, 7 and 8. Their FM output is nonzero/unclipped; the title and Level 2
+  fallback exports are byte-identical to the existing GM converter
+- A complete Level 7 repeat passes with audible, unclipped output. The four
+  relevant native test suites, 15 preview synchronization checks and four JVM
+  asset/profile tests pass
+- Emulator profile persistence, switching, Level 7 FM preview, seek and
+  pause/resume pass. D1 gameplay passes 38/38 steps and D2 fallback gameplay
+  passes 48/48. D1 Level 7 diagnostics show ymfm, zero music-ring underruns,
+  zero clipped samples and a peak of 8675 in this run
+- Normal debug APK builds for ARM64, ARMv7 and x86_64, verifies its signature,
+  and installs without the test-only flag. Physical phone performance and
+  listening preference remain unverified
+- Final APK also passes custom-SF2 import/rejection, persistence and preview
+  switching regression checks; both runners restore the original selection
+
+Reproduction and limitations: `android/tests/fm-prototype.md`. Local APK,
+checksums and reports: `temp/fm-phone-prototype/`. Remaining work includes the
+original HMI paired-voice/panning/volume policy, hardware rhythm and D2 banks,
+custom FM banks, named nostalgic presets and user percussion/effect controls.
+
+### Identical-playback investigation
+
+Export the first 20 seconds of descent, game01 and game07 using each selected
+profile through the production converter, synth and timeline. Compare actual
+PCM as well as the effective renderer, and retain a reproducible listening page.
+Check the user's preview renderer label before attributing their Level 7 result
+to instrument similarity or changing synthesis behavior. Title/Level 1 fallback
+is already visible in the prototype's gameplay logs.
+
+Confirmed with the registered D1 HOG: title and Level 1 produce byte-identical
+PCM for explicit SF2 and FM preference (both actually SF2). Level 7 selects
+ymfm and produces different PCM. Added `compare_music_profiles.py` and a host
+`--render` mode to retain WAVs, effective renderer, PCM hashes and a listening
+page. Native integration and comparison checks pass. The user's phone Level 7
+result remains unresolved pending its actual preview renderer/context; no
+production playback changes were made for this investigation.
+
+### Completed fidelity integration (2026-09-22)
+
+The later `fm-driver-fidelity.md` work completes measured HMI allocation,
+volume/pan, pitch, sustain and repeat behavior in the shared production driver.
+D2 AMLIB/ANLIB banks and the original games' rhythm-marked entries now work.
+The latter use paired melodic voices in DOS, not hardware-rhythm mode.
+Production traces pass 7,604 ordered key-on states, 5,247 settled-state checks,
+and controlled repeat comparisons. All 27 D1 and seven available D2 songs pass
+their applicable host checks. D2 briefing intentionally uses GM/SF2 fallback.
+
+Final Android FM tests pass D1 41/41 and D2 48/48 gameplay steps, plus settings,
+reset defaults, switching and preview seek. Custom-SF2 tests pass D1 44/44 and
+D2 51/51, confirming the imported asset in native logs. The runner reapplies
+its profile after the gameplay fixture clears preferences. All three ABIs build;
+the signed APK and reports are in `temp/fm-driver-android/`.
+
+Remaining product work: independent percussion gain, named user variations,
+supported advanced controls, custom FM bank import and curated nostalgic
+presets. Physical-phone performance/listening and the bundled SF2 distribution
+license decision remain separate follow-ups. MIDI preference persistence and
+AdLib defaults for both user resets are already complete.

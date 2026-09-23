@@ -60,10 +60,10 @@ static void setup(OPLPlayer &player, const char *bank, uint32_t rate)
 static void song(const std::string &mode, const char *bank, const char *sequence,
                  std::vector<int16_t> &pcm, uint32_t rate)
 {
-	OPLPlayer player(1, mode == "file-opl3" ? OPLPlayer::ChipOPL3 : OPLPlayer::ChipOPL2);
+	OPLPlayer player(1, (mode == "file-opl3" || mode == "live-opl3") ? OPLPlayer::ChipOPL3 : OPLPlayer::ChipOPL2);
 	setup(player, bank, rate);
 	const auto frames = static_cast<uint32_t>(pcm.size() / 2);
-	if (mode != "live-opl2") {
+	if (mode != "live-opl2" && mode != "live-opl3") {
 		if (!player.loadSequence(sequence)) throw std::runtime_error("Sequence load failed");
 		player.generate(pcm.data(), frames);
 		return;
@@ -201,13 +201,13 @@ int main(int argc, char **argv)
 		const std::string mode = argv[1];
 		const bool chipOnly = mode == "tone-ymfm" || mode == "tone-emu8950";
 		const bool registerReplay = mode == "registers-opl3" || mode == "registers-ymfm" || mode == "registers-emu8950";
-		if (!chipOnly && !registerReplay && mode != "file-opl2" && mode != "file-opl3" && mode != "live-opl2")
+		if (!chipOnly && !registerReplay && mode != "file-opl2" && mode != "file-opl3" && mode != "live-opl2" && mode != "live-opl3")
 			throw std::runtime_error("Unknown renderer mode");
 		const double seconds = std::stod(argv[5]);
 		if (!(seconds > 0 && seconds <= 600)) throw std::runtime_error("Duration must be in (0, 600]");
 		const uint32_t rate = chipOnly || registerReplay ? 49716 : 48000;
 		if (argc == 7) {
-			if (mode != "live-opl2") throw std::runtime_error("Register instrumentation requires live-opl2");
+			if (mode != "live-opl2" && mode != "live-opl3") throw std::runtime_error("Register instrumentation requires live events");
 			fm_trace.open(argv[6]);
 			if (!fm_trace) throw std::runtime_error("Cannot create register trace");
 		}

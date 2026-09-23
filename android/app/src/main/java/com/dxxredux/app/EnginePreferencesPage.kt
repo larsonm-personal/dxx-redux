@@ -203,7 +203,7 @@ fun EnginePreferencesPage(
             }
     }
 
-    fun savePreferences(): Boolean {
+    fun savePreferences(preset: GameSettingsPreset? = null): Boolean {
         val count =
             NativePilotPreferences.writeEngineAndHomingPrefsToAll(
                 filesDir.absolutePath,
@@ -246,9 +246,10 @@ fun EnginePreferencesPage(
                 savedHudFiltering = hudFiltering
                 savedMainViewFov = mainViewFov
                 savedShowGuidebotLine = showGuidebotLine
+                if (preset != null) MidiPreviewBridge.resetPreferences(context, preset)
             } catch (_: Exception) {
                 statusMessage =
-                    "Pilot preferences saved, but graphics settings could not be saved. Please retry"
+                    "Pilot preferences saved, but some game preferences could not be saved. Please retry"
                 return false
             }
             savedCockpitMode = cockpitMode
@@ -313,7 +314,7 @@ fun EnginePreferencesPage(
                         autoLeveling = true
                     }
                     presetNeedsSave = true
-                    if (savePreferences()) {
+                    if (savePreferences(preset)) {
                         pendingPreset = null
                         statusMessage = "${preset.title} applied"
                     } else {
@@ -394,6 +395,10 @@ fun EnginePreferencesPage(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
+                Text("MIDI music", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                SoundfontSelector()
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
                 Text("Launcher", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(

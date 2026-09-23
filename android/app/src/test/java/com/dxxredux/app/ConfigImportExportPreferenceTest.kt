@@ -23,7 +23,12 @@ class ConfigImportExportPreferenceTest {
                     pref.key to
                         when (pref.type) {
                             ConfigImportExport.ExportedPreferenceType.BOOLEAN -> booleanValue
-                            ConfigImportExport.ExportedPreferenceType.STRING -> "value-${pref.key}"
+                            ConfigImportExport.ExportedPreferenceType.STRING ->
+                                when (pref.key) {
+                                    SoundfontStore.PREF_RENDERER -> "ymfm"
+                                    SoundfontStore.PREF_SOUNDFONT -> "a".repeat(64)
+                                    else -> "value-${pref.key}"
+                                }
                         }
                 }
 

@@ -46,12 +46,14 @@ fun MidiBytesPreviewDialog(
     loadBytes: suspend () -> ByteArray?,
     loadMetadata: (suspend () -> MidiMetadata?)? = null,
     onDismiss: () -> Unit,
+    hogPath: String = "",
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val sampleRate = remember { MidiPreviewBridge.getNativeSampleRate(context) }
     val contentScroll = rememberScrollState()
 
+    var renderer by remember { mutableStateOf<String?>(null) }
     var playing by remember { mutableStateOf(false) }
     var positionMs by remember { mutableIntStateOf(0) }
     var durationMs by remember { mutableIntStateOf(0) }
@@ -102,7 +104,8 @@ fun MidiBytesPreviewDialog(
                     loadError = "Could not read $trackName"
                     return@launch
                 }
-                if (MidiPreviewBridge.startReserved(generation, data, isHmp, sampleRate)) {
+                if (MidiPreviewBridge.startReserved(generation, data, isHmp, sampleRate, hogPath, trackName)) {
+                    renderer = MidiPreviewBridge.getState().renderer
                     playing = true
                     loadError = null
                 } else {
@@ -129,6 +132,9 @@ fun MidiBytesPreviewDialog(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(trackName, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                renderer?.let {
+                    Text(if (it == "ymfm") "Playing with ymfm FM" else "Playing with soundfont", fontSize = 12.sp)
+                }
                 detailLines.forEach { line ->
                     Text(
                         line,

@@ -1229,7 +1229,7 @@ class SetupActivity : ComponentActivity() {
                             require(
                                 file.path.startsWith(filesDir.canonicalPath + File.separator),
                             ) { "Import test file must be in app storage" }
-                            val store = SoundfontStore(filesDir)
+                            val store = SoundfontStore(this@SetupActivity)
                             val font =
                                 file.inputStream().use { input ->
                                     store.import(
@@ -1240,6 +1240,16 @@ class SetupActivity : ComponentActivity() {
                             MidiPreviewBridge.selectSoundfont(this@SetupActivity, font.id)
                             Log.i("DXX-Setup", "music_soundfont_import: selected ${font.id}")
                         }
+                    }
+
+                    "music_renderer_select" -> {
+                        val renderer = intent.getStringExtra("renderer") ?: SoundfontStore.DEFAULT_RENDERER
+                        runIo { MidiPreviewBridge.selectRenderer(this@SetupActivity, renderer) }
+                    }
+
+                    "music_preferences_reset" -> {
+                        val preset = GameSettingsPreset.valueOf(intent.getStringExtra("preset") ?: "DEFAULTS")
+                        runIo { MidiPreviewBridge.resetPreferences(this@SetupActivity, preset) }
                     }
 
                     "music_soundfont_select" -> {
@@ -1282,7 +1292,7 @@ class SetupActivity : ComponentActivity() {
                             }
                             val isHmp = portableGameFilenameIdentity(track.filename).endsWith(".hmp")
                             val sr = MidiPreviewBridge.getNativeSampleRate(this@SetupActivity)
-                            if (MidiPreviewBridge.startReserved(generation, data, isHmp, sr)) {
+                            if (MidiPreviewBridge.startReserved(generation, data, isHmp, sr, src.hog, track.filename)) {
                                 Log.i("DXX-Setup", "music_midi_play: playing ${track.filename} from ${src.label}")
                             } else {
                                 Log.e(

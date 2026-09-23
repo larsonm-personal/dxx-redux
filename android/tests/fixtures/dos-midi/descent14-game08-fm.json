@@ -1,0 +1,16 @@
+{
+  "description": "D1 original DOS FM, game08 substituted as title via loose SNG",
+  "capture": "game_data/music/dos-references/descent14-game08/opl/dos.dro",
+  "capture_sha256": "222862429bfb194771a31e9b9a59262f1e452defc69a92207d143082d5a13bef",
+  "assets": {
+    "game08.hmp": "7146050da4fe34b4af0484d0d1becf37682e66700de44669451b23311245b628",
+    "game08.hmq": "d93db9773397a3871c23af4e87ab7a4d1f1a8386ccb1e0c62053c633b4528f86",
+    "rickmelo.bnk": "de8a4c095665a6254e0dfe768e9d9623071d13c8044922e6056ace60b8e0205e",
+    "rickdrum.bnk": "dd59ffc2ce94c68d4a78d66d5f968f5b1a968979c193ce275a3b30c761621e00"
+  },
+  "matched_sequence": "game08.hmq",
+  "matched_notes": 666,
+  "first_source_index": 0,
+  "last_source_index": 665,
+  "limits": "Exact ordered key-on pitch/operator signatures excluding total levels; not waveform or voice-policy parity"
+}

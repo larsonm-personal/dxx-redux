@@ -338,7 +338,7 @@ static int hmp_play_delta(unsigned char **out, unsigned int *len, uint32_t value
 
 static int hmp_play_emit(unsigned char **out, unsigned int *len, uint32_t *last,
                          uint32_t tick, unsigned char status,
-                         unsigned char a, unsigned char b)
+                         unsigned char a, unsigned char b, int fm)
 {
 	unsigned char msg[3] = { status, a, b };
 	size_t size = (status & 0xe0) == 0xc0 ? 2 : 3;
@@ -346,7 +346,7 @@ static int hmp_play_emit(unsigned char **out, unsigned int *len, uint32_t *last,
 	 * This is a measured full-volume transfer, not a general HMI gain formula.
 	 * The Android user volume remains a separate PCM gain.
 	 */
-	if ((status & 0xf0) == 0xb0 && a == 7)
+	if (!fm && (status & 0xf0) == 0xb0 && a == 7)
 		msg[2] = b > 1 ? (unsigned char) (b - 2) : 0;
 	if (tick < *last || !hmp_play_delta(out, len, tick - *last) ||
 	    !hmp_midi_append(out, len, msg, size))
@@ -360,7 +360,7 @@ static int hmp_play_emit(unsigned char **out, unsigned int *len, uint32_t *last,
  * universal; otherwise the General MIDI synth must select 0xa000 tracks.
  * Level 7 contains separate FM, GM/GUS and digital-sample arrangements.
  */
-static int hmp_play_track_uses_gm(const unsigned char *data, int track)
+static int hmp_play_track_uses_device(const unsigned char *data, int track, int fm)
 {
 	unsigned int i, any = 0;
 	const unsigned char *record;
@@ -369,16 +369,16 @@ static int hmp_play_track_uses_gm(const unsigned char *data, int track)
 	record = data + 0x94 + (track - 1) * 20;
 	for (i = 0; i < 4; i++) {
 		uint32_t device = hmp_read_le32(record + i * 4);
-		if (device == 0xa000)
+		if (device == (fm ? 0xa002u : 0xa000u))
 			return 1;
 		any |= device;
 	}
 	return !any;
 }
 
-int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
-                         unsigned char **midi, int *midi_len,
-                         struct hmp_playback_info *info)
+int hmp2mid_playback_device_mem(const unsigned char *data, int len, int repeat, int fm,
+                                unsigned char **midi, int *midi_len,
+                                struct hmp_playback_info *info)
 {
 	static const unsigned char header[] = {
 		'M', 'T', 'h', 'd', 0, 0, 0, 6, 0, 0, 0, 1, 0, 120,
@@ -391,11 +391,12 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 	const unsigned char *branch[HMP_TRACKS] = { 0 };
 	uint32_t branch_tick[HMP_TRACKS] = { 0 };
 	uint32_t track_end[HMP_TRACKS] = { 0 };
+	uint32_t track_channel[HMP_TRACKS] = { 0 };
 	unsigned char initial_shift[HMP_TRACKS] = { 0 };
 	unsigned char selected[HMP_TRACKS] = { 0 };
 	unsigned char *out = NULL;
 	unsigned int out_len = 0;
-	size_t count = 0, capacity, i, n, branch_pos;
+	size_t count = 0, capacity, i, n, branch_pos, track_offset = 0x308;
 	uint32_t last = 0, end_tick = 0, loop_tick = 0, loop_end = 0;
 	uint32_t end_order = 0, loop_count = 0, start_count = 0;
 	int track, pass, unsupported = 0, have_loop = 0;
@@ -422,7 +423,11 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 		const unsigned char *end;
 		uint32_t tick = 0;
 		int first = 1, ended = 0;
-		selected[track] = (unsigned char) hmp_play_track_uses_gm(data, track);
+		/* Track headers were bounded by hmp_android_open_mem above */
+		track_channel[track] = hmp_read_le32(data + track_offset + 8);
+		track_offset += 12 + hmp->trks[track].len;
+		if (fm && track_channel[track] > 15) goto fail;
+		selected[track] = (unsigned char) hmp_play_track_uses_device(data, track, fm);
 		if (!p || !hmp->trks[track].len)
 			goto fail;
 		end = p + hmp->trks[track].len;
@@ -489,12 +494,14 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 		if (selected[events[i].track] && (events[i].status & 0xf0) == 0x90 && events[i].b)
 			break;
 	if (i == count) {
+		if (fm) goto fail;
 		info->no_gm_arrangement = 1;
 		memset(selected, 1, sizeof(selected));
 	}
 	for (track = 0; track < hmp->num_trks; track++) {
+		uint32_t effective_end = track_end[track] - (fm ? initial_shift[track] : 0);
 		if (!selected[track]) info->filtered_tracks++;
-		else if (track_end[track] > end_tick) end_tick = track_end[track];
+		else if (effective_end > end_tick) end_tick = effective_end;
 	}
 	for (i = 0, n = 0; i < count; i++)
 		if (selected[events[i].track]) events[n++] = events[i];
@@ -578,11 +585,13 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 		goto fail;
 	out[12] = (unsigned char) (hmp->tempo >> 8);
 	out[13] = (unsigned char) hmp->tempo;
-	/* New songs are silent until their first CC7. This is not replayed at a branch */
-	for (track = 0; track < 16; track++)
+	/* GM starts silent until CC7. FM starts with driver defaults, and a synthetic
+	 * wheel message would change its voice-stealing policy before the first note
+	 */
+	for (track = 0; !fm && track < 16; track++)
 		/* Captured HMI reset sends bytes 64,64 (8256), not 0,64 (8192) */
-		if (!hmp_play_emit(&out, &out_len, &last, 0, (unsigned char) (0xe0 + track), 64, 64) ||
-		    !hmp_play_emit(&out, &out_len, &last, 0, (unsigned char) (0xb0 + track), 7, 0))
+		if (!hmp_play_emit(&out, &out_len, &last, 0, (unsigned char) (0xe0 + track), 64, 64, fm) ||
+		    !hmp_play_emit(&out, &out_len, &last, 0, (unsigned char) (0xb0 + track), 7, 0, fm))
 			goto fail;
 	for (pass = 0; pass <= !!repeat; pass++) {
 		uint32_t base = pass ? end_tick + !have_loop : 0;
@@ -597,12 +606,12 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 					if (events[i].track == track && events[i].offset == hmp_read_le32(r))
 						break;
 				channel = events[i].status & 15;
-				if (!hmp_play_emit(&out, &out_len, &last, base, (unsigned char) (0xc0 + channel), r[5], 0))
+				if (!hmp_play_emit(&out, &out_len, &last, base, (unsigned char) (0xc0 + channel), r[5], 0, fm))
 					goto fail;
 				controls = data + hmp_read_le32(r + 8);
 				for (j = 0; j < r[7]; j += 2) {
 					if (controls[j] > 127 || controls[j + 1] > 127 ||
-					    !hmp_play_emit(&out, &out_len, &last, base, (unsigned char) (0xb0 + channel), controls[j], controls[j + 1]))
+					    !hmp_play_emit(&out, &out_len, &last, base, (unsigned char) (0xb0 + channel), controls[j], controls[j + 1], fm))
 						goto fail;
 				}
 			}
@@ -628,7 +637,7 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 		qsort(scheduled, n, sizeof(*scheduled), hmp_play_order);
 		for (i = 0; i < n; i++) {
 			const struct hmp_play_event *e = &scheduled[i];
-			if (!hmp_play_emit(&out, &out_len, &last, e->tick, e->status, e->a, e->b))
+			if (!hmp_play_emit(&out, &out_len, &last, e->tick, e->status, e->a, e->b, fm))
 				goto fail;
 		}
 		if (!have_loop) {
@@ -637,14 +646,15 @@ int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
 			 * at EOF and starts the next pass one driver tick later.
 			 */
 			for (i = 0; i < count; i++) {
-				unsigned char channel = events[i].status & 15;
+				/* DOS FM resets declared track channels, even if events use others */
+				unsigned char channel = fm ? (unsigned char) track_channel[events[i].track] : events[i].status & 15;
 				unsigned char control = (unsigned char) (0xb0 + channel);
 				if (reset_channels & (1u << channel)) continue;
 				reset_channels |= 1u << channel;
-				if (!hmp_play_emit(&out, &out_len, &last, base + end_tick, control, 123, 0) ||
-				    !hmp_play_emit(&out, &out_len, &last, base + end_tick, control, 121, 0) ||
-				    !hmp_play_emit(&out, &out_len, &last, base + end_tick, (unsigned char) (0xe0 + channel), 64, 64) ||
-				    !hmp_play_emit(&out, &out_len, &last, base + end_tick, control, 7, 0))
+				if (!hmp_play_emit(&out, &out_len, &last, base + end_tick, control, 123, 0, fm) ||
+				    !hmp_play_emit(&out, &out_len, &last, base + end_tick, control, 121, 0, fm) ||
+				    !hmp_play_emit(&out, &out_len, &last, base + end_tick, (unsigned char) (0xe0 + channel), fm ? 0 : 64, 64, fm) ||
+				    !hmp_play_emit(&out, &out_len, &last, base + end_tick, control, 7, 0, fm))
 					goto fail;
 			}
 		}
@@ -681,4 +691,10 @@ fail:
 	if (hmp) hmp_close(hmp);
 	memset(info, 0, sizeof(*info));
 	return 0;
+}
+
+int hmp2mid_playback_mem(const unsigned char *data, int len, int repeat,
+                         unsigned char **midi, int *midi_len, struct hmp_playback_info *info)
+{
+	return hmp2mid_playback_device_mem(data, len, repeat, 0, midi, midi_len, info);
 }

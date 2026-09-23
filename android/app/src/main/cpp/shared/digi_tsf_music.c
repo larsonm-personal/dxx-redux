@@ -46,14 +46,15 @@
 #include "hmp_android_shared.h"
 #include "midi_seek_timeline.h"
 #include "hmp_tsf_state.h"
-#include "music_soundfont.h"
+#include "music_synth_hmp.h"
 #include "digi_mixer_music.h"
 #include "u_mem.h"
 #include "console.h"
 
 /* ── Globals ─────────────────────────────────────────────────────────── */
 
-static tsf *g_tsf = NULL;              /* SoundFont synth instance       */
+static int g_renderer_snapshot;
+static music_synth *g_tsf = NULL;      /* SoundFont synth instance       */
 static tml_message *g_midi = NULL;     /* parsed MIDI message list       */
 static tml_message *g_midi_cur = NULL; /* current playback cursor        */
 static int g_is_hmp;
@@ -157,6 +158,7 @@ static int tsf_music_should_trace(unsigned int count)
 #ifdef ANDROID
 extern AAssetManager *g_asset_manager; /* set in jni_main.c              */
 extern char *g_music_soundfont_path;
+extern int g_music_prefer_fm;
 #endif
 
 /* ── Soundfont loading ───────────────────────────────────────────────── */
@@ -184,20 +186,20 @@ static int tsf_music_load_soundfont(void)
 		return 0;
 	}
 
-	g_tsf = music_soundfont_load(g_asset_manager, g_music_soundfont_path);
+	g_tsf = music_synth_load(g_asset_manager, g_music_soundfont_path, g_music_prefer_fm);
 
 	if (!g_tsf) {
 		TSFMUSIC_LOG("tsf_load_memory failed");
 		return 0;
 	}
 
-	TSFMUSIC_LOG("Soundfont loaded (%d presets)", tsf_get_presetcount(g_tsf));
+	TSFMUSIC_LOG("Soundfont loaded (%d presets)", music_synth_get_presetcount(g_tsf));
 #endif
 
 	/* Configure output: stereo interleaved, match SDL mixer rate */
-	tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-	               tsf_atomic_load_float(&g_gain_db));
-	tsf_set_max_voices(g_tsf, tsf_atomic_load_int(&g_max_voices));
+	music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+	                       tsf_atomic_load_float(&g_gain_db));
+	music_synth_set_max_voices(g_tsf, tsf_atomic_load_int(&g_max_voices));
 
 	TSFMUSIC_LOG("TSF configured: rate=%d, max_voices=%d, gain=%.1fdB",
 	             g_output_rate, tsf_atomic_load_int(&g_max_voices),
@@ -227,23 +229,23 @@ static const void *hmp_event_next(const void *event)
 
 static void hmp_dispatch(void *context, const void *event)
 {
-	tsf *synth = context;
+	music_synth *synth = context;
 	const tml_message *m = event;
 	switch (m->type) {
 		case TML_NOTE_ON:
-			tsf_channel_note_on(synth, m->channel, m->key, m->velocity / 127.0f);
+			music_synth_channel_note_on(synth, m->channel, m->key, m->velocity / 127.0f);
 			break;
 		case TML_NOTE_OFF:
-			tsf_channel_note_off(synth, m->channel, m->key);
+			music_synth_channel_note_off(synth, m->channel, m->key);
 			break;
 		case TML_PROGRAM_CHANGE:
-			tsf_channel_set_presetnumber(synth, m->channel, m->program, m->channel == 9);
+			music_synth_channel_set_presetnumber(synth, m->channel, m->program, m->channel == 9);
 			break;
 		case TML_CONTROL_CHANGE:
-			hmp_tsf_control(synth, m->channel, m->control, m->control_value);
+			music_synth_hmp_control(synth, m->channel, m->control, m->control_value);
 			break;
 		case TML_PITCH_BEND:
-			tsf_channel_set_pitchwheel(synth, m->channel, m->pitch_bend);
+			music_synth_channel_set_pitchwheel(synth, m->channel, m->pitch_bend);
 			break;
 		default:
 			break;
@@ -252,7 +254,7 @@ static void hmp_dispatch(void *context, const void *event)
 
 static void hmp_render(void *context, short *out, int frames)
 {
-	tsf_render_short(context, out, frames, 0);
+	music_synth_render_short(context, out, frames, 0);
 #ifdef ANDROID
 	{
 		int i;
@@ -312,24 +314,24 @@ static int render_frames(short *out, int frames)
 			tml_message *m = g_midi_cur;
 			switch (m->type) {
 				case TML_NOTE_ON:
-					tsf_channel_note_on(g_tsf, m->channel, m->key,
-					                    m->velocity / 127.0f);
+					music_synth_channel_note_on(g_tsf, m->channel, m->key,
+					                            m->velocity / 127.0f);
 					break;
 				case TML_NOTE_OFF:
-					tsf_channel_note_off(g_tsf, m->channel, m->key);
+					music_synth_channel_note_off(g_tsf, m->channel, m->key);
 					break;
 				case TML_PROGRAM_CHANGE:
-					tsf_channel_set_presetnumber(g_tsf, m->channel,
-					                             m->program,
-					                             (m->channel == 9));
+					music_synth_channel_set_presetnumber(g_tsf, m->channel,
+					                                     m->program,
+					                                     (m->channel == 9));
 					break;
 				case TML_CONTROL_CHANGE:
-					tsf_channel_midi_control(g_tsf, m->channel,
-					                         m->control, m->control_value);
+					music_synth_channel_midi_control(g_tsf, m->channel,
+					                                 m->control, m->control_value);
 					break;
 				case TML_PITCH_BEND:
-					tsf_channel_set_pitchwheel(g_tsf, m->channel,
-					                           m->pitch_bend);
+					music_synth_channel_set_pitchwheel(g_tsf, m->channel,
+					                                   m->pitch_bend);
 					break;
 				default:
 					break;
@@ -341,7 +343,7 @@ static int render_frames(short *out, int frames)
 		if (trace)
 			crash_breadcrumb_v("tsf_render #%u synth", pass);
 #endif
-		tsf_render_short(g_tsf, out, block, 0);
+		music_synth_render_short(g_tsf, out, block, 0);
 #ifdef ANDROID
 		if (trace)
 			crash_breadcrumb_v("tsf_render #%u synth_done", pass);
@@ -372,14 +374,14 @@ static int render_frames(short *out, int frames)
 		if (g_loop) {
 			g_midi_cur = g_midi;
 			g_playback_msec = 0.0;
-			tsf_reset(g_tsf);
-			tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-			               tsf_atomic_load_float(&g_gain_db));
+			music_synth_reset(g_tsf);
+			music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+			                       tsf_atomic_load_float(&g_gain_db));
 		} else {
 			tsf_atomic_store_int(&g_source_finished, 1);
-			tsf_reset(g_tsf);
-			tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-			               tsf_atomic_load_float(&g_gain_db));
+			music_synth_reset(g_tsf);
+			music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+			                       tsf_atomic_load_float(&g_gain_db));
 		}
 	}
 
@@ -491,14 +493,14 @@ static void tsf_apply_tuning_command(const struct tsf_tuning_command *command,
 		case TSF_TUNING_GAIN:
 			tsf_atomic_store_float(&g_gain_db, command->value.real_value);
 			if (mutate_synth && g_tsf)
-				tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-				               command->value.real_value);
+				music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+				                       command->value.real_value);
 			tsf_reset_render_diagnostics();
 			break;
 		case TSF_TUNING_VOICES:
 			tsf_atomic_store_int(&g_max_voices, command->value.int_value);
 			if (mutate_synth && g_tsf)
-				tsf_set_max_voices(g_tsf, command->value.int_value);
+				music_synth_set_max_voices(g_tsf, command->value.int_value);
 			tsf_atomic_store_int(&g_active_voices_max, 0);
 			break;
 		case TSF_TUNING_VOLUME:
@@ -635,9 +637,9 @@ static int render_thread_func(void *data)
 	crash_breadcrumb_v("tsf_thread start tid=%ld", tsf_music_gettid());
 
 	if (g_tsf) {
-		tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-		               tsf_atomic_load_float(&g_gain_db));
-		tsf_set_max_voices(g_tsf, tsf_atomic_load_int(&g_max_voices));
+		music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+		                       tsf_atomic_load_float(&g_gain_db));
+		music_synth_set_max_voices(g_tsf, tsf_atomic_load_int(&g_max_voices));
 	}
 
 	for (;;) {
@@ -678,7 +680,7 @@ static int render_thread_func(void *data)
 
 		/* Track peak active voices (MIDI only) */
 		if (!g_is_pcm && g_tsf) {
-			int active = tsf_active_voice_count(g_tsf);
+			int active = music_synth_active_voice_count(g_tsf);
 			if (active > tsf_atomic_load_int(&g_active_voices_max))
 				tsf_atomic_store_int(&g_active_voices_max, active);
 		}
@@ -949,6 +951,15 @@ static unsigned char *music_read_stdio_bounded(const char *filename,
 	return data;
 }
 
+static unsigned char *music_read_bank(void *context, const char *name, size_t *size)
+{
+	(void) context;
+	PHYSFS_file *file = PHYSFS_openRead(name);
+	const char *extension = strrchr(name, '.');
+	size_t limit = extension && !d_stricmp(extension, ".hmq") ? MUSIC_MIDI_ENCODED_MAX_BYTES : 65536;
+	return file ? music_read_physfs_bounded(file, limit, size) : NULL;
+}
+
 int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 {
 	unsigned int bufsize = 0;
@@ -1056,6 +1067,8 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 		return 0;
 	}
 
+	tsf_atomic_store_int(&g_renderer_snapshot, music_synth_prepare(g_tsf, filename, music_read_bank, NULL));
+
 	/* Convert HMP through the same bounded playback converter as preview/export */
 	g_is_hmp = 0;
 	if (!d_stricmp(fptr, ".hmp") || !d_stricmp(fptr, ".hmq")) {
@@ -1068,8 +1081,9 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 		hmp_data = music_read_physfs_bounded(fh, MUSIC_MIDI_ENCODED_MAX_BYTES, &hmp_size);
 		if (!hmp_data)
 			return 0;
-		converted = hmp2mid_playback_mem(hmp_data, (int) hmp_size, loop,
-		                                 &g_midi_buf, &midi_len, &g_hmp_info);
+		converted = music_synth_convert_hmp(g_tsf, hmp_data, (int) hmp_size, loop,
+		                                    &g_midi_buf, &midi_len, &g_hmp_info);
+		tsf_atomic_store_int(&g_renderer_snapshot, music_synth_is_fm(g_tsf));
 		d_free(hmp_data);
 		if (!converted) {
 			con_printf(CON_CRITICAL, "TSF: HMP playback conversion failed for %s\n", filename);
@@ -1116,12 +1130,12 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	                   g_midi ? g_midi->time : 0u);
 
 	/* Reset synth state for new song */
-	tsf_reset(g_tsf);
-	tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-	               tsf_atomic_load_float(&g_gain_db));
+	music_synth_reset(g_tsf);
+	music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+	                       tsf_atomic_load_float(&g_gain_db));
 	if (g_is_hmp) {
 		tml_message *repeat_event = NULL;
-		hmp_tsf_begin(g_tsf, &g_hmp_saved_state);
+		music_synth_hmp_begin(g_tsf, &g_hmp_saved_state);
 		if (loop) {
 			for (repeat_event = g_midi; repeat_event; repeat_event = repeat_event->next)
 				if (repeat_event->time >= (unsigned int) g_hmp_info.repeat_ms)
@@ -1198,7 +1212,7 @@ void mix_free_music(void)
 
 	/* Clean up MIDI state */
 	if (g_is_hmp && g_tsf)
-		hmp_tsf_capture(g_tsf, &g_hmp_saved_state);
+		music_synth_hmp_capture(g_tsf, &g_hmp_saved_state);
 	g_midi_cur = NULL;
 	g_is_hmp = 0;
 	memset(&g_hmp_timeline, 0, sizeof(g_hmp_timeline));
@@ -1218,9 +1232,9 @@ void mix_free_music(void)
 
 	/* Stop all voices but keep the synth loaded */
 	if (g_tsf) {
-		tsf_reset(g_tsf);
-		tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-		               tsf_atomic_load_float(&g_gain_db));
+		music_synth_reset(g_tsf);
+		music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
+		                       tsf_atomic_load_float(&g_gain_db));
 	}
 }
 
@@ -1376,3 +1390,8 @@ void tsf_music_set_max_voices(int n)
 	tsf_submit_tuning_command(command);
 }
 #endif
+
+int music_get_fm_active(void)
+{
+	return tsf_atomic_load_int(&g_renderer_snapshot);
+}

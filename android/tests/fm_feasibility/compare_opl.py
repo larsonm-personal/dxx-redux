@@ -21,8 +21,9 @@ def signature(operators, connection, pitch):
 
 def source_notes(hog, song, seconds):
     files = hog_members(hog)
+    bank_song = song[:-1] + 'p' if song.endswith('.hmq') else song
     row = next(row.split() for row in files['descent.sng'].decode('ascii').splitlines()
-               if row.split() and row.split()[0].lower() == song)
+               if row.split() and row.split()[0].lower() == bank_song)
     melodic, drums = (read_bank(files[name.lower()]) for name in row[1:3])
     rate, events, arrangement = hmp_events(files[song], seconds)
     program, volume, pan = [0] * 16, [127] * 16, [64] * 16
@@ -37,8 +38,8 @@ def source_notes(hog, song, seconds):
             pan[channel] = b
         elif kind == 0x90 and b:
             patch = (drums if channel == 9 else melodic)[a if channel == 9 else program[channel]]
-            if patch['mode']:
-                raise ValueError('Unsupported rhythm-mode instrument')
+            # Captures of all five rhythm-flagged D1 entries show ordinary
+            # paired two-operator playback; HMI does not enable hardware rhythm
             pitch = patch['fixed_note'] if channel == 9 else a
             notes.append({'ms': tick * 1000 / rate, 'channel': channel, 'note': a,
                           'pitch': pitch, 'velocity': b, 'volume': volume[channel],
