@@ -525,6 +525,8 @@ private fun MidiSection(filesDir: File) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 
+    SoundfontSelector()
+
     Spacer(modifier = Modifier.height(8.dp))
 
     if (enumerating) {

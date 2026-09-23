@@ -1051,6 +1051,19 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         root.put("has_legacy_gog_audio", findGogPair(setDir) != null)
 
         val musicPreview = JSONObject()
+        val soundfont = SoundfontStore(filesDir).read()
+        root.put(
+            "soundfont",
+            JSONObject().apply {
+                put("selected", soundfont.selected)
+                put(
+                    "fonts",
+                    JSONArray().apply {
+                        soundfont.fonts.forEach { font -> put(JSONObject().put("id", font.id).put("name", font.name)) }
+                    },
+                )
+            },
+        )
         val midiState = MidiPreviewBridge.getState()
         val midiObj = JSONObject()
         midiObj.put(

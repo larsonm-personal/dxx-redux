@@ -29,7 +29,9 @@ def extract_member(hog, name):
 
 
 def prepare(source, output, executable, config_name, song=None, hog_name='DESCENT.HOG',
-            music_device='general-midi', mute_effects=False):
+            music_device='general-midi', mute_effects=False, opl_capture=False):
+    if opl_capture and music_device != 'adlib':
+        raise ValueError('OPL capture requires the AdLib music device')
     source, output = source.resolve(), output.resolve()
     if output == source or source in output.parents:
         raise ValueError('Capture output must be outside the source runtime')
@@ -83,7 +85,7 @@ hdma=5
 @echo off
 mount c "{game}"
 c:
-echo Press {'Ctrl-Alt-F8 for MIDI' if music_device == 'general-midi' else 'Ctrl-F6 for WAV'}, then Space to launch
+echo Press {'Ctrl-Alt-F7 for OPL' if opl_capture else 'Ctrl-Alt-F8 for MIDI' if music_device == 'general-midi' else 'Ctrl-F6 for WAV'}, then Space to launch
 pause
 {executable}
 exit
@@ -102,7 +104,7 @@ exit
         (output / 'song.json').write_text(json.dumps({'hog': hog_name, 'song': song,
                                                     'sha256': hashlib.sha256(data).hexdigest()}, indent=2) + '\n', encoding='utf8')
     print(f'Prepared {output}')
-    shortcut = 'Ctrl+Alt+F8' if music_device == 'general-midi' else 'Ctrl+F6'
+    shortcut = 'Ctrl+Alt+F7' if opl_capture else 'Ctrl+Alt+F8' if music_device == 'general-midi' else 'Ctrl+F6'
     print(f'Arm {shortcut} at the pause; stop with the same shortcut before exiting')
 
 
@@ -117,6 +119,7 @@ def main():
     parser.add_argument('--music-device', choices=('general-midi', 'adlib'), default='general-midi',
                         help='General MIDI capture or the GOG D1 AdLib/FM device (0xa009)')
     parser.add_argument('--mute-effects', action='store_true', help='Set private game effects volume to zero for clean music WAVs')
+    parser.add_argument('--opl-capture', action='store_true', help='Prepare for Ctrl+Alt+F7 DRO register capture (requires --music-device adlib)')
     args = parser.parse_args()
     if Path(args.exe).name != args.exe or not re.fullmatch(r'[A-Za-z0-9_.]+', args.exe):
         parser.error('--exe must be a DOS executable basename')
@@ -125,7 +128,7 @@ def main():
     if Path(args.hog).name != args.hog or (args.song and (Path(args.song).name != args.song or Path(args.song).suffix.lower() not in ('.hmp', '.hmq'))):
         parser.error('--hog and --song must be basenames; song must be HMP/HMQ')
     prepare(args.source, args.output, args.exe, args.config, args.song, args.hog,
-            args.music_device, args.mute_effects)
+            args.music_device, args.mute_effects, args.opl_capture)
 
 
 if __name__ == '__main__':

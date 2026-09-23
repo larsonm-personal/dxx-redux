@@ -13,6 +13,7 @@ param(
     [string]$Hog = 'DESCENT.HOG',
     [ValidateSet('general-midi', 'adlib')][string]$MusicDevice = 'general-midi',
     [switch]$MuteEffects,
+    [switch]$OplCapture,
     [switch]$Launch
 )
 $ErrorActionPreference = 'Stop'
@@ -21,6 +22,7 @@ $captureArgs = @('--source', $SourceDirectory, '--output', $OutputDirectory, '--
 if ($Song) { $captureArgs += @('--song', $Song) }
 $captureArgs += @('--music-device', $MusicDevice)
 if ($MuteEffects) { $captureArgs += '--mute-effects' }
+if ($OplCapture) { $captureArgs += '--opl-capture' }
 python "$PSScriptRoot/dos_midi_capture.py" @captureArgs
 if ($LASTEXITCODE -ne 0) { throw 'DOS MIDI capture preparation failed' }
 if ($Launch) {

@@ -1,0 +1,20 @@
+{
+  "ymfmidi": {
+    "url": "https://github.com/devinacker/ymfmidi.git",
+    "commit": "94b0ab10f901c2208ffe8c28f7373e56a782dde7",
+    "license": "BSD-3-Clause",
+    "license_file": "COPYING.txt"
+  },
+  "ymfm": {
+    "url": "https://github.com/aaronsgiles/ymfm.git",
+    "commit": "d641a80631fe1fa5a3689fa5b6def07685772424",
+    "license": "BSD-3-Clause",
+    "license_file": "LICENSE"
+  },
+  "emu8950": {
+    "url": "https://github.com/digital-sound-antiques/emu8950.git",
+    "commit": "c27078c654de8f9cf37e9f02f040cc251aba33d9",
+    "license": "MIT",
+    "license_file": "LICENSE"
+  }
+}

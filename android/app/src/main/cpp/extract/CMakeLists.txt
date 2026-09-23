@@ -487,7 +487,8 @@ add_executable(
     test_midi_seek_timeline
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_midi_seek_timeline.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/midi_seek_timeline.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/tsf_impl.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/tsf_impl.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/music_soundfont.c)
 target_include_directories(test_midi_seek_timeline PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared
                                                            ${tinysoundfont_test_SOURCE_DIR})
 if(NOT MSVC)
@@ -495,6 +496,14 @@ if(NOT MSVC)
 endif()
 add_test(NAME midi_seek_timeline_tests COMMAND test_midi_seek_timeline
                                                ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/gm.sf2)
+add_executable(test_music_soundfont ../shared/test_music_soundfont.c ../shared/music_soundfont.c
+                                    ../shared/tsf_impl.c)
+target_include_directories(test_music_soundfont PRIVATE ../shared ${tinysoundfont_test_SOURCE_DIR})
+if(NOT MSVC)
+    target_link_libraries(test_music_soundfont PRIVATE m)
+endif()
+add_test(NAME music_soundfont_tests COMMAND test_music_soundfont
+                                            ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/gm.sf2)
 add_executable(
     test_secret_area_scan_budget
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_secret_area_scan_budget.c
@@ -519,8 +528,9 @@ else()
     target_compile_options(test_hmp_android_shared PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME hmp_android_shared_tests COMMAND test_hmp_android_shared)
-add_executable(hmp_midi_export hmp_midi_export.c ../shared/hmp_android_shared.c
-                               ../shared/tsf_impl.c)
+add_executable(
+    hmp_midi_export hmp_midi_export.c ../shared/hmp_android_shared.c ../shared/tsf_impl.c
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/music_soundfont.c)
 target_include_directories(hmp_midi_export PRIVATE test_hmp_stubs ../shared
                                                    ${tinysoundfont_test_SOURCE_DIR})
 if(NOT MSVC)
@@ -528,8 +538,9 @@ if(NOT MSVC)
     target_compile_options(hmp_midi_export PRIVATE -Wall -Wextra)
 endif()
 find_package(Python3 COMPONENTS Interpreter)
-add_executable(midi_tsf_render midi_tsf_render.c ../shared/midi_seek_timeline.c
-                               ../shared/tsf_impl.c)
+add_executable(
+    midi_tsf_render midi_tsf_render.c ../shared/midi_seek_timeline.c ../shared/tsf_impl.c
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/music_soundfont.c)
 target_include_directories(midi_tsf_render PRIVATE ../shared ${tinysoundfont_test_SOURCE_DIR})
 if(NOT MSVC)
     target_link_libraries(midi_tsf_render PRIVATE m)

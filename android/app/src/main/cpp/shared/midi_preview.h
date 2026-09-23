@@ -27,11 +27,11 @@
 #define MDP_PAUSED  -1
 
 /*
- * Initialize the MIDI preview system.  Loads gm.sf2 from APK assets.
- * Must be called once before any other midi_preview function.
+ * Initialize or replace the soundfont; empty path loads bundled gm.sf2.
+ * A successful replacement stops playback; failure preserves the old synth.
  * Returns 1 on success, 0 on failure.
  */
-int midi_preview_init(AAssetManager *mgr);
+int midi_preview_init(AAssetManager *mgr, const char *soundfont_path);
 
 /*
  * Start playback of MIDI data.

@@ -31,6 +31,7 @@
 #define TML_NO_STDIO
 #include "tml.h"
 #include "hmp_tsf_state.h"
+#include "music_soundfont.h"
 
 #define TAG       "DXX-MidiPreview"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
@@ -95,7 +96,8 @@ static unsigned int rb_available(void)
 
 /* ── Playback state ──────────────────────────────────────────────────── */
 
-static tsf *s_tsf = NULL;                /* SoundFont synth (persistent)    */
+static tsf *s_tsf = NULL; /* SoundFont synth (persistent)    */
+static char *s_soundfont_path;
 static tml_message *s_midi = NULL;       /* parsed MIDI message list        */
 static unsigned char *s_midi_buf = NULL; /* raw MIDI bytes (owned)         */
 static int s_midi_buf_len = 0;
@@ -627,39 +629,29 @@ static void osl_shutdown(void)
 
 static void midi_preview_stop_internal(void);
 
-int midi_preview_init(AAssetManager *mgr)
+int midi_preview_init(AAssetManager *mgr, const char *soundfont_path)
 {
+	tsf *replacement;
+	char *path;
+	if (!soundfont_path) return 0;
 	pthread_mutex_lock(&s_control_mutex);
-	if (s_tsf) {
+	if (s_tsf && s_soundfont_path && !strcmp(s_soundfont_path, soundfont_path)) {
 		pthread_mutex_unlock(&s_control_mutex);
-		return 1; /* already initialized */
+		return 1;
 	}
-
-	if (!mgr) {
-		LOGE("No AAssetManager");
-		pthread_mutex_unlock(&s_control_mutex);
-		return 0;
-	}
-
-	AAsset *asset = AAssetManager_open(mgr, "gm.sf2", AASSET_MODE_BUFFER);
-	if (!asset) {
-		LOGE("gm.sf2 not found in APK assets");
+	path = strdup(soundfont_path);
+	replacement = path ? music_soundfont_load(mgr, path) : NULL;
+	if (!replacement) {
+		free(path);
 		pthread_mutex_unlock(&s_control_mutex);
 		return 0;
 	}
-
-	const void *data = AAsset_getBuffer(asset);
-	off_t size = AAsset_getLength(asset);
-
-	s_tsf = tsf_load_memory(data, (int) size);
-	AAsset_close(asset);
-
-	if (!s_tsf) {
-		LOGE("tsf_load_memory failed for gm.sf2");
-		pthread_mutex_unlock(&s_control_mutex);
-		return 0;
-	}
-
+	/* Stop/join rendering before replacing its synth or freeing old samples */
+	midi_preview_stop_internal();
+	if (s_tsf) tsf_close(s_tsf);
+	free(s_soundfont_path);
+	s_tsf = replacement;
+	s_soundfont_path = path;
 	LOGI("SoundFont loaded (%d presets)", tsf_get_presetcount(s_tsf));
 	pthread_mutex_unlock(&s_control_mutex);
 	return 1;

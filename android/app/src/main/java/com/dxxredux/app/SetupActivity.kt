@@ -1222,6 +1222,34 @@ class SetupActivity : ComponentActivity() {
                         }
                     }
 
+                    "music_soundfont_import" -> {
+                        val path = intent.getStringExtra("path") ?: return
+                        runIo {
+                            val file = File(path).canonicalFile
+                            require(
+                                file.path.startsWith(filesDir.canonicalPath + File.separator),
+                            ) { "Import test file must be in app storage" }
+                            val store = SoundfontStore(filesDir)
+                            val font =
+                                file.inputStream().use { input ->
+                                    store.import(
+                                        input,
+                                        file.name,
+                                    ) { MidiPreviewBridge.validateSoundfont(it.absolutePath) }
+                                }
+                            MidiPreviewBridge.selectSoundfont(this@SetupActivity, font.id)
+                            Log.i("DXX-Setup", "music_soundfont_import: selected ${font.id}")
+                        }
+                    }
+
+                    "music_soundfont_select" -> {
+                        val id = intent.getStringExtra("id") ?: ""
+                        runIo {
+                            MidiPreviewBridge.selectSoundfont(this@SetupActivity, id)
+                            Log.i("DXX-Setup", "music_soundfont_select: selected $id")
+                        }
+                    }
+
                     "music_midi_play" -> {
                         val srcIdx = intent.getIntExtra("source", 0)
                         val trkIdx = intent.getIntExtra("track", 0)
@@ -1246,7 +1274,7 @@ class SetupActivity : ComponentActivity() {
                                 )
                                 return@midiPlay
                             }
-                            MidiPreviewBridge.init(this@SetupActivity)
+                            check(MidiPreviewBridge.init(this@SetupActivity)) { "Could not load selected soundfont" }
                             val data = MidiPreviewBridge.readHogEntry(src.hog, track.filename)
                             if (data == null) {
                                 Log.w("DXX-Setup", "music_midi_play: failed to read ${track.filename} from ${src.hog}")

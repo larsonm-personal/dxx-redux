@@ -35,8 +35,21 @@ object MidiPreviewBridge {
         return rateStr?.toIntOrNull() ?: 48000
     }
 
-    /** Initialize the MIDI synth (loads gm.sf2 from APK assets). Call once. */
-    fun init(context: Context): Boolean = nativeInit(context.assets)
+    /** Resolve the same persisted instrument asset used at game startup. Call on IO. */
+    fun init(context: Context): Boolean =
+        synchronized(lifecycleLock) {
+            nativeInit(context.assets, SoundfontStore(context.filesDir).selectedPath())
+        }
+
+    fun selectSoundfont(
+        context: Context,
+        id: String,
+    ) = synchronized(lifecycleLock) {
+        requestedGeneration.incrementAndGet()
+        SoundfontStore(context.filesDir).select(id) { nativeInit(context.assets, it) }
+    }
+
+    fun validateSoundfont(path: String): Boolean = nativeValidateSoundfont(path)
 
     /**
      * Start MIDI/HMP preview from raw file bytes.
@@ -94,7 +107,12 @@ object MidiPreviewBridge {
 
     // -- JNI declarations --
 
-    @JvmStatic private external fun nativeInit(assetManager: android.content.res.AssetManager): Boolean
+    @JvmStatic private external fun nativeInit(
+        assetManager: android.content.res.AssetManager,
+        path: String,
+    ): Boolean
+
+    @JvmStatic private external fun nativeValidateSoundfont(path: String): Boolean
 
     @JvmStatic private external fun nativeStart(
         data: ByteArray,

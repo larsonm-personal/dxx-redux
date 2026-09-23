@@ -9,3 +9,27 @@
 #define TML_IMPLEMENTATION
 #define TML_NO_STDIO
 #include "tml.h"
+
+#include "music_soundfont.h"
+
+tsf *music_soundfont_load_memory(const void *data, size_t size)
+{
+	size_t samples = music_soundfont_validate(data, size);
+	tsf *synth;
+	int p, r;
+	if (!samples) return NULL;
+	synth = tsf_load_memory(data, (int) size);
+	if (!synth) return NULL;
+	for (p = 0; p < synth->presetNum; ++p) {
+		for (r = 0; r < synth->presets[p].regionNum; ++r) {
+			const struct tsf_region *region = &synth->presets[p].regions[r];
+			if (region->offset >= region->end || region->end > samples ||
+			    (region->loop_mode && (region->loop_start < region->offset ||
+			                           region->loop_start >= region->loop_end || region->loop_end >= region->end))) {
+				tsf_close(synth);
+				return NULL;
+			}
+		}
+	}
+	return synth;
+}

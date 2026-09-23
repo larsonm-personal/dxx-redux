@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun MidiBytesPreviewDialog(
@@ -64,8 +65,13 @@ fun MidiBytesPreviewDialog(
     var metadataLoading by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
-        MidiPreviewBridge.init(context)
         onDispose { MidiPreviewBridge.stop() }
+    }
+
+    LaunchedEffect(Unit) {
+        if (!withContext(Dispatchers.IO) { MidiPreviewBridge.init(context) }) {
+            loadError = "Could not load the selected soundfont"
+        }
     }
 
     LaunchedEffect(playing) {
@@ -87,6 +93,10 @@ fun MidiBytesPreviewDialog(
         if (!playing) {
             val generation = MidiPreviewBridge.reserveStart()
             scope.launch(Dispatchers.IO) {
+                if (!MidiPreviewBridge.init(context)) {
+                    loadError = "Could not load the selected soundfont"
+                    return@launch
+                }
                 val data = loadBytes()
                 if (data == null) {
                     loadError = "Could not read $trackName"

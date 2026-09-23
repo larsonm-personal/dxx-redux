@@ -903,6 +903,9 @@ class MainActivity :
         resetOverlayPollProfileWindow()
     }
 
+    @androidx.annotation.Keep
+    fun getMidiSoundfontPath(): String = SoundfontStore(filesDir).selectedPath()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         if (BuildConfig.DEBUG) {
             Log.i(

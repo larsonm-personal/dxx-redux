@@ -46,6 +46,7 @@
 #include "hmp_android_shared.h"
 #include "midi_seek_timeline.h"
 #include "hmp_tsf_state.h"
+#include "music_soundfont.h"
 #include "digi_mixer_music.h"
 #include "u_mem.h"
 #include "console.h"
@@ -155,6 +156,7 @@ static int tsf_music_should_trace(unsigned int count)
 
 #ifdef ANDROID
 extern AAssetManager *g_asset_manager; /* set in jni_main.c              */
+extern char *g_music_soundfont_path;
 #endif
 
 /* ── Soundfont loading ───────────────────────────────────────────────── */
@@ -182,21 +184,7 @@ static int tsf_music_load_soundfont(void)
 		return 0;
 	}
 
-	AAsset *asset = AAssetManager_open(g_asset_manager, "gm.sf2",
-	                                   AASSET_MODE_BUFFER);
-	if (!asset) {
-		TSFMUSIC_LOG("gm.sf2 not found in APK assets");
-		return 0;
-	}
-
-	const void *data = AAsset_getBuffer(asset);
-	off_t size = AAsset_getLength(asset);
-	crash_breadcrumb_v("tsf_sf2 ptr=%p a4=%lu a8=%lu size=%ld", data,
-	                   ((unsigned long) data) & 3ul,
-	                   ((unsigned long) data) & 7ul, (long) size);
-
-	g_tsf = tsf_load_memory(data, (int) size);
-	AAsset_close(asset);
+	g_tsf = music_soundfont_load(g_asset_manager, g_music_soundfont_path);
 
 	if (!g_tsf) {
 		TSFMUSIC_LOG("tsf_load_memory failed");

@@ -16,6 +16,7 @@
 #include "midi_enumeration.h"
 #include "midi_metadata.h"
 #include "audio_tag_metadata.h"
+#include "music_soundfont.h"
 
 #define TAG "DXX-MidiPreviewJNI"
 
@@ -23,10 +24,28 @@
 
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MidiPreviewBridge_nativeInit(
-    JNIEnv *env, jclass clazz, jobject assetManager)
+    JNIEnv *env, jclass clazz, jobject assetManager, jstring jpath)
 {
 	AAssetManager *mgr = AAssetManager_fromJava(env, assetManager);
-	return midi_preview_init(mgr) ? JNI_TRUE : JNI_FALSE;
+	char *path = NULL;
+	int result;
+	if (!dxx_jni_string_to_utf8(env, jpath, &path)) return JNI_FALSE;
+	result = midi_preview_init(mgr, path);
+	free(path);
+	return result ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MidiPreviewBridge_nativeValidateSoundfont(JNIEnv *env, jclass clazz, jstring jpath)
+{
+	char *path = NULL;
+	tsf *synth;
+	if (!dxx_jni_string_to_utf8(env, jpath, &path)) return JNI_FALSE;
+	synth = *path ? music_soundfont_load(NULL, path) : NULL;
+	free(path);
+	if (!synth) return JNI_FALSE;
+	tsf_close(synth);
+	return JNI_TRUE;
 }
 
 JNIEXPORT jboolean JNICALL
