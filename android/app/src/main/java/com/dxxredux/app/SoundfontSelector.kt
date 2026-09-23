@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -38,6 +41,7 @@ fun SoundfontSelector() {
     var showLibrary by remember { mutableStateOf(false) }
     var infoFont by remember { mutableStateOf<SoundfontStore.Font?>(null) }
     var pendingDelete by remember { mutableStateOf<SoundfontStore.Font?>(null) }
+    var rendererInfo by remember { mutableStateOf<String?>(null) }
 
     fun delete(font: SoundfontStore.Font) {
         busy = true
@@ -156,7 +160,7 @@ fun SoundfontSelector() {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Text("Sound profile", style = MaterialTheme.typography.titleSmall)
         listOf("ymfm" to "AdLib / Sound Blaster FM", "sf2" to "Soundfont").forEach { (id, label) ->
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(selected = state.renderer == id, enabled = !busy, onClick = {
                     scope.launch {
                         busy = true
@@ -171,7 +175,10 @@ fun SoundfontSelector() {
                         }
                     }
                 })
-                Text(label, modifier = Modifier.padding(top = 12.dp))
+                Text(label, modifier = Modifier.weight(1f, fill = false))
+                IconButton(onClick = { rendererInfo = id }, modifier = Modifier.tvFocusBorder()) {
+                    Icon(Icons.Filled.Info, contentDescription = "About $label")
+                }
             }
         }
         if (state.renderer == "ymfm") {
@@ -234,6 +241,31 @@ fun SoundfontSelector() {
             }
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+    }
+
+    rendererInfo?.let { renderer ->
+        AlertDialog(
+            onDismissRequest = { rendererInfo = null },
+            title = { Text(if (renderer == "ymfm") "AdLib / Sound Blaster FM" else "SoundFont") },
+            text = {
+                Text(
+                    if (renderer == "ymfm") {
+                        "Recreates the original AdLib/Sound Blaster music using an emulated Yamaha OPL chip " +
+                            "and the game's FM instruments. It synthesizes sounds electronically, " +
+                            "giving them their characteristic retro tone."
+                    } else {
+                        "Plays MIDI using sampled instruments from your selected SoundFont. " +
+                            "This corresponds to the original game's General MIDI sound option; " +
+                            "changing the SoundFont changes the instrument sounds, much like choosing " +
+                            "a different MIDI sound card or module."
+                    },
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { rendererInfo = null }, modifier = Modifier.tvFocusBorder()) { Text("Close") }
+            },
+        )
     }
 
     if (showLibrary) {
