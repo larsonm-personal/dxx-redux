@@ -750,7 +750,7 @@ class LauncherScriptExecutor(
                     if (launchesGame) {
                         pendingGameLaunch = PendingGameLaunch(scriptPath, currentStep + 1, runId)
                     }
-                    if (!activity.performAccessibilityClick(text)) {
+                    if (!activity.performAccessibilityClick(button.text, exactOnly = true)) {
                         // Fallback to touch injection
                         activity.injectTapAt(button.centerX, button.centerY)
                     }

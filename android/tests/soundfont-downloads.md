@@ -3,7 +3,7 @@
 The curated list is `SoundfontCatalog.entries` in
 `app/src/main/java/com/dxxredux/app/SoundfontCatalog.kt`. This is a Kotlin list,
 with unavailable candidates kept as commented-out descriptors. It currently
-enables GeneralUser GS 2.0.3 beta and records 19 further banks for future hosting
+enables GeneralUser GS 2.0.3 beta and Roland SC-55 1.34 (nitro-shoe), and records 19 further banks for future hosting
 or compatibility/permission work. Opening the selector performs no network requests.
 
 The active GeneralUser asset is hosted in Codetta's `soundfont-bundle` GitHub
@@ -14,6 +14,36 @@ so the app labels it accordingly. The downloaded file is 32,319,396 bytes and
 its checked SHA-256 is
 `9575028c7a1f589f5770fccc8cff2734566af40cd26ed836944e9a5152688cfe`.
 This is a verification record, not a runtime checksum enforcement mechanism.
+
+Nitro-shoe's SC-55 bank is pinned to its upstream v1.34 release, 10,375,822 bytes:
+`https://github.com/nitro-shoe/sc-55-soundfont/releases/download/v1.34/Roland.SC-55.sf2`.
+SHA-256: `2f68d824f456e3367fe24105d590ee77b7e28faa9f622723b478fa90647d8a1a`.
+Info retains the author's CC BY 4.0 declaration and complete published sample
+credits, including borrowed Microsoft/Roland and Creative sources. The binary
+is downloaded unchanged from upstream, not bundled or mirrored here.
+
+Coverage on the local registered D1/D2 HOGs: 27 D1 HMPs, 7 D2 HMPs and 7 embedded
+D2 MIDIs; 393,833 note-ons including exported repeats. No uncovered/silent
+note/velocity mappings. D2 game02 (both formats) requests missing bank-8 variations
+of programs 38, 116 and 117 (zero-based Synth Bass 1, Taiko and Melodic Tom slots);
+TSF plays their GM bank-0 alternatives. No songs request the absent SFX drum kit.
+This verifies availability, not SC-55 timbre, effects or mixing accuracy.
+
+The font exposed two bounded zero-length loops in Fantasia. The shared loader now
+accepts those inactive loops, matching pinned TSF's existing one-shot behavior;
+reversed and out-of-bounds loops remain rejected. Synthetic regression fixtures
+exercise this distinction and the coverage tool's missing-note/fallback detection.
+
+Reproduce coverage after building `soundfont_coverage` and `hmp_midi_export`:
+
+```powershell
+python android/tests/audit_soundfont_coverage.py --sf2 path/to/Roland.SC-55.sf2 --hog d1=path/to/descent.hog --hog d2=path/to/descent2.hog --output temp/sc55-validation/coverage
+```
+
+The report records input hashes, every song, missing/fallback uses, and all tested
+note/velocity combinations in TSV files. Each song starts with fresh controller
+state and includes its exported repeat; arbitrary cross-song inherited states
+are not exhaustively tested. The checked Vertigo d2x.hog has no additional MIDI.
 
 FluidR3 GM and OPL-3 FM 128M have release assets, but remain commented because
 they exceed the 64 MiB limit. Other comments distinguish future GitHub hosting
@@ -88,6 +118,7 @@ $env:JAVA_HOME='C:/local/jdk-21'
 ./android/helpers/run_test.ps1 -ScriptName test_soundfont_download_catalog.jsonc -Game d1
 python android/tests/test_soundfont_profiles.py --library --adb C:/local/android-sdk/platform-tools/adb.exe --serial emulator-5554 --output temp/soundfont-library/device
 python android/tests/test_soundfont_release_download.py --adb C:/local/android-sdk/platform-tools/adb.exe --serial emulator-5554 --output temp/soundfont-catalog/device
+python android/tests/test_soundfont_release_download.py --adb C:/local/android-sdk/platform-tools/adb.exe --serial emulator-5554 --output temp/sc55-validation/device --name 'Roland SC-55 1.34 (nitro-shoe)' --sha256 2f68d824f456e3367fe24105d590ee77b7e28faa9f622723b478fa90647d8a1a --url 'https://github.com/nitro-shoe/sc-55-soundfont/releases/download/v1.34/Roland.SC-55.sf2' --website 'https://github.com/nitro-shoe/sc-55-soundfont'
 ```
 
 JVM integration uses synthetic HTTP responses through OkHttp and the real

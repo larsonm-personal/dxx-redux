@@ -99,6 +99,36 @@ internal object SoundfontCatalog {
                 websiteUrl = "https://github.com/mrbumpy409/GeneralUser-GS",
                 license = GENERAL_USER_LICENSE,
             ),
+            // Upstream v1.34, verified 2026-09-23: 10,375,822 bytes
+            // SHA-256 2f68d824f456e3367fe24105d590ee77b7e28faa9f622723b478fa90647d8a1a
+            SoundfontDownload(
+                name = "Roland SC-55 1.34 (nitro-shoe)",
+                url = "https://github.com/nitro-shoe/sc-55-soundfont/releases/download/v1.34/Roland.SC-55.sf2",
+                description =
+                    "Lightweight SC-55-style sample bank by nitro-shoe (9.9 MiB). " +
+                        "An approximation of the module, with no SFX drum kit and limited GS variations. " +
+                        "Uses samples credited to Microsoft/Roland, Creative and community soundfonts.",
+                websiteUrl = "https://github.com/nitro-shoe/sc-55-soundfont",
+                license =
+                    """
+                    Author-declared license: Creative Commons Attribution 4.0 International (CC BY 4.0)
+                    https://creativecommons.org/licenses/by/4.0/
+                    Roland SC-55 soundfont by nitro-shoe, version 1.34. Downloaded unchanged from upstream.
+                    License declaration: https://github.com/nitro-shoe/sc-55-soundfont/blob/main/README.md
+                    Sample credits: https://github.com/nitro-shoe/sc-55-soundfont/blob/main/Sample%20sources.md
+
+                    Microsoft GS Wavetable Synth (William Borges dos Santos)
+                    Roland SC-55 Soundfont (Trevor0402, Triaxis)
+                    Creative 28MBGM (E-mu, Creative Labs)
+                    Roland SC-55 (CS OnDev) (Duwindu Tharinda Perera)
+                    GeneralUser GS (S. Christian Collins)
+                    8MBGM Enhanced (holbred)
+                    Roland MV-30 (SC-55 Version) (MAG2001)
+
+                    The upstream license declaration is recorded here; rights to every borrowed sample
+                    have not been independently verified. This app links to the author's release.
+                    """.trimIndent(),
+            ),
             // RELEASE AVAILABLE, blocked by current 64 MiB limit: 148,398,306 bytes
             // Enable after larger-bank memory/loading validation; no new hosting needed
             // SoundfontDownload(

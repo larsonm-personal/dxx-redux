@@ -504,6 +504,11 @@ if(NOT MSVC)
 endif()
 add_test(NAME music_soundfont_tests COMMAND test_music_soundfont
                                             ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/gm.sf2)
+add_executable(soundfont_coverage soundfont_coverage.cpp ../shared/music_soundfont.c)
+target_include_directories(soundfont_coverage PRIVATE ../shared ${tinysoundfont_test_SOURCE_DIR})
+if(NOT MSVC)
+    target_link_libraries(soundfont_coverage PRIVATE m)
+endif()
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/ymfm-music.cmake)
 add_executable(
     test_music_synth
@@ -557,6 +562,14 @@ if(NOT MSVC)
     target_compile_options(hmp_midi_export PRIVATE -Wall -Wextra)
 endif()
 find_package(Python3 COMPONENTS Interpreter)
+if(Python3_Interpreter_FOUND)
+    add_test(
+        NAME soundfont_loop_bounds_tests
+        COMMAND
+            ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../tests/test_soundfont_loop_bounds.py --probe
+            $<TARGET_FILE:soundfont_coverage> --work ${CMAKE_CURRENT_BINARY_DIR}/sf2-loop-fixtures)
+endif()
 add_executable(
     midi_tsf_render midi_tsf_render.c ../shared/midi_seek_timeline.c ../shared/tsf_impl.c
                     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/music_soundfont.c)

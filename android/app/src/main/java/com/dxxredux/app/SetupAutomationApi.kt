@@ -245,7 +245,10 @@ internal suspend fun SetupActivity.injectTapAt(
  * mapping and uses the semantic click action directly.
  * Returns true if the click was performed.
  */
-internal fun SetupActivity.performAccessibilityClick(buttonText: String): Boolean {
+internal fun SetupActivity.performAccessibilityClick(
+    buttonText: String,
+    exactOnly: Boolean = false,
+): Boolean {
     val root = automationRootView()
     val composeView = findComposeView(root) ?: return false
     val provider = composeView.accessibilityNodeProvider ?: return false
@@ -278,18 +281,18 @@ internal fun SetupActivity.performAccessibilityClick(buttonText: String): Boolea
     }
 
     val lower = buttonText.lowercase()
-    for (click in clickNodes) {
-        val contained = textNodes.filter { click.bounds.contains(it.bounds) }
-        val label = contained.joinToString(" ") { it.text }
-        if (label.lowercase() == lower || label.lowercase().contains(lower)) {
-            return provider.performAction(
-                click.id,
-                AccessibilityNodeInfo.ACTION_CLICK,
-                null,
-            )
+    val labelledClicks =
+        clickNodes.map { click ->
+            val contained = textNodes.filter { click.bounds.contains(it.bounds) }
+            click to contained.joinToString(" ") { it.text }.lowercase()
         }
-    }
-    return false
+    // Match the button resolved by findButtonByText before considering substrings
+    val match =
+        labelledClicks.find { it.second == lower }
+            ?: if (exactOnly) null else labelledClicks.find { it.second.contains(lower) }
+    return match?.let {
+        provider.performAction(it.first.id, AccessibilityNodeInfo.ACTION_CLICK, null)
+    } ?: false
 }
 
 /** Hide the soft keyboard if it's showing. */

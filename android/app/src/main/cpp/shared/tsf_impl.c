@@ -26,8 +26,13 @@ tsf *music_soundfont_load_memory(const void *data, size_t size)
 			/* A sample-start offset can begin partway through a loop (GeneralUser's
 			 * Soundtrack preset does this). The loop may wrap before that initial
 			 * offset, provided all resolved positions stay inside the sample buffer */
+			/* TSF uses inclusive loop_end and only loops when start < end. Empty
+			 * SF2 loops therefore resolve to end + 1 == start (SC-55 Fantasia),
+			 * or start == end for a single sample. These play once in pinned TSF */
+			int inactive_loop = region->loop_start < region->end && region->loop_end < region->end &&
+			                    (region->loop_start == region->loop_end || region->loop_start == region->loop_end + 1);
 			if (region->offset >= region->end || region->end > samples ||
-			    (region->loop_mode && (region->loop_start >= region->loop_end || region->loop_end >= region->end))) {
+			    (region->loop_mode && !inactive_loop && (region->loop_start >= region->loop_end || region->loop_end >= region->end))) {
 				tsf_close(synth);
 				return NULL;
 			}

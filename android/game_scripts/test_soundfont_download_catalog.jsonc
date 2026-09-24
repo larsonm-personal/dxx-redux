@@ -19,6 +19,10 @@
     {"action": "tap_button", "text": "GeneralUser GS 2.0.3"},
     {"action": "assert_button", "text": "https://github.com/mrbumpy409/GeneralUser-GS", "enabled": true},
     {"action": "tap_button", "text": "Cancel", "exact": true},
+    {"action": "tap_button", "text": "Download soundfonts"},
+    {"action": "tap_button", "text": "Roland SC-55 1.34 (nitro-shoe)"},
+    {"action": "assert_button", "text": "https://github.com/nitro-shoe/sc-55-soundfont", "enabled": true},
+    {"action": "tap_button", "text": "Cancel", "exact": true},
     {"action": "assert", "expect": {"soundfont.selected": "", "soundfont.renderer": "ymfm"}},
     {"action": "tap_button", "text": "< Back", "post_delay_ms": 250},
     {"action": "log", "message": "Soundfont download catalog checks passed"}
