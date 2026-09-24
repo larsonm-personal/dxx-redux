@@ -3009,8 +3009,9 @@ try {
                                 throw "Secret travel opened a briefing while the setting was disabled"
                             }
                             if (-not $state.coop_travel.prepared -or -not $state.coop_travel.prepared_checksum) { return $false }
+                            # coop_travel.c envelope: 24 + 8*172 portable + 8 companion + 8 save framing
                             if (-not $state.coop_travel.checkpoint_ready -or -not $state.coop_travel.checkpoint_checksum -or
-                                $state.coop_travel.checkpoint_size -le 1408) { return $false }
+                                $state.coop_travel.checkpoint_size -le 1416) { return $false }
                             if ($checkpointChecksum -and $checkpointChecksum -ne $state.coop_travel.checkpoint_checksum) {
                                 throw "Peers retained different source checkpoints"
                             }

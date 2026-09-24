@@ -5816,7 +5816,35 @@ static void write_checkpoint_custom_assets(int robot_id, int bitmap_id, const st
 
 // Use real native save/restore and the public import adapter, including a second
 // checkpoint taken during the route. The runner provides an isolated write dir
-static void write_checkpoint_frame_trace(const char *directory, const char *checkpoints, bool custom, int level)
+static nlohmann::json checkpoint_dynamic_state()
+{
+	using nlohmann::json;
+	const auto vector = [](const vms_vector &v) { return json::array({ v.x, v.y, v.z }); };
+	json result = { { "reactor_death_silence", controlcen_death_silence }, { "stuck_count", Num_stuck_objects }, { "stuck", json::array() }, { "effects", json::array() }, { "morphs", json::array() } };
+	for (int i = 0; i < MAX_STUCK_OBJECTS; ++i) {
+		const auto &stuck = Stuck_objects[i];
+		if (stuck.wallnum != -1) result["stuck"].push_back({ i, stuck.objnum, stuck.wallnum, stuck.signature });
+	}
+	for (int i = 0; i < Num_effects; ++i) {
+		const auto &effect = Effects[i];
+		result["effects"].push_back({ i, effect.time_left, effect.frame_count, effect.flags & (EF_ONE_SHOT | EF_STOPPED),
+		                              effect.segnum, effect.sidenum, effect.dest_bm_num,
+		                              effect.changing_wall_texture >= 0 ? Textures[effect.changing_wall_texture].index : -1,
+		                              effect.changing_object_texture >= 0 ? ObjBitmaps[effect.changing_object_texture].index : -1 });
+	}
+	for (int i = 0; i < MAX_MORPH_OBJECTS; ++i) {
+		const auto &morph = morph_objects[i];
+		if (!morph.obj || morph.obj->signature != morph.Morph_sig || morph.obj->type == OBJ_NONE) continue;
+		const auto &physics = morph.morph_save_phys_info;
+		json saved = { { "object", morph.obj - Objects }, { "signature", morph.Morph_sig }, { "active", std::vector<int>(morph.submodel_active, morph.submodel_active + MAX_SUBMODELS) }, { "counts", std::vector<int>(morph.n_morphing_points, morph.n_morphing_points + MAX_SUBMODELS) }, { "starts", std::vector<int>(morph.submodel_startpoints, morph.submodel_startpoints + MAX_SUBMODELS) }, { "submodels", morph.n_submodels_active }, { "control", morph.morph_save_control_type }, { "movement", morph.morph_save_movement_type }, { "physics", { vector(physics.velocity), vector(physics.thrust), vector(physics.rotvel), vector(physics.rotthrust), physics.mass, physics.drag, physics.brakes, physics.turnroll, physics.flags } }, { "behavior", morph.obj->ctype.ai_info.behavior }, { "ai_flags", std::vector<sbyte>(morph.obj->ctype.ai_info.flags, morph.obj->ctype.ai_info.flags + MAX_AI_FLAGS) }, { "points", json::array() } };
+		for (int point = 0; point < MAX_VECS; ++point)
+			saved["points"].push_back({ vector(morph.morph_vecs[point]), vector(morph.morph_deltas[point]), morph.morph_times[point] });
+		result["morphs"].push_back(std::move(saved));
+	}
+	return result;
+}
+
+static void write_checkpoint_frame_trace(const char *directory, const char *checkpoints, bool custom, int level, bool dynamic = false)
 {
 	using nlohmann::json;
 	require((level == 1 || level == 7 || level == 27) && (!custom || level == 1), "select a supported checkpoint fixture level");
@@ -6059,6 +6087,53 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		}
 		require(d1_save_translate_apply_checkpoint_objects(data.data(), data.size(), &start), "restore actual native checkpoint objects, world and AI");
 		d1_save_translate_apply_checkpoint_player(&start, "aistate");
+		if (dynamic && std::strcmp(filename, "route-0.sav") == 0) {
+			const json previous_dynamic = checkpoint_dynamic_state();
+			const std::vector<object> previous_objects(Objects, Objects + Highest_object_index + 1);
+			const auto locate_record = [&](const bytes &needle) {
+				const auto found = std::search(data.begin(), data.end(), needle.begin(), needle.end());
+				require(found != data.end() && std::search(found + 1, data.end(), needle.begin(), needle.end()) == data.end(),
+				        "find one unambiguous serialized runtime record in the actual native save");
+				return static_cast<size_t>(found - data.begin());
+			};
+			const morph_data &morph = morph_objects[0];
+			require(morph.obj != nullptr, "malformed runtime fixtures start with a restored morph");
+			bytes morph_header(24);
+			set_int(morph_header, 0, 1);
+			set_int(morph_header, 4, static_cast<int>(morph.obj - Objects));
+			set_int(morph_header, 8, morph.Morph_sig);
+			set_int(morph_header, 12, morph.morph_vecs[0].x);
+			set_int(morph_header, 16, morph.morph_vecs[0].y);
+			set_int(morph_header, 20, morph.morph_vecs[0].z);
+			const size_t morph_offset = locate_record(morph_header);
+			const size_t active_offset = morph_offset + 12 + MAX_VECS * 28;
+			// The native disk record has four physics vectors, three fix values
+			// and two shorts; the stuck registry follows the one active morph
+			const size_t stuck_offset = active_offset + MAX_SUBMODELS * 12 + 4 + 2 + 64;
+			bytes effect_record(28);
+			bool found_effect = false;
+			for (int i = 0; i < Num_effects; ++i) {
+				const eclip &effect = Effects[i];
+				if (!(effect.flags & EF_ONE_SHOT)) continue;
+				const int values[] = { i, effect.time_left, effect.frame_count, effect.flags & (EF_ONE_SHOT | EF_STOPPED), effect.segnum, effect.sidenum, effect.dest_bm_num };
+				for (int field = 0; field < 7; ++field) set_int(effect_record, field * 4, values[field]);
+				found_effect = true;
+				break;
+			}
+			require(found_effect, "malformed effect fixtures start with a one-shot effect");
+			const size_t effect_offset = locate_record(effect_record);
+			const std::pair<size_t, int> corruptions[] = {
+				{ morph_offset + 8, -1 }, { active_offset, 3 }, { stuck_offset + 8, -1 }, { effect_offset, Num_effects }, { effect_offset + 8, 9999 }, { effect_offset + 20, MAX_SIDES_PER_SEGMENT }
+			};
+			for (const auto &corruption : corruptions) {
+				auto damaged = data;
+				set_int(damaged, corruption.first, corruption.second);
+				require(!d1_save_translate_apply_checkpoint_objects(damaged.data(), damaged.size(), &start),
+				        "reject invalid morph, stuck-object and effect records");
+				require(std::memcmp(Objects, previous_objects.data(), previous_objects.size() * sizeof(object)) == 0 && checkpoint_dynamic_state() == previous_dynamic,
+				        "invalid runtime records leave the active world unchanged");
+			}
+		}
 #else
 		require(state_restore_all_sub(filename), "restore actual checkpoint through the native D1 loader");
 #endif
@@ -6126,9 +6201,111 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		Triggers[0].flags = TRIGGER_SHIELD_DAMAGE | TRIGGER_ENERGY_DRAIN |
 		                    ((scenario & 1) ? TRIGGER_ON : 0) |
 		                    ((scenario & 2) ? TRIGGER_ONE_SHOT : 0);
+		// Save live Spreadfire, persistent Fusion and homing shots with history
+		// beyond last_hitobj, using the actual native serializer
+		std::vector<int> checkpoint_weapons = { 20, FUSION_ID, HOMING_ID };
+		if (dynamic) checkpoint_weapons.push_back(FLARE_ID);
+		for (const int weapon : checkpoint_weapons) {
+			const int slot = Laser_create_new(&ConsoleObject->orient.fvec, &ConsoleObject->pos,
+			                                  ConsoleObject->segnum, Players[0].objnum, weapon, 0);
+			require(slot >= 0, "create native checkpoint projectile");
+			auto &laser = Objects[slot].ctype.laser_info;
+			laser.creation_framecount = 713 + scenario + weapon;
+			laser.last_hitobj = static_cast<short>(Players[0].objnum);
+			laser.hitobj_list[Players[0].objnum] = 1;
+			laser.hitobj_list[robot_index] = 1;
+			if (dynamic && weapon == FLARE_ID) {
+				for (auto &stuck : Stuck_objects) stuck.wallnum = -1;
+				Num_stuck_objects = 0;
+				int door = -1;
+				for (int wall = 1; wall < Num_walls; ++wall)
+					if (Walls[wall].type == WALL_DOOR) {
+						door = wall;
+						break;
+					}
+				require(door >= 0, "runtime checkpoint mine has an ordinary door");
+				add_stuck_object(&Objects[slot], Walls[door].segnum, Walls[door].sidenum);
+				require(Num_stuck_objects == 1, "actual door retains the saved flare association");
+			}
+		}
+		if (dynamic) {
+			int morph_slot = -1;
+			for (int slot = 1; slot <= Highest_object_index; ++slot)
+				if (slot != robot_index && Objects[slot].type == OBJ_ROBOT && !Robot_info[Objects[slot].id].boss_flag) {
+					morph_slot = slot;
+					break;
+				}
+			require(morph_slot >= 0, "runtime checkpoint has a second robot for an active morph");
+			init_ai_object(morph_slot, AIB_STATION, Objects[morph_slot].segnum);
+			morph_start(&Objects[morph_slot]);
+			do_morph_frame(&Objects[morph_slot]);
+			require(find_morph_data(&Objects[morph_slot]) != nullptr, "save a partially advanced real morph");
+			controlcen_death_silence = F1_0 + scenario;
+			reset_special_effects_to_time(GameTime64);
+			int effect_index = -1;
+			for (int effect = 0; effect < Num_effects; ++effect)
+				if (Effects[effect].changing_wall_texture > 0 && Effects[effect].vc.num_frames > 1 && !(Effects[effect].flags & EF_CRITICAL)) {
+					effect_index = effect;
+					break;
+				}
+			require(effect_index >= 0, "runtime checkpoint has an animated wall effect");
+			auto &effect = Effects[effect_index];
+			effect.frame_count = effect.vc.num_frames - 1;
+			effect.time_left = 1;
+			effect.flags |= (scenario & 1) ? EF_STOPPED : EF_ONE_SHOT;
+			effect.segnum = (scenario & 1) ? -1 : 0;
+			effect.sidenum = 0;
+			effect.dest_bm_num = 1;
+			Segments[0].sides[0].tmap_num2 = effect.changing_wall_texture;
+			effect_apply_bitmap_state(effect_index);
+			const std::string expected = checkpoint_dynamic_state().dump(2) + "\n";
+			write_fixture((std::string(filename) + ".runtime.json").c_str(), bytes(expected.begin(), expected.end()));
+		}
 		require(state_save_all_sub(filename, description), "write native hide/follow checkpoint");
 #endif
 		restore(filename);
+		if (dynamic) {
+#ifdef DXX_BUILD_DESCENT_II
+			const std::string expected_path = "checkpoints/" + std::string(filename) + ".runtime.json";
+#else
+			const std::string expected_path = std::string(filename) + ".runtime.json";
+#endif
+			PHYSFS_file *expected_file = PHYSFS_openRead(expected_path.c_str());
+			require(expected_file != nullptr, "open pre-save dynamic state evidence");
+			std::string expected(static_cast<size_t>(PHYSFS_fileLength(expected_file)), '\0');
+			require(!expected.empty() && PHYSFS_readBytes(expected_file, &expected[0], expected.size()) == static_cast<PHYSFS_sint64>(expected.size()) && PHYSFS_close(expected_file), "read complete pre-save dynamic state");
+			const json actual = checkpoint_dynamic_state();
+			const std::string evidence = actual.dump(2) + "\n";
+			write_fixture((std::string(filename) + ".restored.json").c_str(), bytes(evidence.begin(), evidence.end()));
+			require(actual == json::parse(expected), "checkpoint preserves pre-save morph, stuck flare, effect and reactor state");
+			char roundtrip[] = "dynamic-roundtrip.sav", roundtrip_description[] = "Dynamic runtime";
+			require(state_save_all_sub(roundtrip, roundtrip_description), "save imported runtime state through the ordinary game serializer");
+#ifdef DXX_BUILD_DESCENT_II
+			require(state_restore_all_sub(roundtrip, 0), "reload runtime state through the ordinary D2 save path");
+#else
+			require(state_restore_all_sub(roundtrip), "reload runtime state through the ordinary D1 save path");
+#endif
+			require(checkpoint_dynamic_state() == actual, "ordinary save/reload retains the imported dynamic records");
+			ConsoleObject = Viewer = &Objects[Players[Player_num].objnum];
+			FrameTime = F1_0 / 64;
+		}
+		json restored_weapons = json::array();
+		for (int slot = 0; slot <= Highest_object_index; ++slot) {
+			const object &shot = Objects[slot];
+			if (shot.type != OBJ_WEAPON) continue;
+			const auto &laser = shot.ctype.laser_info;
+			require(laser.creation_framecount == 713 + scenario + shot.id &&
+			            laser.hitobj_list[Players[0].objnum] == 1 && laser.hitobj_list[robot_index] == 1,
+			        "native checkpoint preserves projectile creation frame and every prior hit");
+			restored_weapons.push_back({ { "slot", slot }, { "id", shot.id }, { "creation_frame", laser.creation_framecount }, { "hits", std::vector<ubyte>(laser.hitobj_list, laser.hitobj_list + MAX_OBJECTS) }, { "position", vector(shot.pos) }, { "velocity", vector(shot.mtype.phys_info.velocity) }, { "size", shot.size }, { "life", shot.lifeleft } });
+			if (shot.id == FUSION_ID) {
+				require(shot.mtype.phys_info.flags & PF_PERSISTENT, "native Fusion is a persistent projectile");
+				const fix shields = Objects[robot_index].shields;
+				collide_robot_and_weapon(&Objects[robot_index], &Objects[slot], &Objects[robot_index].pos);
+				require(Objects[robot_index].shields == shields, "restored persistent projectile cannot damage a previously hit robot again");
+			}
+		}
+		require(restored_weapons.size() == (dynamic ? 4 : 3), "restore every native checkpoint projectile kind");
 		const json restored_assets = asset_snapshot();
 		require(restored_assets == fresh_assets, "checkpoint restore retains the complete level asset generation");
 		const json restored_textures = texture_references();
@@ -6166,6 +6343,14 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				require(asset_snapshot() == fresh_assets, "mid-route checkpoint reload uses the same custom assets");
 				require(snapshot_native_triggers() == restored_triggers, "mid-route checkpoint retains native action flags and links");
 			}
+			if (dynamic) {
+				for (int slot = 0; slot <= Highest_object_index; ++slot)
+					if (Objects[slot].control_type == CT_MORPH) {
+						do_morph_frame(&Objects[slot]);
+						require(!(Objects[slot].flags & OF_SHOULD_BE_DEAD), "restored morph progresses without deleting its robot");
+					}
+				do_special_effects();
+			}
 			do_ai_frame(&robot);
 			const ai_static &aip = robot.ctype.ai_info;
 			const ai_local &local = Ai_local_info[robot_index];
@@ -6185,10 +6370,42 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			}
 			frames.push_back({ { "mode", local.mode }, { "behavior", aip.behavior }, { "submode", aip.flags[4] }, { "skip", aip.SKIP_AI_COUNT }, { "state", aip.CURRENT_STATE }, { "goal", aip.GOAL_STATE }, { "position", vector(robot.pos) }, { "velocity", vector(robot.mtype.phys_info.velocity) }, { "forward", vector(robot.orient.fvec) }, { "right", vector(robot.orient.rvec) }, { "up", vector(robot.orient.uvec) }, { "next_fire", local.next_fire }, { "last_seen", local.time_player_seen }, { "path_index", aip.cur_path_index }, { "path_direction", aip.PATH_DIR }, { "path", path }, { "sim_draws", d_rand_get_call_count() - sim }, { "fx_draws", d_rand_get_stream_call_count(D_RNG_FX) - fx } });
 			frames.back()["object_physics"] = { robot.size, robot.mtype.phys_info.mass, robot.mtype.phys_info.drag, robot.shields, robot.rtype.pobj_info.model_num };
+			if (dynamic) frames.back()["dynamic"] = checkpoint_dynamic_state();
 			GameTime64 += FrameTime;
 			++d_tick_count;
 		}
-		cases.push_back({ { "scenario", scenario }, { "textures", restored_textures }, { "triggers", restored_triggers }, { "assets", restored_assets }, { "frames", frames } });
+		cases.push_back({ { "scenario", scenario }, { "textures", restored_textures }, { "triggers", restored_triggers }, { "assets", restored_assets }, { "weapons", restored_weapons }, { "frames", frames } });
+		if (dynamic) {
+			int morph_slot = -1;
+			for (int slot = 0; slot <= Highest_object_index; ++slot)
+				if (Objects[slot].control_type == CT_MORPH) morph_slot = slot;
+			require(morph_slot >= 0, "resumed checkpoint still contains the active morph");
+			object &morphing = Objects[morph_slot];
+			int completion_frame = 0;
+			while (morphing.control_type == CT_MORPH && completion_frame < 1024) {
+				do_morph_frame(&morphing);
+				++completion_frame;
+				GameTime64 += FrameTime;
+			}
+			require(morphing.control_type == CT_AI && morphing.render_type == RT_POLYOBJ &&
+			            !(morphing.flags & OF_SHOULD_BE_DEAD) && find_morph_data(&morphing) == nullptr,
+			        "restored morph completes and returns the living robot to normal AI");
+			int stuck_wall = -1, stuck_slot = -1;
+			for (const auto &stuck : Stuck_objects)
+				if (stuck.wallnum >= 0) {
+					stuck_wall = stuck.wallnum;
+					stuck_slot = stuck.objnum;
+				}
+			require(stuck_wall >= 0 && Num_stuck_objects == 1, "saved flare remains associated with its door");
+			wall_open_door(&Segments[Walls[stuck_wall].segnum], Walls[stuck_wall].sidenum);
+			wall_frame_process();
+			require(Num_stuck_objects == 0 && Objects[stuck_slot].lifeleft == F1_0 / 4,
+			        "opening the restored door retires its saved stuck flare");
+			const physics_info &physics = morphing.mtype.phys_info;
+			cases.back()["completed_runtime"] = {
+				{ "morph_frame", completion_frame }, { "slot", morph_slot }, { "robot", { morphing.control_type, morphing.movement_type, morphing.render_type, morphing.ctype.ai_info.behavior } }, { "physics", { vector(physics.velocity), vector(physics.thrust), physics.mass, physics.drag, physics.brakes, vector(physics.rotvel), vector(physics.rotthrust), physics.turnroll, physics.flags } }, { "flare", { stuck_slot, Objects[stuck_slot].lifeleft, Num_stuck_objects } }, { "dynamic", checkpoint_dynamic_state() }
+			};
+		}
 	}
 	json boss_checkpoints = json::array();
 	if (level != 1) {
@@ -7446,6 +7663,168 @@ static void write_gameplay_rules_trace(const char *directory, const char *d2_dir
 	std::puts("Gameplay rules trace passed");
 }
 
+// Exercise real firing and blob rendering with original and level-local artwork
+static void write_weapon_art_trace(const char *directory, const char *d2_directory)
+{
+	using nlohmann::json;
+	const std::string hog = std::string(directory) + "/DESCENT.HOG";
+	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "mount original weapon resources");
+	if (d2_directory) {
+		const std::string d2_hog = std::string(d2_directory) + "/descent2.hog";
+		require(PHYSFS_mount(d2_directory, nullptr, 1) && PHYSFS_mount(d2_hog.c_str(), nullptr, 1), "mount optional D2 weapon fixture resources");
+	}
+	Game_mode = 0;
+	GameArg.SndNoSound = GameArg.SndNoMusic = 1;
+	GameArg.SysWindow = GameCfg.WindowMode = 1;
+	GameCfg.AspectX = 4;
+	GameCfg.AspectY = 3;
+	GameCfg.TexFilt = 0;
+	Game_screen_mode = SM(640, 480);
+	digi_select_system(SDLAUDIO_SYSTEM);
+#ifdef DXX_BUILD_DESCENT_II
+	require(d1_in_d2_init_base_resources(1), "select original weapon resources before initialization");
+#endif
+	load_text();
+	require(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) == 0 && gr_init(Game_screen_mode) == 0, "initialize weapon art renderer");
+	gr_use_palette_table("palette.256");
+	gamefont_init();
+	gamedata_init();
+#ifdef DXX_BUILD_DESCENT_II
+	d1_in_d2_init_startup_bitmaps();
+	char mission[] = "descent";
+#else
+	char mission[] = "";
+#endif
+	texmerge_init(10);
+	init_game();
+	require(load_mission_by_name(mission), "select First Strike for weapon rendering");
+	const std::string level_name = Level_names[0];
+	const std::string custom_name = level_name.substr(0, level_name.find_last_of('.')) + ".dtx";
+	PHYSFS_delete(custom_name.c_str());
+	Player_num = 0;
+	N_players = 1;
+	std::strcpy(Players[0].callsign, "weaponart");
+	Difficulty_level = 2;
+	init_player_stats_game(0);
+	json trace = json::array();
+	bytes original_pixels;
+	for (const char *phase : { "base", "reload", "custom", "retired", "after-d2" }) {
+#ifdef DXX_BUILD_DESCENT_II
+		if (d2_directory && !std::strcmp(phase, "after-d2")) {
+			char d2_mission[] = "d2";
+			require(load_mission_by_name(d2_mission), "switch to ordinary D2 before returning to original weapon art");
+			input_demo_set_skip_level_intro(1);
+			StartNewGame(1);
+			test_loaded_d1_weapon_firing(false);
+			require(load_mission_by_name(mission), "return to First Strike after ordinary D2 weapon firing");
+		}
+#endif
+		if (!std::strcmp(phase, "custom")) {
+			// Named old-PIG replacement with non-square transparent artwork
+			bytes data;
+			append_int(data, 1);
+			append_int(data, 0);
+			bytes header(17);
+			std::memcpy(header.data(), "sprdblob", 8);
+			header[9] = 16;
+			header[10] = 8;
+			header[11] = BM_FLAG_TRANSPARENT;
+			append(data, header);
+			for (int y = 0; y < 8; ++y)
+				for (int x = 0; x < 16; ++x)
+					data.push_back(x == 0 || y == 0 || x == 15 || y == 7 ? TRANSPARENCY_COLOR : static_cast<ubyte>(20 + x + y));
+			write_fixture(custom_name.c_str(), data);
+		} else if (!std::strcmp(phase, "retired"))
+			require(PHYSFS_delete(custom_name.c_str()), "remove custom projectile art before base reload");
+#ifdef DXX_BUILD_DESCENT_II
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+#else
+		StartNewLevelSub(1, 0, 0);
+#endif
+		// The resource lifecycle above is real; the empty corridor isolates firing
+		// and rendering from moving enemies, level lighting and occluding walls
+		init_test_corridor(3);
+		Viewer = ConsoleObject = &Objects[0];
+		Players[0].objnum = 0;
+		Viewer->type = OBJ_PLAYER;
+		Viewer->id = 0;
+		Viewer->orient = vmd_identity_matrix;
+		Viewer->pos = vmd_zero_vector;
+		Players[0].primary_weapon = SPREADFIRE_INDEX;
+		Players[0].primary_weapon_flags = HAS_SPREADFIRE_FLAG;
+		Players[0].energy = 100 * F1_0;
+		Player_is_dead = 0;
+		FrameTime = F1_0 / 64;
+		GameTime64 = 10 * F1_0;
+		laser_runtime_state runtime = {};
+		laser_set_runtime_state(&runtime);
+		const int accounting = Primary_weapon_to_weapon_info[SPREADFIRE_INDEX];
+		require(accounting == 12, "original Spreadfire accounting identity");
+		for (int volley = 0; volley < 2; ++volley) {
+			Next_laser_fire_time = GameTime64;
+			const fix energy_before = Players[0].energy;
+			const int first_slot = Highest_object_index + 1;
+			do_laser_firing_player();
+			json shots = json::array();
+			std::vector<object> emitted;
+			for (int i = first_slot; i <= Highest_object_index; ++i) {
+				const object &shot = Objects[i];
+				if (shot.type != OBJ_WEAPON || shot.ctype.laser_info.parent_num != 0) continue;
+				require(shot.id == 20 && Weapon_info[shot.id].render_type == WEAPON_RENDER_BLOB, "actual D1 Spreadfire emits original blob projectile 20");
+				emitted.push_back(shot);
+				shots.push_back({ { "id", shot.id }, { "size", shot.size }, { "damage", shot.shields }, { "life", shot.lifeleft }, { "position", { shot.pos.x, shot.pos.y, shot.pos.z } }, { "velocity", { shot.mtype.phys_info.velocity.x, shot.mtype.phys_info.velocity.y, shot.mtype.phys_info.velocity.z } } });
+			}
+			require(emitted.size() == 3, "each real Spreadfire volley emits three pellets");
+			const bitmap_index bitmap = Weapon_info[20].bitmap;
+			PIGGY_PAGE_IN(bitmap);
+			grs_bitmap *source = &GameBitmaps[bitmap.index];
+			require(std::strcmp(piggy_game_bitmap_name(source), "sprdblob") == 0, "projectile resolves to original sprdblob");
+			grs_bitmap *decoded = (source->bm_flags & BM_FLAG_RLE) ? rle_expand_texture(source) : source;
+			bytes pixels;
+			for (int y = 0; y < decoded->bm_h; ++y)
+				pixels.insert(pixels.end(), decoded->bm_data + y * decoded->bm_rowsize, decoded->bm_data + y * decoded->bm_rowsize + decoded->bm_w);
+			if (!std::strcmp(phase, "base")) original_pixels = pixels;
+			else require((pixels == original_pixels) == (std::strcmp(phase, "custom") != 0), "custom projectile pixels replace and retire correctly");
+			if (!std::strcmp(phase, "custom")) require(source->bm_w == 16 && source->bm_h == 8, "custom projectile dimensions survive normal loading");
+			const std::string stem = std::string(phase) + "-" + std::to_string(volley);
+			write_fixture((stem + ".indexed").c_str(), pixels);
+			write_fixture((stem + ".palette").c_str(), bytes(gr_palette, gr_palette + 768));
+			gr_set_current_canvas(nullptr);
+			glClearColor(0, 0, 0, 1);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			g3_start_frame();
+			vms_vector eye = { 0, 0, -8 * F1_0 };
+			g3_set_view_matrix(&eye, &Viewer->orient, F1_0);
+			for (object shot : emitted) {
+				// Sample the emitted trajectory at a fixed age without world updates
+				vm_vec_scale_add2(&shot.pos, &shot.mtype.phys_info.velocity, F1_0 / 8);
+				Laser_render(&shot);
+			}
+			g3_end_frame();
+			bytes rgb(SWIDTH * SHEIGHT * 3);
+			glPixelStorei(GL_PACK_ALIGNMENT, 1);
+			glReadBuffer(GL_BACK);
+			glReadPixels(0, 0, SWIDTH, SHEIGHT, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
+			require(glGetError() == GL_NO_ERROR && std::any_of(rgb.begin(), rgb.end(), [](ubyte value) { return value != 0; }), "actual projectile renderer produces visible pixels without GL errors");
+			write_fixture((stem + ".rgb").c_str(), rgb);
+#ifdef HAVE_LIBPNG
+			png_image image = {};
+			image.version = PNG_IMAGE_VERSION;
+			image.width = SWIDTH;
+			image.height = SHEIGHT;
+			image.format = PNG_FORMAT_RGB;
+			require(png_image_write_to_file(&image, (stem + ".png").c_str(), 0, rgb.data(), -SWIDTH * 3, nullptr) != 0, "write rendered projectile review artifact");
+#endif
+			trace.push_back({ { "frame", stem }, { "accounting", accounting }, { "energy_used", energy_before - Players[0].energy }, { "cooldown", Next_laser_fire_time - GameTime64 }, { "shots", shots }, { "bitmap", bitmap.index }, { "name", piggy_game_bitmap_name(source) }, { "width", source->bm_w }, { "height", source->bm_h }, { "transparent", !!(source->bm_flags & BM_FLAG_TRANSPARENT) } });
+			GameTime64 = Next_laser_fire_time;
+		}
+	}
+	const std::string result = trace.dump(2) + "\n";
+	write_fixture("weapon-art.json", bytes(result.begin(), result.end()));
+	std::puts("Weapon art trace passed");
+}
+
 // Compare CPU collection against the actual draw, then export native/imported lists
 static void write_render_candidates_trace(const char *directory)
 {
@@ -7577,6 +7956,10 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--weapon-art-trace") == 0) {
+		write_weapon_art_trace(argv[2], argc == 4 ? argv[3] : nullptr);
+		return 0;
+	}
 	if (argc == 3 && std::strcmp(argv[1], "--render-candidates-trace") == 0) {
 		write_render_candidates_trace(argv[2]);
 		return 0;
@@ -7589,8 +7972,8 @@ int main(int argc, char **argv)
 		write_briefing_trace(argv[2], argc == 4 ? argv[3] : nullptr);
 		return 0;
 	}
-	if ((argc == 4 || argc == 5) && (std::strcmp(argv[1], "--checkpoint-frame-trace") == 0 || std::strcmp(argv[1], "--custom-checkpoint-frame-trace") == 0)) {
-		write_checkpoint_frame_trace(argv[2], argv[3], std::strcmp(argv[1], "--custom-checkpoint-frame-trace") == 0, argc == 5 ? std::atoi(argv[4]) : 1);
+	if ((argc == 4 || argc == 5) && (std::strcmp(argv[1], "--checkpoint-frame-trace") == 0 || std::strcmp(argv[1], "--custom-checkpoint-frame-trace") == 0 || std::strcmp(argv[1], "--runtime-checkpoint-frame-trace") == 0)) {
+		write_checkpoint_frame_trace(argv[2], argv[3], std::strcmp(argv[1], "--custom-checkpoint-frame-trace") == 0, argc == 5 ? std::atoi(argv[4]) : 1, std::strcmp(argv[1], "--runtime-checkpoint-frame-trace") == 0);
 		return 0;
 	}
 	if (argc == 3 && std::strcmp(argv[1], "--campaign-trace") == 0) {

@@ -256,7 +256,9 @@ static int place_arrivals(void)
 		COOPLOG("travel arrival: local=%d player=%d level=%d anchor=%d segment=%d pos=%d,%d,%d",
 		        Player_num, i, Current_level_num, anchor.segnum, obj->segnum, obj->pos.x, obj->pos.y, obj->pos.z);
 	}
-	if (!escort_apply_secret_travel(companion[0], (int) companion[1] - 1, (fix) get32(companion + 4))) return 0;
+	/* With nobody following on a first visit, keep the mine's authored companion */
+	if ((companion[0] || prepared_campaign.destination.size) &&
+	    !escort_apply_secret_travel(companion[0], (int) companion[1] - 1, (fix) get32(companion + 4))) return 0;
 	/* Fresh companions are level objects, whose object index is their wire ID */
 	unsigned char companion_arrival[16] = { 0 };
 	put32(companion_arrival, (uint32_t) Buddy_objnum);

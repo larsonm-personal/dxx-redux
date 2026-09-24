@@ -44,7 +44,8 @@ param(
     [int]$HeadlessConsoleOutput = 1,
     [Alias('RebuildBeforeRun')]
     [switch]$BuildBeforeRun,
-    [switch]$RequireFreshBuild
+    [switch]$RequireFreshBuild,
+    [string]$ExecutablePath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -1538,7 +1539,13 @@ if ($canShowReplayRobotLabels) {
 }
 
 $headlessConsoleExe = if ($useHeadlessConsole) { Get-HeadlessConsoleExe -GameName $resolvedGame } else { $null }
-if ($useHeadlessConsole) {
+if ($ExecutablePath) {
+    if ($useHeadlessConsole -or $BuildBeforeRun -or $RequireFreshBuild) {
+        throw 'An explicit executable requires a full-game runner without rebuild flags'
+    }
+    $config.Exe = (Resolve-Path -LiteralPath $ExecutablePath).Path
+    if (-not (Test-Path -LiteralPath $config.Exe -PathType Leaf)) { throw "Executable is not a file: $ExecutablePath" }
+} elseif ($useHeadlessConsole) {
     Ensure-InputDemoExecutable -RepoRoot $repoRoot -GameName $config.Name -ExecutablePath $headlessConsoleExe -Description 'Headless executable' -BuildBeforeRun:$BuildBeforeRun -RequireFreshBuild:$RequireFreshBuild
 } else {
     Ensure-InputDemoExecutable -RepoRoot $repoRoot -GameName $config.Name -ExecutablePath $config.Exe -BuildBeforeRun:$BuildBeforeRun -RequireFreshBuild:$RequireFreshBuild
@@ -1551,297 +1558,297 @@ $script:replayOutputPaths = @($outRoot, $resolvedStateLogPath, $resolvedRngLogPa
 Assert-OutputDiskSpace -Paths $script:replayOutputPaths -MinimumFreeGB $MinimumFreeSpaceGB
 $sandbox = New-LaunchSandbox -Config $config -SandboxName $sandboxName -ReuseSandbox:$ReuseSandbox -SkipExecutableCopy:$useHeadlessConsole
 try {
-$actualResultDirectory = Join-Path $sandbox.Directory 'results'
-if (-not (Test-Path -LiteralPath $actualResultDirectory)) {
-    New-Item -ItemType Directory -Path $actualResultDirectory -Force | Out-Null
-}
-$actualResultPath = Join-Path $actualResultDirectory 'result.actual.json'
-$expectedResult = Get-DemoResultRecord -Path $resolvedDemoPath
-$checkpointRecord = Get-DemoCheckpointRecord -Path $resolvedDemoPath
-$normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -Header $header -Checkpoint $checkpointRecord
-$launchArgs = if ($useHeadlessConsole) {
-    Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath -ReplayDebugLog:$ReplayDebugLog -HeadlessConsoleOutput $HeadlessConsoleOutput
-} else {
-    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ShowReplayRobotLabels:$showReplayRobotLabels -ReplayDebugLog:$ReplayDebugLog -D1InD2:$D1InD2 -D1InD2StartFromLevel:$D1InD2StartFromLevel -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
-}
-$launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
-$runnerName = $runnerSelection.Name
-$quotedArgs = Get-QuotedArgumentString -Arguments $launchArgs
+    $actualResultDirectory = Join-Path $sandbox.Directory 'results'
+    if (-not (Test-Path -LiteralPath $actualResultDirectory)) {
+        New-Item -ItemType Directory -Path $actualResultDirectory -Force | Out-Null
+    }
+    $actualResultPath = Join-Path $actualResultDirectory 'result.actual.json'
+    $expectedResult = Get-DemoResultRecord -Path $resolvedDemoPath
+    $checkpointRecord = Get-DemoCheckpointRecord -Path $resolvedDemoPath
+    $normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -Header $header -Checkpoint $checkpointRecord
+    $launchArgs = if ($useHeadlessConsole) {
+        Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath -ReplayDebugLog:$ReplayDebugLog -HeadlessConsoleOutput $HeadlessConsoleOutput
+    } else {
+        Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ShowReplayRobotLabels:$showReplayRobotLabels -ReplayDebugLog:$ReplayDebugLog -D1InD2:$D1InD2 -D1InD2StartFromLevel:$D1InD2StartFromLevel -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
+    }
+    $launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
+    $runnerName = $runnerSelection.Name
+    $quotedArgs = Get-QuotedArgumentString -Arguments $launchArgs
 
-if (-not (Test-Path -LiteralPath $launchExecutable)) {
-    throw "Built executable not found: $launchExecutable"
-}
+    if (-not (Test-Path -LiteralPath $launchExecutable)) {
+        throw "Built executable not found: $launchExecutable"
+    }
 
-if (Test-Path -LiteralPath $actualResultPath) {
-    Remove-Item -LiteralPath $actualResultPath -Force
-}
-if ($resolvedStateLogPath -and (Test-Path -LiteralPath $resolvedStateLogPath)) {
-    Remove-Item -LiteralPath $resolvedStateLogPath -Force
-}
-if ($resolvedRngLogPath -and (Test-Path -LiteralPath $resolvedRngLogPath)) {
-    Remove-Item -LiteralPath $resolvedRngLogPath -Force
-}
+    if (Test-Path -LiteralPath $actualResultPath) {
+        Remove-Item -LiteralPath $actualResultPath -Force
+    }
+    if ($resolvedStateLogPath -and (Test-Path -LiteralPath $resolvedStateLogPath)) {
+        Remove-Item -LiteralPath $resolvedStateLogPath -Force
+    }
+    if ($resolvedRngLogPath -and (Test-Path -LiteralPath $resolvedRngLogPath)) {
+        Remove-Item -LiteralPath $resolvedRngLogPath -Force
+    }
 
-if (-not $headlessQuietConsole) {
-    Write-Host ''
-    Write-Host "Demo: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
-    Write-Host "Game: $resolvedGame"
-    if ($D1InD2) {
-        Write-Host 'Replay compatibility: D1 recording under D2 executable'
-        if ($D1InD2StartFromLevel) {
-            Write-Host 'Replay compatibility mode: start recording from level start'
+    if (-not $headlessQuietConsole) {
+        Write-Host ''
+        Write-Host "Demo: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
+        Write-Host "Game: $resolvedGame"
+        if ($D1InD2) {
+            Write-Host 'Replay compatibility: D1 recording under D2 executable'
+            if ($D1InD2StartFromLevel) {
+                Write-Host 'Replay compatibility mode: start recording from level start'
+            }
+        }
+        Write-Host "Runner: $runnerName"
+        Write-Host "Runner selection: $($runnerSelection.Selection)"
+        Write-Host "Replay path: $($runnerSelection.Description)"
+        Write-Host "Mode: $($launchMode.Name)"
+        Write-Host "Render profile: $($renderProfileSelection.Name) ($($renderProfileSelection.Description))"
+        if ($canShowReplayRobotLabels) {
+            Write-Host "Replay labels: $(if ($showReplayRobotLabels) { 'on' } else { 'off' })"
+        } elseif ($replayRobotLabelsIgnored) {
+            Write-Host 'Replay labels: ignored by this runner'
+        }
+        Write-Host "Replay debug log: $(if ($ReplayDebugLog) { 'on' } else { 'off' })"
+        if ($useHeadlessConsole -and $renderProfileSelection.ExtraArgs.Count -gt 0) {
+            Write-Host 'Render profile args: ignored by headless runner'
+        }
+        if ($effectiveNoRender -and -not $useHeadlessConsole) {
+            Write-Host 'Render: no-present'
+        }
+        Write-Host "Data: $(Get-RelativeRepoPath -Path $resolvedDataDir)"
+        Write-Host "Sandbox: $(Get-RelativeRepoPath -Path $sandbox.Directory)"
+        if ($resolvedStateLogPath) {
+            Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
+        }
+        if ($resolvedRngLogPath) {
+            Write-Host "Rng trace: $(Get-RelativeRepoPath -Path $resolvedRngLogPath)"
+        }
+        if ($ReuseSandbox) {
+            Write-Host 'Sandbox mode: reuse'
+        }
+        Write-Host "Command: $launchExecutable $quotedArgs"
+    }
+
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = $launchExecutable
+    $startInfo.WorkingDirectory = $sandbox.Directory
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $false
+    $startInfo.RedirectStandardError = $false
+    if ($Sanitizer -eq 'address') {
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+        $startInfo.CreateNoWindow = $true
+    }
+    $startInfo.Arguments = $quotedArgs
+
+    $process = $null
+    $replayStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $missingActualResult = $false
+    $sanitizerOutput = $null
+    $sanitizerError = $null
+    $sanitizerFailure = $false
+    $forcedReplayStop = $false
+    $completedExitCode = $null
+    try {
+        $process = [System.Diagnostics.Process]::Start($startInfo)
+        if (-not $process) {
+            throw 'Failed to start replay process'
+        }
+        if ($Sanitizer -eq 'address') {
+            $sanitizerOutput = $process.StandardOutput.ReadToEndAsync()
+            $sanitizerError = $process.StandardError.ReadToEndAsync()
+        }
+
+        $waitResult = Wait-ForReplayResult -Process $process -ActualResultPath $actualResultPath -TimeoutSeconds $TimeoutSeconds
+        if (-not $waitResult.ResultReady) {
+            $replayStopwatch.Stop()
+            if (-not $waitResult.Exited) {
+                $forcedReplayStop = $true
+                Stop-ReplayProcess -Process $process
+            }
+            if ($waitResult.Exited) {
+                if ($AllowMissingActualResult -and $resolvedStateLogPath -and (Test-Path -LiteralPath $resolvedStateLogPath)) {
+                    $missingActualResult = $true
+                } else {
+                    throw "Replay exited before writing an actual result`nExit code: $($waitResult.ExitCode)`nRepro: $($sandbox.Exe) $quotedArgs"
+                }
+            }
+            if (-not $missingActualResult) {
+                throw "Timed out waiting for replay result after $TimeoutSeconds seconds`nRepro: $($sandbox.Exe) $quotedArgs"
+            }
+        }
+
+        if (-not $process.HasExited -and -not $process.WaitForExit(2000)) {
+            $forcedReplayStop = $true
+            Stop-ReplayProcess -Process $process
+        }
+        if ($process.HasExited -and -not $forcedReplayStop) { $completedExitCode = $process.ExitCode }
+    } finally {
+        Stop-ReplayProcess -Process $process
+        $replayStopwatch.Stop()
+        if ($Sanitizer -eq 'address' -and $sanitizerOutput -and $sanitizerError) {
+            $diagnostics = $sanitizerOutput.GetAwaiter().GetResult() + $sanitizerError.GetAwaiter().GetResult()
+            foreach ($nativeLog in @('stdout.txt', 'stderr.txt')) {
+                $nativePath = Join-Path $sandbox.Directory $nativeLog
+                if (Test-Path -LiteralPath $nativePath) { $diagnostics += Get-Content -LiteralPath $nativePath -Raw }
+            }
+            $diagnosticPath = Join-Path $sandbox.Directory 'sanitizer.log'
+            [IO.File]::WriteAllText($diagnosticPath, $diagnostics)
+            if ($ResultCopyPath) {
+                $archivePath = (Resolve-AbsolutePath -Path $ResultCopyPath) + '.sanitizer.log'
+                New-Item -ItemType Directory -Path (Split-Path $archivePath) -Force | Out-Null
+                Copy-Item -LiteralPath $diagnosticPath -Destination $archivePath -Force
+            }
+            $sanitizerFailure = $diagnostics -match 'AddressSanitizer|runtime error:'
+            if ($sanitizerFailure) { Write-Host $diagnostics }
+            Write-Host "Sanitizer diagnostics: $diagnosticPath"
         }
     }
-    Write-Host "Runner: $runnerName"
-    Write-Host "Runner selection: $($runnerSelection.Selection)"
-    Write-Host "Replay path: $($runnerSelection.Description)"
-    Write-Host "Mode: $($launchMode.Name)"
-    Write-Host "Render profile: $($renderProfileSelection.Name) ($($renderProfileSelection.Description))"
-    if ($canShowReplayRobotLabels) {
-        Write-Host "Replay labels: $(if ($showReplayRobotLabels) { 'on' } else { 'off' })"
-    } elseif ($replayRobotLabelsIgnored) {
-        Write-Host 'Replay labels: ignored by this runner'
+    if ($sanitizerFailure) { throw 'Replay reported a sanitizer error' }
+    if ($Sanitizer -eq 'address' -and $null -ne $completedExitCode -and $completedExitCode -ne 0) {
+        throw "Instrumented replay exited with code $completedExitCode after writing its result"
     }
-    Write-Host "Replay debug log: $(if ($ReplayDebugLog) { 'on' } else { 'off' })"
-    if ($useHeadlessConsole -and $renderProfileSelection.ExtraArgs.Count -gt 0) {
-        Write-Host 'Render profile args: ignored by headless runner'
+    $actualResult = $null
+    if (-not $missingActualResult) {
+        $actualResult = Read-JsonFileAsHashtable -Path $actualResultPath
     }
-    if ($effectiveNoRender -and -not $useHeadlessConsole) {
-        Write-Host 'Render: no-present'
+    $resolvedResultCopyPath = Resolve-AbsolutePath -Path $ResultCopyPath
+    if ($actualResult -and $resolvedResultCopyPath) {
+        $resultCopyDirectory = Split-Path -Path $resolvedResultCopyPath -Parent
+        if (-not (Test-Path -LiteralPath $resultCopyDirectory -PathType Container)) {
+            New-Item -ItemType Directory -Path $resultCopyDirectory -Force | Out-Null
+        }
+        Copy-Item -LiteralPath $actualResultPath -Destination $resolvedResultCopyPath -Force
     }
-    Write-Host "Data: $(Get-RelativeRepoPath -Path $resolvedDataDir)"
-    Write-Host "Sandbox: $(Get-RelativeRepoPath -Path $sandbox.Directory)"
+    $expectedForCompare = $normalizedExpectedResult
+    $stateTraceCompareError = $null
+    $stateTraceExpectedPath = $null
+    $rngTraceCompareError = $null
+    $rngTraceExpectedPath = $null
+    $resolvedReferenceResultPath = Resolve-AbsolutePath -Path $ReferenceResultPath
+    if ($resolvedReferenceResultPath) {
+        if (-not (Test-Path -LiteralPath $resolvedReferenceResultPath -PathType Leaf)) {
+            throw "Reference replay result not found: $resolvedReferenceResultPath"
+        }
+        $expectedForCompare = Read-JsonFileAsHashtable -Path $resolvedReferenceResultPath
+    }
+    if ($D1InD2) {
+        $expectedForCompare = Normalize-D1InD2ExpectedResult -Expected $expectedForCompare -Header $header
+    }
+    if (-not $StrictComparison -and -not $resolvedReferenceResultPath -and $actualResult -and
+        (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory -Expected $expectedForCompare -Actual $actualResult)) {
+        $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $expectedForCompare -Actual $actualResult
+    }
+    if ($resolvedStateLogPath) {
+        if (-not (Test-Path -LiteralPath $resolvedStateLogPath)) {
+            $stateTraceCompareError = "Replay did not write state trace: $resolvedStateLogPath"
+        } elseif ($shouldCompareStateTrace) {
+            $stateTraceResult = Invoke-StateTraceComparison -DemoPath $resolvedDemoPath -ActualPath $resolvedStateLogPath -Silent:$headlessQuietConsole
+            $stateTraceExpectedPath = $stateTraceResult.ExpectedPath
+            if (-not $headlessQuietConsole) {
+                Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
+            }
+            if ($stateTraceResult.ExitCode -ne 0) {
+                if ($stateTraceResult.MismatchLines -and $stateTraceResult.MismatchLines.Count -gt 0) {
+                    $stateTraceCompareError = "State trace compare failed`n" + ($stateTraceResult.MismatchLines -join "`n")
+                } else {
+                    $stateTraceCompareError = 'State trace compare failed'
+                }
+            } elseif (-not $headlessQuietConsole) {
+                Write-Host 'State trace compare: PASS'
+            }
+        }
+    }
+    if ($resolvedRngLogPath) {
+        if (-not (Test-Path -LiteralPath $resolvedRngLogPath)) {
+            $rngTraceCompareError = "Replay did not write rng trace: $resolvedRngLogPath"
+        } elseif ($shouldCompareRngTrace) {
+            $rngTraceResult = Invoke-RngTraceComparison -DemoPath $resolvedDemoPath -ActualPath $resolvedRngLogPath -Silent:$headlessQuietConsole
+            $rngTraceExpectedPath = $rngTraceResult.ExpectedPath
+            if (-not $headlessQuietConsole) {
+                Write-Host "Expected rng trace: $(Get-RelativeRepoPath -Path $rngTraceExpectedPath)"
+            }
+            if ($rngTraceResult.ExitCode -ne 0) {
+                $rngTraceCompareError = 'RNG trace compare failed'
+            } elseif (-not $headlessQuietConsole) {
+                Write-Host 'RNG trace compare: PASS'
+            }
+        }
+    }
+    $compareError = $null
+    if ($SkipExpectedChecks) {
+        $compareError = $null
+    } elseif ($actualResult) {
+        $compareDiffs = Compare-JsonDiff -Expected $expectedForCompare -Actual $actualResult
+        if ($compareDiffs.Count -gt 0) {
+            $compareError = "Result compare failed`n" + ($compareDiffs -join "`n")
+        }
+    } elseif (-not $AllowMissingActualResult) {
+        $compareError = "Replay did not write an actual result: $actualResultPath"
+    }
+    $elapsedSeconds = [Math]::Round($replayStopwatch.Elapsed.TotalSeconds, 3)
+    $replayFps = $null
+    if ($actualResult -and $actualResult.ContainsKey('frame_count') -and $replayStopwatch.Elapsed.TotalSeconds -gt 0) {
+        $replayFps = [Math]::Round(([double]$actualResult.frame_count) / $replayStopwatch.Elapsed.TotalSeconds, 2)
+    }
+
+    Write-Host ''
+    if ($null -ne $replayFps) {
+        Write-Host ("Elapsed: {0}s replay_fps={1}" -f $elapsedSeconds, $replayFps)
+    } else {
+        Write-Host ("Elapsed: {0}s" -f $elapsedSeconds)
+    }
+    if ($missingActualResult) {
+        Write-Host 'Actual: <missing> (state trace/rng trace mode)'
+    } else {
+        Write-Host "Actual: $(Get-RelativeRepoPath -Path $actualResultPath)"
+    }
+    if ($resolvedResultCopyPath) {
+        Write-Host "Result copy: $(Get-RelativeRepoPath -Path $resolvedResultCopyPath)"
+    }
+    if ($resolvedReferenceResultPath) {
+        Write-Host "Reference: $(Get-RelativeRepoPath -Path $resolvedReferenceResultPath)"
+    }
     if ($resolvedStateLogPath) {
         Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
     }
     if ($resolvedRngLogPath) {
         Write-Host "Rng trace: $(Get-RelativeRepoPath -Path $resolvedRngLogPath)"
     }
-    if ($ReuseSandbox) {
-        Write-Host 'Sandbox mode: reuse'
+    if ($stateTraceExpectedPath) {
+        Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
     }
-    Write-Host "Command: $launchExecutable $quotedArgs"
-}
-
-$startInfo = New-Object System.Diagnostics.ProcessStartInfo
-$startInfo.FileName = $launchExecutable
-$startInfo.WorkingDirectory = $sandbox.Directory
-$startInfo.UseShellExecute = $false
-$startInfo.RedirectStandardOutput = $false
-$startInfo.RedirectStandardError = $false
-if ($Sanitizer -eq 'address') {
-    $startInfo.RedirectStandardOutput = $true
-    $startInfo.RedirectStandardError = $true
-    $startInfo.CreateNoWindow = $true
-}
-$startInfo.Arguments = $quotedArgs
-
-$process = $null
-$replayStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-$missingActualResult = $false
-$sanitizerOutput = $null
-$sanitizerError = $null
-$sanitizerFailure = $false
-$forcedReplayStop = $false
-$completedExitCode = $null
-try {
-    $process = [System.Diagnostics.Process]::Start($startInfo)
-    if (-not $process) {
-        throw 'Failed to start replay process'
+    if ($rngTraceExpectedPath) {
+        Write-Host "Expected rng trace: $(Get-RelativeRepoPath -Path $rngTraceExpectedPath)"
     }
-    if ($Sanitizer -eq 'address') {
-        $sanitizerOutput = $process.StandardOutput.ReadToEndAsync()
-        $sanitizerError = $process.StandardError.ReadToEndAsync()
+    if ($actualResult) {
+        Write-Host ($actualResult | ConvertTo-Json -Depth 10)
+    }
+    if ($compareError -or $stateTraceCompareError -or $rngTraceCompareError) {
+        Write-Host ''
+        Write-Host 'RESULT: FAIL' -ForegroundColor Red
+        if ($compareError) {
+            Write-Host $compareError
+        }
+        if ($stateTraceCompareError) {
+            Write-Host $stateTraceCompareError
+        }
+        if ($rngTraceCompareError) {
+            Write-Host $rngTraceCompareError
+        }
+        exit 1
     }
 
-    $waitResult = Wait-ForReplayResult -Process $process -ActualResultPath $actualResultPath -TimeoutSeconds $TimeoutSeconds
-    if (-not $waitResult.ResultReady) {
-        $replayStopwatch.Stop()
-        if (-not $waitResult.Exited) {
-            $forcedReplayStop = $true
-            Stop-ReplayProcess -Process $process
-        }
-        if ($waitResult.Exited) {
-            if ($AllowMissingActualResult -and $resolvedStateLogPath -and (Test-Path -LiteralPath $resolvedStateLogPath)) {
-                $missingActualResult = $true
-            } else {
-                throw "Replay exited before writing an actual result`nExit code: $($waitResult.ExitCode)`nRepro: $($sandbox.Exe) $quotedArgs"
-            }
-        }
-        if (-not $missingActualResult) {
-            throw "Timed out waiting for replay result after $TimeoutSeconds seconds`nRepro: $($sandbox.Exe) $quotedArgs"
-        }
-    }
-
-    if (-not $process.HasExited -and -not $process.WaitForExit(2000)) {
-        $forcedReplayStop = $true
-        Stop-ReplayProcess -Process $process
-    }
-    if ($process.HasExited -and -not $forcedReplayStop) { $completedExitCode = $process.ExitCode }
-} finally {
-    Stop-ReplayProcess -Process $process
-    $replayStopwatch.Stop()
-    if ($Sanitizer -eq 'address' -and $sanitizerOutput -and $sanitizerError) {
-        $diagnostics = $sanitizerOutput.GetAwaiter().GetResult() + $sanitizerError.GetAwaiter().GetResult()
-        foreach ($nativeLog in @('stdout.txt', 'stderr.txt')) {
-            $nativePath = Join-Path $sandbox.Directory $nativeLog
-            if (Test-Path -LiteralPath $nativePath) { $diagnostics += Get-Content -LiteralPath $nativePath -Raw }
-        }
-        $diagnosticPath = Join-Path $sandbox.Directory 'sanitizer.log'
-        [IO.File]::WriteAllText($diagnosticPath, $diagnostics)
-        if ($ResultCopyPath) {
-            $archivePath = (Resolve-AbsolutePath -Path $ResultCopyPath) + '.sanitizer.log'
-            New-Item -ItemType Directory -Path (Split-Path $archivePath) -Force | Out-Null
-            Copy-Item -LiteralPath $diagnosticPath -Destination $archivePath -Force
-        }
-        $sanitizerFailure = $diagnostics -match 'AddressSanitizer|runtime error:'
-        if ($sanitizerFailure) { Write-Host $diagnostics }
-        Write-Host "Sanitizer diagnostics: $diagnosticPath"
-    }
-}
-if ($sanitizerFailure) { throw 'Replay reported a sanitizer error' }
-if ($Sanitizer -eq 'address' -and $null -ne $completedExitCode -and $completedExitCode -ne 0) {
-    throw "Instrumented replay exited with code $completedExitCode after writing its result"
-}
-$actualResult = $null
-if (-not $missingActualResult) {
-    $actualResult = Read-JsonFileAsHashtable -Path $actualResultPath
-}
-$resolvedResultCopyPath = Resolve-AbsolutePath -Path $ResultCopyPath
-if ($actualResult -and $resolvedResultCopyPath) {
-    $resultCopyDirectory = Split-Path -Path $resolvedResultCopyPath -Parent
-    if (-not (Test-Path -LiteralPath $resultCopyDirectory -PathType Container)) {
-        New-Item -ItemType Directory -Path $resultCopyDirectory -Force | Out-Null
-    }
-    Copy-Item -LiteralPath $actualResultPath -Destination $resolvedResultCopyPath -Force
-}
-$expectedForCompare = $normalizedExpectedResult
-$stateTraceCompareError = $null
-$stateTraceExpectedPath = $null
-$rngTraceCompareError = $null
-$rngTraceExpectedPath = $null
-$resolvedReferenceResultPath = Resolve-AbsolutePath -Path $ReferenceResultPath
-if ($resolvedReferenceResultPath) {
-    if (-not (Test-Path -LiteralPath $resolvedReferenceResultPath -PathType Leaf)) {
-        throw "Reference replay result not found: $resolvedReferenceResultPath"
-    }
-    $expectedForCompare = Read-JsonFileAsHashtable -Path $resolvedReferenceResultPath
-}
-if ($D1InD2) {
-    $expectedForCompare = Normalize-D1InD2ExpectedResult -Expected $expectedForCompare -Header $header
-}
-if (-not $StrictComparison -and -not $resolvedReferenceResultPath -and $actualResult -and
-    (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory -Expected $expectedForCompare -Actual $actualResult)) {
-    $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $expectedForCompare -Actual $actualResult
-}
-if ($resolvedStateLogPath) {
-    if (-not (Test-Path -LiteralPath $resolvedStateLogPath)) {
-        $stateTraceCompareError = "Replay did not write state trace: $resolvedStateLogPath"
-    } elseif ($shouldCompareStateTrace) {
-        $stateTraceResult = Invoke-StateTraceComparison -DemoPath $resolvedDemoPath -ActualPath $resolvedStateLogPath -Silent:$headlessQuietConsole
-        $stateTraceExpectedPath = $stateTraceResult.ExpectedPath
-        if (-not $headlessQuietConsole) {
-            Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
-        }
-        if ($stateTraceResult.ExitCode -ne 0) {
-            if ($stateTraceResult.MismatchLines -and $stateTraceResult.MismatchLines.Count -gt 0) {
-                $stateTraceCompareError = "State trace compare failed`n" + ($stateTraceResult.MismatchLines -join "`n")
-            } else {
-                $stateTraceCompareError = 'State trace compare failed'
-            }
-        } elseif (-not $headlessQuietConsole) {
-            Write-Host 'State trace compare: PASS'
-        }
-    }
-}
-if ($resolvedRngLogPath) {
-    if (-not (Test-Path -LiteralPath $resolvedRngLogPath)) {
-        $rngTraceCompareError = "Replay did not write rng trace: $resolvedRngLogPath"
-    } elseif ($shouldCompareRngTrace) {
-        $rngTraceResult = Invoke-RngTraceComparison -DemoPath $resolvedDemoPath -ActualPath $resolvedRngLogPath -Silent:$headlessQuietConsole
-        $rngTraceExpectedPath = $rngTraceResult.ExpectedPath
-        if (-not $headlessQuietConsole) {
-            Write-Host "Expected rng trace: $(Get-RelativeRepoPath -Path $rngTraceExpectedPath)"
-        }
-        if ($rngTraceResult.ExitCode -ne 0) {
-            $rngTraceCompareError = 'RNG trace compare failed'
-        } elseif (-not $headlessQuietConsole) {
-            Write-Host 'RNG trace compare: PASS'
-        }
-    }
-}
-$compareError = $null
-if ($SkipExpectedChecks) {
-    $compareError = $null
-} elseif ($actualResult) {
-    $compareDiffs = Compare-JsonDiff -Expected $expectedForCompare -Actual $actualResult
-    if ($compareDiffs.Count -gt 0) {
-        $compareError = "Result compare failed`n" + ($compareDiffs -join "`n")
-    }
-} elseif (-not $AllowMissingActualResult) {
-    $compareError = "Replay did not write an actual result: $actualResultPath"
-}
-$elapsedSeconds = [Math]::Round($replayStopwatch.Elapsed.TotalSeconds, 3)
-$replayFps = $null
-if ($actualResult -and $actualResult.ContainsKey('frame_count') -and $replayStopwatch.Elapsed.TotalSeconds -gt 0) {
-    $replayFps = [Math]::Round(([double]$actualResult.frame_count) / $replayStopwatch.Elapsed.TotalSeconds, 2)
-}
-
-Write-Host ''
-if ($null -ne $replayFps) {
-    Write-Host ("Elapsed: {0}s replay_fps={1}" -f $elapsedSeconds, $replayFps)
-} else {
-    Write-Host ("Elapsed: {0}s" -f $elapsedSeconds)
-}
-if ($missingActualResult) {
-    Write-Host 'Actual: <missing> (state trace/rng trace mode)'
-} else {
-    Write-Host "Actual: $(Get-RelativeRepoPath -Path $actualResultPath)"
-}
-if ($resolvedResultCopyPath) {
-    Write-Host "Result copy: $(Get-RelativeRepoPath -Path $resolvedResultCopyPath)"
-}
-if ($resolvedReferenceResultPath) {
-    Write-Host "Reference: $(Get-RelativeRepoPath -Path $resolvedReferenceResultPath)"
-}
-if ($resolvedStateLogPath) {
-    Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
-}
-if ($resolvedRngLogPath) {
-    Write-Host "Rng trace: $(Get-RelativeRepoPath -Path $resolvedRngLogPath)"
-}
-if ($stateTraceExpectedPath) {
-    Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
-}
-if ($rngTraceExpectedPath) {
-    Write-Host "Expected rng trace: $(Get-RelativeRepoPath -Path $rngTraceExpectedPath)"
-}
-if ($actualResult) {
-    Write-Host ($actualResult | ConvertTo-Json -Depth 10)
-}
-if ($compareError -or $stateTraceCompareError -or $rngTraceCompareError) {
     Write-Host ''
-    Write-Host 'RESULT: FAIL' -ForegroundColor Red
-    if ($compareError) {
-        Write-Host $compareError
+    if ($SkipExpectedChecks) {
+        Write-Host 'RESULT: CAPTURED (expected-result comparison disabled)'
+    } else {
+        Write-Host 'RESULT: PASS' -ForegroundColor Green
     }
-    if ($stateTraceCompareError) {
-        Write-Host $stateTraceCompareError
-    }
-    if ($rngTraceCompareError) {
-        Write-Host $rngTraceCompareError
-    }
-    exit 1
-}
 
-Write-Host ''
-if ($SkipExpectedChecks) {
-    Write-Host 'RESULT: CAPTURED (expected-result comparison disabled)'
-} else {
-    Write-Host 'RESULT: PASS' -ForegroundColor Green
-}
-
-exit 0
+    exit 0
 } finally {
     if (-not $KeepSandbox -and (Test-Path -LiteralPath $sandbox.Directory)) {
         # Delete only this runner's sandbox after its engine has been stopped

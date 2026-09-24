@@ -14,6 +14,33 @@ import d1_replay_parity as parity
 
 
 class ParityTests(unittest.TestCase):
+    def test_executable_snapshot_survives_source_rebuild(self):
+        source = self.root / "build"
+        source.mkdir()
+        (source / "game.exe").write_bytes(b"original executable")
+        (source / "runtime.dll").write_bytes(b"original dependency")
+        (source / "unrelated.txt").write_bytes(b"excluded")
+        staged = parity.snapshot_executable(source / "game.exe", self.root / "pinned")
+        (source / "game.exe").write_bytes(b"rebuilt executable")
+        (source / "runtime.dll").write_bytes(b"rebuilt dependency")
+        self.assertEqual(Path(staged["path"]).read_bytes(), b"original executable")
+        self.assertEqual(len(staged["package"]), 2)
+        self.assertTrue(all(parity.digest(item["path"]) == item["sha256"] for item in staged["package"]))
+        self.assertFalse((self.root / "pinned" / "unrelated.txt").exists())
+
+    def test_executable_change_while_staging_is_rejected(self):
+        source = self.root / "game.exe"
+        source.write_bytes(b"original")
+        copy = parity.shutil.copy2
+
+        def changing_copy(src, dest):
+            copy(src, dest)
+            source.write_bytes(b"rebuilt")
+
+        with mock.patch.object(parity.shutil, "copy2", side_effect=changing_copy):
+            with self.assertRaisesRegex(parity.EvidenceError, "changed while staging"):
+                parity.snapshot_executable(source, self.root / "pinned")
+
     def test_disk_reserve_rejects_capture_before_creating_output(self):
         args = argparse.Namespace(output=self.root / "capture", minimum_free_gb=4)
         with mock.patch.object(parity.shutil, "disk_usage", return_value=mock.Mock(free=1024)):

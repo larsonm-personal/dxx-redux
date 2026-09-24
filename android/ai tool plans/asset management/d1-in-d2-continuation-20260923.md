@@ -2,7 +2,7 @@
 
 Date: 2026-09-23
 
-Status: research and continuation plan complete; implementation and new runtime validation not started
+Status: implementation in progress; rendered Spreadfire comparison and weapon checkpoint restoration implemented, strict qualification still open
 
 Research baseline: HEAD `756378a3`, including the D1-in-D2 changes in `3ce7e963`. The working tree also contains ongoing music work and edits to `android/outstanding_bugs.md`; this research does not modify them
 
@@ -25,6 +25,8 @@ The June overlay design and September 7 weapon/semantics audits are historical i
 These are source checks and retained results, not new test runs. The latest ordinary replay pass and incomplete strict report were inspected directly. No new compilation, game launch, emulator run or screenshot comparison was performed for this plan
 
 ## Recommended delivery sequence
+
+Implementation follow-up: `test_d1_weapon_art.ps1` now compares ten actual firing/render frames in native D1, imported D1 alone and imported D1 with D2 installed. Source pixels, palettes, state and rendered RGB all match, including custom artwork, reload/retirement and firing in D2 before returning to D1. The reported old sprite defect was not reproduced in this matrix. The checkpoint adapter now restores weapon creation frames and full hit history; native/imported fixtures cover stock/custom level 1 and boss levels 7/27. See the implementation ledger for exact evidence and limits. These results do not close Android rendered checks, complete checkpoint fidelity or F1-F5
 
 ### 1. Close the reported Spreadfire presentation question first
 
@@ -118,6 +120,7 @@ For implementation slices, run relevant CMake/CTest targets and scoped mixed-lan
 - [x] Inspect retained eight-demo pass and incomplete paired-capture report
 - [x] Verify current Spreadfire selection, native bitmap publication and Guide-Bot attachment
 - [x] Write continuation order, ownership, acceptance gates and existing runners
-- [ ] Perform the rendered Spreadfire comparison
+- [x] Perform the host rendered Spreadfire comparison with custom art and D1/D2 switching
+- [ ] Complete Android and live-shot restore rendering coverage
 - [ ] Complete fresh strict captures and F1/F2 evidence
 - [ ] Finish optional lifecycle and F4/F5 qualification

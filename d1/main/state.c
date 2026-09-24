@@ -612,7 +612,8 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	autoselect_write_runtime_state(fp);
 }
 
-#define STATE_PHYSICS_INFO_DISK_BYTES ((size_t)(5 * 3 * sizeof(int) + 3 * sizeof(int) + 2 * sizeof(short)))
+/* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
+#define STATE_PHYSICS_INFO_DISK_BYTES ((size_t) (4 * 3 * sizeof(int) + 3 * sizeof(int) + 2 * sizeof(short)))
 
 static int state_runtime_read_s16(PHYSFS_file *fp, int swap, short *value)
 {
@@ -778,6 +779,7 @@ static int state_validate_effect_runtime_state(PHYSFS_file *fp, int swap, int ve
 static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 {
 	PHYSFS_sint64 start = PHYSFS_tell(fp);
+	const char *validation_stage = "header";
 	game_d_tick_state d_tick_state;
 	object_runtime_state object_state;
 	laser_runtime_state laser_state;
@@ -822,31 +824,41 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	    !laser_runtime_state_is_valid(&laser_state))
 		goto done;
 	if (version >= STATE_FIDELITY_VERSION) {
+		validation_stage = "weapon history";
 		for (i = 0; i <= Highest_object_index; i++)
 			if (Objects[i].type != OBJ_NONE && Objects[i].control_type == CT_WEAPON &&
 			    !state_runtime_skip(fp, sizeof(int) + MAX_OBJECTS))
 				goto done;
-		if (!state_validate_morph_runtime_state(fp, swap) ||
-		    !state_validate_stuck_runtime_state(fp, swap) ||
+		validation_stage = "morph";
+		if (!state_validate_morph_runtime_state(fp, swap))
+			goto done;
+		validation_stage = "stuck objects";
+		if (!state_validate_stuck_runtime_state(fp, swap) ||
 		    !state_runtime_skip(fp, sizeof(int)))
 			goto done;
 	}
+	validation_stage = "AI path";
 	if (version >= STATE_AI_PATH_RUNTIME_VERSION &&
 	    !state_runtime_skip(fp, 5 * sizeof(int) + sizeof(short)))
 		goto done;
+	validation_stage = "effects";
 	if (!state_validate_effect_runtime_state(fp, swap, version))
 		goto done;
+	validation_stage = "secret areas";
 	if (version >= STATE_SECRET_AREA_IDENTITY_VERSION) {
 		if (!secret_area_validate_runtime_state(fp))
 			goto done;
 	} else if (version >= STATE_SECRET_AREA_RUNTIME_VERSION &&
 	    !state_runtime_skip(fp, sizeof(int) + SECRET_AREA_MAX_GENERATED))
 		goto done;
+	validation_stage = "autoselect";
 	if (version >= STATE_AUTOSELECT_RUNTIME_VERSION &&
 	    !autoselect_read_runtime_state(fp, swap, 0))
 		goto done;
 	valid = 1;
 done:
+	if (!valid)
+		con_printf(CON_URGENT, "Save runtime validation failed: %s\n", validation_stage);
 	if (start >= 0)
 		PHYSFS_seek(fp, start);
 	return valid;
@@ -1270,7 +1282,8 @@ void state_object_to_object_rw(object *obj, object_rw *obj_rw)
 			obj_rw->ctype.expl_info.prev_attach   = obj->ctype.expl_info.prev_attach;
 			obj_rw->ctype.expl_info.next_attach   = obj->ctype.expl_info.next_attach;
 			break;
-			
+
+		case CT_MORPH:
 		case CT_AI:
 		{
 			int i;
@@ -1432,7 +1445,8 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj)
 			obj->ctype.expl_info.prev_attach   = obj_rw->ctype.expl_info.prev_attach;
 			obj->ctype.expl_info.next_attach   = obj_rw->ctype.expl_info.next_attach;
 			break;
-			
+
+		case CT_MORPH:
 		case CT_AI:
 		{
 			int i;

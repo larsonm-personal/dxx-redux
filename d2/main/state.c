@@ -830,7 +830,8 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	autoselect_write_runtime_state(fp);
 }
 
-#define STATE_PHYSICS_INFO_DISK_BYTES ((size_t)(5 * 3 * sizeof(int) + 3 * sizeof(int) + 2 * sizeof(short)))
+/* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
+#define STATE_PHYSICS_INFO_DISK_BYTES ((size_t) (4 * 3 * sizeof(int) + 3 * sizeof(int) + 2 * sizeof(short)))
 
 static int state_runtime_read_s16(PHYSFS_file *fp, int swap, short *value)
 {
@@ -1530,7 +1531,8 @@ void state_object_to_object_rw(object *obj, object_rw *obj_rw)
 			obj_rw->ctype.expl_info.prev_attach   = obj->ctype.expl_info.prev_attach;
 			obj_rw->ctype.expl_info.next_attach   = obj->ctype.expl_info.next_attach;
 			break;
-			
+
+		case CT_MORPH:
 		case CT_AI:
 		{
 			int i;
@@ -1700,7 +1702,8 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj)
 			obj->ctype.expl_info.prev_attach   = obj_rw->ctype.expl_info.prev_attach;
 			obj->ctype.expl_info.next_attach   = obj_rw->ctype.expl_info.next_attach;
 			break;
-			
+
+		case CT_MORPH:
 		case CT_AI:
 		{
 			int i;

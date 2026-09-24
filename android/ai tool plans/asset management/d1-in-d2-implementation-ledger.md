@@ -1626,3 +1626,60 @@ frame zero; `temp/d1-stream-large-native-frames-comparison.json` retains the
 complete per-field inventory. F1 complete
 semantic observations/mappings and terminal boundaries, followed by F3-F5,
 remain unfinished
+
+### 2026-09-23: continuation, rendered Spreadfire and live weapon checkpoints
+
+The September 23 suite repair in `3ce7e963` supersedes the preceding long-level-7
+stopping point: native lava shove/rotation RNG ordering was restored, all eight
+ordinary imported replay regressions passed, and optional Guide-Bot package
+preparation was connected to the normal unpublished generation lifecycle. The
+[continuation plan](d1-in-d2-continuation-20260923.md) distinguishes that ordinary
+pass from the still-incomplete strict paired evidence
+
+The shared integration fixture now fires two real Spreadfire volleys and follows
+their projectile record through `Laser_render` and `draw_object_blob`. It exports
+actual shot state, original decoded pixels, palette, framebuffer RGB and review
+PNGs. `android/helpers/test_d1_weapon_art.ps1` compares native D1 against imported
+D1 with D1-only resources and with optional D2 resources installed. Ten frames
+cover original art, reload, a named non-square transparent `sprdblob` DTX override,
+custom retirement and return from an actual D2 level/firing operation. All source,
+state and rendered comparisons pass. Projectile 20, accounting record 12, speed,
+damage, size, palette and visible violet artwork agree with native D1; no new
+bitmap remapping or renderer workaround was needed
+
+Evidence: `temp/d1-weapon-art-final.log` and
+`temp/d1-weapon-art-comparison/{native,imported,imported-with-d2}/`. The fixture
+uses a controlled empty corridor and samples the real emitted trajectory at a
+fixed age without advancing world physics. It proves the specified host asset/
+render path, not arbitrary gameplay screenshots, all graphics settings, Android
+rendering or checkpoint in-flight rendering
+
+The native checkpoint fixture now serializes live Spreadfire, Fusion and Homing
+shots with nonzero creation frames and two prior hits. Native D1 passed; the
+unmodified imported adapter failed its exact restoration assertion. The adapter
+now reads those fields into unpublished translated objects instead of skipping
+them, retaining transactional rejection on a malformed later record. Stock and
+custom level-1 fixtures and stock levels 7/27 pass seven checkpoint scenarios
+each, including 28 restored AI frames per configuration and the two existing
+30-case boss-health matrices. Logs: `temp/d1-checkpoint-weapons-before.log`,
+`temp/d1-checkpoint-weapons-fixed.log`, `temp/d1-checkpoint-weapons-matrix.log`
+
+The final stock fixture also invokes the real Fusion/robot collision handler
+after restoring a robot hit that is older than `last_hitobj`; the robot takes
+no duplicate damage. All 21 saved projectiles and 28 AI frames match. Evidence:
+`temp/d1-checkpoint-weapons-collision.log`. Both host suites pass (52 native D1,
+60 D2 CTests), and scoped quality checks pass. Logs are
+`temp/d1-continuation-{d1,d2}-ctest.log` and `temp/d1-continuation-quality.log`.
+The Android build attempt stopped at the repository's cleanup/retention idle
+guard because the paired capture was active; retry packaging after capture
+completion. No Android compiler or runtime result is claimed for this slice
+
+The paired replay runner now snapshots each executable and its adjacent DLLs,
+records their hashes, rejects concurrent staging changes and passes the frozen
+executable explicitly to the normal replay wrapper. A subsequent source rebuild
+cannot replace one member of a native-repeat/imported experiment. The Python
+comparison/orchestration suite passes 20 tests, including snapshot isolation and
+concurrent-source-change rejection. The live long level-7 strict capture is being
+repeated with a 600-second per-capture budget; its report is not yet qualification
+evidence. Morph, stuck-object and effect restoration, complete semantic snapshots/
+mappings, optional lifecycle and F4/F5 remain open

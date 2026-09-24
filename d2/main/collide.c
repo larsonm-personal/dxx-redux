@@ -1389,6 +1389,8 @@ void maybe_kill_weapon(object *weapon, object *other_obj)
 
 void collide_weapon_and_controlcen( object * weapon, object *controlcen, vms_vector *collision_point  )
 {
+	if (input_demo_replay_is_loaded())
+		con_printf(CON_URGENT, "reactor_impact_probe frame=%d weapon=%d sig=%d pos=%d,%d,%d radius=%d reactor=%d pos=%d,%d,%d radius=%d hit=%d,%d,%d\n", input_demo_trace_collision_frame_index(), weapon->id, weapon->signature, weapon->pos.x, weapon->pos.y, weapon->pos.z, weapon->size, (int)(controlcen-Objects), controlcen->pos.x, controlcen->pos.y, controlcen->pos.z, controlcen->size, collision_point->x, collision_point->y, collision_point->z);
 
 	if (weapon->id == OMEGA_ID)
 		if (!ok_to_do_omega_damage(weapon)) // see comment in laser.c

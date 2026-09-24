@@ -4,6 +4,7 @@
 param(
     [Parameter(Mandatory)][string]$D1DataDirectory,
     [switch]$CustomAssets,
+    [switch]$RuntimeState,
     [ValidateSet(1, 7, 27)][int]$Level = 1,
     [string]$NativeExecutable = "buildd1/main/test_upstream_compat.exe",
     [string]$ImportedExecutable = "buildd2/main/test_upstream_compat.exe"
@@ -17,8 +18,10 @@ $nativePath = (Resolve-Path -LiteralPath $NativeExecutable).Path
 $importedPath = (Resolve-Path -LiteralPath $ImportedExecutable).Path
 $outputPath = Join-Path $repository $(if ($CustomAssets) { "temp/d1-custom-checkpoint-comparison" } else { "temp/d1-ai-checkpoint-comparison" })
 if ($Level -ne 1) { $outputPath += "-level$Level" }
+if ($RuntimeState) { $outputPath += '-runtime' }
+if ($RuntimeState -and $CustomAssets) { throw 'Select runtime or custom asset checkpoint coverage separately' }
 if ($CustomAssets -and $Level -ne 1) { throw "Custom checkpoint fixtures use level 1" }
-$traceOption = if ($CustomAssets) { "--custom-checkpoint-frame-trace" } else { "--checkpoint-frame-trace" }
+$traceOption = if ($RuntimeState) { '--runtime-checkpoint-frame-trace' } elseif ($CustomAssets) { "--custom-checkpoint-frame-trace" } else { "--checkpoint-frame-trace" }
 & "$PSScriptRoot/retain-recent-artifacts.ps1" -Artifacts $outputPath
 $nativeDirectory = Join-Path $outputPath "native"
 foreach ($run in @(
@@ -45,6 +48,8 @@ if ($native -cne $imported) {
 $trace = $native | ConvertFrom-Json
 $cases = $trace.cases.Count
 Write-Output "PASS: $cases native checkpoint scenarios, $($cases * 4) restored robot frames match"
+Write-Output "PASS: $($cases * $(if ($RuntimeState) { 4 } else { 3 })) live projectiles preserve native creation frames, hit history, motion and lifetime"
+if ($RuntimeState) { Write-Output 'PASS: active morphs, stuck flares, effect animation and reactor timers match before restore and during resumed frames' }
 Write-Output "PASS: $($trace.fresh_textures.Count) side texture pairs match after fresh load and each checkpoint restore"
 Write-Output "PASS: native trigger actions, source state, values and links match after fresh load and each checkpoint restore"
 if ($Level -ne 1) {

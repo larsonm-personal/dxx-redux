@@ -413,6 +413,27 @@ def executable_info(path):
     return {"path": str(path.resolve()), "sha256": digest(path), "architecture": architecture}
 
 
+def snapshot_executable(path, directory):
+    """Keep every capture on the same executable and colocated runtime libraries."""
+    source = Path(path).resolve()
+    directory.mkdir(parents=True)
+    files = [source] + sorted(p for p in source.parent.iterdir()
+                              if p.is_file() and p.suffix.lower() == ".dll" and p != source)
+    original = {p: digest(p) for p in files}
+    dependencies = []
+    for item in files:
+        target = directory / item.name
+        shutil.copy2(item, target)
+        if digest(target) != original[item]:
+            raise EvidenceError(f"Executable package changed while staging: {item}")
+        dependencies.append({"source": str(item), "path": str(target.resolve()), "sha256": original[item]})
+    if any(digest(item) != expected for item, expected in original.items()):
+        raise EvidenceError("Executable package changed while staging; finish the build before capture")
+    info = executable_info(directory / source.name)
+    info.update(source=str(source), package=dependencies)
+    return info
+
+
 def capture(args, demo, directory, name, imported, assets, executable):
     require_disk_space(args.output, args.minimum_free_gb)
     require_disk_space(args.repo, args.minimum_free_gb)
@@ -426,6 +447,7 @@ def capture(args, demo, directory, name, imported, assets, executable):
                "-SandboxSuffix", args.output.name + "-" + name, "-TimeoutSeconds", str(args.timeout),
                "-ResultCopyPath", str(paths["result"]), "-StateLogPath", str(paths["state"]),
                "-RngLogPath", str(paths["rng"]), "-MinimumFreeSpaceGB", str(args.minimum_free_gb)]
+    command += ["-ExecutablePath", executable["path"]]
     command += ["-D1InD2"] if imported else ["-Game", "d1"]
     info = {"command": command, "executable": executable, "artifacts": {key: str(path) for key, path in paths.items()}}
     write_json(run / "launch.json", info)
@@ -433,9 +455,8 @@ def capture(args, demo, directory, name, imported, assets, executable):
     with (run / "runner.log").open("w", encoding="utf-8") as log:
         completed = subprocess.run(command, cwd=args.repo, stdout=log, stderr=subprocess.STDOUT, check=False)
     info["exit_code"] = completed.returncode
-    # Detect a build/source change during the sequential experiment
-    if digest(executable["path"]) != executable["sha256"]:
-        info["error"] = "Executable changed during capture; repeat with fixed binaries"
+    if any(digest(item["path"]) != item["sha256"] for item in executable["package"]):
+        info["error"] = "Staged executable package changed during capture"
     for key in ("state", "rng"):
         if paths[key].is_file():
             paths[key] = compress_trace(paths[key])
@@ -475,8 +496,8 @@ def run_with_lease(args):
         target = assets / name
         shutil.copyfile(matches[0], target)
         asset_manifest.append({"source": str(matches[0]), "staged": str(target), "sha256": digest(target)})
-    native = executable_info(args.native)
-    imported = executable_info(args.imported)
+    native = snapshot_executable(args.native, args.output / "binaries" / "native")
+    imported = snapshot_executable(args.imported, args.output / "binaries" / "imported")
     manifest = {"schema": 1, "created_utc": datetime.now(timezone.utc).isoformat(), "host": platform.platform(),
                 "assets": asset_manifest, "executables": {"native": native, "imported": imported},
                 "settings": {"runner": "fast", "render_profile": "default", "companion": False,

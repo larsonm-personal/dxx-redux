@@ -126,6 +126,16 @@ typedef struct d1_save_translate_runtime_state {
 	object_runtime_state object_state;
 	laser_runtime_state laser_state;
 	ai_path_runtime_state ai_path_state;
+	int morph_count;
+	int morph_objects[MAX_MORPH_OBJECTS];
+	morph_data morphs[MAX_MORPH_OBJECTS];
+	int stuck_count;
+	stuckobj stuck[MAX_STUCK_OBJECTS];
+	fix reactor_death_silence;
+	fix64 effect_loop_time;
+	int effect_count;
+	int effect_ids[MAX_EFFECTS];
+	eclip effects[MAX_EFFECTS];
 	int primary_picked_up;
 	int secondary_picked_up;
 	int delayed_primary;
@@ -578,6 +588,7 @@ static int d1_save_translate_read_object_control(d1_save_translate_reader *reade
 		    !d1_save_translate_read_s16(reader, &obj->ctype.expl_info.next_attach))
 			return 0;
 		break;
+	case CT_MORPH:
 	case CT_AI: {
 		short d1_cur_path_index;
 		short unused_follow_path_start_seg;
@@ -788,9 +799,9 @@ static int d1_save_translate_validate_object(const object *obj, int object_count
 	     !d1_save_translate_object_index_valid(obj->ctype.expl_info.next_attach,
 	                                          object_count)))
 		return 0;
-	if (obj->control_type == CT_AI &&
+	if ((obj->control_type == CT_AI || obj->control_type == CT_MORPH) &&
 	    !d1_save_translate_object_index_valid(obj->ctype.ai_info.danger_laser_num,
-	                                         object_count))
+	                                          object_count))
 		return 0;
 	if (obj->contains_count < -1 ||
 	    (obj->contains_count > 0 &&
@@ -823,7 +834,7 @@ static int d1_save_translate_validate_object_references(object *objects,
 		 * references after the referenced segment/object is gone.  D1 tolerated
 		 * these until the corresponding AI mode used them; translated state must
 		 * not publish those unsafe optional references into D2. */
-		if (obj->type == OBJ_ROBOT && obj->control_type == CT_AI) {
+		if (obj->type == OBJ_ROBOT && (obj->control_type == CT_AI || obj->control_type == CT_MORPH)) {
 			if (!d1_save_translate_object_index_valid(
 			        obj->ctype.ai_info.danger_laser_num, object_count)) {
 				obj->ctype.ai_info.danger_laser_num = -1;
@@ -1423,15 +1434,19 @@ static int d1_save_translate_read_d1_state_to_runtime(
 	return d1_save_translate_skip(reader, 6 * sizeof(int));
 }
 
-static int d1_save_translate_skip_weapon_fidelity_state(
-	d1_save_translate_reader *reader, const object *objects, int object_count)
+static int d1_save_translate_read_weapon_fidelity_state(
+    d1_save_translate_reader *reader, object *objects, int object_count)
 {
 	int i;
 
 	for (i = 0; i < object_count; i++) {
 		if (objects[i].type == OBJ_NONE || objects[i].control_type != CT_WEAPON)
 			continue;
-		if (!d1_save_translate_skip(reader, sizeof(int) + MAX_OBJECTS))
+		/* Decode into unpublished objects so a truncated tail cannot change
+		 * the current world. Native D1 stores the complete prior-hit bitmap */
+		if (!d1_save_translate_read_s32(reader, &objects[i].ctype.laser_info.creation_framecount) ||
+		    !d1_save_translate_read_bytes(reader, objects[i].ctype.laser_info.hitobj_list,
+		                                  sizeof(objects[i].ctype.laser_info.hitobj_list)))
 			return 0;
 	}
 	return 1;
@@ -1474,29 +1489,123 @@ static int d1_save_translate_validate_runtime_allocator(
 	return 1;
 }
 
-static int d1_save_translate_skip_morph_state(d1_save_translate_reader *reader)
+static int d1_save_translate_read_morph_state(d1_save_translate_reader *reader,
+                                              const object *objects, int object_count, d1_save_translate_runtime_state *state)
 {
-	int active_morphs;
-	size_t morph_bytes;
-
-	if (!d1_save_translate_read_s32(reader, &active_morphs) ||
-	    active_morphs < 0 || active_morphs > MAX_MORPH_OBJECTS)
+	ubyte seen[MAX_OBJECTS] = { 0 };
+	int i, j;
+	if (!d1_save_translate_read_s32(reader, &state->morph_count) ||
+	    state->morph_count < 0 || state->morph_count > MAX_MORPH_OBJECTS)
 		return 0;
-	morph_bytes = sizeof(int) * 2 + (size_t) MAX_VECS * sizeof(vms_vector) * 2 +
-	              (size_t) MAX_VECS * sizeof(fix) +
-	              (size_t) MAX_SUBMODELS * sizeof(int) * 3 + sizeof(int) +
-	              sizeof(ubyte) * 2 + sizeof(physics_info);
-	return d1_save_translate_skip(reader, (size_t) active_morphs * morph_bytes);
+	for (i = 0; i < state->morph_count; ++i) {
+		morph_data *morph = &state->morphs[i];
+		physics_info *physics = &morph->morph_save_phys_info;
+		int objnum, model, active_count = 0;
+		if (!d1_save_translate_read_s32(reader, &objnum) ||
+		    !d1_save_translate_read_s32(reader, &morph->Morph_sig) ||
+		    objnum < 0 || objnum >= object_count || seen[objnum] ||
+		    objects[objnum].type == OBJ_NONE || objects[objnum].signature != morph->Morph_sig ||
+		    objects[objnum].render_type != RT_MORPH || objects[objnum].control_type != CT_MORPH)
+			return 0;
+		state->morph_objects[i] = objnum;
+		seen[objnum] = 1;
+		model = objects[objnum].rtype.pobj_info.model_num;
+		if (model < 0 || model >= N_polygon_models || Polygon_models[model].n_models < 1 ||
+		    Polygon_models[model].n_models > MAX_SUBMODELS)
+			return 0;
+		for (j = 0; j < MAX_VECS; ++j)
+			if (!d1_save_translate_read_vector(reader, &morph->morph_vecs[j])) return 0;
+		for (j = 0; j < MAX_VECS; ++j)
+			if (!d1_save_translate_read_vector(reader, &morph->morph_deltas[j])) return 0;
+		for (j = 0; j < MAX_VECS; ++j)
+			if (!d1_save_translate_read_fix(reader, &morph->morph_times[j])) return 0;
+		for (j = 0; j < MAX_SUBMODELS; ++j)
+			if (!d1_save_translate_read_s32(reader, &morph->submodel_active[j])) return 0;
+		for (j = 0; j < MAX_SUBMODELS; ++j)
+			if (!d1_save_translate_read_s32(reader, &morph->n_morphing_points[j])) return 0;
+		for (j = 0; j < MAX_SUBMODELS; ++j)
+			if (!d1_save_translate_read_s32(reader, &morph->submodel_startpoints[j])) return 0;
+		if (!d1_save_translate_read_s32(reader, &morph->n_submodels_active) ||
+		    !d1_save_translate_read_u8(reader, &morph->morph_save_control_type) ||
+		    !d1_save_translate_read_u8(reader, &morph->morph_save_movement_type) ||
+		    !d1_save_translate_read_vector(reader, &physics->velocity) ||
+		    !d1_save_translate_read_vector(reader, &physics->thrust) ||
+		    !d1_save_translate_read_fix(reader, &physics->mass) ||
+		    !d1_save_translate_read_fix(reader, &physics->drag) ||
+		    !d1_save_translate_read_fix(reader, &physics->brakes) ||
+		    !d1_save_translate_read_vector(reader, &physics->rotvel) ||
+		    !d1_save_translate_read_vector(reader, &physics->rotthrust) ||
+		    !d1_save_translate_read_fixang(reader, &physics->turnroll) ||
+		    !d1_save_translate_read_u16(reader, &physics->flags))
+			return 0;
+		for (j = 0; j < MAX_SUBMODELS; ++j) {
+			int active = morph->submodel_active[j], count = morph->n_morphing_points[j], start = morph->submodel_startpoints[j];
+			if (active < 0 || active > 2 || count < 0 || start < 0 || start > MAX_VECS ||
+			    count > MAX_VECS - start || (j >= Polygon_models[model].n_models && (active || count)))
+				return 0;
+			if (active == 1) ++active_count;
+		}
+		if (active_count != morph->n_submodels_active ||
+		    !d1_save_translate_control_type_valid(morph->morph_save_control_type) ||
+		    (morph->morph_save_movement_type != MT_NONE && morph->morph_save_movement_type != MT_PHYSICS &&
+		     morph->morph_save_movement_type != MT_SPINNING))
+			return 0;
+	}
+	return 1;
+}
+
+static int d1_save_translate_read_stuck_state(d1_save_translate_reader *reader,
+                                              const object *objects, int object_count, int wall_count, d1_save_translate_runtime_state *state)
+{
+	int i, saved_count;
+	if (!d1_save_translate_read_s32(reader, &saved_count)) return 0;
+	/* Native restore counts occupied slots; inactive records retain stale IDs */
+	state->stuck_count = 0;
+	for (i = 0; i < MAX_STUCK_OBJECTS; ++i) {
+		stuckobj *stuck = &state->stuck[i];
+		if (!d1_save_translate_read_s16(reader, &stuck->objnum) ||
+		    !d1_save_translate_read_s16(reader, &stuck->wallnum) ||
+		    !d1_save_translate_read_s32(reader, &stuck->signature)) return 0;
+		if (stuck->wallnum == -1) continue;
+		if (stuck->wallnum < 0 || stuck->wallnum >= wall_count || stuck->objnum < 0 || stuck->objnum >= object_count ||
+		    objects[stuck->objnum].type == OBJ_NONE || objects[stuck->objnum].signature != stuck->signature) return 0;
+		++state->stuck_count;
+	}
+	return 1;
+}
+
+static int d1_save_translate_read_effect_state(d1_save_translate_reader *reader, d1_save_translate_runtime_state *state)
+{
+	ubyte seen[MAX_EFFECTS] = { 0 };
+	int i;
+	if (!d1_save_translate_read_fix64(reader, &state->effect_loop_time) ||
+	    !d1_save_translate_read_s32(reader, &state->effect_count) || state->effect_count < 0 || state->effect_count > Num_effects) return 0;
+	for (i = 0; i < state->effect_count; ++i) {
+		eclip *effect = &state->effects[i];
+		int *id = &state->effect_ids[i];
+		if (!d1_save_translate_read_s32(reader, id) ||
+		    !d1_save_translate_read_fix(reader, &effect->time_left) ||
+		    !d1_save_translate_read_s32(reader, &effect->frame_count) ||
+		    !d1_save_translate_read_s32(reader, &effect->flags) ||
+		    !d1_save_translate_read_s32(reader, &effect->segnum) ||
+		    !d1_save_translate_read_s32(reader, &effect->sidenum) ||
+		    !d1_save_translate_read_s32(reader, &effect->dest_bm_num) ||
+		    *id < 0 || *id >= Num_effects || seen[*id] || effect->time_left < 0 ||
+		    effect->frame_count < 0 || effect->frame_count >= Effects[*id].vc.num_frames ||
+		    (effect->flags & ~(EF_ONE_SHOT | EF_STOPPED))) return 0;
+		seen[*id] = 1;
+		if (effect->segnum != -1 && (effect->segnum < 0 || effect->segnum > Highest_segment_index ||
+		                             effect->sidenum < 0 || effect->sidenum >= MAX_SIDES_PER_SEGMENT || effect->dest_bm_num <= 0 || effect->dest_bm_num >= NumTextures)) return 0;
+		if ((effect->flags & EF_ONE_SHOT) && effect->segnum == -1) return 0;
+	}
+	return 1;
 }
 
 static int d1_save_translate_read_runtime_state(
-	d1_save_translate_reader *reader, const object *objects, int object_count,
-	d1_save_translate_runtime_state *state, int version)
+    d1_save_translate_reader *reader, object *objects, int object_count,
+    d1_save_translate_runtime_state *state, int version, int wall_count)
 {
 	int i;
-	int active_effects;
-	fix effect_time_unused;
-	fix64 effect_loop_time_unused;
 
 	if (!reader || !objects || !state)
 		return 0;
@@ -1545,11 +1654,11 @@ static int d1_save_translate_read_runtime_state(
 	    !d1_save_translate_read_s32(reader, &state->laser_state.missile_gun) ||
 	    !d1_save_translate_read_s32(reader,
 	                                &state->laser_state.proximity_dropped) ||
-	    !d1_save_translate_skip_weapon_fidelity_state(reader, objects,
+	    !d1_save_translate_read_weapon_fidelity_state(reader, objects,
 	                                                  object_count) ||
-	    !d1_save_translate_skip_morph_state(reader) ||
-	    !d1_save_translate_skip(reader, sizeof(int) + MAX_STUCK_OBJECTS * 8) ||
-	    !d1_save_translate_skip(reader, sizeof(int)) ||
+	    !d1_save_translate_read_morph_state(reader, objects, object_count, state) ||
+	    !d1_save_translate_read_stuck_state(reader, objects, object_count, wall_count, state) ||
+	    !d1_save_translate_read_fix(reader, &state->reactor_death_silence) ||
 	    !d1_save_translate_read_s32(
 	        reader, &state->ai_path_state.last_tick_garbage_collected) ||
 	    !d1_save_translate_read_s16(
@@ -1562,17 +1671,8 @@ static int d1_save_translate_read_runtime_state(
 	        reader, &state->ai_path_state.player_following_path_flag) ||
 	    !d1_save_translate_read_s32(
 	        reader, &state->ai_path_state.player_goal_segment) ||
-	    !d1_save_translate_read_fix64(reader, &effect_loop_time_unused) ||
-	    !d1_save_translate_read_s32(reader, &active_effects))
+	    !d1_save_translate_read_effect_state(reader, state))
 		return 0;
-	if (active_effects < 0 || active_effects > Num_effects)
-		return 0;
-	for (i = 0; i < active_effects; i++) {
-		if (!d1_save_translate_skip(reader, sizeof(int)) ||
-		    !d1_save_translate_read_fix(reader, &effect_time_unused) ||
-		    !d1_save_translate_skip(reader, sizeof(int) * 5))
-			return 0;
-	}
 	if (version >= D1_SAVE_SECRET_IDENTITY_VERSION) {
 		secret_area_saved_state saved;
 		size_t offset = reader->pos;
@@ -1619,6 +1719,26 @@ static int d1_save_translate_read_runtime_state(
 static void d1_save_translate_commit_runtime_state(
 	const d1_save_translate_runtime_state *state)
 {
+	int i;
+	for (i = 0; i < state->morph_count; ++i) {
+		morph_objects[i] = state->morphs[i];
+		morph_objects[i].obj = &Objects[state->morph_objects[i]];
+	}
+	memcpy(Stuck_objects, state->stuck, sizeof(state->stuck));
+	Num_stuck_objects = state->stuck_count;
+	controlcen_death_silence = state->reactor_death_silence;
+	reset_special_effects_to_time(state->effect_loop_time);
+	for (i = 0; i < state->effect_count; ++i) {
+		eclip *effect = &Effects[state->effect_ids[i]];
+		const eclip *saved = &state->effects[i];
+		effect->time_left = saved->time_left;
+		effect->frame_count = saved->frame_count;
+		effect->flags = (effect->flags & ~(EF_ONE_SHOT | EF_STOPPED)) | saved->flags;
+		effect->segnum = saved->segnum;
+		effect->sidenum = saved->sidenum;
+		effect->dest_bm_num = saved->dest_bm_num;
+	}
+	for (i = 0; i < Num_effects; ++i) effect_apply_bitmap_state(i);
 	Next_laser_fire_time = GameTime64 + (fix64)state->next_laser_fire_delta;
 	Next_missile_fire_time = GameTime64 + (fix64)state->next_missile_fire_delta;
 	Last_laser_fired_time = GameTime64 + (fix64)state->last_laser_fired_delta;
@@ -1799,7 +1919,7 @@ int d1_save_translate_apply_checkpoint_objects(
 		goto fail;
 	failure = "runtime state";
 	if (!d1_save_translate_read_runtime_state(
-	        &reader, translated_objects, start->object_count, runtime, start->version))
+	        &reader, translated_objects, start->object_count, runtime, start->version, world->num_walls))
 		goto fail;
 	if (!d1_save_translate_validate_runtime_ai_path(runtime, ai))
 		goto fail;
