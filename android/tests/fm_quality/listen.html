@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Descent FM listening experiment</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #111922; color: #e6edf3; }
+    body { max-width: 920px; margin: 0 auto; padding: 32px 20px 60px; line-height: 1.55; }
+    h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: 1.15; margin-bottom: 16px; }
+    h2 { font-size: 1.2rem; }
+    p { max-width: 76ch; }
+    .eyebrow { color: #7adbc4; letter-spacing: .12em; font-size: .8rem; text-transform: uppercase; }
+    .muted, small { color: #abbaca; }
+    .tracks { display: flex; gap: 8px; flex-wrap: wrap; margin: 24px 0; }
+    button { font: inherit; cursor: pointer; color: inherit; background: #1d2a38; border: 1px solid #526479; border-radius: 10px; padding: 12px 18px; }
+    button:hover { background: #2b3d4f; }
+    button:focus-visible, a:focus-visible { outline: 3px solid #f5c969; outline-offset: 3px; }
+    button[aria-pressed="true"] { background: #173d3a; border-color: #7adbc4; box-shadow: inset 0 0 0 1px #7adbc4; }
+    .versions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+    .versions button { text-align: left; }
+    .versions strong, .versions small { display: block; }
+    .versions small { font-size: .86rem; margin-top: 6px; }
+    .player { padding: 20px; border: 1px solid #35485b; border-radius: 14px; background: #17222e; }
+    #now { font-weight: 650; margin: 0 0 12px; }
+    audio { display: block; width: 100%; }
+    #status { min-height: 1.5em; margin-bottom: 0; }
+    a { color: #88dccc; }
+    details { margin-top: 28px; }
+    summary { cursor: pointer; font-weight: 600; }
+    table { border-collapse: collapse; width: 100%; font-size: .9rem; margin: 16px 0; }
+    th, td { padding: 10px 6px; border-bottom: 1px solid #35485b; text-align: left; }
+    .table-wrap { overflow-x: auto; }
+    @media (max-width: 560px) { .versions { grid-template-columns: 1fr; } body { padding-top: 20px; } }
+  </style>
+</head>
+<body>
+  <div class="eyebrow">Descent / ymfm / output quality</div>
+  <h1>Same music. Five ways to hear it.</h1>
+  <p>Compare the opening of <b>game01, game07 and game08</b>. Every version uses the game's AdLib arrangement and instrument bank, with the same ordered chip-register events. Only output processing changes.</p>
+  <p class="muted">Use headphones and switch during the same passage. Loudness is matched with constant gain, without compression. More precision may be a very subtle change; the warm filter is deliberately more audible.</p>
+  <nav id="tracks" class="tracks" aria-label="Track"></nav>
+  <div id="versions" class="versions" role="group" aria-label="Output processing"></div>
+  <section class="player" aria-label="Listening controls">
+    <p id="now" aria-live="polite"></p>
+    <audio id="player" controls preload="auto"></audio>
+    <div id="cues" class="tracks" role="group" aria-label="Jump to comparison passage"></div>
+    <p id="status" class="muted" role="status">Press Play to start. Switching versions keeps your place, with a short loading gap.</p>
+  </section>
+  <p class="muted">This is an offline audition, not an Android playback change. All listening files are 48 kHz stereo PCM16; the precision experiment keeps more detail <em>before</em> final conversion. The warm filter is a tonal option, not a measured recreation of a particular Sound Blaster.</p>
+  <p class="muted">Both warm versions have the same 8 kHz cutoff. One pole preserves more treble above that cutoff, but starts softening the frequencies below it more gradually. Compare against Clean resampling to check whether game08's riffs survive.</p>
+  <details>
+    <summary>Files and verification</summary>
+    <p id="verification"></p>
+    <div class="table-wrap"><table><thead><tr><th>Track</th><th>Version / WAV</th><th>LUFS estimate</th><th>Peak estimate</th></tr></thead><tbody id="files"></tbody></table></div>
+    <p><a href="report.json">Full measurements and source hashes</a> &middot; <a href="README.md">Method and reproduction instructions</a></p>
+  </details>
+  <noscript>This page needs JavaScript for switching. Open the WAV files alongside this page to listen directly.</noscript>
+  <script>
+    const report = /*REPORT*/null;
+    const player = document.getElementById('player');
+    const status = document.getElementById('status');
+    let song = 'game01';
+    let mode = 'current';
+    let pendingTime = null;
+    let resume = false;
+    const trackButtons = new Map();
+    const modeButtons = new Map();
+    function select(nextSong, nextMode, cueTime = null) {
+      const sameTrack = nextSong === song;
+      const position = cueTime ?? (sameTrack ? (pendingTime ?? player.currentTime) : 0);
+      const keepPlaying = pendingTime !== null ? resume : !player.paused;
+      player.pause();
+      song = nextSong;
+      mode = nextMode;
+      pendingTime = position;
+      resume = keepPlaying;
+      for (const [key, button] of trackButtons) button.setAttribute('aria-pressed', String(key === song));
+      for (const [key, button] of modeButtons) button.setAttribute('aria-pressed', String(key === mode));
+      document.getElementById('now').textContent = `${song} / ${report.variants[mode][0]}`;
+      status.textContent = 'Loading audio...';
+      player.src = report.tracks[song].variants[mode].file;
+      player.load();
+    }
+    player.addEventListener('loadedmetadata', () => {
+      if (pendingTime === null) return;
+      player.currentTime = Math.min(pendingTime, Math.max(0, player.duration - 0.01));
+      pendingTime = null;
+      status.textContent = 'Switch versions to compare the same passage. Changing tracks starts at the beginning.';
+      if (resume) player.play().catch(() => { status.textContent = 'Press Play to continue.'; });
+    });
+    player.addEventListener('error', () => { status.textContent = 'Could not load the WAV. Keep this page and its WAV files in the same folder.'; });
+    for (const [track, time, label] of [
+      [null, 0, 'Restart current track'],
+      ['game01', 30, 'game01 / 0:30 high note'],
+      ['game07', 45, 'game07 / 0:45 passage'],
+    ]) {
+      if (time >= report.seconds) continue;
+      const button = document.createElement('button');
+      button.textContent = label;
+      button.addEventListener('click', () => select(track ?? song, mode, time));
+      document.getElementById('cues').append(button);
+    }
+    for (const key of Object.keys(report.tracks)) {
+      const button = document.createElement('button');
+      button.textContent = key;
+      button.addEventListener('click', () => select(key, mode));
+      trackButtons.set(key, button);
+      document.getElementById('tracks').append(button);
+    }
+    for (const [key, [title, description]] of Object.entries(report.variants)) {
+      const button = document.createElement('button');
+      const strong = document.createElement('strong');
+      strong.textContent = title;
+      const small = document.createElement('small');
+      small.textContent = description;
+      button.append(strong, small);
+      button.addEventListener('click', () => select(song, key));
+      modeButtons.set(key, button);
+      document.getElementById('versions').append(button);
+    }
+    for (const [track, data] of Object.entries(report.tracks)) {
+      for (const [key, variant] of Object.entries(data.variants)) {
+        const row = document.createElement('tr');
+        const name = document.createElement('td');
+        name.textContent = track;
+        const file = document.createElement('td');
+        const link = document.createElement('a');
+        link.href = variant.file;
+        link.textContent = report.variants[key][0];
+        link.download = variant.file;
+        file.append(link);
+        const loudness = document.createElement('td');
+        loudness.textContent = variant.listen_metrics.loudness_lufs.toFixed(1);
+        const peak = document.createElement('td');
+        peak.textContent = `${variant.listen_metrics.true_peak_estimate_dbtp.toFixed(1)} dBTP`;
+        row.append(name, file, loudness, peak);
+        document.getElementById('files').append(row);
+      }
+    }
+    document.getElementById('verification').textContent = `${report.seconds} seconds per clip; matched to ${report.target_lufs.toFixed(1)} LUFS. Register events agree at millisecond resolution. Baseline and native renders repeat byte-for-byte. All clips pass the clipping and loudness checks.`;
+    select(song, mode);
+  </script>
+</body>
+</html>

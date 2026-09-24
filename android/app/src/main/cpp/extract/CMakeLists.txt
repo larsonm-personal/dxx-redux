@@ -520,6 +520,9 @@ else()
 endif()
 add_test(NAME music_synth_tests COMMAND test_music_synth
                                         ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/gm.sf2)
+add_executable(test_fm_resampler test_fm_resampler.cpp)
+target_include_directories(test_fm_resampler PRIVATE ../shared)
+add_test(NAME fm_resampler_tests COMMAND test_fm_resampler)
 add_executable(
     test_secret_area_scan_budget
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_secret_area_scan_budget.c

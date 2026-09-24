@@ -5,6 +5,7 @@
 #include "music_synth.h"
 #include "music_soundfont.h"
 #include "music_decode_limits.h"
+#include "music_fm_resampler.h"
 #include "player.h"
 #include "tml.h"
 #include <algorithm>
@@ -41,6 +42,8 @@ void fm_trace_write(int, uint16_t, uint8_t) {}
 struct music_synth {
 	tsf *sf = nullptr;
 	std::unique_ptr<OPLPlayer> fm;
+	music_fm_resampler fm_resampler;
+	double fm_gain = std::pow(10.0, -10.0 / 20.0);
 	std::unique_ptr<unsigned char, decltype(&std::free)> fm_sequence{ nullptr, std::free };
 	int fm_sequence_size = 0;
 	bool prefer_fm = false;
@@ -201,8 +204,10 @@ int music_synth_prepare(music_synth *s, const char *song, music_bank_reader read
 				fm->setLoop(false);
 				fm->setStereo(true);
 				fm->setFilter(0);
-				fm->setSampleRate(s->rate);
-				fm->setGain(std::pow(10.0, s->gain / 20.0));
+				fm->setSampleRate(music_fm_resampler::native_rate);
+				fm->setGain(1);
+				s->fm_resampler.configure(s->rate);
+				s->fm_resampler.reset();
 				if (fm->loadPatches(wopl.data(), wopl.size())) {
 					std::string sequence = song;
 					if (sequence.size() > 4 && identity(sequence.c_str()).compare(sequence.size() - 4, 4, ".hmp") == 0) {
@@ -265,17 +270,19 @@ void music_synth_reset(music_synth *s)
 {
 	if (s->fm) s->fm->reset();
 	else tsf_reset(s->sf);
+	s->fm_resampler.reset();
 	s->notes = {};
 	s->held = {};
 	s->sustain = {};
 }
 void music_synth_set_output(music_synth *s, TSFOutputMode mode, int rate, float gain)
 {
+	if (rate < 8000 || rate > 192000 || !std::isfinite(gain)) return;
 	s->rate = rate;
 	s->gain = gain;
+	s->fm_gain = std::pow(10.0, gain / 20.0);
 	if (s->fm) {
-		s->fm->setSampleRate(rate);
-		s->fm->setGain(std::pow(10.0, gain / 20.0));
+		s->fm_resampler.configure(rate);
 	} else tsf_set_output(s->sf, mode, rate, gain);
 }
 void music_synth_set_max_voices(music_synth *s, int voices)
@@ -295,8 +302,22 @@ int music_synth_active_voice_count(music_synth *s)
 }
 void music_synth_render_short(music_synth *s, short *out, int frames, int mixing)
 {
-	if (s->fm) s->fm->generate(out, frames);
-	else tsf_render_short(s->sf, out, frames, mixing);
+	if (!s->fm) {
+		tsf_render_short(s->sf, out, frames, mixing);
+		return;
+	}
+	float samples[music_fm_resampler::block_frames * 2];
+	while (frames > 0) {
+		const int count = std::min(frames, int(music_fm_resampler::block_frames));
+		s->fm_resampler.render(samples, count, [s](float *buffer, int n) { s->fm->generate(buffer, unsigned(n)); });
+		for (int i = 0; i < count * 2; ++i) {
+			// Preserve fractional filter/gain output until the PCM16 queue boundary
+			const double value = double(samples[i]) * s->fm_gain * 32768 + (mixing ? out[i] : 0);
+			out[i] = short(std::lround(std::max(-32768.0, std::min(32767.0, value))));
+		}
+		out += count * 2;
+		frames -= count;
+	}
 }
 void music_synth_channel_note_on(music_synth *s, int c, int key, float velocity)
 {

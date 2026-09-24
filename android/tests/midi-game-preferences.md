@@ -6,7 +6,7 @@ imported soundfont catalog stays in private `soundfonts/selection.json`; its
 selection fields from the earlier prototype are no longer read or written.
 As with other pre-release preference changes, no migration is performed.
 
-New preferences default to AdLib / Sound Blaster FM (`ymfm`). Both Game
+New preferences default to AdLib (OPL3) FM (`ymfm`). Both Game
 Preferences presets, Original Descent and Restore Defaults, apply AdLib and
 the bundled SF2 fallback. They retain imported SF2 files and catalog entries.
 These are renderer defaults, not changes to MIDI/CD/external-music source mode.

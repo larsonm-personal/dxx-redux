@@ -161,7 +161,7 @@ fun SoundfontSelector() {
 
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Text("Sound profile", style = MaterialTheme.typography.titleSmall)
-        listOf("ymfm" to "AdLib / Sound Blaster FM", "sf2" to "MIDI soundfont").forEach { (id, label) ->
+        listOf("ymfm" to "AdLib (OPL3) FM", "sf2" to "MIDI soundfont").forEach { (id, label) ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(selected = state.renderer == id, enabled = !busy, onClick = {
                     scope.launch {
@@ -248,7 +248,7 @@ fun SoundfontSelector() {
     rendererInfo?.let { renderer ->
         AlertDialog(
             onDismissRequest = { rendererInfo = null },
-            title = { Text(if (renderer == "ymfm") "AdLib / Sound Blaster FM" else "MIDI soundfont") },
+            title = { Text(if (renderer == "ymfm") "AdLib (OPL3) FM" else "MIDI soundfont") },
             text = {
                 Text(
                     if (renderer == "ymfm") {

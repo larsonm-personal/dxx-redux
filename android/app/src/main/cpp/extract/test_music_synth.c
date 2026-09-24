@@ -298,6 +298,21 @@ int main(int argc, char **argv)
 			hashes[pass] = checksum(pcm, frames * 2);
 		}
 		if (expected_fm) CHECK(hashes[0] == hashes[1]);
+		if (expected_fm) {
+			// Reconstruct with different chunks, including a partial prefill block
+			struct midi_seek_timeline timeline;
+			const uint64_t target = 10 * 48000 + 37;
+			int prefill = 0;
+			music_synth_reset(s);
+			music_synth_set_output(s, TSF_STEREO_INTERLEAVED, 48000, -10);
+			midi_seek_timeline_init(&timeline, messages, 48000, 2, s, &ops);
+			CHECK(midi_seek_timeline_reconstruct(&timeline, target, block, 2048, &prefill));
+			CHECK(prefill > 0);
+			CHECK(!memcmp(block, pcm + target * 2, (size_t) prefill * 2 * sizeof(short)));
+			CHECK(midi_seek_timeline_render(&timeline, block, 4800) == 4800);
+			CHECK(!memcmp(block, pcm + (target + prefill) * 2, sizeof(block)));
+			puts("FM seek: exact PCM and filter history after partial-block reconstruction");
+		}
 		peak = 0;
 		for (size_t i = 0; i < frames * 2; ++i)
 			if (abs(pcm[i]) > peak) peak = abs(pcm[i]);
