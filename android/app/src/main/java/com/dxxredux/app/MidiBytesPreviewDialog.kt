@@ -53,7 +53,8 @@ fun MidiBytesPreviewDialog(
     val sampleRate = remember { MidiPreviewBridge.getNativeSampleRate(context) }
     val contentScroll = rememberScrollState()
 
-    var renderer by remember { mutableStateOf<String?>(null) }
+    var playbackStatus by remember { mutableStateOf<String?>(null) }
+    var midiFallback by remember { mutableStateOf(false) }
     var playing by remember { mutableStateOf(false) }
     var positionMs by remember { mutableIntStateOf(0) }
     var durationMs by remember { mutableIntStateOf(0) }
@@ -93,6 +94,8 @@ fun MidiBytesPreviewDialog(
 
     fun togglePlayback() {
         if (!playing) {
+            playbackStatus = null
+            midiFallback = false
             val generation = MidiPreviewBridge.reserveStart()
             scope.launch(Dispatchers.IO) {
                 if (!MidiPreviewBridge.init(context)) {
@@ -105,7 +108,18 @@ fun MidiBytesPreviewDialog(
                     return@launch
                 }
                 if (MidiPreviewBridge.startReserved(generation, data, isHmp, sampleRate, hogPath, trackName)) {
-                    renderer = MidiPreviewBridge.getState().renderer
+                    val soundfonts = SoundfontStore(context).read()
+                    val actualRenderer = MidiPreviewBridge.getState().renderer
+                    midiFallback = soundfonts.renderer == "ymfm" && actualRenderer == "sf2"
+                    playbackStatus =
+                        if (actualRenderer == "ymfm") {
+                            "Playing with ymfm FM"
+                        } else {
+                            val name =
+                                soundfonts.fonts.firstOrNull { it.id == soundfonts.selected }?.name
+                                    ?: SoundfontCatalog.bundled(context).name
+                            "Playing with MIDI $name"
+                        }
                     playing = true
                     loadError = null
                 } else {
@@ -132,8 +146,15 @@ fun MidiBytesPreviewDialog(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(trackName, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                renderer?.let {
-                    Text(if (it == "ymfm") "Playing with ymfm FM" else "Playing with soundfont", fontSize = 12.sp)
+                playbackStatus?.let {
+                    Text(it, fontSize = 12.sp)
+                }
+                if (midiFallback) {
+                    Text(
+                        "FM is unavailable for this song. Using MIDI soundfont playback instead.",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
                 detailLines.forEach { line ->
                     Text(

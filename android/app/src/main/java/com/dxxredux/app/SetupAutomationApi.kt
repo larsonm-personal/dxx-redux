@@ -1093,6 +1093,8 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
             JSONObject().apply {
                 put("selected", soundfont.selected)
                 put("renderer", soundfont.renderer)
+                put("reverb", soundfont.reverb)
+                put("chorus", soundfont.chorus)
                 put(
                     "fonts",
                     JSONArray().apply {

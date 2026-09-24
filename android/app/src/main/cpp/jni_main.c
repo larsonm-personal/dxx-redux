@@ -45,6 +45,7 @@ jobject g_activity = NULL; /* Global ref to MainActivity */
 AAssetManager *g_asset_manager = NULL;
 char *g_music_soundfont_path = NULL;
 int g_music_prefer_fm;
+int g_music_reverb = 1, g_music_chorus = 1;
 
 /* Guard against double-launch: two startGame() calls in the same :game
  * process corrupt SDL/OpenGL/PhysFS globals and crash.  This happens when
@@ -141,6 +142,14 @@ static int android_cache_asset_manager(JNIEnv *env, jobject activity)
 	method = (*env)->GetMethodID(env, cls, "getMidiPreferFm", "()Z");
 	if (!method || (*env)->ExceptionCheck(env)) return 0;
 	g_music_prefer_fm = (*env)->CallBooleanMethod(env, activity, method) == JNI_TRUE;
+	if ((*env)->ExceptionCheck(env)) return 0;
+	method = (*env)->GetMethodID(env, cls, "getMidiReverb", "()Z");
+	if (!method || (*env)->ExceptionCheck(env)) return 0;
+	g_music_reverb = (*env)->CallBooleanMethod(env, activity, method) == JNI_TRUE;
+	if ((*env)->ExceptionCheck(env)) return 0;
+	method = (*env)->GetMethodID(env, cls, "getMidiChorus", "()Z");
+	if (!method || (*env)->ExceptionCheck(env)) return 0;
+	g_music_chorus = (*env)->CallBooleanMethod(env, activity, method) == JNI_TRUE;
 	return g_asset_manager != NULL && !(*env)->ExceptionCheck(env);
 }
 

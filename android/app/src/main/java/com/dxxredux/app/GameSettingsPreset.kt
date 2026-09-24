@@ -58,6 +58,7 @@ internal enum class GameSettingsPreset(
                 add(PresetSettingPreview("Original homing (Single/Coop)", originalHoming))
                 add(PresetSettingPreview("MIDI renderer", value = "AdLib (OPL3) FM"))
                 add(PresetSettingPreview("MIDI soundfont fallback", value = "Bundled"))
+                add(PresetSettingPreview("MIDI reverb and chorus", true))
                 if (this@GameSettingsPreset == DEFAULTS) {
                     add(PresetSettingPreview("HUD size", value = "Cockpit"))
                     add(PresetSettingPreview("Auto-level", true))

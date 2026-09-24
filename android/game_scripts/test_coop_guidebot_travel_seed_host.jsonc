@@ -1,0 +1,6 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"guidebot.released": true, "guidebot.owner_player": 1}},
+    {"action": "set_debug", "field": "guidebot_travel_shields", "value": "true"},
+    {"action": "assert", "expect": {"guidebot.shields": "37.0"}}
+]

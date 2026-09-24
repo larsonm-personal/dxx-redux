@@ -1099,7 +1099,7 @@ function Get-LatestNdkFullVersion {
 }
 
 function Get-LatestSoundfontVersion {
-    $latest = Get-LatestGitTagInfo "arbruijn/TimGM6mb" "v"
+    $latest = Get-LatestGitTagInfo "nitro-shoe/sc-55-soundfont" "v"
     if ($latest) {
         return $latest.Version
     }
@@ -1190,6 +1190,7 @@ $latestShfmt = Get-LatestGitTagInfo "mvdan/sh" "v"
 $latestKtlint = Get-LatestGitTagInfo "pinterest/ktlint"
 $latestCmakelang = Get-LatestPyPIVersion "cmakelang"
 $latestChromaprint = Get-LatestGitTagInfo "acoustid/chromaprint" "v"
+$latestFluidSynth = Get-LatestGitTagInfo "FluidSynth/fluidsynth" "v"
 $latestClangFormat = Get-LatestClangFormatInfo
 $latestNdkFullVersion = Get-LatestNdkFullVersion
 $latestMinimp3Commit = Get-LatestGitHubDefaultBranchCommit "lieff/minimp3"
@@ -1350,6 +1351,11 @@ $deps = @(
     @{ Name = "Chromaprint"; ConfKey = "CHROMAPRINT_VERSION";
         Current = $conf["CHROMAPRINT_VERSION"];
         Latest = if ($latestChromaprint) { $latestChromaprint["Tag"] } else { $null }
+    },
+
+    @{ Name = "FluidSynth"; ConfKey = "FLUIDSYNTH_VERSION";
+        Current = $conf["FLUIDSYNTH_VERSION"];
+        Latest = if ($latestFluidSynth) { $latestFluidSynth["Version"] } else { $null }
     },
 
     @{ Name = "minimp3"; ConfKey = "MINIMP3_COMMIT";
@@ -1673,6 +1679,53 @@ function Update-GradleWrapper($version) {
     Set-Content $path $content -NoNewline
 }
 
+function Update-FluidSynthTarget($version) {
+    if ($version -notmatch '^\d+\.\d+\.\d+$') {
+        throw "Expected a stable FluidSynth release version, got: $version"
+    }
+    # Read data only; never execute upstream CMake while updating the manifest
+    $module = (Invoke-LoggedWebRequest -Uri "https://raw.githubusercontent.com/FluidSynth/fluidsynth/v$version/cmake_admin/FindGCEM.cmake" -TimeoutSec 30).Content
+    $revision = [regex]::Matches($module, '(?m)^\s*set\(GCEM_REVISION\s+"([0-9a-f]{40})"\s*\)')
+    $hash = [regex]::Matches($module, '(?m)^\s*set\(GCEM_HASH\s+"([0-9a-f]{64})"\s*\)')
+    if ($revision.Count -ne 1 -or $hash.Count -ne 1 -or
+        $module -notmatch 'set\(GCEM_ZIP_URL\s+"https://github.com/kthohr/gcem/archive/\$\{GCEM_REVISION\}\.zip"\s*\)') {
+        throw "FluidSynth's GCEM declaration changed; review its dependency setup before updating"
+    }
+    $commit = $revision[0].Groups[1].Value
+    $fluidUrl = "https://github.com/FluidSynth/fluidsynth/archive/refs/tags/v$version.tar.gz"
+    $gcemUrl = "https://github.com/kthohr/gcem/archive/$commit.zip"
+    $fluidHash = Get-RemoteFileSha256 $fluidUrl
+    $gcemHash = Get-RemoteFileSha256 $gcemUrl
+    if ($fluidHash -notmatch '^[0-9a-f]{64}$' -or $gcemHash -ne $hash[0].Groups[1].Value) {
+        throw "FluidSynth/GCEM archive verification failed; dependency pins were not changed"
+    }
+    $pins = [ordered]@{
+        FLUIDSYNTH_VERSION = $version
+        FLUIDSYNTH_URL = $fluidUrl
+        FLUIDSYNTH_SHA256 = $fluidHash
+        GCEM_COMMIT = $commit
+        GCEM_URL = $gcemUrl
+        GCEM_SHA256 = $gcemHash
+    }
+    $content = Get-Content -LiteralPath $confFile -Raw
+    foreach ($entry in $pins.GetEnumerator()) {
+        $pattern = '(?m)^' + $entry.Key + '=[^\r\n]*'
+        if ([regex]::Matches($content, $pattern).Count -ne 1) {
+            throw "Expected exactly one $($entry.Key) in $confFile"
+        }
+        $assignment = Format-SafeToolConfAssignment -Key $entry.Key -Value $entry.Value
+        $content = [regex]::Replace($content, $pattern, $assignment)
+    }
+    # Replace all six pins together only after both downloads pass verification
+    $stagedConf = "$confFile.$([guid]::NewGuid().ToString('N')).tmp"
+    try {
+        [IO.File]::WriteAllText($stagedConf, $content, [Text.UTF8Encoding]::new($false))
+        [IO.File]::Replace($stagedConf, $confFile, [NullString]::Value)
+    } finally {
+        if (Test-Path -LiteralPath $stagedConf) { Remove-Item -LiteralPath $stagedConf -Force }
+    }
+}
+
 $script:executedInstallCommands = @{}
 
 function Invoke-InstallSyncForDependency($dep, $target) {
@@ -1710,7 +1763,7 @@ foreach ($item in $selectedTarget) {
     # Hash-coupled downloads are updated atomically in their switch cases after
     # all new payloads have been downloaded and hashed successfully
     $confValue = if ($dep.ContainsKey("NewValue")) { $dep.NewValue } else { $new }
-    $hashCoupledTarget = $name -in @("Chromaprint", "minimp3", "stb_vorbis", "dr_flac")
+    $hashCoupledTarget = $name -in @("Chromaprint", "FluidSynth", "GM Soundfont", "minimp3", "stb_vorbis", "dr_flac")
     if (-not $hashCoupledTarget) {
         Update-Conf $key $confValue
     }
@@ -1773,11 +1826,13 @@ foreach ($item in $selectedTarget) {
             }
         }
         "GM Soundfont" {
+            $sfUrl = "https://github.com/nitro-shoe/sc-55-soundfont/releases/download/v$new/Roland.SC-55.sf2"
+            $sfHash = Get-RemoteFileSha256 $sfUrl
             Update-Conf "SOUNDFONT_VERSION" $new
-            $sfUrl = "https://github.com/arbruijn/TimGM6mb/releases/download/v$new/TimGM6mb.sf2"
             Update-Conf "SOUNDFONT_URL" $sfUrl
-            Write-Host "    NOTE: Update SOUNDFONT_SHA256 in tool_versions.conf after downloading"
-            Write-Host "    Run: helpers/get_soundfont.sh (it will fail on hash mismatch until you update the hash)"
+            Update-Conf "SOUNDFONT_SHA256" $sfHash
+            Write-Host "    Review the bundled catalog version/credits and D1/D2 instrument coverage before shipping"
+            Write-Host "    Run: helpers/get_soundfont.sh"
         }
         "clang-format" {
             if ($dep.ReleaseTag) {
@@ -1809,6 +1864,11 @@ foreach ($item in $selectedTarget) {
             Update-Conf "CHROMAPRINT_SHA256" $chromaprintSha256
             Update-Conf "FPCALC_URL" (Get-ChromaprintFpcalcUrlForPlatform $new)
             Update-Conf "FPCALC_DIR_NAME" "fpcalc-$plainVersion"
+        }
+        "FluidSynth" {
+            Update-FluidSynthTarget $new
+            Write-Host "    Validate native rendering, Android ABIs, licenses and source rebuild before shipping"
+            Write-Host "    See android/tests/fluidsynth_quality/README.md (Updating FluidSynth)"
         }
         "minimp3" {
             $minimp3Url = "https://raw.githubusercontent.com/lieff/minimp3/$new/minimp3.h"

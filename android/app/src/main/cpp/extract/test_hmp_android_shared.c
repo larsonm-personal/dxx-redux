@@ -8,6 +8,7 @@
 
 static int allocation_count;
 static int fail_allocation = -1;
+static size_t realloc_calls, realloc_bytes;
 static int should_fail_allocation(void)
 {
 	return fail_allocation >= 0 && allocation_count++ == fail_allocation;
@@ -29,6 +30,8 @@ void *test_hmp_malloc(size_t size)
 
 void *test_hmp_realloc(void *ptr, size_t size)
 {
+	++realloc_calls;
+	realloc_bytes += size;
 	if (should_fail_allocation())
 		return NULL;
 	return realloc(ptr, size);
@@ -128,6 +131,53 @@ static int expect_track_result(const char *name, const unsigned char *track,
 			return 1;                                            \
 	} while (0)
 
+/* Model the game's copying debug allocator with a bound on bytes requested
+ * Growing output per event made preparation quadratic in song length */
+static int test_large_song_growth(void)
+{
+	enum { NOTES = 5000 };
+	unsigned char *track = malloc(NOTES * 8 + 4), *hmp;
+	size_t hmp_len;
+	int mode, i;
+	if (!track) return 0;
+	for (i = 0; i < NOTES; ++i) {
+		const unsigned char note[] = { 0x80, 0x90, 60, 64, 0x81, 0x80, 60, 0 };
+		memcpy(track + i * 8, note, sizeof(note));
+	}
+	memcpy(track + NOTES * 8, "\x81\xff\x2f\0", 4);
+	hmp = make_hmp(track, NOTES * 8 + 4, 2, &hmp_len);
+	free(track);
+	if (!hmp) return 0;
+	for (mode = 0; mode < 3; ++mode) {
+		int failure;
+		/* Includes failure at every buffer growth, not just the first allocation */
+		for (failure = -1; failure < 64; ++failure) {
+			unsigned char *midi = NULL;
+			int midi_len = 0, ok;
+			struct hmp_playback_info info;
+			allocation_count = 0;
+			fail_allocation = failure;
+			realloc_calls = realloc_bytes = 0;
+			ok = mode == 0 ? convert(hmp, hmp_len, &midi, &midi_len)
+			               : hmp2mid_playback_device_mem(hmp, (int) hmp_len, 1, mode == 2, &midi, &midi_len, &info);
+			if ((!ok && (failure < 0 || midi || midi_len)) ||
+			    (ok && (midi_len < NOTES * 6 || realloc_calls > 32 || realloc_bytes > (size_t) midi_len * 4))) {
+				fprintf(stderr, "large HMP mode=%d failure=%d ok=%d len=%d reallocs=%zu bytes=%zu\n",
+				        mode, failure, ok, midi_len, realloc_calls, realloc_bytes);
+				free(midi);
+				free(hmp);
+				return 0;
+			}
+			free(midi);
+			if (ok && failure >= 0) break;
+		}
+		if (failure == 64) { free(hmp); return 0; }
+	}
+	free(hmp);
+	fail_allocation = -1;
+	return 1;
+}
+
 int main(void)
 {
 	static const unsigned char valid[] = {
@@ -143,6 +193,7 @@ int main(void)
 	size_t hmp_len;
 	unsigned char *hmp, *midi;
 	int midi_len, failure;
+	if (!test_large_song_growth()) return 1;
 
 	if (!expect_track_result("valid", valid, sizeof(valid), 1) ||
 	    !expect_track_result("empty", valid, 0, 0))

@@ -115,7 +115,9 @@ the track's declared channel, not every event channel. FM conversion now follows
 that rule and accounts for the initial countdown decrement when computing EOF.
 Three production probes match two complete captured passes: 200 paired key-ons,
 all corresponding transitions and settled states. See `temp/fm-driver-production`.
-D2 briefing has GM-only music tracks and intentionally retains SF2 fallback.
+D2 briefing in the tested retail HOG has GM-only music tracks and retains SF2
+fallback. The DOS demo supplies its FM arrangement as `briefing.hmq`; see
+`d2-briefing-origin.md` for the subsequent cross-release asset comparison.
 All seven available D2 songs pass their applicable native checks; six use FM.
 
 Production validation now skips TinyMidi metadata before reading channel/key

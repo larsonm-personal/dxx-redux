@@ -140,6 +140,86 @@ static void render(void *s, short *out, int frames)
 }
 static const struct midi_seek_timeline_ops ops = { event_time, event_next, dispatch, render };
 
+static void soundfont_contracts(const char *path)
+{
+	music_synth *s = music_synth_load(NULL, path, 0);
+	CHECK(s && music_synth_get_presetcount(s) > 0);
+	CHECK(!music_synth_load(NULL, "missing-soundfont.sf2", 0));
+	tml_message events[4] = { 0 };
+	events[0].type = TML_CONTROL_CHANGE;
+	events[0].control = 7;
+	events[0].control_value = 100;
+	events[1].type = TML_NOTE_ON;
+	events[1].key = 60;
+	events[1].velocity = 100;
+	events[2].type = TML_NOTE_OFF;
+	events[2].key = 60;
+	events[2].time = 500;
+	events[3].type = TML_CONTROL_CHANGE;
+	events[3].control = 121;
+	events[3].time = 900;
+	for (int i = 0; i < 3; ++i) events[i].next = &events[i + 1];
+	short *continuous = malloc(120000 * 2 * sizeof(short));
+	short *again = malloc(120000 * 2 * sizeof(short));
+	CHECK(continuous && again);
+	const int rates[] = { 44100, 48000 };
+	for (int r = 0; r < 2; ++r) {
+		struct midi_seek_timeline timeline;
+		struct hmp_tsf_state initial = { 0 };
+		music_synth_set_output(s, TSF_STEREO_INTERLEAVED, rates[r], -10);
+		for (int pass = 0; pass < 2; ++pass) {
+			music_synth_reset(s);
+			music_synth_hmp_begin(s, &initial);
+			midi_seek_timeline_init(&timeline, events, rates[r], 2, s, &ops);
+			CHECK(midi_seek_timeline_set_range(&timeline, events, 0, 1000));
+			short *pcm = pass ? again : continuous;
+			CHECK(midi_seek_timeline_render(&timeline, pcm, 120000) == 120000);
+		}
+		CHECK(!memcmp(continuous, again, 120000 * 2 * sizeof(short)));
+		// Exercise a reset with an incomplete internal block and wet effect tails
+		music_synth_render_short(s, again, 37, 0);
+		music_synth_reset(s);
+		music_synth_hmp_begin(s, &initial);
+		midi_seek_timeline_init(&timeline, events, rates[r], 2, s, &ops);
+		CHECK(midi_seek_timeline_set_range(&timeline, events, 0, 1000));
+		short scratch[512];
+		int prefill = 0;
+		const int target = 12345;
+		CHECK(midi_seek_timeline_reconstruct(&timeline, target, scratch, 256, &prefill));
+		memcpy(again, scratch, (size_t) prefill * 2 * sizeof(short));
+		CHECK(midi_seek_timeline_render(&timeline, again + prefill * 2, 120000 - target - prefill) == 120000 - target - prefill);
+		CHECK(!memcmp(continuous + target * 2, again, (size_t) (120000 - target) * 2 * sizeof(short)));
+		music_synth_set_effects(s, 0, 0);
+		music_synth_reset(s);
+		music_synth_hmp_begin(s, &initial);
+		midi_seek_timeline_init(&timeline, events, rates[r], 2, s, &ops);
+		CHECK(midi_seek_timeline_render(&timeline, again, 24000) == 24000);
+		CHECK(memcmp(continuous, again, 24000 * 2 * sizeof(short)));
+		music_synth_set_effects(s, 1, 1);
+	}
+	struct hmp_tsf_state state = { 0 }, saved;
+	music_synth_hmp_control(s, 0, 0, 8);
+	music_synth_hmp_control(s, 0, 32, 4);
+	music_synth_hmp_control(s, 0, 10, 23);
+	music_synth_hmp_control(s, 0, 42, 17);
+	music_synth_channel_set_presetnumber(s, 0, 38, 0);
+	music_synth_hmp_capture(s, &state);
+	music_synth_hmp_control(s, 0, 121, 0);
+	music_synth_hmp_capture(s, &saved);
+	CHECK(state.bank[0] == saved.bank[0] && state.pan[0] == saved.pan[0]);
+	music_synth_reset(s);
+	music_synth_render_short(s, again, 24000, 0);
+	for (int i = 0; i < 48000; ++i) CHECK(again[i] == 0);
+	CHECK(!music_synth_active_voice_count(s));
+	music_synth_hmp_begin(s, &state);
+	music_synth_hmp_capture(s, &saved);
+	CHECK(state.bank[0] == saved.bank[0] && state.pan[0] == saved.pan[0] && state.preset[0] == saved.preset[0]);
+	free(continuous);
+	free(again);
+	music_synth_close(s);
+	puts("FluidSynth: exact wet reset, seek and loop at 44.1/48 kHz; effects, silence and HMI retention passed");
+}
+
 static unsigned long long checksum(const short *pcm, size_t samples)
 {
 	unsigned long long hash = 14695981039346656037ull;
@@ -181,7 +261,7 @@ static int render_comparison(int argc, char **argv)
 	struct hmp_tsf_state initial = { 0 };
 	music_synth_hmp_begin(s, &initial);
 	music_synth_set_output(s, TSF_STEREO_INTERLEAVED, 48000, -10);
-	music_synth_set_max_voices(s, 48);
+	music_synth_set_max_voices(s, 128);
 	int seconds = argc >= 8 ? atoi(argv[7]) : 20;
 	CHECK(seconds > 0 && seconds <= 120);
 	const int frames = seconds * 48000;
@@ -347,6 +427,7 @@ int main(int argc, char **argv)
 		tml_free(messages);
 	}
 	music_synth_close(s);
+	soundfont_contracts(argv[1]);
 	puts("music_synth integration passed");
 	return 0;
 }

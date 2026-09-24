@@ -1,0 +1,16 @@
+FluidSynth 2.6.1
+Copyright: the FluidSynth contributors; see source headers and fluidsynth-authors.txt
+https://github.com/FluidSynth/fluidsynth/tree/v2.6.1
+License: LGPL-2.1-or-later (full text: fluidsynth.txt)
+
+Built as the separate, dynamically linked libfluidsynth.so
+No readline, audio drivers, GLib, networking, or optional DSP dependencies
+GCEM compile-time math headers: Apache-2.0 (full text: gcem.txt)
+https://github.com/kthohr/gcem/tree/012ae73c6d0a2cb09ffe86475f5c6fba3926e200
+
+Local changes: one explicit int-to-float cast in fluid_audio_convert.h;
+MSVC mixed-enum warning suppression for host builds
+The exact patch, dependency hashes, settings and rebuild procedure are in
+cmake/fluidsynth-music.cmake and android/tests/fluidsynth_quality/README.md
+Publish the corresponding-source archive produced by package_sources.py
+alongside distributed builds containing this library

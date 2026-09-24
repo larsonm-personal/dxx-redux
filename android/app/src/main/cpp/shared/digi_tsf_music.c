@@ -1,13 +1,13 @@
 /*
- * MIDI music playback using TinySoundFont + TinyMidiLoader.
+ * MIDI music playback using the shared FluidSynth/ymfm renderer.
  *
  * Replaces digi_mixer_music.c on Android (or any platform without a
  * working SDL_mixer MIDI backend).  HMP files are converted to standard
  * MIDI in memory (via hmp2mid), parsed with TinyMidiLoader, then rendered
- * to PCM through TinySoundFont feeding Mix_HookMusic().
+ * to PCM through music_synth feeding Mix_HookMusic().
  *
  * Requires:
- *   - tsf.h  (TinySoundFont — SF2 synth, single-header C library)
+ *   - music_synth (FluidSynth SF2 and ymfm FM synthesis)
  *   - tml.h  (TinyMidiLoader — MIDI parser, single-header C library)
  *   - A General MIDI .sf2 soundfont available at runtime
  */
@@ -28,6 +28,8 @@
 #include <unistd.h>
 #include "android_crash_handler.h"
 #include "android_lifecycle_diagnostics.h"
+#include "android_log.h"
+#include <sys/system_properties.h>
 #define TSFMUSIC_LOG(...) __android_log_print(ANDROID_LOG_INFO, "TSF-Music", __VA_ARGS__)
 #else
 #define TSFMUSIC_LOG(...) ((void) 0)
@@ -97,7 +99,7 @@ static int g_pcm_rate;     /* source sample rate (e.g. 44100)     */
 
 /* ── Configurable gain (dB) ──────────────────────────────────────────────── */
 static float g_gain_db = -10.0f; /* TSF global gain in dB      */
-static int g_max_voices = 48;    /* voice limit (runtime-tunable) */
+static int g_max_voices = 128;   /* voice limit (runtime-tunable) */
 
 #ifdef ANDROID
 static int tsf_atomic_load_int(const int *value)
@@ -141,6 +143,10 @@ static int g_rb_underruns = 0; /* callback found buffer empty */
 static int g_rb_cb_count = 0;  /* total callbacks             */
 static unsigned int g_render_pass_count = 0;
 static unsigned int g_callback_trace_count = 0;
+/* Opt-in Android startup diagnostics, kept off the audio callback's logging path */
+static int g_music_timing;
+static Uint32 g_music_start_ticks;
+static unsigned int g_first_audio_ms;
 
 static long tsf_music_gettid(void)
 {
@@ -159,6 +165,7 @@ static int tsf_music_should_trace(unsigned int count)
 extern AAssetManager *g_asset_manager; /* set in jni_main.c              */
 extern char *g_music_soundfont_path;
 extern int g_music_prefer_fm;
+extern int g_music_reverb, g_music_chorus;
 #endif
 
 /* ── Soundfont loading ───────────────────────────────────────────────── */
@@ -179,6 +186,10 @@ static int tsf_music_load_soundfont(void)
 		}
 		TSFMUSIC_LOG("SDL mixer output: %d Hz, fmt=0x%04X, ch=%d", g_output_rate, fmt, ch);
 	}
+	if (g_output_rate < 8000 || g_output_rate > 96000) {
+		TSFMUSIC_LOG("Unsupported MIDI sample rate: %d", g_output_rate);
+		return 0;
+	}
 
 #ifdef ANDROID
 	if (!g_asset_manager) {
@@ -193,6 +204,7 @@ static int tsf_music_load_soundfont(void)
 		return 0;
 	}
 
+	music_synth_set_effects(g_tsf, g_music_reverb, g_music_chorus);
 	TSFMUSIC_LOG("Soundfont loaded (%d presets)", music_synth_get_presetcount(g_tsf));
 #endif
 
@@ -632,6 +644,7 @@ static int render_thread_func(void *data)
 	(void) data;
 	enum { CHUNK = 2048 }; /* frames per render pass */
 	short buf[CHUNK * 2];
+	int first_audio_reported = 0;
 
 	TSFMUSIC_LOG("Render thread started");
 	crash_breadcrumb_v("tsf_thread start tid=%ld", tsf_music_gettid());
@@ -643,6 +656,13 @@ static int render_thread_func(void *data)
 	}
 
 	for (;;) {
+		if (g_music_timing && !first_audio_reported) {
+			unsigned int first = __atomic_load_n(&g_first_audio_ms, __ATOMIC_RELAXED);
+			if (first) {
+				debug_log_force(DLOG_PROFILING, "Music first audio: fm=%d elapsed_ms=%u", tsf_atomic_load_int(&g_renderer_snapshot), first - 1);
+				first_audio_reported = 1;
+			}
+		}
 		android_lifecycle_diagnostics_count(ANDROID_LIFECYCLE_COUNTER_MUSIC_PRODUCER_WAKE);
 		tsf_apply_pending_tuning();
 		if (!__atomic_load_n(&g_render_running, __ATOMIC_SEQ_CST))
@@ -771,6 +791,13 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 	}
 
 	int got = rb_read(out, needed);
+	if (g_music_timing && !__atomic_load_n(&g_first_audio_ms, __ATOMIC_RELAXED)) {
+		for (int i = 0; i < got; ++i)
+			if (out[i]) {
+				__atomic_store_n(&g_first_audio_ms, 1u + SDL_GetTicks() - g_music_start_ticks, __ATOMIC_RELAXED);
+				break;
+			}
+	}
 	if (trace)
 		crash_breadcrumb_v("tsf_cb #%u got=%d", cb, got);
 
@@ -964,6 +991,11 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 {
 	unsigned int bufsize = 0;
 	char *fptr;
+#ifdef ANDROID
+	const Uint32 started = SDL_GetTicks();
+	Uint32 stopped;
+	char timing[PROP_VALUE_MAX];
+#endif
 
 	crash_breadcrumb_v("mix_play_file enter tid=%ld file=%s loop=%d",
 	                   tsf_music_gettid(), filename, loop);
@@ -971,6 +1003,12 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	crash_breadcrumb("mix_play_file: dispatch_finished_done");
 	mix_free_music();
 	crash_breadcrumb("mix_play_file: preflight_free_done");
+#ifdef ANDROID
+	stopped = SDL_GetTicks();
+	g_music_start_ticks = started;
+	__atomic_store_n(&g_first_audio_ms, 0u, __ATOMIC_RELAXED);
+	g_music_timing = __system_property_get("debug.dxx.music_timing", timing) > 0 && !strcmp(timing, "1");
+#endif
 
 	fptr = strrchr(filename, '.');
 	if (!fptr) return 0;
@@ -1168,6 +1206,9 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 
 #ifdef ANDROID
 	/* Start background render thread -- fills ring buffer ahead */
+	if (g_music_timing)
+		debug_log_force(DLOG_PROFILING, "Music prepared: song=%s fm=%d stop_ms=%u prepare_ms=%u total_ms=%u",
+		                filename, tsf_atomic_load_int(&g_renderer_snapshot), stopped - started, SDL_GetTicks() - stopped, SDL_GetTicks() - started);
 	if (!render_thread_start()) {
 		mix_free_music();
 		return 0;

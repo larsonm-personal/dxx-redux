@@ -4927,8 +4927,9 @@ extern "C" void game_automate_tick(void)
 					source_generation = coop_campaign_current()->generation;
 					captured_world[source_level + 127] = true;
 					captured_robots[source_level + 127] = 0;
+					/* The companion travels with the party, rather than this mine */
 					for (int i = 0; i <= Highest_object_index; ++i)
-						if (Objects[i].type == OBJ_ROBOT) ++captured_robots[source_level + 127];
+						if (Objects[i].type == OBJ_ROBOT && !Robot_info[Objects[i].id].companion) ++captured_robots[source_level + 127];
 					if (source_level > 0) {
 						char path[1024];
 						snprintf(path, sizeof(path), "%s/coop_world_base_expected.json", g_automate_dir);
@@ -5020,7 +5021,7 @@ extern "C" void game_automate_tick(void)
 					}
 					int robots = 0;
 					for (int i = 0; i <= Highest_object_index; ++i)
-						if (Objects[i].type == OBJ_ROBOT) ++robots;
+						if (Objects[i].type == OBJ_ROBOT && !Robot_info[Objects[i].id].companion) ++robots;
 					bool fresh = !captured_world[Current_level_num + 127];
 					if (!prepared || !checksum || Current_level_num != destination || (!rollback && Current_level_num == source_level) ||
 					    coop_travel_active() || game_is_time_paused() ||
@@ -5325,6 +5326,16 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail(reason);
 					break;
 				}
+			} else if (s.field == "guidebot_travel_shields") {
+#ifdef DXX_BUILD_DESCENT_II
+				if (!escort_buddy_is_active() || !Buddy_allowed_to_talk) {
+					stop_script_fail("Travel companion must be released before seeding shields");
+					break;
+				}
+				Objects[Buddy_objnum].shields = i2f(37);
+#else
+				stop_script_fail("guidebot_travel_shields requires D2");
+#endif
 			} else if (s.field == "release_guidebot_cage") {
 				char reason[128];
 				if ((strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) &&

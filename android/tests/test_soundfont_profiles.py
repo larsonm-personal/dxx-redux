@@ -83,6 +83,8 @@ def main():
     try:
         start_setup()
         command('music_renderer_select', '--es', 'renderer', 'sf2')
+        command('music_effects_select', '--ez', 'reverb', 'false', '--ez', 'chorus', 'true')
+        assert state()['soundfont']['reverb'] is False and state()['soundfont']['chorus'] is True
         stage(fixture, 'soundfont-profile-test.sf2')
         stage(invalid, 'soundfont-invalid-test.sf2')
         base = '/data/user/0/' + PACKAGE + '/files/'
@@ -96,6 +98,17 @@ def main():
         start_setup()
         assert state()['soundfont']['selected'] == identity
         report['checks'].append('selection survives process restart')
+        assert state()['soundfont']['reverb'] is False and state()['soundfont']['chorus'] is True
+        report['checks'].append('independent effect preferences survive process restart')
+        for preset in ('ORIGINAL', 'DEFAULTS'):
+            command('music_preferences_reset', '--es', 'preset', preset)
+            reset = state()['soundfont']
+            assert reset['renderer'] == 'ymfm' and reset['selected'] == '' and reset['reverb'] and reset['chorus'], reset
+            command('music_effects_select', '--ez', 'reverb', 'false', '--ez', 'chorus', 'false')
+        report['checks'].append('both resets restore AdLib, bundled font and wet MIDI defaults')
+        command('music_renderer_select', '--es', 'renderer', 'sf2')
+        command('music_soundfont_select', '--es', 'id', identity)
+        command('music_effects_select', '--ez', 'reverb', 'true', '--ez', 'chorus', 'true')
         command('music_midi_play', '--ei', 'source', '0', '--ei', 'track', '2')
         time.sleep(2)
         preview = state()['music_preview']['midi']
@@ -105,6 +118,11 @@ def main():
         assert switched['soundfont']['selected'] == ''
         assert switched['music_preview']['midi']['state'] == 'stopped'
         report['checks'].append('switch to bundled stops the previous preview safely')
+        command('music_midi_play', '--ei', 'source', '0', '--ei', 'track', '2')
+        time.sleep(1)
+        bundled_preview = state()['music_preview']['midi']
+        assert bundled_preview['state'] == 'playing' and bundled_preview['position_ms'] > 500, bundled_preview
+        report['checks'].append('bundled font loads and MIDI preview advances')
         command('music_soundfont_select', '--es', 'id', identity)
         command('music_midi_play', '--ei', 'source', '0', '--ei', 'track', '2')
         time.sleep(1)
@@ -135,6 +153,7 @@ def main():
                 logs = call('logcat', '-d', '-s', 'DXX-Soundfont:I', '*:S').stdout
                 (args.output / f'{game}-soundfont.log').write_text(logs, encoding='utf8')
                 assert f'/{identity}.sf2' in logs and 'Loaded path=' in logs, logs
+                assert 'renderer=fluidsynth' in logs, logs
                 report['games'][game] = 'music-control automation passed; native loader selected custom asset'
         if args.library:
             # Simulate a completed download's stored metadata absent from the production

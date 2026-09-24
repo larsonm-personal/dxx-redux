@@ -1,5 +1,5 @@
 #!/bin/bash
-# get_soundfont.sh - Download the GM soundfont (TimGM6mb.sf2) into the assets
+# get_soundfont.sh - Download the pinned bundled GM soundfont into the assets
 # directory if it is missing or has the wrong hash.
 # Reads URL and SHA256 from tool_versions.conf.
 set -e
@@ -26,7 +26,7 @@ fi
 mkdir -p "$(dirname "$DEST")"
 TMPFILE="$(create_temp_file sf2)"
 
-echo "Downloading TimGM6mb.sf2 (v${SOUNDFONT_VERSION})..."
+echo "Downloading bundled soundfont (v${SOUNDFONT_VERSION})..."
 download_file "$TMPFILE" "$SOUNDFONT_URL"
 
 # --- Verify hash ---

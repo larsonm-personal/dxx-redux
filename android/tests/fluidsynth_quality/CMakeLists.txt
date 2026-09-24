@@ -1,0 +1,25 @@
+cmake_minimum_required(VERSION 3.24)
+project(dxx-fluidsynth-quality C CXX)
+include(FetchContent)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
+include(${CMAKE_CURRENT_LIST_DIR}/../../../cmake/fluidsynth-music.cmake)
+
+include(${CMAKE_CURRENT_LIST_DIR}/../../../cmake/dxx-verified-dependencies.cmake)
+dxx_verified_fetchcontent_declare(tsf_headers TINYSOUNDFONT)
+FetchContent_MakeAvailable(tsf_headers)
+set(shared "${CMAKE_CURRENT_LIST_DIR}/../../app/src/main/cpp/shared")
+add_executable(fluid_render render.cpp ${shared}/midi_seek_timeline.c)
+target_include_directories(fluid_render PRIVATE ${shared} ${tsf_headers_SOURCE_DIR})
+target_link_libraries(fluid_render PRIVATE libfluidsynth)
+if(MSVC)
+    target_compile_definitions(fluid_render PRIVATE _CRT_SECURE_NO_WARNINGS)
+else()
+    target_compile_options(fluid_render PRIVATE -Wall -Wextra)
+endif()
+
+enable_testing()
+add_test(NAME fluid_render_contracts
+         COMMAND fluid_render --test ${CMAKE_CURRENT_LIST_DIR}/../../app/src/main/assets/gm.sf2)

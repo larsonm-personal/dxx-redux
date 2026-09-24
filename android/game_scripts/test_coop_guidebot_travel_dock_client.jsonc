@@ -1,0 +1,6 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "meta_action", "id": 1042, "post_delay_ms": 200},
+    {"action": "meta_action", "id": 1045, "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"guidebot.docked": true, "guidebot.owner_player": 1}}
+]

@@ -29,6 +29,7 @@ fun SoundfontSelector() {
     val context = LocalContext.current
     val store = remember { SoundfontStore(context) }
     val bundled = remember(context) { SoundfontCatalog.bundled(context) }
+    val downloads = remember(context) { SoundfontCatalog.entries(context) }
     val scope = rememberCoroutineScope()
     var state by remember { mutableStateOf(store.read()) }
     var expanded by remember { mutableStateOf(false) }
@@ -99,7 +100,17 @@ fun SoundfontSelector() {
         val preferences = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
         val listener =
             SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                if (key == SoundfontStore.PREF_RENDERER || key == SoundfontStore.PREF_SOUNDFONT) state = store.read()
+                if (key in
+                    setOf(
+                        SoundfontStore.PREF_RENDERER,
+                        SoundfontStore.PREF_SOUNDFONT,
+                        SoundfontStore.PREF_REVERB,
+                        SoundfontStore.PREF_CHORUS,
+                    )
+                ) {
+                    state =
+                        store.read()
+                }
             }
         preferences.registerOnSharedPreferenceChangeListener(listener)
         onDispose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
@@ -211,6 +222,36 @@ fun SoundfontSelector() {
                 }
             }
         }
+        Text("MIDI soundfont effects", style = MaterialTheme.typography.titleSmall)
+        listOf("Reverb" to state.reverb, "Chorus" to state.chorus).forEach { (label, checked) ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(label, modifier = Modifier.weight(1f))
+                Switch(checked = checked, enabled = !busy, onCheckedChange = { enabled ->
+                    busy = true
+                    error = null
+                    scope.launch {
+                        try {
+                            withContext(Dispatchers.IO) {
+                                MidiPreviewBridge.selectEffects(
+                                    context,
+                                    if (label == "Reverb") enabled else state.reverb,
+                                    if (label == "Chorus") enabled else state.chorus,
+                                )
+                            }
+                            state = store.read()
+                        } catch (e: Exception) {
+                            error = e.message ?: "Could not change MIDI effects"
+                        } finally {
+                            busy = false
+                        }
+                    }
+                })
+            }
+        }
+        Text(
+            "Applies to soundfont playback, including AdLib fallback songs.",
+            style = MaterialTheme.typography.bodySmall,
+        )
         Text(
             "Saved immediately in Game Preferences for MIDI previews and the next launch of either game.",
             style = MaterialTheme.typography.bodySmall,
@@ -228,7 +269,7 @@ fun SoundfontSelector() {
         ) {
             Text("Download soundfonts")
         }
-        if (SoundfontCatalog.entries.isEmpty()) {
+        if (downloads.isEmpty()) {
             Text("No soundfont downloads are available yet.", style = MaterialTheme.typography.bodySmall)
         }
         if (busy) {
@@ -254,12 +295,16 @@ fun SoundfontSelector() {
                     if (renderer == "ymfm") {
                         "Recreates the original AdLib/Sound Blaster music using an emulated Yamaha OPL chip " +
                             "and the game's FM instruments. It synthesizes sounds electronically, " +
-                            "giving them their characteristic retro tone."
+                            "giving them their characteristic retro tone.\n\n" +
+                            "HMP/HMQ music is converted to MIDI, parsed by TinyMidiLoader, " +
+                            "and rendered through ymfmidi and ymfm's OPL3 emulation."
                     } else {
                         "Plays MIDI using sampled instruments from your selected SoundFont. " +
                             "This corresponds to the original game's General MIDI sound option; " +
                             "changing the SoundFont changes the instrument sounds, much like choosing " +
-                            "a different MIDI sound card or module."
+                            "a different MIDI sound card or module.\n\n" +
+                            "HMP music is converted to MIDI, parsed by TinyMidiLoader, " +
+                            "and rendered by FluidSynth using your selected SF2 soundfont."
                     },
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                 )
@@ -368,7 +413,7 @@ fun SoundfontSelector() {
                         infoFont = bundled
                     }
                     HorizontalDivider()
-                    SoundfontCatalog.entries.forEach { entry ->
+                    downloads.forEach { entry ->
                         TextButton(onClick = {
                             showDownloads = false
                             pendingDownload = entry

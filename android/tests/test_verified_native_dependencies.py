@@ -14,6 +14,8 @@ PRODUCTION_PREFIXES = (
     "SDL12",
     "SDL_MIXER12",
     "TINYSOUNDFONT",
+    "FLUIDSYNTH",
+    "GCEM",
     "NLOHMANN_JSON",
     "PHYSFS",
     "LZMA_SDK",
@@ -82,6 +84,7 @@ class VerifiedNativeDependenciesTest(unittest.TestCase):
         owners = (
             ROOT / "android/app/src/main/cpp/CMakeLists.txt",
             ROOT / "cmake/input-demo-codec-deps.cmake",
+            ROOT / "cmake/fluidsynth-music.cmake",
         )
         for owner in owners:
             text = owner.read_text(encoding="utf-8")

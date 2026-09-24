@@ -70,14 +70,32 @@ class SoundfontStoreTest {
         for (preset in GameSettingsPreset.entries) {
             store.select(font.id) { true }
             store.selectRenderer("sf2") { _, _ -> true }
+            store.selectEffects(false, false) { _, _ -> true }
             preset.resetMidiPreferences(store) { path, fm -> path.isEmpty() && fm }
             val reopened = SoundfontStore(temporary.root, preferences)
             assertEquals("ymfm", reopened.read().renderer)
+            assertTrue(reopened.read().reverb)
+            assertTrue(reopened.read().chorus)
             assertEquals("", reopened.read().selected)
             assertEquals(listOf(font), reopened.read().fonts)
             assertTrue(File(temporary.root, "soundfonts/${font.id}.sf2").isFile)
             assertEquals("ymfm", preferences.getString(SoundfontStore.PREF_RENDERER, null))
         }
+    }
+
+    @Test fun effectPreferencesPersistAndFailedActivationKeepsPreviousValues() {
+        val store = SoundfontStore(temporary.root, preferences)
+        store.selectEffects(false, true) { r, c -> !r && c }
+        val reopened = SoundfontStore(temporary.root, preferences)
+        assertFalse(reopened.read().reverb)
+        assertTrue(reopened.read().chorus)
+        try {
+            reopened.selectEffects(true, false) { _, _ -> false }
+            fail("Saved effects after failed activation")
+        } catch (_: IllegalStateException) {
+        }
+        assertFalse(store.read().reverb)
+        assertTrue(store.read().chorus)
     }
 
     @Test fun exportedSelectionsRoundTripAndMissingAssetsFallBack() {
@@ -89,7 +107,11 @@ class SoundfontStoreTest {
         val decoded = ConfigImportExport.decodePreferenceValues(exported)
         assertNull(decoded.error)
         val restored = memoryPreferences()
-        decoded.values.forEach { (key, value) -> restored.edit().putString(key.key, value as String).commit() }
+        decoded.values.forEach { (key, value) ->
+            val editor = restored.edit()
+            if (value is Boolean) editor.putBoolean(key.key, value) else editor.putString(key.key, value as String)
+            editor.commit()
+        }
         assertEquals(store.read(), SoundfontStore(temporary.root, restored).read())
         val missing = TemporaryFolder().also { it.create() }
         try {
@@ -147,6 +169,8 @@ class SoundfontStoreTest {
         store.selectRenderer("ymfm") { path, fm -> fm && File(path).exists() }
         val reopened = SoundfontStore(temporary.root, preferences)
         assertEquals("ymfm", reopened.read().renderer)
+            assertTrue(reopened.read().reverb)
+            assertTrue(reopened.read().chorus)
         assertEquals(font.id, reopened.read().selected)
         try {
             reopened.selectRenderer("sf2") { _, _ -> false }

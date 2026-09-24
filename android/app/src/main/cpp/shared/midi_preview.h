@@ -1,7 +1,7 @@
 /*
  * midi_preview.h -- Standalone MIDI/HMP preview player for the launcher.
  *
- * Uses TinySoundFont (TSF) + TinyMidiLoader (TML) for synthesis and
+ * Uses FluidSynth/ymfm + TinyMidiLoader (TML) for synthesis and
  * OpenSL ES for audio output.  No SDL, PHYSFS, or game engine dependency.
  *
  * HMP files are converted to standard MIDI in memory using the same
@@ -10,7 +10,7 @@
  *
  * Thread model (same as cd_preview.c):
  *   - Main thread: JNI calls (init/start/stop/pause/seek/get_state)
- *   - Render thread: applies queued seeks, advances MIDI, renders TSF -> ring
+ *   - Render thread: applies queued seeks, advances MIDI, renders PCM -> ring
  *   - OpenSL ES callback: reads ring buffer, outputs audio
  * Control calls are serialized, mutable synth state is protected by one mutex
  * shared with rendering, while pause flags and state queries are atomic. The
@@ -31,7 +31,7 @@
  * A successful replacement stops playback; failure preserves the old synth.
  * Returns 1 on success, 0 on failure.
  */
-int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer_fm);
+int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer_fm, int reverb, int chorus);
 
 /*
  * Start playback of MIDI data.

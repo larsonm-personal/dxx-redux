@@ -52,6 +52,11 @@ add_library(
 set_target_properties(music_ymfmidi PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(music_ymfmidi SYSTEM PUBLIC ${_music_player_dir})
 target_link_libraries(music_ymfmidi PUBLIC music_ymfm)
+if(ANDROID)
+    # Real-time synthesis must keep up in debug/internal APKs too Preserve symbols and assertions
+    target_compile_options(music_ymfm PRIVATE $<$<CONFIG:Debug>:-O2>)
+    target_compile_options(music_ymfmidi PRIVATE $<$<CONFIG:Debug>:-O2>)
+endif()
 if(MSVC)
     target_compile_definitions(music_ymfmidi PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()

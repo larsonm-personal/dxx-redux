@@ -377,15 +377,19 @@ FetchContent_MakeAvailable(ktx_software)
 # 3c. TinySoundFont shared library  (MIDI synth, linked by both games)
 # ──────────────────────────────────────────────────────────────
 include(${DXX_PROJECT_ROOT}/cmake/ymfm-music.cmake)
+include(${DXX_PROJECT_ROOT}/cmake/fluidsynth-music.cmake)
 
 add_library(
     tsf SHARED
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/tsf_impl.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_soundfont.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_synth.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_synth.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_fluid.cpp)
 target_include_directories(tsf PRIVATE ${_TSF_DIR})
-target_link_libraries(tsf android log music_ymfmidi)
+target_link_libraries(tsf android log music_ymfmidi libfluidsynth)
 target_compile_options(tsf PRIVATE -w)
+# The shared renderer includes the FM resampler and runs on both game and preview audio threads
+target_compile_options(tsf PRIVATE $<$<CONFIG:Debug>:-O2>)
 
 # ──────────────────────────────────────────────────────────────
 # 3d. PCM decoders + fingerprinting shared library

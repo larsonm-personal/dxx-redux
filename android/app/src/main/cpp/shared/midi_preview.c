@@ -2,8 +2,8 @@
  * midi_preview.c -- Standalone MIDI/HMP preview player for the launcher.
  *
  * Mirrors cd_preview.c architecture: OpenSL ES output, render thread,
- * lock-free ring buffer.  Renders MIDI via TinySoundFont (TSF) +
- * TinyMidiLoader (TML).
+ * lock-free ring buffer.  Renders MIDI via FluidSynth or ymfm with
+ * TinyMidiLoader (TML) sequencing.
  *
  * HMP -> MIDI conversion reuses shared hmp2mid_mem(), which parses HMP
  * from a memory buffer.
@@ -20,6 +20,9 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <time.h>
+#include <sys/system_properties.h>
+#include "android_log.h"
 #include <android/log.h>
 #include <android/asset_manager.h>
 #include <SLES/OpenSLES.h>
@@ -99,6 +102,7 @@ static unsigned int rb_available(void)
 
 static music_synth *s_tsf = NULL; /* SoundFont synth (persistent)    */
 static char *s_soundfont_path;
+static int s_reverb = 1, s_chorus = 1;
 static int s_prefer_fm;
 static int s_renderer_snapshot;
 static tml_message *s_midi = NULL;       /* parsed MIDI message list        */
@@ -120,7 +124,7 @@ static struct hmp_tsf_state s_hmp_initial_state;
 static int s_output_rate = 48000;
 static float s_volume = 0.7f;
 static float s_gain_db = -10.0f;
-static int s_max_voices = 48;
+static int s_max_voices = 128;
 static pthread_mutex_t s_control_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t s_playback_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t s_ring_reset_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -129,6 +133,18 @@ static pthread_mutex_t s_ring_reset_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t s_render_tid;
 static volatile int s_render_running = 0;
 static int s_thread_created = 0;
+
+/* Android music diagnostics: no synth work or logging on the audio callback */
+static unsigned int s_callback_count, s_underrun_count, s_consumed_frames, s_first_audio_ms;
+static int s_diagnostics; /* Explicit adb opt-in; no per-chunk clocks or callback scans otherwise */
+static double s_start_ms;
+
+static double preview_now_ms(void)
+{
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	return (double) now.tv_sec * 1000.0 + (double) now.tv_nsec / 1000000.0;
+}
 
 /* OpenSL ES objects */
 static SLObjectItf s_engine_obj = NULL;
@@ -352,10 +368,10 @@ static void approximate_seek(int target_ms)
 	int key;
 	int notes = 0;
 
+	music_synth_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
 	music_synth_reset(s_tsf);
 	if (s_hmp_end_ms > 0)
 		music_synth_hmp_begin(s_tsf, &s_hmp_initial_state);
-	music_synth_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
 	music_synth_set_max_voices(s_tsf, s_max_voices);
 	while (message && message->time <= (unsigned int) target_ms) {
 		channel = (unsigned char) message->channel;
@@ -425,6 +441,8 @@ static void *render_thread_func(void *data)
 {
 	enum { CHUNK = 2048 };
 	short buf[CHUNK * 2];
+	double report_at = preview_now_ms(), render_ms = 0, max_render_ms = 0;
+	unsigned int rendered_frames = 0;
 	(void) data;
 
 	LOGI("MIDI preview render thread started");
@@ -448,13 +466,27 @@ static void *render_thread_func(void *data)
 			if (space < CHUNK * 2u) {
 				sleep_usec = 5000;
 			} else {
+				double started = s_diagnostics ? preview_now_ms() : 0;
 				int got = render_midi_frames(buf, CHUNK);
+				double elapsed = s_diagnostics ? preview_now_ms() - started : 0;
+				render_ms += elapsed;
+				if (elapsed > max_render_ms) max_render_ms = elapsed;
+				rendered_frames += (unsigned int) got;
 				if (got > 0)
 					rb_write(buf, got * 2);
 				stop = !__atomic_load_n(&s_playing, __ATOMIC_ACQUIRE);
 			}
 		}
 		publish_playback_state();
+		if (s_diagnostics && preview_now_ms() - report_at >= 1000) {
+			debug_log_force(DLOG_PROFILING, "MIDI preview Progress: renderer=%s position_ms=%d rendered_frames=%u consumed_frames=%u callbacks=%u underruns=%u queued_frames=%u render_ms=%.3f max_render_ms=%.3f voices=%d first_audio_ms=%u",
+			     music_synth_is_fm(s_tsf) ? "ymfm" : "fluidsynth", (int) s_playback_msec, rendered_frames,
+			     __atomic_load_n(&s_consumed_frames, __ATOMIC_RELAXED), __atomic_load_n(&s_callback_count, __ATOMIC_RELAXED),
+			     __atomic_load_n(&s_underrun_count, __ATOMIC_RELAXED), rb_available() / 2, render_ms, max_render_ms,
+			     music_synth_active_voice_count(s_tsf), __atomic_load_n(&s_first_audio_ms, __ATOMIC_RELAXED));
+			report_at = preview_now_ms();
+			render_ms = max_render_ms = 0;
+		}
 		pthread_mutex_unlock(&s_playback_mutex);
 
 		if (stop) break;
@@ -497,14 +529,27 @@ static void osl_callback(SLAndroidSimpleBufferQueueItf bq, void *ctx)
 	(void) ctx;
 	short *buf = s_play_bufs[s_next_buf];
 	int needed = BUF_FRAMES * 2;
+	int received = 0;
 
 	memset(buf, 0, needed * sizeof(short));
 
 	if (__atomic_load_n(&s_output_enabled, __ATOMIC_ACQUIRE) &&
 	    pthread_mutex_trylock(&s_ring_reset_mutex) == 0) {
 		if (__atomic_load_n(&s_output_enabled, __ATOMIC_RELAXED))
-			rb_read(buf, needed);
+			received = rb_read(buf, needed);
 		pthread_mutex_unlock(&s_ring_reset_mutex);
+	}
+	if (s_diagnostics && __atomic_load_n(&s_output_enabled, __ATOMIC_ACQUIRE)) {
+		__atomic_add_fetch(&s_callback_count, 1u, __ATOMIC_RELAXED);
+		__atomic_add_fetch(&s_consumed_frames, (unsigned int) received / 2, __ATOMIC_RELAXED);
+		if (received < needed) __atomic_add_fetch(&s_underrun_count, 1u, __ATOMIC_RELAXED);
+		if (!__atomic_load_n(&s_first_audio_ms, __ATOMIC_RELAXED)) {
+			for (int i = 0; i < received; ++i)
+				if (buf[i]) {
+					__atomic_store_n(&s_first_audio_ms, 1u + (unsigned int) (preview_now_ms() - s_start_ms), __ATOMIC_RELAXED);
+					break;
+				}
+		}
 	}
 
 	SLresult r = (*bq)->Enqueue(bq, buf, needed * sizeof(short));
@@ -656,13 +701,13 @@ static void osl_shutdown(void)
 
 static void midi_preview_stop_internal(void);
 
-int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer_fm)
+int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer_fm, int reverb, int chorus)
 {
 	music_synth *replacement;
 	char *path;
 	if (!soundfont_path) return 0;
 	pthread_mutex_lock(&s_control_mutex);
-	if (s_tsf && s_soundfont_path && s_prefer_fm == prefer_fm && !strcmp(s_soundfont_path, soundfont_path)) {
+	if (s_tsf && s_soundfont_path && s_prefer_fm == prefer_fm && s_reverb == reverb && s_chorus == chorus && !strcmp(s_soundfont_path, soundfont_path)) {
 		pthread_mutex_unlock(&s_control_mutex);
 		return 1;
 	}
@@ -678,6 +723,9 @@ int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer
 	if (s_tsf) music_synth_close(s_tsf);
 	free(s_soundfont_path);
 	s_tsf = replacement;
+	music_synth_set_effects(s_tsf, reverb, chorus);
+	s_reverb = reverb;
+	s_chorus = chorus;
 	memset(&s_hmp_saved_state, 0, sizeof(s_hmp_saved_state));
 	memset(&s_hmp_initial_state, 0, sizeof(s_hmp_initial_state));
 	s_soundfont_path = path;
@@ -693,12 +741,19 @@ int midi_preview_start(const unsigned char *data, int len,
 	unsigned char *midi_data = NULL;
 	int midi_len = 0;
 	struct hmp_playback_info hmp_info;
+	char timing[PROP_VALUE_MAX];
 	pthread_mutex_lock(&s_control_mutex);
 
 	/* Stop any existing preview */
 	midi_preview_stop_internal();
+	s_diagnostics = __system_property_get("debug.dxx.music_timing", timing) > 0 && !strcmp(timing, "1");
+	s_start_ms = preview_now_ms();
+	__atomic_store_n(&s_callback_count, 0u, __ATOMIC_RELAXED);
+	__atomic_store_n(&s_underrun_count, 0u, __ATOMIC_RELAXED);
+	__atomic_store_n(&s_consumed_frames, 0u, __ATOMIC_RELAXED);
+	__atomic_store_n(&s_first_audio_ms, 0u, __ATOMIC_RELAXED);
 
-	if (!data || len <= 0 || sample_rate <= 0) {
+	if (!data || len <= 0 || sample_rate < 8000 || sample_rate > 96000) {
 		LOGE("Invalid args");
 		pthread_mutex_unlock(&s_control_mutex);
 		return 0;
@@ -755,13 +810,13 @@ int midi_preview_start(const unsigned char *data, int len,
 	__atomic_store_n(&s_playing, 1, __ATOMIC_RELEASE);
 	__atomic_store_n(&s_output_enabled, 1, __ATOMIC_RELEASE);
 
-	/* Configure TSF */
+	/* Configure the shared renderer before restoring song state */
+	music_synth_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
 	music_synth_reset(s_tsf);
 	if (is_hmp) {
 		s_hmp_initial_state = s_hmp_saved_state;
 		music_synth_hmp_begin(s_tsf, &s_hmp_initial_state);
 	}
-	music_synth_set_output(s_tsf, TSF_STEREO_INTERLEAVED, s_output_rate, s_gain_db);
 	music_synth_set_max_voices(s_tsf, s_max_voices);
 	reset_midi_timeline();
 	__atomic_store_n(&s_seek_target_ms, -1, __ATOMIC_RELEASE);
@@ -770,6 +825,9 @@ int midi_preview_start(const unsigned char *data, int len,
 
 	LOGI("Starting MIDI playback (%d bytes, duration=%dms, rate=%d)",
 	     midi_len, s_duration_ms, sample_rate);
+	if (s_diagnostics)
+		debug_log_force(DLOG_PROFILING, "MIDI preview prepared: song=%s prepare_ms=%.3f",
+		                song ? song : "MIDI", preview_now_ms() - s_start_ms);
 
 	/* Init OpenSL ES */
 	if (!osl_init(sample_rate)) {

@@ -1,9 +1,9 @@
 # SoundFont downloads
 
-The curated list is `SoundfontCatalog.entries` in
+The curated list is `SoundfontCatalog.entries(context)` in
 `app/src/main/java/com/dxxredux/app/SoundfontCatalog.kt`. This is a Kotlin list,
 with unavailable candidates kept as commented-out descriptors. It currently
-enables GeneralUser GS 2.0.3 beta and Roland SC-55 1.34 (nitro-shoe), and records 19 further banks for future hosting
+enables GeneralUser GS 2.0.3 beta and TimGM6mb, and records 19 further banks for future hosting
 or compatibility/permission work. Opening the selector performs no network requests.
 
 The active GeneralUser asset is hosted in Codetta's `soundfont-bundle` GitHub
@@ -20,7 +20,9 @@ Nitro-shoe's SC-55 bank is pinned to its upstream v1.34 release, 10,375,822 byte
 SHA-256: `2f68d824f456e3367fe24105d590ee77b7e28faa9f622723b478fa90647d8a1a`.
 Info retains the author's CC BY 4.0 declaration and complete published sample
 credits, including borrowed Microsoft/Roland and Creative sources. The binary
-is downloaded unchanged from upstream, not bundled or mirrored here.
+is bundled unchanged as `assets/gm.sf2`; it is the default MIDI bank.
+AdLib remains the default renderer. TimGM6mb is now an optional upstream download
+with its full GPL-2 license retained in downloaded Info.
 
 Coverage on the local registered D1/D2 HOGs: 27 D1 HMPs, 7 D2 HMPs and 7 embedded
 D2 MIDIs; 393,833 note-ons including exported repeats. No uncovered/silent
@@ -85,13 +87,13 @@ renderer choice remains unchanged. If activation fails, the previous choice
 remains active and the imported asset remains available for retry.
 
 Completed downloads also save their descriptor in the soundfont manifest.
-The bundled TimGM6mb bank is named in the selector and has a permanent Info
+The bundled Roland SC-55 1.34 bank is named in the selector and has a permanent Info
 entry in both **Manage soundfonts** and **Download soundfonts**. Its details
 include the author, version, size, source release URL, repository link and full
-offline GPL-2 license from `assets/licenses/TimGM6mb.txt`. It has no download or
+offline CC BY 4.0 declaration and credits from `assets/licenses/nitro-shoe-sc55.txt`. It has no download or
 delete action and is not stored in the removable-font manifest. Closing Info
-returns to the list that opened it. This labels the existing bank; it does not
-replace it or change its license.
+returns to the list that opened it. Both reset presets select this bundled bank
+and restore the AdLib renderer; existing custom font selections remain saved.
 
 **Manage soundfonts** offers **Info** and **Delete** for each downloaded or
 locally imported bank. Info shows the saved description, asset URL, clickable
@@ -118,7 +120,7 @@ $env:JAVA_HOME='C:/local/jdk-21'
 ./android/helpers/run_test.ps1 -ScriptName test_soundfont_download_catalog.jsonc -Game d1
 python android/tests/test_soundfont_profiles.py --library --adb C:/local/android-sdk/platform-tools/adb.exe --serial emulator-5554 --output temp/soundfont-library/device
 python android/tests/test_soundfont_release_download.py --adb C:/local/android-sdk/platform-tools/adb.exe --serial emulator-5554 --output temp/soundfont-catalog/device
-python android/tests/test_soundfont_release_download.py --adb C:/local/android-sdk/platform-tools/adb.exe --serial emulator-5554 --output temp/sc55-validation/device --name 'Roland SC-55 1.34 (nitro-shoe)' --sha256 2f68d824f456e3367fe24105d590ee77b7e28faa9f622723b478fa90647d8a1a --url 'https://github.com/nitro-shoe/sc-55-soundfont/releases/download/v1.34/Roland.SC-55.sf2' --website 'https://github.com/nitro-shoe/sc-55-soundfont'
+python android/tests/test_soundfont_release_download.py --adb C:/local/android-sdk/platform-tools/adb.exe --serial emulator-5554 --output temp/bundled-sc55/timgm-download --name 'TimGM6mb' --sha256 c5378b62028c920cb11e4803327983fee2f2cdff5dc89c708e39da417e51c854 --url 'https://github.com/arbruijn/TimGM6mb/releases/download/v20100822/TimGM6mb.sf2' --website 'https://github.com/arbruijn/TimGM6mb'
 ```
 
 JVM integration uses synthetic HTTP responses through OkHttp and the real

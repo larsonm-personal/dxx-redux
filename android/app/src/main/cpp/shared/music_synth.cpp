@@ -3,7 +3,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include "music_synth.h"
-#include "music_soundfont.h"
+#include "music_fluid.h"
 #include "music_decode_limits.h"
 #include "music_fm_resampler.h"
 #include "player.h"
@@ -40,7 +40,7 @@ void fm_trace_write(int, uint16_t, uint8_t) {}
 #endif
 
 struct music_synth {
-	tsf *sf = nullptr;
+	music_fluid sf;
 	std::unique_ptr<OPLPlayer> fm;
 	music_fm_resampler fm_resampler;
 	double fm_gain = std::pow(10.0, -10.0 / 20.0);
@@ -53,10 +53,6 @@ struct music_synth {
 	std::array<std::array<bool, 128>, 16> held{};
 	std::array<bool, 16> sustain{};
 	std::array<bool, 256> available{};
-	~music_synth()
-	{
-		if (sf) tsf_close(sf);
-	}
 };
 
 static unsigned le16(const unsigned char *p)
@@ -155,8 +151,11 @@ music_synth *music_synth_load(AAssetManager *assets, const char *sf2, int prefer
 {
 	try {
 		auto s = std::unique_ptr<music_synth>(new music_synth);
-		s->sf = music_soundfont_load(assets, sf2);
-		if (!s->sf) return nullptr;
+		if (!s->sf.load(assets, sf2)) return nullptr;
+#ifdef __ANDROID__
+		__android_log_print(ANDROID_LOG_INFO, "DXX-Soundfont", "Loaded path=%s presets=%d renderer=fluidsynth",
+		                    sf2 && *sf2 ? sf2 : "bundled:gm.sf2", s->sf.preset_count());
+#endif
 		s->prefer_fm = prefer_fm != 0;
 		return s.release();
 	} catch (...) {
@@ -228,7 +227,7 @@ int music_synth_prepare(music_synth *s, const char *song, music_bank_reader read
 	} catch (...) {
 		s->fm.reset();
 	}
-	MUSIC_LOG("renderer=sf2 song=%s reason=%s", song ? song : "MIDI", s->prefer_fm ? "unsupported-or-missing-FM-banks" : "selected");
+	MUSIC_LOG("renderer=fluidsynth song=%s reason=%s", song ? song : "MIDI", s->prefer_fm ? "unsupported-or-missing-FM-banks" : "selected");
 	return 0;
 }
 
@@ -269,7 +268,7 @@ int music_synth_accepts_midi(music_synth *s, const unsigned char *midi, int size
 void music_synth_reset(music_synth *s)
 {
 	if (s->fm) s->fm->reset();
-	else tsf_reset(s->sf);
+	else s->sf.reset();
 	s->fm_resampler.reset();
 	s->notes = {};
 	s->held = {};
@@ -278,24 +277,26 @@ void music_synth_reset(music_synth *s)
 void music_synth_set_output(music_synth *s, TSFOutputMode mode, int rate, float gain)
 {
 	if (rate < 8000 || rate > 192000 || !std::isfinite(gain)) return;
+	if (!s->fm && rate > 96000) return; // FluidSynth's documented rate range
 	s->rate = rate;
 	s->gain = gain;
 	s->fm_gain = std::pow(10.0, gain / 20.0);
 	if (s->fm) {
 		s->fm_resampler.configure(rate);
-	} else tsf_set_output(s->sf, mode, rate, gain);
+	} else s->sf.output(rate, gain);
+	(void) mode; // All shared callers use interleaved stereo
 }
 void music_synth_set_max_voices(music_synth *s, int voices)
 {
-	tsf_set_max_voices(s->sf, voices);
+	if (voices >= 8 && voices <= 256) s->sf.voices(voices);
 }
 int music_synth_get_presetcount(music_synth *s)
 {
-	return s->fm ? 256 : tsf_get_presetcount(s->sf);
+	return s->fm ? 256 : s->sf.preset_count();
 }
 int music_synth_active_voice_count(music_synth *s)
 {
-	if (!s->fm) return tsf_active_voice_count(s->sf);
+	if (!s->fm) return fluid_synth_get_active_voice_count(s->sf.get());
 	int count = 0;
 	for (const auto &channel : s->notes) count += int(std::count(channel.begin(), channel.end(), true));
 	return std::min(count, 9); // keyed-note diagnostic; paired banks share nine voices
@@ -303,7 +304,7 @@ int music_synth_active_voice_count(music_synth *s)
 void music_synth_render_short(music_synth *s, short *out, int frames, int mixing)
 {
 	if (!s->fm) {
-		tsf_render_short(s->sf, out, frames, mixing);
+		s->sf.render(out, frames, mixing);
 		return;
 	}
 	float samples[music_fm_resampler::block_frames * 2];
@@ -329,7 +330,8 @@ void music_synth_channel_note_on(music_synth *s, int c, int key, float velocity)
 		}
 		s->fm->midiNoteOn(uint8_t(c), uint8_t(key), uint8_t(velocity * 127 + 0.5f));
 		s->notes[c][key] = s->held[c][key] = true;
-	} else tsf_channel_note_on(s->sf, c, key, velocity);
+	} else if (velocity > 0) fluid_synth_noteon(s->sf.get(), c, key, int(velocity * 127 + 0.5f));
+	else fluid_synth_noteoff(s->sf.get(), c, key);
 }
 void music_synth_channel_note_off(music_synth *s, int c, int key)
 {
@@ -340,13 +342,16 @@ void music_synth_channel_note_off(music_synth *s, int c, int key)
 		if (!s->sustain[c]) {
 			s->notes[c][key] = false;
 		}
-	} else tsf_channel_note_off(s->sf, c, key);
+	} else fluid_synth_noteoff(s->sf.get(), c, key);
 }
 void music_synth_channel_set_presetnumber(music_synth *s, int c, int program, int drums)
 {
 	if (c < 0 || c >= 16 || program < 0 || program >= 128) return;
 	if (s->fm) s->fm->midiProgramChange(uint8_t(c), uint8_t(program));
-	else tsf_channel_set_presetnumber(s->sf, c, program, drums);
+	else {
+		fluid_synth_set_channel_type(s->sf.get(), c, drums ? CHANNEL_TYPE_DRUM : CHANNEL_TYPE_MELODIC);
+		fluid_synth_program_change(s->sf.get(), c, program);
+	}
 }
 void music_synth_channel_midi_control(music_synth *s, int c, int control, int value)
 {
@@ -371,24 +376,29 @@ void music_synth_channel_midi_control(music_synth *s, int c, int control, int va
 			music_synth_channel_midi_control(s, c, 11, 127);
 			s->fm->midiPitchControl(uint8_t(c), 0);
 		} else s->fm->midiControlChange(uint8_t(c), uint8_t(control), uint8_t(value));
-	} else tsf_channel_midi_control(s->sf, c, control, value);
+	} else fluid_synth_cc(s->sf.get(), c, control, value);
 }
 void music_synth_channel_set_pitchwheel(music_synth *s, int c, int value)
 {
 	if (c < 0 || c >= 16 || value < 0 || value >= 16384) return;
 	if (s->fm) s->fm->midiPitchControl(uint8_t(c), (value - 8192) / 8192.0);
-	else tsf_channel_set_pitchwheel(s->sf, c, value);
+	else fluid_synth_pitch_bend(s->sf.get(), c, value);
 }
 void music_synth_hmp_begin(music_synth *s, const hmp_tsf_state *state)
 {
-	if (!s->fm) hmp_tsf_begin(s->sf, state);
+	if (!s->fm) s->sf.begin(state);
 }
 void music_synth_hmp_capture(music_synth *s, hmp_tsf_state *state)
 {
-	if (!s->fm) hmp_tsf_capture(s->sf, state);
+	if (!s->fm) s->sf.capture(state);
 }
 void music_synth_hmp_control(music_synth *s, int c, int control, int value)
 {
 	if (s->fm) music_synth_channel_midi_control(s, c, control, value);
-	else hmp_tsf_control(s->sf, c, control, value);
+	else s->sf.control(c, control, value);
+}
+
+void music_synth_set_effects(music_synth *s, int reverb, int chorus)
+{
+	if (s) s->sf.effects(reverb != 0, chorus != 0);
 }

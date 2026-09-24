@@ -909,6 +909,12 @@ class MainActivity :
     @androidx.annotation.Keep
     fun getMidiPreferFm(): Boolean = SoundfontStore(this).read().renderer == "ymfm"
 
+    @androidx.annotation.Keep
+    fun getMidiReverb(): Boolean = SoundfontStore(this).read().reverb
+
+    @androidx.annotation.Keep
+    fun getMidiChorus(): Boolean = SoundfontStore(this).read().chorus
+
     override fun onCreate(savedInstanceState: Bundle?) {
         if (BuildConfig.DEBUG) {
             Log.i(

@@ -133,39 +133,52 @@ size_t music_soundfont_validate(const void *data, size_t size)
 	return samples;
 }
 
-tsf *music_soundfont_load(struct AAssetManager *assets, const char *path)
+void *music_soundfont_read(struct AAssetManager *assets, const char *path, size_t *size)
 {
-	tsf *synth = NULL;
+	void *data = NULL;
+	*size = 0;
 	if (path && *path) {
 		FILE *file = fopen(path, "rb");
 		long length;
-		void *data;
 		if (!file) return NULL;
-		if (fseek(file, 0, SEEK_END) || (length = ftell(file)) <= 0 ||
-		    (unsigned long) length > MUSIC_SOUNDFONT_MAX_BYTES || fseek(file, 0, SEEK_SET)) {
-			fclose(file);
-			return NULL;
+		if (!fseek(file, 0, SEEK_END) && (length = ftell(file)) > 0 &&
+		    (unsigned long) length <= MUSIC_SOUNDFONT_MAX_BYTES && !fseek(file, 0, SEEK_SET)) {
+			data = malloc((size_t) length);
+			if (data && fread(data, 1, (size_t) length, file) == (size_t) length) *size = (size_t) length;
 		}
-		data = malloc((size_t) length);
-		if (data && fread(data, 1, (size_t) length, file) == (size_t) length)
-			synth = music_soundfont_load_memory(data, (size_t) length);
-		free(data);
 		fclose(file);
 	} else {
 #ifdef __ANDROID__
 		AAsset *asset = assets ? AAssetManager_open(assets, "gm.sf2", AASSET_MODE_BUFFER) : NULL;
 		if (asset) {
-			synth = music_soundfont_load_memory(AAsset_getBuffer(asset), (size_t) AAsset_getLength(asset));
+			const long length = AAsset_getLength(asset);
+			const void *buffer = AAsset_getBuffer(asset);
+			if (buffer && length > 0 && (unsigned long) length <= MUSIC_SOUNDFONT_MAX_BYTES) {
+				data = malloc((size_t) length);
+				if (data) {
+					memcpy(data, buffer, (size_t) length);
+					*size = (size_t) length;
+				}
+			}
 			AAsset_close(asset);
 		}
 #else
 		(void) assets;
 #endif
 	}
-#ifdef __ANDROID__
-	__android_log_print(synth ? ANDROID_LOG_INFO : ANDROID_LOG_ERROR, "DXX-Soundfont",
-	                    "%s path=%s presets=%d", synth ? "Loaded" : "Rejected",
-	                    path && *path ? path : "bundled:gm.sf2", synth ? tsf_get_presetcount(synth) : 0);
-#endif
+	if (!music_soundfont_validate(data, *size)) {
+		free(data);
+		*size = 0;
+		return NULL;
+	}
+	return data;
+}
+
+tsf *music_soundfont_load(struct AAssetManager *assets, const char *path)
+{
+	size_t size;
+	void *data = music_soundfont_read(assets, path, &size);
+	tsf *synth = data ? music_soundfont_load_memory(data, size) : NULL;
+	free(data);
 	return synth;
 }

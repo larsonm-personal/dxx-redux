@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit
 class SoundfontDownloadTest {
     @get:Rule val temporary = TemporaryFolder()
     private val preferences = memoryPreferences()
+    private val catalog = SoundfontCatalog.entries(File("src/main/assets/licenses/TimGM6mb.txt").readText())
     private val entry = SoundfontDownload(
         "Example bank", "https://github.com/example/banks/releases/download/v1/bank.sf2",
         "Example description", "https://github.com/original/bank", "MIT license text",
@@ -41,7 +42,6 @@ class SoundfontDownloadTest {
         }.build())
 
     @Test fun catalogUsesReleaseAssetsAndDescriptorsRequireCompleteHttpsMetadata() {
-        val catalog = SoundfontCatalog.entries
         assertTrue(catalog.isNotEmpty())
         assertEquals(catalog.size, catalog.map { it.name }.distinct().size)
         for (font in catalog) {
@@ -99,7 +99,7 @@ class SoundfontDownloadTest {
             assertEquals(entry, SoundfontStore(temporary.root, preferences).read().fonts.single().download)
         }
         // The retained information does not require a matching catalog entry
-        assertFalse(SoundfontCatalog.entries.any { it.url == entry.url })
+        assertFalse(catalog.any { it.url == entry.url })
     }
 
     @Test fun rejectedDownloadsPreserveSelectedAssetAndCleanTemporaryFiles() = runBlocking {

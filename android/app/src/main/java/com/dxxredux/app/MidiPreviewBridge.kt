@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong
  * JNI bridge for MIDI/HMP preview playback in the launcher.
  *
  * Uses a standalone C player (midi_preview.c) that renders MIDI via
- * TinySoundFont or ymfm and outputs through OpenSL ES -- no SDL required.
+ * FluidSynth or ymfm and outputs through OpenSL ES -- no SDL required.
  */
 object MidiPreviewBridge {
     const val STATE_STOPPED = 0
@@ -36,11 +36,32 @@ object MidiPreviewBridge {
         return rateStr?.toIntOrNull() ?: 48000
     }
 
+    private fun initProfile(
+        context: Context,
+        path: String,
+        fm: Boolean,
+    ): Boolean {
+        val state = SoundfontStore(context).read()
+        return nativeInit(context.assets, path, fm, state.reverb, state.chorus)
+    }
+
+    fun selectEffects(
+        context: Context,
+        reverb: Boolean,
+        chorus: Boolean,
+    ) = synchronized(lifecycleLock) {
+        requestedGeneration.incrementAndGet()
+        val store = SoundfontStore(context)
+        store.selectEffects(reverb, chorus) { rev, cho ->
+            nativeInit(context.assets, store.selectedPath(), store.read().renderer == "ymfm", rev, cho)
+        }
+    }
+
     /** Resolve the same persisted instrument asset used at game startup. Call on IO. */
     fun init(context: Context): Boolean =
         synchronized(lifecycleLock) {
             val store = SoundfontStore(context)
-            nativeInit(context.assets, store.selectedPath(), store.read().renderer == "ymfm")
+            initProfile(context, store.selectedPath(), store.read().renderer == "ymfm")
         }
 
     fun selectSoundfont(
@@ -49,7 +70,7 @@ object MidiPreviewBridge {
     ) = synchronized(lifecycleLock) {
         requestedGeneration.incrementAndGet()
         val store = SoundfontStore(context)
-        store.select(id) { nativeInit(context.assets, it, store.read().renderer == "ymfm") }
+        store.select(id) { initProfile(context, it, store.read().renderer == "ymfm") }
     }
 
     fun selectRenderer(
@@ -57,7 +78,7 @@ object MidiPreviewBridge {
         renderer: String,
     ) = synchronized(lifecycleLock) {
         requestedGeneration.incrementAndGet()
-        SoundfontStore(context).selectRenderer(renderer) { path, fm -> nativeInit(context.assets, path, fm) }
+        SoundfontStore(context).selectRenderer(renderer) { path, fm -> initProfile(context, path, fm) }
     }
 
     fun deleteSoundfont(
@@ -67,7 +88,7 @@ object MidiPreviewBridge {
         val store = SoundfontStore(context)
         store.delete(id) { path ->
             requestedGeneration.incrementAndGet()
-            nativeInit(context.assets, path, store.read().renderer == "ymfm")
+            initProfile(context, path, store.read().renderer == "ymfm")
         }
     }
 
@@ -78,7 +99,15 @@ object MidiPreviewBridge {
         preset: GameSettingsPreset,
     ) = synchronized(lifecycleLock) {
         requestedGeneration.incrementAndGet()
-        preset.resetMidiPreferences(SoundfontStore(context)) { path, fm -> nativeInit(context.assets, path, fm) }
+        val store = SoundfontStore(context)
+        val old = store.read()
+        var first = true
+        preset.resetMidiPreferences(store) { path, fm ->
+            val result =
+                nativeInit(context.assets, path, fm, if (first) true else old.reverb, if (first) true else old.chorus)
+            first = false
+            result
+        }
     }
 
     /**
@@ -144,6 +173,8 @@ object MidiPreviewBridge {
         assetManager: android.content.res.AssetManager,
         path: String,
         preferFm: Boolean,
+        reverb: Boolean,
+        chorus: Boolean,
     ): Boolean
 
     @JvmStatic private external fun nativeValidateSoundfont(path: String): Boolean

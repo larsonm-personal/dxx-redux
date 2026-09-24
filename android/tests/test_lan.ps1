@@ -27,6 +27,7 @@
 #   .\test_lan.ps1 -GuidebotClientRelease cage
 #   .\test_lan.ps1 -GuidebotClientRelease deploy
 #   .\test_lan.ps1 -GuidebotSpawn -InitialLevel 8 -AllowSecretWarps
+#   .\test_lan.ps1 -GuidebotTravel -InitialLevel 8 -AllowSecretWarps -NoCoopQol
 #   .\test_lan.ps1 -GuidebotHostObserver
 #   .\test_lan.ps1 -GuidebotSlotRemapRestore
 #   .\test_lan.ps1 -SavedLateJoin -Game d2
@@ -78,6 +79,7 @@ param(
     [ValidateSet('cage', 'deploy')]
     [string]$GuidebotClientRelease,
     [switch]$GuidebotSpawn,
+    [switch]$GuidebotTravel,
     [switch]$GuidebotHostObserver,
     [switch]$GuidebotSlotRemapRestore,
     [switch]$SavedLateJoin,
@@ -155,6 +157,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+if ($GuidebotTravel) {
+    if ($Game -ne 'd2' -or $InitialLevel -ne 8 -or $MissionFile -or -not $AllowSecretWarps) {
+        throw 'GuidebotTravel requires Counterstrike level 8 and AllowSecretWarps'
+    }
+    $SecretWorld = $SecretRevisit = $true
+}
 if ($BriefingPalette -or $EmptyBriefing) { $Briefings = $true }
 if ($EndgameClientFirst -or $EndgameBoss -or $EndgameObserverHost -or $EndgameContent -ne "builtin") { $Endgame = $true }
 if ($EndgameBoss -and ($Game -ne "d2" -or $EndgameClientFirst -or $EndgameObserverHost -or $EndgameContent -ne "builtin")) {
@@ -2899,6 +2907,11 @@ try {
             throw "Secret world probe requires a fresh D2 co-op game with secret warps enabled"
         }
         $sourceCampaign = (Get-GameIntrospection -Serial $EMU1).coop_campaign
+        if ($GuidebotTravel) {
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_guidebot_travel_seed_host.jsonc' `
+                        -SecondarySerial $EMU2 -SecondaryScript 'test_coop_guidebot_travel_seed_client.jsonc' `
+                        -Description 'Release companion for client and seed carried health')) { throw 'Guidebot travel setup failed' }
+        }
         if ($SecretCrossRestore) {
             if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_base_save_seed.jsonc' `
                         -SecondarySerial $EMU2 -SecondaryScript 'test_coop_base_save_seed.jsonc' `
@@ -2919,12 +2932,22 @@ try {
             $expectedVisit = [uint64]3 # Initial mine, failed destination, then rollback
             Assert-CoopWorldVisit -Expected $expectedVisit
             Assert-CoopGameplayFences
+            if ($GuidebotTravel) {
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_guidebot_travel_released.jsonc' `
+                            -SecondarySerial $EMU2 -SecondaryScript 'test_coop_guidebot_travel_navigation_client.jsonc' `
+                            -Description 'Rollback preserves released companion and client control')) { throw 'Guidebot rollback failed' }
+            }
         }
         $travelLegs = if ($SecretRevisit) { @("enter", "return", "revisit", "return") } else { @("enter", "return") }
         $expectedGeneration = $sourceCampaign.generation
         foreach ($leg in $travelLegs) {
             ++$expectedGeneration
             $testPassed = $false
+            if ($GuidebotTravel -and $leg -eq 'revisit') {
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_guidebot_travel_docked.jsonc' `
+                            -SecondarySerial $EMU2 -SecondaryScript 'test_coop_guidebot_travel_dock_client.jsonc' `
+                            -Description 'Dock the travelling companion before revisiting the secret')) { throw 'Guidebot docking failed' }
+            }
             if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_world_carry.jsonc" `
                         -SecondarySerial $EMU2 -SecondaryScript "test_coop_world_carry.jsonc" -Description "Seed portable state for secret $leg")) { throw "Secret portable-state setup failed" }
             $hostPrepare = if ($SecretPhysical) { "test_coop_physical_prepare_host.jsonc" } else { "test_coop_world_travel_prepare.jsonc" }
@@ -3005,6 +3028,18 @@ try {
                         }
                         return $true
                     })) { throw "Invalid committed campaigns after secret $leg" }
+            if ($GuidebotTravel) {
+                $buddyCheck = if ($expectedGeneration -ge $sourceCampaign.generation + 3) { 'test_coop_guidebot_travel_docked.jsonc' } else { 'test_coop_guidebot_travel_released.jsonc' }
+                $clientBuddyCheck = if ($expectedGeneration -ge $sourceCampaign.generation + 3) { $buddyCheck } else { 'test_coop_guidebot_travel_navigation_client.jsonc' }
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $buddyCheck `
+                            -SecondarySerial $EMU2 -SecondaryScript $clientBuddyCheck `
+                            -Description "Verify one client-owned companion after $leg")) { throw 'Guidebot travel verification failed' }
+                if ($expectedGeneration -eq $sourceCampaign.generation + 4) {
+                    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_guidebot_travel_released.jsonc' `
+                                -SecondarySerial $EMU2 -SecondaryScript 'test_coop_guidebot_travel_redeploy_client.jsonc' `
+                                -Description 'Redeploy and navigate after docked return')) { throw 'Guidebot redeploy after travel failed' }
+                }
+            }
             if ($SecretRewind -and $leg -eq "enter") {
                 if (-not (Invoke-CoopRewindScenario -FromClient)) { throw "Secret client rewind failed" }
             }

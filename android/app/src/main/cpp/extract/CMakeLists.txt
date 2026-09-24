@@ -510,13 +510,27 @@ if(NOT MSVC)
     target_link_libraries(soundfont_coverage PRIVATE m)
 endif()
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/ymfm-music.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/fluidsynth-music.cmake)
 add_executable(
     test_music_synth
-    test_music_synth.c ../shared/music_synth.cpp ../shared/music_soundfont.c ../shared/tsf_impl.c
-    ../shared/hmp_android_shared.c ../shared/midi_seek_timeline.c)
+    test_music_synth.c
+    ../shared/music_fluid.cpp
+    ../shared/music_synth.cpp
+    ../shared/music_soundfont.c
+    ../shared/tsf_impl.c
+    ../shared/hmp_android_shared.c
+    ../shared/midi_seek_timeline.c)
 target_include_directories(test_music_synth PRIVATE test_hmp_stubs ../shared
                                                     ${tinysoundfont_test_SOURCE_DIR})
-target_link_libraries(test_music_synth PRIVATE music_ymfmidi)
+target_link_libraries(test_music_synth PRIVATE music_ymfmidi libfluidsynth)
+if(WIN32)
+    add_custom_command(
+        TARGET test_music_synth
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:libfluidsynth>
+                $<TARGET_FILE_DIR:test_music_synth>
+        COMMENT "Place FluidSynth beside the host integration test")
+endif()
 target_compile_definitions(test_music_synth PRIVATE DXX_MUSIC_SYNTH_TEST_TRACE)
 if(MSVC)
     target_compile_options(test_music_synth PRIVATE /W4)

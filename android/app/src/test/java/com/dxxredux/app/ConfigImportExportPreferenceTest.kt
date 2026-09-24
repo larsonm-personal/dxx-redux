@@ -16,6 +16,34 @@ class ConfigImportExportPreferenceTest {
             .put("host_defaults", JSONObject().put("game", "d2"))
 
     @Test
+    fun untouchedMidiDefaultsAreExplicitInExports() {
+        val json = ConfigImportExport.exportPreferenceValues(emptyMap<String, Any>())
+        assertEquals(SoundfontStore.DEFAULT_RENDERER, json.getString(SoundfontStore.PREF_RENDERER))
+        assertEquals("", json.getString(SoundfontStore.PREF_SOUNDFONT))
+        assertTrue(json.getBoolean(SoundfontStore.PREF_REVERB))
+        assertTrue(json.getBoolean(SoundfontStore.PREF_CHORUS))
+        assertEquals("d1-builtin", json.getString(PREF_MIDI_EDITOR_SOURCE))
+        val decoded = ConfigImportExport.decodePreferenceValues(json)
+        assertNull(decoded.error)
+        assertEquals(5, decoded.values.size)
+    }
+
+    @Test
+    fun midiEffectsExportAndImportIndependently() {
+        for (reverb in listOf(false, true)) {
+            for (chorus in listOf(false, true)) {
+                val source = mapOf(SoundfontStore.PREF_REVERB to reverb, SoundfontStore.PREF_CHORUS to chorus)
+                val json = ConfigImportExport.exportPreferenceValues(source)
+                val decoded = ConfigImportExport.decodePreferenceValues(json)
+                assertNull(decoded.error)
+                val restored = decoded.values.mapKeys { it.key.key }
+                assertEquals(reverb, restored[SoundfontStore.PREF_REVERB])
+                assertEquals(chorus, restored[SoundfontStore.PREF_CHORUS])
+            }
+        }
+    }
+
+    @Test
     fun exportedPreferencesRoundTripWithDeclaredTypes() {
         for (booleanValue in listOf(false, true)) {
             val source =

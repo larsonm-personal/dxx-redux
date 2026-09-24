@@ -1620,7 +1620,11 @@ void multi_robot_request_change(object *robot, int player_num)
 
 	if (!(Game_mode & GM_MULTI_ROBOTS))
 		return;
-	
+	/* Companion control follows the explicit escort owner. A ship bump or
+	 * weapon hit must not release his slot or impose the enemy hands-off timer */
+	if ((Game_mode & GM_MULTI_COOP) && Robot_info[robot->id].companion)
+		return;
+
 //	if (robot->ctype.ai_info.REMOTE_OWNER == Player_num)
 //		return;
 

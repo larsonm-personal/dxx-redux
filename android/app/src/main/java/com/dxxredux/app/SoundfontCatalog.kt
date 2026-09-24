@@ -9,19 +9,21 @@ internal object SoundfontCatalog {
     fun bundled(context: Context): SoundfontStore.Font =
         SoundfontStore.Font(
             id = "",
-            name = "TimGM6mb (bundled)",
+            name = "nitro-shoe SC-55-style 1.34 (bundled)",
             download =
                 SoundfontDownload(
-                    name = "TimGM6mb",
-                    url = "https://github.com/arbruijn/TimGM6mb/releases/download/v20100822/TimGM6mb.sf2",
+                    name = "nitro-shoe SC-55-style 1.34",
+                    url = "https://github.com/nitro-shoe/sc-55-soundfont/releases/download/v1.34/Roland.SC-55.sf2",
                     description =
-                        "Compact General MIDI bank by Tim Brechbill, with contributions by David Bolton. " +
-                            "Version 20100822, 5.7 MiB. Included with the app and always available; cannot be deleted.",
-                    websiteUrl = "https://github.com/arbruijn/TimGM6mb",
+                        "Community SC-55-style sample bank by nitro-shoe (9.9 MiB). " +
+                            "An approximation of the module, with limited GS variations and no SFX drum kit. " +
+                            "Included with the app and always available; cannot be deleted.",
+                    websiteUrl = "https://github.com/nitro-shoe/sc-55-soundfont",
                     license =
                         context.assets
-                            .open("licenses/TimGM6mb.txt")
-                            .bufferedReader()
+                            .open(
+                                "licenses/nitro-shoe-sc55.txt",
+                            ).bufferedReader()
                             .use { it.readText() },
                 ),
         )
@@ -85,8 +87,27 @@ internal object SoundfontCatalog {
     // Active entries must be direct HTTPS SF2 files within SoundfontStore.MAX_BYTES
     // Pin a release asset, retain its complete license/credits, and test the actual download
     // The source website belongs to the bank author; the download can be a credited mirror
-    val entries: List<SoundfontDownload> =
+    fun entries(context: Context): List<SoundfontDownload> =
+        entries(
+            context.assets
+                .open("licenses/TimGM6mb.txt")
+                .bufferedReader()
+                .use { it.readText() },
+        )
+
+    internal fun entries(timGmLicense: String): List<SoundfontDownload> =
         listOf(
+            // Former bundled bank; retained as an optional upstream download at the user's request
+            // SHA-256 c5378b62028c920cb11e4803327983fee2f2cdff5dc89c708e39da417e51c854
+            SoundfontDownload(
+                name = "TimGM6mb",
+                url = "https://github.com/arbruijn/TimGM6mb/releases/download/v20100822/TimGM6mb.sf2",
+                description =
+                    "Compact General MIDI bank by Tim Brechbill, with contributions by David Bolton. " +
+                        "Version 20100822, 5.7 MiB. Previously bundled with the app.",
+                websiteUrl = "https://github.com/arbruijn/TimGM6mb",
+                license = timGmLicense,
+            ),
             // Latest bank version available in the checked GitHub releases (Codetta mirror)
             // 32,319,396 bytes; SHA-256 9575028c7a1f589f5770fccc8cff2734566af40cd26ed836944e9a5152688cfe
             SoundfontDownload(
@@ -98,36 +119,6 @@ internal object SoundfontCatalog {
                         "Some advanced instrument features are not reproduced by our current synthesizer.",
                 websiteUrl = "https://github.com/mrbumpy409/GeneralUser-GS",
                 license = GENERAL_USER_LICENSE,
-            ),
-            // Upstream v1.34, verified 2026-09-23: 10,375,822 bytes
-            // SHA-256 2f68d824f456e3367fe24105d590ee77b7e28faa9f622723b478fa90647d8a1a
-            SoundfontDownload(
-                name = "Roland SC-55 1.34 (nitro-shoe)",
-                url = "https://github.com/nitro-shoe/sc-55-soundfont/releases/download/v1.34/Roland.SC-55.sf2",
-                description =
-                    "Lightweight SC-55-style sample bank by nitro-shoe (9.9 MiB). " +
-                        "An approximation of the module, with no SFX drum kit and limited GS variations. " +
-                        "Uses samples credited to Microsoft/Roland, Creative and community soundfonts.",
-                websiteUrl = "https://github.com/nitro-shoe/sc-55-soundfont",
-                license =
-                    """
-                    Author-declared license: Creative Commons Attribution 4.0 International (CC BY 4.0)
-                    https://creativecommons.org/licenses/by/4.0/
-                    Roland SC-55 soundfont by nitro-shoe, version 1.34. Downloaded unchanged from upstream.
-                    License declaration: https://github.com/nitro-shoe/sc-55-soundfont/blob/main/README.md
-                    Sample credits: https://github.com/nitro-shoe/sc-55-soundfont/blob/main/Sample%20sources.md
-
-                    Microsoft GS Wavetable Synth (William Borges dos Santos)
-                    Roland SC-55 Soundfont (Trevor0402, Triaxis)
-                    Creative 28MBGM (E-mu, Creative Labs)
-                    Roland SC-55 (CS OnDev) (Duwindu Tharinda Perera)
-                    GeneralUser GS (S. Christian Collins)
-                    8MBGM Enhanced (holbred)
-                    Roland MV-30 (SC-55 Version) (MAG2001)
-
-                    The upstream license declaration is recorded here; rights to every borrowed sample
-                    have not been independently verified. This app links to the author's release.
-                    """.trimIndent(),
             ),
             // RELEASE AVAILABLE, blocked by current 64 MiB limit: 148,398,306 bytes
             // Enable after larger-bank memory/loading validation; no new hosting needed
@@ -289,7 +280,7 @@ internal object SoundfontCatalog {
             // ),
         )
 
-    // Not future-hosting candidates under the current policy: TimGM6mb and FreePats
+    // Not future-hosting candidates under the current policy: FreePats
     // (GPL), the GPL-tagged open-soundfonts/SGM_V2_01_soundfonts mirror, proprietary
     // SC-55/GM.DLS/Creative ROM rips without redistribution grants
 }

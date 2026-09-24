@@ -2519,6 +2519,11 @@ void escort_rebuild_runtime_state_after_restore(void)
 #ifdef NETWORK
 	escort_validate_owner_after_restore();
 #endif
+#if defined(__ANDROID__) && defined(NETWORK)
+	/* Co-op metadata already restored release state. Deploy can place a free
+	 * companion near an intact cage, which must not imprison him on rollback */
+	if (!(Game_mode & GM_MULTI_COOP))
+#endif
 	Buddy_allowed_to_talk = 0;
 	ok_for_buddy_to_talk();
 	Buddy_last_seen_player = ailp->time_player_seen;
@@ -4257,6 +4262,69 @@ static unsigned int escort_next_owner_generation(void)
 		Escort_owner_generation = 1;
 	return Escort_owner_generation;
 }
+
+#ifdef __ANDROID__
+void escort_capture_secret_travel(int *state, int *owner, fix *shields)
+{
+	*state = escort_buddy_is_docked() ? 2 :
+	         escort_refresh_buddy_objnum() && escort_buddy_is_active() && Buddy_allowed_to_talk ? 1 : 0;
+	*owner = *state ? Escort_owner_player : -1;
+	*shields = *state ? Objects[Buddy_objnum].shields : 0;
+}
+
+int escort_apply_secret_travel(int state, int owner, fix shields)
+{
+	int discard = state || Buddy_allowed_to_talk || escort_buddy_is_docked();
+	if (!(Game_mode & GM_MULTI_COOP) || !game_is_time_paused()) return 0;
+	/* A dormant mine contains the old companion too. Never restore a second
+	 * copy, or resurrect that copy when the travelling companion was killed */
+	if (discard) {
+		for (int i = Highest_object_index; i >= 0; --i) {
+			if (!escort_is_companion_object(i) && !escort_is_docked_object(i)) continue;
+			multi_delete_controlled_robot(i);
+			obj_delete(i);
+		}
+		/* Reset the companion, not the mine's restored switch history */
+		Buddy_objnum = -1;
+		Buddy_allowed_to_talk = 0;
+		Escort_owner_player = -1;
+		Escort_owner_generation = Escort_spawn_generation = 0;
+		Escort_pending_docked = 0;
+		Escort_cage_releaser = -1;
+		Escort_network_target_mode = ESCORT_ROUTE_TARGET_END_OF_LEVEL;
+		Looking_for_marker = Last_buddy_key = -1;
+		escort_goal_message_reset();
+		escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
+		escort_reset_navigation_for_owner(-1);
+	}
+	if (!state) return 1;
+	if (!escort_owner_candidate_eligible(owner)) {
+		for (owner = 0; owner < N_players; ++owner)
+			if (escort_owner_candidate_eligible(owner)) break;
+		if (owner == N_players) return 0;
+	}
+	/* All peers have loaded the same world. Rebuild the free list so local
+	 * allocation history cannot change this new level object's network ID
+	 * Arrival agreement checks the ID before any robot traffic can resume */
+	special_reset_objects();
+	int robots_level = Players[Player_num].num_robots_level;
+	int robots_total = Players[Player_num].num_robots_total;
+	Buddy_objnum = create_buddy_bot_at_player(owner);
+	/* Moving the same companion is not a newly generated enemy */
+	Players[Player_num].num_robots_level = robots_level;
+	Players[Player_num].num_robots_total = robots_total;
+	if (Buddy_objnum < 0) return 0;
+	object_owner[Buddy_objnum] = -1;
+	Objects[Buddy_objnum].shields = shields;
+	Buddy_allowed_to_talk = 1;
+	Escort_owner_generation = Escort_spawn_generation = 1;
+	escort_apply_multiplayer_owner(owner, ESCORT_ROUTE_TARGET_END_OF_LEVEL);
+	if (state == 2) escort_apply_docked_state(1);
+	ESCORT_DIAG("secret travel companion: level=%d object=%d state=%d owner=%d shields=%d",
+	            Current_level_num, Buddy_objnum, state, owner, shields);
+	return 1;
+}
+#endif
 
 static void escort_spawn_for_owner(int owner)
 {

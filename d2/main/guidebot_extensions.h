@@ -142,6 +142,11 @@ extern void thief_prepare_for_local_control(struct object *objp);
 extern int Buddy_objnum, Buddy_allowed_to_talk;
 
 #ifdef NETWORK
+#ifdef __ANDROID__
+/* Frozen co-op travel: 0 absent/unreleased, 1 released, 2 docked */
+void escort_capture_secret_travel(int *state, int *owner, fix *shields);
+int escort_apply_secret_travel(int state, int owner, fix shields);
+#endif
 extern int Escort_owner_player;
 unsigned int escort_get_owner_generation(void);
 void multi_send_escort_owner(int owner_pnum);

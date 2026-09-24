@@ -497,6 +497,7 @@ fun AddToSetDialog(
 @Composable
 private fun MidiSection(filesDir: File) {
     val ctx = LocalContext.current
+    val preferences = remember(ctx) { ctx.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE) }
     val scope = rememberCoroutineScope()
     val sampleRate = remember { MidiPreviewBridge.getNativeSampleRate(ctx) }
 
@@ -506,7 +507,7 @@ private fun MidiSection(filesDir: File) {
     var previewTrack by remember { mutableStateOf<MidiEnumerationBridge.TrackInfo?>(null) }
     var previewSource by remember { mutableStateOf<MidiEnumerationBridge.SourceInfo?>(null) }
 
-    // Initialize TSF and enumerate on first composition
+    // Initialize the renderer and enumerate on first composition
     LaunchedEffect(Unit) {
         enumerating = true
         withContext(Dispatchers.IO) {
@@ -515,8 +516,12 @@ private fun MidiSection(filesDir: File) {
             enumResult = MidiEnumerationBridge.enumerateTracks(setDir.absolutePath)
         }
         enumerating = false
-        // Auto-select first source
-        enumResult?.sources?.firstOrNull()?.let { selectedSource = it }
+        // Missing sources fall back without overwriting the user's saved choice
+        selectedSource =
+            preferredMidiEditorSource(
+                enumResult?.sources.orEmpty(),
+                preferences.getString(PREF_MIDI_EDITOR_SOURCE, null),
+            )
     }
 
     Text(
@@ -595,6 +600,7 @@ private fun MidiSection(filesDir: File) {
                     },
                     onClick = {
                         selectedSource = src
+                        preferences.edit().putString(PREF_MIDI_EDITOR_SOURCE, src.id).apply()
                         sourceExpanded = false
                     },
                 )

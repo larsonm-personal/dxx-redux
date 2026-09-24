@@ -22,6 +22,8 @@ const unsigned char *music_synth_fm_sequence(const music_synth *synth, int *size
 int music_synth_accepts_midi(music_synth *synth, const unsigned char *midi, int size);
 void music_synth_reset(music_synth *synth);
 void music_synth_set_output(music_synth *synth, enum TSFOutputMode mode, int rate, float gain);
+/* Change effects only while playback is stopped */
+void music_synth_set_effects(music_synth *synth, int reverb, int chorus);
 void music_synth_set_max_voices(music_synth *synth, int voices);
 int music_synth_get_presetcount(music_synth *synth);
 int music_synth_active_voice_count(music_synth *synth);

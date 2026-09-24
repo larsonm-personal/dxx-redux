@@ -119,4 +119,72 @@ if (Test-SafeToolConfValue -Key 'TEST_COMMIT' -Value 'abc123') {
     throw 'Short commit accepted'
 }
 
+# Exercise the real coupled updater against a fixture manifest, without network
+$tokens = $null
+$parseErrors = $null
+$updateAst = [Management.Automation.Language.Parser]::ParseInput($checkUpdates, [ref]$tokens, [ref]$parseErrors)
+if ($parseErrors.Count) { throw "check-updates.ps1 does not parse: $parseErrors" }
+$fluidFunction = $updateAst.Find({ param($node)
+        $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Update-FluidSynthTarget'
+    }, $true)
+. ([scriptblock]::Create($fluidFunction.Extent.Text))
+$confFile = Join-Path $repoRoot "android/temp/fluidsynth-update-$([guid]::NewGuid()).conf"
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $confFile
+New-Item -ItemType Directory -Path (Split-Path $confFile) -Force | Out-Null
+$fixtureCommit = 'a' * 40
+$fixtureHash = 'b' * 64
+$fixtureModule = 'set(GCEM_REVISION "' + $fixtureCommit + '")' + "`n" +
+'set(GCEM_HASH "' + $fixtureHash + '")' + "`n" +
+'set(GCEM_ZIP_URL "https://github.com/kthohr/gcem/archive/${GCEM_REVISION}.zip")'
+function Invoke-LoggedWebRequest($Uri, $TimeoutSec) {
+    if ($Uri -ne 'https://raw.githubusercontent.com/FluidSynth/fluidsynth/v2.6.2/cmake_admin/FindGCEM.cmake' -or $TimeoutSec -le 0) {
+        throw "Unexpected metadata request: $Uri"
+    }
+    return @{ Content = $fixtureModule }
+}
+function Get-RemoteFileSha256($uri) {
+    if ($uri -eq 'https://github.com/FluidSynth/fluidsynth/archive/refs/tags/v2.6.2.tar.gz') { return ('c' * 64) }
+    if ($uri -ne "https://github.com/kthohr/gcem/archive/$fixtureCommit.zip") { throw "Unexpected archive: $uri" }
+    if ($failureMode -eq 'download') { throw 'Simulated interrupted download' }
+    if ($failureMode -eq 'hash') { return ('d' * 64) }
+    return $fixtureHash
+}
+try {
+    foreach ($failureMode in @('download', 'hash', 'metadata', 'none')) {
+        [IO.File]::WriteAllText($confFile, $versions)
+        $savedModule = $fixtureModule
+        if ($failureMode -eq 'metadata') { $fixtureModule = 'upstream changed its dependency declaration' }
+        $failed = $false
+        try { Update-FluidSynthTarget '2.6.2' } catch {
+            if ($failureMode -eq 'none') { throw }
+            $failed = $true
+        }
+        $fixtureModule = $savedModule
+        $updated = Get-Content -LiteralPath $confFile -Raw
+        if ($failureMode -ne 'none') {
+            if (-not $failed -or $updated -cne $versions) { throw "Failed update changed pins: $failureMode" }
+            Write-Host "PASS: FluidSynth $failureMode failure preserves the complete manifest"
+        } else {
+            if ($failed) { throw 'Valid FluidSynth update failed' }
+            $expected = @{
+                FLUIDSYNTH_VERSION = '2.6.2'
+                FLUIDSYNTH_URL = 'https://github.com/FluidSynth/fluidsynth/archive/refs/tags/v2.6.2.tar.gz'
+                FLUIDSYNTH_SHA256 = 'c' * 64
+                GCEM_COMMIT = $fixtureCommit
+                GCEM_URL = "https://github.com/kthohr/gcem/archive/$fixtureCommit.zip"
+                GCEM_SHA256 = $fixtureHash
+            }
+            foreach ($entry in $expected.GetEnumerator()) {
+                Assert-Matches $updated ('(?m)^' + $entry.Key + '=' + [regex]::Escape($entry.Value) + '\r?$') $entry.Key
+            }
+            $otherPins = '(?m)^(FLUIDSYNTH_|GCEM_)[^\r\n]*'
+            if (($updated -replace $otherPins, '') -cne ($versions -replace $otherPins, '')) {
+                throw 'FluidSynth update changed unrelated configuration'
+            }
+        }
+    }
+} finally {
+    Remove-Item -LiteralPath $confFile -Force -ErrorAction SilentlyContinue
+}
+
 Write-Host "All get_deps runtime update tests passed"

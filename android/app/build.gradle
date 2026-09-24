@@ -136,7 +136,9 @@ def soundfontUrl = toolVersions['SOUNDFONT_URL']
 def soundfontSha = toolVersions['SOUNDFONT_SHA256']
 
 tasks.register('downloadSoundfont') {
-    description = 'Download GM soundfont (TimGM6mb.sf2) into assets if missing or wrong hash'
+    description = 'Download the pinned bundled GM soundfont into assets if missing or wrong hash'
+    inputs.property('soundfontUrl', soundfontUrl)
+    inputs.property('soundfontSha256', soundfontSha)
     outputs.file(soundfontFile)
 
     doLast {
@@ -152,7 +154,7 @@ tasks.register('downloadSoundfont') {
             soundfontFile.delete()
         }
         soundfontFile.parentFile.mkdirs()
-        logger.lifecycle("Downloading TimGM6mb.sf2...")
+        logger.lifecycle("Downloading bundled soundfont...")
         new URL(soundfontUrl).withInputStream { is -> soundfontFile.withOutputStream { os -> os << is } }
 
         // verify

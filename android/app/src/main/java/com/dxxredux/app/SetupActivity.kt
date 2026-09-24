@@ -1257,6 +1257,12 @@ class SetupActivity : ComponentActivity() {
                         runIo { MidiPreviewBridge.selectRenderer(this@SetupActivity, renderer) }
                     }
 
+                    "music_effects_select" -> {
+                        val reverb = intent.getBooleanExtra("reverb", true)
+                        val chorus = intent.getBooleanExtra("chorus", true)
+                        runIo { MidiPreviewBridge.selectEffects(this@SetupActivity, reverb, chorus) }
+                    }
+
                     "music_preferences_reset" -> {
                         val preset = GameSettingsPreset.valueOf(intent.getStringExtra("preset") ?: "DEFAULTS")
                         runIo { MidiPreviewBridge.resetPreferences(this@SetupActivity, preset) }

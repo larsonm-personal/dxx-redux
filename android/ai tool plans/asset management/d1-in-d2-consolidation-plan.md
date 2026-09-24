@@ -4,6 +4,8 @@ Date: 2026-09-21
 
 Status: implementation in progress; see the [implementation ledger](d1-in-d2-implementation-ledger.md)
 
+September 23 handoff: see the [continuation plan](d1-in-d2-continuation-20260923.md) before acting on the dated stocktake below. Commit `3ce7e963` fixed the remaining long level-7 lava RNG ordering failure (all eight ordinary imported replay regressions passed) and connected optional Guide-Bot package preparation to the production lifecycle. Strict paired qualification remains incomplete. The continuation plan reconciles these results and prioritizes rendered Spreadfire verification, strict evidence, and the remaining F3-F5 gates
+
 The first requested step is implemented: all 30 D1 compatibility source/header files now live in `d2/main/d1_in_d2/`, including custom assets, PIG validation, checkpoint translation and replay adapters. The move preserves their contents; external includes, CMake source paths and source-inspecting tests use the new location. See the ledger for verification
 
 Planning revision: section 0 is the authoritative finishing sequence and current stocktake. Section 16 supplies detailed ownership/removal contracts for its work packages. Earlier phase/package lists explain the design and are not additional queues of work. Existing implementation is a starting point to review, not a reason to preserve an unsuitable boundary

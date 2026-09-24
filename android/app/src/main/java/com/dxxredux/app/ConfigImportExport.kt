@@ -31,6 +31,7 @@ object ConfigImportExport {
     internal data class ExportedPreference(
         val key: String,
         val type: ExportedPreferenceType,
+        val defaultValue: Any? = null,
     )
 
     // SharedPreferences included in config export with their declared runtime type.
@@ -40,8 +41,16 @@ object ConfigImportExport {
             ExportedPreference("render_resolution", ExportedPreferenceType.STRING),
             ExportedPreference("game_orientation", ExportedPreferenceType.STRING),
             ExportedPreference("music_mode", ExportedPreferenceType.STRING),
-            ExportedPreference(SoundfontStore.PREF_RENDERER, ExportedPreferenceType.STRING),
-            ExportedPreference(SoundfontStore.PREF_SOUNDFONT, ExportedPreferenceType.STRING),
+            ExportedPreference(PREF_MIDI_EDITOR_SOURCE, ExportedPreferenceType.STRING, DEFAULT_MIDI_EDITOR_SOURCE),
+            // Match SoundfontStore.read defaults so untouched MIDI settings also round-trip
+            ExportedPreference(
+                SoundfontStore.PREF_RENDERER,
+                ExportedPreferenceType.STRING,
+                SoundfontStore.DEFAULT_RENDERER,
+            ),
+            ExportedPreference(SoundfontStore.PREF_SOUNDFONT, ExportedPreferenceType.STRING, ""),
+            ExportedPreference(SoundfontStore.PREF_REVERB, ExportedPreferenceType.BOOLEAN, true),
+            ExportedPreference(SoundfontStore.PREF_CHORUS, ExportedPreferenceType.BOOLEAN, true),
             ExportedPreference("touch_overlay_enabled", ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_SHOW_RESUME_OFFER, ExportedPreferenceType.BOOLEAN),
@@ -73,8 +82,7 @@ object ConfigImportExport {
     internal fun exportPreferenceValues(allPrefs: Map<String, *>): JSONObject {
         val json = JSONObject()
         for (pref in EXPORTED_PREFERENCES) {
-            if (!allPrefs.containsKey(pref.key)) continue
-            val value = allPrefs[pref.key]
+            val value = if (allPrefs.containsKey(pref.key)) allPrefs[pref.key] else pref.defaultValue
             if (pref.type.accepts(value)) json.put(pref.key, value)
         }
         return json

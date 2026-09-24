@@ -30,13 +30,15 @@
 #include "coop_start_positions.h"
 #include "cntrlcen.h"
 #include "endlevel.h"
+#include "escort.h"
 #endif
 
 /* Fixed little-endian envelope: operation/phase/roster, session and source
  * visit, restore epoch, revision, operation generation, remaining warning
  * time and initiator. Sender identity always comes from UDP authentication */
 enum { PACKET_SIZE = 56 + COOP_PORTABLE_BYTES,
-	   PREPARED_HEADER = 24 + MAX_PLAYERS * COOP_PORTABLE_BYTES,
+	   COMPANION_OFFSET = 24 + MAX_PLAYERS * COOP_PORTABLE_BYTES,
+	   PREPARED_HEADER = COMPANION_OFFSET + 8,
 	   CAMPAIGN_HEADER = PREPARED_HEADER + 8, /* Reserved terminal world visit */
 	   CHECKPOINT_HEADER = PREPARED_HEADER + 8,
 	   STATE = 1,
@@ -72,6 +74,8 @@ static uint64_t terminal_visit;
 static uint32_t prepared_checksum;
 static coop_portable_player portable[MAX_PLAYERS];
 static unsigned portable_received;
+/* State, owner plus one, two reserved bytes, little-endian shields */
+static unsigned char companion[8];
 static unsigned operation_players, snapshot_players;
 static unsigned frozen_received, deaths_settled;
 static int freeze_ready;
@@ -252,6 +256,14 @@ static int place_arrivals(void)
 		COOPLOG("travel arrival: local=%d player=%d level=%d anchor=%d segment=%d pos=%d,%d,%d",
 		        Player_num, i, Current_level_num, anchor.segnum, obj->segnum, obj->pos.x, obj->pos.y, obj->pos.z);
 	}
+	if (!escort_apply_secret_travel(companion[0], (int) companion[1] - 1, (fix) get32(companion + 4))) return 0;
+	/* Fresh companions are level objects, whose object index is their wire ID */
+	unsigned char companion_arrival[16] = { 0 };
+	put32(companion_arrival, (uint32_t) Buddy_objnum);
+	put32(companion_arrival + 4, (uint32_t) Escort_owner_player);
+	put32(companion_arrival + 8, (uint32_t) Buddy_allowed_to_talk);
+	put32(companion_arrival + 12, (uint32_t) escort_buddy_is_docked());
+	arrival_checksum = coop_save_checksum(companion_arrival, sizeof(companion_arrival), arrival_checksum);
 	arrivals_placed = 1;
 	game_flush_inputs();
 	return 1;
@@ -379,6 +391,7 @@ void coop_travel_reset(void)
 	frozen_received = deaths_settled = 0;
 	freeze_ready = 0;
 	memset(portable, 0, sizeof(portable));
+	memset(companion, 0, sizeof(companion));
 	clear_checkpoint();
 	failure_pending = rollback_required = rollback_started = recovery_entered = 0;
 	fail_after_load = failed_destination = 0;
@@ -589,6 +602,10 @@ static int frozen_roster_valid(const unsigned char *bytes, size_t size, int chec
 	if (bytes[18] & ~(checkpoint ? 0u : 2u)) return 0;
 	for (int i = 19; i < 24; ++i)
 		if (bytes[i]) return 0;
+	const unsigned char *buddy = bytes + COMPANION_OFFSET;
+	if (buddy[0] > 2 || buddy[1] > MAX_PLAYERS || buddy[2] || buddy[3] ||
+	    get32(buddy + 4) > INT32_MAX ||
+	    (!buddy[0] && (buddy[1] || get32(buddy + 4)))) return 0;
 	for (int i = 0; i < MAX_PLAYERS; ++i) {
 		coop_portable_player record;
 		memcpy(&record, bytes + 24 + i * COOP_PORTABLE_BYTES, sizeof(record));
@@ -709,6 +726,7 @@ int coop_travel_stage_checkpoint(const void *data, size_t size)
 	checkpoint_checksum = get32(copy + PREPARED_HEADER + 4);
 	checkpoint_ready = 1;
 	memcpy(portable, copy + 24, sizeof(portable));
+	memcpy(companion, copy + COMPANION_OFFSET, sizeof(companion));
 	snapshot_players = portable_received = bytes[16];
 	COOPLOG("travel source checkpoint retained: player=%d level=%d bytes=%u checksum=%u generation=%llu",
 	        Player_num, source_level, (unsigned) size, checkpoint_checksum, (unsigned long long) policy.generation);
@@ -798,6 +816,14 @@ static int capture_source_checkpoint(void)
 	package.data[16] = policy.participants;
 	package.data[17] = 1;
 	memcpy(package.data + 24, portable, sizeof(portable));
+#ifdef DXX_BUILD_DESCENT_II
+	int buddy_state, buddy_owner;
+	fix buddy_shields;
+	escort_capture_secret_travel(&buddy_state, &buddy_owner, &buddy_shields);
+	package.data[COMPANION_OFFSET] = (unsigned char) buddy_state;
+	package.data[COMPANION_OFFSET + 1] = (unsigned char) (buddy_owner + 1);
+	put32(package.data + COMPANION_OFFSET + 4, (uint32_t) buddy_shields);
+#endif
 	put32(package.data + PREPARED_HEADER, (uint32_t) save.size);
 	memcpy(package.data + CHECKPOINT_HEADER, save.data, save.size);
 	put32(package.data + PREPARED_HEADER + 4, source_checkpoint_checksum(package.data, package.size));
@@ -813,7 +839,8 @@ int coop_travel_stage_campaign(const void *data, size_t size)
 	const unsigned char *bytes = (const unsigned char *) data;
 	coop_campaign_travel next = { 0 };
 	if (!checkpoint_ready || size <= CAMPAIGN_HEADER || !frozen_roster_valid(bytes, size, 0) ||
-	    memcmp(portable, bytes + 24, sizeof(portable))) return 0;
+	    memcmp(portable, bytes + 24, sizeof(portable)) ||
+	    memcmp(companion, bytes + COMPANION_OFFSET, sizeof(companion))) return 0;
 	if (!coop_campaign_travel_decode(&next, bytes + CAMPAIGN_HEADER, size - CAMPAIGN_HEADER)) return 0;
 	const uint64_t ending_visit = get64(bytes + PREPARED_HEADER);
 	if (next.source_level != source_level || next.source_generation != campaign_generation ||
@@ -866,6 +893,7 @@ static int prepare_campaign_transfer(void)
 	    !coop_briefing_count_intro(ShowLevelIntro, next.destination.level)) buffer.data[18] = 2;
 #endif
 	memcpy(buffer.data + 24, portable, sizeof(portable));
+	memcpy(buffer.data + COMPANION_OFFSET, companion, sizeof(companion));
 	put64(buffer.data + PREPARED_HEADER, ending_visit);
 	memcpy(buffer.data + CAMPAIGN_HEADER, encoded, size);
 	result = multi_send_coop_campaign_transfer(&buffer);

@@ -1323,6 +1323,7 @@ static json serialize_guidebot()
 		const fix speed = vm_vec_mag_quick(&buddy.mtype.phys_info.velocity);
 
 		result["segment"] = (int) buddy.segnum;
+		result["shields"] = f2fl(buddy.shields);
 		result["object_type"] = (int) buddy.type;
 		result["position"] = json::array({ f2fl(buddy.pos.x), f2fl(buddy.pos.y), f2fl(buddy.pos.z) });
 		result["velocity"] = json::array({ f2fl(buddy.mtype.phys_info.velocity.x), f2fl(buddy.mtype.phys_info.velocity.y), f2fl(buddy.mtype.phys_info.velocity.z) });

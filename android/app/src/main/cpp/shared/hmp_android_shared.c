@@ -84,25 +84,35 @@ fail:
 	return NULL;
 }
 
-static int hmp_midi_append(unsigned char **midbuf, unsigned int *midlen,
+static int hmp_midi_append(unsigned char **midbuf, unsigned int *midlen, unsigned int *capacity,
                            const void *data, size_t data_len)
 {
 	unsigned char *newbuf;
+	unsigned int needed, grown;
 
 	if (data_len > INT_MAX || *midlen > (unsigned int) (INT_MAX - data_len))
 		return 0;
-	newbuf = d_realloc(*midbuf, *midlen + data_len);
-	if (!newbuf)
-		return 0;
-	*midbuf = newbuf;
+	needed = *midlen + (unsigned int) data_len;
+	if (needed > *capacity) {
+		/* The debug allocator always copies on realloc Geometric growth keeps
+		 * conversion linear instead of copying the song for every event */
+		grown = *capacity ? *capacity : 1024;
+		while (grown < needed)
+			grown = grown > INT_MAX / 2u ? (unsigned int) INT_MAX : grown * 2u;
+		newbuf = d_realloc(*midbuf, grown);
+		if (!newbuf)
+			return 0;
+		*midbuf = newbuf;
+		*capacity = grown;
+	}
 	if (data_len != 0)
-		memcpy(newbuf + *midlen, data, data_len);
-	*midlen += (unsigned int) data_len;
+		memcpy(*midbuf + *midlen, data, data_len);
+	*midlen = needed;
 	return 1;
 }
 
 static int hmp_android_convert_track(const unsigned char *data, size_t size,
-                                     unsigned char **midbuf, unsigned int *midlen, unsigned int *track_len)
+                                     unsigned char **midbuf, unsigned int *midlen, unsigned int *capacity, unsigned int *track_len)
 {
 	const unsigned char *cursor = data;
 	const unsigned char *end;
@@ -132,7 +142,7 @@ static int hmp_android_convert_track(const unsigned char *data, size_t size,
 			if (i + 1 < delta_len)
 				converted_delta[i] |= 0x80;
 		}
-		if (!hmp_midi_append(midbuf, midlen, converted_delta, delta_len))
+		if (!hmp_midi_append(midbuf, midlen, capacity, converted_delta, delta_len))
 			return 0;
 		if (cursor == end)
 			return 0;
@@ -160,7 +170,7 @@ static int hmp_android_convert_track(const unsigned char *data, size_t size,
 			} while (1);
 			if (meta_len > (uint32_t) (end - cursor))
 				return 0;
-			if (!hmp_midi_append(midbuf, midlen, event_start,
+			if (!hmp_midi_append(midbuf, midlen, capacity, event_start,
 			                     (size_t) (cursor - event_start) + meta_len))
 				return 0;
 			cursor += meta_len;
@@ -193,9 +203,9 @@ static int hmp_android_convert_track(const unsigned char *data, size_t size,
 		if (payload_len > (size_t) (end - cursor))
 			return 0;
 		if (status != last_command &&
-		    !hmp_midi_append(midbuf, midlen, &status, 1))
+		    !hmp_midi_append(midbuf, midlen, capacity, &status, 1))
 			return 0;
-		if (!hmp_midi_append(midbuf, midlen, cursor, payload_len))
+		if (!hmp_midi_append(midbuf, midlen, capacity, cursor, payload_len))
 			return 0;
 		cursor += payload_len;
 		last_command = status;
@@ -215,7 +225,7 @@ static int hmp_android_convert_mem(
 	int i;
 	short ms;
 	hmp_file *hmp = NULL;
-	unsigned int midlen = 0;
+	unsigned int midlen = 0, capacity = 0;
 	unsigned char *midbuf = NULL;
 
 	if (!out_midi || !out_len)
@@ -230,22 +240,22 @@ static int hmp_android_convert_mem(
 		goto fail;
 
 	/* Write MIDI header */
-	if (!hmp_midi_append(&midbuf, &midlen, "MThd", 4))
+	if (!hmp_midi_append(&midbuf, &midlen, &capacity, "MThd", 4))
 		goto fail;
 	{
 		int mi = HMP_MIDI_INT(6);
-		if (!hmp_midi_append(&midbuf, &midlen, &mi, sizeof(mi)))
+		if (!hmp_midi_append(&midbuf, &midlen, &capacity, &mi, sizeof(mi)))
 			goto fail;
 	}
 	ms = HMP_MIDI_SHORT(1);
-	if (!hmp_midi_append(&midbuf, &midlen, &ms, sizeof(ms)))
+	if (!hmp_midi_append(&midbuf, &midlen, &capacity, &ms, sizeof(ms)))
 		goto fail;
 	ms = HMP_MIDI_SHORT(hmp->num_trks);
-	if (!hmp_midi_append(&midbuf, &midlen, &ms, sizeof(ms)))
+	if (!hmp_midi_append(&midbuf, &midlen, &capacity, &ms, sizeof(ms)))
 		goto fail;
 	ms = HMP_MIDI_SHORT((short) (hmp->tempo * 8 / 5));
-	if (!hmp_midi_append(&midbuf, &midlen, &ms, sizeof(ms)) ||
-	    !hmp_midi_append(&midbuf, &midlen, tempo_track, tempo_track_len))
+	if (!hmp_midi_append(&midbuf, &midlen, &capacity, &ms, sizeof(ms)) ||
+	    !hmp_midi_append(&midbuf, &midlen, &capacity, tempo_track, tempo_track_len))
 		goto fail;
 
 	/* Convert HMP tracks */
@@ -253,14 +263,14 @@ static int hmp_android_convert_mem(
 		unsigned int track_len, track_len_pos;
 		int midi_track_len;
 
-		if (!hmp_midi_append(&midbuf, &midlen, "MTrk", 4))
+		if (!hmp_midi_append(&midbuf, &midlen, &capacity, "MTrk", 4))
 			goto fail;
 		track_len_pos = midlen;
 		midi_track_len = 0;
-		if (!hmp_midi_append(&midbuf, &midlen, &midi_track_len,
+		if (!hmp_midi_append(&midbuf, &midlen, &capacity, &midi_track_len,
 		                     sizeof(midi_track_len)) ||
 		    !hmp_android_convert_track(hmp->trks[i].data, hmp->trks[i].len,
-		                               &midbuf, &midlen, &track_len))
+		                               &midbuf, &midlen, &capacity, &track_len))
 			goto fail;
 		midi_track_len = HMP_MIDI_INT((int) track_len);
 		memcpy(midbuf + track_len_pos, &midi_track_len, sizeof(midi_track_len));
@@ -324,7 +334,7 @@ static int hmp_play_number(const unsigned char **p, const unsigned char *end,
 	return 0;
 }
 
-static int hmp_play_delta(unsigned char **out, unsigned int *len, uint32_t value)
+static int hmp_play_delta(unsigned char **out, unsigned int *len, unsigned int *capacity, uint32_t value)
 {
 	unsigned char bytes[4];
 	int n = 4;
@@ -333,10 +343,10 @@ static int hmp_play_delta(unsigned char **out, unsigned int *len, uint32_t value
 	bytes[--n] = value & 127;
 	while ((value >>= 7) != 0)
 		bytes[--n] = (value & 127) | 128;
-	return hmp_midi_append(out, len, bytes + n, (size_t) (4 - n));
+	return hmp_midi_append(out, len, capacity, bytes + n, (size_t) (4 - n));
 }
 
-static int hmp_play_emit(unsigned char **out, unsigned int *len, uint32_t *last,
+static int hmp_play_emit(unsigned char **out, unsigned int *len, unsigned int *capacity, uint32_t *last,
                          uint32_t tick, unsigned char status,
                          unsigned char a, unsigned char b, int fm)
 {
@@ -348,8 +358,8 @@ static int hmp_play_emit(unsigned char **out, unsigned int *len, uint32_t *last,
 	 */
 	if (!fm && (status & 0xf0) == 0xb0 && a == 7)
 		msg[2] = b > 1 ? (unsigned char) (b - 2) : 0;
-	if (tick < *last || !hmp_play_delta(out, len, tick - *last) ||
-	    !hmp_midi_append(out, len, msg, size))
+	if (tick < *last || !hmp_play_delta(out, len, capacity, tick - *last) ||
+	    !hmp_midi_append(out, len, capacity, msg, size))
 		return 0;
 	*last = tick;
 	return 1;
@@ -395,7 +405,7 @@ int hmp2mid_playback_device_mem(const unsigned char *data, int len, int repeat, 
 	unsigned char initial_shift[HMP_TRACKS] = { 0 };
 	unsigned char selected[HMP_TRACKS] = { 0 };
 	unsigned char *out = NULL;
-	unsigned int out_len = 0;
+	unsigned int out_len = 0, out_capacity = 0;
 	size_t count = 0, capacity, i, n, branch_pos, track_offset = 0x308;
 	uint32_t last = 0, end_tick = 0, loop_tick = 0, loop_end = 0;
 	uint32_t end_order = 0, loop_count = 0, start_count = 0;
@@ -581,7 +591,7 @@ int hmp2mid_playback_device_mem(const unsigned char *data, int len, int repeat, 
 		end_tick = loop_end;
 	if (end_tick > 0x07ffffff)
 		goto fail;
-	if (!hmp_midi_append(&out, &out_len, header, sizeof(header)))
+	if (!hmp_midi_append(&out, &out_len, &out_capacity, header, sizeof(header)))
 		goto fail;
 	out[12] = (unsigned char) (hmp->tempo >> 8);
 	out[13] = (unsigned char) hmp->tempo;
@@ -590,8 +600,8 @@ int hmp2mid_playback_device_mem(const unsigned char *data, int len, int repeat, 
 	 */
 	for (track = 0; !fm && track < 16; track++)
 		/* Captured HMI reset sends bytes 64,64 (8256), not 0,64 (8192) */
-		if (!hmp_play_emit(&out, &out_len, &last, 0, (unsigned char) (0xe0 + track), 64, 64, fm) ||
-		    !hmp_play_emit(&out, &out_len, &last, 0, (unsigned char) (0xb0 + track), 7, 0, fm))
+		if (!hmp_play_emit(&out, &out_len, &out_capacity, &last, 0, (unsigned char) (0xe0 + track), 64, 64, fm) ||
+		    !hmp_play_emit(&out, &out_len, &out_capacity, &last, 0, (unsigned char) (0xb0 + track), 7, 0, fm))
 			goto fail;
 	for (pass = 0; pass <= !!repeat; pass++) {
 		uint32_t base = pass ? end_tick + !have_loop : 0;
@@ -606,12 +616,12 @@ int hmp2mid_playback_device_mem(const unsigned char *data, int len, int repeat, 
 					if (events[i].track == track && events[i].offset == hmp_read_le32(r))
 						break;
 				channel = events[i].status & 15;
-				if (!hmp_play_emit(&out, &out_len, &last, base, (unsigned char) (0xc0 + channel), r[5], 0, fm))
+				if (!hmp_play_emit(&out, &out_len, &out_capacity, &last, base, (unsigned char) (0xc0 + channel), r[5], 0, fm))
 					goto fail;
 				controls = data + hmp_read_le32(r + 8);
 				for (j = 0; j < r[7]; j += 2) {
 					if (controls[j] > 127 || controls[j + 1] > 127 ||
-					    !hmp_play_emit(&out, &out_len, &last, base, (unsigned char) (0xb0 + channel), controls[j], controls[j + 1], fm))
+					    !hmp_play_emit(&out, &out_len, &out_capacity, &last, base, (unsigned char) (0xb0 + channel), controls[j], controls[j + 1], fm))
 						goto fail;
 				}
 			}
@@ -637,7 +647,7 @@ int hmp2mid_playback_device_mem(const unsigned char *data, int len, int repeat, 
 		qsort(scheduled, n, sizeof(*scheduled), hmp_play_order);
 		for (i = 0; i < n; i++) {
 			const struct hmp_play_event *e = &scheduled[i];
-			if (!hmp_play_emit(&out, &out_len, &last, e->tick, e->status, e->a, e->b, fm))
+			if (!hmp_play_emit(&out, &out_len, &out_capacity, &last, e->tick, e->status, e->a, e->b, fm))
 				goto fail;
 		}
 		if (!have_loop) {
@@ -651,10 +661,10 @@ int hmp2mid_playback_device_mem(const unsigned char *data, int len, int repeat, 
 				unsigned char control = (unsigned char) (0xb0 + channel);
 				if (reset_channels & (1u << channel)) continue;
 				reset_channels |= 1u << channel;
-				if (!hmp_play_emit(&out, &out_len, &last, base + end_tick, control, 123, 0, fm) ||
-				    !hmp_play_emit(&out, &out_len, &last, base + end_tick, control, 121, 0, fm) ||
-				    !hmp_play_emit(&out, &out_len, &last, base + end_tick, (unsigned char) (0xe0 + channel), fm ? 0 : 64, 64, fm) ||
-				    !hmp_play_emit(&out, &out_len, &last, base + end_tick, control, 7, 0, fm))
+				if (!hmp_play_emit(&out, &out_len, &out_capacity, &last, base + end_tick, control, 123, 0, fm) ||
+				    !hmp_play_emit(&out, &out_len, &out_capacity, &last, base + end_tick, control, 121, 0, fm) ||
+				    !hmp_play_emit(&out, &out_len, &out_capacity, &last, base + end_tick, (unsigned char) (0xe0 + channel), fm ? 0 : 64, 64, fm) ||
+				    !hmp_play_emit(&out, &out_len, &out_capacity, &last, base + end_tick, control, 7, 0, fm))
 					goto fail;
 			}
 		}
@@ -668,8 +678,8 @@ int hmp2mid_playback_device_mem(const unsigned char *data, int len, int repeat, 
 		goto fail;
 	info->branch_loop = have_loop;
 	info->unsupported_branches = unsupported;
-	if (end_tick < last || !hmp_play_delta(&out, &out_len, end_tick - last) ||
-	    !hmp_midi_append(&out, &out_len, eot, sizeof(eot)))
+	if (end_tick < last || !hmp_play_delta(&out, &out_len, &out_capacity, end_tick - last) ||
+	    !hmp_midi_append(&out, &out_len, &out_capacity, eot, sizeof(eot)))
 		goto fail;
 	{
 		uint32_t bytes = out_len - 22;
