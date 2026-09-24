@@ -217,6 +217,9 @@ foreach ($requiredArtifact in @(
 
 # Exercise the replay exit/file race without running a game or relying on timing
 & {
+    . (Join-Path $PSScriptRoot '../helpers/output_disk_space.ps1')
+    $script:replayOutputPaths = @((Join-Path $PSScriptRoot '../temp'))
+    $MinimumFreeSpaceGB = 0.01
     $replayAst = [Management.Automation.Language.Parser]::ParseFile(
         (Join-Path $PSScriptRoot 'run_input_demo_replay.ps1'), [ref]$null, [ref]$null)
     $waitFunction = $replayAst.Find({ param($node)

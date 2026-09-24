@@ -28,6 +28,7 @@ import kotlinx.coroutines.withContext
 fun SoundfontSelector() {
     val context = LocalContext.current
     val store = remember { SoundfontStore(context) }
+    val bundled = remember(context) { SoundfontCatalog.bundled(context) }
     val scope = rememberCoroutineScope()
     var state by remember { mutableStateOf(store.read()) }
     var expanded by remember { mutableStateOf(false) }
@@ -40,6 +41,7 @@ fun SoundfontSelector() {
     var downloadSize by remember { mutableStateOf<Long?>(null) }
     var showLibrary by remember { mutableStateOf(false) }
     var infoFont by remember { mutableStateOf<SoundfontStore.Font?>(null) }
+    var infoFromDownloads by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<SoundfontStore.Font?>(null) }
     var rendererInfo by remember { mutableStateOf<String?>(null) }
 
@@ -159,7 +161,7 @@ fun SoundfontSelector() {
 
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Text("Sound profile", style = MaterialTheme.typography.titleSmall)
-        listOf("ymfm" to "AdLib / Sound Blaster FM", "sf2" to "Soundfont").forEach { (id, label) ->
+        listOf("ymfm" to "AdLib / Sound Blaster FM", "sf2" to "MIDI soundfont").forEach { (id, label) ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(selected = state.renderer == id, enabled = !busy, onClick = {
                     scope.launch {
@@ -194,10 +196,10 @@ fun SoundfontSelector() {
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth().tvFocusBorder(),
             ) {
-                Text(state.fonts.firstOrNull { it.id == state.selected }?.name ?: "Bundled soundfont")
+                Text(state.fonts.firstOrNull { it.id == state.selected }?.name ?: bundled.name)
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                DropdownMenuItem(text = { Text("Bundled soundfont") }, onClick = {
+                DropdownMenuItem(text = { Text(bundled.name) }, onClick = {
                     expanded = false
                     select("")
                 })
@@ -221,7 +223,7 @@ fun SoundfontSelector() {
         }
         TextButton(
             onClick = { showDownloads = true },
-            enabled = !busy && SoundfontCatalog.entries.isNotEmpty(),
+            enabled = !busy,
             modifier = Modifier.tvFocusBorder(),
         ) {
             Text("Download soundfonts")
@@ -246,7 +248,7 @@ fun SoundfontSelector() {
     rendererInfo?.let { renderer ->
         AlertDialog(
             onDismissRequest = { rendererInfo = null },
-            title = { Text(if (renderer == "ymfm") "AdLib / Sound Blaster FM" else "SoundFont") },
+            title = { Text(if (renderer == "ymfm") "AdLib / Sound Blaster FM" else "MIDI soundfont") },
             text = {
                 Text(
                     if (renderer == "ymfm") {
@@ -274,6 +276,12 @@ fun SoundfontSelector() {
             title = { Text("Saved soundfonts") },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
+                    BundledSoundfontEntry(bundled.name, state.selected.isEmpty()) {
+                        showLibrary = false
+                        infoFromDownloads = false
+                        infoFont = bundled
+                    }
+                    HorizontalDivider()
                     if (state.fonts.isEmpty()) Text("No downloaded or imported soundfonts.")
                     state.fonts.forEach { font ->
                         Text(font.name, style = MaterialTheme.typography.titleSmall)
@@ -281,6 +289,7 @@ fun SoundfontSelector() {
                         Row {
                             TextButton(onClick = {
                                 showLibrary = false
+                                infoFromDownloads = false
                                 infoFont = font
                             }, modifier = Modifier.tvFocusBorder()) { Text("Info") }
                             TextButton(onClick = {
@@ -299,7 +308,7 @@ fun SoundfontSelector() {
     infoFont?.let { font ->
         fun closeInfo() {
             infoFont = null
-            showLibrary = true
+            if (infoFromDownloads) showDownloads = true else showLibrary = true
         }
         AlertDialog(
             onDismissRequest = { closeInfo() },
@@ -309,7 +318,7 @@ fun SoundfontSelector() {
                     Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    font.download?.let { SoundfontDetails(it) } ?: Text(
+                    font.download?.let { SoundfontDetails(it, bundled = font.id.isEmpty()) } ?: Text(
                         "Imported from a local SF2 file. No source or license information was supplied.",
                     )
                 }
@@ -331,7 +340,7 @@ fun SoundfontSelector() {
                         if (font.id ==
                             state.selected
                         ) {
-                            " The bundled soundfont will be selected and MIDI preview will stop."
+                            " ${bundled.name} will be selected and MIDI preview will stop."
                         } else {
                             ""
                         },
@@ -353,6 +362,12 @@ fun SoundfontSelector() {
             title = { Text("Download soundfonts") },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
+                    BundledSoundfontEntry(bundled.name, state.selected.isEmpty()) {
+                        showDownloads = false
+                        infoFromDownloads = true
+                        infoFont = bundled
+                    }
+                    HorizontalDivider()
                     SoundfontCatalog.entries.forEach { entry ->
                         TextButton(onClick = {
                             showDownloads = false
@@ -380,7 +395,7 @@ fun SoundfontSelector() {
                 ) {
                     SoundfontDetails(entry)
                     Text(
-                        "Downloads and selects this soundfont. Your AdLib / Soundfont choice stays the same.",
+                        "Downloads and selects this soundfont. Your AdLib / MIDI soundfont choice stays the same.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -399,11 +414,34 @@ fun SoundfontSelector() {
 }
 
 @Composable
-private fun SoundfontDetails(entry: SoundfontDownload) {
+private fun BundledSoundfontEntry(
+    name: String,
+    selected: Boolean,
+    onInfo: () -> Unit,
+) {
+    TextButton(onClick = onInfo, modifier = Modifier.fillMaxWidth().tvFocusBorder()) {
+        Column(Modifier.fillMaxWidth()) {
+            Text(name, style = MaterialTheme.typography.titleSmall)
+            Text("Included with app - Info", style = MaterialTheme.typography.bodySmall)
+            if (selected) Text("Selected", style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+private fun SoundfontDetails(
+    entry: SoundfontDownload,
+    bundled: Boolean = false,
+) {
     val uriHandler = LocalUriHandler.current
     var linkError by remember(entry) { mutableStateOf<String?>(null) }
     Text(entry.description)
-    SelectionContainer { Text("Download URL:\n${entry.url}", style = MaterialTheme.typography.bodySmall) }
+    SelectionContainer {
+        Text(
+            "${if (bundled) "Source file URL" else "Download URL"}:\n${entry.url}",
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
     TextButton(onClick = {
         try {
             uriHandler.openUri(entry.websiteUrl)

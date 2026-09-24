@@ -55,6 +55,14 @@ renderer choice remains unchanged. If activation fails, the previous choice
 remains active and the imported asset remains available for retry.
 
 Completed downloads also save their descriptor in the soundfont manifest.
+The bundled TimGM6mb bank is named in the selector and has a permanent Info
+entry in both **Manage soundfonts** and **Download soundfonts**. Its details
+include the author, version, size, source release URL, repository link and full
+offline GPL-2 license from `assets/licenses/TimGM6mb.txt`. It has no download or
+delete action and is not stored in the removable-font manifest. Closing Info
+returns to the list that opened it. This labels the existing bank; it does not
+replace it or change its license.
+
 **Manage soundfonts** offers **Info** and **Delete** for each downloaded or
 locally imported bank. Info shows the saved description, asset URL, clickable
 original website/readme and license, even after restarting the app or removing

@@ -117,6 +117,7 @@ static int prepare_assets(const char *level_name)
 		d1_in_d2_free_assets(generation);
 		Error("Cannot prepare D1 custom assets for %s: invalid %s", level_name, error);
 	}
+	d1_in_d2_prepare_available_guidebot(generation);
 	if (!d1_in_d2_publish_assets(generation, &error)) {
 		d1_in_d2_free_assets(generation);
 		Error("Cannot publish D1 assets: invalid %s", error);

@@ -390,15 +390,22 @@ function Wait-SetupCondition {
         [Parameter(Mandatory)][scriptblock]$Predicate,
         [int]$TimeoutSeconds = 15,
         [int]$PollMs = 500,
-        [switch]$Lightweight
+        [switch]$Lightweight,
+        [switch]$ButtonsOnly
     )
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+        $snapshot = if ($ButtonsOnly) { 'files/setup_buttons.json' } else { 'files/setup_introspect.json' }
         $broadcastArgs = @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT")
         if ($Lightweight) { $broadcastArgs += @("--ez", "lightweight", "true") }
+        if ($ButtonsOnly) {
+            # Correlate UI polls with a new response; full dumps use a separate file
+            Adb-Timeout -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', $snapshot) -Seconds 3 | Out-Null
+            $broadcastArgs += @('--ez', 'buttons_only', 'true')
+        }
         Adb-Timeout -AdbArgs $broadcastArgs -Seconds 5 | Out-Null
         Start-Sleep -Milliseconds $PollMs
-        $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 3
+        $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", $snapshot) -Seconds 3
         if ($json -and $json -match '^\s*\{') {
             try {
                 $obj = $json | ConvertFrom-Json

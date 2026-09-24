@@ -190,6 +190,9 @@ class SetupActivity : ComponentActivity() {
 
     internal fun launchPreparationSnapshot(): LauncherPreparationState? = launchPreparation.value
 
+    internal var launchPreflightFailure: String? = null
+        private set
+
     private fun beginLaunchPreparation(
         game: String,
         launchKind: String,
@@ -198,6 +201,7 @@ class SetupActivity : ComponentActivity() {
             Log.w("DXX-Setup", "Ignoring duplicate game launch during launcher preparation")
             return false
         }
+        launchPreflightFailure = null
         launchPreparation.value =
             LauncherPreparationState(
                 game = game,
@@ -233,6 +237,10 @@ class SetupActivity : ComponentActivity() {
                 ctx: Context?,
                 intent: Intent?,
             ) {
+                if (intent?.getBooleanExtra("buttons_only", false) == true) {
+                    this@SetupActivity.writeButtonsIntrospectJson(this@SetupActivity.collectAccessibleButtons())
+                    return
+                }
                 val lightweight = intent?.getBooleanExtra("lightweight", false) == true
                 if (lightweight) {
                     val pendingResult = goAsync()
@@ -692,6 +700,8 @@ class SetupActivity : ComponentActivity() {
     }
 
     private fun showLaunchPreflightFailure(message: String) {
+        launchPreflightFailure = message
+        Log.e("DXX-Setup", "Launch preflight blocked: $message")
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 

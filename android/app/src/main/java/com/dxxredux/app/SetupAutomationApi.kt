@@ -751,6 +751,8 @@ internal fun SetupActivity.writeMpIntrospectJson() {
         root.put("chat", chatArr)
 
         root.put("game_launch_pending", s.gameLaunchInfo != null)
+        root.put("launch_error", launchPreflightFailure ?: JSONObject.NULL)
+        root.put("launch_phase", launchPreparationSnapshot()?.phase?.wireName ?: "")
 
         val logArr = JSONArray()
         for (line in s.statusLog.takeLast(20)) {
@@ -771,6 +773,26 @@ internal fun SetupActivity.writeReadyIntrospectJson() {
     AtomicFilePublication.writeUtf8(outFile, JSONObject().put("screen", "setup").toString())
     Log.i("DXX-Setup", "Ready introspect written: ${outFile.absolutePath}")
 }
+
+// UI polling must not wait for archive enumeration, native music loaders or metadata
+internal fun SetupActivity.writeButtonsIntrospectJson(buttons: List<SetupActivity.ButtonInfo>) {
+    val root = JSONObject().put("screen", "setup").put("buttons", setupButtonsArray(buttons))
+    AtomicFilePublication.writeUtf8(File(filesDir, "setup_buttons.json"), root.toString())
+}
+
+private fun setupButtonsArray(buttons: List<SetupActivity.ButtonInfo>): JSONArray =
+    JSONArray(
+        buttons.map { btn ->
+            JSONObject()
+                .put("text", btn.text)
+                .put("enabled", btn.enabled)
+                .put("focused", btn.focused)
+                .put("x", btn.centerX.toInt())
+                .put("y", btn.centerY.toInt())
+                .put("w", btn.width.toInt())
+                .put("h", btn.height.toInt())
+        },
+    )
 
 internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.ButtonInfo>) {
     try {
@@ -1138,19 +1160,7 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         }
         root.put("music_preview", musicPreview)
 
-        val buttonsArr = JSONArray()
-        for (btn in buttons) {
-            val bo = JSONObject()
-            bo.put("text", btn.text)
-            bo.put("enabled", btn.enabled)
-            bo.put("focused", btn.focused)
-            bo.put("x", btn.centerX.toInt())
-            bo.put("y", btn.centerY.toInt())
-            bo.put("w", btn.width.toInt())
-            bo.put("h", btn.height.toInt())
-            buttonsArr.put(bo)
-        }
-        root.put("buttons", buttonsArr)
+        root.put("buttons", setupButtonsArray(buttons))
 
         val outFile = File(dir, "setup_introspect.json")
         AtomicFilePublication.writeUtf8(outFile, root.toString())

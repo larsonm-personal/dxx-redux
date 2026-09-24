@@ -1,7 +1,31 @@
 package com.dxxredux.app
 
+import android.content.Context
+
 /** Curated download catalog. Keep unavailable candidates commented out for future hosting. */
 internal object SoundfontCatalog {
+    // Matches SOUNDFONT_VERSION/URL in get_deps/tool_versions.conf and assets/gm.sf2
+    // This is an APK asset, not a removable entry in SoundfontStore's manifest
+    fun bundled(context: Context): SoundfontStore.Font =
+        SoundfontStore.Font(
+            id = "",
+            name = "TimGM6mb (bundled)",
+            download =
+                SoundfontDownload(
+                    name = "TimGM6mb",
+                    url = "https://github.com/arbruijn/TimGM6mb/releases/download/v20100822/TimGM6mb.sf2",
+                    description =
+                        "Compact General MIDI bank by Tim Brechbill, with contributions by David Bolton. " +
+                            "Version 20100822, 5.7 MiB. Included with the app and always available; cannot be deleted.",
+                    websiteUrl = "https://github.com/arbruijn/TimGM6mb",
+                    license =
+                        context.assets
+                            .open("licenses/TimGM6mb.txt")
+                            .bufferedReader()
+                            .use { it.readText() },
+                ),
+        )
+
     // Full upstream license remains available offline in saved Info
     private val GENERAL_USER_LICENSE =
         """

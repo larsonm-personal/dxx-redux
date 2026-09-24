@@ -113,6 +113,7 @@ void d1_in_d2_free_guidebot_source(d1_guidebot_assets *assets);
 void d1_in_d2_guidebot_source_stats(const d1_guidebot_assets *assets, d1_guidebot_asset_stats *stats);
 /* Attach only after custom definitions; failure leaves the base unchanged */
 int d1_in_d2_prepare_guidebot_extension(d1_asset_generation *base, const d1_guidebot_source *source, const char **error);
+void d1_in_d2_prepare_available_guidebot(d1_asset_generation *base);
 int d1_in_d2_validate_guidebot_extension(const d1_asset_generation *base);
 /* All fallible preparation precedes publication of either bank */
 int d1_in_d2_prepare_guidebot_output(d1_guidebot_assets *assets, int target_rate);
@@ -120,6 +121,7 @@ void d1_in_d2_publish_guidebot_extension(d1_asset_generation *base);
 int d1_in_d2_guidebot_owns_model(int model_num);
 /* Original egg radius uses ObjId[OBJ_ROBOT], not the dropped robot's ID */
 fix d1_in_d2_robot_drop_radius(void);
+int d1_in_d2_native_texture_count(void);
 
 /* Preparation owns all buffers and never publishes live tables. Publication
  * transfers model_data to Polygon_models/free_polygon_models and the sample

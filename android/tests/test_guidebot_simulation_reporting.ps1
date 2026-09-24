@@ -5,10 +5,13 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/guidebot_simulation_regression.ps1')
 $runner = Join-Path $repoRoot 'android/helpers/regenerate_all_guidebot_simulations.ps1'
 $ast = [Management.Automation.Language.Parser]::ParseFile($runner, [ref]$null, [ref]$null)
-$infrastructureFunction = $ast.Find({ param($node)
-        $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'New-GuidebotInfrastructureErrorResult'
-    }, $true)
-. ([scriptblock]::Create($infrastructureFunction.Extent.Text))
+foreach ($functionName in @('New-GuidebotInfrastructureErrorResult', 'Test-GuidebotExpectedProcessTimeout')) {
+    $helperFunction = $ast.Find({ param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName
+        }, $true)
+    if (-not $helperFunction) { throw "Missing runner helper: $functionName" }
+    . ([scriptblock]::Create($helperFunction.Extent.Text))
+}
 $pool = $ast.Find({ param($node)
         $node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -eq 'Invoke-HeadlessProcessPool'
     }, $true)

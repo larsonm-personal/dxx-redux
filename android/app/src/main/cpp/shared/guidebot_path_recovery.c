@@ -16,7 +16,10 @@
 static int precise_recovery;
 static vms_vector precise_recovery_point;
 
-/* Match the short collision sweeps used by movement when validating a recovery leg */
+static int recovery_point_fits(const object *objp, int segnum, const vms_vector *point);
+
+/* Match short collision sweeps and the occupancy check used by movement.
+ * A clear sweep alone can still leave the ship intersecting a portal rim */
 static int recovery_leg_clear(const object *objp, const vms_vector *from,
                               int segnum, const vms_vector *to)
 {
@@ -32,7 +35,7 @@ static int recovery_leg_clear(const object *objp, const vms_vector *from,
 		if (!guidebot_route_waypoint_leg_clear(objp, &current, segnum, &next))
 			return 0;
 		segnum = find_point_seg(&next, segnum);
-		if (segnum < 0)
+		if (segnum < 0 || !recovery_point_fits(objp, segnum, &next))
 			return 0;
 		current = next;
 	}

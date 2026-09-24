@@ -1758,6 +1758,11 @@ int d1_in_d2_has_native_assets(void)
 	return Active_d1_assets != NULL;
 }
 
+int d1_in_d2_native_texture_count(void)
+{
+	return Active_d1_assets ? Active_d1_assets->num_textures : 0;
+}
+
 void d1_custom_get_stats(d1_custom_texture_stats *stats)
 {
 	if (!stats)

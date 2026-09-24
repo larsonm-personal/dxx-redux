@@ -4626,16 +4626,21 @@ static void test_d1_registered_bitmaps(const char *directory, const char *d2_dir
 			require(d1_in_d2_decode_level_textures(&primary, &overlay, 1) && primary == texture && overlay == saved_overlay,
 			        "every original D1 texture and packed overlay orientation survives the level adapter");
 		}
-	for (int invalid : { -1, NumTextures, MAX_TEXTURES }) {
+	for (int invalid : { -1 }) {
 		short primary = static_cast<short>(invalid), overlay = 0x4001;
 		require(!d1_in_d2_decode_level_textures(&primary, &overlay, 1) && primary == invalid && overlay == 0x4001,
 		        "invalid source primary leaves both references unchanged");
 	}
 	for (int orientation = 0; orientation < 4; ++orientation) {
 		short primary = 333, overlay = static_cast<short>(NumTextures | (orientation << 14));
-		const short saved_overlay = overlay;
-		require(!d1_in_d2_decode_level_textures(&primary, &overlay, 1) && primary == 333 && overlay == saved_overlay,
-		        "invalid source overlay leaves the valid primary and packed bits unchanged");
+		require(d1_in_d2_decode_level_textures(&primary, &overlay, 1) && primary == 333 &&
+		            overlay == static_cast<short>(orientation << 14),
+		        "native D1 wraps excess overlay indices while preserving orientation");
+	}
+	for (int excess : { NumTextures, 1056, MAX_TEXTURES }) {
+		short primary = static_cast<short>(excess), overlay = 0;
+		require(d1_in_d2_decode_level_textures(&primary, &overlay, 1) && primary == excess % NumTextures,
+		        "native D1 convert_tmap wraps authored excess primary indices");
 	}
 	// The retained legacy adapter always returns D2 slots, even while D1 is
 	// published. Its source layout and PIG availability are explicit inputs
@@ -5347,8 +5352,8 @@ static void test_d1_reactor()
 		require(d1_in_d2_decode_level_textures(&primary, &overlay, 1) && primary == 0 && overlay == 0x4000,
 		        "native D1 level decoding preserves source texture identity and orientation");
 		primary = 1;
-		require(!d1_in_d2_decode_level_textures(&primary, &overlay, 1) && primary == 1 && overlay == 0x4000,
-		        "native references must fit the published table, not the larger D2 capacity");
+		require(d1_in_d2_decode_level_textures(&primary, &overlay, 1) && primary == 0 && overlay == 0x4000,
+		        "native excess indices wrap in the original D1 table, not the larger D2 capacity");
 		const int previous_version = Gamesave_current_version;
 		Gamesave_current_version = 1;
 		object reactor_object = {};
@@ -7335,7 +7340,11 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 				}
 				const fix delta = 100 * F1_0 - Players[0].shields;
 				require(invulnerable ? delta == 0 : delta > 0, "real contact/lava/blast honors invulnerability");
-				damage.push_back({ difficulty, invulnerable, kind, delta, d_rand_get_call_count() });
+				const auto &physics = ConsoleObject->mtype.phys_info;
+				// Equal RNG counts do not prove equal order: lava shove and spin share the stream
+				damage.push_back({ difficulty, invulnerable, kind, delta, d_rand_get_call_count(),
+				                   { physics.velocity.x, physics.velocity.y, physics.velocity.z },
+				                   { physics.rotvel.x, physics.rotvel.y, physics.rotvel.z } });
 			}
 	}
 	for (const int id : { POW_CLOAK, POW_VULCAN_WEAPON, POW_SPREADFIRE_WEAPON, POW_PLASMA_WEAPON, POW_FUSION_WEAPON, POW_QUAD_FIRE, POW_VULCAN_AMMO, POW_ENERGY, POW_EXTRA_LIFE })

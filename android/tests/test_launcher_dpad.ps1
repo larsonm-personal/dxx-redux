@@ -15,35 +15,35 @@ function Fail($msg) { Write-Error "FAIL: $msg"; exit 1 }
 function Info($msg) { Write-Host $msg }
 
 function GetSetupButtons {
-    # Poll until setup_introspect.json has a non-empty buttons array.
+    # Poll until setup_buttons.json has a non-empty buttons array.
     # Returns button text array, or fails after timeout.
-    $result = Wait-SetupCondition -TimeoutSeconds 15 -PollMs 800 -Predicate {
+    $result = Wait-SetupCondition -ButtonsOnly -TimeoutSeconds 15 -PollMs 800 -Predicate {
         param($obj)
         return ($null -ne $obj.buttons -and $obj.buttons.Count -gt 0)
     }
     if (-not $result) {
         # Dump whatever we got for diagnostics
-        $raw = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 3
-        Info "  DEBUG: setup_introspect.json content: $raw"
+        $raw = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_buttons.json") -Seconds 3
+        Info "  DEBUG: setup_buttons.json content: $raw"
         Fail "Timed out waiting for setup buttons (15s)"
     }
-    $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 3
+    $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_buttons.json") -Seconds 3
     $obj = $json | ConvertFrom-Json
     return $obj.buttons | ForEach-Object { $_.text }
 }
 
 function GetSetupIntrospect {
-    $result = Wait-SetupCondition -TimeoutSeconds 15 -PollMs 800 -Predicate {
+    $result = Wait-SetupCondition -ButtonsOnly -TimeoutSeconds 15 -PollMs 800 -Predicate {
         param($obj)
         return ($null -ne $obj.buttons -and $obj.buttons.Count -gt 0)
     }
     if (-not $result) {
-        $raw = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 3
-        Info "  DEBUG: setup_introspect.json content: $raw"
+        $raw = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_buttons.json") -Seconds 3
+        Info "  DEBUG: setup_buttons.json content: $raw"
         Fail "Timed out waiting for setup introspection (15s)"
     }
 
-    $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 3
+    $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_buttons.json") -Seconds 3
     return $json | ConvertFrom-Json
 }
 
@@ -53,7 +53,7 @@ function Wait-ForMainPageDpadReady {
         [int]$SettleMs = 1500
     )
 
-    $ready = Wait-SetupCondition -TimeoutSeconds $TimeoutSeconds -PollMs 400 -Predicate {
+    $ready = Wait-SetupCondition -ButtonsOnly -TimeoutSeconds $TimeoutSeconds -PollMs 400 -Predicate {
         param($obj)
         if ($null -eq $obj.buttons -or $obj.buttons.Count -eq 0) {
             return $false
@@ -103,7 +103,7 @@ function Wait-ForSetupButtons {
     )
 
     $buttonPredicate = $Predicate
-    $matched = Wait-SetupCondition -TimeoutSeconds $TimeoutSeconds -PollMs 500 -Predicate {
+    $matched = Wait-SetupCondition -ButtonsOnly -TimeoutSeconds $TimeoutSeconds -PollMs 500 -Predicate {
         param($obj)
         if ($null -eq $obj.buttons -or $obj.buttons.Count -eq 0) {
             return $false
@@ -125,7 +125,7 @@ function Wait-ForSetupButtonFocus {
         [int]$TimeoutSeconds = 10
     )
 
-    $matched = Wait-SetupCondition -TimeoutSeconds $TimeoutSeconds -PollMs 500 -Predicate {
+    $matched = Wait-SetupCondition -ButtonsOnly -TimeoutSeconds $TimeoutSeconds -PollMs 500 -Predicate {
         param($obj)
         if ($null -eq $obj.buttons -or $obj.buttons.Count -eq 0) {
             return $false

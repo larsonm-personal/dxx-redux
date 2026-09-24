@@ -221,7 +221,8 @@ void remove_ordinary_robots(void)
 				vm_vec_zero(&objp->mtype.phys_info.rotthrust);
 			} else if (objp->type == OBJ_ROBOT && objnum != State.actor_objnum &&
 			           objp->control_type == CT_NONE &&
-			           objp->ctype.ai_info.dying_start_time) {
+			           (objp->ctype.ai_info.dying_start_time ||
+			            (Robot_info[objp->id].boss_flag && Boss_dying))) {
 				/* Death rolls advance through AI dispatch before the normal
 				 * explosion releases contents. Only living robots stay frozen */
 				objp->control_type = CT_AI;
@@ -449,6 +450,27 @@ int record_implicitly_completed_steps(const level_metadata_state *metadata,
 	return 1;
 }
 
+bool target_leg_clear(object *actor, const vms_vector *from, int segnum)
+{
+	vms_vector start = *from;
+	fvi_query query = {};
+	fvi_info hit = {};
+	query.p0 = &start;
+	query.p1 = &State.target_pos;
+	query.startseg = segnum;
+	query.rad = actor->size;
+	if (ConsoleObject && ConsoleObject->size > query.rad)
+		query.rad = ConsoleObject->size;
+	query.thisobjnum = actor - Objects;
+	/* Hidden-door approach requires the authored segment before firing at its
+	 * face. A coordinate shortcut can instead end in an overlapping segment.
+	 * Pickup and switch guidance can legitimately finish across a boundary */
+	return find_vector_intersection(&query, &hit) == HIT_NONE &&
+	       (State.step.activation_kind != LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR ||
+	        State.target_seg != State.semantic_target_seg ||
+	        hit.hit_seg == State.target_seg);
+}
+
 void refine_last_path_point(object *actor)
 {
 	ai_static *aip;
@@ -464,8 +486,9 @@ void refine_last_path_point(object *actor)
 		if (guidebot_route_adjust_waypoint(actor, State.target_seg, &target)) {
 			State.target_pos = target;
 			const point_seg *previous = aip->path_length > 1 ? last - 1 : last;
-			if (guidebot_route_waypoint_leg_clear(actor, &previous->point,
-			                                      previous->segnum, &target))
+			/* Overlapping coordinates do not prove a segment crossing. Retain
+			 * the interior waypoint unless this leg really enters the goal */
+			if (target_leg_clear(actor, &previous->point, previous->segnum))
 				last->point = target;
 		}
 	}
@@ -2372,8 +2395,7 @@ extern "C" int route_confirmation_drive_companion(object *objp)
 	    objp->ctype.ai_info.path_length > 0 &&
 	    objp->ctype.ai_info.cur_path_index >=
 	        objp->ctype.ai_info.path_length - 1 &&
-	    guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum,
-	                                      &State.target_pos)) {
+	    target_leg_clear(objp, &objp->pos, objp->segnum)) {
 		ai_path_set_orient_and_vel(objp, &State.target_pos, 2, NULL);
 		return 1;
 	}

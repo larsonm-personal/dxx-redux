@@ -14,12 +14,30 @@
 #include "sounds.h"
 #include "textures.h"
 #include "u_mem.h"
+#include "console.h"
 
 enum source_kind {
 	SOURCE_ROBOT, SOURCE_MODEL, SOURCE_JOINT, SOURCE_WEAPON, SOURCE_POWERUP,
 	SOURCE_VCLIP, SOURCE_EFFECT, SOURCE_TEXTURE, SOURCE_OBJPTR, SOURCE_OBJBMP,
 	SOURCE_BITMAP, SOURCE_SOUND, SOURCE_SAMPLE, SOURCE_KINDS
 };
+
+void d1_in_d2_prepare_available_guidebot(d1_asset_generation *base)
+{
+	/* Optional registered D2 package; never capture whichever live tables a
+	 * previous mission left behind. Prepare after D1 custom definitions */
+	const char *error = NULL;
+	const char *sound = PHYSFSX_exists("descent2.s22", 1) ? "descent2.s22" : "descent2.s11";
+	const d1_guidebot_source source = {
+		"descent2.ham", "groupa.pig", "groupa.256", sound,
+		!strcmp(sound, "descent2.s22") ? SAMPLE_RATE_22K : SAMPLE_RATE_11K
+	};
+	if (!PHYSFSX_exists(source.ham_path, 1) || !PHYSFSX_exists(source.pig_path, 1) ||
+	    !PHYSFSX_exists(source.palette_path, 1) || !PHYSFSX_exists(source.sound_path, 1))
+		return;
+	if (!d1_in_d2_prepare_guidebot_extension(base, &source, &error))
+		con_printf(CON_URGENT, "Optional D1 Guide-Bot unavailable: %s\n", error ? error : "invalid D2 assets");
+}
 
 struct d1_guidebot_assets {
 	int count[SOURCE_KINDS];

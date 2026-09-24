@@ -78,6 +78,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "palette.h"
 #include "gameseq.h"
 #include "d1_in_d2/d1_in_d2_semantics.h"
+#include "d1_in_d2/d1_in_d2.h"
 #include "d1_in_d2/d1_in_d2_ai.h"
 #include "d1_in_d2/d1_in_d2_weapons.h"
 #include "input_demo_hooks.h"
@@ -542,9 +543,12 @@ int check_volatile_wall(object *obj,int segnum,int sidenum,vms_vector *hitpt)
 				PALETTE_FLASH_ADD(f2i(damage*4), 0, 0);	//flash red
 			}
 
-			// SIM RNG: this directly spins the hit object after the live bump
-			obj->mtype.phys_info.rotvel.x = (d_rand() - 16384)/2;
-			obj->mtype.phys_info.rotvel.z = (d_rand() - 16384)/2;
+			/* D1 draws the shove direction before the rotational kick */
+			if (!d1_in_d2_use_d1_gameplay()) {
+				// SIM RNG: D2 spins the hit object before its wall bump
+				obj->mtype.phys_info.rotvel.x = (d_rand() - 16384)/2;
+				obj->mtype.phys_info.rotvel.z = (d_rand() - 16384)/2;
+			}
 		}
 
 		return (d>0)?1:2;
@@ -588,6 +592,11 @@ void scrape_player_on_wall(object *obj, short hitseg, short hitside, vms_vector 
 		vm_vec_scale_add2(&hit_dir, &rand_vec, F1_0/8);
 		vm_vec_normalize_quick(&hit_dir);
 		bump_one_object(obj, &hit_dir, F1_0*8);
+		if (d1_in_d2_use_d1_gameplay()) {
+			// SIM RNG: native D1 spins the hit object after its wall bump
+			obj->mtype.phys_info.rotvel.x = (d_rand() - 16384)/2;
+			obj->mtype.phys_info.rotvel.z = (d_rand() - 16384)/2;
+		}
 	}
 }
 

@@ -279,6 +279,18 @@ try {
     }
     Write-Status "SetupActivity ready on both emulators" "Green"
 
+    # Reset-GameState preserves pilots, including a prior test's CD music choice.
+    # This fixture has no CD source; set music through the engine preference API.
+    foreach ($emu in @($EMU1, $EMU2)) {
+        $musicResult = Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+            'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+            '--es', 'command', 'write_music_prefs', '--es', 'source', 'midi'
+        ) -Seconds 10
+        if (-not $musicResult -or $musicResult -notmatch 'result=0') {
+            throw "Could not initialize MIDI preferences on ${emu}: $musicResult"
+        }
+    }
+
     # -- Step 3: Connect to matchmaking --
     Write-Status ""
     Write-Status "--- Phase 3: Connect to matchmaking ---" "White"
@@ -423,19 +435,13 @@ try {
     & $ADB -s $EMU2 logcat -c 2>&1 | Out-Null
     $logcatFile1 = Join-Path $REPO_ROOT "temp\emu1_logcat_phase8.txt"
     $logcatFile2 = Join-Path $REPO_ROOT "temp\emu2_logcat_phase8.txt"
-    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "MatchmakingService:*", "LocalhostProxy:*", "DEBUG:*", "AndroidRuntime:*", "libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu1_logcat_err.txt")
-    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "MatchmakingService:*", "LocalhostProxy:*", "DEBUG:*", "AndroidRuntime:*", "libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu2_logcat_err.txt")
+    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "DXX-Setup:*", "DXX-RouteMetadata:*", "DXX-Redux:*", "dxxredux:*", "MatchmakingService:*", "LocalhostProxy:*", "DEBUG:*", "AndroidRuntime:*", "libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu1_logcat_err.txt")
+    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "DXX-Setup:*", "DXX-RouteMetadata:*", "DXX-Redux:*", "dxxredux:*", "MatchmakingService:*", "LocalhostProxy:*", "DEBUG:*", "AndroidRuntime:*", "libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu2_logcat_err.txt")
 
     # Start game via MP_COMMAND -- "Start Game" is on the LobbyScreen which
     # uses LazyColumn; same accessibility limitation as the Join button.
     Write-Status "Player 1 starting game..."
     Send-MpCommand -Serial $EMU1 -Command "start_game"
-
-    # Poll for game process on EMU1
-    $null = Wait-ForCondition -Description "EMU1 game process" -TimeoutSec 15 -PollMs 500 -Condition {
-        $gPid = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "pidof", "${PACKAGE}:game") -Seconds 5
-        return ($gPid -and $gPid -match '^\d+')
-    }
 
     # -- Step 8: Wait for both players to enter the game --
     # The test drives matchmaking through MP_COMMANDs, so always send explicit
@@ -443,13 +449,14 @@ try {
     Write-Status ""
     Write-Status "--- Phase 8: Wait for game launch ---" "White"
 
-    # Fallback: send launch_game in case the auto-launch didn't fire
-    Send-MpCommand -Serial $EMU1 -Command "launch_game"
-    $null = Wait-ForCondition -Description "EMU1 game process" -TimeoutSec 15 -PollMs 500 -Condition {
-        $gPid = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "pidof", "${PACKAGE}:game") -Seconds 5
-        return ($gPid -and $gPid -match '^\d+')
+    foreach ($emu in @($EMU1, $EMU2)) {
+        $launchReady = Wait-ForCondition -Description "Launch information on $emu" -TimeoutSec 15 -PollMs 500 -Condition {
+            $mp = Get-MpIntrospection -Serial $emu
+            return ($mp -and $mp.game_launch_pending)
+        }
+        if (-not $launchReady) { throw "No game launch information received on $emu" }
+        Send-MpCommand -Serial $emu -Command "launch_game"
     }
-    Send-MpCommand -Serial $EMU2 -Command "launch_game"
 
     # Wait for both to enter the game.
     # Primary: check in_game via introspection.
@@ -468,6 +475,8 @@ try {
             $script:p8nullCount = 0
             if ($gi.current_level_num -gt 0) { $script:p8hadLevel = $true }
         } else {
+            $launch = Get-MpIntrospection -Serial $EMU1
+            if ($launch -and $launch.launch_error) { throw "Host launch blocked: $($launch.launch_error)" }
             $script:p8nullCount++
             Write-Status "  [poll $($script:p8poll)] EMU1: introspection returned null (consecutive: $($script:p8nullCount))" "Gray"
         }
@@ -546,6 +555,8 @@ try {
             if ($gi) {
                 Write-Status "  [poll $($script:p8poll2)] EMU2: screen=$($gi.screen_mode) in_game=$($gi.in_game) game_mode=$($gi.game_mode) level=$($gi.current_level_num)" "Gray"
             } else {
+                $launch = Get-MpIntrospection -Serial $EMU2
+                if ($launch -and $launch.launch_error) { throw "Client launch blocked: $($launch.launch_error)" }
                 $script:p8nullCount2++
                 Write-Status "  [poll $($script:p8poll2)] EMU2: introspection returned null (consecutive: $($script:p8nullCount2))" "Gray"
             }

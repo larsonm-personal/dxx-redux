@@ -18,6 +18,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "d1_in_d2_levels.h"
 #include "d1_in_d2.h"
+#include "d1_in_d2_assets.h"
 #include "gamemine.h"
 #include "piggy.h"
 #include "textures.h"
@@ -384,7 +385,13 @@ int d1_in_d2_level_bonuses(int level_points, int *skill, int *shields, int *ener
 int d1_in_d2_decode_level_textures(short *primary, short *overlay, int new_file_format)
 {
 	short base = *primary, decal = *overlay;
-	if (!d1_in_d2_has_native_assets()) {
+	const int native_textures = d1_in_d2_native_texture_count();
+	if (native_textures > 0 && base >= 0) {
+		/* Match native D1 gamesave.c:convert_tmap for old authored levels
+		 * with excess texture indices. Optional D2 assets are not D1 slots */
+		base %= native_textures;
+		decal = ((decal & TMAP_NUM_MASK) % native_textures) | (decal & ~TMAP_NUM_MASK);
+	} else if (!d1_in_d2_has_native_assets()) {
 		const int have_pig = PHYSFSX_exists(D1_PIGFILE, 1);
 		base = d1_in_d2_legacy_texture(base, have_pig, new_file_format);
 		if (decal)
