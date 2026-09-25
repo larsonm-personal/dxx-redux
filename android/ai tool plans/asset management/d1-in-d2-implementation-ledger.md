@@ -3282,3 +3282,42 @@ also compiled all three ABIs, exposing one now-unused private skipping helper;
 that helper is removed and final host/quality checks pass. Final Android retry
 was refused before compilation by the active-replay cleanup guard. Retry after
 capture releases the guard; details in d1-usable-completion-20260924.md
+
+### Effective reactor identity and diagnostic schema 2
+
+Native get_reactor_definition ignores its source ID, while imported source/save
+loading selects definition 0. Cross-engine object and restore/terminal boundary
+comparison now maps only the native expected reactor ID to zero. It retains
+raw records, native-repeat ID checks, and strict imported selectors, models,
+shields, gun geometry and unknown fields
+
+Shared frame diagnostics now use that effective native selector consistently
+in object hashes, local/all-segment lists and player contact observations.
+Schema 2 prevents older raw-ID captures from masquerading as the new contract.
+Ordinary D2 and imported D1 retain actual D2 selectors. Tests cover selector
+sensitivity in both profiles plus model/shield changes and raw data retention
+
+All 56 comparator tests, both host builds, all 53/61 suites and final targeted
+upstream/recorder checks pass. Android builds all three ABIs with no warnings
+in the changed sources, also completing the unused-loader cleanup build.
+Provenance: temp/d1-reactor-observation-android-manifest.json. Fresh level-15
+paired replay is active in temp/d1-reactor-respawn-current, separate from the
+historical baseline corpus. Do not claim a fresh replay pass until it completes
+
+Fresh level-15 native/imported comparison passes every required check over 2006
+frames, including frame diagnostics, object/world fields, SIM RNG and restored/
+terminal observations. This directly verifies respawn cloak memory and reactor
+identity together. Report: temp/d1-reactor-respawn-current/report.json
+
+That report does not qualify the whole run: one native repeat exited 1 at frame
+160. Its complete prefix matched native-a; its sandbox was automatically removed
+by the helper. A diagnostic rerun completed and its full state/RNG traces and
+result are identical to native-a, with unchanged pinned package hashes. Evidence:
+temp/d1-reactor-repeat-debug/verification.json. Quiet repeat with sandbox retained
+is pending; the earlier failure is neither overwritten nor explained by retry
+
+Quiet native rerun also completed with exit 0 and identical full state/RNG
+traces and result JSON (temp/d1-reactor-repeat-quiet/verification.json). Both
+successful repeats support current native determinism; the earlier isolated
+early exit remains preserved and unexplained. Remaining corpus/resource/platform
+gates stay open

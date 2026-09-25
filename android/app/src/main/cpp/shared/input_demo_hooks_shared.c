@@ -32,6 +32,13 @@
 #include "robot.h"
 #include "timer.h"
 #include "weapon.h"
+#ifndef DXX_HEADLESS_CONSOLE
+#ifndef __ANDROID__
+#include <SDL.h>
+#endif
+#include "gr.h"
+#include "window.h"
+#endif
 
 #ifdef DXX_BUILD_DESCENT_II
 #include "d1_in_d2/d1_in_d2.h"
@@ -638,6 +645,44 @@ int input_demo_sync_replay_rng_to_current_frame_shared(
 	else
 		d_rand_reset_call_count();
 	return 1;
+}
+
+int input_demo_process_fast_replay(void)
+{
+#ifndef DXX_HEADLESS_CONSOLE
+	static fix64 last_progress_time = -F1_0;
+	static int last_foreground = -1;
+	const int foreground = Game_wind && window_get_front() == Game_wind;
+	fix64 now;
+	if (!GameArg.SysInputDemoNoRender || !input_demo_replay_is_loaded())
+		return 0;
+	now = timer_query();
+	if (foreground != last_foreground || now < last_progress_time || now - last_progress_time >= F1_0 / 2) {
+		char text[160];
+		const unsigned int frame = input_demo_replay_next_frame_index();
+		const unsigned int count = input_demo_replay_frame_count();
+		last_progress_time = now;
+		last_foreground = foreground;
+		snprintf(text, sizeof(text), "Input replay: %u / %u%s", frame, count,
+		         foreground ? " (game rendering disabled)" : " (waiting for dialog)");
+#ifndef __ANDROID__
+		SDL_WM_SetCaption(text, "Input replay");
+#endif
+		if (foreground) {
+			grs_canvas *saved_canvas = grd_curcanv;
+			snprintf(text, sizeof(text), "Replay in progress\nFrame %u / %u\nGame rendering disabled", frame, count);
+			show_boxed_message(text, 0);
+			gr_set_current_canvas(saved_canvas);
+		}
+	}
+	/* A frontmost dialog must receive draw events even when game drawing is off */
+	if (!foreground)
+		return 0;
+	input_demo_step_replay_frame();
+	return 1;
+#else
+	return 0;
+#endif
 }
 
 int input_demo_step_replay_frame_shared(

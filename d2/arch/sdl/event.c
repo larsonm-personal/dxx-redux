@@ -15,6 +15,7 @@
 #include "config.h"
 #include "args.h"
 #include "input_demo_hooks.h"
+#include "game.h"
 #ifdef ANDROID
 #include "android_axis_mailbox.h"
 #include "coop/coop_endgame.h"
@@ -250,8 +251,7 @@ void event_process(void)
 	if (window_get_front() != wind)
 		return;
 
-	if (GameArg.SysInputDemoNoRender && input_demo_replay_is_loaded()) {
-		input_demo_step_replay_frame();
+	if (input_demo_process_fast_replay()) {
 		return;
 	}
 	
@@ -267,7 +267,8 @@ void event_process(void)
 	while (wind != NULL)
 	{
 		window *prev = window_get_prev(wind);
-		if (window_is_visible(wind))
+		if (window_is_visible(wind) &&
+		    !(GameArg.SysInputDemoNoRender && input_demo_replay_is_loaded() && wind == Game_wind))
 			window_send_event(wind, &event);
 		if (!window_exists(wind))
 		{
@@ -279,8 +280,7 @@ void event_process(void)
 			wind = window_get_next(wind);
 	}
 
-	if (!(GameArg.SysInputDemoNoRender && input_demo_replay_is_loaded()))
-		gr_flip();
+	gr_flip();
 #ifdef INTROSPECT_ON
 	game_introspect_check_and_dump();
 #endif

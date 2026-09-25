@@ -294,3 +294,46 @@ APK/source provenance: temp/d1-reactor-observation-android-manifest.json
 Fresh paired level-15 run on current pinned binaries is session 43594,
 temp/d1-reactor-respawn-current. It uses diagnostic schema 2 and the corrected
 respawn behavior. Keep it separate from historical full corpus session 64665
+
+Fresh level-15 capture issue: native-a and imported exited 0, but native-repeat
+exited 1 after 161 complete frames (last frame 160), leaving truncated gzip and
+no result/RNG finalization. Its full frame-state/diagnostic prefix exactly matches
+native-a. The helper removed its sandbox in finally, so the original engine log
+is unavailable; retain runner.log and partial trace rather than relabel failure.
+The run is now comparing native/imported but cannot qualify repeatability
+
+Diagnostic rerun of the same pinned native package uses KeepSandbox and
+ReplayDebugLog in temp/d1-reactor-repeat-debug, session 3030. It has passed frame
+160 and was at 489 when inspected. Do not treat a successful retry alone as an
+explanation of the early exit. The existing helper's failure-log retention needs
+review after the frozen corpus no longer depends on its unchanged source
+
+Frozen level 18 finishes: native repeatability/SIM/terminal pass, imported strict
+object/world only reactor ID 25 versus 0 (slot 10). Corpus advances level 5
+
+Fresh native/imported level-15 comparison PASSES all checks across 2006 frames:
+SIM RNG, frame diagnostics, object fields, world fields, checkpoint clock and
+terminal result. This verifies the actual respawn AI-cache fix and effective
+reactor mapping together. Recorded/native remains separately failed (historical
+annotation/layout differences; RNG values themselves match in this case)
+
+The debug native rerun exits 0. Its complete decompressed state and RNG traces
+are byte-identical to native-a and its result JSON is identical; pinned native
+package hashes are unchanged. Evidence: temp/d1-reactor-repeat-debug/verification.json.
+The original failed repeat remains unresolved and preserved. A quiet repeat with
+KeepSandbox (no extra debug logging) is running in temp/d1-reactor-repeat-quiet;
+check its live session before relying on any expected result
+
+Quiet native repeat completed with exit 0. Its entire decompressed state/RNG
+traces and result JSON are also identical to native-a, with unchanged pinned
+package hashes. Evidence: temp/d1-reactor-repeat-quiet/verification.json.
+Thus both diagnostic and quiet repeats reproduce the full current native run;
+the earlier failed attempt remains preserved/unexplained, not overwritten
+
+Next work: continue full frozen corpus session 64665 (level 5 native-repeat as
+last observed); retire the remaining connected effect/robot overlay and captured
+Guide-Bot/cockpit backup paths by moving their fixture coverage onto generation
+publication/real restore callers. Do not retain test-only production loaders just
+to keep obsolete overlay-specific assertions. Raw recorder/helper failure-log
+retention needs improvement once the frozen capture dependencies can be changed
+without invalidating its manifest. ARM64 runtime is still unverified

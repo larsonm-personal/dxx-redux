@@ -77,6 +77,7 @@ void input_demo_log_player_robot_hit_object_probe(const char *step,
 void input_demo_log_current_replay_frame_state_mismatch(void);
 int input_demo_prepare_replay_frame(void);
 int input_demo_step_replay_frame(void);
+int input_demo_process_fast_replay(void);
 void input_demo_advance_replay_frame(void);
 int input_demo_restore_checkpoint_object_links(void);
 void input_demo_finish_replay_without_close(void);
