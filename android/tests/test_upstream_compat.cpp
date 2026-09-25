@@ -44,6 +44,11 @@ extern Mix_Chunk SoundChunks[];
 #include "fuelcen.h"
 #include "fireball.h"
 #include "game.h"
+void game_render_frame(void);
+void dead_player_frame(void);
+void start_player_death_sequence(object *player);
+void set_camera_pos(vms_vector *camera_pos, object *objp);
+extern fix Camera_to_player_dist_goal;
 #include "gamefont.h"
 #include "gameseg.h"
 #include "fvi.h"
@@ -108,6 +113,7 @@ int check_collision_delayfunc_exec(void);
 int object_create_egg(object *obj);
 int drop_powerup(int type, int id, int num, vms_vector *velocity, vms_vector *position, int segment);
 void collide_robot_and_player(object *robot, object *player, vms_vector *point);
+void collide_player_and_player(object *player1, object *player2, vms_vector *point);
 extern point_seg Point_segs[];
 extern point_seg *Point_segs_free_ptr;
 extern ai_cloak_info Ai_cloak_info[];
@@ -583,6 +589,121 @@ static void init_test_corridor(int cells = 2)
 	Num_walls = 0;
 }
 
+static void test_death_camera_sim_isolation()
+{
+	const fix old_distance = Camera_to_player_dist_goal;
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+#endif
+	for (const int profile : { 2, 1, 2 }) {
+#ifdef DXX_BUILD_DESCENT_II
+		mission.descent_version = profile;
+#else
+		(void) profile;
+#endif
+		init_test_corridor(1);
+		object &player = Objects[0];
+		player.segnum = 0;
+		compute_segment_center(&player.pos, &Segments[0]);
+		// A distant camera cannot fit in this closed cell, forcing wall retries
+		Camera_to_player_dist_goal = 40 * F1_0;
+		for (const int updates : { 1, 2, 8 }) {
+			d_srand(9341);
+			d_srand_stream(D_RNG_FX, 9342 + updates);
+			unsigned int before = 0, after = 0;
+			require(d_rand_get_state(&before), "death-camera test can observe SIM state");
+			const auto sim = d_rand_get_call_count();
+			const auto fx = d_rand_get_stream_call_count(D_RNG_FX);
+			for (int update = 0; update < updates; ++update) {
+				vms_vector camera = player.pos;
+				set_camera_pos(&camera, &player);
+			}
+			require(d_rand_get_state(&after) && before == after && sim == d_rand_get_call_count(),
+			        "death-camera wall avoidance must not consume or reseed SIM RNG");
+			require(d_rand_get_stream_call_count(D_RNG_FX) > fx, "closed cell exercises random camera wall retries through FX RNG");
+		}
+	}
+	Camera_to_player_dist_goal = old_distance;
+#ifdef DXX_BUILD_DESCENT_II
+	Current_mission = nullptr;
+#endif
+}
+
+static void test_multiplayer_bump_cadence()
+{
+	const auto old_netgame = Netgame;
+	const auto old_mode = Game_mode;
+	const fix64 old_time = GameTime64;
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+#endif
+	for (const int profile : { 2, 1, 2 }) {
+#ifdef DXX_BUILD_DESCENT_II
+		mission.descent_version = profile;
+#endif
+		init_test_corridor();
+		Netgame = {};
+		Netgame.PacketsPerSec = 20;
+		Game_mode = GM_NETWORK; // Exercise local collision policy without opening a transport
+		GameArg.SndNoSound = 1;
+		Player_num = 0;
+		N_players = 3;
+		Player_is_dead = Player_exploded = Endlevel_sequence = 0;
+		Players[0].flags = 0;
+		Players[0].objnum = 0;
+		object &local = Objects[0];
+		local.type = OBJ_PLAYER;
+		local.id = 0;
+		local.movement_type = MT_PHYSICS;
+		local.flags = 0;
+		local.mtype.phys_info = {};
+		local.mtype.phys_info.mass = F1_0;
+		vms_vector point = {};
+		const int slot = obj_create(OBJ_PLAYER, 1, 0, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
+		require(slot > 0, "create real remote contact actor");
+		object &remote = Objects[slot];
+		remote.mtype.phys_info.mass = F1_0;
+		const auto contact = [&](fix64 time, int peer, bool damage, bool reverse = false) {
+			GameTime64 = time;
+			remote.id = peer;
+			local.mtype.phys_info.velocity = { 128 * F1_0, 0, 0 };
+			remote.mtype.phys_info.velocity = {};
+			Players[0].shields = local.shields = 100 * F1_0;
+			collide_player_and_player(reverse ? &remote : &local, reverse ? &local : &remote, &point);
+			require(Players[0].shields == (damage ? 96 : 100) * F1_0,
+			        "multiplayer contact damage follows per-peer packet cadence and backwards-time recovery");
+			require(local.mtype.phys_info.velocity.x == 96 * F1_0 && remote.mtype.phys_info.velocity.x == 32 * F1_0,
+			        "throttled damage does not suppress the actual collision impulse");
+		};
+		const fix64 base = (1LL << 40) + profile * 100 * F1_0;
+		const fix interval = F1_0 / Netgame.PacketsPerSec;
+		contact(base, 1, true);
+		contact(base + 1, 1, false);
+		contact(base + interval, 1, false);
+		contact(base + interval + 1, 1, true, true);
+		contact(base + interval + 1, 2, true);
+		contact(10 * F1_0, 1, true); // Restore/travel moves the world epoch backwards
+		contact(10 * F1_0, 1, false);
+		for (const int invalid : { MAX_PLAYERS, 255 }) {
+			remote.id = invalid;
+			local.mtype.phys_info.velocity = { 128 * F1_0, 0, 0 };
+			remote.mtype.phys_info.velocity = {};
+			collide_player_and_player(&local, &remote, &point);
+			require(local.mtype.phys_info.velocity.x == 128 * F1_0 && remote.mtype.phys_info.velocity.x == 0,
+			        "invalid peer identifiers are rejected before indexing contact history or applying impulses");
+		}
+	}
+	Game_mode = old_mode;
+	GameTime64 = old_time;
+	Netgame = old_netgame;
+	N_players = 1;
+#ifdef DXX_BUILD_DESCENT_II
+	Current_mission = nullptr;
+#endif
+}
+
 // Run actual door allocation, animation and repeated contact without a renderer
 static nlohmann::json exercise_door_open_completion(bool native)
 {
@@ -1018,6 +1139,55 @@ static input_demo_state_trace_diag capture_ai_diagnostics(bool reset_history = t
 	input_demo_capture_object_state_diag(&result);
 	input_demo_capture_robot_ai_local_diag(&result);
 	return result;
+}
+
+static void test_reactor_diagnostic_identity()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+	const int profiles[] = { 2, 1, 2 };
+#else
+	const int profiles[] = { 1 };
+#endif
+	for (int profile : profiles) {
+#ifdef DXX_BUILD_DESCENT_II
+		mission.descent_version = profile;
+#else
+		(void)profile;
+#endif
+		init_test_corridor();
+		vms_vector point = {};
+		const int slot = obj_create(OBJ_CNTRLCEN, 0, 0, &point, &vmd_identity_matrix, F1_0, CT_CNTRLCEN, MT_NONE, RT_POLYOBJ);
+		require(slot > 0, "create diagnostic reactor");
+		auto &reactor = Objects[slot];
+		reactor.rtype.pobj_info.model_num = 8;
+		const auto baseline = capture_ai_diagnostics();
+		reactor.id = 7;
+		const auto changed = capture_ai_diagnostics();
+#ifdef DXX_BUILD_DESCENT_II
+		const bool selector_matters = true;
+#else
+		const bool selector_matters = false;
+#endif
+		require((baseline.live_object_hash != changed.live_object_hash) == selector_matters &&
+		            (baseline.object_slot_hashes[0] != changed.object_slot_hashes[0]) == selector_matters &&
+		            (baseline.object_focus_slot_hashes[slot] != changed.object_focus_slot_hashes[slot]) == selector_matters &&
+		            (baseline.segment_object_list_hash != changed.segment_object_list_hash) == selector_matters &&
+		            (baseline.segment_trace_hashes[0] != changed.segment_trace_hashes[0]) == selector_matters,
+		        "only native D1 ignores the unused reactor selector in diagnostics");
+		require(reactor.id == 7, "diagnostics preserve the raw reactor identity");
+		++reactor.rtype.pobj_info.model_num;
+		require(capture_ai_diagnostics().live_object_hash != changed.live_object_hash,
+		        "reactor model changes remain observable");
+		--reactor.rtype.pobj_info.model_num;
+		++reactor.shields;
+		require(capture_ai_diagnostics().live_object_hash != changed.live_object_hash,
+		        "reactor shield changes remain observable");
+	}
+#ifdef DXX_BUILD_DESCENT_II
+	Current_mission = nullptr;
+#endif
 }
 
 static void test_ai_diagnostic_profiles()
@@ -7607,6 +7777,7 @@ static void write_endlevel_lifetime_trace()
 {
 	using nlohmann::json;
 	json trace = json::array();
+	int run_number = 0;
 	for (const int level : { 1, 2, 1 }) {
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(level);
@@ -7631,14 +7802,23 @@ static void write_endlevel_lifetime_trace()
 		Players[0].homing_object_dist = -F1_0;
 		Control_center_destroyed = 1;
 		d_srand(9341);
-		d_srand_stream(D_RNG_FX, 9342);
+		// Vary cosmetic randomness and rendering load; SIM must stay untouched
+		d_srand_stream(D_RNG_FX, 9342 + run_number);
 		const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+		unsigned int sim_state = 0, observed_sim_state = 0;
+		require(d_rand_get_state(&sim_state), "flyout SIM isolation check requires observable RNG state");
 		json run = { { "level", level }, { "before", input_demo_endlevel_trace_snapshot() }, { "frames", json::array() } };
+		run["render_passes_per_frame"] = run_number;
+		run["fx_seed"] = 9342 + run_number;
+		run["sim_state"] = sim_state;
 		input_demo_set_skip_level_intro(1);
 		std::fprintf(stderr, "Start rendered exit: level=%d approach=%d exit=%d\n", level, approach, exit);
 		start_endlevel_sequence();
 		std::fprintf(stderr, "Rendered exit entered phase %d\n", Endlevel_sequence);
 		require(Endlevel_sequence == 1, "actual exit enters the rendered flythrough");
+		require(d_rand_get_state(&observed_sim_state) && observed_sim_state == sim_state && d_rand_get_call_count() == sim, "starting the exit animation leaves SIM RNG untouched");
+		char active[] = "active-flyout.sav", description[21] = "Active flyout";
+		require(!state_save_all_sub(active, description), "active flyouts cannot create incomplete gameplay checkpoints");
 		unsigned phases = 0;
 		bool explosion_seen = false;
 		for (int frame = 0; frame < 900 && Endlevel_sequence; ++frame) {
@@ -7647,6 +7827,10 @@ static void write_endlevel_lifetime_trace()
 			phases |= 1u << Endlevel_sequence;
 			const int previous_phase = Endlevel_sequence;
 			do_endlevel_frame();
+			for (int pass = 0; pass < run_number && Endlevel_sequence; ++pass)
+				game_render_frame();
+			require(d_rand_get_state(&observed_sim_state) && observed_sim_state == sim_state && d_rand_get_call_count() == sim,
+			        "flyout effects and rendering must not consume or reseed SIM RNG");
 			if (Endlevel_sequence != previous_phase)
 				std::fprintf(stderr, "Rendered exit frame %d: phase %d -> %d\n", frame, previous_phase, Endlevel_sequence);
 			const auto state = input_demo_endlevel_trace_snapshot();
@@ -7663,12 +7847,110 @@ static void write_endlevel_lifetime_trace()
 		run["next_level"] = Current_level_num;
 		std::fprintf(stderr, "Endlevel %d: %zu frames, all phases and external explosion\n", level, run["frames"].size());
 		trace.push_back(std::move(run));
+		++run_number;
 	}
 	const std::string output = trace.dump(2) + "\n";
 	write_fixture("endlevel.json", bytes(output.begin(), output.end()));
 }
 
-static void write_campaign_trace(const char *directory, const char *d2_directory, bool endlevel_only = false)
+static void write_death_sequence_trace(const char *filename = "death.json")
+{
+	using nlohmann::json;
+	json trace = json::array();
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(1);
+	Players[0].lives = 5;
+	const fix saved_frame = FrameTime;
+	const auto powerups = [] {
+		int count = 0;
+		for (int slot = 0; slot <= Highest_object_index; ++slot)
+			if (Objects[slot].type == OBJ_POWERUP) ++count;
+		return count;
+	};
+	const auto snapshot = [&](const char *phase) {
+		trace.push_back({ { "phase", phase }, { "dead", Player_is_dead },
+		                 { "exploded", Player_exploded }, { "dropped", Player_eggs_dropped },
+		                 { "lives", Players[0].lives }, { "hostages", Players[0].hostages_on_board },
+		                 { "powerups", powerups() } });
+	};
+	const auto advance = [](fix dt) {
+		FrameTime = dt;
+		GameTime64 += dt;
+		dead_player_frame();
+	};
+	// Two real deaths with no intervening alive frame: respawn can occur inside
+	// dead_player_frame, then the same simulation step can kill the new ship
+	for (int death = 0; death < 2; ++death) {
+		Players[0].hostages_on_board = 2;
+		Players[0].primary_weapon_flags |= 1 << PLASMA_INDEX;
+		Players[0].secondary_ammo[HOMING_INDEX] = 7;
+		Players[0].secondary_weapon_flags |= 1 << HOMING_INDEX;
+		Players[0].shields = -F1_0;
+		start_player_death_sequence(ConsoleObject);
+		require(Player_is_dead && Dead_player_camera != nullptr, "actual death starts its camera phase");
+		char checkpoint[] = "active-death.sav", description[21] = "Active death";
+		require(!state_save_all_sub(checkpoint, description), "active death cannot create an incomplete gameplay checkpoint");
+		const int before = powerups();
+		advance(3 * F1_0 / 2);
+		require(!Player_exploded && !Player_eggs_dropped && Players[0].hostages_on_board == 2 && powerups() == before,
+		        "each new death retains gear and hostages before its own explosion deadline");
+		snapshot("before_explosion");
+		advance(F1_0 / 2);
+		require(!Player_exploded && !Player_eggs_dropped, "death explosion waits through exact two-second boundary");
+		advance(1);
+		require(Player_exploded && Player_eggs_dropped && Players[0].hostages_on_board == 0 && powerups() > before,
+		        "death explosion drops real carried gear and clears hostages after two seconds");
+		snapshot("exploded");
+		const int dropped = powerups();
+		advance(F1_0 / 4);
+		require(powerups() == dropped, "continued death phase does not duplicate gear drops");
+		const int lives = Players[0].lives;
+		// Respawn retains native D1 robot knowledge of the previous ship
+		// Ordinary D2 deliberately refreshes that knowledge at new-ship entry
+		for (int i = 0; i < MAX_AI_CLOAK_INFO; ++i) {
+			Ai_cloak_info[i].last_time = -F1_0 - i;
+			Ai_cloak_info[i].last_position = { i * F1_0, -F1_0, 3 * F1_0 };
+		}
+		const vms_vector death_position = ConsoleObject->pos;
+		const fix64 respawn_time = GameTime64 + 1;
+		Death_sequence_aborted = 1;
+		advance(1);
+		for (int i = 0; i < MAX_AI_CLOAK_INFO; ++i) {
+			bool refresh = false;
+#ifdef DXX_BUILD_DESCENT_II
+			refresh = !d1_in_d2_use_d1_gameplay();
+#endif
+			const vms_vector expected = refresh ? death_position : vms_vector{ i * F1_0, -F1_0, 3 * F1_0 };
+			require(Ai_cloak_info[i].last_time == (refresh ? respawn_time : -F1_0 - i) &&
+			        !std::memcmp(&Ai_cloak_info[i].last_position, &expected, sizeof(expected)),
+			        "actual respawn preserves native D1 cloak memory and refreshes ordinary D2");
+		}
+		require(!Player_is_dead && !Player_exploded && !Player_eggs_dropped && Players[0].lives == lives - 1,
+		        "actual death dismissal respawns a live ship exactly once");
+		require(powerups() == dropped, "death dismissal does not duplicate completed drops");
+		snapshot("respawned");
+	}
+	// Early dismissal must drop carried gear once even before the blast
+	Players[0].primary_weapon_flags |= 1 << PLASMA_INDEX;
+	Players[0].shields = -F1_0;
+	start_player_death_sequence(ConsoleObject);
+	const int before_abort = powerups(), lives_before_abort = Players[0].lives;
+	Death_sequence_aborted = 1;
+	advance(F1_0 / 4);
+	require(!Player_is_dead && Players[0].lives == lives_before_abort - 1 && powerups() > before_abort,
+	        "early death dismissal drops gear and respawns exactly once");
+	snapshot("early_respawn");
+	const int after_abort = powerups();
+	advance(F1_0 / 4);
+	require(powerups() == after_abort && Players[0].lives == lives_before_abort - 1,
+	        "alive frame after early dismissal does not repeat drops or death");
+	FrameTime = saved_frame;
+	const std::string output = trace.dump(2) + "\n";
+	write_fixture(filename, bytes(output.begin(), output.end()));
+}
+
+
+static void write_campaign_trace(const char *directory, const char *d2_directory, bool endlevel_only = false, bool death_only = false)
 {
 	using nlohmann::json;
 	const std::string hog = std::string(directory) + "/DESCENT.HOG";
@@ -7715,8 +7997,9 @@ static void write_campaign_trace(const char *directory, const char *d2_directory
 		SDL_PushEvent(&event);
 		return interval; }, nullptr);
 	require(timer != 0, "start presentation dismissal timer");
-	if (endlevel_only) {
-		write_endlevel_lifetime_trace();
+	if (endlevel_only || death_only) {
+		if (death_only) write_death_sequence_trace();
+		else write_endlevel_lifetime_trace();
 		SDL_RemoveTimer(timer);
 		return;
 	}
@@ -7915,6 +8198,7 @@ static void write_campaign_trace(const char *directory, const char *d2_directory
 		}
 		const std::string result = control.dump(2) + "\n";
 		write_fixture("cadence-d2.json", bytes(result.begin(), result.end()));
+		write_death_sequence_trace("death-d2.json");
 	}
 #else
 	(void) d2_directory;
@@ -9510,6 +9794,10 @@ int main(int argc, char **argv)
 		write_campaign_trace(argv[2], argc == 4 ? argv[3] : nullptr);
 		return 0;
 	}
+	if (argc == 3 && std::strcmp(argv[1], "--death-trace") == 0) {
+		write_campaign_trace(argv[2], nullptr, false, true);
+		return 0;
+	}
 	if (argc == 3 && std::strcmp(argv[1], "--endlevel-trace") == 0) {
 		write_campaign_trace(argv[2], nullptr, true);
 		return 0;
@@ -9538,6 +9826,7 @@ int main(int argc, char **argv)
 	test_cadence_saved_record();
 	test_fusion_cadence_state();
 	test_refueling_sound_cadence();
+	test_reactor_diagnostic_identity();
 	test_ai_diagnostic_profiles();
 #ifdef DXX_BUILD_DESCENT_II
 	test_native_ai_object_encoding();
@@ -9548,6 +9837,8 @@ int main(int argc, char **argv)
 	test_lives();
 	std::fprintf(stderr, "Testing wall crossing, door pixels and rotated RLE overlays\n");
 	test_endlevel_flythrough();
+	test_death_camera_sim_isolation();
+	test_multiplayer_bump_cadence();
 	test_wall_crossing();
 	test_door_open_completion();
 	std::fprintf(stderr, "Testing native compound triggers and paired crossing state\n");

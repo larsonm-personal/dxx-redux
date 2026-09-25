@@ -999,6 +999,17 @@ void input_demo_capture_player_weapon_diag(input_demo_state_trace_diag *diag)
 	}
 }
 
+static int input_demo_diagnostic_object_id(const object *obj)
+{
+#ifndef DXX_BUILD_DESCENT_II
+	/* D1 ignores the reactor ID when selecting its single definition
+	 * Raw object traces retain the source ID; model_num remains compared */
+	if (obj->type == OBJ_CNTRLCEN)
+		return 0;
+#endif
+	return obj->id;
+}
+
 static unsigned int input_demo_state_trace_hash_object(unsigned int hash,
                                                        const object *obj)
 {
@@ -1007,7 +1018,7 @@ static unsigned int input_demo_state_trace_hash_object(unsigned int hash,
 
 	hash = input_demo_state_trace_hash_update(hash, (unsigned int) obj->signature);
 	hash = input_demo_state_trace_hash_update(hash, (unsigned int) obj->type);
-	hash = input_demo_state_trace_hash_update(hash, (unsigned int) obj->id);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int) input_demo_diagnostic_object_id(obj));
 	hash = input_demo_state_trace_hash_update(hash, (unsigned int) obj->segnum);
 	hash = input_demo_state_trace_hash_update(hash, (unsigned int) obj->control_type);
 	hash = input_demo_state_trace_hash_update(hash, (unsigned int) obj->movement_type);
@@ -1135,7 +1146,7 @@ static int input_demo_capture_segment_trace_slot(input_demo_state_trace_diag *di
 		diag->segment_trace_hashes[slot] = input_demo_state_trace_hash_update(
 		    diag->segment_trace_hashes[slot], (unsigned int) obj->type);
 		diag->segment_trace_hashes[slot] = input_demo_state_trace_hash_update(
-		    diag->segment_trace_hashes[slot], (unsigned int) obj->id);
+		    diag->segment_trace_hashes[slot], (unsigned int) input_demo_diagnostic_object_id(obj));
 		diag->segment_trace_hashes[slot] = input_demo_state_trace_hash_update(
 		    diag->segment_trace_hashes[slot], (unsigned int) obj->prev);
 		diag->segment_trace_hashes[slot] = input_demo_state_trace_hash_update(
@@ -1147,7 +1158,7 @@ static int input_demo_capture_segment_trace_slot(input_demo_state_trace_diag *di
 			diag->segment_trace_objs[chain_index] = objnum;
 			diag->segment_trace_sigs[chain_index] = obj->signature;
 			diag->segment_trace_types[chain_index] = obj->type;
-			diag->segment_trace_ids[chain_index] = obj->id;
+			diag->segment_trace_ids[chain_index] = input_demo_diagnostic_object_id(obj);
 			diag->segment_trace_prevs[chain_index] = obj->prev;
 			diag->segment_trace_nexts[chain_index] = obj->next;
 		}
@@ -1922,7 +1933,7 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 			segment_hash = input_demo_state_trace_hash_update(
 			    segment_hash, (unsigned int) obj->type);
 			segment_hash = input_demo_state_trace_hash_update(
-			    segment_hash, (unsigned int) obj->id);
+			    segment_hash, (unsigned int) input_demo_diagnostic_object_id(obj));
 			segment_hash = input_demo_state_trace_hash_update(
 			    segment_hash, (unsigned int) obj->flags);
 			segment_hash = input_demo_state_trace_hash_update(
@@ -2239,7 +2250,7 @@ void input_demo_log_player_bump_probe(const char *step, object *obj0,
 	input_demo_last_player_bump.other_obj = (int) (other - Objects);
 	input_demo_last_player_bump.other_sig = other->signature;
 	input_demo_last_player_bump.other_type = other->type;
-	input_demo_last_player_bump.other_id = other->id;
+	input_demo_last_player_bump.other_id = input_demo_diagnostic_object_id(other);
 	input_demo_last_player_bump.damage_flag = damage_flag;
 	input_demo_last_player_bump.force_mag = player_force_mag;
 	input_demo_last_player_bump.damage_raw = damage_raw;

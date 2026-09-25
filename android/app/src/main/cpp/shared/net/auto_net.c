@@ -15,6 +15,7 @@
 #include "config.h"
 #include "console.h"
 #include "coop_save.h"
+#include "kconfig.h"
 #include "physfsx.h"
 #include "player.h"
 #include "playsave.h"
@@ -160,6 +161,8 @@ int auto_create_pilot(void)
 		extern void android_apply_gamepad_defaults(void);
 
 		android_apply_gamepad_defaults();
+		/* Refresh the active input table after replacing new-pilot defaults */
+		kc_set_controls();
 	}
 #endif
 

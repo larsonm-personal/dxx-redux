@@ -24,7 +24,7 @@ foreach ($run in @(
     )) {
     $runDirectory = Join-Path $outputPath $run.Name
     New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
-    foreach ($name in @('campaign.json', 'cadence-d2.json', 'cadence-d2-awareness.json')) {
+    foreach ($name in @('campaign.json', 'cadence-d2.json', 'cadence-d2-awareness.json', 'death-d2.json')) {
         $file = Join-Path $runDirectory $name
         if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file }
     }
@@ -60,5 +60,8 @@ if ($D2DataDirectory) {
     $control = Get-Content -LiteralPath (Join-Path $outputPath 'imported/cadence-d2.json') -Raw | ConvertFrom-Json
     if ($control.Count -ne 3) { throw 'Incomplete ordinary D2 cadence persistence control' }
     Write-Output "PASS: $($control.Count) ordinary D2 loaded-world save/restore cases retain full-width relative cadence clocks"
+    $deaths = Get-Content -LiteralPath (Join-Path $outputPath 'imported/death-d2.json') -Raw | ConvertFrom-Json
+    if ($deaths.Count -ne 7) { throw 'Incomplete ordinary D2 death lifecycle control' }
+    Write-Output 'PASS: ordinary D2 consecutive deaths, early dismissal and checkpoint rejection'
 }
 Write-Output "Campaign traces: $outputPath"

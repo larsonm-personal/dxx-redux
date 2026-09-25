@@ -15,7 +15,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -47,6 +46,9 @@ fun MidiBytesPreviewDialog(
     loadMetadata: (suspend () -> MidiMetadata?)? = null,
     onDismiss: () -> Unit,
     hogPath: String = "",
+    autoPlay: Boolean = false,
+    onSkip: ((Int) -> Unit)? = null,
+    onCancelPending: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -55,6 +57,10 @@ fun MidiBytesPreviewDialog(
 
     var playbackStatus by remember { mutableStateOf<String?>(null) }
     var midiFallback by remember { mutableStateOf(false) }
+    var activeStart by remember { mutableStateOf(0L) }
+    var loading by remember { mutableStateOf(false) }
+    var startJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var paused by remember { mutableStateOf(false) }
     var playing by remember { mutableStateOf(false) }
     var positionMs by remember { mutableIntStateOf(0) }
     var durationMs by remember { mutableIntStateOf(0) }
@@ -67,19 +73,10 @@ fun MidiBytesPreviewDialog(
     var showMetadata by remember { mutableStateOf(false) }
     var metadataLoading by remember { mutableStateOf(false) }
 
-    DisposableEffect(Unit) {
-        onDispose { MidiPreviewBridge.stop() }
-    }
-
-    LaunchedEffect(Unit) {
-        if (!withContext(Dispatchers.IO) { MidiPreviewBridge.init(context) }) {
-            loadError = "Could not load the selected soundfont"
-        }
-    }
-
     LaunchedEffect(playing) {
         while (playing) {
             val state = MidiPreviewBridge.getState()
+            paused = state.state == MidiPreviewBridge.STATE_PAUSED
             if (!seeking) {
                 positionMs = state.positionMs
                 durationMs = state.durationMs
@@ -92,49 +89,93 @@ fun MidiBytesPreviewDialog(
         }
     }
 
-    fun togglePlayback() {
-        if (!playing) {
+    fun startPlayback() {
+        if (MidiPreviewBridge.getState().state != MidiPreviewBridge.STATE_PAUSED) {
             playbackStatus = null
             midiFallback = false
             val generation = MidiPreviewBridge.reserveStart()
-            scope.launch(Dispatchers.IO) {
-                if (!MidiPreviewBridge.init(context)) {
-                    loadError = "Could not load the selected soundfont"
-                    return@launch
-                }
-                val data = loadBytes()
-                if (data == null) {
-                    loadError = "Could not read $trackName"
-                    return@launch
-                }
-                if (MidiPreviewBridge.startReserved(generation, data, isHmp, sampleRate, hogPath, trackName)) {
-                    val soundfonts = SoundfontStore(context).read()
-                    val actualRenderer = MidiPreviewBridge.getState().renderer
-                    midiFallback = soundfonts.renderer == "ymfm" && actualRenderer == "sf2"
-                    playbackStatus =
-                        if (actualRenderer == "ymfm") {
-                            "Playing with ymfm FM"
+            activeStart = generation
+            loadError = null
+            loading = true
+            startJob =
+                scope.launch {
+                    try {
+                        val started =
+                            withContext(Dispatchers.IO) {
+                                if (!MidiPreviewBridge.init(context)) {
+                                    loadError = "Could not load the selected soundfont"
+                                    return@withContext false
+                                }
+                                val data = loadBytes()
+                                if (data == null) {
+                                    loadError = "Could not read $trackName"
+                                    return@withContext false
+                                }
+                                MidiPreviewBridge.startReserved(generation, data, isHmp, sampleRate, hogPath, trackName)
+                            }
+                        if (started) {
+                            val soundfonts = SoundfontStore(context).read()
+                            val actualRenderer = MidiPreviewBridge.getState().renderer
+                            midiFallback = soundfonts.renderer == "ymfm" && actualRenderer == "sf2"
+                            playbackStatus =
+                                if (actualRenderer == "ymfm") {
+                                    "Playing with ymfm FM"
+                                } else {
+                                    val name =
+                                        soundfonts.fonts.firstOrNull { it.id == soundfonts.selected }?.name
+                                            ?: SoundfontCatalog.bundled(context).name
+                                    "Playing with MIDI $name"
+                                }
+                            playing = true
+                            loadError = null
                         } else {
-                            val name =
-                                soundfonts.fonts.firstOrNull { it.id == soundfonts.selected }?.name
-                                    ?: SoundfontCatalog.bundled(context).name
-                            "Playing with MIDI $name"
+                            if (loadError == null) loadError = "Playback failed"
                         }
-                    playing = true
-                    loadError = null
-                } else {
-                    loadError = "Playback failed"
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        loadError = "Playback failed: ${e.message}"
+                    } finally {
+                        if (activeStart == generation) loading = false
+                    }
                 }
-            }
         } else {
-            val state = MidiPreviewBridge.getState()
-            if (state.state == MidiPreviewBridge.STATE_PLAYING) {
-                MidiPreviewBridge.pause()
-            } else {
-                MidiPreviewBridge.resume()
-            }
+            MidiPreviewBridge.resume()
+            playing = true
         }
     }
+
+    val media =
+        rememberPreviewMediaSession(
+            trackName,
+            autoPlay,
+            PreviewTransport(
+                snapshot = {
+                    if (loading) {
+                        PreviewSnapshot(PreviewStatus.LOADING)
+                    } else {
+                        val state = MidiPreviewBridge.getState()
+                        nativePreviewSnapshot(state.state, state.positionMs, state.durationMs)
+                    }
+                },
+                start = { startPlayback() },
+                pause = { MidiPreviewBridge.pause() },
+                stop = {
+                    activeStart = 0L
+                    startJob?.cancel()
+                    MidiPreviewBridge.stop()
+                    loading = false
+                    playing = false
+                    positionMs = 0
+                },
+                seek = { target ->
+                    val duration = MidiPreviewBridge.getState().durationMs
+                    if (duration > 0 && MidiPreviewBridge.seek(target.toFloat() / duration)) positionMs = target
+                },
+                navigate = onSkip,
+                cancelPendingNavigation = onCancelPending,
+            ),
+        )
 
     AlertDialog(
         modifier = Modifier.repeatVerticalDpadFocus(closeFocus),
@@ -180,24 +221,21 @@ fun MidiBytesPreviewDialog(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     TextButton(
-                        onClick = { togglePlayback() },
+                        onClick = { media.toggle() },
                         modifier = Modifier.focusRequester(playFocus).tvFocusBorder(),
                     ) {
                         val label =
                             if (!playing) {
                                 "Play"
                             } else {
-                                val state = MidiPreviewBridge.getState()
-                                if (state.state == MidiPreviewBridge.STATE_PAUSED) "Resume" else "Pause"
+                                if (paused) "Resume" else "Pause"
                             }
                         Text(label, fontSize = 13.sp)
                     }
                     if (playing) {
                         TextButton(
                             onClick = {
-                                MidiPreviewBridge.stop()
-                                playing = false
-                                positionMs = 0
+                                media.stop()
                             },
                             modifier = Modifier.tvFocusBorder(),
                         ) {

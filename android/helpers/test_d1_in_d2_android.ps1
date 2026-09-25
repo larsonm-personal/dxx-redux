@@ -4,6 +4,7 @@ param(
     [switch]$GameLog,
     [switch]$SoundCheck,
     [switch]$WeaponArt,
+    [switch]$Guidebot,
     [switch]$NativeD1,
     [string]$WeaponArtReference,
     [string]$Serial = 'emulator-5554',
@@ -14,6 +15,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if ($Guidebot -and (-not $D2DataDirectory -or $NativeD1 -or $WeaponArt -or $SoundCheck)) { throw 'Guidebot requires D2 assets and its own imported-D1 run' }
 if ($NativeD1 -and (-not $WeaponArt -or $D2DataDirectory)) { throw 'NativeD1 requires WeaponArt and D1-only data' }
 if ($WeaponArt -and $SoundCheck) { throw 'Run weapon rendering and sound checks separately' }
 if ($WeaponArt -and -not $NativeD1 -and -not $WeaponArtReference) { throw 'Imported weapon art requires a native-D1 WeaponArtReference directory' }
@@ -132,7 +134,7 @@ if ($SoundCheck) {
     if ($last -lt 0) { throw 'Sound scenario cannot locate the completed laser-firing assertion' }
     $steps = @($steps[0..$last])
 }
-if ($D2DataDirectory -and -not $WeaponArt) {
+if ($D2DataDirectory -and -not $WeaponArt -and -not $Guidebot) {
     $steps[1].game = 'd2'
     # Registered D2 contributes four independently owned companion models
     # The source/publication integration fixture verifies the 78 original models
@@ -158,6 +160,10 @@ if ($WeaponArt) {
         $steps[7] = @{ action = 'key'; key = 'enter'; post_delay_ms = 100 }
     } elseif ($D2DataDirectory) { $steps[1].game = 'd2' }
     $steps += @(Get-Content (Join-Path $repo 'android/game_scripts/test_d1_weapon_art.jsonc') -Raw | ConvertFrom-Json |
+            Where-Object { -not $_._info })
+}
+if ($Guidebot) {
+    $steps = @($steps[0..11]) + @(Get-Content (Join-Path $repo 'android/game_scripts/test_d1_optional_guidebot.jsonc') -Raw | ConvertFrom-Json |
             Where-Object { -not $_._info })
 }
 $scriptFile = Join-Path $outputDirectory 'script.json'
@@ -277,6 +283,7 @@ try {
     & $AdbPath -s $Serial exec-out screencap -p > (Join-Path $outputDirectory 'first-strike.png')
     if ($WeaponArt) { Write-Output "Android weapon rendering evidence: $outputDirectory/weapon-art" }
     elseif ($SoundCheck) { Write-Output "$testLabel Android First Strike sound conversion checks passed" }
+    elseif ($Guidebot) { Write-Output 'PASS: Android optional Guide-Bot cold deploy, save/restore and D1/D2/D1 lifecycle' }
     else { Write-Output "$testLabel Android First Strike interaction and level-transition checks passed" }
 } finally {
     if ($WeaponArt) {

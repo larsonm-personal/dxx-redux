@@ -707,7 +707,7 @@ static int expect_write_state_trace(void)
 	remove(trace_path.c_str());
 	remove_test_dir(dir);
 	if (text.find("\"type\":\"meta\"") == std::string::npos ||
-	    text.find("\"diag_version\":1") == std::string::npos ||
+	    text.find("\"diag_version\":2") == std::string::npos ||
 	    text.find("\"source\":\"replay\"") == std::string::npos ||
 	    text.find("\"f\":810") == std::string::npos ||
 	    text.find("\"ft\":2622") == std::string::npos ||

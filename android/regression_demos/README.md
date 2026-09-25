@@ -67,8 +67,8 @@ The timestamped output under `temp/d1_replay_parity_*` contains a manifest of re
 asset and executable hashes, recorded player settings, launch commands, raw results,
 compressed state/RNG traces and a report with three independent relationships:
 recording versus native, native repeatability, and native versus imported. Every
-available frame field and diagnostic is compared; only declared engine/mission
-aliases and RNG source-code labels are mapped. Terminal player values are never
+available frame field and diagnostic is compared with explicit engine/storage
+mappings described below. Terminal player values are never
 copied into an expectation. Missing/truncated evidence is not a pass
 
 The output also archives the working source patch and runner sources. State-trace
@@ -76,14 +76,15 @@ metadata describes the recording in both engines; terminal results identify the
 executing engine. RNG reports retain context differences in their strict verdict
 and separately show the first value/timing/count difference, so an annotation
 cannot hide a later simulation difference. SIM and effects RNG streams have
-independent verdicts; matching simulation draws cannot conceal effects drift
+independent reports. FX state/count differences are cosmetic diagnostics and do
+not fail gameplay parity; SIM state, draws and counts remain strict
 
 Frame reports also inventory every diagnostic field, including its compared and
 differing frame counts and first differing value. These entries supplement the
 strict verdict: an early hash/layout difference cannot hide a later mismatch in
 weapon orientation or another diagnostic. No diagnostic exclusion list is used
 
-Replay state traces also contain version-1 `object_state` records after each
+Replay state traces also contain version-2 `object_state` records after each
 `frame_state`. Frame zero resets a slot map; subsequent `slots` entries replace a
 complete object, or delete it with `null`. Unlisted slots retain their preceding
 state. Slot reuse carries the new signature and complete replacement. Each record
@@ -94,18 +95,26 @@ fields absent from the old hashes such as orientation and weapon hit history
 
 These records expose common object fields, active movement/control/render data,
 retained ghost polygon data and per-robot local AI data. They omit ABI padding
-and inactive union interpretations. D1 and D2 fields remain in their original
-representations: no reactor-ID, AI-layout or unused-capacity mapping is applied
-yet. This covers live objects after each replay frame, not the complete world,
-player/global state, pre-advance restore or pre-retirement transition snapshots
+and inactive union interpretations. Raw records retain each engine's storage.
+The cross-engine comparison relocates saved D1 AI fields, requires neutral D2-only
+capacity/fields, and maps native D1's unused reactor ID to effective selector 0.
+Imported reactor selectors, models, shields and gun geometry remain compared.
+Native repeatability still checks raw IDs. Frame diagnostic schema 2 uses the
+same effective selector in native object/segment hashes and collision diagnostics;
+older captures require their original checker and cannot pass the new schema
+
+Version-8 world records expose per-frame world/player/AI state. Both object and
+world observers emit restored and terminal boundaries. Known exit-animation
+cosmetic fields are excluded from gameplay comparison; sequence ownership and
+unknown fields remain strict. No animation-history persistence is required
 
 State-log paths ending in `.gz` are compressed by the engine as it writes. The
 paired runner uses `state.jsonl.gz`; the existing PowerShell trace comparator
 also accepts plain or gzip input. Original records remain available for auditing
 
-This is still F1 work in progress: current diagnostics contain unmapped engine
-representations, and complete pre-advance and pre-retirement semantic snapshots
-are not yet emitted. The report keeps these coverage gaps explicit and returns
+This is still F1 work in progress: the complete simulation lifetime and private
+state audit, corpus qualification and target-platform matrix remain open.
+The report keeps these coverage gaps explicit and returns
 nonzero for incomplete qualification (2) or observed differences (1). An exact
 summary-state match alone cannot qualify full fidelity
 

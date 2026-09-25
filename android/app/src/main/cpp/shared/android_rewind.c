@@ -13,6 +13,7 @@
 #include "android_rewind_policy.h"
 #include "android_save_meta.h"
 #include "collide.h"
+#include "endlevel.h"
 #include "fix.h"
 #include "game.h"
 #include "input_demo_recorder.h"
@@ -360,7 +361,7 @@ void android_rewind_maybe_capture_frame(void)
 		return;
 	/* A source-side cancellation keeps its history; no intermediate world may
 	 * replace it while a transition or presentation owns the game */
-	if (coop_briefing_active() || coop_travel_blocks_state_actions() || multi_save_transfer_busy())
+	if (Endlevel_sequence || Player_is_dead || coop_briefing_active() || coop_travel_blocks_state_actions() || multi_save_transfer_busy())
 		return;
 	if (!android_rewind_capture_context_allowed() || Newdemo_state == ND_STATE_PLAYBACK || Current_level_num == 0) {
 		android_rewind_reset_history();

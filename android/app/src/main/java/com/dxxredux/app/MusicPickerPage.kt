@@ -503,7 +503,10 @@ private fun MidiSection(filesDir: File) {
 
     var enumResult by remember { mutableStateOf<MidiEnumerationBridge.EnumerationResult?>(null) }
     var enumerating by remember { mutableStateOf(false) }
+    var archiveSources by remember { mutableStateOf(emptyMap<String, MusicEditorArchiveSource>()) }
+    val stageManager = remember(ctx) { MissionZipMusicStageManager(ctx.cacheDir) }
     var selectedSource by remember { mutableStateOf<MidiEnumerationBridge.SourceInfo?>(null) }
+    var previewAutoPlay by remember { mutableStateOf(false) }
     var previewTrack by remember { mutableStateOf<MidiEnumerationBridge.TrackInfo?>(null) }
     var previewSource by remember { mutableStateOf<MidiEnumerationBridge.SourceInfo?>(null) }
 
@@ -513,7 +516,13 @@ private fun MidiSection(filesDir: File) {
         withContext(Dispatchers.IO) {
             MidiPreviewBridge.init(ctx)
             val setDir = FileSetManager(filesDir).let { it.getSetDir(it.getActive()) }
-            enumResult = MidiEnumerationBridge.enumerateTracks(setDir.absolutePath)
+            val nativeResult = MidiEnumerationBridge.enumerateTracks(setDir.absolutePath)
+            val imported = loadMusicEditorArchiveSources(ModManager(filesDir, ctx, setDir))
+            archiveSources = imported.associateBy { it.info.id }
+            enumResult =
+                nativeResult.copy(
+                    sources = orderedMidiEditorSources(nativeResult.sources + imported.map { it.info }),
+                )
         }
         enumerating = false
         // Missing sources fall back without overwriting the user's saved choice
@@ -525,7 +534,7 @@ private fun MidiSection(filesDir: File) {
     }
 
     Text(
-        "MIDI music from game data files, played using the sound profile below",
+        "MIDI music from game data and imported levels/mods, played using the sound profile below",
         fontSize = 13.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -626,6 +635,7 @@ private fun MidiSection(filesDir: File) {
                     Modifier
                         .fillMaxWidth()
                         .clickable {
+                            previewAutoPlay = false
                             previewTrack = track
                             previewSource = currentSource
                         },
@@ -643,7 +653,8 @@ private fun MidiSection(filesDir: File) {
                         modifier = Modifier.width(28.dp),
                     )
                     Text(
-                        track.metadata?.display_name?.takeIf { it.isNotBlank() } ?: track.filename,
+                        archiveSources[currentSource.id]?.tracks?.get(track.filename)?.displayName
+                            ?: track.metadata?.display_name?.takeIf { it.isNotBlank() } ?: track.filename,
                         fontSize = 13.sp,
                         modifier = Modifier.weight(1f),
                     )
@@ -663,17 +674,62 @@ private fun MidiSection(filesDir: File) {
 
     // Preview dialog
     if (previewTrack != null && previewSource != null) {
-        MidiTrackPreviewDialog(
-            filesDir = filesDir,
-            track = previewTrack!!,
-            source = previewSource!!,
-            sampleRate = sampleRate,
-            onDismiss = {
-                MidiPreviewBridge.stop()
-                previewTrack = null
-                previewSource = null
-            },
-        )
+        val queue = previewSource!!.tracks
+        val onSkip: ((Int) -> Unit)? =
+            if (queue.size > 1) {
+                { direction ->
+                    val index = queue.indexOf(previewTrack)
+                    queue.getOrNull(index + direction)?.let {
+                        previewAutoPlay = true
+                        previewTrack = it
+                    }
+                }
+            } else {
+                null
+            }
+        androidx.compose.runtime.key(previewSource!!.id, previewTrack!!.filename) {
+            val archiveSource = archiveSources[previewSource!!.id]
+            val archiveTrack = archiveSource?.tracks?.get(previewTrack!!.filename)
+            if (archiveSource != null && archiveTrack != null) {
+                MidiBytesPreviewDialog(
+                    autoPlay = previewAutoPlay,
+                    onSkip = onSkip,
+                    title = "MIDI Preview",
+                    trackName = archiveTrack.displayName,
+                    detailLines = listOf("Source: ${archiveSource.info.label}"),
+                    isHmp = archiveTrack.extension == "hmp" || archiveTrack.extension == "hmq",
+                    loadBytes = { stageManager.readMidiTrackBytes(archiveSource.catalog, archiveTrack) },
+                    loadMetadata = {
+                        stageManager.readMidiTrackBytes(archiveSource.catalog, archiveTrack)?.let {
+                            MidiMetadataBridge.parse(
+                                it,
+                                archiveTrack.extension == "hmp" || archiveTrack.extension == "hmq",
+                                archiveTrack.sourceRelativeName,
+                            )
+                        }
+                    },
+                    onDismiss = {
+                        MidiPreviewBridge.stop()
+                        previewTrack = null
+                        previewSource = null
+                    },
+                )
+            } else {
+                MidiTrackPreviewDialog(
+                    autoPlay = previewAutoPlay,
+                    onSkip = onSkip,
+                    filesDir = filesDir,
+                    track = previewTrack!!,
+                    source = previewSource!!,
+                    sampleRate = sampleRate,
+                    onDismiss = {
+                        MidiPreviewBridge.stop()
+                        previewTrack = null
+                        previewSource = null
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -684,6 +740,8 @@ private fun MidiTrackPreviewDialog(
     source: MidiEnumerationBridge.SourceInfo,
     sampleRate: Int,
     onDismiss: () -> Unit,
+    autoPlay: Boolean = false,
+    onSkip: ((Int) -> Unit)? = null,
 ) {
     val detailLines =
         buildList {
@@ -691,6 +749,8 @@ private fun MidiTrackPreviewDialog(
             if (track.duration_ms > 0) add("Duration: ${formatMusicPickerPreviewTime(track.duration_ms)}")
         }
     MidiBytesPreviewDialog(
+        autoPlay = autoPlay,
+        onSkip = onSkip,
         title = "MIDI Preview",
         trackName = track.filename,
         detailLines = detailLines,
@@ -1195,6 +1255,8 @@ private fun TrackPreviewDialog(
     val title =
         if (musicMode == MUSIC_MODE_CD) "CD Audio Track Order" else "Audio File Playlist"
 
+    var previewAutoPlay by remember { mutableStateOf(false) }
+
     // Track info tap state
     var infoTrack by remember { mutableStateOf<CustomAudioSetManager.TrackDetail?>(null) }
 
@@ -1259,11 +1321,18 @@ private fun TrackPreviewDialog(
                                     .then(
                                         when {
                                             row.cdInfo != null -> {
-                                                Modifier.clickable { cdPreviewTrack = row.cdInfo }
+                                                Modifier.clickable {
+                                                    previewAutoPlay = false
+                                                    cdPreviewTrack =
+                                                        row.cdInfo
+                                                }
                                             }
 
                                             row.detail != null -> {
-                                                Modifier.clickable { infoTrack = row.detail }
+                                                Modifier.clickable {
+                                                    previewAutoPlay = false
+                                                    infoTrack = row.detail
+                                                }
                                             }
 
                                             else -> {
@@ -1303,22 +1372,52 @@ private fun TrackPreviewDialog(
 
     // Track info sub-dialog (audio files) with mini player
     infoTrack?.let { track ->
-        AudioFileDetailDialog(
-            filesDir = filesDir,
-            track = track,
-            onDismiss = { infoTrack = null },
-        )
+        val queue = tracks.mapNotNull { it.detail }
+        androidx.compose.runtime.key(track.setId, track.filename) {
+            AudioFileDetailDialog(
+                autoPlay = previewAutoPlay,
+                onSkip =
+                    if (queue.size > 1) {
+                        { direction ->
+                            queue.getOrNull(queue.indexOf(infoTrack) + direction)?.let {
+                                previewAutoPlay = true
+                                infoTrack = it
+                            }
+                        }
+                    } else {
+                        null
+                    },
+                filesDir = filesDir,
+                track = track,
+                onDismiss = { infoTrack = null },
+            )
+        }
     }
 
     // CD track mini player dialog
     cdPreviewTrack?.let { info ->
-        CdTrackDetailDialog(
-            filesDir = filesDir,
-            trackName = info.name,
-            audioTrackIdx = info.audioTrackIdx,
-            source = info.source,
-            onDismiss = { cdPreviewTrack = null },
-        )
+        val queue = tracks.mapNotNull { it.cdInfo }
+        androidx.compose.runtime.key(info) {
+            CdTrackDetailDialog(
+                autoPlay = previewAutoPlay,
+                onSkip =
+                    if (queue.size > 1) {
+                        { direction ->
+                            queue.getOrNull(queue.indexOf(cdPreviewTrack) + direction)?.let {
+                                previewAutoPlay = true
+                                cdPreviewTrack = it
+                            }
+                        }
+                    } else {
+                        null
+                    },
+                filesDir = filesDir,
+                trackName = info.name,
+                audioTrackIdx = info.audioTrackIdx,
+                source = info.source,
+                onDismiss = { cdPreviewTrack = null },
+            )
+        }
     }
 }
 
@@ -1331,10 +1430,13 @@ private fun CdTrackDetailDialog(
     audioTrackIdx: Int,
     source: AudioSourceManager.AudioSource,
     onDismiss: () -> Unit,
+    autoPlay: Boolean = false,
+    onSkip: ((Int) -> Unit)? = null,
 ) {
     val ctx = LocalContext.current
     val sampleRate = remember { CdPreviewBridge.getNativeSampleRate(ctx) }
 
+    var paused by remember { mutableStateOf(false) }
     var playing by remember { mutableStateOf(false) }
     var positionMs by remember { mutableIntStateOf(0) }
     var durationMs by remember { mutableIntStateOf(0) }
@@ -1342,15 +1444,11 @@ private fun CdTrackDetailDialog(
     val sliderFocus = remember { FocusRequester() }
     val closeFocus = remember { FocusRequester() }
 
-    // Stop preview when dialog is dismissed
-    DisposableEffect(Unit) {
-        onDispose { CdPreviewBridge.stop() }
-    }
-
     // Poll playback state while playing or paused
     LaunchedEffect(playing) {
         while (playing) {
             val state = CdPreviewBridge.getState()
+            paused = state.state == CdPreviewBridge.STATE_PAUSED
             if (!seeking) {
                 positionMs = state.positionMs
                 durationMs = state.durationMs
@@ -1363,8 +1461,8 @@ private fun CdTrackDetailDialog(
         }
     }
 
-    fun togglePlayback() {
-        if (!playing) {
+    fun startPlayback() {
+        if (CdPreviewBridge.getState().state != CdPreviewBridge.STATE_PAUSED) {
             val cuePath = resolveCdAudioSourceFile(filesDir, source.cuePath).absolutePath
             val localBinPaths = resolveCdPreviewLocalBinPaths(filesDir, source)
             val binUris = source.binContentUriList()
@@ -1444,14 +1542,34 @@ private fun CdTrackDetailDialog(
                 }
             if (started) playing = true
         } else {
-            val state = CdPreviewBridge.getState()
-            if (state.state == CdPreviewBridge.STATE_PLAYING) {
-                CdPreviewBridge.pause()
-            } else {
-                CdPreviewBridge.resume()
-            }
+            CdPreviewBridge.resume()
+            playing = true
         }
     }
+
+    val media =
+        rememberPreviewMediaSession(
+            trackName,
+            autoPlay,
+            PreviewTransport(
+                snapshot = {
+                    val state = CdPreviewBridge.getState()
+                    nativePreviewSnapshot(state.state, state.positionMs, state.durationMs)
+                },
+                start = { startPlayback() },
+                pause = { CdPreviewBridge.pause() },
+                stop = {
+                    CdPreviewBridge.stop()
+                    playing = false
+                    positionMs = 0
+                },
+                seek = { target ->
+                    val duration = CdPreviewBridge.getState().durationMs
+                    if (duration > 0 && CdPreviewBridge.seek(target.toFloat() / duration)) positionMs = target
+                },
+                navigate = onSkip,
+            ),
+        )
 
     fun formatTime(ms: Int): String {
         val s = ms / 1000
@@ -1490,21 +1608,18 @@ private fun CdTrackDetailDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    TextButton(onClick = { togglePlayback() }) {
+                    TextButton(onClick = { media.toggle() }) {
                         val state =
                             if (!playing) {
                                 "Play"
                             } else {
-                                val s = CdPreviewBridge.getState()
-                                if (s.state == CdPreviewBridge.STATE_PAUSED) "Resume" else "Pause"
+                                if (paused) "Resume" else "Pause"
                             }
                         Text(state, fontSize = 13.sp)
                     }
                     if (playing) {
                         TextButton(onClick = {
-                            CdPreviewBridge.stop()
-                            playing = false
-                            positionMs = 0
+                            media.stop()
                         }) {
                             Text("Stop", fontSize = 13.sp)
                         }
@@ -1562,6 +1677,8 @@ private fun AudioFileDetailDialog(
     filesDir: File,
     track: CustomAudioSetManager.TrackDetail,
     onDismiss: () -> Unit,
+    autoPlay: Boolean = false,
+    onSkip: ((Int) -> Unit)? = null,
 ) {
     val audioFile = File(File(filesDir, CustomAudioSetManager.MUSIC_DIR), "${track.setId}/${track.filename}")
     val lines =
@@ -1589,6 +1706,8 @@ private fun AudioFileDetailDialog(
             }
         }
     AudioFilePreviewDialog(
+        autoPlay = autoPlay,
+        onSkip = onSkip,
         title = "Track Info",
         audioFile = audioFile,
         lines = lines,

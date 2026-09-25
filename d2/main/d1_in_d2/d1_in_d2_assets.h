@@ -139,11 +139,7 @@ int d1_in_d2_publish_asset_data(d1_asset_generation *generation, const char **er
 
 /* Transitional overlay operations; only the session facade orders these */
 void d1_in_d2_apply_effects(int active);
-void d1_in_d2_apply_powerup_vclips(int active);
-void d1_in_d2_apply_wall_anims(int active);
 void d1_in_d2_apply_robot_assets(int active);
-int d1_in_d2_apply_sounds(int active);
-const char *d1_in_d2_sound_validation_error(void);
 void d1_in_d2_apply_cockpit(int active);
 int d1_in_d2_prepare_guidebot_assets(void);
 int d1_in_d2_validate_assets(void);

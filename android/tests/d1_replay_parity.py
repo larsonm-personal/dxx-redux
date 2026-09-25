@@ -135,7 +135,7 @@ def difference(expected, actual, path="$"):
 
 # Versioned contract for input_demo_state_trace_diag and its JSON emitter.
 # Keep names and array lengths synchronized; unknown fields remain compared.
-FRAME_DIAGNOSTIC_VERSION = 1
+FRAME_DIAGNOSTIC_VERSION = 2
 FRAME_DIAGNOSTIC_FIELDS = {
     name: length
     for length, names in (
@@ -460,6 +460,12 @@ def field_differences(expected, actual, path="$"):
         yield {"path": path, "expected": expected, "actual": actual}
 
 
+def simulation_rng_storage(rng):
+    # Both streams remain required and typed in raw evidence. FX history is
+    # cosmetic; keep availability and unknown fields, but not its seed/count
+    return [rng[0], {key: value for key, value in rng[1].items() if key not in ("state", "calls")}]
+
+
 def compare_objects(left, right, header, right_engine="d1"):
     validate_comparison_content(header, right_engine)
     first = {}
@@ -470,13 +476,20 @@ def compare_objects(left, right, header, right_engine="d1"):
         # Name fields independently of slot, while preserving the first concrete
         # slot/frame in each example. All raw values remain in the archived trace
         for group in ("capacity", "allocator", "segment_heads", "clock", "rng"):
-            for found in field_differences(a[group], b[group], f"$.{group}"):
+            expected, actual = a[group], b[group]
+            if group == "rng":
+                expected, actual = simulation_rng_storage(expected), simulation_rng_storage(actual)
+            for found in field_differences(expected, actual, f"$.{group}"):
                 first.setdefault(found["path"], {"frame": count, **found})
         for slot in sorted(a["objects"].keys() | b["objects"].keys(), key=int):
+            expected = a["objects"].get(slot)
             actual = b["objects"].get(slot)
-            if right_engine == "d2" and actual is not None:
-                actual = canonical_d1_object(actual)
-            for found in field_differences(a["objects"].get(slot), actual, "$.object"):
+            if right_engine == "d2":
+                if expected is not None:
+                    expected = canonical_native_d1_object(expected)
+                if actual is not None:
+                    actual = canonical_d1_object(actual)
+            for found in field_differences(expected, actual, "$.object"):
                 first.setdefault(found["path"], {"frame": count, "slot": int(slot), **found})
         count += 1
     return {"status": "fail" if first else "pass", "frames_compared": count,
@@ -533,6 +546,12 @@ def canonical_d1_ai_storage(value, fields):
     else:
         del result["d1_saved"]
     return result
+
+
+def canonical_native_d1_object(value):
+    # Native get_reactor_definition ignores the ID; imported saves/mines select
+    # definition zero. Keep the raw source ID archived and all model/gun fields
+    return {**value, "id": 0} if value["type"] == 9 else value
 
 
 def canonical_d1_object(value):
@@ -997,7 +1016,22 @@ def compare_world(left, right, header, right_engine="d1"):
             raise EvidenceError("Unequal world/boundary trace lengths")
         if right_engine == "d2":
             b = canonical_d1_world(b)
-        for found in field_differences(a, b):
+            if a["type"] == "object_boundary":
+                a = {**a, "slots": {slot: canonical_native_d1_object(value)
+                                    for slot, value in a["slots"].items()}}
+        # Exit-animation cosmetics are diagnostics, not saved gameplay state
+        # Keep sequence ownership and unknown fields; retain the full raw trace
+        compared = []
+        for row in (a, b):
+            if row["type"] == "object_boundary":
+                row = {**row, "rng": simulation_rng_storage(row["rng"])}
+            else:
+                state = dict(row["state"])
+                state["endlevel"] = {key: value for key, value in state["endlevel"].items()
+                                     if key == "sequence" or key not in ENDLEVEL_SCHEMA}
+                row = {**row, "state": state}
+            compared.append(row)
+        for found in field_differences(*compared):
             # A restored-state difference must not conceal a terminal-only one
             key = f"{a['type']}:{a.get('phase', 'frame')}:{found['path']}"
             first.setdefault(key, {"frame": a["f"], **found})
@@ -1020,14 +1054,14 @@ def compare_pair(demo, left, right, engine, recorded=False):
         "checkpoint_collision_clock": safe_check(lambda: compare_checkpoint_collision_clock(demo, right["state"], engine)),
         "frames": safe_check(lambda: compare_frames(left["state"], right["state"], header, engine, recorded)),
         "simulation_rng": safe_check(lambda: compare_rng(left["rng"], right["rng"])),
-        "effects_rng": safe_check(lambda: compare_rng(left["rng"], right["rng"], stream=1)),
     }
     if not recorded:
         checks["object_states"] = safe_check(lambda: compare_objects(left["state"], right["state"], header, engine))
         checks["world_states"] = safe_check(lambda: compare_world(left["state"], right["state"], header, engine))
     statuses = [item["status"] for item in checks.values()]
     return {"status": "fail" if "fail" in statuses else "incomplete" if "incomplete" in statuses else "pass",
-            "checks": checks}
+            "checks": checks,
+            "diagnostics": {"effects_rng": safe_check(lambda: compare_rng(left["rng"], right["rng"], stream=1))}}
 
 
 def compare_checkpoint_collision_clock(demo, trace, engine):

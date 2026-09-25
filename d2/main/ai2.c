@@ -2009,6 +2009,9 @@ int boss_spew_robot(object *objp, vms_vector *pos)
 void init_ai_for_ship(void)
 {
 	int	i;
+	/* Native D1 respawn retains the robots' existing cloak memory */
+	if (d1_in_d2_use_d1_gameplay())
+		return;
 
 	for (i=0; i<MAX_AI_CLOAK_INFO; i++) {
 		Ai_cloak_info[i].last_time = GameTime64;

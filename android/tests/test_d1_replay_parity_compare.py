@@ -224,7 +224,7 @@ class ParityTests(unittest.TestCase):
 
     def test_fresh_diagnostics_require_the_declared_version(self):
         a = self.trace("a")
-        for version in (None, False, "1", 0, 2):
+        for version in (None, False, "2", 0, 1, 3):
             b = self.trace("b")
             self.mutate(b, lambda rows: rows[0].update(diag_version=version))
             with self.assertRaisesRegex(parity.EvidenceError, "diagnostic schema"):
@@ -282,6 +282,49 @@ class ParityTests(unittest.TestCase):
             row["allocator"].update(num_objects=1, highest_object_index=3)
             rows.append(row)
         return self.write(name, rows)
+
+    def test_reactor_selector_mapping_is_native_only_and_keeps_other_fields_strict(self):
+        def reactor(engine, selector):
+            obj = schema_example(parity.OBJECT_SCHEMA)
+            obj.update(type=9, id=selector, control_type=16, render_type=1,
+                       polyobj={"model_num": 8, "subobj_flags": 0, "tmap_override": -1,
+                                "alt_textures": 0, "anim_angles": [[0, 0, 0]] * 10},
+                       reactor_gun_pos=[[1, 2, 3]] * 4, reactor_gun_dir=[[4, 5, 6]] * 4)
+            if engine == "d2":
+                for key in ("reactor_gun_pos", "reactor_gun_dir"):
+                    obj[key] += [[0, 0, 0]] * 4
+            return obj
+
+        for world in (False, True):
+            make_trace = self.world_trace if world else self.object_trace
+            compare = parity.compare_world if world else parity.compare_objects
+            a, b = make_trace("reactor-native"), make_trace("reactor-imported")
+
+            def seed(rows, engine):
+                for row in rows:
+                    if "slots" in row:
+                        row["slots"]["3"] = reactor(engine, 25 if engine == "d1" else 0)
+                        row["allocator"].update(num_objects=1, highest_object_index=3)
+                    elif engine == "d2" and row.get("state"):
+                        self.import_world_storage(row["state"])
+            self.mutate(a, lambda rows: seed(rows, "d1"))
+            self.mutate(b, lambda rows: seed(rows, "d2"))
+            raw_a, raw_b = a.read_bytes(), b.read_bytes()
+            self.assertEqual(compare(a, b, self.header, "d2")["status"], "pass")
+            self.assertEqual((a.read_bytes(), b.read_bytes()), (raw_a, raw_b))
+            for mutation in (lambda obj: obj.update(id=25),
+                             lambda obj: obj.update(shields=123),
+                             lambda obj: obj["polyobj"].update(model_num=9),
+                             lambda obj: obj["reactor_gun_pos"][0].__setitem__(0, 7),
+                             lambda obj: obj.update(unknown=0)):
+                b.write_bytes(raw_b)
+                self.mutate(b, lambda rows: mutation(next(row for row in rows if "slots" in row)["slots"]["3"]))
+                self.assertEqual(compare(a, b, self.header, "d2")["status"], "fail")
+            # Native repeatability still checks the raw ID, even though the
+            # cross-engine comparison uses the effective reactor definition
+            b.write_bytes(raw_a)
+            self.mutate(b, lambda rows: next(row for row in rows if "slots" in row)["slots"]["3"].update(id=0))
+            self.assertEqual(compare(a, b, self.header, "d1")["status"], "fail")
 
     def object_storage(self):
         row = schema_example(parity.OBJECT_STORAGE_SCHEMA)
@@ -560,6 +603,43 @@ class ParityTests(unittest.TestCase):
             self.mutate(path, mutation)
             with self.assertRaises(parity.EvidenceError):
                 list(parity.rng_events(path))
+
+    def test_effects_rng_does_not_set_the_gameplay_verdict(self):
+        a, b = self.rng("rng-a"), self.rng("rng-b")
+        for path in (a, b):
+            self.mutate(path, lambda rows: rows[2].update(stream=1))
+        self.mutate(b, lambda rows: rows[2].update(result=3))
+        result = self.root / "result.json"
+        result.write_text(json.dumps(self.result))
+        demo = {"header": self.header, "result": self.result}
+        with mock.patch.object(parity, "compare_frames", return_value={"status": "pass"}), \
+             mock.patch.object(parity, "compare_checkpoint_collision_clock", return_value={"status": "pass"}):
+            def compare():
+                return parity.compare_pair(demo, {"state": a, "rng": a},
+                                           {"state": b, "rng": b, "result": result}, "d1", recorded=True)
+            report = compare()
+            self.assertEqual(report["status"], "pass")
+            self.assertEqual(report["diagnostics"]["effects_rng"]["status"], "fail")
+            self.mutate(b, lambda rows: rows[1].update(result=3))
+            self.assertEqual(compare()["status"], "fail")
+
+    def test_object_and_boundary_rng_exclude_only_cosmetic_history(self):
+        for fixture, compare in ((self.object_trace, parity.compare_objects),
+                                 (self.world_trace, parity.compare_world)):
+            a, b = fixture("rng-a"), fixture("rng-b")
+            def change(rows, stream, values):
+                for row in rows:
+                    if row.get("type") in ("object_state", "object_boundary"):
+                        row["rng"][stream].update(values)
+            self.mutate(b, lambda rows: change(rows, 1, {"state": 42, "calls": 99}))
+            raw = b.read_bytes()
+            self.assertEqual(compare(a, b, self.header)["status"], "pass")
+            self.assertEqual(b.read_bytes(), raw)
+            self.mutate(b, lambda rows: change(rows, 1, {"unknown": 7}))
+            self.assertEqual(compare(a, b, self.header)["status"], "fail")
+            b = fixture("rng-b")
+            self.mutate(b, lambda rows: change(rows, 0, {"state": 42}))
+            self.assertEqual(compare(a, b, self.header)["status"], "fail")
 
     def test_orchestration_attempts_every_capture_and_archives_failures(self):
         data = self.root / "data"
@@ -922,11 +1002,17 @@ class ParityTests(unittest.TestCase):
             with self.assertRaises(parity.EvidenceError):
                 parity.compare_world(a, changed, self.header, "d2")
 
-    def test_endlevel_private_state_is_required_and_compared(self):
+    def test_endlevel_cosmetics_are_diagnostic_not_gameplay_equality(self):
         a, b = self.world_trace("endlevel-a"), self.world_trace("endlevel-b")
         self.mutate(b, lambda rows: rows[2]["state"]["endlevel"]["frame"].update(sound_count=3))
         report = parity.compare_world(a, b, self.header)
-        self.assertIn("world_boundary:restored:$.state.endlevel.frame.sound_count", report["first_field_differences"])
+        self.assertEqual(report["status"], "pass")
+        self.mutate(b, lambda rows: rows[2]["state"]["endlevel"].update(sequence=1))
+        report = parity.compare_world(a, b, self.header)
+        self.assertIn("world_boundary:restored:$.state.endlevel.sequence", report["first_field_differences"])
+        self.mutate(b, lambda rows: rows[2]["state"]["endlevel"].update(unmapped=99))
+        report = parity.compare_world(a, b, self.header)
+        self.assertIn("world_boundary:restored:$.state.endlevel.unmapped", report["first_field_differences"])
         for change in (lambda s: s.pop("endlevel"),
                        lambda s: s["endlevel"]["frame"].pop("explosion_wait1"),
                        lambda s: s["endlevel"]["fly"].pop(),

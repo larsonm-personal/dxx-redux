@@ -3060,3 +3060,225 @@ No full-corpus or save/rewind fidelity claim is added by this observer milestone
 The completed endlevel evidence, current source, host binaries and APK are frozen
 in `temp/d1-endlevel-observation-source/manifest.json`. Earlier frozen capsules
 retain their original source, binary and checker identities
+
+### Superseded: September 24 post-flyout history persistence experiment
+
+User rejected treating cosmetic flyout history as gameplay state. The new
+serializer and experimental versions 19/38 below have been removed from the
+working implementation. Retained reports describe historical experiments only
+The active-flyout save/capture guard remains independently useful
+
+The actual post-flyout save probe reproduced native D1 retaining another
+flyout's countdowns and sound counter after ordinary restore: saved
+`[7068, 2197, 0]`, restored `[5582, 12, 3]`. The same writer accepted an
+active-flyout save, despite not serializing sequence/camera/phase runtime
+Before-fix source, both saves and raw traces are retained in
+`temp/d1-endlevel-persistence-before`
+
+Shared `endlevel_history.h` serializes only the history read before assignment
+by the next sequence: two signed 32-bit explosion countdowns and sound count
+(0..6). The 12-byte record is appended by native D1 version 19 and D2 version
+38. It does not rebase against game time. Both readers preflight the complete
+record; native checkpoint import stages it before committing. Older saves
+reset absent history, while ordinary level preparation retains the native
+carryover. D2 secret-world restores retain current history with the existing
+skip-apply policy. Actual secret-world network coverage remains separate
+
+Phase timer, bank rate and external-explosion half-life are assigned before
+their active consumers and are not persisted. Actors, camera and geometry are
+initialized by the relevant sequence/phase entry; inactive historical bytes
+remain in the unmodified raw schema-8 observer. The restored-branch assertion
+compares subsequent player/viewer motion, active explosion state, countdowns,
+sound count and both RNG draw counts rather than equating unused phase bytes
+
+Both engine writers reject active-flyout saves before opening the output
+Android rewind's normal capture entry also skips active flyouts, retaining its
+prior playable history. This excludes active-flyout capture; it neither adds
+active-flyout resume support nor qualifies requests made from a presentation
+
+Host verification passes:
+- Four actual flyouts per engine, 1268 identical native/imported raw frames,
+  including post-save contamination and a restored branch whose subsequent
+  behavior matches uninterrupted execution
+- Seven populated native checkpoint scenarios, native import, ordinary re-save,
+  legacy/current switching, 28 resumed frames and 28 live projectiles
+- Both byte orders, every 12-byte truncation boundary, invalid sound counters,
+  staged malformed native import, and immediate prior formats 18/37
+- All 53 D1 and 61 D2 CTest tests; all 53 comparator tests
+- Twenty-one actual campaign observations and three populated ordinary-D2
+  saves restoring both full-width cadence clocks and dormant flyout history
+
+Scoped mixed-language quality and all three Android ABI builds pass. Build
+warnings are the existing four-byte `DGSS` string and unused movie table
+APK SHA-256:
+`32391418a87bf2c55bb3a55e41a5f1e9e0acabf4f4af29631a44607ca2f5c03f`
+
+Android native D1 passes 16/16 on x86-64, including ordinary memory restore
+and actual authoritative rewind retaining `[-123, 4567, 6]` after deliberate
+contamination. The production memory adapter rejects all four flyout phase
+flags and the capture entry preserves existing history. This phase-admission
+check uses explicit flags; actual flyout motion is covered by the host fixture
+Both native and imported Android runs pass 16/16; their four captured projectile
+frames retain identical state, source pixels, palette and GPU output. Both
+helpers exit 0, restore the original app directories and remove their backup
+Device evidence: `temp/d1-launch-runtime-20260924-102435` (native) and
+`temp/d1-launch-runtime-20260924-102637` (imported)
+
+Current source, host binaries, APK, asset hashes and completed evidence are
+frozen in `temp/d1-endlevel-persistence-source/manifest.json`. Earlier capsules
+retain their original source and binary identities
+
+Logs use `temp/d1-endlevel-persistence-*.log`. The bounded plan is
+`d1-endlevel-persistence-20260924.md`. Next: boss network effect start/stop,
+complete death-phase and multiplayer bump timing, then the remaining private
+state audit and stable-schema full corpus. No new full-corpus, live-network,
+active-presentation restore or ARM64 runtime qualification is claimed
+
+### September 24 correction: cosmetic flyouts do not require persistence
+
+User clarified that exact exit-animation repeatability is not a requirement
+SIM RNG isolation is the relevant graphics boundary. The previous persistence
+milestone over-scoped an incidental static lifetime as saved gameplay state
+
+Removed the history codec, accessors, native translator changes, experimental
+versions 19/38 and all added animation-history persistence tests. Existing
+D1 18 / D2 37 saves and their cadence records remain unchanged. The active
+flyout save guard and Android capture admission guard remain
+
+Both rendered sequence entries reset their transient phase clocks and camera
+pointer; actor initialization clears the prior flythrough record. No production
+RNG stream is reseeded, restored or hidden by a save/restore wrapper. All direct
+flyout and starfield random draws already use `d_rand_fx`. The non-damaging
+cutscene explosion constructor does not take the damage/robot random paths
+
+The integration fixture varies FX seeds and 0/1/2 actual render passes, checks
+sequence completion and asserts unchanged SIM state AND call count at startup
+and every frame. Cosmetic frame equality and FX draw-count equality are no
+longer acceptance gates. Raw world traces retain endlevel diagnostics; the
+comparator excludes known cosmetic fields but retains sequence ownership and
+unknown fields. Its updated 53-test suite passes
+
+Corrected verification passes: both CMake builds, D1 CTest 53/53, D2 CTest
+61/61, 53 comparator tests, scoped quality and Android assembleDebug for all
+three ABIs. Each engine completes 951 actual flyout frames with varied FX
+seeds/render counts and unchanged SIM RNG. On emulator-5556, native D1 and
+imported D1 each complete all 16 automation steps, including active-flyout
+capture rejection, preserved playable history, normal restore/rewind and
+Spreadfire rendering. Device evidence is in
+`temp/d1-launch-runtime-20260924-105200` (native) and
+`temp/d1-launch-runtime-20260924-105330` (imported). Logs use
+`temp/d1-flyout-sim-isolation-*.log`; the corrected source/binary/evidence
+capsule is `temp/d1-flyout-sim-isolation-source/manifest.json`
+
+This is bounded host and x86_64 emulator verification, not new full-corpus,
+live-network or ARM64 runtime qualification
+
+The earlier
+`temp/d1-endlevel-persistence-source` capsule remains immutable historical
+evidence; it must not be used as the current implementation or future scope
+
+
+### September 24 continuation: death-camera SIM RNG leak
+
+Boss effect action 4/5 consumers only restart/stop an eclip. The sender cache
+is cosmetic packet suppression, not saved gameplay state
+
+The death-camera wall retry path called the AI SIM vector helper in both
+engines. A real closed-cell camera collision regression failed before the fix
+in both host builds. Both object.c files now use the existing local FX vector
+helper. No seed manipulation, new serializer or animation-equality gate
+
+Regression varies 1/2/8 camera updates and FX seeds, verifies FX retries occur
+and SIM state/count stay unchanged, and covers D2/D1/D2 profiles in the D2
+engine. Both CMake builds, D1 53/53 and D2 61/61 CTest, scoped quality and
+Android assembleDebug for all three ABIs pass. Evidence and source/binary
+hashes: temp/d1-death-camera-rng/manifest.json. No fresh device runtime,
+live-network or full-corpus claim
+
+Next is complete death-phase gameplay lifecycle and multiplayer bump timing;
+see d1-death-camera-rng-20260924.md for concrete remaining consumers
+
+### September 24 usable-completion continuation
+
+The actual repeated-death regression reproduced stale elapsed death time after
+respawn in both engines. Reset time_dead at death entry. Actual death-phase
+save admission also accepted an unusable checkpoint; both writers now reject
+Player_is_dead and Android rewind keeps its prior playable history. Seven
+native/imported death observations and ordinary D2 control pass, covering
+explosion boundary, single gear drop, hostage loss and life decrement. Fresh
+campaign coverage passes. Evidence: temp/d1-death-lifecycle
+
+Real multiplayer contact tests found id MAX_PLAYERS admitted and indexing one
+past the per-player bump clock array. Both engines now reject >= MAX_PLAYERS.
+Packet boundary, same-peer repeat, independent peer, reversed ordering, wide
+clock and backwards epoch cases pass. No bump history serialization added.
+Evidence: temp/d1-bump-cadence; full host suites 53/53 and 61/61 pass
+
+Current three-ABI APK passes native/imported Android memory restore/rewind,
+death/flyout admission and matching GPU Spreadfire output. Cold optional
+Guide-Bot deployment, docking, quick-save/load and D1/D2/D1 redeployment pass
+45/45. Preserved artifacts and APK hash: temp/d1-usable-device-evidence
+
+Fresh imported two-peer physical level-1-to-2 transition passes, including
+both Android overlays, gameplay controls and Back opening/closing the game
+menu: temp/d1-usable-lan-d2-D1LevelTransition, exit 0. The native control failed
+earlier at reactor destruction and remains unresolved. The complete paired
+corpus remains active in temp/d1-usable-corpus, with frozen binaries predating
+the latest death/bump fixes. No full-corpus or ARM64 qualification claim
+
+Removed the unused d1_in_d2_apply_sounds API, its unused validation-error
+accessor and private map reader/flags. No production or test caller remained;
+generation preparation/conversion/publication owns live sound loading. Host
+build and all 61 D2 tests pass. Final Android build passes all three ABIs after
+removing a newly unused static helper; hashes and logs are recorded in
+temp/d1-sound-overlay-final-manifest.json. Effect/reactor test-only overlays and connected
+Guide-Bot/cockpit backup retirement remain open. Current work and evidence
+limits: d1-usable-completion-20260924.md
+
+### September 24 follow-up: fresh LAN input and respawn AI memory
+
+The native transition control exposed stale active input bindings for a fresh
+LAN pilot. Android profile bindings loaded correctly, but auto_create_pilot
+did not call kc_set_controls after replacing desktop defaults. Added the same
+refresh used by both normal new-pilot menus. Before-fix live introspection
+shows virtual button 100 held while primary fire remained bound to button 0;
+evidence: temp/d1-lan-input-before. The three-ABI Android build and fresh native
+two-peer transition pass, including reactor firing and level-2 input/overlay/
+Back. Imported co-op death passes for either dying player while the survivor
+continues playing. Both helpers exit 0 and restore original app data
+
+The frozen full corpus completed levels 14/15 before interruption. Both native
+repeats pass; imported SIM RNG and terminal results match. Raw reactor ID
+differences (8/25 versus 0) account for object/hash mismatches, reflecting
+native's ignored reactor selector and imported's explicit selector 0. This
+still needs explicit semantic observation handling, not a gameplay workaround
+
+Level 15 also showed a real cloak-memory divergence at respawn frame 1983.
+D2's init_ai_for_ship reset the AI cache; native D1 leaves it intact. The
+extended actual-death regression passes native and failed imported before
+the fix. init_ai_for_ship now leaves native-D1 gameplay memory intact while
+ordinary D2 retains its reset. Both host builds, the death/campaign integration
+including ordinary D2 controls, and all 61 D2 CTests pass. Android build is
+in progress. Evidence: temp/d1-respawn-cloak-before and related logs
+
+The stopped corpus was continued with verified frozen inputs, reusing complete
+captures and preserving the interrupted output: temp/d1-usable-corpus-continuation.
+It remains historical diagnostic evidence, not coverage of the later fixes
+
+The cloak-memory three-ABI APK subsequently passed imported SavedLateJoin and
+the complete physical level-1-to-2 scenario on both x86-64 peers (host 26/26,
+client 23/23, overlay and Back checks, helper exits 0). Evidence/provenance:
+temp/d1-respawn-cloak-evidence/manifest.json. Frozen level 16 also completes:
+native repeatability/SIM/terminal pass, reactor ID 18 versus 0 remains the
+strict object/world discrepancy. Level 18 capture continues
+
+Removed the unused powerup-vclip and wall-animation overlay APIs and their
+private readers/caches after confirming no production/test callers. The
+live generation loader remains unchanged. Scoped quality/host builds pass;
+D2 suite and Android cleanup compilation are pending in the active plan
+
+Unused-animation-loader cleanup passes all 61 D2 tests and host builds. Android
+also compiled all three ABIs, exposing one now-unused private skipping helper;
+that helper is removed and final host/quality checks pass. Final Android retry
+was refused before compilation by the active-replay cleanup guard. Retry after
+capture releases the guard; details in d1-usable-completion-20260924.md

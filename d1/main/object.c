@@ -612,7 +612,7 @@ void update_all_robot_location_info(void)
 //	------------------------------------------------------------------------------------------------------------------
 static void make_random_vector_fx(vms_vector *vec)
 {
-	// FX RNG: graphics only, this helper just scatters attached effects around the parent object
+	// FX RNG: cosmetic effect offsets and death-camera wall avoidance
 	vec->x = (d_rand_fx() - 16384) | 1;
 	vec->y = d_rand_fx() - 16384;
 	vec->z = d_rand_fx() - 16384;
@@ -1496,6 +1496,7 @@ int		Player_flags_save;
 int		Player_exploded = 0;
 int		Death_sequence_aborted=0;
 int		Player_eggs_dropped=0;
+static fix time_dead;
 fix		Camera_to_player_dist_goal=F1_0*4;
 ubyte		Control_type_save, Render_type_save;
 
@@ -1574,7 +1575,7 @@ void set_camera_pos(vms_vector *camera_pos, object *objp)
 			if (hit_data.hit_type == HIT_NONE) {
 				*camera_pos = closer_p1;
 			} else {
-				make_random_vector(&player_camera_vec);
+				make_random_vector_fx(&player_camera_vec);
 				far_scale = 3*F1_0/2;
 			}
 		}
@@ -1589,7 +1590,6 @@ extern int previewed_spawn_point;
 //	------------------------------------------------------------------------------------------------------------------
 void dead_player_frame(void)
 {
-	static fix	time_dead = 0;
 	vms_vector	fvec;
 
 	int turn_camera = 1;
@@ -1770,6 +1770,8 @@ void start_player_death_sequence(object *player)
 		HUD_clear_messages();
 
 	Death_sequence_aborted = 0;
+	// A respawn can die again before an alive frame clears the old clock
+	time_dead = 0;
 
 	#ifdef NETWORK
 	if (Game_mode & GM_MULTI)

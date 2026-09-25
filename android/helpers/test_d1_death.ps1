@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-# Exercise actual flyouts with different FX seeds/render loads and check SIM isolation
+# Compare actual death phases, gear drops and consecutive respawns
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$D1DataDirectory,
@@ -13,7 +13,7 @@ $repository = Split-Path (Split-Path $PSScriptRoot)
 $assets = (Resolve-Path -LiteralPath $D1DataDirectory).Path
 $nativePath = (Resolve-Path -LiteralPath $NativeExecutable).Path
 $importedPath = (Resolve-Path -LiteralPath $ImportedExecutable).Path
-$outputPath = Join-Path $repository 'temp/d1-endlevel-comparison'
+$outputPath = Join-Path $repository 'temp/d1-death-comparison'
 & "$PSScriptRoot/retain-recent-artifacts.ps1" -Artifacts $outputPath
 foreach ($run in @(
         @{ Name = 'native'; Executable = $nativePath },
@@ -21,21 +21,18 @@ foreach ($run in @(
     )) {
     $runDirectory = Join-Path $outputPath $run.Name
     New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
-    $trace = Join-Path $runDirectory 'endlevel.json'
+    $trace = Join-Path $runDirectory 'death.json'
     if (Test-Path -LiteralPath $trace) { Remove-Item -LiteralPath $trace }
     Push-Location $runDirectory
     try {
-        & $run.Executable --endlevel-trace $assets *> output.log
-        if ($LASTEXITCODE -ne 0) { throw "$($run.Name) endlevel trace failed (exit $LASTEXITCODE); see $runDirectory/output.log" }
+        & $run.Executable --death-trace $assets *> output.log
+        if ($LASTEXITCODE -ne 0) { throw "$($run.Name) death trace failed (exit $LASTEXITCODE); see $runDirectory/output.log" }
     } finally {
         Pop-Location
     }
 }
-foreach ($engine in @('native', 'imported')) {
-    $runs = Get-Content -LiteralPath (Join-Path $outputPath "$engine/endlevel.json") -Raw | ConvertFrom-Json
-    if ($runs.Count -ne 3) { throw "Incomplete flyout coverage: $engine" }
-    $frames = ($runs | ForEach-Object { $_.frames.Count } | Measure-Object -Sum).Sum
-    Write-Output "PASS: $engine completes 3 flyouts, $frames frames with varied FX seeds and 0/1/2 render passes; SIM RNG unchanged"
-}
-Write-Output 'PASS: active flyout saves rejected; cosmetic animation equality is not required'
-Write-Output "Endlevel traces: $outputPath"
+$native = Get-Content -LiteralPath (Join-Path $outputPath 'native/death.json') -Raw
+$imported = Get-Content -LiteralPath (Join-Path $outputPath 'imported/death.json') -Raw
+if ($native -cne $imported) { throw "Death gameplay state differs; see $outputPath" }
+Write-Output 'PASS: actual native/imported death timing, carried gear drops and consecutive respawns match'
+Write-Output "Death traces: $outputPath"

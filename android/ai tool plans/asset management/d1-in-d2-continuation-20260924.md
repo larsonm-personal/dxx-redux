@@ -6,37 +6,58 @@ Status: implementation continues; baseline implementation is substantial, full f
 
 ## Current stopping point and next work
 
-Latest endlevel work: world schema 8 now observes the complete two-actor
-flythrough records, phase timers, explosion waits/sound counter, camera and
-exit geometry, phase angles and the active external explosion's object union.
-Former function statics retain their process lifetime; this adds no resets or
-save-format changes. Three actual rendered-sequence runs (levels 1, 2, 1) match
-across 951 native/imported frames, including player/viewer motion and SIM/FX
-draw counts. All four phases and the outside explosion are exercised. The
-fixture drives the real endlevel frame function and actual campaign completion;
-it does not claim GPU pixel or audible-output verification
+User clarification: exit animations are cosmetic, not gameplay fidelity
+requirements. Exact animation timing, FX RNG counts and historical flyout
+state must not drive persistence changes or block gameplay qualification
+Graphics must leave SIM RNG state and draw count untouched
 
-The repeated run demonstrates real carryover: with the same FX seed, the first
-level-1 flyout draws 41 times and the repeated level-1 flyout draws 37 times.
-The second run exercises nonzero bank rate and sound counts carry into the third.
-Do not blanket-reset this history. Next, add an actual post-flyout save/restore
-probe, then determine the persistence contract for these waits/counters alongside
-the remaining private-state audit. The current save writers do not serialize
-them. Desktop endlevel input excludes normal save commands, but Android rewind
-captures before `GameProcessFrame`, and its shared memory-save path has no
-explicit endlevel guard. Inspect/drive that path before declaring active-flyout
-rewind supported or excluded. Boss/network, death-phase and bump-state audits
-remain open
+The uncommitted endlevel history serializer and experimental save versions
+19/38 have been removed. Production save versions remain D1 18 / D2 37
+Transient flyout clocks and actor state now reset on actual rendered sequence
+entry. Normal animation randomness remains on the existing FX stream; neither
+stream is reseeded by this change. Active-flyout saves remain blocked because
+the saved world does not include a resumable camera/phase sequence. Android
+rewind skips active-flyout capture without replacing its playable history
 
-Both host builds and full suites (53/53 D1, 61/61 D2), 53 comparator tests,
-scoped quality and all Android ABI builds pass. Evidence is in
-`temp/d1-endlevel-comparison` and `temp/d1-endlevel-observation-*.log`.
-Schema-7 captures retain their frozen checker; no full-corpus or device-runtime
-qualification is added by the schema-8 observer
+The actual flyout fixture now varies FX seeds and 0/1/2 render passes, checks
+completion and verifies unchanged SIM state/count. It no longer requires
+native/imported animation frames to match. Raw schema-8 cosmetic observations
+remain diagnostic; world parity excludes known endlevel cosmetic fields while
+still comparing sequence ownership and unknown fields
 
-Current source, host binaries, APK and completed endlevel evidence are pinned
-in `temp/d1-endlevel-observation-source/manifest.json`. Earlier source capsules
-and checkers are unchanged
+Corrected verification passes: both CMake builds, D1 CTest 53/53, D2 CTest
+61/61, 53 comparator tests, scoped quality and Android assembleDebug for all
+three ABIs. Each engine completes 951 actual flyout frames with varied FX
+seeds/render counts and unchanged SIM RNG. On emulator-5556, native D1 and
+imported D1 each complete all 16 automation steps, including active-flyout
+capture rejection, preserved playable history, normal restore/rewind and
+Spreadfire rendering. Device evidence is in
+`temp/d1-launch-runtime-20260924-105200` (native) and
+`temp/d1-launch-runtime-20260924-105330` (imported). Logs use
+`temp/d1-flyout-sim-isolation-*.log`; the corrected source/binary/evidence
+capsule is `temp/d1-flyout-sim-isolation-source/manifest.json`
+
+This is bounded host and x86_64 emulator verification, not new full-corpus,
+live-network or ARM64 runtime qualification
+
+Earlier persistence
+reports in `temp/d1-endlevel-persistence-source` are historical evidence for a
+superseded approach, not the implementation to continue. See
+`d1-endlevel-persistence-20260924.md` for the correction
+
+Latest continuation: boss effect action 4/5 receivers only restart/stop a visual
+eclip; their sender cache is not saved gameplay state. The death-phase audit
+reproduced a real SIM leak in both engines: death-camera wall avoidance called
+make_random_vector. Both now use the existing local FX-vector helper. A real
+closed-cell collision-query regression varies FX seeds and camera-update counts
+across native D1 and D2/D1/D2 profiles, without comparing camera paths. See
+`d1-death-camera-rng-20260924.md` and `temp/d1-death-camera-rng`. Both host
+builds, 53/53 D1 and 61/61 D2 CTest, scoped quality and all Android ABI builds
+pass. No fresh device-runtime or full-corpus qualification is claimed
+
+Next: finish death-phase gameplay state and multiplayer bump timing, then
+run the full gameplay replay corpus once its observation contract is ready
+Do not add save records or exactness gates for incidental animation history
 
 Latest transition work: the campaign fixture now compares 21 native/imported
 observations, including normal travel, all three secret levels, ordinary restore,
@@ -62,9 +83,8 @@ Current sources, binaries, APK and evidence are frozen separately in
 `temp/d1-cadence-lifetime-source/manifest.json`; the earlier persistence capsule
 is unchanged. This milestone adds no fresh device-runtime or full-corpus claim
 
-Continue with the private endlevel and boss/network state audit, not another
-cadence format change. Audit complete death-phase state and multiplayer bump
-timing alongside those caches. Then stabilize the observation contract and run
+The boss effect sender cache is cosmetic. Continue with complete death-phase
+gameplay state and multiplayer bump timing, not another cadence format change. Then stabilize the observation contract and run
 all eight recordings with two native captures and one imported capture each.
 Live network, rewind-history selection, optional-feature lifecycle, custom art,
 full D1/D2/D1 presentation switching and platform qualification remain open
@@ -155,9 +175,10 @@ Endlevel audit detail: `was_located[MAX_FLY_OBJECTS]` in both flythrough
 functions is Android log suppression only; its sole reader gates `debug_log`,
 not movement, RNG or sound. Record that exclusion instead of serializing it.
 The explosion waits, sound counter, transition timer, bank rate and external
-explosion state do affect cutscene execution and remain in scope. The native
-boss `eclip_state` controls outgoing network effect messages and is also in
-scope; matching local effect flags alone does not cover it
+explosion state are cosmetic and excluded from gameplay persistence/equality.
+The native boss `eclip_state` only suppresses duplicate visual effect packets;
+action 4/5 receivers do not change gameplay state. Preserve SIM isolation, not
+exact animation or packet-history repeatability
 
 The wider static-state sweep also found these concrete follow-ups, beyond the
 first three clocks. None is yet qualified by the current short capture
@@ -319,7 +340,7 @@ are audit targets, not yet demonstrated gameplay divergences
 | Fusion cadence | Both engine clocks are now exposed and traced. Actual firing tests prove the gate controls awareness and overcharge damage/SIM RNG as well as sound | Define new-level/ship/restore behavior and compare populated warmup and overcharge state before and after actual save/load and rewind. Do not classify it as presentation-only |
 | Collision delay | The clock is traced, replay metadata restoration is verified, and current disk saves retain a full-width relative value. Actual campaign transitions and first-use RNG now match | Carry the persistence and transition regressions forward; complete applicable network and rewind-history selection coverage |
 | Refueling cadence | The original sound clock is now exposed and traced; the imported cadence is corrected to one-third second. D2's repair-center clock remains separate | Check refueling across restore and level/session switching and complete its reset/restore contract without importing D2 repair behavior |
-| Endlevel and boss effects | Endlevel timers/flythrough caches remain private. Native boss `eclip_state` and the owned `Boss_gate_effect_state` have different reset locations | Audit each cache's consumers and lifetime before adding fields. Exercise consecutive transitions and boss effect start/stop across applicable restore and network boundaries; exclude only proven diagnostic-only state with a written reason |
+| Endlevel and boss effects | Endlevel cosmetics are excluded from gameplay persistence/equality per user direction. Boss action 4/5 only restart/stop visuals | Verify SIM isolation for visuals; no save record for cosmetic message suppression |
 | Required frame diagnostics | Implemented: all 360 declared fields and exact array lengths are required for fresh diagnostic schema 1; unknown fields remain compared | Carry the missing-from-both and malformed-field regressions forward. Keep historical recordings and frozen older checkers separate; completeness of this diagnostic list does not prove complete simulation observation |
 
 For every relevant field, record its owner, type/width, observation boundary,

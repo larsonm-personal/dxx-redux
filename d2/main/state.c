@@ -35,6 +35,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "switch.h"
 #include "game.h"
 #include "effects.h"
+#include "endlevel.h"
 #include "newmenu.h"
 #include "fuelcen.h"
 #include "hash.h"
@@ -2402,6 +2403,9 @@ int state_save_all_sub(char *filename, char *desc)
 	GLint gl_draw_buffer;
 #endif
 	fix tmptime32 = 0;
+
+	/* Active flyouts and deaths are not resumable gameplay checkpoints */
+	if (Endlevel_sequence || Player_is_dead) return 0;
 
 	#ifndef NDEBUG
 	if (GameArg.SysUsePlayersDir && strncmp(filename, "Players/", 8))

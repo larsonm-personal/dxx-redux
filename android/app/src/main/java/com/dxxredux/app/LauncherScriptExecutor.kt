@@ -237,6 +237,16 @@ class LauncherScriptExecutor(
                     currentStep++
                 }
 
+                "test_preview_media_controls" -> {
+                    try {
+                        testPreviewMediaControls(context, step.getString("audio_path"))
+                    } catch (e: Exception) {
+                        fail("preview media controls: ${e.message}")
+                        return
+                    }
+                    currentStep++
+                }
+
                 "setup_command" -> {
                     val cmd = step.optString("command", "")
                     val args = step.optJSONObject("args")

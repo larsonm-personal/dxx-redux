@@ -1,0 +1,8 @@
+[
+    {"_info": {
+        "description": "Real Android media-key routing for MIDI, CD and MP3 launcher previews",
+        "games": ["d2"]
+    }},
+    {"action": "enter_launcher"},
+    {"action": "test_preview_media_controls", "audio_path": "preview-media-test.mp3"}
+]

@@ -1390,42 +1390,104 @@ private fun MissionZipMusicDialog(
             )
     }
 
+    var previewAutoPlay by remember { mutableStateOf(false) }
+    var previewSkipJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    val previewQueue =
+        remember(displaySources) {
+            displaySources.flatMap { it.tracks }.map { it.track }.filter {
+                it.playable && it.kind in listOf(MissionZipMusic.KIND_MIDI, MissionZipMusic.KIND_COMPRESSED_AUDIO)
+            }
+        }
+
+    fun closePreview() {
+        previewSkipJob?.cancel()
+        previewTarget = null
+        midiPreviewTarget = null
+        previewAutoPlay = false
+    }
+    val skipPreview: ((Int) -> Unit)? =
+        if (previewQueue.size > 1) {
+            { direction ->
+                val current = midiPreviewTarget ?: previewTarget?.first
+                val next = previewQueue.getOrNull(previewQueue.indexOf(current) + direction)
+                if (next != null) {
+                    previewSkipJob?.cancel()
+                    previewSkipJob =
+                        scope.launch {
+                            try {
+                                val staged =
+                                    if (next.kind == MissionZipMusic.KIND_COMPRESSED_AUDIO) {
+                                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            stageManager.stageCompressedAudioTrack(catalog, next)
+                                        }
+                                            ?: throw java.io.IOException("Could not stage ${next.displayName}")
+                                    } else {
+                                        null
+                                    }
+                                currentCoroutineContext().ensureActive()
+                                previewAutoPlay = true
+                                midiPreviewTarget = if (staged == null) next else null
+                                previewTarget = staged?.let { next to it }
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: InsufficientStorageException) {
+                                storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                            } catch (e: Exception) {
+                                stagingProblem = "Could not preview ${next.displayName}: ${e.message}"
+                            }
+                        }
+                }
+            }
+        } else {
+            null
+        }
+
     previewTarget?.let { (track, file) ->
         val matchLine = cachedFingerprints[track.id]?.let { missionZipMusicFingerprintLine(it, allowAcoustIdLookups) }
-        AudioFilePreviewDialog(
-            title = "Track Preview",
-            audioFile = file,
-            lines =
-                buildList {
-                    add(AudioFilePreviewLine("File: ${track.displayName}"))
-                    add(AudioFilePreviewLine("Source: ${track.archiveEntryPath}"))
-                    if (matchLine != null) add(AudioFilePreviewLine(matchLine, primary = true))
-                    add(AudioFilePreviewLine("Staged: ${file.absolutePath}", small = true))
+        androidx.compose.runtime.key(track.id) {
+            AudioFilePreviewDialog(
+                autoPlay = previewAutoPlay,
+                onSkip = skipPreview,
+                onCancelPending = { previewSkipJob?.cancel() },
+                title = "Track Preview",
+                audioFile = file,
+                lines =
+                    buildList {
+                        add(AudioFilePreviewLine("File: ${track.displayName}"))
+                        add(AudioFilePreviewLine("Source: ${track.archiveEntryPath}"))
+                        if (matchLine != null) add(AudioFilePreviewLine(matchLine, primary = true))
+                        add(AudioFilePreviewLine("Staged: ${file.absolutePath}", small = true))
+                    },
+                loadMetadata = {
+                    AudioTagMetadataBridge
+                        .parsePath(file, track.extension)
+                        ?.let(::audioTagMetadataPrintout)
+                        ?.map { AudioFilePreviewLine(it) }
+                        ?: emptyList()
                 },
-            loadMetadata = {
-                AudioTagMetadataBridge
-                    .parsePath(file, track.extension)
-                    ?.let(::audioTagMetadataPrintout)
-                    ?.map { AudioFilePreviewLine(it) }
-                    ?: emptyList()
-            },
-            onDismiss = { previewTarget = null },
-        )
+                onDismiss = { closePreview() },
+            )
+        }
     }
     midiPreviewTarget?.let { track ->
-        MidiBytesPreviewDialog(
-            title = "MIDI Preview",
-            trackName = track.displayName,
-            detailLines =
-                listOf(
-                    "Source: ${track.archiveEntryPath}",
-                    missionZipMusicTrackSubtitle(track),
-                ),
-            isHmp = track.extension == "hmp" || track.extension == "hmq",
-            loadBytes = { stageManager.readMidiTrackBytes(catalog, track) },
-            loadMetadata = { loadMidiMetadata(track) },
-            onDismiss = { midiPreviewTarget = null },
-        )
+        androidx.compose.runtime.key(track.id) {
+            MidiBytesPreviewDialog(
+                autoPlay = previewAutoPlay,
+                onSkip = skipPreview,
+                onCancelPending = { previewSkipJob?.cancel() },
+                title = "MIDI Preview",
+                trackName = track.displayName,
+                detailLines =
+                    listOf(
+                        "Source: ${track.archiveEntryPath}",
+                        missionZipMusicTrackSubtitle(track),
+                    ),
+                isHmp = track.extension == "hmp" || track.extension == "hmq",
+                loadBytes = { stageManager.readMidiTrackBytes(catalog, track) },
+                loadMetadata = { loadMidiMetadata(track) },
+                onDismiss = { closePreview() },
+            )
+        }
     }
     storageFailureMessage?.let { message ->
         StorageFailureDialog(message = message, onDismiss = { storageFailureMessage = null })

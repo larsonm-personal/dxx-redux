@@ -2199,6 +2199,7 @@ class SetupActivity : ComponentActivity() {
         }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (LauncherPreviewMediaSession.dispatchKeyEvent(event)) return true
         val name = gamepadButtonName(event.keyCode)
         if (name != null) {
             if (event.action == KeyEvent.ACTION_DOWN) launcherControllerNavigationActive.value = true

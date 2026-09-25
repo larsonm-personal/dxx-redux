@@ -15,6 +15,7 @@ extern "C" {
 #include "android_save_meta.h"
 #include "android_rewind.h"
 #include "collide.h"
+#include "endlevel.h"
 #include "fuelcen.h"
 #include "game.h"
 #include "gameseg.h"
@@ -166,6 +167,42 @@ int game_automate_weapon_art(char *reason, size_t reason_size)
 		records.push_back(capture("first", first));
 		const fix64 checkpoint_time = GameTime64;
 		require(state_save_to_memory(&checkpoint, "Spreadfire in flight", ANDROID_SAVE_META_KIND_MANUAL, 1), "cannot save live Spreadfire checkpoint");
+		// Exercise the production memory adapter and history admission for each
+		// flyout phase; actual phase motion is covered by the host flyout fixture
+		android_rewind_reset_level();
+		android_rewind_maybe_capture_frame();
+		int history_count = 0;
+		android_rewind_get_history(&history_count, nullptr, nullptr);
+		require(history_count == 1, "playable mine did not seed rewind history");
+		for (int phase = 1; phase <= 4; ++phase) {
+			rewind_memory_buffer active = {};
+			Endlevel_sequence = phase;
+			GameTime64 += 5 * F1_0;
+			const int accepted = state_save_to_memory(&active, "Active flyout", ANDROID_SAVE_META_KIND_MANUAL, 1);
+			android_rewind_maybe_capture_frame();
+			int count = 0;
+			android_rewind_get_history(&count, nullptr, nullptr);
+			Endlevel_sequence = 0;
+			const bool untouched = active.size == 0;
+			rewind_memory_buffer_discard(&active);
+			require(!accepted && untouched && count == history_count, "flyout captured incomplete state or replaced playable rewind history");
+		}
+		GameTime64 = checkpoint_time;
+		for (const int exploded : { 0, 1 }) {
+			rewind_memory_buffer active = {};
+			Player_is_dead = 1;
+			Player_exploded = exploded;
+			GameTime64 += 5 * F1_0;
+			const int accepted = state_save_to_memory(&active, "Active death", ANDROID_SAVE_META_KIND_MANUAL, 1);
+			android_rewind_maybe_capture_frame();
+			int count = 0;
+			android_rewind_get_history(&count, nullptr, nullptr);
+			Player_is_dead = Player_exploded = 0;
+			const bool untouched = active.size == 0;
+			rewind_memory_buffer_discard(&active);
+			require(!accepted && untouched && count == history_count, "death captured incomplete state or replaced playable rewind history");
+		}
+		GameTime64 = checkpoint_time;
 		write_file("checkpoint.dsg", checkpoint.data, checkpoint.size);
 		for (int slot : first) obj_delete(slot);
 		game_set_fusion_next_sound_time(123);

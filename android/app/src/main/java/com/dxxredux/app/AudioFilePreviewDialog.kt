@@ -17,7 +17,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -85,6 +84,9 @@ fun AudioFilePreviewDialog(
     lines: List<AudioFilePreviewLine>,
     loadMetadata: (suspend () -> List<AudioFilePreviewLine>)? = null,
     onDismiss: () -> Unit,
+    autoPlay: Boolean = false,
+    onSkip: ((Int) -> Unit)? = null,
+    onCancelPending: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     var player by remember { mutableStateOf<MediaPlayer?>(null) }
@@ -120,12 +122,6 @@ fun AudioFilePreviewDialog(
         if (!retainDuration) durationMs = 0
     }
 
-    DisposableEffect(playerOwner) {
-        onDispose {
-            playerOwner.release()
-        }
-    }
-
     LaunchedEffect(playing) {
         while (playing) {
             val p = player
@@ -157,6 +153,13 @@ fun AudioFilePreviewDialog(
                         releasePlayer(failed)
                         true
                     }
+                    starting.setAudioAttributes(
+                        android.media.AudioAttributes
+                            .Builder()
+                            .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build(),
+                    )
                     starting.setDataSource(audioFile.absolutePath)
                     starting.prepare()
                     durationMs = starting.duration
@@ -188,6 +191,40 @@ fun AudioFilePreviewDialog(
             }
         }
     }
+
+    val media =
+        rememberPreviewMediaSession(
+            audioFile.name,
+            autoPlay,
+            PreviewTransport(
+                snapshot = {
+                    val p = player
+                    if (p == null) {
+                        PreviewSnapshot(PreviewStatus.STOPPED)
+                    } else {
+                        try {
+                            PreviewSnapshot(
+                                if (p.isPlaying) PreviewStatus.PLAYING else PreviewStatus.PAUSED,
+                                p.currentPosition,
+                                p.duration,
+                            )
+                        } catch (e: IllegalStateException) {
+                            releasePlayer(p)
+                            PreviewSnapshot(PreviewStatus.STOPPED)
+                        }
+                    }
+                },
+                start = { togglePlayback() },
+                pause = { if (playing) togglePlayback() },
+                stop = { releasePlayer() },
+                seek = { target ->
+                    player?.seekTo(target)
+                    positionMs = target
+                },
+                navigate = onSkip,
+                cancelPendingNavigation = onCancelPending,
+            ),
+        )
 
     AlertDialog(
         modifier = Modifier.repeatVerticalDpadFocus(closeFocus),
@@ -222,7 +259,7 @@ fun AudioFilePreviewDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        TextButton(onClick = { togglePlayback() }) {
+                        TextButton(onClick = { media.toggle() }) {
                             val label =
                                 when {
                                     player == null -> "Play"
@@ -234,7 +271,7 @@ fun AudioFilePreviewDialog(
                         if (player != null) {
                             TextButton(
                                 onClick = {
-                                    releasePlayer()
+                                    media.stop()
                                 },
                             ) {
                                 Text("Stop", fontSize = 13.sp)

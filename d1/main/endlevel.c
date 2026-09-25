@@ -103,6 +103,9 @@ int transition_segnum,exit_segnum;
 
 object *endlevel_camera;
 
+// Transient animation state belongs to one flyout
+static endlevel_frame_state Endlevel_frame;
+
 #define FLY_SPEED i2f(50)
 
 #define FLY_ACCEL i2f(5)
@@ -316,6 +319,8 @@ void start_endlevel_sequence()
 #ifdef __ANDROID__
 	if (coop_flyout_active()) coop_flyout_remaining(coop_flyout_tunnel_ms());
 #endif
+	memset(&Endlevel_frame, 0, sizeof(Endlevel_frame));
+	endlevel_camera = NULL;
 	Endlevel_sequence = EL_FLYTHROUGH;
 #ifdef ANDROID
 	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_ENDLEVEL, 1);
@@ -447,8 +452,6 @@ void get_angs_to_object(vms_angvec *av,vms_vector *targ_pos,vms_vector *cur_pos)
 	vm_extract_angles_vector(av,&tv);
 }
 
-// Former function statics retain their original process lifetime
-static endlevel_frame_state Endlevel_frame;
 
 void do_endlevel_frame()
 {
@@ -1110,6 +1113,7 @@ fixang interp_angle(fixang dest,fixang src,fixang step);
 void start_endlevel_flythrough(int n,object *obj,fix speed)
 {
 	flydata = &fly_objects[n];
+	memset(flydata, 0, sizeof(*flydata));
 
 	flydata->obj = obj;
 

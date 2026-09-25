@@ -520,6 +520,14 @@ function Get-DeviceAutomationResult {
 function Write-DeviceAutomationDiagnostics {
     param([string]$Serial)
 
+    # Refresh before Cleanup stops the engine; the last polled snapshot may
+    # predate the failed gameplay action
+    $snapshot = Get-GameIntrospection -Serial $Serial
+    if ($snapshot) {
+        $snapshotPath = Join-Path $REPO_ROOT "temp/lan-failure-$Serial.json"
+        $snapshot | ConvertTo-Json -Depth 40 | Set-Content -Encoding utf8 -LiteralPath $snapshotPath
+        Write-Status "  $Serial failure state: $snapshotPath" 'Yellow'
+    }
     $result = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
         "shell", "run-as", $PACKAGE, "cat", "files/automation_result.json"
     ) -Seconds 5
