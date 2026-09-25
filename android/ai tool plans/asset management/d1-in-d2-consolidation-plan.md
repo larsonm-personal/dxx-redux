@@ -6,7 +6,50 @@ Status: implementation in progress; see the [implementation ledger](d1-in-d2-imp
 
 September 23 handoff: see the [continuation plan](d1-in-d2-continuation-20260923.md) before acting on the dated stocktake below. Commit `3ce7e963` fixed the remaining long level-7 lava RNG ordering failure (all eight ordinary imported replay regressions passed) and connected optional Guide-Bot package preparation to the production lifecycle. Strict paired qualification remains incomplete. The continuation plan reconciles these results and prioritizes rendered Spreadfire verification, strict evidence, and the remaining F3-F5 gates
 
+September 24 update: start with the [current continuation](d1-in-d2-continuation-20260924.md).
+The co-op physical level transition now passes both Android overlays and controls.
+Stock Spreadfire rendering and live save/restore match native D1 exactly on
+Android x86-64, with D1-only and both-installed assets. Strict frame/object/world
+qualification, custom presentation lifecycle and the wider F3-F5 gates remain open
+
+Later September 24 evidence: original trigger storage and checked cross-engine
+mappings are implemented. The short level-7 paired capture now passes all six
+native-repeat and native/imported comparisons, including full frame diagnostics,
+object/world records and both RNG streams. See
+`temp/d1-ai-semantic-parity/report.json` and the current continuation. This does
+not complete F1: private-state/saved-global coverage, storage-width findings,
+the whole corpus and independent recording/native disagreement remain open
+
+Save-width follow-up: the boss death-sound flag now retains the original
+signed integer through native import and version-35 D2 saves, with explicit
+legacy decoding. Host suites, runtime checkpoint comparisons on levels
+1/7/27 and Android live restore pass. The native short AI path index now also
+has an original 30-byte object representation in version-36 saves and current
+D2 network converters; old save and ordinary D2 layouts remain distinct.
+See the current continuation for final checkpoint evidence and the still-open
+live network session/private-state qualification
+
 The first requested step is implemented: all 30 D1 compatibility source/header files now live in `d2/main/d1_in_d2/`, including custom assets, PIG validation, checkpoint translation and replay adapters. The move preserves their contents; external includes, CMake source paths and source-inspecting tests use the new location. See the ledger for verification
+
+Private-state follow-up: world schema 7 observes Fusion, collision and refueling
+clocks; diagnostic schema 1 requires all 360 declared frame fields. The native
+refueling cadence is corrected, and shared replay startup now restores collision
+metadata for translated checkpoints. Both host suites and Android ABI builds
+pass; the short paired capture passes all seven native-repeat/imported checks,
+and the ordinary D2 before/after control matches exactly. Clock persistence/reset contracts,
+transition/network caches and full-corpus qualification remain open. See the
+September 24 continuation for the current run and source capsule
+
+Persistence follow-up: native D1 saves now use version 18 and D2 saves version
+37 for three full-width relative cadence clocks in one shared codec. Populated
+native/import/re-save and legacy controls pass seven scenarios, 28 resumed
+frames and both host suites. Both Android x86-64 runs pass memory restore,
+authoritative rewind and native-identical Spreadfire pixels; all ABI builds
+pass. The subsequent 21-phase campaign comparison now verifies single-player
+level/ship/secret cadence lifetime and 17 real first-use phases. It also exposed
+stale awareness crossing mines; both engines now retire that queue on AI
+initialization, while saves restore their own queue. Three ordinary D2 save
+controls pass. Network/private-state and wider F1-F5 gates remain open
 
 Planning revision: section 0 is the authoritative finishing sequence and current stocktake. Section 16 supplies detailed ownership/removal contracts for its work packages. Earlier phase/package lists explain the design and are not additional queues of work. Existing implementation is a starting point to review, not a reason to preserve an unsuitable boundary
 
@@ -18,6 +61,14 @@ The central acceptance rule is change locality: a correction to D1 artwork, brie
 
 ## 0. Stocktake and plan to finish
 
+Endlevel observation follow-up: world schema 8 exposes flythrough steering,
+private phase/explosion clocks, sound count, camera/exit geometry and the active
+outside explosion. Three actual rendered-sequence runs match across 951
+native/imported frames, with exact motion and RNG counts. Process-lifetime
+carryover is preserved and demonstrated. Save/rewind handling of that history,
+boss/network state and the rest of the private-state audit remain open; the
+current continuation records the next probe and qualified evidence
+
 ### What exists, and what is still unproven
 
 The implementation has moved well beyond the original D2-first overlay. Registered D1 data can populate the engine independently, and substantial gameplay/presentation algorithms have their own owners. The remaining work is integrated fidelity, strict replay evidence, optional-feature completion and removal of the second loading architecture. Passing isolated comparisons does not yet establish exact reproduction of complete D1 recordings
@@ -28,7 +79,7 @@ The implementation has moved well beyond the original D2-first overlay. Register
 | Original resources and D1-only play | Independent base/custom generations, original texture/effect/model/sound definitions, original cockpit and presentation. Ledger records isolated registered-PC Android play through First Strike's exit to level 2 | Complete lifecycle/error/edition coverage; prove optional D2 presence cannot alter baseline data. Preserve unbreakable ordinary D1 lights, native lava/reactor wreck and the retained destroyed-light conversion |
 | Native gameplay | AI frame/path/world operations, weapons, small collision/physics rules, triggers and single-player campaign operations have owners and focused native comparisons | Whole-recording exactness, checkpoint frame-zero equivalence, unexercised interactions and broader campaign/network behavior |
 | Presentation | Owned briefing session and cockpit/camera layout; ledger records 84 native/imported rendered-frame comparisons | Wider editions, audible output, interruptions/custom resources and full campaign presentation |
-| Optional Guide-Bot | Private source reader, dependency maps and combined publication are present. Normal session preparation still does not attach an optional package; old capture/append code remains | Coherent source selection, working actor and all hardcoded sound/flare/morph consumers, restore identity, safe retirement and removal of legacy capture |
+| Optional Guide-Bot | Private source reader, dependency maps and combined publication are present. Normal session preparation now calls `d1_in_d2_prepare_available_guidebot`; registered-D2 attachment publishes 82 models, including four optional models | Complete actor/sound/flare/morph lifecycle, restore identity, safe retirement, baseline invariance and removal of legacy capture |
 | Replay infrastructure | Existing `-D1InD2` runner, native checkpoint translator, result/state/RNG tooling and an eight-demo D1 corpus | Strict native-versus-imported comparison, D1-only runner staging and explicit failure classification. Current runner success is not sufficient evidence of exact reproduction |
 | Supported scope | Strongest evidence is registered PC content on Windows host and Android x86-64; recordings originate on Android arm64 | Declare and exercise required shareware/OEM/Mac, platform and network scope before claiming full support or retiring native D1 |
 

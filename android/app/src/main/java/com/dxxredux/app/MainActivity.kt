@@ -2942,6 +2942,18 @@ class MainActivity :
             ) {
                 if (!gameStarted) return
                 publishDormancyUiPollCounters()
+                // Android view state complements the engine's next-frame snapshot
+                val uiState =
+                    JSONObject()
+                        .put("request_id", intent.getStringExtra("request_id").orEmpty())
+                        .put("touch_overlay_active", touchOverlay.isActive)
+                        .put("touch_overlay_shown", touchOverlay.isShown)
+                        .put("touch_overlay_attached", touchOverlay.isAttachedToWindow)
+                        .put("controller_menu_open", touchOverlay.isControllerMenuOpen())
+                        .put("admin_tray_open", touchOverlay.isAdminTrayOpen())
+                runCatching {
+                    File(filesDir, "introspect_ui.json").writeText(uiState.toString(2) + "\n")
+                }.onFailure { Log.w("DXX-Introspect", "Could not write Android view state", it) }
                 nativeRequestIntrospect()
                 Log.i("DXX-Introspect", "Introspection requested â€” will dump on next frame")
             }

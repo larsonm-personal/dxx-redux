@@ -15,6 +15,8 @@ struct active_door;
 
 /* Small difficulty rules at the existing pickup/damage calculation phase */
 fix d1_in_d2_pickup_boost(fix base_boost);
+/* Refueling cadence is original D1 even when D2 assets are available */
+fix d1_in_d2_refuel_sound_delay(fix engine_delay);
 fix d1_in_d2_contact_damage(fix damage);
 fix d1_in_d2_blast_damage(fix damage);
 /* Native objects without a supplied orientation retain D1's cleared matrix */
@@ -42,6 +44,8 @@ int d1_in_d2_bounce_preserves_velocity(const struct object *obj);
  * Closing checks native obstruction without reopening or advancing animation */
 int d1_in_d2_door_close_blocked(const struct active_door *door);
 int d1_in_d2_door_wait_elapsed(const struct active_door *door);
+/* Nonautomatic D1 doors retain OPENING after their active animation retires */
+int d1_in_d2_completed_door_state(void);
 fix d1_in_d2_released_flare_lifetime(void);
 int d1_in_d2_remove_obsolete_stuck_objects(void);
 
@@ -56,6 +60,10 @@ fix d1_in_d2_boss_health_maximum(fix strength, fix engine_maximum);
 int d1_in_d2_reactor_frame(struct object *reactor);
 /* Original D1 level health; ordinary D2 retains its computed strength */
 fix d1_in_d2_reactor_strength(fix engine_strength);
+/* Preserve native integer rounding for the reactor's small impact flash */
+fix d1_in_d2_reactor_impact_size(fix reactor_size);
+/* Wall fireball size also sets its distance from the exploding wall */
+fix d1_in_d2_wall_fireball_base_size(fix engine_size);
 /* Complete native dead-reactor burn phase; inactive consumes no RNG */
 int d1_in_d2_dead_reactor_effects(void);
 

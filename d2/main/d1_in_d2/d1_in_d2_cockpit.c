@@ -19,6 +19,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdio.h>
 #include <string.h>
 #include "inferno.h"
+#include "args.h"
 #include "game.h"
 #include "screens.h"
 #include "gauges.h"
@@ -48,6 +49,12 @@ static int d1_cockpit_hires(void)
 	return GameBitmaps[cockpit_bitmap[CM_FULL_COCKPIT].index].bm_w >= 640;
 }
 #define D1_COCKPIT_HIRES d1_cockpit_hires()
+
+int d1_in_d2_hud_hires(void)
+{
+	return d1_in_d2_has_native_assets() ? D1_COCKPIT_HIRES : HIRESMODE;
+}
+
 //bitmap numbers for gauges
 #define GAUGE_SHIELDS			0		//0..9, in decreasing order (100%,90%...0%)
 #define GAUGE_INVULNERABLE		10		//10..19

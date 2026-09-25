@@ -46,7 +46,17 @@ static int recovery_leg_clear(const object *objp, const vms_vector *from,
 static vms_vector recovery_sample(int segnum, const vms_vector *center, int sample)
 {
 	vms_vector point = *center;
-	if (sample) {
+	if (sample >= 43) {
+		/* Refine toward each face when the coarse interior samples miss the
+		 * connected corridor through a taper. Every candidate still needs
+		 * full-radius occupancy and stepped collision checks on both legs */
+		vms_vector surface;
+		const int divisor = 8 << ((sample - 43) % 4);
+		compute_center_point_on_side(&surface, &Segments[segnum], (sample - 43) / 4);
+		point.x = surface.x + (center->x - surface.x) / divisor;
+		point.y = surface.y + (center->y - surface.y) / divisor;
+		point.z = surface.z + (center->z - surface.z) / divisor;
+	} else if (sample) {
 		vms_vector offset, surface;
 		if (sample <= 18)
 			compute_center_point_on_side(&surface, &Segments[segnum], (sample - 1) / 3);
@@ -75,7 +85,7 @@ static int find_recovery_waypoint(const object *objp, int segnum,
 	if (segnum < 0 || segnum > Highest_segment_index)
 		return 0;
 	compute_segment_center(&center, &Segments[segnum]);
-	for (int sample = 0; sample < 43; ++sample) {
+	for (int sample = 0; sample < 67; ++sample) {
 		vms_vector point = recovery_sample(segnum, &center, sample);
 		if (!recovery_point_fits(objp, segnum, &point) ||
 		    vm_vec_dist(&objp->pos, &point) <= F1_0 ||
@@ -104,7 +114,7 @@ static int repair_recovery_waypoint(object *objp, vms_vector *goal_point,
 		return 0;
 	vms_vector center;
 	compute_segment_center(&center, &Segments[segnum]);
-	for (int sample = 0; sample < 43; ++sample) {
+	for (int sample = 0; sample < 67; ++sample) {
 		vms_vector point = recovery_sample(segnum, &center, sample);
 		if (!recovery_point_fits(objp, segnum, &point) ||
 		    !recovery_leg_clear(objp, &point, segnum, &Point_segs[aip->hide_index + next].point) ||

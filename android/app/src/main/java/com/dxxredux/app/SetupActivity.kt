@@ -1783,11 +1783,8 @@ class SetupActivity : ComponentActivity() {
                         if (lobby == null) {
                             Log.w("DXX-MP", "lan_join_first_lobby: no lobby discovered")
                         } else {
-                            com.dxxredux.app.lobby.LobbyService.joinLobby(
-                                lobby.announce.lobbyId,
-                                lobby.announce.hostAddress,
-                                mpCallsign,
-                            )
+                            com.dxxredux.app.lobby.LobbyService
+                                .joinDiscoveredLobby(lobby.announce, mpCallsign)
                             Log.i("DXX-MP", "lan_join_first_lobby: joining ${lobby.announce.lobbyId}")
                         }
                     }
@@ -1822,7 +1819,9 @@ class SetupActivity : ComponentActivity() {
                         Log.i(
                             "DXX-MP",
                             "lan_lobby_status: hosting=${lobbyService.isHosting.value} " +
-                                "joined=${lobbyService.joinedLobby.value != null} players=${players.size} " +
+                                "joined=${lobbyService.joinedLobby.value != null} " +
+                                "game=${lobbyService.joinedLobby.value?.game ?: ""} " +
+                                "players=${players.size} " +
                                 "all_ready=${players.isNotEmpty() && players.all { it.ready }} " +
                                 "chat_messages=${lobbyService.chatMessages.value.size} " +
                                 "diagnostics=${lobbyService.diagnostics.value} [$playerStatus]",
@@ -3210,7 +3209,6 @@ private fun SetupScreen(
         val saved = gamePrefs.getString("selected_game", null)
         mutableStateOf(
             when {
-                saved == "d1-in-d2" && d1RequiredOk -> "d1-in-d2"
                 saved == "d1" && d1RequiredOk -> "d1"
                 saved == "d2" && d2RequiredOk -> "d2"
                 d1RequiredOk && !d2RequiredOk -> "d1"
@@ -5352,7 +5350,7 @@ private fun SetupScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             val availableTargets =
-                                GameLaunchTarget.entries.filter { it.filesReady(d1RequiredOk, d2RequiredOk) }
+                                GameLaunchTarget.launcherChoices.filter { it.filesReady(d1RequiredOk, d2RequiredOk) }
                             availableTargets.forEach { target ->
                                 FilterChip(
                                     selected = selectedGame == target.id,
@@ -5379,21 +5377,10 @@ private fun SetupScreen(
                             Modifier
                                 .fillMaxWidth()
                                 .height(40.dp),
-                        enabled = canLaunch,
                         colors =
                             ButtonDefaults.buttonColors(
-                                containerColor =
-                                    if (!canLaunch) {
-                                        MaterialTheme.colorScheme.surfaceVariant
-                                    } else {
-                                        MaterialTheme.colorScheme.secondaryContainer
-                                    },
-                                contentColor =
-                                    if (!canLaunch) {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    } else {
-                                        MaterialTheme.colorScheme.onSecondaryContainer
-                                    },
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                             ),
                     ) {
                         Text("Multiplayer", fontSize = 14.sp)

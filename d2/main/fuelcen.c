@@ -55,6 +55,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "byteswap.h"
 #include "matcen_mode.h"
 #include "d1_in_d2/d1_in_d2_ai.h"
+#include "d1_in_d2/d1_in_d2_semantics.h"
 
 // The max number of fuel stations per mine.
 
@@ -589,11 +590,23 @@ void fuelcen_update_all()
 #define FUELCEN_SOUND_DELAY (f1_0/4)		//play every half second
 
 //-------------------------------------------------------------
+// Runtime observation and checkpoint access for the original refueling cadence
+static fix64 Fuelcen_last_sound_time = 0;
+
+fix64 fuelcen_get_last_sound_time(void)
+{
+	return Fuelcen_last_sound_time;
+}
+
+void fuelcen_set_last_sound_time(fix64 last_sound_time)
+{
+	Fuelcen_last_sound_time = last_sound_time;
+}
+
 fix fuelcen_give_fuel(segment *segp, fix MaxAmountCanTake )
 {
 	segment2	*seg2p = &Segment2s[segp-Segments];
 
-	static fix64 last_play_time = 0;
 
 	Assert( segp != NULL );
 
@@ -632,9 +645,9 @@ fix fuelcen_give_fuel(segment *segp, fix MaxAmountCanTake )
 //				Station[segp->value].Capacity -= amount;
 //			}
 
-		if (last_play_time + FUELCEN_SOUND_DELAY < GameTime64 || last_play_time > GameTime64)
+		if (Fuelcen_last_sound_time + d1_in_d2_refuel_sound_delay(FUELCEN_SOUND_DELAY) < GameTime64 || Fuelcen_last_sound_time > GameTime64)
 		{
-			last_play_time = GameTime64;
+			Fuelcen_last_sound_time = GameTime64;
 			digi_play_sample( SOUND_REFUEL_STATION_GIVING_FUEL, F1_0/2 );
 #ifdef NETWORK
 			if (Game_mode & GM_MULTI)

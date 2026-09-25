@@ -547,6 +547,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_lifecycle_diagnostics.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate_weapon_art.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/overlay_ringbuf.cpp
@@ -725,6 +726,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_lifecycle_diagnostics.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate_weapon_art.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/overlay_ringbuf.cpp

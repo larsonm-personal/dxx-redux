@@ -402,7 +402,7 @@ int save_mine_data(PHYSFS_file * SaveFile)
 	mine_fileinfo.walls_sizeof		  =	sizeof(wall);  
 	mine_fileinfo.triggers_offset	  =	triggers_offset;
 	mine_fileinfo.triggers_howmany  =	Num_triggers;
-	mine_fileinfo.triggers_sizeof	  =	sizeof(trigger);  
+	mine_fileinfo.triggers_sizeof = TRIGGER_DISK_SIZE;
 
 	// Write the fileinfo
 	PHYSFS_write( SaveFile, &mine_fileinfo, sizeof(mine_fileinfo), 1 );

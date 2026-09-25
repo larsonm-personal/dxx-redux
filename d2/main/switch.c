@@ -88,7 +88,8 @@ void trigger_init()
 		Triggers[i].num_links = 0;
 		Triggers[i].value = 0;
 		Triggers[i].time = -1;
-		}
+		memset(&Triggers[i].d1_saved, 0, sizeof(Triggers[i].d1_saved));
+	    }
 }
 #endif
 
@@ -809,6 +810,7 @@ extern void v30_trigger_read(v30_trigger *t, PHYSFS_file *fp)
 extern void trigger_read(trigger *t, PHYSFS_file *fp)
 {
 	int i;
+	memset(&t->d1_saved, 0, sizeof(t->d1_saved));
 
 	t->type = PHYSFSX_readByte(fp);
 	t->flags = PHYSFSX_readByte(fp);
@@ -844,11 +846,12 @@ void trigger_read_n_swap(trigger *t, int n, int swap, PHYSFS_file *fp)
 {
 	int i;
 
-	PHYSFS_read(fp, t, sizeof(trigger), n);
-
-	if (swap)
-		for (i = 0; i < n; i++)
+	for (i = 0; i < n; i++) {
+		memset(&t[i].d1_saved, 0, sizeof(t[i].d1_saved));
+		PHYSFS_read(fp, &t[i], TRIGGER_DISK_SIZE, 1);
+		if (swap)
 			trigger_swap(&t[i], swap);
+	}
 }
 
 void trigger_write(trigger *t, short version, PHYSFS_file *fp)
@@ -925,7 +928,7 @@ void trigger_write(trigger *t, short version, PHYSFS_file *fp)
 
 	if (version <= 29)
 	{
-		PHYSFSX_writeU8(fp, -1);	//t->link_num
+		PHYSFSX_writeU8(fp, d1_in_d2_trigger_source_link(t));
 		PHYSFS_writeSLE16(fp, t->num_links);
 	}
 

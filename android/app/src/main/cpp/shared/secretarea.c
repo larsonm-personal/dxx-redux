@@ -55,6 +55,7 @@ static int Secret_area_inventory_valid;
 static int Secret_area_texture_complete;
 static char Secret_area_level_file[PATH_MAX];
 static unsigned long long Secret_area_level_identity;
+static unsigned long long Secret_area_native_d1_level_identity;
 static int Secret_area_bitmap_flags[MAX_BITMAP_FILES];
 static int Secret_area_texture_flags[MAX_TEXTURES];
 static unsigned char Secret_area_trigger_side[SECRET_AREA_MAX_SEGMENTS][SECRET_AREA_MAX_SIDES];
@@ -4610,6 +4611,7 @@ void secret_area_level_loaded(const char *filename)
 	Secret_area_inventory_valid = 0;
 	Secret_area_texture_complete = 0;
 	Secret_area_level_identity = 0;
+	Secret_area_native_d1_level_identity = 0;
 	secret_area_state_clear(&Secret_area_state);
 	snprintf(Secret_area_level_file, sizeof(Secret_area_level_file), "%s", filename ? filename : "");
 	file = PHYSFSX_openReadBuffered(Secret_area_level_file);
@@ -4632,6 +4634,9 @@ void secret_area_level_loaded(const char *filename)
 		remaining -= count;
 	}
 	PHYSFS_close(file);
+	Secret_area_native_d1_level_identity = (hash ^ 1u) * 1099511628211ULL;
+	if (!Secret_area_native_d1_level_identity)
+		Secret_area_native_d1_level_identity = 1;
 #ifdef DXX_BUILD_DESCENT_II
 	hash = (hash ^ ((Current_mission && EMULATING_D1) ? 3u : 2u)) * 1099511628211ULL;
 #else
@@ -5376,6 +5381,25 @@ int secret_area_validate_runtime_state(rewind_file *fp)
 	       secret_area_decode_saved_state(data, sizeof(data), &saved);
 }
 
+#ifdef DXX_BUILD_DESCENT_II
+int secret_area_adapt_native_d1_saved_state(secret_area_saved_state *saved)
+{
+	/* Translate only after proving that the original level bytes match */
+	if (!saved || !Current_mission || !EMULATING_D1 ||
+	    !Secret_area_native_d1_level_identity ||
+	    saved->level_identity != Secret_area_native_d1_level_identity)
+		return 0;
+	saved->level_identity = Secret_area_level_identity;
+	return 1;
+}
+#endif
+
+void secret_area_restore_saved_state(const secret_area_saved_state *saved)
+{
+	const int count = saved->level_identity == Secret_area_level_identity ? saved->count : 0;
+	secret_area_restore_identities(&Secret_area_state, count, saved->identities, saved->found);
+}
+
 void secret_area_read_runtime_state(rewind_file *fp, int swap, int has_identities)
 {
 	unsigned char found[SECRET_AREA_MAX_GENERATED] = { 0 };
@@ -5387,9 +5411,7 @@ void secret_area_read_runtime_state(rewind_file *fp, int swap, int has_identitie
 		    !secret_area_decode_saved_state(data, sizeof(data), &saved))
 			return;
 		/* Identity records are explicitly little-endian, independent of swap */
-		if (saved.level_identity != Secret_area_level_identity)
-			saved.count = 0;
-		secret_area_restore_identities(&Secret_area_state, saved.count, saved.identities, saved.found);
+		secret_area_restore_saved_state(&saved);
 		return;
 	}
 	saved_total = secret_area_runtime_read_sxe32(fp, swap);

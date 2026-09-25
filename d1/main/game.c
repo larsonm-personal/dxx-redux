@@ -447,6 +447,19 @@ void calc_d_tick()
 	d_tick_timer = (fix)next_timer;
 }
 
+// Runtime observation and checkpoint access; retain the original cadence gate
+static fix64 Fusion_next_sound_time = 0;
+
+fix64 game_get_fusion_next_sound_time(void)
+{
+	return Fusion_next_sound_time;
+}
+
+void game_set_fusion_next_sound_time(fix64 next_sound_time)
+{
+	Fusion_next_sound_time = next_sound_time;
+}
+
 void game_get_d_tick_state(game_d_tick_state *state)
 {
 	if (!state)
@@ -1568,7 +1581,6 @@ void FireLaser()
 		if ((Players[Player_num].energy < F1_0*2) && (Auto_fire_fusion_cannon_time == 0)) {
 			Global_laser_firing_count = 0;
 		} else {
-			static fix64 Fusion_next_sound_time = 0;
 			int flash_val;
 
 			if (Fusion_charge == 0)
@@ -1617,7 +1629,7 @@ void FireLaser()
 						multi_send_play_sound(SOUND_FUSION_WARMUP, F1_0);
 					#endif
 				}
-				// FX RNG: sound only, this just jitters fusion warmup cadence
+				// FX RNG jitters this cadence, which also gates awareness and overcharge damage
 				Fusion_next_sound_time = GameTime64 + F1_0/8 + d_rand_fx()/4;
 			}
 

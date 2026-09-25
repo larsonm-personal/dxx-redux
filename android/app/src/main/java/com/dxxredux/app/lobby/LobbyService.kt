@@ -3,7 +3,10 @@ package com.dxxredux.app.lobby
 import android.content.Context
 import android.net.wifi.WifiManager
 import android.util.Log
+import com.dxxredux.app.AssetManifest
+import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.VisualReplacementPolicy
+import com.dxxredux.app.lanGameReadinessWarning
 import com.dxxredux.app.multiplayer.ClientIdentity
 import com.dxxredux.app.multiplayer.MissionCompatibilityResolver
 import com.dxxredux.app.multiplayer.MissionCompatibilityStatus
@@ -463,6 +466,13 @@ object LobbyService {
         hostAddress: String,
         callsign: String,
     ) {
+        val advertisedGame =
+            _discoveredLobbies.value
+                .find {
+                    it.announce.lobbyId == lobbyId && it.announce.hostAddress == hostAddress
+                }?.announce
+                ?.game
+        if (advertisedGame != null && !checkJoinGameReady(advertisedGame)) return
         Log.i(TAG, "joinLobby: lobbyId=$lobbyId host=$hostAddress callsign=$callsign")
         NetLog.log("LAN", "Joining lobby $lobbyId at $hostAddress as $callsign")
         Log.i(TAG, "joinLobby: socket=${socket != null} bound=${socket?.isBound} closed=${socket?.isClosed}")
@@ -520,11 +530,7 @@ object LobbyService {
                     if (lobby != null) {
                         Log.i(TAG, "joinLobbyByIp: discovered lobby ${lobby.announce.lobbyId}, joining")
                         _diagnostics.value = ""
-                        if (lobby.announce.status == "in_game") {
-                            emitInGameJoinLaunch(lobby.announce)
-                        } else {
-                            joinLobby(lobby.announce.lobbyId, hostAddress, callsign)
-                        }
+                        joinDiscoveredLobby(lobby.announce, callsign)
                         return@launch
                     }
                 }
@@ -557,11 +563,7 @@ object LobbyService {
                 }
             if (lobby != null) {
                 Log.i(TAG, "tryJoinLobbyByIp: found lobby ${lobby.announce.lobbyId}, joining")
-                if (lobby.announce.status == "in_game") {
-                    emitInGameJoinLaunch(lobby.announce)
-                } else {
-                    joinLobby(lobby.announce.lobbyId, hostAddress, callsign)
-                }
+                joinDiscoveredLobby(lobby.announce, callsign)
                 return true
             }
             delay(100)
@@ -1473,6 +1475,12 @@ object LobbyService {
         if (lobbyId.isEmpty()) return
         joinRetryJob?.cancel()
         joinRetryJob = null
+        if (!checkJoinGameReady(json.optString("game", "d2"))) {
+            val leave = buildLeave(lobbyId, hostCallsign, localClientId)
+            scope?.launch(Dispatchers.IO) { sendTo(leave, senderAddr) }
+            updateLanForegroundSession()
+            return
+        }
         val requirement = missionRequirementFromJson(json.optJSONObject("mission_requirement"))
         val previous = _joinedLobby.value
         val previousStatus =
@@ -1779,6 +1787,35 @@ object LobbyService {
         NetLog.log("LAN", "Launch event emitted for joiner: game=$game host=$senderAddr")
     }
 
+    // Discovery and joins use the host's engine, independently of single-player preferences
+    fun joinDiscoveredLobby(
+        announce: LanLobbyAnnounce,
+        callsign: String,
+    ) {
+        if (!checkJoinGameReady(announce.game)) return
+        _diagnostics.value = ""
+        if (announce.status == "in_game") {
+            emitInGameJoinLaunch(announce)
+        } else {
+            joinLobby(announce.lobbyId, announce.hostAddress, callsign)
+        }
+    }
+
+    private fun checkJoinGameReady(game: String): Boolean {
+        val context = appContext ?: return false
+        val fileSets = FileSetManager(context.filesDir)
+        val activeSet = fileSets.getActive()
+        val setDir = fileSets.getSetDir(activeSet)
+        val warning =
+            lanGameReadinessWarning(game, setDir, AssetManifest(setDir), fileSets.safManifestForSet(activeSet))
+        if (warning != null) {
+            _diagnostics.value = warning
+            NetLog.log("LAN", warning)
+            return false
+        }
+        return true
+    }
+
     private fun emitInGameJoinLaunch(announce: LanLobbyAnnounce) {
         _lanLaunchEvent.value =
             com.dxxredux.app.multiplayer.GameLaunchInfo(
@@ -1797,6 +1834,7 @@ object LobbyService {
                 hostCallsign = announce.callsign,
                 hostClientId = announce.hostClientId,
                 restrictNonCoopFovToBase = announce.restrictNonCoopFovToBase,
+                missionRequirement = announce.missionRequirement,
             )
         NetLog.log(
             "LAN",

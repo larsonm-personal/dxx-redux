@@ -4,10 +4,25 @@
 
 #include "vecmat.h"
 #include "aistruct.h"
+#include "rewind_file.h"
 struct object;
+struct object_rw;
 struct segment;
 struct ai_local;
 struct robot_info;
+
+/* Versioned runtime extension for original local timers and legacy AI fields */
+void d1_in_d2_ai_reset_saved_storage(void);
+void d1_in_d2_ai_write_saved_storage(rewind_file *fp);
+int d1_in_d2_ai_read_saved_storage(rewind_file *fp, int swap, int apply);
+
+/* Version-36 saves and the current protocol use original D1 static AI records
+ * Native enemies only; ordinary D2 and optional companions retain D2 encoding
+ * Zero means unhandled; savegame clears transport ownership like the D2 writer */
+#define D1_AI_OBJECT_SAVE_VERSION 36
+int d1_in_d2_ai_write_object(const struct object *obj, struct object_rw *saved, int savegame);
+int d1_in_d2_ai_read_object(const struct object_rw *saved, struct object *obj);
+int d1_in_d2_ai_swap_object(struct object_rw *saved);
 
 enum d1_ai_actor_role { D1_AI_ENGINE_ACTOR, D1_AI_NATIVE_ENEMY };
 /* Select at an AI phase boundary; optional companions retain engine policy */
@@ -16,6 +31,8 @@ int d1_in_d2_ai_morph_robot_mode(const struct object *obj, int engine_mode);
 /* HUD cameras may wake engine actors, never native enemies. The native hide
  * submode shares storage with D2 camera flags and must remain untouched */
 int d1_in_d2_ai_camera_can_wake(const struct object *obj);
+/* Native D1 cloak memory changes on awareness/pickup events, not every frame */
+int d1_in_d2_ai_uses_continuous_cloak_tracking(void);
 /* Native enemies have neither flash stun nor D2 boss blast resistance */
 int d1_in_d2_ai_flash_can_stun(const struct object *obj);
 fix d1_in_d2_ai_robot_blast_damage(const struct object *obj, fix damage);
@@ -37,9 +54,19 @@ int d1_in_d2_ai_drop_robots(int id, int count, const vms_vector *velocity,
  * Ordinary D2 values pass through unchanged; older untagged D1 saves have no hit */
 void d1_in_d2_ai_reset_boss_state(void);
 void d1_in_d2_ai_restore_boss_hit(int pending);
+void d1_in_d2_ai_restore_boss_state(int pending, int been_hit);
+/* Damage history resets on a new ship, independently of pending weapon contact */
+void d1_in_d2_ai_init_boss_for_ship(void);
+int d1_in_d2_ai_boss_been_hit(void);
+/* Versioned extension retains both native integers exactly, beyond the older
+ * Boolean contact tag in the core AI record */
+void d1_in_d2_ai_write_boss_saved_state(rewind_file *fp);
+int d1_in_d2_ai_read_boss_saved_state(rewind_file *fp, int swap, int apply);
+int d1_in_d2_ai_boss_hit_pending(void);
 fix d1_in_d2_ai_save_boss_hit(fix engine_delta);
 fix64 d1_in_d2_ai_restore_boss_hit_time(fix saved);
 int d1_in_d2_ai_boss_weapon_hit(const struct object *obj);
+int d1_in_d2_ai_note_boss_damage(const struct object *obj);
 /* After shared shield subtraction/diagnostics: -1 inactive, otherwise the
  * native damage result, including kill accounting and death publication */
 int d1_in_d2_ai_finish_boss_damage(struct object *obj, int killer);

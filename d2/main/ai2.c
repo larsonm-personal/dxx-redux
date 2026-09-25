@@ -118,6 +118,7 @@ int ai_behavior_to_mode(int behavior)
 //	Call every time the player starts a new ship.
 void ai_init_boss_for_ship(void)
 {
+	d1_in_d2_ai_init_boss_for_ship();
 	Boss_hit_time = -F1_0*10;
 
 }
@@ -361,6 +362,8 @@ void init_ai_objects(void)
 {
 	int	i;
 
+	// Pending events refer to segments in the previous mine
+	Num_awareness_events = 0;
 	Point_segs_free_ptr = Point_segs;
 
 	for (i=0; i<MAX_OBJECTS; i++) {
@@ -2165,8 +2168,11 @@ void start_robot_death_sequence(object *objp)
 void do_boss_dying_frame(object *objp)
 {
 	int	rval;
+	sbyte sound_playing = Boss_dying_sound_playing != 0;
 
-	rval = do_robot_dying_frame(objp, Boss_dying_start_time, BOSS_DEATH_DURATION, &Boss_dying_sound_playing, Robot_info[objp->id].deathroll_sound, F1_0*4, F1_0*4);
+	rval = do_robot_dying_frame(objp, Boss_dying_start_time, BOSS_DEATH_DURATION, &sound_playing, Robot_info[objp->id].deathroll_sound, F1_0*4, F1_0*4);
+	if (!Boss_dying_sound_playing)
+		Boss_dying_sound_playing = sound_playing;
 
 	if (rval) {
 		Boss_dying_start_time=GameTime64; // make sure following only happens one time!

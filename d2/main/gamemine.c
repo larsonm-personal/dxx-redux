@@ -199,7 +199,7 @@ int load_mine_data(PHYSFS_file *LoadFile)
 	mine_fileinfo.walls_sizeof		  =	sizeof(wall);  
  	mine_fileinfo.triggers_offset	  =	-1;
 	mine_fileinfo.triggers_howmany  =	0;
-	mine_fileinfo.triggers_sizeof	  =	sizeof(trigger);  
+	mine_fileinfo.triggers_sizeof = TRIGGER_DISK_SIZE;
 	mine_fileinfo.object_offset		=	-1;
 	mine_fileinfo.object_howmany		=	1;
 	mine_fileinfo.object_sizeof		=	sizeof(object);  

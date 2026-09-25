@@ -1,5 +1,6 @@
 #include "input_demo_object_trace.h"
 #include "input_demo_state_trace.h"
+#include "input_demo_ai_trace.h"
 
 #include <array>
 #include <string>
@@ -44,44 +45,12 @@ json ai_state(const ai_static &a)
 #ifdef DXX_BUILD_DESCENT_II
 	FIELD(out, a, dying_sound_playing);
 	FIELD(out, a, dying_start_time);
+	FIELD(out["d1_saved"], a.d1_saved, follow_path_start_seg);
+	FIELD(out["d1_saved"], a.d1_saved, follow_path_end_seg);
 #else
 	FIELD(out, a, follow_path_start_seg);
 	FIELD(out, a, follow_path_end_seg);
 #endif
-	return out;
-}
-
-json ai_local_state(const ai_local &a)
-{
-	json out = json::object();
-	FIELD(out, a, player_awareness_type);
-	FIELD(out, a, retry_count);
-	FIELD(out, a, consecutive_retries);
-	FIELD(out, a, mode);
-	FIELD(out, a, previous_visibility);
-	FIELD(out, a, rapidfire_count);
-	FIELD(out, a, goal_segment);
-	FIELD(out, a, next_fire);
-	FIELD(out, a, player_awareness_time);
-	FIELD(out, a, time_player_seen);
-	FIELD(out, a, time_player_sound_attacked);
-	FIELD(out, a, next_misc_sound_time);
-	FIELD(out, a, time_since_processed);
-#ifdef DXX_BUILD_DESCENT_II
-	FIELD(out, a, next_action_time);
-	FIELD(out, a, next_fire2);
-#else
-	FIELD(out, a, last_see_time);
-	FIELD(out, a, last_attack_time);
-	FIELD(out, a, wait_time);
-#endif
-	for (const char *key : { "goal_angles", "delta_angles", "goal_state", "achieved_state" }) out[key] = json::array();
-	for (int i = 0; i < MAX_SUBMODELS; ++i) {
-		out["goal_angles"].push_back(angles(a.goal_angles[i]));
-		out["delta_angles"].push_back(angles(a.delta_angles[i]));
-		out["goal_state"].push_back(static_cast<int>(a.goal_state[i]));
-		out["achieved_state"].push_back(static_cast<int>(a.achieved_state[i]));
-	}
 	return out;
 }
 
@@ -176,7 +145,7 @@ json object_state(const object &o, int slot)
 			}
 			break;
 	}
-	if (o.type == OBJ_ROBOT) out["ai_local"] = ai_local_state(Ai_local_info[slot]);
+	if (o.type == OBJ_ROBOT) out["ai_local"] = input_demo_ai_local_trace_snapshot(slot);
 	if (o.render_type == RT_POLYOBJ || o.render_type == RT_MORPH || (o.render_type == RT_NONE && o.type == OBJ_GHOST)) {
 		const auto &p = o.rtype.pobj_info;
 		auto &r = out["polyobj"];
@@ -199,15 +168,21 @@ json object_state(const object &o, int slot)
 #undef FIELD
 } // namespace
 
-int input_demo_object_trace_write(uint32_t frame, char *error, size_t error_size)
+nlohmann::ordered_json input_demo_object_trace_snapshot(const object &value, int slot)
+{
+	return object_state(value, slot);
+}
+
+static int write_object_state(uint32_t frame, const char *phase, char *error, size_t error_size)
 {
 	static std::array<json, MAX_OBJECTS> previous;
-	if (frame == 0) previous.fill(nullptr);
-	json record = { { "type", "object_state" }, { "version", 1 }, { "f", frame }, { "reset", frame == 0 }, { "capacity", MAX_OBJECTS }, { "slots", json::object() } };
+	if (frame == 0 && !phase) previous.fill(nullptr);
+	json record = { { "type", phase ? "object_boundary" : "object_state" }, { "version", 2 }, { "f", frame }, { "reset", phase || frame == 0 }, { "capacity", MAX_OBJECTS }, { "slots", json::object() } };
+	if (phase) record["phase"] = phase;
 	for (int i = 0; i < MAX_OBJECTS; ++i) {
 		json current = Objects[i].type == OBJ_NONE ? json(nullptr) : object_state(Objects[i], i);
-		if (current != previous[i]) record["slots"][std::to_string(i)] = current;
-		previous[i] = std::move(current);
+		if (phase ? !current.is_null() : current != previous[i]) record["slots"][std::to_string(i)] = current;
+		if (!phase) previous[i] = std::move(current);
 	}
 	object_runtime_state allocator;
 	object_get_runtime_state(&allocator);
@@ -226,4 +201,14 @@ int input_demo_object_trace_write(uint32_t frame, char *error, size_t error_size
 		record["rng"].push_back({ { "available", available }, { "state", state }, { "calls", d_rand_get_stream_call_count(stream) } });
 	}
 	return input_demo_state_trace_write_json(record.dump().c_str(), error, error_size);
+}
+
+int input_demo_object_trace_write(uint32_t frame, char *error, size_t error_size)
+{
+	return write_object_state(frame, nullptr, error, error_size);
+}
+
+int input_demo_object_trace_boundary(uint32_t frame, const char *phase, char *error, size_t error_size)
+{
+	return write_object_state(frame, phase, error, error_size);
 }

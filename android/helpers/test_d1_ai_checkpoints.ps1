@@ -49,11 +49,11 @@ $trace = $native | ConvertFrom-Json
 $cases = $trace.cases.Count
 Write-Output "PASS: $cases native checkpoint scenarios, $($cases * 4) restored robot frames match"
 Write-Output "PASS: $($cases * $(if ($RuntimeState) { 4 } else { 3 })) live projectiles preserve native creation frames, hit history, motion and lifetime"
-if ($RuntimeState) { Write-Output 'PASS: active morphs, stuck flares, effect animation and reactor timers match before restore and during resumed frames' }
+if ($RuntimeState) { Write-Output 'PASS: morphs, stuck flares, effects, reactor timers, explored segments, discovered secrets, original AI storage and boss damage history survive restore and resumed frames' }
 Write-Output "PASS: $($trace.fresh_textures.Count) side texture pairs match after fresh load and each checkpoint restore"
-Write-Output "PASS: native trigger actions, source state, values and links match after fresh load and each checkpoint restore"
+Write-Output "PASS: native trigger actions, original type/link bytes, source state, values and complete link storage match after fresh load and each checkpoint restore"
 if ($Level -ne 1) {
-    Write-Output "PASS: $($trace.boss_checkpoints.Count) boss checkpoints preserve exact health and physics across all difficulties"
+    Write-Output "PASS: $($trace.boss_checkpoints.Count) boss checkpoints preserve exact health, physics and actual damage history across all difficulties"
 }
 Write-Output "PASS: $($trace.reactor_guns.Count) reactor gun positions and directions match after fresh load and every checkpoint restore"
 Write-Output "PASS: $($trace.hidden_reactors.Count) hidden boss-level reactors retain their type, control and presentation after every restore"

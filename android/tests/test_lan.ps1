@@ -18,6 +18,8 @@
 # Usage:
 #   .\test_lan.ps1
 #   .\test_lan.ps1 -Game d1
+#   .\test_lan.ps1 -Game d2 -D1LevelTransition  # First Strike in the D2 engine
+#   .\test_lan.ps1 -Game d1 -D1LevelTransition  # Native control
 #   .\test_lan.ps1 -Game d2 -EndgameBoss
 #   .\test_lan.ps1 -Game d1 -Endgame -EndgameClientFirst
 #   .\test_lan.ps1 -Game d2 -EndgameObserverHost
@@ -92,6 +94,7 @@ param(
     [switch]$SpewPickup,
     [switch]$SpewPartialPickup,
     [switch]$Briefings,
+    [switch]$D1LevelTransition,
     [switch]$Flyouts,
     [ValidateSet("natural", "deadline", "force")]
     [string]$FlyoutCase = "natural",
@@ -162,6 +165,14 @@ if ($GuidebotTravel) {
         throw 'GuidebotTravel requires Counterstrike level 8 and AllowSecretWarps'
     }
     $SecretWorld = $SecretRevisit = $true
+}
+if ($D1LevelTransition) {
+    if ($Game -notin @('d1', 'd2') -or $InitialLevel -ne 1 -or $RestoreSavePath -or
+        ($MissionFile -and $MissionFile -ne 'descent')) {
+        throw 'D1LevelTransition requires a fresh First Strike level 1 session in d1 or d2'
+    }
+    if ($Game -eq 'd2') { $MissionFile = 'descent' }
+    $Briefings = $true
 }
 if ($BriefingPalette -or $EmptyBriefing) { $Briefings = $true }
 if ($EndgameClientFirst -or $EndgameBoss -or $EndgameObserverHost -or $EndgameContent -ne "builtin") { $Endgame = $true }
@@ -1412,6 +1423,46 @@ function Assert-CoopGameplayFences {
     }
 }
 
+function Get-GameUiIntrospection {
+    param([string]$Serial)
+    $requestId = [guid]::NewGuid().ToString('N')
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        'shell', 'am', 'broadcast', '-a', 'com.dxxredux.INTROSPECT', '--es', 'request_id', $requestId
+    ) -Seconds 10 | Out-Null
+    $raw = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        'shell', 'run-as', $PACKAGE, 'cat', 'files/introspect_ui.json'
+    ) -Seconds 5
+    try {
+        $snapshot = $raw | ConvertFrom-Json
+        if ($snapshot.request_id -eq $requestId) { return $snapshot }
+    } catch { }
+    return $null
+}
+
+function Assert-PostTransitionAndroidControls {
+    foreach ($serial in @($EMU1, $EMU2)) {
+        if (-not (Wait-ForCondition -Description "Android touch overlay active on $serial" -TimeoutSec 15 -PollMs 500 -Condition {
+                    $ui = Get-GameUiIntrospection -Serial $serial
+                    return $ui -and $ui.touch_overlay_active -and $ui.touch_overlay_shown -and
+                    $ui.touch_overlay_attached -and -not $ui.controller_menu_open -and -not $ui.admin_tray_open
+                })) { throw "Post-transition touch overlay is unavailable on $serial" }
+        Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'input', 'keyevent', '4') -Seconds 10 | Out-Null
+        if (-not (Wait-ForCondition -Description "Android Back opens the game menu on $serial" -TimeoutSec 15 -PollMs 500 -Condition {
+                    $intro = Get-GameIntrospection -Serial $serial
+                    return $intro -and $intro.current_level_num -eq 2 -and -not $intro.game_window_is_front -and
+                    $intro.menu -and $intro.menu.type -eq 'newmenu'
+                })) { throw "Android Back did not open the post-transition game menu on $serial" }
+        Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'input', 'keyevent', '4') -Seconds 10 | Out-Null
+        if (-not (Wait-ForCondition -Description "Android Back returns to the playable mine on $serial" -TimeoutSec 15 -PollMs 500 -Condition {
+                    $intro = Get-GameIntrospection -Serial $serial
+                    $ui = Get-GameUiIntrospection -Serial $serial
+                    return $intro -and $intro.current_level_num -eq 2 -and $intro.game_window_is_front -and
+                    -not $intro.time_paused -and (Get-IntroNumConnected -Intro $intro) -eq 2 -and
+                    $ui -and $ui.touch_overlay_active -and $ui.touch_overlay_shown -and $ui.touch_overlay_attached
+                })) { throw "Android Back did not restore post-transition gameplay on $serial" }
+    }
+}
+
 function Invoke-PairedGameAutomation {
     param(
         [string]$PrimarySerial,
@@ -2065,6 +2116,15 @@ try {
             Adb-Dev-Timeout -Serial $serial -AdbArgs @(
                 "shell", "run-as", $PACKAGE, "rm", "-f",
                 "files/d1x-redux/coop_restore_slot.txt", "files/d2x-redux/coop_restore_slot.txt"
+            ) -Seconds 10 | Out-Null
+        }
+    }
+
+    if ($D1LevelTransition) {
+        foreach ($serial in @($EMU1, $EMU2)) {
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @(
+                'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+                '--es', 'command', 'write_probe_debug_prefs', '--ez', 'enabled', 'true'
             ) -Seconds 10 | Out-Null
         }
     }
@@ -3260,6 +3320,13 @@ try {
         $testPassed = Invoke-PairedGameAutomation -PrimarySerial $fastSerial -PrimaryScript $fastScript `
             -SecondarySerial $slowSerial -SecondaryScript $slowScript `
             -Description "Independent campaign ending with $fastSerial returning first" -TimeoutSec 90 -IndependentEndgame
+    }
+
+    if ($testPassed -and $D1LevelTransition) {
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_d1_transition_host.jsonc' `
+            -SecondarySerial $EMU2 -SecondaryScript 'test_coop_d1_transition_client.jsonc' `
+            -Description 'First Strike flyout, score, briefing and playable level 2' -TimeoutSec 180
+        if ($testPassed) { Assert-PostTransitionAndroidControls }
     }
 
     if ($testPassed -and $BriefingPalette) {

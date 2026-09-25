@@ -60,6 +60,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "u_mem.h"
 #include "args.h"
 #include "ai.h"
+#include "d1_in_d2/d1_in_d2_ai.h"
+#include "d1_in_d2/d1_in_d2_levels.h"
 #include "fireball.h"
 #include "controls.h"
 #include "laser.h"
@@ -92,7 +94,12 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "config.h"
 #endif
 
-#define STATE_VERSION 31
+// Version 36 uses original static AI records for native D1 actors
+// Version 37 appends full-width relative Fusion, refueling and collision clocks
+#define STATE_VERSION CADENCE_D2_SAVE_VERSION
+#define STATE_D1_TRIGGER_STORAGE_VERSION       34
+#define STATE_D1_BOSS_STATE_VERSION 33
+#define STATE_D1_AI_STORAGE_VERSION 32
 #define STATE_AUTOSELECT_RUNTIME_VERSION 31
 #define STATE_COMPATIBLE_VERSION 20
 #define STATE_RUNTIME_VERSION 23
@@ -316,6 +323,7 @@ static int state_android_physfs_raw_close(struct PHYSFS_File *file)
 #endif
 
 #include "autoselect_runtime.h"
+#include "cadence_runtime.h"
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -828,6 +836,10 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	state_write_effect_runtime_state(fp, GameTime64);
 	secret_area_write_runtime_state(fp);
 	autoselect_write_runtime_state(fp);
+	d1_in_d2_ai_write_saved_storage(fp);
+	d1_in_d2_ai_write_boss_saved_state(fp);
+	d1_in_d2_write_trigger_storage(fp);
+	cadence_runtime_write(fp, GameTime64);
 }
 
 /* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
@@ -1083,6 +1095,22 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	if (version >= STATE_AUTOSELECT_RUNTIME_VERSION &&
 	    !autoselect_read_runtime_state(fp, swap, 0))
 		goto done;
+	validation_stage = "original D1 AI storage";
+	if (version >= STATE_D1_AI_STORAGE_VERSION &&
+	    !d1_in_d2_ai_read_saved_storage(fp, swap, 0))
+		goto done;
+	validation_stage = "original D1 boss state";
+	if (version >= STATE_D1_BOSS_STATE_VERSION &&
+	    !d1_in_d2_ai_read_boss_saved_state(fp, swap, 0))
+		goto done;
+	validation_stage = "original D1 trigger storage";
+	if (version >= STATE_D1_TRIGGER_STORAGE_VERSION &&
+	    !d1_in_d2_read_trigger_storage(fp, swap, 0))
+		goto done;
+	validation_stage = "cadence clocks";
+	if (version >= CADENCE_D2_SAVE_VERSION &&
+	    !cadence_runtime_read(fp, swap, 0, GameTime64))
+		goto done;
 	valid = 1;
 done:
 #ifdef __ANDROID__
@@ -1175,6 +1203,14 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 		secret_area_read_runtime_state(fp, swap, version >= STATE_SECRET_AREA_IDENTITY_VERSION);
 	if (version >= STATE_AUTOSELECT_RUNTIME_VERSION)
 		autoselect_read_runtime_state(fp, swap, !secret_restore);
+	if (version >= STATE_D1_AI_STORAGE_VERSION)
+		d1_in_d2_ai_read_saved_storage(fp, swap, !secret_restore);
+	if (version >= STATE_D1_BOSS_STATE_VERSION)
+		d1_in_d2_ai_read_boss_saved_state(fp, swap, !secret_restore);
+	if (version >= STATE_D1_TRIGGER_STORAGE_VERSION)
+		d1_in_d2_read_trigger_storage(fp, swap, !secret_restore);
+	if (version >= CADENCE_D2_SAVE_VERSION)
+		cadence_runtime_read(fp, swap, !secret_restore, GameTime64);
 
 	if (secret_restore)
 		return;
@@ -1536,6 +1572,7 @@ void state_object_to_object_rw(object *obj, object_rw *obj_rw)
 		case CT_AI:
 		{
 			int i;
+			if (d1_in_d2_ai_write_object(obj, obj_rw, 1)) break;
 			obj_rw->ctype.ai_info.behavior               = obj->ctype.ai_info.behavior; 
 			for (i = 0; i < MAX_AI_FLAGS; i++)
 				obj_rw->ctype.ai_info.flags[i]       = obj->ctype.ai_info.flags[i]; 
@@ -1613,7 +1650,7 @@ void state_object_to_object_rw(object *obj, object_rw *obj_rw)
 }
 
 // turn object_rw to object after reading from Savegame
-void state_object_rw_to_object(object_rw *obj_rw, object *obj)
+void state_object_rw_to_object(object_rw *obj_rw, object *obj, int native_ai_format)
 {
 	obj->signature     = obj_rw->signature;
 	obj->type          = obj_rw->type;
@@ -1707,6 +1744,7 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj)
 		case CT_AI:
 		{
 			int i;
+			if (native_ai_format && d1_in_d2_ai_read_object(obj_rw, obj)) break;
 			obj->ctype.ai_info.behavior               = obj_rw->ctype.ai_info.behavior; 
 			for (i = 0; i < MAX_AI_FLAGS; i++)
 				obj->ctype.ai_info.flags[i]       = obj_rw->ctype.ai_info.flags[i]; 
@@ -2568,9 +2606,10 @@ int state_save_all_sub(char *filename, char *desc)
 
 //Save trigger info
 	PHYSFS_write(fp, &Num_triggers, sizeof(int), 1);
-	PHYSFS_write(fp, Triggers, sizeof(trigger), Num_triggers);
+	for (i = 0; i < Num_triggers; ++i)
+		PHYSFS_write(fp, &Triggers[i], TRIGGER_DISK_SIZE, 1);
 
-//Save tmap info
+	// Save tmap info
 	for (i = 0; i <= Highest_segment_index; i++)
 	{
 		for (j = 0; j < 6; j++)
@@ -3289,8 +3328,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		object_rw *obj_rw;
 		MALLOC(obj_rw, object_rw, 1);
 		PHYSFS_read(fp, obj_rw, sizeof(object_rw), 1);
-		object_rw_swap(obj_rw, swap);
-		state_object_rw_to_object(obj_rw, &Objects[i]);
+		object_rw_swap(obj_rw, swap, version >= D1_AI_OBJECT_SAVE_VERSION);
+		state_object_rw_to_object(obj_rw, &Objects[i], version >= D1_AI_OBJECT_SAVE_VERSION);
 		d_free(obj_rw);
 	}
 
@@ -3434,6 +3473,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		PHYSFS_close(fp);
 		return 0;
 	}
+	/* Core D2 records have no original D1 fields; only the extension restores them */
+	d1_in_d2_ai_reset_saved_storage();
 	difficulty_refresh_runtime_parameters();
 
 	// Restore the automap visited info
@@ -3720,6 +3761,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		}
 		state_read_runtime_state(fp, swap, secret_restore, version);
 	}
+	if (version < CADENCE_D2_SAVE_VERSION && !secret_restore)
+		cadence_runtime_reset();
 	state_log_checkpoint_ai_restore_state();
 
 #ifdef __ANDROID__
@@ -3830,24 +3873,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	#ifdef __ANDROID__
 	{
 		int64_t collision_delay_last_play_time = 0;
-
 		if (android_rewind_get_restore_collision_delay_last_play_time(&collision_delay_last_play_time))
-		collide_set_collision_delay_last_play_time((fix64) collision_delay_last_play_time);
-		else if (input_demo_replay_has_checkpoint()) {
-			if (input_demo_replay_get_checkpoint_collision_delay_last_play_time(&collision_delay_last_play_time))
-			collide_set_collision_delay_last_play_time((fix64) collision_delay_last_play_time);
-			else
-			collide_set_collision_delay_last_play_time(0);
-	}
-	}
-	#else
-	if (input_demo_replay_has_checkpoint()) {
-		int64_t collision_delay_last_play_time = 0;
-
-		if (input_demo_replay_get_checkpoint_collision_delay_last_play_time(&collision_delay_last_play_time))
-			collide_set_collision_delay_last_play_time((fix64) collision_delay_last_play_time);
-		else
-			collide_set_collision_delay_last_play_time(0);
+			collide_set_collision_delay_last_play_time((fix64)collision_delay_last_play_time);
 	}
 	#endif
 	escort_rebuild_runtime_state_after_restore();

@@ -9,8 +9,13 @@
 #include "d1_in_d2.h"
 #include "player.h"
 
+int d1_in_d2_input_demo_continue_level_exit(void)
+{
+	return d1_in_d2_use_d1_gameplay();
+}
+
 int d1_in_d2_input_demo_result_robots_killed(player *current_player,
-	int d2_baseline_valid, int d2_baseline)
+                                             int d2_baseline_valid, int d2_baseline)
 {
 	if (!current_player)
 		return 0;

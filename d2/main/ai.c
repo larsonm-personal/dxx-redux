@@ -98,7 +98,7 @@ fix             Gate_interval = F1_0*6;
 fix64           Boss_dying_start_time;
 fix64           Boss_hit_time;
 int           Boss_dying;
-sbyte           Boss_dying_sound_playing, unused123, unused234;
+int             Boss_dying_sound_playing;
 
 // -- MK, 10/21/95, unused! -- int             Boss_been_hit=0;
 
@@ -268,7 +268,8 @@ void init_ai_frame(void)
 
 	ab_state = Players[Player_num].afterburner_charge && Controls.afterburner_state && (Players[Player_num].flags & PLAYER_FLAGS_AFTERBURNER);
 
-	if (!(Players[Player_num].flags & PLAYER_FLAGS_CLOAKED) || (Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT_ON) || ab_state) {
+	if (d1_in_d2_ai_uses_continuous_cloak_tracking() &&
+	    (!(Players[Player_num].flags & PLAYER_FLAGS_CLOAKED) || (Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT_ON) || ab_state)) {
 		ai_do_cloak_stuff();
 	}
 }
@@ -2351,6 +2352,10 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap)
 	Boss_dying_start_time = tmptime32 ? GameTime64 + (fix64)tmptime32 : 0;
 	Boss_dying = PHYSFSX_readSXE32(fp, swap);
 	Boss_dying_sound_playing = PHYSFSX_readSXE32(fp, swap);
+	// Before state version 35, the writer read four bytes from a byte global
+	// Preserve that reader's signed-byte interpretation of legacy padding
+	if (version < 35)
+		Boss_dying_sound_playing = (sbyte)Boss_dying_sound_playing;
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
 	Boss_hit_time = d1_in_d2_ai_restore_boss_hit_time(tmptime32);
 	// -- MK, 10/21/95, unused! -- PHYSFS_read(fp, &Boss_been_hit, sizeof(int), 1);

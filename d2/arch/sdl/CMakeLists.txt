@@ -16,6 +16,7 @@ endif()
 if(SDLMIXER)
     target_sources(${DXX_TARGET_PREFIX}arch_sdl PRIVATE
         digi_mixer.c
+        ../../../android/app/src/main/cpp/shared/sound_mixer_convert.c
         digi_mixer_music.c
         jukebox.c
         )

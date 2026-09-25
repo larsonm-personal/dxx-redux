@@ -294,7 +294,7 @@ int ds_load(int skip, char * filename )	{
 		PHYSFS_read( cfp, n.data, 1, n.length );
 		PHYSFS_close(cfp);
 		n.bits = 8;
-		n.freq = 11025;
+		n.freq = GameArg.SndDigiSampleRate == SAMPLE_RATE_22K ? SAMPLE_RATE_22K : SAMPLE_RATE_11K;
 	} else {
 		return 255;
 	}

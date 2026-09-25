@@ -567,9 +567,21 @@ void fuelcen_update_all()
 }
 
 //-------------------------------------------------------------
+// Runtime observation and checkpoint access for the original refueling cadence
+static fix64 Fuelcen_last_sound_time = 0;
+
+fix64 fuelcen_get_last_sound_time(void)
+{
+	return Fuelcen_last_sound_time;
+}
+
+void fuelcen_set_last_sound_time(fix64 last_sound_time)
+{
+	Fuelcen_last_sound_time = last_sound_time;
+}
+
 fix fuelcen_give_fuel(segment *segp, fix MaxAmountCanTake )
 {
-	static fix64 last_play_time = 0;
         #define REFUEL_SOUND_DELAY (F1_0/3)
 
 	Assert( segp != NULL );
@@ -608,9 +620,9 @@ fix fuelcen_give_fuel(segment *segp, fix MaxAmountCanTake )
 //			}
 
 
-		if (last_play_time + REFUEL_SOUND_DELAY < GameTime64 || last_play_time > GameTime64)
+		if (Fuelcen_last_sound_time + REFUEL_SOUND_DELAY < GameTime64 || Fuelcen_last_sound_time > GameTime64)
 		{
-			last_play_time = GameTime64;
+			Fuelcen_last_sound_time = GameTime64;
 			digi_play_sample( SOUND_REFUEL_STATION_GIVING_FUEL, F1_0/2 );
 
 #ifdef NETWORK

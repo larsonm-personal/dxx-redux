@@ -773,19 +773,25 @@ static int flyout_handler(window *wind, d_event *event, void *unused)
 {
 	(void) wind;
 	(void) unused;
+	/* A handled CLOSE event vetoes window retirement */
+	if (event->type == EVENT_WINDOW_CLOSE || event->type == EVENT_WINDOW_CLOSED) return 0;
 	if (event->type == EVENT_WINDOW_DRAW) {
-		uint64_t now = now_ms();
-		unsigned elapsed = (unsigned) (now - flyout_frame_time);
-		FrameTime = (fix) (elapsed * (uint64_t) F1_0 / 1000);
-		coop_flyout_remaining(local_progress.remaining_ms > elapsed ? local_progress.remaining_ms - elapsed : 0);
-		flyout_frame_time = now;
-		do_endlevel_frame();
-		if (Endlevel_sequence) game_render_frame();
+		if (Endlevel_sequence) {
+			uint64_t now = now_ms();
+			unsigned elapsed = (unsigned) (now - flyout_frame_time);
+			/* A second draw in the same millisecond has no simulation time */
+			if (elapsed) {
+				FrameTime = (fix) (elapsed * (uint64_t) F1_0 / 1000);
+				coop_flyout_remaining(local_progress.remaining_ms > elapsed ? local_progress.remaining_ms - elapsed : 0);
+				flyout_frame_time = now;
+				do_endlevel_frame();
+			}
+			if (Endlevel_sequence) game_render_frame();
+		}
 		timer_delay2(60);
-	} else if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
-	           (android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_ENDLEVEL) ||
-	            android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_ENDLEVEL, event) ||
-	            (event->type == EVENT_KEY_COMMAND && event_key_get(event) == KEY_ESC)))
+	} else if (android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_ENDLEVEL) ||
+	           android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_ENDLEVEL, event) ||
+	           (event->type == EVENT_KEY_COMMAND && event_key_get(event) == KEY_ESC))
 		coop_briefing_skip();
 	return 1;
 }
@@ -795,6 +801,8 @@ void coop_flyout_render(void)
 	if (!Endlevel_sequence) return;
 	set_screen_mode(SCREEN_GAME);
 	window *viewer = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, flyout_handler, NULL);
+	debug_log(DLOG_COOP_DESYNC, "[COOP] flyout window opened: level=%d player=%d created=%d sequence=%d",
+	          Current_level_num, Player_num, viewer != NULL, Endlevel_sequence);
 	flyout_frame_time = now_ms();
 	while (viewer && Endlevel_sequence && !coop_briefing_cancelled()) {
 		coop_briefing_pump();
@@ -802,6 +810,8 @@ void coop_flyout_render(void)
 	}
 	if (Endlevel_sequence) stop_endlevel_sequence();
 	if (viewer && window_exists(viewer)) window_close(viewer);
+	debug_log(DLOG_COOP_DESYNC, "[COOP] flyout window retired: level=%d player=%d remains=%d sequence=%d",
+	          Current_level_num, Player_num, viewer && window_exists(viewer), Endlevel_sequence);
 	coop_briefing_step_complete(viewer != NULL);
 }
 

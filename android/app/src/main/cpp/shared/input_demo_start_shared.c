@@ -10,6 +10,7 @@
 #endif
 
 #include "args.h"
+#include "collide.h"
 #include "game.h"
 #include "gameseq.h"
 #include "input_demo_debug_logging.h"
@@ -19,6 +20,7 @@
 #include "input_demo_rng_trace.h"
 #include "input_demo_start.h"
 #include "input_demo_state_trace.h"
+#include "input_demo_world_trace.h"
 #include "mission.h"
 #include "newmenu.h"
 #include "object.h"
@@ -561,7 +563,7 @@ static int input_demo_start_replay_new_level(
 	return 0;
 }
 
-int input_demo_start_loaded_replay_common(void)
+static int input_demo_restore_loaded_replay(void)
 {
 	const char *checkpoint_name;
 	const uint8_t *checkpoint_data;
@@ -686,6 +688,21 @@ int input_demo_start_loaded_replay_common(void)
 	                   mission_name, input_demo_replay_level(),
 	                   input_demo_replay_frame_count());
 	return 0;
+}
+
+int input_demo_start_loaded_replay_common(void)
+{
+	const int result = input_demo_restore_loaded_replay();
+	if (!result) {
+		/* Replay metadata belongs to both native and translated checkpoint paths */
+		if (input_demo_replay_has_checkpoint()) {
+			int64_t collision_delay_last_play_time = 0;
+			if (input_demo_replay_get_checkpoint_collision_delay_last_play_time(&collision_delay_last_play_time))
+				collide_set_collision_delay_last_play_time((fix64) collision_delay_last_play_time);
+		}
+		input_demo_trace_boundary("restored");
+	}
+	return result;
 }
 
 static void input_demo_capture_restored_player_diag(

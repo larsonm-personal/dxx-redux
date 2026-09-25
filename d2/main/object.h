@@ -353,6 +353,7 @@ typedef struct object_rw {
 		laser_info_rw   laser_info;
 		explosion_info  expl_info;      // NOTE: debris uses this also
 		ai_static_rw    ai_info;
+		d1_ai_static_rw d1_ai_info;
 		struct light_info      light_info;     // why put this here?  Didn't know what else to do with it.
 		powerup_info_rw powerup_info;
 	} __pack__ ctype ;
@@ -585,7 +586,7 @@ extern void wake_up_missile_camera_robots(void);
 
 void reset_player_object(void);
 
-extern void object_rw_swap(object_rw *obj_rw, int swap);
+extern void object_rw_swap(object_rw *obj_rw, int swap, int native_ai_format);
 
 extern void set_homing_update_rate(int update_rate, int original_homing);
 

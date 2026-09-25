@@ -36,6 +36,7 @@ class MusicControlPanel(
 
     private data class MusicState(
         val source: String = "cd",
+        val hasAddonMission: Boolean = false,
         val oneTrackPerLevel: Boolean = false,
         val volume: Int = 8,
         val paused: Boolean = false,
@@ -142,6 +143,7 @@ class MusicControlPanel(
                     }
                 MusicState(
                     source = obj.optString("source", "cd"),
+                    hasAddonMission = obj.optBoolean("hasAddonMission", false),
                     oneTrackPerLevel = obj.optBoolean("oneTrackPerLevel", false),
                     volume = obj.optInt("volume", 8).coerceIn(0, 8),
                     paused = obj.optBoolean("paused", false),
@@ -173,6 +175,7 @@ class MusicControlPanel(
                 a.filesDir,
                 a.gameVariantForMusicOverlay(),
                 state.source,
+                state.hasAddonMission,
             ) { uri, useFileDescriptor ->
                 canAccessSafUri(a, android.net.Uri.parse(uri), useFileDescriptor)
             }

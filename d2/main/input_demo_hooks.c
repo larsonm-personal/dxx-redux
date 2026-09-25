@@ -6989,10 +6989,12 @@ static void input_demo_prepare_finish_replay_from_game_over(void)
 
 int input_demo_finish_replay_from_level_exit(void)
 {
+	if (d1_in_d2_input_demo_continue_level_exit())
+		return 0;
 	return input_demo_finish_replay_shared(1,
-		&input_demo_replay_last_timer_value,
-		input_demo_prepare_finish_replay_from_level_exit,
-		input_demo_write_replay_result);
+	                                       &input_demo_replay_last_timer_value,
+	                                       input_demo_prepare_finish_replay_from_level_exit,
+	                                       input_demo_write_replay_result);
 }
 
 static void input_demo_prepare_finish_replay_from_level_exit(void)

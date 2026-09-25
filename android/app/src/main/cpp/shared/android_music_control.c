@@ -20,6 +20,8 @@
 #include "digi.h"
 #include "game.h"
 #include "gameseq.h"
+#include "mission.h"
+#include "strutil.h"
 #include "playsave.h"
 #include "android_crash_handler.h"
 #include "android_log.h"
@@ -158,11 +160,23 @@ done:
 	dst[pos] = '\0';
 }
 
+static int music_has_addon_mission(void)
+{
+	if (!Current_mission || PLAYING_BUILTIN_MISSION)
+		return 0;
+#ifdef DXX_BUILD_DESCENT_II
+	// First Strike uses a zero builtin_hogsize in the D2 mission list
+	if (EMULATING_D1 && !d_stricmp(Current_mission_filename, D1_MISSION_FILENAME))
+		return 0;
+#endif
+	return 1;
+}
+
 static const char *music_current_source(void)
 {
 	switch (GameCfg.MusicType) {
 		case MUSIC_TYPE_BUILTIN:
-			return android_music_get_prefer_mission_soundtrack() ? "mission" : "midi";
+			return music_has_addon_mission() && android_music_get_prefer_mission_soundtrack() ? "mission" : "midi";
 		case MUSIC_TYPE_REDBOOK:
 			return "cd";
 		case MUSIC_TYPE_CUSTOM:
@@ -443,10 +457,12 @@ static void music_publish_snapshot(void)
 	if (g_music_snapshot_overlay) {
 		written = snprintf(g_music_snapshot_overlay, g_music_snapshot_overlay_capacity,
 		                   "{\"musicType\":%d,\"source\":\"%s\",\"preferMissionSoundtrack\":%d,"
+		                   "\"hasAddonMission\":%s,"
 		                   "\"playOrder\":%d,\"oneTrackPerLevel\":%d,\"volume\":%d,"
 		                   "\"paused\":%d,\"currentTrack\":%d,\"totalTracks\":%d,"
 		                   "\"currentName\":\"%s\",\"tracks\":%s}",
 		                   type, music_current_source(), android_music_get_prefer_mission_soundtrack(),
+		                   music_has_addon_mission() ? "true" : "false",
 		                   GameCfg.CMLevelMusicPlayOrder,
 		                   GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_LEVEL,
 		                   GameCfg.MusicVolume, music_is_paused(), track, total, escaped_name,

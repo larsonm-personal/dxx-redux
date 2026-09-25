@@ -94,8 +94,6 @@ static const sbyte Mike_to_matt_xlate[] = {AS_REST, AS_REST, AS_ALERT, AS_ALERT,
 
 #define	OVERALL_AGITATION_MAX	100
 
-#define		MAX_AI_CLOAK_INFO	8	//	Must be a power of 2!
-
 #define	BOSS_CLOAK_DURATION	(F1_0*7)
 #define	BOSS_DEATH_DURATION	(F1_0*6)
 #define	BOSS_DEATH_SOUND_DURATION	0x2ae14		//	2.68 seconds
@@ -166,13 +164,6 @@ sbyte	Super_boss_gate_list[] = {0, 1, 8, 9, 10, 11, 12, 15, 16, 18, 19, 20, 22, 
 #endif
 
 int	Ai_info_enabled=0;
-
-#define	MAX_AWARENESS_EVENTS	64
-typedef struct awareness_event {
-	short 		segnum;				// segment the event occurred in
-	short			type;					// type of event, defines behavior
-	vms_vector	pos;					// absolute 3 space location of event
-} awareness_event;
 
 
 // These globals are set by a call to find_vector_intersection, which is a slow routine,
@@ -380,6 +371,8 @@ void init_ai_objects(void)
 {
 	int	i;
 
+	// Pending events refer to segments in the previous mine
+	Num_awareness_events = 0;
 	Point_segs_free_ptr = Point_segs;
 
 	for (i=0; i<MAX_OBJECTS; i++) {

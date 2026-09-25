@@ -67,6 +67,10 @@ void fuelcen_replentish_all();
 // Create a matcen robot
 extern object *create_morph_robot(segment *segp, vms_vector *object_pos, int object_id);
 
+// Runtime observation and checkpoint access
+fix64 fuelcen_get_last_sound_time(void);
+void fuelcen_set_last_sound_time(fix64 last_sound_time);
+
 // Returns the amount of fuel/shields this segment can give up.
 // Can be from 0 to 100.
 fix fuelcen_give_fuel(segment *segp, fix MaxAmountCanTake );

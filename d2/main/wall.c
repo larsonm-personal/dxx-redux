@@ -937,8 +937,9 @@ void do_door_open(int door_num)
 				for (i=door_num;i<Num_open_doors;i++)
 					ActiveDoors[i] = ActiveDoors[i+1];
 				Num_open_doors--;
-				Walls[seg->sides[side].wall_num].state = WALL_DOOR_OPEN;
-				Walls[csegp->sides[Connectside].wall_num].state = WALL_DOOR_OPEN;
+				const int completed_state = d1_in_d2_completed_door_state();
+				Walls[seg->sides[side].wall_num].state = completed_state;
+				Walls[csegp->sides[Connectside].wall_num].state = completed_state;
 			}
 			else {
 

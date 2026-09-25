@@ -281,7 +281,7 @@ extern fix              Boss_cloak_duration;
 extern fix64            Last_gate_time;
 extern fix              Gate_interval;
 extern fix64            Boss_dying_start_time;
-extern sbyte            Boss_dying_sound_playing;
+extern int              Boss_dying_sound_playing;
 extern fix64            Boss_hit_time;
 // -- extern int              Boss_been_hit;
 // ------ John: End of variables which must be saved as part of gamesave. -----

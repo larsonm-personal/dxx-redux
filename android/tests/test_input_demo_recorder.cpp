@@ -315,10 +315,10 @@ static int expect_record_and_flush(void)
 	if (!read_text_file(trace_path.c_str(), &text))
 		return report_failure("could not read recorder rng trace file");
 	if (text.find("\"type\":\"meta\"") == std::string::npos ||
-		text.find("\"type\":\"srand\"") == std::string::npos ||
-		text.find("\"type\":\"rand\"") == std::string::npos ||
-		text.find("\"func\":\"expect_record_and_flush\"") == std::string::npos ||
-		text.find("\"gt\":3276") == std::string::npos)
+	    text.find("\"type\":\"srand\"") == std::string::npos ||
+	    text.find("\"type\":\"rand\"") == std::string::npos ||
+	    text.find("\"func\":\"expect_record_and_flush\"") == std::string::npos ||
+	    text.find("\"gt\":3276") == std::string::npos)
 		return report_failure_string(std::string("unexpected recorder rng trace file: ") + text);
 	if (!input_demo_file_read(demo_path.c_str(), &parsed, &read_error))
 		return report_failure_string(std::string("recorder demo read failed: ") + read_error);
@@ -707,20 +707,21 @@ static int expect_write_state_trace(void)
 	remove(trace_path.c_str());
 	remove_test_dir(dir);
 	if (text.find("\"type\":\"meta\"") == std::string::npos ||
-		text.find("\"source\":\"replay\"") == std::string::npos ||
-		text.find("\"f\":810") == std::string::npos ||
-		text.find("\"ft\":2622") == std::string::npos ||
-		text.find("\"rng\":{\"s\":2636896831,\"c\":22066}") == std::string::npos ||
-		text.find("\"runtime_state_hash\":424242") == std::string::npos ||
-		text.find("\"object_signature_seed\":19479") == std::string::npos ||
-		text.find("\"object_free_head0\":95") == std::string::npos ||
-		text.find("\"weapon_last_laser_delta\":-900") == std::string::npos ||
-		text.find("\"weapon_spreadfire_toggle\":1") == std::string::npos ||
-		text.find("\"highest_object_index\":95") == std::string::npos ||
-		text.find("\"object_slot_bucket_size\":32") == std::string::npos ||
-		text.find("\"object_slot_hashes\":[101") == std::string::npos ||
-		text.find("\"segment_object_list_hash\":5678") == std::string::npos ||
-		text.find("\"game_time64\":2233467") == std::string::npos)
+	    text.find("\"diag_version\":1") == std::string::npos ||
+	    text.find("\"source\":\"replay\"") == std::string::npos ||
+	    text.find("\"f\":810") == std::string::npos ||
+	    text.find("\"ft\":2622") == std::string::npos ||
+	    text.find("\"rng\":{\"s\":2636896831,\"c\":22066}") == std::string::npos ||
+	    text.find("\"runtime_state_hash\":424242") == std::string::npos ||
+	    text.find("\"object_signature_seed\":19479") == std::string::npos ||
+	    text.find("\"object_free_head0\":95") == std::string::npos ||
+	    text.find("\"weapon_last_laser_delta\":-900") == std::string::npos ||
+	    text.find("\"weapon_spreadfire_toggle\":1") == std::string::npos ||
+	    text.find("\"highest_object_index\":95") == std::string::npos ||
+	    text.find("\"object_slot_bucket_size\":32") == std::string::npos ||
+	    text.find("\"object_slot_hashes\":[101") == std::string::npos ||
+	    text.find("\"segment_object_list_hash\":5678") == std::string::npos ||
+	    text.find("\"game_time64\":2233467") == std::string::npos)
 		return report_failure_string(std::string("unexpected state trace text: ") + text);
 	return 0;
 }

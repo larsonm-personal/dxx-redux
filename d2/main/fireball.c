@@ -1690,7 +1690,8 @@ void do_exploding_wall_frame()
 				vm_vec_scale_add(&pos,v1,&vv0,d_rand()*2);
 				vm_vec_scale_add2(&pos,&vv1,d_rand()*2);
 
-				size = EXPL_WALL_FIREBALL_SIZE + (2*EXPL_WALL_FIREBALL_SIZE * e / EXPL_WALL_TOTAL_FIREBALLS);
+				const fix base_size = d1_in_d2_wall_fireball_base_size(EXPL_WALL_FIREBALL_SIZE);
+				size = base_size + (2 * base_size * e / EXPL_WALL_TOTAL_FIREBALLS);
 
 				//fireballs start away from door, with subsequent ones getting closer
 				#ifdef COMPACT_SEGS	

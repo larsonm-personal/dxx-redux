@@ -1670,8 +1670,16 @@ static route_trigger_path_selection select_trigger_firing_path_internal(
 		// Prefer the normal source approach before expanding prerequisite poses
 		if (allow_progress && !include_remote_prerequisite_poses &&
 		    valid_segment(snapshot, source.source_segment) &&
-		    search.nodes[source.source_segment].reachable)
-			continue;
+		    search.nodes[source.source_segment].reachable) {
+			route_position local_position;
+			double local_distance = 0.0;
+			// A graph-reachable recess is not necessarily large enough to fire from
+			if (!valid_wall(snapshot, source.source_wall) ||
+			    !snapshot.topology.walls[source.source_wall].shootable_trigger ||
+			    visible_source_position(snapshot, progress, source, visibility,
+			                            source.source_segment, local_position, local_distance))
+				continue;
+		}
 		const int source_base = static_cast<int>(source_index) * segments * 2;
 		if (!trigger_source_wall_valid(
 		        snapshot, progress, source.source_wall) ||
@@ -3219,6 +3227,8 @@ class dependency_planner
 			route_visibility_query alternative;
 			alternative.user = &base_visibility;
 			alternative.analysis_budget = visibility_.analysis_budget;
+			alternative.sample_cache = visibility_.sample_cache;
+			alternative.sample_cache_namespace = visibility_.sample_cache_namespace ^ 0x20000000u;
 			alternative.wall_shootable = [](void *user, int segment, const route_position &from, int target_wall) {
 				const auto &visibility = *static_cast<route_visibility_query *>(user);
 				route_position aim;
@@ -4544,8 +4554,13 @@ class dependency_planner
 				if (!fire_trigger(
 				        optimistic.first_obstruction_segment,
 				        optimistic.first_obstruction_side, depth + 1)) {
+					// An inaccessible shortcut must not hide a longer dependency route
 					const bool avoidable =
 					    state_.problem == "trigger source missing" ||
+					    state_.problem == "route target unreachable" ||
+					    state_.problem == "blue key unreachable" ||
+					    state_.problem == "red key unreachable" ||
+					    state_.problem == "gold key unreachable" ||
 					    state_.problem.rfind(
 					        "non-shootable trigger source is behind a closed wall", 0) == 0 ||
 					    state_.problem.rfind(

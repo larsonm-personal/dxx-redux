@@ -1,0 +1,148 @@
+[
+    {
+        "_info": {
+            "games": [
+                "d1",
+                "d2"
+            ],
+            "_standalone": false,
+            "_owner": "test_lan",
+            "description": "First Strike synchronized level 1 to 2 with real flyout and post-transition input"
+        }
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "current_level_num": 1,
+            "in_game": true,
+            "time_paused": false,
+            "game_window_is_front": true,
+            "multiplayer.num_connected": 2
+        }
+    },
+    {"action": "set_debug", "field": "clear_robots", "value": "true"},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"level_scene.reactor_destroyed": true}},
+    {
+        "action": "pose_view",
+        "segment": 69,
+        "x": -150,
+        "y": -202.5,
+        "z": 80,
+        "heading": 16384
+    },
+    {
+        "action": "send_button",
+        "button": 102,
+        "held": 1
+    },
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {"endlevel_sequence": {"gt": 0}}},
+    {"action": "send_button", "button": 102, "pressed": 0},
+    {
+        "action": "wait_for",
+        "timeout_ms": 90000,
+        "expect": {
+            "postlevel_active": true,
+            "screen_advance_can_activate": true
+        }
+    },
+    {
+        "action": "request_screen_advance",
+        "generation": "current"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 60000,
+        "expect": {
+            "current_level_num": 2,
+            "coop_briefing.active": true,
+            "coop_briefing.phase": 6,
+            "coop_briefing.presenting": true,
+            "screen_advance_can_activate": true
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_briefing_action",
+        "value": "skip"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": {
+            "current_level_num": 2,
+            "in_game": true,
+            "time_paused": false,
+            "game_window_is_front": true,
+            "coop_briefing.active": false,
+            "multiplayer.num_connected": 2,
+            "position.control_type": 4,
+            "position.movement_type": 1
+        }
+    },
+    {
+        "action": "send_button",
+        "button": 102,
+        "held": 1
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "throttle_time": {
+                "gt": 0
+            }
+        }
+    },
+    {
+        "action": "send_button",
+        "button": 102,
+        "pressed": 0
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "player.energy": {
+                "lt": 100
+            }
+        }
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0
+    },
+    {
+        "action": "key",
+        "key": "escape"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "game_window_is_front": false,
+            "menu.type": "newmenu"
+        }
+    },
+    {
+        "action": "key",
+        "key": "escape"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "game_window_is_front": true,
+            "time_paused": false,
+            "player_dead": false
+        }
+    },
+    {
+        "action": "introspect"
+    }
+]

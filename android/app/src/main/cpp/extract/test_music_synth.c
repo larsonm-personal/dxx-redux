@@ -21,6 +21,8 @@
 		}                                                        \
 	} while (0)
 
+void test_music_fluid_interpolation(const char *path);
+
 static FILE *trace_file;
 static uint64_t trace_frame;
 void music_synth_test_trace(int chip, uint16_t reg, uint8_t value)
@@ -305,6 +307,7 @@ int main(int argc, char **argv)
 {
 	if (argc >= 7 && argc <= 9 && (!strcmp(argv[1], "--render") || !strcmp(argv[1], "--render-repeat"))) return render_comparison(argc, argv);
 	CHECK(argc == 2 || argc == 5 || (argc == 6 && !strcmp(argv[5], "--expect-sf2")));
+	test_music_fluid_interpolation(argv[1]);
 	music_synth *s = music_synth_load(NULL, argv[1], 1);
 	CHECK(s);
 	CHECK(music_synth_prepare(s, "test.hmp", read_fixture, NULL));

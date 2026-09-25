@@ -41,6 +41,7 @@ extern "C" {
 
 extern "C" {
 #include "game_automate.h"
+#include "game_automate_weapon_art.h"
 #include "game_introspect.h"
 #include "overlay_ringbuf.h"
 #include "android_save_meta.h"
@@ -100,6 +101,7 @@ void multi_save_game(ubyte slot, uint id, char *desc);
 #include "cntrlcen.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
+#include "d1_in_d2/d1_in_d2_presentation.h"
 #include "guidebot_info_overlay.h"
 #include "gamemine.h"
 #include "route_confirmation.h"
@@ -1386,11 +1388,11 @@ static bool select_dispatch_front_menu_key(int keycode, const char *key_name)
 		title_handler(front, (d_event *) &key_event, data);
 		return true;
 	}
-	if (cb == (int (*)(window *, d_event *, void *)) briefing_handler) {
+	if (cb == (int (*)(window *, d_event *, void *)) briefing_handler || d1_in_d2_briefing_is_handler(cb)) {
 		if (!data)
 			return false;
 		LOGI("SELECT: dispatching briefing key %s (key=%d)", key_name, keycode);
-		briefing_handler(front, (d_event *) &key_event, data);
+		window_send_event(front, (d_event *) &key_event);
 		return true;
 	}
 	if (cb == (int (*)(window *, d_event *, void *)) MovieHandler) {
@@ -1432,7 +1434,7 @@ static bool can_direct_dispatch_front_key_command(void)
 #ifdef DXX_BUILD_DESCENT_II
 	if (cb == (int (*)(window *, d_event *, void *)) title_handler)
 		return data != NULL;
-	if (cb == (int (*)(window *, d_event *, void *)) briefing_handler)
+	if (cb == (int (*)(window *, d_event *, void *)) briefing_handler || d1_in_d2_briefing_is_handler(cb))
 		return data != NULL;
 	if (cb == (int (*)(window *, d_event *, void *)) MovieHandler)
 		return data != NULL;
@@ -1455,7 +1457,7 @@ static const char *describe_window_handler(window *wind)
 #ifdef DXX_BUILD_DESCENT_II
 	if (cb == (int (*)(window *, d_event *, void *)) title_handler)
 		return "title";
-	if (cb == (int (*)(window *, d_event *, void *)) briefing_handler)
+	if (cb == (int (*)(window *, d_event *, void *)) briefing_handler || d1_in_d2_briefing_is_handler(cb))
 		return "briefing";
 	if (cb == (int (*)(window *, d_event *, void *)) MovieHandler)
 		return "movie";
@@ -3929,6 +3931,17 @@ extern "C" void game_automate_tick(void)
 				     strtol(s.value.c_str(), NULL, 10) != 0)
 				        ? 1
 				        : 0;
+			} else if (s.field == "weapon_art_probe") {
+#ifdef ANDROID
+				char reason[256];
+				/* Save/restore can pump nested events; do not re-enter this step */
+				g_active = 0;
+				const int passed = game_automate_weapon_art(reason, sizeof(reason));
+				g_active = 1;
+				if (!passed) stop_script_fail(reason);
+#else
+				stop_script_fail("weapon_art_probe requires Android");
+#endif
 			} else if (s.field == "reactor_countdown_paused") {
 				int paused = (strcasecmp(s.value.c_str(), "true") == 0 ||
 				              strtol(s.value.c_str(), NULL, 10) != 0)

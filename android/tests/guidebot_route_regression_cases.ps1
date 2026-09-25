@@ -37,6 +37,7 @@ function Get-GuidebotRouteRegressionCases {
         [pscustomobject]@{ File = 'test_eaf_guided_launch_prerequisites.ps1'; Family = 'eaf'; Always = $false }
         [pscustomobject]@{ File = 'test_entropy2_level4_reactor_links.ps1'; Family = 'entropy'; Always = $false }
         [pscustomobject]@{ File = 'test_entropy2_level5_key_carrier.ps1'; Family = 'entropy'; Always = $false }
+        [pscustomobject]@{ File = 'test_ffyl_alternative_dependency.ps1'; Family = 'ffyl'; Always = $false }
         [pscustomobject]@{ File = 'test_ffyl_closed_path_door.ps1'; Family = 'ffyl'; Always = $false }
         [pscustomobject]@{ File = 'test_ffyl_fleeing_guidebot.ps1'; Family = 'ffyl'; Always = $false }
         [pscustomobject]@{ File = 'test_ffyl_forcefield_door.ps1'; Family = 'ffyl'; Always = $false }
@@ -79,6 +80,7 @@ function Get-GuidebotRouteRegressionCases {
         [pscustomobject]@{ File = 'test_tew_level23_hidden_keyed_door.ps1'; Family = 'tew'; Always = $false }
         [pscustomobject]@{ File = 'test_tew_level26_timed_switches.ps1'; Family = 'tew'; Always = $false }
         [pscustomobject]@{ File = 'test_tew_secret3_trigger_door.ps1'; Family = 'tew'; Always = $false }
+        [pscustomobject]@{ File = 'test_tew_tapered_route.ps1'; Family = 'tew'; Always = $false }
         [pscustomobject]@{ File = 'test_vertigo_level11_door_contact.ps1'; Family = 'vertigo'; Always = $false }
         [pscustomobject]@{ File = 'test_vertigo_level16_narrow_portal.ps1'; Family = 'vertigo'; Always = $false }
         [pscustomobject]@{ File = 'test_vertigo_level6_blue_door_route.ps1'; Family = 'vertigo'; Always = $false }

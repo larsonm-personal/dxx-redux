@@ -126,6 +126,10 @@ int secret_area_note_segment_entered(int segnum);
 void secret_area_restore_saved_found(int saved_total, const unsigned char *found, int found_capacity, const unsigned char *visited, int visited_count);
 void secret_area_restore_found_from_automap(const unsigned char *visited, int visited_count);
 void secret_area_write_runtime_state(rewind_file *fp);
+void secret_area_restore_saved_state(const secret_area_saved_state *saved);
+#ifdef DXX_BUILD_DESCENT_II
+int secret_area_adapt_native_d1_saved_state(secret_area_saved_state *saved);
+#endif
 void secret_area_read_runtime_state(rewind_file *fp, int swap, int has_identities);
 int secret_area_validate_runtime_state(rewind_file *fp);
 int secret_area_get_reveal_unfound(void);

@@ -56,6 +56,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "physics.h"
 #include "config.h"
 #include "ai.h"
+#include "d1_in_d2/d1_in_d2_ai.h"
 #include "switch.h"
 #include "textures.h"
 #include "byteswap.h"
@@ -8195,9 +8196,11 @@ void multi_object_to_object_rw(object *obj, object_rw *obj_rw)
 			obj_rw->ctype.expl_info.next_attach   = obj->ctype.expl_info.next_attach;
 			break;
 			
+		case CT_MORPH:
 		case CT_AI:
 		{
 			int i;
+			if (d1_in_d2_ai_write_object(obj, obj_rw, 0)) break;
 			obj_rw->ctype.ai_info.behavior               = obj->ctype.ai_info.behavior; 
 			for (i = 0; i < MAX_AI_FLAGS; i++)
 				obj_rw->ctype.ai_info.flags[i]       = obj->ctype.ai_info.flags[i]; 
@@ -8354,9 +8357,11 @@ void multi_object_rw_to_object(object_rw *obj_rw, object *obj)
 			obj->ctype.expl_info.next_attach   = obj_rw->ctype.expl_info.next_attach;
 			break;
 			
+		case CT_MORPH:
 		case CT_AI:
 		{
 			int i;
+			if (d1_in_d2_ai_read_object(obj_rw, obj)) break;
 			obj->ctype.ai_info.behavior               = obj_rw->ctype.ai_info.behavior; 
 			for (i = 0; i < MAX_AI_FLAGS; i++)
 				obj->ctype.ai_info.flags[i]       = obj_rw->ctype.ai_info.flags[i]; 

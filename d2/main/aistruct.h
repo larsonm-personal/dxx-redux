@@ -25,6 +25,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "inferno.h"
 #include "polyobj.h"
+#include "d1_in_d2/d1_in_d2_ai_storage.h"
 
 #define GREEN_GUY   1
 
@@ -141,11 +142,12 @@ typedef struct ai_static {
 	short   hide_segment;           // Segment to go to for hiding.
 	short   hide_index;             // Index in Path_seg_points
 	short   path_length;            // Length of hide path.
-	sbyte   cur_path_index;         // Current index in path.
+	short   cur_path_index;         // Original D1 paths retain their full signed index
 	sbyte   dying_sound_playing;    // !0 if this robot is playing its dying sound.
 	short   danger_laser_num;
 	int     danger_laser_signature;
 	fix64   dying_start_time;       // Time at which this robot started dying.
+	d1_ai_static_storage d1_saved;
 } __pack__ ai_static;
 
 // Same as above but structure Savegames/Multiplayer objects expect
@@ -184,6 +186,7 @@ typedef struct ai_local {
 	vms_angvec delta_angles[MAX_SUBMODELS];   // angles for each subobject
 	sbyte      goal_state[MAX_SUBMODELS];     // Goal state for this sub-object
 	sbyte      achieved_state[MAX_SUBMODELS]; // Last achieved state
+	d1_ai_local_storage d1_saved;
 } ai_local;
 
 // Same as above but structure Savegames expect

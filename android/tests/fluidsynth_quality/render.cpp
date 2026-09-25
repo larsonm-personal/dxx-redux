@@ -32,7 +32,9 @@ struct synth {
 	unsigned clipped = 0;
 	int peak_voices = 0;
 
-	synth(const char *sf2, int reverb, int chorus, int send, int voices = 48, int interpolation = FLUID_INTERP_7THORDER) : chorus_send(send)
+	// Historical offline comparisons retain enum 7 (25-point sinc in 2.6)
+	// Production uses fourth-order; pass interpolation=4 to compare that mode
+	synth(const char *sf2, int reverb, int chorus, int send, int voices = 48, int interpolation = FLUID_INTERP_HIGHEST) : chorus_send(send)
 	{
 		settings = new_fluid_settings();
 		CHECK(settings);
@@ -236,7 +238,7 @@ int main(int argc, char **argv)
 	CHECK(messages);
 	const int voices = argc == 11 ? std::atoi(argv[8]) : 48;
 	const int channel = argc == 11 ? std::atoi(argv[9]) : -1;
-	const int interpolation = argc == 11 ? std::atoi(argv[10]) : FLUID_INTERP_7THORDER;
+	const int interpolation = argc == 11 ? std::atoi(argv[10]) : FLUID_INTERP_HIGHEST;
 	CHECK(voices >= 16 && voices <= 256 && channel >= -1 && channel < 16);
 	CHECK(interpolation == 0 || interpolation == 1 || interpolation == 4 || interpolation == 7);
 	if (channel >= 0)

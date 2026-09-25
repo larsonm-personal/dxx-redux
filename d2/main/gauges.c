@@ -317,6 +317,19 @@ static void input_demo_record_score_event(const char *score_kind, int points)
 #define HUD_SCALE_Y_AR(y)	(y)
 #endif
 
+// Overlay gauge bitmaps use the installed D1 PIG resolution in D1 sessions
+static int hud_gauge_scale(int value)
+{
+#ifdef OGL
+	const int hires = d1_in_d2_hud_hires();
+	const double sx = (double)grd_curscreen->sc_w / (hires ? 640 : 320);
+	const double sy = (double)grd_curscreen->sc_h / (hires ? 480 : 200);
+	return (int)(value * (sx < sy ? sx : sy) + 0.5);
+#else
+	return value;
+#endif
+}
+
 bitmap_index Gauges[MAX_GAUGE_BMS];   // Array of all gauge bitmaps.
 bitmap_index Gauges_hires[MAX_GAUGE_BMS];   // hires gauges
 grs_bitmap deccpt;
@@ -1051,7 +1064,7 @@ void hud_show_keys(void)
 	int pnum = get_pnum_for_hud();
 
 	grs_bitmap *blue,*yellow,*red;
-	int y=HUD_SCALE_Y_AR(GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ].bm_h+2)+FSPACY(1);
+	int y=hud_gauge_scale(GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ].bm_h+2)+FSPACY(1);
 
 	PAGE_IN_GAUGE( KEY_ICON_BLUE );
 	PAGE_IN_GAUGE( KEY_ICON_YELLOW );
@@ -1061,16 +1074,16 @@ void hud_show_keys(void)
 	yellow=&GameBitmaps[ GET_GAUGE_INDEX(KEY_ICON_YELLOW) ];
 	red=&GameBitmaps[ GET_GAUGE_INDEX(KEY_ICON_RED) ];
 	{
-		int x = FSPACX(2) + hud_corner_text_left_inset(y, HUD_SCALE_Y_AR(blue->bm_h));
+		int x = FSPACX(2) + hud_corner_text_left_inset(y, hud_gauge_scale(blue->bm_h));
 
 		if (Players[pnum].flags & PLAYER_FLAGS_BLUE_KEY)
-			hud_bitblt_free(x,y,HUD_SCALE_X_AR(blue->bm_w),HUD_SCALE_Y_AR(blue->bm_h),blue);
+			hud_bitblt_free(x,y,hud_gauge_scale(blue->bm_w),hud_gauge_scale(blue->bm_h),blue);
 
 		if (Players[pnum].flags & PLAYER_FLAGS_GOLD_KEY)
-			hud_bitblt_free(x+HUD_SCALE_X_AR(blue->bm_w+3),y,HUD_SCALE_X_AR(yellow->bm_w),HUD_SCALE_Y_AR(yellow->bm_h),yellow);
+			hud_bitblt_free(x+hud_gauge_scale(blue->bm_w+3),y,hud_gauge_scale(yellow->bm_w),hud_gauge_scale(yellow->bm_h),yellow);
 
 		if (Players[pnum].flags & PLAYER_FLAGS_RED_KEY)
-			hud_bitblt_free(x+HUD_SCALE_X_AR(blue->bm_w+yellow->bm_w+6),y,HUD_SCALE_X_AR(red->bm_w),HUD_SCALE_Y_AR(red->bm_h),red);
+			hud_bitblt_free(x+hud_gauge_scale(blue->bm_w+yellow->bm_w+6),y,hud_gauge_scale(red->bm_w),hud_gauge_scale(red->bm_h),red);
 	}
 
 }
@@ -1092,7 +1105,7 @@ void hud_show_orbs (void)
 			x = FSPACX(2);
 		}
 		else if (PlayerCfg.CurrentCockpitMode == CM_FULL_SCREEN) {
-			y=HUD_SCALE_Y_AR(GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ].bm_h+GameBitmaps[ GET_GAUGE_INDEX(KEY_ICON_RED) ].bm_h+4)+FSPACY(1);
+			y=hud_gauge_scale(GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ].bm_h+GameBitmaps[ GET_GAUGE_INDEX(KEY_ICON_RED) ].bm_h+4)+FSPACY(1);
 			x = FSPACX(2);
 		}
 		else
@@ -1116,15 +1129,15 @@ void hud_show_flag(void)
 		grs_bitmap *bm;
 
 		if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT) {
-			y=HUD_SCALE_Y_AR(GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ].bm_h+2)+FSPACY(1);
+			y=hud_gauge_scale(GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ].bm_h+2)+FSPACY(1);
 			x = (SWIDTH/10);
 		}
 		else if (PlayerCfg.CurrentCockpitMode == CM_STATUS_BAR) {
-			y=HUD_SCALE_Y_AR(GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ].bm_h+2)+FSPACY(1);
+			y=hud_gauge_scale(GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ].bm_h+2)+FSPACY(1);
 			x = FSPACX(2);
 		}
 		else if (PlayerCfg.CurrentCockpitMode == CM_FULL_SCREEN) {
-			y=HUD_SCALE_Y_AR(GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ].bm_h+GameBitmaps[ GET_GAUGE_INDEX(KEY_ICON_RED) ].bm_h+4)+FSPACY(1);
+			y=hud_gauge_scale(GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ].bm_h+GameBitmaps[ GET_GAUGE_INDEX(KEY_ICON_RED) ].bm_h+4)+FSPACY(1);
 			x = FSPACX(2);
 		}
 		else
@@ -1593,8 +1606,8 @@ void hud_show_lives()
 	else if (Players[pnum].lives > 1)  {
 		PAGE_IN_GAUGE( GAUGE_LIVES );
 		grs_bitmap * bm = &GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ];
-		int bitmap_w = HUD_SCALE_X_AR(bm->bm_w);
-		int bitmap_h = HUD_SCALE_Y_AR(bm->bm_h);
+		int bitmap_w = hud_gauge_scale(bm->bm_w);
+		int bitmap_h = hud_gauge_scale(bm->bm_h);
 		int total_h;
 		snprintf(lives_str, sizeof(lives_str), " x %d", Players[pnum].lives - 1);
 		gr_get_string_drawn_size(lives_str, &text_w, &text_h);

@@ -47,10 +47,13 @@ if ($D2DataDirectory -and !(Test-Path -LiteralPath (Join-Path $outputPath "impor
     throw "Ordinary D2 regression did not finish"
 }
 Write-Output "PASS: $($trace.doors.Count) door, $($trace.pickups.Count) pickup, $($trace.damage.Count) damage and $($trace.drops.Count) drop cases match native D1"
+Write-Output "PASS: $($trace.opening_doors.Count) door-opening lifecycles match native D1, including paired textures, active-queue retirement and repeated contact"
 Write-Output "PASS: $($trace.surfaces.Count) source surfaces, $($trace.contact_motion.motion.Count) motion cases, $($trace.contact_motion.contacts.Count) robot contact cases and $($trace.robot_blasts.Count) robot blasts match native D1"
 Write-Output "PASS: $($trace.robot_pairs.Count) robot-pair intersections, $($trace.resource_drops.Count) resource drops and $($trace.secondary_explosions.Count) secondary explosions match native D1"
 Write-Output "PASS: $($trace.small_fireballs.Count) attached fireball cases match native D1, including position, size and FX draw count"
 Write-Output "PASS: $($trace.reactor_fireballs.Count) dead-reactor burn cases match native D1"
+Write-Output "PASS: $($trace.reactor_impacts.Count) reactor impact cases match native D1, including real projectile physics"
+Write-Output "PASS: $($trace.exploding_walls.Count * 32) exploding-wall fireballs match native D1, including size, position, blast motion and RNG"
 Write-Output "PASS: $($trace.reactor_frames.Count) reactor initialization and firing frames match native D1, including projectiles, timers and RNG"
 Write-Output "PASS: $($trace.object_orientations.Count) object initialization cases match native D1"
 Write-Output "PASS: $($trace.powerup_animation.Count) pickup animation steps match native D1"

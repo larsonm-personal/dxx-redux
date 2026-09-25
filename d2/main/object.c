@@ -3021,7 +3021,7 @@ void wake_up_missile_camera_robots(void)
 }
 
 // Swap endianess of given object_rw if swap == 1
-void object_rw_swap(object_rw *obj, int swap)
+void object_rw_swap(object_rw *obj, int swap, int native_ai_format)
 {
 	if (!swap)
 		return;
@@ -3100,7 +3100,9 @@ void object_rw_swap(object_rw *obj, int swap)
 			obj->ctype.expl_info.next_attach   = SWAPSHORT(obj->ctype.expl_info.next_attach);
 			break;
 			
+		case CT_MORPH:
 		case CT_AI:
+			if (native_ai_format && d1_in_d2_ai_swap_object(obj)) break;
 			obj->ctype.ai_info.hide_segment           = SWAPSHORT(obj->ctype.ai_info.hide_segment);
 			obj->ctype.ai_info.hide_index             = SWAPSHORT(obj->ctype.ai_info.hide_index);
 			obj->ctype.ai_info.path_length            = SWAPSHORT(obj->ctype.ai_info.path_length);

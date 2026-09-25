@@ -14,12 +14,18 @@ Switching variants retains playback position. Start with current versus dry;
 then compare dry versus reverb and chorus separately.
 
 Each clip is 60 seconds. The same exported MIDI is passed to both renderers;
-both use 48 voices and 48 kHz output. FluidSynth uses seventh-order interpolation,
+both use 48 voices and 48 kHz output. These historical clips use 25-point sinc interpolation,
 double-precision DSP and a single synthesis thread. Its gain is 0.2; TSF retains
 the shipping -10 dB gain. Listening copies are independently RMS-matched with a
 peak cap. They are not BS.1770 loudness-matched; raw copies and gains are saved.
 Existing PCM clipping in a baseline cannot be undone by normalization and is
 recorded as `pcm_boundary_samples`. FluidSynth renders must not clip.
+
+The old `FLUID_INTERP_7THORDER` name was misleading: in the pinned 2.6.1 it
+selects 25-point sinc, not seven-point interpolation. Production now explicitly
+uses `FLUID_INTERP_4THORDER` on load and DSP recreation. The offline runner keeps
+enum 7 as its historical default; pass the final arguments `128 -1 4` for the
+production voice limit and interpolation. See [the runtime/build audit](AUDIT.md).
 
 Effects are synthesizer effects, not a filter added to the finished recording:
 
@@ -156,7 +162,8 @@ tested revision, rather than updating independently to GCEM's newest commit.
 Before shipping an update:
 
 1. Review upstream release notes, licenses, newly enabled dependencies and the
-   local numeric-cast patch. Keep GPL components disabled. Refresh bundled notices
+   local numeric-cast patch. Check the actual meaning of selected enums and
+   defaults, including interpolation, against the pinned source. Keep GPL components disabled. Refresh bundled notices
    and version references in this README as appropriate
 2. Reconfigure/build the host renderer and run `fluid_render_contracts` plus
    `music_synth_tests`. Build all three Android ABIs and run the installed-app
@@ -187,6 +194,6 @@ The high sustained part is channel 5, program 51 (zero-based), Syn.Strings2.
 python android/tests/fluidsynth_quality/popping.py --fluid temp/fluidsynth-feasibility/host/bin/Release/fluid_render.exe --font temp/sc55-validation/Roland.SC-55.sf2 --midi temp/fluidsynth-feasibility/listening/raw/game01.mid --output temp/fluidsynth-integration/popping
 ```
 
-Before the production gain calibration above, the adapter's 36-second game01 output was byte-for-byte identical to
+Before the production gain calibration and fourth-order interpolation change, the adapter's 36-second game01 output was byte-for-byte identical to
 this 128-voice reverb+chorus render. The diagnostic uses the same gain for all
 versions and also provides the isolated high part; no normalization or filtering.

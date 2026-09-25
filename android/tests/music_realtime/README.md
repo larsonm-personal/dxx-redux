@@ -15,6 +15,9 @@ python android/tests/music_realtime/probe.py --adb C:/local/android-sdk/platform
 Use `--renderer sf2` or `--renderer ymfm` to isolate a renderer. D1 is selected
 by source ID, not catalog index. `--source d2-builtin` tests the D2 songs.
 Use `--measure-only` to retain a known-bad baseline without a failing exit code.
+Use `--max-render-ratio 0.15` to require at most 0.15 elapsed render seconds per
+produced audio second, excluding initial queue priming. Reports always include
+this ratio; it includes scheduling delays and is not thread CPU utilization.
 Run without concurrent builds or other device tests to avoid CPU contention.
 
 The default cases are FM menu, briefing and game01, plus MIDI game01. A pass
@@ -56,9 +59,13 @@ and producing 222 sustained underruns. Average audio consumption fell to
 47,984 frames/second with zero sustained underruns. FM game01 rendering dropped
 from roughly 200-300 ms to 30-40 ms per second of playback.
 
-Debug symbols and assertions remain enabled. Double precision, seventh-order
+Debug symbols and assertions remain enabled. Double precision, the then-selected
 SF2 interpolation, FM clean resampling, effects, voice limit and queue sizes
 are unchanged. Release builds retain their existing optimization settings.
+
+That baseline still selected deprecated `FLUID_INTERP_7THORDER`, which maps to
+25-point sinc in FluidSynth 2.6.1. The subsequent fix selects fourth-order in
+production; see [the FluidSynth audit](../fluidsynth_quality/AUDIT.md) for results.
 
 The preview did not reproduce a 2-3 second FM startup delay: first nonzero PCM
 was approximately 0.95 seconds for the menu, 61 ms for briefing and 446 ms for

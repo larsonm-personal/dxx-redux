@@ -89,7 +89,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
-#define STATE_VERSION 17
+#define STATE_VERSION CADENCE_D1_SAVE_VERSION
 #define STATE_AUTOSELECT_RUNTIME_VERSION 17
 #define STATE_COMPATIBLE_VERSION 6
 #define STATE_RUNTIME_VERSION 8
@@ -119,6 +119,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 12- Save FX RNG state and call count for deterministic checkpoint replay
 // 13- Save difficulty change history for mid-level difficulty edits
 // 14- Save generated secret-area found bits
+// 18- Save full-width relative Fusion, refueling and collision cadence clocks
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
@@ -181,6 +182,7 @@ static int g_android_save_blank_thumbnail = 0;
 #endif
 
 #include "autoselect_runtime.h"
+#include "cadence_runtime.h"
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -610,6 +612,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	state_write_effect_runtime_state(fp, GameTime64);
 	secret_area_write_runtime_state(fp);
 	autoselect_write_runtime_state(fp);
+	cadence_runtime_write(fp, GameTime64);
 }
 
 /* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
@@ -855,6 +858,10 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	if (version >= STATE_AUTOSELECT_RUNTIME_VERSION &&
 	    !autoselect_read_runtime_state(fp, swap, 0))
 		goto done;
+	validation_stage = "cadence clocks";
+	if (version >= CADENCE_D1_SAVE_VERSION &&
+	    !cadence_runtime_read(fp, swap, 0, GameTime64))
+		goto done;
 	valid = 1;
 done:
 	if (!valid)
@@ -964,6 +971,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
 		secret_area_read_runtime_state(fp, swap, version >= STATE_SECRET_AREA_IDENTITY_VERSION);
 	if (version >= STATE_AUTOSELECT_RUNTIME_VERSION)
 		autoselect_read_runtime_state(fp, swap, 1);
+	if (version >= CADENCE_D1_SAVE_VERSION)
+		cadence_runtime_read(fp, swap, 1, GameTime64);
 }
 
 static int state_thumbnail_has_palette(int version)
@@ -2863,6 +2872,8 @@ RetryObjectLoading:
 		}
 		state_read_runtime_state(fp, swap, version);
 	}
+	if (version < CADENCE_D1_SAVE_VERSION)
+		cadence_runtime_reset();
 	if (version < STATE_AI_PATH_FREE_PTR_VERSION)
 		ai_path_rebuild_free_ptr_from_paths();
 
@@ -2949,24 +2960,8 @@ RetryObjectLoading:
 	#ifdef __ANDROID__
 	{
 		int64_t collision_delay_last_play_time = 0;
-
 		if (android_rewind_get_restore_collision_delay_last_play_time(&collision_delay_last_play_time))
-		collide_set_collision_delay_last_play_time((fix64) collision_delay_last_play_time);
-		else if (input_demo_replay_has_checkpoint()) {
-			if (input_demo_replay_get_checkpoint_collision_delay_last_play_time(&collision_delay_last_play_time))
-			collide_set_collision_delay_last_play_time((fix64) collision_delay_last_play_time);
-			else
-			collide_set_collision_delay_last_play_time(0);
-	}
-	}
-	#else
-	if (input_demo_replay_has_checkpoint()) {
-		int64_t collision_delay_last_play_time = 0;
-
-		if (input_demo_replay_get_checkpoint_collision_delay_last_play_time(&collision_delay_last_play_time))
-			collide_set_collision_delay_last_play_time((fix64) collision_delay_last_play_time);
-		else
-			collide_set_collision_delay_last_play_time(0);
+			collide_set_collision_delay_last_play_time((fix64)collision_delay_last_play_time);
 	}
 	#endif
 

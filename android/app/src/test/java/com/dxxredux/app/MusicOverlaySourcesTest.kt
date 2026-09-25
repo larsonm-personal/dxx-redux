@@ -3,8 +3,40 @@ package com.dxxredux.app
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class MusicOverlaySourcesTest {
+    @Test
+    fun installedMissionMusicIsHiddenForBaseMissions() {
+        val filesDir = freshDir("build/test-music-overlay-base-mission")
+        val archive = File(filesDir, "soundtrack.zip")
+        ZipOutputStream(archive.outputStream()).use { zip ->
+            for ((name, content) in listOf(
+                "soundtrack.mn2" to "name = Soundtrack\nnum_levels = 1\nlevel01.rl2\n",
+                "level01.rl2" to "level",
+                "soundtrack.sng" to "track.ogg\n",
+                "track.ogg" to "audio",
+            )) {
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(content.toByteArray())
+                zip.closeEntry()
+            }
+        }
+        val manager = ModManager.forActiveSet(filesDir)
+        org.junit.Assert.assertNotNull(manager.importMissionZipFile(archive, "soundtrack.zip"))
+        org.junit.Assert.assertTrue(manager.hasEnabledMissionZipSoundtrack("d2"))
+
+        assertEquals(
+            listOf("midi"),
+            musicOverlaySourceOptions(filesDir, "d2", activeSource = "mission", hasAddonMission = false).map { it.id },
+        )
+        assertEquals(
+            listOf("mission", "midi"),
+            musicOverlaySourceOptions(filesDir, "d2", hasAddonMission = true).map { it.id },
+        )
+    }
+
     @Test
     fun emptyLauncherMusicShowsOnlyBaseMidi() {
         val filesDir = freshDir("build/test-music-overlay-empty")

@@ -11,10 +11,11 @@ internal fun musicOverlaySourceOptions(
     filesDir: File,
     game: String,
     activeSource: String? = null,
+    hasAddonMission: Boolean = false,
     canAccessUri: (uri: String, useFileDescriptor: Boolean) -> Boolean = { _, _ -> true },
 ): List<MusicOverlaySourceOption> =
     buildList {
-        if (ModManager.forActiveSet(filesDir).hasEnabledMissionZipSoundtrack(game)) {
+        if (hasAddonMission && ModManager.forActiveSet(filesDir).hasEnabledMissionZipSoundtrack(game)) {
             add(MusicOverlaySourceOption("mission", "Mission zip"))
         }
         if (CustomAudioSetManager.forActiveSet(filesDir).hasUsableTrack { uri -> canAccessUri(uri, true) }) {

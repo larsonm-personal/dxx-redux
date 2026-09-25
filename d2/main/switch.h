@@ -24,6 +24,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "segment.h"
 
 #include "rewind_file.h"
+#include <stddef.h>
+#include "d1_in_d2/d1_in_d2_trigger_storage.h"
 
 #define MAX_TRIGGERS        100
 #define MAX_WALLS_PER_LINK  10
@@ -104,7 +106,10 @@ typedef struct trigger {
 	fix     time;
 	short   seg[MAX_WALLS_PER_LINK];
 	short   side[MAX_WALLS_PER_LINK];
+	d1_trigger_storage d1_saved; // Runtime extension, excluded from the core disk record
 } __pack__ trigger;
+
+#define TRIGGER_DISK_SIZE offsetof(trigger, d1_saved)
 
 extern trigger Triggers[MAX_TRIGGERS];
 

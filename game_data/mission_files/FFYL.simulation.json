@@ -5,10 +5,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 26,
-    "failed": 1
+    "ok": 27
   },
   "levels": [
     {
@@ -35,7 +34,7 @@
         },
         {
           "n": "fly-through 2",
-          "s": 71
+          "s": 70
         },
         {
           "n": "gold key",
@@ -43,29 +42,29 @@
         },
         {
           "n": "switch 10",
-          "s": 124
+          "s": 123
         },
         {
           "n": "red key",
-          "s": 140
+          "s": 139
         },
         {
           "n": "boss",
-          "s": 165
+          "s": 164
         },
         {
           "n": "exit",
           "s": 172
         }
       ],
-      "total_frames": 10344,
+      "total_frames": 10292,
       "rng_end": {
         "state": 3596119335,
         "calls": 6082
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 7.566666,
+        "simulated_seconds": 7.533325,
         "difficulty": 2
       }
     },
@@ -136,7 +135,7 @@
           "s": 111
         }
       ],
-      "total_frames": 6632,
+      "total_frames": 6639,
       "rng_end": {
         "state": 848514606,
         "calls": 10009
@@ -180,8 +179,8 @@
     {
       "level_num": 4,
       "level_file": "PDL11.RL2",
-      "route_input_sha256": "C82E8EBEB1264F8FCBF4FED71B9B258160CFDDEBCD3DD9270C29135483B077B7",
-      "status": "failed",
+      "route_input_sha256": "CE91BC6AFA03B077D3ED06677C934A64EE6227C6936540B0627036DD94B40E2E",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -190,14 +189,58 @@
         {
           "n": "blue key",
           "s": 13
+        },
+        {
+          "n": "switch 13",
+          "s": 27
+        },
+        {
+          "n": "pass-through 12",
+          "s": 27
+        },
+        {
+          "n": "gold key",
+          "s": 32
+        },
+        {
+          "n": "red key",
+          "s": 42
+        },
+        {
+          "n": "pass-through 18",
+          "s": 44
+        },
+        {
+          "n": "switch 19",
+          "s": 45
+        },
+        {
+          "n": "hidden door",
+          "s": 47
+        },
+        {
+          "n": "switch 20",
+          "s": 49
+        },
+        {
+          "n": "boss",
+          "s": 59
+        },
+        {
+          "n": "exit",
+          "s": 67
         }
       ],
-      "total_frames": 790,
+      "total_frames": 3994,
       "rng_end": {
-        "state": 831237128,
-        "calls": 351
+        "state": 2477621756,
+        "calls": 4091
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 7.900009,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 5,
@@ -270,10 +313,10 @@
           "s": 106
         }
       ],
-      "total_frames": 6337,
+      "total_frames": 6333,
       "rng_end": {
-        "state": 1422849092,
-        "calls": 10387
+        "state": 4104448510,
+        "calls": 10377
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -363,21 +406,21 @@
         },
         {
           "n": "boss",
-          "s": 123
+          "s": 124
         },
         {
           "n": "exit",
           "s": 131
         }
       ],
-      "total_frames": 7833,
+      "total_frames": 7855,
       "rng_end": {
         "state": 3494795999,
         "calls": 11018
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 7.183334,
+        "simulated_seconds": 7.166656,
         "difficulty": 2
       }
     },
@@ -401,17 +444,17 @@
         },
         {
           "n": "boss",
-          "s": 77
+          "s": 78
         },
         {
           "n": "exit",
           "s": 80
         }
       ],
-      "total_frames": 4803,
+      "total_frames": 4824,
       "rng_end": {
-        "state": 1403245953,
-        "calls": 9856
+        "state": 1193730200,
+        "calls": 9871
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -458,14 +501,14 @@
           "s": 84
         }
       ],
-      "total_frames": 5025,
+      "total_frames": 5031,
       "rng_end": {
         "state": 1211594024,
         "calls": 10175
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 6.53334,
+        "simulated_seconds": 6.533325,
         "difficulty": 2
       }
     },
@@ -756,7 +799,7 @@
           "s": 98
         }
       ],
-      "total_frames": 5882,
+      "total_frames": 5889,
       "rng_end": {
         "state": 3125765643,
         "calls": 2302
@@ -841,17 +884,17 @@
         },
         {
           "n": "exit",
-          "s": 20
+          "s": 21
         }
       ],
-      "total_frames": 1172,
+      "total_frames": 1230,
       "rng_end": {
         "state": 2025613794,
         "calls": 789
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 10.433334,
+        "simulated_seconds": 11.400009,
         "difficulty": 2
       }
     },
@@ -1135,7 +1178,7 @@
           "s": 155
         }
       ],
-      "total_frames": 9296,
+      "total_frames": 9295,
       "rng_end": {
         "state": 1577312002,
         "calls": 12405
@@ -1190,29 +1233,29 @@
         },
         {
           "n": "gold key",
-          "s": 99
+          "s": 106
         },
         {
           "n": "red key",
-          "s": 134
+          "s": 139
         },
         {
           "n": "switch 17",
-          "s": 166
+          "s": 172
         },
         {
           "n": "boss",
-          "s": 213
+          "s": 219
         },
         {
           "n": "exit",
-          "s": 221
+          "s": 227
         }
       ],
-      "total_frames": 13263,
+      "total_frames": 13620,
       "rng_end": {
-        "state": 1505632171,
-        "calls": 16222
+        "state": 1343141719,
+        "calls": 17042
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,

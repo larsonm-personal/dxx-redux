@@ -12,6 +12,32 @@ import kotlin.io.path.createTempDirectory
 
 class SetupLaunchReadinessTest {
     @Test
+    fun launcherOffersOnlyTheTwoEngines() {
+        assertEquals(listOf("d1", "d2"), GameLaunchTarget.launcherChoices.map { it.id })
+    }
+
+    @Test
+    fun lanJoinChecksTheHostedEngineAgainstInstalledData() {
+        val setDir = createTempDirectory("lan-engine-readiness").toFile()
+        fun warning(game: String) =
+            lanGameReadinessWarning(game, setDir, AssetManifest(setDir), SafManifest.forDir(setDir))
+
+        assertTrue(warning("d1")!!.contains("Descent 1 game data is not ready"))
+        assertTrue(warning("d2")!!.contains("Descent 2 game data is not ready"))
+        writeFile(setDir, "descent.hog")
+        writeFile(setDir, "descent.pig")
+        assertEquals(null, warning("d1"))
+        assertTrue(warning("d2")!!.contains("Descent 2 game data is not ready"))
+        writeD2Files(setDir)
+        assertEquals(null, warning("d1"))
+        assertEquals(null, warning("d2"))
+        File(setDir, "descent.pig").delete()
+        assertTrue(warning("d1")!!.contains("Descent 1 game data is not ready"))
+        assertEquals(null, warning("d2"))
+        assertTrue(warning("unknown")!!.contains("unsupported host engine"))
+    }
+
+    @Test
     fun d2DemoSetCountsAsLaunchReady() {
         val setDir = createTempDirectory("d2-demo-ready").toFile()
         writeFile(setDir, "d2demo.hog")

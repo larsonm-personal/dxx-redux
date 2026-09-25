@@ -107,7 +107,7 @@ MIDI events and soundfont. Switching variants retains the play position.</p>
 <p><b>Chorus is an explicit experiment:</b> its variants add MIDI CC93=24 on melodic channels;
 drums retain their original send. Later song controls can override it. Reverb uses the font and
 renderer defaults for sends, with fixed conservative FDN effect parameters.</p>
-<p>FluidSynth 2.6.1 uses seventh-order interpolation; all renders use 48 voices and 48 kHz.
+<p>This historical comparison uses FluidSynth 2.6.1's 25-point sinc interpolation; production now uses fourth-order. All renders use 48 voices and 48 kHz.
 Listening copies are approximately RMS-matched with a peak cap, without EQ or compression.
 This is a soundfont experiment, not an SC-55 emulation or a production app update.</p>
 <small id="detail"></small><script>

@@ -43,6 +43,26 @@ extern int Boss_dying;
 extern ai_local	Ai_local_info[MAX_OBJECTS];
 extern vms_vector	Believed_player_pos;
 
+/* AI state retained by native saves and read by shared replay observation */
+#define MAX_AI_CLOAK_INFO    8 // Must be a power of 2!
+#define MAX_AWARENESS_EVENTS 64
+typedef struct awareness_event {
+	short segnum;   // segment the event occurred in
+	short type;     // type of event, defines behavior
+	vms_vector pos; // absolute 3 space location of event
+} awareness_event;
+extern int Ai_initialized;
+extern ai_cloak_info Ai_cloak_info[MAX_AI_CLOAK_INFO];
+extern int Num_awareness_events;
+extern awareness_event Awareness_events[MAX_AWARENESS_EVENTS];
+extern fix Boss_teleport_interval, Boss_cloak_interval, Gate_interval;
+extern fix64 Last_gate_time, Boss_dying_start_time;
+extern int Boss_dying_sound_playing;
+#ifndef SHAREWARE
+extern int Num_boss_gate_segs;
+extern short Boss_gate_segs[MAX_BOSS_TELEPORT_SEGS];
+#endif
+
 extern void move_towards_segment_center(object *objp);
 extern int gate_in_robot(int type, int segnum);
 extern void do_ai_movement(object *objp);

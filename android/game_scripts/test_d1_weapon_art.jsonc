@@ -1,0 +1,8 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_d1_in_d2_standalone",
+        "description": "Actual Spreadfire firing, checkpoint restore and Android GPU readback in First Strike"}},
+    {"action": "assert", "expect": {"current_level_num": 1, "game_window_is_front": true, "player_dead": false}},
+    {"action": "set_debug", "field": "clear_robots", "value": "true"},
+    {"action": "set_debug", "field": "weapon_art_probe", "value": "true"},
+    {"action": "introspect"}
+]

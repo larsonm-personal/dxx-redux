@@ -138,6 +138,22 @@ internal fun launchDataReadyForGame(
         .all { it.found }
 }
 
+internal fun lanGameReadinessWarning(
+    game: String,
+    setDir: File,
+    manifest: AssetManifest,
+    safManifest: SafManifest,
+): String? {
+    val target =
+        GameLaunchTarget.launcherChoices.firstOrNull { it.id == game }
+            ?: return "Cannot join: unsupported host engine '$game'"
+    return if (launchDataReadyForGame(game, setDir, manifest, safManifest)) {
+        null
+    } else {
+        "Cannot join: ${target.displayName} game data is not ready. Add its required files in Setup, then join again"
+    }
+}
+
 internal fun d1InD2Readiness(
     filesDir: File,
     setDir: File,

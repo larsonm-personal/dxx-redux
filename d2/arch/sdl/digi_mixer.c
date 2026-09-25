@@ -29,6 +29,7 @@
 #include "sounds.h"
 #include "digi.h"
 #include "digi_mixer.h"
+#include "sound_mixer_convert.h"
 #include "digi_mixer_music.h"
 #include "console.h"
 #include "config.h"
@@ -141,13 +142,19 @@ void digi_mixer_free_channel(int channel_num)
 	channels[channel_num] = 0;
 }
 
+static int digi_mixer_source_rate(int soundnum)
+{
+	if (GameSounds[soundnum].freq > 0)
+		return GameSounds[soundnum].freq;
+	return GameArg.SndDigiSampleRate > 0 ? GameArg.SndDigiSampleRate : SAMPLE_RATE_22K;
+}
+
 /*
  * Play-time conversion. Performs output conversion only once per sound effect used.
  * Once the sound sample has been converted, it is cached in SoundChunks[]
  */
 void mixdigi_convert_sound(int i)
 {
-	SDL_AudioCVT cvt;
 	Uint8 *data = GameSounds[i].data;
 	Uint32 dlen = GameSounds[i].length;
 	int out_freq;
@@ -163,37 +170,22 @@ void mixdigi_convert_sound(int i)
 	if (!Mix_QuerySpec(&out_freq, &out_format, &out_channels)) return;
 
 	{
-		int cvt_ret;
-		int src_rate = GameArg.SndDigiSampleRate;
-		size_t converted_len;
+		int src_rate = GameSounds[i].freq;
+		Uint8 *converted;
+		Uint32 converted_length;
 		if (src_rate <= 0)
 			src_rate = SAMPLE_RATE_22K;
-		cvt_ret = SDL_BuildAudioCVT(&cvt, AUDIO_U8, 1, src_rate, out_format, out_channels, out_freq);
-		if (cvt_ret < 0 || cvt.len_mult <= 0)
-		{
-			con_printf(CON_DEBUG, "conversion setup of %d failed\n", i);
+		if (!sound_mixer_convert(data, dlen, src_rate, out_freq, out_format, out_channels,
+		                         &converted, &converted_length)) {
+			con_printf(CON_DEBUG, "conversion of %d failed\n", i);
 			return;
 		}
-
-		converted_len = (size_t)dlen * (size_t)cvt.len_mult;
-		cvt.buf = malloc(converted_len);
-		if (!cvt.buf)
-			return;
-		cvt.len = dlen;
-		memcpy(cvt.buf, data, dlen);
-		if (SDL_ConvertAudio(&cvt))
-		{
-			free(cvt.buf);
-			con_printf(CON_DEBUG,"conversion of %d failed\n", i);
-			return;
-		}
-
-		SoundChunks[i].abuf = cvt.buf;
-		SoundChunks[i].alen = cvt.len_cvt;
+		SoundChunks[i].abuf = converted;
+		SoundChunks[i].alen = converted_length;
 		SoundChunks[i].allocated = 1;
 		SoundChunks[i].volume = 128; // Max volume = 128
 #ifdef __ANDROID__
-		android_sound_trace_converted(i, cvt.buf, cvt.len_cvt, src_rate, out_freq, out_format, out_channels);
+		android_sound_trace_converted(i, converted, converted_length, src_rate, out_freq, out_format, out_channels);
 #endif
 	}
 }
@@ -230,7 +222,7 @@ int digi_mixer_start_sound(short soundnum, fix volume, int pan, int looping, int
 #ifdef __ANDROID__
 	/* Hashing/logging must not delay volume setup after playback starts */
 	android_sound_trace_play(soundnum, SoundChunks[soundnum].abuf, SoundChunks[soundnum].alen,
-	                         GameArg.SndDigiSampleRate > 0 ? GameArg.SndDigiSampleRate : SAMPLE_RATE_22K, channel);
+	                         digi_mixer_source_rate(soundnum), channel);
 #endif
 	Mix_PlayChannel(channel, &(SoundChunks[soundnum]), mix_loop);
 	Mix_SetPanning(channel, 255-mix_pan, mix_pan);

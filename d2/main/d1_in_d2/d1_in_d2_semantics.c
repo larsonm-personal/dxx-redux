@@ -55,6 +55,11 @@ fix d1_in_d2_pickup_boost(fix base_boost)
 	return !d1_in_d2_use_d1_gameplay() && Difficulty_level == 0 ? base_boost + base_boost / 2 : base_boost;
 }
 
+fix d1_in_d2_refuel_sound_delay(fix engine_delay)
+{
+	return d1_in_d2_use_d1_gameplay() ? F1_0 / 3 : engine_delay;
+}
+
 fix d1_in_d2_boss_health_maximum(fix strength, fix engine_maximum)
 {
 	return d1_in_d2_use_d1_gameplay() ? strength : engine_maximum;
@@ -211,6 +216,12 @@ int d1_in_d2_bounce_preserves_velocity(const object *obj)
 int d1_in_d2_door_wait_elapsed(const active_door *door)
 {
 	return d1_in_d2_use_d1_gameplay() ? door->time > DOOR_WAIT_TIME : -1;
+}
+
+int d1_in_d2_completed_door_state(void)
+{
+	/* The native state also prevents repeated hits from sending door-open events */
+	return d1_in_d2_use_d1_gameplay() ? WALL_DOOR_OPENING : WALL_DOOR_OPEN;
 }
 
 int d1_in_d2_door_close_blocked(const active_door *door)
@@ -432,6 +443,16 @@ fix d1_in_d2_reactor_strength(fix engine_strength)
 	if (!d1_in_d2_use_d1_gameplay())
 		return engine_strength;
 	return F1_0 * 200 + Current_level_num * F1_0 * (Current_level_num >= 0 ? 50 : -100);
+}
+
+fix d1_in_d2_reactor_impact_size(fix reactor_size)
+{
+	return d1_in_d2_use_d1_gameplay() ? ((reactor_size / 3) * 3) / 4 : reactor_size * 3 / 20;
+}
+
+fix d1_in_d2_wall_fireball_base_size(fix engine_size)
+{
+	return d1_in_d2_use_d1_gameplay() ? 0x48000 : engine_size;
 }
 
 int d1_in_d2_use_d2_resource_drop_suppression(const object *objp, int game_mode)

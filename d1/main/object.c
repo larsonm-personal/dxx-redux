@@ -1950,18 +1950,28 @@ void object_move_one( object * obj )
 			input_demo_rng_trace_clear_object_context();
 			break;
 
-		case CT_WEAPON:		Laser_do_weapon_sequence(obj, doHomerFrame, idealHomerFrameTime, homerFrameCount, originalHoming); break; // CED
-		case CT_EXPLOSION:	do_explosion_sequence(obj); break;
+		case CT_WEAPON:
+			input_demo_rng_trace_set_object_context((int) (obj - Objects), obj->signature,
+			                                        obj->id);
+			Laser_do_weapon_sequence(obj, doHomerFrame, idealHomerFrameTime, homerFrameCount, originalHoming);
+			input_demo_rng_trace_clear_object_context();
+			break; // CED
+		case CT_EXPLOSION:
+			input_demo_rng_trace_set_object_context((int) (obj - Objects), obj->signature,
+			                                        obj->id);
+			do_explosion_sequence(obj);
+			input_demo_rng_trace_clear_object_context();
+			break;
 
-		#ifndef RELEASE
+#ifndef RELEASE
 		case CT_SLEW:
-			if ( keyd_pressed[KEY_PAD5] ) slew_stop();
-			if ( keyd_pressed[KEY_NUMLOCK] ) 		{
+			if (keyd_pressed[KEY_PAD5]) slew_stop();
+			if (keyd_pressed[KEY_NUMLOCK]) {
 				slew_reset_orient();
 			}
 			slew_frame(0 );		// Does velocity addition for us.
 			break;
-		#endif
+#endif
 
 //		case CT_FLYTHROUGH:
 //			do_flythrough(obj,0);			// HACK:do_flythrough should operate on an object!!!!
@@ -1997,6 +2007,9 @@ void object_move_one( object * obj )
 	if (obj->type == OBJ_NONE || obj->flags&OF_SHOULD_BE_DEAD)
 		return;         // object has been deleted
 
+	input_demo_rng_trace_set_object_context((int) (obj - Objects), obj->signature,
+	                                        obj->id);
+
 	switch (obj->movement_type) {
 
 		case MT_NONE:			break;				//this doesn't move
@@ -2004,7 +2017,6 @@ void object_move_one( object * obj )
 		case MT_PHYSICS:		do_physics_sim(obj);	break;	//move by physics
 
 		case MT_SPINNING:		spin_object(obj); break;
-
 	}
 
 	//	If player and moved to another segment, see if hit any triggers.
@@ -2022,10 +2034,11 @@ void object_move_one( object * obj )
 	#else
 		obj++;		//kill warning
 	#endif
+	input_demo_rng_trace_clear_object_context();
 }
 
 //--------------------------------------------------------------------
-//move all objects for the current frame
+// move all objects for the current frame
 void object_move_all()
 {
 	int i;

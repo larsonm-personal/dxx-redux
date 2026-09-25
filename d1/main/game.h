@@ -118,6 +118,8 @@ void init_cockpit(void);
 void calc_frame_time(void);
 void calc_game_time(void);
 void calc_d_tick();
+fix64 game_get_fusion_next_sound_time(void);
+void game_set_fusion_next_sound_time(fix64 next_sound_time);
 void game_get_d_tick_state(game_d_tick_state *state);
 int game_d_tick_state_is_valid(const game_d_tick_state *state);
 void game_set_d_tick_state(const game_d_tick_state *state);

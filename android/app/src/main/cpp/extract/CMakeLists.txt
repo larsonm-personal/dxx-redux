@@ -514,6 +514,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/fluidsynth-music.cmake
 add_executable(
     test_music_synth
     test_music_synth.c
+    test_music_fluid.cpp
     ../shared/music_fluid.cpp
     ../shared/music_synth.cpp
     ../shared/music_soundfont.c

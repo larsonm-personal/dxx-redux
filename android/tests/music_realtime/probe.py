@@ -5,6 +5,7 @@ and a debug APK. Restores game preferences; does not change imported assets.
 """
 import argparse
 import json
+import math
 from pathlib import Path
 import re
 import subprocess
@@ -26,9 +27,14 @@ def main():
     parser.add_argument('--renderer', choices=['both', 'ymfm', 'sf2'], default='both')
     parser.add_argument('--source', default='d1-builtin')
     parser.add_argument('--measure-only', action='store_true', help='Record a failing baseline without a nonzero exit')
+    parser.add_argument('--max-render-ratio', type=float,
+                        help='Optional elapsed render seconds per produced audio second budget (includes scheduling delays)')
     args = parser.parse_args()
     if args.seconds < 35:
         parser.error('--seconds must be at least 35 to reach game01\'s dense section')
+    if args.max_render_ratio is not None and (
+            not math.isfinite(args.max_render_ratio) or args.max_render_ratio <= 0):
+        parser.error('--max-render-ratio must be finite and positive')
     args.output.mkdir(parents=True, exist_ok=True)
 
     def call(*parts, check=True):
@@ -97,6 +103,14 @@ def main():
                     result['forward_progress'] = all(b['consumed_frames'] > a['consumed_frames'] for a, b in zip(samples, samples[1:]))
                     result['first_audio_ms'] = last['first_audio_ms']
                     result['max_render_ms'] = max(s['max_render_ms'] for s in samples)
+                    audio_seconds = (last['rendered_frames'] - first['rendered_frames']) / 48000
+                    result['render_wall_seconds_per_audio_second'] = (
+                        sum(s['render_ms'] for s in samples[1:]) / 1000 / audio_seconds
+                        if audio_seconds > 0 else None)
+                    if args.max_render_ratio is not None and (
+                            result['render_wall_seconds_per_audio_second'] is None or
+                            result['render_wall_seconds_per_audio_second'] > args.max_render_ratio):
+                        failures.append('Elapsed rendering exceeded the requested headroom budget')
                     if not result['forward_progress']:
                         failures.append('Audio consumption stopped making forward progress')
                     if not 47000 <= result['consumed_frames_per_second'] <= 49000:

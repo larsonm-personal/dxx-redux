@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -7,10 +8,15 @@
 #include <vector>
 #include <zlib.h>
 #include "input_demo_object_trace.h"
+#include "input_demo_ai_trace.h"
+#include "input_demo_world_trace.h"
 #include "input_demo_state_trace.h"
 #include "render_gameplay_view.h"
 #include <nlohmann/json.hpp>
 #include <SDL.h>
+#ifdef USE_SDLMIXER
+#include <SDL_mixer.h>
+#endif
 #undef main
 #ifdef HAVE_LIBPNG
 #include <png.h>
@@ -19,6 +25,7 @@
 extern "C" {
 #include "args.h"
 #include "ai.h"
+#include "automap.h"
 #include "bm.h"
 #include "boss_health_shared.h"
 #include "config.h"
@@ -26,6 +33,12 @@ extern "C" {
 #include "cntrlcen.h"
 #include "console.h"
 #include "dxxerror.h"
+#ifdef USE_SDLMIXER
+#include "digi_mixer.h"
+void mixdigi_convert_sound(int sample);
+void digi_mixer_free_cached_sounds(void);
+extern Mix_Chunk SoundChunks[];
+#endif
 #include "endlevel.h"
 #include "effects.h"
 #include "fuelcen.h"
@@ -51,6 +64,7 @@ extern "C" {
 #include "object.h"
 #include "palette.h"
 #include "physfsx.h"
+#include "cadence_runtime.h"
 #include "physics.h"
 #include "piggy.h"
 #include "polyobj.h"
@@ -61,11 +75,18 @@ extern "C" {
 #include "rle.h"
 #include "render.h"
 #include "screens.h"
+#include "secretarea.h"
 #include "state.h"
+#ifdef DXX_BUILD_DESCENT_II
+void state_object_to_object_rw(object *obj, object_rw *saved);
+void state_object_rw_to_object(object_rw *saved, object *obj, int native_ai_format);
+#endif
 #include "input_demo_hooks.h"
+#include "input_demo_hooks_shared.h"
 #include "input_demo_start.h"
 #include "inferno.h"
 #include "key.h"
+#include "kconfig.h"
 #include "mouse.h"
 #include "switch.h"
 #include "text.h"
@@ -82,6 +103,8 @@ void do_endlevel_flythrough(int n);
 void apply_force_damage(object *obj, fix force, object *other);
 void kill_stuck_objects(int wallnum);
 void InitWeaponOrdering(void);
+void FireLaser(void);
+int check_collision_delayfunc_exec(void);
 int object_create_egg(object *obj);
 int drop_powerup(int type, int id, int num, vms_vector *velocity, vms_vector *position, int segment);
 void collide_robot_and_player(object *robot, object *player, vms_vector *point);
@@ -151,13 +174,6 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun, vms_v
 const char *gamefont_curfontname(int gf);
 void update_cockpits(void);
 #else
-// Native D1 keeps this shared queue layout private to ai.c; inspect the real
-// queue here without adding a production API solely for this fixture
-struct awareness_event {
-	short segnum, type;
-	vms_vector pos;
-};
-extern awareness_event Awareness_events[64];
 void load_hxm(char *filename);
 void load_custom_data(char *filename);
 void custom_remove(void);
@@ -187,6 +203,15 @@ static void require(bool condition, const char *message)
 }
 
 using bytes = std::vector<unsigned char>;
+
+static nlohmann::json boss_hit_state()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	return nlohmann::json::array({ d1_in_d2_ai_boss_hit_pending(), d1_in_d2_ai_boss_been_hit() });
+#else
+	return nlohmann::json::array({ Boss_hit_this_frame, Boss_been_hit });
+#endif
+}
 
 static void set_int(bytes &data, size_t offset, int value)
 {
@@ -558,6 +583,93 @@ static void init_test_corridor(int cells = 2)
 	Num_walls = 0;
 }
 
+// Run actual door allocation, animation and repeated contact without a renderer
+static nlohmann::json exercise_door_open_completion(bool native)
+{
+	const auto previous_clip = WallAnims[0];
+	auto result = nlohmann::json::array();
+	Game_mode = 0;
+	Newdemo_state = ND_STATE_NORMAL;
+	GameArg.SndNoSound = 1;
+	Player_num = 0;
+	Players[0].objnum = 0;
+	Players[0].flags = 0;
+	FrameTime = F1_0 / 16;
+	for (const bool automatic : { false, true })
+		for (const bool from_back : { false, true }) {
+			init_test_corridor(4);
+			Num_walls = 4;
+			Num_open_doors = 0;
+			std::memset(ActiveDoors, 0, sizeof(ActiveDoors));
+			WallAnims[0] = {};
+			WallAnims[0].num_frames = 8;
+			WallAnims[0].play_time = F1_0;
+			WallAnims[0].flags = WCF_TMAP1;
+			WallAnims[0].open_sound = WallAnims[0].close_sound = -1;
+			for (int i = 0; i < 8; ++i) WallAnims[0].frames[i] = i + 1;
+			for (int i = 0; i < 4; ++i) {
+				Walls[i] = {};
+				Walls[i].segnum = i;
+				Walls[i].sidenum = i % 2 ? 5 : 4;
+				Walls[i].linked_wall = -1;
+				Walls[i].type = WALL_DOOR;
+				Walls[i].flags = automatic ? WALL_DOOR_AUTO : 0;
+				Walls[i].state = WALL_DOOR_CLOSED;
+				Segments[i].sides[Walls[i].sidenum].wall_num = i;
+			}
+			for (int pair = 0; pair < 2; ++pair) {
+				const auto &w = Walls[pair * 2 + from_back];
+				wall_open_door(&Segments[w.segnum], w.sidenum);
+			}
+			require(Num_open_doors == 2, "two real doors allocate distinct active animations");
+			auto frames = nlohmann::json::array();
+			for (int frame = 0; frame < 16; ++frame) {
+				wall_frame_process();
+				auto walls = nlohmann::json::array();
+				for (int i = 0; i < 4; ++i)
+					walls.push_back({ Walls[i].state, Walls[i].flags, Segments[i].sides[Walls[i].sidenum].tmap_num });
+				frames.push_back({ Num_open_doors, walls });
+			}
+			int expected_state = automatic ? WALL_DOOR_WAITING : WALL_DOOR_OPENING;
+#ifdef DXX_BUILD_DESCENT_II
+			if (!native && !automatic) expected_state = WALL_DOOR_OPEN;
+#else
+			(void) native;
+#endif
+			require(Num_open_doors == (automatic ? 2 : 0), "only automatic doors remain in the active queue after opening");
+			for (int i = 0; i < 4; ++i) {
+				const auto &w = Walls[i];
+				auto &seg = Segments[w.segnum];
+				require(w.state == expected_state && (w.flags & WALL_DOOR_OPENED) && seg.sides[w.sidenum].tmap_num == 8,
+				        "completed door preserves native state, open collision flags and final texture on both sides");
+				require(wall_is_doorway(&seg, w.sidenum) & WID_FLY_FLAG, "completed door is traversable from both sides");
+				wall_open_door(&seg, w.sidenum);
+				require(wall_hit_process(&seg, w.sidenum, F1_0, Player_num, ConsoleObject) == WHP_DOOR,
+				        "repeated player contact still recognizes the completed door");
+				require(w.state == expected_state && Num_open_doors == (automatic ? 2 : 0) && seg.sides[w.sidenum].tmap_num == 8,
+				        "repeated opening and contact do not restart the animation or change completed state");
+			}
+			result.push_back({ { "automatic", automatic }, { "from_back", from_back }, { "frames", frames } });
+		}
+	WallAnims[0] = previous_clip;
+	return result;
+}
+
+static void test_door_open_completion()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	mission.descent_version = 1;
+	Current_mission = &mission;
+#endif
+	exercise_door_open_completion(true);
+#ifdef DXX_BUILD_DESCENT_II
+	mission.descent_version = 2;
+	exercise_door_open_completion(false);
+	Current_mission = nullptr;
+#endif
+}
+
 // Shared native/imported activation scenarios, through the real crossing entry
 static void install_native_trigger(int index, short flags)
 {
@@ -630,6 +742,364 @@ static void test_object_state_trace()
 	}
 }
 
+static void test_world_state_trace()
+{
+	init_test_corridor();
+	const fix64 saved_collision_clock = collide_get_collision_delay_last_play_time();
+	const fix64 saved_fusion_clock = game_get_fusion_next_sound_time();
+	const fix64 saved_refuel_clock = fuelcen_get_last_sound_time();
+	const fix64 collision_clock = (static_cast<fix64>(1) << 40) + 123;
+	collide_set_collision_delay_last_play_time(collision_clock);
+	game_set_fusion_next_sound_time(collision_clock + 1);
+	fuelcen_set_last_sound_time(collision_clock + 2);
+	N_players = 1;
+	Players[0].shields = 77 * F1_0;
+	Num_walls = 1;
+	Walls[0] = {};
+	Walls[0].hps = 100 * F1_0;
+	const int inactive = MAX_OBJECTS - 1;
+	require(Objects[inactive].type == OBJ_NONE, "AI observation fixture uses an inactive object slot");
+	const std::vector<ai_local> saved_locals(Ai_local_info, Ai_local_info + MAX_OBJECTS);
+	ai_local baseline = {};
+	baseline.time_player_seen = -7 * F1_0;
+	baseline.time_player_sound_attacked = -9 * F1_0;
+	baseline.next_misc_sound_time = -11 * F1_0;
+#ifdef DXX_BUILD_DESCENT_II
+	baseline.d1_saved.last_see_time = 123;
+	baseline.d1_saved.last_attack_time = -456;
+	baseline.d1_saved.wait_time = 789;
+#endif
+	std::fill_n(Ai_local_info, MAX_OBJECTS, baseline);
+	const auto saved_point = Point_segs[MAX_POINT_SEGS - 1];
+	const auto saved_awareness = Awareness_events[MAX_AWARENESS_EVENTS - 1];
+	Ai_local_info[inactive].next_fire = 123456;
+	Point_segs[MAX_POINT_SEGS - 1].segnum = 17;
+	Point_segs[MAX_POINT_SEGS - 1].point = { 11, 22, 33 };
+	Awareness_events[MAX_AWARENESS_EVENTS - 1].pos = { 44, 55, 66 };
+	std::vector<nlohmann::json> complete_locals;
+	for (int i = 0; i < MAX_OBJECTS; ++i) complete_locals.push_back(input_demo_ai_local_trace_snapshot(i));
+	char error[256] = {};
+	const char *path = "world-state-test.jsonl";
+	require(input_demo_state_trace_start(path, "replay", "d1", "d1", 1, 0, "save_checkpoint", 2, error, sizeof(error)), "open real world observation stream");
+	const auto sim_calls = d_rand_get_call_count(), fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	require(input_demo_world_trace_write(0, "restored", error, sizeof(error)), "capture restored world before simulation");
+	require(input_demo_world_trace_write(0, nullptr, error, sizeof(error)), "initial world frame has independent reset");
+	require(input_demo_world_trace_write(1, nullptr, error, sizeof(error)), "unchanged world frame emits empty delta");
+	collide_set_collision_delay_last_play_time(-collision_clock);
+	game_set_fusion_next_sound_time(-collision_clock - 1);
+	fuelcen_set_last_sound_time(-collision_clock - 2);
+	Players[0].shields -= F1_0;
+	Walls[0].hps -= 3 * F1_0;
+	Ai_local_info[inactive].next_fire++;
+	Ai_local_info[0].time_player_seen++;
+	require(input_demo_world_trace_write(2, "terminal", error, sizeof(error)), "capture terminal-only inventory and world changes");
+	require(input_demo_world_trace_write(2, nullptr, error, sizeof(error)), "boundary does not replace the per-frame delta baseline");
+	input_demo_state_trace_stop();
+	require(sim_calls == d_rand_get_call_count() && fx_calls == d_rand_get_stream_call_count(D_RNG_FX), "world observer never consumes RNG");
+	PHYSFS_file *file = PHYSFS_openRead(path);
+	require(file != nullptr, "read world observation stream");
+	std::string text(static_cast<size_t>(PHYSFS_fileLength(file)), '\0');
+	require(PHYSFS_readBytes(file, &text[0], text.size()) == static_cast<PHYSFS_sint64>(text.size()) && PHYSFS_close(file), "read complete world records");
+	std::istringstream lines(text);
+	std::string line;
+	std::vector<nlohmann::json> rows;
+	while (std::getline(lines, line)) rows.push_back(nlohmann::json::parse(line));
+	require(rows.size() == 6 && rows[1]["phase"] == "restored" && rows[1]["state"]["players"][0]["shields"] == 77 * F1_0, "restored inventory is observed before later changes");
+	require(rows[1]["state"]["globals"]["Collision_delay_last_play_time"] == collision_clock &&
+	            rows[4]["state"]["globals"]["Collision_delay_last_play_time"] == -collision_clock &&
+	            rows[5]["state"]["globals"]["Collision_delay_last_play_time"] == -collision_clock,
+	        "world boundaries and deltas retain the complete signed collision clock");
+	for (int row : { 1, 2, 4, 5 }) {
+		const fix64 sign = row < 4 ? 1 : -1;
+		require(rows[row]["state"]["globals"]["Fusion_next_sound_time"] == sign * (collision_clock + 1) &&
+		            rows[row]["state"]["globals"]["Fuelcen_last_sound_time"] == sign * (collision_clock + 2),
+		        "world boundaries and deltas retain full-width Fusion and refueling clocks");
+	}
+	const auto &ai = rows[1]["state"]["ai"];
+#ifdef DXX_BUILD_DESCENT_II
+	require(ai["local_default"]["d1_saved"] == nlohmann::json({ { "last_see_time", 123 }, { "last_attack_time", -456 }, { "wait_time", 789 } }),
+	        "world observer retains all original saved AI fields in its complete default");
+#endif
+	require(rows[1]["version"] == 8 && ai["local_capacity"] == MAX_OBJECTS &&
+	            ai["locals"][std::to_string(inactive)]["next_fire"] == 123456,
+	        "complete AI observation retains populated inactive local storage");
+	require(ai["locals"].size() == 1 && ai["local_default"]["time_player_seen"] == -7 * F1_0,
+	        "rebased inactive AI storage uses an explicit nonzero default and one changed slot");
+	for (int i = 0; i < MAX_OBJECTS; ++i) {
+		const auto key = std::to_string(i);
+		const auto &reconstructed = ai["locals"].contains(key) ? ai["locals"][key] : ai["local_default"];
+		require(reconstructed == complete_locals[i], "default plus exceptions reconstructs every field of every AI local slot");
+	}
+	require(ai["paths"].size() == MAX_POINT_SEGS && ai["paths"].back()["segment"] == 17 &&
+	            ai["paths"].back()["point"] == nlohmann::json({ 11, 22, 33 }) &&
+	            ai["awareness"].size() == MAX_AWARENESS_EVENTS && ai["awareness"].back()["position"] == nlohmann::json({ 44, 55, 66 }),
+	        "AI observation includes unused path and queue storage");
+	require(ai["cloak"].size() == MAX_AI_CLOAK_INFO && ai["boss"]["Boss_cloak_start_time"] == Boss_cloak_start_time &&
+	            ai["path_free_index"] == Point_segs_free_ptr - Point_segs,
+	        "AI observation retains boss clocks, cloak beliefs and path allocator");
+	if (rows[2]["state"] != rows[1]["state"] || !rows[3]["state"].empty())
+		std::fprintf(stderr, "World observer initial difference=%s unchanged delta=%s\n", nlohmann::json::diff(rows[1]["state"], rows[2]["state"]).dump().c_str(), rows[3]["state"].dump().c_str());
+	require(rows[2]["reset"].is_boolean() && rows[2]["reset"].get<bool>() && rows[2]["state"] == rows[1]["state"] && rows[3]["state"].empty(), "initial and unchanged world deltas retain the boundary state");
+	require(rows[4]["phase"] == "terminal" && rows[4]["state"]["walls"][0]["hps"] == 97 * F1_0 && rows[4]["state"]["players"][0]["shields"] == 76 * F1_0, "terminal snapshot retains final world and inventory changes");
+	require(rows[5]["state"].size() == 4 && rows[5]["state"].contains("walls") && rows[5]["state"].contains("players") &&
+	            rows[5]["state"]["ai"]["locals"][std::to_string(inactive)]["next_fire"] == 123457,
+	        "terminal observation does not consume later world or inactive AI deltas");
+	for (int i = 0; i < MAX_OBJECTS; ++i) {
+		const auto key = std::to_string(i);
+		auto expected = complete_locals[i];
+		if (i == 0) expected["time_player_seen"] = -7 * F1_0 + 1;
+		if (i == inactive) expected["next_fire"] = 123457;
+		for (int record : { 4, 5 }) {
+			const auto &terminal_ai = rows[record]["state"]["ai"];
+			const auto &reconstructed = terminal_ai["locals"].contains(key) ? terminal_ai["locals"][key] : terminal_ai["local_default"];
+			require(reconstructed == expected, "changing the default slot never changes another slot's reconstructed state");
+		}
+	}
+	std::copy(saved_locals.begin(), saved_locals.end(), Ai_local_info);
+	Point_segs[MAX_POINT_SEGS - 1] = saved_point;
+	Awareness_events[MAX_AWARENESS_EVENTS - 1] = saved_awareness;
+	collide_set_collision_delay_last_play_time(saved_collision_clock);
+	game_set_fusion_next_sound_time(saved_fusion_clock);
+	fuelcen_set_last_sound_time(saved_refuel_clock);
+	PHYSFS_delete(path);
+}
+
+static void test_cadence_saved_record()
+{
+	const cadence_runtime_state original = { game_get_fusion_next_sound_time(), fuelcen_get_last_sound_time(), collide_get_collision_delay_last_play_time() };
+	const fix64 epoch = (1LL << 40) + 123;
+	const cadence_runtime_state populated = { epoch + F1_0 / 8, -epoch, epoch - F1_0 / 4 };
+	cadence_runtime_apply(&populated);
+	PHYSFS_file *file = PHYSFS_openWrite("cadence.bin");
+	require(file != nullptr, "open real cadence serializer fixture");
+	cadence_runtime_write(file, epoch);
+	require(PHYSFS_close(file), "finish cadence serializer fixture");
+	file = PHYSFS_openRead("cadence.bin");
+	bytes data(CADENCE_RUNTIME_DISK_BYTES);
+	require(file && PHYSFS_fileLength(file) == CADENCE_RUNTIME_DISK_BYTES &&
+	            PHYSFS_readBytes(file, data.data(), data.size()) == static_cast<PHYSFS_sint64>(data.size()) && PHYSFS_close(file),
+	        "cadence serializer writes exactly three full-width relative clocks");
+	for (const int swap : { 0, 1 }) {
+		auto encoded = data;
+		if (swap)
+			for (size_t offset = 0; offset < encoded.size(); offset += 4) std::reverse(encoded.begin() + offset, encoded.begin() + offset + 4);
+		for (const fix64 restored_epoch : { fix64(0), epoch, -epoch }) {
+			const cadence_runtime_state expected = { restored_epoch + F1_0 / 8, restored_epoch - 2 * epoch, restored_epoch - F1_0 / 4 };
+			for (size_t length = 0; length <= encoded.size(); ++length) {
+				write_fixture("cadence-read.bin", bytes(encoded.begin(), encoded.begin() + length));
+				cadence_runtime_apply(&original);
+				file = PHYSFS_openRead("cadence-read.bin");
+				require(file && cadence_runtime_read(file, swap, 1, restored_epoch) == (length == encoded.size()) && PHYSFS_close(file),
+				        "cadence restore rejects every truncated record in both byte orders");
+				const auto &wanted = length == encoded.size() ? expected : original;
+				require(game_get_fusion_next_sound_time() == wanted.fusion && fuelcen_get_last_sound_time() == wanted.refuel &&
+				            collide_get_collision_delay_last_play_time() == wanted.collision,
+				        "cadence restore rebases all 64 bits atomically without changing clocks on failure");
+			}
+		}
+	}
+	cadence_runtime_apply(&original);
+}
+
+static void test_fusion_cadence_state()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+	const int profiles[] = { 2, 1, 2 };
+#else
+	const int profiles[] = { 1 };
+#endif
+	const fix64 saved_clock = game_get_fusion_next_sound_time(), saved_time = GameTime64;
+	const fix saved_frame = FrameTime;
+	const auto saved_controls = Controls;
+	for (int profile : profiles) {
+#ifdef DXX_BUILD_DESCENT_II
+		mission.descent_version = profile;
+#endif
+		for (bool overcharge : { false, true }) {
+			init_test_corridor();
+			Game_mode = 0;
+			GameTime64 = 10 * F1_0;
+			FrameTime = F1_0 / 64;
+			Players[0].primary_weapon = FUSION_INDEX;
+			Players[0].energy = 100 * F1_0;
+			Players[0].shields = 100 * F1_0;
+			Players[0].flags = 0;
+			Weapon_info[Primary_weapon_to_weapon_info[FUSION_INDEX]].fire_count = 1;
+			Fusion_charge = overcharge ? 3 * F1_0 : 0;
+			Auto_fire_fusion_cannon_time = 0;
+			Controls = {};
+			Controls.fire_primary_state = 1;
+			Num_awareness_events = 0;
+			game_set_fusion_next_sound_time(GameTime64);
+			const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+			FireLaser();
+			require(game_get_fusion_next_sound_time() == GameTime64 && Players[0].shields == 100 * F1_0 &&
+			            Num_awareness_events == 0 && sim == d_rand_get_call_count() && fx == d_rand_get_stream_call_count(D_RNG_FX),
+			        "Fusion cadence suppresses sound, awareness and overcharge damage at its exact deadline");
+			++GameTime64;
+			FireLaser();
+			require(game_get_fusion_next_sound_time() >= GameTime64 + F1_0 / 8 &&
+			            game_get_fusion_next_sound_time() <= GameTime64 + F1_0 / 8 + D_RAND_MAX / 4 &&
+			            d_rand_get_stream_call_count(D_RNG_FX) == fx + 1,
+			        "Fusion advances the observed deadline using one cadence RNG draw");
+			require(overcharge ? (Players[0].shields < 100 * F1_0 && d_rand_get_call_count() == sim + 1 && Num_awareness_events == 0) : (Players[0].shields == 100 * F1_0 && Num_awareness_events == 1),
+			        "Fusion's observed clock gates real damage or AI awareness, not only audio");
+		}
+	}
+	Controls = saved_controls;
+	FrameTime = saved_frame;
+	GameTime64 = saved_time;
+	game_set_fusion_next_sound_time(saved_clock);
+	Fusion_charge = 0;
+	Auto_fire_fusion_cannon_time = 0;
+	Global_laser_firing_count = 0;
+#ifdef DXX_BUILD_DESCENT_II
+	Current_mission = nullptr;
+#endif
+}
+
+static void test_refueling_sound_cadence()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+	const int profiles[] = { 2, 1, 2 };
+#else
+	const int profiles[] = { 1 };
+#endif
+	const fix64 saved_clock = fuelcen_get_last_sound_time(), saved_time = GameTime64;
+	const fix saved_frame = FrameTime;
+	init_test_corridor();
+	Game_mode = 0;
+	FrameTime = F1_0 / 64;
+#ifdef DXX_BUILD_DESCENT_II
+	Segment2s[0].special = SEGMENT_IS_FUELCEN;
+#else
+	Segments[0].special = SEGMENT_IS_FUELCEN;
+#endif
+	for (int profile : profiles) {
+#ifdef DXX_BUILD_DESCENT_II
+		mission.descent_version = profile;
+#endif
+		for (fix64 start : { static_cast<fix64>(10 * F1_0), (static_cast<fix64>(1) << 40) + 123 }) {
+			const fix delay = F1_0 / (profile == 1 ? 3 : 4);
+			fuelcen_set_last_sound_time(start);
+			const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+			GameTime64 = start + delay;
+			require(fuelcen_give_fuel(&Segments[0], F1_0) == fixmul(FrameTime, 25 * F1_0), "refueling retains the original energy rate");
+			if (fuelcen_get_last_sound_time() != start)
+				std::fprintf(stderr, "Refuel profile=%d elapsed=%d expected clock=%lld actual=%lld\n", profile, delay, static_cast<long long>(start), static_cast<long long>(fuelcen_get_last_sound_time()));
+			require(fuelcen_get_last_sound_time() == start, "refueling sound waits through the exact native cadence boundary");
+			++GameTime64;
+			fuelcen_give_fuel(&Segments[0], F1_0);
+			require(fuelcen_get_last_sound_time() == GameTime64, "refueling sound advances immediately beyond its cadence boundary");
+			GameTime64 = start - 1;
+			fuelcen_give_fuel(&Segments[0], 0);
+			require(fuelcen_get_last_sound_time() == start + delay + 1, "full energy does not advance the refueling sound clock");
+			fuelcen_give_fuel(&Segments[0], F1_0);
+			require(fuelcen_get_last_sound_time() == GameTime64, "refueling restarts its cadence when game time moves backward");
+			require(sim == d_rand_get_call_count() && fx == d_rand_get_stream_call_count(D_RNG_FX), "refueling cadence consumes neither RNG stream");
+		}
+	}
+	fuelcen_set_last_sound_time(saved_clock);
+	GameTime64 = saved_time;
+	FrameTime = saved_frame;
+#ifdef DXX_BUILD_DESCENT_II
+	Current_mission = nullptr;
+#endif
+}
+
+static input_demo_state_trace_diag capture_ai_diagnostics(bool reset_history = true)
+{
+	if (reset_history) input_demo_reset_object_state_diag_history();
+	input_demo_state_trace_diag result = {};
+	input_demo_capture_object_state_diag(&result);
+	input_demo_capture_robot_ai_local_diag(&result);
+	return result;
+}
+
+static void test_ai_diagnostic_profiles()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+	const int profiles[] = { 2, 1, 2 };
+#else
+	const int profiles[] = { 1 };
+#endif
+	for (int profile : profiles) {
+#ifdef DXX_BUILD_DESCENT_II
+		mission.descent_version = profile;
+#endif
+		init_test_corridor();
+		Robot_info[0] = {};
+		vms_vector point = {};
+		const int slot = obj_create(OBJ_ROBOT, 0, 0, &point, &vmd_identity_matrix, F1_0, CT_AI, MT_NONE, RT_NONE);
+		require(slot > 0, "create diagnostic robot");
+		auto &aip = Objects[slot].ctype.ai_info;
+		auto &local = Ai_local_info[slot];
+		local = {};
+#ifdef DXX_BUILD_DESCENT_II
+		auto &original_static = aip.d1_saved;
+		auto &original_local = local.d1_saved;
+#else
+		auto &original_static = aip;
+		auto &original_local = local;
+#endif
+		original_static.follow_path_start_seg = -123;
+		original_static.follow_path_end_seg = 456;
+		original_local.last_see_time = -234;
+		original_local.last_attack_time = 567;
+		original_local.wait_time = -890;
+		const auto baseline = capture_ai_diagnostics();
+		require(baseline.robot_ai_static_trace_follow_starts[0] == (profile == 1 ? -123 : -1) &&
+		            baseline.robot_ai_static_trace_follow_ends[0] == (profile == 1 ? 456 : -1),
+		        "diagnostics expose original follow fields only for native actors");
+		for (int field = 0; field < 2; ++field) {
+			const auto before = capture_ai_diagnostics();
+			if (field == 0) ++original_static.follow_path_start_seg;
+			else ++original_static.follow_path_end_seg;
+			const auto changed = capture_ai_diagnostics(false);
+			require((changed.robot_ai_static_state_hash != before.robot_ai_static_state_hash) == (profile == 1),
+			        "native static hashes include both original follow fields; D2 ignores that extension");
+			if (profile == 1)
+				require(changed.robot_ai_static_changed_obj == slot &&
+				            changed.robot_ai_static_changed_follow_start == original_static.follow_path_start_seg &&
+				            changed.robot_ai_static_changed_follow_end == original_static.follow_path_end_seg,
+				        "changed-object diagnostics retain signed original follow fields");
+		}
+		for (int field = 0; field < 3; ++field) {
+			const auto before = capture_ai_diagnostics();
+			if (field == 0) ++original_local.last_see_time;
+			else if (field == 1) ++original_local.last_attack_time;
+			else ++original_local.wait_time;
+			const auto changed = capture_ai_diagnostics();
+			require((changed.robot_ai_local_state_hash != before.robot_ai_local_state_hash) == (profile == 1),
+			        "native local hashes include original timing fields; D2 ignores that extension");
+		}
+#ifdef DXX_BUILD_DESCENT_II
+		// Ordinary D2 and optional engine actors retain the original D2 layout
+		for (int companion : { 0, 1 }) {
+			Robot_info[0].companion = companion;
+			const auto before = capture_ai_diagnostics();
+			++aip.dying_sound_playing;
+			++local.next_action_time;
+			const auto after = capture_ai_diagnostics();
+			const bool engine_actor = profile == 2 || companion;
+			require((after.robot_ai_static_state_hash != before.robot_ai_static_state_hash) == engine_actor &&
+			            (after.robot_ai_local_state_hash != before.robot_ai_local_state_hash) == engine_actor,
+			        "D2 and companion diagnostics retain D2-only AI fields");
+		}
+		Robot_info[0].companion = 0;
+#endif
+	}
+#ifdef DXX_BUILD_DESCENT_II
+	Current_mission = nullptr;
+#endif
+}
+
 static short native_trigger_flags(int index)
 {
 #ifdef DXX_BUILD_DESCENT_II
@@ -647,7 +1117,12 @@ static nlohmann::json snapshot_native_triggers()
 	for (int i = 0; i < Num_triggers; ++i) {
 		auto links = nlohmann::json::array();
 		for (int j = 0; j < Triggers[i].num_links; ++j) links.push_back({ Triggers[i].seg[j], Triggers[i].side[j] });
-		result.push_back({ { "flags", native_trigger_flags(i) }, { "value", Triggers[i].value }, { "time", Triggers[i].time }, { "links", links } });
+#ifdef DXX_BUILD_DESCENT_II
+		const auto &original = Triggers[i].d1_saved;
+#else
+		const auto &original = Triggers[i];
+#endif
+		result.push_back({ { "type", static_cast<int>(original.type) }, { "link_num", static_cast<int>(original.link_num) }, { "flags", native_trigger_flags(i) }, { "value", Triggers[i].value }, { "time", Triggers[i].time }, { "links", links }, { "segments", std::vector<short>(Triggers[i].seg, Triggers[i].seg + MAX_WALLS_PER_LINK) }, { "sides", std::vector<short>(Triggers[i].side, Triggers[i].side + MAX_WALLS_PER_LINK) } });
 	}
 	return result;
 }
@@ -719,11 +1194,14 @@ static void test_native_triggers()
 #ifdef DXX_BUILD_DESCENT_II
 static void test_native_trigger_serialization()
 {
+	static_assert(TRIGGER_DISK_SIZE == 52, "core D2 trigger disk record must stay unchanged");
+	static_assert(sizeof(trigger) == TRIGGER_DISK_SIZE + 2, "original trigger bytes are runtime-only storage");
 	for (const int version : { 29, 30, 31 }) {
 		PHYSFS_file *file = PHYSFS_openWrite("triggers.bin");
 		require(file != nullptr, "open trigger round-trip output");
 		for (int flags = 0; flags < 1024; ++flags) {
 			install_native_trigger(0, flags);
+			Triggers[0].d1_saved.link_num = static_cast<sbyte>(flags % 256 - 128);
 			trigger_write(&Triggers[0], version, file);
 		}
 		PHYSFS_close(file);
@@ -749,12 +1227,18 @@ static void test_native_trigger_serialization()
 			require(native_trigger_flags(0) == flags && Triggers[0].value == 3 * F1_0 &&
 			            Triggers[0].time == 9 * F1_0 && Triggers[0].num_links == 1 && Triggers[0].side[0] == 4,
 			        "all native flag combinations and linked state survive trigger serialization");
+			require(Triggers[0].d1_saved.type == 0 && Triggers[0].d1_saved.link_num == (version == 29 ? flags % 256 - 128 : 0),
+			        "legacy D1 output retains signed link bytes; newer core-only records clear unavailable source bytes");
 		}
 		PHYSFS_close(file);
 	}
 	PHYSFS_delete("triggers.bin");
 	v29_trigger source = {};
 	source.flags = TRIGGER_CONTROL_DOORS;
+	source.type = -127;
+	source.link_num = 126;
+	require(d1_in_d2_decode_trigger(&Triggers[0], &source, 1) && Triggers[0].d1_saved.type == -127 && Triggers[0].d1_saved.link_num == 126,
+	        "native decoding retains both signed source bytes instead of its representative D2 type");
 	const trigger before = Triggers[0];
 	for (const int count : { -1, 11, 256, 257, 32767 }) {
 		source.num_links = count;
@@ -767,6 +1251,8 @@ static void test_native_trigger_serialization()
 	require(!d1_in_d2_decode_trigger(&Triggers[0], &source, 1), "D2 extension is not a native D1 action");
 	require(d1_in_d2_decode_trigger(&Triggers[0], &source, 0) && Triggers[0].type == TT_UNLOCK_DOOR,
 	        "explicit old D2 adapter retains D2 extension action");
+	require(Triggers[0].d1_saved.type == 0 && Triggers[0].d1_saved.link_num == 0,
+	        "ordinary D2 trigger replacement clears source storage");
 	short flags;
 	require(!d1_in_d2_trigger_source_flags(&Triggers[0], &flags), "old D2 conversion is not marked native");
 	Triggers[0].flags |= TF_DISABLED;
@@ -2048,6 +2534,71 @@ static void test_robot_awareness_frame()
 #endif
 }
 
+static void test_cloak_world_frame()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+	const int profiles[] = { 2, 1, 2 };
+	const int reveal_count = 3;
+#else
+	const int profiles[] = { 1 };
+	const int reveal_count = 1;
+#endif
+	Game_mode = 0;
+	Player_num = 0;
+	Players[0].objnum = 0;
+	for (int profile : profiles) {
+#ifdef DXX_BUILD_DESCENT_II
+		mission.descent_version = profile;
+#endif
+		for (bool cloaked : { false, true })
+			for (int reveal = 0; reveal < reveal_count; ++reveal) {
+				init_test_corridor();
+				GameTime64 = 123 * F1_0;
+				ConsoleObject->pos = { 7 * F1_0, 8 * F1_0, 9 * F1_0 };
+				Players[0].flags = cloaked ? PLAYER_FLAGS_CLOAKED : 0;
+#ifdef DXX_BUILD_DESCENT_II
+				if (reveal == 1) Players[0].flags |= PLAYER_FLAGS_HEADLIGHT_ON;
+				if (reveal == 2) Players[0].flags |= PLAYER_FLAGS_AFTERBURNER;
+				Players[0].afterburner_charge = F1_0;
+				Controls.afterburner_state = reveal == 2;
+#endif
+				for (int i = 0; i < MAX_AI_CLOAK_INFO; ++i) {
+					Ai_cloak_info[i].last_position = { i * F1_0, -F1_0, 3 * F1_0 };
+					Ai_cloak_info[i].last_time = i * F1_0;
+#ifdef DXX_BUILD_DESCENT_II
+					Ai_cloak_info[i].last_segment = -1;
+#endif
+				}
+				const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+#ifdef DXX_BUILD_DESCENT_II
+				init_ai_frame();
+#endif
+				const bool refresh = profile == 2 && (!cloaked || reveal != 0);
+				for (int i = 0; i < MAX_AI_CLOAK_INFO; ++i) {
+					const vms_vector expected = refresh ? ConsoleObject->pos : vms_vector{ i * F1_0, -F1_0, 3 * F1_0 };
+					require(Ai_cloak_info[i].last_time == (refresh ? GameTime64 : i * F1_0) &&
+					            std::memcmp(&Ai_cloak_info[i].last_position, &expected, sizeof(expected)) == 0,
+					        "native D1 retains event-driven cloak memory while ordinary D2 refreshes visible players each frame");
+#ifdef DXX_BUILD_DESCENT_II
+					require(Ai_cloak_info[i].last_segment == (refresh ? ConsoleObject->segnum : -1), "per-frame cloak segment refresh follows the selected engine policy");
+#endif
+				}
+				require(sim == d_rand_get_call_count() && fx == d_rand_get_stream_call_count(D_RNG_FX), "AI world entry does not consume RNG");
+				Num_awareness_events = 0;
+				create_awareness_event(ConsoleObject, PA_PLAYER_COLLISION);
+				for (const auto &cloak : Ai_cloak_info)
+					require(cloak.last_time == GameTime64 && std::memcmp(&cloak.last_position, &ConsoleObject->pos, sizeof(cloak.last_position)) == 0,
+					        "real player collision awareness still refreshes cloak memory in both games");
+			}
+	}
+#ifdef DXX_BUILD_DESCENT_II
+	Controls.afterburner_state = 0;
+	Current_mission = nullptr;
+#endif
+}
+
 static void test_world_awareness()
 {
 #ifdef DXX_BUILD_DESCENT_II
@@ -3130,6 +3681,72 @@ static object &create_boss_frame_scene()
 	return boss;
 }
 
+#ifdef DXX_BUILD_DESCENT_II
+static void test_boss_sound_storage()
+{
+	Mission mission = {};
+	Current_mission = &mission;
+	// All other fields are zero, so both byte orders describe the same valid
+	// AI block, with no path allocation, boss destinations or awareness events
+	const size_t boss_start = 8 + MAX_OBJECTS * 200 + MAX_POINT_SEGS * 16 + MAX_AI_CLOAK_INFO * 20;
+	const size_t sound_offset = boss_start + 10 * 4;
+	const size_t state_size = boss_start + 12 * 4 + 5 * 4 + MAX_STOLEN_ITEMS + 4 + 8 + 4 + 28;
+	for (const int profile : { 2, 1, 2 }) {
+		mission.descent_version = profile;
+		create_boss_frame_scene();
+		for (const int value : { 0, 1, 127, 128, 255, 256, -129, INT_MIN, INT_MAX, 0x76543201 }) {
+			for (const int version : { 31, 34, 35 }) {
+				for (const int swap : { 0, 1 }) {
+					bytes state(state_size);
+					set_int(state, sound_offset, value);
+					if (swap) std::reverse(state.begin() + sound_offset, state.begin() + sound_offset + 4);
+					write_fixture("boss-sound-state.bin", state);
+					Boss_dying_sound_playing = 42;
+					PHYSFS_file *handle = PHYSFS_openRead("boss-sound-state.bin");
+					REWIND_PHYSFS_FILE(reader, handle);
+					require(handle && ai_restore_state(reader, version, swap) && PHYSFS_tell(handle) == static_cast<PHYSFS_sint64>(state_size) && PHYSFS_close(handle),
+					        "restore a complete AI core in either byte order without changing its layout");
+					const int expected = version < 35 ? static_cast<sbyte>(value) : value;
+					require(Boss_dying_sound_playing == expected,
+					        "current saves preserve full integers; old saves retain signed-byte decoding");
+					if (version == 35 && !swap) {
+						require(input_demo_ai_trace_snapshot()["boss"]["Boss_dying_sound_playing"] == expected,
+						        "raw observation preserves full-width boss sound state");
+						handle = PHYSFS_openWrite("boss-sound-written.bin");
+						REWIND_PHYSFS_FILE(writer, handle);
+						require(handle && ai_save_state(writer) && PHYSFS_close(handle), "write actual full-width boss sound state");
+						handle = PHYSFS_openRead("boss-sound-written.bin");
+						require(handle && PHYSFS_seek(handle, sound_offset) && PHYSFSX_readSXE32(handle, 0) == value && PHYSFS_close(handle),
+						        "actual AI writer serializes exactly the full boss sound integer");
+					}
+					state.pop_back();
+					write_fixture("boss-sound-truncated.bin", state);
+					Boss_dying_sound_playing = 42;
+					handle = PHYSFS_openRead("boss-sound-truncated.bin");
+					REWIND_PHYSFS_FILE(invalid, handle);
+					require(handle && !ai_restore_state(invalid, version, swap) && PHYSFS_close(handle) && Boss_dying_sound_playing == 42,
+					        "truncated AI input cannot partially overwrite boss sound state");
+				}
+			}
+			if (profile == 2) {
+				object &boss = create_boss_frame_scene();
+				Robot_info[boss.id].boss_flag = BOSS_D2;
+				Boss_dying_sound_playing = value;
+				Boss_dying_start_time = GameTime64 - BOSS_DEATH_DURATION + F1_0 / 2;
+				const int sample_rate = GameArg.SndDigiSampleRate;
+				GameArg.SndDigiSampleRate = 0;
+				do_boss_dying_frame(&boss);
+				GameArg.SndDigiSampleRate = sample_rate;
+				require(Boss_dying_sound_playing == (value ? value : 1) && !Control_center_destroyed,
+				        "ordinary D2 death rolls start an absent sound once and retain a populated integer flag");
+			}
+		}
+	}
+	Boss_dying_sound_playing = 0;
+	Current_mission = nullptr;
+}
+#endif
+
 static void hit_boss_with_repeat_weapon(object &boss)
 {
 	const int laser = obj_create(OBJ_WEAPON, 0, boss.segnum, &boss.pos, &vmd_identity_matrix, F1_0 / 8, CT_WEAPON, MT_PHYSICS, RT_NONE);
@@ -3189,6 +3806,35 @@ static void test_boss_frame_updates()
 	do_ai_frame(&hit);
 	require(Last_teleport_time == GameTime64 - Boss_teleport_interval / 4, "consumed boss hit does not accelerate twice");
 
+	for (int guard = 0; guard < 3; ++guard) {
+		object &damaged = create_boss_frame_scene();
+		damaged.shields = guard == 1 ? -1 : 10 * F1_0;
+		if (guard == 2) damaged.flags |= OF_EXPLODING;
+#ifdef DXX_BUILD_DESCENT_II
+		const fix64 old_hit_time = Boss_hit_time;
+#endif
+		require(boss_hit_state() == nlohmann::json::array({ 0, 0 }), "fresh level resets both native boss hit fields");
+		require(!apply_damage_to_robot(&damaged, F1_0, 0), "nonlethal or guarded boss damage does not kill");
+		require(boss_hit_state() == nlohmann::json::array({ 0, guard == 0 ? 1 : 0 }),
+		        "damage marker follows native live/exploding guards without creating pending weapon contact");
+#ifdef DXX_BUILD_DESCENT_II
+		require(Boss_hit_time == old_hit_time, "native boss damage leaves D2's unused hit timestamp untouched");
+		require(input_demo_ai_trace_snapshot()["boss"]["d1_been_hit"] == (guard == 0 ? 1 : 0),
+		        "raw AI observer retains the actual boss damage marker");
+#endif
+		if (guard == 0) {
+			hit_boss_with_repeat_weapon(damaged);
+			require(boss_hit_state() == nlohmann::json::array({ 1, 1 }), "weapon contact and actual damage remain independent flags");
+#ifdef DXX_BUILD_DESCENT_II
+			d1_in_d2_ai_restore_boss_hit(0);
+			require(boss_hit_state() == nlohmann::json::array({ 0, 1 }), "network cloak acknowledgement clears contact without erasing damage history");
+			hit_boss_with_repeat_weapon(damaged);
+#endif
+			ai_init_boss_for_ship();
+			require(boss_hit_state() == nlohmann::json::array({ 1, 0 }), "new ship clears damage history without consuming pending contact");
+		}
+	}
+
 	for (const bool pending : { false, true }) {
 		object &saved = create_boss_frame_scene();
 		if (pending) hit_boss_with_repeat_weapon(saved);
@@ -3234,6 +3880,13 @@ static void test_boss_frame_updates()
 	do_ai_frame_all();
 	require(!Boss_dying_sound_playing && before_world == d_rand_get_stream_call_count(D_RNG_FX), "world AI does not repeat a native boss death update");
 	++GameTime64;
+	for (const int sound_state : { 256, -129, INT_MIN, INT_MAX }) {
+		Boss_dying_sound_playing = sound_state;
+		do_ai_frame(&dying);
+		require(Boss_dying_sound_playing == sound_state && !Control_center_destroyed,
+		        "a populated full-width native sound flag prevents restarting the boss death sound");
+	}
+	Boss_dying_sound_playing = 0;
 	do_ai_frame(&dying);
 	require(Boss_dying_sound_playing && !Control_center_destroyed, "native fixed death sound starts before destruction");
 	GameTime64 = Boss_dying_start_time + 6 * F1_0 + 1;
@@ -3248,10 +3901,15 @@ static void test_boss_frame_updates()
 	const object before_d2 = d2_boss;
 	const auto sim_before = d_rand_get_call_count(), fx_before = d_rand_get_stream_call_count(D_RNG_FX);
 	require(!d1_in_d2_ai_run_frame(&d2_boss) &&
+	            !d1_in_d2_ai_note_boss_damage(&d2_boss) &&
 	            d1_in_d2_ai_finish_boss_damage(&d2_boss, 0) == -1 && !d1_in_d2_ai_boss_weapon_hit(&d2_boss) &&
 	            !std::memcmp(&d2_boss, &before_d2, sizeof(d2_boss)) &&
 	            d_rand_get_call_count() == sim_before && d_rand_get_stream_call_count(D_RNG_FX) == fx_before,
 	        "inactive native frame and boss operations leave ordinary D2 actors and both RNG streams untouched");
+	d2_boss.shields = 10 * F1_0;
+	const int prior_native_damage = d1_in_d2_ai_boss_been_hit();
+	require(!apply_damage_to_robot(&d2_boss, F1_0, 0) && Boss_hit_time == GameTime64 && d1_in_d2_ai_boss_been_hit() == prior_native_damage,
+	        "ordinary D2 damage retains its timestamp and does not publish native damage history");
 	Boss_hit_time = GameTime64 - F1_0;
 	do_ai_frame(&d2_boss);
 	require(d2_boss.ctype.ai_info.CLOAKED && Boss_cloak_start_time == GameTime64, "ordinary D2 boss still runs its original update after a D1 session");
@@ -4550,7 +5208,7 @@ static void test_guidebot_publication(const char *pig_path, const char *palette_
 	std::fprintf(stderr, "Companion extension publication, native invariance, sound translation and retirement passed\n");
 }
 
-static void test_registered_guidebot_source(const char *directory)
+static d1_guidebot_asset_stats test_registered_guidebot_source(const char *directory)
 {
 	const std::string hog = std::string(directory) + "/DESCENT2.HOG";
 	require(PHYSFS_mount(directory, "optional-d2", 0) && PHYSFS_mount(hog.c_str(), "optional-d2", 0), "mount explicit optional package independently of base content");
@@ -4582,6 +5240,7 @@ static void test_registered_guidebot_source(const char *directory)
 	source.sample_rate = SAMPLE_RATE_11K;
 	test_guidebot_publication("native-d1/DESCENT.PIG", "native-d1/palette.256", source);
 	require(PHYSFS_unmount(hog.c_str()) && PHYSFS_unmount(directory), "release isolated optional package mounts");
+	return previous;
 }
 
 static void test_d1_registered_bitmaps(const char *directory, const char *d2_directory, bool graphics)
@@ -4609,7 +5268,8 @@ static void test_d1_registered_bitmaps(const char *directory, const char *d2_dir
 	require(assets->num_cockpits == 3 && assets->num_gauges == 80 && assets->exit_model == 41 && assets->destroyed_exit_model == 42, "original cockpit, gauge and exit definitions are prepared");
 	require(assets->sound_bank.count > 0 && assets->sound_bank.bytes > 0, "registered D1 sound samples are owned by the generation");
 	std::fprintf(stderr, "Prepared original D1 definitions: %d textures, %d models, %d sounds\n", assets->num_textures, assets->num_polygon_models, assets->sound_bank.count);
-	if (d2_directory) test_registered_guidebot_source(d2_directory);
+	d1_guidebot_asset_stats optional = {};
+	if (d2_directory) optional = test_registered_guidebot_source(d2_directory);
 	Mission mission = {};
 	mission.descent_version = 1;
 	Current_mission = &mission;
@@ -4759,7 +5419,7 @@ static void test_d1_registered_bitmaps(const char *directory, const char *d2_dir
 			check_profile_resources(false);
 			if (!entry) {
 				d1_in_d2_prepare_intro_assets();
-				require(d1_in_d2_use_d1_gameplay() && d1_in_d2_has_native_assets() && N_robot_types == 24,
+				require(d1_in_d2_use_d1_gameplay() && d1_in_d2_has_native_assets() && N_robot_types == 24 + optional.robots,
 				        "actual intro entry commits D1 definitions for briefing robot rendering before level decode");
 				check_profile_resources(true);
 				if (graphics) check_profile_fonts(true);
@@ -4770,7 +5430,7 @@ static void test_d1_registered_bitmaps(const char *directory, const char *d2_dir
 			mission.path = mission.filename = const_cast<char *>("descent");
 			std::strcpy(levels[0], "level01.rdl");
 			LoadLevel(1, 0);
-			require(d1_in_d2_has_native_assets() && N_polygon_models == 78 && NumTextures == 584 && Effects[27].vc.num_frames == 10, "returning to D1 restores original definitions after D2 loading");
+			require(d1_in_d2_has_native_assets() && N_polygon_models == 78 + optional.models && NumTextures == 584 && Effects[27].vc.num_frames == 10, "returning to D1 restores original definitions and independently sourced optional models after D2 loading");
 			require(TXT_SECRET_EXIT == d1_secret_text && std::strstr(d2_secret_text, "Secret Teleporter"), "returning to D1 restores its text bank without invalidating D2 references");
 			check_profile_resources(true);
 			if (graphics) check_profile_fonts(true);
@@ -4785,7 +5445,7 @@ static void test_d1_registered_bitmaps(const char *directory, const char *d2_dir
 			piggy_reset_asset_registry();
 			require(d1_in_d2_init_base_resources(profile), "select an explicit baseline with both installations present");
 			d1_in_d2_restore_base_resources();
-			require(d1_in_d2_has_native_assets() == (profile == 1) && N_robot_types == (profile == 1 ? 24 : 66),
+			require(d1_in_d2_has_native_assets() == (profile == 1) && N_robot_types == (profile == 1 ? 24 + optional.robots : 66),
 			        "baseline restoration follows explicit content selection with both installations present");
 			check_profile_resources(profile == 1);
 			if (graphics) check_profile_fonts(profile == 1);
@@ -5492,11 +6152,41 @@ static void test_d2_embedded_sound_reload()
 		require(Num_sound_files == 1 && piggy_find_sound(name) == 0, "fresh registries reload embedded HAM sound headers");
 		require(GameSounds[0].data == SoundBits && SoundBits != nullptr, "mission loading resolves embedded sound offsets to owned sample memory");
 		require(GameSounds[0].length == 4 && GameSounds[0].data[0] == 11 && GameSounds[0].data[3] == 44, "embedded HAM sound payload survives registry replacement");
+		require(GameSounds[0].bits == 8 && GameSounds[0].freq == SAMPLE_RATE_11K, "embedded HAM sounds retain their original 11 kHz rate");
 		free_polygon_models();
 		piggy_reset_asset_registry();
 	}
 	Current_mission = saved_mission;
 	require(PHYSFS_delete("descent2.ham") && PHYSFS_delete("d2demo.ham"), "remove embedded sound fixture sources");
+	const int saved_rate = GameArg.SndDigiSampleRate;
+	const int saved_no_sound = GameArg.SndNoSound;
+	GameArg.SndNoSound = 1;
+	Piggy_hamfile_version = 3;
+	bytes sound_bank;
+	append_int(sound_bank, 0x444e5344);
+	append_int(sound_bank, 1);
+	append_int(sound_bank, 1);
+	append(sound_bank, { 'r', 'a', 't', 'e', 0, 0, 0, 0 });
+	append_int(sound_bank, 4);
+	append_int(sound_bank, 4);
+	append_int(sound_bank, 0);
+	append(sound_bank, { 51, 62, 73, 84 });
+	for (int available_rate : { SAMPLE_RATE_11K, SAMPLE_RATE_22K }) {
+		const char *name = available_rate == SAMPLE_RATE_11K ? "descent2.s11" : "descent2.s22";
+		write_fixture(name, sound_bank);
+		for (int requested_rate : { SAMPLE_RATE_11K, SAMPLE_RATE_22K }) {
+			GameArg.SndDigiSampleRate = requested_rate;
+			require(read_sndfile(), "read selected or fallback ordinary D2 sound bank");
+			piggy_read_sounds();
+			require(Num_sound_files == 1 && GameSounds[0].bits == 8 && GameSounds[0].freq == available_rate &&
+			            GameSounds[0].length == 4 && GameSounds[0].data[0] == 51 && GameSounds[0].data[3] == 84,
+			        "ordinary D2 sound banks publish their actual source rate and original payload");
+			piggy_reset_asset_registry();
+		}
+		require(PHYSFS_delete(name), "remove ordinary D2 sound rate fixture");
+	}
+	GameArg.SndDigiSampleRate = saved_rate;
+	GameArg.SndNoSound = saved_no_sound;
 	require(PHYSFS_setWriteDir(original_write_dir.c_str()) && PHYSFS_unmount(fixture_dir.c_str()), "restore embedded sound fixture search path");
 }
 
@@ -5821,6 +6511,37 @@ static nlohmann::json checkpoint_dynamic_state()
 	using nlohmann::json;
 	const auto vector = [](const vms_vector &v) { return json::array({ v.x, v.y, v.z }); };
 	json result = { { "reactor_death_silence", controlcen_death_silence }, { "stuck_count", Num_stuck_objects }, { "stuck", json::array() }, { "effects", json::array() }, { "morphs", json::array() } };
+	result["boss_hit"] = boss_hit_state();
+	result["boss_dying_sound_playing"] = Boss_dying_sound_playing;
+	// Ordinary saves restore at zero; compare each deadline relative to its epoch
+	result["cadence_clock_deltas"] = { game_get_fusion_next_sound_time() - GameTime64,
+		                               fuelcen_get_last_sound_time() - GameTime64,
+		                               collide_get_collision_delay_last_play_time() - GameTime64 };
+	result["triggers"] = snapshot_native_triggers();
+	result["ai_saved_storage"] = json::array();
+	result["ai_path_indices"] = json::array();
+	for (int i = 0; i < MAX_OBJECTS; ++i) {
+		const auto &obj = Objects[i];
+#ifdef DXX_BUILD_DESCENT_II
+		const auto &local = Ai_local_info[i].d1_saved;
+		const auto &state = obj.ctype.ai_info.d1_saved;
+#else
+		const auto &local = Ai_local_info[i];
+		const auto &state = obj.ctype.ai_info;
+#endif
+		json row = { { "last_see_time", local.last_see_time }, { "last_attack_time", local.last_attack_time }, { "wait_time", local.wait_time } };
+		if (obj.type != OBJ_NONE && (obj.control_type == CT_AI || obj.control_type == CT_MORPH)) {
+			result["ai_path_indices"].push_back({ i, static_cast<int>(obj.ctype.ai_info.cur_path_index) });
+			row["follow_path_start_seg"] = static_cast<int>(state.follow_path_start_seg);
+			row["follow_path_end_seg"] = static_cast<int>(state.follow_path_end_seg);
+		}
+		result["ai_saved_storage"].push_back(std::move(row));
+	}
+	result["automap_visited"] = std::vector<ubyte>(Automap_visited, Automap_visited + Highest_segment_index + 1);
+	const auto *secrets = secret_area_get_state();
+	result["secrets"] = json::array();
+	for (int i = 0; i < secret_area_total(secrets); ++i)
+		result["secrets"].push_back({ secrets->secrets[i].identity, secrets->found[i] });
 	for (int i = 0; i < MAX_STUCK_OBJECTS; ++i) {
 		const auto &stuck = Stuck_objects[i];
 		if (stuck.wallnum != -1) result["stuck"].push_back({ i, stuck.objnum, stuck.wallnum, stuck.signature });
@@ -5843,6 +6564,152 @@ static nlohmann::json checkpoint_dynamic_state()
 	}
 	return result;
 }
+
+#ifdef DXX_BUILD_DESCENT_II
+static void test_native_ai_object_encoding()
+{
+	static_assert(sizeof(ai_static_rw) == 30 && sizeof(d1_ai_static_rw) == 30 && sizeof(object_rw) == 264,
+	              "AI encoding does not enlarge saved or network object records");
+	Mission mission = {};
+	Mission *previous_mission = Current_mission;
+	Current_mission = &mission;
+	const int previous_count = N_robot_types;
+	const auto previous_robot = Robot_info[0];
+	N_robot_types = 1;
+	for (const int profile : { 2, 1, 3, 2 }) {
+		mission.descent_version = profile == 2 ? 2 : 1;
+		Robot_info[0].companion = profile == 3;
+		const bool native = profile == 1;
+		for (const int control : { CT_AI, CT_MORPH }) {
+			for (const int index : { SHRT_MIN, -129, -128, -1, 0, 127, 128, 255, 256, SHRT_MAX }) {
+				object source = {};
+				source.type = OBJ_ROBOT;
+				source.control_type = static_cast<ubyte>(control);
+				auto &ai = source.ctype.ai_info;
+				ai.behavior = AIB_STATION;
+				for (int i = 0; i < MAX_AI_FLAGS; ++i) ai.flags[i] = static_cast<sbyte>(i - 5);
+				ai.hide_segment = -123;
+				ai.hide_index = 345;
+				ai.path_length = 400;
+				ai.cur_path_index = static_cast<short>(native ? index : static_cast<sbyte>(index));
+				ai.d1_saved.follow_path_start_seg = -1234;
+				ai.d1_saved.follow_path_end_seg = 2345;
+				ai.danger_laser_signature = 0x12345678;
+				ai.danger_laser_num = -234;
+				ai.dying_sound_playing = native ? 0 : 1;
+				ai.dying_start_time = native ? 0 : GameTime64 - F1_0;
+				for (const bool savegame : { false, true }) {
+					object_rw encoded = {};
+					if (savegame) state_object_to_object_rw(&source, &encoded);
+					else multi_object_to_object_rw(&source, &encoded);
+					bytes expected;
+					expected.push_back(ai.behavior);
+					for (int i = 0; i < MAX_AI_FLAGS; ++i)
+						expected.push_back(static_cast<ubyte>(savegame && i == 8 ? -1 : savegame && i == 9 ? 0
+						                                                                                   : ai.flags[i]));
+					for (const short value : { ai.hide_segment, ai.hide_index, ai.path_length }) {
+						expected.push_back(static_cast<ubyte>(value));
+						expected.push_back(static_cast<ubyte>(value >> 8));
+					}
+					if (native) {
+						for (const short value : { ai.cur_path_index, ai.d1_saved.follow_path_start_seg, ai.d1_saved.follow_path_end_seg }) {
+							expected.push_back(static_cast<ubyte>(value));
+							expected.push_back(static_cast<ubyte>(value >> 8));
+						}
+						append_int(expected, ai.danger_laser_signature);
+						expected.push_back(static_cast<ubyte>(ai.danger_laser_num));
+						expected.push_back(static_cast<ubyte>(ai.danger_laser_num >> 8));
+					} else {
+						expected.push_back(static_cast<ubyte>(ai.cur_path_index));
+						expected.push_back(ai.dying_sound_playing);
+						expected.push_back(static_cast<ubyte>(ai.danger_laser_num));
+						expected.push_back(static_cast<ubyte>(ai.danger_laser_num >> 8));
+						append_int(expected, ai.danger_laser_signature);
+						append_int(expected, -F1_0);
+					}
+					require(expected.size() == 30 && !std::memcmp(&encoded.ctype, expected.data(), 30),
+					        "actual save/network conversion uses the exact declared native or D2 byte layout");
+					const object_rw original = encoded;
+					object_rw_swap(&encoded, 1, 1);
+					if (native) {
+						for (int offset : { 12, 14, 16, 18, 20, 22, 28 }) std::reverse(expected.begin() + offset, expected.begin() + offset + 2);
+						std::reverse(expected.begin() + 24, expected.begin() + 28);
+						require(!std::memcmp(&encoded.ctype, expected.data(), 30), "opposite-endian native AI bytes follow the original short/int boundaries");
+					}
+					object_rw_swap(&encoded, 1, 1);
+					require(!std::memcmp(&original, &encoded, sizeof(encoded)), "object endian conversion reverses without losing any bytes");
+					object restored = {};
+					if (savegame) state_object_rw_to_object(&encoded, &restored, 1);
+					else multi_object_rw_to_object(&encoded, &restored);
+					const auto &actual = restored.ctype.ai_info;
+					require(actual.cur_path_index == ai.cur_path_index && actual.danger_laser_num == ai.danger_laser_num &&
+					            actual.danger_laser_signature == ai.danger_laser_signature &&
+					            actual.dying_sound_playing == ai.dying_sound_playing,
+					        "AI save/network decoding preserves index, danger references and engine-only sound state");
+					if (native) require(actual.d1_saved.follow_path_start_seg == -1234 && actual.d1_saved.follow_path_end_seg == 2345 && actual.dying_start_time == 0,
+						                "native object transfer retains both original follow fields without D2 death state");
+				}
+			}
+		}
+	}
+	Robot_info[0] = previous_robot;
+	N_robot_types = previous_count;
+	Current_mission = previous_mission;
+}
+
+static void test_d1_ai_storage_scope()
+{
+	Mission mission = {};
+	mission.descent_version = 2;
+	Mission *saved_mission = Current_mission;
+	Current_mission = &mission;
+	require(!d1_in_d2_use_d1_gameplay(), "AI storage control starts in ordinary D2 before asset publication");
+	PHYSFS_file *file = PHYSFS_openWrite("d2-ai-storage.bin");
+	require(file != nullptr, "open ordinary D2 storage control");
+	d1_in_d2_ai_write_saved_storage(file);
+	require(PHYSFS_close(file), "finish ordinary D2 storage control");
+	file = PHYSFS_openRead("d2-ai-storage.bin");
+	require(file && PHYSFS_fileLength(file) == 4 && d1_in_d2_ai_read_saved_storage(file, 0, 0) && PHYSFS_close(file),
+	        "ordinary D2 saves declare no native D1 AI payload");
+	bytes foreign;
+	append_int(foreign, MAX_OBJECTS);
+	write_fixture("d1-ai-storage-foreign.bin", foreign);
+	const auto previous = Ai_local_info[0].d1_saved;
+	file = PHYSFS_openRead("d1-ai-storage-foreign.bin");
+	require(file && !d1_in_d2_ai_read_saved_storage(file, 0, 1) && PHYSFS_close(file),
+	        "ordinary D2 rejects a native-content AI payload");
+	require(std::memcmp(&previous, &Ai_local_info[0].d1_saved, sizeof(previous)) == 0,
+	        "foreign AI extension leaves local state untouched");
+	file = PHYSFS_openWrite("d2-boss-damage.bin");
+	require(file != nullptr, "open ordinary D2 boss-damage control");
+	d1_in_d2_ai_write_boss_saved_state(file);
+	require(PHYSFS_close(file), "finish ordinary D2 boss-damage control");
+	file = PHYSFS_openRead("d2-boss-damage.bin");
+	require(file && PHYSFS_fileLength(file) == 8 && d1_in_d2_ai_read_boss_saved_state(file, 0, 1) && PHYSFS_close(file),
+	        "ordinary D2 saves have an empty native boss-damage marker");
+	for (int field = 0; field < 2; ++field) {
+		bytes foreign_boss(8);
+		set_int(foreign_boss, field * 4, 1);
+		write_fixture("d1-boss-state-foreign.bin", foreign_boss);
+		file = PHYSFS_openRead("d1-boss-state-foreign.bin");
+		require(file && !d1_in_d2_ai_read_boss_saved_state(file, 0, 1) && PHYSFS_close(file) && boss_hit_state() == nlohmann::json::array({ 0, 0 }),
+		        "ordinary D2 rejects either populated native boss field without mutation");
+	}
+	file = PHYSFS_openWrite("d2-trigger-storage.bin");
+	require(file != nullptr, "open ordinary D2 trigger extension");
+	d1_in_d2_write_trigger_storage(file);
+	require(PHYSFS_close(file), "finish ordinary D2 trigger extension");
+	file = PHYSFS_openRead("d2-trigger-storage.bin");
+	require(file && PHYSFS_fileLength(file) == 4 && d1_in_d2_read_trigger_storage(file, 0, 1) && PHYSFS_close(file),
+	        "ordinary D2 emits no original trigger records");
+	bytes foreign_trigger(6);
+	set_int(foreign_trigger, 0, 1);
+	write_fixture("d1-trigger-storage-foreign.bin", foreign_trigger);
+	file = PHYSFS_openRead("d1-trigger-storage-foreign.bin");
+	require(file && !d1_in_d2_read_trigger_storage(file, 0, 1) && PHYSFS_close(file), "ordinary D2 rejects a native trigger extension");
+	Current_mission = saved_mission;
+}
+#endif
 
 static void write_checkpoint_frame_trace(const char *directory, const char *checkpoints, bool custom, int level, bool dynamic = false)
 {
@@ -6063,9 +6930,9 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				if (!invalid)
 					damaged.pop_back();
 				else if (invalid < 4) {
-					// Version 17 ends in the four autoselect_runtime.h integers
-					const size_t offset = damaged.size() - (invalid == 1 ? 16 : invalid == 2 ? 8
-					                                                                         : 4);
+					// Version 18 appends cadence clocks after the four autoselect integers
+					const size_t offset = damaged.size() - CADENCE_RUNTIME_DISK_BYTES - (invalid == 1 ? 16 : invalid == 2 ? 8
+					                                                                                                      : 4);
 					set_int(damaged, offset, invalid == 1 ? 2 : 5);
 				} else {
 					// Native object_rw starts with signature, type/id, links, then
@@ -6088,6 +6955,19 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		require(d1_save_translate_apply_checkpoint_objects(data.data(), data.size(), &start), "restore actual native checkpoint objects, world and AI");
 		d1_save_translate_apply_checkpoint_player(&start, "aistate");
 		if (dynamic && std::strcmp(filename, "route-0.sav") == 0) {
+			const json current = checkpoint_dynamic_state();
+			auto legacy = data;
+			legacy.resize(legacy.size() - CADENCE_RUNTIME_DISK_BYTES);
+			set_int(legacy, 4, CADENCE_D1_SAVE_VERSION - 1);
+			d1_save_translate_checkpoint_start legacy_start = {};
+			require(d1_save_translate_read_checkpoint_start(legacy.data(), legacy.size(), &legacy_start) &&
+			            d1_save_translate_apply_checkpoint_objects(legacy.data(), legacy.size(), &legacy_start),
+			        "import the prior native format without cadence clocks");
+			json legacy_expected = current;
+			legacy_expected["cadence_clock_deltas"] = { 0, 0, 0 };
+			require(checkpoint_dynamic_state() == legacy_expected, "legacy native import resets missing cadence state without inheriting a prior session");
+			require(d1_save_translate_apply_checkpoint_objects(data.data(), data.size(), &start) && checkpoint_dynamic_state() == current,
+			        "current native import restores populated cadence state after a legacy save");
 			const json previous_dynamic = checkpoint_dynamic_state();
 			const std::vector<object> previous_objects(Objects, Objects + Highest_object_index + 1);
 			const auto locate_record = [&](const bytes &needle) {
@@ -6122,8 +7002,9 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			}
 			require(found_effect, "malformed effect fixtures start with a one-shot effect");
 			const size_t effect_offset = locate_record(effect_record);
+			const size_t secret_offset = data.size() - CADENCE_RUNTIME_DISK_BYTES - 16 - SECRET_AREA_IDENTITY_SAVE_SIZE;
 			const std::pair<size_t, int> corruptions[] = {
-				{ morph_offset + 8, -1 }, { active_offset, 3 }, { stuck_offset + 8, -1 }, { effect_offset, Num_effects }, { effect_offset + 8, 9999 }, { effect_offset + 20, MAX_SIDES_PER_SEGMENT }
+				{ morph_offset + 8, -1 }, { active_offset, 3 }, { stuck_offset + 8, -1 }, { effect_offset, Num_effects }, { effect_offset + 8, 9999 }, { effect_offset + 20, MAX_SIDES_PER_SEGMENT }, { secret_offset, 0 }, { secret_offset + 8, SECRET_AREA_MAX_GENERATED + 1 }
 			};
 			for (const auto &corruption : corruptions) {
 				auto damaged = data;
@@ -6165,6 +7046,18 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		source_ai.cur_path_index = scenario == 3 ? source_ai.path_length - 1 : 0;
 		source_ai.SKIP_AI_COUNT = scenario == 5 ? 1 : 0;
 		source_ai.CURRENT_STATE = source_ai.GOAL_STATE = AIS_REST;
+		if (dynamic && scenario == 6) {
+			// A valid saved path may use more than the normal path-builder depth
+			// Repeat real mine waypoints to exercise an active index above 127
+			const int start = static_cast<int>(Point_segs_free_ptr - Point_segs);
+			require(start + 260 <= MAX_POINT_SEGS, "allocate a native checkpoint path beyond the byte index range");
+			for (int point = 0; point < 260; ++point)
+				Point_segs[start + point] = Point_segs[source_ai.hide_index + point % source_ai.path_length];
+			source_ai.hide_index = static_cast<short>(start);
+			source_ai.path_length = 260;
+			source_ai.cur_path_index = 256;
+			Point_segs_free_ptr += 260;
+		}
 		const point_seg &point = Point_segs[source_ai.hide_index + source_ai.cur_path_index];
 		source.pos = point.point;
 		obj_relink(robot_index, point.segnum);
@@ -6176,6 +7069,25 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		local.player_awareness_type = PA_NEARBY_ROBOT_FIRED;
 		local.player_awareness_time = 10 * F1_0;
 		local.time_player_seen = GameTime64 - F1_0;
+		// These saved fields no longer drive AI, but must survive import and
+		// ordinary re-save, including local storage outside the live object range
+		if (dynamic) {
+			Boss_been_hit = scenario == 1 ? 0 : scenario == 2 ? 1 : -12345 - scenario;
+			Boss_hit_this_frame = scenario == 1 ? 0 : scenario == 2 ? 1 : 23456 + scenario;
+			const int sound_states[] = { 256, 0, 1, -129, 127, INT_MAX, INT_MIN };
+			Boss_dying_sound_playing = sound_states[scenario];
+			for (int trigger = 0; trigger < Num_triggers; ++trigger) {
+				Triggers[trigger].type = static_cast<sbyte>(-120 + scenario + trigger);
+				Triggers[trigger].link_num = static_cast<sbyte>(100 - scenario - trigger);
+			}
+			source_ai.follow_path_start_seg = static_cast<short>(100 + scenario);
+			source_ai.follow_path_end_seg = static_cast<short>(200 + scenario);
+			for (int slot : { robot_index, MAX_OBJECTS - 1 }) {
+				Ai_local_info[slot].last_see_time = F1_0 + slot + scenario;
+				Ai_local_info[slot].last_attack_time = -2 * F1_0 - slot - scenario;
+				Ai_local_info[slot].wait_time = 3 * F1_0 + slot + scenario;
+			}
+		}
 		if (scenario == 6) {
 			// A visible target and ready gun exercise firing clocks and RNG after
 			// restore, using the original robot and weapon definitions
@@ -6237,10 +7149,20 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				}
 			require(morph_slot >= 0, "runtime checkpoint has a second robot for an active morph");
 			init_ai_object(morph_slot, AIB_STATION, Objects[morph_slot].segnum);
+			const short saved_indices[] = { 128, -129, 256, SHRT_MAX, SHRT_MIN, 0, 127 };
+			Objects[morph_slot].ctype.ai_info.cur_path_index = saved_indices[scenario];
 			morph_start(&Objects[morph_slot]);
 			do_morph_frame(&Objects[morph_slot]);
 			require(find_morph_data(&Objects[morph_slot]) != nullptr, "save a partially advanced real morph");
 			controlcen_death_silence = F1_0 + scenario;
+			for (int segment = 0; segment <= Highest_segment_index; ++segment)
+				Automap_visited[segment] = (segment + scenario) % 3 == 0;
+			Automap_visited[ConsoleObject->segnum] = 1;
+			const auto *secrets = secret_area_get_state();
+			require(secret_area_total(secrets) > 0, "runtime checkpoint mine has discovered-secret regions");
+			for (int i = 0; i < secret_area_total(secrets); ++i)
+				if ((i + scenario) % 2 == 0)
+					secret_area_note_segment_entered(secrets->segments[secrets->secrets[i].segment_offset]);
 			reset_special_effects_to_time(GameTime64);
 			int effect_index = -1;
 			for (int effect = 0; effect < Num_effects; ++effect)
@@ -6258,11 +7180,24 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			effect.dest_bm_num = 1;
 			Segments[0].sides[0].tmap_num2 = effect.changing_wall_texture;
 			effect_apply_bitmap_state(effect_index);
+			const fix64 wide = (1LL << 40) + scenario;
+			game_set_fusion_next_sound_time(GameTime64 + (scenario & 1 ? -wide : F1_0 / 8));
+			fuelcen_set_last_sound_time(GameTime64 + (scenario & 1 ? wide : -F1_0 / 4));
+			collide_set_collision_delay_last_play_time(GameTime64 - wide);
+		}
+		require(state_save_all_sub(filename, description), "write native hide/follow checkpoint");
+		if (dynamic) {
+			// The real save thumbnail marks visible automap segments before writing
+			// Compare the state actually serialized by native D1, before any restore
 			const std::string expected = checkpoint_dynamic_state().dump(2) + "\n";
 			write_fixture((std::string(filename) + ".runtime.json").c_str(), bytes(expected.begin(), expected.end()));
 		}
-		require(state_save_all_sub(filename, description), "write native hide/follow checkpoint");
 #endif
+		if (dynamic) {
+			game_set_fusion_next_sound_time(123);
+			fuelcen_set_last_sound_time(456);
+			collide_set_collision_delay_last_play_time(789);
+		}
 		restore(filename);
 		if (dynamic) {
 #ifdef DXX_BUILD_DESCENT_II
@@ -6277,10 +7212,207 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			const json actual = checkpoint_dynamic_state();
 			const std::string evidence = actual.dump(2) + "\n";
 			write_fixture((std::string(filename) + ".restored.json").c_str(), bytes(evidence.begin(), evidence.end()));
-			require(actual == json::parse(expected), "checkpoint preserves pre-save morph, stuck flare, effect and reactor state");
+			require(actual == json::parse(expected), "checkpoint preserves pre-save morph, stuck flare, effect, reactor and cadence state");
 			char roundtrip[] = "dynamic-roundtrip.sav", roundtrip_description[] = "Dynamic runtime";
 			require(state_save_all_sub(roundtrip, roundtrip_description), "save imported runtime state through the ordinary game serializer");
+			if (scenario == 0) {
+				PHYSFS_file *file = PHYSFS_openRead(roundtrip);
+				require(file != nullptr, "open current save for cadence legacy control");
+				bytes legacy(static_cast<size_t>(PHYSFS_fileLength(file)));
+				require(PHYSFS_readBytes(file, legacy.data(), legacy.size()) == static_cast<PHYSFS_sint64>(legacy.size()) && PHYSFS_close(file), "read complete cadence legacy control");
+				legacy.resize(legacy.size() - CADENCE_RUNTIME_DISK_BYTES);
 #ifdef DXX_BUILD_DESCENT_II
+				set_int(legacy, 4, CADENCE_D2_SAVE_VERSION - 1);
+#else
+				set_int(legacy, 4, CADENCE_D1_SAVE_VERSION - 1);
+#endif
+				char legacy_name[] = "cadence-prior-format.sav";
+				write_fixture(legacy_name, legacy);
+#ifdef DXX_BUILD_DESCENT_II
+				require(state_restore_all_sub(legacy_name, 0), "restore prior D2 format without cadence clocks");
+#else
+				require(state_restore_all_sub(legacy_name), "restore prior D1 format without cadence clocks");
+#endif
+				json expected_legacy = actual;
+				expected_legacy["cadence_clock_deltas"] = { 0, 0, 0 };
+				require(checkpoint_dynamic_state() == expected_legacy, "legacy restore resets only unavailable cadence state");
+#ifdef DXX_BUILD_DESCENT_II
+				require(state_restore_all_sub(roundtrip, 0), "restore current D2 cadence record after a legacy load");
+#else
+				require(state_restore_all_sub(roundtrip), "restore current D1 cadence record after a legacy load");
+#endif
+				require(checkpoint_dynamic_state() == actual, "current save restores complete cadence state after a legacy load");
+			}
+#ifdef DXX_BUILD_DESCENT_II
+			if (scenario == 0) {
+				PHYSFS_file *file = PHYSFS_openWrite("d1-ai-storage.bin");
+				require(file != nullptr, "open original AI storage fixture");
+				d1_in_d2_ai_write_saved_storage(file);
+				require(PHYSFS_close(file), "finish original AI storage fixture");
+				file = PHYSFS_openRead("d1-ai-storage.bin");
+				require(file != nullptr, "read original AI storage fixture");
+				bytes storage(static_cast<size_t>(PHYSFS_fileLength(file)));
+				require(storage.size() == 4 + MAX_OBJECTS * 16 &&
+				            PHYSFS_readBytes(file, storage.data(), storage.size()) == static_cast<PHYSFS_sint64>(storage.size()) && PHYSFS_close(file),
+				        "original AI extension contains every local slot");
+				for (int malformed = 0; malformed < 3; ++malformed) {
+					auto damaged = storage;
+					if (malformed == 0) damaged.pop_back();
+					else if (malformed == 1) set_int(damaged, 0, MAX_OBJECTS - 1);
+					else set_short(damaged, 4 + Players[Player_num].objnum * 16, 1);
+					write_fixture("d1-ai-storage-invalid.bin", damaged);
+					file = PHYSFS_openRead("d1-ai-storage-invalid.bin");
+					require(file && !d1_in_d2_ai_read_saved_storage(file, 0, 1) && PHYSFS_close(file),
+					        "reject truncated storage, wrong capacity and AI data on a non-AI object");
+					require(checkpoint_dynamic_state() == actual, "invalid AI extension does not partially apply");
+				}
+				auto swapped = storage;
+				std::reverse(swapped.begin(), swapped.begin() + 4);
+				for (size_t offset = 4; offset < swapped.size(); offset += 16) {
+					std::reverse(swapped.begin() + offset, swapped.begin() + offset + 2);
+					std::reverse(swapped.begin() + offset + 2, swapped.begin() + offset + 4);
+					for (int field = 4; field < 16; field += 4)
+						std::reverse(swapped.begin() + offset + field, swapped.begin() + offset + field + 4);
+				}
+				write_fixture("d1-ai-storage-swapped.bin", swapped);
+				d1_in_d2_ai_reset_saved_storage();
+				file = PHYSFS_openRead("d1-ai-storage-swapped.bin");
+				require(file && d1_in_d2_ai_read_saved_storage(file, 1, 1) && PHYSFS_close(file) && checkpoint_dynamic_state() == actual,
+				        "opposite-endian extension restores all original AI storage");
+				file = PHYSFS_openWrite("d1-boss-damage.bin");
+				require(file != nullptr, "open boss-damage extension fixture");
+				d1_in_d2_ai_write_boss_saved_state(file);
+				require(PHYSFS_close(file), "finish boss-damage extension fixture");
+				file = PHYSFS_openRead("d1-boss-damage.bin");
+				bytes boss_storage(8);
+				require(file && PHYSFS_fileLength(file) == 8 && PHYSFS_readBytes(file, boss_storage.data(), 8) == 8 && PHYSFS_close(file),
+				        "read the complete boss-damage extension");
+				write_fixture("d1-boss-damage-invalid.bin", bytes(boss_storage.begin(), boss_storage.end() - 1));
+				file = PHYSFS_openRead("d1-boss-damage-invalid.bin");
+				require(file && !d1_in_d2_ai_read_boss_saved_state(file, 0, 1) && PHYSFS_close(file) && checkpoint_dynamic_state() == actual,
+				        "truncated boss-damage extension cannot partially apply");
+				std::reverse(boss_storage.begin(), boss_storage.begin() + 4);
+				std::reverse(boss_storage.begin() + 4, boss_storage.end());
+				write_fixture("d1-boss-damage-swapped.bin", boss_storage);
+				d1_in_d2_ai_reset_boss_state();
+				file = PHYSFS_openRead("d1-boss-damage-swapped.bin");
+				require(file && d1_in_d2_ai_read_boss_saved_state(file, 1, 0) && PHYSFS_close(file) && boss_hit_state() == json::array({ 0, 0 }),
+				        "boss-damage preflight reads opposite-endian data without applying it");
+				file = PHYSFS_openRead("d1-boss-damage-swapped.bin");
+				require(file && d1_in_d2_ai_read_boss_saved_state(file, 1, 1) && PHYSFS_close(file) && checkpoint_dynamic_state() == actual,
+				        "opposite-endian boss-damage extension preserves the exact native integer");
+				file = PHYSFS_openWrite("d1-trigger-storage.bin");
+				require(file != nullptr, "open original trigger storage fixture");
+				d1_in_d2_write_trigger_storage(file);
+				require(PHYSFS_close(file), "finish original trigger storage fixture");
+				file = PHYSFS_openRead("d1-trigger-storage.bin");
+				bytes trigger_storage(4 + 2 * Num_triggers);
+				require(file && PHYSFS_fileLength(file) == static_cast<PHYSFS_sint64>(trigger_storage.size()) &&
+				            PHYSFS_readBytes(file, trigger_storage.data(), trigger_storage.size()) == static_cast<PHYSFS_sint64>(trigger_storage.size()) && PHYSFS_close(file),
+				        "read complete source bytes for every active trigger");
+				for (int invalid = 0; invalid < 3; ++invalid) {
+					auto damaged = trigger_storage;
+					if (invalid == 0) damaged.pop_back();
+					else if (invalid == 1) set_int(damaged, 0, Num_triggers + 1);
+					else Triggers[0].flags &= ~128;
+					write_fixture("d1-trigger-storage-invalid.bin", damaged);
+					file = PHYSFS_openRead("d1-trigger-storage-invalid.bin");
+					require(file && !d1_in_d2_read_trigger_storage(file, 0, 1) && PHYSFS_close(file), "reject truncated, mismatched-count and foreign-core trigger extensions");
+					if (invalid == 2) Triggers[0].flags |= 128;
+					require(checkpoint_dynamic_state() == actual, "invalid trigger extension never partially applies");
+				}
+				std::reverse(trigger_storage.begin(), trigger_storage.begin() + 4);
+				write_fixture("d1-trigger-storage-swapped.bin", trigger_storage);
+				for (int trigger = 0; trigger < Num_triggers; ++trigger) Triggers[trigger].d1_saved = {};
+				file = PHYSFS_openRead("d1-trigger-storage-swapped.bin");
+				require(file && d1_in_d2_read_trigger_storage(file, 1, 0) && PHYSFS_close(file) && Triggers[0].d1_saved.type == 0,
+				        "trigger preflight validates endian count without applying source bytes");
+				file = PHYSFS_openRead("d1-trigger-storage-swapped.bin");
+				require(file && d1_in_d2_read_trigger_storage(file, 1, 1) && PHYSFS_close(file) && checkpoint_dynamic_state() == actual,
+				        "opposite-endian trigger extension restores the original signed bytes");
+				file = PHYSFS_openRead(roundtrip);
+				require(file != nullptr, "open current save for the prior-format control");
+				bytes previous_format(static_cast<size_t>(PHYSFS_fileLength(file)));
+				require(PHYSFS_readBytes(file, previous_format.data(), previous_format.size()) == static_cast<PHYSFS_sint64>(previous_format.size()) && PHYSFS_close(file),
+				        "read the complete current save");
+				// Build the legacy object layout, not merely an older header
+				// Single-player prefix from state_save_all_sub's RGB thumbnail
+				const size_t object_count_offset = 8 + 20 + 100 * 50 * 3 + 4 + 9 + 12 + sizeof(player_rw) + 2 + 16 + 4;
+				int object_count;
+				std::memcpy(&object_count, previous_format.data() + object_count_offset, sizeof(object_count));
+				require(!(Game_mode & GM_MULTI_COOP) && object_count == Highest_object_index + 1 &&
+				            object_count_offset + 4 + object_count * sizeof(object_rw) < previous_format.size(),
+				        "legacy fixture locates the complete single-player object array");
+				for (int slot = 0; slot < object_count; ++slot) {
+					const size_t offset = object_count_offset + 4 + slot * sizeof(object_rw);
+					object_rw saved;
+					std::memcpy(&saved, previous_format.data() + offset, sizeof(saved));
+					object decoded = {};
+					if (!d1_in_d2_ai_read_object(&saved, &decoded)) continue;
+					const auto original = saved.ctype.d1_ai_info;
+					auto &legacy = saved.ctype.ai_info;
+					legacy.behavior = original.behavior;
+					std::memcpy(legacy.flags, original.flags, sizeof(legacy.flags));
+					legacy.hide_segment = original.hide_segment;
+					legacy.hide_index = original.hide_index;
+					legacy.path_length = original.path_length;
+					legacy.cur_path_index = static_cast<sbyte>(original.cur_path_index);
+					legacy.dying_sound_playing = 0;
+					legacy.danger_laser_signature = original.danger_laser_signature;
+					legacy.danger_laser_num = original.danger_laser_num;
+					legacy.dying_start_time = 0;
+					std::memcpy(previous_format.data() + offset, &saved, sizeof(saved));
+				}
+				previous_format.resize(previous_format.size() - CADENCE_RUNTIME_DISK_BYTES);
+				set_int(previous_format, 4, 35);
+				char prior_path[] = "ai-path-prior-format.sav";
+				write_fixture(prior_path, previous_format);
+				require(state_restore_all_sub(prior_path, 0), "load version 35 with the legacy AI object layout");
+				json expected_prior_path = actual;
+				expected_prior_path["cadence_clock_deltas"] = { 0, 0, 0 };
+				for (auto &row : expected_prior_path["ai_path_indices"]) row[1] = static_cast<sbyte>(row[1].get<int>());
+				require(checkpoint_dynamic_state() == expected_prior_path, "legacy object restore retains the byte index and extension follow fields");
+				set_int(previous_format, 4, 34);
+				char prior_sound[] = "boss-sound-prior-format.sav";
+				write_fixture(prior_sound, previous_format);
+				require(state_restore_all_sub(prior_sound, 0), "load version 34 with the legacy byte-sized boss sound flag");
+				json expected_prior_sound = expected_prior_path;
+				expected_prior_sound["boss_dying_sound_playing"] = static_cast<sbyte>(actual["boss_dying_sound_playing"].get<int>());
+				require(checkpoint_dynamic_state() == expected_prior_sound, "prior-format restore changes only the legacy boss sound interpretation");
+				previous_format.resize(previous_format.size() - 4 - 2 * Num_triggers);
+				set_int(previous_format, 4, 33);
+				char prior_trigger[] = "trigger-prior-format.sav";
+				write_fixture(prior_trigger, previous_format);
+				require(state_restore_all_sub(prior_trigger, 0), "load version 33 without original trigger bytes");
+				json expected_prior_trigger = expected_prior_sound;
+				for (auto &row : expected_prior_trigger["triggers"]) {
+					row["type"] = 0;
+					row["link_num"] = 0;
+				}
+				require(checkpoint_dynamic_state() == expected_prior_trigger, "prior-format restore clears only unavailable original trigger bytes");
+				// Version 33 appends exact boss integers after version-32 AI storage
+				previous_format.resize(previous_format.size() - 8);
+				set_int(previous_format, 4, 32);
+				char prior_boss[] = "boss-prior-format.sav";
+				write_fixture(prior_boss, previous_format);
+				require(state_restore_all_sub(prior_boss, 0), "load version 32 without a native boss-damage marker");
+				json expected_prior_boss = expected_prior_trigger;
+				expected_prior_boss["boss_hit"][0] = actual["boss_hit"][0].get<int>() != 0 ? 1 : 0;
+				expected_prior_boss["boss_hit"][1] = 0;
+				require(checkpoint_dynamic_state() == expected_prior_boss, "prior format retains Boolean contact and clears unavailable damage history");
+				previous_format.resize(previous_format.size() - storage.size());
+				set_int(previous_format, 4, 31);
+				char previous_name[] = "ai-prior-format.sav";
+				write_fixture(previous_name, previous_format);
+				require(state_restore_all_sub(previous_name, 0), "load the prior D2 save format without a native AI extension");
+				const json previous_state = checkpoint_dynamic_state();
+				for (const auto &row : previous_state["ai_saved_storage"])
+					for (const auto &value : row)
+						require(value == 0, "prior-format restore clears unavailable original AI storage instead of inheriting it");
+			}
+			d1_in_d2_ai_reset_saved_storage();
+			d1_in_d2_ai_init_boss_for_ship();
+			require(checkpoint_dynamic_state() != actual, "clearing original AI storage changes the saved-state comparison");
 			require(state_restore_all_sub(roundtrip, 0), "reload runtime state through the ordinary D2 save path");
 #else
 			require(state_restore_all_sub(roundtrip), "reload runtime state through the ordinary D1 save path");
@@ -6370,6 +7502,10 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			}
 			frames.push_back({ { "mode", local.mode }, { "behavior", aip.behavior }, { "submode", aip.flags[4] }, { "skip", aip.SKIP_AI_COUNT }, { "state", aip.CURRENT_STATE }, { "goal", aip.GOAL_STATE }, { "position", vector(robot.pos) }, { "velocity", vector(robot.mtype.phys_info.velocity) }, { "forward", vector(robot.orient.fvec) }, { "right", vector(robot.orient.rvec) }, { "up", vector(robot.orient.uvec) }, { "next_fire", local.next_fire }, { "last_seen", local.time_player_seen }, { "path_index", aip.cur_path_index }, { "path_direction", aip.PATH_DIR }, { "path", path }, { "sim_draws", d_rand_get_call_count() - sim }, { "fx_draws", d_rand_get_stream_call_count(D_RNG_FX) - fx } });
 			frames.back()["object_physics"] = { robot.size, robot.mtype.phys_info.mass, robot.mtype.phys_info.drag, robot.shields, robot.rtype.pobj_info.model_num };
+			const auto diagnostics = capture_ai_diagnostics();
+			frames.back()["ai_diagnostics"] = {
+				{ "static_hash", diagnostics.robot_ai_static_state_hash }, { "local_hash", diagnostics.robot_ai_local_state_hash }, { "static_buckets", diagnostics.robot_ai_static_bucket_hashes }, { "local_buckets", diagnostics.robot_ai_local_bucket_hashes }, { "trace_hashes", diagnostics.robot_ai_static_trace_hashes }, { "follow_starts", diagnostics.robot_ai_static_trace_follow_starts }, { "follow_ends", diagnostics.robot_ai_static_trace_follow_ends }
+			};
 			if (dynamic) frames.back()["dynamic"] = checkpoint_dynamic_state();
 			GameTime64 += FrameTime;
 			++d_tick_count;
@@ -6425,6 +7561,11 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 #ifndef DXX_BUILD_DESCENT_II
 				Difficulty_level = difficulty;
 				Objects[boss_slot].shields = health[variant];
+				if (variant % 2 == 0) {
+					Objects[boss_slot].shields += F1_0;
+					require(!apply_damage_to_robot(&Objects[boss_slot], F1_0, Players[Player_num].objnum),
+					        "apply actual nonlethal boss damage before native checkpoint save");
+				}
 				Objects[boss_slot].mtype.phys_info.mass += F1_0;
 				Objects[boss_slot].mtype.phys_info.drag += 1;
 				require(state_save_all_sub(filename, description), "write native boss health and physics checkpoint");
@@ -6436,8 +7577,9 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				require(boss.mtype.phys_info.mass == original.mtype.phys_info.mass + F1_0 &&
 				            boss.mtype.phys_info.drag == original.mtype.phys_info.drag + 1 && boss.size == original.size,
 				        "native checkpoint retains boss physics instead of copying definition defaults");
+				require(boss_hit_state()[1] == (variant % 2 == 0 ? 1 : 0), "checkpoint retains actual boss damage history");
 				boss_checkpoints.push_back({ difficulty, variant, boss_slot, boss.id, boss.shields,
-				                             boss.mtype.phys_info.mass, boss.mtype.phys_info.drag, boss.size });
+				                             boss.mtype.phys_info.mass, boss.mtype.phys_info.drag, boss.size, boss_hit_state() });
 			}
 		}
 	}
@@ -6461,14 +7603,79 @@ static void finish_campaign_game(int death)
 	}
 }
 
-static void write_campaign_trace(const char *directory)
+static void write_endlevel_lifetime_trace()
+{
+	using nlohmann::json;
+	json trace = json::array();
+	for (const int level : { 1, 2, 1 }) {
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(level);
+		require(Game_wind != nullptr, "rendered flyout has an actual game window");
+		const auto loaded = input_demo_endlevel_trace_snapshot();
+		require(loaded["data_loaded"] == 1, "actual campaign mine has rendered endlevel data");
+		const int exit = loaded["exit_segment"];
+		int approach = -1;
+		for (const auto child : Segments[exit].children)
+			if (child >= 0) approach = child;
+		require(approach >= 0, "actual mine exit has an approach cell");
+		object &ship = *ConsoleObject;
+		obj_relink(&ship - Objects, approach);
+		compute_segment_center(&ship.pos, &Segments[approach]);
+		vms_vector destination, heading;
+		compute_segment_center(&destination, &Segments[exit]);
+		vm_vec_normalized_dir(&heading, &destination, &ship.pos);
+		vm_vector_2_matrix(&ship.orient, &heading, nullptr, nullptr);
+		vm_vec_sub(&ship.last_pos, &ship.pos, &heading);
+		ship.mtype.phys_info.velocity = {};
+		ship.mtype.phys_info.thrust = {};
+		Players[0].homing_object_dist = -F1_0;
+		Control_center_destroyed = 1;
+		d_srand(9341);
+		d_srand_stream(D_RNG_FX, 9342);
+		const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+		json run = { { "level", level }, { "before", input_demo_endlevel_trace_snapshot() }, { "frames", json::array() } };
+		input_demo_set_skip_level_intro(1);
+		std::fprintf(stderr, "Start rendered exit: level=%d approach=%d exit=%d\n", level, approach, exit);
+		start_endlevel_sequence();
+		std::fprintf(stderr, "Rendered exit entered phase %d\n", Endlevel_sequence);
+		require(Endlevel_sequence == 1, "actual exit enters the rendered flythrough");
+		unsigned phases = 0;
+		bool explosion_seen = false;
+		for (int frame = 0; frame < 900 && Endlevel_sequence; ++frame) {
+			FrameTime = F1_0 / 60;
+			GameTime64 += FrameTime;
+			phases |= 1u << Endlevel_sequence;
+			const int previous_phase = Endlevel_sequence;
+			do_endlevel_frame();
+			if (Endlevel_sequence != previous_phase)
+				std::fprintf(stderr, "Rendered exit frame %d: phase %d -> %d\n", frame, previous_phase, Endlevel_sequence);
+			const auto state = input_demo_endlevel_trace_snapshot();
+			explosion_seen |= state["explosion_playing"] != 0;
+			json row = { { "state", state }, { "game_time", GameTime64 }, { "sim_draws", d_rand_get_call_count() - sim }, { "fx_draws", d_rand_get_stream_call_count(D_RNG_FX) - fx } };
+			for (const auto entry : { std::make_pair("player", ConsoleObject), std::make_pair("viewer", Viewer) }) {
+				const object &o = *entry.second;
+				row[entry.first] = { { "slot", entry.second - Objects }, { "segment", o.segnum }, { "position", { o.pos.x, o.pos.y, o.pos.z } }, { "orientation", { o.orient.rvec.x, o.orient.rvec.y, o.orient.rvec.z, o.orient.uvec.x, o.orient.uvec.y, o.orient.uvec.z, o.orient.fvec.x, o.orient.fvec.y, o.orient.fvec.z } } };
+			}
+			run["frames"].push_back(std::move(row));
+		}
+		require(!Endlevel_sequence && Current_level_num == level + 1, "rendered flyout finishes through actual campaign travel");
+		require(phases == 30 && explosion_seen, "flyout observes tunnel, lookback, outside, stopped and external explosion");
+		run["next_level"] = Current_level_num;
+		std::fprintf(stderr, "Endlevel %d: %zu frames, all phases and external explosion\n", level, run["frames"].size());
+		trace.push_back(std::move(run));
+	}
+	const std::string output = trace.dump(2) + "\n";
+	write_fixture("endlevel.json", bytes(output.begin(), output.end()));
+}
+
+static void write_campaign_trace(const char *directory, const char *d2_directory, bool endlevel_only = false)
 {
 	using nlohmann::json;
 	const std::string hog = std::string(directory) + "/DESCENT.HOG";
 	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "mount campaign resources");
 	Game_mode = 0;
 	GameArg.SndNoSound = GameArg.SndNoMusic = 1;
-	GameArg.SysInputDemoNoRender = 1;
+	GameArg.SysInputDemoNoRender = endlevel_only ? 0 : 1;
 	GameArg.SysWindow = GameCfg.WindowMode = 1;
 	GameCfg.AspectX = 4;
 	GameCfg.AspectY = 3;
@@ -6508,13 +7715,90 @@ static void write_campaign_trace(const char *directory)
 		SDL_PushEvent(&event);
 		return interval; }, nullptr);
 	require(timer != 0, "start presentation dismissal timer");
+	if (endlevel_only) {
+		write_endlevel_lifetime_trace();
+		SDL_RemoveTimer(timer);
+		return;
+	}
 	json trace = json::array();
+	const auto clocks = [] {
+		return json::array({ game_get_fusion_next_sound_time(), fuelcen_get_last_sound_time(), collide_get_collision_delay_last_play_time() });
+	};
+	const auto seed_clocks = [&] {
+		GameTime64 = 20 * F1_0;
+		game_set_fusion_next_sound_time(GameTime64 + F1_0 / 8);
+		fuelcen_set_last_sound_time(GameTime64 - F1_0 / 4);
+		collide_set_collision_delay_last_play_time(GameTime64 - 300);
+		return clocks();
+	};
 	const auto snapshot = [&](const char *phase) {
 		const player &p = Players[0];
 		trace.push_back({ { "phase", phase }, { "level", Current_level_num }, { "score", p.score }, { "last_score", p.last_score }, { "lives", p.lives }, { "shields", p.shields }, { "energy", p.energy }, { "hostages", p.hostages_on_board }, { "rescued", p.hostages_rescued_total }, { "primary", p.primary_weapon_flags }, { "secondary", p.secondary_weapon_flags }, { "homing", p.secondary_ammo[HOMING_INDEX] }, { "triggers", snapshot_native_triggers() } });
+		trace.back()["cadence_clocks"] = clocks();
+		trace.back()["game_time"] = GameTime64;
+		trace.back()["pending_awareness"] = Num_awareness_events;
 		std::fprintf(stderr, "Campaign phase %s: level %d score %d lives %d\n", phase, Current_level_num, p.score, p.lives);
 		std::fflush(stderr);
 	};
+	const auto first_use = [&](bool expired) {
+		// Keep the campaign inventory intact while exercising the real consumers
+		const player saved_player = Players[0];
+		const auto saved_controls = Controls;
+		const fix saved_frame = FrameTime, saved_charge = Fusion_charge;
+		const fix64 saved_auto_fire = Auto_fire_fusion_cannon_time;
+		const int saved_firing = Global_laser_firing_count;
+		const json before = clocks();
+		FrameTime = F1_0 / 64;
+		Players[0].primary_weapon = FUSION_INDEX;
+		Players[0].energy = 100 * F1_0;
+		Fusion_charge = 0;
+		Auto_fire_fusion_cannon_time = 0;
+		Controls = {};
+		Controls.fire_primary_state = 1;
+		Num_awareness_events = 0;
+		d_srand(12345);
+		d_srand_stream(D_RNG_FX, 12346);
+		const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+		FireLaser();
+		require(Num_awareness_events == (expired ? 1 : 0), "transition retains native Fusion first-use awareness cadence");
+		int station = -1;
+		for (int segment = 0; segment <= Highest_segment_index; ++segment) {
+#ifdef DXX_BUILD_DESCENT_II
+			if (Segment2s[segment].special == SEGMENT_IS_FUELCEN) station = segment;
+#else
+			if (Segments[segment].special == SEGMENT_IS_FUELCEN) station = segment;
+#endif
+		}
+		require(station >= 0, "campaign mine has a real refueling center");
+		require(fuelcen_give_fuel(&Segments[station], F1_0) == fixmul(FrameTime, 25 * F1_0), "transition retains actual refueling energy rate");
+		require(check_collision_delayfunc_exec() == (expired ? 1 : 0), "transition retains native collision first-use spawning gate");
+		// Warmup awareness draws once for agitation, then the collision gate draws
+		const auto sim_draws = d_rand_get_call_count() - sim, fx_draws = d_rand_get_stream_call_count(D_RNG_FX) - fx;
+		if (sim_draws != (expired ? 2u : 0u) || fx_draws != (expired ? 1u : 0u))
+			std::fprintf(stderr, "First-use RNG: phase=%s expired=%d SIM=%u FX=%u clock=%lld\n", trace.back()["phase"].get<std::string>().c_str(), expired, sim_draws, fx_draws, static_cast<long long>(GameTime64));
+		require(sim_draws == (expired ? 2u : 0u) && fx_draws == (expired ? 1u : 0u), "transition first-use cadence consumes exactly the native RNG draws");
+		require(expired ? fuelcen_get_last_sound_time() == GameTime64 : clocks() == before, "transition either restarts expired cadence or preserves unexpired deadlines");
+		trace.back()["first_use"] = { { "clocks", clocks() }, { "awareness", Num_awareness_events }, { "sim_draws", sim_draws }, { "fx_draws", fx_draws } };
+		Players[0] = saved_player;
+		Controls = saved_controls;
+		FrameTime = saved_frame;
+		Fusion_charge = saved_charge;
+		Auto_fire_fusion_cannon_time = saved_auto_fire;
+		Global_laser_firing_count = saved_firing;
+	};
+	json seeded = seed_clocks();
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(1);
+	require(GameTime64 == 0 && clocks() == seeded, "new game retains native cadence storage while rebasing level time");
+	snapshot("normal_start");
+	first_use(true);
+	seeded = seed_clocks();
+	input_demo_set_skip_level_intro(1);
+	PlayerFinishedLevel(0);
+	require(Current_level_num == 2 && GameTime64 == 0 && clocks() == seeded, "normal travel retains native cadence storage while rebasing level time");
+	require(Num_awareness_events == 0, "normal travel retires pending awareness from the previous mine");
+	snapshot("normal_exit");
+	first_use(true);
 	for (int secret = 0; secret < -Last_secret_level; ++secret) {
 		const int origin = Secret_level_table[secret];
 		input_demo_set_skip_level_intro(1);
@@ -6532,10 +7816,14 @@ static void write_campaign_trace(const char *directory)
 		for (int i = 0; i < Num_triggers; ++i)
 			if (native_trigger_flags(i) & TRIGGER_SECRET_EXIT) trigger_index = i;
 		require(trigger_index >= 0, "campaign origin contains native secret trigger");
+		seeded = seed_clocks();
 		input_demo_set_skip_level_intro(1);
 		check_trigger_sub(trigger_index, 0, 0);
 		require(Current_level_num == -secret - 1, "native secret trigger reaches its exact destination");
+		require(GameTime64 == 0 && clocks() == seeded, "secret entry retains native clocks across the new level epoch");
 		snapshot("secret_entry");
+		first_use(true);
+		seed_clocks();
 		char checkpoint[] = "campaign.sav", description[21] = "Native travel";
 		require(state_save_all_sub(checkpoint, description), "save actual secret world");
 		const json triggers_before = snapshot_native_triggers();
@@ -6547,21 +7835,31 @@ static void write_campaign_trace(const char *directory)
 #endif
 		require(snapshot_native_triggers() == triggers_before, "ordinary save restores complete native triggers");
 		snapshot("secret_restore");
+		first_use(false);
+		seeded = seed_clocks();
 		Control_center_destroyed = 0;
 		DoPlayerDead();
 		require(Current_level_num == -secret - 1 && Players[0].lives == 2, "intact secret death respawns in that secret");
+		require(GameTime64 == 20 * F1_0 && clocks() == seeded, "intact death retains both native cadence clocks and the level epoch");
 		snapshot("secret_respawn");
+		first_use(false);
+		seeded = seed_clocks();
 		Control_center_destroyed = 1;
 		input_demo_set_skip_level_intro(1);
 		DoPlayerDead();
 		require(Current_level_num == origin + 1 && Players[0].lives == 1, "destroyed secret death advances to next normal level");
+		require(GameTime64 == 0 && clocks() == seeded, "destroyed-mine death retains native clocks across the next level epoch");
 		snapshot("secret_destroyed_death");
+		first_use(true);
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(-secret - 1);
+		seeded = seed_clocks();
 		input_demo_set_skip_level_intro(1);
 		PlayerFinishedLevel(0);
 		require(Current_level_num == origin + 1, "ordinary secret exit advances using mission table without entry history");
+		require(GameTime64 == 0 && clocks() == seeded, "secret exit retains native clocks across the normal level epoch");
 		snapshot("secret_exit");
+		first_use(true);
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(-secret - 1);
 		Players[0].lives = 1;
@@ -6581,6 +7879,46 @@ static void write_campaign_trace(const char *directory)
 	SDL_RemoveTimer(timer);
 	const std::string output = trace.dump(2) + "\n";
 	write_fixture("campaign.json", bytes(output.begin(), output.end()));
+#ifdef DXX_BUILD_DESCENT_II
+	if (d2_directory) {
+		const std::string d2_hog = std::string(d2_directory) + "/descent2.hog";
+		require(PHYSFS_mount(d2_directory, nullptr, 0) && PHYSFS_mount(d2_hog.c_str(), nullptr, 0), "mount ordinary D2 persistence resources");
+		char d2_mission[] = "d2";
+		require(load_mission_by_name(d2_mission) && !d1_in_d2_use_d1_gameplay(), "select actual Counterstrike persistence control");
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+		require(Current_level_num == 1 && Highest_object_index > 10 && !d1_in_d2_use_d1_gameplay(), "ordinary D2 persistence has a real populated mine");
+		json control = json::array();
+		const auto ai_control = input_demo_ai_trace_snapshot();
+		const json awareness_control = { { "highest_segment", Highest_segment_index },
+			                             { "count", ai_control["Num_awareness_events"] },
+			                             { "events", ai_control["awareness"] },
+			                             { "believed_segment", ai_control["Believed_player_seg"] } };
+		const std::string awareness_output = awareness_control.dump(2) + "\n";
+		write_fixture("cadence-d2-awareness.json", bytes(awareness_output.begin(), awareness_output.end()));
+		require(Num_awareness_events == 0, "D1 to D2 session switch retires pending awareness from the previous mine");
+		for (int scenario = 0; scenario < 3; ++scenario) {
+			GameTime64 = 20 * F1_0 + scenario;
+			const fix64 wide = (1LL << 40) + scenario;
+			const cadence_runtime_state saved = { GameTime64 + (scenario ? -wide : F1_0 / 8),
+				                                  GameTime64 + (scenario ? wide : -F1_0 / 4), GameTime64 - wide };
+			cadence_runtime_apply(&saved);
+			const json expected = { saved.fusion - GameTime64, saved.refuel - GameTime64, saved.collision - GameTime64 };
+			char name[] = "cadence-counterstrike.sav", description[21] = "D2 cadence control";
+			require(state_save_all_sub(name, description), "save populated ordinary D2 cadence clocks");
+			const cadence_runtime_state contaminated = { 123, 456, 789 };
+			cadence_runtime_apply(&contaminated);
+			GameTime64 = 80 * F1_0;
+			require(state_restore_all_sub(name, 0) && GameTime64 == 0 && !d1_in_d2_use_d1_gameplay(), "restore actual ordinary D2 save at its rebased epoch");
+			require(clocks() == expected, "ordinary D2 restores all three full-width cadence deadlines");
+			control.push_back({ { "scenario", scenario }, { "level", Current_level_num }, { "objects", Highest_object_index + 1 }, { "clock_deltas", clocks() } });
+		}
+		const std::string result = control.dump(2) + "\n";
+		write_fixture("cadence-d2.json", bytes(result.begin(), result.end()));
+	}
+#else
+	(void) d2_directory;
+#endif
 	std::puts("Native campaign transition trace passed");
 }
 
@@ -7228,6 +8566,104 @@ static nlohmann::json exercise_volatile_impacts(bool native)
 	return result;
 }
 
+static nlohmann::json exercise_exploding_walls(bool native)
+{
+	auto result = nlohmann::json::array();
+	const wclip original_clip = WallAnims[0];
+	Game_mode = 0;
+	Player_num = 0;
+	for (const int seed : { 1, 23, 456 }) {
+		init_test_corridor(2);
+		init_exploding_walls();
+		Num_walls = 2;
+		std::memset(Walls, 0, 2 * sizeof(Walls[0]));
+		Segments[0].sides[4].wall_num = 0;
+		Segments[1].sides[5].wall_num = 1;
+		for (int wall = 0; wall < 2; ++wall) {
+			Walls[wall].segnum = wall;
+			Walls[wall].sidenum = wall ? 5 : 4;
+			Walls[wall].type = WALL_BLASTABLE;
+			Walls[wall].clip_num = 0;
+		}
+		WallAnims[0].num_frames = 8;
+		WallAnims[0].flags = WCF_TMAP1;
+		for (int frame = 0; frame < 8; ++frame) WallAnims[0].frames[frame] = frame + 1;
+		Players[0].objnum = 0;
+		Players[0].flags = PLAYER_FLAGS_INVULNERABLE;
+		Players[0].shields = ConsoleObject->shields = 100 * F1_0;
+		ConsoleObject->mtype.phys_info.mass = F1_0;
+		FrameTime = F1_0 / 32;
+		d_srand(seed);
+		d_srand_fx(seed + 7);
+		d_rand_reset_call_count();
+		d_rand_reset_stream_call_count(D_RNG_FX);
+		explode_wall(0, 4);
+		auto flashes = nlohmann::json::array();
+		for (int frame = 0; frame < 32; ++frame) {
+			const int first = Highest_object_index + 1;
+			do_exploding_wall_frame();
+			for (int slot = first; slot <= Highest_object_index; ++slot) {
+				const object &flash = Objects[slot];
+				const int base_size = native ? 0x48000 : 0x48000 * 6 / 10;
+				require(flash.type == OBJ_FIREBALL && flash.size == base_size + 2 * base_size * static_cast<int>(flashes.size()) / 32,
+				        "exploding wall emits each fireball with its original source size");
+				flashes.push_back({ frame, flash.id, flash.size, flash.lifeleft, flash.pos.x, flash.pos.y, flash.pos.z });
+			}
+		}
+		require(flashes.size() == 32 && (Walls[0].flags & WALL_BLASTED) && (Walls[1].flags & WALL_BLASTED),
+		        "actual blastable wall completes all fireballs and opens both sides");
+		result.push_back({ { "seed", seed }, { "flashes", flashes }, { "textures", { Segments[0].sides[4].tmap_num, Segments[1].sides[5].tmap_num } }, { "player_motion", { ConsoleObject->mtype.phys_info.velocity.x, ConsoleObject->mtype.phys_info.velocity.y, ConsoleObject->mtype.phys_info.velocity.z, ConsoleObject->mtype.phys_info.rotvel.x, ConsoleObject->mtype.phys_info.rotvel.y, ConsoleObject->mtype.phys_info.rotvel.z } }, { "sim_calls", d_rand_get_call_count() }, { "fx_calls", d_rand_get_stream_call_count(D_RNG_FX) } });
+	}
+	WallAnims[0] = original_clip;
+	return result;
+}
+
+static nlohmann::json exercise_reactor_impacts(bool native)
+{
+	auto result = nlohmann::json::array();
+	Game_mode = 0;
+	Player_num = 0;
+	collide_init();
+	for (const int size : { 6 * F1_0 + 7, 18 * F1_0, 20 * F1_0 + 11 })
+		for (const int parent_type : { OBJ_PLAYER, OBJ_ROBOT })
+			for (const int physical : { 0, 1 }) {
+				init_test_corridor(6);
+				for (int vertex = 0; vertex < Num_vertices; ++vertex) vm_vec_scale(&Vertices[vertex], 4 * F1_0);
+				validate_segment_all();
+				Players[0].objnum = 0;
+				ConsoleObject->pos = { 0, 0, 80 * F1_0 };
+				obj_relink(0, find_point_seg(&ConsoleObject->pos, 0));
+				vms_vector center = {};
+				const int target = obj_create(OBJ_CNTRLCEN, 0, 0, &center, &vmd_identity_matrix, size, CT_CNTRLCEN, MT_NONE, RT_POLYOBJ);
+				require(target > 0, "create reactor impact target");
+				Objects[target].shields = 1000 * F1_0;
+				Control_center_destroyed = 0;
+				Control_center_been_hit = 0;
+				vms_vector shot_pos = { F1_0, 0, -30 * F1_0 };
+				const int source = obj_create(OBJ_WEAPON, LASER_ID_L1, 0, &shot_pos, &vmd_identity_matrix, F1_0 / 4, CT_WEAPON, MT_PHYSICS, RT_LASER);
+				require(source > 0, "create actual reactor impact projectile");
+				object &weapon = Objects[source];
+				weapon.ctype.laser_info.parent_type = parent_type;
+				weapon.ctype.laser_info.parent_num = 0;
+				weapon.ctype.laser_info.parent_signature = ConsoleObject->signature;
+				weapon.ctype.laser_info.multiplier = F1_0;
+				weapon.mtype.phys_info.velocity.z = 120 * F1_0;
+				weapon.mtype.phys_info.mass = F1_0;
+				weapon.shields = F1_0;
+				FrameTime = F1_0 / 4;
+				vms_vector contact = { F1_0, 0, -size };
+				if (physical) do_physics_sim(&weapon);
+				else collide_two_objects(&weapon, &Objects[target], &contact);
+				const object &effect = Objects[source + 1];
+				require(effect.type == OBJ_FIREBALL && effect.id == VCLIP_SMALL_EXPLOSION && (weapon.flags & OF_SHOULD_BE_DEAD),
+				        "real reactor hit creates a small explosion and retires the projectile");
+				require(effect.size == (native ? ((size / 3) * 3) / 4 : size * 3 / 20), "reactor impact uses its original rounded effect radius");
+				result.push_back({ size, parent_type, physical, effect.size, effect.lifeleft, effect.pos.x, effect.pos.y, effect.pos.z,
+				                   Objects[target].shields, Control_center_been_hit });
+			}
+	return result;
+}
+
 static nlohmann::json exercise_reactor_frames(bool native)
 {
 	using nlohmann::json;
@@ -7450,6 +8886,9 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 	const auto reactor_frames = exercise_reactor_frames(native);
 	const auto secondary_explosions = exercise_secondary_explosions(native);
 	const auto volatile_impacts = exercise_volatile_impacts(native);
+	const auto reactor_impacts = exercise_reactor_impacts(native);
+	const auto exploding_walls = exercise_exploding_walls(native);
+	const auto opening_doors = exercise_door_open_completion(native);
 	Game_mode = 0;
 	Player_num = 0;
 	N_players = 1;
@@ -7604,7 +9043,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 					}
 				}
 	Game_mode = 0;
-	return { { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "powerup_animation", powerup_animation }, { "object_orientations", object_orientations }, { "small_fireballs", small_fireballs }, { "reactor_fireballs", reactor_fireballs }, { "volatile_impacts", volatile_impacts }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "weapon_drops", weapon_drops }, { "robot_drops", robot_drops }, { "reactor_frames", reactor_frames }, { "secondary_explosions", secondary_explosions } };
+	return { { "opening_doors", opening_doors }, { "exploding_walls", exploding_walls }, { "reactor_impacts", reactor_impacts }, { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "powerup_animation", powerup_animation }, { "object_orientations", object_orientations }, { "small_fireballs", small_fireballs }, { "reactor_fireballs", reactor_fireballs }, { "volatile_impacts", volatile_impacts }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "weapon_drops", weapon_drops }, { "robot_drops", robot_drops }, { "reactor_frames", reactor_frames }, { "secondary_explosions", secondary_explosions } };
 }
 
 static void write_gameplay_rules_trace(const char *directory, const char *d2_directory)
@@ -7949,6 +9388,91 @@ static void write_render_candidates_trace(const char *directory)
 
 void test_autoselect();
 
+#ifdef USE_SDLMIXER
+// Exercise the real mixer with simultaneous D1 and optional D2 sample rates
+static void test_mixed_rate_sound_conversion()
+{
+	static char dummy_driver[] = "SDL_AUDIODRIVER=dummy";
+	require(SDL_putenv(dummy_driver) == 0 && SDL_InitSubSystem(SDL_INIT_AUDIO) == 0,
+	        "initialize isolated mixer audio device");
+#ifdef DXX_BUILD_DESCENT_II
+	const int saved_rate = GameArg.SndDigiSampleRate;
+#endif
+	digi_sound saved_samples[2] = { GameSounds[0], GameSounds[1] };
+	for (int output_rate : { 44100, 48000 }) {
+		require(Mix_OpenAudio(output_rate, AUDIO_S16SYS, 2, 512) == 0, "open mixer conversion fixture");
+		int actual_rate, channels;
+		Uint16 format;
+		require(Mix_QuerySpec(&actual_rate, &format, &channels) && actual_rate == output_rate && channels == 2 && format == AUDIO_S16SYS,
+		        "mixer fixture has the requested output format");
+		for (int selected_rate : { SAMPLE_RATE_11K, SAMPLE_RATE_22K }) {
+#ifdef DXX_BUILD_DESCENT_II
+			GameArg.SndDigiSampleRate = selected_rate;
+#endif
+			std::vector<bytes> samples;
+			for (int source_rate : { SAMPLE_RATE_11K, SAMPLE_RATE_22K }) {
+				samples.emplace_back(source_rate);
+				for (int i = 0; i < source_rate; ++i)
+					samples.back()[i] = (i * 440 / source_rate) % 2 ? 192 : 64;
+				const int slot = static_cast<int>(samples.size()) - 1;
+				GameSounds[slot].bits = 8;
+				GameSounds[slot].freq = source_rate;
+				GameSounds[slot].length = source_rate;
+				GameSounds[slot].data = samples.back().data();
+				mixdigi_convert_sound(slot);
+				std::fprintf(stderr, "Mixer source=%d selected=%d output=%d bytes=%u expected=%d\n",
+				             source_rate, selected_rate, actual_rate, SoundChunks[slot].alen, actual_rate * channels * 2);
+				require(SoundChunks[slot].abuf && SoundChunks[slot].alen == static_cast<Uint32>(actual_rate * channels * 2),
+				        "each one-second source retains its duration regardless of the selected bank rate");
+				int transitions = 0;
+				Sint16 previous = 0;
+				for (int frame = 0; frame < actual_rate; ++frame) {
+					Sint16 left, right;
+					std::memcpy(&left, SoundChunks[slot].abuf + frame * 4, 2);
+					std::memcpy(&right, SoundChunks[slot].abuf + frame * 4 + 2, 2);
+					require(left == right && (left == -16384 || left == 16384), "conversion preserves mono amplitude in both output channels");
+					if (frame && left != previous) ++transitions;
+					previous = left;
+				}
+				require(transitions == 439, "one-second conversion retains the source waveform frequency");
+				if (actual_rate == 44100) {
+					SDL_AudioCVT legacy;
+					require(SDL_BuildAudioCVT(&legacy, AUDIO_U8, 1, source_rate, format, channels, actual_rate) >= 0,
+					        "prepare original integer-ratio conversion control");
+					bytes buffer(samples.back().size() * legacy.len_mult);
+					std::memcpy(buffer.data(), samples.back().data(), samples.back().size());
+					legacy.buf = buffer.data();
+					legacy.len = source_rate;
+					require(SDL_ConvertAudio(&legacy) == 0 && legacy.len_cvt == static_cast<int>(SoundChunks[slot].alen) &&
+					            std::memcmp(buffer.data(), SoundChunks[slot].abuf, legacy.len_cvt) == 0,
+					        "44.1 kHz output retains the original converted PCM byte for byte");
+				}
+				ubyte *cached = SoundChunks[slot].abuf;
+				mixdigi_convert_sound(slot);
+				require(SoundChunks[slot].abuf == cached, "repeated conversion reuses the live sample cache");
+			}
+#ifdef DXX_BUILD_DESCENT_II
+			digi_mixer_free_cached_sounds();
+#else
+			// Native host D1 has no public cache-retirement operation
+			for (int slot = 0; slot < 2; ++slot) {
+				std::free(SoundChunks[slot].abuf);
+				std::memset(&SoundChunks[slot], 0, sizeof(SoundChunks[slot]));
+			}
+#endif
+			require(!SoundChunks[0].abuf && !SoundChunks[1].abuf, "bank retirement clears both converted rates");
+		}
+		Mix_CloseAudio();
+	}
+	GameSounds[0] = saved_samples[0];
+	GameSounds[1] = saved_samples[1];
+#ifdef DXX_BUILD_DESCENT_II
+	GameArg.SndDigiSampleRate = saved_rate;
+#endif
+	SDL_QuitSubSystem(SDL_INIT_AUDIO);
+}
+#endif
+
 int main(int argc, char **argv)
 {
 	(void) argc;
@@ -7956,6 +9480,12 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+#ifdef USE_SDLMIXER
+	if (argc == 2 && std::strcmp(argv[1], "--sound-mixer-test") == 0) {
+		test_mixed_rate_sound_conversion();
+		return 0;
+	}
+#endif
 	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--weapon-art-trace") == 0) {
 		write_weapon_art_trace(argv[2], argc == 4 ? argv[3] : nullptr);
 		return 0;
@@ -7976,8 +9506,12 @@ int main(int argc, char **argv)
 		write_checkpoint_frame_trace(argv[2], argv[3], std::strcmp(argv[1], "--custom-checkpoint-frame-trace") == 0, argc == 5 ? std::atoi(argv[4]) : 1, std::strcmp(argv[1], "--runtime-checkpoint-frame-trace") == 0);
 		return 0;
 	}
-	if (argc == 3 && std::strcmp(argv[1], "--campaign-trace") == 0) {
-		write_campaign_trace(argv[2]);
+	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--campaign-trace") == 0) {
+		write_campaign_trace(argv[2], argc == 4 ? argv[3] : nullptr);
+		return 0;
+	}
+	if (argc == 3 && std::strcmp(argv[1], "--endlevel-trace") == 0) {
+		write_campaign_trace(argv[2], nullptr, true);
 		return 0;
 	}
 	if (argc == 3 && std::strcmp(argv[1], "--robot-frame-trace") == 0) {
@@ -8000,10 +9534,22 @@ int main(int argc, char **argv)
 #endif
 	std::fprintf(stderr, "Testing life limits\n");
 	test_object_state_trace();
+	test_world_state_trace();
+	test_cadence_saved_record();
+	test_fusion_cadence_state();
+	test_refueling_sound_cadence();
+	test_ai_diagnostic_profiles();
+#ifdef DXX_BUILD_DESCENT_II
+	test_native_ai_object_encoding();
+#endif
+#ifdef DXX_BUILD_DESCENT_II
+	test_d1_ai_storage_scope();
+#endif
 	test_lives();
 	std::fprintf(stderr, "Testing wall crossing, door pixels and rotated RLE overlays\n");
 	test_endlevel_flythrough();
 	test_wall_crossing();
+	test_door_open_completion();
 	std::fprintf(stderr, "Testing native compound triggers and paired crossing state\n");
 	test_native_triggers();
 #ifdef DXX_BUILD_DESCENT_II
@@ -8014,6 +9560,7 @@ int main(int argc, char **argv)
 	test_d1_follow_path_frame();
 	std::fprintf(stderr, "Testing native robot perception and cloak state\n");
 	test_robot_perception();
+	test_cloak_world_frame();
 	std::fprintf(stderr, "Testing native robot frame scheduling\n");
 	test_robot_scheduling();
 	std::fprintf(stderr, "Testing native robot entry and awareness phases\n");
@@ -8035,6 +9582,9 @@ int main(int argc, char **argv)
 	test_robot_relative_movement();
 	test_boss_preparation_and_gating();
 	test_boss_frame_updates();
+#ifdef DXX_BUILD_DESCENT_II
+	test_boss_sound_storage();
+#endif
 	std::fprintf(stderr, "Testing native homing acquisition and retention\n");
 	test_homing_targets();
 	test_projectile_collision_relationships();

@@ -974,6 +974,8 @@ int read_hamfile()
 
 		for (i=0; i<N_sounds; i++ ) {
 			DiskSoundHeader_read(&sndh, ham_fp);
+			temp_sound.bits = 8;
+			temp_sound.freq = SAMPLE_RATE_11K;
 			temp_sound.length = sndh.length;
 			temp_sound.data = (ubyte *)(size_t)(sndh.offset + header_size + sound_start);
 			SoundOffset[Num_sound_files] = sndh.offset + header_size + sound_start;
@@ -1079,6 +1081,8 @@ int read_sndfile()
 
 	for (i=0; i<N_sounds; i++ ) {
 		DiskSoundHeader_read(&sndh, snd_fp);
+		temp_sound.bits = 8;
+		temp_sound.freq = sample_rate;
 		temp_sound.length = sndh.length;
 		temp_sound.data = (ubyte *)(size_t)(sndh.offset + header_size + sound_start);
 		SoundOffset[Num_sound_files] = sndh.offset + header_size + sound_start;
@@ -1131,6 +1135,8 @@ static void piggy_init_registry(void)
 		}
 		gr_init_bitmap(&GameBitmaps[Num_bitmap_files], 0, 0, 0, 64, 64, 64, bogus_data);
 		piggy_register_bitmap(&GameBitmaps[Num_bitmap_files], "bogus", 1);
+		bogus_sound.bits = 8;
+		bogus_sound.freq = GameArg.SndDigiSampleRate;
 		bogus_sound.length = 64*64;
 		bogus_sound.data = bogus_data;
 		GameBitmapOffset[0] = 0;

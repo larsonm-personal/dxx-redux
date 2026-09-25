@@ -45,6 +45,149 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "escort.h"
 #include "physics.h"
 #include "input_demo_hooks.h"
+#include "byteswap.h"
+#include "rewind_file_compat.h"
+
+typedef char d1_ai_record_size_check[(sizeof(d1_ai_static_rw) == 30 && sizeof(ai_static_rw) == 30 && MAX_AI_FLAGS == 11) ? 1 : -1];
+
+static int native_ai_record(int type, int id, int control)
+{
+	return d1_in_d2_use_d1_gameplay() && type == OBJ_ROBOT && id >= 0 && id < N_robot_types &&
+		!Robot_info[id].companion && (control == CT_AI || control == CT_MORPH);
+}
+
+int d1_in_d2_ai_write_object(const object *obj, object_rw *saved, int savegame)
+{
+	const ai_static *state = &obj->ctype.ai_info;
+	d1_ai_static_rw *record = &saved->ctype.d1_ai_info;
+	if (!native_ai_record(obj->type, obj->id, obj->control_type))
+		return 0;
+	record->behavior = state->behavior;
+	memcpy(record->flags, state->flags, sizeof(record->flags));
+	if (savegame) {
+		record->REMOTE_OWNER = -1;
+		record->REMOTE_SLOT_NUM = 0;
+	}
+	record->hide_segment = state->hide_segment;
+	record->hide_index = state->hide_index;
+	record->path_length = state->path_length;
+	record->cur_path_index = state->cur_path_index;
+	record->follow_path_start_seg = state->d1_saved.follow_path_start_seg;
+	record->follow_path_end_seg = state->d1_saved.follow_path_end_seg;
+	record->danger_laser_signature = state->danger_laser_signature;
+	record->danger_laser_num = state->danger_laser_num;
+	return 1;
+}
+
+int d1_in_d2_ai_read_object(const object_rw *saved, object *obj)
+{
+	const d1_ai_static_rw *record = &saved->ctype.d1_ai_info;
+	ai_static *state = &obj->ctype.ai_info;
+	if (!native_ai_record(saved->type, saved->id, saved->control_type))
+		return 0;
+	memset(state, 0, sizeof(*state));
+	state->behavior = record->behavior;
+	memcpy(state->flags, record->flags, sizeof(state->flags));
+	state->hide_segment = record->hide_segment;
+	state->hide_index = record->hide_index;
+	state->path_length = record->path_length;
+	state->cur_path_index = record->cur_path_index;
+	state->d1_saved.follow_path_start_seg = record->follow_path_start_seg;
+	state->d1_saved.follow_path_end_seg = record->follow_path_end_seg;
+	state->danger_laser_signature = record->danger_laser_signature;
+	state->danger_laser_num = record->danger_laser_num;
+	return 1;
+}
+
+int d1_in_d2_ai_swap_object(object_rw *saved)
+{
+	d1_ai_static_rw *record = &saved->ctype.d1_ai_info;
+	if (!native_ai_record(saved->type, saved->id, saved->control_type))
+		return 0;
+	record->hide_segment = SWAPSHORT(record->hide_segment);
+	record->hide_index = SWAPSHORT(record->hide_index);
+	record->path_length = SWAPSHORT(record->path_length);
+	record->cur_path_index = SWAPSHORT(record->cur_path_index);
+	record->follow_path_start_seg = SWAPSHORT(record->follow_path_start_seg);
+	record->follow_path_end_seg = SWAPSHORT(record->follow_path_end_seg);
+	record->danger_laser_signature = SWAPINT(record->danger_laser_signature);
+	record->danger_laser_num = SWAPSHORT(record->danger_laser_num);
+	return 1;
+}
+
+void d1_in_d2_ai_reset_saved_storage(void)
+{
+	int i;
+	for (i = 0; i < MAX_OBJECTS; ++i) {
+		memset(&Ai_local_info[i].d1_saved, 0, sizeof(Ai_local_info[i].d1_saved));
+		if (Objects[i].control_type == CT_AI || Objects[i].control_type == CT_MORPH)
+			memset(&Objects[i].ctype.ai_info.d1_saved, 0, sizeof(Objects[i].ctype.ai_info.d1_saved));
+	}
+}
+
+void d1_in_d2_ai_write_saved_storage(rewind_file *fp)
+{
+	const int count = d1_in_d2_use_d1_gameplay() ? MAX_OBJECTS : 0;
+	int i;
+	PHYSFS_write(fp, &count, sizeof(count), 1);
+	for (i = 0; i < count; ++i) {
+		const object *obj = &Objects[i];
+		const d1_ai_static_storage empty = { 0, 0 };
+		const d1_ai_static_storage *state = obj->type != OBJ_NONE &&
+		                                            (obj->control_type == CT_AI || obj->control_type == CT_MORPH)
+		                                        ? &obj->ctype.ai_info.d1_saved
+		                                        : &empty;
+		const d1_ai_local_storage *local = &Ai_local_info[i].d1_saved;
+		PHYSFS_write(fp, &state->follow_path_start_seg, sizeof(short), 1);
+		PHYSFS_write(fp, &state->follow_path_end_seg, sizeof(short), 1);
+		PHYSFS_write(fp, &local->last_see_time, sizeof(fix), 1);
+		PHYSFS_write(fp, &local->last_attack_time, sizeof(fix), 1);
+		PHYSFS_write(fp, &local->wait_time, sizeof(fix), 1);
+	}
+}
+
+int d1_in_d2_ai_read_saved_storage(rewind_file *fp, int swap, int apply)
+{
+	d1_ai_static_storage states[MAX_OBJECTS];
+	d1_ai_local_storage locals[MAX_OBJECTS];
+	int count, i;
+	if (PHYSFS_read(fp, &count, sizeof(count), 1) != 1)
+		return 0;
+	if (swap) count = SWAPINT(count);
+	if (count != (d1_in_d2_use_d1_gameplay() ? MAX_OBJECTS : 0))
+		return 0;
+	for (i = 0; i < count; ++i) {
+		d1_ai_static_storage *state = &states[i];
+		d1_ai_local_storage *local = &locals[i];
+		if (PHYSFS_read(fp, &state->follow_path_start_seg, sizeof(short), 1) != 1 ||
+		    PHYSFS_read(fp, &state->follow_path_end_seg, sizeof(short), 1) != 1 ||
+		    PHYSFS_read(fp, &local->last_see_time, sizeof(fix), 1) != 1 ||
+		    PHYSFS_read(fp, &local->last_attack_time, sizeof(fix), 1) != 1 ||
+		    PHYSFS_read(fp, &local->wait_time, sizeof(fix), 1) != 1)
+			return 0;
+		if (swap) {
+			state->follow_path_start_seg = SWAPSHORT(state->follow_path_start_seg);
+			state->follow_path_end_seg = SWAPSHORT(state->follow_path_end_seg);
+			local->last_see_time = SWAPINT(local->last_see_time);
+			local->last_attack_time = SWAPINT(local->last_attack_time);
+			local->wait_time = SWAPINT(local->wait_time);
+		}
+		const object *obj = &Objects[i];
+		if ((obj->type == OBJ_NONE || (obj->control_type != CT_AI && obj->control_type != CT_MORPH)) &&
+		    (state->follow_path_start_seg || state->follow_path_end_seg))
+			return 0;
+	}
+	/* Apply only after the complete record validates, including inactive locals */
+	if (apply) {
+		d1_in_d2_ai_reset_saved_storage();
+		for (i = 0; i < count; ++i) {
+			Ai_local_info[i].d1_saved = locals[i];
+			if (Objects[i].control_type == CT_AI || Objects[i].control_type == CT_MORPH)
+				Objects[i].ctype.ai_info.d1_saved = states[i];
+		}
+	}
+	return 1;
+}
 
 extern int Robot_sound_volume;
 
@@ -55,6 +198,12 @@ static void compute_visibility(object *obj, vms_vector *pos, ai_local *local,
 enum { D1_AI_FRAME_READY = 0, D1_AI_FRAME_DEFER = 1 };
 
 static int Boss_hit_pending;
+static int Boss_damage_history;
+
+int d1_in_d2_ai_uses_continuous_cloak_tracking(void)
+{
+	return !d1_in_d2_use_d1_gameplay();
+}
 
 int d1_in_d2_ai_drop_robots(int id, int count, const vms_vector *velocity,
 	const vms_vector *position, int segment, int *result)
@@ -121,6 +270,7 @@ enum { D1_ROBOT_BABY_SPIDER = 14 };
 void d1_in_d2_ai_reset_boss_state(void)
 {
 	Boss_hit_pending = 0;
+	Boss_damage_history = 0;
 #ifdef NETWORK
 	Boss_gate_effect_state = 0;
 #endif
@@ -128,7 +278,52 @@ void d1_in_d2_ai_reset_boss_state(void)
 
 void d1_in_d2_ai_restore_boss_hit(int pending)
 {
-	Boss_hit_pending = pending != 0;
+	Boss_hit_pending = pending;
+}
+
+void d1_in_d2_ai_restore_boss_state(int pending, int been_hit)
+{
+	d1_in_d2_ai_restore_boss_hit(pending);
+	Boss_damage_history = been_hit;
+}
+
+void d1_in_d2_ai_init_boss_for_ship(void)
+{
+	Boss_damage_history = 0;
+}
+
+int d1_in_d2_ai_boss_been_hit(void)
+{
+	return Boss_damage_history;
+}
+
+void d1_in_d2_ai_write_boss_saved_state(rewind_file *fp)
+{
+	const int pending = d1_in_d2_use_d1_gameplay() ? Boss_hit_pending : 0;
+	const int been_hit = d1_in_d2_use_d1_gameplay() ? Boss_damage_history : 0;
+	PHYSFS_write(fp, &pending, sizeof(pending), 1);
+	PHYSFS_write(fp, &been_hit, sizeof(been_hit), 1);
+}
+
+int d1_in_d2_ai_read_boss_saved_state(rewind_file *fp, int swap, int apply)
+{
+	int pending, been_hit;
+	if (PHYSFS_read(fp, &pending, sizeof(pending), 1) != 1 ||
+	    PHYSFS_read(fp, &been_hit, sizeof(been_hit), 1) != 1)
+		return 0;
+	if (swap) {
+		pending = SWAPINT(pending);
+		been_hit = SWAPINT(been_hit);
+	}
+	if (!d1_in_d2_use_d1_gameplay() && (pending != 0 || been_hit != 0))
+		return 0;
+	if (apply) d1_in_d2_ai_restore_boss_state(pending, been_hit);
+	return 1;
+}
+
+int d1_in_d2_ai_boss_hit_pending(void)
+{
+	return Boss_hit_pending;
 }
 
 fix d1_in_d2_ai_save_boss_hit(fix engine_delta)
@@ -138,8 +333,10 @@ fix d1_in_d2_ai_save_boss_hit(fix engine_delta)
 
 fix64 d1_in_d2_ai_restore_boss_hit_time(fix saved)
 {
+	/* Older saves have no damage marker; never inherit the previous world's */
+	Boss_damage_history = 0;
 	if (!d1_in_d2_use_d1_gameplay())
-		return GameTime64 + (fix64)saved;
+		return GameTime64 + (fix64) saved;
 	Boss_hit_pending = saved == D1_BOSS_HIT_PENDING;
 	return -F1_0*10;
 }
@@ -375,6 +572,14 @@ int d1_in_d2_ai_boss_weapon_hit(const object *obj)
 	if (d1_in_d2_ai_actor_role(obj) != D1_AI_NATIVE_ENEMY || !Robot_info[obj->id].boss_flag)
 		return 0;
 	Boss_hit_pending = 1;
+	return 1;
+}
+
+int d1_in_d2_ai_note_boss_damage(const object *obj)
+{
+	if (d1_in_d2_ai_actor_role(obj) != D1_AI_NATIVE_ENEMY || !Robot_info[obj->id].boss_flag)
+		return 0;
+	Boss_damage_history = 1;
 	return 1;
 }
 

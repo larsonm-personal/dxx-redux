@@ -69,18 +69,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "editor/editor.h"
 #endif
 
-typedef struct flythrough_data {
-	object		*obj;
-	vms_angvec	angles;			//orientation in angles
-	vms_vector	step;				//how far in a second
-	vms_vector	angstep;			//rotation per second
-	fix			speed;			//how fast object is moving
-	vms_vector 	headvec;			//where we want to be pointing
-	int			first_time;		//flag for if first time through
-	int			transition_reached;	//remember a camera transition crossed within a slow frame
-	fix			offset_frac;	//how far off-center as portion of way
-	fix			offset_dist;	//how far currently off-center
-} flythrough_data;
+#include "endlevel_runtime.h"
 
 //endlevel sequence states
 
@@ -458,18 +447,16 @@ void get_angs_to_object(vms_angvec *av,vms_vector *targ_pos,vms_vector *cur_pos)
 	vm_extract_angles_vector(av,&tv);
 }
 
+// Former function statics retain their original process lifetime
+static endlevel_frame_state Endlevel_frame;
+
 void do_endlevel_frame()
 {
 #if defined(ANDROID) && defined(INTROSPECT_ON)
 	if (Android_automation_endlevel_frozen)
 		return;
 #endif
-	static fix timer;
 	vms_vector save_last_pos;
-	static fix explosion_wait1=0;
-	static fix explosion_wait2=0;
-	static fix bank_rate;
-	static fix ext_expl_halflife;
 
 	save_last_pos = ConsoleObject->last_pos;	//don't let move code change this
 	object_move_all();
@@ -480,7 +467,7 @@ void do_endlevel_frame()
 		external_explosion.lifeleft -= FrameTime;
 		do_explosion_sequence(&external_explosion);
 
-		if (external_explosion.lifeleft < ext_expl_halflife)
+		if (external_explosion.lifeleft < Endlevel_frame.ext_expl_halflife)
 			mine_destroyed = 1;
 
 		if (external_explosion.flags & OF_SHOULD_BE_DEAD)
@@ -527,7 +514,7 @@ void do_endlevel_frame()
 
 					flash_scale = 0;	//kill lights in mine
 
-					ext_expl_halflife = tobj->lifeleft;
+					Endlevel_frame.ext_expl_halflife = tobj->lifeleft;
 
 					ext_expl_playing = 1;
 				}
@@ -538,10 +525,9 @@ void do_endlevel_frame()
 
 		// FX RNG: graphics and sound only, these endlevel blasts are cutscene dressing
 		//do explosions chasing player
-		if ((explosion_wait1-=FrameTime) < 0) {
+		if ((Endlevel_frame.explosion_wait1-=FrameTime) < 0) {
 			vms_vector tpnt;
 			int segnum;
-			static int sound_count;
 
 			// FX RNG: cutscene only, this just jitters tunnel blast placement and cadence
 			vm_vec_scale_add(&tpnt,&ConsoleObject->pos,&ConsoleObject->orient.fvec,-ConsoleObject->size*5);
@@ -552,13 +538,13 @@ void do_endlevel_frame()
 
 			if (segnum != -1) {
 				object_create_explosion(segnum,&tpnt,i2f(20),VCLIP_BIG_PLAYER_EXPLOSION);
-				if (d_rand_fx()<10000 || ++sound_count==7) {		//pseudo-random
+				if (d_rand_fx()<10000 || ++Endlevel_frame.sound_count==7) {		//pseudo-random
 					digi_link_sound_to_pos( SOUND_TUNNEL_EXPLOSION, segnum, 0, &tpnt, 0, F1_0 );
-					sound_count=0;
+					Endlevel_frame.sound_count=0;
 				}
 			}
 
-			explosion_wait1 = 0x2000 + d_rand_fx()/4;
+			Endlevel_frame.explosion_wait1 = 0x2000 + d_rand_fx()/4;
 
 		}
 	}
@@ -566,7 +552,7 @@ void do_endlevel_frame()
 	// FX RNG: graphics only, these endlevel wall explosions are cutscene dressing
 	//do little explosions on walls
 	if (Endlevel_sequence >= EL_FLYTHROUGH && Endlevel_sequence < EL_OUTSIDE)
-		if ((explosion_wait2-=FrameTime) < 0) {
+		if ((Endlevel_frame.explosion_wait2-=FrameTime) < 0) {
 			vms_vector tpnt;
 			fvi_query fq;
 			fvi_info hit_data;
@@ -597,7 +583,7 @@ void do_endlevel_frame()
 			if (hit_data.hit_type==HIT_WALL && hit_data.hit_seg!=-1)
 				object_create_explosion(hit_data.hit_seg,&hit_data.hit_pnt,i2f(3)+d_rand_fx()*6,VCLIP_SMALL_EXPLOSION);
 
-			explosion_wait2 = (0xa00 + d_rand_fx()/8)/2;
+			Endlevel_frame.explosion_wait2 = (0xa00 + d_rand_fx()/8)/2;
 		}
 
 	switch (Endlevel_sequence) {
@@ -634,7 +620,7 @@ void do_endlevel_frame()
 
 					vm_vec_scale_add2(&endlevel_camera->pos,&endlevel_camera->orient.fvec,i2f(7));
 
-					timer=0x20000;
+					Endlevel_frame.timer=0x20000;
 			}
 
 			break;
@@ -646,11 +632,11 @@ void do_endlevel_frame()
 			do_endlevel_flythrough(0);
 			do_endlevel_flythrough(1);
 
-			if (timer>0) {
+			if (Endlevel_frame.timer>0) {
 
-				timer -= FrameTime;
+				Endlevel_frame.timer -= FrameTime;
 
-				if (timer < 0)		//reduce speed
+				if (Endlevel_frame.timer < 0)		//reduce speed
 					fly_objects[1].speed = fly_objects[0].speed;
 			}
 
@@ -659,14 +645,14 @@ void do_endlevel_frame()
 
 				Endlevel_sequence = EL_OUTSIDE;
 
-				timer = i2f(2);
+				Endlevel_frame.timer = i2f(2);
 
 				vm_vec_negate(&endlevel_camera->orient.fvec);
 				vm_vec_negate(&endlevel_camera->orient.rvec);
 
 				vm_extract_angles_matrix(&cam_angles,&endlevel_camera->orient);
 				vm_extract_angles_matrix(&exit_seg_angles,&mine_exit_orient);
-				bank_rate = (-exit_seg_angles.b - cam_angles.b)/2;
+				Endlevel_frame.bank_rate = (-exit_seg_angles.b - cam_angles.b)/2;
 
 				ConsoleObject->control_type = endlevel_camera->control_type = CT_NONE;
 
@@ -691,19 +677,19 @@ void do_endlevel_frame()
 			vm_vec_scale_add2(&endlevel_camera->pos,&endlevel_camera->orient.uvec,fixmul(FrameTime,-cur_fly_speed/10));
 
 			vm_extract_angles_matrix(&cam_angles,&endlevel_camera->orient);
-			cam_angles.b += fixmul(bank_rate,FrameTime);
+			cam_angles.b += fixmul(Endlevel_frame.bank_rate,FrameTime);
 			vm_angles_2_matrix(&endlevel_camera->orient,&cam_angles);
 #endif
 
-			timer -= FrameTime;
+			Endlevel_frame.timer -= FrameTime;
 
-			if (timer < 0) {
+			if (Endlevel_frame.timer < 0) {
 
 				Endlevel_sequence = EL_STOPPED;
 
 				vm_extract_angles_matrix(&player_angles,&ConsoleObject->orient);
 
-				timer = i2f(3);
+				Endlevel_frame.timer = i2f(3);
 
 			}
 
@@ -718,14 +704,14 @@ void do_endlevel_frame()
 
 			vm_vec_scale_add2(&ConsoleObject->pos,&ConsoleObject->orient.fvec,fixmul(FrameTime,cur_fly_speed));
 
-			timer -= FrameTime;
+			Endlevel_frame.timer -= FrameTime;
 
-			if (timer < 0) {
+			if (Endlevel_frame.timer < 0) {
 
 				#ifdef SLEW_ON
 				slew_obj = endlevel_camera;
 				_do_slew_movement(endlevel_camera,1);
-				timer += FrameTime;		//make time stop
+				Endlevel_frame.timer += FrameTime;		//make time stop
 				break;
 				#else
 
@@ -739,7 +725,7 @@ void do_endlevel_frame()
 				vm_extract_angles_matrix(&camera_cur_angles,&endlevel_camera->orient);
 
 
-				timer = i2f(3);
+				Endlevel_frame.timer = i2f(3);
 
 				if (Game_mode & GM_MULTI) { // try to skip part of the seq if multiplayer
 					stop_endlevel_sequence();
@@ -1106,6 +1092,8 @@ void render_endlevel_frame(fix eye_offset)
 flythrough_data fly_objects[MAX_FLY_OBJECTS];
 
 flythrough_data *flydata;
+
+#include "endlevel_runtime_accessors.h"
 
 int matt_find_connect_side(int seg0,int seg1);
 

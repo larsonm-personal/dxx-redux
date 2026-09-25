@@ -1389,8 +1389,6 @@ void maybe_kill_weapon(object *weapon, object *other_obj)
 
 void collide_weapon_and_controlcen( object * weapon, object *controlcen, vms_vector *collision_point  )
 {
-	if (input_demo_replay_is_loaded())
-		con_printf(CON_URGENT, "reactor_impact_probe frame=%d weapon=%d sig=%d pos=%d,%d,%d radius=%d reactor=%d pos=%d,%d,%d radius=%d hit=%d,%d,%d\n", input_demo_trace_collision_frame_index(), weapon->id, weapon->signature, weapon->pos.x, weapon->pos.y, weapon->pos.z, weapon->size, (int)(controlcen-Objects), controlcen->pos.x, controlcen->pos.y, controlcen->pos.z, controlcen->size, collision_point->x, collision_point->y, collision_point->z);
 
 	if (weapon->id == OMEGA_ID)
 		if (!ok_to_do_omega_damage(weapon)) // see comment in laser.c
@@ -1423,7 +1421,7 @@ void collide_weapon_and_controlcen( object * weapon, object *controlcen, vms_vec
 		if ( Weapon_info[weapon->id].damage_radius )
 			explode_badass_weapon(weapon, d1_in_d2_badass_explosion_pos(weapon, collision_point));
 		else
-			object_create_explosion( controlcen->segnum, collision_point, controlcen->size*3/20, VCLIP_SMALL_EXPLOSION );
+			object_create_explosion(controlcen->segnum, collision_point, d1_in_d2_reactor_impact_size(controlcen->size), VCLIP_SMALL_EXPLOSION);
 
 		digi_link_sound_to_pos( SOUND_CONTROL_CENTER_HIT, controlcen->segnum, 0, collision_point, 0, F1_0 );
 
@@ -1433,7 +1431,7 @@ void collide_weapon_and_controlcen( object * weapon, object *controlcen, vms_vec
 
 		maybe_kill_weapon(weapon,controlcen);
 	} else {	//	If robot weapon hits control center, blow it up, make it go away, but do no damage to control center.
-		object_create_explosion( controlcen->segnum, collision_point, controlcen->size*3/20, VCLIP_SMALL_EXPLOSION );
+		object_create_explosion(controlcen->segnum, collision_point, d1_in_d2_reactor_impact_size(controlcen->size), VCLIP_SMALL_EXPLOSION);
 		maybe_kill_weapon(weapon,controlcen);
 	}
 
@@ -1526,7 +1524,7 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 
 	if (robot->shields < 0 ) return 0;	//robot already dead...
 
-	if (Robot_info[robot->id].boss_flag)
+	if (Robot_info[robot->id].boss_flag && !d1_in_d2_ai_note_boss_damage(robot))
 		Boss_hit_time = GameTime64;
 
 	//	Buddy invulnerable on level 24 so he can give you his important messages.  Bah.

@@ -422,8 +422,8 @@ void read_object(object *obj,PHYSFS_file *f,int version)
 			obj->ctype.ai_info.cur_path_index		= PHYSFSX_readShort(f);
 
 			if (version <= 25) {
-				PHYSFSX_readShort(f);	//				obj->ctype.ai_info.follow_path_start_seg	= 
-				PHYSFSX_readShort(f);	//				obj->ctype.ai_info.follow_path_end_seg		= 
+				obj->ctype.ai_info.d1_saved.follow_path_start_seg = PHYSFSX_readShort(f);
+				obj->ctype.ai_info.d1_saved.follow_path_end_seg = PHYSFSX_readShort(f);
 			}
 
 			break;

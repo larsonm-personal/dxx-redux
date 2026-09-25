@@ -13,6 +13,9 @@ namespace
 // Shared gameplay/preview calibration at the app's default -10 dB
 // Twice the original 0.2 gain (+6.02 dB), bringing SF2 closer to FM
 constexpr double default_gain = 0.4;
+// In FluidSynth 2.6, deprecated 7THORDER selects expensive 25-point sinc
+// Pin the real-time interpolation explicitly, including after DSP recreation
+constexpr int interpolation = FLUID_INTERP_4THORDER;
 
 struct source {
 	const unsigned char *data;
@@ -100,7 +103,7 @@ bool music_fluid::load(AAssetManager *assets, const char *path)
 	auto *font = fluid_synth_get_sfont_by_id(get(), id);
 	fluid_sfont_iteration_start(font);
 	while (fluid_sfont_iteration_next(font)) ++presets;
-	fluid_synth_set_interp_method(get(), -1, FLUID_INTERP_7THORDER);
+	if (fluid_synth_set_interp_method(get(), -1, interpolation) != FLUID_OK) return false;
 	effects(reverb, chorus);
 	return presets > 0;
 }
@@ -118,7 +121,7 @@ bool music_fluid::recreate()
 	synth.reset();
 	synth = std::move(fresh);
 	if (fluid_synth_add_sfont(get(), font) < 0) return false;
-	fluid_synth_set_interp_method(get(), -1, FLUID_INTERP_7THORDER);
+	if (fluid_synth_set_interp_method(get(), -1, interpolation) != FLUID_OK) return false;
 	effects(reverb, chorus);
 	return true;
 }

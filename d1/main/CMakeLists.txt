@@ -83,6 +83,8 @@ set(D1X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/render_gameplay_view.c
     ../../android/app/src/main/cpp/shared/input_demo_hooks_shared.c
     ../../android/app/src/main/cpp/shared/input_demo_object_trace.cpp
+    ../../android/app/src/main/cpp/shared/input_demo_world_trace.cpp
+    ../../android/app/src/main/cpp/shared/input_demo_ai_trace.cpp
     ../../android/app/src/main/cpp/shared/input_demo_newdemo_shared.c
     ../../android/app/src/main/cpp/shared/input_demo_start_shared.c
     ../../android/app/src/main/cpp/shared/input_demo_debug_logging.cpp
@@ -315,6 +317,11 @@ if(NOT ANDROID)
         add_test(NAME test_upstream_compat COMMAND test_upstream_compat)
         set_tests_properties(test_upstream_compat PROPERTIES
             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/upstream-compat-fixtures")
+        if(SDLMIXER)
+            add_test(NAME test_mixed_rate_sound COMMAND test_upstream_compat --sound-mixer-test)
+            set_tests_properties(test_mixed_rate_sound PROPERTIES
+                WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/upstream-compat-fixtures")
+        endif()
     endif()
 
 endif()

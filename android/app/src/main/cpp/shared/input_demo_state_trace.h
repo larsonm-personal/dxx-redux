@@ -10,7 +10,9 @@
 extern "C" {
 #endif
 
+// Strict paired replay validates this diagnostic contract in d1_replay_parity.py
 enum {
+	INPUT_DEMO_FRAME_DIAGNOSTIC_VERSION = 1,
 	INPUT_DEMO_OBJECT_SLOT_BUCKET_BITS = 5,
 	INPUT_DEMO_OBJECT_SLOT_BUCKET_SIZE = 1 << INPUT_DEMO_OBJECT_SLOT_BUCKET_BITS,
 	INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT = 32,

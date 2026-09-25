@@ -41,17 +41,19 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "mission.h"
 #include "menu.h"
 #include "d1_in_d2_presentation.h"
+#include "byteswap.h"
 #ifdef __ANDROID__
 #include "coop/coop_endgame.h"
 #include "coop/coop_briefing.h"
 #include "coop/coop_travel.h"
 #endif
+#include "rewind_file_compat.h"
 
 /* The serialized D2 trigger has an unused byte and unused flag bits. Keep the
  * native action mask in that byte and source ON separately from TF_DISABLED:
  * native D1 clears ON for one-shots but does not gate execution on it. Keeping
- * this state in the record also preserves raw saves, rewind and swapped reads
- * without a parallel trigger bank or a changed structure size */
+ * these flags in the core record preserves their existing save/rewind layout
+ * Original type/link bytes are runtime storage with a versioned save extension */
 enum { D1_TRIGGER_RECORD = 128, D1_TRIGGER_ON = 64 };
 
 int d1_in_d2_initialize_level_ambience(void)
@@ -75,6 +77,42 @@ int d1_in_d2_trigger_source_flags(const trigger *source, short *flags)
 	return 1;
 }
 
+int d1_in_d2_trigger_source_link(const trigger *source)
+{
+	return (source->flags & D1_TRIGGER_RECORD) ? source->d1_saved.link_num : -1;
+}
+
+void d1_in_d2_write_trigger_storage(rewind_file *fp)
+{
+	const int count = d1_in_d2_use_d1_gameplay() ? Num_triggers : 0;
+	PHYSFS_write(fp, &count, sizeof(count), 1);
+	for (int i = 0; i < count; ++i) {
+		PHYSFS_write(fp, &Triggers[i].d1_saved.type, 1, 1);
+		PHYSFS_write(fp, &Triggers[i].d1_saved.link_num, 1, 1);
+	}
+}
+
+int d1_in_d2_read_trigger_storage(rewind_file *fp, int swap, int apply)
+{
+	d1_trigger_storage storage[MAX_TRIGGERS];
+	int count;
+	if (PHYSFS_read(fp, &count, sizeof(count), 1) != 1)
+		return 0;
+	if (swap) count = SWAPINT(count);
+	if (count < 0 || count > MAX_TRIGGERS || count != (d1_in_d2_use_d1_gameplay() ? Num_triggers : 0))
+		return 0;
+	for (int i = 0; i < count; ++i) {
+		if (!(Triggers[i].flags & D1_TRIGGER_RECORD) ||
+		    PHYSFS_read(fp, &storage[i].type, 1, 1) != 1 ||
+		    PHYSFS_read(fp, &storage[i].link_num, 1, 1) != 1)
+			return 0;
+	}
+	if (apply)
+		for (int i = 0; i < count; ++i)
+			Triggers[i].d1_saved = storage[i];
+	return 1;
+}
+
 int d1_in_d2_decode_trigger(trigger *out, const v29_trigger *source, int native_d1)
 {
 	if (source->num_links < 0 || source->num_links > MAX_WALLS_PER_LINK ||
@@ -93,6 +131,8 @@ int d1_in_d2_decode_trigger(trigger *out, const v29_trigger *source, int native_
 	if (flags & TRIGGER_ONE_SHOT)
 		result.flags = TF_ONE_SHOT;
 	if (native_d1) {
+		result.d1_saved.type = source->type;
+		result.d1_saved.link_num = source->link_num;
 		result.flags |= D1_TRIGGER_RECORD | ((flags & TRIGGER_ON) ? D1_TRIGGER_ON : 0);
 		result.pad = (sbyte)((flags & 15) | ((flags >> 2) & 240));
 		/* A representative type serves existing exit/route queries only. Native

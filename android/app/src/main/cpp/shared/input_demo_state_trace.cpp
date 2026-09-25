@@ -501,7 +501,7 @@ int input_demo_state_trace_start(const char *path,
 	         "%s",
 	         source);
 	const ordered_json meta = {
-		{ "type", "meta" }, { "version", 1 }, { "source", source }, { "game", game }, { "mission", mission }, { "level", level }, { "difficulty", difficulty }, { "start_mode", start_mode }, { "frame_count", frame_count }
+		{ "type", "meta" }, { "version", 1 }, { "diag_version", INPUT_DEMO_FRAME_DIAGNOSTIC_VERSION }, { "source", source }, { "game", game }, { "mission", mission }, { "level", level }, { "difficulty", difficulty }, { "start_mode", start_mode }, { "frame_count", frame_count }
 	};
 	if (!input_demo_state_trace_write_json(meta.dump().c_str(), error, error_size)) {
 		reset_session();

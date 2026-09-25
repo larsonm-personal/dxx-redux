@@ -567,7 +567,7 @@ private fun LanDiscoveryView(
                     discoveredLobbies,
                     key = { it.announce.lobbyId },
                 ) { lobby ->
-                    LanLobbyCard(lobby, callsign, onJoinInGame = onLaunchGame)
+                    LanLobbyCard(lobby, callsign)
                     Spacer(Modifier.height(4.dp))
                 }
             }
@@ -1042,7 +1042,6 @@ private fun LanDiscoveryView(
 private fun LanLobbyCard(
     lobby: LobbyService.DiscoveredLobby,
     myCallsign: String,
-    onJoinInGame: ((GameLaunchInfo) -> Unit)? = null,
 ) {
     val difficulties = listOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
     val isInGame = lobby.announce.status == "in_game"
@@ -1096,46 +1095,11 @@ private fun LanLobbyCard(
                 )
             }
             Spacer(Modifier.height(4.dp))
-            if (isInGame && onJoinInGame != null) {
-                Button(
-                    onClick = {
-                        onJoinInGame(
-                            GameLaunchInfo(
-                                game = lobby.announce.game,
-                                mission = lobby.announce.mission,
-                                mode = lobby.announce.mode,
-                                difficulty = lobby.announce.difficulty,
-                                levelNum = lobby.announce.levelNum,
-                                maxPlayers = lobby.announce.maxPlayers,
-                                yourSlot = 1,
-                                isHost = false,
-                                peers = emptyList(),
-                                lanHostAddr = lobby.announce.hostAddress,
-                                lanHostPort = lobby.announce.hostPort,
-                                isLan = true,
-                                hostCallsign = lobby.announce.callsign,
-                                hostClientId = lobby.announce.hostClientId,
-                                restrictNonCoopFovToBase = lobby.announce.restrictNonCoopFovToBase,
-                            ),
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("Join In-Game")
-                }
-            } else {
-                Button(
-                    onClick = {
-                        LobbyService.joinLobby(
-                            lobby.announce.lobbyId,
-                            lobby.announce.hostAddress,
-                            myCallsign,
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("Join")
-                }
+            Button(
+                onClick = { LobbyService.joinDiscoveredLobby(lobby.announce, myCallsign) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(if (isInGame) "Join In-Game" else "Join")
             }
         }
     }

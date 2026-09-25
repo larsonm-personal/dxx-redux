@@ -3,8 +3,10 @@
 #include <string.h>
 
 #include "ai.h"
+#include "automap.h"
 #include "byteswap.h"
 #include "cntrlcen.h"
+#include "collide.h"
 #include "console.h"
 #include "d1_save_translate.h"
 #include "d1_in_d2_ai.h"
@@ -27,7 +29,10 @@
 #include "weapon.h"
 #include "vclip.h"
 
-#define D1_SAVE_VERSION 17
+#include "physfsx.h"
+#include "cadence_runtime.h"
+
+#define D1_SAVE_VERSION CADENCE_D1_SAVE_VERSION
 #define D1_SAVE_COMPATIBLE_VERSION 15
 #define D1_SAVE_SECRET_IDENTITY_VERSION 16
 #define D1_SAVE_AUTOSELECT_VERSION 17
@@ -63,6 +68,7 @@ typedef struct d1_save_translate_side_state {
 } d1_save_translate_side_state;
 
 typedef struct d1_save_translate_world_state {
+	ubyte automap_visited[MAX_SEGMENTS];
 	int num_walls;
 	wall walls[MAX_WALLS];
 	int num_open_doors;
@@ -101,8 +107,9 @@ typedef struct d1_save_translate_ai_state {
 	fix gate_interval;
 	fix64 boss_dying_start_time;
 	int boss_dying;
-	sbyte boss_dying_sound_playing;
+	int boss_dying_sound_playing;
 	int boss_hit_pending;
+	int boss_been_hit;
 	int point_seg_free_index;
 	int awareness_count;
 	awareness_event awareness_events[D1_SAVE_MAX_AWARENESS_EVENTS];
@@ -110,6 +117,7 @@ typedef struct d1_save_translate_ai_state {
 } d1_save_translate_ai_state;
 
 typedef struct d1_save_translate_runtime_state {
+	cadence_runtime_state cadence;
 	fix next_laser_fire_delta;
 	fix next_missile_fire_delta;
 	fix last_laser_fired_delta;
@@ -136,6 +144,8 @@ typedef struct d1_save_translate_runtime_state {
 	int effect_count;
 	int effect_ids[MAX_EFFECTS];
 	eclip effects[MAX_EFFECTS];
+	int has_secret_identities;
+	secret_area_saved_state secrets;
 	int primary_picked_up;
 	int secondary_picked_up;
 	int delayed_primary;
@@ -590,10 +600,6 @@ static int d1_save_translate_read_object_control(d1_save_translate_reader *reade
 		break;
 	case CT_MORPH:
 	case CT_AI: {
-		short d1_cur_path_index;
-		short unused_follow_path_start_seg;
-		short unused_follow_path_end_seg;
-
 		if (!d1_save_translate_read_u8(reader, &obj->ctype.ai_info.behavior))
 			return 0;
 		for (i = 0; i < MAX_AI_FLAGS; i++)
@@ -603,14 +609,13 @@ static int d1_save_translate_read_object_control(d1_save_translate_reader *reade
 		if (!d1_save_translate_read_s16(reader, &obj->ctype.ai_info.hide_segment) ||
 		    !d1_save_translate_read_s16(reader, &obj->ctype.ai_info.hide_index) ||
 		    !d1_save_translate_read_s16(reader, &obj->ctype.ai_info.path_length) ||
-		    !d1_save_translate_read_s16(reader, &d1_cur_path_index) ||
-		    !d1_save_translate_read_s16(reader, &unused_follow_path_start_seg) ||
-		    !d1_save_translate_read_s16(reader, &unused_follow_path_end_seg) ||
+		    !d1_save_translate_read_s16(reader, &obj->ctype.ai_info.cur_path_index) ||
+		    !d1_save_translate_read_s16(reader, &obj->ctype.ai_info.d1_saved.follow_path_start_seg) ||
+		    !d1_save_translate_read_s16(reader, &obj->ctype.ai_info.d1_saved.follow_path_end_seg) ||
 		    !d1_save_translate_read_s32(
 		        reader, &obj->ctype.ai_info.danger_laser_signature) ||
 		    !d1_save_translate_read_s16(reader, &obj->ctype.ai_info.danger_laser_num))
 			return 0;
-		obj->ctype.ai_info.cur_path_index = (sbyte) d1_cur_path_index;
 		obj->ctype.ai_info.dying_sound_playing = 0;
 		obj->ctype.ai_info.dying_start_time = 0;
 		break;
@@ -927,8 +932,9 @@ static int d1_save_translate_read_ai_local(d1_save_translate_reader *reader,
 	if (!d1_save_translate_read_s16(reader, &goal_segment))
 		return 0;
 	local->goal_segment = goal_segment;
-	if (!d1_save_translate_skip(reader, 2 * sizeof(fix)) ||
-	    !d1_save_translate_read_fix(reader, &local->next_action_time) ||
+	if (!d1_save_translate_read_fix(reader, &local->d1_saved.last_see_time) ||
+	    !d1_save_translate_read_fix(reader, &local->d1_saved.last_attack_time) ||
+	    !d1_save_translate_read_fix(reader, &local->d1_saved.wait_time) ||
 	    !d1_save_translate_read_fix(reader, &local->next_fire) ||
 	    !d1_save_translate_read_fix(reader, &local->player_awareness_time) ||
 	    !d1_save_translate_read_fix(reader, &time_delta))
@@ -965,7 +971,6 @@ static int d1_save_translate_read_d1_ai_state(
 	d1_save_translate_reader *reader, d1_save_translate_ai_state *state)
 {
 	int i;
-	int unused_s32;
 	fix time_delta;
 
 	if (!reader || !state)
@@ -1009,11 +1014,10 @@ static int d1_save_translate_read_d1_ai_state(
 		return 0;
 	state->boss_dying_start_time = time_delta ? GameTime64 + (fix64) time_delta : 0;
 	if (!d1_save_translate_read_s32(reader, &state->boss_dying) ||
-	    !d1_save_translate_read_s32(reader, &unused_s32))
+	    !d1_save_translate_read_s32(reader, &state->boss_dying_sound_playing))
 		return 0;
-	state->boss_dying_sound_playing = (sbyte) unused_s32;
 	if (!d1_save_translate_read_s32(reader, &state->boss_hit_pending) ||
-	    !d1_save_translate_skip(reader, sizeof(int)) ||
+	    !d1_save_translate_read_s32(reader, &state->boss_been_hit) ||
 	    !d1_save_translate_read_s32(reader, &state->point_seg_free_index))
 		return 0;
 	if (state->point_seg_free_index < 0 ||
@@ -1086,7 +1090,7 @@ static void d1_save_translate_commit_d1_ai_state(
 	Boss_dying_start_time = state->boss_dying_start_time;
 	Boss_dying = state->boss_dying;
 	Boss_dying_sound_playing = state->boss_dying_sound_playing;
-	d1_in_d2_ai_restore_boss_hit(state->boss_hit_pending);
+	d1_in_d2_ai_restore_boss_state(state->boss_hit_pending, state->boss_been_hit);
 	Point_segs_free_ptr = &Point_segs[state->point_seg_free_index];
 	Num_awareness_events = state->awareness_count;
 	memcpy(Awareness_events, state->awareness_events,
@@ -1412,6 +1416,7 @@ static void d1_save_translate_commit_d1_world_state(
 	Control_center_next_fire_time = state->control_center_next_fire_time;
 	Control_center_present = state->control_center_present;
 	Dead_controlcen_object_num = state->dead_controlcen_object_num;
+	memcpy(Automap_visited, state->automap_visited, sizeof(state->automap_visited));
 	if (Control_center_destroyed)
 		Total_countdown_time = Countdown_timer / F0_5;
 	else
@@ -1425,10 +1430,12 @@ static int d1_save_translate_read_d1_state_to_runtime(
 	if (!d1_save_translate_read_d1_world_state(reader, world) ||
 	    !d1_save_translate_read_d1_ai_state(reader, ai))
 		return 0;
-	if (Highest_segment_index + 1 > MAX_SEGMENTS_ORIGINAL) {
-		if (!d1_save_translate_skip(reader, (size_t) Highest_segment_index + 1))
-			return 0;
-	} else if (!d1_save_translate_skip(reader, MAX_SEGMENTS_ORIGINAL)) {
+	/* Native saves use the original minimum capacity, extended for large mines */
+	const size_t visited_count = Highest_segment_index + 1 > MAX_SEGMENTS_ORIGINAL
+	                                 ? (size_t) Highest_segment_index + 1
+	                                 : MAX_SEGMENTS_ORIGINAL;
+	if (visited_count > sizeof(world->automap_visited) ||
+	    !d1_save_translate_read_bytes(reader, world->automap_visited, visited_count)) {
 		return 0;
 	}
 	return d1_save_translate_skip(reader, 6 * sizeof(int));
@@ -1674,12 +1681,12 @@ static int d1_save_translate_read_runtime_state(
 	    !d1_save_translate_read_effect_state(reader, state))
 		return 0;
 	if (version >= D1_SAVE_SECRET_IDENTITY_VERSION) {
-		secret_area_saved_state saved;
 		size_t offset = reader->pos;
 		if (!d1_save_translate_skip(reader, SECRET_AREA_IDENTITY_SAVE_SIZE) ||
-		    !secret_area_decode_saved_state(reader->data + offset, SECRET_AREA_IDENTITY_SAVE_SIZE, &saved))
+		    !secret_area_decode_saved_state(reader->data + offset, SECRET_AREA_IDENTITY_SAVE_SIZE, &state->secrets) ||
+		    !secret_area_adapt_native_d1_saved_state(&state->secrets))
 			return 0;
-		/* Region identities are scoped to the native game interpretation */
+		state->has_secret_identities = 1;
 	} else if (!d1_save_translate_skip(reader,
 	                                   sizeof(int) + SECRET_AREA_MAX_GENERATED))
 		return 0;
@@ -1702,6 +1709,13 @@ static int d1_save_translate_read_runtime_state(
 		if (state->delayed_primary == 16)
 			state->delayed_primary = LASER_INDEX;
 	}
+	if (version >= CADENCE_D1_SAVE_VERSION) {
+		const size_t offset = reader->pos;
+		if (!d1_save_translate_skip(reader, CADENCE_RUNTIME_DISK_BYTES) ||
+		    !cadence_runtime_decode(reader->data + offset, CADENCE_RUNTIME_DISK_BYTES,
+		                            reader->swap, GameTime64, &state->cadence))
+			return 0;
+	}
 	if (!d1_save_translate_validate_runtime_allocator(
 	        &state->object_state, objects, object_count))
 		return 0;
@@ -1720,6 +1734,10 @@ static void d1_save_translate_commit_runtime_state(
 	const d1_save_translate_runtime_state *state)
 {
 	int i;
+	if (state->has_secret_identities)
+		secret_area_restore_saved_state(&state->secrets);
+	else
+		secret_area_restore_found_from_automap(Automap_visited, Highest_segment_index + 1);
 	for (i = 0; i < state->morph_count; ++i) {
 		morph_objects[i] = state->morphs[i];
 		morph_objects[i].obj = &Objects[state->morph_objects[i]];
@@ -1739,6 +1757,7 @@ static void d1_save_translate_commit_runtime_state(
 		effect->dest_bm_num = saved->dest_bm_num;
 	}
 	for (i = 0; i < Num_effects; ++i) effect_apply_bitmap_state(i);
+	cadence_runtime_apply(&state->cadence);
 	Next_laser_fire_time = GameTime64 + (fix64)state->next_laser_fire_delta;
 	Next_missile_fire_time = GameTime64 + (fix64)state->next_missile_fire_delta;
 	Last_laser_fired_time = GameTime64 + (fix64)state->last_laser_fired_delta;

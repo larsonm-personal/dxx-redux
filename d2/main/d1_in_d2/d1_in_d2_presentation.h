@@ -11,6 +11,10 @@ int d1_in_d2_show_titles(void);
 /* Own the complete native session; inactive returns without side effects
  * A missing/failed D1 resource is handled here and never falls through to D2 */
 int d1_in_d2_show_briefing(char *filename, int level_num);
+/* Identify the private session without exposing its interpreter state */
+struct window;
+struct d_event;
+int d1_in_d2_briefing_is_handler(int (*callback)(struct window *, struct d_event *, void *));
 int d1_in_d2_show_ending(char *filename);
 int d1_in_d2_show_order_form(void);
 const char *d1_in_d2_presentation_prefix(void);

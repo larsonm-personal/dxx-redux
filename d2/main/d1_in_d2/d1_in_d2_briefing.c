@@ -928,6 +928,13 @@ static int new_briefing_screen(briefing *br, int first)
 }
 
 //-----------------------------------------------------------------------------
+static int briefing_handler(window *wind, d_event *event, briefing *br);
+
+int d1_in_d2_briefing_is_handler(int (*callback)(window *, d_event *, void *))
+{
+	return callback == (int (*)(window *, d_event *, void *)) briefing_handler;
+}
+
 static int briefing_handler(window *wind, d_event *event, briefing *br)
 {
 	/* The window service sends CLOSED with a null data pointer */

@@ -27,6 +27,9 @@ int d1_in_d2_initialize_level_ambience(void);
 int d1_in_d2_decode_trigger(trigger *out, const v29_trigger *source, int native_d1);
 /* Returns 1 and the original flags for a native record, 0 for an ordinary D2 record */
 int d1_in_d2_trigger_source_flags(const trigger *source, short *flags);
+int d1_in_d2_trigger_source_link(const trigger *source);
+void d1_in_d2_write_trigger_storage(rewind_file *fp);
+int d1_in_d2_read_trigger_storage(rewind_file *fp, int swap, int apply);
 /* Bind native wall backlinks after world loading: -1 D2, 0 invalid, 1 bound */
 int d1_in_d2_bind_trigger_links(int trigger_num);
 

@@ -22,6 +22,7 @@
 #include "input_demo_rng_trace.h"
 #include "input_demo_state_trace.h"
 #include "input_demo_object_trace.h"
+#include "input_demo_world_trace.h"
 #include "laser.h"
 #include "maths.h"
 #include "mission.h"
@@ -34,6 +35,7 @@
 
 #ifdef DXX_BUILD_DESCENT_II
 #include "d1_in_d2/d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2_ai.h"
 #endif
 
 #include "input_demo_hooks_shared.h"
@@ -203,7 +205,7 @@ unsigned int input_demo_state_trace_hash_i64(unsigned int hash,
 }
 
 static unsigned int input_demo_state_trace_hash_ai_static_fields(
-    unsigned int hash, const ai_static *aip)
+    unsigned int hash, const object *obj, const ai_static *aip)
 {
 	int i;
 
@@ -224,23 +226,27 @@ static unsigned int input_demo_state_trace_hash_ai_static_fields(
 	hash = input_demo_state_trace_hash_update(hash,
 	                                          (unsigned int) aip->cur_path_index);
 #ifdef DXX_BUILD_DESCENT_II
-	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) aip->dying_sound_playing);
-	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) aip->danger_laser_num);
-	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) aip->danger_laser_signature);
-	hash = input_demo_state_trace_hash_i64(hash, aip->dying_start_time);
+	if (d1_in_d2_ai_actor_role(obj) != D1_AI_NATIVE_ENEMY) {
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) aip->dying_sound_playing);
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) aip->danger_laser_num);
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) aip->danger_laser_signature);
+		return input_demo_state_trace_hash_i64(hash, aip->dying_start_time);
+	}
+	/* Native-content diagnostics use the original field order. The full raw
+	 * object observer separately retains and checks D2-only storage */
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int) aip->d1_saved.follow_path_start_seg);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int) aip->d1_saved.follow_path_end_seg);
 #else
+	(void) obj;
 	hash = input_demo_state_trace_hash_update(
 	    hash, (unsigned int) aip->follow_path_start_seg);
 	hash = input_demo_state_trace_hash_update(
 	    hash, (unsigned int) aip->follow_path_end_seg);
+#endif
 	hash = input_demo_state_trace_hash_update(
 	    hash, (unsigned int) aip->danger_laser_signature);
 	hash = input_demo_state_trace_hash_update(hash,
 	                                          (unsigned int) aip->danger_laser_num);
-#endif
 	return hash;
 }
 
@@ -249,7 +255,7 @@ static unsigned int input_demo_state_trace_hash_ai_static(
 {
 	if (!obj || obj->control_type != CT_AI)
 		return hash;
-	return input_demo_state_trace_hash_ai_static_fields(hash,
+	return input_demo_state_trace_hash_ai_static_fields(hash, obj,
 	                                                    &obj->ctype.ai_info);
 }
 
@@ -361,12 +367,16 @@ static unsigned int input_demo_hash_robot_ai_local(unsigned int hash,
 	hash = input_demo_state_trace_hash_update(hash,
 	                                          (unsigned int) ailp->goal_segment);
 #ifdef DXX_BUILD_DESCENT_II
-	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) ailp->next_action_time);
-	hash = input_demo_state_trace_hash_update(hash,
-	                                          (unsigned int) ailp->next_fire);
-	hash = input_demo_state_trace_hash_update(hash,
-	                                          (unsigned int) ailp->next_fire2);
+	if (d1_in_d2_ai_actor_role(obj) == D1_AI_NATIVE_ENEMY) {
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) ailp->d1_saved.last_see_time);
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) ailp->d1_saved.last_attack_time);
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) ailp->d1_saved.wait_time);
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) ailp->next_fire);
+	} else {
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) ailp->next_action_time);
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) ailp->next_fire);
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) ailp->next_fire2);
+	}
 #else
 	hash = input_demo_state_trace_hash_update(hash,
 	                                          (unsigned int) ailp->last_see_time);
@@ -559,6 +569,8 @@ void input_demo_stop_replay_shared(int write_result,
                                    void (*write_replay_result)(void),
                                    void (*before_stop_replay)(void))
 {
+	if (input_demo_replay_is_loaded())
+		input_demo_trace_boundary(write_result ? "terminal" : "aborted");
 	if (replay_last_timer_value)
 		*replay_last_timer_value = 0;
 	if (before_stop_replay && input_demo_replay_is_loaded())
@@ -581,6 +593,7 @@ int input_demo_finish_replay_shared(int close_window,
 		*replay_last_timer_value = 0;
 	if (!input_demo_replay_is_loaded())
 		return 0;
+	input_demo_trace_boundary("terminal");
 	if (before_write_replay_result)
 		before_write_replay_result();
 	if (write_replay_result)
@@ -703,12 +716,26 @@ void input_demo_write_replay_frame_state_trace_shared(
 	                                       &actual_state,
 	                                       error,
 	                                       sizeof(error)) &&
-	    input_demo_object_trace_write(replay_frame->frame, error, sizeof(error)))
+	    input_demo_object_trace_write(replay_frame->frame, error, sizeof(error)) &&
+	    input_demo_world_trace_write(replay_frame->frame, NULL, error, sizeof(error)))
 		return;
 	if (!logged_state_trace_error || !*logged_state_trace_error)
 		con_printf(CON_NORMAL, "Input demo replay state trace write failed: %s\n", error);
 	if (logged_state_trace_error)
 		*logged_state_trace_error = 1;
+	input_demo_state_trace_stop();
+}
+
+void input_demo_trace_boundary(const char *phase)
+{
+	char error[256] = "";
+	const uint32_t frame = input_demo_replay_next_frame_index();
+	if (!input_demo_state_trace_is_active())
+		return;
+	if (input_demo_object_trace_boundary(frame, phase, error, sizeof(error)) &&
+	    input_demo_world_trace_write(frame, phase, error, sizeof(error)))
+		return;
+	con_printf(CON_NORMAL, "Input demo boundary trace failed: %s\n", error);
 	input_demo_state_trace_stop();
 }
 
@@ -1520,8 +1547,8 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 					diag->robot_ai_static_changed_cur_path_index =
 					    aip->cur_path_index;
 #ifdef DXX_BUILD_DESCENT_II
-					diag->robot_ai_static_changed_follow_start = -1;
-					diag->robot_ai_static_changed_follow_end = -1;
+					diag->robot_ai_static_changed_follow_start = d1_in_d2_ai_actor_role(obj) == D1_AI_NATIVE_ENEMY ? aip->d1_saved.follow_path_start_seg : -1;
+					diag->robot_ai_static_changed_follow_end = d1_in_d2_ai_actor_role(obj) == D1_AI_NATIVE_ENEMY ? aip->d1_saved.follow_path_end_seg : -1;
 #else
 					diag->robot_ai_static_changed_follow_start =
 					    aip->follow_path_start_seg;
@@ -1564,9 +1591,9 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 					diag->robot_ai_static_trace_submodes[trace_index] =
 					    aip->SUB_FLAGS;
 					diag->robot_ai_static_trace_follow_starts[trace_index] =
-					    -1;
+					    d1_in_d2_ai_actor_role(obj) == D1_AI_NATIVE_ENEMY ? aip->d1_saved.follow_path_start_seg : -1;
 					diag->robot_ai_static_trace_follow_ends[trace_index] =
-					    -1;
+					    d1_in_d2_ai_actor_role(obj) == D1_AI_NATIVE_ENEMY ? aip->d1_saved.follow_path_end_seg : -1;
 #else
 					diag->robot_ai_static_trace_submodes[trace_index] =
 					    aip->SUBMODE;
@@ -1827,7 +1854,7 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 			if (i == diag->robot_ai_static_changed_obj)
 				diag->robot_ai_static_without_changed_hash =
 				    input_demo_state_trace_hash_ai_static_fields(
-				        diag->robot_ai_static_without_changed_hash,
+				        diag->robot_ai_static_without_changed_hash, obj,
 				        &previous_robot_ai_static_values[i]);
 			else
 				diag->robot_ai_static_without_changed_hash =

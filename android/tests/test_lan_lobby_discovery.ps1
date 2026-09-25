@@ -18,6 +18,8 @@
 #   .\test_lan_lobby_discovery.ps1 -ResumeCoverage -ReconnectCoverage
 
 param(
+    [ValidateSet("d1", "d2")][string]$HostGame = "d2",
+    [switch]$JoinCoverage,
     [int]$TimeoutSeconds = 30,
     [int]$IdleStabilitySeconds = 70,
     [switch]$ResumeCoverage,
@@ -93,8 +95,8 @@ try {
     Write-Status "Starting LAN lobby host on $EMU1..."
     Send-MpCommand -Serial $EMU1 -Command "lan_host_lobby" -Extras @(
         "--es", "callsign", "DiscoveryHost",
-        "--es", "game", "d2",
-        "--es", "mission", "d2",
+        "--es", "game", $HostGame,
+        "--es", "mission", $(if ($HostGame -eq "d1") { "descent" } else { "d2" }),
         "--es", "mode", "coop",
         "--ei", "max_players", "4"
     )
@@ -144,6 +146,20 @@ try {
     }
 
     if ($found) {
+        if ($JoinCoverage) {
+            Send-MpCommand -Serial $EMU2 -Command "lan_join_first_lobby"
+            $joined = Wait-ForCondition -Description "join advertised $HostGame engine" -TimeoutSec 15 -PollMs 1000 -Condition {
+                Send-MpCommand -Serial $EMU2 -Command "lan_lobby_status"
+                Start-Sleep -Milliseconds 300
+                $status = Get-LogcatLines -Serial $EMU2 -Tags @("DXX-MP:*") |
+                    Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
+                return $status -and $status -match "joined=true game=$HostGame "
+            }
+            if (-not $joined) {
+                Write-Status "FAIL: Joiner did not use the advertised $HostGame engine" "Red"
+                exit 1
+            }
+        }
         if ($ResumeCoverage) {
             Write-Status "Joining the discovered lobby..."
             Send-MpCommand -Serial $EMU2 -Command "lan_join_first_lobby"
