@@ -22,7 +22,7 @@ class ConfigImportExportPreferenceTest {
         assertEquals("", json.getString(SoundfontStore.PREF_SOUNDFONT))
         assertTrue(json.getBoolean(SoundfontStore.PREF_REVERB))
         assertTrue(json.getBoolean(SoundfontStore.PREF_CHORUS))
-        assertEquals(MusicEq.FLAT, json.getString(SoundfontStore.PREF_EQ))
+        assertEquals("{}", json.getString(SoundfontStore.PREF_EQ))
         assertEquals("d1-builtin", json.getString(PREF_MIDI_EDITOR_SOURCE))
         val decoded = ConfigImportExport.decodePreferenceValues(json)
         assertNull(decoded.error)
@@ -56,7 +56,7 @@ class ConfigImportExportPreferenceTest {
                                 when (pref.key) {
                                     SoundfontStore.PREF_RENDERER -> "ymfm"
                                     SoundfontStore.PREF_SOUNDFONT -> "a".repeat(64)
-                                    SoundfontStore.PREF_EQ -> MusicEq.BALANCED
+                                    SoundfontStore.PREF_EQ -> MusicEq.encodeProfiles(mapOf(MusicEq.BUNDLED to MusicEq.BROAD))
                                     else -> "value-${pref.key}"
                                 }
                         }

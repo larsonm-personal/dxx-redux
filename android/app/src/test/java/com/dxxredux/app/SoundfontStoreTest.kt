@@ -11,26 +11,43 @@ class SoundfontStoreTest {
     @get:Rule val temporary = TemporaryFolder()
     private val preferences = memoryPreferences()
 
-    @Test fun measuredEqPersistsAcrossFontsAndResetRestoresFlat() {
+    @Test fun eqProfilesHaveIndependentDefaultsSelectionsAndReset() {
         val store = SoundfontStore(temporary.root, preferences)
         assertEquals(MusicEq.FLAT, store.read().eq)
-        store.selectEq(MusicEq.BALANCED) { true }
+        assertEquals(MusicEq.BALANCED, store.read().soundfontEq)
+        store.selectRenderer("sf2") { _, _ -> true }
+        assertEquals(MusicEq.BALANCED, store.read().eq)
+        store.selectEq(MusicEq.BROAD) { true }
         val imported = store.import(byteArrayOf(1, 2, 3).inputStream(), "Other bank") { true }
         store.select(imported.id) { true }
         val reopened = SoundfontStore(temporary.root, preferences)
-        assertEquals(MusicEq.BALANCED, reopened.read().eq)
-        assertFalse(MusicEq.supports(reopened.read().selected))
-        reopened.select("") { true }
-        assertTrue(MusicEq.supports(reopened.read().selected))
-        assertEquals(2, MusicEq.nativeId(reopened.read().eq))
+        assertEquals(MusicEq.FLAT, reopened.read().eq)
         try {
-            reopened.selectEq(MusicEq.BROAD) { false }
+            reopened.selectEq(MusicEq.BALANCED) { fail("Activated unsupported preset"); true }
+            fail("Accepted unsupported measured EQ")
+        } catch (_: IllegalArgumentException) {
+        }
+        reopened.selectEq(MusicEq.FLAT) { true }
+        reopened.select("") { true }
+        assertEquals(MusicEq.BROAD, reopened.read().eq)
+        reopened.selectRenderer("ymfm") { _, _ -> true }
+        assertEquals(MusicEq.FLAT, reopened.read().eq)
+        assertEquals(MusicEq.BROAD, reopened.read().soundfontEq)
+        reopened.selectEq(MusicEq.FLAT) { true }
+        reopened.selectRenderer("sf2") { _, _ -> true }
+        assertEquals(MusicEq.BROAD, reopened.read().eq)
+        try {
+            reopened.selectEq(MusicEq.FLAT) { false }
             fail("Persisted failed EQ activation")
         } catch (_: IllegalStateException) {
         }
-        assertEquals(MusicEq.BALANCED, reopened.read().eq)
+        assertEquals(MusicEq.BROAD, reopened.read().eq)
+        reopened.selectEq(MusicEq.FLAT) { true }
+        assertEquals(MusicEq.FLAT, SoundfontStore(temporary.root, preferences).read().eq)
         reopened.resetPreferences { _, _ -> true }
         assertEquals(MusicEq.FLAT, reopened.read().eq)
+        assertEquals(MusicEq.BALANCED, reopened.read().soundfontEq)
+        assertTrue(reopened.read().eqProfiles.isEmpty())
     }
 
     @Test fun deletingInactiveFontKeepsActiveFontAndDoesNotRestartPlayback() {
@@ -125,7 +142,9 @@ class SoundfontStoreTest {
         val font = store.import(byteArrayOf(4).inputStream(), "Saved bank") { true }
         store.select(font.id) { true }
         store.selectRenderer("sf2") { _, _ -> true }
+        store.select("") { true }
         store.selectEq(MusicEq.BROAD) { true }
+        store.select(font.id) { true }
         val exported = ConfigImportExport.exportPreferenceValues(preferences.all)
         val decoded = ConfigImportExport.decodePreferenceValues(exported)
         assertNull(decoded.error)
@@ -136,7 +155,8 @@ class SoundfontStoreTest {
             editor.commit()
         }
         assertEquals(store.read(), SoundfontStore(temporary.root, restored).read())
-        assertEquals(MusicEq.BROAD, SoundfontStore(temporary.root, restored).read().eq)
+        assertEquals(MusicEq.FLAT, SoundfontStore(temporary.root, restored).read().eq)
+        assertEquals(MusicEq.BROAD, SoundfontStore(temporary.root, restored).read().eqFor(MusicEq.BUNDLED))
         val missing = TemporaryFolder().also { it.create() }
         try {
             assertEquals("", SoundfontStore(missing.root, restored).selectedPath())

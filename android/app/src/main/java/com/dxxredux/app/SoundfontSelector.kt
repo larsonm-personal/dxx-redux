@@ -7,7 +7,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -18,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +45,8 @@ fun SoundfontSelector() {
     var infoFromDownloads by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<SoundfontStore.Font?>(null) }
     var rendererInfo by remember { mutableStateOf<String?>(null) }
-    var eqExpanded by remember { mutableStateOf(false) }
+    var showEq by remember { mutableStateOf(false) }
+    val fontName = state.fonts.firstOrNull { it.id == state.selected }?.name ?: bundled.name
 
     fun selectEq(preset: String) {
         busy = true
@@ -214,6 +213,13 @@ fun SoundfontSelector() {
             }
         }
         if (state.renderer == "ymfm") {
+            OutlinedButton(
+                onClick = { showEq = true },
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+            ) {
+                Text("eq opl3")
+            }
             Text(
                 "Uses original instruments for supported D1 and D2 songs. " +
                     "Other MIDI songs use the soundfont below.",
@@ -239,6 +245,15 @@ fun SoundfontSelector() {
                         select(font.id)
                     })
                 }
+            }
+        }
+        if (state.renderer == "sf2") {
+            OutlinedButton(
+                onClick = { showEq = true },
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+            ) {
+                Text("eq $fontName")
             }
         }
         Text("MIDI soundfont effects", style = MaterialTheme.typography.titleSmall)
@@ -271,78 +286,6 @@ fun SoundfontSelector() {
             "Applies to soundfont playback, including AdLib fallback songs.",
             style = MaterialTheme.typography.bodySmall,
         )
-        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-        Text("Equalizer", style = MaterialTheme.typography.titleSmall)
-        listOf(
-            MusicEq.FLAT to "Flat (no EQ)",
-            MusicEq.BALANCED to "Measured EQ - match SC-55 recordings",
-        ).forEach { (preset, label) ->
-            val selected = if (preset == MusicEq.FLAT) state.eq == MusicEq.FLAT else state.eq != MusicEq.FLAT
-            val enabled = !busy && (preset == MusicEq.FLAT || MusicEq.supports(state.selected))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = {
-                            selectEq(preset)
-                        }),
-            ) {
-                RadioButton(
-                    selected = selected,
-                    enabled = enabled,
-                    onClick = null,
-                )
-                Text(label)
-            }
-        }
-        Text(
-            "Measured for nitro-shoe SC-55-style 1.34 against SC-55 recordings. " +
-                "One averaged correction across 28 D1 and D2 songs, shared by every track.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-        if (state.eq != MusicEq.FLAT) {
-            Text("Curve smoothing", style = MaterialTheme.typography.labelLarge)
-            Box {
-                OutlinedButton(
-                    onClick = { eqExpanded = true },
-                    enabled = !busy && MusicEq.supports(state.selected),
-                    modifier = Modifier.fillMaxWidth().tvFocusBorder(),
-                ) { Text(MusicEq.smoothing[state.eq] ?: "Balanced (1 octave)") }
-                DropdownMenu(expanded = eqExpanded, onDismissRequest = { eqExpanded = false }) {
-                    MusicEq.smoothing.forEach { (preset, label) ->
-                        DropdownMenuItem(text = { Text(label) }, onClick = {
-                            eqExpanded = false
-                            selectEq(preset)
-                        })
-                    }
-                }
-            }
-            Text(
-                "Balanced is recommended. Detail follows more of the measured curve; " +
-                    "Broad makes gentler, wider adjustments.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-        if (!MusicEq.supports(state.selected)) {
-            Text(
-                "Measured EQ is inactive for this soundfont. Select the bundled SC-55 bank to use it.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        } else if (state.renderer == "ymfm") {
-            Text(
-                "FM stays unchanged. EQ applies when a song falls back to this soundfont.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-        Text(
-            "Changing EQ stops the current preview; play a track again to compare.",
-            style = MaterialTheme.typography.bodySmall,
-        )
-        Text(
-            "Saved immediately in Game Preferences for MIDI previews and the next launch of either game.",
-            style = MaterialTheme.typography.bodySmall,
-        )
         TextButton(onClick = { picker.launch(arrayOf("*/*")) }, enabled = !busy, modifier = Modifier.tvFocusBorder()) {
             Text("Import SF2 soundfont")
         }
@@ -371,6 +314,18 @@ fun SoundfontSelector() {
             }
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+    }
+
+    if (showEq) {
+        MusicEqDialog(
+            name = if (state.renderer == "ymfm") "opl3" else fontName,
+            profile = state.eqProfile,
+            preset = state.eq,
+            busy = busy,
+            error = error,
+            onSelect = ::selectEq,
+            onDismiss = { if (!busy) showEq = false },
+        )
     }
 
     rendererInfo?.let { renderer ->

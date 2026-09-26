@@ -17,6 +17,30 @@ internal object MusicEq {
             BROAD to "Broad (2 octaves)",
         )
 
+    const val OPL3 = "opl3"
+    const val BUNDLED = "bundled"
+
+    fun profile(
+        renderer: String,
+        fontId: String,
+    ): String = if (renderer == "ymfm") OPL3 else fontId.ifEmpty { BUNDLED }
+
+    fun defaultPreset(profile: String): String = if (profile == BUNDLED) BALANCED else FLAT
+
+    fun supportsProfile(profile: String): Boolean = profile == BUNDLED || profile == SOUNDFONT_SHA256
+
+    fun decodeProfiles(value: String): Map<String, String> {
+        val json = org.json.JSONObject(value)
+        return json.keys().asSequence().associateWith { key ->
+            require(key in listOf(OPL3, BUNDLED) || key.matches(Regex("[0-9a-f]{64}"))) { "Invalid EQ profile" }
+            val preset = json.getString(key)
+            require(preset in presets && (preset == FLAT || supportsProfile(key))) { "Invalid profile EQ preset" }
+            preset
+        }
+    }
+
+    fun encodeProfiles(profiles: Map<String, String>): String = org.json.JSONObject(profiles.toSortedMap()).toString()
+
     fun nativeId(preset: String): Int = presets.indexOf(preset).coerceAtLeast(0)
 
     fun supports(fontId: String): Boolean = fontId.isEmpty() || fontId == SOUNDFONT_SHA256

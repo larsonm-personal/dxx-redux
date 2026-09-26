@@ -51,7 +51,7 @@ object ConfigImportExport {
             ExportedPreference(SoundfontStore.PREF_SOUNDFONT, ExportedPreferenceType.STRING, ""),
             ExportedPreference(SoundfontStore.PREF_REVERB, ExportedPreferenceType.BOOLEAN, true),
             ExportedPreference(SoundfontStore.PREF_CHORUS, ExportedPreferenceType.BOOLEAN, true),
-            ExportedPreference(SoundfontStore.PREF_EQ, ExportedPreferenceType.STRING, MusicEq.FLAT),
+            ExportedPreference(SoundfontStore.PREF_EQ, ExportedPreferenceType.STRING, "{}"),
             ExportedPreference("touch_overlay_enabled", ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_SHOW_RESUME_OFFER, ExportedPreferenceType.BOOLEAN),
@@ -97,7 +97,9 @@ object ConfigImportExport {
             if (!pref.type.accepts(value)) {
                 return DecodedPreferences(error = "'${pref.key}' must be ${pref.type.displayName}")
             }
-            if (pref.key == SoundfontStore.PREF_EQ && value !in MusicEq.presets) {
+            if (pref.key == SoundfontStore.PREF_EQ &&
+                runCatching { MusicEq.decodeProfiles(value as String) }.isFailure
+            ) {
                 return DecodedPreferences(error = "Unknown music EQ preset")
             }
             if (pref.key == SoundfontStore.PREF_RENDERER && value !in SoundfontStore.RENDERERS) {

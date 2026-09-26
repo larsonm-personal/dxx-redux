@@ -30,8 +30,14 @@ class SoundfontStore(
         val renderer: String = DEFAULT_RENDERER,
         val reverb: Boolean = true,
         val chorus: Boolean = true,
-        val eq: String = MusicEq.FLAT,
-    )
+        val eqProfiles: Map<String, String> = emptyMap(),
+    ) {
+        val eqProfile: String get() = MusicEq.profile(renderer, selected)
+        val eq: String get() = eqFor(eqProfile)
+        val soundfontEq: String get() = eqFor(MusicEq.profile("sf2", selected))
+
+        fun eqFor(profile: String): String = eqProfiles[profile] ?: MusicEq.defaultPreset(profile)
+    }
 
     private val directory = File(filesDir, "soundfonts")
     private val manifest = File(directory, "selection.json")
@@ -54,7 +60,10 @@ class SoundfontStore(
                 catalog,
                 reverb = preferences.getBoolean(PREF_REVERB, true),
                 chorus = preferences.getBoolean(PREF_CHORUS, true),
-                eq = preferences.getString(PREF_EQ, MusicEq.FLAT)?.takeIf { it in MusicEq.presets } ?: MusicEq.FLAT,
+                eqProfiles =
+                    runCatching {
+                        MusicEq.decodeProfiles(preferences.getString(PREF_EQ, "{}") ?: "{}")
+                    }.getOrDefault(emptyMap()),
                 renderer =
                     preferences
                         .getString(PREF_RENDERER, DEFAULT_RENDERER)
@@ -233,7 +242,7 @@ class SoundfontStore(
                         renderer = DEFAULT_RENDERER,
                         reverb = true,
                         chorus = true,
-                        eq = MusicEq.FLAT,
+                        eqProfiles = emptyMap(),
                     ),
                 )
             } catch (error: Exception) {
@@ -263,9 +272,12 @@ class SoundfontStore(
     ) = synchronized(lock) {
         require(preset in MusicEq.presets) { "Unknown music EQ preset" }
         val state = read()
+        require(
+            preset == MusicEq.FLAT || MusicEq.supportsProfile(state.eqProfile),
+        ) { "No measured EQ for this profile" }
         check(activate(preset)) { "Could not change music EQ" }
         try {
-            saveSelection(state.copy(eq = preset))
+            saveSelection(state.copy(eqProfiles = state.eqProfiles + (state.eqProfile to preset)))
         } catch (error: Exception) {
             activate(state.eq)
             throw error
@@ -277,14 +289,14 @@ class SoundfontStore(
         val previousFont = preferences.getString(PREF_SOUNDFONT, null)
         val previousReverb = preferences.getBoolean(PREF_REVERB, true)
         val previousChorus = preferences.getBoolean(PREF_CHORUS, true)
-        val previousEq = preferences.getString(PREF_EQ, MusicEq.FLAT)
+        val previousEq = preferences.getString(PREF_EQ, "{}")
         if (!preferences
                 .edit()
                 .putString(PREF_RENDERER, state.renderer)
                 .putString(PREF_SOUNDFONT, state.selected)
                 .putBoolean(PREF_REVERB, state.reverb)
                 .putBoolean(PREF_CHORUS, state.chorus)
-                .putString(PREF_EQ, state.eq)
+                .putString(PREF_EQ, MusicEq.encodeProfiles(state.eqProfiles))
                 .commit()
         ) {
             // SharedPreferences updates memory even when writing to disk fails
@@ -305,7 +317,7 @@ class SoundfontStore(
         const val PREF_SOUNDFONT = "midi_soundfont"
         const val PREF_REVERB = "midi_reverb"
         const val PREF_CHORUS = "midi_chorus"
-        const val PREF_EQ = "midi_eq"
+        const val PREF_EQ = "midi_eq_profiles"
         const val DEFAULT_RENDERER = "ymfm"
         val RENDERERS = setOf("sf2", "ymfm")
 

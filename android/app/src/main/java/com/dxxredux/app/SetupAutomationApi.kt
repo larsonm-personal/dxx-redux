@@ -1096,6 +1096,8 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
                 put("reverb", soundfont.reverb)
                 put("chorus", soundfont.chorus)
                 put("eq", soundfont.eq)
+                put("eq_profile", soundfont.eqProfile)
+                put("soundfont_eq", soundfont.soundfontEq)
                 put("eq_effective_native", MidiPreviewBridge.getEqualizer())
                 put("eq_compatible_soundfont", MusicEq.supports(soundfont.selected))
                 put(

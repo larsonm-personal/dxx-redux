@@ -54,6 +54,25 @@ The reference family name does not establish original hardware, SoundFont identi
 lossless provenance or mastering. Codec cutoffs, different patches and effects can
 all influence the result. No EQ is fitted or applied by this tool
 
+## OPL3 recording baseline
+
+```powershell
+temp/music-spectral-venv/Scripts/python.exe android/tests/compare_music_spectra.py --manifest android/tests/music_spectral/opl3.json --output temp/music-spectral-opl3 --seconds 90
+```
+
+Open `temp/music-spectral-opl3/report.html`. The manifest maps 27 full-version
+D1 songs and seven D2 songs to the MP3 recordings under `game_data/music`.
+Shareware bonus recordings are excluded. The `backend` field selects `ymfm`;
+the runner verifies the actual backend and rejects SoundFont fallback. Instrument
+banks and HMP/HMQ selection use the production game path and are recorded in each
+render log. The SoundFont argument is required by the host renderer but does not
+produce the accepted OPL3 audio. No EQ is applied
+
+Manifests may specify `reference_label` and a per-game `extension` (default `.ogg`)
+with explicit song-to-reference filename stems in `aliases`. Omitting `backend`
+preserves the SF2 comparison. Analysis and alignment thresholds are identical for
+both backends
+
 ## Shared measured EQ
 
 After generating the baseline, fit the shared D1+D2 correction and publish its
@@ -82,9 +101,12 @@ correction. The catalog uses the SHA-256 identity in `MusicEq.kt` for imported
 copies of the same bank. Update that identity and UI attribution when calibrating
 a different bank; never relabel an existing curve for another bank
 
-The editor exposes Flat and Measured EQ, with selectable smoothing. Balanced is
-the recommended measured setting; Flat remains the default. Settings persist
-globally for launcher previews and the next D1/D2 launch, including SF2 fallback.
+The editor opens a profile EQ popup from `eq opl3` or `eq [soundfont name]`.
+The popup shows the actual filter response on logarithmic frequency and dB axes.
+The bundled bank defaults to Measured EQ / Balanced; OPL3 and imported banks
+default to Flat. Overrides persist separately by profile in `midi_eq_profiles`,
+including export/import and reset to defaults. SoundFont fallback uses the selected
+font profile. Settings apply to previews and the next D1/D2 launch.
 Changing the profile stops the preview using the existing replacement path.
 FM, recorded tracks and effects audio are unchanged
 

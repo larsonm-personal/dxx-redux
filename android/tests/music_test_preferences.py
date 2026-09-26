@@ -33,7 +33,7 @@ def restore_preferences(call, path):
 def clear_midi_preferences(call, original, output):
     root = ET.parse(original).getroot() if original else ET.Element('map')
     for entry in list(root):
-        if entry.get('name') in ('midi_renderer', 'midi_soundfont', 'midi_reverb', 'midi_chorus', 'midi_eq'):
+        if entry.get('name') in ('midi_renderer', 'midi_soundfont', 'midi_reverb', 'midi_chorus', 'midi_eq_profiles'):
             root.remove(entry)
     path = Path(output) / 'fresh-midi-preferences.xml'
     ET.ElementTree(root).write(path, encoding='utf-8', xml_declaration=True)

@@ -181,6 +181,12 @@ def main():
     manifest = json.loads(args.manifest.read_text(encoding='utf8'))
     ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     font = ROOT / manifest['soundfont']
+    backend = manifest.get('backend', 'sf2')
+    if backend not in ('sf2', 'ymfm'):
+        parser.error('Manifest backend must be sf2 or ymfm')
+    reference_label = manifest.get('reference_label', 'SC-55 recording')
+    synthesis = ('production ymfm OPL3 with game instrument banks and production resampling'
+                 if backend == 'ymfm' else 'production FluidSynth with reverb/chorus and 128 voices')
     cases = []
     for game in manifest['games']:
         songs = {song: song for song in game['songs']}
@@ -194,8 +200,10 @@ def main():
                   ffmpeg=run([ffmpeg, '-version'], text=True).stdout.splitlines()[0],
                   python=sys.version, numpy=np.__version__, scipy=__import__('scipy').__version__,
                   matplotlib=matplotlib.__version__,
-                  settings=dict(rate=RATE, seconds=args.seconds, voices=128, gain_db=-10,
-                                fluid_gain=.4, interpolation='fourth-order', reverb=True, chorus=True,
+                  settings=dict(backend=backend, rate=RATE, seconds=args.seconds, voices=128 if backend == 'sf2' else None, gain_db=-10,
+                                fluid_gain=.4 if backend == 'sf2' else None,
+                                interpolation='fourth-order' if backend == 'sf2' else None,
+                                reverb=backend == 'sf2', chorus=backend == 'sf2', equalizer='flat',
                                 start='cold', spectrum='Welch 4096 Hann, 75% overlap, stereo power average',
                                 normalization='250-2000 Hz power anchor; listening clips use constant LUFS gain'),
                   excluded=manifest['excluded'], tracks=[])
@@ -204,7 +212,7 @@ def main():
     centers = np.sqrt(EDGES[:-1] * EDGES[1:])
     for game, song, reference_name in cases:
         name = f'{game["game"]}-{song}'
-        reference = ROOT / game['references'] / (reference_name + '.ogg')
+        reference = ROOT / game['references'] / (reference_name + game.get('extension', '.ogg'))
         row = dict(id=name, game=game['game'], song=song, reference=str(reference.relative_to(ROOT)))
         print(f'Rendering {name}', flush=True)
         try:
@@ -215,10 +223,10 @@ def main():
                         and wav.exists() and prior.get('pcm_sha256') == digest(wav))
             if not reusable:
                 result = run([args.renderer.resolve(), '--render', font, ROOT / game['hog'],
-                              song + '.hmp', wav, 'sf2', args.seconds], text=True)
+                              song + '.hmp', wav, backend, args.seconds], text=True)
                 (output / (name + '.log')).write_text(result.stdout + result.stderr, encoding='utf8')
-                if 'actual=sf2' not in result.stdout:
-                    raise ValueError('Renderer did not select SF2')
+                if f'actual={backend}' not in result.stdout:
+                    raise ValueError(f'Renderer did not select {backend}; refusing fallback audio')
             ours, ref, alignment = align(decode(ffmpeg, wav, args.seconds), decode(ffmpeg, reference, args.seconds + 8))
             curves, delta, anchor, bands = compare(ours, ref)
             ours_levels, ref_levels = levels(ffmpeg, ours), levels(ffmpeg, ref)
@@ -238,7 +246,7 @@ def main():
                 write_wav(output / f'{name}-{label}.wav', pcm[:30 * RATE] * 10 ** ((target - measurement['lufs']) / 20))
             fig, axes = plt.subplots(2, 1, figsize=(11, 6), constrained_layout=True)
             axes[0].plot(centers, db(curves[0]) + anchor, label='Our playback (midrange matched)', color='#dc6a25')
-            axes[0].plot(centers, db(curves[1]), label='SC-55 recording', color='#187bbf')
+            axes[0].plot(centers, db(curves[1]), label=reference_label, color='#187bbf')
             axes[0].set_ylabel('Band power (dBFS)')
             axes[0].legend(loc='lower left')
             axes[0].set_title(name + ' | ' + ('aligned' if alignment['accepted'] else 'alignment uncertain: excluded from summary'))
@@ -298,10 +306,10 @@ img{{width:100%;height:auto}}nav a{{display:inline-block;margin:5px}}.players{{d
 audio{{display:block;width:360px;max-width:100%}}pre{{white-space:pre-wrap}}.badge{{color:#704519;font-weight:bold}}</style>
 <h1>D1 / D2: is our MIDI playback brighter?</h1><div class="intro">
 <p class="badge">Measured baseline. No EQ applied. {accepted} of {len(cases)} pairs accepted for the summary.</p>
-<p>Bundled SoundFont through the production FluidSynth renderer versus local SC-55-labelled OGG recordings.
+<p>{html.escape(manifest['family'])}.
 Each graph matches energy at 250 Hz-2 kHz. Positive differences above that range mean more treble relative to the midrange,
 independent of the overall volume setting. Shading shows variation across songs, not a confidence interval.</p>
-<p>These are cold-start host renders, up to {args.seconds} seconds per song, with reverb/chorus and 128 voices.
+<p>These are cold-start host renders, up to {args.seconds} seconds per song, using {html.escape(synthesis)}.
 Alignment uses rhythmic energy envelopes and three section checks. Poorly aligned pairs are excluded from the summary.
 Passing this check does not prove identical arrangement or patch selection. Codec/mastering differences and reference provenance
 can affect high frequencies; this is evidence for investigation, not an automatically justified corrective EQ.</p>

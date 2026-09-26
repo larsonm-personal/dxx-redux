@@ -1,0 +1,61 @@
+{
+  "family": "OPL3 recordings versus production ymfm OPL3 playback",
+  "soundfont": "android/app/src/main/assets/gm.sf2",
+  "games": [
+    {
+      "game": "d1",
+      "hog": "game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/descent.hog",
+      "references": "game_data/music/D1 MIDI mp3 opl3",
+      "songs": [],
+      "aliases": {
+        "descent": "01 Descent",
+        "briefing": "02 Briefing",
+        "credits": "03 Credits",
+        "endlevel": "04 Escape",
+        "endgame": "05 Ending",
+        "game01": "06 (Level 1) Lunar Outpost",
+        "game02": "07 (Level 2) Lunar Scilab",
+        "game03": "08 (Level 3) Lunar Military Base",
+        "game04": "09 (Level 4) Venus Atmospheric Lab",
+        "game05": "10 (Level 5) Venus Nickel-Iron Mine",
+        "game06": "11 (Level 6) Mercury Solar Lab",
+        "game07": "12 (Level 7) Mercury Core",
+        "game08": "13 (Level 8) Mars Processing Station",
+        "game09": "14 (Level 9) Mars Military Dig",
+        "game10": "15 (Level 10) Mars Military Base",
+        "game11": "16 (Level 11) Io Sulfur Mine",
+        "game12": "17 (Level 12) Callisto Tower Colony",
+        "game13": "18 (Level 13) Europa Mining Colony",
+        "game14": "19 (Level 14) Europa CO2 Mine",
+        "game15": "20 (Level 15) Titan Mine",
+        "game16": "21 (Level 16) Hyperion Methane Mine",
+        "game17": "22 (Level 17) Tethys H20 Mine",
+        "game18": "23 (Level 18) Miranda Mine",
+        "game19": "24 (Level 19) Oberon Mine",
+        "game20": "25 (Level 20) Oberon Iron Mine",
+        "game21": "26 (Level 21) - Oberon Platinum Mine",
+        "game22": "27 (Level 22) - Neptune Storage Depot"
+      },
+      "extension": ".mp3"
+    },
+    {
+      "game": "d2",
+      "hog": "game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/DESCENT2.HOG",
+      "references": "game_data/music/D2 midi mp3 opl3",
+      "songs": [],
+      "aliases": {
+        "descent": "01 Descent II",
+        "briefing": "02 Briefing",
+        "credits": "03 Credits",
+        "game01": "04 Game 1",
+        "game02": "05 Game 2",
+        "game03": "06 Game 3",
+        "game04": "07 Game 4"
+      },
+      "extension": ".mp3"
+    }
+  ],
+  "excluded": "D1 shareware bonus recordings 28-31 are excluded because this corpus uses the full-version HOG. D2 endgame/endlevel have no supplied reference. OPL3 labels do not establish original hardware or identical mastering.",
+  "backend": "ymfm",
+  "reference_label": "OPL3 recording"
+}

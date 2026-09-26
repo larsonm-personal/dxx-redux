@@ -42,7 +42,10 @@ object MidiPreviewBridge {
         fm: Boolean,
     ): Boolean {
         val state = SoundfontStore(context).read()
-        return nativeInit(context.assets, path, fm, state.reverb, state.chorus, MusicEq.nativeId(state.eq))
+        // Activation precedes persistence: resolve from the target path, not the old selection
+        val fontId = if (path.isEmpty()) "" else java.io.File(path).nameWithoutExtension
+        val eq = state.eqFor(MusicEq.profile("sf2", fontId))
+        return nativeInit(context.assets, path, fm, state.reverb, state.chorus, MusicEq.nativeId(eq))
     }
 
     fun selectEffects(
@@ -59,7 +62,7 @@ object MidiPreviewBridge {
                 store.read().renderer == "ymfm",
                 rev,
                 cho,
-                MusicEq.nativeId(store.read().eq),
+                MusicEq.nativeId(store.read().soundfontEq),
             )
         }
     }
@@ -79,7 +82,7 @@ object MidiPreviewBridge {
                 state.renderer == "ymfm",
                 state.reverb,
                 state.chorus,
-                MusicEq.nativeId(selected),
+                MusicEq.nativeId(if (state.renderer == "ymfm") state.soundfontEq else selected),
             )
         }
     }
@@ -138,7 +141,7 @@ object MidiPreviewBridge {
                     fm,
                     if (first) true else old.reverb,
                     if (first) true else old.chorus,
-                    if (first) 0 else MusicEq.nativeId(old.eq),
+                    if (first) MusicEq.nativeId(MusicEq.BALANCED) else MusicEq.nativeId(old.soundfontEq),
                 )
             first = false
             result
