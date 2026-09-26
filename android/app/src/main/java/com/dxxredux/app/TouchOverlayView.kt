@@ -1271,6 +1271,17 @@ class TouchOverlayView
                 else -> ControllerMenuSurface.NONE
             }
 
+        internal fun controllerNavigationState(): Map<String, Any> =
+            mapOf(
+                "controller_menu_open" to isControllerMenuOpen(),
+                "admin_tray_open" to adminTrayOpen,
+                "remaining_index" to remainingActionSelectedIndex,
+                "admin_index" to adminTraySelectedIndex,
+                "difficulty_open" to adminTrayDifficultyMenuOpen,
+                "difficulty_index" to adminTrayDifficultySelectedIndex,
+                "cheats_open" to adminTrayCheatsMenuOpen,
+            )
+
         fun isControllerMenuOpen(): Boolean = currentControllerMenuSurface() != ControllerMenuSurface.NONE
 
         fun cycleControllerMenu() {

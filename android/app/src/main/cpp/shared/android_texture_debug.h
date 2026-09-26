@@ -17,6 +17,7 @@ extern "C" {
 
 extern float g_font_rgb_override[3];
 extern int g_ogl_render_context;
+void android_texture_debug_draw_overlay(void);
 void android_texture_debug_set_target(const char *value);
 const char *android_texture_debug_get_target_display(void);
 int android_texture_debug_target_is_crosshair(void);

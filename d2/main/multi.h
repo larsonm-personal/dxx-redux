@@ -62,12 +62,12 @@ extern int multi_protocol; // set and determinate used protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
 #ifdef __ANDROID__
-#define MULTI_PROTO_VERSION 30076 // Original D1 static AI object records
+#define MULTI_PROTO_VERSION 30077 // Session Guidebot routing mode
 #define MULTI_PLAYER_DROP_LENGTH 114
 #define MULTI_SHIP_STATUS_LENGTH 84
 #define MULTI_COOP_RESTORE_LENGTH 102
 #else
-#define MULTI_PROTO_VERSION 30023 // Original D1 static AI object records
+#define MULTI_PROTO_VERSION 30024 // Session Guidebot routing mode
 #define MULTI_PLAYER_DROP_LENGTH 106
 #define MULTI_SHIP_STATUS_LENGTH 70
 #define MULTI_COOP_RESTORE_LENGTH 86
@@ -710,6 +710,7 @@ typedef struct netgame_info
 	ubyte						FullDeathSpew;
 	ubyte						PlayerSpewNoExpire;
 	ubyte						DuplicateEnergyShields;
+	ubyte GuidebotRouting;
 #ifdef __ANDROID__
 	ubyte CoopBriefings;
 	ubyte AllowSecretWarps;

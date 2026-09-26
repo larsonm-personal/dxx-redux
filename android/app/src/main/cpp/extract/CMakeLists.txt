@@ -100,7 +100,8 @@ if(MSVC)
 endif()
 
 # ── extract_cd ───────────────────────────────────────────────────────
-add_executable(extract_cd ${CMAKE_CURRENT_SOURCE_DIR}/extract_cd.c ${EXTRACT_SOURCES})
+add_executable(extract_cd ${CMAKE_CURRENT_SOURCE_DIR}/extract_cd.c
+                          ${CMAKE_CURRENT_SOURCE_DIR}/sha1.c ${EXTRACT_SOURCES})
 target_include_directories(extract_cd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ── test_sow_direct ─────────────────────────────────────────────────
@@ -232,16 +233,21 @@ add_test(
 # ── extract_gog ─────────────────────────────────────────────────────
 add_executable(
     extract_gog
-    ${CMAKE_CURRENT_SOURCE_DIR}/extract_gog.c ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract_gog.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sha1.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
 target_include_directories(extract_gog PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(extract_gog PRIVATE lzma_sdk_c ZLIB::ZLIB)
 
 add_executable(
     test_gog_fd
     ${CMAKE_CURRENT_SOURCE_DIR}/test_gog_fd.c ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c ${CMAKE_CURRENT_SOURCE_DIR}/sha1.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
 target_include_directories(test_gog_fd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(test_gog_fd PRIVATE lzma_sdk_c ZLIB::ZLIB)
 target_compile_definitions(test_gog_fd PRIVATE INNO_READER_TESTING=1)
@@ -326,6 +332,7 @@ set(SHARED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../shared")
 add_executable(
     fingerprint_cd
     ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_cd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sha1.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cd_read_contract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
     ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
@@ -618,6 +625,20 @@ add_executable(test_utf8_codec ${CMAKE_CURRENT_SOURCE_DIR}/test_utf8_codec.c
                                ${CMAKE_CURRENT_SOURCE_DIR}/../shared/utf8_codec.c)
 target_include_directories(test_utf8_codec PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
 add_test(NAME utf8_codec_tests COMMAND test_utf8_codec)
+add_executable(test_sha1 ${CMAKE_CURRENT_SOURCE_DIR}/test_sha1.c ${CMAKE_CURRENT_SOURCE_DIR}/sha1.c)
+if(MSVC)
+    target_compile_options(test_sha1 PRIVATE /W4)
+else()
+    target_compile_options(test_sha1 PRIVATE -Wall -Wextra -Werror)
+endif()
+add_test(NAME sha1_tests COMMAND test_sha1)
+add_test(
+    NAME cd_sha1_cli_tests
+    COMMAND
+        ${CMAKE_COMMAND} "-DEXTRACT_CD=$<TARGET_FILE:extract_cd>"
+        "-DFINGERPRINT_CD=$<TARGET_FILE:fingerprint_cd>" -P
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_cd_sha1.cmake)
+
 add_executable(test_cd_read_contract ${CMAKE_CURRENT_SOURCE_DIR}/test_cd_read_contract.c
                                      ${CMAKE_CURRENT_SOURCE_DIR}/cd_read_contract.c)
 target_include_directories(test_cd_read_contract PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

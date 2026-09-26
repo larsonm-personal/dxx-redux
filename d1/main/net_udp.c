@@ -22,6 +22,9 @@
 #include "timer.h"
 #include "newmenu.h"
 #include "key.h"
+#ifdef ANDROID
+#include "android_menu_navigation.h"
+#endif
 #include "gauges.h"
 #include "object.h"
 #include "dxxerror.h"
@@ -5536,6 +5539,13 @@ int load_preset_menu_handler( listbox *lb, d_event *event, void *userdata )
 	int citem = listbox_get_citem(lb);
 	char filename[PATH_MAX];
 
+#ifdef ANDROID
+	android_menu_key_event controller_key;
+	if (event->type == EVENT_JOYSTICK_BUTTON_DOWN && (event_joystick_get_button(event) == 2 || event_joystick_get_button(event) == 3) && android_menu_translate_button(event, &controller_key)) {
+		event = (d_event *)&controller_key;
+	}
+#endif
+
 	switch (event->type)
 	{
 		case EVENT_KEY_COMMAND:
@@ -5601,7 +5611,11 @@ int load_preset(newmenu *menu_settings)
 	// Sort by name
 	qsort(list, NumItems, sizeof(char *), (int (*)( const void *, const void * ))string_array_sort_func);
 
+#ifdef ANDROID
+	newmenu_listbox1("Select preset\nX: delete  Y: defaults", NumItems, list, 1, 0, load_preset_menu_handler, menu_settings);
+#else
 	newmenu_listbox1("Select preset\nCtrl+D to delete\nCtrl+R for defaults", NumItems, list, 1, 0, load_preset_menu_handler, menu_settings);
+#endif
 
 	return 1;
 }
@@ -9005,6 +9019,13 @@ static int show_game_rules_handler(window *wind, d_event *event, netgame_info *n
 	int label_color, value_color;
 	const char *ammo_style[] = {"Dupl", "Depl", "Drop", "Respawn"};
 	
+#ifdef ANDROID
+	android_menu_key_event controller_key;
+	if (android_menu_translate_button(event, &controller_key)) {
+		event = (d_event *)&controller_key;
+	}
+#endif
+
 	switch (event->type)
 	{
 		case EVENT_WINDOW_ACTIVATED:

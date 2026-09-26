@@ -1,1 +1,5 @@
 temp_game_logs/
+
+# Generated JVM metadata-module output
+/mission-metadata-core/bin/
+/mission-metadata-cli/bin/

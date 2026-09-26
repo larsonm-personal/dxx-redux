@@ -6,6 +6,8 @@
 #include "3d.h"
 #include "debug_tex_overlay.h"
 #include "gr.h"
+#include "gamefont.h"
+#include "palette.h"
 #include "ogl_init.h"
 #include "piggy.h"
 #include "strutil.h"
@@ -19,6 +21,39 @@ float g_font_rgb_override[3] = { -1.f, -1.f, -1.f };
 int g_ogl_render_context = 0;
 static char g_android_texture_debug_target_name[ANDROID_TEXTURE_DEBUG_TARGET_NAME_MAX] = { 0 };
 volatile int g_android_texture_debug_target_mode = ANDROID_TEXTURE_DEBUG_TARGET_CROSSHAIR;
+
+void android_texture_debug_draw_overlay(void)
+{
+	/* Debug texture overlay: draw accumulated labels from 3D rendering.
+	 * Green = hires PNG replacement, yellow = base game texture.
+	 * Uses direct RGB override to bypass lossy palette round-trip. */
+	if (g_debug_tex_overlay_active && g_debug_tex_label_count > 0) {
+		int i;
+		gr_set_current_canvas(NULL);
+		gr_set_curfont(GAME_FONT);
+		gr_set_fontcolor(BM_XRGB(63, 63, 0), -1); /* fallback palette color */
+		for (i = 0; i < g_debug_tex_label_count; i++) {
+			struct debug_tex_label *lbl = &g_debug_tex_labels[i];
+			if (lbl->name[0] == '\0')
+				continue;
+			if (lbl->is_hires) {
+				g_font_rgb_override[0] = 0.f;
+				g_font_rgb_override[1] = 1.f;
+				g_font_rgb_override[2] = 0.f;
+			} else {
+				g_font_rgb_override[0] = 1.f;
+				g_font_rgb_override[1] = 1.f;
+				g_font_rgb_override[2] = 0.f;
+			}
+			if (lbl->seg >= 0 && lbl->side >= 0 && lbl->face >= 0)
+				gr_printf(lbl->sx, lbl->sy, "%s [%d/%d/%d]",
+				          lbl->name, lbl->seg, lbl->side, lbl->face);
+			else
+				gr_printf(lbl->sx, lbl->sy, "%s", lbl->name);
+		}
+		g_font_rgb_override[0] = -1.f;
+	}
+}
 
 static void android_texture_debug_copy_string(char *dst, int dst_size,
                                               const char *src)

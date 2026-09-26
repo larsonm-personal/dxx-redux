@@ -34,7 +34,7 @@ internal object TouchLayoutSlotRepository {
         val slotSet = load(context)
         val slots = slotSet.slots.toMutableList()
         val activeIndex = slotSet.safeActiveIndex
-        slots[activeIndex] = slots[activeIndex].copy(value = TouchLayoutRepository.migrateForCurrentVersion(layout))
+        slots[activeIndex] = slots[activeIndex].copy(value = layout)
         val updated = normalizeSlotSet(ConfigSlotSet(activeIndex, slots), TouchLayoutRepository.defaultLayout(context))
         write(context, updated)
         TouchLayoutRepository.save(context, updated.activeSlot.value)
@@ -88,7 +88,7 @@ internal object TouchLayoutSlotRepository {
         val current = load(context)
         val slots =
             current.slots +
-                ConfigSlot(normalizeConfigSlotName(name), TouchLayoutRepository.migrateForCurrentVersion(sourceLayout))
+                ConfigSlot(normalizeConfigSlotName(name), sourceLayout)
         val updated =
             normalizeSlotSet(ConfigSlotSet(slots.lastIndex, slots), TouchLayoutRepository.defaultLayout(context))
         write(context, updated)
@@ -151,7 +151,7 @@ internal object TouchLayoutSlotRepository {
             if (slotObject.has("name") && slotObject.opt("name") !is String) return null
             val parsed = HumanReadableConfig.humanJsonToTouchLayout(layoutObject)
             if (parsed.warnings.isNotEmpty()) return null
-            val layout = parsed.value?.let { TouchLayoutRepository.migrateForCurrentVersion(it) } ?: return null
+            val layout = parsed.value ?: return null
             val name =
                 if (slotIndex == 0) {
                     DEFAULT_CONFIG_SLOT_NAME
@@ -195,7 +195,7 @@ internal object TouchLayoutSlotRepository {
                     } else {
                         normalizeConfigSlotName(slot.name, "slot ${slotIndex + 1}")
                     }
-                slot.copy(name = name, value = TouchLayoutRepository.migrateForCurrentVersion(slot.value))
+                slot.copy(name = name)
             }
         return ConfigSlotSet(slotSet.activeIndex.coerceIn(0, normalizedSlots.lastIndex), normalizedSlots)
     }

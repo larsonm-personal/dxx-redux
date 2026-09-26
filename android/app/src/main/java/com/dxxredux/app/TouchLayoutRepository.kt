@@ -7,7 +7,6 @@ import java.io.File
 
 internal const val DEFAULT_TOUCH_PRESET_NAME = "Touch Default"
 internal const val CONTROLLER_MENU_TOUCH_PRESET_NAME = "Controller Menus"
-internal const val MIN_SUPPORTED_TOUCH_LAYOUT_VERSION = 1
 internal const val CURRENT_TOUCH_LAYOUT_VERSION = 11
 
 internal fun defaultTouchPresetName(hasTouchscreen: Boolean): String =
@@ -29,7 +28,6 @@ internal fun isControllerMenuOnlyTouchLayout(layout: TouchLayout): Boolean =
 object TouchLayoutRepository {
     private const val TAG = "TouchLayoutRepository"
     private const val FILENAME = "touch_layout.json"
-    private const val LEGACY_BTN_CHEATS_MENU = 100
     private const val BUNDLED_DIR = "configs/touch"
     private const val USER_DIR = "configs/touch"
 
@@ -37,7 +35,7 @@ object TouchLayoutRepository {
         val file = File(context.filesDir, FILENAME)
         if (!file.exists()) return defaultLayout(context)
         return try {
-            migrateForCurrentVersion(TouchLayout.fromJson(JSONObject(file.readText())))
+            TouchLayout.fromJson(JSONObject(file.readText()))
         } catch (e: Exception) {
             Log.e(TAG, "Stored touch layout is invalid; leaving it unchanged and using the bundled default", e)
             runCatching { LauncherDebugLog.log("Stored touch layout could not be loaded: ${e.message}") }
@@ -45,233 +43,11 @@ object TouchLayoutRepository {
         }
     }
 
-    /** Apply migrations from older layout versions to CURRENT_VERSION. */
-    internal fun migrateForCurrentVersion(layout: TouchLayout): TouchLayout {
-        var migrated = layout
-        if (migrated.version < 2) {
-            migrated =
-                migrated.copy(
-                    version = 2,
-                    buttons =
-                        migrated.buttons.map { button ->
-                            if (button.binding == TouchBindings.BTN_GYRO_RECENTER &&
-                                !button.longPressEnabled &&
-                                button.longPressBinding < 0
-                            ) {
-                                button.copy(
-                                    longPressEnabled = true,
-                                    longPressBinding = TouchBindings.META_GYRO_TOGGLE,
-                                    longPressDurationMs = TouchBindings.DEFAULT_LONG_PRESS_DURATION_MS,
-                                )
-                            } else {
-                                button
-                            }
-                        },
-                )
-        }
-        if (migrated.version < 3) {
-            migrated =
-                migrated.copy(
-                    version = 3,
-                    radialMenus = migrated.radialMenus.map { migrateGuideWheelSecretSegment(it) },
-                )
-        }
-        if (migrated.version < 4) {
-            migrated =
-                migrated.copy(
-                    version = 4,
-                    buttons = migrated.buttons.mapNotNull { migrateLegacyCheatsButton(it) },
-                    radialMenus = migrated.radialMenus.map { migrateLegacyCheatsRadial(it) },
-                )
-        }
-        if (migrated.version < 5) {
-            migrated =
-                migrated.copy(
-                    version = 5,
-                    radialMenus = migrated.radialMenus.map { migrateGuideWheelNextGoalCenter(it) },
-                )
-        }
-        if (migrated.version < 6) {
-            migrated =
-                migrated.copy(
-                    version = 6,
-                    radialMenus = migrated.radialMenus.map { migrateGuideWheelActions(it) },
-                )
-        }
-        if (migrated.version < 7) {
-            migrated =
-                migrated.copy(
-                    version = 7,
-                    radialMenus = migrated.radialMenus.map { migrateGuideWheelWarpToMe(it) },
-                )
-        }
-        if (migrated.version < 8) {
-            migrated =
-                migrated.copy(
-                    version = 8,
-                    radialMenus = migrated.radialMenus.map { migrateGuideWheelUnexploredAction(it) },
-                )
-        }
-        if (migrated.version < 9) {
-            migrated =
-                migrated.copy(
-                    version = 9,
-                    radialMenus = migrated.radialMenus.map { migrateGuideWheelUnexploredAction(it) },
-                )
-        }
-        if (migrated.version < 10) {
-            migrated =
-                migrated.copy(
-                    version = 10,
-                    radialMenus = migrated.radialMenus.map { migrateGuideWheelUnexploredSlice(it) },
-                )
-        }
-        if (migrated.version < 11) {
-            migrated =
-                migrated.copy(
-                    version = 11,
-                    radialMenus = migrated.radialMenus.map { migrateGuideWheelWarpToMeLabel(it) },
-                )
-        }
-        if (migrated.version >= CURRENT_TOUCH_LAYOUT_VERSION) return migrated
-        return migrated.copy(version = CURRENT_TOUCH_LAYOUT_VERSION)
-    }
-
-    private fun migrateLegacyCheatsButton(button: ButtonControl): ButtonControl? {
-        if (button.binding == LEGACY_BTN_CHEATS_MENU) return null
-        if (button.longPressBinding != LEGACY_BTN_CHEATS_MENU) return button
-        return button.copy(longPressEnabled = false, longPressBinding = -1)
-    }
-
-    private fun migrateLegacyCheatsRadial(radial: RadialMenuControl): RadialMenuControl =
-        radial.copy(
-            segments = radial.segments.filter { it.binding != LEGACY_BTN_CHEATS_MENU },
-            centerBinding = if (radial.centerBinding == LEGACY_BTN_CHEATS_MENU) -1 else radial.centerBinding,
-        )
-
-    private fun migrateGuideWheelSecretSegment(radial: RadialMenuControl): RadialMenuControl {
-        if (radial.id != "Guide" ||
-            radial.segments.any { it.binding == TouchBindings.META_GUIDE_FIND_SECRET } ||
-            radial.segments.size >= 12
-        ) {
-            return radial
-        }
-        val secretSegment = RadialSegment("Secret", TouchBindings.META_GUIDE_FIND_SECRET)
-        val releaseIndex = radial.segments.indexOfFirst { it.binding == TouchBindings.META_GUIDE_RELEASE_CONTROL }
-        val segments =
-            if (releaseIndex >= 0) {
-                radial.segments.toMutableList().also { it.add(releaseIndex, secretSegment) }
-            } else {
-                radial.segments + secretSegment
-            }
-        return radial.copy(segments = segments)
-    }
-
-    private fun migrateGuideWheelNextGoalCenter(radial: RadialMenuControl): RadialMenuControl {
-        if (radial.id != "Guide" || radial.centerBinding != TouchBindings.META_GUIDE_CLEAR_GOAL) {
-            return radial
-        }
-        return radial.copy(
-            centerLabel = "Next",
-            centerBinding = TouchBindings.META_GUIDE_NEXT_GOAL,
-        )
-    }
-
-    private fun migrateGuideWheelActions(radial: RadialMenuControl): RadialMenuControl {
-        if (radial.id != "Guide") return radial
-        val segments =
-            radial.segments
-                .filter { it.binding != TouchBindings.META_GUIDE_RELEASE_CONTROL }
-                .toMutableList()
-        if (segments.none { it.binding == TouchBindings.META_GUIDE_NEXT_GOAL }) {
-            val releaseIndex = radial.segments.indexOfFirst { it.binding == TouchBindings.META_GUIDE_RELEASE_CONTROL }
-            val insertIndex = if (releaseIndex >= 0) releaseIndex.coerceAtMost(segments.size) else segments.size
-            segments.add(insertIndex, RadialSegment("Next", TouchBindings.META_GUIDE_NEXT_GOAL))
-        }
-        val clearCenter =
-            radial.centerBinding == TouchBindings.META_GUIDE_NEXT_GOAL ||
-                radial.centerBinding == TouchBindings.META_GUIDE_CLEAR_GOAL
-        return radial.copy(
-            segments = segments,
-            centerLabel = if (clearCenter) "" else radial.centerLabel,
-            centerBinding = if (clearCenter) -1 else radial.centerBinding,
-        )
-    }
-
-    private fun migrateGuideWheelWarpToMe(radial: RadialMenuControl): RadialMenuControl {
-        if (radial.id != "Guide" ||
-            radial.segments.any { it.binding == TouchBindings.META_GUIDE_WARP_TO_ME }
-        ) {
-            return radial
-        }
-        val segments = radial.segments.toMutableList()
-        val nextIndex = segments.indexOfFirst { it.binding == TouchBindings.META_GUIDE_NEXT_GOAL }
-        segments.add(
-            if (nextIndex >= 0) nextIndex else segments.size,
-            RadialSegment("Warp to Me", TouchBindings.META_GUIDE_WARP_TO_ME),
-        )
-        return radial.copy(segments = segments)
-    }
-
-    private fun migrateGuideWheelWarpToMeLabel(radial: RadialMenuControl): RadialMenuControl {
-        if (radial.id != "Guide") return radial
-        return radial.copy(
-            segments =
-                radial.segments.map { segment ->
-                    if (segment.binding == TouchBindings.META_GUIDE_WARP_TO_ME) {
-                        segment.copy(label = "Warp to Me")
-                    } else {
-                        segment
-                    }
-                },
-        )
-    }
-
-    private fun migrateGuideWheelUnexploredAction(radial: RadialMenuControl): RadialMenuControl {
-        if (radial.id != "Guide" ||
-            radial.centerBinding == TouchBindings.META_GUIDE_FIND_UNEXPLORED ||
-            radial.segments.any { it.binding == TouchBindings.META_GUIDE_FIND_UNEXPLORED }
-        ) {
-            return radial
-        }
-        if (radial.centerBinding < 0) {
-            return radial.copy(
-                centerLabel = "Unexplored",
-                centerBinding = TouchBindings.META_GUIDE_FIND_UNEXPLORED,
-            )
-        }
-        val segments = radial.segments.toMutableList()
-        val nextIndex = segments.indexOfFirst { it.binding == TouchBindings.META_GUIDE_NEXT_GOAL }
-        segments.add(
-            if (nextIndex >= 0) nextIndex else segments.size,
-            RadialSegment("Unexplored", TouchBindings.META_GUIDE_FIND_UNEXPLORED),
-        )
-        return radial.copy(segments = segments)
-    }
-
-    private fun migrateGuideWheelUnexploredSlice(radial: RadialMenuControl): RadialMenuControl {
-        if (radial.id != "Guide") return radial
-        val centerIsUnexplored = radial.centerBinding == TouchBindings.META_GUIDE_FIND_UNEXPLORED
-        val segments = radial.segments.toMutableList()
-        if (segments.none { it.binding == TouchBindings.META_GUIDE_FIND_UNEXPLORED }) {
-            val nextIndex = segments.indexOfFirst { it.binding == TouchBindings.META_GUIDE_NEXT_GOAL }
-            segments.add(
-                if (nextIndex >= 0) nextIndex else segments.size,
-                RadialSegment("Unexplored", TouchBindings.META_GUIDE_FIND_UNEXPLORED),
-            )
-        }
-        return radial.copy(
-            segments = segments,
-            centerLabel = if (centerIsUnexplored) "" else radial.centerLabel,
-            centerBinding = if (centerIsUnexplored) -1 else radial.centerBinding,
-        )
-    }
-
     fun save(
         context: Context,
         layout: TouchLayout,
     ) {
-        File(context.filesDir, FILENAME).writeText(migrateForCurrentVersion(layout).toJson().toString(2))
+        File(context.filesDir, FILENAME).writeText(layout.toJson().toString(2))
     }
 
     /** Default layout: first bundled preset, or a minimal hard-coded fallback. */
@@ -314,7 +90,7 @@ object TouchLayoutRepository {
             if (result.warnings.isNotEmpty()) {
                 Log.w(TAG, "Warnings loading $filename: ${result.warnings}")
             }
-            result.value?.let { migrateForCurrentVersion(it) }
+            result.value
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load bundled preset $filename", e)
             null
@@ -337,7 +113,7 @@ object TouchLayoutRepository {
                     if (result.warnings.isNotEmpty()) {
                         Log.w(TAG, "Warnings loading ${file.name}: ${result.warnings}")
                     }
-                    result.value?.let { migrateForCurrentVersion(it) }
+                    result.value
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to load user preset ${file.name}", e)
                     null

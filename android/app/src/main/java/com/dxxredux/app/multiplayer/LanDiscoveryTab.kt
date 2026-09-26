@@ -54,8 +54,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.dxxredux.app.BuildInfo
+import com.dxxredux.app.Button
 import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.ModManager
+import com.dxxredux.app.OutlinedButton
+import com.dxxredux.app.TextButton
 import com.dxxredux.app.VisualReplacementPolicy
 import com.dxxredux.app.formatBinarySize
 import com.dxxredux.app.lobby.LobbyService

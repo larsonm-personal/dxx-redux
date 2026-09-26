@@ -42,6 +42,7 @@
  */
 
 #include "inno_reader.h"
+#include "sha1.h"
 #include "physical_output_file.h"
 #include "game_file_extensions.h"
 
@@ -289,112 +290,6 @@ static uint32_t inno_crc32(const uint8_t *data, size_t len)
 	return (uint32_t) crc32(crc32(0, Z_NULL, 0), data, (uInt) len);
 }
 
-/* -- SHA-1 (RFC 3174, used by Inno 5.3.9 and newer) ---------------- */
-typedef struct {
-	uint32_t state[5];
-	uint64_t bytes;
-	uint8_t block[64];
-	size_t block_len;
-} inno_sha1_ctx_t;
-
-static uint32_t sha1_rotate_left(uint32_t value, unsigned bits)
-{
-	return (value << bits) | (value >> (32 - bits));
-}
-
-static void inno_sha1_transform(inno_sha1_ctx_t *ctx, const uint8_t block[64])
-{
-	uint32_t words[80];
-	for (int i = 0; i < 16; i++) {
-		words[i] = ((uint32_t) block[i * 4] << 24) |
-		           ((uint32_t) block[i * 4 + 1] << 16) |
-		           ((uint32_t) block[i * 4 + 2] << 8) |
-		           (uint32_t) block[i * 4 + 3];
-	}
-	for (int i = 16; i < 80; i++)
-		words[i] = sha1_rotate_left(words[i - 3] ^ words[i - 8] ^
-		                                words[i - 14] ^ words[i - 16],
-		                            1);
-
-	uint32_t a = ctx->state[0];
-	uint32_t b = ctx->state[1];
-	uint32_t c = ctx->state[2];
-	uint32_t d = ctx->state[3];
-	uint32_t e = ctx->state[4];
-	for (int i = 0; i < 80; i++) {
-		uint32_t f;
-		uint32_t k;
-		if (i < 20) {
-			f = (b & c) | ((~b) & d);
-			k = 0x5A827999U;
-		} else if (i < 40) {
-			f = b ^ c ^ d;
-			k = 0x6ED9EBA1U;
-		} else if (i < 60) {
-			f = (b & c) | (b & d) | (c & d);
-			k = 0x8F1BBCDCU;
-		} else {
-			f = b ^ c ^ d;
-			k = 0xCA62C1D6U;
-		}
-		uint32_t next = sha1_rotate_left(a, 5) + f + e + k + words[i];
-		e = d;
-		d = c;
-		c = sha1_rotate_left(b, 30);
-		b = a;
-		a = next;
-	}
-	ctx->state[0] += a;
-	ctx->state[1] += b;
-	ctx->state[2] += c;
-	ctx->state[3] += d;
-	ctx->state[4] += e;
-}
-
-static void inno_sha1_init(inno_sha1_ctx_t *ctx)
-{
-	ctx->state[0] = 0x67452301U;
-	ctx->state[1] = 0xEFCDAB89U;
-	ctx->state[2] = 0x98BADCFEU;
-	ctx->state[3] = 0x10325476U;
-	ctx->state[4] = 0xC3D2E1F0U;
-	ctx->bytes = 0;
-	ctx->block_len = 0;
-}
-
-static void inno_sha1_update(inno_sha1_ctx_t *ctx, const uint8_t *data, size_t len)
-{
-	ctx->bytes += len;
-	while (len > 0) {
-		size_t count = sizeof(ctx->block) - ctx->block_len;
-		if (count > len) count = len;
-		memcpy(ctx->block + ctx->block_len, data, count);
-		ctx->block_len += count;
-		data += count;
-		len -= count;
-		if (ctx->block_len == sizeof(ctx->block)) {
-			inno_sha1_transform(ctx, ctx->block);
-			ctx->block_len = 0;
-		}
-	}
-}
-
-static void inno_sha1_final(inno_sha1_ctx_t *ctx, uint8_t digest[20])
-{
-	uint64_t bit_count = ctx->bytes * 8;
-	uint8_t padding[72] = { 0x80 };
-	size_t padding_len = ctx->block_len < 56 ? 56 - ctx->block_len : 120 - ctx->block_len;
-	for (int i = 0; i < 8; i++)
-		padding[padding_len + i] = (uint8_t) (bit_count >> (56 - i * 8));
-	inno_sha1_update(ctx, padding, padding_len + 8);
-	for (int i = 0; i < 5; i++) {
-		digest[i * 4] = (uint8_t) (ctx->state[i] >> 24);
-		digest[i * 4 + 1] = (uint8_t) (ctx->state[i] >> 16);
-		digest[i * 4 + 2] = (uint8_t) (ctx->state[i] >> 8);
-		digest[i * 4 + 3] = (uint8_t) ctx->state[i];
-	}
-}
-
 /* -- MD5 (RFC 1321, used for Inno file integrity before 5.3.9) ----- */
 typedef struct {
 	uint32_t state[4];
@@ -520,7 +415,7 @@ typedef struct {
 	inno_checksum_type_t type;
 	union {
 		inno_md5_ctx_t md5;
-		inno_sha1_ctx_t sha1;
+		dxx_sha1_ctx_t sha1;
 	} state;
 } inno_checksum_ctx_t;
 
@@ -531,7 +426,7 @@ static int inno_checksum_init(inno_checksum_ctx_t *ctx,
 	if (type == INNO_CHECKSUM_MD5)
 		inno_md5_init(&ctx->state.md5);
 	else if (type == INNO_CHECKSUM_SHA1)
-		inno_sha1_init(&ctx->state.sha1);
+		dxx_sha1_init(&ctx->state.sha1);
 	else
 		return -1;
 	return 0;
@@ -543,7 +438,7 @@ static void inno_checksum_update(inno_checksum_ctx_t *ctx,
 	if (ctx->type == INNO_CHECKSUM_MD5)
 		inno_md5_update(&ctx->state.md5, data, len);
 	else
-		inno_sha1_update(&ctx->state.sha1, data, len);
+		dxx_sha1_update(&ctx->state.sha1, data, len);
 }
 
 static int inno_checksum_matches(inno_checksum_ctx_t *ctx,
@@ -560,7 +455,7 @@ static int inno_checksum_matches(inno_checksum_ctx_t *ctx,
 		inno_md5_final(&ctx->state.md5, digest);
 		digest_size = 16;
 	} else {
-		inno_sha1_final(&ctx->state.sha1, digest);
+		dxx_sha1_final(&ctx->state.sha1, digest);
 		digest_size = 20;
 	}
 	if (memcmp(digest, de->checksum, digest_size) != 0) {

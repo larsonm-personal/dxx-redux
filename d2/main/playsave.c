@@ -172,6 +172,7 @@ int new_player_config()
 	strcpy(PlayerCfg.GuidebotNameReal,"GUIDE-BOT");
 	PlayerCfg.HudMode = 0;
 	PlayerCfg.EscortHotKeys = 1;
+	PlayerCfg.GuidebotRouting = 1; // Enhanced, synchronized with guidebot_routing.h
 	PlayerCfg.PersistentDebris = 0;
 	PlayerCfg.PRShot = 0;
 	PlayerCfg.DemoRecordingIndicator = 0;
@@ -480,6 +481,8 @@ int read_player_d2x(char *filename)
 			{
 				if(!strcmp(word,"ESCORTHOTKEYS"))
 					PlayerCfg.EscortHotKeys = atoi(line);
+				if(!strcmp(word,"GUIDEBOTROUTING"))
+					PlayerCfg.GuidebotRouting = atoi(line) == 0 ? 0 : 1;
 				if(!strcmp(word,"PERSISTENTDEBRIS"))
 					PlayerCfg.PersistentDebris = atoi(line);
 				if(!strcmp(word,"PRSHOT"))
@@ -789,6 +792,7 @@ int write_player_d2x(char *filename)
 		PHYSFSX_printf(fout,"[end]\n");
 		PHYSFSX_printf(fout,"[toggles]\n");
 		PHYSFSX_printf(fout,"escorthotkeys=%i\n",PlayerCfg.EscortHotKeys);
+		PHYSFSX_printf(fout,"guidebotrouting=%i\n",PlayerCfg.GuidebotRouting);
 		PHYSFSX_printf(fout,"persistentdebris=%i\n",PlayerCfg.PersistentDebris);
 		PHYSFSX_printf(fout,"prshot=%i\n",PlayerCfg.PRShot);
 		PHYSFSX_printf(fout,"demorecordingindicator=%i\n",PlayerCfg.DemoRecordingIndicator);

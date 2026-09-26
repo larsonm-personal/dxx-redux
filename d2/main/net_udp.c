@@ -26,6 +26,9 @@
 #include "timer.h"
 #include "newmenu.h"
 #include "key.h"
+#ifdef ANDROID
+#include "android_menu_navigation.h"
+#endif
 #include "gauges.h"
 #include "object.h"
 #include "dxxerror.h"
@@ -3774,6 +3777,7 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 		buf[len] = Netgame.FullDeathSpew; len++;
 		buf[len] = Netgame.PlayerSpewNoExpire; len++;
 		buf[len] = Netgame.DuplicateEnergyShields; len++;
+		buf[len++] = Netgame.GuidebotRouting;
 #ifdef __ANDROID__
 		buf[len++] = info_upid == UPID_SYNC ? coop_briefing_sync_flags(Netgame.levelnum) : !!Netgame.CoopBriefings;
 		buf[len++] = Netgame.AllowSecretWarps;
@@ -4108,6 +4112,9 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		Netgame.FullDeathSpew = data[len]; len++;
 		Netgame.PlayerSpewNoExpire = data[len]; len++;
 		Netgame.DuplicateEnergyShields = data[len]; len++;
+		if (!guidebot_routing_valid(data[len]))
+			return 0;
+		Netgame.GuidebotRouting = data[len++];
 #ifdef __ANDROID__
 		briefing_flags = data[len++];
 		Netgame.CoopBriefings = (briefing_flags & 1) != 0;
@@ -4217,7 +4224,7 @@ static int net_udp_test_game_info_fence(void)
 	for (int sync = 0; sync < 2; ++sync) {
 		const int size = android_test_game_info_size[sync];
 		if (size < 64 || size > UPID_MAX_SIZE) return 0;
-		for (int mutation = 0; mutation < 5; ++mutation) {
+		for (int mutation = 0; mutation < 6; ++mutation) {
 			ubyte packet[UPID_MAX_SIZE], identity[ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE];
 			const int token_offset = size - 8 - ANDROID_NET_UDP_RECONNECT_GENERATION_SIZE - 4;
 			memcpy(packet, android_test_game_info[sync], size);
@@ -4231,6 +4238,8 @@ static int net_udp_test_game_info_fence(void)
 			if (mutation == 0) coop_world_visit_write(packet + size - 8, visit - 1);
 			if (mutation == 1) PUT_INTEL_INT(packet + token_offset, session ^ 1);
 			if (mutation == 2) packet[token_offset + 4] ^= 1;
+			/* GuidebotRouting precedes two briefing and four final settings */
+			if (mutation == 5) packet[token_offset - 1 - (sync ? 4 : 0) - 7] = 2;
 			int received_size = mutation == 3 ? size - 1 : mutation == 4 ? 7 : size;
 			if (net_udp_process_game_info(packet, received_size,
 			        before.players[master].protocol.udp.addr, 0, sync) ||
@@ -4250,7 +4259,7 @@ static int net_udp_test_game_info_fence(void)
 	}
 	con_printf(CON_NORMAL, "Android game info fence: visit=%llu rejected=%u preserved=1",
 	           (unsigned long long) visit, checked);
-	return checked == 10;
+	return checked == 12;
 }
 #endif
 
@@ -5624,6 +5633,7 @@ void netgame_set_defaults()
 	Netgame.FullDeathSpew = 0;
 	Netgame.PlayerSpewNoExpire = 0;
 	Netgame.DuplicateEnergyShields = 0;
+	Netgame.GuidebotRouting = (ubyte) guidebot_routing_default();
 #ifdef __ANDROID__
 	Netgame.CoopBriefings = 0;
 	Netgame.AllowSecretWarps = 0;
@@ -5646,6 +5656,13 @@ int load_preset_menu_handler( listbox *lb, d_event *event, void *userdata )
 	char **items = listbox_get_items(lb);
 	int citem = listbox_get_citem(lb);
 	char filename[PATH_MAX];
+
+#ifdef ANDROID
+	android_menu_key_event controller_key;
+	if (event->type == EVENT_JOYSTICK_BUTTON_DOWN && (event_joystick_get_button(event) == 2 || event_joystick_get_button(event) == 3) && android_menu_translate_button(event, &controller_key)) {
+		event = (d_event *)&controller_key;
+	}
+#endif
 
 	switch (event->type)
 	{
@@ -5712,7 +5729,11 @@ int load_preset(newmenu *menu_settings)
 	// Sort by name
 	qsort(list, NumItems, sizeof(char *), (int (*)( const void *, const void * ))string_array_sort_func);
 
+#ifdef ANDROID
+	newmenu_listbox1("Select preset\nX: delete  Y: defaults", NumItems, list, 1, 0, load_preset_menu_handler, menu_settings);
+#else
 	newmenu_listbox1("Select preset\nCtrl+D to delete\nCtrl+R for defaults", NumItems, list, 1, 0, load_preset_menu_handler, menu_settings);
+#endif
 
 	return 1;
 }
@@ -9251,6 +9272,13 @@ static int show_game_rules_handler(window *wind, d_event *event, netgame_info *n
 	int label_color, value_color;
 	const char *ammo_style[] = {"Dupl", "Depl", "Drop", "Respawn"};
 	
+#ifdef ANDROID
+	android_menu_key_event controller_key;
+	if (android_menu_translate_button(event, &controller_key)) {
+		event = (d_event *)&controller_key;
+	}
+#endif
+
 	switch (event->type)
 	{
 		case EVENT_WINDOW_ACTIVATED:

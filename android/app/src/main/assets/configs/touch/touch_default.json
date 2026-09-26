@@ -381,7 +381,6 @@
     "axisX": "Right Stick X",
     "axisY": "Right Stick Y",
     "axisZ": -1,
-    "deadzone": 0.22935780882835388,
     "deadzoneX": 0.22935780882835388,
     "deadzoneY": 0.22935780882835388,
     "deadzoneZ": 0.6000000238418579,

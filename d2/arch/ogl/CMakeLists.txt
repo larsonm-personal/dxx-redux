@@ -1,6 +1,7 @@
 add_library(${DXX_TARGET_PREFIX}arch_ogl STATIC
     gr.c
     ogl.c
+    ../../../android/app/src/main/cpp/shared/ogl_2d_batch.c
     )
 
 if(OPENGLMERGE)

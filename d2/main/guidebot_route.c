@@ -172,9 +172,290 @@ static point_seg Escort_path_parity_route[MAX_SEGMENTS * 2];
 static int Escort_path_parity_saved_path_lengths[MAX_OBJECTS];
 #endif
 
+static escort_path_recalc_limiter Escort_route_path_recalc_limiter;
+static int Escort_route_path_recalc_pending;
+static fix64 Escort_route_path_recalc_requested_time;
+static fix64 Escort_route_path_recalc_due_time;
+static unsigned int Escort_route_path_recalc_suppressed_count;
+static int Escort_route_path_recalc_goal_kind = -1;
+static int Escort_route_path_recalc_goal_seg = -1;
+static int Escort_route_path_recalc_goal_trigger = -1;
+static int Escort_route_path_recalc_goal_wall = -1;
+
+static void escort_route_path_recalc_cancel_pending(void)
+{
+	Escort_route_path_recalc_pending = 0;
+	Escort_route_path_recalc_requested_time = 0;
+	Escort_route_path_recalc_due_time = 0;
+	Escort_route_path_recalc_suppressed_count = 0;
+}
+
+static void escort_route_path_recalc_reset(void)
+{
+	escort_path_recalc_limiter_reset(&Escort_route_path_recalc_limiter);
+	escort_route_path_recalc_cancel_pending();
+}
+
+static void escort_route_path_recalc_sync_goal(void)
+{
+	if (!Escort_route_goal.active) {
+		escort_route_path_recalc_cancel_pending();
+		Escort_route_path_recalc_goal_kind = -1;
+		Escort_route_path_recalc_goal_seg = -1;
+		Escort_route_path_recalc_goal_trigger = -1;
+		Escort_route_path_recalc_goal_wall = -1;
+		return;
+	}
+	if (Escort_route_path_recalc_goal_kind == Escort_route_goal.objective_kind &&
+	    Escort_route_path_recalc_goal_seg == Escort_route_goal.target_seg &&
+	    Escort_route_path_recalc_goal_trigger == Escort_route_goal.objective_trigger &&
+	    Escort_route_path_recalc_goal_wall == Escort_route_goal.objective_wall)
+		return;
+	escort_route_path_recalc_cancel_pending();
+	Escort_route_path_recalc_goal_kind = Escort_route_goal.objective_kind;
+	Escort_route_path_recalc_goal_seg = Escort_route_goal.target_seg;
+	Escort_route_path_recalc_goal_trigger = Escort_route_goal.objective_trigger;
+	Escort_route_path_recalc_goal_wall = Escort_route_goal.objective_wall;
+}
+
+int escort_route_path_recalc_begin(const char *reason)
+{
+	long long next_allowed;
+	fix64 delay;
+
+	if (!guidebot_routing_is_enhanced())
+		return 1;
+	escort_route_path_recalc_sync_goal();
+	if (!Escort_route_goal.active)
+		return 1;
+	if (escort_path_recalc_limiter_allow(&Escort_route_path_recalc_limiter,
+	                                     GameTime64, F1_0, &next_allowed)) {
+		if (Escort_route_path_recalc_pending) {
+			delay = GameTime64 - Escort_route_path_recalc_requested_time;
+			if (delay < 0)
+				delay = 0;
+			debug_log(DLOG_GUIDEBOT,
+			          "path_recalc delayed_rerun executed reason=%s delay_ms=%lld suppressed=%u",
+			          reason, (long long) (delay * 1000 / F1_0),
+			          Escort_route_path_recalc_suppressed_count);
+			Escort_route_path_recalc_pending = 0;
+			Escort_route_path_recalc_suppressed_count = 0;
+		}
+		return 1;
+	}
+	if (!Escort_route_path_recalc_pending) {
+		Escort_route_path_recalc_pending = 1;
+		Escort_route_path_recalc_requested_time = GameTime64;
+		Escort_route_path_recalc_due_time = (fix64) next_allowed;
+		debug_log(DLOG_GUIDEBOT,
+		          "path_recalc delayed_rerun scheduled reason=%s limit=%d delay_ms=%lld",
+		          reason, ESCORT_PATH_RECALC_LIMIT_PER_SECOND,
+		          (long long) ((Escort_route_path_recalc_due_time - GameTime64) *
+		                       1000 / F1_0));
+	}
+	Escort_route_path_recalc_suppressed_count++;
+	return 0;
+}
+
+void escort_route_reset_navigation(void)
+{
+	level_metadata_invalidate_live_route_work();
+	escort_route_clear_goal();
+	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
+	escort_route_path_recalc_reset();
+	escort_route_path_recalc_sync_goal();
+	Escort_route_pending_event_mask = 0;
+	Escort_route_pending_audit_mask = 0;
+	Escort_route_deferred_live_event_mask = 0;
+	Escort_route_cache_improvement_pending = 0;
+	Escort_route_metadata_dirty = 1;
+	Escort_route_cache_poll_time = 0;
+	Escort_route_completion_check_time = 0;
+	Escort_route_progress_next_time = 0;
+	Escort_route_progress_signature = -1;
+	Escort_route_progress_stall_samples = 0;
+	Escort_route_avoid_from_seg = Escort_route_avoid_seg = -1;
+	Escort_route_avoid_from_seg2 = Escort_route_avoid_seg2 = -1;
+	Escort_route_avoid_trigger = Escort_route_avoid_wall = -1;
+}
+
+void escort_route_init_level(void)
+{
+	escort_route_path_recalc_reset();
+	Escort_route_path_recalc_goal_kind = -1;
+	Escort_route_path_recalc_goal_seg = -1;
+	Escort_route_path_recalc_goal_trigger = -1;
+	Escort_route_path_recalc_goal_wall = -1;
+	Escort_route_cache_poll_time = 0;
+	Escort_route_seen_revision = level_metadata_get_route_revision();
+	escort_route_clear_goal();
+	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
+	Escort_route_metadata_rescan_count = 0;
+	Escort_route_guidance_full_search_count = 0;
+	Escort_route_avoid_from_seg = -1;
+	Escort_route_avoid_seg = -1;
+	Escort_route_avoid_from_seg2 = -1;
+	Escort_route_avoid_seg2 = -1;
+	Escort_route_avoid_trigger = -1;
+	Escort_route_avoid_wall = -1;
+	Escort_route_progress_next_time = 0;
+	Escort_route_progress_signature = -1;
+	Escort_route_progress_seg = -1;
+	Escort_route_progress_path_index = -1;
+	Escort_route_progress_target_seg = -1;
+	Escort_route_progress_stall_samples = 0;
+	Escort_route_stall_recovery_count = 0;
+	Escort_route_ignored_nonowner_key_change_count = 0;
+	Escort_route_boss_move_invalidation_count = 0;
+	Escort_route_wall_generation = 0;
+	Escort_route_trigger_generation = 0;
+	Escort_route_object_generation = 0;
+	Escort_route_reactor_generation = 0;
+	Escort_route_automap_generation = 0;
+	Escort_route_pending_event_mask = 0;
+	Escort_route_pending_audit_mask = 0;
+	Escort_route_deferred_live_event_mask = 0;
+	Escort_route_event_notification_count = 0;
+	Escort_route_notification_coalesced_count = 0;
+	Escort_route_redundant_dirty_domain_count = 0;
+	Escort_route_event_coalesced_rescan_count = 0;
+	Escort_route_publish_latency_sample_count = 0;
+	Escort_route_publish_latency_last_ticks = 0;
+	Escort_route_publish_latency_max_ticks = 0;
+	Escort_route_first_dirty_notification_time = 0;
+	Escort_route_dirty_notification_time_valid = 0;
+	Escort_route_ignored_nonowner_event_count = 0;
+	Escort_route_audit_check_count = 0;
+	Escort_route_audit_discovery_count = 0;
+	Escort_route_audit_only_discovery_count = 0;
+	Escort_route_audit_work_total = 0;
+	Escort_route_audit_work_max = 0;
+	Escort_route_audit_deferred_count = 0;
+	Escort_route_certificate_check_count = 0;
+	Escort_route_certificate_failure_count = 0;
+	Escort_route_certificate_work_total = 0;
+	Escort_route_certificate_work_max = 0;
+	Escort_route_path_retained_count = 0;
+	Escort_route_path_replaced_count = 0;
+	Escort_route_invalid_path_stopped_count = 0;
+	Escort_route_audit_domain_cursor = 0;
+	Escort_route_audit_next_time = 0;
+	Escort_route_last_audit_rescan_time = 0;
+	Escort_route_last_audit_rescan_time_valid = 0;
+	Escort_route_completion_check_time = 0;
+	escort_route_reset_activated_triggers();
+#ifdef INTROSPECT_ON
+	Escort_route_notifications_suppressed = 0;
+	Escort_route_certificate_checks_suppressed = 0;
+#endif
+	escort_route_note_replan("level_start");
+	Escort_route_target_mode_restore_pending = 0;
+}
+
+static void escort_route_monitor_path_progress(object *objp, ai_local *ailp,
+                                               ai_static *aip)
+{
+	int doorway = -1;
+	int openable = -1;
+	int side = -1;
+	int target_seg;
+	int wall_num = -1;
+	fix target_distance;
+
+	if (!Escort_route_goal.active || ailp->mode != AIM_GOTO_OBJECT ||
+	    aip->hide_index < 0 || aip->cur_path_index < 0 ||
+	    aip->cur_path_index >= aip->path_length) {
+		Escort_route_progress_signature = -1;
+		Escort_route_progress_stall_samples = 0;
+		return;
+	}
+	if (GameTime64 < Escort_route_progress_next_time &&
+	    Escort_route_progress_next_time - GameTime64 < F1_0 * 2)
+		return;
+	Escort_route_progress_next_time = GameTime64 + F1_0;
+	target_seg = Point_segs[aip->hide_index + aip->cur_path_index].segnum;
+	target_distance = vm_vec_dist_quick(
+	    &objp->pos, &Point_segs[aip->hide_index + aip->cur_path_index].point);
+	if (target_seg != objp->segnum &&
+	    Escort_route_progress_signature == objp->signature &&
+	    Escort_route_progress_seg == objp->segnum &&
+	    Escort_route_progress_target_seg == target_seg)
+		Escort_route_progress_stall_samples++;
+	else
+		Escort_route_progress_stall_samples = 0;
+	Escort_route_progress_signature = objp->signature;
+	Escort_route_progress_seg = objp->segnum;
+	Escort_route_progress_path_index = aip->cur_path_index;
+	Escort_route_progress_target_seg = target_seg;
+	if (Escort_route_progress_stall_samples < 7)
+		return;
+
+	if (Escort_route_avoid_seg < 0) {
+		Escort_route_avoid_from_seg = objp->segnum;
+		Escort_route_avoid_seg = target_seg;
+	} else if (objp->segnum != Escort_route_avoid_from_seg ||
+	           target_seg != Escort_route_avoid_seg) {
+		Escort_route_avoid_from_seg2 = objp->segnum;
+		Escort_route_avoid_seg2 = target_seg;
+	}
+	Escort_route_avoid_trigger = Escort_route_goal.objective_trigger;
+	Escort_route_avoid_wall = Escort_route_goal.objective_wall;
+	Escort_route_progress_stall_samples = 0;
+	Escort_route_stall_recovery_count++;
+	if (target_seg >= 0 && target_seg <= Highest_segment_index) {
+		side = find_connect_side(&Segments[target_seg], &Segments[objp->segnum]);
+		if (side >= 0) {
+			wall_num = Segments[objp->segnum].sides[side].wall_num;
+			doorway = WALL_IS_DOORWAY(&Segments[objp->segnum], side);
+			openable = ai_door_is_openable(objp, &Segments[objp->segnum], side);
+		}
+	}
+	debug_log(DLOG_GUIDEBOT,
+	          "recovery stalled_edge obj=%d seg=%d avoid_edge=%d>%d avoid_edge2=%d>%d goal_seg=%d "
+	          "path_index=%d target_dist=%d side=%d wall=%d doorway=0x%x openable=%d "
+	          "wall_type=%d wall_state=%d wall_flags=0x%x wall_trigger=%d size=%d count=%u",
+	          (int) (objp - Objects), objp->segnum,
+	          Escort_route_avoid_from_seg, Escort_route_avoid_seg,
+	          Escort_route_avoid_from_seg2, Escort_route_avoid_seg2,
+	          Escort_route_goal.target_seg, aip->cur_path_index, target_distance,
+	          side, wall_num, doorway, openable,
+	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].type : -1,
+	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].state : -1,
+	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].flags : 0,
+	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].controlling_trigger : -1,
+	          objp->size,
+	          Escort_route_stall_recovery_count);
+	if (!escort_route_path_recalc_begin("stalled_edge"))
+		return;
+	Escort_last_path_created = GameTime64;
+	escort_create_path_to_goal(objp);
+}
+
+void escort_route_frame(object *objp, fix dist_to_player, int player_visibility)
+{
+	ai_static *aip = &objp->ctype.ai_info;
+	ai_local *ailp = &Ai_local_info[objp - Objects];
+	escort_update_navigation_liveness(objp, ailp);
+	if (!guidebot_routing_is_enhanced())
+		return;
+	escort_route_monitor_path_progress(objp, ailp, aip);
+	escort_trace_navigation(objp, ailp, aip, dist_to_player, player_visibility);
+	escort_route_path_recalc_sync_goal();
+	if (Escort_route_path_recalc_pending && ailp->mode == AIM_GOTO_OBJECT &&
+	    GameTime64 >= Escort_route_path_recalc_due_time) {
+		if (!escort_goal_is_pathable(Escort_goal_object))
+			Escort_goal_object = escort_set_goal_object();
+		if (escort_goal_is_pathable(Escort_goal_object) &&
+		    escort_route_path_recalc_begin("delayed_rerun")) {
+			ailp->mode = AIM_GOTO_OBJECT;
+			escort_create_path_to_goal(objp);
+		}
+	}
+}
+
 int escort_route_follows_objective(const object *objp)
 {
-	return objp && objp->type == OBJ_ROBOT && Robot_info[objp->id].companion &&
+	return guidebot_routing_is_enhanced() && objp && objp->type == OBJ_ROBOT && Robot_info[objp->id].companion &&
 	       Escort_route_goal.active && Ai_local_info[objp - Objects].mode == AIM_GOTO_OBJECT;
 }
 
@@ -345,6 +626,8 @@ void escort_trace_navigation_reset(const char *reason, object *objp,
 
 void escort_route_set_target_mode(int target_mode)
 {
+	if (!guidebot_routing_is_enhanced())
+		target_mode = ESCORT_ROUTE_TARGET_END_OF_LEVEL;
 	if (Escort_route_target_mode != target_mode)
 		level_metadata_invalidate_live_route_work();
 	Escort_route_target_mode = target_mode;
@@ -354,6 +637,8 @@ void escort_route_set_target_mode(int target_mode)
 
 void escort_route_note_replan(const char *reason)
 {
+	if (!guidebot_routing_is_enhanced())
+		return;
 #ifdef __ANDROID__
 	guidebot_info_event(reason, reason && (strstr(reason, "stall") || strstr(reason, "fail") || strstr(reason, "invalid")));
 #endif
@@ -478,6 +763,8 @@ void escort_route_record_event(
     unsigned int *generation,
     int matches_objective)
 {
+	if (!guidebot_routing_is_enhanced())
+		return;
 	int local_authority;
 
 #ifdef INTROSPECT_ON
@@ -1570,6 +1857,8 @@ int escort_route_select_next_goal(
 		*selected_index = -1;
 	if (candidate)
 		escort_route_goal_initialize(candidate);
+	if (!guidebot_routing_is_enhanced())
+		return ESCORT_GOAL_UNSPECIFIED;
 	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED &&
 	    !Escort_unexplored_route_target.active) {
 		return ESCORT_GOAL_UNSPECIFIED;
@@ -1633,12 +1922,16 @@ int Escort_route_logged_readiness = -1;
 
 int escort_route_metadata_pending(void)
 {
+	if (!guidebot_routing_is_enhanced())
+		return 0;
 	return level_metadata_get_route_readiness() ==
 	       LEVEL_METADATA_READINESS_CALCULATING;
 }
 
 int escort_route_next_waypoint_pending(void)
 {
+	if (!guidebot_routing_is_enhanced())
+		return 0;
 	const int readiness = level_metadata_get_route_readiness();
 
 	if (readiness == LEVEL_METADATA_READINESS_CALCULATING)
@@ -1659,6 +1952,8 @@ int escort_get_route_cache_improvement_pending(void)
 
 void escort_route_poll_pending_cache(void)
 {
+	if (!guidebot_routing_is_enhanced())
+		return;
 	const int readiness = level_metadata_get_route_readiness();
 	const fix64 now = timer_query();
 	const unsigned int revision = level_metadata_get_route_revision();
@@ -1734,6 +2029,8 @@ static void escort_route_publish_goal(const escort_route_goal *candidate)
 
 int escort_route_next_goal(void)
 {
+	if (!guidebot_routing_is_enhanced())
+		return ESCORT_GOAL_UNSPECIFIED;
 	escort_route_goal candidate;
 	int route_goal = escort_route_select_next_goal(&candidate, NULL);
 	int cache_improvement = Escort_route_cache_improvement_pending;
@@ -1774,6 +2071,8 @@ int escort_route_next_goal(void)
 
 int escort_route_adopt_exit_command(void)
 {
+	if (!guidebot_routing_is_enhanced())
+		return 0;
 	int route_goal;
 
 	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_EXIT);
@@ -1798,6 +2097,8 @@ int escort_route_adopt_exit_command(void)
  * Reuse the segment planner only on a slow cadence; the escort owns movement */
 int escort_route_prepare_hostage(object *objp)
 {
+	if (!guidebot_routing_is_enhanced())
+		return -1;
 	int reachable = exists_in_mine(objp->segnum, OBJ_HOSTAGE, -1, -1);
 	if (reachable != -2) {
 		escort_route_clear_goal();
@@ -1854,6 +2155,8 @@ int escort_route_prepare_hostage(object *objp)
 
 void escort_route_refresh_metadata(void)
 {
+	if (!guidebot_routing_is_enhanced())
+		return;
 #ifdef NETWORK
 	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num)
 		return;
@@ -1908,6 +2211,8 @@ void escort_route_refresh_metadata(void)
 
 void escort_route_stop_invalid_path(void)
 {
+	if (!guidebot_routing_is_enhanced())
+		return;
 	object *objp;
 	ai_local *ailp;
 	ai_static *aip;
@@ -1946,6 +2251,8 @@ static int escort_route_goal_semantic_equal(
 
 void escort_route_monitor_completion(void)
 {
+	if (!guidebot_routing_is_enhanced())
+		return;
 	if (Escort_special_goal == ESCORT_GOAL_HOSTAGE) {
 		/* Continue budgeted work without replacing the live movement path */
 		if (escort_route_has_local_authority() &&
@@ -2204,3 +2511,76 @@ int escort_route_physical_target(object *objp, int goal_seg, int max_depth)
 #ifdef __ANDROID__
 #include "guidebot_info_overlay_impl.h"
 #endif
+
+/* Enhanced fallback also serves builds without the live metadata planner */
+extern int exists_in_mine(int start_seg, int objtype, int objid, int special);
+extern int find_exit_segment(void);
+
+static int escort_key_exists(int powerup_id)
+{
+	return exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, powerup_id, -1) != -1;
+}
+
+static int escort_reactor_exists(void)
+{
+	int i;
+
+	for (i=0; i<=Highest_object_index; i++)
+		if (Objects[i].type == OBJ_CNTRLCEN && !(Objects[i].flags & OF_SHOULD_BE_DEAD))
+			return 1;
+
+	for (i=0; i<=Highest_segment_index; i++)
+		if (Segment2s[i].special == SEGMENT_IS_CONTROLCEN)
+			return 1;
+
+	return 0;
+}
+
+int escort_enhanced_goal_object(int key_flags)
+{
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
+	int route_goal;
+#endif
+
+	if (Escort_special_goal != -1) {
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
+		if (Escort_special_goal == ESCORT_GOAL_HOSTAGE)
+			return ESCORT_GOAL_HOSTAGE;
+		escort_route_clear_goal();
+#endif
+		return ESCORT_GOAL_UNSPECIFIED;
+	}
+
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
+	escort_route_refresh_metadata();
+	route_goal = escort_route_next_goal();
+	if (route_goal != ESCORT_GOAL_UNSPECIFIED)
+		return route_goal;
+	if (escort_route_next_waypoint_pending())
+		return ESCORT_GOAL_UNSPECIFIED;
+	if (Escort_route_target_mode != ESCORT_ROUTE_TARGET_END_OF_LEVEL)
+		return ESCORT_GOAL_UNSPECIFIED;
+#endif
+	if ((key_flags & PLAYER_FLAGS_RED_KEY) == 0) {
+		if ((key_flags & (PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_GOLD_KEY)) == 0) {
+			if (escort_key_exists(POW_KEY_BLUE))
+				return ESCORT_GOAL_BLUE_KEY;
+			if (escort_key_exists(POW_KEY_GOLD))
+				return ESCORT_GOAL_GOLD_KEY;
+		} else if ((key_flags & PLAYER_FLAGS_GOLD_KEY) == 0) {
+			if (escort_key_exists(POW_KEY_GOLD))
+				return ESCORT_GOAL_GOLD_KEY;
+		}
+		if (escort_key_exists(POW_KEY_RED))
+			return ESCORT_GOAL_RED_KEY;
+	}
+
+	if (Control_center_destroyed == 0) {
+		if (Num_boss_teleport_segs)
+			return ESCORT_GOAL_BOSS;
+		else if (escort_reactor_exists())
+			return ESCORT_GOAL_CONTROLCEN;
+	}
+
+	return (Control_center_destroyed || find_exit_segment() != -1) ? ESCORT_GOAL_EXIT : ESCORT_GOAL_CONTROLCEN;
+}

@@ -173,6 +173,7 @@ static void input_demo_fill_extra_player_cfg(
 {
 #ifdef DXX_BUILD_DESCENT_II
 	settings->player_cfg.has_headlight_active_default = 1;
+	settings->player_cfg.guidebot_routing_mode = (uint8_t) guidebot_routing_mode();
 	settings->player_cfg.headlight_active_default =
 	    PlayerCfg.HeadlightActiveDefault;
 #else

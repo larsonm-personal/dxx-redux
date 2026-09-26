@@ -1597,12 +1597,12 @@ void cockpit_decode_alpha(grs_bitmap *bm)
 		}
 	}
 #ifdef OGL
-	ogl_freebmtexture(bm);
+	ogl_freebmtexture(&deccpt);
 #endif
 	gr_init_bitmap (&deccpt, 0, 0, 0, bm->bm_w, bm->bm_h, bm->bm_w, cockpitbuf);
 	gr_set_transparent(&deccpt,1);
 #ifdef OGL
-	ogl_ubitmapm_cs (0, 0, -1, -1, &deccpt, 255, F1_0); // render one time to init the texture
+	ogl_loadbmtexture_f(&deccpt, GameCfg.TexFilt, NULL);
 #endif
 	if (WinBoxOverlay[0] != NULL)
 		gr_free_sub_bitmap(WinBoxOverlay[0]);
@@ -1656,6 +1656,7 @@ void draw_energy_bar(int energy)
 
 	gr_setcolor(BM_XRGB(0,0,0));
 
+	gr_begin_2d_batch();
 	if (energy < 100)
 		for (y=0; y < HUD_SCALE_Y(LEFT_ENERGY_GAUGE_H); y++) {
 			x1 = HUD_SCALE_X(LEFT_ENERGY_GAUGE_H - 2) - y*(aplitscale);
@@ -1667,12 +1668,14 @@ void draw_energy_bar(int energy)
 			if (x2 > x1) gr_uline( i2f(x1+HUD_SCALE_X(LEFT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(LEFT_ENERGY_GAUGE_Y)), i2f(x2+HUD_SCALE_X(LEFT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(LEFT_ENERGY_GAUGE_Y)) );
 		}
 
+	gr_end_2d_batch();
 	gr_set_current_canvas( NULL );
 
 	// Draw right energy bar
 	PIGGY_PAGE_IN(Gauges[GAUGE_ENERGY_RIGHT]);
 	hud_bitblt (HUD_SCALE_X(RIGHT_ENERGY_GAUGE_X), HUD_SCALE_Y(RIGHT_ENERGY_GAUGE_Y), &GameBitmaps[Gauges[GAUGE_ENERGY_RIGHT].index]);
 
+	gr_begin_2d_batch();
 	if (energy < 100)
 		for (y=0; y < HUD_SCALE_Y(RIGHT_ENERGY_GAUGE_H); y++) {
 			x1 = HUD_SCALE_X(RIGHT_ENERGY_GAUGE_W - RIGHT_ENERGY_GAUGE_H + 2 ) + y*(aplitscale) - not_energy;
@@ -1684,6 +1687,7 @@ void draw_energy_bar(int energy)
 			if (x2 > x1) gr_uline( i2f(x1+HUD_SCALE_X(RIGHT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(RIGHT_ENERGY_GAUGE_Y)), i2f(x2+HUD_SCALE_X(RIGHT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(RIGHT_ENERGY_GAUGE_Y)) );
 		}
 
+	gr_end_2d_batch();
 	gr_set_current_canvas( NULL );
 }
 

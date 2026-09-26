@@ -1,4 +1,6 @@
 // TEST: GLES compatibility shim VBO-backed array offsets
+// Also compares immediate and batched 2D framebuffer pixels, including overflow,
+// empty batches, mixed line/rectangle order, gradients, and alpha blending
 [
     {"_info": {
         "games": ["d1", "d2"],

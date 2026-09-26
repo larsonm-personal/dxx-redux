@@ -71,7 +71,16 @@ available frame field and diagnostic is compared with explicit engine/storage
 mappings described below. Terminal player values are never
 copied into an expectation. Missing/truncated evidence is not a pass
 
-The output also archives the working source patch and runner sources. State-trace
+The output also archives the working source patch and a frozen harness under
+`harness/android/`. Both the Python controller and the PowerShell replay runner
+execute from that copy, including the runner's platform, menu, compatibility and
+retention helpers. `harness.json` lists their hashes; staging races, missing
+dependencies or later changes to the staged files invalidate the capture.
+Live workspace edits do not replace the executed scripts. The runner receives
+the original repository root explicitly for data/output paths and uses the
+supplied staged data bank without regenerating the workspace data index.
+
+State-trace
 metadata describes the recording in both engines; terminal results identify the
 executing engine. RNG reports retain context differences in their strict verdict
 and separately show the first value/timing/count difference, so an annotation

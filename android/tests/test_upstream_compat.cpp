@@ -56,6 +56,7 @@ extern fix Camera_to_player_dist_goal;
 #include "gamemine.h"
 #include "gamesave.h"
 #include "gauges.h"
+void cockpit_decode_alpha(grs_bitmap *bm);
 #include "hash.h"
 #include "iff.h"
 #include "laser.h"
@@ -83,6 +84,7 @@ extern fix Camera_to_player_dist_goal;
 #include "secretarea.h"
 #include "state.h"
 #ifdef DXX_BUILD_DESCENT_II
+int read_hamfile(void);
 void state_object_to_object_rw(object *obj, object_rw *saved);
 void state_object_rw_to_object(object_rw *saved, object *obj, int native_ai_format);
 #endif
@@ -497,6 +499,16 @@ static void test_menu_png()
 	require(inside[0] == 0 && inside[1] == 0 && inside[2] == 0 && outside[0] >= 250, "3D clear affects only the current subview in both engines");
 	glDisable(GL_SCISSOR_TEST);
 	gr_set_current_canvas(nullptr);
+	// Preparing the camera surround must not paint over gauges already drawn
+	glClearColor(0, 1, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
+	ubyte cockpit_before[3], cockpit_after[3];
+	glReadPixels(0, 0, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, cockpit_before);
+	cockpit_decode_alpha(stock);
+	glReadPixels(0, 0, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, cockpit_after);
+	require(std::memcmp(cockpit_before, cockpit_after, sizeof(cockpit_before)) == 0 && glGetError() == GL_NO_ERROR,
+	        "cockpit overlay preparation preserves the framebuffer in both engines");
+	close_gauges();
 	char filename[] = "scores.pcx";
 	require(pcx_write_bitmap(filename, stock, palette) == PCX_ERROR_NONE, "write stock menu fallback");
 	gr_free_bitmap(stock);
@@ -4660,8 +4672,6 @@ static void test_d1_monitors()
 	Effects[2].dest_bm_num = -1;
 	Effects[2].vc.frames[0].index = 8;
 	Effects[2].vc.frames[1].index = 9;
-	const eclip original_effect = Effects[0];
-	const eclip original_lava = Effects[2];
 	for (int pass = 0; pass < 2; ++pass) {
 		for (int i = 0; i < 10; ++i) {
 			gr_init_bitmap(&GameBitmaps[i], BM_LINEAR, 0, 0, 2, 2, 2, stock_pixels[i]);
@@ -4688,28 +4698,6 @@ static void test_d1_monitors()
 			require(piggy_bitmap_get_offset(i) == 100 + i && piggy_bitmap_get_file_flags(i) == BM_FLAG_TRANSPARENT, "protected monitor paging state preserved");
 		}
 		require(GameBitmaps[4].bm_data[0] == 12 && GameBitmaps[5].bm_data == GameBitmaps[4].bm_data, "ordinary walls and unprotected animation clones still replaced");
-		d1_in_d2_apply_effects(1);
-		d1_in_d2_asset_stats stats = {};
-		d1_in_d2_get_stats(&stats);
-		require(GameBitmaps[8].bm_data[0] == 13 && GameBitmaps[9].bm_data[0] == 14, "relocated lava effect loads D1 pixels into the mapped D2 animation slots");
-		require(stats.effect_frames_applied == 4 && stats.effect_frames_skipped == 0, "dedicated D1 effect loader restores monitor and relocated lava frames");
-		require(GameBitmaps[1].bm_data[0] == 13 && GameBitmaps[2].bm_data[0] == 14, "D1 animation frame pixels restored");
-		require(GameBitmaps[3].bm_data == stock_pixels[3], "destroyed monitor remains protected after frame restoration");
-		init_special_effects();
-		Effects[0].frame_count = 0;
-		FrameTime = F1_0 / 4 + 1;
-		do_special_effects();
-		require(Textures[0].index == 2 && GameBitmaps[Textures[0].index].bm_data[0] == 14, "monitor animation selects restored D1 frame");
-		require(Textures[409].index == 9 && GameBitmaps[Textures[409].index].bm_data[0] == 14, "lava animation continues using restored D1 colors");
-		Effects[0].flags = EF_ONE_SHOT;
-		Effects[0].segnum = 0;
-		Effects[0].sidenum = 0;
-		Segments[0].sides[0].tmap_num2 = 0x4000 | 2;
-		do_special_effects();
-		require(Segments[0].sides[0].tmap_num2 == (0x4000 | 1) && GameBitmaps[Textures[1].index].bm_data[0] == 43, "completed monitor effect selects protected destroyed image and retains orientation");
-		d1_in_d2_apply_effects(0);
-		require(std::memcmp(&Effects[0], &original_effect, sizeof(eclip)) == 0, "leaving D1 emulation restores original D2 effect");
-		require(std::memcmp(&Effects[2], &original_lava, sizeof(eclip)) == 0, "leaving D1 restores relocated effects beyond the D1 effect count");
 		Textures[0].index = 1;
 		if (pass == 1) {
 			// A new PIG or custom image can replace the slot before arena cleanup
@@ -4946,6 +4934,9 @@ static void check_profile_cockpit(bool d1)
 	Screen_mode = SCREEN_GAME;
 	Game_screen_mode = SM(640, 480);
 	GameCfg.TexFilt = 0;
+	// Restore the level palette after the preceding menu presentation checks
+	load_palette(Current_level_palette, 0, 1);
+	gr_palette_load(gr_palette);
 	Players[Player_num].energy = 70 * F1_0;
 	Players[Player_num].shields = 80 * F1_0;
 	Players[Player_num].flags = PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_GOLD_KEY | PLAYER_FLAGS_RED_KEY | PLAYER_FLAGS_QUAD_LASERS;
@@ -4974,8 +4965,8 @@ static void check_profile_cockpit(bool d1)
 		if (mode != CM_REAR_VIEW) render_gauges();
 		require(glGetError() == GL_NO_ERROR, "cockpit and gauge draw uses valid graphics resources");
 		std::fprintf(stderr, "Cockpit mode %d: pixels\n", mode);
-		if (d1 && mode == CM_FULL_COCKPIT) {
-			grs_bitmap *key = &GameBitmaps[Gauges[24].index];
+		if (mode == CM_FULL_COCKPIT) {
+			grs_bitmap *key = &GameBitmaps[(d1 ? Gauges[24] : Gauges_hires[24]).index];
 			if (key->bm_flags & BM_FLAG_RLE) key = rle_expand_texture(key);
 			int checked = 0;
 			for (int y = 0; y < key->bm_h; ++y)
@@ -4983,9 +4974,14 @@ static void check_profile_cockpit(bool d1)
 					const int color = key->bm_data[y * key->bm_rowsize + x];
 					if (color == TRANSPARENCY_COLOR) continue;
 					ubyte pixel[3];
-					glReadPixels(int((45 + x + .5) * 2), 479 - int((152 + y + .5) * 2.4), 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
-					for (int c = 0; c < 3; ++c)
-						require(std::abs(int(pixel[c]) - int(gr_palette[color * 3 + c]) * 4) <= 3, "D1 key gauge renders original pixels at its original left-side position");
+					glReadPixels(d1 ? int((45 + x + .5) * 2) : 535 + x,
+					             479 - (d1 ? int((152 + y + .5) * 2.4) : 374 + y), 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
+					for (int c = 0; c < 3; ++c) {
+						if (std::abs(int(pixel[c]) - int(gr_palette[color * 3 + c]) * 4) > 3)
+							std::fprintf(stderr, "D%d key (%d,%d) palette index %d channel %d: actual %u palette %u current %u player %d mode %d\n",
+							             d1 ? 1 : 2, x, y, color, c, pixel[c], gr_palette[color * 3 + c], gr_current_pal[color * 3 + c], Player_num, Game_mode);
+						require(std::abs(int(pixel[c]) - int(gr_palette[color * 3 + c]) * 4) <= 3, "key gauge renders original pixels at its profile's source position");
+					}
 					++checked;
 				}
 			require(checked > 5, "key placement verification covers opaque source pixels");
@@ -6097,6 +6093,71 @@ static void test_d1_custom_definitions()
 	Current_mission = saved_mission;
 }
 
+static void test_d1_generation_effects(const bytes &base_pig, size_t directory)
+{
+	// Keep the complete source tables; add a second bitmap and a native effect
+	bytes pig(base_pig.begin(), base_pig.begin() + directory);
+	set_int(pig, 4, 2);
+	set_short(pig, 10, 2);
+	const size_t effects = 8 + 800 * 28 + 500 + 4 + 70 * 82;
+	set_int(pig, effects, 1);
+	const size_t effect = effects + 4;
+	set_int(pig, effect, F1_0 / 2);
+	set_int(pig, effect + 4, 2);
+	set_int(pig, effect + 8, F1_0 / 4);
+	set_short(pig, effect + 18, 1);
+	set_short(pig, effect + 20, 2);
+	set_short(pig, effect + 90, 0);
+	set_short(pig, effect + 92, -1);
+	set_int(pig, effect + 98, -1);
+	set_int(pig, effect + 102, 1);
+	append_int(pig, 2);
+	append_int(pig, 1);
+	bytes image(base_pig.begin() + directory + 8, base_pig.begin() + directory + 25);
+	append(pig, image);
+	std::memcpy(image.data(), "second", 6);
+	set_int(image, 13, 4);
+	append(pig, image);
+	bytes sound(base_pig.begin() + directory + 25, base_pig.begin() + directory + 45);
+	set_int(sound, 16, 8);
+	append(pig, sound);
+	append(pig, bytes{ 21, 21, 21, 21, 22, 22, 22, 22, 5, 6, 7, 8 });
+	write_fixture("descent.pig", pig);
+	const char *error = nullptr;
+	d1_asset_generation *prepared = d1_in_d2_read_assets("descent.pig", "source.256", &error);
+	require(prepared && d1_in_d2_publish_assets(prepared, &error), error ? error : "publish native effect definitions and images together");
+	require(Num_effects == 1 && Effects[0].changing_wall_texture == 0 && Effects[0].dest_bm_num == 1 &&
+	            Effects[0].vc.num_frames == 2 && Effects[0].vc.frames[1].index == 2,
+	        "native effects retain their full source animation and texture namespace");
+	const fix saved_frame_time = FrameTime;
+	const short saved_overlay = Segments[0].sides[0].tmap_num2;
+	init_special_effects();
+	FrameTime = F1_0 / 4 + 1;
+	do_special_effects();
+	require(Textures[0].index == 2 && GameBitmaps[Textures[0].index].bm_data[0] == 22, "published effect advances to the second original frame");
+	Effects[0].flags = EF_ONE_SHOT;
+	Effects[0].segnum = Effects[0].sidenum = 0;
+	Segments[0].sides[0].tmap_num2 = 0x4000;
+	do_special_effects();
+	require(Segments[0].sides[0].tmap_num2 == (0x4000 | 1) && !(Effects[0].flags & EF_ONE_SHOT) &&
+	            GameBitmaps[Textures[1].index].bm_data[0] == 22,
+	        "native one-shot completion retains overlay orientation and selects the source destroyed image");
+	FrameTime = saved_frame_time;
+	Segments[0].sides[0].tmap_num2 = saved_overlay;
+	const eclip active_effect = Effects[0];
+	const auto active_pixels = GameBitmaps[2].bm_data;
+	set_short(pig, effect + 90, 2);
+	write_fixture("descent.pig", pig);
+	require(!d1_in_d2_read_assets("descent.pig", "source.256", &error) &&
+	            std::memcmp(&Effects[0], &active_effect, sizeof(active_effect)) == 0 && GameBitmaps[2].bm_data == active_pixels,
+	        "rejected effect texture reference leaves active animation and images untouched");
+	write_fixture("descent.pig", base_pig);
+	prepared = d1_in_d2_read_assets("descent.pig", "source.256", &error);
+	require(prepared && d1_in_d2_publish_assets(prepared, &error), "publish the next source generation without effects");
+	require(!Num_effects && !Effects[0].vc.num_frames && NumTextures == 1 && Num_bitmap_files == 2 && GameBitmaps[1].bm_data[0] == 1,
+	        "next generation retires animation definitions and prior images without overlay backups");
+}
+
 static void test_d1_reactor()
 {
 	const std::string original_write_dir = PHYSFS_getWriteDir();
@@ -6302,9 +6363,14 @@ static void test_d1_reactor()
 	const d1_guidebot_source guidebot_source = { "feature.ham", "feature.pig", "feature.256", "feature.s22", SAMPLE_RATE_22K };
 	test_guidebot_publication("descent.pig", "source.256", guidebot_source);
 	test_d1_custom_definitions();
+	test_d1_generation_effects(pig, directory);
 	free_polygon_models();
 	piggy_reset_asset_registry();
 	require(!d1_in_d2_has_native_assets() && Num_bitmap_files == 1 && Num_sound_files == 0 && GameBitmaps[1].bm_data == nullptr, "registry cleanup retires the D1 generation without reloading D2 files");
+	d1_in_d2_asset_stats retired_stats = {}, empty_stats = {};
+	d1_in_d2_get_stats(&retired_stats);
+	require(std::memcmp(&retired_stats, &empty_stats, sizeof(retired_stats)) == 0,
+	        "normal registry retirement clears presentation and asset diagnostics without a second reset hook");
 	Highest_object_index = 0;
 	std::memset(&Objects[0], 0, sizeof(Objects[0]));
 	Objects[0].type = OBJ_CNTRLCEN;
@@ -6312,26 +6378,42 @@ static void test_d1_reactor()
 	Objects[0].rtype.pobj_info.model_num = 90;
 	Reactors[0].model_num = 90;
 	N_robot_types = 0;
-	require(d1_in_d2_validate_assets() != 0, d1_in_d2_asset_validation_error());
-	d1_in_d2_apply_robot_assets(1);
-	require(Reactors[0].model_num == 1 && Objects[0].rtype.pobj_info.model_num == 1, "D1 reactor uses the live model from its own object table");
+	prepared = d1_in_d2_read_assets("descent.pig", "source.256", &error);
+	require(prepared && d1_in_d2_publish_assets(prepared, &error), "publish reactor through the complete D1 generation loader");
+	d1_in_d2_fixup_level_object(&Objects[0], 1);
+	require(Reactors[0].model_num == 1 && Objects[0].id == 0 && Objects[0].rtype.pobj_info.model_num == 1, "D1 level adapter selects the published reactor model");
 	require(Reactors[0].n_guns == 1 && Reactors[0].gun_points[0].x == 3 * F1_0 && Reactors[0].gun_dirs[0].z == F1_0, "D1 reactor gun geometry matches its model");
 	maybe_delete_object(&Objects[0]);
 	require(Objects[0].rtype.pobj_info.model_num == 2 && (Objects[0].flags & OF_DESTROYED) && !(Objects[0].flags & OF_SHOULD_BE_DEAD), "destroyed D1 reactor keeps its wreck instead of being deleted");
-	d1_in_d2_apply_robot_assets(1);
-	require(Objects[0].rtype.pobj_info.model_num == 2, "reloading D1 assets preserves an existing reactor wreck");
+	const object wreck = Objects[0];
+	prepared = d1_in_d2_read_assets("descent.pig", "source.256", &error);
+	require(prepared && d1_in_d2_publish_assets(prepared, &error), "republish a complete D1 generation with a reactor wreck present");
+	require(std::memcmp(&Objects[0], &wreck, sizeof(wreck)) == 0 && Dead_modelnums[1] == 2, "asset publication preserves the existing wreck and its model definition");
+	const auto active_reactor_model = Polygon_models[1].model_data;
+	const auto active_pixels = GameBitmaps[1].bm_data;
+	const reactor active_reactor = Reactors[0];
+	auto reject_reactor = [&](const char *message) {
+		require(!d1_in_d2_read_assets("descent.pig", "source.256", &error), message);
+		require(error && *error && d1_in_d2_has_native_assets() &&
+		            std::memcmp(&Reactors[0], &active_reactor, sizeof(active_reactor)) == 0 &&
+		            std::memcmp(&Objects[0], &wreck, sizeof(wreck)) == 0 &&
+		            Polygon_models[1].model_data == active_reactor_model && GameBitmaps[1].bm_data == active_pixels,
+		        "rejected reactor preparation preserves active definitions, buffers and wreck state");
+	};
 	pig[object_types + 100] = 3;
 	write_fixture("descent.pig", pig);
-	require(!d1_in_d2_validate_assets(), "out-of-range D1 reactor model is rejected");
+	reject_reactor("out-of-range D1 reactor model is rejected");
 	pig[object_types + 100] = 1;
 	set_int(pig, guns - 4, 5);
 	write_fixture("descent.pig", pig);
-	require(!d1_in_d2_validate_assets(), "D1 reactor gun count cannot exceed the source table");
+	reject_reactor("D1 reactor gun count cannot exceed the source table");
 	pig.resize(guns + 1);
 	write_fixture("descent.pig", pig);
-	require(!d1_in_d2_validate_assets(), "truncated D1 reactor gun geometry is rejected");
-	d1_in_d2_apply_robot_assets(0);
-	require(Reactors[0].model_num == 90, "leaving D1 restores the D2 reactor definition");
+	reject_reactor("truncated D1 reactor gun geometry is rejected");
+	free_polygon_models();
+	piggy_reset_asset_registry();
+	require(!d1_in_d2_has_native_assets() && read_hamfile(), "retire D1 assets and load ordinary D2 definitions from their HAM");
+	require(Reactors[0].model_num == 90 && N_polygon_models == 166, "ordinary D2 loading restores its own reactor and models without overlay backups");
 	free_polygon_models();
 	require(PHYSFS_delete("descent.pig") != 0, "remove D1 reactor fixture");
 	require(PHYSFS_delete("source.256") != 0, "remove D1 generation palette fixture");
@@ -7444,10 +7526,11 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				require(file != nullptr, "open current save for cadence legacy control");
 				bytes legacy(static_cast<size_t>(PHYSFS_fileLength(file)));
 				require(PHYSFS_readBytes(file, legacy.data(), legacy.size()) == static_cast<PHYSFS_sint64>(legacy.size()) && PHYSFS_close(file), "read complete cadence legacy control");
-				legacy.resize(legacy.size() - CADENCE_RUNTIME_DISK_BYTES);
 #ifdef DXX_BUILD_DESCENT_II
+				legacy.resize(legacy.size() - CADENCE_RUNTIME_DISK_BYTES - 4); // Guidebot mode follows cadence
 				set_int(legacy, 4, CADENCE_D2_SAVE_VERSION - 1);
 #else
+				legacy.resize(legacy.size() - CADENCE_RUNTIME_DISK_BYTES);
 				set_int(legacy, 4, CADENCE_D1_SAVE_VERSION - 1);
 #endif
 				char legacy_name[] = "cadence-prior-format.sav";
@@ -7587,7 +7670,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 					legacy.dying_start_time = 0;
 					std::memcpy(previous_format.data() + offset, &saved, sizeof(saved));
 				}
-				previous_format.resize(previous_format.size() - CADENCE_RUNTIME_DISK_BYTES);
+				previous_format.resize(previous_format.size() - CADENCE_RUNTIME_DISK_BYTES - 4); // Guidebot routing mode
 				set_int(previous_format, 4, 35);
 				char prior_path[] = "ai-path-prior-format.sav";
 				write_fixture(prior_path, previous_format);

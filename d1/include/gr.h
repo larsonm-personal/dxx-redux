@@ -279,6 +279,15 @@ unsigned char gr_ugpixel( grs_bitmap * bitmap, int x, int y );
 int gr_line(fix x0,fix y0,fix x1,fix y1);
 int gr_uline(fix x0,fix y0,fix x1,fix y1);
 
+// Batch consecutive lines/rectangles only; end before any canvas or GL state change
+#ifdef OGL
+void gr_begin_2d_batch(void);
+void gr_end_2d_batch(void);
+#else
+#define gr_begin_2d_batch() ((void) 0)
+#define gr_end_2d_batch() ((void) 0)
+#endif
+
 // Draws an anti-aliased line into the current canvas in the current color and drawmode.
 int gr_aaline(fix x0,fix y0,fix x1,fix y1);
 int gr_uaaline(fix x0,fix y0,fix x1,fix y1);

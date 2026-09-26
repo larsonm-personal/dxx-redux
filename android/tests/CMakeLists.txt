@@ -165,6 +165,10 @@ add_executable(
 add_executable(test_kconfig_android_shared test_kconfig_android_shared.c
                                            "${DXX_TEST_SHARED_SOURCE_DIR}/kconfig_android_shared.c")
 
+add_executable(
+    test_android_virtual_gamepad test_android_virtual_gamepad.c
+                                 "${DXX_TEST_SHARED_SOURCE_DIR}/android_virtual_gamepad.c")
+
 if(DXX_TEST_GAME STREQUAL "d2")
     add_executable(test_classic_demo_json test_classic_demo_json.c
                                           "${DXX_TEST_SHARED_SOURCE_DIR}/classic_demo_json.c")
@@ -418,6 +422,7 @@ set(DXX_HOST_TEST_TARGETS
     test_playsave_layout
     test_playsave_text
     test_kconfig_android_shared
+    test_android_virtual_gamepad
     test_android_rewind_policy
     test_android_render_fov
     test_ogl_gpu_timer

@@ -191,30 +191,6 @@ internal fun shouldConsumeKeyboardBack(
     gamepadOnlyMode: Boolean,
 ): Boolean = keyboardActive && (keyboardImeVisible || gamepadOnlyMode)
 
-internal fun shouldDispatchGamepadButtonDown(
-    isInGame: Boolean,
-    repeatCount: Int,
-    edgeDispatchAllowed: Boolean,
-): Boolean = if (isInGame) edgeDispatchAllowed else repeatCount == 0
-
-internal fun shouldDispatchGamepadButtonUp(
-    isInGame: Boolean,
-    edgeDispatchAllowed: Boolean,
-): Boolean = if (isInGame) edgeDispatchAllowed else true
-
-internal fun shouldRouteControllerBToNativeBack(
-    keyCode: Int,
-    isControllerEvent: Boolean,
-    nativeMenuFront: Boolean,
-    controllerMenuOpen: Boolean,
-    adminTrayOpen: Boolean,
-): Boolean =
-    isControllerEvent &&
-        keyCode == KeyEvent.KEYCODE_BUTTON_B &&
-        nativeMenuFront &&
-        !controllerMenuOpen &&
-        !adminTrayOpen
-
 class MainActivity :
     Activity(),
     SurfaceHolder.Callback {
@@ -346,6 +322,52 @@ class MainActivity :
         return done.await(2, TimeUnit.SECONDS) && selected
     }
 
+    @Suppress("unused") // Called from the native automation runner
+    fun automateControllerInput(json: String): String {
+        if (!BuildConfig.DEBUG) return "Controller automation requires a debug build"
+        val done = CountDownLatch(1)
+        var failure = "Controller input did not finish"
+        runOnUiThread {
+            try {
+                val step = JSONObject(json)
+                if (step.optBoolean("reload_bindings")) loadMetaBindings()
+                step.optJSONObject("bindings")?.let { bindings ->
+                    for (name in bindings.keys()) {
+                        val key = controllerAutomationKeyCode(name)
+                        val meta = TouchBindings.metaActionIdForLabel(bindings.getString(name))
+                        require(meta >= 0) { "Expected a meta action for $name" }
+                        if (dpadKeyCodeToJoyButton(key) >= 0) {
+                            dpadMetaBindings = dpadMetaBindings + (key to meta)
+                        } else {
+                            buttonMetaBindings = buttonMetaBindings + (gamepadButtonIndex(key) to meta)
+                        }
+                    }
+                }
+                dispatchControllerAutomationInput(step, ::dispatchKeyEvent, ::dispatchGenericMotionEvent)
+                step.optJSONObject("expect_ui")?.let { expected ->
+                    val actual =
+                        touchOverlay.controllerNavigationState() +
+                            mapOf(
+                                "music_open" to (musicPanel != null),
+                                "video_open" to (videoInfoOverlay?.visibility == View.VISIBLE),
+                            )
+                    for (name in expected.keys()) {
+                        check(actual[name]?.toString() == expected.get(name).toString()) {
+                            "$name: expected ${expected.get(name)}, actual ${actual[name]}"
+                        }
+                    }
+                }
+                failure = ""
+            } catch (exception: Exception) {
+                failure = exception.message ?: exception.javaClass.simpleName
+                Log.e("DXX-Automate", "Controller input failed", exception)
+            } finally {
+                done.countDown()
+            }
+        }
+        return if (done.await(2, TimeUnit.SECONDS)) failure else "Controller input timed out"
+    }
+
     external fun nativeSetMusicGain(gainDb: Float)
 
     external fun nativeSetMusicVoices(maxVoices: Int)
@@ -379,6 +401,8 @@ class MainActivity :
     external fun nativeGetGammaLevel(): Int
 
     external fun nativeSetPersistGuidebotGoal(enabled: Boolean)
+
+    external fun nativeSetGuidebotRoutingDefault(mode: Int)
 
     external fun nativeSetCoopIndicatorOptions(
         showNearestPlayerLine: Boolean,
@@ -416,6 +440,8 @@ class MainActivity :
     )
 
     external fun nativeIsInGame(): Boolean
+
+    external fun nativeIsControllerMenuFront(): Boolean
 
     external fun nativeSetJoystickEnabled(enabled: Boolean)
 
@@ -944,7 +970,6 @@ class MainActivity :
             applyTvPerfTestPrefs(getSharedPreferences("dxx_prefs", MODE_PRIVATE))
         }
 
-        CrashLog.install(this)
         // Append to the main-process log file if a path was passed, otherwise create new
         val netlogPath = intent.getStringExtra("netlog_path")
         if (netlogPath != null) {
@@ -2222,7 +2247,11 @@ class MainActivity :
         isActivityResumed = false
         gyroManager?.pause()
         suspendUiWork()
-        gamepadButtonEdgeTracker.clear()
+        controllerKeys.releaseAll()
+        controllerMenuAxes.reset { _, _ -> }
+        controllerMenuAxesActive = false
+        hatXState = 0
+        hatYState = 0
         if (::inputMixer.isInitialized) inputMixer.releaseAll()
         resetTouchOverlayForSuspend()
         // Inject Escape so the engine opens its pause / game menu.
@@ -2403,6 +2432,9 @@ class MainActivity :
     private fun applyCoopIndicatorPrefs(prefs: android.content.SharedPreferences) {
         try {
             nativeSetPersistGuidebotGoal(prefs.getBoolean(PREF_PERSIST_GUIDEBOT_GOAL, true))
+            nativeSetGuidebotRoutingDefault(
+                GuidebotRoutingMode.sanitize(prefs.getInt(PREF_GUIDEBOT_ROUTING_MODE, GuidebotRoutingMode.ENHANCED)),
+            )
             nativeSetCoopIndicatorOptions(
                 prefs.getBoolean(PREF_NEAREST_PLAYER_LINE, true),
                 prefs.getBoolean(PREF_GUIDEBOT_HELPER_LINE, true),
@@ -3518,43 +3550,100 @@ class MainActivity :
             else -> -1
         }
 
-    /** Dispatch a d-pad event, using meta action if bound, else mixer.
-     *  D-pad virtual button indices: DUp=22, DDown=23, DLeft=24, DRight=25.
-     *  Shared constant with joy.c D-pad button registration. */
     private fun dispatchDpad(
         keyCode: Int,
         action: Int,
     ) {
-        if (handleControllerSettingsChildKey(keyCode, action)) {
-            return
+        dispatchControllerKey(keyCode, action, 0)
+    }
+
+    private fun controllerOverlayVisible(): Boolean =
+        touchOverlay.isControllerMenuOpen() || musicPanel != null || videoInfoOverlay?.visibility == View.VISIBLE
+
+    private fun nativeControllerMenuFront(): Boolean = gameStarted && nativeIsControllerMenuFront()
+
+    private fun dispatchControllerKey(
+        keyCode: Int,
+        action: Int,
+        repeatCount: Int,
+    ): Boolean {
+        val joyButton = gamepadButtonIndex(keyCode)
+        val dpadButton = dpadKeyCodeToJoyButton(keyCode)
+        val isCenter = keyCode == KeyEvent.KEYCODE_DPAD_CENTER
+        val isBack = keyCode == KeyEvent.KEYCODE_BACK
+        if (joyButton < 0 && dpadButton < 0 && !isCenter && !isBack) return false
+        if (action != 0) {
+            controllerKeys.release(keyCode)
+            return true
         }
-        if (touchOverlay.handleControllerMenuKey(keyCode, action)) {
-            return
-        }
-        val pressed = action == 0
-        val metaId = dpadMetaBindings[keyCode]
+
+        val overlayVisible = controllerOverlayVisible()
+        val nativeMenu = nativeControllerMenuFront()
         logGamepadInput(
-            "dispatchDpad kc=$keyCode action=${if (pressed) "down" else "up"} meta=${metaId ?: -1}",
+            "controller route kc=$keyCode overlay=$overlayVisible nativeMenu=$nativeMenu repeat=$repeatCount",
         )
-        if (metaId != null) {
-            dispatchMetaAction(metaId, pressed)
-        } else {
-            val btnIdx = dpadKeyCodeToJoyButton(keyCode)
-            if (btnIdx >= 0) {
-                val tag = "ctrl:dpad$keyCode"
-                val kcIndices = mixerButtonMap[btnIdx]
-                if (kcIndices != null) {
-                    for (kc in kcIndices) inputMixer.setButton(kc, tag, pressed)
+        controllerKeys.press(keyCode, repeatCount, (overlayVisible || nativeMenu) && dpadButton >= 0) {
+            val metaId = if (dpadButton >= 0) dpadMetaBindings[keyCode] else buttonMetaBindings[joyButton]
+            val navigationKey = joyButton in 0..1 || dpadButton >= 0 || isCenter || isBack
+            when {
+                overlayVisible && (navigationKey || metaId != TouchBindings.META_MENU_CYCLE) -> {
+                    // Capture the visible child so its release cannot activate a newly exposed menu
+                    val panel = musicPanel
+                    val video = videoInfoOverlay?.takeIf { it.visibility == View.VISIBLE }
+                    val destination: (Boolean) -> Unit = { pressed ->
+                        val edge = if (pressed) 0 else 1
+                        when {
+                            panel != null -> panel.handleControllerKey(keyCode, edge)
+                            video != null -> video.handleControllerKey(keyCode, edge)
+                            else -> touchOverlay.handleControllerMenuKey(keyCode, edge)
+                        }
+                    }
+                    destination
                 }
-                // Always fire the virtual joystick button too. In-game menus
-                // translate joy buttons 22-25 to KEY_UP/DOWN/LEFT/RIGHT via
-                // the ANDROID EVENT_JOYSTICK_BUTTON_DOWN block in newmenu.c.
-                // During gameplay this is a no-op because the launcher binds
-                // actions via keyboard through the mixer above; joy buttons
-                // 22-25 stay unbound in kconfig
-                nativeJoystickButton(btnIdx, if (pressed) 1 else 0)
+
+                nativeMenu && (navigationKey || joyButton in 2..5) -> {
+                    val button =
+                        if (isCenter) {
+                            0
+                        } else if (dpadButton >= 0) {
+                            dpadButton
+                        } else {
+                            joyButton
+                        }
+                    val destination: (Boolean) -> Unit = { pressed ->
+                        if (isBack) {
+                            nativeKeyEvent(if (pressed) 0 else 1, KeyEvent.KEYCODE_BACK, 0)
+                        } else {
+                            nativeJoystickButton(button, if (pressed) 1 else 0)
+                        }
+                    }
+                    destination
+                }
+
+                metaId != null -> {
+                    val destination: (Boolean) -> Unit = { pressed -> dispatchMetaAction(metaId, pressed) }
+                    destination
+                }
+
+                joyButton >= 0 || dpadButton >= 0 -> {
+                    val button = if (dpadButton >= 0) dpadButton else joyButton
+                    val indices = mixerButtonMap[button].orEmpty()
+                    val destination: (Boolean) -> Unit = { pressed ->
+                        for (index in indices) inputMixer.setButton(index, "ctrl:key$keyCode", pressed)
+                        nativeJoystickButton(button, if (pressed) 1 else 0)
+                    }
+                    destination
+                }
+
+                else -> {
+                    val destination: (Boolean) -> Unit = { pressed ->
+                        nativeKeyEvent(if (pressed) 0 else 1, keyCode, 0)
+                    }
+                    destination
+                }
             }
         }
+        return true
     }
 
     /** Map d-pad keycode to virtual joystick button index (22-25). */
@@ -3582,18 +3671,6 @@ class MainActivity :
             KeyEvent.KEYCODE_BUTTON_THUMBR -> 9
             else -> -1
         }
-
-    private fun handleOverlayBypassMetaKey(
-        keyCode: Int,
-        action: Int,
-    ): Boolean {
-        val joyBtn = gamepadButtonIndex(keyCode)
-        if (joyBtn < 0) return false
-        val metaId = buttonMetaBindings[joyBtn] ?: return false
-        if (metaId != TouchBindings.META_MENU_CYCLE) return false
-        dispatchMetaAction(metaId, action == 0)
-        return true
-    }
 
     private fun isControllerSource(source: Int): Boolean =
         source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
@@ -3695,6 +3772,7 @@ class MainActivity :
     ): Float = applyControllerAxisExponent(value, controllerAxisExponents[axisKey] ?: DEFAULT_CONTROLLER_AXIS_EXPONENT)
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_UP && controllerKeys.release(event.keyCode)) return true
         if (gameSurfaceView.keyboardActive) {
             when (event.keyCode) {
                 KeyEvent.KEYCODE_BUTTON_A -> {
@@ -3785,72 +3863,9 @@ class MainActivity :
             return true
         }
 
-        if (handleOverlayBypassMetaKey(keyCode, 0)) return true
-
+        if (dispatchControllerKey(keyCode, 0, event.repeatCount)) return true
         if (handleControllerSettingsChildKey(keyCode, 0)) return true
-
-        if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT ||
-            keyCode == KeyEvent.KEYCODE_BUTTON_START ||
-            keyCode == KeyEvent.KEYCODE_BACK
-        ) {
-            logSelectRouting(
-                "down kc=$keyCode src=${event.source} menuOpen=${touchOverlay.isControllerMenuOpen()} " +
-                    "tray=${touchOverlay.isAdminTrayOpen()} overlay=${touchOverlay.isActive} " +
-                    "automap=${touchOverlay.automapActive} inGame=${nativeIsInGame()} focus=${gameSurfaceView.hasFocus()}",
-            )
-        }
-
-        if (keyCode == KeyEvent.KEYCODE_BACK && isControllerSource(event.source)) {
-            logSelectRouting("down back-controller -> fallthrough nativeKeyEvent")
-        }
-
-        val inGame = nativeIsInGame()
-        if (
-            shouldRouteControllerBToNativeBack(
-                keyCode = keyCode,
-                isControllerEvent = isControllerSource(event.source),
-                nativeMenuFront = gameStarted && !inGame,
-                controllerMenuOpen = touchOverlay.isControllerMenuOpen(),
-                adminTrayOpen = touchOverlay.isAdminTrayOpen(),
-            )
-        ) {
-            nativeKeyEvent(0, KeyEvent.KEYCODE_BACK, 0)
-            return true
-        }
-
         if (touchOverlay.handleControllerMenuKey(keyCode, 0)) return true
-
-        // Gamepad face / shoulder buttons -> mixer or meta action
-        val joyBtn = gamepadButtonIndex(keyCode)
-        if (joyBtn >= 0) {
-            if (!shouldDispatchGamepadButtonDown(
-                    inGame,
-                    event.repeatCount,
-                    gamepadButtonEdgeTracker.shouldDispatchDown(keyCode, event.repeatCount),
-                )
-            ) {
-                return true
-            }
-            val metaId = buttonMetaBindings[joyBtn]
-            if (metaId != null) {
-                dispatchMetaAction(metaId, true)
-            } else {
-                val tag = "ctrl:btn$joyBtn"
-                val kcIndices = mixerButtonMap[joyBtn]
-                if (kcIndices != null) {
-                    for (kc in kcIndices) inputMixer.setButton(kc, tag, true)
-                }
-                nativeJoystickButton(joyBtn, 1)
-            }
-            return true
-        }
-
-        // D-pad keys: route through dispatchDpad to avoid dual dispatch
-        // (HAT axis path already sends joystick buttons 22-25)
-        if (dpadKeyCodeToJoyButton(keyCode) >= 0) {
-            dispatchDpad(keyCode, 0)
-            return true
-        }
 
         nativeKeyEvent(0, keyCode, event.unicodeChar)
         return true
@@ -3890,66 +3905,18 @@ class MainActivity :
             return true
         }
 
-        if (handleOverlayBypassMetaKey(keyCode, 1)) return true
-
+        if (dispatchControllerKey(keyCode, 1, event.repeatCount)) return true
         if (handleControllerSettingsChildKey(keyCode, 1)) return true
-
-        if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT ||
-            keyCode == KeyEvent.KEYCODE_BUTTON_START ||
-            keyCode == KeyEvent.KEYCODE_BACK
-        ) {
-            logSelectRouting(
-                "up kc=$keyCode src=${event.source} menuOpen=${touchOverlay.isControllerMenuOpen()} " +
-                    "tray=${touchOverlay.isAdminTrayOpen()} overlay=${touchOverlay.isActive} inGame=${nativeIsInGame()}",
-            )
-        }
-
-        val inGame = nativeIsInGame()
-        if (
-            shouldRouteControllerBToNativeBack(
-                keyCode = keyCode,
-                isControllerEvent = isControllerSource(event.source),
-                nativeMenuFront = gameStarted && !inGame,
-                controllerMenuOpen = touchOverlay.isControllerMenuOpen(),
-                adminTrayOpen = touchOverlay.isAdminTrayOpen(),
-            )
-        ) {
-            nativeKeyEvent(1, KeyEvent.KEYCODE_BACK, 0)
-            return true
-        }
-
         if (touchOverlay.handleControllerMenuKey(keyCode, 1)) return true
-
-        val joyBtn = gamepadButtonIndex(keyCode)
-        if (joyBtn >= 0) {
-            if (!shouldDispatchGamepadButtonUp(inGame, gamepadButtonEdgeTracker.shouldDispatchUp(keyCode))) {
-                return true
-            }
-            val metaId = buttonMetaBindings[joyBtn]
-            if (metaId != null) {
-                dispatchMetaAction(metaId, false)
-            } else {
-                val tag = "ctrl:btn$joyBtn"
-                val kcIndices = mixerButtonMap[joyBtn]
-                if (kcIndices != null) {
-                    for (kc in kcIndices) inputMixer.setButton(kc, tag, false)
-                }
-                nativeJoystickButton(joyBtn, 0)
-            }
-            return true
-        }
-
-        if (dpadKeyCodeToJoyButton(keyCode) >= 0) {
-            dispatchDpad(keyCode, 1)
-            return true
-        }
 
         nativeKeyEvent(1, keyCode, 0)
         return true
     }
 
     // â”€â”€ Gamepad analog axes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    private val gamepadButtonEdgeTracker = GamepadButtonEdgeTracker()
+    private val controllerKeys = ControllerKeyDispatch()
+    private val controllerMenuAxes = ControllerMenuAxes()
+    private var controllerMenuAxesActive = false
 
     private var hatXState = 0 // -1, 0, +1
     private var hatYState = 0
@@ -3970,6 +3937,47 @@ class MainActivity :
                 hatXState = if (hatX != 0) hatX else stickX
                 hatYState = if (hatY != 0) hatY else stickY
                 return super.onGenericMotionEvent(event)
+            }
+            val menuNavigation = controllerOverlayVisible() || nativeControllerMenuFront()
+            if (menuNavigation) {
+                if (!controllerMenuAxesActive) {
+                    if (hatXState !=
+                        0
+                    ) {
+                        dispatchDpad(
+                            if (hatXState <
+                                0
+                            ) {
+                                KeyEvent.KEYCODE_DPAD_LEFT
+                            } else {
+                                KeyEvent.KEYCODE_DPAD_RIGHT
+                            },
+                            1,
+                        )
+                    }
+                    if (hatYState !=
+                        0
+                    ) {
+                        dispatchDpad(if (hatYState < 0) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN, 1)
+                    }
+                    hatXState = 0
+                    hatYState = 0
+                    inputMixer.clearSources("ctrl")
+                    controllerMenuAxesActive = true
+                }
+                controllerMenuAxes.update(
+                    event.getAxisValue(MotionEvent.AXIS_X),
+                    event.getAxisValue(MotionEvent.AXIS_Y),
+                    event.getAxisValue(MotionEvent.AXIS_Z),
+                    event.getAxisValue(MotionEvent.AXIS_RZ),
+                    event.getAxisValue(MotionEvent.AXIS_HAT_X),
+                    event.getAxisValue(MotionEvent.AXIS_HAT_Y),
+                ) { key, pressed -> dispatchDpad(key, if (pressed) 0 else 1) }
+                return true
+            }
+            if (controllerMenuAxesActive) {
+                controllerMenuAxes.reset { key, pressed -> dispatchDpad(key, if (pressed) 0 else 1) }
+                controllerMenuAxesActive = false
             }
             val lx = controllerAxisValue("LS_X", event.getAxisValue(MotionEvent.AXIS_X))
             val ly = controllerAxisValue("LS_Y", event.getAxisValue(MotionEvent.AXIS_Y))

@@ -23,6 +23,20 @@ class EvidenceError(ValueError):
     pass
 
 
+# Relative layout matters: PowerShell loads its helpers beside the staged runner
+HARNESS_FILES = (
+    "android/tests/d1_replay_parity.py",
+    "android/tests/run_input_demo_replay.ps1",
+    "android/tests/input_demo_host_build_guard.ps1",
+    "android/helpers/test_host_platform.ps1",
+    "android/helpers/powershell_compat.ps1",
+    "android/helpers/input_demo_replay_menu.ps1",
+    "android/helpers/output_disk_space.ps1",
+    "android/helpers/retain-recent-artifacts.ps1",
+    "android/helpers/clean-old-artifacts.ps1",
+)
+
+
 def write_json(path, value):
     Path(path).write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -1185,14 +1199,42 @@ def snapshot_untracked_sources(repo, directory, minimum_free_gb):
     return manifest
 
 
-def capture(args, demo, directory, name, imported, assets, executable):
+def snapshot_harness(repo, directory):
+    repo, directory = Path(repo).resolve(), Path(directory).resolve()
+    hashes = {name: digest(repo / name) for name in HARNESS_FILES}
+    package = []
+    for name, expected in hashes.items():
+        target = directory / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(repo / name, target)
+        if digest(target) != expected:
+            raise EvidenceError(f"Replay harness changed while staging: {name}")
+        package.append({"source": name, "path": str(target), "sha256": expected})
+    if any(digest(repo / name) != expected for name, expected in hashes.items()):
+        raise EvidenceError("Replay harness changed while staging; finish edits before capture")
+    return {"root": str(directory), "package": package}
+
+
+def check_harness(harness):
+    if len(harness["package"]) != len(HARNESS_FILES) or {item["source"] for item in harness["package"]} != set(HARNESS_FILES):
+        raise EvidenceError("Staged replay harness dependency inventory is incomplete")
+    for item in harness["package"]:
+        if Path(item["path"]) != Path(harness["root"]) / item["source"]:
+            raise EvidenceError(f"Replay harness dependency is outside its staged location: {item['source']}")
+        if not Path(item["path"]).is_file() or digest(item["path"]) != item["sha256"]:
+            raise EvidenceError(f"Staged replay harness changed: {item['source']}")
+
+
+def capture(args, demo, directory, name, imported, assets, executable, harness):
     require_disk_space(args.output, args.minimum_free_gb)
     require_disk_space(args.repo, args.minimum_free_gb)
+    check_harness(harness)
     run = directory / name
     run.mkdir()
     paths = {key: run / filename for key, filename in
              (("result", "result.json"), ("state", "state.jsonl.gz"), ("rng", "rng.jsonl"))}
-    command = [args.pwsh, "-NoProfile", "-File", str(args.repo / "android/tests/run_input_demo_replay.ps1"),
+    command = [args.pwsh, "-NoProfile", "-File", str(Path(harness["root"]) / "android/tests/run_input_demo_replay.ps1"),
+               "-RepositoryRoot", str(args.repo),
                "-DemoPath", demo["path"], "-DataDir", str(assets), "-Runner", "fast", "-Mode", "accelerated",
                "-RenderProfile", "default", "-ReplayRobotLabels", "hide", "-SkipExpectedChecks",
                "-SandboxSuffix", args.output.name + "-" + name, "-TimeoutSeconds", str(args.timeout),
@@ -1208,12 +1250,16 @@ def capture(args, demo, directory, name, imported, assets, executable):
     info["exit_code"] = completed.returncode
     if any(digest(item["path"]) != item["sha256"] for item in executable["package"]):
         info["error"] = "Staged executable package changed during capture"
+    try:
+        check_harness(harness)
+    except EvidenceError as error:
+        info["harness_error"] = str(error)
     for key in ("state", "rng"):
         if paths[key].is_file():
             paths[key] = compress_trace(paths[key])
     info["artifacts"] = {key: str(path) for key, path in paths.items()}
     write_json(run / "launch.json", info)
-    if completed.returncode or "error" in info:
+    if completed.returncode or "error" in info or "harness_error" in info:
         raise EvidenceError(f"{name} capture failed; see {run / 'runner.log'}")
     for path in paths.values():
         if not path.is_file():
@@ -1232,10 +1278,22 @@ def run(args):
             fcntl.flock(lease.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         lease.write("paired D1 replay capture and comparison\n")
         lease.flush()
-        return run_with_lease(args)
+        harness = snapshot_harness(args.repo, args.output / "harness")
+        harness_path = args.output / "harness.json"
+        write_json(harness_path, harness)
+        # Run the comparator itself from the same frozen package as its children
+        command = [sys.executable, str(Path(harness["root"]) / "android/tests/d1_replay_parity.py"),
+                   "--harness-manifest", str(harness_path), "--repo", str(args.repo),
+                   "--data", str(args.data), "--native", str(args.native), "--imported", str(args.imported),
+                   "--output", str(args.output), "--pwsh", args.pwsh, "--timeout", str(args.timeout),
+                   "--minimum-free-gb", str(args.minimum_free_gb)]
+        for demo in args.demo:
+            command.extend(("--demo", str(demo)))
+        write_json(args.output / "controller-launch.json", {"command": command})
+        return subprocess.run(command, cwd=args.repo, check=False).returncode
 
 
-def run_with_lease(args):
+def run_with_lease(args, harness):
     assets = args.output / "d1-assets"
     assets.mkdir()
     asset_manifest = []
@@ -1249,8 +1307,9 @@ def run_with_lease(args):
         asset_manifest.append({"source": str(matches[0]), "staged": str(target), "sha256": digest(target)})
     native = snapshot_executable(args.native, args.output / "binaries" / "native")
     imported = snapshot_executable(args.imported, args.output / "binaries" / "imported")
-    manifest = {"schema": 1, "created_utc": datetime.now(timezone.utc).isoformat(), "host": platform.platform(),
+    manifest = {"schema": 2, "created_utc": datetime.now(timezone.utc).isoformat(), "host": platform.platform(),
                 "assets": asset_manifest, "executables": {"native": native, "imported": imported},
+                "harness": harness,
                 "settings": {"runner": "fast", "render_profile": "default", "companion": False,
                              "cameras": "checkpoint settings", "player_cfg": "unchanged recording header"},
                 "demos": []}
@@ -1260,16 +1319,6 @@ def run_with_lease(args):
     manifest["working_diff_sha256"] = hashlib.sha256(working_diff).hexdigest()
     manifest["untracked_sources"] = snapshot_untracked_sources(
         args.repo, args.output / "untracked-sources", args.minimum_free_gb)
-    harness = args.output / "harness"
-    harness.mkdir()
-    manifest["harness_sha256"] = {}
-    for name in ("d1_replay_parity.py", "test_d1_replay_parity.ps1", "run_input_demo_replay.ps1",
-                 "input_demo_host_build_guard.ps1"):
-        shutil.copyfile(args.repo / "android/tests" / name, harness / name)
-        manifest["harness_sha256"][name] = digest(harness / name)
-    for name in ("output_disk_space.ps1", "retain-recent-artifacts.ps1", "clean-old-artifacts.ps1"):
-        shutil.copyfile(args.repo / "android/helpers" / name, harness / name)
-        manifest["harness_sha256"][name] = digest(harness / name)
     report = {"schema": 1, "cases": [], "qualification": "incomplete", "coverage_gaps": [
         "Declared frame diagnostics are required, but the complete simulation-state and lifetime audit remains open",
         "Restore/terminal object, world and saved AI storage are observed, but transition/cache and static-runtime coverage is incomplete",
@@ -1295,7 +1344,7 @@ def run_with_lease(args):
             for name in ("native-a", "native-repeat", "imported"):
                 try:
                     runs[name] = capture(args, demo, directory, name, name == "imported", assets,
-                                         imported if name == "imported" else native)
+                                         imported if name == "imported" else native, harness)
                 except (OSError, EvidenceError) as error:
                     case.setdefault("capture_errors", {})[name] = str(error)
             recorded = {"state": path, "rng": Path(str(path) + ".rngtrace.jsonl")}
@@ -1318,6 +1367,10 @@ def run_with_lease(args):
     for asset in asset_manifest:
         if digest(asset["staged"]) != asset["sha256"]:
             report["asset_error"] = "Staged assets changed during capture"
+    try:
+        check_harness(harness)
+    except EvidenceError as error:
+        report["harness_error"] = str(error)
     write_json(args.output / "report.json", report)
     print(f"Report: {args.output / 'report.json'}", flush=True)
     print("Full fidelity qualification: INCOMPLETE (see explicit coverage gaps)", flush=True)
@@ -1335,9 +1388,19 @@ def main():
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--minimum-free-gb", type=float, default=4)
     parser.add_argument("--demo", type=Path, action="append", required=True)
+    parser.add_argument("--harness-manifest", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
     if not 0.01 <= args.minimum_free_gb <= 1048576:
         parser.error("--minimum-free-gb must be between 0.01 and 1048576")
+    for name in ("repo", "data", "native", "imported", "output"):
+        setattr(args, name, getattr(args, name).resolve())
+    args.demo = [path.resolve() for path in args.demo]
+    if args.harness_manifest:
+        harness = json.loads(args.harness_manifest.read_text(encoding="utf-8"))
+        check_harness(harness)
+        if Path(__file__).resolve() != Path(harness["root"]) / "android/tests/d1_replay_parity.py":
+            raise EvidenceError("Frozen controller must execute from the staged harness")
+        return run_with_lease(args, harness)
     return run(args)
 
 

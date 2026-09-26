@@ -1355,6 +1355,16 @@ Java_com_dxxredux_app_MainActivity_nativeIsInGame(JNIEnv *env, jobject thiz)
 	return (Game_wind != NULL && Screen_mode == SCREEN_GAME && Game_wind == window_get_front()) ? JNI_TRUE : JNI_FALSE;
 }
 
+/* Preserve automap flight controls, but reserve navigation in menus covering it */
+extern int automap_handler(window *wind, d_event *event, void *data);
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsControllerMenuFront(JNIEnv *env, jobject thiz)
+{
+	window *front = window_get_front();
+	return front && front != Game_wind && window_get_callback(front) != automap_handler;
+}
+
 /* Packed transient-screen state shared with MainActivity.kt.
  * Bits 0..7: kind, bit 8: ready, bit 9: can activate, bits 32..63: generation. */
 JNIEXPORT jlong JNICALL

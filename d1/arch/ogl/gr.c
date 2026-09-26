@@ -54,6 +54,7 @@
 #include "game.h"
 #include "pngfile.h"
 #include "oglprog.h"
+#include "../../../android/app/src/main/cpp/shared/ogl_2d_batch.h"
 
 #ifdef ANDROID
 #include "android_egl_surface.h"
@@ -1007,9 +1008,7 @@ void ogl_urect(int left,int top,int right,int bot)
 	vertex_array[6] = xf;
 	vertex_array[7] = yo;
 	
-	glVertexPointer(2, GL_FLOAT, 0, vertex_array);
-	glColorPointer(4, GL_FLOAT, 0, color_array);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);//replaced GL_QUADS
+	ogl_2d_batch_draw(GL_TRIANGLE_FAN, 4, vertex_array, color_array);
 	glDisableClientState(GL_VERTEX_ARRAY);
 }
 
@@ -1034,9 +1033,7 @@ void ogl_ulinec(int left,int top,int right,int bot,int c)
 	vertex_array[2] = xf;
 	vertex_array[3] = yf;
 
-	glVertexPointer(2, GL_FLOAT, 0, vertex_array);
-	glColorPointer(4, GL_FLOAT, 0, color_array);
-	glDrawArrays(GL_LINES, 0, 2);
+	ogl_2d_batch_draw(GL_LINES, 2, vertex_array, color_array);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
 }

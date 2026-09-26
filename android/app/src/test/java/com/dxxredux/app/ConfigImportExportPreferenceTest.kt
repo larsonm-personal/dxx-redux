@@ -26,7 +26,8 @@ class ConfigImportExportPreferenceTest {
         assertEquals("d1-builtin", json.getString(PREF_MIDI_EDITOR_SOURCE))
         val decoded = ConfigImportExport.decodePreferenceValues(json)
         assertNull(decoded.error)
-        assertEquals(6, decoded.values.size)
+        assertEquals(GuidebotRoutingMode.ENHANCED, json.getInt(PREF_GUIDEBOT_ROUTING_MODE))
+        assertEquals(7, decoded.values.size)
     }
 
     @Test
@@ -52,6 +53,7 @@ class ConfigImportExportPreferenceTest {
                     pref.key to
                         when (pref.type) {
                             ConfigImportExport.ExportedPreferenceType.BOOLEAN -> booleanValue
+                            ConfigImportExport.ExportedPreferenceType.INTEGER -> if (booleanValue) 1 else 0
                             ConfigImportExport.ExportedPreferenceType.STRING ->
                                 when (pref.key) {
                                     SoundfontStore.PREF_RENDERER -> "ymfm"
@@ -69,6 +71,7 @@ class ConfigImportExportPreferenceTest {
             assertEquals(source, decoded.values.mapKeys { it.key.key })
             for (pref in ConfigImportExport.EXPORTED_PREFERENCES) {
                 when (pref.type) {
+                    ConfigImportExport.ExportedPreferenceType.INTEGER -> assertTrue(json.get(pref.key) is Int)
                     ConfigImportExport.ExportedPreferenceType.BOOLEAN -> {
                         assertTrue(json.get(pref.key) is Boolean)
                     }
@@ -106,6 +109,7 @@ class ConfigImportExportPreferenceTest {
         for (pref in ConfigImportExport.EXPORTED_PREFERENCES) {
             val wrongValues =
                 when (pref.type) {
+                    ConfigImportExport.ExportedPreferenceType.INTEGER -> listOf("0", true, 0.5, -1, 2, JSONObject(), JSONArray(), JSONObject.NULL)
                     ConfigImportExport.ExportedPreferenceType.BOOLEAN -> {
                         listOf("true", 1, JSONObject(), JSONArray(), JSONObject.NULL)
                     }

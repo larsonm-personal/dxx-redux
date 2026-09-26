@@ -4995,12 +4995,14 @@ void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
 	struct merged_wall_tracked_face *track;
 	int i, projected = 0;
 
+	merged_wall_begin_frame_tracking();
+	if (!g_merged_wall_snapshot_pending && !debug_log_enabled[DLOG_TEXTURE])
+		return;
 	if (!g_android_draw_face_ctx.valid || g_android_draw_face_ctx.tmap2 == 0)
 		return;
 	if (nv <= 0 || nv > MERGED_WALL_LOG_PT_COUNT || merged_wall_tracked_face_count >= MERGED_WALL_TRACKED_FACE_MAX)
 		return;
 
-	merged_wall_begin_frame_tracking();
 	track = &merged_wall_tracked_faces[merged_wall_tracked_face_count++];
 	memset(track, 0, sizeof(*track));
 	track->render_pass = g_merged_wall_render_pass;
@@ -5083,6 +5085,10 @@ void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
                                    int texfilt_level, int menu_texfilt, int hud_texfilt,
                                    int aniso_level)
 {
+	/* Snapshot/tap probes request collection before rendering the sampled frame */
+	merged_wall_begin_frame_tracking();
+	if (!g_merged_wall_snapshot_pending && !debug_log_enabled[DLOG_TEXTURE])
+		return;
 	struct android_draw_face_context cover_ctx = g_android_draw_face_ctx;
 	float cover_min_sx = 0.0f, cover_max_sx = 0.0f;
 	float cover_min_sy = 0.0f, cover_max_sy = 0.0f;
@@ -5094,7 +5100,6 @@ void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
 	float cover_pt_sy[MERGED_WALL_LOG_PT_COUNT] = { 0.0f };
 	int i, ordered;
 
-	merged_wall_begin_frame_tracking();
 	if (nv <= 0 || nv > MERGED_WALL_LOG_PT_COUNT)
 		return;
 	cover_projected_count = merged_wall_store_projected_points(pointlist, nv,

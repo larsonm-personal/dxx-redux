@@ -137,9 +137,9 @@ object HumanReadableConfig {
                 throw IllegalArgumentException("type must be touch_layout")
             }
             val version = json.opt("version")
-            if (version !is Int || version !in MIN_SUPPORTED_TOUCH_LAYOUT_VERSION..CURRENT_TOUCH_LAYOUT_VERSION) {
+            if (version !is Int || version != CURRENT_TOUCH_LAYOUT_VERSION) {
                 throw IllegalArgumentException(
-                    "version must be an integer in $MIN_SUPPORTED_TOUCH_LAYOUT_VERSION..$CURRENT_TOUCH_LAYOUT_VERSION",
+                    "version must be $CURRENT_TOUCH_LAYOUT_VERSION",
                 )
             }
             for (key in listOf("sticks", "buttons", "sliders", "radialMenus", "dpads")) {
@@ -537,18 +537,6 @@ object HumanReadableConfig {
             } else {
                 -1
             }
-        // Migrate old raw-radian deadzone to fraction-of-maxAngle
-        val rawDz = j.optDouble("deadzone", 0.1).toFloat()
-        val deadzone =
-            if (rawDz <= 0.1f && rawDz > 0f) {
-                (rawDz / 0.436f).coerceIn(0f, 0.6f)
-            } else {
-                rawDz
-            }
-        // Per-axis deadzones: fall back to migrated single value if absent
-        val dzX = if (j.has("deadzoneX")) j.optDouble("deadzoneX").toFloat() else deadzone
-        val dzY = if (j.has("deadzoneY")) j.optDouble("deadzoneY").toFloat() else deadzone
-        val dzZ = if (j.has("deadzoneZ")) j.optDouble("deadzoneZ").toFloat() else (deadzone * 3f).coerceAtMost(0.6f)
         return GyroConfig(
             enabled = j.optBoolean("enabled"),
             activation = GyroActivation.valueOf(j.optString("activation", "ALWAYS")),
@@ -559,13 +547,12 @@ object HumanReadableConfig {
             axisX = axisX,
             axisY = axisY,
             axisZ = axisZ,
-            deadzone = deadzone,
-            deadzoneX = dzX,
-            deadzoneY = dzY,
-            deadzoneZ = dzZ,
-            maxAngleX = j.optDouble("maxAngleX", j.optDouble("maxAngle", 0.436)).toFloat(),
-            maxAngleY = j.optDouble("maxAngleY", j.optDouble("maxAngle", 0.436)).toFloat(),
-            maxAngleZ = j.optDouble("maxAngleZ", j.optDouble("maxAngle", 0.436)).toFloat(),
+            deadzoneX = j.optDouble("deadzoneX", 0.1).toFloat(),
+            deadzoneY = j.optDouble("deadzoneY", 0.1).toFloat(),
+            deadzoneZ = j.optDouble("deadzoneZ", 0.3).toFloat(),
+            maxAngleX = j.optDouble("maxAngleX", 0.436).toFloat(),
+            maxAngleY = j.optDouble("maxAngleY", 0.436).toFloat(),
+            maxAngleZ = j.optDouble("maxAngleZ", 0.436).toFloat(),
         )
     }
 

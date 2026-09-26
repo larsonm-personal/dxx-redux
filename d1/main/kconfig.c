@@ -34,6 +34,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "iff.h"
 #include "u_mem.h"
 #include "kconfig.h"
+#ifdef ANDROID
+#include "android_menu_navigation.h"
+#endif
 #include "gauges.h"
 #include "rbaudio.h"
 #include "render.h"
@@ -501,10 +504,17 @@ static void kconfig_draw_contents(kc_menu *menu, grs_canvas *canvas)
 
 	grd_curcanv->cv_font = GAME_FONT;
 	gr_set_fontcolor( BM_XRGB(28,28,28), -1 );
+#ifdef ANDROID
+	if (menu->read_only)
+		gr_string(0x8000, FSPACY(21), "Managed by launcher  L1/R1: scroll  B: back");
+	else
+		gr_string(0x8000, FSPACY(21), "A: change  X: clear  Y: defaults  B: back");
+#else
 	if (menu->read_only)
 		gr_string( 0x8000, FSPACY(21), "Managed by launcher (read-only). ESC exits");
 	else
 		gr_string( 0x8000, FSPACY(21), "Enter changes, ctrl-d deletes, ctrl-r resets defaults, ESC exits");
+#endif
 	gr_set_fontcolor( BM_XRGB(28,28,28), -1 );
 
 	if ( menu->items == kc_keyboard )
@@ -716,6 +726,22 @@ int kconfig_mouse(window *wind, d_event *event, kc_menu *menu)
 	return rval;
 }
 
+#ifdef ANDROID
+static void android_kconfig_reveal_selection(kc_menu *menu)
+{
+	android_menu_scale_result scale;
+	grs_canvas *canvas = window_get_canvas(menu->wind);
+	if (!android_menu_scale_get_state(&scale) || !scale.active)
+		return;
+	int top = canvas->cv_bitmap.bm_y + FSPACY(menu->items[menu->citem].y);
+	int bottom = top + FSPACY(10);
+	if (top < scale.src.y)
+		android_menu_scale_scroll_by(&menu->android_scroll_y, top - scale.src.y);
+	else if (bottom > scale.src.y + scale.src.h)
+		android_menu_scale_scroll_by(&menu->android_scroll_y, bottom - scale.src.y - scale.src.h);
+}
+#endif
+
 int kconfig_key_command(window *wind, d_event *event, kc_menu *menu)
 {
 	int i,k;
@@ -759,14 +785,20 @@ int kconfig_key_command(window *wind, d_event *event, kc_menu *menu)
 #ifdef TABLE_CREATION
 			if (menu->items[menu->citem].u==-1) menu->items[menu->citem].u=find_next_item_up( menu->items,menu->nitems, menu->citem);
 #endif
-			menu->citem = menu->items[menu->citem].u; 
+			menu->citem = menu->items[menu->citem].u;
+#ifdef ANDROID
+			android_kconfig_reveal_selection(menu);
+#endif
 			return 1;
 		case KEY_DOWN:
 		case KEY_PAD2:
 #ifdef TABLE_CREATION
 			if (menu->items[menu->citem].d==-1) menu->items[menu->citem].d=find_next_item_down( menu->items,menu->nitems, menu->citem);
 #endif
-			menu->citem = menu->items[menu->citem].d; 
+			menu->citem = menu->items[menu->citem].d;
+#ifdef ANDROID
+			android_kconfig_reveal_selection(menu);
+#endif
 			return 1;
 #ifdef ANDROID
 		case KEY_PAGEUP:
@@ -781,14 +813,20 @@ int kconfig_key_command(window *wind, d_event *event, kc_menu *menu)
 #ifdef TABLE_CREATION
 			if (menu->items[menu->citem].l==-1) menu->items[menu->citem].l=find_next_item_left( menu->items,menu->nitems, menu->citem);
 #endif
-			menu->citem = menu->items[menu->citem].l; 
+			menu->citem = menu->items[menu->citem].l;
+#ifdef ANDROID
+			android_kconfig_reveal_selection(menu);
+#endif
 			return 1;
 		case KEY_RIGHT:
 		case KEY_PAD6:
 #ifdef TABLE_CREATION
 			if (menu->items[menu->citem].r==-1) menu->items[menu->citem].r=find_next_item_right( menu->items,menu->nitems, menu->citem);
 #endif
-			menu->citem = menu->items[menu->citem].r; 
+			menu->citem = menu->items[menu->citem].r;
+#ifdef ANDROID
+			android_kconfig_reveal_selection(menu);
+#endif
 			return 1;
 		case KEY_ENTER:
 		case KEY_PADENTER:
@@ -896,6 +934,13 @@ int kconfig_handler(window *wind, d_event *event, kc_menu *menu)
 {
 	int i;
 	
+#ifdef ANDROID
+	android_menu_key_event controller_key;
+	if (event->type == EVENT_JOYSTICK_BUTTON_DOWN && (!menu->changing || event_joystick_get_button(event) == 1) && android_menu_translate_button(event, &controller_key)) {
+		event = (d_event *)&controller_key;
+	}
+#endif
+
 	switch (event->type)
 	{
 		case EVENT_WINDOW_ACTIVATED:
@@ -2103,3 +2148,12 @@ void kconfig_set_joystick_item(int idx, int value)
 	PlayerCfg.KeySettings[1][idx] = value;
 }
 #endif /* ANDROID */
+
+#ifdef INTROSPECT_ON
+void kconfig_get_menu_state(void *data, int *selected, int *changing)
+{
+	kc_menu *menu = (kc_menu *)data;
+	*selected = menu->citem;
+	*changing = menu->changing;
+}
+#endif

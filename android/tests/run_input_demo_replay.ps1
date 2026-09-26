@@ -45,12 +45,13 @@ param(
     [Alias('RebuildBeforeRun')]
     [switch]$BuildBeforeRun,
     [switch]$RequireFreshBuild,
-    [string]$ExecutablePath
+    [string]$ExecutablePath,
+    [string]$RepositoryRoot
 )
 
 $ErrorActionPreference = 'Stop'
 
-$repoRoot = Split-Path (Split-Path $PSScriptRoot)
+$repoRoot = if ($RepositoryRoot) { [IO.Path]::GetFullPath($RepositoryRoot) } else { Split-Path (Split-Path $PSScriptRoot) }
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/input_demo_replay_menu.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/output_disk_space.ps1')
@@ -142,6 +143,28 @@ function Stop-ReplayProcess {
     } catch {
         try { Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue } catch {}
     }
+}
+
+function Save-ReplayFailureDiagnostics {
+    param([string]$SandboxDirectory, [System.Collections.IDictionary]$Details)
+
+    $prefix = if ($ResultCopyPath -and -not (Test-PathUnderDirectory -Path $ResultCopyPath -Directory $SandboxDirectory)) {
+        (Resolve-AbsolutePath -Path $ResultCopyPath) + '.failure_'
+    } else {
+        Join-Path (Join-Path $outRoot 'failures') ($sandboxName + '_')
+    }
+    $destination = $prefix + (Get-Date -Format 'yyyyMMdd_HHmmss_fff')
+    & (Join-Path (Split-Path $PSScriptRoot) 'helpers/retain-recent-artifacts.ps1') -Artifacts $destination -RepositoryRoot $repoRoot
+    New-Item -ItemType Directory -Path $destination -Force | Out-Null
+    # Preserve diagnostics, not the staged executable and dependency package
+    foreach ($name in @('gamelog.txt', 'stdout.txt', 'stderr.txt', 'sanitizer.log', 'descent.cfg', 'results/result.actual.json')) {
+        $source = Join-Path $SandboxDirectory $name
+        if (Test-Path -LiteralPath $source -PathType Leaf) {
+            Copy-Item -LiteralPath $source -Destination (Join-Path $destination ([IO.Path]::GetFileName($name)))
+        }
+    }
+    $Details | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $destination 'failure.json') -Encoding utf8
+    Write-Host "Failure diagnostics: $destination"
 }
 
 function Stop-StaleReplayProcessesInDirectory {
@@ -555,6 +578,10 @@ function Resolve-DataDir {
         [string]$RequestedDataDir
     )
 
+    # Paired captures supply a staged bank and must not consult live index generators
+    if ($RequestedDataDir -and (Test-DataDirMatchesGame -Path $RequestedDataDir -Config $Config)) {
+        return (Resolve-Path -LiteralPath $RequestedDataDir).Path
+    }
     $candidates = @()
     if ($RequestedDataDir) {
         $candidates += $RequestedDataDir
@@ -1557,6 +1584,15 @@ if ($SandboxSuffix) {
 $script:replayOutputPaths = @($outRoot, $resolvedStateLogPath, $resolvedRngLogPath, $ResultCopyPath) | Where-Object { $_ }
 Assert-OutputDiskSpace -Paths $script:replayOutputPaths -MinimumFreeGB $MinimumFreeSpaceGB
 $sandbox = New-LaunchSandbox -Config $config -SandboxName $sandboxName -ReuseSandbox:$ReuseSandbox -SkipExecutableCopy:$useHeadlessConsole
+$replaySucceeded = $false
+$replayFailure = 'Replay did not complete'
+$lastWindowTitle = $null
+$process = $null
+$launchExecutable = $null
+$launchArgs = @()
+$replayStopwatch = $null
+$completedExitCode = $null
+$forcedReplayStop = $false
 try {
     $actualResultDirectory = Join-Path $sandbox.Directory 'results'
     if (-not (Test-Path -LiteralPath $actualResultDirectory)) {
@@ -1643,14 +1679,11 @@ try {
     }
     $startInfo.Arguments = $quotedArgs
 
-    $process = $null
     $replayStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $missingActualResult = $false
     $sanitizerOutput = $null
     $sanitizerError = $null
     $sanitizerFailure = $false
-    $forcedReplayStop = $false
-    $completedExitCode = $null
     try {
         $process = [System.Diagnostics.Process]::Start($startInfo)
         if (-not $process) {
@@ -1665,6 +1698,7 @@ try {
         if (-not $waitResult.ResultReady) {
             $replayStopwatch.Stop()
             if (-not $waitResult.Exited) {
+                $lastWindowTitle = $process.MainWindowTitle
                 $forcedReplayStop = $true
                 Stop-ReplayProcess -Process $process
             }
@@ -1681,11 +1715,21 @@ try {
         }
 
         if (-not $process.HasExited -and -not $process.WaitForExit(2000)) {
+            $lastWindowTitle = $process.MainWindowTitle
             $forcedReplayStop = $true
             Stop-ReplayProcess -Process $process
         }
         if ($process.HasExited -and -not $forcedReplayStop) { $completedExitCode = $process.ExitCode }
     } finally {
+        if ($process) {
+            $process.Refresh()
+            if (-not $process.HasExited) {
+                $lastWindowTitle = $process.MainWindowTitle
+                $forcedReplayStop = $true
+            } elseif (-not $forcedReplayStop) {
+                $completedExitCode = $process.ExitCode
+            }
+        }
         Stop-ReplayProcess -Process $process
         $replayStopwatch.Stop()
         if ($Sanitizer -eq 'address' -and $sanitizerOutput -and $sanitizerError) {
@@ -1707,8 +1751,8 @@ try {
         }
     }
     if ($sanitizerFailure) { throw 'Replay reported a sanitizer error' }
-    if ($Sanitizer -eq 'address' -and $null -ne $completedExitCode -and $completedExitCode -ne 0) {
-        throw "Instrumented replay exited with code $completedExitCode after writing its result"
+    if ($null -ne $completedExitCode -and $completedExitCode -ne 0) {
+        throw "Replay exited with code $completedExitCode after writing its result"
     }
     $actualResult = $null
     if (-not $missingActualResult) {
@@ -1827,6 +1871,7 @@ try {
         Write-Host ($actualResult | ConvertTo-Json -Depth 10)
     }
     if ($compareError -or $stateTraceCompareError -or $rngTraceCompareError) {
+        $replayFailure = (@($compareError, $stateTraceCompareError, $rngTraceCompareError) | Where-Object { $_ }) -join "`n"
         Write-Host ''
         Write-Host 'RESULT: FAIL' -ForegroundColor Red
         if ($compareError) {
@@ -1848,8 +1893,38 @@ try {
         Write-Host 'RESULT: PASS' -ForegroundColor Green
     }
 
+    $replaySucceeded = $true
     exit 0
+} catch {
+    $replayFailure = $_.Exception.Message
+    throw
 } finally {
+    if (-not $replaySucceeded) {
+        try {
+            Save-ReplayFailureDiagnostics -SandboxDirectory $sandbox.Directory -Details ([ordered]@{
+                    error = $replayFailure
+                    executable = $launchExecutable
+                    executable_sha256 = if ($launchExecutable -and (Test-Path -LiteralPath $launchExecutable -PathType Leaf)) {
+                        (Get-FileHash -LiteralPath $launchExecutable -Algorithm SHA256).Hash
+                    } else { $null }
+                    source_executable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $config.Exe }
+                    arguments = $launchArgs
+                    runner = $runnerSelection.Name
+                    demo = $resolvedDemoPath
+                    data_directory = $resolvedDataDir
+                    process_id = if ($process) { $process.Id } else { $null }
+                    native_exit_code = $completedExitCode
+                    forced_stop = $forcedReplayStop
+                    elapsed_seconds = if ($replayStopwatch) { $replayStopwatch.Elapsed.TotalSeconds } else { $null }
+                    last_window_title = $lastWindowTitle
+                    state_trace = $resolvedStateLogPath
+                    rng_trace = $resolvedRngLogPath
+                })
+        } catch {
+            $KeepSandbox = $true
+            Write-Warning "Could not archive replay diagnostics: $_. Preserving sandbox: $($sandbox.Directory)"
+        }
+    }
     if (-not $KeepSandbox -and (Test-Path -LiteralPath $sandbox.Directory)) {
         # Delete only this runner's sandbox after its engine has been stopped
         $sandboxPath = [IO.Path]::GetFullPath($sandbox.Directory)

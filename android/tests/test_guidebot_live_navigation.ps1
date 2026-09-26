@@ -1,12 +1,12 @@
 # TEST-SUPPORT: owner=test_guidebot_route_regressions
 # Native escort loop and physics, without rendering or player auto-follow
-param([switch]$NoBuild, [ValidateRange(0, 899)][int]$ReturnTargetSegment = 35)
+param([switch]$NoBuild, [ValidateRange(0, 899)][int]$ReturnTargetSegment = 35, [string]$BuildDir = 'buildd2')
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $outputRoot = Join-Path $repoRoot 'android/temp/guidebot_live_navigation'
 $hogDir = Join-Path $repoRoot 'game_data/CD images/Descent II (USA) (v1.1)/data_tracks/d2data'
-$exe = Join-Path $repoRoot 'buildd2/main/test_guidebot_live_navigation.exe'
+$exe = Join-Path $repoRoot "$BuildDir/main/test_guidebot_live_navigation.exe"
 if (-not $NoBuild) {
     & (Join-Path $repoRoot 'run-windows-build.ps1') -Target d2
     if ($LASTEXITCODE -ne 0) { throw 'D2 Windows build failed' }

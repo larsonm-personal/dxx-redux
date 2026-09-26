@@ -1,0 +1,260 @@
+// TEST: Original / Enhanced launcher selection and real save lifecycle
+[
+    {
+        "_info": {
+            "games": [
+                "d2"
+            ],
+            "_deps": [
+                {
+                    "file": "descent2.s22",
+                    "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"
+                },
+                {
+                    "file": "descent2.hog",
+                    "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"
+                },
+                {
+                    "file": "descent2.ham",
+                    "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"
+                },
+                {
+                    "file": "groupa.pig",
+                    "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"
+                }
+            ]
+        }
+    },
+    {
+        "action": "enter_launcher"
+    },
+    {
+        "action": "reset_state"
+    },
+    {
+        "action": "clear_mods"
+    },
+    {
+        "action": "setup_command",
+        "command": "clear_save_files",
+        "post_delay_ms": 250
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": {
+            "key": "show_resume_offer",
+            "value": false
+        },
+        "post_delay_ms": 250
+    },
+    {
+        "action": "setup_command",
+        "command": "write_engine_prefs",
+        "args": {
+            "guidebot_routing_mode": 0
+        },
+        "post_delay_ms": 250
+    },
+    {
+        "action": "enter_game",
+        "game": "d2"
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 20000,
+        "post_delay_ms": 200
+    },
+    {
+        "action": "wait_for",
+        "field": "screen_mode",
+        "value": "menu",
+        "timeout_ms": 20000
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "optional": true
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 10000
+    },
+    {
+        "action": "select",
+        "text": "Counterstrike",
+        "optional": true,
+        "timeout_ms": 1000
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 5000
+    },
+    {
+        "action": "select",
+        "text": "Rookie",
+        "timeout_ms": 10000
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 10000
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 10000
+    },
+    {
+        "action": "wait_for",
+        "field": "game_window_is_front",
+        "value": "true",
+        "timeout_ms": 10000
+    },
+    {
+        "action": "wait_ms",
+        "ms": 500
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "guidebot.routing_mode_name": "Original",
+            "guidebot.routing_default": 0
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "clear_robots",
+        "value": "true"
+    },
+    {
+        "action": "meta_action",
+        "id": 1037,
+        "post_delay_ms": 500
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "guidebot.released": true,
+            "guidebot.info_overlay_status": "Original"
+        },
+        "timeout_ms": 10000
+    },
+    {
+        "action": "set_debug",
+        "field": "guidebot_routing_default",
+        "value": "Enhanced"
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "guidebot.routing_mode_name": "Original",
+            "guidebot.routing_default": 1
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 750
+    },
+    {
+        "action": "meta_action",
+        "id": 1043,
+        "post_delay_ms": 200
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "guidebot.route_target_mode_name": "end_of_level",
+            "guidebot.routing_mode_name": "Original"
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "guidebot_routing_mode",
+        "value": "Enhanced"
+    },
+    {
+        "action": "select_radial",
+        "menu": "Guide",
+        "text": "Next",
+        "post_delay_ms": 500
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "guidebot.info_overlay_status": "HIGH-LEVEL"
+        },
+        "timeout_ms": 30000
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load"
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "guidebot.routing_mode_name": "Original",
+            "game_window_is_front": true,
+            "time_paused": false
+        },
+        "timeout_ms": 30000
+    },
+    {
+        "action": "set_debug",
+        "field": "guidebot_routing_mode",
+        "value": "Enhanced"
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 750
+    },
+    {
+        "action": "set_debug",
+        "field": "guidebot_routing_mode",
+        "value": "Original"
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load"
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "guidebot.routing_mode_name": "Enhanced",
+            "game_window_is_front": true,
+            "time_paused": false
+        },
+        "timeout_ms": 30000
+    },
+    {
+        "action": "set_debug",
+        "field": "guidebot_routing_default",
+        "value": "Enhanced"
+    },
+    {
+        "action": "introspect"
+    },
+    {
+        "action": "log",
+        "message": "Guidebot routing defaults, active modes, commands and save restore PASS"
+    },
+    {
+        "action": "enter_launcher"
+    },
+    {
+        "action": "setup_command",
+        "command": "write_engine_prefs",
+        "args": {
+            "guidebot_routing_mode": 1
+        },
+        "post_delay_ms": 250
+    }
+]

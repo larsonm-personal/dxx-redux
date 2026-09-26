@@ -1122,6 +1122,7 @@ void StartNewGame(int start_level)
 	Game_mode = GM_NORMAL;
 
 	Next_level_num = 0;
+	guidebot_routing_start_session();
 
 	InitPlayerObject();				//make sure player's object set up
 

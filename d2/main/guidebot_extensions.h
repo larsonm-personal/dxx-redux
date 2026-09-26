@@ -1,6 +1,8 @@
 #ifndef D2_GUIDEBOT_EXTENSIONS_H
 #define D2_GUIDEBOT_EXTENSIONS_H
 
+#include "guidebot_routing.h"
+
 struct input_demo_checkpoint_escort_state;
 struct input_demo_checkpoint_thief_state;
 
@@ -140,6 +142,7 @@ extern void escort_get_input_demo_checkpoint_thief_state(struct input_demo_check
 extern void thief_apply_network_mode(struct object *objp, int mode, int victim_pnum, int prepare_path);
 extern void thief_prepare_for_local_control(struct object *objp);
 extern int Buddy_objnum, Buddy_allowed_to_talk;
+const char *escort_current_goal_label(void);
 
 #ifdef NETWORK
 #ifdef __ANDROID__

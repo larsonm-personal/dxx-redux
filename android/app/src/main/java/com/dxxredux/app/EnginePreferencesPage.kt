@@ -121,6 +121,11 @@ fun EnginePreferencesPage(
     var persistGuidebotGoal by remember {
         mutableStateOf(prefs.getBoolean(PREF_PERSIST_GUIDEBOT_GOAL, true))
     }
+    var guidebotRoutingMode by remember {
+        mutableIntStateOf(
+            GuidebotRoutingMode.sanitize(prefs.getInt(PREF_GUIDEBOT_ROUTING_MODE, GuidebotRoutingMode.ENHANCED)),
+        )
+    }
     var showNearestPlayerLine by remember {
         mutableStateOf(prefs.getBoolean(PREF_NEAREST_PLAYER_LINE, true))
     }
@@ -750,6 +755,43 @@ fun EnginePreferencesPage(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
+                Text("Guidebot routing", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Text(
+                    "Applies to new games. Saves retain their mode; co-op uses the host's choice",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                listOf(
+                    Triple(
+                        GuidebotRoutingMode.ENHANCED,
+                        "Enhanced",
+                        "Finds prerequisites and recovers from difficult routes",
+                    ),
+                    Triple(
+                        GuidebotRoutingMode.ORIGINAL,
+                        "Original",
+                        "Classic Redux routing, including its limitations",
+                    ),
+                ).forEach { (mode, label, description) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = guidebotRoutingMode == mode,
+                            onClick = {
+                                guidebotRoutingMode = mode
+                                prefs.edit().putInt(PREF_GUIDEBOT_ROUTING_MODE, mode).apply()
+                            },
+                            modifier = Modifier.tvFocusBorder(),
+                        )
+                        Column {
+                            Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                            Text(description, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 Text("Local Visual Helpers", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(

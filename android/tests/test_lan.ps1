@@ -35,6 +35,8 @@
 #   .\test_lan.ps1 -SavedLateJoin -Game d2
 #   .\test_lan.ps1 -SavedLateJoin -RestoreStatus -Game d2
 #   .\test_lan.ps1 -HostMigration
+#   .\test_lan.ps1 -GuidebotRoutingMode Original -HostMigration
+#   .\test_lan.ps1 -HostDevice emulator-5556 -HostAvd Nexus5X_Light_2 -JoinDevice emulator-5558 -JoinAvd DxxSdk36
 #   .\test_lan.ps1 -SpewRecovery
 #   .\test_lan.ps1 -Game d1 -CoopDeath
 #   .\test_lan.ps1 -Game d2 -BriefingCase paused_force  # Requires other-h.mvl in game data
@@ -70,6 +72,10 @@
 
 param(
     [string]$Game = "d2",
+    [string]$HostDevice = 'emulator-5554',
+    [string]$JoinDevice = 'emulator-5556',
+    [string]$HostAvd = 'Nexus5X_Light_1',
+    [string]$JoinAvd = 'Nexus5X_Light_2',
     [string]$MissionFile,
     [int]$InitialLevel = 1,
     [string]$HostCallsign = "LanHost",
@@ -78,6 +84,8 @@ param(
     [switch]$SkipBuild,
     [switch]$UseRelay,
     [switch]$GuidebotOwnership,
+    [ValidateSet('Original', 'Enhanced')]
+    [string]$GuidebotRoutingMode,
     [ValidateSet('cage', 'deploy')]
     [string]$GuidebotClientRelease,
     [switch]$GuidebotSpawn,
@@ -160,6 +168,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+if ($HostDevice -eq $JoinDevice) { throw 'Host and joiner require separate devices' }
+if ($GuidebotRoutingMode -and $Game -ne 'd2') { throw 'Guidebot routing requires D2' }
 if ($GuidebotTravel) {
     if ($Game -ne 'd2' -or $InitialLevel -ne 8 -or $MissionFile -or -not $AllowSecretWarps) {
         throw 'GuidebotTravel requires Counterstrike level 8 and AllowSecretWarps'
@@ -282,9 +292,9 @@ $PACKAGE = "com.dxxredux.app"
 $ACTIVITY = "com.dxxredux.app.SetupActivity"
 
 $EMULATOR = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "emulator" -ToolName "emulator"
-$EMU1 = "emulator-5554"  # Player 1 (host)
-$EMU2 = "emulator-5556"  # Player 2 (joiner)
-$AVD_MAP = @{ $EMU1 = "Nexus5X_Light_1"; $EMU2 = "Nexus5X_Light_2" }
+$EMU1 = $HostDevice
+$EMU2 = $JoinDevice
+$AVD_MAP = @{ $EMU1 = $HostAvd; $EMU2 = $JoinAvd }
 $CALLSIGN1 = $HostCallsign
 $CALLSIGN2 = $JoinCallsign
 $MIGRATED_HOST_PORT = 42425
@@ -1279,6 +1289,19 @@ function Wait-BidirectionalPdata {
     }
 }
 
+function Assert-GuidebotRoutingSelection {
+    param([string[]]$Serials = @($EMU1, $EMU2))
+    if (-not $GuidebotRoutingMode) { return }
+    foreach ($serial in $Serials) {
+        $intro = Get-GameIntrospection -Serial $serial
+        $guidebot = Get-IntroGuidebot -Intro $intro
+        if (-not $guidebot -or $guidebot.routing_mode_name -ne $GuidebotRoutingMode) {
+            throw "Guidebot routing on $serial did not retain host selection $GuidebotRoutingMode"
+        }
+    }
+    Write-Status "$($Serials -join ', ') retain $GuidebotRoutingMode routing" 'Green'
+}
+
 function Invoke-HostMigrationScenario {
     $checkGuidebot = $Game -eq "d2"
     $initialGuidebotGeneration = -1
@@ -1330,6 +1353,7 @@ function Invoke-HostMigrationScenario {
         return $false
     }
     Write-Status "Slot 1 became host and reset object ownership$(if ($checkGuidebot) { ', with Guide-Bot authority' })" "Green"
+    Assert-GuidebotRoutingSelection -Serials @($EMU2)
 
     if (-not (Start-MigratedPeerRejoin -JoiningSerial $EMU1 -HostSerial $EMU2 -Callsign $CALLSIGN1)) {
         return $false
@@ -1346,6 +1370,7 @@ function Invoke-HostMigrationScenario {
         return $false
     }
     Write-Status "Former host rejoined with object parity and sustained PDATA" "Green"
+    Assert-GuidebotRoutingSelection
 
     $firstMigrationGuidebotGeneration = if ($checkGuidebot) {
         [int](Get-IntroGuidebot -Intro $script:migratedHostIntro).owner_generation
@@ -1363,6 +1388,7 @@ function Invoke-HostMigrationScenario {
         return $false
     }
     Write-Status "Slot 0 regained host authority$(if ($checkGuidebot) { ' and the Guide-Bot' })" "Green"
+    Assert-GuidebotRoutingSelection -Serials @($EMU1)
 
     if (-not (Start-MigratedPeerRejoin -JoiningSerial $EMU2 -HostSerial $EMU1 -Callsign $CALLSIGN2)) {
         return $false
@@ -2103,6 +2129,18 @@ try {
     }
     Write-Status "SetupActivity ready on both emulators" "Green"
 
+    if ($Game -eq 'd2') {
+        foreach ($serial in @($EMU1, $EMU2)) {
+            # Explicit coverage opposes the joiner's preference to the host's
+            $routing = if ($GuidebotRoutingMode -eq 'Original') { 0 } else { 1 }
+            if ($GuidebotRoutingMode -and $serial -eq $EMU2) { $routing = 1 - $routing }
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @(
+                'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+                '--es', 'command', 'write_engine_prefs', '--ei', 'guidebot_routing_mode', "$routing"
+            ) -Seconds 10 | Out-Null
+        }
+    }
+
     # Other tests intentionally exercise CD audio and can leave that pilot
     # preference behind after removing their temporary source. LAN startup is
     # unrelated to audio-source coverage, so normalize both devices to MIDI.
@@ -2835,6 +2873,8 @@ try {
         $testPassed = $false
     }
 
+    if ($testPassed) { Assert-GuidebotRoutingSelection }
+
     if ($testPassed -and $GuidebotOwnership) {
         $testPassed = Invoke-GuidebotOwnershipScenario
     }
@@ -3347,6 +3387,8 @@ try {
             Write-Status "Verified changed briefing palette restored on $serial" 'Green'
         }
     }
+
+    if ($testPassed) { Assert-GuidebotRoutingSelection }
 
     # Stop logcat capture
     try { if ($logcatProc1 -and -not $logcatProc1.HasExited) { Stop-Process -Id $logcatProc1.Id -Force } } catch {}

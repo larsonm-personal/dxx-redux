@@ -49,6 +49,8 @@ typedef struct input_demo_player_cfg {
 	uint8_t classic_autoselect_weapon;
 	uint8_t autoselect_only_once;
 	uint8_t original_homing;
+	/* D2 guidebot_routing.h values: Original 0, Enhanced 1 */
+	uint8_t guidebot_routing_mode;
 	uint8_t primary_order_count;
 	uint8_t primary_order[INPUT_DEMO_PLAYER_CFG_PRIMARY_ORDER_MAX];
 	uint8_t secondary_order_count;

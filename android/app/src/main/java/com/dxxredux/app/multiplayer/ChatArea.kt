@@ -23,6 +23,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dxxredux.app.Button
 import com.dxxredux.app.dpadTextFieldNavigation
 
 /** Chat area with message list and input field, shared between LAN and matchmaking lobbies. */

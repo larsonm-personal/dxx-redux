@@ -31,6 +31,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "game.h"
 #include "player.h"
 #include "key.h"
+#ifdef ANDROID
+#include "android_menu_navigation.h"
+#endif
 #include "object.h"
 #include "menu.h"
 #include "physics.h"
@@ -424,6 +427,13 @@ int pause_handler(window *wind, d_event *event, char *msg)
 {
 	int key;
 
+#ifdef ANDROID
+	android_menu_key_event controller_key;
+	if (android_menu_translate_button(event, &controller_key)) {
+		event = (d_event *)&controller_key;
+	}
+#endif
+
 	switch (event->type)
 	{
 		case EVENT_WINDOW_ACTIVATED:
@@ -437,6 +447,9 @@ int pause_handler(window *wind, d_event *event, char *msg)
 			{
 				case 0:
 					break;
+#ifdef ANDROID
+				case KEY_ENTER:
+#endif
 				case KEY_ESC:
 					window_close(wind);
 					return 1;

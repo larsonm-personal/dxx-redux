@@ -1,6 +1,6 @@
 {
   "type": "touch_layout",
-  "version": 4,
+  "version": 11,
   "name": "Controller Menus",
   "globalOpacity": 0.7,
   "sticks": [],
@@ -36,6 +36,11 @@
     "invertZ": true,
     "axisX": "Right Stick X",
     "axisY": "Right Stick Y",
-    "deadzone": 0.1
+    "deadzoneX": 0.22935780882835388,
+    "deadzoneY": 0.22935780882835388,
+    "deadzoneZ": 0.6000000238418579,
+    "maxAngleX": 0.436,
+    "maxAngleY": 0.436,
+    "maxAngleZ": 0.436
   }
 }

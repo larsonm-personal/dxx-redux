@@ -71,7 +71,6 @@ void d1_in_d2_release_assets(void);
 void d1_in_d2_get_stats(d1_in_d2_asset_stats *stats);
 int d1_in_d2_ensure_spawnable_guidebot(void);
 int d1_in_d2_is_spawnable_guidebot_model(int model_num);
-void d1_in_d2_note_spawnable_guidebot_draw(int model_num);
 /* Installed content identity survives descriptor changes until asset retirement
  * Before publication/after retirement, bootstrap uses the requested content */
 int d1_in_d2_use_d1_gameplay(void);

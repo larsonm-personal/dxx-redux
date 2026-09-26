@@ -274,7 +274,7 @@ class TouchEditorZoneEdgeTest {
     private fun minimalHumanLayout(): JSONObject =
         JSONObject()
             .put("type", "touch_layout")
-            .put("version", 2)
+            .put("version", CURRENT_TOUCH_LAYOUT_VERSION)
             .put("globalOpacity", 0.7)
             .put("sticks", JSONArray())
             .put("buttons", JSONArray())
@@ -438,7 +438,15 @@ class TouchEditorZoneEdgeTest {
         assertEquals(1.57f, parsed.gyro.maxAngleX, 0f)
         assertEquals(1.57f, parsed.gyro.maxAngleY, 0f)
         assertEquals(1.57f, parsed.gyro.maxAngleZ, 0f)
-        assertEquals(2.45f, parsed.sticks.single().extremeActions.single().releaseThreshold, 0f)
+        assertEquals(
+            2.45f,
+            parsed.sticks
+                .single()
+                .extremeActions
+                .single()
+                .releaseThreshold,
+            0f,
+        )
     }
 
     @Test
@@ -461,7 +469,13 @@ class TouchEditorZoneEdgeTest {
             )
 
         val parsed = TouchLayoutSlotRepository.fromExportJsonArray(slots, activeIndex = 0)
-        val zone = parsed?.activeSlot?.value?.axisRegions?.single()?.zone
+        val zone =
+            parsed
+                ?.activeSlot
+                ?.value
+                ?.axisRegions
+                ?.single()
+                ?.zone
 
         assertEquals(70f, zone?.leftPct ?: -1f, 0.001f)
         assertEquals(90f, zone?.rightPct ?: -1f, 0.001f)

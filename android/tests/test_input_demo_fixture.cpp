@@ -462,12 +462,20 @@ static int expect_player_cfg_order_validation(void)
 	        player_cfg_header_with_orders(valid_primary, valid_secondary), &metadata, &error))
 		return report_failure_string(std::string("valid player_cfg permutation failed: ") + error);
 	metadata.player_cfg.autoselect_only_once = 1;
+	if (metadata.player_cfg.guidebot_routing_mode != 1)
+		return report_failure("legacy replay did not default to Enhanced routing");
+	metadata.player_cfg.guidebot_routing_mode = 0;
 	std::string serialized;
 	input_demo_metadata restored;
 	if (!input_demo_metadata_to_header_line(metadata, &serialized, &error) ||
 	    !input_demo_metadata_parse_header_line(serialized, &restored, &error) ||
 	    restored.player_cfg.autoselect_only_once != 1)
 		return report_failure("Autoselect Only Once recording setting did not roundtrip");
+	if (restored.player_cfg.guidebot_routing_mode != 0)
+		return report_failure("Original Guidebot replay setting did not roundtrip");
+	metadata.player_cfg.guidebot_routing_mode = 2;
+	if (input_demo_metadata_to_header_line(metadata, &serialized, &error))
+		return report_failure("invalid Guidebot replay setting unexpectedly serialized");
 	if (input_demo_metadata_parse_header_line(
 	        player_cfg_header_with_orders(duplicate_primary, valid_secondary), &metadata, &error))
 		return report_failure("duplicate player_cfg weapon unexpectedly validated");

@@ -76,6 +76,7 @@ typedef struct player_config
 	char GuidebotNameReal[GUIDEBOT_NAME_LEN+1];
 	int HudMode;
 	int EscortHotKeys;
+	int GuidebotRouting;
 	int PersistentDebris;
 	int PRShot;
 	int DemoRecordingIndicator;

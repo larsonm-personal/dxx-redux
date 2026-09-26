@@ -77,6 +77,9 @@ void multi_save_game(ubyte slot, uint id, char *desc);
 #include "kmatrix.h"
 #include "multi.h"
 #include "net_udp.h"
+#ifdef NETWORK
+void net_udp_show_game_rules(netgame_info *netgame);
+#endif
 #include "multibot.h"
 #include "fireball.h"
 #include "maths.h"
@@ -189,6 +192,38 @@ static bool automation_select_radial(const char *menu_id, const char *text)
 	if (cls) env->DeleteLocalRef(cls);
 	if (attached) g_jvm->DetachCurrentThread();
 	return selected;
+}
+
+static std::string automation_controller_input(const std::string &input)
+{
+	JNIEnv *env;
+	int attached = 0;
+	if (!g_jvm || !g_activity)
+		return "Controller input has no Activity";
+	if (g_jvm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {
+		if (g_jvm->AttachCurrentThread(&env, NULL) != JNI_OK)
+			return "Controller input could not attach to JVM";
+		attached = 1;
+	}
+	std::string failure = "Controller input JNI call failed";
+	jclass cls = env->GetObjectClass(g_activity);
+	jmethodID method = cls ? env->GetMethodID(cls, "automateControllerInput", "(Ljava/lang/String;)Ljava/lang/String;") : NULL;
+	jstring request = method ? env->NewStringUTF(input.c_str()) : NULL;
+	jstring result = request ? (jstring) env->CallObjectMethod(g_activity, method, request) : NULL;
+	if (env->ExceptionCheck()) {
+		env->ExceptionClear();
+	} else if (result) {
+		const char *text = env->GetStringUTFChars(result, NULL);
+		if (text) {
+			failure = text;
+			env->ReleaseStringUTFChars(result, text);
+		}
+	}
+	if (result) env->DeleteLocalRef(result);
+	if (request) env->DeleteLocalRef(request);
+	if (cls) env->DeleteLocalRef(cls);
+	if (attached) g_jvm->DetachCurrentThread();
+	return failure;
 }
 
 static void automation_enter_launcher(void)
@@ -398,6 +433,7 @@ static int objective_mode_from_name(const char *name)
 
 enum step_type {
 	STEP_KEY,                        /* inject key down+up, then delay */
+	STEP_CONTROLLER_INPUT,           /* exercise Android Activity controller dispatch */
 	STEP_WAIT_MS,                    /* wait N milliseconds */
 	STEP_WAIT_FOR,                   /* wait for a game state condition */
 	STEP_INTROSPECT,                 /* trigger introspection dump */
@@ -467,6 +503,7 @@ struct assert_expect {
 
 struct auto_step {
 	step_type type = STEP_KEY;
+	std::string controller_input;
 	std::string key_name;               /* STEP_KEY: key name */
 	std::string modifier_name;          /* STEP_KEY: optional modifier (e.g. "lshift") */
 	int post_delay_ms = 300;            /* STEP_KEY / STEP_SELECT: post-action delay */
@@ -610,6 +647,7 @@ static const char *step_type_name(step_type t)
 {
 	switch (t) {
 		case STEP_KEY: return "key";
+		case STEP_CONTROLLER_INPUT: return "controller_input";
 		case STEP_WAIT_MS: return "wait_ms";
 		case STEP_WAIT_FOR: return "wait_for";
 		case STEP_INTROSPECT: return "introspect";
@@ -2358,6 +2396,7 @@ static int parse_script(const char *json_text)
 			std::string action = step_json.value("action", "");
 
 			if (action == "key") s.type = STEP_KEY;
+			else if (action == "controller_input") s.type = STEP_CONTROLLER_INPUT;
 			else if (action == "wait_ms") s.type = STEP_WAIT_MS;
 			else if (action == "wait_for") s.type = STEP_WAIT_FOR;
 			else if (action == "introspect") s.type = STEP_INTROSPECT;
@@ -2417,6 +2456,7 @@ static int parse_script(const char *json_text)
 				continue;
 			}
 
+			if (s.type == STEP_CONTROLLER_INPUT) s.controller_input = step_json.dump();
 			s.key_name = step_json.value("key", "");
 			s.modifier_name = step_json.value("modifier", "");
 			s.post_delay_ms = step_json.value("post_delay_ms", step_json.value("ms", 300));
@@ -3028,6 +3068,24 @@ extern "C" void game_automate_tick(void)
 	Uint32 elapsed = now - g_step_start;
 
 	switch (s.type) {
+		case STEP_CONTROLLER_INPUT:
+#ifdef ANDROID
+			if (g_key_phase == 0) {
+				std::string failure = automation_controller_input(s.controller_input);
+				if (!failure.empty()) {
+					stop_script_fail(failure.c_str());
+					break;
+				}
+				g_key_phase = 1;
+				g_step_start = SDL_GetTicks();
+			} else if (elapsed >= (Uint32) s.post_delay_ms) {
+				advance_step();
+			}
+#else
+			stop_script_fail("controller_input: Android-only action");
+#endif
+			break;
+
 		case STEP_KEY:
 			if (g_key_phase == 0) {
 				if (!s.modifier_name.empty())
@@ -3921,6 +3979,24 @@ extern "C" void game_automate_tick(void)
 				     strtol(s.value.c_str(), NULL, 10) != 0)
 				        ? 1
 				        : 0;
+			} else if (s.field == "guidebot_routing_mode" || s.field == "guidebot_routing_default") {
+#ifdef DXX_BUILD_DESCENT_II
+				int mode = s.value == "Original" || s.value == "original" || s.value == "0" ? GUIDEBOT_ROUTING_ORIGINAL : s.value == "Enhanced" || s.value == "enhanced" || s.value == "1" ? GUIDEBOT_ROUTING_ENHANCED
+				                                                                                                                                                                           : -1;
+				if (!guidebot_routing_valid(mode)) {
+					stop_script_fail("guidebot routing: expected Original or Enhanced");
+					break;
+				}
+				if (s.field == "guidebot_routing_default")
+					guidebot_routing_set_default(mode);
+				else if (Game_mode & GM_MULTI_COOP) {
+					stop_script_fail("guidebot routing: co-op mode is fixed by the host at session creation");
+					break;
+				} else
+					guidebot_routing_set_mode(mode);
+#else
+				stop_script_fail("guidebot routing requires the D2 engine");
+#endif
 			} else if (s.field == "persist_guidebot_goal_message") {
 #ifdef DXX_BUILD_DESCENT_II
 				escort_set_goal_message_persistent(s.value == "true" || s.value == "1");
@@ -5324,6 +5400,17 @@ extern "C" void game_automate_tick(void)
 				Players[Player_num].laser_level = 2;
 				Players[Player_num].flags |= PLAYER_FLAGS_QUAD_LASERS;
 				multi_send_ship_status();
+			} else if (s.field == "player_energy") {
+				if (Screen_mode != SCREEN_GAME || !Game_wind || !ConsoleObject) {
+					stop_script_fail("player_energy: game is not running");
+					break;
+				}
+				const int energy = std::stoi(s.value);
+				if (energy < 0 || energy > 200) {
+					stop_script_fail("player_energy must be between 0 and 200");
+					break;
+				}
+				Players[Player_num].energy = i2f(energy);
 			} else if (s.field == "damage_player") {
 				if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
 					stop_script_fail("damage_player: game is not running");
@@ -5597,6 +5684,11 @@ extern "C" void game_automate_tick(void)
 					meta_action_dispatch(META_QUICK_LOAD, 1);
 				} else if (s.value == "game_menu") {
 					g_android_open_game_menu = 1;
+
+#ifdef NETWORK
+				} else if (s.value == "netgame_info") {
+					net_udp_show_game_rules(&Netgame);
+#endif
 				} else if (s.value == "pause") {
 					do_game_pause();
 				} else if (s.value == "overlay_pause") {

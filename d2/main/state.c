@@ -97,7 +97,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 // Version 36 uses original static AI records for native D1 actors
 // Version 37 appends full-width relative Fusion, refueling and collision clocks
-#define STATE_VERSION CADENCE_D2_SAVE_VERSION
+// Version 38 records the session Guidebot routing algorithm
+#define STATE_VERSION 38
+#define STATE_GUIDEBOT_ROUTING_VERSION 38
 #define STATE_D1_TRIGGER_STORAGE_VERSION       34
 #define STATE_D1_BOSS_STATE_VERSION 33
 #define STATE_D1_AI_STORAGE_VERSION 32
@@ -841,6 +843,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	d1_in_d2_ai_write_boss_saved_state(fp);
 	d1_in_d2_write_trigger_storage(fp);
 	cadence_runtime_write(fp, GameTime64);
+	PHYSFS_writeSLE32(fp, guidebot_routing_mode());
 }
 
 /* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
@@ -1112,6 +1115,12 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	if (version >= CADENCE_D2_SAVE_VERSION &&
 	    !cadence_runtime_read(fp, swap, 0, GameTime64))
 		goto done;
+	validation_stage = "Guidebot routing mode";
+	if (version >= STATE_GUIDEBOT_ROUTING_VERSION) {
+		int mode;
+		if (!state_runtime_read_s32(fp, swap, &mode) || !guidebot_routing_valid(mode))
+			goto done;
+	}
 	valid = 1;
 done:
 #ifdef __ANDROID__
@@ -1212,6 +1221,12 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 		d1_in_d2_read_trigger_storage(fp, swap, !secret_restore);
 	if (version >= CADENCE_D2_SAVE_VERSION)
 		cadence_runtime_read(fp, swap, !secret_restore, GameTime64);
+	if (version >= STATE_GUIDEBOT_ROUTING_VERSION) {
+		int mode = PHYSFSX_readSXE32(fp, swap);
+		if (!secret_restore)
+			guidebot_routing_restore_mode(mode);
+	} else if (!secret_restore)
+		guidebot_routing_restore_mode(guidebot_routing_default());
 
 	if (secret_restore)
 		return;
@@ -3764,7 +3779,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			return 0;
 		}
 		state_read_runtime_state(fp, swap, secret_restore, version);
-	}
+	} else if (!secret_restore)
+		guidebot_routing_restore_mode(guidebot_routing_default());
 	if (version < CADENCE_D2_SAVE_VERSION && !secret_restore)
 		cadence_runtime_reset();
 	state_log_checkpoint_ai_restore_state();

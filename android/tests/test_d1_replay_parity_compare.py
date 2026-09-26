@@ -25,6 +25,122 @@ def schema_example(schema):
 
 
 class ParityTests(unittest.TestCase):
+    def test_frozen_runner_loads_its_helpers_after_workspace_edits(self):
+        pwsh = parity.shutil.which("pwsh")
+        if not pwsh:
+            self.skipTest("PowerShell is required for runner loading integration")
+        source = self.root / "workspace"
+        parity.snapshot_harness(Path(__file__).resolve().parents[2], source)
+        harness = parity.snapshot_harness(source, self.root / "frozen")
+        for name in ("android/tests/run_input_demo_replay.ps1", "android/helpers/test_host_platform.ps1",
+                     "android/helpers/input_demo_replay_menu.ps1", "android/helpers/retain-recent-artifacts.ps1"):
+            (source / name).write_text("throw 'live workspace must not execute'\n")
+        demos = self.root / "demos"
+        demos.mkdir()
+        (demos / "pinned-demo.dximdemo").write_text(json.dumps({"type": "header", **self.header}) + "\n")
+        completed = parity.subprocess.run(
+            [pwsh, "-NoProfile", "-File", str(Path(harness["root"]) / "android/tests/run_input_demo_replay.ps1"),
+             "-RepositoryRoot", str(source), "-ListOnly", "-SearchRoot", str(demos)],
+            capture_output=True, text=True, encoding="utf-8", check=False)
+        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+        self.assertIn("pinned-demo.dximdemo", completed.stdout)
+        # Failure retention must also load the staged helpers, and explicit staged
+        # data must not execute a workspace index generator before launch
+        (source / "game_data").mkdir()
+        (source / "game_data/generate_game_data_index.ps1").write_text("throw 'live index must not execute'\n")
+        data = source / "data"
+        data.mkdir()
+        for name in ("descent.hog", "descent.pig"):
+            (data / name).write_bytes(b"inventory only")
+        executable = source / "child.exe"
+        executable.write_bytes(b"not executed: malformed recording fails before launch")
+        result = source / "temp/result.json"
+        failed = parity.subprocess.run(
+            [pwsh, "-NoProfile", "-File", str(Path(harness["root"]) / "android/tests/run_input_demo_replay.ps1"),
+             "-RepositoryRoot", str(source), "-DemoPath", str(demos / "pinned-demo.dximdemo"),
+             "-DataDir", str(data), "-ExecutablePath", str(executable), "-Runner", "windowed-no-present",
+             "-Mode", "accelerated", "-ResultCopyPath", str(result)],
+            capture_output=True, text=True, encoding="utf-8", check=False)
+        self.assertNotEqual(failed.returncode, 0)
+        archives = list(result.parent.glob("result.json.failure_*/failure.json"))
+        self.assertEqual(len(archives), 1, failed.stdout + failed.stderr)
+        failure = json.loads(archives[0].read_text(encoding="utf-8-sig"))
+        self.assertIn("does not end with a result record", failure["error"])
+        self.assertIsNone(failure["process_id"])
+        self.assertFalse((source / "temp/input_demo_runtime_wrapper/d1/pinned-demo").exists())
+        parity.check_harness(harness)
+
+    def test_harness_change_while_staging_is_rejected(self):
+        source = self.root / "workspace"
+        parity.snapshot_harness(Path(__file__).resolve().parents[2], source)
+        original_copy = parity.shutil.copy2
+
+        def changing_copy(src, dest):
+            original_copy(src, dest)
+            Path(src).write_bytes(b"changed while staging")
+
+        with mock.patch.object(parity.shutil, "copy2", side_effect=changing_copy):
+            with self.assertRaisesRegex(parity.EvidenceError, "changed while staging"):
+                parity.snapshot_harness(source, self.root / "frozen")
+
+    def test_harness_inventory_cannot_omit_or_redirect_a_dependency(self):
+        harness = parity.snapshot_harness(Path(__file__).resolve().parents[2], self.root / "frozen")
+        missing = copy.deepcopy(harness)
+        missing["package"].pop()
+        with self.assertRaisesRegex(parity.EvidenceError, "inventory is incomplete"):
+            parity.check_harness(missing)
+        redirected = copy.deepcopy(harness)
+        redirected["package"][0]["path"] = str(Path(__file__).with_name("d1_replay_parity.py"))
+        with self.assertRaisesRegex(parity.EvidenceError, "outside its staged location"):
+            parity.check_harness(redirected)
+
+    def test_controller_executes_staged_code_after_source_changes(self):
+        source = self.root / "workspace"
+        parity.snapshot_harness(Path(__file__).resolve().parents[2], source)
+        controller = source / "android/tests/d1_replay_parity.py"
+        controller.write_text(
+            "import json,sys\nfrom pathlib import Path\n"
+            "out=Path(sys.argv[sys.argv.index('--output')+1])\n"
+            "(out/'executed.json').write_text(json.dumps({'controller':str(Path(__file__).resolve())}))\n"
+            "sys.exit(7)\n")
+        original_snapshot = parity.snapshot_harness
+
+        def stage_then_edit(repo, directory):
+            harness = original_snapshot(repo, directory)
+            controller.write_text("raise RuntimeError('live controller must not execute')\n")
+            return harness
+
+        args = argparse.Namespace(repo=source, output=self.root / "output", data=source,
+                                  native=controller, imported=controller, minimum_free_gb=0,
+                                  pwsh="unused", timeout=10, demo=[source / "demo"])
+        with mock.patch.object(parity, "snapshot_harness", side_effect=stage_then_edit):
+            self.assertEqual(parity.run(args), 7)
+        executed = json.loads((args.output / "executed.json").read_text())
+        self.assertEqual(Path(executed["controller"]), args.output / "harness/android/tests/d1_replay_parity.py")
+
+    def test_staged_harness_corruption_rejects_capture_before_and_after_launch(self):
+        harness = parity.snapshot_harness(Path(__file__).resolve().parents[2], self.root / "frozen")
+        helper = Path(harness["root"]) / "android/helpers/powershell_compat.ps1"
+        args = argparse.Namespace(repo=self.root, output=self.root, minimum_free_gb=0, timeout=1, pwsh="unused")
+        executable = {"path": "unused", "package": []}
+
+        def corrupt_after_launch(command, **_kwargs):
+            for flag in ("-ResultCopyPath", "-StateLogPath", "-RngLogPath"):
+                Path(command[command.index(flag) + 1]).write_bytes(b"{}\n")
+            helper.write_text("corrupted staged helper")
+            return parity.subprocess.CompletedProcess(command, 0)
+
+        with mock.patch.object(parity.subprocess, "run", side_effect=corrupt_after_launch) as launch:
+            with self.assertRaisesRegex(parity.EvidenceError, "capture failed"):
+                parity.capture(args, {"path": "unused"}, self.root, "after", False, self.root, executable, harness)
+            self.assertEqual(launch.call_count, 1)
+            with self.assertRaisesRegex(parity.EvidenceError, "Staged replay harness changed"):
+                parity.capture(args, {"path": "unused"}, self.root, "before", False, self.root, executable, harness)
+            self.assertEqual(launch.call_count, 1)
+        info = json.loads((self.root / "after/launch.json").read_text())
+        self.assertIn("harness_error", info)
+        self.assertFalse((self.root / "before").exists())
+
     def test_untracked_sources_are_pinned_and_ignore_build_products(self):
         repo = self.root / "repo"
         repo.mkdir()
@@ -649,11 +765,13 @@ class ParityTests(unittest.TestCase):
         args = argparse.Namespace(repo=Path(__file__).resolve().parents[2], data=data,
                                   output=self.root / "output", native=__file__, imported=__file__, minimum_free_gb=0.01,
                                   demo=[self.root / "one.dximdemo", self.root / "two.dximdemo"])
+        args.output.mkdir()
+        harness = parity.snapshot_harness(args.repo, args.output / "harness")
         demo = {"header": self.header, "result": self.result}
         with mock.patch.object(parity, "read_demo", return_value=demo), \
              mock.patch.object(parity, "capture", side_effect=parity.EvidenceError("timeout")) as capture, \
              contextlib.redirect_stdout(io.StringIO()):
-            self.assertNotEqual(parity.run(args), 0)
+            self.assertNotEqual(parity.run_with_lease(args, harness), 0)
         self.assertEqual(capture.call_count, 6)
         report = json.loads((args.output / "report.json").read_text())
         self.assertEqual(len(report["cases"]), 2)

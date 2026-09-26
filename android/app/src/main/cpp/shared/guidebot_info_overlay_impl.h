@@ -63,6 +63,7 @@ const char *guidebot_info_status(void)
 	return Guidebot_info_mode == 0 ? "inactive" : Guidebot_info_mode == 1 ? "remote owner"
 	                                          : Guidebot_info_mode == 2   ? "HIGH-LEVEL"
 	                                          : Guidebot_info_mode == 3   ? "BASE routing"
+	                                          : Guidebot_info_mode == 5   ? "Original"
 	                                                                      : "follow / idle";
 }
 
@@ -72,7 +73,8 @@ void guidebot_info_draw(void)
 	const object *obj = live ? &Objects[Buddy_objnum] : NULL;
 	const ai_static *aip = obj ? &obj->ctype.ai_info : NULL;
 	const ai_local *ailp = obj ? &Ai_local_info[Buddy_objnum] : NULL;
-	const int readiness = level_metadata_get_route_readiness();
+	const int enhanced = guidebot_routing_is_enhanced();
+	const int readiness = enhanced ? level_metadata_get_route_readiness() : -1;
 	int remote = 0;
 	int mode, stalled, i, x, y, line, width = 0;
 	char rows[6][112];
@@ -87,14 +89,16 @@ void guidebot_info_draw(void)
 	remote = (Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num;
 #endif
 	mode = !live ? 0 : remote                      ? 1
+	               : !enhanced                     ? 5
 	               : Escort_route_goal.active      ? 2
 	               : ailp->mode == AIM_GOTO_OBJECT ? 3
 	                                               : 4;
 	status = mode == 0 ? "inactive" : mode == 1 ? "remote owner"
 	                              : mode == 2   ? "HIGH-LEVEL"
 	                              : mode == 3   ? "BASE routing"
+	                              : mode == 5   ? "Original"
 	                                            : "follow / idle";
-	if (readiness != Guidebot_info_readiness) {
+	if (enhanced && readiness != Guidebot_info_readiness) {
 		char event[80];
 		snprintf(event, sizeof(event), "Metadata: %s", level_metadata_route_readiness_name(readiness));
 		guidebot_info_event(event, readiness == LEVEL_METADATA_READINESS_FAILED);
@@ -119,12 +123,15 @@ void guidebot_info_draw(void)
 	}
 	if (!guidebot_info_visible())
 		return;
-	snprintf(rows[0], sizeof(rows[0]), "GB %s | metadata %s", status,
-	         level_metadata_route_readiness_name(readiness));
+	if (enhanced)
+		snprintf(rows[0], sizeof(rows[0]), "GB Enhanced: %s | metadata %s", status,
+		         level_metadata_route_readiness_name(readiness));
+	else
+		snprintf(rows[0], sizeof(rows[0]), "GB Original: %s", status);
 	colors[0] = mode == 3 || readiness == LEVEL_METADATA_READINESS_FAILED ? red : mode == 2 ? green
 	                                                                                        : normal;
 	snprintf(rows[1], sizeof(rows[1]), "Goal: %.64s", mode == 1 ? "diagnostics on owner" : Escort_route_goal.active ? escort_route_goal_label()
-	                                                                                                                : "no high-level objective");
+	                                                                                                                : escort_current_goal_label());
 	colors[1] = normal;
 	if (obj && !remote)
 		snprintf(rows[2], sizeof(rows[2]), "S%d>%d P%d/%d still:%ds retry:%d",

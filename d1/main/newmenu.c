@@ -2296,11 +2296,13 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 			else if (btn == 23) keycode = KEY_DOWN;
 			else if (btn == 24) keycode = KEY_LEFT;
 			else if (btn == 25) keycode = KEY_RIGHT;
+			else if (btn == 4)  keycode = KEY_PAGEUP;
+			else if (btn == 5)  keycode = KEY_PAGEDOWN;
 			if (keycode >= 0) {
 				struct { event_type type; int keycode; } ke;
 				ke.type = EVENT_KEY_COMMAND;
 				ke.keycode = keycode;
-				return newmenu_key_command(wind, (d_event *)&ke, menu);
+				return newmenu_handler(wind, (d_event *)&ke, menu);
 			}
 			break;
 		}
@@ -2336,7 +2338,7 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 						struct { event_type type; int keycode; } ke;
 						ke.type = EVENT_KEY_COMMAND;
 						ke.keycode = keycode;
-						return newmenu_key_command(wind, (d_event *)&ke, menu);
+						return newmenu_handler(wind, (d_event *)&ke, menu);
 					}
 				}
 			}
@@ -3370,11 +3372,13 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 			else if (btn == 23) keycode = KEY_DOWN;
 			else if (btn == 24) keycode = KEY_LEFT;
 			else if (btn == 25) keycode = KEY_RIGHT;
+			else if (btn == 4)  keycode = KEY_PAGEUP;
+			else if (btn == 5)  keycode = KEY_PAGEDOWN;
 			if (keycode >= 0) {
 				struct { event_type type; int keycode; } ke;
 				ke.type = EVENT_KEY_COMMAND;
 				ke.keycode = keycode;
-				return listbox_key_command(wind, (d_event *)&ke, lb);
+				return listbox_handler(wind, (d_event *)&ke, lb);
 			}
 			break;
 		}
@@ -3406,7 +3410,7 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 						struct { event_type type; int keycode; } ke;
 						ke.type = EVENT_KEY_COMMAND;
 						ke.keycode = keycode;
-						return listbox_key_command(wind, (d_event *)&ke, lb);
+						return listbox_handler(wind, (d_event *)&ke, lb);
 					}
 				}
 			}

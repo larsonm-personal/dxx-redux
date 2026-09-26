@@ -10,6 +10,38 @@
 
 #include "android_log.h"
 #include "android_slowdown_detector.h"
+#include "game.h"
+#include "object.h"
+#include "player.h"
+
+void android_profile_scene_state(void)
+{
+	int active_objects = 0;
+	int projectile_objects = 0;
+	int reactor_objects = 0;
+	int i;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *obj = &Objects[i];
+		int owner;
+
+		if (obj->type == OBJ_NONE)
+			continue;
+		active_objects++;
+		if (obj->type == OBJ_WEAPON)
+			projectile_objects++;
+		else if (obj->type == OBJ_CNTRLCEN)
+			reactor_objects++;
+		if (obj->type != OBJ_ROBOT)
+			continue;
+		owner = obj->ctype.ai_info.REMOTE_OWNER;
+		android_profile_remote_robot_live(
+		    i, obj->signature,
+		    (Game_mode & GM_MULTI) && owner >= 0 && owner != Player_num);
+	}
+	android_profile_set_scene_object_counts(
+	    active_objects, projectile_objects, reactor_objects);
+}
 
 extern int r_tpolyc;
 extern int r_water_faces;

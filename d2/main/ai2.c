@@ -214,7 +214,8 @@ static object *create_buddy_bot_at_position(int segnum, vms_vector *pos)
 {
 	int	buddy_id;
 
-	d1_in_d2_ensure_spawnable_guidebot();
+	if (!d1_in_d2_ensure_spawnable_guidebot())
+		return NULL;
 	for (buddy_id=0; buddy_id<N_robot_types; buddy_id++)
 		if (Robot_info[buddy_id].companion)
 			break;
@@ -1724,9 +1725,9 @@ int ai_door_is_openable(object *objp, segment *segp, int sidenum)
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 		/* A controlling switch does not make a solid grate an openable door
 		 * The strategic planner can guide to that switch before rebuilding */
-		if (wallp->type == WALL_CLOSED ||
+		if (guidebot_routing_is_enhanced() && (wallp->type == WALL_CLOSED ||
 		    (wallp->type == WALL_ILLUSION &&
-		     !(WALL_IS_DOORWAY(segp, sidenum) & WID_FLY_FLAG)))
+		     !(WALL_IS_DOORWAY(segp, sidenum) & WID_FLY_FLAG))))
 			return 0;
 #endif
 

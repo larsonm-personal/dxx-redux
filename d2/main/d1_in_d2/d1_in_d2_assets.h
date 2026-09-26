@@ -137,12 +137,4 @@ int d1_in_d2_publish_assets(d1_asset_generation *generation, const char **error)
 /* Data owner called only by the facade above; does not select the session profile */
 int d1_in_d2_publish_asset_data(d1_asset_generation *generation, const char **error);
 
-/* Transitional overlay operations; only the session facade orders these */
-void d1_in_d2_apply_effects(int active);
-void d1_in_d2_apply_robot_assets(int active);
-void d1_in_d2_apply_cockpit(int active);
-int d1_in_d2_prepare_guidebot_assets(void);
-int d1_in_d2_validate_assets(void);
-const char *d1_in_d2_asset_validation_error(void);
-
 #endif

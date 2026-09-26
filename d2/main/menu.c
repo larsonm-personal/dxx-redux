@@ -25,6 +25,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "game.h"
 #include "gr.h"
 #include "key.h"
+#ifdef ANDROID
+#include "android_menu_navigation.h"
+#endif
 #include "mouse.h"
 #include "iff.h"
 #include "u_mem.h"
@@ -793,6 +796,15 @@ int demo_menu_handler( listbox *lb, d_event *event, void *userdata )
 
 	userdata = userdata;
 
+#ifdef ANDROID
+	android_menu_key_event controller_key;
+	if (event->type == EVENT_JOYSTICK_BUTTON_DOWN && (event_joystick_get_button(event) == 2 || event_joystick_get_button(event) == 3) && android_menu_translate_button(event, &controller_key)) {
+		if (event_joystick_get_button(event) == 3)
+			controller_key.keycode = KEY_CTRLED + KEY_C;
+		event = (d_event *)&controller_key;
+	}
+#endif
+
 	switch (event->type)
 	{
 		case EVENT_KEY_COMMAND:
@@ -838,7 +850,13 @@ int select_demo(void)
 	// Sort by name
 	qsort(list, NumItems, sizeof(char *), (int (*)( const void *, const void * ))string_array_sort_func);
 
+#ifdef ANDROID
+	static char controller_title[128];
+	snprintf(controller_title, sizeof(controller_title), "%s\nX: delete  Y: convert", TXT_SELECT_DEMO);
+	newmenu_listbox1(controller_title, NumItems, list, 1, 0, demo_menu_handler, NULL);
+#else
 	newmenu_listbox1(TXT_SELECT_DEMO, NumItems, list, 1, 0, demo_menu_handler, NULL);
+#endif
 
 	return 1;
 }
@@ -2177,7 +2195,11 @@ struct misc_menu_data {
 
 void do_misc_menu()
 {
+#ifdef __ANDROID__
 	newmenu_item m[43];
+#else
+	newmenu_item m[46];
+#endif
 	int i = 0;
 	struct misc_menu_data misc_menu_data;
 
@@ -2297,6 +2319,18 @@ void do_misc_menu()
 		ADD_CHECK(41, "Original homing (Single/Coop)", PlayerCfg.OriginalHoming);
 		m[42].type = NM_TYPE_TEXT;
 		m[42].text = "D1 is similar at 25 Hz; D2 tracks and reacquires more strongly.";
+#ifndef __ANDROID__
+		m[43].type = NM_TYPE_TEXT;
+		m[43].text = "Guidebot routing (new games):";
+		m[44].type = NM_TYPE_RADIO;
+		m[44].text = "Original";
+		m[44].group = 2;
+		m[44].value = guidebot_routing_default() == GUIDEBOT_ROUTING_ORIGINAL;
+		m[45].type = NM_TYPE_RADIO;
+		m[45].text = "Enhanced";
+		m[45].group = 2;
+		m[45].value = guidebot_routing_default() == GUIDEBOT_ROUTING_ENHANCED;
+#endif
 
 		i = newmenu_do1(NULL, "Misc Options", SDL_arraysize(m), m, menu_misc_options_handler, &misc_menu_data, i);
 
@@ -2305,6 +2339,10 @@ void do_misc_menu()
 		PlayerCfg.HeadlightActiveDefault	= m[2].value;
 		PlayerCfg.GuidedInBigWindow		= m[3].value;
 		PlayerCfg.EscortHotKeys			= m[4].value;
+#ifndef __ANDROID__
+		PlayerCfg.GuidebotRouting = m[44].value ? GUIDEBOT_ROUTING_ORIGINAL : GUIDEBOT_ROUTING_ENHANCED;
+		guidebot_routing_set_default(PlayerCfg.GuidebotRouting);
+#endif
 		PlayerCfg.PersistentDebris		= m[5].value;
 		PlayerCfg.PRShot 			= m[6].value;
 		if (m[9].value) {

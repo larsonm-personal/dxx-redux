@@ -28,6 +28,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "window.h"
 #include "gr.h"
 #include "key.h"
+#ifdef ANDROID
+#include "android_menu_navigation.h"
+#endif
 #include "mouse.h"
 #include "palette.h"
 #include "game.h"
@@ -379,6 +382,13 @@ int scores_handler(window *wind, d_event *event, scores_menu *menu)
 	sbyte fades[64] = { 1,1,1,2,2,3,4,4,5,6,8,9,10,12,13,15,16,17,19,20,22,23,24,26,27,28,28,29,30,30,31,31,31,31,31,30,30,29,28,28,27,26,24,23,22,20,19,17,16,15,13,12,10,9,8,6,5,4,4,3,2,2,1,1 };
 	int w = FSPACX(290), h = FSPACY(170);
 
+#ifdef ANDROID
+	android_menu_key_event controller_key;
+	if (android_menu_translate_button(event, &controller_key)) {
+		event = (d_event *)&controller_key;
+	}
+#endif
+
 	switch (event->type)
 	{
 		case EVENT_WINDOW_ACTIVATED:
@@ -441,7 +451,11 @@ int scores_handler(window *wind, d_event *event, scores_menu *menu)
 			gr_string( FSPACX(253), FSPACY(50), TXT_TIME );
 			
 			if ( menu->citem < 0 )	
+#ifdef ANDROID
+				gr_string(0x8000, FSPACY(175), "A/B: close  Y: reset scores");
+#else
 				gr_string( 0x8000, FSPACY(175), TXT_PRESS_CTRL_R );
+#endif
 			
 			gr_set_fontcolor( BM_XRGB(28,28,28), -1 );
 			

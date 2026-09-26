@@ -830,6 +830,16 @@ class SetupActivity : ComponentActivity() {
                     }
 
                     "write_engine_prefs" -> {
+                        if (intent.hasExtra("guidebot_routing_mode")) {
+                            getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+                                .edit()
+                                .putInt(
+                                    PREF_GUIDEBOT_ROUTING_MODE,
+                                    GuidebotRoutingMode.sanitize(
+                                        intent.getIntExtra("guidebot_routing_mode", GuidebotRoutingMode.ENHANCED),
+                                    ),
+                                ).commit()
+                        }
                         val cockpitMode = intent.getIntExtra("cockpit_mode", 0)
                         val autoLeveling = intent.getBooleanExtra("auto_leveling", true)
                         val showRobotHostageCounts = intent.getBooleanExtra("show_robot_hostage_counts", false)
@@ -2406,7 +2416,6 @@ class SetupActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        CrashLog.install(this)
         // The launcher uses dxx-redux-d2 JNI helpers (MIDI/CD preview,
         // enumeration, import helpers). Load it here so native breadcrumb
         // storage is ready before any launcher-side native work starts.
@@ -2971,8 +2980,6 @@ private fun SetupScreen(
     val fileSetManager =
         remember {
             FileSetManager(filesDir).also {
-                it.migrateDefaultSetIfNeeded()
-                it.sweepRootGameFiles()
                 it.migratePilotFiles()
             }
         }

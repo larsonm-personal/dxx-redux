@@ -95,6 +95,7 @@ void android_profile_network_end(long long start_us);
 void android_profile_remote_robot_update(int objnum, int signature);
 void android_profile_remote_robot_live(int objnum, int signature,
                                        int remote_owned);
+void android_profile_scene_state(void);
 void android_profile_set_scene_object_counts(int active_objects,
                                              int projectile_objects,
                                              int reactor_objects);

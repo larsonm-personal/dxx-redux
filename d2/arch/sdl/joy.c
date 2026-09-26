@@ -29,6 +29,7 @@
 #include "kconfig.h"
 #ifdef ANDROID
 #include "android_axis_mailbox.h"
+#include "android_virtual_gamepad.h"
 #include "android_log.h"
 #ifdef INTROSPECT_ON
 #include "game_automate.h"
@@ -305,65 +306,17 @@ void joy_init()
 	for (i = 0; i < ANDROID_AXIS_MAILBOX_AXIS_BUTTON_COUNT; ++i)
 		android_axis_mailbox_set_button_deadzone(i, 38);
 
-	{
-		static const char *axis_names[] = {"LX","LY","RX","RY","LT","RT","BK","SU"};
-		static const char *btn_names[]  = {"A","B","X","Y","L1","R1","Sel","Sta","L3","R3"};
-
-		SDL_Joysticks[0].handle   = NULL;
-		SDL_Joysticks[0].n_axes   = 8;
-		SDL_Joysticks[0].n_buttons= 10;
-		SDL_Joysticks[0].n_hats   = 0;
-
-		for (j = 0; j < 8; j++) {
-			sprintf(temp, "J1 %s", axis_names[j]);
-			joyaxis_text[Joystick.n_axes] = d_strdup(temp);
-			SDL_Joysticks[0].axis_map[j] = Joystick.n_axes++;
-		}
-		for (j = 0; j < 10; j++) {
-			sprintf(temp, "J1 %s", btn_names[j]);
-			joybutton_text[Joystick.n_buttons] = d_strdup(temp);
-			SDL_Joysticks[0].button_map[j] = Joystick.n_buttons++;
-		}
-		/* Axis buttons only for physical axes 0-5; axes 6-7 are
-		 * virtual (gyro/slide) and don't need directional buttons.
-		 * Set them to -1 so joy_axisbutton_handler() skips them. */
-		for (j = 0; j < 6; j++) {
-			SDL_Joysticks[0].axis_button_map[j] = Joystick.n_buttons;
-			sprintf(temp, "J1 -%s", axis_names[j]);
-			joybutton_text[Joystick.n_buttons++] = d_strdup(temp);
-			sprintf(temp, "J1 +%s", axis_names[j]);
-			joybutton_text[Joystick.n_buttons++] = d_strdup(temp);
-		}
-		for (j = 6; j < 8; j++)
-			SDL_Joysticks[0].axis_button_map[j] = -1;
-
-		/* Virtual combiner axes for half-axis trigger bindings.
-		 * Kotlin computes combined values and sends via nativeJoystickAxis().
-		 * axis_button_map must be -1 so joy_axisbutton_handler skips them;
-		 * the memset-zero default (0) would cause spurious button-0/1 events. */
-		for (j = 0; j < 3; j++) {
-			SDL_Joysticks[0].axis_map[8 + j] = Joystick.n_axes;
-			SDL_Joysticks[0].axis_button_map[8 + j] = -1;
-			sprintf(temp, "J1 VC%d", j);
-			joyaxis_text[Joystick.n_axes++] = d_strdup(temp);
-		}
-
-		/* D-pad virtual buttons: DUp=22, DDown=23, DLeft=24, DRight=25.
-		 * Shared constant with MainActivity.kt DPAD_JOY_BUTTON_BASE.
-		 * Must set button_map[] so joy_button_handler() translates the
-		 * raw SDL button index to the correct virtual button number. */
-		{
-			static const char *dpad_names[] = {"DUp","DDn","DLt","DRt"};
-			for (j = 0; j < 4; j++) {
-				sprintf(temp, "J1 %s", dpad_names[j]);
-				SDL_Joysticks[0].button_map[Joystick.n_buttons] = Joystick.n_buttons;
-				joybutton_text[Joystick.n_buttons++] = d_strdup(temp);
-			}
-		}
-
-		num_joysticks = 1;
-		con_printf(CON_NORMAL, "android-joystick: registered virtual gamepad (%d axes, %d buttons)\n", Joystick.n_axes, Joystick.n_buttons);
-	}
+	SDL_Joysticks[0].handle = NULL;
+	SDL_Joysticks[0].n_axes = ANDROID_VIRTUAL_GAMEPAD_BASE_AXES;
+	SDL_Joysticks[0].n_buttons = ANDROID_VIRTUAL_GAMEPAD_BASE_BUTTONS;
+	SDL_Joysticks[0].n_hats = 0;
+	android_virtual_gamepad_init(SDL_Joysticks[0].axis_map,
+	    SDL_Joysticks[0].button_map, SDL_Joysticks[0].axis_button_map,
+	    joyaxis_text, joybutton_text);
+	Joystick.n_axes = ANDROID_VIRTUAL_GAMEPAD_AXES;
+	Joystick.n_buttons = ANDROID_VIRTUAL_GAMEPAD_BUTTONS;
+	num_joysticks = 1;
+	con_printf(CON_NORMAL, "android-joystick: registered virtual gamepad (%d axes, %d buttons)\n", Joystick.n_axes, Joystick.n_buttons);
 
 	joy_num_axes = Joystick.n_axes;
 	return;

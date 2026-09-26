@@ -524,6 +524,7 @@ target_sources(
             ${DXX_DISC_IMPORT_JNI_SOURCE}
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/game_file_extensions.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/extract/sha1.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_gog_import.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_music_control.c
@@ -549,6 +550,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate_weapon_art.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_virtual_gamepad.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/overlay_ringbuf.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
@@ -703,6 +705,7 @@ target_sources(
             ${DXX_DISC_IMPORT_JNI_SOURCE}
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/game_file_extensions.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/extract/sha1.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_gog_import.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_music_control.c
@@ -728,6 +731,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate_weapon_art.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_virtual_gamepad.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/overlay_ringbuf.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c

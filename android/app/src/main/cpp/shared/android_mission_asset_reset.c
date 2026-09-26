@@ -32,7 +32,6 @@ extern void gamedata_android_reset_tbl(void);
 extern void digi_mixer_free_cached_sounds(void);
 #endif
 #else
-extern void d1_in_d2_reset_asset_context(void);
 extern void free_bitmap_replacements(void);
 #endif
 
@@ -42,7 +41,6 @@ void android_mission_asset_reset_before(void)
 	digi_stop_digi_sounds();
 #ifdef DXX_BUILD_DESCENT_II
 	digi_free_cached_sounds();
-	d1_in_d2_reset_asset_context();
 	free_bitmap_replacements();
 #else
 #ifdef USE_SDLMIXER

@@ -37,6 +37,7 @@ set(D2X_MAIN_SOURCES
     escort.c
     escort_owner_policy.c
     guidebot_route.c
+    guidebot_routing.c
     fireball.c
     fuelcen.c
     fvi.c
@@ -218,6 +219,7 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/input_demo_direct_command_policy.c)
     target_compile_definitions(dxx-redux-d2 PRIVATE
         DXX_GUIDEBOT_ROUTE_DESKTOP
+        DXX_GUIDEBOT_LIVE_ESCORT
         DXX_GUIDEBOT_ROUTE_PLANNER)
     target_include_directories(dxx-redux-d2 PRIVATE ../../android/app/src/main/cpp/shared)
     target_link_libraries(dxx-redux-d2 PRIVATE nlohmann_json::nlohmann_json)
@@ -334,7 +336,7 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/headless/input_demo_headless_main.cpp
         GAME_SOURCES ${D2X_HEADLESS_SOURCES}
         # Replay must use the same Guide-Bot navigation rules as the desktop game
-        PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II DXX_GUIDEBOT_ROUTE_PLANNER
+        PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II DXX_GUIDEBOT_ROUTE_PLANNER DXX_GUIDEBOT_LIVE_ESCORT
         PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve)
     dxx_add_headless_target(
         dxx-redux-d2-headless-metadata
@@ -360,6 +362,14 @@ if(NOT ANDROID)
         PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve
         INCLUDE_GAME_DIR)
     if(BUILD_TESTING)
+        dxx_add_headless_target(
+            test_guidebot_original_navigation
+            ../../android/app/src/main/cpp/headless/route_confirmation_headless_main.cpp
+            GAME_SOURCES ../../android/tests/test_guidebot_original_navigation.cpp
+                ../../android/tests/guidebot_redux_reference.c ${D2X_HEADLESS_SOURCES}
+            PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II DXX_GUIDEBOT_ROUTE_PLANNER DXX_GUIDEBOT_LIVE_ESCORT
+            PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve
+            INCLUDE_GAME_DIR)
         dxx_add_headless_target(
             test_guidebot_live_navigation
             ../../android/app/src/main/cpp/headless/route_confirmation_headless_main.cpp

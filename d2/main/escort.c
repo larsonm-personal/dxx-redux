@@ -105,7 +105,6 @@ struct escort_menu;
 static void show_escort_menu(struct escort_menu *menu);
 extern fix64 Buddy_last_seen_player, Buddy_last_player_path_created;
 
-
 static const char *const Escort_goal_text[MAX_ESCORT_GOALS] = {
 	"BLUE KEY",
 	"YELLOW KEY",
@@ -144,17 +143,7 @@ fix64	Escort_last_path_created = 0;
 int	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED, Escort_special_goal = -1, Escort_goal_index = -1, Buddy_messages_suppressed = 0;
 static int Escort_goal_secret_seg = -1;
 static int Escort_goal_secret_side = -1;
-#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
-static escort_path_recalc_limiter Escort_route_path_recalc_limiter;
-static int Escort_route_path_recalc_pending;
-static fix64 Escort_route_path_recalc_requested_time;
-static fix64 Escort_route_path_recalc_due_time;
-static unsigned int Escort_route_path_recalc_suppressed_count;
-static int Escort_route_path_recalc_goal_kind = -1;
-static int Escort_route_path_recalc_goal_seg = -1;
-static int Escort_route_path_recalc_goal_trigger = -1;
-static int Escort_route_path_recalc_goal_wall = -1;
-#endif
+
 fix64	Buddy_sorry_time;
 int	Buddy_objnum, Buddy_allowed_to_talk;
 int	Looking_for_marker;
@@ -253,7 +242,6 @@ int escort_buddy_is_active(void)
 	       !(Objects[Buddy_objnum].flags & (OF_EXPLODING | OF_SHOULD_BE_DEAD));
 }
 
-static int escort_reactor_exists(void);
 static int escort_goal_command_allowed(void);
 static int escort_key_owner_player(void);
 static void escort_clear_secret_goal(void);
@@ -316,80 +304,6 @@ static int thief_store_stolen_item(ubyte item)
 	return 1;
 }
 
-#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
-static void escort_route_path_recalc_cancel_pending(void)
-{
-	Escort_route_path_recalc_pending = 0;
-	Escort_route_path_recalc_requested_time = 0;
-	Escort_route_path_recalc_due_time = 0;
-	Escort_route_path_recalc_suppressed_count = 0;
-}
-
-static void escort_route_path_recalc_reset(void)
-{
-	escort_path_recalc_limiter_reset(&Escort_route_path_recalc_limiter);
-	escort_route_path_recalc_cancel_pending();
-}
-
-static void escort_route_path_recalc_sync_goal(void)
-{
-	if (!Escort_route_goal.active) {
-		escort_route_path_recalc_cancel_pending();
-		Escort_route_path_recalc_goal_kind = -1;
-		Escort_route_path_recalc_goal_seg = -1;
-		Escort_route_path_recalc_goal_trigger = -1;
-		Escort_route_path_recalc_goal_wall = -1;
-		return;
-	}
-	if (Escort_route_path_recalc_goal_kind == Escort_route_goal.objective_kind &&
-	    Escort_route_path_recalc_goal_seg == Escort_route_goal.target_seg &&
-	    Escort_route_path_recalc_goal_trigger == Escort_route_goal.objective_trigger &&
-	    Escort_route_path_recalc_goal_wall == Escort_route_goal.objective_wall)
-		return;
-	escort_route_path_recalc_cancel_pending();
-	Escort_route_path_recalc_goal_kind = Escort_route_goal.objective_kind;
-	Escort_route_path_recalc_goal_seg = Escort_route_goal.target_seg;
-	Escort_route_path_recalc_goal_trigger = Escort_route_goal.objective_trigger;
-	Escort_route_path_recalc_goal_wall = Escort_route_goal.objective_wall;
-}
-
-static int escort_route_path_recalc_begin(const char *reason)
-{
-	long long next_allowed;
-	fix64 delay;
-
-	escort_route_path_recalc_sync_goal();
-	if (!Escort_route_goal.active)
-		return 1;
-	if (escort_path_recalc_limiter_allow(&Escort_route_path_recalc_limiter,
-	                                     GameTime64, F1_0, &next_allowed)) {
-		if (Escort_route_path_recalc_pending) {
-			delay = GameTime64 - Escort_route_path_recalc_requested_time;
-			if (delay < 0)
-				delay = 0;
-			debug_log(DLOG_GUIDEBOT,
-			          "path_recalc delayed_rerun executed reason=%s delay_ms=%lld suppressed=%u",
-			          reason, (long long) (delay * 1000 / F1_0),
-			          Escort_route_path_recalc_suppressed_count);
-			Escort_route_path_recalc_pending = 0;
-			Escort_route_path_recalc_suppressed_count = 0;
-		}
-		return 1;
-	}
-	if (!Escort_route_path_recalc_pending) {
-		Escort_route_path_recalc_pending = 1;
-		Escort_route_path_recalc_requested_time = GameTime64;
-		Escort_route_path_recalc_due_time = (fix64) next_allowed;
-		debug_log(DLOG_GUIDEBOT,
-		          "path_recalc delayed_rerun scheduled reason=%s limit=%d delay_ms=%lld",
-		          reason, ESCORT_PATH_RECALC_LIMIT_PER_SECOND,
-		          (long long) ((Escort_route_path_recalc_due_time - GameTime64) *
-		                       1000 / F1_0));
-	}
-	Escort_route_path_recalc_suppressed_count++;
-	return 0;
-}
-#endif
 
 static void thief_drop_stolen_mine(object *objp, int weapon_id)
 {
@@ -419,75 +333,7 @@ void init_buddy_for_level(void)
 	Escort_goal_secret_seg = -1;
 	Escort_goal_secret_side = -1;
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
-	escort_route_path_recalc_reset();
-	Escort_route_path_recalc_goal_kind = -1;
-	Escort_route_path_recalc_goal_seg = -1;
-	Escort_route_path_recalc_goal_trigger = -1;
-	Escort_route_path_recalc_goal_wall = -1;
-	Escort_route_cache_poll_time = 0;
-	Escort_route_seen_revision = level_metadata_get_route_revision();
-	escort_route_clear_goal();
-	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
-	Escort_route_metadata_rescan_count = 0;
-	Escort_route_guidance_full_search_count = 0;
-	Escort_route_avoid_from_seg = -1;
-	Escort_route_avoid_seg = -1;
-	Escort_route_avoid_from_seg2 = -1;
-	Escort_route_avoid_seg2 = -1;
-	Escort_route_avoid_trigger = -1;
-	Escort_route_avoid_wall = -1;
-	Escort_route_progress_next_time = 0;
-	Escort_route_progress_signature = -1;
-	Escort_route_progress_seg = -1;
-	Escort_route_progress_path_index = -1;
-	Escort_route_progress_target_seg = -1;
-	Escort_route_progress_stall_samples = 0;
-	Escort_route_stall_recovery_count = 0;
-	Escort_route_ignored_nonowner_key_change_count = 0;
-	Escort_route_boss_move_invalidation_count = 0;
-	Escort_route_wall_generation = 0;
-	Escort_route_trigger_generation = 0;
-	Escort_route_object_generation = 0;
-	Escort_route_reactor_generation = 0;
-	Escort_route_automap_generation = 0;
-	Escort_route_pending_event_mask = 0;
-	Escort_route_pending_audit_mask = 0;
-	Escort_route_deferred_live_event_mask = 0;
-	Escort_route_event_notification_count = 0;
-	Escort_route_notification_coalesced_count = 0;
-	Escort_route_redundant_dirty_domain_count = 0;
-	Escort_route_event_coalesced_rescan_count = 0;
-	Escort_route_publish_latency_sample_count = 0;
-	Escort_route_publish_latency_last_ticks = 0;
-	Escort_route_publish_latency_max_ticks = 0;
-	Escort_route_first_dirty_notification_time = 0;
-	Escort_route_dirty_notification_time_valid = 0;
-	Escort_route_ignored_nonowner_event_count = 0;
-	Escort_route_audit_check_count = 0;
-	Escort_route_audit_discovery_count = 0;
-	Escort_route_audit_only_discovery_count = 0;
-	Escort_route_audit_work_total = 0;
-	Escort_route_audit_work_max = 0;
-	Escort_route_audit_deferred_count = 0;
-	Escort_route_certificate_check_count = 0;
-	Escort_route_certificate_failure_count = 0;
-	Escort_route_certificate_work_total = 0;
-	Escort_route_certificate_work_max = 0;
-	Escort_route_path_retained_count = 0;
-	Escort_route_path_replaced_count = 0;
-	Escort_route_invalid_path_stopped_count = 0;
-	Escort_route_audit_domain_cursor = 0;
-	Escort_route_audit_next_time = 0;
-	Escort_route_last_audit_rescan_time = 0;
-	Escort_route_last_audit_rescan_time_valid = 0;
-	Escort_route_completion_check_time = 0;
-	escort_route_reset_activated_triggers();
-#ifdef INTROSPECT_ON
-	Escort_route_notifications_suppressed = 0;
-	Escort_route_certificate_checks_suppressed = 0;
-#endif
-	escort_route_note_replan("level_start");
-	Escort_route_target_mode_restore_pending = 0;
+	escort_route_init_level();
 #endif
 	Buddy_messages_suppressed = 0;
 #ifdef NETWORK
@@ -905,7 +751,6 @@ int segment_is_reachable(int curseg, int sidenum)
 
 }
 
-
 //	-----------------------------------------------------------------------------
 //	Create a breadth-first list of segments reachable from current segment.
 //	max_segs is maximum number of segments to search.  Use MAX_SEGMENTS to search all.
@@ -1073,7 +918,7 @@ void detect_escort_goal_accomplished(int index)
 		return;
 
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
-	if (Escort_special_goal == ESCORT_GOAL_HOSTAGE) {
+	if (guidebot_routing_is_enhanced() && Escort_special_goal == ESCORT_GOAL_HOSTAGE) {
 		if (index < 0 || index > Highest_object_index || Objects[index].type != OBJ_HOSTAGE)
 			return;
 		detected = 1;
@@ -1327,8 +1172,10 @@ void set_escort_special_goal(int special_key)
 				break;
 			case KEY_0:
 				Escort_special_goal = -1;
-				Escort_goal_index = -1;
-				Escort_last_path_created = 0;
+				if (guidebot_routing_is_enhanced()) {
+					Escort_goal_index = -1;
+					Escort_last_path_created = 0;
+				}
 				break;
 			default:
 				Int3();		//	Oops, called with illegal key value.
@@ -1383,6 +1230,10 @@ void escort_resume_default_goal(void)
 
 void escort_find_secret_goal(void)
 {
+	if (!guidebot_routing_is_enhanced()) {
+		HUD_init_message_literal(HM_DEFAULT, "Find Secret requires Enhanced Guidebot routing");
+		return;
+	}
 	escort_secret_goal_info goal;
 	int skip_display_index = -1;
 	int goal_index;
@@ -1424,6 +1275,10 @@ void escort_find_secret_goal(void)
 
 void escort_find_unexplored_goal(void)
 {
+	if (!guidebot_routing_is_enhanced()) {
+		HUD_init_message_literal(HM_DEFAULT, "Unexplored requires Enhanced Guidebot routing");
+		return;
+	}
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	if (!escort_goal_command_allowed())
 		return;
@@ -1778,25 +1633,7 @@ static int escort_key_owner_player(void)
 	return Player_num;
 }
 
-static int escort_key_exists(int powerup_id)
-{
-	return exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, powerup_id, -1) != -1;
-}
 
-static int escort_reactor_exists(void)
-{
-	int i;
-
-	for (i=0; i<=Highest_object_index; i++)
-		if (Objects[i].type == OBJ_CNTRLCEN && !(Objects[i].flags & OF_SHOULD_BE_DEAD))
-			return 1;
-
-	for (i=0; i<=Highest_segment_index; i++)
-		if (Segment2s[i].special == SEGMENT_IS_CONTROLCEN)
-			return 1;
-
-	return 0;
-}
 
 static int side_has_exit_trigger(int seg, int side)
 {
@@ -1829,6 +1666,9 @@ int find_exit_segment(void)
 				external_segment = i;
 				break;
 			}
+
+	if (!guidebot_routing_is_enhanced())
+		return external_segment;
 
 	/* Trigger-only community levels have no external endpoint to select. */
 	for (i = 0; i <= Highest_segment_index && trigger_segment == -1; ++i)
@@ -1918,7 +1758,7 @@ void escort_create_path_to_goal(object *objp)
 
 	Escort_kill_object = -1;
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
-	if (Escort_special_goal == ESCORT_GOAL_HOSTAGE)
+	if (guidebot_routing_is_enhanced() && Escort_special_goal == ESCORT_GOAL_HOSTAGE)
 		hostage_index = escort_route_prepare_hostage(objp);
 #endif
 
@@ -1929,7 +1769,7 @@ void escort_create_path_to_goal(object *objp)
 			goal_seg = Objects[Escort_goal_index].segnum;
 	} else {
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
-	if (Escort_route_goal.active) {
+	if (guidebot_routing_is_enhanced() && Escort_route_goal.active) {
 		if (Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_BOSS &&
 		    Escort_route_goal.objective_object >= 0 &&
 		    Escort_route_goal.objective_object <= Highest_object_index &&
@@ -2173,140 +2013,30 @@ void escort_create_path_to_goal(object *objp)
 
 }
 
-#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
-static void escort_route_monitor_path_progress(object *objp, ai_local *ailp,
-                                               ai_static *aip)
-{
-	int doorway = -1;
-	int openable = -1;
-	int side = -1;
-	int target_seg;
-	int wall_num = -1;
-	fix target_distance;
-
-	if (!Escort_route_goal.active || ailp->mode != AIM_GOTO_OBJECT ||
-	    aip->hide_index < 0 || aip->cur_path_index < 0 ||
-	    aip->cur_path_index >= aip->path_length) {
-		Escort_route_progress_signature = -1;
-		Escort_route_progress_stall_samples = 0;
-		return;
-	}
-	if (GameTime64 < Escort_route_progress_next_time &&
-	    Escort_route_progress_next_time - GameTime64 < F1_0 * 2)
-		return;
-	Escort_route_progress_next_time = GameTime64 + F1_0;
-	target_seg = Point_segs[aip->hide_index + aip->cur_path_index].segnum;
-	target_distance = vm_vec_dist_quick(
-	    &objp->pos, &Point_segs[aip->hide_index + aip->cur_path_index].point);
-	if (target_seg != objp->segnum &&
-	    Escort_route_progress_signature == objp->signature &&
-	    Escort_route_progress_seg == objp->segnum &&
-	    Escort_route_progress_target_seg == target_seg)
-		Escort_route_progress_stall_samples++;
-	else
-		Escort_route_progress_stall_samples = 0;
-	Escort_route_progress_signature = objp->signature;
-	Escort_route_progress_seg = objp->segnum;
-	Escort_route_progress_path_index = aip->cur_path_index;
-	Escort_route_progress_target_seg = target_seg;
-	if (Escort_route_progress_stall_samples < 7)
-		return;
-
-	if (Escort_route_avoid_seg < 0) {
-		Escort_route_avoid_from_seg = objp->segnum;
-		Escort_route_avoid_seg = target_seg;
-	} else if (objp->segnum != Escort_route_avoid_from_seg ||
-	           target_seg != Escort_route_avoid_seg) {
-		Escort_route_avoid_from_seg2 = objp->segnum;
-		Escort_route_avoid_seg2 = target_seg;
-	}
-	Escort_route_avoid_trigger = Escort_route_goal.objective_trigger;
-	Escort_route_avoid_wall = Escort_route_goal.objective_wall;
-	Escort_route_progress_stall_samples = 0;
-	Escort_route_stall_recovery_count++;
-	if (target_seg >= 0 && target_seg <= Highest_segment_index) {
-		side = find_connect_side(&Segments[target_seg], &Segments[objp->segnum]);
-		if (side >= 0) {
-			wall_num = Segments[objp->segnum].sides[side].wall_num;
-			doorway = WALL_IS_DOORWAY(&Segments[objp->segnum], side);
-			openable = ai_door_is_openable(objp, &Segments[objp->segnum], side);
-		}
-	}
-	debug_log(DLOG_GUIDEBOT,
-	          "recovery stalled_edge obj=%d seg=%d avoid_edge=%d>%d avoid_edge2=%d>%d goal_seg=%d "
-	          "path_index=%d target_dist=%d side=%d wall=%d doorway=0x%x openable=%d "
-	          "wall_type=%d wall_state=%d wall_flags=0x%x wall_trigger=%d size=%d count=%u",
-	          (int) (objp - Objects), objp->segnum,
-	          Escort_route_avoid_from_seg, Escort_route_avoid_seg,
-	          Escort_route_avoid_from_seg2, Escort_route_avoid_seg2,
-	          Escort_route_goal.target_seg, aip->cur_path_index, target_distance,
-	          side, wall_num, doorway, openable,
-	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].type : -1,
-	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].state : -1,
-	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].flags : 0,
-	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].controlling_trigger : -1,
-	          objp->size,
-	          Escort_route_stall_recovery_count);
-	if (!escort_route_path_recalc_begin("stalled_edge"))
-		return;
-	Escort_last_path_created = GameTime64;
-	escort_create_path_to_goal(objp);
-}
-
-#endif
-
 //	-----------------------------------------------------------------------------
 //	Escort robot chooses goal object based on owned keys, location.
 //	Returns goal object.
 int escort_set_goal_object(void)
 {
-	int key_flags;
-#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
-	int route_goal;
-#endif
+	if (guidebot_routing_is_enhanced())
+		return escort_enhanced_goal_object(escort_owned_key_flags());
 
-	if (Escort_special_goal != -1) {
-#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
-		if (Escort_special_goal == ESCORT_GOAL_HOSTAGE)
-			return ESCORT_GOAL_HOSTAGE;
-		escort_route_clear_goal();
-#endif
+	if (Escort_special_goal != -1)
 		return ESCORT_GOAL_UNSPECIFIED;
-	}
-
-	key_flags = escort_owned_key_flags();
-#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
-	escort_route_refresh_metadata();
-	route_goal = escort_route_next_goal();
-	if (route_goal != ESCORT_GOAL_UNSPECIFIED)
-		return route_goal;
-	if (escort_route_next_waypoint_pending())
-		return ESCORT_GOAL_UNSPECIFIED;
-	if (Escort_route_target_mode != ESCORT_ROUTE_TARGET_END_OF_LEVEL)
-		return ESCORT_GOAL_UNSPECIFIED;
-#endif
-	if ((key_flags & PLAYER_FLAGS_RED_KEY) == 0) {
-		if ((key_flags & (PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_GOLD_KEY)) == 0) {
-			if (escort_key_exists(POW_KEY_BLUE))
-				return ESCORT_GOAL_BLUE_KEY;
-			if (escort_key_exists(POW_KEY_GOLD))
-				return ESCORT_GOAL_GOLD_KEY;
-		} else if ((key_flags & PLAYER_FLAGS_GOLD_KEY) == 0) {
-			if (escort_key_exists(POW_KEY_GOLD))
-				return ESCORT_GOAL_GOLD_KEY;
-		}
-		if (escort_key_exists(POW_KEY_RED))
-			return ESCORT_GOAL_RED_KEY;
-	}
-
-	if (Control_center_destroyed == 0) {
+	else if (!(ConsoleObject->flags & PLAYER_FLAGS_BLUE_KEY) && (exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, POW_KEY_BLUE, -1) != -1))
+		return ESCORT_GOAL_BLUE_KEY;
+	else if (!(ConsoleObject->flags & PLAYER_FLAGS_GOLD_KEY) && (exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, POW_KEY_GOLD, -1) != -1))
+		return ESCORT_GOAL_GOLD_KEY;
+	else if (!(ConsoleObject->flags & PLAYER_FLAGS_RED_KEY) && (exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, POW_KEY_RED, -1) != -1))
+		return ESCORT_GOAL_RED_KEY;
+	else if (Control_center_destroyed == 0) {
 		if (Num_boss_teleport_segs)
 			return ESCORT_GOAL_BOSS;
-		else if (escort_reactor_exists())
+		else
 			return ESCORT_GOAL_CONTROLCEN;
-	}
+	} else
+		return ESCORT_GOAL_EXIT;
 
-	return (Control_center_destroyed || find_exit_segment() != -1) ? ESCORT_GOAL_EXIT : ESCORT_GOAL_CONTROLCEN;
 }
 
 #define	MAX_ESCORT_TIME_AWAY		(F1_0*4)
@@ -2328,7 +2058,7 @@ int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)
 
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	/* A nearby visible player is already following the objective route */
-	if (Escort_route_goal.active && Buddy_last_seen_player == GameTime64 &&
+	if (guidebot_routing_is_enhanced() && Escort_route_goal.active && Buddy_last_seen_player == GameTime64 &&
 	    vm_vec_dist_quick(&objp->pos, &ConsoleObject->pos) < MIN_ESCORT_DISTANCE &&
 	    guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, &ConsoleObject->pos))
 		return 0;
@@ -2725,20 +2455,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		return;
 	}
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
-	escort_route_monitor_path_progress(objp, ailp, aip);
-	escort_update_navigation_liveness(objp, ailp);
-	escort_trace_navigation(objp, ailp, aip, dist_to_player, player_visibility);
-	escort_route_path_recalc_sync_goal();
-	if (Escort_route_path_recalc_pending && ailp->mode == AIM_GOTO_OBJECT &&
-	    GameTime64 >= Escort_route_path_recalc_due_time) {
-		if (!escort_goal_is_pathable(Escort_goal_object))
-			Escort_goal_object = escort_set_goal_object();
-		if (escort_goal_is_pathable(Escort_goal_object) &&
-		    escort_route_path_recalc_begin("delayed_rerun")) {
-			ailp->mode = AIM_GOTO_OBJECT;
-			escort_create_path_to_goal(objp);
-		}
-	}
+	escort_route_frame(objp, dist_to_player, player_visibility);
 #endif
 
 	if (player_visibility) {
@@ -2859,8 +2576,8 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		//	This is to prevent buddy from looking for a goal, which he will do because we only allow path creation once/second.
 		return;
 	} else if ((ailp->mode == AIM_GOTO_PLAYER) &&
-		(aip->cur_path_index >= aip->path_length/2) &&
-		(dist_to_player < MIN_ESCORT_DISTANCE - F1_0/4)) {
+		(!guidebot_routing_is_enhanced() || aip->cur_path_index >= aip->path_length/2) &&
+		(dist_to_player < MIN_ESCORT_DISTANCE - (guidebot_routing_is_enhanced() ? F1_0/4 : 0))) {
 		Escort_goal_object = escort_set_goal_object();
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 		if (!escort_goal_request_is_pathable(Escort_goal_object, Escort_special_goal))
@@ -2889,8 +2606,8 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		ailp->mode = AIM_GOTO_OBJECT;
 	} else if (Escort_goal_object == ESCORT_GOAL_UNSPECIFIED) {
 		if ((ailp->mode != AIM_GOTO_PLAYER) ||
-			((aip->cur_path_index >= aip->path_length/2) &&
-			 (dist_to_player < MIN_ESCORT_DISTANCE - F1_0/4))) {
+			((!guidebot_routing_is_enhanced() || aip->cur_path_index >= aip->path_length/2) &&
+			 (dist_to_player < MIN_ESCORT_DISTANCE - (guidebot_routing_is_enhanced() ? F1_0/4 : 0)))) {
 			Escort_goal_object = escort_set_goal_object();
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 			if (!escort_goal_request_is_pathable(Escort_goal_object, Escort_special_goal))
@@ -2924,6 +2641,12 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 void invalidate_escort_goal(void)
 {
 	Escort_goal_object = -1;
+}
+
+const char *escort_current_goal_label(void)
+{
+	return Escort_goal_object > 0 && Escort_goal_object <= MAX_ESCORT_GOALS ?
+	    Escort_goal_text[Escort_goal_object - 1] : "follow / idle";
 }
 
 void escort_note_player_key_flags(int old_flags, int new_flags)
@@ -3447,7 +3170,6 @@ int maybe_steal_primary_weapon(int player_num, int weapon_num)
 }
 
 
-
 //	----------------------------------------------------------------------------
 //	Called for a thief-type robot.
 //	If a item successfully stolen, returns true, else returns false.
@@ -3838,6 +3560,7 @@ static int escort_menu_joystick_button_down(window *wind, d_event *event, escort
 			return escort_menu_activate_key(wind, escort_menu_key_for_item(menu->selected_item));
 
 		case ANDROID_JOY_BUTTON_B:
+		case 3: /* Y: toggle the Guide Bot menu closed */
 			window_close(wind);
 			return 1;
 
@@ -3977,7 +3700,7 @@ void do_escort_menu(void)
 			break;
 		case ESCORT_GOAL_EXIT:
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
-			if (Escort_route_goal.active) {
+			if (guidebot_routing_is_enhanced() && Escort_route_goal.active) {
 				snprintf(
 				    menu->goal_str, sizeof(menu->goal_str),
 				    Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT ?
@@ -4062,6 +3785,7 @@ static int escort_menu_draw_scaled(escort_menu *menu, const char *title,
 	gr_init_bitmap_alloc(&source_bitmap, BM_LINEAR, 0, 0, box_w, box_h, box_w);
 	gr_init_canvas(&source_canvas, source_bitmap.bm_data, BM_LINEAR, box_w, box_h);
 	gr_set_current_canvas(&source_canvas);
+	gr_set_curfont(GAME_FONT);
 	nm_draw_background(0, 0, box_w, box_h);
 	escort_menu_draw_contents(menu, title, rows, BORDERX, BORDERY, content_w, title_h);
 	gr_set_current_canvas(save_canvas);
@@ -4078,7 +3802,6 @@ static void show_escort_menu(escort_menu *menu)
 	const char *title = "Select Guide-Bot Command:";
 	int i, w, h, aw, title_w, title_h, content_w, content_h;
 	int x, y, box_w, box_h;
-
 
 	gr_set_current_canvas(NULL);
 
@@ -4592,5 +4315,34 @@ void escort_release_control(void)
 
 	multi_send_escort_owner(new_owner);
 	HUD_init_message_literal(HM_DEFAULT, "Guide-Bot control released");
+}
+#endif
+
+/* Routing mode is session state; called on the game thread before new guidance */
+void escort_reset_routing(void)
+{
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	escort_route_reset_navigation();
+#endif
+	escort_clear_secret_goal();
+	escort_goal_message_reset();
+	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+	Escort_special_goal = -1;
+	Escort_goal_index = -1;
+	Looking_for_marker = -1;
+	Last_buddy_key = -1;
+	Escort_last_path_created = 0;
+	if (escort_is_companion_object(Buddy_objnum)) {
+		object *objp = &Objects[Buddy_objnum];
+		objp->ctype.ai_info.path_length = 0;
+		objp->ctype.ai_info.cur_path_index = 0;
+		Ai_local_info[Buddy_objnum].mode = AIM_GOTO_PLAYER;
+	}
+}
+
+#ifdef INTROSPECT_ON
+int escort_menu_get_selection(void *data)
+{
+	return ((escort_menu *)data)->selected_item;
 }
 #endif

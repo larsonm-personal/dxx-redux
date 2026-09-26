@@ -29,6 +29,7 @@ extern "C" void input_demo_player_cfg_clear(input_demo_player_cfg *player_cfg)
 	if (!player_cfg)
 		return;
 	memset(player_cfg, 0, sizeof(*player_cfg));
+	player_cfg->guidebot_routing_mode = 1; // Enhanced; synchronized with D2 guidebot_routing.h
 }
 
 extern "C" void input_demo_checkpoint_escort_state_clear(input_demo_checkpoint_escort_state *escort_state)
@@ -210,6 +211,10 @@ static bool parse_player_cfg(const ordered_json &value,
 		} else if (name == "original_homing") {
 			if (!parse_uint8_field(it.value(), &parsed.original_homing, error, "player_cfg original_homing"))
 				return false;
+		} else if (name == "guidebot_routing_mode") {
+			if (!parse_uint8_field(it.value(), &parsed.guidebot_routing_mode, error, "player_cfg guidebot_routing_mode") ||
+			    parsed.guidebot_routing_mode > 1)
+				return fail(error, "player_cfg guidebot_routing_mode must be 0 or 1");
 		} else if (name == "primary_order") {
 			if (!parse_player_cfg_order(it.value(), parsed.primary_order,
 			                            INPUT_DEMO_PLAYER_CFG_PRIMARY_ORDER_MAX,
@@ -275,6 +280,8 @@ static bool validate_player_cfg(const input_demo_player_cfg &player_cfg,
 
 	if (!expected_primary || !expected_secondary)
 		return fail(error, "metadata player_cfg requires a valid game");
+	if (player_cfg.guidebot_routing_mode > 1)
+		return fail(error, "player_cfg guidebot_routing_mode must be 0 or 1");
 	if (game == "d1") {
 		primary_domain = d1_primary_domain;
 		secondary_domain = d1_secondary_domain;
@@ -307,6 +314,7 @@ static void player_cfg_to_json(const input_demo_player_cfg &player_cfg,
 	(*json)["classic_autoselect_weapon"] = player_cfg.classic_autoselect_weapon;
 	(*json)["autoselect_only_once"] = player_cfg.autoselect_only_once;
 	(*json)["original_homing"] = player_cfg.original_homing;
+	(*json)["guidebot_routing_mode"] = player_cfg.guidebot_routing_mode;
 	for (i = 0; i != player_cfg.primary_order_count; ++i)
 		primary.push_back(player_cfg.primary_order[i]);
 	for (i = 0; i != player_cfg.secondary_order_count; ++i)

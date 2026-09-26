@@ -3321,3 +3321,108 @@ traces and result JSON (temp/d1-reactor-repeat-quiet/verification.json). Both
 successful repeats support current native determinism; the earlier isolated
 early exit remains preserved and unexplained. Remaining corpus/resource/platform
 gates stay open
+
+### September 25: retire robot overlay and captured Guide-Bot resources
+
+Caller/function: ai2.c create_buddy_bot_at_position now consumes the existing
+availability result; polyobj.c no longer calls legacy captured-model diagnostics.
+Generation-owned model classification remains the artwork selection contract.
+D1 owner: d1_in_d2_assets read/publish/retire and optional extension publication.
+Removed: test-only validate/apply-robot public APIs, pending generation cache,
+D2-derived tuning/player-ship backups, reserved overlay bitmap slots, captured
+Guide-Bot model/joints/images, append/restore/cleanup helpers and draw logger.
+No original D1 gameplay body moved. Normal generation publication is unchanged.
+
+The remaining availability/model queries read the active generation and allocate
+nothing. Ordinary D2 retains its existing companion-table search. Native D1
+without an extension cannot accidentally append captured D2 data. No SIM or FX
+RNG changes, new saved state, or content-index remapping are introduced here.
+
+Reactor fixtures now use the real generation reader/publisher and level-object
+adapter, destroy the reactor, republish with the wreck present, and reject bad
+model/gun/truncated inputs while verifying active buffers/definitions/object
+state are unchanged. Retirement plus ordinary HAM reload restores the D2
+reactor/models. Existing extension tests cover attach/reject/publish/retire and
+model/sample namespaces. Both host builds and scoped quality pass; all 53 D1
+and 61 D2 tests pass. Logs: temp/d1-robot-overlay-{build,quality,ctest-d1,ctest-d2}.log.
+Android compile and fresh device companion lifecycle checks are pending.
+
+F4 remains open for effects overlays, cockpit/gauge backups and the remaining
+namespace/trigger/travel review. Whole-corpus/platform qualification also remains
+open; this deletion does not claim those broader gates.
+
+The connected effect overlay is also removed. Its animation/one-shot/invalid-input/
+retirement coverage now uses a complete read/published source bank; the separate
+legacy bitmap-replacement fixture retains bitmap protection and RLE assertions.
+Unused source-to-D2 model-color conversion is retired; indexed native model colors
+remain. These final effect changes await the combined build/integration run in
+session 91701. Detailed pending steps and shared-tree build corrections are in
+d1-usable-completion-20260924.md. Do not extend the earlier robot-only test pass
+to the unexecuted effect fixture or to Android runtime.
+
+### September 25: effect/cockpit retirement and current lifecycle checks
+
+The obsolete effect loader/cache, source-to-D2 flat model palette converter,
+cockpit/gauge capture/remap/backups and Android reset_asset_context hook are now
+removed. Production owns assets through read/validate/publish/retire. Registry
+retirement also clears all published asset/presentation statistics. The effect
+fixture uses a complete generation to verify animation, one-shot orientation,
+rejected preparation preserving the active bank and next-generation retirement.
+
+Current isolated D2 build and complete integration pass with original registered
+D1/D2 data, real level 1/2/1 loading, D1/D2/D1 resource switching, fonts/cockpit
+rendering and cameras. The font/menu fixture had left MENU_PALETTE active for
+its subsequent D2 draw; the cockpit fixture now restores Current_level_palette
+through the ordinary engine API. Production palette code was not changed.
+Evidence: temp/d1-asset-retirement-palette-check (exit 0, binary SHA256,
+full log and PNGs). D1 key pixels, camera surrounds/viewer restoration and GL
+validity are asserted. D2 palette/geometry were reviewed visually; do not treat
+this as a comprehensive ordinary-D2 gauge-pixel comparison.
+
+Shared Android package compilation passes all three ABIs. A pinned copy and
+asset source/object provenance are in temp/d1-asset-retirement-android. Fresh
+Android x86-64 optional Guide-Bot test passes all 45 steps: cold deployment,
+docking, quick-save/load and D1/D2/D1 redeployment. Helper exit 0 includes
+successful restoration of the original app files/preferences. Device results,
+step log, introspection and logcat are copied under its device directory.
+A real untraced level-15 imported replay also passes strict terminal comparison:
+temp/d1-asset-retirement-replay-check (2006 frames, exit 0).
+
+F4 remains open for the remaining namespace/trigger/travel ownership review;
+these results close this obsolete-resource-path removal slice, not F1-F5.
+Fresh whole-corpus and wider platform/edition qualification remain required.
+
+### September 25: preserve failed replay evidence
+
+run_input_demo_replay.ps1 now retains native logs, configuration, any terminal
+result, launch arguments, exact staged binary hash/source path, process exit,
+forced-stop status and elapsed time before cleaning a failed sandbox. Failure
+archives use normal bounded producer retention. If archiving fails, it retains
+the sandbox. Successful runs still remove the staged package. A nonzero engine
+exit cannot pass just because a result exists.
+
+The real wrapper passes six controlled process cases: failure before launch,
+early exit, timeout/termination, result followed by nonzero exit, comparison
+failure and success. Checks cover native log retention, binary identity, child
+termination and sandbox cleanup. Final evidence:
+temp/input_demo_replay_failures_20260925_222227_483/report.json. Scoped PowerShell
+quality passes. The real 2006-frame imported replay above independently verifies
+normal engine completion under the stricter exit handling.
+
+### September 25: execute the frozen parity harness
+
+Paired replay runs now stage and execute the Python controller, PowerShell
+runner and complete helper dependency set in their original relative layout.
+The staged runner receives the original repository root explicitly; valid
+explicit data avoids live index generation. Source stability is verified during
+staging, and staged hashes are checked before/after captures and final reporting.
+The producer lease stays held by the bootstrap process throughout execution.
+
+All 61 comparator/harness tests and scoped quality pass, including real
+subprocess execution after live source mutation, rejected staged corruption,
+and failure retention through frozen helpers. Fresh isolated D1/D2 builds pass.
+Evidence: temp/d1-frozen-harness-tests.log, temp/d1-frozen-harness-quality.log,
+temp/d1-frozen-corpus-build.log. The fresh eight-demo run is active under
+temp/d1_replay_parity_20260925_223823_asset_retirement (session 82504), with
+manifested binaries/assets and the actually executed harness. This is pending
+corpus evidence, not a pass or completion of F1-F5.

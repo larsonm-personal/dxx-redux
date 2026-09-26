@@ -80,7 +80,7 @@ void net_udp_request_resync_from_host(const char *reason);
 #else
 #define UPID_GAME_INFO_COOP_TRANSITION_SIZE 0
 #endif
-#define UPID_GAME_INFO_SIZE			(6 + 4*2 + 370 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1) + ((MAX_PLAYERS+4)*(CALLSIGN_LEN+1+37)) + 20*12 + UPID_GAME_INFO_RECONNECT_AUTH_SIZE + UPID_GAME_INFO_COOP_TRANSITION_SIZE)
+#define UPID_GAME_INFO_SIZE			(6 + 4*2 + 371 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1) + ((MAX_PLAYERS+4)*(CALLSIGN_LEN+1+37)) + 20*12 + UPID_GAME_INFO_RECONNECT_AUTH_SIZE + UPID_GAME_INFO_COOP_TRANSITION_SIZE)
 #define UPID_GAME_INFO_LITE_REQ			  4 // Requesting lite info about a netgame. Used for discovering games.
 #define UPID_GAME_INFO_LITE			  5 // Packet containing lite netgame info.
 #define UPID_GAME_INFO_LITE_SIZE		 (31 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1))

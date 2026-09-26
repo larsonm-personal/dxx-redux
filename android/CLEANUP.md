@@ -83,6 +83,13 @@ capture; it never blesses truncated traces or starts global workspace cleanup.
 Replay sandboxes are removed on exceptions and timeouts as well as success;
 `-KeepSandbox` explicitly retains them for debugging. External requested result
 and trace paths remain available, including incomplete captures
+Before deleting a failed replay sandbox, the runner preserves native text logs,
+configuration, any result and structured launch/exit details in a timestamped
+failure directory beside `-ResultCopyPath`, or under the runner's `failures`
+directory when no external result path was supplied. Copied executables and DLLs
+are not archived. Producer retention keeps three prior failures per output; if
+diagnostic archiving fails, the sandbox is retained instead. A nonzero engine
+exit remains a failure even when the engine wrote a result
 The reserve is a guardrail, not reserved disk allocation: other processes and a
 single very large write can consume it between checks. Paired, default `-TraceState`
 and determinism-matrix state traces are written directly as gzip. Explicit trace

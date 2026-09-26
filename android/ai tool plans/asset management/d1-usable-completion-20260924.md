@@ -337,3 +337,251 @@ publication/real restore callers. Do not retain test-only production loaders jus
 to keep obsolete overlay-specific assertions. Raw recorder/helper failure-log
 retention needs improvement once the frozen capture dependencies can be changed
 without invalidating its manifest. ARM64 runtime is still unverified
+
+## September 25 continuation: robot overlay and captured companion retirement
+
+The frozen eight-demo continuation is terminal, with no live replay processes.
+All eight native repeats and cross-engine SIM RNG/terminal checks pass; the two
+later level-7 recordings pass all historical strict checks. Other strict failures
+are reactor selectors and respawn cloak memory on binaries preceding their fixes.
+The historical report stays unchanged and does not qualify current F1/F2.
+
+Next F4 slice: migrate reactor coverage from test-only validate/apply APIs to
+read/publish, the real level-object adapter, rejected preparation with an active
+bank, and ordinary HAM reload. Remove the superseded robot overlay, pending bank,
+D2 tuning/player backups and connected captured Guide-Bot append resources.
+Retain generation-owned optional companion publication/availability/model checks.
+Validate scoped quality, both host builds, full D2 integration and Android build.
+Concurrent profiling/rendering edits and outstanding_bugs.md remain untouched.
+
+Robot/captured-companion retirement passed both host builds, scoped quality and
+all 114 host tests. The next connected slice is now implemented: effect fixture
+coverage moved to a complete published generation (two original animation frames,
+one-shot completion/orientation, invalid-reference rejection retaining the active
+bank, and next-generation retirement). The legacy monitor replacement test still
+covers its distinct bitmap protection/RLE duties. Removed apply_effects, its
+private reader/cache, and the now-unused source-to-D2 model palette converter.
+Native models retain indexed palette colors through the unchanged publication
+contract. Final combined host build is live session 65726; new full tests pending.
+
+An unrelated shared Android build failed on guidebot_route.c's undeclared
+escort_set_goal_object call during concurrent routing changes. No Android or
+new emulator qualification is claimed yet. Do not change or revert those edits
+as part of asset retirement. Recheck current source/build before retrying.
+
+Final shared-tree build hit two concurrent routing integration errors: a call to
+nonexistent PHYSFSX_writeInt in state.c, and a missing declaration of the existing
+escort_set_goal_object in the route module. Corrected only the symbol to the
+existing PHYSFS_writeSLE32 and added the function declaration in its internal
+header. Preserve all other routing work. Final scoped quality passes.
+
+Current live build: session 91701, temp/d1-overlay-retirement-build-retry.log.
+The previous session 65726 is terminal (link failed before correction). The retry
+is confirmed live in CMake regeneration/vcpkg install, with cmake PID 6340,
+regeneration PID 29744 and vcpkg PID 19636 at the last check. Poll this same
+session rather than starting another build. After success, run full D2 CTest
+(new effect fixture has not yet executed), then Android compile and isolated
+Guide-Bot helper on emulator-5554. D1 assets: temp/d1-collision-clock-parity/d1-assets;
+D2 assets available under game_data/gog installers/setup_descent_2_1.1_(16596)/extracted.
+Do not claim the robot-only 114 pass covers the later effect test changes.
+
+Further cockpit audit: apply_cockpit has no active caller, only inactive cleanup
+inside reset_asset_context. That cleanup is called solely from Android mission
+reset; gamedata_close/piggy registry retirement already releases the published
+generation and clears its stats. The remaining cockpit/gauge capture/remap family
+is therefore a concrete next removal candidate, followed by real cockpit/resource
+and D1/D2/D1 reset validation. No removal of that family made in this turn.
+
+## Cockpit backup retirement continuation
+
+Previous turn was progress plus a verified wait. Session 91701 remains live and
+has advanced from cmake --version to compiler hash detection/pwsh --version.
+No new build has been started. Completed caller audit confirms no active cockpit
+remap call: only reset_asset_context -> apply_cockpit(0) remained. Remove the
+private cockpit/gauge capture/remap family, its API and the Android reset hook.
+Normal gamedata_close -> piggy_close -> release_assets remains the single
+retirement path. Extend the registry integration assertion to require all asset/
+presentation diagnostics cleared, and run actual D1/D2/D1 cockpit rendering plus
+the isolated Android Guide-Bot lifecycle once the build is available.
+
+The isolated intermediate binary passed its entire integration suite (session
+68334 exit 0), including the new effect fixture. Evidence and binary SHA256 are
+in temp/d1-overlay-fixture-check. It predates the final cockpit removal; this is
+fixture/earlier-effect evidence, not complete current-tree qualification.
+
+The original build session 91701 is terminal. Its D1 build completed; D2 failed
+with object-file permission errors because a separate build entered buildd2.
+The vcpkg slowdown was scheduler starvation of Idle-priority child processes;
+normalizing only the known build subtree allowed compiler detection to finish.
+No unrelated process was terminated or reprioritized.
+
+Current validation uses a separate build directory temp/d1-asset-retirement-build,
+with the installed dependencies read from buildd2 and manifest installation off.
+Session 32255 is live; log temp/d1-asset-retirement-build-configure-retry.log.
+Initial configuration session 51993 failed because Ninja was not on PATH; the
+retry explicitly selects the installed Ninja path and has passed compiler checks.
+After build, run test_upstream_compat with --d1-assets, --d2-assets,
+--presentation-graphics and --cockpit-dump-prefix to verify original rendering
+and D1/D2/D1 resource switching, then fresh Android compilation/runtime checks.
+
+## Non-render throughput clarification and fresh resource validation
+
+The user's sub-25-fps observation is supported by the preserved paired timing:
+2006 native D1 frames took 5.092 seconds (393.95 fps) without diagnostic traces,
+and 110.951 seconds (18.08 fps) with full state/RNG traces. Both exited 0 and
+produced the same terminal result. Evidence: temp/d1-replay-throughput/no-trace.log
+and traced.log. This measures tracing as a whole, not individual serialization,
+compression or filesystem costs. Replay bypasses calc_frame_time; there is no
+25-fps limit in this path. The dedicated console runner currently supports D2
+accelerated checkpoint replay, not native D1 or D1-in-D2. Do not compare its
+untraced throughput against this diagnostic run or silently drop strict evidence.
+
+Fresh isolated current-source D2 build session 32255 completed with exit 0.
+Full integration with real registered D1/D2 resources, presentation graphics and
+cockpit dumps is running as session 69588 in temp/d1-asset-retirement-current-check.
+Binary SHA256 is recorded there. Android's shared package build is currently
+owned by concurrent controller work; do not start an overlapping native build.
+
+Session 69588 completed successfully with real D1/D2 resources and all integration
+assertions. Visual review of its PNGs found a fixture sequencing error: the font/
+menu checks leave MENU_PALETTE active before the D2 cockpit render. D1's menu and
+level palette coincide, so only the D2 image exposed it. check_profile_cockpit
+now calls the ordinary load_palette(Current_level_palette, 0, 1) before drawing,
+matching the engine's return-to-level path. No production palette code changed.
+Scoped quality passes; rebuilt fixture session 21308 is pending, with log
+ temp/d1-asset-retirement-palette-build.log. Rerun all integration checks and
+inspect fresh D2 PNGs before claiming visual qualification.
+
+The current Android APK was packaged by concurrent controller work at 22:05.
+That work now owns emulator-5554 through test_gamepad_menu_navigation_unified;
+do not overlap the Guide-Bot lifecycle run. Emulator-5580 is also reserved by
+other ongoing work. Fresh Android runtime qualification remains pending.
+
+The fixture rebuild completed with exit 0 as session 97019. The first launch
+(session 21308) failed before building because cmd.exe parsed a forward-slash
+batch path as arguments; the retry used its absolute Windows path. Final test
+is live session 65582 in temp/d1-asset-retirement-palette-check, with executable
+SHA256 and eventual exit-code.txt. Poll it, then inspect cockpit-d2-0.png and
+cockpit-d1-0.png. The earlier current-check integration pass stands, but its D2
+PNG used the menu palette and must not be cited as visual-fidelity evidence.
+
+Throughput evidence also verifies exact terminal JSON byte equality. The traced
+run contains 742577818 uncompressed state bytes (64111051 gzip bytes), confirming
+that the 18.08-fps run includes substantial full-world diagnostic output. No
+simulation/frame-cap/RNG behavior was changed in response to the timing question.
+
+## Replay failure evidence retention
+
+Previous turn made concrete progress: current resource integration passed,
+visual review identified/fixed a test-only D2 menu-palette leak, and its corrected
+rerun remains live (65582). Emulator validation is owned by concurrent tests.
+While that runs, close the identified F1 harness gap: retain small native logs,
+result, launch arguments and process outcome on failure before sandbox cleanup;
+reject a nonzero engine exit even if it wrote a result. Preserve normal successful
+cleanup and avoid retaining copied executable/DLL packages. Verify actual wrapper
+execution using controlled child exit, timeout, result-then-failure, mismatch and
+success cases. No changes to engine simulation or diagnostic trace content.
+
+## Current terminal results and next work
+
+Session 65582 completed exit 0. Corrected D2 cockpit PNG now has the level's
+colors; D1 original key/camera pixel assertions also pass. Its output is
+ temp/d1-asset-retirement-palette-check; binary SHA256 starts 81D17EFD41CB.
+The D2 gauge foregrounds in this low-level fixture look dark/absent; its D2
+checks currently assert GL validity and camera bounds, not foreground pixels.
+Do not claim full D2 HUD pixel fidelity from it. Investigate fixture state versus
+normal renderer entry before inferring a production regression.
+
+Android session 26526 completed exit 0: all 45 Guide-Bot lifecycle steps pass,
+original app data restoration finished. Evidence is copied under
+ temp/d1-asset-retirement-android/device to survive the helper's next retention
+cycle. Manifest records the APK hash D6DB77965D51..., asset source hashes and
+newer compiled objects for all three ABIs. Device ABI verified x86_64.
+Controller testing resumed on 5554 after our helper finished; 5556 and 5580 also
+belong to other work. Recheck live processes before more Android work.
+
+Final replay failure integration session 29122 passed all six cases and scoped
+quality. Its report is temp/input_demo_replay_failures_20260925_222227_483/report.json.
+Real imported replay session 66400 passed strict terminal comparison over 2006
+frames using the new failure handling (temp/d1-asset-retirement-replay-check).
+No live task-owned build/test remains from this turn.
+
+Next F1 audit finding: d1_replay_parity.py copies several harness files into its
+manifest, but capture() still executes the live repository wrapper, and the
+copied dependency list omits dot-sourced platform/compat/menu helpers. The old
+frozen corpus is historical evidence and must not be silently requalified.
+Before starting the fresh full corpus, make its executed harness genuinely
+frozen or fully enforce hash stability for every executed dependency, with a
+regression covering source mutation. Then pin fresh matching native/imported
+builds and rerun all eight cases. Remaining F4 owner review, edition/platform
+qualification and ARM64 runtime remain open.
+
+## Freeze the executed replay harness
+
+Previous turn was progress: resource removal passed fresh host/Android lifecycle
+checks and failed-run evidence retention passed six process integration cases.
+This slice stages the Python controller, PowerShell runner and all helpers used
+by paired captures in their original relative layout. The controller then runs
+from that snapshot and invokes the staged runner with the explicit workspace
+root. Hash checks reject staging races or later edits to the staged package.
+An explicit valid data directory must bypass live data-index generation. Verify
+source mutation isolation, staged corruption rejection and actual PowerShell
+loading, then launch fresh paired captures using the corrected harness.
+
+The frozen controller/runner package is implemented and all 61 comparator and
+harness tests pass, including actual Python/PowerShell execution after live
+source mutation, staged dependency corruption and failed-run archive retention.
+Scoped quality passes. Fresh isolated native D1 and imported D2 builds pass.
+Logs: temp/d1-frozen-harness-{quality,tests}.log and
+temp/d1-frozen-corpus-build.log.
+
+The full eight-demo corpus is live in session 82504, with outer log
+temp/d1-frozen-corpus-run.log and output
+temp/d1_replay_parity_20260925_223823_asset_retirement. The first level-15 native
+capture and repeat both completed successfully; the imported capture is running.
+Native binary SHA256 is B5AF006BFA6FB79E12DEA7A4E906F9EA850D53661B7B163B19E84996B46FA435;
+imported is 1EEC76B0D35132DCF5713CB15D43C05D77074A59056329163CB7121EB987C356.
+Process inspection confirms that captures execute the staged controller and
+runner, with explicit original repository root and copied D1-only data. Keep
+this run and its historical verdicts intact; poll the same session.
+
+While the corpus runs, investigate the dark D2 gauge foregrounds in the resource
+fixture. Extend the existing source-pixel assertion to the D2 key gauge, identify
+missing normal renderer state before changing production, and rerun the complete
+resource integration with original D1/D2 data. No claim of full D2 visual
+qualification follows from the previous GL-validity-only assertion.
+
+The new source-pixel assertion reproduces D2's first-frame gauge loss in
+temp/d1-cockpit-foreground-before (exit 1): blue key pixel expected 148 but is 0.
+Both original engines' cockpit_decode_alpha draw the entire decoded cockpit just
+to upload its texture, overwriting the gauges rendered earlier in that frame.
+Use the existing texture-upload operation directly and retire the decoded
+texture itself, matching the already-correct imported D1 implementation. Keep
+the two original-engine fixes mirrored. Extend the shared graphics fixture to
+assert that overlay preparation preserves existing framebuffer pixels. Also
+finish the fixture's normal return-to-level palette setup with gr_palette_load;
+source inspection confirms the ordinary engine performs both palette calls.
+Rebuild both host games/fixtures, run both graphics suites and the complete
+registered D1/D2 resource integration, then review fresh PNGs.
+
+Current E4 caller audit narrows the old checklist: coop_travel.c's physical_enabled
+explicitly excludes EMULATING_D1, so its early trigger interceptor does not consume
+native D1 compound actions in the current tree. Do not move native activation
+ahead of that interceptor on the assumption that it does. The surviving native
+action mask is explicitly marked in the trigger record; activate/cross execute
+that mask. The representative type still prioritizes secret exit over normal
+exit, while escort.c::side_has_exit_trigger and route confirmation query only the
+representative type. Review combined exit flags through a levels-owned semantic
+query alongside the legacy single-type fallback in switch.c. The format matrix
+must distinguish current version-34 trigger storage from older imported saves;
+no namespace guess or recovery of lost compound flags is justified by the type.
+
+Both mirrored cockpit fixes and fixtures build successfully; native D1's complete
+graphics/integration invocation passes in temp/d1-cockpit-foreground-native.
+The full D2 graphics plus registered resource test is live in session 84925 under
+temp/d1-cockpit-foreground-current. The frozen corpus remains live in 82504 and
+has reached level-15 native/imported comparison. Its binaries intentionally
+predate this draw-only correction. The latest APK predates it as well; Android
+compile/runtime for these two new original-renderer edits remains pending.
+Concurrent Gradle work hit the native-retention guard while the corpus runs;
+do not bypass that guard or stop the preserved corpus for another build.

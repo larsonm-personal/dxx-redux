@@ -25,6 +25,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "game.h"
 #include "gr.h"
 #include "key.h"
+#ifdef ANDROID
+#include "android_menu_navigation.h"
+#endif
 #include "mouse.h"
 #include "iff.h"
 #include "u_mem.h"
@@ -768,6 +771,15 @@ int demo_menu_handler( listbox *lb, d_event *event, void *userdata )
 
 	userdata = userdata;
 
+#ifdef ANDROID
+	android_menu_key_event controller_key;
+	if (event->type == EVENT_JOYSTICK_BUTTON_DOWN && (event_joystick_get_button(event) == 2 || event_joystick_get_button(event) == 3) && android_menu_translate_button(event, &controller_key)) {
+		if (event_joystick_get_button(event) == 3)
+			controller_key.keycode = KEY_CTRLED + KEY_C;
+		event = (d_event *)&controller_key;
+	}
+#endif
+
 	switch (event->type)
 	{
 		case EVENT_KEY_COMMAND:
@@ -813,7 +825,13 @@ int select_demo(void)
 	// Sort by name
 	qsort(list, NumItems, sizeof(char *), (int (*)( const void *, const void * ))string_array_sort_func);
 
+#ifdef ANDROID
+	static char controller_title[128];
+	snprintf(controller_title, sizeof(controller_title), "%s\nX: delete  Y: convert", TXT_SELECT_DEMO);
+	newmenu_listbox1(controller_title, NumItems, list, 1, 0, demo_menu_handler, NULL);
+#else
 	newmenu_listbox1(TXT_SELECT_DEMO, NumItems, list, 1, 0, demo_menu_handler, NULL);
+#endif
 
 	return 1;
 }

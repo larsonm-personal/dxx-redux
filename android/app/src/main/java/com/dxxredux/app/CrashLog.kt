@@ -28,20 +28,7 @@ object CrashLog {
     private const val BREADCRUMB_SNAPSHOT_FILE_NAME = "crash_breadcrumbs_latest.txt"
     private const val BREADCRUMB_BACKFILL_WINDOW_MS = 5 * 60 * 1000L
 
-    private var installed = false
     private var backfillAttempted = false
-
-    /**
-     * Legacy compatibility hook. xCrash is initialized from the Application,
-     * so Activity call sites can safely keep calling this without installing
-     * a second Java uncaught exception handler.
-     */
-    fun install(context: Context) {
-        @Suppress("UNUSED_PARAMETER")
-        val unused = context
-        if (installed) return
-        installed = true
-    }
 
     /** List existing crash files, newest first. */
     fun listCrashFiles(context: Context): List<File> {

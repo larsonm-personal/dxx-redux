@@ -18,12 +18,14 @@ object ConfigImportExport {
         val displayName: String,
     ) {
         BOOLEAN("Boolean"),
+        INTEGER("Integer"),
         STRING("String"),
         ;
 
         fun accepts(value: Any?): Boolean =
             when (this) {
                 BOOLEAN -> value is Boolean
+                INTEGER -> value is Int
                 STRING -> value is String
             }
     }
@@ -58,6 +60,11 @@ object ConfigImportExport {
             ExportedPreference(PREF_SHOW_DEMO_INSTALLER_OFFER, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_GUIDEBOT_HELPER_LINE, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_PERSIST_GUIDEBOT_GOAL, ExportedPreferenceType.BOOLEAN),
+            ExportedPreference(
+                PREF_GUIDEBOT_ROUTING_MODE,
+                ExportedPreferenceType.INTEGER,
+                GuidebotRoutingMode.ENHANCED,
+            ),
             ExportedPreference(PREF_NEAREST_PLAYER_LINE, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_HEADLIGHT_OFF_BY_DEFAULT, ExportedPreferenceType.BOOLEAN),
         )
@@ -96,6 +103,11 @@ object ConfigImportExport {
             val value = json.get(pref.key)
             if (!pref.type.accepts(value)) {
                 return DecodedPreferences(error = "'${pref.key}' must be ${pref.type.displayName}")
+            }
+            if (pref.key == PREF_GUIDEBOT_ROUTING_MODE &&
+                value !in listOf(GuidebotRoutingMode.ORIGINAL, GuidebotRoutingMode.ENHANCED)
+            ) {
+                return DecodedPreferences(error = "'${pref.key}' must be Original (0) or Enhanced (1)")
             }
             if (pref.key == SoundfontStore.PREF_EQ &&
                 runCatching { MusicEq.decodeProfiles(value as String) }.isFailure
@@ -594,6 +606,7 @@ object ConfigImportExport {
         for ((pref, value) in decoded.values) {
             when (pref.type) {
                 ExportedPreferenceType.BOOLEAN -> editor.putBoolean(pref.key, value as Boolean)
+                ExportedPreferenceType.INTEGER -> editor.putInt(pref.key, value as Int)
                 ExportedPreferenceType.STRING -> editor.putString(pref.key, value as String)
             }
             count++

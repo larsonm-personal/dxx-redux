@@ -1,13 +1,16 @@
 #ifndef D2_GUIDEBOT_ROUTE_INTERNAL_H
 #define D2_GUIDEBOT_ROUTE_INTERNAL_H
 
-/* DXX_GUIDEBOT_LIVE_ESCORT builds the Android escort decision loop in the
- * isolated Windows integration test, without enabling Android UI dependencies */
+/* DXX_GUIDEBOT_LIVE_ESCORT enables the live routing loop on desktop and
+ * headless replay/test targets without enabling Android UI dependencies */
 enum escort_route_target_mode {
 	ESCORT_ROUTE_TARGET_END_OF_LEVEL = 0,
 	ESCORT_ROUTE_TARGET_UNEXPLORED = 1,
 	ESCORT_ROUTE_TARGET_EXIT = 2
 };
+
+int escort_set_goal_object(void);
+int escort_enhanced_goal_object(int key_flags);
 
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 
@@ -121,6 +124,11 @@ extern int Escort_route_certificate_checks_suppressed;
 #endif
 
 int exists_in_mine(int start_seg, int objtype, int objid, int special);
+void escort_route_init_level(void);
+void escort_route_frame(object *objp, fix dist_to_player, int player_visibility);
+int escort_route_path_recalc_begin(const char *reason);
+void escort_route_reset_navigation(void);
+void escort_create_path_to_goal(object *objp);
 int escort_route_prepare_hostage(object *objp);
 int escort_route_follows_objective(const object *objp);
 int escort_is_companion_object(int objnum);

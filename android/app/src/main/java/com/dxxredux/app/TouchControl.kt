@@ -38,7 +38,6 @@ private val TOUCH_FLOAT_RANGES =
         "stripLabelAngleDeg" to -90.0..90.0,
         "stripSelectedScale" to 1.0..3.0,
         "stripCardScale" to MIN_SCROLL_STRIP_CARD_SCALE.toDouble()..MAX_SCROLL_STRIP_CARD_SCALE.toDouble(),
-        "maxAngle" to 0.1f.toDouble()..1.57f.toDouble(),
         "maxAngleX" to 0.1f.toDouble()..1.57f.toDouble(),
         "maxAngleY" to 0.1f.toDouble()..1.57f.toDouble(),
         "maxAngleZ" to 0.1f.toDouble()..1.57f.toDouble(),
@@ -297,7 +296,7 @@ private fun validateFloatingZone(
 }
 
 internal fun validateTouchLayoutDomains(layout: TouchLayout): String? {
-    if (layout.version !in MIN_SUPPORTED_TOUCH_LAYOUT_VERSION..CURRENT_TOUCH_LAYOUT_VERSION) {
+    if (layout.version != CURRENT_TOUCH_LAYOUT_VERSION) {
         return "touch_layout.version is unsupported"
     }
 
@@ -518,7 +517,6 @@ internal fun validateTouchLayoutDomains(layout: TouchLayout): String? {
     axis("touch_layout.gyro.axisY", gyro.axisY)?.let { return it }
     axis("touch_layout.gyro.axisZ", gyro.axisZ, optional = true)?.let { return it }
     for ((name, value) in listOf(
-        "deadzone" to gyro.deadzone,
         "deadzoneX" to gyro.deadzoneX,
         "deadzoneY" to gyro.deadzoneY,
         "deadzoneZ" to gyro.deadzoneZ,
@@ -1053,7 +1051,6 @@ data class GyroConfig(
     val axisX: Int = TouchBindings.AXIS_RIGHT_X,
     val axisY: Int = TouchBindings.AXIS_RIGHT_Y,
     val axisZ: Int = -1, // -1 = disabled (roll not mapped by default)
-    val deadzone: Float = 0.1f, // legacy single deadzone, kept for migration
     val deadzoneX: Float = 0.1f, // per-axis: yaw
     val deadzoneY: Float = 0.1f, // per-axis: roll
     val deadzoneZ: Float = 0.3f, // per-axis: pitch (typically needs larger deadzone)
@@ -1076,7 +1073,6 @@ data class GyroConfig(
             put("axisX", axisX)
             put("axisY", axisY)
             put("axisZ", axisZ)
-            put("deadzone", deadzoneX.toDouble()) // write deadzoneX as legacy "deadzone" for compat
             put("deadzoneX", deadzoneX.toDouble())
             put("deadzoneY", deadzoneY.toDouble())
             put("deadzoneZ", deadzoneZ.toDouble())
@@ -1089,33 +1085,8 @@ data class GyroConfig(
         }
 
     companion object {
-        /** Migrate old raw-radian deadzone (<=0.1) to fraction-of-maxAngle. */
-        private fun migrateDeadzone(raw: Float): Float {
-            // Old format: radians (0.0-0.1). New format: fraction (0.0-0.6).
-            // Old default was 0.02 rad with maxAngle 0.436 -> 0.02/0.436 ~= 0.046.
-            // Values <= 0.1 are clearly old-format radians; convert to fraction.
-            if (raw <= 0.1f && raw > 0f) return (raw / 0.436f).coerceIn(0f, 0.6f)
-            return raw
-        }
-
-        fun fromJson(j: JSONObject): GyroConfig {
-            // Migration: old configs have single maxAngle; new have maxAngleX/Y/Z
-            val legacyAngle = j.optDouble("maxAngle", 0.436).toFloat()
-            val rawDz = j.optDouble("deadzone", 0.1).toFloat()
-            val migratedDz = migrateDeadzone(rawDz)
-            // Per-axis deadzones: fall back to migrated single value if absent
-            val dzX = if (j.has("deadzoneX")) j.optDouble("deadzoneX").toFloat() else migratedDz
-            val dzY = if (j.has("deadzoneY")) j.optDouble("deadzoneY").toFloat() else migratedDz
-            val dzZ =
-                if (j.has(
-                        "deadzoneZ",
-                    )
-                ) {
-                    j.optDouble("deadzoneZ").toFloat()
-                } else {
-                    (migratedDz * 3f).coerceAtMost(0.6f)
-                }
-            return GyroConfig(
+        fun fromJson(j: JSONObject): GyroConfig =
+            GyroConfig(
                 enabled = j.optBoolean("enabled"),
                 activation = GyroActivation.valueOf(j.optString("activation", "ALWAYS")),
                 mode = GyroMode.valueOf(j.optString("mode", "ABSOLUTE")),
@@ -1125,18 +1096,16 @@ data class GyroConfig(
                 axisX = j.optInt("axisX", TouchBindings.AXIS_RIGHT_X),
                 axisY = j.optInt("axisY", TouchBindings.AXIS_RIGHT_Y),
                 axisZ = j.optInt("axisZ", -1),
-                deadzone = migratedDz,
-                deadzoneX = dzX,
-                deadzoneY = dzY,
-                deadzoneZ = dzZ,
-                maxAngleX = j.optDouble("maxAngleX", legacyAngle.toDouble()).toFloat(),
-                maxAngleY = j.optDouble("maxAngleY", legacyAngle.toDouble()).toFloat(),
-                maxAngleZ = j.optDouble("maxAngleZ", legacyAngle.toDouble()).toFloat(),
+                deadzoneX = j.optDouble("deadzoneX", 0.1).toFloat(),
+                deadzoneY = j.optDouble("deadzoneY", 0.1).toFloat(),
+                deadzoneZ = j.optDouble("deadzoneZ", 0.3).toFloat(),
+                maxAngleX = j.optDouble("maxAngleX", 0.436).toFloat(),
+                maxAngleY = j.optDouble("maxAngleY", 0.436).toFloat(),
+                maxAngleZ = j.optDouble("maxAngleZ", 0.436).toFloat(),
                 refAzimuth = if (j.has("refAzimuth")) j.getDouble("refAzimuth").toFloat() else null,
                 refPitch = if (j.has("refPitch")) j.getDouble("refPitch").toFloat() else null,
                 refRoll = if (j.has("refRoll")) j.getDouble("refRoll").toFloat() else null,
             )
-        }
     }
 }
 
@@ -1256,7 +1225,7 @@ data class MoreActionsControl(
 }
 
 data class TouchLayout(
-    val version: Int = 2,
+    val version: Int = CURRENT_TOUCH_LAYOUT_VERSION,
     val name: String = "Default",
     val globalOpacity: Float = TouchBindings.DEFAULT_GLOBAL_OPACITY,
     val sticks: List<AnalogStickControl> = emptyList(),
@@ -1287,6 +1256,10 @@ data class TouchLayout(
 
     companion object {
         fun fromJson(j: JSONObject): TouchLayout {
+            val version = j.opt("version")
+            require(version is Int && version == CURRENT_TOUCH_LAYOUT_VERSION) {
+                "touch_layout.version is unsupported"
+            }
             validateTouchLayoutJsonNumbers(j)?.let { throw IllegalArgumentException(it) }
 
             fun <T> parseArray(
@@ -1298,7 +1271,7 @@ data class TouchLayout(
             }
             val layout =
                 TouchLayout(
-                    version = j.optInt("version", 1),
+                    version = version,
                     name = j.optString("name", "Default"),
                     globalOpacity =
                         j

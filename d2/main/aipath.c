@@ -43,6 +43,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "deterministic_math.h"
 #include "d1_in_d2/d1_in_d2_ai.h"
 #include "input_demo_hooks.h"
+#include "guidebot_routing.h"
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 #include "escort.h"
 #include "escort_goal_policy.h"
@@ -1907,9 +1908,13 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 	if (dot < -15*F1_0/16) {
 		norm_cur_vel = norm_vec_to_goal;
 	} else {
-		norm_cur_vel.x += dxx_ai_path_smoothing_delta(norm_vec_to_goal.x, FrameTime);
-		norm_cur_vel.y += dxx_ai_path_smoothing_delta(norm_vec_to_goal.y, FrameTime);
-		norm_cur_vel.z += dxx_ai_path_smoothing_delta(norm_vec_to_goal.z, FrameTime);
+		if (robptr->companion && !guidebot_routing_is_enhanced())
+			guidebot_original_path_smoothing(&norm_cur_vel, &norm_vec_to_goal, FrameTime);
+		else {
+			norm_cur_vel.x += dxx_ai_path_smoothing_delta(norm_vec_to_goal.x, FrameTime);
+			norm_cur_vel.y += dxx_ai_path_smoothing_delta(norm_vec_to_goal.y, FrameTime);
+			norm_cur_vel.z += dxx_ai_path_smoothing_delta(norm_vec_to_goal.z, FrameTime);
+		}
 	}
 
 	vm_vec_normalize_quick(&norm_cur_vel);
@@ -1939,7 +1944,7 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 #endif
 	/* Match Android guidebot motion during input-demo record/replay so
 	 * checkpoint-backed replays stay deterministic on desktop. */
-	if (robptr->companion && !precise_approach && input_demo_should_match_android_companion_velocity()) {
+	if (robptr->companion && guidebot_routing_is_enhanced() && !precise_approach && input_demo_should_match_android_companion_velocity()) {
 		objp->mtype.phys_info.velocity.x = (objp->mtype.phys_info.velocity.x + norm_cur_vel.x) / 2;
 		objp->mtype.phys_info.velocity.y = (objp->mtype.phys_info.velocity.y + norm_cur_vel.y) / 2;
 		objp->mtype.phys_info.velocity.z = (objp->mtype.phys_info.velocity.z + norm_cur_vel.z) / 2;
@@ -2399,4 +2404,3 @@ void check_create_player_path(void)
 //	----------------------------------------------------------------------------------------------------------
 //					DEBUG FUNCTIONS ENDED
 //	----------------------------------------------------------------------------------------------------------
-

@@ -4141,7 +4141,6 @@ private fun GyroSettingsDialog(
     var invertX by remember { mutableStateOf(gyro.invertX) }
     var invertY by remember { mutableStateOf(gyro.invertY) }
     var invertZ by remember { mutableStateOf(gyro.invertZ) }
-    var deadzone by remember { mutableFloatStateOf(gyro.deadzone) }
     var deadzoneX by remember { mutableFloatStateOf(gyro.deadzoneX) }
     var deadzoneY by remember { mutableFloatStateOf(gyro.deadzoneY) }
     var deadzoneZ by remember { mutableFloatStateOf(gyro.deadzoneZ) }
@@ -4290,7 +4289,6 @@ private fun GyroSettingsDialog(
                         invertX = invertX,
                         invertY = invertY,
                         invertZ = invertZ,
-                        deadzone = deadzoneX, // legacy field tracks yaw for compat
                         deadzoneX = deadzoneX,
                         deadzoneY = deadzoneY,
                         deadzoneZ = deadzoneZ,

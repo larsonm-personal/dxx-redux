@@ -65,6 +65,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
+#include "android_texture_debug.h"
 #endif
 
 extern int LinearSVGABuffer;
@@ -978,37 +979,7 @@ void game_render_frame_mono(int flip)
 #endif
 
 #ifdef ANDROID
-	/* Debug texture overlay: draw accumulated labels from 3D rendering.
-	 * Green = hires PNG replacement, yellow = base game texture.
-	 * Uses direct RGB override to bypass lossy palette round-trip. */
-	if (g_debug_tex_overlay_active && g_debug_tex_label_count > 0)
-	{
-		extern float g_font_rgb_override[3];
-		int i;
-		gr_set_current_canvas(NULL);
-		gr_set_curfont(GAME_FONT);
-		gr_set_fontcolor(BM_XRGB(63, 63, 0), -1); /* fallback palette color */
-		for (i = 0; i < g_debug_tex_label_count; i++) {
-			struct debug_tex_label *lbl = &g_debug_tex_labels[i];
-			if (lbl->name[0] == '\0')
-				continue;
-			if (lbl->is_hires) {
-				g_font_rgb_override[0] = 0.f;
-				g_font_rgb_override[1] = 1.f;
-				g_font_rgb_override[2] = 0.f;
-			} else {
-				g_font_rgb_override[0] = 1.f;
-				g_font_rgb_override[1] = 1.f;
-				g_font_rgb_override[2] = 0.f;
-			}
-			if (lbl->seg >= 0 && lbl->side >= 0 && lbl->face >= 0)
-				gr_printf(lbl->sx, lbl->sy, "%s [%d/%d/%d]",
-					lbl->name, lbl->seg, lbl->side, lbl->face);
-			else
-				gr_printf(lbl->sx, lbl->sy, "%s", lbl->name);
-		}
-		g_font_rgb_override[0] = -1.f;
-	}
+	android_texture_debug_draw_overlay();
 #endif
 
 	/* android port: replay robot labels and frame counter */

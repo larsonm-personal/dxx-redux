@@ -5,8 +5,6 @@ import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.io.FileOutputStream
-import java.security.MessageDigest
 
 /**
  * Manages multiple file sets — named collections of game data files.
@@ -21,9 +19,6 @@ import java.security.MessageDigest
  * plus any locally copied files in its directory.
  *
  * Persistence is via `file_sets.json` in [filesDir].
- *
- * Call [migrateDefaultSetIfNeeded] once at startup to move legacy game data
- * from filesDir root into `sets/default/`.
  */
 class FileSetManager(
     private val filesDir: File,
@@ -167,7 +162,7 @@ class FileSetManager(
     }
 
     /**
-     * Get the directory for a set. All sets live under `filesDir/sets/<name>/`,
+     * Get the directory for a set. All sets live under `<importRoot>/sets/<name>/`,
      * including "default".
      */
     fun getSetDir(name: String): File = File(setsDir, name).also { it.mkdirs() }
@@ -223,201 +218,6 @@ class FileSetManager(
 
     private fun saveConfig(config: JSONObject) {
         AtomicFilePublication.writeUtf8(configFile, config.toString(2))
-    }
-
-    /**
-     * Migrate game data files from filesDir root into sets/default/.
-     * Called once at startup. Idempotent — skips if already migrated.
-     *
-     * Moves files by extension (case-insensitive) and known game data
-     * subdirectories (e.g. missions/). Music (.gog/.inst) and
-     * configs/saves/metadata stay in filesDir.
-     */
-    fun migrateDefaultSetIfNeeded() {
-        val config = loadConfig()
-        val currentVersion = config.optInt("migration_version", 0)
-
-        // v0 -> v1: move legacy game-data files from filesDir root into
-        // <importRoot>/sets/default/.  Pre-v1 the sets/ dir was at
-        // filesDir/sets/, but importRoot defaults to filesDir/imported so
-        // the destination already lives in the right place.
-        if (currentVersion < 1) {
-            val defaultDir = getSetDir(DEFAULT_SET) // creates dir via mkdirs()
-            var movedCount = 0
-            var migrationComplete = true
-            val files = filesDir.listFiles() ?: emptyArray()
-            for (file in files) {
-                if (file.isDirectory) {
-                    if (file.name.lowercase() in GAME_DATA_DIRS) {
-                        val dest = File(defaultDir, file.name)
-                        if (transferVerified(file, dest)) movedCount++ else migrationComplete = false
-                    }
-                    continue
-                }
-                if (GameFileFormats.isSetGameData(file.name)) {
-                    val dest = File(defaultDir, file.name)
-                    if (transferVerified(file, dest)) movedCount++ else migrationComplete = false
-                }
-            }
-            for (name in listOf(".asset_manifest.json", ".saf_manifest.json")) {
-                val src = File(filesDir, name)
-                if (src.exists()) {
-                    val dest = File(defaultDir, name)
-                    if (!transferVerified(src, dest)) migrationComplete = false
-                }
-            }
-            if (!migrationComplete) {
-                migrationLog("Default-set migration incomplete; retaining migration version 0 for retry", error = true)
-                return
-            }
-            config.put("migration_version", 1)
-            saveConfig(config)
-            migrationLog("Default-set migration: moved $movedCount items to ${defaultDir.absolutePath}")
-        }
-
-        // v1 -> v2: when sets/ used to live at filesDir/sets/ and now lives
-        // at importRoot/sets/, relocate it.  This is a no-op when importRoot
-        // is filesDir (overlap) or when the legacy dir was already moved.
-        if (config.optInt("migration_version", 0) < 2) {
-            val legacy = File(filesDir, "sets")
-            val target = File(importRoot, "sets")
-            if (legacy.exists() && legacy.absolutePath != target.absolutePath) {
-                if (!transferVerified(legacy, target)) {
-                    migrationLog("Set-root migration incomplete; retaining migration version 1 for retry", error = true)
-                    return
-                }
-                migrationLog("Verified sets/ transfer from ${legacy.absolutePath} to ${target.absolutePath}")
-            }
-            config.put("migration_version", 2)
-            saveConfig(config)
-        }
-    }
-
-    /**
-     * Copy one file or tree into [destination], verify every file, and only then remove its source.
-     * Existing identical entries are accepted; a differing file collision stops the migration.
-     * Completed children may remain published after a later failure, but retries are safe because
-     * their source and destination bytes compare identically.
-     */
-    private fun transferVerified(
-        source: File,
-        destination: File,
-    ): Boolean {
-        if (!source.exists()) return true
-        if (source.isDirectory) {
-            if (destination.exists() && !destination.isDirectory) return false
-            if (!destination.exists() && !destination.mkdirs()) return false
-            val children = source.listFiles() ?: return false
-            for (child in children) {
-                if (!transferVerified(child, File(destination, child.name))) return false
-            }
-            if (source.listFiles()?.isEmpty() == true && !source.delete()) {
-                migrationLog("Verified migration left empty source directory ${source.absolutePath}")
-            }
-            return true
-        }
-        if (!source.isFile) return false
-        if (destination.exists()) {
-            if (!destination.isFile || !filesMatch(source, destination)) return false
-            if (!source.delete()) migrationLog("Verified migration left duplicate source ${source.absolutePath}")
-            return true
-        }
-
-        val parent = destination.parentFile ?: return false
-        if (!parent.exists() && !parent.mkdirs()) return false
-        val temporary = File(parent, ".${destination.name}.migration.tmp")
-        if (temporary.exists() && !temporary.deleteRecursively()) return false
-        return try {
-            source.inputStream().use { input ->
-                FileOutputStream(temporary).use { output ->
-                    input.copyTo(output)
-                    output.fd.sync()
-                }
-            }
-            temporary.setLastModified(source.lastModified())
-            if (!filesMatch(source, temporary) || !temporary.renameTo(destination)) {
-                temporary.delete()
-                false
-            } else if (!filesMatch(source, destination)) {
-                destination.delete()
-                false
-            } else {
-                if (!source.delete()) migrationLog("Verified migration left duplicate source ${source.absolutePath}")
-                true
-            }
-        } catch (e: Exception) {
-            migrationLog("Verified migration failed for ${source.absolutePath}: ${e.message}", error = true)
-            temporary.delete()
-            false
-        }
-    }
-
-    private fun filesMatch(
-        first: File,
-        second: File,
-    ): Boolean {
-        if (first.length() != second.length()) return false
-        return try {
-            MessageDigest.isEqual(sha256(first), sha256(second))
-        } catch (e: Exception) {
-            migrationLog("Could not verify migrated file: ${e.message}", error = true)
-            false
-        }
-    }
-
-    private fun sha256(file: File): ByteArray {
-        val digest = MessageDigest.getInstance("SHA-256")
-        file.inputStream().buffered().use { input ->
-            val buffer = ByteArray(64 * 1024)
-            while (true) {
-                val count = input.read(buffer)
-                if (count < 0) break
-                if (count > 0) digest.update(buffer, 0, count)
-            }
-        }
-        return digest.digest()
-    }
-
-    private fun migrationLog(
-        message: String,
-        error: Boolean = false,
-    ) {
-        try {
-            if (error) Log.e(TAG, message) else Log.i(TAG, message)
-        } catch (_: RuntimeException) {
-            // android.util.Log is an unimplemented stub in local JVM tests.
-        }
-    }
-
-    /**
-     * Remove any game-data files still sitting in filesDir root.
-     * After the one-time migration, these are either duplicates of files
-     * already in a set dir, or orphans left by adb push / incomplete
-     * migration.  Either way they must not remain in filesDir because it
-     * is always on the PhysFS search path and would leak data into every
-     * set.  Runs every startup (cheap — just a dir listing).
-     */
-    fun sweepRootGameFiles() {
-        val config = loadConfig()
-        if (config.optInt("migration_version", 0) < 1) return // migration hasn't run yet
-        var swept = 0
-        val files = filesDir.listFiles() ?: return
-        for (file in files) {
-            if (file.isDirectory) {
-                if (file.name.lowercase() in GAME_DATA_DIRS) {
-                    file.deleteRecursively()
-                    swept++
-                }
-                continue
-            }
-            if (GameFileFormats.isSetGameData(file.name)) {
-                file.delete()
-                swept++
-            }
-        }
-        if (swept > 0) {
-            Log.i(TAG, "Swept $swept orphaned game-data items from filesDir root")
-        }
     }
 
     /**

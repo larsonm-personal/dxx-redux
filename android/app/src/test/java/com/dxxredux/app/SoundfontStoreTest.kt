@@ -151,7 +151,11 @@ class SoundfontStoreTest {
         val restored = memoryPreferences()
         decoded.values.forEach { (key, value) ->
             val editor = restored.edit()
-            if (value is Boolean) editor.putBoolean(key.key, value) else editor.putString(key.key, value as String)
+            when (key.type) {
+                ConfigImportExport.ExportedPreferenceType.BOOLEAN -> editor.putBoolean(key.key, value as Boolean)
+                ConfigImportExport.ExportedPreferenceType.INTEGER -> editor.putInt(key.key, value as Int)
+                ConfigImportExport.ExportedPreferenceType.STRING -> editor.putString(key.key, value as String)
+            }
             editor.commit()
         }
         assertEquals(store.read(), SoundfontStore(temporary.root, restored).read())

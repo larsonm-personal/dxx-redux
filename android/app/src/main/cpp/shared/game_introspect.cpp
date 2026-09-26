@@ -311,6 +311,11 @@ int androidaud_get_initial_queued_buffers(void);
 extern "C" int newmenu_handler(window *wind, d_event *event, void *data);
 extern "C" int listbox_handler(window *wind, d_event *event, void *data);
 extern "C" int kconfig_handler(window *wind, d_event *event, void *data);
+extern "C" void kconfig_get_menu_state(void *data, int *selected, int *changing);
+#ifdef DXX_BUILD_DESCENT_II
+extern "C" int escort_menu_handler(window *wind, d_event *event, void *data);
+extern "C" int escort_menu_get_selection(void *data);
+#endif
 extern "C" int scores_handler(window *wind, d_event *event, void *data);
 extern "C" int credits_handler(window *wind, d_event *event, void *data);
 
@@ -971,6 +976,9 @@ static json serialize_guidebot()
 	result["info_overlay_status"] = guidebot_info_status();
 	result["info_overlay_history_count"] = guidebot_info_history_count();
 	result["persist_goal_message"] = escort_goal_message_persistent() != 0;
+	result["routing_mode"] = guidebot_routing_mode();
+	result["routing_mode_name"] = guidebot_routing_name();
+	result["routing_default"] = guidebot_routing_default();
 	result["persistent_goal_message"] = escort_goal_message() ? escort_goal_message() : "";
 	result["buddy_objnum"] = Buddy_objnum;
 	int companion_count = 0;
@@ -2243,7 +2251,14 @@ extern "C" char *game_introspect_get_state(void)
 			} else if (cb == (int (*)(window *, d_event *, void *)) listbox_handler && data) {
 				j["menu"] = serialize_listbox_data(data);
 			} else if (cb == (int (*)(window *, d_event *, void *)) kconfig_handler) {
-				j["menu"] = { { "type", "kconfig" } };
+				int selected, changing;
+				kconfig_get_menu_state(data, &selected, &changing);
+				j["menu"] = { { "type", "kconfig" }, { "selected_index", selected }, { "changing", (bool) changing } };
+
+#ifdef DXX_BUILD_DESCENT_II
+			} else if (cb == escort_menu_handler) {
+				j["menu"] = { { "type", "guidebot" }, { "selected_index", escort_menu_get_selection(data) } };
+#endif
 			} else if (cb == scores_handler) {
 				j["menu"] = { { "type", "scores" } };
 			} else if (cb == credits_handler) {

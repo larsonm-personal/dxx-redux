@@ -28,6 +28,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gr.h"
 #include "window.h"
 #include "key.h"
+#ifdef ANDROID
+#include "android_menu_navigation.h"
+#endif
 #include "mouse.h"
 #include "palette.h"
 #include "game.h"
@@ -65,6 +68,13 @@ int credits_handler(window *wind, d_event *event, credits *cr)
 	int j, l, y;
 	char * tempp;
 	
+#ifdef ANDROID
+	android_menu_key_event controller_key;
+	if (event->type == EVENT_JOYSTICK_BUTTON_DOWN && event_joystick_get_button(event) <= 1 && android_menu_translate_button(event, &controller_key)) {
+		event = (d_event *)&controller_key;
+	}
+#endif
+
 	switch (event->type)
 	{
 		case EVENT_KEY_COMMAND:

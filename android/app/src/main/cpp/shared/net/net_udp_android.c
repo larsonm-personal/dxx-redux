@@ -228,7 +228,7 @@ const char *android_net_udp_game_info_preflight(
 	                            6 + 20 + 2;
 	const int settings_bytes = android_net_udp_local_identity.game_kind ==
 	                                   ANDROID_NET_UDP_RECONNECT_GAME_D2
-	                               ? 35
+	                               ? 36 /* Includes D2 GuidebotRouting before briefing options */
 	                               : 31;
 	const int master_offset = settings_offset + settings_bytes;
 	const int token_offset = master_offset + 1 + (is_sync ? 4 : 0);
@@ -240,6 +240,10 @@ const char *android_net_udp_game_info_preflight(
 
 	if (!data || size != visit_offset + 8)
 		return "full game info size incorrect";
+	/* D2 settings index 29 is GuidebotRouting: Original=0, Enhanced=1,
+	 * synchronized with guidebot_routing.h and net_udp_send_game_info */
+	if (settings_bytes == 36 && data[settings_offset + 29] > 1)
+		return "full game info Guidebot routing incorrect";
 	if (data[0] != (is_sync ? UPID_SYNC : UPID_GAME_INFO))
 		return "full game info type incorrect";
 	if (data[master_offset] >= MAX_PLAYERS ||

@@ -41,6 +41,10 @@ void gles3_shim_vertex_pointer(GLint size, GLenum type, GLsizei stride, const vo
 void gles3_shim_color_pointer(GLint size, GLenum type, GLsizei stride, const void *ptr);
 void gles3_shim_texcoord_pointer(GLint size, GLenum type, GLsizei stride, const void *ptr);
 
+/* All array-buffer owners, including xmodels, use these binding transitions */
+void gles3_shim_bind_buffer(GLenum target, GLuint buffer);
+void gles3_shim_delete_buffers(GLsizei count, const GLuint *buffers);
+
 /* ---------- fixed-function state ---------- */
 void gles3_shim_color4f(GLfloat r, GLfloat g, GLfloat b, GLfloat a);
 void gles3_shim_alpha_func(GLenum func, GLfloat ref);
@@ -94,6 +98,8 @@ int gles3_shim_probe_vbo_arrays(void);
 #define glVertexPointer      gles3_shim_vertex_pointer
 #define glColorPointer       gles3_shim_color_pointer
 #define glTexCoordPointer    gles3_shim_texcoord_pointer
+#define glBindBuffer         gles3_shim_bind_buffer
+#define glDeleteBuffers      gles3_shim_delete_buffers
 
 /* Draw call wrapper */
 #define glDrawArrays gles3_shim_draw_arrays
