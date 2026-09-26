@@ -1,4 +1,5 @@
 #include "route_snapshot.h"
+#include "route_edge.h"
 #include "guidebot_route_certifier.h"
 #include "route_snapshot_c.h"
 
@@ -208,7 +209,9 @@ std::uint64_t hash_topology(const route_topology &topology)
 	}
 	for (const auto &trigger : topology.triggers) {
 		hasher.add_int(trigger.raw_type);
-		hasher.add_int(static_cast<int>(trigger.kind));
+		hasher.add_int(static_cast<int>(trigger.actions.size()));
+		for (const auto action : trigger.actions)
+			hasher.add_int(static_cast<int>(action));
 		hasher.add_bool(trigger.one_shot);
 		hasher.add_int(static_cast<int>(trigger.links.size()));
 		for (const auto &link : trigger.links) {
@@ -730,8 +733,16 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 		if (view.trigger_type)
 			topology_trigger.raw_type = view.trigger_type(
 			    view.user, trigger_index);
-		topology_trigger.kind = normalize_trigger_kind(
-		    view, topology_trigger.raw_type);
+		int action_types[LEVEL_METADATA_MAX_TRIGGER_ACTIONS] = {};
+		const int action_count = view.trigger_action_types
+		                             ? view.trigger_action_types(view.user, trigger_index, action_types)
+		                             : 1;
+		if (action_count < 0 || action_count > LEVEL_METADATA_MAX_TRIGGER_ACTIONS)
+			return fail(problem, "invalid route snapshot trigger action count");
+		if (!view.trigger_action_types)
+			action_types[0] = topology_trigger.raw_type;
+		for (int action = 0; action < action_count; ++action)
+			topology_trigger.actions.push_back(normalize_trigger_kind(view, action_types[action]));
 		if (view.trigger_flags)
 			state_trigger.flags = view.trigger_flags(view.user, trigger_index);
 		topology_trigger.one_shot = view.trigger_flag_one_shot != 0 &&
@@ -845,17 +856,11 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 		if (source_trigger < 0 ||
 		    source_trigger >= static_cast<int>(next.topology.triggers.size()))
 			continue;
-		const auto source_kind =
-		    next.topology.triggers[source_trigger].kind;
-		if (source_kind != route_trigger_kind::open_door &&
-		    source_kind != route_trigger_kind::toggle_door &&
-		    source_kind != route_trigger_kind::open_wall &&
-		    source_kind != route_trigger_kind::illusory_wall &&
-		    source_kind != route_trigger_kind::illusion_off &&
-		    source_kind != route_trigger_kind::unlock_door)
+		const auto &source_trigger_actions = next.topology.triggers[source_trigger];
+		if (!route_trigger_opens_path(source_trigger_actions))
 			continue;
 		for (const auto &trigger : next.topology.triggers) {
-			if (trigger.kind != route_trigger_kind::close_wall)
+			if (!trigger.has_action(route_trigger_kind::close_wall))
 				continue;
 			for (const auto &link : trigger.links) {
 				if (link.segment < 0 ||

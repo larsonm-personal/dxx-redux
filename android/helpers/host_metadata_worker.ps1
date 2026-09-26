@@ -39,6 +39,7 @@ function Invoke-MetadataWorker {
     $progressTimer = [Diagnostics.Stopwatch]::StartNew()
     $lastCheckpointProgress = $null
     $lastCheckpointText = $null
+    $runtimeRestarts = 0
     if (-not $Request.Contains('checkpoint_path')) { $Request['checkpoint_path'] = "$LogPath.checkpoint.json" }
     New-Item -ItemType Directory -Path (Split-Path -Parent $LogPath) -Force | Out-Null
     try {
@@ -84,7 +85,24 @@ function Invoke-MetadataWorker {
                 $json = $line.Substring(8)
                 Write-Utf8NoBomTextAtomically -Path $RawOutputPath -Text ($json + "`n")
                 Write-Utf8NoBomTextAtomically -Path $LogPath -Text (($logLines -join "`n") + $(if ($logLines.Count) { "`n" } else { "" }))
-                return $json | ConvertFrom-Json
+                $result = $json | ConvertFrom-Json
+                # Native initialization and mount retirement own this protocol flag
+                if ($result.PSObject.Properties['worker_restart_required'] -and $result.worker_restart_required) {
+                    Stop-MetadataWorkerProcess -Worker $Worker
+                    if ($result.failure_kind -eq 'busy' -and $runtimeRestarts++ -eq 0) {
+                        $replacement = New-MetadataWorker -Executable $Worker.Executable -Arguments $Worker.Arguments
+                        $Worker.Process = $replacement.Process
+                        $Worker.ErrorTask = $replacement.ErrorTask
+                        $process = $Worker.Process
+                        $logLines.Add('Metadata runtime context changed; retrying in a fresh worker')
+                        $lastCheckpointProgress = $lastCheckpointText = $null
+                        $progressTimer.Restart()
+                        $process.StandardInput.WriteLine(($Request | ConvertTo-Json -Depth 20 -Compress))
+                        $process.StandardInput.Flush()
+                        continue
+                    }
+                }
+                return $result
             }
             $logLines.Add($line)
             $progressTimer.Restart()

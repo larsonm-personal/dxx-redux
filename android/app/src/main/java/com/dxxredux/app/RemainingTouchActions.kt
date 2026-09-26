@@ -3,7 +3,13 @@ package com.dxxredux.app
 internal fun touchBindingEnabled(
     binding: Int,
     rewindEnabled: Boolean,
-): Boolean = rewindEnabled || binding != TouchBindings.META_REWIND
+    enhancedGuidebotRouting: Boolean = true,
+): Boolean =
+    (rewindEnabled || binding != TouchBindings.META_REWIND) &&
+        (
+            enhancedGuidebotRouting ||
+                (binding != TouchBindings.META_GUIDE_FIND_SECRET && binding != TouchBindings.META_GUIDE_FIND_UNEXPLORED)
+        )
 
 internal data class RemainingTouchAction(
     val label: String,
@@ -169,6 +175,7 @@ internal fun remainingKeyTouchActions(
     workingControllerInUse: Boolean = false,
     extraBoundBindings: Set<Int> = emptySet(),
     rewindEnabled: Boolean = true,
+    enhancedGuidebotRouting: Boolean = true,
 ): List<RemainingTouchAction> {
     val boundBindings =
         touchLayoutBoundActionBindings(layout) +
@@ -204,7 +211,7 @@ internal fun remainingKeyTouchActions(
         .filter { binding ->
             gameVariant != "d1" ||
                 (binding !in TouchBindings.D2_ONLY_BUTTONS && binding !in TouchBindings.D2_ONLY_META_ACTIONS)
-        }.filter { touchBindingEnabled(it, rewindEnabled) }
+        }.filter { touchBindingEnabled(it, rewindEnabled, enhancedGuidebotRouting) }
         .filter { it !in boundBindings }
         .distinct()
         .map { RemainingTouchAction(remainingActionLabel(it, gameVariant, weaponState), binding = it) }

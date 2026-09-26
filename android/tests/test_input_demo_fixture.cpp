@@ -45,7 +45,7 @@ static bool read_text_file(const char *path, std::string *text)
 }
 
 static int expect_streaming_demo(const std::string &text, const std::string &expected,
-                                  bool valid)
+                                 bool valid)
 {
 	const char *path = "test_input_demo_stream.dximdemo";
 	input_demo_file parsed;
@@ -79,7 +79,7 @@ static int expect_streaming_boundaries(const std::string &expected)
 {
 	// Exercise delimiters on either side of a reader chunk, including EOF
 	for (size_t length : { size_t(65534), size_t(65535), size_t(65536), size_t(65537),
-	                      size_t(INPUT_DEMO_RECORD_MAX_BYTES) }) {
+	                       size_t(INPUT_DEMO_RECORD_MAX_BYTES) }) {
 		const std::string comment = "//" + std::string(length - 2, 'x');
 		if (expect_streaming_demo(comment + "\n" + expected, expected, true) ||
 		    expect_streaming_demo(expected + comment, expected, true))
@@ -485,6 +485,33 @@ static int expect_player_cfg_order_validation(void)
 	return 0;
 }
 
+static int expect_imported_d1_weapon_orders(void)
+{
+	const std::string prefix = "{\"type\":\"header\",\"version\":3,\"game\":\"d2\",\"mission\":\"descent\",\"build_number\":0,\"git_version\":\"test\",\"arch\":\"test\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"lcg_state\",\"frame_count\":1,\"player_cfg\":{\"primary_order\":[9,8,7,6,5,4,3,2,1,0,255],\"secondary_order\":[9,8,7,6,5,4,3,2,1,0,255],";
+	const std::string orders = "\"d1_primary_order\":[16,4,3,2,1,0,255],\"d1_secondary_order\":[4,3,2,1,0,255]";
+	input_demo_metadata metadata, restored;
+	std::string error, serialized;
+	if (!input_demo_metadata_parse_header_line(prefix + orders + "}}", &metadata, &error) ||
+	    !input_demo_metadata_to_header_line(metadata, &serialized, &error) ||
+	    !input_demo_metadata_parse_header_line(serialized, &restored, &error))
+		return report_failure_string("imported native order roundtrip failed: " + error);
+	if (restored.player_cfg.primary_order_count != 11 || restored.player_cfg.primary_order[0] != 9 ||
+	    restored.player_cfg.d1_primary_order_count != 7 || restored.player_cfg.d1_primary_order[0] != 16 ||
+	    restored.player_cfg.d1_secondary_order_count != 6 || restored.player_cfg.d1_secondary_order[0] != 4)
+		return report_failure("native and D2 recording orders were conflated");
+	const char *invalid[] = {
+		"\"d1_primary_order\":[16,4,3,2,1,0,255]",
+		"\"d1_primary_order\":[],\"d1_secondary_order\":[]",
+		"\"d1_primary_order\":[16,4,3,2,1,0,255],\"d1_secondary_order\":[4,3,2,1,0,16]",
+		"\"d1_primary_order\":[16,4,3,2,1,0,0],\"d1_secondary_order\":[4,3,2,1,0,255]",
+		"\"d1_primary_order\":[5,4,3,2,1,0,255],\"d1_secondary_order\":[4,3,2,1,0,255]",
+	};
+	for (const char *entry : invalid)
+		if (input_demo_metadata_parse_header_line(prefix + entry + "}}", &metadata, &error))
+			return report_failure("invalid separate native order accepted");
+	return 0;
+}
+
 static int expect_checkpoint_demo_file_output(void)
 {
 	const char *path = "test_input_demo_checkpoint_fixture.dximdemo";
@@ -689,6 +716,8 @@ int main(void)
 	if (expect_metadata_level_validation())
 		return 1;
 	if (expect_player_cfg_order_validation())
+		return 1;
+	if (expect_imported_d1_weapon_orders())
 		return 1;
 	if (expect_checkpoint_demo_file_output())
 		return 1;

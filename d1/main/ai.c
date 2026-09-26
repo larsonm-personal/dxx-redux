@@ -3509,7 +3509,8 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap, int rebirth)
 
 			event.segnum = (short)PHYSFSX_readSXE16(fp, swap);
 			event.type = (short)PHYSFSX_readSXE16(fp, swap);
-			PHYSFSX_readVectorX(fp, &event.pos, swap);
+			/* The appended awareness vectors use the explicit little-endian writer */
+			PHYSFSX_readVector(&event.pos, fp);
 			if (event.segnum < 0 || event.segnum > Highest_segment_index ||
 			    event.type < PA_NEARBY_ROBOT_FIRED ||
 			    event.type > PA_WEAPON_ROBOT_COLLISION)
@@ -3517,7 +3518,7 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap, int rebirth)
 			if (Num_awareness_events < MAX_AWARENESS_EVENTS)
 				Awareness_events[Num_awareness_events++] = event;
 		}
-		PHYSFSX_readVectorX(fp, &Believed_player_pos, swap);
+		PHYSFSX_readVector(&Believed_player_pos, fp);
 	} else {
 		Num_awareness_events = 0;
 		if (ConsoleObject)

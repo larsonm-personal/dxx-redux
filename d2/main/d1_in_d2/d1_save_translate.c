@@ -31,8 +31,10 @@
 
 #include "physfsx.h"
 #include "cadence_runtime.h"
+#include "fireball.h"
+#include "exploding_wall_runtime.h"
 
-#define D1_SAVE_VERSION CADENCE_D1_SAVE_VERSION
+#define D1_SAVE_VERSION EXPLODING_WALL_D1_SAVE_VERSION
 #define D1_SAVE_COMPATIBLE_VERSION 15
 #define D1_SAVE_SECRET_IDENTITY_VERSION 16
 #define D1_SAVE_AUTOSELECT_VERSION 17
@@ -118,6 +120,7 @@ typedef struct d1_save_translate_ai_state {
 
 typedef struct d1_save_translate_runtime_state {
 	cadence_runtime_state cadence;
+	expl_wall exploding_walls[MAX_EXPLODING_WALLS];
 	fix next_laser_fire_delta;
 	fix next_missile_fire_delta;
 	fix last_laser_fired_delta;
@@ -269,6 +272,19 @@ static int d1_save_translate_read_vector(d1_save_translate_reader *reader,
 	return d1_save_translate_read_fix(reader, &out->x) &&
 	       d1_save_translate_read_fix(reader, &out->y) &&
 	       d1_save_translate_read_fix(reader, &out->z);
+}
+
+/* Appended runtime vectors use PHYSFSX_writeVector, not raw structure writes */
+static int d1_save_translate_read_le_vector(d1_save_translate_reader *reader,
+                                            vms_vector *out)
+{
+	vms_vector value;
+	if (!d1_save_translate_read_bytes(reader, &value, sizeof(value)))
+		return 0;
+	out->x = INTEL_INT(value.x);
+	out->y = INTEL_INT(value.y);
+	out->z = INTEL_INT(value.z);
+	return 1;
 }
 
 static int d1_save_translate_read_matrix(d1_save_translate_reader *reader,
@@ -1035,12 +1051,12 @@ static int d1_save_translate_read_d1_ai_state(
 			return 0;
 		state->awareness_events[i].segnum = value;
 		if (!d1_save_translate_read_s16(reader, &value) ||
-		    !d1_save_translate_read_vector(reader,
+		    !d1_save_translate_read_le_vector(reader,
 		                                   &state->awareness_events[i].pos))
 			return 0;
 		state->awareness_events[i].type = value;
 	}
-	return d1_save_translate_read_vector(reader, &state->believed_player_pos);
+	return d1_save_translate_read_le_vector(reader, &state->believed_player_pos);
 }
 
 static int d1_save_translate_validate_d1_ai_state(
@@ -1521,9 +1537,9 @@ static int d1_save_translate_read_morph_state(d1_save_translate_reader *reader,
 		    Polygon_models[model].n_models > MAX_SUBMODELS)
 			return 0;
 		for (j = 0; j < MAX_VECS; ++j)
-			if (!d1_save_translate_read_vector(reader, &morph->morph_vecs[j])) return 0;
+			if (!d1_save_translate_read_le_vector(reader, &morph->morph_vecs[j])) return 0;
 		for (j = 0; j < MAX_VECS; ++j)
-			if (!d1_save_translate_read_vector(reader, &morph->morph_deltas[j])) return 0;
+			if (!d1_save_translate_read_le_vector(reader, &morph->morph_deltas[j])) return 0;
 		for (j = 0; j < MAX_VECS; ++j)
 			if (!d1_save_translate_read_fix(reader, &morph->morph_times[j])) return 0;
 		for (j = 0; j < MAX_SUBMODELS; ++j)
@@ -1535,13 +1551,13 @@ static int d1_save_translate_read_morph_state(d1_save_translate_reader *reader,
 		if (!d1_save_translate_read_s32(reader, &morph->n_submodels_active) ||
 		    !d1_save_translate_read_u8(reader, &morph->morph_save_control_type) ||
 		    !d1_save_translate_read_u8(reader, &morph->morph_save_movement_type) ||
-		    !d1_save_translate_read_vector(reader, &physics->velocity) ||
-		    !d1_save_translate_read_vector(reader, &physics->thrust) ||
+		    !d1_save_translate_read_le_vector(reader, &physics->velocity) ||
+		    !d1_save_translate_read_le_vector(reader, &physics->thrust) ||
 		    !d1_save_translate_read_fix(reader, &physics->mass) ||
 		    !d1_save_translate_read_fix(reader, &physics->drag) ||
 		    !d1_save_translate_read_fix(reader, &physics->brakes) ||
-		    !d1_save_translate_read_vector(reader, &physics->rotvel) ||
-		    !d1_save_translate_read_vector(reader, &physics->rotthrust) ||
+		    !d1_save_translate_read_le_vector(reader, &physics->rotvel) ||
+		    !d1_save_translate_read_le_vector(reader, &physics->rotthrust) ||
 		    !d1_save_translate_read_fixang(reader, &physics->turnroll) ||
 		    !d1_save_translate_read_u16(reader, &physics->flags))
 			return 0;
@@ -1705,15 +1721,20 @@ static int d1_save_translate_read_runtime_state(
 		    state->delayed_secondary < -1 ||
 		    state->delayed_secondary >= D1_SAVE_TRANSLATE_SECONDARY_WEAPONS)
 			return 0;
-		/* Native D1 uses 16 for quad-laser selection; D2 selects its laser */
-		if (state->delayed_primary == 16)
-			state->delayed_primary = LASER_INDEX;
 	}
 	if (version >= CADENCE_D1_SAVE_VERSION) {
 		const size_t offset = reader->pos;
 		if (!d1_save_translate_skip(reader, CADENCE_RUNTIME_DISK_BYTES) ||
 		    !cadence_runtime_decode(reader->data + offset, CADENCE_RUNTIME_DISK_BYTES,
 		                            reader->swap, GameTime64, &state->cadence))
+			return 0;
+	}
+	for (int i = 0; i < MAX_EXPLODING_WALLS; ++i) state->exploding_walls[i].segnum = -1;
+	if (version >= EXPLODING_WALL_D1_SAVE_VERSION) {
+		const size_t offset = reader->pos;
+		if (!d1_save_translate_skip(reader, EXPLODING_WALL_RUNTIME_DISK_BYTES) ||
+		    !exploding_wall_runtime_decode(reader->data + offset, EXPLODING_WALL_RUNTIME_DISK_BYTES,
+		                                  reader->swap, state->exploding_walls))
 			return 0;
 	}
 	if (!d1_save_translate_validate_runtime_allocator(
@@ -1758,6 +1779,7 @@ static void d1_save_translate_commit_runtime_state(
 	}
 	for (i = 0; i < Num_effects; ++i) effect_apply_bitmap_state(i);
 	cadence_runtime_apply(&state->cadence);
+	memcpy(expl_wall_list, state->exploding_walls, sizeof(state->exploding_walls));
 	Next_laser_fire_time = GameTime64 + (fix64)state->next_laser_fire_delta;
 	Next_missile_fire_time = GameTime64 + (fix64)state->next_missile_fire_delta;
 	Last_laser_fired_time = GameTime64 + (fix64)state->last_laser_fired_delta;

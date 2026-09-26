@@ -88,11 +88,11 @@ static int record_mount(const char *path, const char *mount_point, int append,
 }
 
 int physfsx_android_setup_search_paths(const char *game_dir,
+                                       const char *isolated_data_dir,
                                        const physfsx_android_setup_ops *ops,
                                        physfsx_android_setup_result *result)
 {
 	const char *pref;
-	const char *preview_setdir = getenv("DXX_ANDROID_LEVEL_PREVIEW_DATA_DIR");
 	const char *write_dir;
 	char previous_write_dir[PHYSFSX_ANDROID_PATH_MAX] = "";
 	char game_path[PHYSFSX_ANDROID_PATH_MAX];
@@ -162,9 +162,9 @@ int physfsx_android_setup_search_paths(const char *game_dir,
 		return 0;
 	}
 
-	if (preview_setdir && preview_setdir[0]) {
-		if (!copy_text(setdir, sizeof(setdir), preview_setdir)) {
-			set_failure(result, "read preview set path", preview_setdir, "path is too long");
+	if (isolated_data_dir && isolated_data_dir[0]) {
+		if (!copy_text(setdir, sizeof(setdir), isolated_data_dir)) {
+			set_failure(result, "read isolated set path", isolated_data_dir, "path is too long");
 			rollback(ops, mounted, mounted_count, previous_write_dir);
 			return 0;
 		}
@@ -223,7 +223,7 @@ int physfsx_android_setup_search_paths(const char *game_dir,
 		return 0;
 	}
 
-	if (!preview_setdir || !preview_setdir[0]) {
+	if (!isolated_data_dir || !isolated_data_dir[0]) {
 		file = fopen(mod_path_file, "r");
 		if (file) {
 			while (1) {

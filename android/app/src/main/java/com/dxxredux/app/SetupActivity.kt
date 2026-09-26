@@ -612,6 +612,9 @@ class SetupActivity : ComponentActivity() {
         val activeSetDir = fileSetManager.getSetDir(activeSet)
         val safManifest = fileSetManager.safManifestForSet(activeSet)
         if (!launchDataReadyForGame(target.id, activeSetDir, AssetManifest(activeSetDir), safManifest)) {
+            if (target == GameLaunchTarget.D1_IN_D2) {
+                d1InD2EditionError(activeSetDir, safManifest)?.let { return complete(it) }
+            }
             return complete("${target.displayName} data is not ready")
         }
         LauncherDebugLog.log("launch-target id=${target.id} engine=${target.engine} content=${target.content}")
@@ -655,7 +658,12 @@ class SetupActivity : ComponentActivity() {
             return complete(compatibility.toUserMessage())
         }
         if (game == "d2" && !includeD1MissionZipsForD2 && modManager.hasEnabledD1MissionZipForD2()) {
-            LauncherDebugLog.log("d1-in-d2-hidden-missions reason=missing-d1-base-assets")
+            LauncherDebugLog.log(
+                "d1-in-d2-hidden-missions reason=${d1InD2EditionError(
+                    activeSetDir,
+                    safManifest,
+                ) ?: "missing-d1-base-assets"}",
+            )
         }
         try {
             fileSetManager.writeActiveSetPath()

@@ -5,6 +5,10 @@ param(
     [switch]$SoundCheck,
     [switch]$WeaponArt,
     [switch]$Guidebot,
+    [switch]$EditionAdmission,
+    [switch]$Metadata,
+    [ValidateSet('missing', 'changed')]
+    [string]$RewindSourceCase,
     [switch]$NativeD1,
     [string]$WeaponArtReference,
     [string]$Serial = 'emulator-5554',
@@ -15,6 +19,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if ($Metadata -and ($Guidebot -or $WeaponArt -or $SoundCheck -or $NativeD1 -or $RewindSourceCase -or $EditionAdmission)) { throw 'Metadata requires its own imported-D1 run' }
+if ($Metadata) { $GameLog = $true }
+if ($EditionAdmission -and ($Guidebot -or $WeaponArt -or $SoundCheck -or $NativeD1 -or $RewindSourceCase)) { throw 'EditionAdmission requires its own imported-D1 readiness run' }
+if ($RewindSourceCase) { $Guidebot = $GameLog = $true }
 if ($Guidebot -and (-not $D2DataDirectory -or $NativeD1 -or $WeaponArt -or $SoundCheck)) { throw 'Guidebot requires D2 assets and its own imported-D1 run' }
 if ($NativeD1 -and (-not $WeaponArt -or $D2DataDirectory)) { throw 'NativeD1 requires WeaponArt and D1-only data' }
 if ($WeaponArt -and $SoundCheck) { throw 'Run weapon rendering and sound checks separately' }
@@ -29,6 +37,8 @@ $package = 'com.dxxredux.app'
 $backup = '.d1-in-d2-check-backup'
 $moved = @()
 $created = @()
+$logcatProcess = $null
+$nativeLogcat = Join-Path $outputDirectory 'native-logcat.txt'
 $runId = [guid]::NewGuid().ToString('N')
 $script:lastSceneSnapshot = ''
 $script:sceneNumber = 0
@@ -44,6 +54,57 @@ function Read-AppJson {
     param([string]$Name)
     $raw = Invoke-Device -Arguments @('shell', 'run-as', $package, 'cat', "files/$Name") -AllowFailure
     try { return $raw | ConvertFrom-Json } catch { return $null }
+}
+
+function Wait-GameAutomation {
+    param([string]$ExpectedRunId)
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    $gameProcessId = ''
+    do {
+        Start-Sleep -Milliseconds 800
+        $result = Read-AppJson 'automation_result.json'
+        Save-SceneSnapshot
+        if ($result -and $result.run_id -eq $ExpectedRunId -and $result.result -in @('PASS', 'FAIL')) { break }
+        $candidate = Invoke-Device -Arguments @('shell', 'pidof', "$package`:game") -AllowFailure
+        if ($gameProcessId -and (-not $candidate.Trim() -or ($candidate -match '^\d+$' -and $candidate.Trim() -ne $gameProcessId))) {
+            throw "Game process $gameProcessId exited before the matching automation result; see captured logcat"
+        }
+        if (-not $gameProcessId -and $candidate -match '^\d+$') { $gameProcessId = $candidate.Trim() }
+        $crashes = Invoke-Device -Arguments @('shell', 'run-as', $package, 'ls', 'files/tombstones') -AllowFailure
+        if ($gameProcessId -and $crashes -match "crash_error_$gameProcessId\.txt|crash_signal_.*_$gameProcessId\.txt") {
+            throw 'Native error during isolated launch; see captured tombstones and logcat'
+        }
+    } while ([DateTime]::UtcNow -lt $deadline)
+    if (-not $result -or $result.run_id -ne $ExpectedRunId -or $result.result -ne 'PASS') {
+        throw "$testLabel automation failed or timed out: $($result | ConvertTo-Json -Depth 10 -Compress)"
+    }
+    return $result
+}
+
+function Save-PhaseDiagnostics {
+    param([string]$Phase)
+
+    Invoke-Device -Arguments @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.INTROSPECT') -AllowFailure | Out-Null
+    Start-Sleep -Milliseconds 500
+    foreach ($name in @('automation_result.json', 'automation_log.jsonl', 'introspect.json')) {
+        Invoke-Device -Arguments @('shell', 'run-as', $package, 'cat', "files/$name") -AllowFailure |
+            Set-Content -LiteralPath (Join-Path $outputDirectory "$Phase-$name") -Encoding utf8
+    }
+}
+
+function Invoke-RewindSourcePhase {
+    param([string]$Phase, [string]$ScriptName)
+
+    $phaseScript = Join-Path $outputDirectory $ScriptName
+    Copy-Item -LiteralPath (Join-Path $repo "android/game_scripts/$ScriptName") -Destination $phaseScript
+    Invoke-Device -Arguments @('push', $phaseScript, "/data/local/tmp/$ScriptName") | Out-Null
+    Invoke-Device -Arguments @('shell', 'run-as', $package, 'cp', "/data/local/tmp/$ScriptName", "files/$ScriptName") | Out-Null
+    Invoke-Device -Arguments @('shell', 'rm', "/data/local/tmp/$ScriptName") | Out-Null
+    $phaseRunId = [guid]::NewGuid().ToString('N')
+    Invoke-Device -Arguments @('shell', 'am', 'broadcast', '--async', '-a', 'com.dxxredux.AUTOMATE', '--es', 'script', $ScriptName, '--es', 'run_id', $phaseRunId) | Out-Null
+    try { Wait-GameAutomation -ExpectedRunId $phaseRunId | Out-Null }
+    finally { Save-PhaseDiagnostics -Phase $Phase }
 }
 
 function Save-SceneSnapshot {
@@ -134,7 +195,7 @@ if ($SoundCheck) {
     if ($last -lt 0) { throw 'Sound scenario cannot locate the completed laser-firing assertion' }
     $steps = @($steps[0..$last])
 }
-if ($D2DataDirectory -and -not $WeaponArt -and -not $Guidebot) {
+if ($D2DataDirectory -and -not $WeaponArt -and -not $Guidebot -and -not $Metadata) {
     $steps[1].game = 'd2'
     # Registered D2 contributes four independently owned companion models
     # The source/publication integration fixture verifies the 78 original models
@@ -163,10 +224,16 @@ if ($WeaponArt) {
             Where-Object { -not $_._info })
 }
 if ($Guidebot) {
-    $steps = @($steps[0..11]) + @(Get-Content (Join-Path $repo 'android/game_scripts/test_d1_optional_guidebot.jsonc') -Raw | ConvertFrom-Json |
+    $guidebotScript = if ($RewindSourceCase) { 'test_d1_rewind_source_prepare.jsonc' } else { 'test_d1_optional_guidebot.jsonc' }
+    $steps = @($steps[0..11]) + @(Get-Content (Join-Path $repo "android/game_scripts/$guidebotScript") -Raw | ConvertFrom-Json |
             Where-Object { -not $_._info })
 }
 $scriptFile = Join-Path $outputDirectory 'script.json'
+if ($Metadata) {
+    $steps = @($steps[0..11]) + @(Get-Content (Join-Path $repo 'android/game_scripts/test_d1_in_d2_metadata.jsonc') -Raw | ConvertFrom-Json |
+            Where-Object { -not $_._info })
+}
+if ($EditionAdmission) { $steps = @(@{ action = 'enter_launcher' }, @{ action = 'enter_game'; game = 'd1-in-d2' }) }
 $steps | ConvertTo-Json -Depth 40 | Set-Content $scriptFile -Encoding utf8
 Invoke-Device -Arguments @('get-state') | Out-Null
 if ($ApkPath) { Invoke-Device -Arguments @('install', '-r', '-t', $ApkPath) | Out-Null }
@@ -192,11 +259,17 @@ try {
         Invoke-Device -Arguments @('shell', 'run-as', $package, 'cp', $deviceFile, "files/imported/sets/default/$($name.ToLowerInvariant())") | Out-Null
         Invoke-Device -Arguments @('shell', 'rm', $deviceFile) | Out-Null
     }
-    if ($GameLog) {
-        # DebugLogCategory.prefKey(GAME) in the fresh installation only
+    if ($GameLog -or $Guidebot) {
+        # DebugLogCategory and EnginePreferencesPage keys in the fresh installation only
         $preferences = Join-Path $outputDirectory 'dxx_prefs.xml'
-        '<?xml version="1.0" encoding="utf-8"?><map><boolean name="dlog_game logs_enabled" value="true" /></map>' |
-            Set-Content $preferences -Encoding utf8
+        $preferenceLines = @('<?xml version="1.0" encoding="utf-8"?>', '<map>')
+        if ($GameLog) { $preferenceLines += '<boolean name="dlog_game logs_enabled" value="true" />' }
+        if ($Guidebot) {
+            $preferenceLines += '<boolean name="rewind_support_enabled" value="true" />'
+            $preferenceLines += '<int name="rewind_target_seconds" value="10" />'
+        }
+        $preferenceLines += '</map>'
+        $preferenceLines | Set-Content $preferences -Encoding utf8
         Invoke-Device -Arguments @('push', $preferences, '/data/local/tmp/d1-in-d2-prefs.xml') | Out-Null
         Invoke-Device -Arguments @('shell', 'run-as', $package, 'cp', '/data/local/tmp/d1-in-d2-prefs.xml', 'shared_prefs/dxx_prefs.xml') | Out-Null
         Invoke-Device -Arguments @('shell', 'rm', '/data/local/tmp/d1-in-d2-prefs.xml') | Out-Null
@@ -204,6 +277,16 @@ try {
     Invoke-Device -Arguments @('push', $scriptFile, '/data/local/tmp/d1-in-d2-script.jsonc') | Out-Null
     Invoke-Device -Arguments @('shell', 'run-as', $package, 'cp', '/data/local/tmp/d1-in-d2-script.jsonc', 'files/d1-in-d2-script.jsonc') | Out-Null
     Invoke-Device -Arguments @('logcat', '-c') | Out-Null
+    # Keep startup and restore records even when later level loads fill logcat's ring
+    $logcatStart = @{
+        FilePath = $AdbPath
+        ArgumentList = @('-s', $Serial, 'logcat', '-s', 'DXX-DLOG:*', 'DXX-Automate:*', 'AndroidRuntime:*', 'libc:*')
+        PassThru = $true
+        RedirectStandardOutput = $nativeLogcat
+        RedirectStandardError = Join-Path $outputDirectory 'native-logcat-error.txt'
+    }
+    if ($IsWindows) { $logcatStart.WindowStyle = 'Hidden' } else { $logcatStart.NoNewWindow = $true }
+    $logcatProcess = Start-Process @logcatStart
     Invoke-Device -Arguments @('shell', 'am', 'start', '-n', "$package/.SetupActivity") | Out-Null
     $deadline = [DateTime]::UtcNow.AddSeconds($LauncherTimeoutSeconds)
     $nextIntrospection = [DateTime]::MinValue
@@ -224,34 +307,66 @@ try {
     if (-not ($setup.launch_targets | Where-Object { $_.id -eq 'd1-in-d2' -and $_.engine -eq 'd2' })) {
         throw 'Installed APK does not expose the D1-in-D2 launch target; supply the current Gradle artifact with -ApkPath'
     }
+    if ($EditionAdmission) {
+        $target = $setup.launch_targets | Where-Object { $_.id -eq 'd1-in-d2' }
+        if (-not $setup.d1.ready -or $target.ready -or $setup.d1_in_d2.ready -or
+            -not $setup.d1_in_d2.unsupported_reason -or $setup.d2.ready -ne [bool]$D2DataDirectory) {
+            throw 'Unsupported imported edition must retain native readiness and explain rejection'
+        }
+        Invoke-Device -Arguments @('shell', 'am', 'broadcast', '--async', '-a', 'com.dxxredux.SETUP_AUTOMATE', '--es', 'script', 'd1-in-d2-script.jsonc', '--es', 'run_id', $runId) | Out-Null
+        $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+        do {
+            Invoke-Device -Arguments @('shell', 'am', 'broadcast', '--async', '-a', 'com.dxxredux.SETUP_INTROSPECT') | Out-Null
+            Start-Sleep -Milliseconds 500
+            $rejected = Read-AppJson 'setup_introspect.json'
+        } while ((-not $rejected -or -not $rejected.launch_error) -and [DateTime]::UtcNow -lt $deadline)
+        $rejected | ConvertTo-Json -Depth 40 | Set-Content (Join-Path $outputDirectory 'rejected-setup.json') -Encoding utf8
+        if (-not $rejected -or $rejected.launch_error -cne $setup.d1_in_d2.unsupported_reason) {
+            throw 'Unsupported edition did not return the expected launcher rejection'
+        }
+        $gamePid = Invoke-Device -Arguments @('shell', 'pidof', "$package`:game") -AllowFailure
+        if ($gamePid -match '^\d+$') { throw 'Unsupported edition started a game process' }
+        [ordered]@{ result = 'PASS'; nativeReady = $setup.d1.ready; importedReady = $target.ready; launchError = $rejected.launch_error; gameStarted = $false } |
+            ConvertTo-Json | Set-Content (Join-Path $outputDirectory 'edition-admission.json') -Encoding utf8
+        Write-Output 'PASS: unsupported imported edition is rejected before startup; native D1 readiness remains available'
+        return
+    }
     if (-not $setup.d1.ready -or $setup.d2.ready -ne [bool]$D2DataDirectory -or -not $setup.d1_in_d2.ready) { throw "Incorrect $testLabel launcher readiness" }
     # Dispatch once, then bound the wait by the durable result and run identity
     Invoke-Device -Arguments @('shell', 'am', 'broadcast', '--async', '-a', 'com.dxxredux.SETUP_AUTOMATE', '--es', 'script', 'd1-in-d2-script.jsonc', '--es', 'run_id', $runId) | Out-Null
-    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
-    $gameProcessId = ''
-    do {
-        Start-Sleep -Milliseconds 800
-        $result = Read-AppJson 'automation_result.json'
-        Save-SceneSnapshot
-        if ($result -and $result.run_id -eq $runId -and $result.result -in @('PASS', 'FAIL')) { break }
-        $candidate = Invoke-Device -Arguments @('shell', 'pidof', "$package`:game") -AllowFailure
-        if ($gameProcessId -and (-not $candidate.Trim() -or ($candidate -match '^\d+$' -and $candidate.Trim() -ne $gameProcessId))) {
-            throw "Game process $gameProcessId exited before the matching automation result; see captured logcat"
+    $result = Wait-GameAutomation -ExpectedRunId $runId
+    if ($RewindSourceCase) {
+        Save-PhaseDiagnostics -Phase 'prepared'
+        $originalProcess = (Invoke-Device -Arguments @('shell', 'pidof', "$package`:game")).Trim()
+        $sourcePath = 'files/imported/sets/default/descent2.s22'
+        $sourceBackup = "$sourcePath.rewind-original"
+        Invoke-Device -Arguments @('shell', 'run-as', $package, 'mv', $sourcePath, $sourceBackup) | Out-Null
+        if ($RewindSourceCase -eq 'changed') {
+            # An unused trailing byte changes identity without changing decoded records
+            $changedSource = Join-Path $outputDirectory 'changed-descent2.s22'
+            Copy-Item -LiteralPath (Join-Path $D2DataDirectory 'DESCENT2.S22') -Destination $changedSource
+            $stream = [IO.File]::Open($changedSource, [IO.FileMode]::Append, [IO.FileAccess]::Write)
+            try { $stream.WriteByte(1) } finally { $stream.Dispose() }
+            Invoke-Device -Arguments @('push', $changedSource, '/data/local/tmp/d1-rewind-source.s22') | Out-Null
+            Invoke-Device -Arguments @('shell', 'run-as', $package, 'cp', '/data/local/tmp/d1-rewind-source.s22', $sourcePath) | Out-Null
+            Invoke-Device -Arguments @('shell', 'rm', '/data/local/tmp/d1-rewind-source.s22') | Out-Null
         }
-        if (-not $gameProcessId -and $candidate -match '^\d+$') { $gameProcessId = $candidate.Trim() }
-        $crashes = Invoke-Device -Arguments @('shell', 'run-as', $package, 'ls', 'files/tombstones') -AllowFailure
-        if ($gameProcessId -and $crashes -match "crash_error_$gameProcessId\.txt|crash_signal_.*_$gameProcessId\.txt") {
-            throw 'Native error during isolated launch; see captured tombstones and logcat'
+        Invoke-RewindSourcePhase -Phase 'rejected' -ScriptName 'test_d1_rewind_source_reject.jsonc'
+        $trace = Get-Content -LiteralPath $nativeLogcat -Raw
+        if ($trace -notmatch 'D1 optional Guide-Bot source assets are missing or changed' -or
+            $trace -notmatch 'rewind authoritative restore failed:') { throw 'Missing explicit source-identity rejection during memory rewind' }
+        Invoke-Device -Arguments @('shell', 'run-as', $package, 'mv', $sourceBackup, $sourcePath) | Out-Null
+        Invoke-RewindSourcePhase -Phase 'recovered' -ScriptName 'test_d1_rewind_source_recover.jsonc'
+        if ((Invoke-Device -Arguments @('shell', 'pidof', "$package`:game")).Trim() -ne $originalProcess) {
+            throw 'Source recovery replaced the game process instead of recovering through its menu'
         }
-    } while ([DateTime]::UtcNow -lt $deadline)
-    if (-not $result -or $result.run_id -ne $runId -or $result.result -ne 'PASS') {
-        throw "$testLabel automation failed or timed out: $($result | ConvertTo-Json -Depth 10 -Compress)"
+        Write-Output "PASS: $RewindSourceCase optional source rejects memory rewind and recovers through a valid file restore"
     }
     if ($WeaponArt) {
         Save-WeaponArt
         Assert-WeaponArt
     } elseif ($SoundCheck) {
-        $trace = Invoke-Device -Arguments @('logcat', '-d', '-s', 'DXX-DLOG')
+        $trace = Get-Content -LiteralPath $nativeLogcat -Raw
         $samples = [regex]::Matches($trace, '\[SFX\] context=[1-9]\d* sample=(?<sample>\d+) cache_input_hash=\w+ cache_input_bytes=(?<input>\d+).*? output_bytes=(?<output>\d+) source_rate=(?<source>\d+) cached_rate=(?<cached>\d+) output_rate=(?<rate>\d+) output_format=(?<format>\d+) channels=(?<channels>\d+)')
         $checked = 0
         $laser = $false
@@ -270,8 +385,8 @@ try {
         }
         if (-not $checked -or -not $laser) { throw 'Missing converted original laser sound evidence' }
         Write-Output "PASS: $checked original D1 sample conversions retain source rate and duration, including laser playback"
-    } elseif ($GameLog) {
-        $trace = Invoke-Device -Arguments @('logcat', '-d', '-s', 'DXX-DLOG')
+    } elseif ($GameLog -and -not $Guidebot) {
+        $trace = Get-Content -LiteralPath $nativeLogcat -Raw
         $samples = [regex]::Matches($trace, '\[FLYOUT\].*? seg=(?<segment>\d+) located=(?<located>[01]) exit=(?<exit>\d+)')
         if (-not $samples.Count) { throw 'Requested flyout diagnostics were not captured' }
         foreach ($sample in $samples) {
@@ -283,9 +398,19 @@ try {
     & $AdbPath -s $Serial exec-out screencap -p > (Join-Path $outputDirectory 'first-strike.png')
     if ($WeaponArt) { Write-Output "Android weapon rendering evidence: $outputDirectory/weapon-art" }
     elseif ($SoundCheck) { Write-Output "$testLabel Android First Strike sound conversion checks passed" }
-    elseif ($Guidebot) { Write-Output 'PASS: Android optional Guide-Bot cold deploy, save/restore and D1/D2/D1 lifecycle' }
+    elseif ($RewindSourceCase) { Write-Output "Android rewind source recovery evidence: $outputDirectory" }
+    elseif ($Guidebot) { Write-Output 'PASS: Android optional Guide-Bot cold deploy, save/restore, memory rewind and D1/D2/D1 lifecycle' }
+    elseif ($Metadata) { Write-Output "$testLabel imported-D1 route-cache publication and adoption passed" }
     else { Write-Output "$testLabel Android First Strike interaction and level-transition checks passed" }
 } finally {
+    try {
+        if ($logcatProcess -and -not $logcatProcess.HasExited) {
+            Stop-Process -Id $logcatProcess.Id -Force
+            $null = $logcatProcess.WaitForExit(5000)
+        }
+    } catch {
+        Write-Warning "Could not stop native log capture: $_"
+    }
     if ($WeaponArt) {
         try { Save-WeaponArt } catch { Write-Warning "Could not preserve weapon art: $_" }
     }

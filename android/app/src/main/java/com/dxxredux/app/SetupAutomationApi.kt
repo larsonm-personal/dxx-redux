@@ -815,6 +815,7 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         val root = JSONObject()
         root.put("screen", "setup")
         root.put("can_launch", d2Ready || d1Ready)
+        root.put("launch_error", launchPreflightFailure ?: JSONObject.NULL)
         root.put("active_set", activeSet)
         val runningGamePid = automationRunningGameProcessPid()
         val hasReturnableGameActivity = automationHasReturnableGameActivity()
@@ -1016,6 +1017,7 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         d1InD2Json.put("blocked", d1InD2.blocked)
         d1InD2Json.put("d2_ready", d1InD2.d2Ready)
         d1InD2Json.put("d1_assets_ready", d1InD2.d1AssetsReady)
+        d1InD2Json.put("unsupported_reason", d1InD2.unsupportedReason ?: JSONObject.NULL)
         d1InD2Json.put("files", fileStatusArray(d1InD2.d1AssetStatuses))
         root.put("d1_in_d2", d1InD2Json)
         root.put(
@@ -1027,7 +1029,16 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
                             .put("id", target.id)
                             .put("engine", target.engine)
                             .put("content", target.content)
-                            .put("ready", target.filesReady(d1Ready, d2Ready)),
+                            .put(
+                                "ready",
+                                if (target ==
+                                    GameLaunchTarget.D1_IN_D2
+                                ) {
+                                    d1InD2.ready
+                                } else {
+                                    target.filesReady(d1Ready, d2Ready)
+                                },
+                            ),
                     )
                 }
             },

@@ -15,8 +15,8 @@ if ($helperSource -notmatch 'return \(Adb-Timeout -AdbArgs \$AdbArgs -Seconds \$
 if ($helperSource -notmatch 'return \(Adb-Dev-Timeout -Serial \$Serial -AdbArgs \$AdbArgs -Seconds \$Seconds -IncludeStandardError\)') {
     throw 'Default device-targeted ADB helper is not bounded'
 }
-if ($helperSource -notmatch 'Adb-Timeout -AdbArgs "start-server" -Seconds 10') {
-    throw 'ADB server restart is not bounded'
+if ($helperSource -notmatch 'Adb-Dev-Timeout -Serial \$Serial -AdbArgs @\("reconnect"\) -Seconds 10') {
+    throw 'ADB transport reconnect is not bounded'
 }
 if ($helperSource -notmatch '\$proc\.Kill\(\$true\)' -or
     $helperSource -notmatch '\$proc\.StandardOutput\.Close\(\)') {
@@ -82,7 +82,7 @@ $script:AdbRestarts = 0
 function Test-EmulatorHealthy {
     return $script:HealthChecks.Dequeue()
 }
-function Restart-AdbServer {
+function Reconnect-AdbDevice {
     $script:AdbRestarts++
 }
 
@@ -92,27 +92,27 @@ if (-not (Confirm-EmulatorHealthWithAdbRecovery -RetryDelayMilliseconds 0)) {
     throw 'Transient emulator health failure was not retried'
 }
 if ($script:AdbRestarts -ne 0) {
-    throw 'ADB was restarted when the emulator recovered on retry'
+    throw 'ADB was reconnected when the emulator recovered on retry'
 }
 
 $script:HealthChecks.Enqueue($false)
 $script:HealthChecks.Enqueue($false)
 $script:HealthChecks.Enqueue($true)
 if (-not (Confirm-EmulatorHealthWithAdbRecovery -RetryDelayMilliseconds 0)) {
-    throw 'Emulator health was not rechecked after ADB restart'
+    throw 'Emulator health was not rechecked after ADB reconnect'
 }
 if ($script:AdbRestarts -ne 1) {
-    throw "Expected one ADB restart, got $script:AdbRestarts"
+    throw "Expected one ADB reconnect, got $script:AdbRestarts"
 }
 
 $script:HealthChecks.Enqueue($false)
 $script:HealthChecks.Enqueue($false)
 $script:HealthChecks.Enqueue($false)
 if (Confirm-EmulatorHealthWithAdbRecovery -RetryDelayMilliseconds 0) {
-    throw 'Persistent emulator health failure was accepted after ADB restart'
+    throw 'Persistent emulator health failure was accepted after ADB reconnect'
 }
 if ($script:AdbRestarts -ne 2) {
-    throw "Expected two total ADB restarts, got $script:AdbRestarts"
+    throw "Expected two total ADB reconnects, got $script:AdbRestarts"
 }
 
 $script:TimeoutCalls = 0
@@ -253,6 +253,53 @@ foreach ($requiredArtifact in @(
     } finally {
         if (-not $replayProcess.HasExited) { $replayProcess.Kill(); $replayProcess.WaitForExit() }
         $replayProcess.Dispose()
+    }
+}
+
+# Exercise the suite's actual selection and cleanup functions with unrelated devices present
+$ast = [System.Management.Automation.Language.Parser]::ParseInput($runnerSource, [ref]$null, [ref]$null)
+foreach ($name in @('Test-SingleEmulator', 'Test-TwoEmulators', 'Stop-TestSuiteEmulators')) {
+    $node = $ast.Find({ param($item)
+            $item -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $item.Name -eq $name
+        }, $true)
+    if (-not $node) { throw "Missing suite function $name" }
+    Invoke-Expression $node.Extent.Text
+}
+$script:onlineDevices = @('emulator-5580')
+function Test-DeviceOnline { param([string]$Serial); return $Serial -in $script:onlineDevices }
+if ((Test-SingleEmulator) -or (Test-TwoEmulators)) { throw 'An unrelated emulator satisfied suite prerequisites' }
+$script:onlineDevices += $script:PRIMARY_EMULATOR_SERIAL
+if (-not (Test-SingleEmulator) -or (Test-TwoEmulators)) { throw 'The suite did not require its configured second emulator' }
+$script:onlineDevices += $script:SECONDARY_EMULATOR_SERIAL
+if (-not (Test-TwoEmulators)) { throw 'The configured emulator pair was rejected' }
+$script:stoppedDevices = @()
+function Stop-ManagedEmulator { param([string]$Serial); $script:stoppedDevices += $Serial; return $true }
+$script:startedEmu1 = $true
+$script:startedEmu2 = $false
+$script:onlineDevices = @('emulator-5580')
+Stop-TestSuiteEmulators
+if ($script:stoppedDevices.Count -ne 1 -or $script:stoppedDevices[0] -ne $script:PRIMARY_EMULATOR_SERIAL) {
+    throw 'Suite cleanup did not limit shutdown to its owned offline emulator'
+}
+
+$script:serverProcess = $null
+$script:dockerNatActive = $false
+$KillOnExit = $true
+foreach ($setupName in @('test_dual_emu.ps1', 'test_dual_emu_setup.ps1')) {
+    $source = Get-Content (Join-Path $PSScriptRoot $setupName) -Raw
+    $ast = [System.Management.Automation.Language.Parser]::ParseInput($source, [ref]$null, [ref]$null)
+    $node = $ast.Find({ param($item)
+            $item -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $item.Name -eq 'Cleanup'
+        }, $true)
+    Invoke-Expression $node.Extent.Text
+    $script:stoppedDevices = @()
+    $script:ownedEmulatorSerials = @()
+    Cleanup
+    if ($script:stoppedDevices.Count) { throw "$setupName stopped a reused emulator" }
+    $script:ownedEmulatorSerials = @($script:SECONDARY_EMULATOR_SERIAL)
+    Cleanup
+    if ($script:stoppedDevices.Count -ne 1 -or $script:stoppedDevices[0] -ne $script:SECONDARY_EMULATOR_SERIAL) {
+        throw "$setupName did not limit shutdown to its owned emulator"
     }
 }
 

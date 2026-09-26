@@ -4,6 +4,7 @@
 #include "args.h"
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "physfsx_android_shared.h"
@@ -41,7 +42,8 @@ static int register_saf_archiver(void)
 	return PHYSFS_registerArchiver(&SAF_Archiver);
 }
 
-void physfsx_android_init(int argc, char *argv[], const char *game_dir)
+static int init_search_paths(char *argv0, const char *game_dir, const char *data_dir,
+                             char *error, size_t error_size)
 {
 	physfsx_android_setup_result result;
 	const physfsx_android_setup_ops ops = {
@@ -56,12 +58,39 @@ void physfsx_android_init(int argc, char *argv[], const char *game_dir)
 		PHYSFSX_addRelToSearchPath,
 		PHYSFS_getLastError,
 	};
-	if (!PHYSFS_init(argv[0]))
-		Error("PhysicsFS initialization failed: %s", PHYSFS_getLastError());
+	if (!PHYSFS_init(argv0)) {
+		snprintf(error, error_size, "PhysicsFS initialization failed: %s", PHYSFS_getLastError());
+		return 0;
+	}
 	PHYSFS_permitSymbolicLinks(1);
-	if (!physfsx_android_setup_search_paths(game_dir, &ops, &result))
-		Error("Android content setup failed during %s for %s: %s",
-		      result.operation, result.path, result.detail);
+	if (!physfsx_android_setup_search_paths(game_dir, data_dir, &ops, &result)) {
+		snprintf(error, error_size, "Android content setup failed during %s for %s: %s",
+		         result.operation, result.path, result.detail);
+		return 0;
+	}
+	return 1;
+}
+
+void physfsx_android_init(int argc, char *argv[], const char *game_dir)
+{
+	char error[1024];
+	if (!init_search_paths(argv[0], game_dir, getenv("DXX_ANDROID_LEVEL_PREVIEW_DATA_DIR"), error, sizeof(error)))
+		Error("%s", error);
 	InitArgsAndroid(argc, argv);
 	android_mission_assets_init();
+}
+
+int physfsx_android_init_metadata(int argc, char *argv[], const char *game_dir,
+                                  const char *data_dir, char *error, size_t error_size)
+{
+	if (!data_dir || !data_dir[0]) {
+		snprintf(error, error_size, "%s", "missing metadata data directory");
+		return 0;
+	}
+	if (!init_search_paths(argv[0], game_dir, data_dir, error, error_size))
+		return 0;
+	InitArgsAndroid(argc, argv);
+	/* Metadata requests own their mounts, independent of the selected game mission */
+	android_mission_assets_shutdown();
+	return 1;
 }

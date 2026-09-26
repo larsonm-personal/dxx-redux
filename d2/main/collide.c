@@ -100,21 +100,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define FORCE_DAMAGE_THRESHOLD (F1_0/3)
 #define STANDARD_EXPL_DELAY (F1_0/4)
 
-static int input_demo_disable_homing_player_bump(void)
-{
-	static int initialized;
-	static int enabled;
-	const char *value;
-
-	if (initialized)
-		return enabled;
-
-	initialized = 1;
-	value = getenv("DXX_INPUT_DEMO_DISABLE_HOMING_PLAYER_BUMP");
-	enabled = (value && value[0] && value[0] != '0');
-	return enabled;
-}
-
 static fix64 Collision_delay_last_play_time = 0;
 
 fix64 collide_get_collision_delay_last_play_time(void)

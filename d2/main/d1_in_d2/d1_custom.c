@@ -511,6 +511,15 @@ int d1_custom_read_assets(d1_asset_generation *generation, const char *level_nam
 	if (!d1_custom_read_file(generation, filename))
 		goto done;
 	valid = d1_custom_read_definitions(generation, level_name, &stage);
+	if (valid) {
+		char pg1[PATH_MAX], dtx[PATH_MAX], hx1[PATH_MAX];
+		const char *sources[3] = { pg1, dtx, hx1 };
+		change_filename_extension(pg1, level_name, ".pg1");
+		change_filename_extension(dtx, level_name, ".dtx");
+		change_filename_extension(hx1, level_name, ".hx1");
+		stage = "custom source identity";
+		valid = d1_in_d2_hash_custom_sources(generation->base_identity, sources, generation->definition_identity);
+	}
 done:
 	if (error)
 		*error = valid ? NULL : stage;

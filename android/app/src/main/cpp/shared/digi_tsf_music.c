@@ -21,6 +21,7 @@
 #include <physfs.h>
 
 #ifdef ANDROID
+#include "pcm_ring.h"
 #include <android/log.h>
 #include <android/asset_manager.h>
 #include <pthread.h>
@@ -460,13 +461,7 @@ static int pcm_render_frames(short *out, int frames)
 
 /* Power-of-2 ring buffer:  2^18 = 262144 samples = 131072 frames
  *                          = 2.73 seconds at 48 kHz stereo               */
-#define RB_SHIFT   18
-#define RB_SAMPLES (1 << RB_SHIFT)
-#define RB_MASK    (RB_SAMPLES - 1)
-
-static short g_rb[RB_SAMPLES];
-static volatile int g_rb_wpos; /* monotonic write position       */
-static volatile int g_rb_rpos; /* monotonic read position        */
+static struct pcm_ring g_rb;
 static SDL_Thread *g_render_thread = NULL;
 static volatile int g_render_running;
 
@@ -595,50 +590,6 @@ static void tsf_finish_tuning_ownership(void)
 	pthread_mutex_unlock(&g_tuning_mutex);
 }
 
-/* ── Ring buffer helpers ────────────────────────────────────────────── */
-
-static void rb_reset(void)
-{
-	__atomic_store_n(&g_rb_wpos, 0, __ATOMIC_SEQ_CST);
-	__atomic_store_n(&g_rb_rpos, 0, __ATOMIC_SEQ_CST);
-}
-
-static void rb_write(const short *data, int count)
-{
-	unsigned int wpos = (unsigned int) __atomic_load_n(&g_rb_wpos, __ATOMIC_RELAXED);
-	unsigned int idx = wpos & RB_MASK;
-	int first = RB_SAMPLES - (int) idx;
-	if (first > count) first = count;
-	memcpy(&g_rb[idx], data, first * sizeof(short));
-	if (count > first)
-		memcpy(&g_rb[0], data + first, (count - first) * sizeof(short));
-	__atomic_store_n(&g_rb_wpos, (int) (wpos + (unsigned int) count), __ATOMIC_RELEASE);
-}
-
-static int rb_read(short *out, int count)
-{
-	unsigned int wpos = (unsigned int) __atomic_load_n(&g_rb_wpos, __ATOMIC_ACQUIRE);
-	unsigned int rpos = (unsigned int) __atomic_load_n(&g_rb_rpos, __ATOMIC_RELAXED);
-	unsigned int avail = wpos - rpos;
-	if ((int) avail < count) count = (int) avail;
-	if (count <= 0) return 0;
-
-	unsigned int idx = rpos & RB_MASK;
-	int first = RB_SAMPLES - (int) idx;
-	if (first > count) first = count;
-	memcpy(out, &g_rb[idx], first * sizeof(short));
-	if (count > first)
-		memcpy(out + first, &g_rb[0], (count - first) * sizeof(short));
-	__atomic_store_n(&g_rb_rpos, (int) (rpos + (unsigned int) count), __ATOMIC_RELEASE);
-	return count;
-}
-
-static unsigned int rb_available(void)
-{
-	return (unsigned int) __atomic_load_n(&g_rb_wpos, __ATOMIC_ACQUIRE) -
-	       (unsigned int) __atomic_load_n(&g_rb_rpos, __ATOMIC_ACQUIRE);
-}
-
 /* ── Render thread ──────────────────────────────────────────────────── */
 
 static int render_thread_func(void *data)
@@ -689,8 +640,8 @@ static int render_thread_func(void *data)
 		}
 
 		/* Check available space (samples, not frames) */
-		unsigned int filled = rb_available();
-		unsigned int space = RB_SAMPLES - filled;
+		unsigned int filled = pcm_ring_available(&g_rb);
+		unsigned int space = PCM_RING_SAMPLES - filled;
 		if (space < CHUNK * 2) {
 			SDL_Delay(5); /* buffer is full enough */
 			continue;
@@ -708,7 +659,7 @@ static int render_thread_func(void *data)
 		}
 
 		if (got > 0)
-			rb_write(buf, got * 2);
+			pcm_ring_write(&g_rb, buf, got * 2);
 	}
 
 	tsf_finish_tuning_ownership();
@@ -725,7 +676,7 @@ static int render_thread_func(void *data)
 static int render_thread_start(void)
 {
 	if (g_render_thread) return 1; /* already running */
-	rb_reset();
+	pcm_ring_reset(&g_rb);
 	pthread_mutex_lock(&g_tuning_mutex);
 	g_render_accepting_commands = 1;
 	__atomic_store_n(&g_render_running, 1, __ATOMIC_SEQ_CST);
@@ -783,7 +734,7 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 	__atomic_add_fetch(&g_rb_cb_count, 1, __ATOMIC_RELAXED);
 	if (trace)
 		crash_breadcrumb_v("tsf_cb #%u enter tid=%ld need=%d fill=%u", cb,
-		                   tsf_music_gettid(), needed, rb_available());
+		                   tsf_music_gettid(), needed, pcm_ring_available(&g_rb));
 
 	if (!tsf_atomic_load_int(&g_playing) ||
 	    tsf_atomic_load_int(&g_paused) ||
@@ -792,7 +743,7 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 		return;
 	}
 
-	int got = rb_read(out, needed);
+	int got = pcm_ring_read(&g_rb, out, needed);
 	if (g_music_timing && !__atomic_load_n(&g_first_audio_ms, __ATOMIC_RELAXED)) {
 		for (int i = 0; i < got; ++i)
 			if (out[i]) {
@@ -811,7 +762,7 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 			                                   __ATOMIC_RELAXED);
 			if (underruns <= 10 || (underruns % 50) == 0)
 				TSFMUSIC_LOG("MIDI underrun #%d: got=%d needed=%d rb_fill=%u",
-				             underruns, got, needed, rb_available());
+				             underruns, got, needed, pcm_ring_available(&g_rb));
 		}
 	}
 
@@ -825,7 +776,7 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 
 	/* Producer EOF is not audible completion.  Publish completion only
 	 * after this callback consumes the final queued sample. */
-	if (tsf_atomic_load_int(&g_source_finished) && rb_available() == 0) {
+	if (tsf_atomic_load_int(&g_source_finished) && pcm_ring_available(&g_rb) == 0) {
 		tsf_atomic_store_int(&g_playing, 0);
 		tsf_atomic_store_int(&g_song_finished, 1);
 	}
@@ -1411,11 +1362,11 @@ int tsf_music_get_max_voices(void)
 }
 int tsf_music_get_rb_fill(void)
 {
-	return (int) rb_available();
+	return (int) pcm_ring_available(&g_rb);
 }
 int tsf_music_get_rb_capacity(void)
 {
-	return RB_SAMPLES;
+	return PCM_RING_SAMPLES;
 }
 float tsf_music_get_gain_db(void)
 {

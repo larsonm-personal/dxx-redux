@@ -15,6 +15,7 @@ set(D2X_MAIN_SOURCES
     d1_in_d2/d1_in_d2_ai.c
     d1_in_d2/d1_in_d2_ai_path.c
     d1_in_d2/d1_in_d2_assets.c
+    d1_in_d2/d1_in_d2_asset_identity.cpp
     d1_in_d2/d1_in_d2_bitmaps.c
     d1_in_d2/d1_in_d2_briefing.c
     d1_in_d2/d1_in_d2_cockpit.c
@@ -390,6 +391,11 @@ if(NOT ANDROID)
         add_test(NAME test_upstream_compat COMMAND test_upstream_compat)
         set_tests_properties(test_upstream_compat PROPERTIES
             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/upstream-compat-fixtures")
+        file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/classic-trigger-fixtures")
+        add_test(NAME test_classic_trigger_demo COMMAND test_upstream_compat --classic-trigger-demo)
+        set_tests_properties(test_classic_trigger_demo PROPERTIES
+            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/classic-trigger-fixtures"
+            TIMEOUT 30)
         if(SDLMIXER)
             add_test(NAME test_mixed_rate_sound COMMAND test_upstream_compat --sound-mixer-test)
             set_tests_properties(test_mixed_rate_sound PROPERTIES

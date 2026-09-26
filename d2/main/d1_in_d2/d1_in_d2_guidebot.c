@@ -61,6 +61,7 @@ struct d1_guidebot_assets {
 	d1_guidebot_asset_stats stats;
 	int runtime_map[SOURCE_KINDS][MAX_BITMAP_FILES];
 	int runtime_base[SOURCE_KINDS], runtime_end[SOURCE_KINDS];
+	ubyte identity[32];
 	int prepared;
 };
 
@@ -640,6 +641,10 @@ int d1_in_d2_prepare_guidebot_extension(d1_asset_generation *base, const d1_guid
 	stage = "optional extension palette conversion";
 	if (!d1_in_d2_remap_feature_bitmaps(assets->images, base->bitmap_data->palette))
 		goto failed;
+	stage = "optional source identity";
+	if (!d1_in_d2_hash_guidebot_source(source, assets->runtime_map,
+		SOURCE_KINDS, assets->identity))
+		goto failed;
 	assets->prepared = 1;
 	base->guidebot = assets;
 	if (error)
@@ -864,4 +869,9 @@ int d1_in_d2_guidebot_owns_model(int model_num)
 {
 	return Published_guidebot && model_num >= Published_guidebot->runtime_base[SOURCE_MODEL] &&
 		model_num < Published_guidebot->runtime_end[SOURCE_MODEL];
+}
+
+const ubyte *d1_in_d2_guidebot_identity(void)
+{
+	return Published_guidebot ? Published_guidebot->identity : NULL;
 }

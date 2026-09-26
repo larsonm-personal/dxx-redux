@@ -1,0 +1,9 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_d1_in_d2_standalone"}},
+    {"action": "assert", "expect": {"time_paused": true, "current_level_num": 1, "game_window_is_front": false}},
+    {"action": "key", "key": "escape"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {"game_window_is_front": true, "time_paused": false}},
+    {"action": "meta_action", "id": 1035},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"in_game": false, "screen_mode": "menu", "window_count": 1, "menu.type": "newmenu", "menu.items[0].text": "New game"}},
+    {"action": "introspect"}
+]

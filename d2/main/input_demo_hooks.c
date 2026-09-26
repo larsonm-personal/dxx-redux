@@ -1,6 +1,7 @@
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "3d.h"
@@ -38,6 +39,21 @@
 #include "textures.h"
 #include "weapon.h"
 #include "wall.h"
+
+int input_demo_disable_homing_player_bump(void)
+{
+	static int initialized;
+	static int enabled;
+	const char *value;
+
+	if (initialized)
+		return enabled;
+
+	initialized = 1;
+	value = getenv("DXX_INPUT_DEMO_DISABLE_HOMING_PLAYER_BUMP");
+	enabled = (value && value[0] && value[0] != '0');
+	return enabled;
+}
 
 extern int Num_awareness_events;
 #define INPUT_DEMO_RESULT_KILLS_MODE_NONE   0

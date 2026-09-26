@@ -509,6 +509,9 @@ int main(int argc, char *argv[])
 
 	PHYSFSX_addArchiveContent();
 	if (startup_find_cmd_arg("-classicdemo-dump-json")) {
+		/* Asset generation retirement uses audio services even in a silent dump */
+		GameArg.SndNoSound = GameArg.SndNoMusic = 1;
+		digi_select_system(SDLAUDIO_SYSTEM);
 		gr_use_palette_table(d1_in_d2_startup_palette());
 		gamedata_init();
 		texmerge_init(10);

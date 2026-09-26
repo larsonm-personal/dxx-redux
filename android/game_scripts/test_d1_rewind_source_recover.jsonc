@@ -1,0 +1,12 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_d1_in_d2_standalone"}},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "select_mission", "text": "first strike", "timeout_ms": 10000},
+    {"action": "select", "text": "Ok", "timeout_ms": 5000},
+    {"action": "select", "text": "Trainee", "timeout_ms": 10000},
+    {"action": "skip_briefing", "timeout_ms": 60000},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"game_window_is_front": true, "asset_trace.mode": "d1-in-d2", "guidebot.companion_count": 0}},
+    {"action": "set_debug", "field": "android_game_request", "value": "quick_load"},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"guidebot.docked": false, "guidebot.released": true, "guidebot.companion_count": 1, "guidebot.object_type": 2, "game_window_is_front": true, "time_paused": false}},
+    {"action": "introspect"}
+]

@@ -2838,7 +2838,8 @@ void net_udp_send_objects(void)
 	memset(object_buffer, 0, UPID_MAX_SIZE);
 	object_buffer[0] = UPID_OBJECT_DATA;
 	PUT_INTEL_INT(object_buffer + 1, UDP_sync_player.token); 
-	loc = 9;
+	d1_in_d2_write_network_identity(object_buffer + 9);
+	loc = UPID_OBJECT_HEADER_SIZE;
 
 	if (Network_send_objnum == -1)
 	{
@@ -2913,11 +2914,11 @@ void net_udp_send_objects(void)
 			// Send count so other side can make sure he got them all
 			object_buffer[0] = UPID_OBJECT_DATA;
 			PUT_INTEL_INT(object_buffer+5, 1);
-			PUT_INTEL_INT(object_buffer+9, -2);
-			object_buffer[13] = player_num;
-			PUT_INTEL_INT(object_buffer+14, obj_count);
+			PUT_INTEL_INT(object_buffer+UPID_OBJECT_HEADER_SIZE, -2);
+			object_buffer[UPID_OBJECT_HEADER_SIZE+4] = player_num;
+			PUT_INTEL_INT(object_buffer+UPID_OBJECT_HEADER_SIZE+5, obj_count);
 			net_udp_send_sync_payload(
-			    object_buffer, 18,
+			    object_buffer, UPID_OBJECT_HEADER_SIZE+9,
 			    UDP_sync_player.player.protocol.udp.addr, player_num);
 
 
@@ -2971,18 +2972,44 @@ int net_udp_verify_objects(int remote, int local)
 	return(1);
 }
 
+static int net_udp_admit_assets(const ubyte *identity, int size)
+{
+	const char *error = d1_in_d2_check_network_identity(identity, size);
+	if (!error) return 1;
+	con_printf(CON_URGENT, "Cannot join game: %s\n", error);
+	Network_status = NETSTAT_MENU;
+	net_udp_close();
+	nm_messagebox(TXT_ERROR, 1, TXT_OK, "%s", error);
+	return 0;
+}
+
 void net_udp_read_object_packet( ubyte *data, int data_len )
 {
-	multi_received_objects = 1; 
+	if (!net_udp_admit_assets(data_len >= UPID_OBJECT_HEADER_SIZE ? data + 9 : NULL,
+	                         data_len >= UPID_OBJECT_HEADER_SIZE ? D1_IN_D2_NET_ASSET_SIZE : 0)) return;
 
 	// Object from another net player we need to sync with
 	object *obj;
 	sbyte obj_owner;
 	static int mode = 0, object_count = 0, my_pnum = 0;
 	static int sync_retries = 0;
-	int i = 0, segnum = 0, objnum = 0, remote_objnum = 0, nobj = 0, loc = 9;
+	int i = 0, segnum = 0, objnum = 0, remote_objnum = 0, nobj = 0, loc = UPID_OBJECT_HEADER_SIZE;
 	
 	nobj = GET_INTEL_INT(data + 5);
+	// Check record boundaries before a clear marker or object can change the world
+	if (nobj < 1 || nobj > (data_len - loc) / 9) return;
+	for (i = 0; i < nobj; ++i) {
+		if (data_len - loc < 9) return;
+		objnum = GET_INTEL_INT(data + loc);
+		loc += 9;
+		if (objnum != -1 && objnum != -2) {
+			if (data_len - loc < (int) sizeof(object_rw)) return;
+			loc += sizeof(object_rw);
+		}
+	}
+	if (loc != data_len) return;
+	loc = UPID_OBJECT_HEADER_SIZE;
+	multi_received_objects = 1;
 #ifdef __ANDROID__
 	crash_breadcrumb_v("read_obj_pkt: nobj=%d len=%d", nobj, data_len);
 	mpdiag_pkt_dump("RX", data, data_len);
@@ -3813,6 +3840,8 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 		coop_world_visit_write(buf + len, coop_world_visit_current());
 		len += 8;
 #endif
+		d1_in_d2_write_network_identity(buf + len);
+		len += D1_IN_D2_NET_ASSET_SIZE;
 
 		Assert(len <= sizeof(buf));
 
@@ -3923,7 +3952,23 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		}
 	}
 #endif
-	
+#ifndef __ANDROID__
+	/* Serialized widths match the full-info writer; reject before parser writes */
+	if (!lite_info) {
+		const int player_bytes = CALLSIGN_LEN + 1 + 4 + 37 + 1 +
+		    (is_sync && Netgame.RetroProtocol ? sizeof(struct _sockaddr) : 0);
+		const int expected = 7 + (MAX_PLAYERS + 4) * player_bytes +
+		    NETGAME_NAME_LEN + 1 + MISSION_NAME_LEN + 1 + 9 +
+		    4 + 9 + 4 + 10 + 2 * (CALLSIGN_LEN + 1) +
+		    MAX_PLAYERS * (4 + MAX_PLAYERS * 2 + 2 + 2 + 4 + 1) +
+		    6 + 20 + 2 + 34 + (is_sync ? 8 : 4) + D1_IN_D2_NET_ASSET_SIZE;
+		if (data_len != expected) return 0;
+	}
+#endif
+	if (!lite_info && is_sync &&
+	    !net_udp_admit_assets(data_len >= D1_IN_D2_NET_ASSET_SIZE ? data + data_len - D1_IN_D2_NET_ASSET_SIZE : NULL,
+	                         data_len >= D1_IN_D2_NET_ASSET_SIZE ? D1_IN_D2_NET_ASSET_SIZE : 0)) return 0;
+
 	if (lite_info)
 	{
 		UDP_netgame_info_lite recv_game;
@@ -4187,6 +4232,7 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		}
 #endif
 
+		len += D1_IN_D2_NET_ASSET_SIZE;
 		if (len > data_len) {
 			char err_mess[200];
 			snprintf(err_mess, sizeof(err_mess), "game info size incorrect; received %d, expected %d",  data_len, len);
@@ -4226,16 +4272,17 @@ static int net_udp_test_game_info_fence(void)
 		if (size < 64 || size > UPID_MAX_SIZE) return 0;
 		for (int mutation = 0; mutation < 6; ++mutation) {
 			ubyte packet[UPID_MAX_SIZE], identity[ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE];
-			const int token_offset = size - 8 - ANDROID_NET_UDP_RECONNECT_GENERATION_SIZE - 4;
+			const int visit_offset = size - D1_IN_D2_NET_ASSET_SIZE - 8;
+			const int token_offset = visit_offset - ANDROID_NET_UDP_RECONNECT_GENERATION_SIZE - 4;
 			memcpy(packet, android_test_game_info[sync], size);
 			/* Bring authority fields current so each probe isolates its rejection */
 			packet[token_offset - 1 - (sync ? 4 : 0)] = master;
 			PUT_INTEL_INT(packet + token_offset, session);
 			if (sync) PUT_INTEL_INT(packet + token_offset - 4, player);
 			memcpy(packet + token_offset + 4, generation, sizeof(generation));
-			coop_world_visit_write(packet + size - 8, visit);
+			coop_world_visit_write(packet + visit_offset, visit);
 			packet[1] ^= 1; /* First parser write must also remain unapplied */
-			if (mutation == 0) coop_world_visit_write(packet + size - 8, visit - 1);
+			if (mutation == 0) coop_world_visit_write(packet + visit_offset, visit - 1);
 			if (mutation == 1) PUT_INTEL_INT(packet + token_offset, session ^ 1);
 			if (mutation == 2) packet[token_offset + 4] ^= 1;
 			/* GuidebotRouting precedes two briefing and four final settings */

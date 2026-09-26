@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <initializer_list>
 
 #define DXX_REWIND_FILE_WRAPPER 1
 extern "C" {
@@ -11,6 +12,7 @@ extern "C" {
 #include "object.h"
 #include "physfsx.h"
 #include "playsave.h"
+#include "powerup.h"
 #include "text.h"
 #include "weapon.h"
 #include "rewind_file.h"
@@ -91,6 +93,64 @@ static void test_runtime_roundtrip(bool memory)
 	swapped[2] = SWAPINT(1000);
 	rewind_file_init_memory_read(&file, reinterpret_cast<unsigned char *>(swapped), sizeof(swapped));
 	require(!autoselect_read_runtime_state(&file, 1, 1), "reject invalid queued weapon");
+}
+
+// Called with an actual native/imported/D2 mission selected by the asset fixture
+void test_quad_autoselect_runtime(bool native)
+{
+	for (const bool memory : { false, true }) {
+		new_ship(0);
+		if (!native) {
+			int state[4] = { 1, 0, 16, -1 };
+			rewind_file file;
+			rewind_file_init_memory_read(&file, reinterpret_cast<unsigned char *>(state), sizeof(state));
+			require(!autoselect_read_runtime_state(&file, 0, 1) && !PrimaryWeaponPickedUp && delayed_primary_autoselect_weapon_index == -1,
+			        "ordinary D2 rejects native quad selection without changing runtime state");
+			continue;
+		}
+		const ubyte order[] = { 16, 4, 0, 3, 2, 1, 255 };
+#ifdef DXX_BUILD_DESCENT_II
+		require(d1_in_d2_set_weapon_order(0, order, sizeof(order)), "configure native quad preference");
+#else
+		std::memcpy(PlayerCfg.PrimaryOrder, order, sizeof(order));
+#endif
+		Players[0].primary_weapon = PLASMA_INDEX;
+		Players[0].primary_weapon_flags |= 1 << PLASMA_INDEX;
+		PlayerCfg.SelectAfterFire = 1;
+		Controls.fire_primary_state = 1;
+		object pickup = {};
+		pickup.type = OBJ_POWERUP;
+		pickup.id = POW_QUAD_FIRE;
+		pickup.lifeleft = F1_0;
+		require(do_powerup(&pickup) && delayed_primary_autoselect_weapon_index == 16, "actual quad pickup queues its native selection identity");
+		rewind_memory_buffer buffer = {};
+		rewind_file file;
+		if (memory)
+			rewind_file_init_memory_write(&file, &buffer);
+		else
+			rewind_file_init_physfs(&file, PHYSFS_openWrite("quad-autoselect-runtime.bin"));
+		autoselect_write_runtime_state(&file);
+		require(rewind_file_close(&file), "write pending quad selection");
+		reset_auto_select();
+		PrimaryWeaponPickedUp = 0;
+		if (memory)
+			rewind_file_init_memory_read(&file, buffer.data, buffer.size);
+		else
+			rewind_file_init_physfs(&file, PHYSFS_openRead("quad-autoselect-runtime.bin"));
+		require(autoselect_read_runtime_state(&file, 0, 0) && !PrimaryWeaponPickedUp && delayed_primary_autoselect_weapon_index == -1,
+		        "validation of native quad state preserves current ship");
+		require(rewind_file_seek(&file, 0) && autoselect_read_runtime_state(&file, 0, 1), "restore pending quad identity from file or memory");
+		require(rewind_file_close(&file), "close quad runtime record");
+		require(PrimaryWeaponPickedUp && delayed_primary_autoselect_weapon_index == 16, "quad identity survives restore");
+		require(pick_up_primary(FUSION_INDEX) && delayed_primary_autoselect_weapon_index == 16, "later pickup cannot replace a better queued quad after restore");
+		Controls.fire_primary_state = 0;
+		delayed_autoselect();
+		require(Players[0].primary_weapon == LASER_INDEX && delayed_primary_autoselect_weapon_index == -1, "restored quad switches to the laser inventory slot on release");
+		rewind_memory_buffer_discard(&buffer);
+		int swapped[4] = { static_cast<int>(SWAPINT(1)), 0, static_cast<int>(SWAPINT(16)), -1 };
+		rewind_file_init_memory_read(&file, reinterpret_cast<unsigned char *>(swapped), sizeof(swapped));
+		require(autoselect_read_runtime_state(&file, 1, 1) && delayed_primary_autoselect_weapon_index == 16, "opposite-endian native quad identity");
+	}
 }
 
 void test_autoselect()

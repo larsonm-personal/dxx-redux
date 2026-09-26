@@ -50,6 +50,13 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 trigger Triggers[MAX_TRIGGERS];
 int Num_triggers;
 
+int trigger_exit_flags(int trigger_num)
+{
+	if (trigger_num < 0 || trigger_num >= Num_triggers || trigger_num >= MAX_TRIGGERS)
+		return 0;
+	return Triggers[trigger_num].flags & (TRIGGER_EXIT | TRIGGER_SECRET_EXIT);
+}
+
 //link Links[MAX_WALL_LINKS];
 //int Num_links;
 

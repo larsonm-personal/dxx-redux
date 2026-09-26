@@ -33,10 +33,13 @@ typedef struct input_demo_rng_record {
 
 #define INPUT_DEMO_PLAYER_CFG_PRIMARY_ORDER_MAX   11
 #define INPUT_DEMO_PLAYER_CFG_SECONDARY_ORDER_MAX 11
-#define INPUT_DEMO_DIFFICULTY_LEVELS              5
-#define INPUT_DEMO_CHECKPOINT_STOLEN_ITEM_COUNT   10
-#define INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET    INT32_MIN
-#define INPUT_DEMO_CHECKPOINT_ESCORT_I64_UNSET    INT64_MIN
+/* Native D1 order domains, also carried by D2 recordings of imported missions */
+#define INPUT_DEMO_D1_PRIMARY_ORDER_COUNT       7
+#define INPUT_DEMO_D1_SECONDARY_ORDER_COUNT     6
+#define INPUT_DEMO_DIFFICULTY_LEVELS            5
+#define INPUT_DEMO_CHECKPOINT_STOLEN_ITEM_COUNT 10
+#define INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET  INT32_MIN
+#define INPUT_DEMO_CHECKPOINT_ESCORT_I64_UNSET  INT64_MIN
 
 typedef struct input_demo_player_cfg {
 	int32_t auto_leveling;
@@ -55,6 +58,10 @@ typedef struct input_demo_player_cfg {
 	uint8_t primary_order[INPUT_DEMO_PLAYER_CFG_PRIMARY_ORDER_MAX];
 	uint8_t secondary_order_count;
 	uint8_t secondary_order[INPUT_DEMO_PLAYER_CFG_SECONDARY_ORDER_MAX];
+	uint8_t d1_primary_order_count;
+	uint8_t d1_primary_order[INPUT_DEMO_D1_PRIMARY_ORDER_COUNT];
+	uint8_t d1_secondary_order_count;
+	uint8_t d1_secondary_order[INPUT_DEMO_D1_SECONDARY_ORDER_COUNT];
 } input_demo_player_cfg;
 
 typedef struct input_demo_checkpoint_escort_state {

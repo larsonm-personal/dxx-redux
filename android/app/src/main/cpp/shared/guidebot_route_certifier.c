@@ -848,7 +848,7 @@ static int guidebot_prepare_switch_restorer(
 	    !view->wall_side)
 		return 0;
 	for (trigger = 0; trigger < view->num_triggers; ++trigger) {
-		const int type = view->trigger_type(view->user, trigger);
+		const int type = level_metadata_trigger_effect_type(view, trigger);
 		int restores_target = 0;
 		int link;
 
@@ -999,7 +999,7 @@ static int guidebot_access_trigger_opens_frontier(
     const level_metadata_scan_view *view, int trigger, const int *distance)
 {
 	int link;
-	const int type = view->trigger_type(view->user, trigger);
+	const int type = level_metadata_trigger_effect_type(view, trigger);
 	for (link = 0; link < view->trigger_link_count(view->user, trigger) &&
 	               link < LEVEL_METADATA_MAX_ROUTE_LINKS;
 	     ++link) {
@@ -1011,7 +1011,7 @@ static int guidebot_access_trigger_opens_frontier(
 		wall = view->wall_num(view->user, segment, side);
 		if (wall < 0 || wall >= view->num_walls)
 			continue;
-		if (type == view->trigger_type_open_door &&
+		if ((type == view->trigger_type_open_door || type == view->trigger_type_toggle_door) &&
 		    view->wall_type(view->user, wall) != view->wall_type_door &&
 		    view->wall_type(view->user, wall) != view->wall_type_blastable)
 			continue;
@@ -1047,24 +1047,34 @@ static int guidebot_access_trigger_opens_frontier(
 	return 0;
 }
 
+static int guidebot_exit_destination_type(const level_metadata_scan_view *view, int trigger)
+{
+	if (level_metadata_trigger_has_action(view, trigger, view->trigger_type_exit)) return view->trigger_type_exit;
+	if (level_metadata_trigger_has_action(view, trigger, view->trigger_type_secret_exit)) return view->trigger_type_secret_exit;
+	return -1;
+}
+
 /* Preserve the exit destination type when a different live exit is reachable */
 static int guidebot_prepare_alternative_exit(
     const level_metadata_scan_view *view, level_metadata_route_step *step,
     const int *distance)
 {
 	int best = -1, best_distance = 0;
+	const int destination_type = step->trigger_type == view->trigger_type_exit || step->trigger_type == view->trigger_type_secret_exit
+	                                 ? step->trigger_type
+	                                 : guidebot_exit_destination_type(view, step->trigger_num);
 	if (step->kind != LEVEL_METADATA_ROUTE_EXIT ||
 	    step->activation_kind != LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT ||
 	    !view->wall_segment || !view->wall_side || !view->wall_trigger ||
 	    !view->trigger_type || !view->side_is_flyable || !view->segment_center || !view->side_center ||
-	    (step->trigger_type != view->trigger_type_exit && step->trigger_type != view->trigger_type_secret_exit))
+	    (destination_type != view->trigger_type_exit && destination_type != view->trigger_type_secret_exit))
 		return 0;
 	for (int wall = 0; wall < view->num_walls; ++wall) {
 		const int seg = view->wall_segment(view->user, wall);
 		const int side = view->wall_side(view->user, wall);
 		const int trigger = view->wall_trigger(view->user, wall);
 		if (!guidebot_valid_segment(view, seg) || distance[seg] < 0 || side < 0 || side >= LEVEL_METADATA_MAX_SIDES ||
-		    guidebot_trigger_is_spent(view, trigger) || view->trigger_type(view->user, trigger) != step->trigger_type ||
+		    guidebot_trigger_is_spent(view, trigger) || !level_metadata_trigger_has_action(view, trigger, destination_type) ||
 		    !view->side_is_flyable(view->user, seg, side))
 			continue;
 		if (best < 0 || distance[seg] < best_distance) {
@@ -1106,9 +1116,11 @@ static int guidebot_prepare_access_action(
 		if (!guidebot_valid_segment(view, segment) ||
 		    side < 0 || side >= LEVEL_METADATA_MAX_SIDES ||
 		    guidebot_trigger_is_spent(view, trigger) ||
-		    (view->trigger_type(view->user, trigger) != view->trigger_type_open_wall &&
-		     view->trigger_type(view->user, trigger) != view->trigger_type_open_door &&
-		     view->trigger_type(view->user, trigger) != view->trigger_type_unlock_door) ||
+		    (level_metadata_trigger_effect_type(view, trigger) != view->trigger_type_open_wall &&
+		     level_metadata_trigger_effect_type(view, trigger) != view->trigger_type_open_door &&
+		     level_metadata_trigger_effect_type(view, trigger) != view->trigger_type_toggle_door &&
+		     level_metadata_trigger_effect_type(view, trigger) != view->trigger_type_illusion_off &&
+		     level_metadata_trigger_effect_type(view, trigger) != view->trigger_type_unlock_door) ||
 		    (!shootable && (distance[segment] < 0 || !guidebot_route_side_passable_current(view, segment, side))) ||
 		    !guidebot_access_trigger_opens_frontier(view, trigger, distance))
 			continue;
@@ -1152,7 +1164,7 @@ static int guidebot_prepare_access_action(
 	recovery.side = view->wall_side(view->user, best);
 	recovery.wall_num = best;
 	recovery.trigger_num = view->wall_trigger(view->user, best);
-	recovery.trigger_type = view->trigger_type(view->user, recovery.trigger_num);
+	recovery.trigger_type = level_metadata_trigger_effect_type(view, recovery.trigger_num);
 	/* Rebinding the requested switch's firing pose is the original action */
 	if (step->kind == LEVEL_METADATA_ROUTE_TRIGGER &&
 	    recovery.trigger_num == step->trigger_num && recovery.activation_kind == step->activation_kind) {

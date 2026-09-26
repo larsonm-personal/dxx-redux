@@ -1,0 +1,12 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.docked": false, "guidebot.released": true,
+        "guidebot.companion_count": 1, "guidebot.object_type": 2,
+        "guidebot.shields": 37.0, "guidebot.owner_player": 1,
+        "guidebot.owner_is_local": false, "guidebot.remote_owner": 1,
+        "guidebot.local_control_slot_matches": false,
+        "game_window_is_front": true, "time_paused": false
+    }},
+    {"action": "introspect"}
+]

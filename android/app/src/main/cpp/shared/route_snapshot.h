@@ -4,6 +4,7 @@
 #include "level_metadata_scan.h"
 
 #include <array>
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -123,9 +124,17 @@ struct route_topology_trigger_link {
 
 struct route_topology_trigger {
 	int raw_type = -1;
-	route_trigger_kind kind = route_trigger_kind::other;
+	std::vector<route_trigger_kind> actions;
 	bool one_shot = false;
 	std::vector<route_topology_trigger_link> links;
+	bool has_action(route_trigger_kind action) const
+	{
+		return std::find(actions.begin(), actions.end(), action) != actions.end();
+	}
+	bool ends_level() const
+	{
+		return has_action(route_trigger_kind::exit) || has_action(route_trigger_kind::secret_exit);
+	}
 };
 
 struct route_topology {

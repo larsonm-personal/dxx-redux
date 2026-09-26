@@ -24,6 +24,7 @@ typedef struct physfsx_android_setup_result {
 } physfsx_android_setup_result;
 
 int physfsx_android_setup_search_paths(const char *game_dir,
+                                       const char *isolated_data_dir,
                                        const physfsx_android_setup_ops *ops,
                                        physfsx_android_setup_result *result);
 

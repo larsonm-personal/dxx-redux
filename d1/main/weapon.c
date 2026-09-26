@@ -427,9 +427,6 @@ void classic_auto_select_weapon(int weapon_type)
 				}
 
 
-				if (cur_weapon==MAX_PRIMARY_WEAPONS)
-					cur_weapon = 0;
-
 				//	Hack alert!  Because the fusion uses 0 energy at the end (it's got the weird chargeup)
 				//	it looks like it takes 0 to fire, but it doesn't, so never auto-select.
 				// if (PlayerCfg.PrimaryOrder[cur_weapon] == FUSION_INDEX)
@@ -480,7 +477,7 @@ void classic_auto_select_weapon(int weapon_type)
 				if (PlayerCfg.SecondaryOrder[cur_weapon] == Players[Player_num].secondary_weapon) {
 					HUD_init_message_literal(HM_DEFAULT, "No secondary weapons available!");
 					try_again = 0;				// Tried all weapons!
-				} else if (player_has_weapon(Player_num, PlayerCfg.SecondaryOrder[cur_weapon], 1) == HAS_ALL) {
+				} else if (PlayerCfg.SecondaryOrder[cur_weapon]!=255 && player_has_weapon(Player_num, PlayerCfg.SecondaryOrder[cur_weapon], 1) == HAS_ALL) {
 					select_weapon(PlayerCfg.SecondaryOrder[cur_weapon], 1, 1, 1 );
 					try_again = 0;
 				}

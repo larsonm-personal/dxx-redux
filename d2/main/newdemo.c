@@ -96,6 +96,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gamesave.h"
 #include "gamemine.h"
 #include "switch.h"
+#include "d1_in_d2/d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2.h"
+#include "d1_in_d2/d1_in_d2_levels.h"
 
 #if defined(__ANDROID__)
 extern volatile int g_demo_record_per_frame_state;
@@ -189,6 +192,7 @@ extern void init_seismic_disturbances(void);
 #define ND_EVENT_LINK_SOUND_TO_OBJ		49	// record digi_link_sound_to_object3
 #define ND_EVENT_KILL_SOUND_TO_OBJ		50	// record digi_kill_sound_linked_to_object
 #define ND_EVENT_PLAYER_CONTROL_TRACE		51	// player control and wiggle state captured during recording
+#define ND_EVENT_D1_ASSET_IDENTITY		52	// level byte, digest length byte, source digests
 
 
 #define NORMAL_PLAYBACK 			0
@@ -255,6 +259,11 @@ typedef struct nd_player_control_trace {
 static unsigned int nd_playback_v_demosize;
 static char nd_playback_v_save_callsign[CALLSIGN_LEN+1];
 static sbyte nd_playback_v_demo_version = DEMO_VERSION;
+static sbyte nd_playback_v_game_type = DEMO_GAME_TYPE;
+static int nd_playback_v_asset_identity_valid;
+static const char *nd_playback_v_asset_error;
+static int nd_record_v_game_type = DEMO_GAME_TYPE;
+static int nd_record_v_asset_identity_written;
 static sbyte nd_playback_v_at_eof;
 static sbyte nd_playback_v_cntrlcen_destroyed = 0;
 static sbyte nd_playback_v_bad_read;
@@ -623,6 +632,11 @@ object *prev_obj=NULL;      //ptr to last object read in
 void nd_read_object(object *obj)
 {
 	short shortsig = 0;
+	if (nd_playback_v_game_type == D1_IN_D2_DEMO_GAME_TYPE && !nd_playback_v_asset_identity_valid) {
+		nd_playback_v_asset_error = "D1 demo frame has no asset identity";
+		nd_playback_v_bad_read = -1;
+		return;
+	}
 
 	memset(obj, 0, sizeof(object));
 
@@ -645,6 +659,13 @@ void nd_read_object(object *obj)
 		Int3();
 
 	obj->attached_obj = -1;
+	if (nd_playback_v_game_type == D1_IN_D2_DEMO_GAME_TYPE &&
+		((obj->type == OBJ_ROBOT && obj->id >= N_robot_types) ||
+		 (obj->type == OBJ_POWERUP && obj->id >= N_powerup_types) ||
+		 (obj->type == OBJ_CLUTTER && obj->id >= N_polygon_models))) {
+		nd_playback_v_bad_read = -1;
+		return;
+	}
 
 	switch(obj->type) {
 
@@ -799,6 +820,13 @@ void nd_read_object(object *obj)
 		if ((obj->type != OBJ_ROBOT) && (obj->type != OBJ_PLAYER) && (obj->type != OBJ_CLUTTER)) {
 			nd_read_int(&(obj->rtype.pobj_info.model_num));
 			nd_read_int(&(obj->rtype.pobj_info.subobj_flags));
+		}
+		if (nd_playback_v_game_type == D1_IN_D2_DEMO_GAME_TYPE &&
+			(obj->rtype.pobj_info.model_num < 0 || obj->rtype.pobj_info.model_num >= N_polygon_models ||
+			 Polygon_models[obj->rtype.pobj_info.model_num].n_models < 1 ||
+			 Polygon_models[obj->rtype.pobj_info.model_num].n_models > MAX_SUBMODELS)) {
+			nd_playback_v_bad_read = -1;
+			return;
 		}
 
 		if ((obj->type != OBJ_PLAYER) && (obj->type != OBJ_DEBRIS))
@@ -1001,16 +1029,39 @@ void nd_write_object(object *obj)
 
 }
 
+/* Emit before the first object in every recorded frame, so direct seeking and
+ * backwards playback never depend on a previously decoded frame's identity */
+static int nd_record_asset_identity(void)
+{
+	ubyte identity[64];
+	int length;
+	if (nd_record_v_game_type != D1_IN_D2_DEMO_GAME_TYPE || nd_record_v_asset_identity_written)
+		return 1;
+	length = d1_in_d2_capture_asset_identity(identity);
+	if (!length) {
+		newdemo_stop_recording(0);
+		return 0;
+	}
+	nd_write_byte(ND_EVENT_D1_ASSET_IDENTITY);
+	nd_write_byte(Current_level_num);
+	nd_write_byte(length);
+	newdemo_write(identity, 1, length);
+	nd_record_v_asset_identity_written = 1;
+	return 1;
+}
+
 void newdemo_record_start_demo()
 {
 	int i;
 
 	nd_record_v_recordframe_last_time=GameTime64-REC_DELAY; // make sure first frame is recorded!
+	nd_record_v_game_type = d1_in_d2_use_d1_gameplay() ? D1_IN_D2_DEMO_GAME_TYPE : DEMO_GAME_TYPE;
+	nd_record_v_asset_identity_written = 0;
 
 	stop_time();
 	nd_write_byte(ND_EVENT_START_DEMO);
-	nd_write_byte(DEMO_VERSION);
-	nd_write_byte(DEMO_GAME_TYPE);
+	nd_write_byte(nd_record_v_game_type == D1_IN_D2_DEMO_GAME_TYPE ? D1_IN_D2_DEMO_VERSION : DEMO_VERSION);
+	nd_write_byte(nd_record_v_game_type);
 	nd_write_fix(0); // NOTE: This is supposed to write GameTime (in fix). Since our GameTime64 is fix64 and the demos do not NEED this time actually, just write 0.
 
 #ifdef NETWORK
@@ -1115,6 +1166,7 @@ void newdemo_record_start_frame(fix frame_time )
 		for (i=0;i<32;i++)
 			nd_record_v_rendering[i]=0;
 		nd_record_v_player_control_written = 0;
+		nd_record_v_asset_identity_written = 0;
 
 		nd_record_v_frame_number -= nd_record_v_start_frame;
 
@@ -1141,6 +1193,8 @@ void newdemo_record_render_object(object * obj)
 		return;
 	if (nd_record_v_viewobjs[obj-Objects])
 		return;
+	if (!nd_record_asset_identity())
+		return;
 
 	stop_time();
 	nd_write_byte(ND_EVENT_RENDER_OBJECT);
@@ -1158,6 +1212,8 @@ void newdemo_record_viewer_object(object * obj)
 	if (nd_record_v_viewobjs[obj-Objects] && (nd_record_v_viewobjs[obj-Objects]-1)==RenderingType)
 		return;
 	if (nd_record_v_rendering[RenderingType])
+		return;
+	if (!nd_record_asset_identity())
 		return;
 
 	stop_time();
@@ -1294,6 +1350,8 @@ void newdemo_record_hostage_rescued( int hostage_number )
 void newdemo_record_morph_frame(morph_data *md)
 {
 	if (!nd_record_v_recordframe)
+		return;
+	if (!nd_record_asset_identity())
 		return;
 	stop_time();
 	nd_write_byte( ND_EVENT_MORPH_FRAME );
@@ -1750,6 +1808,8 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 	fix nd_GameTime32 = 0;
 
 	Rear_view=0;
+	nd_playback_v_asset_error = NULL;
+	nd_playback_v_asset_identity_valid = 0;
 
 	nd_read_byte(&c);
 	if (purpose == PURPOSE_REWRITE)
@@ -1766,17 +1826,19 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 	if (purpose == PURPOSE_REWRITE)
 		nd_write_byte(game_type);
 	nd_playback_v_demo_version = version;
+	nd_playback_v_game_type = game_type;
 	if (game_type < DEMO_GAME_TYPE) {
 		if (purpose != PURPOSE_DUMP)
 			nm_messagebox( NULL, 1, TXT_OK, "%s %s\n%s", TXT_CANT_PLAYBACK, TXT_RECORDED, "    In Descent: First Strike" );
 		return 1;
 	}
-	if (game_type != DEMO_GAME_TYPE) {
+	if (game_type != DEMO_GAME_TYPE && game_type != D1_IN_D2_DEMO_GAME_TYPE) {
 		if (purpose != PURPOSE_DUMP)
 			nm_messagebox( NULL, 1, TXT_OK, "%s %s\n%s", TXT_CANT_PLAYBACK, TXT_RECORDED, "   In Unknown Descent version" );
 		return 1;
 	}
-	if (version < DEMO_OLDEST_SUPPORTED_VERSION) {
+	if (version < DEMO_OLDEST_SUPPORTED_VERSION ||
+		(game_type == D1_IN_D2_DEMO_GAME_TYPE && version != D1_IN_D2_DEMO_VERSION)) {
 		if (purpose == PURPOSE_CHOSE_PLAY) {
 			nm_messagebox( NULL, 1, TXT_OK, "%s %s", TXT_CANT_PLAYBACK, TXT_DEMO_OLD );
 		}
@@ -1894,6 +1956,12 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 		}
 		return 1;
 	}
+	if ((game_type == D1_IN_D2_DEMO_GAME_TYPE) != (Current_mission->descent_version == 1)) {
+		nd_playback_v_asset_error = "Demo format does not identify this mission's asset namespace";
+		if (purpose != PURPOSE_DUMP && purpose != PURPOSE_RANDOM_PLAY)
+			nm_messagebox(NULL, 1, TXT_OK, "%s", nd_playback_v_asset_error);
+		return 1;
+	}
 
 	nd_recorded_total = 0;
 	nd_playback_total = 0;
@@ -1965,6 +2033,7 @@ int newdemo_read_frame_information(int rewrite)
 	bool afterburner_updated = 0; // Added in D2 port of fix - looks likely to affect this too
 
 	done = 0;
+	nd_playback_v_asset_identity_valid = 0;
 
 	if (Newdemo_vcr_state != ND_STATE_PAUSED)
 		for (segnum=0; segnum <= Highest_segment_index; segnum++)
@@ -1982,6 +2051,40 @@ int newdemo_read_frame_information(int rewrite)
 			nd_write_byte(c);
 
 		switch( c ) {
+		case ND_EVENT_D1_ASSET_IDENTITY: {
+			sbyte level = 0, length = 0;
+			ubyte identity[64];
+			nd_read_byte(&level);
+			nd_read_byte(&length);
+			if (nd_playback_v_bad_read || nd_playback_v_game_type != D1_IN_D2_DEMO_GAME_TYPE ||
+				(level < Last_secret_level || level > Last_level || !level) ||
+				(length != 32 && length != 64)) {
+				nd_playback_v_bad_read = -1;
+				done = -1;
+				break;
+			}
+			newdemo_read(identity, 1, length);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			/* Rewinding can enter the preceding level's last frame before its
+			 * NEW_LEVEL event. Bind its definitions before reading any objects */
+			if (level != Current_level_num) {
+				LoadLevel(level, !nd_dump_v_active && !rewrite);
+				reset_objects(1);
+			}
+			nd_playback_v_asset_error = d1_in_d2_check_asset_identity(identity, length);
+			if (nd_playback_v_asset_error) {
+				nd_playback_v_bad_read = -1;
+				done = -1;
+				break;
+			}
+			nd_playback_v_asset_identity_valid = 1;
+			if (rewrite) {
+				nd_write_byte(level);
+				nd_write_byte(length);
+				newdemo_write(identity, 1, length);
+			}
+			break;
+		}
 
 		case ND_EVENT_START_FRAME: {        // Followed by an integer frame number, then a fix FrameTime
 			short last_frame_length;
@@ -2236,7 +2339,10 @@ int newdemo_read_frame_information(int rewrite)
 			break;
 		}
 
-		case ND_EVENT_TRIGGER:
+		case ND_EVENT_TRIGGER: {
+			int truth = 0;
+			int has_exit_status = 0;
+			PHYSFS_sint64 next_event;
 			nd_read_int(&segnum);
 			nd_read_int(&side);
 			nd_read_int(&objnum);
@@ -2249,23 +2355,42 @@ int newdemo_read_frame_information(int rewrite)
 				nd_write_int(objnum);
 				nd_write_int(shot);
 			}
-			if (Triggers[Walls[Segments[segnum].sides[side].wall_num].trigger].type == TT_SECRET_EXIT) {
-				int truth;
-
-				nd_read_byte(&c);
-				Assert(c == ND_EVENT_SECRET_THINGY);
+			/* D2 secret exits may emit a status event. Rejected crossings can
+			 * return before writing it, and native D1 exits never write one */
+			next_event = PHYSFS_tell(infile);
+			nd_read_byte(&c);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (c == ND_EVENT_SECRET_THINGY) {
+				has_exit_status = 1;
 				nd_read_int(&truth);
+				if (nd_playback_v_bad_read) { done = -1; break; }
 				if (rewrite)
 				{
 					nd_write_byte(c);
 					nd_write_int(truth);
+				}
+			} else if (!PHYSFS_seek(infile, next_event)) {
+				nd_playback_v_bad_read = 1;
+				done = -1;
+				break;
+			}
+			if (!rewrite && !nd_dump_v_active && !truth && Newdemo_vcr_state != ND_STATE_PAUSED) {
+				int wall_num, trigger_num;
+				if (segnum < 0 || segnum > Highest_segment_index || side < 0 || side >= 6 || objnum < 0 || objnum >= MAX_OBJECTS) {
+					nd_playback_v_bad_read = 1;
+					done = -1;
 					break;
 				}
-				if (!nd_dump_v_active && !truth && Newdemo_vcr_state != ND_STATE_PAUSED)
-					check_trigger(&Segments[segnum], side, objnum,shot);
-			} else if (!rewrite && !nd_dump_v_active && Newdemo_vcr_state != ND_STATE_PAUSED)
+				wall_num = Segments[segnum].sides[side].wall_num;
+				if (wall_num < 0 || wall_num >= Num_walls) break;
+				trigger_num = Walls[wall_num].trigger;
+				if (trigger_num < 0 || trigger_num >= Num_triggers) break;
+				/* A D2 secret crossing without status was rejected while recording */
+				if (!has_exit_status && Triggers[trigger_num].type == TT_SECRET_EXIT) break;
 				check_trigger(&Segments[segnum], side, objnum,shot);
+			}
 			break;
+		}
 
 		case ND_EVENT_HOSTAGE_RESCUED: {
 			int hostage_number;
@@ -3025,10 +3150,20 @@ int newdemo_read_frame_information(int rewrite)
 
 			nd_read_byte (&new_level);
 			nd_read_byte (&old_level);
+			nd_playback_v_asset_identity_valid = 0;
 			if (nd_dump_v_active) {
 				dump_level = ((Newdemo_vcr_state == ND_STATE_REWINDING) ||
 					(Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD)) ? old_level : new_level;
-				Current_level_num = dump_level;
+				if (nd_playback_v_game_type == D1_IN_D2_DEMO_GAME_TYPE) {
+					if (!dump_level || dump_level < Last_secret_level || dump_level > Last_level) {
+						nd_playback_v_bad_read = -1;
+						return -1;
+					}
+					LoadLevel(dump_level, 0);
+					reset_objects(1);
+					Objects[0].type = OBJ_NONE;
+				} else
+					Current_level_num = dump_level;
 				if (nd_playback_v_juststarted) {
 					int wall_count;
 					int wall_index;
@@ -3067,7 +3202,14 @@ int newdemo_read_frame_information(int rewrite)
 			{
 				nd_write_byte (new_level);
 				nd_write_byte (old_level);
-				load_level_robots(new_level);	// for correct robot info reading (specifically boss flag)
+				if (nd_playback_v_game_type == D1_IN_D2_DEMO_GAME_TYPE) {
+					if (!new_level || new_level < Last_secret_level || new_level > Last_level) {
+						nd_playback_v_bad_read = -1;
+						return -1;
+					}
+					LoadLevel(new_level, 0);
+				} else
+					load_level_robots(new_level);	// for correct robot info reading (specifically boss flag)
 			}
 			else
 			{
@@ -3198,7 +3340,8 @@ int newdemo_read_frame_information(int rewrite)
 
 	if (nd_playback_v_bad_read) {
 		if (!nd_dump_v_active)
-			nm_messagebox( NULL, 1, TXT_OK, "%s %s", TXT_DEMO_ERR_READING, TXT_DEMO_OLD_CORRUPT );
+			nm_messagebox( NULL, 1, TXT_OK, "%s %s", TXT_DEMO_ERR_READING,
+				nd_playback_v_asset_error ? nd_playback_v_asset_error : TXT_DEMO_OLD_CORRUPT );
 		free_mission();
 	}
 
@@ -3319,7 +3462,10 @@ void newdemo_goto_end(int to_rewrite)
 	nd_playback_v_framecount--;
 	PHYSFSX_fseek(infile, 4, SEEK_CUR);
 	Newdemo_vcr_state = ND_STATE_PLAYBACK;
-	newdemo_read_frame_information(0); // then the frame information
+	if (newdemo_read_frame_information(0) == -1 && !nd_playback_v_at_eof) {
+		newdemo_stop_playback();
+		return;
+	}
 	Newdemo_vcr_state = ND_STATE_PAUSED;
 	return;
 }
@@ -3994,7 +4140,11 @@ void newdemo_start_playback(char * filename)
 	if (!Game_wind)
 		hide_menus();
 	newdemo_playback_one_frame();       // this one loads new level
+	if (Newdemo_state != ND_STATE_PLAYBACK)
+		return;
 	newdemo_playback_one_frame();       // get all of the objects to renderb game
+	if (Newdemo_state != ND_STATE_PLAYBACK)
+		return;
 	if (!Game_wind)
 		Game_wind = game_setup();							// create game environment
 }
@@ -4002,6 +4152,7 @@ void newdemo_start_playback(char * filename)
 void newdemo_stop_playback()
 {
 	PHYSFS_close(infile);
+	infile = NULL;
 	Newdemo_state = ND_STATE_NORMAL;
 #ifdef NETWORK
 	change_playernum_to(0);             //this is reality
@@ -4016,6 +4167,8 @@ void newdemo_stop_playback()
 	
 	if (Game_wind)
 		window_close(Game_wind);               // Exit game loop
+	else
+		show_menus();
 }
 
 #define DEM2JSON_MOUNT_POINT "__classicdemo_dump"
@@ -4154,7 +4307,7 @@ static int newdemo_dump_write_header(void)
 	classic_demo_json_header snapshot;
 
 	classic_demo_json_d2_snapshot_header(&snapshot,
-		nd_playback_v_demo_version, DEMO_GAME_TYPE);
+		nd_playback_v_demo_version, nd_playback_v_game_type);
 	return classic_demo_json_write_header(&nd_dump_v_writer, &snapshot);
 }
 
@@ -4197,6 +4350,7 @@ static int newdemo_dump_open_input(const char *demo_path,
 	const char *sep;
 	char basename[PATH_MAX];
 	size_t parent_len;
+	const char *existing_mount;
 
 	*mounted = 0;
 	sep = newdemo_dump_find_last_sep(demo_path);
@@ -4220,15 +4374,28 @@ static int newdemo_dump_open_input(const char *demo_path,
 		newdemo_dump_set_error(error, error_size, "invalid classic demo path");
 		return 0;
 	}
-	if (!PHYSFS_mount(mount_dir, DEM2JSON_MOUNT_POINT, 0)) {
-		newdemo_dump_set_error(error, error_size, "could not mount classic demo directory");
-		return 0;
+	existing_mount = PHYSFS_getMountPoint(mount_dir);
+	if (existing_mount) {
+		const char *source_dir;
+		/* Reuse a caller-owned mount without changing or retiring it */
+		snprintf(logical_path, logical_path_size, "%s%s",
+			existing_mount[0] == '/' ? existing_mount + 1 : existing_mount, basename);
+		source_dir = PHYSFS_getRealDir(logical_path);
+		if (!source_dir || strcmp(source_dir, mount_dir)) {
+			newdemo_dump_set_error(error, error_size, "classic demo source is missing or shadowed in its mounted directory");
+			return 0;
+		}
+	} else {
+		if (!PHYSFS_mount(mount_dir, DEM2JSON_MOUNT_POINT, 0)) {
+			newdemo_dump_set_error(error, error_size, "could not mount classic demo directory");
+			return 0;
+		}
+		*mounted = 1;
+		snprintf(logical_path, logical_path_size, "%s/%s", DEM2JSON_MOUNT_POINT, basename);
 	}
-	*mounted = 1;
-	snprintf(logical_path, logical_path_size, "%s/%s", DEM2JSON_MOUNT_POINT, basename);
 	infile = PHYSFSX_openReadBuffered(logical_path);
 	if (!infile) {
-		PHYSFS_removeFromSearchPath(mount_dir);
+		if (*mounted) PHYSFS_removeFromSearchPath(mount_dir);
 		*mounted = 0;
 		newdemo_dump_set_error(error, error_size, "could not open classic demo file");
 		return 0;
@@ -4358,6 +4525,7 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 	char logical_path[PATH_MAX] = "";
 	char temporary_path[PATH_MAX] = "";
 	int mounted = 0;
+	int input_opened = 0;
 	int same = 0;
 	int frame_count = 0;
 	int object_total = 0;
@@ -4382,6 +4550,7 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 	}
 	if (!newdemo_dump_open_input(demo_path, mount_dir, sizeof(mount_dir), logical_path, sizeof(logical_path), &mounted, error, error_size))
 		goto cleanup;
+	input_opened = 1;
 
 #ifdef NETWORK
 	change_playernum_to(0);
@@ -4400,7 +4569,7 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 	Players[Player_num].lives = 0;
 	Viewer = ConsoleObject = &Objects[0];
 	if (newdemo_read_demo_start(PURPOSE_DUMP)) {
-		newdemo_dump_set_error(error, error_size, "classic demo header parse failed");
+		newdemo_dump_set_error(error, error_size, nd_playback_v_asset_error ? nd_playback_v_asset_error : "classic demo header parse failed");
 		goto cleanup;
 	}
 	fp = newdemo_dump_open_temporary(output_path, temporary_path,
@@ -4426,7 +4595,7 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 
 		if (newdemo_read_frame_information(0) == -1) {
 			if (!nd_playback_v_at_eof) {
-				newdemo_dump_set_error(error, error_size, "classic demo frame decode failed");
+				newdemo_dump_set_error(error, error_size, nd_playback_v_asset_error ? nd_playback_v_asset_error : "classic demo frame decode failed");
 				decode_failed = 1;
 			}
 			break;
@@ -4489,10 +4658,11 @@ cleanup:
 	nd_dump_v_active = 0;
 	newdemo_dump_reset_player_control_trace();
 	newdemo_dump_reset_player_wiggle();
-	if (Newdemo_state == ND_STATE_PLAYBACK)
-		newdemo_stop_playback();
-	else if (infile) {
-		PHYSFS_close(infile);
+	if (input_opened) {
+		if (Newdemo_state == ND_STATE_PLAYBACK)
+			newdemo_stop_playback();
+		else
+			PHYSFS_close(infile);
 		infile = NULL;
 	}
 	if (mounted)
@@ -4550,11 +4720,13 @@ int newdemo_swap_endian(char *filename)
 
 	while (newdemo_read_frame_information(1) == 1) {}	// rewrite all frames
 
-	newdemo_goto_end(1);	// get end of demo data
-	newdemo_write_end();	// and write it
+	if (!nd_playback_v_bad_read && nd_playback_v_at_eof) {
+		newdemo_goto_end(1);	// get end of demo data
+		newdemo_write_end();	// and write it
+	}
 
 	swap_endian = 0;
-	complete = nd_playback_v_demosize == Newdemo_num_written;
+	complete = !nd_playback_v_bad_read && nd_playback_v_at_eof && nd_playback_v_demosize == Newdemo_num_written;
 	PHYSFS_close(infile);
 	PHYSFS_close(outfile);
 	outfile = NULL;
@@ -4564,10 +4736,15 @@ int newdemo_swap_endian(char *filename)
 		char bakpath[PATH_MAX+FILENAME_LEN];
 
 		change_filename_extension(bakpath, inpath, DEMO_BACKUP_EXT);
-		PHYSFSX_rename(inpath, bakpath);
-		PHYSFSX_rename(DEMO_FILENAME, inpath);
+		/* Keep an earlier backup intact and report publication failures */
+		if (PHYSFSX_exists(bakpath, 0) || !PHYSFSX_rename(inpath, bakpath))
+			complete = 0;
+		else if (!PHYSFSX_rename(DEMO_FILENAME, inpath)) {
+			PHYSFSX_rename(bakpath, inpath);
+			complete = 0;
+		}
 	}
-	else
+	if (!complete)
 		PHYSFS_delete(DEMO_FILENAME);	// clean up the mess
 
 read_error:
@@ -4576,7 +4753,7 @@ read_error:
 					  complete ? "" : (nd_playback_v_at_eof ? TXT_DEMO_CORRUPT : PHYSFS_getLastError()));
 	}
 
-	return nd_playback_v_at_eof;
+	return complete;
 }
 
 #ifndef NDEBUG

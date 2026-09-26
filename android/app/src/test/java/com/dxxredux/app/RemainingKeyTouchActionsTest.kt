@@ -6,6 +6,32 @@ import org.junit.Test
 
 class RemainingKeyTouchActionsTest {
     @Test
+    fun originalRoutingHidesAddedGoalsAndEnhancedRestoresThem() {
+        val layout = TouchLayout(name = "Empty")
+        val enhanced = remainingKeyTouchActions(layout, "d2", enhancedGuidebotRouting = true)
+        val original = remainingKeyTouchActions(layout, "d2", enhancedGuidebotRouting = false)
+        val addedGoals = setOf(TouchBindings.META_GUIDE_FIND_SECRET, TouchBindings.META_GUIDE_FIND_UNEXPLORED)
+
+        assertTrue(enhanced.map { it.binding }.containsAll(addedGoals))
+        assertEquals(enhanced.filter { it.binding !in addedGoals }, original)
+        assertTrue(original.any { it.binding == TouchBindings.META_GUIDE_NEXT_GOAL })
+        assertEquals(enhanced, remainingKeyTouchActions(layout, "d2", enhancedGuidebotRouting = true))
+    }
+
+    @Test
+    fun routingFilterPreservesConfiguredGuideWheelAndClassicControls() {
+        val configured = TouchBindings.RADIAL_PRESET_SEGMENTS.getValue("Guide")
+        val snapshot = configured.toList()
+        val original = configured.filter { touchBindingEnabled(it.binding, true, false) }
+
+        assertEquals(listOf("Secret", "Unexplored"), configured.filter { it !in original }.map { it.label })
+        assertTrue(original.any { it.binding == TouchBindings.META_GUIDE_RECALL })
+        assertTrue(original.any { it.binding == TouchBindings.META_GUIDE_WARP_TO_ME })
+        assertEquals(snapshot, configured.filter { touchBindingEnabled(it.binding, true, true) })
+        assertEquals(snapshot, configured)
+    }
+
+    @Test
     fun disabledRewindIsHiddenWithoutChangingConfiguredBindings() {
         for (game in listOf("d1", "d2")) {
             val layout = TouchLayout(name = "Empty")

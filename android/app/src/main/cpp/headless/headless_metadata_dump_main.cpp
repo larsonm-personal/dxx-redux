@@ -468,7 +468,7 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 		const int source_seg = Walls[wall_num].segnum;
 		const int source_side = Walls[wall_num].sidenum;
 		if (source_trigger >= 0 && source_trigger < Num_triggers &&
-		    (Triggers[source_trigger].type == TT_EXIT || Triggers[source_trigger].type == TT_SECRET_EXIT) &&
+		    trigger_exit_flags(source_trigger) &&
 		    source_seg >= 0 && source_seg < Num_segments && source_side >= 0 && source_side < MAX_SIDES_PER_SEGMENT)
 			fprintf(stderr, "SECRET-AREA-DUMP EXIT level=%d trigger=%d type=%d wall=%d wall_type=%d seg=%d side=%d child=%d\n",
 			        level_num, source_trigger, Triggers[source_trigger].type, wall_num, Walls[wall_num].type,

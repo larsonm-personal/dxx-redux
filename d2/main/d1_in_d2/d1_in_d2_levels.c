@@ -79,6 +79,14 @@ int d1_in_d2_trigger_source_flags(const trigger *source, short *flags)
 	return 1;
 }
 
+int d1_in_d2_trigger_exit_flags(const trigger *source)
+{
+	short flags;
+	if (!d1_in_d2_trigger_source_flags(source, &flags))
+		return -1;
+	return flags & (TRIGGER_EXIT | TRIGGER_SECRET_EXIT);
+}
+
 int d1_in_d2_trigger_source_link(const trigger *source)
 {
 	return (source->flags & D1_TRIGGER_RECORD) ? source->d1_saved.link_num : -1;
@@ -137,8 +145,8 @@ int d1_in_d2_decode_trigger(trigger *out, const v29_trigger *source, int native_
 		result.d1_saved.link_num = source->link_num;
 		result.flags |= D1_TRIGGER_RECORD | ((flags & TRIGGER_ON) ? D1_TRIGGER_ON : 0);
 		result.pad = (sbyte)((flags & 15) | ((flags >> 2) & 240));
-		/* A representative type serves existing exit/route queries only. Native
-		 * execution below uses every source action, never this priority list */
+		/* Keep a representative type for existing format/metadata consumers
+		 * Native execution and runtime exit queries use every source action */
 		if (flags & TRIGGER_SECRET_EXIT) result.type = TT_SECRET_EXIT;
 		else if (flags & TRIGGER_EXIT) result.type = TT_EXIT;
 		else if (flags & TRIGGER_CONTROL_DOORS) result.type = TT_OPEN_DOOR;

@@ -65,6 +65,8 @@ internal data class LevelMetadataTarget(
     val archiveEntries: List<String> = emptyList(),
     val missionAssetContext: String = "",
     val provenanceDates: List<ArchiveProvenanceDate> = emptyList(),
+    // Engine selects the worker/cache namespace; content selects its native asset lifecycle
+    val contentGame: String = game,
 )
 
 internal data class LevelMetadataCheckpointUpdate(
@@ -1810,6 +1812,7 @@ internal object LevelMetadataAnalyzer {
             .put("schema", schema)
             .put("request_id", requestId)
             .put("game", target.game)
+            .put("content_game", target.contentGame)
             .put("source_name", target.displayName)
             .put("source_path", target.sourcePath.orEmpty())
             .put("archive_path", target.archivePath.orEmpty())
@@ -2271,12 +2274,18 @@ internal class LevelMetadataServiceCommandQueue(
 
 open class LevelMetadataAnalysisService : Service() {
     private lateinit var commandQueue: LevelMetadataServiceCommandQueue
+    private var restartRequired = false
 
     override fun onCreate() {
         super.onCreate()
         commandQueue =
             LevelMetadataServiceCommandQueue(
-                onDrained = { startId -> stopSelfResult(startId) },
+                onDrained = { startId ->
+                    if (stopSelfResult(startId) && restartRequired) {
+                        Log.w(TAG, "Retiring metadata worker after native runtime failure")
+                        Process.killProcess(Process.myPid())
+                    }
+                },
             )
     }
 
@@ -2351,6 +2360,9 @@ open class LevelMetadataAnalysisService : Service() {
         val requestId = request.optString("request_id")
         RouteMetadataDiagnostics.log(
             "Level metadata worker starting request=$requestId source=${request.optString("source_name")} " +
+                "game=${request.optString(
+                    "game",
+                )} content=${request.optString("content_game", request.optString("game"))} " +
                 "priority=${priority.wireName} cpu_duty_percent=${request.optInt("cpu_duty_percent")}",
         )
         val workDir = requestFile.parentFile ?: error("Level metadata request directory is missing")
@@ -2406,6 +2418,11 @@ open class LevelMetadataAnalysisService : Service() {
     ) {
         val resultPath = request.optString("result_path")
         val resultFile = File(resultPath)
+        if (restartRequired) {
+            // Accepted requests retry once this process has drained and retired
+            writeResult(resultFile, failedJson(request, "Metadata worker is restarting", "busy"))
+            return
+        }
         val result =
             try {
                 LevelMetadataNativeBridge.analyze(this, requestJson, request.optString("game"))
@@ -2413,6 +2430,8 @@ open class LevelMetadataAnalysisService : Service() {
             } catch (e: Throwable) {
                 failedJson(request, e.message ?: e.javaClass.simpleName, "internal_error")
             }
+        // Native initialization and mount retirement own this protocol flag
+        restartRequired = runCatching { JSONObject(result).optBoolean("worker_restart_required") }.getOrDefault(false)
         writeResult(resultFile, result)
     }
 

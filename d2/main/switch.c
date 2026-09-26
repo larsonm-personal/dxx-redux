@@ -65,6 +65,17 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 trigger Triggers[MAX_TRIGGERS];
 int Num_triggers;
 
+int trigger_exit_flags(int trigger_num)
+{
+	if (trigger_num < 0 || trigger_num >= Num_triggers || trigger_num >= MAX_TRIGGERS)
+		return 0;
+	const trigger *trig = &Triggers[trigger_num];
+	const int native_flags = d1_in_d2_trigger_exit_flags(trig);
+	if (native_flags >= 0)
+		return native_flags;
+	return trig->type == TT_EXIT ? TRIGGER_EXIT : trig->type == TT_SECRET_EXIT ? TRIGGER_SECRET_EXIT : 0;
+}
+
 static void input_demo_log_trigger_probe(const char *phase, segment *seg, short side, short objnum, int shot, int trigger_num);
 
 //link Links[MAX_WALL_LINKS];
@@ -726,10 +737,11 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 		}
 
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
-		if ((Triggers[trigger_num].type == TT_EXIT || Triggers[trigger_num].type == TT_SECRET_EXIT) &&
+		const int exit_flags = trigger_exit_flags(trigger_num);
+		if (exit_flags &&
 		    route_confirmation_handle_requested_exit_trigger(objnum, trigger_num))
 			return;
-		if (Triggers[trigger_num].type == TT_EXIT &&
+		if ((exit_flags & TRIGGER_EXIT) &&
 		    route_confirmation_handle_exit_trigger(objnum))
 			return;
 #endif

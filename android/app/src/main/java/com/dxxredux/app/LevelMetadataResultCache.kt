@@ -47,6 +47,7 @@ internal object LevelMetadataResultCache {
                 .put("schema", LEVEL_METADATA_RESULT_CACHE_SCHEMA)
                 .put("route_cache_generation", ROUTE_METADATA_CACHE_GENERATION)
                 .put("game", target.game)
+                .put("content_game", target.contentGame)
                 .put("source_type", target.sourceType)
                 .put("mission_name", target.missionName.orEmpty())
                 .put("mission_filename", target.missionFilename.orEmpty())

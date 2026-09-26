@@ -161,7 +161,7 @@ class AndroidAudioLifecycleTest(unittest.TestCase):
 
         callback_start = MUSIC.index("static void tsf_music_callback(void *udata, Uint8 *stream, int len)")
         callback = MUSIC[callback_start : MUSIC.index("#else /* !ANDROID", callback_start)]
-        self.assertLess(callback.index("rb_read(out, needed)"), callback.index("rb_available() == 0"))
+        self.assertLess(callback.index("pcm_ring_read(&g_rb, out, needed)"), callback.index("pcm_ring_available(&g_rb) == 0"))
 
     def test_music_completion_is_polled_on_paired_event_threads(self) -> None:
         self.assertIn("void mix_poll_music(void)", MUSIC)
@@ -250,7 +250,7 @@ class AndroidAudioLifecycleTest(unittest.TestCase):
         self.assertIn('"mission",', SETUP_CONFIG)
         self.assertIn('source == "mission" && missionHasSoundtrack', SETUP_CONFIG)
         self.assertIn("selectBundledMusicForNewMission", MOD_MANAGER)
-        self.assertIn("ModManager(filesDir, context)", SETUP_SECTIONS)
+        self.assertIn("ModManager(filesDir, context, setDir)", SETUP_SECTIONS)
         self.assertNotIn("PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE", MAIN_ACTIVITY)
         self.assertNotIn("PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE", MUSIC_PANEL)
 

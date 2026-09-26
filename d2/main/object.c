@@ -34,6 +34,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "textures.h"
 #include "byteswap.h"
 #include "object.h"
+#include "player_death_runtime.h"
 #include "physics.h"
 #include "slew.h"
 #include "render.h"
@@ -1749,6 +1750,17 @@ static fix time_dead;
 fix		Camera_to_player_dist_goal=F1_0*4;
 ubyte		Control_type_save, Render_type_save;
 
+void player_death_get_runtime_state(player_death_runtime_state *state)
+{
+	state->active = Player_is_dead;
+	state->exploded = Player_exploded;
+	state->eggs_dropped = Player_eggs_dropped;
+	state->aborted = Player_is_dead ? Death_sequence_aborted : 0;
+	state->elapsed = Player_is_dead ? time_dead : 0;
+	state->saved_flags = Player_is_dead ? Player_flags_save : 0;
+	state->saved_control = Player_is_dead ? Control_type_save : 0;
+}
+
 //	------------------------------------------------------------------------------------------------------------------
 void dead_player_end(void)
 {
@@ -2514,7 +2526,7 @@ void object_move_one( object * obj )
 				if ( wall_num != -1 ) {
 					trigger_num = Walls[wall_num].trigger;
 					if (trigger_num != -1)
-						if (Triggers[trigger_num].type == TT_EXIT)
+						if (trigger_exit_flags(trigger_num) & TRIGGER_EXIT)
 							Guided_missile[Player_num]->lifeleft = 0;
 				}
 			}
@@ -3070,7 +3082,7 @@ void object_rw_swap(object_rw *obj, int swap, int native_ai_format)
 			obj->mtype.phys_info.rotthrust.x = SWAPINT(obj->mtype.phys_info.rotthrust.x);
 			obj->mtype.phys_info.rotthrust.y = SWAPINT(obj->mtype.phys_info.rotthrust.y);
 			obj->mtype.phys_info.rotthrust.z = SWAPINT(obj->mtype.phys_info.rotthrust.z);
-			obj->mtype.phys_info.turnroll    = SWAPINT(obj->mtype.phys_info.turnroll);
+			obj->mtype.phys_info.turnroll    = SWAPSHORT(obj->mtype.phys_info.turnroll);
 			obj->mtype.phys_info.flags       = SWAPSHORT(obj->mtype.phys_info.flags);
 			break;
 			
@@ -3136,9 +3148,9 @@ void object_rw_swap(object_rw *obj, int swap, int native_ai_format)
 			obj->rtype.pobj_info.model_num                = SWAPINT(obj->rtype.pobj_info.model_num);
 			for (i=0;i<MAX_SUBMODELS;i++)
 			{
-				obj->rtype.pobj_info.anim_angles[i].p = SWAPINT(obj->rtype.pobj_info.anim_angles[i].p);
-				obj->rtype.pobj_info.anim_angles[i].b = SWAPINT(obj->rtype.pobj_info.anim_angles[i].b);
-				obj->rtype.pobj_info.anim_angles[i].h = SWAPINT(obj->rtype.pobj_info.anim_angles[i].h);
+				obj->rtype.pobj_info.anim_angles[i].p = SWAPSHORT(obj->rtype.pobj_info.anim_angles[i].p);
+				obj->rtype.pobj_info.anim_angles[i].b = SWAPSHORT(obj->rtype.pobj_info.anim_angles[i].b);
+				obj->rtype.pobj_info.anim_angles[i].h = SWAPSHORT(obj->rtype.pobj_info.anim_angles[i].h);
 			}
 			obj->rtype.pobj_info.subobj_flags             = SWAPINT(obj->rtype.pobj_info.subobj_flags);
 			obj->rtype.pobj_info.tmap_override            = SWAPINT(obj->rtype.pobj_info.tmap_override);

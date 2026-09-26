@@ -58,8 +58,8 @@ struct route_progress_state {
 	std::vector<unsigned char> destroyed_blastable_walls;
 };
 
-bool route_trigger_opens_path(route_trigger_kind kind);
-bool route_trigger_changes_navigation(route_trigger_kind kind);
+bool route_trigger_opens_path(const route_topology_trigger &trigger);
+bool route_trigger_changes_navigation(const route_topology_trigger &trigger);
 route_wall_kind route_progress_wall_kind(
     const route_snapshot &snapshot,
     const route_progress_state &progress,

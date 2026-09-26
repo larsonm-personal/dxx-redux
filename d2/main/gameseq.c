@@ -1018,7 +1018,8 @@ void LoadLevel(int level_num,int page_in_textures)
 			secret_entry_levels[i] = Secret_level_table[i];
 		}
 		android_route_metadata_request(
-		    "d2", Current_mission ? Current_mission_filename : "",
+		    "d2", d1_in_d2_use_d1_gameplay() ? "d1" : "d2",
+		    Current_mission ? Current_mission_filename : "",
 		    Current_level_num, level_name, normal_level_files, Last_level,
 		    secret_level_files, secret_entry_levels, N_secret_levels);
 	}
@@ -2100,6 +2101,7 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 		set_highest_level(Current_level_num);
 	else
 		read_player_file();		//get window sizes
+	input_demo_apply_level_player_cfg();
 
 	reset_special_effects();
 	init_exploding_walls();

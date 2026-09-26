@@ -160,7 +160,7 @@ static int test_nominal_order(void)
 {
 	physfsx_android_setup_result result;
 	CHECK(reset_fixture(1, 1, 1));
-	CHECK(physfsx_android_setup_search_paths("d2x-redux", &mock_ops, &result));
+	CHECK(physfsx_android_setup_search_paths("d2x-redux", NULL, &mock_ops, &result));
 	CHECK(strcmp(current_write_dir, game_path) == 0);
 	CHECK(mount_count == 7);
 	CHECK(strcmp(mount_paths[0], game_path) == 0);
@@ -178,7 +178,7 @@ static int test_active_mount_failure_rolls_back(void)
 	physfsx_android_setup_result result;
 	CHECK(reset_fixture(1, 0, 0));
 	snprintf(fail_operation, sizeof(fail_operation), "mount:%s", active_path);
-	CHECK(!physfsx_android_setup_search_paths("d2x-redux", &mock_ops, &result));
+	CHECK(!physfsx_android_setup_search_paths("d2x-redux", NULL, &mock_ops, &result));
 	CHECK(strcmp(result.operation, "mount active set") == 0);
 	CHECK(strcmp(result.path, active_path) == 0);
 	CHECK(strcmp(result.detail, "injected failure") == 0);
@@ -194,7 +194,7 @@ static int test_late_mod_failure_removes_partial_stack(void)
 	physfsx_android_setup_result result;
 	CHECK(reset_fixture(1, 0, 1));
 	snprintf(fail_operation, sizeof(fail_operation), "mount:mod-one");
-	CHECK(!physfsx_android_setup_search_paths("d2x-redux", &mock_ops, &result));
+	CHECK(!physfsx_android_setup_search_paths("d2x-redux", NULL, &mock_ops, &result));
 	CHECK(strcmp(result.operation, "mount enabled mod") == 0);
 	CHECK(strcmp(current_write_dir, "previous-write") == 0);
 	CHECK(unmount_count == 4);
@@ -210,7 +210,7 @@ static int test_saf_manifest_failure_rolls_back_selected_content(void)
 	CHECK(reset_fixture(1, 1, 0));
 	snprintf(saf_path, sizeof(saf_path), "%s/.saf_manifest.json", active_path);
 	snprintf(fail_operation, sizeof(fail_operation), "mount:%s", saf_path);
-	CHECK(!physfsx_android_setup_search_paths("d2x-redux", &mock_ops, &result));
+	CHECK(!physfsx_android_setup_search_paths("d2x-redux", NULL, &mock_ops, &result));
 	CHECK(strcmp(result.operation, "mount SAF manifest") == 0);
 	CHECK(strcmp(result.path, saf_path) == 0);
 	CHECK(strcmp(current_write_dir, "previous-write") == 0);
@@ -229,7 +229,7 @@ static int test_required_setup_failures_abort(void)
 		physfsx_android_setup_result result;
 		CHECK(reset_fixture(1, 0, 0));
 		snprintf(fail_operation, sizeof(fail_operation), "%s", failures[i]);
-		CHECK(!physfsx_android_setup_search_paths("d2x-redux", &mock_ops, &result));
+		CHECK(!physfsx_android_setup_search_paths("d2x-redux", NULL, &mock_ops, &result));
 		CHECK(result.operation[0] != '\0');
 	}
 	return 1;
@@ -239,7 +239,7 @@ static int test_absent_selection_uses_optional_fallbacks(void)
 {
 	physfsx_android_setup_result result;
 	CHECK(reset_fixture(0, 0, 0));
-	CHECK(physfsx_android_setup_search_paths("d2x-redux", &mock_ops, &result));
+	CHECK(physfsx_android_setup_search_paths("d2x-redux", NULL, &mock_ops, &result));
 	CHECK(mount_count == 3);
 	CHECK(strcmp(mount_paths[0], game_path) == 0);
 	CHECK(strcmp(mount_paths[1], test_root) == 0);
@@ -252,22 +252,44 @@ static int test_game_directory_is_parameterized(void)
 	char d1_path[PHYSFSX_ANDROID_PATH_MAX];
 	physfsx_android_setup_result result;
 	CHECK(reset_fixture(0, 0, 0));
-	CHECK(physfsx_android_setup_search_paths("d1x-redux", &mock_ops, &result));
+	CHECK(physfsx_android_setup_search_paths("d1x-redux", NULL, &mock_ops, &result));
 	snprintf(d1_path, sizeof(d1_path), "%sd1x-redux/", test_root);
 	CHECK(strcmp(current_write_dir, d1_path) == 0);
 	CHECK(strcmp(mount_paths[0], d1_path) == 0);
 	return 1;
 }
 
+static int test_isolated_request_ignores_selected_game_and_mods(void)
+{
+	physfsx_android_setup_result result;
+	char request_path[PHYSFSX_ANDROID_PATH_MAX];
+	char saf_path[PHYSFSX_ANDROID_PATH_MAX];
+	CHECK(reset_fixture(1, 1, 1));
+	snprintf(request_path, sizeof(request_path), "%srequested", test_root);
+	CHECK(mkdir_one(request_path) == 0);
+	snprintf(saf_path, sizeof(saf_path), "%s/.saf_manifest.json", request_path);
+	CHECK(write_text_file(saf_path, "{}"));
+	/* The selected game root must not even be attempted */
+	snprintf(fail_operation, sizeof(fail_operation), "mount:%s", active_path);
+	CHECK(physfsx_android_setup_search_paths("d2x-redux", request_path, &mock_ops, &result));
+	CHECK(mount_count == 5);
+	CHECK(strcmp(mount_paths[2], request_path) == 0);
+	CHECK(strcmp(mount_paths[3], saf_path) == 0);
+	CHECK(strcmp(mount_paths[4], "optional-base") == 0);
+	return 1;
+}
+
 int main(void)
 {
-	CHECK(test_nominal_order());
-	CHECK(test_active_mount_failure_rolls_back());
-	CHECK(test_late_mod_failure_removes_partial_stack());
-	CHECK(test_saf_manifest_failure_rolls_back_selected_content());
-	CHECK(test_required_setup_failures_abort());
-	CHECK(test_absent_selection_uses_optional_fallbacks());
-	CHECK(test_game_directory_is_parameterized());
+	if (!test_nominal_order() ||
+	    !test_active_mount_failure_rolls_back() ||
+	    !test_late_mod_failure_removes_partial_stack() ||
+	    !test_saf_manifest_failure_rolls_back_selected_content() ||
+	    !test_required_setup_failures_abort() ||
+	    !test_absent_selection_uses_optional_fallbacks() ||
+	    !test_game_directory_is_parameterized() ||
+	    !test_isolated_request_ignores_selected_game_and_mods())
+		return 1;
 	printf("physfsx_android_setup tests passed\n");
 	return 0;
 }

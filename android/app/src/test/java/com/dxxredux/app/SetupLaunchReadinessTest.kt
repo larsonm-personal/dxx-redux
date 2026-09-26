@@ -194,9 +194,9 @@ class SetupLaunchReadinessTest {
         val manifest = AssetManifest(setDir)
         val saf = SafManifest.forDir(setDir)
 
-        assertTrue(launchDataReadyForGame("d1-in-d2", setDir, manifest, saf))
+        assertTrue(launchDataReadyForGame("d1-in-d2", setDir, manifest, saf) { null })
         assertFalse(launchDataReadyForGame("d2", setDir, manifest, saf))
-        val readiness = d1InD2Readiness(filesDir, setDir, manifest, saf)
+        val readiness = d1InD2Readiness(filesDir, setDir, manifest, saf) { null }
         assertTrue(readiness.ready)
         assertFalse(readiness.needed)
         assertFalse(readiness.d2Ready)
@@ -239,12 +239,56 @@ class SetupLaunchReadinessTest {
                 setDir = setDir,
                 manifest = AssetManifest(setDir),
                 safManifest = SafManifest.forDir(setDir),
+                d1EditionError = { null },
             )
 
         assertTrue(ready.needed)
         assertTrue(ready.ready)
         assertFalse(ready.degraded)
         assertFalse(ready.blocked)
+    }
+
+    @Test
+    fun importedEditionAdmissionPreservesNativeAndOrdinaryD2Readiness() {
+        for (useSaf in listOf(false, true)) {
+            val filesDir = createTempDirectory("d1-edition-readiness").toFile()
+            val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+            val manifest = AssetManifest(setDir)
+            val saf = SafManifest.forDir(setDir)
+            if (useSaf) {
+                saf.write(listOf(
+                    SafManifest.SafFileEntry("DESCENT.HOG", "content://test/hog", 17),
+                    SafManifest.SafFileEntry("DESCENT.PIG", "content://test/pig", 23),
+                ))
+            } else {
+                writeFile(setDir, "DESCENT.HOG", 17)
+                writeFile(setDir, "DESCENT.PIG", 23)
+            }
+            val message = "This edition requires the native engine"
+            val reject: (Long) -> String? = { size ->
+                assertEquals(23L, size)
+                message
+            }
+            assertTrue(launchDataReadyForGame("d1", setDir, manifest, saf, reject))
+            assertFalse(launchDataReadyForGame("d1-in-d2", setDir, manifest, saf, reject))
+            val rejected = d1InD2Readiness(filesDir, setDir, manifest, saf, reject)
+            assertTrue(rejected.d1AssetsReady)
+            assertTrue(rejected.blocked)
+            assertFalse(rejected.ready)
+            assertEquals(message, rejected.unsupportedReason)
+            writeD2Files(setDir)
+            assertTrue(launchDataReadyForGame("d2", setDir, manifest, saf, reject))
+            assertFalse(d1InD2Readiness(filesDir, setDir, manifest, saf, reject).blocked)
+            assertTrue(launchDataReadyForGame("d1-in-d2", setDir, manifest, saf) { null })
+            assertTrue(d1InD2Readiness(filesDir, setDir, manifest, saf) { null }.ready)
+            if (useSaf) {
+                writeFile(setDir, "descent.pig", 29)
+                assertTrue(launchDataReadyForGame("d1-in-d2", setDir, manifest, saf) { size ->
+                    assertEquals(29L, size)
+                    null
+                })
+            }
+        }
     }
 
     private fun writeD2Files(setDir: File) {

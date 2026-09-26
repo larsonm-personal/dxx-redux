@@ -44,7 +44,7 @@ class MidiPreviewSynchronizationTest(unittest.TestCase):
             body,
             "pthread_mutex_lock(&s_playback_mutex)",
             "render_midi_frames(buf, CHUNK)",
-            "rb_write(buf, got * 2)",
+            "pcm_ring_write(&s_rb, buf, got * 2)",
             "pthread_mutex_unlock(&s_playback_mutex)",
         )
 
@@ -112,7 +112,7 @@ class MidiPreviewSynchronizationTest(unittest.TestCase):
             "reset_midi_timeline()",
             "s_timeline.event = message",
             "s_timeline.frame = midi_seek_timeline_frame_for_ms",
-            "rb_reset()",
+            "pcm_ring_reset(&s_rb)",
         )
         self.assertNotIn("tsf_render", body)
         self.assertNotIn("midi_seek_timeline_reconstruct", body)
@@ -123,7 +123,7 @@ class MidiPreviewSynchronizationTest(unittest.TestCase):
             self,
             body,
             "pthread_mutex_trylock(&s_ring_reset_mutex)",
-            "rb_read(buf, needed)",
+            "pcm_ring_read(&s_rb, buf, needed)",
             "pthread_mutex_unlock(&s_ring_reset_mutex)",
         )
         self.assertNotIn("pthread_mutex_lock(&s_playback_mutex)", body)

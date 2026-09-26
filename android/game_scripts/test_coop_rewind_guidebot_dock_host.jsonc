@@ -1,0 +1,8 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.docked": true, "guidebot.released": false,
+        "guidebot.companion_count": 1, "guidebot.owner_player": 1
+    }},
+    {"action": "introspect"}
+]

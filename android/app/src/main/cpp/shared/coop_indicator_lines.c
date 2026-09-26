@@ -137,13 +137,8 @@ static int find_exit_segment(void)
 {
 	int i, j;
 	for (i = 0; i < Num_triggers; i++) {
-#ifdef DXX_BUILD_DESCENT_II
-		if (Triggers[i].type != TT_EXIT)
+		if (!(trigger_exit_flags(i) & TRIGGER_EXIT))
 			continue;
-#else
-		if (!(Triggers[i].flags & TRIGGER_EXIT))
-			continue;
-#endif
 		for (j = 0; j < Num_walls; j++)
 			if (Walls[j].trigger == i)
 				return Walls[j].segnum;

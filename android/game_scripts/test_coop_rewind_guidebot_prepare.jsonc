@@ -1,0 +1,5 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "clear_robots", "value": "true"},
+    {"action": "wait_ms", "ms": 1000}
+]

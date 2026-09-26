@@ -243,7 +243,7 @@ function Restore-MissionZipBatchDevice {
     }
 
     Write-Status "$Reason -- recovering emulator ($script:MissionZipBatchConsecutiveRecoveryCount/$MaxEmulatorRecoveries consecutive)" "Yellow"
-    Restart-AdbServer
+    Reconnect-AdbDevice
     Ensure-EmulatorHealthy | Out-Null
 
     Write-Status "Installing APK after emulator recovery"

@@ -1623,45 +1623,67 @@ static void test_visible_unlocked_triggered_door_is_physically_passable(void)
     assert(level_metadata_route_step_required_by_world_state(&view, &step));
 }
 
+static int compound_exit_action_types(void *user, int trigger, int types[LEVEL_METADATA_MAX_TRIGGER_ACTIONS])
+{
+	types[0] = trigger_type(user, trigger);
+	if (trigger == 0) {
+		types[1] = 3;
+		types[2] = 4;
+		return 3;
+	}
+	return 1;
+}
+
 static void test_alternative_exit_preserves_destination_type(void)
 {
-    certifier_fixture fixture;
-    level_metadata_scan_view view;
-    level_metadata_route_step original, step;
-    guidebot_route_certifier_summary summary;
-    initialize_fixture(&fixture);
-    view = make_view(&fixture);
-    view.wall_trigger = wall_trigger;
-    view.trigger_type_exit = 3;
-    view.trigger_type_secret_exit = 4;
-    fixture.wall_open[0] = 1;
-    fixture.wall_extra_flags[1] = view.wall_flag_door_locked;
-    fixture.trigger_type[0] = view.trigger_type_exit;
-    fixture.trigger_type[1] = view.trigger_type_secret_exit;
-    memset(&original, 0, sizeof(original));
-    original.kind = LEVEL_METADATA_ROUTE_EXIT;
-    original.activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT;
-    original.trigger_type = view.trigger_type_exit;
-    original.seg = original.path_terminal_segment = 3;
-    original.wall_num = 3;
-    memset(&summary, 0, sizeof(summary));
-    step = original;
-    assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
-    assert(step.seg == 0 && step.wall_num == 0 && step.trigger_num == 0);
-    assert(step.trigger_type == view.trigger_type_exit);
-    fixture.trigger_flags[0] = view.trigger_flag_disabled;
-    step = original;
-    assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
-    assert(step.wall_num == original.wall_num);
-    fixture.trigger_flags[0] = 0;
-    fixture.trigger_type[0] = view.trigger_type_secret_exit;
-    step = original;
-    assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
-    assert(step.wall_num == original.wall_num);
-    original.trigger_type = view.trigger_type_secret_exit;
-    step = original;
-    assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
-    assert(step.wall_num == 0 && step.trigger_type == view.trigger_type_secret_exit);
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	level_metadata_route_step original, step;
+	guidebot_route_certifier_summary summary;
+	initialize_fixture(&fixture);
+	view = make_view(&fixture);
+	view.wall_trigger = wall_trigger;
+	view.trigger_type_exit = 3;
+	view.trigger_type_secret_exit = 4;
+	fixture.wall_open[0] = 1;
+	fixture.wall_extra_flags[1] = view.wall_flag_door_locked;
+	fixture.trigger_type[0] = view.trigger_type_exit;
+	fixture.trigger_type[1] = view.trigger_type_secret_exit;
+	memset(&original, 0, sizeof(original));
+	original.kind = LEVEL_METADATA_ROUTE_EXIT;
+	original.activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT;
+	original.trigger_type = view.trigger_type_exit;
+	original.seg = original.path_terminal_segment = 3;
+	original.wall_num = 3;
+	memset(&summary, 0, sizeof(summary));
+	step = original;
+	assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
+	assert(step.seg == 0 && step.wall_num == 0 && step.trigger_num == 0);
+	assert(step.trigger_type == view.trigger_type_exit);
+	fixture.trigger_flags[0] = view.trigger_flag_disabled;
+	step = original;
+	assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
+	assert(step.wall_num == original.wall_num);
+	fixture.trigger_flags[0] = 0;
+	fixture.trigger_type[0] = view.trigger_type_secret_exit;
+	step = original;
+	assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
+	assert(step.wall_num == original.wall_num);
+	original.trigger_type = view.trigger_type_secret_exit;
+	step = original;
+	assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
+	assert(step.wall_num == 0 && step.trigger_type == view.trigger_type_secret_exit);
+	/* The candidate's first action is a door, but both exit actions survive */
+	view.trigger_action_types = compound_exit_action_types;
+	fixture.trigger_type[0] = view.trigger_type_open_door;
+	original.trigger_type = view.trigger_type_exit;
+	step = original;
+	assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
+	assert(step.wall_num == 0 && step.trigger_type == view.trigger_type_exit);
+	original.trigger_type = view.trigger_type_secret_exit;
+	step = original;
+	assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
+	assert(step.wall_num == 0 && step.trigger_type == view.trigger_type_secret_exit);
 }
 
 static void test_restoring_wall_blocks_new_paths(void)

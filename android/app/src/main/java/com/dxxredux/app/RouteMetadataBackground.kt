@@ -13,6 +13,7 @@ internal object RouteMetadataBackground {
     suspend fun computeMission(
         context: Context,
         game: String,
+        contentGame: String,
         mission: String,
         currentLevelNum: Int,
         currentLevelFile: String,
@@ -31,6 +32,7 @@ internal object RouteMetadataBackground {
         val sourceIdentity =
             listOf(
                 game,
+                contentGame,
                 mission,
                 missionAssetContext,
                 File(dataDir).lastModified(),
@@ -86,6 +88,7 @@ internal object RouteMetadataBackground {
                     LevelMetadataTarget(
                         displayName = "Active game mission",
                         game = game,
+                        contentGame = contentGame,
                         sourceType = "active_level",
                         missionAssetContext = missionAssetContext,
                         dataDir = dataDir,

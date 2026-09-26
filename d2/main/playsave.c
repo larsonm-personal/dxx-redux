@@ -256,6 +256,7 @@ int read_player_d2x(char *filename)
 	int rc = 0;
 	char line[50],*word;
 	int Stop=0;
+	d1_in_d2_reset_weapon_order();
 
 	f = PHYSFSX_openReadBuffered(filename);
 
@@ -267,7 +268,11 @@ int read_player_d2x(char *filename)
 		PHYSFSX_fgets(line,50,f);
 		word=splitword(line,':');
 		d_strupr(word);
-		if (strstr(word,"KEYBOARD"))
+		if (strstr(word,"D1 WEAPON ORDER"))
+		{
+			d1_in_d2_read_weapon_order(f);
+		}
+		else if (strstr(word,"KEYBOARD"))
 		{
 			d_free(word);
 			PHYSFSX_fgets(line,50,f);
@@ -724,6 +729,7 @@ int write_player_d2x(char *filename)
 	if(fout)
 	{
 		PHYSFSX_printf(fout,"[D2X OPTIONS]\n");
+		d1_in_d2_write_weapon_order(fout);
 		PHYSFSX_printf(fout,"[keyboard]\n");
 		PHYSFSX_printf(fout,"sensitivity0=%d\n",PlayerCfg.KeyboardSens[0]);
 		PHYSFSX_printf(fout,"sensitivity1=%d\n",PlayerCfg.KeyboardSens[1]);

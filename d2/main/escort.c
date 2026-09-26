@@ -1648,7 +1648,7 @@ static int side_has_exit_trigger(int seg, int side)
 	trigger_num = Walls[wall_num].trigger;
 	if (trigger_num < 0 || trigger_num >= Num_triggers)
 		return 0;
-	return Triggers[trigger_num].type == TT_EXIT;
+	return (trigger_exit_flags(trigger_num) & TRIGGER_EXIT) != 0;
 }
 
 //	-----------------------------------------------------------------------------

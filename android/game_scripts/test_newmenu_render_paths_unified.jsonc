@@ -130,6 +130,20 @@
         "menu_scale.direct_render": "true",
         "menu_scale.render_scale": {"gt": 1.05}
     }},
+    // Reused transient upload storage must follow menu dimensions and sampler
+    // changes after the listbox and fresh engine/context have rendered
+    {"action": "set_debug", "field": "graphics_option", "value": "aniso_level:2", "post_delay_ms": 150},
+    {"action": "set_menu_viewport", "zoom_milli": 1800, "pan_milli": 800},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "assert", "expect": {
+        "menu_scale.active": "true",
+        "menu_scale.direct_render": "true",
+        "menu_scale.user_zoom_milli": 1800,
+        "menu_interaction.tappable_count": {"gt": 0}
+    }},
+    {"action": "set_debug", "field": "graphics_option", "value": "aniso_level:0", "post_delay_ms": 150},
+    {"action": "set_menu_viewport", "zoom_milli": 1000, "pan_milli": 0},
+    {"action": "wait_ms", "ms": 200},
     {"action": "select", "text": "Options", "post_delay_ms": 150, "timeout_ms": 5000},
     {"action": "assert", "expect": {
         "menu.type": "newmenu"

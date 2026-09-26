@@ -7,6 +7,33 @@
 #include "vecmat.h"
 
 struct object;
+struct PHYSFS_File;
+
+enum { D1_IN_D2_PRIMARY_ORDER_COUNT = 7, D1_IN_D2_SECONDARY_ORDER_COUNT = 6 };
+typedef struct d1_in_d2_weapon_order_config {
+	ubyte primary[D1_IN_D2_PRIMARY_ORDER_COUNT];
+	ubyte secondary[D1_IN_D2_SECONDARY_ORDER_COUNT];
+} d1_in_d2_weapon_order_config;
+
+void d1_in_d2_reset_weapon_order(void);
+const ubyte *d1_in_d2_weapon_order(int secondary);
+int d1_in_d2_set_weapon_order(int secondary, const ubyte *order, int count);
+void d1_in_d2_read_weapon_order(struct PHYSFS_File *file);
+void d1_in_d2_write_weapon_order(struct PHYSFS_File *file);
+/* True means the native operation handled the call */
+int d1_in_d2_cycle_weapon(int secondary);
+int d1_in_d2_auto_select_weapon(int secondary, int classic);
+int d1_in_d2_reorder_weapons(int secondary);
+/* -1 leaves the D2 inventory/ammo/energy query active */
+int d1_in_d2_weapon_availability(ubyte player_num, int weapon_index, int secondary);
+
+/* Native quad selection uses a logical index distinct from the inventory bit */
+int d1_in_d2_is_quad_selection(int weapon_index);
+int d1_in_d2_primary_selection_index(int weapon_index);
+/* Negative results leave ordinary D2 ordering/acquisition active */
+int d1_in_d2_primary_order(int weapon_index);
+int d1_in_d2_secondary_order(int weapon_index);
+int d1_in_d2_pick_up_primary(int weapon_index, int is_quads);
 
 /* Native collision relationship; -1 leaves D2 handling active */
 int d1_in_d2_laser_are_related(int first, int second);

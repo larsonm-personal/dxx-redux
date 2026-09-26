@@ -60,6 +60,11 @@ typedef int (*android_ogl_loadtexture_fn)(unsigned char *data, int dxo, int dyo,
                                           int data_format, int texfilt,
                                           const char *bitmapname);
 
+/* Reuse one upload name, retaining at most 8 MiB of base-level RGBA storage */
+ogl_texture *android_ogl_transient_blit_texture(int width, int height);
+void android_ogl_reset_transient_blit_texture(
+	const struct android_ogl_bind_texture_state *state, int delete_handle);
+
 void android_ogl_bind_texture_2d(const struct android_ogl_bind_texture_state *state,
                                  GLuint handle);
 void android_ogl_active_texture(const struct android_ogl_bind_texture_state *state,

@@ -291,6 +291,7 @@ extern GLubyte *texbuf;
 void ogl_filltexbuf(unsigned char *data, GLubyte *texp, int truewidth, int width, int height, int dxo, int dyo, int twidth, int theight, int type, int bm_flags, int data_format);
 void ogl_loadbmtexture(grs_bitmap *bm);
 int ogl_loadtexture(unsigned char *data, int dxo, int dyo, ogl_texture *tex, int bm_flags, int data_format, int texfilt, const char *bitmapname);
+static int ogl_loadtexture_into(unsigned char *data, int dxo, int dyo, ogl_texture *tex, int bm_flags, int data_format, int texfilt, const char *bitmapname, GLuint reuse_handle);
 void ogl_freetexture(ogl_texture *gltexture);
 void ogl_freebmtexture(grs_bitmap *bm);
 void tex_set_size(ogl_texture *tex);
@@ -415,6 +416,9 @@ void ogl_reset_texture_stats_internal(void){
 
 void ogl_init_texture_list_internal(void){
 	int i;
+#ifdef ANDROID
+	android_ogl_reset_transient_blit_texture(&ogl_bind_texture_state, 0);
+#endif
 	ogl_texture_list_cur=0;
 	for (i=0;i<OGL_TEXTURE_LIST_SIZE;i++)
 		ogl_reset_texture(&ogl_texture_list[i]);
@@ -429,6 +433,9 @@ void ogl_init_texture_list_internal(void){
 
 void ogl_smash_texture_list_internal(void){
 	int i;
+#ifdef ANDROID
+	android_ogl_reset_transient_blit_texture(&ogl_bind_texture_state, 1);
+#endif
 	if (sphere_va != NULL)
 	{
 		d_free(sphere_va);
@@ -2057,7 +2064,7 @@ bool g3_draw_bitmap(vms_vector *pos,fix width,fix height,grs_bitmap *bm)
 
 /*
  * Movies
- * Since this function will create a new texture each call, mipmapping can be very GPU intensive - so it has an optional setting for texture filtering.
+ * Bitmap contents are uploaded each call; filtering is optional for movie frames
  */
 bool ogl_ubitblt_i(int dw,int dh,int dx,int dy, int sw, int sh, int sx, int sy, grs_bitmap * src, grs_bitmap * dest, int texfilt)
 {
@@ -2066,6 +2073,11 @@ bool ogl_ubitblt_i(int dw,int dh,int dx,int dy, int sw, int sh, int sx, int sy, 
 	GLfloat texcoord_array[] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 	GLfloat vertex_array[] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 	ogl_texture tex;
+#ifdef ANDROID
+	ogl_texture *reuse = android_ogl_transient_blit_texture(sw, sh);
+	/* A bitmap already at its display size only samples mip level zero */
+	const int linear_unscaled = texfilt && dw == sw && dh == sh;
+#endif
 	r_ubitbltc++;
 
 	glEnableClientState(GL_VERTEX_ARRAY);
@@ -2088,11 +2100,22 @@ bool ogl_ubitblt_i(int dw,int dh,int dx,int dy, int sw, int sh, int sx, int sy, 
 	OGL_ENABLE(TEXTURE_2D);
 	
 	ogl_pal=gr_current_pal;
+#ifdef ANDROID
+	ogl_loadtexture_into(src->bm_data, sx, sy, &tex, src->bm_flags, 0,
+		linear_unscaled ? 0 : texfilt, NULL, reuse ? reuse->handle : 0);
+#else
 	ogl_loadtexture(src->bm_data, sx, sy, &tex, src->bm_flags, 0, texfilt,
 		NULL);
+#endif
 	ogl_pal=gr_palette;
 	OGL_BINDTEXTURE(tex.handle);
 	
+#ifdef ANDROID
+	if (linear_unscaled) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
+#endif
 	ogl_texwrap(&tex,GL_CLAMP_TO_EDGE);
 
 	vertex_array[0] = xo;
@@ -2121,6 +2144,11 @@ bool ogl_ubitblt_i(int dw,int dh,int dx,int dy, int sw, int sh, int sx, int sy, 
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+#ifdef ANDROID
+	if (reuse)
+		*reuse = tex;
+	else
+#endif
 	ogl_freetexture(&tex);
 	return 0;
 }
@@ -2834,6 +2862,11 @@ void tex_set_size(ogl_texture *tex){
 //stores OpenGL textured id in *texid and u/v values required to get only the real data in *u/*v
 int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, int bm_flags, int data_format, int texfilt, const char *bitmapname)
 {
+	return ogl_loadtexture_into(data, dxo, dyo, tex, bm_flags, data_format, texfilt, bitmapname, 0);
+}
+
+static int ogl_loadtexture_into(unsigned char *data, int dxo, int dyo, ogl_texture *tex, int bm_flags, int data_format, int texfilt, const char *bitmapname, GLuint reuse_handle)
+{
 	GLubyte	*bufP = texbuf;
 	tex->tw = pow2ize (tex->w);
 	tex->th = pow2ize (tex->h);//calculate smallest texture size that can accomodate us (must be multiples of 2)
@@ -2897,7 +2930,9 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 		}
 	}
 	// Generate OpenGL texture IDs.
-	glGenTextures (1, &tex->handle);
+	tex->handle = reuse_handle;
+	if (!tex->handle)
+		glGenTextures (1, &tex->handle);
 #ifndef OGLES
 	//set priority
 	glPrioritizeTextures (1, &tex->handle, &tex->prio);
@@ -2905,6 +2940,11 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 	// Give our data to OpenGL.
 	OGL_BINDTEXTURE(tex->handle);
 	glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+#ifdef ANDROID
+	/* Each reuse starts with the same anisotropy as a new texture */
+	if (reuse_handle && ogl_maxanisotropy > 1.0)
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1.0f);
+#endif
 
 	if (texfilt
 #ifdef ANDROID
@@ -2964,7 +3004,8 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 	}
 
 	tex_set_size (tex);
-	r_texcount++;
+	if (!reuse_handle)
+		r_texcount++;
 	return 0;
 }
 

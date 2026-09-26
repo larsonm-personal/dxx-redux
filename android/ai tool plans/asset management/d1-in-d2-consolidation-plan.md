@@ -61,13 +61,37 @@ The central acceptance rule is change locality: a correction to D1 artwork, brie
 
 ## 0. Stocktake and plan to finish
 
-Endlevel observation follow-up: world schema 8 exposes flythrough steering,
-private phase/explosion clocks, sound count, camera/exit geometry and the active
-outside explosion. Three actual rendered-sequence runs match across 951
-native/imported frames, with exact motion and RNG counts. Process-lifetime
-carryover is preserved and demonstrated. Save/rewind handling of that history,
-boss/network state and the rest of the private-state audit remain open; the
-current continuation records the next probe and qualified evidence
+September 26 current state: cosmetic exit/death animation consumes FX RNG and
+must not affect SIM RNG. Exit animation history is reset at sequence entry and
+does not carry between levels; active flyout/death saves are rejected. Exact
+cosmetic repetition is not an acceptance requirement. Earlier carryover probes
+are historical defect evidence, not the desired behavior or a persistence task.
+
+World schema 10 now observes active exploding walls, pending weapon selection
+and death gameplay clocks/flags in addition to the prior world/AI state. Native
+saves use version 19, imported D1 saves 40 and ordinary D2 saves 38. Actual
+save/rewind, source rejection/recovery, companion persistence and two-peer
+level-transition evidence is recorded in the current continuation and ledger.
+The independent state/identity audit, fresh corpus and wider F1-F5 qualification
+remain open; these focused checks do not by themselves close those gates
+
+The [support/evidence matrix](d1-in-d2-support-matrix.md) records E6's edition,
+platform, network and serialized-format scope, including unverified rows.
+
+E2's registry boundary is now implemented: bitmap metadata dispatch follows
+published content, and D1 reads source flags from its owned base/custom
+generation. The shared PIG/POG reader no longer infers D1 from a requested
+mission or palette filename. The converted-light paging cleanup remains
+necessary and is exposed through the lifecycle facade; piggy.c no longer
+includes the private generation layout. Focused lifecycle and registered-data
+tests pass; see the ledger for device verification and the frozen-corpus boundary.
+
+E5 follow-up repairs metadata initialization ownership: Android workers now use
+their requested data root and retire after partial initialization failure.
+Native D1 and ordinary D2 host/Android recovery and healthy reuse pass. Imported
+D1 in-game metadata still selects a D2 worker that requires D2 base files;
+that content/engine/cache identity boundary remains open. The gameplay level
+transition control passes independently; see the ledger for precise scope.
 
 ### What exists, and what is still unproven
 
@@ -94,7 +118,7 @@ The implementation has moved well beyond the original D2-first overlay. Register
 | F4. Retire migration paths and close persistence | Section 16 E1-E5: remove old overlay/capture/backup APIs and test-only production paths; finish namespace/trigger/travel consumers | One resource lifecycle, documented serialized identities, actual save/reload/rewind and applicable network travel tests, no unexplained transitional owner/hook |
 | F5. Release qualification | Section 16 E6 plus presentation/resource comparisons and platform matrix | Strict corpus passes on declared targets; D1-only cold startup/error/menu/shutdown; custom/stock and D1/D2 switching; ordinary D2 regression; explicit remaining unsupported scope |
 
-F1 is in progress. The paired runner now stages D1-only assets, pins its inputs and binaries, captures two native runs and one imported run, and reports recording/native-repeat/imported relationships independently. Full semantic observations and cross-engine diagnostic mappings remain open, so it deliberately cannot report complete fidelity qualification. Do not postpone whole-game evidence until after optional features. Serialization and lifecycle checks run alongside F2/F3, not only in F4. Each fix keeps the source-owner boundary and removes its superseded body in the same review. Native D1 remains the reference engine; deleting it is a separate decision after F5
+F1 is in progress. The paired runner stages D1-only assets, pins its inputs and binaries, captures two native runs and one imported run, and reports recording/native-repeat/imported relationships independently. Explicit object/AI/trigger storage mappings and complete declared frame fields are implemented. Their independent completeness audit and current whole-corpus qualification remain open, so the runner cannot yet report complete fidelity qualification. The previous frozen eight-demo run is retained as dated evidence; current fixes require a fresh run. Do not postpone whole-game evidence until after optional features. Serialization and lifecycle checks run alongside F2/F3, not only in F4. Each fix keeps the source-owner boundary and removes its superseded body in the same review. Native D1 remains the reference engine; deleting it is a separate decision after F5
 
 ### Exact reproduction using the D1 regression demos
 

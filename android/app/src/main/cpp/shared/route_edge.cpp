@@ -50,7 +50,7 @@ int side_progress_trigger(
 		const int trigger = snapshot.state.walls[source_wall].trigger;
 		if (!valid_trigger(snapshot, trigger) ||
 		    snapshot.state.triggers[trigger].disabled ||
-		    !route_trigger_opens_path(snapshot.topology.triggers[trigger].kind) ||
+		    !route_trigger_opens_path(snapshot.topology.triggers[trigger]) ||
 		    state_flag(progress.fired_triggers, trigger) ||
 		    state_flag(progress.avoided_triggers, trigger))
 			continue;
@@ -87,8 +87,8 @@ bool side_has_active_fired_opener(
 		const int trigger = snapshot.state.walls[source_wall].trigger;
 		if (valid_trigger(snapshot, trigger) &&
 		    !snapshot.state.triggers[trigger].disabled &&
-		    route_trigger_opens_path(snapshot.topology.triggers[trigger].kind) &&
-		    snapshot.topology.triggers[trigger].kind != route_trigger_kind::unlock_door &&
+		    route_trigger_opens_path(snapshot.topology.triggers[trigger]) &&
+		    !snapshot.topology.triggers[trigger].has_action(route_trigger_kind::unlock_door) &&
 		    state_flag(progress.fired_triggers, trigger))
 			return true;
 	}
@@ -172,24 +172,33 @@ route_edge_decision blocked(route_edge_blocker blocker, int wall = -1)
 
 } // namespace
 
-bool route_trigger_opens_path(route_trigger_kind kind)
+bool route_trigger_opens_path(const route_topology_trigger &trigger)
 {
-	return kind == route_trigger_kind::open_door ||
-	       kind == route_trigger_kind::toggle_door ||
-	       kind == route_trigger_kind::open_wall ||
-	       kind == route_trigger_kind::illusory_wall ||
-	       kind == route_trigger_kind::illusion_off ||
-	       kind == route_trigger_kind::unlock_door;
+	if (trigger.ends_level()) return false;
+	bool opens = false;
+	for (const auto action : trigger.actions) {
+		switch (action) {
+			case route_trigger_kind::close_door:
+			case route_trigger_kind::close_wall:
+			case route_trigger_kind::illusion_on: opens = false; break;
+			case route_trigger_kind::open_door:
+			case route_trigger_kind::toggle_door:
+			case route_trigger_kind::open_wall:
+			case route_trigger_kind::illusory_wall:
+			case route_trigger_kind::illusion_off:
+			case route_trigger_kind::unlock_door: opens = true; break;
+			default: break;
+		}
+	}
+	return opens;
 }
 
-bool route_trigger_changes_navigation(route_trigger_kind kind)
+bool route_trigger_changes_navigation(const route_topology_trigger &trigger)
 {
-	return route_trigger_opens_path(kind) ||
-	       kind == route_trigger_kind::close_door ||
-	       kind == route_trigger_kind::toggle_door ||
-	       kind == route_trigger_kind::illusion_on ||
-	       kind == route_trigger_kind::lock_door ||
-	       kind == route_trigger_kind::close_wall;
+	if (trigger.ends_level()) return false;
+	for (const auto action : trigger.actions)
+		if (action != route_trigger_kind::other) return true;
+	return false;
 }
 
 route_wall_kind route_progress_wall_kind(

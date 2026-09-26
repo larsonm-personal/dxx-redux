@@ -13,6 +13,8 @@
 #include "ogl_texture_filename.h"
 #include "pngfile.h"
 
+static ogl_texture transient_blit_texture;
+
 static void android_ogl_texture_clock_now(struct timespec *ts)
 {
 	clock_gettime(CLOCK_MONOTONIC, ts);
@@ -181,7 +183,7 @@ void android_ogl_apply_bound_texture_filter(ogl_texture *texture, int effective_
 
 int android_ogl_get_texture_bytes(const struct android_ogl_texture_list_state *state)
 {
-	int total = 0;
+	int total = transient_blit_texture.handle ? transient_blit_texture.bytes : 0;
 	int i;
 
 	if (!state || !state->texture_list || state->texture_list_size <= 0)
@@ -441,6 +443,28 @@ void android_ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfi
 	free(mdata.data);
 	if (mdata.palette)
 		free(mdata.palette);
+}
+
+/* Texture contents are converted and replaced on every blit */
+ogl_texture *android_ogl_transient_blit_texture(int width, int height)
+{
+	int tw = 1, th = 1;
+	if (width <= 0 || height <= 0 || width > 2048 || height > 2048)
+		return NULL;
+	while (tw < width) tw *= 2;
+	while (th < height) th *= 2;
+	if (tw * th > 2 * 1024 * 1024)
+		return NULL;
+	return &transient_blit_texture;
+}
+
+void android_ogl_reset_transient_blit_texture(
+	const struct android_ogl_bind_texture_state *state, int delete_handle)
+{
+	if (delete_handle && transient_blit_texture.handle)
+		glDeleteTextures(1, &transient_blit_texture.handle);
+	memset(&transient_blit_texture, 0, sizeof(transient_blit_texture));
+	android_ogl_reset_texture_bindings(state);
 }
 
 #endif

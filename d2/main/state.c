@@ -62,6 +62,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #include "ai.h"
 #include "d1_in_d2/d1_in_d2_ai.h"
+#include "d1_in_d2/d1_in_d2.h"
 #include "d1_in_d2/d1_in_d2_levels.h"
 #include "fireball.h"
 #include "controls.h"
@@ -98,6 +99,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // Version 36 uses original static AI records for native D1 actors
 // Version 37 appends full-width relative Fusion, refueling and collision clocks
 // Version 38 records the session Guidebot routing algorithm
+// Version 39 binds imported D1 optional asset IDs before the object array
+// Version 40 also binds original base and custom definition sources
 #define STATE_VERSION 38
 #define STATE_GUIDEBOT_ROUTING_VERSION 38
 #define STATE_D1_TRIGGER_STORAGE_VERSION       34
@@ -390,13 +393,14 @@ static void state_write_physics_info(PHYSFS_file *fp, physics_info *phys_info)
 
 static void state_read_physics_info(PHYSFS_file *fp, int swap, physics_info *phys_info)
 {
-	PHYSFSX_readVectorX(fp, &phys_info->velocity, swap);
-	PHYSFSX_readVectorX(fp, &phys_info->thrust, swap);
+	/* Vector helpers use fixed little-endian bytes; raw scalars use save order */
+	PHYSFSX_readVector(&phys_info->velocity, fp);
+	PHYSFSX_readVector(&phys_info->thrust, fp);
 	phys_info->mass = PHYSFSX_readSXE32(fp, swap);
 	phys_info->drag = PHYSFSX_readSXE32(fp, swap);
 	phys_info->brakes = PHYSFSX_readSXE32(fp, swap);
-	PHYSFSX_readVectorX(fp, &phys_info->rotvel, swap);
-	PHYSFSX_readVectorX(fp, &phys_info->rotthrust, swap);
+	PHYSFSX_readVector(&phys_info->rotvel, fp);
+	PHYSFSX_readVector(&phys_info->rotthrust, fp);
 	phys_info->turnroll = (fixang)PHYSFSX_readSXE16(fp, swap);
 	phys_info->flags = (ushort)PHYSFSX_readSXE16(fp, swap);
 }
@@ -623,13 +627,13 @@ static void state_read_morph_state(PHYSFS_file *fp, int swap, int apply)
 
 		for (j = 0; j < MAX_VECS; j++) {
 			vms_vector value;
-			PHYSFSX_readVectorX(fp, &value, swap);
+			PHYSFSX_readVector(&value, fp);
 			if (md)
 				md->morph_vecs[j] = value;
 		}
 		for (j = 0; j < MAX_VECS; j++) {
 			vms_vector value;
-			PHYSFSX_readVectorX(fp, &value, swap);
+			PHYSFSX_readVector(&value, fp);
 			if (md)
 				md->morph_deltas[j] = value;
 		}
@@ -1118,7 +1122,8 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	validation_stage = "Guidebot routing mode";
 	if (version >= STATE_GUIDEBOT_ROUTING_VERSION) {
 		int mode;
-		if (!state_runtime_read_s32(fp, swap, &mode) || !guidebot_routing_valid(mode))
+		/* This field is explicitly little-endian, independent of the save header */
+		if (!state_runtime_read_s32(fp, 0, &mode) || !guidebot_routing_valid(INTEL_INT(mode)))
 			goto done;
 	}
 	valid = 1;
@@ -1222,7 +1227,7 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	if (version >= CADENCE_D2_SAVE_VERSION)
 		cadence_runtime_read(fp, swap, !secret_restore, GameTime64);
 	if (version >= STATE_GUIDEBOT_ROUTING_VERSION) {
-		int mode = PHYSFSX_readSXE32(fp, swap);
+		int mode = PHYSFSX_readInt(fp);
 		if (!secret_restore)
 			guidebot_routing_restore_mode(mode);
 	} else if (!secret_restore)
@@ -2438,7 +2443,8 @@ int state_save_all_sub(char *filename, char *desc)
 	PHYSFS_write(fp, dgss_id, sizeof(char) * 4, 1);
 
 //Save version
-	i = STATE_VERSION;
+	/* Ordinary D2 retains its existing format; only imported D1 adds identity */
+	i = d1_in_d2_use_d1_gameplay() ? D1_IN_D2_SAVE_VERSION : STATE_VERSION;
 	PHYSFS_write(fp, &i, sizeof(int), 1);
 
 // Save Coop state_game_id and this Player's callsign. Oh the redundancy... we have this one later on but Coop games want to read this before loading a state so for easy access save this here, too
@@ -2584,6 +2590,10 @@ int state_save_all_sub(char *filename, char *desc)
 	PHYSFS_write(fp, &cheats.enabled, sizeof(int), 1);
 
 //Save object info
+	if (d1_in_d2_use_d1_gameplay() && !d1_in_d2_write_saved_asset_identity(fp)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
 	i = Highest_object_index+1;
 	PHYSFS_write(fp, &i, sizeof(int), 1);
 	//PHYSFS_write(fp, Objects, sizeof(object), i);
@@ -2951,9 +2961,8 @@ void ShowLevelIntro(int level_num);
 extern void do_cloak_invul_secret_stuff(fix64 old_gametime);
 extern void copy_defaults_to_robot(object *objp);
 
-#ifdef __ANDROID__
 static int restore_requires_menu;
-#ifdef INTROSPECT_ON
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
 static int restore_test_fail_after_hide;
 void state_restore_test_fail_after_hide(void) { restore_test_fail_after_hide = 1; }
 #endif
@@ -2964,6 +2973,7 @@ int state_restore_take_menu_request(void)
 	return requested;
 }
 
+#ifdef __ANDROID__
 static int state_restore_all_sub_impl(char *filename, int secret_restore, int *world_changed);
 int state_restore_all_sub(char *filename, int secret_restore)
 {
@@ -3156,6 +3166,14 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		return 0;
 	}
 
+	if (!d1_in_d2_saved_format_supported(version)) {
+		PHYSFS_close(fp);
+		/* Mission selection may have changed mounts; leave any existing game */
+		if (Game_wind && !window_is_visible(Game_wind)) window_set_visible(Game_wind, 1);
+		restore_requires_menu = Game_wind != NULL;
+		return 0;
+	}
+
 //Read level info
 	current_level = PHYSFSX_readSXE32(fp, swap);
 	PHYSFS_seek(fp, PHYSFS_tell(fp) + sizeof(PHYSFS_sint32)); // skip Next_level_num
@@ -3327,6 +3345,15 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	game_disable_cheats(); // disable cheats first
 	cheats.enabled = PHYSFSX_readSXE32(fp, swap);
 
+	/* Definitions are now prepared, but no saved object references are installed */
+	if (version >= D1_IN_D2_SAVE_VERSION && !d1_in_d2_read_saved_asset_identity(fp, swap)) {
+		PHYSFS_close(fp);
+		/* The fresh world must not run with partly restored player state */
+		if (Game_wind && !window_is_visible(Game_wind)) window_set_visible(Game_wind, 1);
+		restore_requires_menu = 1;
+		return 0;
+	}
+
 	Do_appearance_effect = 0;			// Don't do this for middle o' game stuff.
 
 	//Clear out all the objects from the lvl file
@@ -3388,8 +3415,9 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	for (i=0; i<=Highest_object_index; i++ )	{
 		obj = &Objects[i];
 
-		//look for, and fix, boss with bogus shields
-		if (obj->type == OBJ_ROBOT && Robot_info[obj->id].boss_flag) {
+		//look for, and fix, D2 boss with bogus shields; native D1 preserves saved health
+		if (obj->type == OBJ_ROBOT && Robot_info[obj->id].boss_flag &&
+		    d1_in_d2_ai_actor_role(obj) == D1_AI_ENGINE_ACTOR) {
 			fix save_shields = obj->shields;
 			fix default_shields;
 

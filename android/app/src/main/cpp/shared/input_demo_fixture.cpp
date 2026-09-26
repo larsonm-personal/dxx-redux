@@ -227,6 +227,22 @@ static bool parse_player_cfg(const ordered_json &value,
 			                            &parsed.secondary_order_count, error,
 			                            "player_cfg secondary_order"))
 				return false;
+		} else if (name == "d1_primary_order") {
+			if (!parse_player_cfg_order(it.value(), parsed.d1_primary_order,
+			                            INPUT_DEMO_D1_PRIMARY_ORDER_COUNT,
+			                            &parsed.d1_primary_order_count, error,
+			                            "player_cfg d1_primary_order"))
+				return false;
+			if (parsed.d1_primary_order_count != INPUT_DEMO_D1_PRIMARY_ORDER_COUNT)
+				return fail(error, "player_cfg d1_primary_order has the wrong length");
+		} else if (name == "d1_secondary_order") {
+			if (!parse_player_cfg_order(it.value(), parsed.d1_secondary_order,
+			                            INPUT_DEMO_D1_SECONDARY_ORDER_COUNT,
+			                            &parsed.d1_secondary_order_count, error,
+			                            "player_cfg d1_secondary_order"))
+				return false;
+			if (parsed.d1_secondary_order_count != INPUT_DEMO_D1_SECONDARY_ORDER_COUNT)
+				return fail(error, "player_cfg d1_secondary_order has the wrong length");
 		} else {
 			return fail(error, "unknown player_cfg key: " + name);
 		}
@@ -282,6 +298,17 @@ static bool validate_player_cfg(const input_demo_player_cfg &player_cfg,
 		return fail(error, "metadata player_cfg requires a valid game");
 	if (player_cfg.guidebot_routing_mode > 1)
 		return fail(error, "player_cfg guidebot_routing_mode must be 0 or 1");
+	if (player_cfg.d1_primary_order_count || player_cfg.d1_secondary_order_count) {
+		if (game != "d2")
+			return fail(error, "separate D1 weapon orders require a D2 recording");
+		if (!validate_player_cfg_order(player_cfg.d1_primary_order, player_cfg.d1_primary_order_count,
+		                               d1_primary_domain, INPUT_DEMO_D1_PRIMARY_ORDER_COUNT, error,
+		                               "metadata player_cfg d1_primary_order") ||
+		    !validate_player_cfg_order(player_cfg.d1_secondary_order, player_cfg.d1_secondary_order_count,
+		                               d1_secondary_domain, INPUT_DEMO_D1_SECONDARY_ORDER_COUNT, error,
+		                               "metadata player_cfg d1_secondary_order"))
+			return false;
+	}
 	if (game == "d1") {
 		primary_domain = d1_primary_domain;
 		secondary_domain = d1_secondary_domain;
@@ -321,6 +348,14 @@ static void player_cfg_to_json(const input_demo_player_cfg &player_cfg,
 		secondary.push_back(player_cfg.secondary_order[i]);
 	(*json)["primary_order"] = primary;
 	(*json)["secondary_order"] = secondary;
+	if (player_cfg.d1_primary_order_count) {
+		(*json)["d1_primary_order"] = ordered_json::array();
+		(*json)["d1_secondary_order"] = ordered_json::array();
+		for (i = 0; i < player_cfg.d1_primary_order_count; ++i)
+			(*json)["d1_primary_order"].push_back(player_cfg.d1_primary_order[i]);
+		for (i = 0; i < player_cfg.d1_secondary_order_count; ++i)
+			(*json)["d1_secondary_order"].push_back(player_cfg.d1_secondary_order[i]);
+	}
 }
 
 static bool validate_rng_record(const input_demo_rng_record &record, std::string *error)

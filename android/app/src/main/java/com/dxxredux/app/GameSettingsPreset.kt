@@ -24,6 +24,13 @@ internal enum class GameSettingsPreset(
 
     val originalHoming: Boolean get() = true
 
+    val guidebotRoutingMode: Int
+        get() =
+            when (this) {
+                ORIGINAL -> GuidebotRoutingMode.ORIGINAL
+                DEFAULTS -> GuidebotRoutingMode.ENHANCED
+            }
+
     val mainViewFov: Int get() = 0 // Native base projection (90 degrees)
 
     val skipIntroMovie: Boolean get() = false
@@ -49,6 +56,12 @@ internal enum class GameSettingsPreset(
                 add(PresetSettingPreview("In-game FOV", value = "90 deg (Base)"))
                 add(PresetSettingPreview("Guidebot helper line", helpersEnabled))
                 add(PresetSettingPreview("Persist guidebot goal message", helpersEnabled))
+                add(
+                    PresetSettingPreview(
+                        "Guidebot routing (new games)",
+                        value = if (guidebotRoutingMode == GuidebotRoutingMode.ORIGINAL) "Original" else "Enhanced",
+                    ),
+                )
                 add(PresetSettingPreview("New-server Coop QoL\n(teammate arrows, Guidebot, warp)", serverCoopQol))
                 add(PresetSettingPreview("Rewind support and overlay controls", rewindEnabled))
                 add(PresetSettingPreview("Texture filtering", value = "Nearest"))

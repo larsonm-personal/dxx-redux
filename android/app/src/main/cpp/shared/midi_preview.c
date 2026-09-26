@@ -10,6 +10,7 @@
  */
 
 #include "midi_preview.h"
+#include "pcm_ring.h"
 #include "hmp_android_shared.h"
 #include "hog_midi_catalog.h"
 #include "midi_seek_timeline.h"
@@ -49,54 +50,7 @@
 
 /* ── Ring buffer (same lock-free pattern as cd_preview.c) ────────────── */
 
-#define RB_SHIFT   18
-#define RB_SAMPLES (1 << RB_SHIFT) /* 262144 samples */
-#define RB_MASK    (RB_SAMPLES - 1)
-
-static short s_rb[RB_SAMPLES];
-static volatile int s_rb_wpos = 0;
-static volatile int s_rb_rpos = 0;
-
-static void rb_reset(void)
-{
-	__atomic_store_n(&s_rb_wpos, 0, __ATOMIC_SEQ_CST);
-	__atomic_store_n(&s_rb_rpos, 0, __ATOMIC_SEQ_CST);
-}
-
-static void rb_write(const short *data, int count)
-{
-	unsigned int wpos = (unsigned int) __atomic_load_n(&s_rb_wpos, __ATOMIC_RELAXED);
-	unsigned int idx = wpos & RB_MASK;
-	int first = RB_SAMPLES - (int) idx;
-	if (first > count) first = count;
-	memcpy(&s_rb[idx], data, first * sizeof(short));
-	if (count > first)
-		memcpy(&s_rb[0], data + first, (count - first) * sizeof(short));
-	__atomic_store_n(&s_rb_wpos, (int) (wpos + (unsigned int) count), __ATOMIC_RELEASE);
-}
-
-static int rb_read(short *out, int count)
-{
-	unsigned int wpos = (unsigned int) __atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE);
-	unsigned int rpos = (unsigned int) __atomic_load_n(&s_rb_rpos, __ATOMIC_RELAXED);
-	unsigned int avail = wpos - rpos;
-	if ((int) avail < count) count = (int) avail;
-	if (count <= 0) return 0;
-	unsigned int idx = rpos & RB_MASK;
-	int first = RB_SAMPLES - (int) idx;
-	if (first > count) first = count;
-	memcpy(out, &s_rb[idx], first * sizeof(short));
-	if (count > first)
-		memcpy(out + first, &s_rb[0], (count - first) * sizeof(short));
-	__atomic_store_n(&s_rb_rpos, (int) (rpos + (unsigned int) count), __ATOMIC_RELEASE);
-	return count;
-}
-
-static unsigned int rb_available(void)
-{
-	return (unsigned int) __atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE) -
-	       (unsigned int) __atomic_load_n(&s_rb_rpos, __ATOMIC_ACQUIRE);
-}
+static struct pcm_ring s_rb;
 
 /* ── Playback state ──────────────────────────────────────────────────── */
 
@@ -430,7 +384,7 @@ static void approximate_seek(int target_ms)
 	s_timeline.frame = midi_seek_timeline_frame_for_ms(target_ms, s_output_rate);
 	s_playback_msec = target_ms;
 	pthread_mutex_lock(&s_ring_reset_mutex);
-	rb_reset();
+	pcm_ring_reset(&s_rb);
 	pthread_mutex_unlock(&s_ring_reset_mutex);
 	LOGI("Approximate seek complete: target=%dms events=%d notes=%d",
 	     target_ms, events, notes);
@@ -463,7 +417,7 @@ static void *render_thread_func(void *data)
 		    __atomic_load_n(&s_paused, __ATOMIC_ACQUIRE)) {
 			sleep_usec = 20000;
 		} else {
-			unsigned int space = RB_SAMPLES - rb_available();
+			unsigned int space = PCM_RING_SAMPLES - pcm_ring_available(&s_rb);
 			if (space < CHUNK * 2u) {
 				sleep_usec = 5000;
 			} else {
@@ -474,7 +428,7 @@ static void *render_thread_func(void *data)
 				if (elapsed > max_render_ms) max_render_ms = elapsed;
 				rendered_frames += (unsigned int) got;
 				if (got > 0)
-					rb_write(buf, got * 2);
+					pcm_ring_write(&s_rb, buf, got * 2);
 				stop = !__atomic_load_n(&s_playing, __ATOMIC_ACQUIRE);
 			}
 		}
@@ -483,7 +437,7 @@ static void *render_thread_func(void *data)
 			debug_log_force(DLOG_PROFILING, "MIDI preview Progress: renderer=%s position_ms=%d rendered_frames=%u consumed_frames=%u callbacks=%u underruns=%u queued_frames=%u render_ms=%.3f max_render_ms=%.3f voices=%d first_audio_ms=%u",
 			                music_synth_is_fm(s_tsf) ? "ymfm" : "fluidsynth", (int) s_playback_msec, rendered_frames,
 			                __atomic_load_n(&s_consumed_frames, __ATOMIC_RELAXED), __atomic_load_n(&s_callback_count, __ATOMIC_RELAXED),
-			                __atomic_load_n(&s_underrun_count, __ATOMIC_RELAXED), rb_available() / 2, render_ms, max_render_ms,
+			                __atomic_load_n(&s_underrun_count, __ATOMIC_RELAXED), pcm_ring_available(&s_rb) / 2, render_ms, max_render_ms,
 			                music_synth_active_voice_count(s_tsf), __atomic_load_n(&s_first_audio_ms, __ATOMIC_RELAXED));
 			report_at = preview_now_ms();
 			render_ms = max_render_ms = 0;
@@ -503,7 +457,7 @@ static int render_thread_start(void)
 {
 	if (s_thread_created) return 1;
 	pthread_mutex_lock(&s_ring_reset_mutex);
-	rb_reset();
+	pcm_ring_reset(&s_rb);
 	pthread_mutex_unlock(&s_ring_reset_mutex);
 	__atomic_store_n(&s_render_running, 1, __ATOMIC_SEQ_CST);
 	if (pthread_create(&s_render_tid, NULL, render_thread_func, NULL) == 0) {
@@ -537,7 +491,7 @@ static void osl_callback(SLAndroidSimpleBufferQueueItf bq, void *ctx)
 	if (__atomic_load_n(&s_output_enabled, __ATOMIC_ACQUIRE) &&
 	    pthread_mutex_trylock(&s_ring_reset_mutex) == 0) {
 		if (__atomic_load_n(&s_output_enabled, __ATOMIC_RELAXED))
-			received = rb_read(buf, needed);
+			received = pcm_ring_read(&s_rb, buf, needed);
 		pthread_mutex_unlock(&s_ring_reset_mutex);
 	}
 	if (s_diagnostics && __atomic_load_n(&s_output_enabled, __ATOMIC_ACQUIRE)) {
@@ -882,7 +836,7 @@ static void midi_preview_stop_internal(void)
 		s_midi_buf = NULL;
 		s_midi_buf_len = 0;
 	}
-	rb_reset();
+	pcm_ring_reset(&s_rb);
 	s_duration_ms = 0;
 	s_hmp_end_ms = 0;
 	s_playback_msec = 0.0;

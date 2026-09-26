@@ -211,6 +211,18 @@ class TouchOverlayView
                 invalidate()
             }
 
+        /** Effective session policy, including restored saves and the co-op host's choice */
+        var enhancedGuidebotRouting: Boolean = true
+            set(value) {
+                if (field == value) return
+                releaseAllButtons()
+                resetAllSticks()
+                closeRemainingActions()
+                field = value
+                recomputeRemainingActionGeometry()
+                invalidate()
+            }
+
         /** Whether the overlay should be visible and active. */
         var isActive: Boolean = false
             set(value) {
@@ -403,7 +415,7 @@ class TouchOverlayView
             pressed: Boolean,
             sourceTag: String = "touch",
         ) {
-            if (pressed && !touchBindingEnabled(binding, rewindSupportEnabled)) return
+            if (pressed && !touchBindingEnabled(binding, rewindSupportEnabled, enhancedGuidebotRouting)) return
             if (TouchBindings.isMetaAction(binding)) {
                 metaActionCallback?.invoke(binding, pressed)
                 return
@@ -1141,6 +1153,7 @@ class TouchOverlayView
                         controllerBoundBindings = controllerBoundActionBindingsProvider?.invoke() ?: emptySet(),
                         workingControllerInUse = workingControllerInUseProvider?.invoke() == true,
                         rewindEnabled = rewindSupportEnabled,
+                        enhancedGuidebotRouting = enhancedGuidebotRouting,
                     ),
                 gamepadOnlyMode = gamepadOnlyMode,
                 controllerAdminActions = remainingAdminActionsProvider?.invoke() ?: emptyList(),
@@ -1662,7 +1675,7 @@ class TouchOverlayView
             )
 
         private fun buttonVisibleInCurrentMode(b: ButtonState): Boolean {
-            if (!touchBindingEnabled(b.control.binding, rewindSupportEnabled)) return false
+            if (!touchBindingEnabled(b.control.binding, rewindSupportEnabled, enhancedGuidebotRouting)) return false
             if (gameVariant == "d1" && b.control.binding in TouchBindings.D2_ONLY_BUTTONS) return false
             return !automapActive || automapTouchButtonVisible(b.control.binding)
         }
@@ -1689,7 +1702,8 @@ class TouchOverlayView
         }
 
         private fun stickBindingVisibleInCurrentMode(binding: Int): Boolean =
-            touchBindingEnabled(binding, rewindSupportEnabled) && (!automapActive || automapTouchButtonVisible(binding))
+            touchBindingEnabled(binding, rewindSupportEnabled, enhancedGuidebotRouting) &&
+                (!automapActive || automapTouchButtonVisible(binding))
 
         private fun touchBindingAllowedInCurrentMode(binding: Int): Boolean {
             if (gameVariant == "d1" &&
@@ -3877,7 +3891,7 @@ class TouchOverlayView
             seg: RadialSegment?,
             binding: Int,
         ) {
-            if (!touchBindingEnabled(binding, rewindSupportEnabled)) return
+            if (!touchBindingEnabled(binding, rewindSupportEnabled, enhancedGuidebotRouting)) return
             val isAction = seg?.bindingType == "action"
             if (binding >= 0) {
                 if (TouchBindings.isMetaAction(binding)) {
@@ -3903,6 +3917,12 @@ class TouchOverlayView
                 visibleRadialSegments(rm).firstOrNull { it.label.contains(text, ignoreCase = true) } ?: return false
             dispatchRadialBinding(seg, seg.binding)
             return true
+        }
+
+        internal fun visibleRadialBindings(menuId: String): List<Int> {
+            val menu =
+                radialStates.firstOrNull { it.control.id.equals(menuId, ignoreCase = true) } ?: return emptyList()
+            return visibleRadialSegments(menu).map { it.binding }
         }
 
         private fun releaseRadialMenu(
@@ -3952,7 +3972,7 @@ class TouchOverlayView
                         rm.control.segments
                     }
                 }
-            return segments.filter { touchBindingEnabled(it.binding, rewindSupportEnabled) }
+            return segments.filter { touchBindingEnabled(it.binding, rewindSupportEnabled, enhancedGuidebotRouting) }
         }
 
         private fun keycodeToUnicode(keycode: Int): Int =

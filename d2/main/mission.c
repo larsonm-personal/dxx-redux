@@ -1093,10 +1093,15 @@ int load_mission_by_name(char *mission_name)
 int load_mission_by_name_from_current_dir(char *mission_name)
 {
 	char descriptor[FILENAME_LEN];
+	snprintf(descriptor, sizeof(descriptor), "%s.mn2", mission_name);
+	return load_mission_from_current_dir(descriptor);
+}
+
+int load_mission_from_current_dir(char *descriptor)
+{
 	mle mission = { 0 };
 	int loaded;
 
-	snprintf(descriptor, sizeof(descriptor), "%s.mn2", mission_name);
 	if (!read_mission_file(&mission, descriptor, ML_CURDIR))
 		return 0;
 	loaded = load_mission(&mission);

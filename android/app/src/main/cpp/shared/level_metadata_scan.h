@@ -10,6 +10,7 @@ extern "C" {
 #define LEVEL_METADATA_MAX_SEGMENTS                         9000
 #define LEVEL_METADATA_MAX_WALLS                            254
 #define LEVEL_METADATA_MAX_TRIGGERS                         100
+#define LEVEL_METADATA_MAX_TRIGGER_ACTIONS                  16
 #define LEVEL_METADATA_MAX_OBJECTS                          1000
 #define LEVEL_METADATA_MAX_SIDES                            6
 #define LEVEL_METADATA_MAX_TARGETS                          512
@@ -17,7 +18,7 @@ extern "C" {
 #define LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES       16
 #define LEVEL_METADATA_MAX_ROUTE_LINKS                      10
 #define LEVEL_METADATA_ROUTE_LABEL_LEN                      64
-#define LEVEL_METADATA_ROUTE_TRIGGER_TYPE_LEN               24
+#define LEVEL_METADATA_ROUTE_TRIGGER_TYPE_LEN               96
 #define LEVEL_METADATA_KEY_MASK_BLUE                        (1 << 0)
 #define LEVEL_METADATA_KEY_MASK_RED                         (1 << 1)
 #define LEVEL_METADATA_KEY_MASK_GOLD                        (1 << 2)
@@ -234,6 +235,8 @@ typedef struct level_metadata_scan_view {
 	int (*triggered_side_opener_count)(void *user, int seg, int side);
 	int (*triggered_side_opener_wall_num)(void *user, int seg, int side, int index);
 	int (*trigger_type)(void *user, int trigger_num);
+	/* Optional ordered action list; single-action views use trigger_type */
+	int (*trigger_action_types)(void *user, int trigger_num, int types[LEVEL_METADATA_MAX_TRIGGER_ACTIONS]);
 	int (*trigger_flags)(void *user, int trigger_num);
 	int (*trigger_was_activated)(void *user, int trigger_num);
 	int (*trigger_link_count)(void *user, int trigger_num);
@@ -255,6 +258,10 @@ typedef struct level_metadata_scan_view {
 	void *cancel_user;
 	level_metadata_cancel_callback cancelled;
 } level_metadata_scan_view;
+
+int level_metadata_trigger_has_action(const level_metadata_scan_view *view, int trigger_num, int type);
+/* Last linked navigation effect; terminal exits have no intermediate effect */
+int level_metadata_trigger_effect_type(const level_metadata_scan_view *view, int trigger_num);
 
 typedef struct level_metadata_unexplored_route {
 	int component_size;

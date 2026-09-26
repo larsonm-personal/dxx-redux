@@ -1293,14 +1293,12 @@ int game_handler(window *wind, d_event *event, void *data)
 	    event->type != EVENT_WINDOW_DEACTIVATED)
 		return 1;
 #endif
-#ifdef __ANDROID__
 	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
 	    state_restore_take_menu_request()) {
 		set_screen_mode(SCREEN_MENU);
 		window_close(wind);
 		return 1;
 	}
-#endif
 
 	data = data;
 

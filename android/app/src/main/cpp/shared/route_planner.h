@@ -104,7 +104,7 @@ struct route_trigger_source {
 	int source_segment = -1;
 	int source_side = -1;
 	int trigger = -1;
-	route_trigger_kind trigger_kind = route_trigger_kind::other;
+	std::vector<route_trigger_kind> trigger_actions;
 	route_position source_position;
 };
 

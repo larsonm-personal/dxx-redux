@@ -61,7 +61,7 @@ if ($D2DataDirectory) {
     if ($control.Count -ne 3) { throw 'Incomplete ordinary D2 cadence persistence control' }
     Write-Output "PASS: $($control.Count) ordinary D2 loaded-world save/restore cases retain full-width relative cadence clocks"
     $deaths = Get-Content -LiteralPath (Join-Path $outputPath 'imported/death-d2.json') -Raw | ConvertFrom-Json
-    if ($deaths.Count -ne 7) { throw 'Incomplete ordinary D2 death lifecycle control' }
+    if ($deaths.Count -ne 12) { throw 'Incomplete ordinary D2 death lifecycle control' }
     Write-Output 'PASS: ordinary D2 consecutive deaths, early dismissal and checkpoint rejection'
 }
 Write-Output "Campaign traces: $outputPath"

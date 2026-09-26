@@ -781,6 +781,7 @@ class ParityTests(unittest.TestCase):
     def world_trace(self, name):
         example = schema_example
         state = example(parity.WORLD_SCHEMA)
+        state["exploding_walls"] = {"capacity": 10, "slots": {}}
         ai = state["ai"]
         ai["local_capacity"] = 1000
         ai["local_default"].update(last_see_time=0, last_attack_time=0, wait_time=0)
@@ -798,15 +799,99 @@ class ParityTests(unittest.TestCase):
         def boundary(phase, frame):
             rows.append({**self.object_storage(), "type": "object_boundary", "version": 2, "phase": phase,
                          "f": frame, "reset": True})
-            rows.append({"type": "world_boundary", "version": 8, "phase": phase,
+            rows.append({"type": "world_boundary", "version": 10, "phase": phase,
                          "f": frame, "reset": True, "state": copy.deepcopy(state)})
 
         boundary("restored", 0)
         for frame in range(2):
-            rows.append({"type": "world_state", "version": 8, "f": frame,
+            rows.append({"type": "world_state", "version": 10, "f": frame,
                          "reset": frame == 0, "state": copy.deepcopy(state) if frame == 0 else {}})
         boundary("terminal", 2)
         return self.write(name, rows)
+
+    def test_pending_selection_and_death_gameplay_are_compared(self):
+        a = self.world_trace("runtime-native")
+        def populate(rows):
+            for row in rows:
+                if row.get("type") in ("world_state", "world_boundary") and row["state"]:
+                    row["state"]["weapons"].update(PrimaryWeaponPickedUp=1, SecondaryWeaponPickedUp=1,
+                                                 delayed_primary_autoselect_weapon_index=16,
+                                                 delayed_secondary_autoselect_weapon_index=4)
+                    row["state"]["death"].update(active=1, elapsed=2 * 65536, saved_flags=2, saved_control=4)
+        self.mutate(a, populate)
+        baseline = list(parity.records(a))
+        b = self.write("runtime-imported", copy.deepcopy(baseline))
+        def translate(rows):
+            for row in rows:
+                if row.get("type") in ("world_state", "world_boundary") and row["state"]:
+                    self.import_world_storage(row["state"])
+        self.mutate(b, translate)
+        self.assertEqual(parity.compare_world(a, b, self.header, "d2")["status"], "pass")
+        changes = [("weapons", key, value) for key, value in (
+            ("PrimaryWeaponPickedUp", 0), ("SecondaryWeaponPickedUp", 0),
+            ("delayed_primary_autoselect_weapon_index", -1), ("delayed_secondary_autoselect_weapon_index", 3))]
+        changes += [("death", key, value) for key, value in (
+            ("exploded", 1), ("eggs_dropped", 1), ("aborted", 1), ("elapsed", 2 * 65536 + 1),
+            ("saved_flags", 0), ("saved_control", 5))]
+        for group, key, value in changes:
+            for index in (2, 4, 6):
+                with self.subTest(group=group, field=key, record=index):
+                    rows = copy.deepcopy(baseline)
+                    if index == 4:
+                        rows[index]["state"][group] = copy.deepcopy(rows[2]["state"][group])
+                    rows[index]["state"][group][key] = value
+                    b = self.write("runtime-changed", rows)
+                    self.assertEqual(parity.compare_world(a, b, self.header)["status"], "fail")
+
+    def test_pending_selection_and_death_contract_rejects_incomplete_state(self):
+        a = self.world_trace("runtime-native")
+        changes = [("weapons", key, value) for key, value in (
+            ("PrimaryWeaponPickedUp", 2), ("SecondaryWeaponPickedUp", -1),
+            ("delayed_primary_autoselect_weapon_index", 5), ("delayed_primary_autoselect_weapon_index", -2),
+            ("delayed_secondary_autoselect_weapon_index", 16))]
+        changes += [("death", key, value) for key, value in (
+            ("active", 2), ("exploded", -1), ("eggs_dropped", 2), ("elapsed", -1),
+            ("elapsed", 1), ("aborted", 1), ("saved_flags", 256), ("saved_control", 4))]
+        baseline = list(parity.records(a))
+        for group, key, value in changes:
+            for missing in (False, True):
+                rows = copy.deepcopy(baseline)
+                if missing:
+                    del rows[-1]["state"][group][key]
+                else:
+                    rows[-1]["state"][group][key] = value
+                b = self.write("runtime-invalid", rows)
+                with self.subTest(group=group, field=key, missing=missing), self.assertRaises(parity.EvidenceError):
+                    parity.compare_world(a, b, self.header)
+        rows = copy.deepcopy(baseline)
+        rows[-1]["version"] = 9
+        with self.assertRaises(parity.EvidenceError):
+            parity.compare_world(a, self.write("old-runtime", rows), self.header)
+
+    def test_wall_blast_lifetime_is_required_and_compared(self):
+        a = self.world_trace("blast-a")
+        def populate(rows):
+            for row in rows:
+                if row.get("type") in ("world_state", "world_boundary") and row["state"]:
+                    row["state"]["segments"] = [schema_example(parity.WORLD_SCHEMA["segments"][0])]
+                    row["state"]["exploding_walls"]["slots"] = {"9": [0, 4, 32768]}
+        self.mutate(a, populate)
+        for group in ({"capacity": 10, "slots": {"9": [0, 4, 32769]}},
+                      {"capacity": 10, "slots": {}}):
+            b = self.world_trace("blast-b")
+            self.mutate(b, populate)
+            self.mutate(b, lambda rows: rows[-1]["state"].update(exploding_walls=group))
+            self.assertEqual(parity.compare_world(a, b, self.header)["status"], "fail")
+        for mutation in (lambda rows: rows[-1]["state"].pop("exploding_walls"),
+                         lambda rows: rows[-1].update(version=8),
+                         lambda rows: rows[-1]["state"]["exploding_walls"].update(capacity=9),
+                         lambda rows: rows[-1]["state"]["exploding_walls"].update(slots={"10": [0, 4, 0]}),
+                         lambda rows: rows[-1]["state"]["exploding_walls"].update(slots={"0": [0, 4, 65537]})):
+            b = self.world_trace("blast-b")
+            self.mutate(b, populate)
+            self.mutate(b, mutation)
+            with self.assertRaises(parity.EvidenceError):
+                parity.compare_world(a, b, self.header)
 
     def test_world_deltas_and_both_boundaries_are_required(self):
         a, b = self.world_trace("world-a"), self.world_trace("world-b")

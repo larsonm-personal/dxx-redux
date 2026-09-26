@@ -156,22 +156,13 @@ function Push-VerifiedDeviceFile {
 }
 
 function Test-EmulatorHealthy {
-    # Check if emulator process is running, adb sees it, and shell responds.
-    $emuProc = Get-Process -ErrorAction SilentlyContinue | Where-Object {
-        $_.ProcessName -match 'qemu-system|emulator' -and (-not $_.Path -or $_.Path -match 'android|emulator')
-    }
-    if (-not $emuProc) { return $false }
-    $devices = Adb-Timeout -AdbArgs "devices" -Seconds 5
-    if ($devices -notmatch 'emulator-\d+\s+device') { return $false }
-    $boot = Adb-Timeout -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 10
-    if ($null -eq $boot -or $boot -ne "1") { return $false }
-    $packageService = Adb-Timeout -AdbArgs @("shell", "cmd", "package", "list", "packages", "android") -Seconds 10
-    if ($null -eq $packageService -or
-        $packageService -match 'Can''t find service: package' -or
-        $packageService -notmatch 'package:android') {
-        return $false
-    }
-    return $true
+    param([string]$Serial = $env:ANDROID_SERIAL)
+    if (-not $Serial) { $Serial = $script:PRIMARY_EMULATOR_SERIAL }
+    if (-not (Test-DeviceOnline -Serial $Serial)) { return $false }
+    $boot = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 5
+    if ($boot -ne "1") { return $false }
+    $packages = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "cmd", "package", "list", "packages", "android") -Seconds 5
+    return ($packages -and $packages -match '(?m)^package:android\r?$')
 }
 
 function Test-AppPackageInstalled {
@@ -239,7 +230,7 @@ function Ensure-EmulatorHealthy {
             Write-Status "Emulator healthy" "Green"
             return $true
         }
-        Restart-AdbServer
+        Reconnect-AdbDevice
         if (Test-EmulatorReadyForTests) {
             Write-Status "Emulator healthy" "Green"
             return $true
@@ -262,12 +253,11 @@ function Ensure-EmulatorHealthy {
     return $true
 }
 
-function Restart-AdbServer {
-    Write-Status "Restarting ADB server..." "DarkGray"
-    Get-Process adb -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 1
-    Adb-Timeout -AdbArgs "start-server" -Seconds 10 | Out-Null
-    Start-Sleep -Seconds 2
+function Reconnect-AdbDevice {
+    param([string]$Serial = $env:ANDROID_SERIAL)
+    if (-not $Serial) { $Serial = $script:PRIMARY_EMULATOR_SERIAL }
+    Write-Status "Reconnecting ADB transport for $Serial" "DarkGray"
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @("reconnect") -Seconds 10 | Out-Null
 }
 
 function Confirm-EmulatorHealthWithAdbRecovery {
@@ -282,7 +272,7 @@ function Confirm-EmulatorHealthWithAdbRecovery {
     if (Test-EmulatorHealthy) { return $true }
 
     Write-Status "Health check still failing, resetting ADB transport..." "Yellow"
-    Restart-AdbServer
+    Reconnect-AdbDevice
     return Test-EmulatorHealthy
 }
 
@@ -293,10 +283,10 @@ function Invoke-LauncherStartupRecovery {
     )
 
     Write-Status "$Reason -- restarting emulator for launcher recovery" "Yellow"
-    Restart-AdbServer
+    Reconnect-AdbDevice
 
     $healthScript = Join-Path $PSScriptRoot "emu_health.ps1"
-    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds $TimeoutSeconds -AvdName $script:PRIMARY_AVD_NAME
+    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds $TimeoutSeconds -PreferredSerial $env:ANDROID_SERIAL
     $emuExit = $LASTEXITCODE
     if ($emuExit -ne 0 -and $emuExit -ne 2) {
         Write-Status "Launcher recovery failed: emulator restart exit $emuExit" "Red"
@@ -540,7 +530,7 @@ function Adb-Dev-Timeout {
 function Test-DeviceOnline {
     param([string]$Serial)
     $devices = Adb-Timeout -AdbArgs "devices" -Seconds 5
-    return $devices -match "$Serial\s+device"
+    return $devices -match "(?m)^$([regex]::Escape($Serial))\s+device\b"
 }
 
 function Send-MpCommand {
@@ -2312,13 +2302,15 @@ function Write-ManagedEmulatorLogTail {
 function Start-ManagedEmulatorProcess {
     param(
         [Parameter(Mandatory)][string]$AvdName,
+        [Parameter(Mandatory)][string]$Serial,
         [string]$GpuRenderer = "host",
         [switch]$Headless
     )
 
     $logs = Get-ManagedEmulatorLaunchLogPaths -AvdName $AvdName
     Remove-Item -LiteralPath $logs.Stdout, $logs.Stderr -ErrorAction SilentlyContinue
-    $arguments = @("-avd", $AvdName, "-no-snapshot-load", "-no-snapshot-save", "-gpu", $GpuRenderer, "-crash-report-mode", "disabled")
+    $port = Get-ManagedEmulatorPort -Serial $Serial
+    $arguments = @("-avd", $AvdName, "-port", "$port", "-no-snapshot-load", "-no-snapshot-save", "-gpu", $GpuRenderer, "-crash-report-mode", "disabled")
     if ($Headless) {
         $arguments += "-no-window"
     }
@@ -2351,13 +2343,59 @@ function Start-ManagedEmulatorProcess {
     }
 }
 
-function Invoke-StaleEmulatorCleanupHelper {
-    $cleanupScript = Join-Path $PSScriptRoot "kill-stale-emulators.ps1"
-    if (-not (Test-Path -LiteralPath $cleanupScript)) {
-        return
+function Get-ManagedEmulatorProcesses {
+    param([Parameter(Mandatory)][string]$Serial)
+    $port = Get-ManagedEmulatorPort -Serial $Serial
+    $pattern = "(?:^|\s)-ports?\s+$port(?:,\d+)?(?:\s|$)"
+    if (Test-RegressionWindowsHost) {
+        return @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
+                $_.Name -match '^(emulator|qemu-system.*)\.exe$' -and $_.CommandLine -match $pattern
+            } | Select-Object ProcessId)
     }
+    return @(& /bin/ps -axo 'pid=,args=' | ForEach-Object {
+            if ($_ -match '^\s*(\d+)\s+(.*)$') {
+                $processId = [int]$Matches[1]
+                $commandLine = $Matches[2]
+                if ($commandLine -match '(?:^|/)emulator\s|qemu-system' -and $commandLine -match $pattern) {
+                    [pscustomobject]@{ ProcessId = $processId }
+                }
+            }
+        })
+}
 
-    & $cleanupScript -Kill | ForEach-Object { Write-Status "  $_" "DarkGray" }
+function Get-ManagedEmulatorPort {
+    param([Parameter(Mandatory)][string]$Serial)
+    if ($Serial -notmatch '^emulator-(\d+)$') { throw "Expected an emulator serial, got '$Serial'" }
+    $port = [int]$Matches[1]
+    if ($port -lt 5554 -or $port -gt 5682 -or ($port % 2)) { throw "Invalid emulator console port: $port" }
+    return $port
+}
+
+function Stop-ManagedEmulator {
+    param([Parameter(Mandatory)][string]$Serial)
+    # Capture only this console port before asking ADB to shut it down
+    $processes = @(Get-ManagedEmulatorProcesses -Serial $Serial)
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @("emu", "kill") -Seconds 5 | Out-Null
+    foreach ($entry in $processes) {
+        $process = Get-Process -Id $entry.ProcessId -ErrorAction SilentlyContinue
+        if ($process) {
+            if (-not $process.WaitForExit(3000)) {
+                # Recheck the command line before force-stopping a surviving PID
+                if (Get-ManagedEmulatorProcesses -Serial $Serial | Where-Object { $_.ProcessId -eq $entry.ProcessId }) {
+                    Stop-Process -Id $entry.ProcessId -Force -ErrorAction SilentlyContinue
+                }
+            }
+            $process.Dispose()
+        }
+    }
+    $deadline = [DateTime]::UtcNow.AddSeconds(10)
+    do {
+        if (-not (Test-DeviceOnline -Serial $Serial) -and @(Get-ManagedEmulatorProcesses -Serial $Serial).Count -eq 0) {
+            return $true
+        }
+        Start-Sleep -Milliseconds 250
+    } while ([DateTime]::UtcNow -lt $deadline)
+    return $false
 }
 
 function Test-EmulatorAccelerationAvailable {
@@ -2405,9 +2443,19 @@ function Start-ManagedEmulator {
         [Parameter(Mandatory)][string]$AvdName,
         [Parameter(Mandatory)][string]$Serial,
         [int]$AppearTimeoutSeconds = 90,
-        [int]$BootTimeoutSeconds = 240
+        [int]$BootTimeoutSeconds = 240,
+        [string]$GpuRenderer = "host",
+        [switch]$Headless
     )
 
+    Get-ManagedEmulatorPort -Serial $Serial | Out-Null
+    if (Test-DeviceOnline -Serial $Serial) {
+        return Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $BootTimeoutSeconds
+    }
+    if (@(Get-ManagedEmulatorProcesses -Serial $Serial).Count -gt 0) {
+        Write-Status "FAIL: $Serial already has a process; recover that serial before launching" "Red"
+        return $false
+    }
     if (-not (Test-Path $script:EMULATOR_EXE)) {
         Write-Status "FAIL: emulator not found at $script:EMULATOR_EXE" "Red"
         return $false
@@ -2420,13 +2468,13 @@ function Start-ManagedEmulator {
     }
 
     $launches = @(
-        @{ GpuRenderer = "host"; Headless = $false; Label = "host gpu" },
+        @{ GpuRenderer = $GpuRenderer; Headless = [bool]$Headless; Label = $GpuRenderer },
         @{ GpuRenderer = "swiftshader_indirect"; Headless = $true; Label = "swiftshader_indirect no-window" }
     )
 
     foreach ($launch in $launches) {
         Write-Status "  Starting $AvdName ($Serial, $($launch.Label))..." "Yellow"
-        if (-not (Start-ManagedEmulatorProcess -AvdName $AvdName -GpuRenderer $launch.GpuRenderer -Headless:$launch.Headless)) {
+        if (-not (Start-ManagedEmulatorProcess -AvdName $AvdName -Serial $Serial -GpuRenderer $launch.GpuRenderer -Headless:$launch.Headless)) {
             Write-ManagedEmulatorLogTail -AvdName $AvdName
             continue
         }
@@ -2442,7 +2490,7 @@ function Start-ManagedEmulator {
         if (-not (Test-DeviceOnline -Serial $Serial)) {
             Write-Status "  $Serial did not appear in adb after ${AppearTimeoutSeconds}s" "Yellow"
             Write-ManagedEmulatorLogTail -AvdName $AvdName
-            Invoke-StaleEmulatorCleanupHelper
+            if (-not (Stop-ManagedEmulator -Serial $Serial)) { return $false }
             continue
         }
 
@@ -2454,7 +2502,7 @@ function Start-ManagedEmulator {
 
         Write-Status "  $Serial did not boot within ${BootTimeoutSeconds}s" "Yellow"
         Write-ManagedEmulatorLogTail -AvdName $AvdName
-        Invoke-StaleEmulatorCleanupHelper
+        if (-not (Stop-ManagedEmulator -Serial $Serial)) { return $false }
     }
 
     Write-Status "FAIL: $Serial did not start from $AvdName" "Red"
@@ -2462,15 +2510,7 @@ function Start-ManagedEmulator {
 }
 
 function Start-SingleEmulator {
-    # Start EMU1 (Nexus5X_Light_1) if not already running. Returns $true on success.
-    if (Test-DeviceOnline -Serial $script:PRIMARY_EMULATOR_SERIAL) { return $true }
-    Write-Status "Starting emulator ($script:PRIMARY_AVD_NAME)..." "Yellow"
-    $healthScript = Join-Path $PSScriptRoot "emu_health.ps1"
-    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 180 -AvdName $script:PRIMARY_AVD_NAME
-    $ec = $LASTEXITCODE
-    if (($ec -eq 0 -or $ec -eq 2) -and (Test-DeviceOnline -Serial $script:PRIMARY_EMULATOR_SERIAL)) { return $true }
-    Write-Status "FAIL: Could not start emulator" "Red"
-    return $false
+    return Start-ManagedEmulator -AvdName $script:PRIMARY_AVD_NAME -Serial $script:PRIMARY_EMULATOR_SERIAL
 }
 
 function Start-SecondEmulator {

@@ -35,6 +35,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "switch.h"
 #include "game.h"
 #include "effects.h"
+#include "fireball.h"
 #include "endlevel.h"
 #include "newmenu.h"
 #include "fuelcen.h"
@@ -90,7 +91,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
-#define STATE_VERSION CADENCE_D1_SAVE_VERSION
+#define STATE_VERSION EXPLODING_WALL_D1_SAVE_VERSION
 #define STATE_AUTOSELECT_RUNTIME_VERSION 17
 #define STATE_COMPATIBLE_VERSION 6
 #define STATE_RUNTIME_VERSION 8
@@ -121,6 +122,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 13- Save difficulty change history for mid-level difficulty edits
 // 14- Save generated secret-area found bits
 // 18- Save full-width relative Fusion, refueling and collision cadence clocks
+// 19- Save active wall blasts, including passability and damaging-blast timing
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
@@ -183,6 +185,7 @@ static int g_android_save_blank_thumbnail = 0;
 #endif
 
 #include "autoselect_runtime.h"
+#include "exploding_wall_runtime.h"
 #include "cadence_runtime.h"
 
 static fix state_time_to_delta_fix(fix64 time_value)
@@ -247,13 +250,14 @@ static void state_write_physics_info(PHYSFS_file *fp, physics_info *phys_info)
 
 static void state_read_physics_info(PHYSFS_file *fp, int swap, physics_info *phys_info)
 {
-	PHYSFSX_readVectorX(fp, &phys_info->velocity, swap);
-	PHYSFSX_readVectorX(fp, &phys_info->thrust, swap);
+	/* Vector helpers use fixed little-endian bytes; raw scalars use save order */
+	PHYSFSX_readVector(&phys_info->velocity, fp);
+	PHYSFSX_readVector(&phys_info->thrust, fp);
 	phys_info->mass = PHYSFSX_readSXE32(fp, swap);
 	phys_info->drag = PHYSFSX_readSXE32(fp, swap);
 	phys_info->brakes = PHYSFSX_readSXE32(fp, swap);
-	PHYSFSX_readVectorX(fp, &phys_info->rotvel, swap);
-	PHYSFSX_readVectorX(fp, &phys_info->rotthrust, swap);
+	PHYSFSX_readVector(&phys_info->rotvel, fp);
+	PHYSFSX_readVector(&phys_info->rotthrust, fp);
 	phys_info->turnroll = (fixang)PHYSFSX_readSXE16(fp, swap);
 	phys_info->flags = (ushort)PHYSFSX_readSXE16(fp, swap);
 }
@@ -461,13 +465,13 @@ static void state_read_morph_state(PHYSFS_file *fp, int swap)
 
 		for (j = 0; j < MAX_VECS; j++) {
 			vms_vector value;
-			PHYSFSX_readVectorX(fp, &value, swap);
+			PHYSFSX_readVector(&value, fp);
 			if (md)
 				md->morph_vecs[j] = value;
 		}
 		for (j = 0; j < MAX_VECS; j++) {
 			vms_vector value;
-			PHYSFSX_readVectorX(fp, &value, swap);
+			PHYSFSX_readVector(&value, fp);
 			if (md)
 				md->morph_deltas[j] = value;
 		}
@@ -614,6 +618,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	secret_area_write_runtime_state(fp);
 	autoselect_write_runtime_state(fp);
 	cadence_runtime_write(fp, GameTime64);
+	exploding_wall_runtime_write(fp);
 }
 
 /* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
@@ -863,6 +868,10 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	if (version >= CADENCE_D1_SAVE_VERSION &&
 	    !cadence_runtime_read(fp, swap, 0, GameTime64))
 		goto done;
+	validation_stage = "exploding walls";
+	if (version >= EXPLODING_WALL_D1_SAVE_VERSION &&
+	    !exploding_wall_runtime_read(fp, swap, 0))
+		goto done;
 	valid = 1;
 done:
 	if (!valid)
@@ -974,6 +983,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
 		autoselect_read_runtime_state(fp, swap, 1);
 	if (version >= CADENCE_D1_SAVE_VERSION)
 		cadence_runtime_read(fp, swap, 1, GameTime64);
+	if (version >= EXPLODING_WALL_D1_SAVE_VERSION)
+		exploding_wall_runtime_read(fp, swap, 1);
 }
 
 static int state_thumbnail_has_palette(int version)

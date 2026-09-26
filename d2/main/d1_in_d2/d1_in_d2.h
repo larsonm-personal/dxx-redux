@@ -7,6 +7,11 @@
 #ifndef _D1_IN_D2_H
 #define _D1_IN_D2_H
 
+#include <stdint.h>
+
+/* Known unsupported base layouts; NULL means the full reader must validate it */
+const char *d1_in_d2_source_edition_error(int64_t pig_size);
+
 typedef struct d1_in_d2_asset_stats {
 	int effects_active;
 	int effects_loaded;
@@ -66,7 +71,15 @@ void d1_in_d2_restore_base_resources(void);
  * Call at a load boundary with the old world no longer executing */
 int d1_in_d2_load_mission_assets(void);
 int d1_in_d2_has_native_assets(void);
+/* Current published level's source flags, independent of renderer/paging state */
+int d1_in_d2_read_level_bitmap_flags(int *flags, int capacity);
+/* Restore converted-light paging before piggy frees its replacement arena */
+void d1_in_d2_reset_bitmap_replacements(void);
 void d1_in_d2_release_assets(void);
+
+/* Shared save/demo namespace: native definitions followed by optional mapping */
+int d1_in_d2_capture_asset_identity(uint8_t identity[64]);
+const char *d1_in_d2_check_asset_identity(const uint8_t *identity, int length);
 
 void d1_in_d2_get_stats(d1_in_d2_asset_stats *stats);
 int d1_in_d2_ensure_spawnable_guidebot(void);

@@ -49,6 +49,7 @@ int d1_in_d2_prepare_sound_output(d1_sound_generation *bank, int target_rate);
 
 typedef struct d1_asset_generation {
 	struct d1_guidebot_assets *guidebot;
+	ubyte base_identity[32], definition_identity[32];
 	d1_custom_texture_stats custom_stats;
 	bitmap_index textures[D1_MAX_PIG_TEXTURES];
 	tmap_info texture_info[D1_MAX_PIG_TEXTURES];
@@ -119,6 +120,12 @@ int d1_in_d2_validate_guidebot_extension(const d1_asset_generation *base);
 int d1_in_d2_prepare_guidebot_output(d1_guidebot_assets *assets, int target_rate);
 void d1_in_d2_publish_guidebot_extension(d1_asset_generation *base);
 int d1_in_d2_guidebot_owns_model(int model_num);
+/* Source bytes and explicit source-to-runtime mapping, never struct memory */
+int d1_in_d2_hash_guidebot_source(const d1_guidebot_source *source, const int mapping[][MAX_BITMAP_FILES], size_t kinds, ubyte digest[32]);
+const ubyte *d1_in_d2_guidebot_identity(void);
+int d1_in_d2_hash_base_source(const char *pig, const char *palette, ubyte digest[32]);
+int d1_in_d2_hash_custom_sources(const ubyte base[32], const char *const paths[3], ubyte digest[32]);
+const ubyte *d1_in_d2_definition_identity(void);
 /* Original egg radius uses ObjId[OBJ_ROBOT], not the dropped robot's ID */
 fix d1_in_d2_robot_drop_radius(void);
 int d1_in_d2_native_texture_count(void);

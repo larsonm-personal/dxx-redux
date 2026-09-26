@@ -115,6 +115,9 @@ extern trigger Triggers[MAX_TRIGGERS];
 
 extern int Num_triggers;
 
+// Return TRIGGER_EXIT/TRIGGER_SECRET_EXIT actions, independent of activation state
+int trigger_exit_flags(int trigger_num);
+
 extern void trigger_init();
 extern void check_trigger(segment *seg, short side, short objnum,int shot);
 extern int check_trigger_sub(int trigger_num, int player_num,int shot);

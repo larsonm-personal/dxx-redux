@@ -138,6 +138,7 @@ extern Mission *Current_mission; // current mission
 //Returns true if mission loaded ok, else false.
 int load_mission_by_name (char *mission_name);
 int load_mission_by_name_from_current_dir(char *mission_name);
+int load_mission_from_current_dir(char *descriptor);
 
 /* D2 HAM/sound/extra-robot loading service; caller owns profile transition and
  * has released old polygon models. Does not select or prepare D1 assets */

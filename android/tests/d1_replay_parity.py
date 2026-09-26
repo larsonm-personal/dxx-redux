@@ -519,14 +519,14 @@ def safe_check(operation):
 
 WORLD_GROUPS = ("globals", "tick", "players", "weapons", "walls", "doors", "triggers",
                 "segments", "automap", "reactor", "fuelcenters", "robotcenters",
-                "effects", "stuck", "morphs", "secrets", "ai")
+                "effects", "stuck", "morphs", "secrets", "ai", "exploding_walls", "death")
 
 
 def integer_fields(names, **nested):
     return {**dict.fromkeys(names.split(), int), **nested}
 
 
-# Required common fields of input_demo_world_trace.cpp schema 8. Extra engine
+# Required common fields of input_demo_world_trace.cpp schema 10. Extra engine
 # fields remain in the raw comparison; this is validation, not normalization
 VECTOR_SCHEMA = (int, int, int)
 AI_LOCAL_SCHEMA = integer_fields("player_awareness_type retry_count consecutive_retries mode previous_visibility rapidfire_count "
@@ -788,6 +788,8 @@ ENDLEVEL_SCHEMA = integer_fields("sequence data_loaded transition_segment exit_s
                                  fly=(ENDLEVEL_FLY_SCHEMA,) * 2, explosion=[OBJECT_SCHEMA])
 
 WORLD_SCHEMA = {
+    "death": integer_fields("active exploded eggs_dropped aborted elapsed saved_flags saved_control"),
+    "exploding_walls": integer_fields("capacity", slots={"*": (int, int, int)}),
     "endlevel": ENDLEVEL_SCHEMA,
     "ai": integer_fields("Ai_initialized Overall_agitation local_capacity path_free_index Num_awareness_events",
                          Believed_player_pos=VECTOR_SCHEMA, local_default=AI_LOCAL_SCHEMA, locals={"*": AI_LOCAL_SCHEMA},
@@ -815,7 +817,8 @@ WORLD_SCHEMA = {
     "weapons": integer_fields("Next_laser_fire_time Last_laser_fired_time Next_missile_fire_time Next_flare_fire_time "
                              "Auto_fire_fusion_cannon_time Global_laser_firing_count Global_missile_firing_count "
                              "fusion_charge spreadfire_toggle missile_gun proximity_dropped helix_orientation "
-                             "smartmines_dropped last_omega_fire_time"),
+                             "smartmines_dropped last_omega_fire_time PrimaryWeaponPickedUp SecondaryWeaponPickedUp "
+                             "delayed_primary_autoselect_weapon_index delayed_secondary_autoselect_weapon_index"),
     "walls": [integer_fields("segnum sidenum hps linked_wall type flags state trigger clip_num keys")],
     "doors": [integer_fields("n_parts time", front=(int, int), back=(int, int))],
     "triggers": [integer_fields("type flags num_links value time", segments=[int], sides=[int])],
@@ -863,6 +866,24 @@ def validate_world_value(value, schema, path):
 
 def validate_world_state(state, engine=None):
     validate_world_value(state, WORLD_SCHEMA, "$.state")
+    weapons = state["weapons"]
+    if (weapons["PrimaryWeaponPickedUp"] not in (0, 1) or weapons["SecondaryWeaponPickedUp"] not in (0, 1) or
+            weapons["delayed_primary_autoselect_weapon_index"] not in (-1, 0, 1, 2, 3, 4, 16) or
+            weapons["delayed_secondary_autoselect_weapon_index"] not in (-1, 0, 1, 2, 3, 4)):
+        raise EvidenceError("Invalid native weapon autoselection state")
+    death = state["death"]
+    if (any(death[key] not in (0, 1) for key in ("active", "exploded", "eggs_dropped", "aborted")) or
+            not 0 <= death["elapsed"] <= 2147483647 or not 0 <= death["saved_flags"] <= 255 or
+            not 0 <= death["saved_control"] <= 255 or
+            (not death["active"] and any(death[key] for key in ("aborted", "elapsed", "saved_flags", "saved_control")))):
+        raise EvidenceError("Invalid player death gameplay state")
+    exploding = state["exploding_walls"]
+    if exploding["capacity"] != 10:
+        raise EvidenceError("Invalid exploding-wall capacity")
+    for slot, (segment, side, time) in exploding["slots"].items():
+        if (not slot.isdecimal() or str(int(slot)) != slot or not 0 <= int(slot) < 10 or
+                not 0 <= segment < len(state["segments"]) or not 0 <= side < 6 or not 0 <= time <= 65536):
+            raise EvidenceError("Invalid active exploding-wall slot or lifetime")
     endlevel = state["endlevel"]
     if len(endlevel["explosion"]) != int(bool(endlevel["explosion_playing"])):
         raise EvidenceError("Missing or inactive external endlevel explosion")
@@ -979,7 +1000,7 @@ def world_states(path, header, engine="d1"):
             meta_seen = True
         if kind not in ("world_state", "world_boundary", "object_boundary"):
             continue
-        if not meta_seen or type(row.get("version")) is not int or row["version"] != (2 if kind == "object_boundary" else 8):
+        if not meta_seen or type(row.get("version")) is not int or row["version"] != (2 if kind == "object_boundary" else 10):
             raise EvidenceError("Missing world metadata or unsupported schema")
         if kind.endswith("boundary"):
             phase = row.get("phase")

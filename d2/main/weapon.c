@@ -37,6 +37,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ai.h"
 #include "args.h"
 #include "playsave.h"
+#include "d1_in_d2/d1_in_d2_weapons.h"
 
 int POrderList (int num);
 int SOrderList (int num);
@@ -183,6 +184,8 @@ const sbyte   Weapon_is_energy[MAX_WEAPON_TYPES] = {
 // See weapon.h for bit values
 int player_has_weapon(ubyte pnum, int weapon_num, int secondary_flag)
 {
+	const int native_status = d1_in_d2_weapon_availability(pnum, weapon_num, secondary_flag);
+	if (native_status >= 0) return native_status;
 	int	return_value = 0;
 	int	weapon_index;
 
@@ -233,6 +236,7 @@ int player_has_weapon(ubyte pnum, int weapon_num, int secondary_flag)
 
 void InitWeaponOrdering ()
  {
+	 d1_in_d2_reset_weapon_order();
   // short routine to setup default weapon priorities for new pilots
 
   int i;
@@ -245,6 +249,7 @@ void InitWeaponOrdering ()
 
 void CyclePrimary ()
 {
+	if (d1_in_d2_cycle_weapon(0)) return;
 	int cur_order_slot, desired_weapon = Players[Player_num].primary_weapon, loop=0;
 	const int autoselect_order_slot = POrderList(255);
 	
@@ -294,6 +299,7 @@ void CyclePrimary ()
 
 void CycleSecondary ()
 {
+	if (d1_in_d2_cycle_weapon(1)) return;
 	int cur_order_slot = SOrderList(Players[Player_num].secondary_weapon), desired_weapon = Players[Player_num].secondary_weapon, loop=0;
 	const int autoselect_order_slot = SOrderList(255);
 	const int use_restricted_autoselect = (cur_order_slot < autoselect_order_slot) && (1 < autoselect_order_slot) && (PlayerCfg.CycleAutoselectOnly);
@@ -333,6 +339,12 @@ void select_weapon(int weapon_num, int secondary_flag, int print_message, int wa
 	// Don't select a weapon if you're dead.
 	if (Objects[Players[Player_num].objnum].type == OBJ_GHOST)
 		return;
+
+	if (!secondary_flag && d1_in_d2_is_quad_selection(weapon_num)) {
+		weapon_num = LASER_INDEX;
+		if (Players[Player_num].primary_weapon == LASER_INDEX)
+			return;
+	}
 
 	char	*weapon_name;
 
@@ -483,6 +495,7 @@ void do_weapon_select(int weapon_num, int secondary_flag)
 
 void classic_auto_select_weapon(int weapon_type)
 {
+	if (d1_in_d2_auto_select_weapon(weapon_type, 1)) return;
 	int	r;
 	int cutpoint;
 	int looped=0;
@@ -584,6 +597,7 @@ void classic_auto_select_weapon(int weapon_type)
 // Weapon type: 0==primary, 1==secondary
 void auto_select_weapon(int weapon_type)
 {
+	if (d1_in_d2_auto_select_weapon(weapon_type, PlayerCfg.ClassicAutoselectWeapon)) return;
 	if (PlayerCfg.ClassicAutoselectWeapon) {
 		classic_auto_select_weapon(weapon_type);
 		return;
@@ -754,6 +768,7 @@ int pick_up_secondary(int weapon_index,int count)
 
 void ReorderPrimary ()
 {
+	if (d1_in_d2_reorder_weapons(0)) return;
 	newmenu_item m[MAX_PRIMARY_WEAPONS+1];
 	int i;
 
@@ -780,6 +795,7 @@ void ReorderPrimary ()
 
 void ReorderSecondary ()
 {
+	if (d1_in_d2_reorder_weapons(1)) return;
 	newmenu_item m[MAX_SECONDARY_WEAPONS+1];
 	int i;
 
@@ -806,6 +822,9 @@ void ReorderSecondary ()
 int POrderList (int num)
 {
 	int i;
+	const int native_order = d1_in_d2_primary_order(num);
+	if (native_order >= 0)
+		return native_order;
 
 	for (i=0;i<MAX_PRIMARY_WEAPONS+1;i++)
 	if (PlayerCfg.PrimaryOrder[i]==num)
@@ -818,6 +837,9 @@ int POrderList (int num)
 int SOrderList (int num)
 {
 	int i;
+	const int native_order = d1_in_d2_secondary_order(num);
+	if (native_order >= 0)
+		return native_order;
 
 	for (i=0;i<MAX_SECONDARY_WEAPONS+1;i++)
 		if (PlayerCfg.SecondaryOrder[i]==num)
@@ -833,6 +855,9 @@ int delayed_primary_autoselect_weapon_index = -1;
 //returns true if actually picked up
 int pick_up_primary(int weapon_index)
 {
+	const int native_pickup = d1_in_d2_pick_up_primary(weapon_index, 0);
+	if (native_pickup >= 0)
+		return native_pickup;
 	//ushort old_flags = Players[Player_num].primary_weapon_flags;
 	ushort flag = 1<<weapon_index;
 	int cutpoint, supposed_weapon=Players[Player_num].primary_weapon;
@@ -960,7 +985,7 @@ int pick_up_ammo(int class_flag,int weapon_index,int ammo_count)
 		supposed_weapon=SUPER_LASER_INDEX;  // allotment for stupid way of doing super laser
 
 
-	int primary_weapon_index = supposed_weapon;
+	int primary_weapon_index = d1_in_d2_primary_selection_index(supposed_weapon);
 
 	if ( Players[Player_num].primary_weapon_flags&(1<<weapon_index)  && old_ammo==0 &&
 		POrderList(weapon_index)<cutpoint && POrderList(weapon_index)<POrderList(primary_weapon_index)) {

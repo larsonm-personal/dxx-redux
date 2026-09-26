@@ -8,6 +8,7 @@
  */
 
 #include "multi.h"
+#include "d1_in_d2/d1_in_d2_net.h"
 #ifdef __ANDROID__
 #include "net/net_udp_reconnect_auth.h"
 #include "coop/coop_gameplay_fence.h"
@@ -80,7 +81,7 @@ void net_udp_request_resync_from_host(const char *reason);
 #else
 #define UPID_GAME_INFO_COOP_TRANSITION_SIZE 0
 #endif
-#define UPID_GAME_INFO_SIZE			(6 + 4*2 + 371 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1) + ((MAX_PLAYERS+4)*(CALLSIGN_LEN+1+37)) + 20*12 + UPID_GAME_INFO_RECONNECT_AUTH_SIZE + UPID_GAME_INFO_COOP_TRANSITION_SIZE)
+#define UPID_GAME_INFO_SIZE			(6 + 4*2 + 371 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1) + ((MAX_PLAYERS+4)*(CALLSIGN_LEN+1+37)) + 20*12 + UPID_GAME_INFO_RECONNECT_AUTH_SIZE + UPID_GAME_INFO_COOP_TRANSITION_SIZE + D1_IN_D2_NET_ASSET_SIZE)
 #define UPID_GAME_INFO_LITE_REQ			  4 // Requesting lite info about a netgame. Used for discovering games.
 #define UPID_GAME_INFO_LITE			  5 // Packet containing lite netgame info.
 #define UPID_GAME_INFO_LITE_SIZE		 (31 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1))
@@ -96,6 +97,7 @@ void net_udp_request_resync_from_host(const char *reason);
 #endif
 #define UPID_SYNC				 10 // Packet from host containing full netgame info to sync players up.
 #define UPID_OBJECT_DATA			 11 // Packet from host containing object buffer.
+#define UPID_OBJECT_HEADER_SIZE (9 + D1_IN_D2_NET_ASSET_SIZE)
 #define UPID_PING				 12 // Packet from host containing his GameTime and the Ping list. Client returns this time to host as UPID_PONG and adapts the ping list.
 #define UPID_PING_SIZE				 37
 #define UPID_PONG				 13 // Packet answer from client to UPID_PING. Contains the time the initial ping packet was sent.

@@ -1,0 +1,12 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_d1_in_d2_standalone"}},
+    {"action": "assert", "expect": {"asset_trace.mode": "d1-in-d2", "guidebot.companion_count": 0}},
+    {"action": "set_debug", "field": "clear_robots", "value": "true"},
+    {"action": "meta_action", "id": 1037},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {"guidebot.companion_count": 1, "guidebot.released": true, "guidebot.object_type": 2}},
+    {"action": "set_debug", "field": "android_game_request", "value": "quick_save", "post_delay_ms": 500},
+    {"action": "wait_ms", "ms": 15000},
+    {"action": "set_debug", "field": "android_game_request", "value": "pause", "post_delay_ms": 300},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {"time_paused": true, "current_level_num": 1, "game_window_is_front": false}},
+    {"action": "introspect"}
+]

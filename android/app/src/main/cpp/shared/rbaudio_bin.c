@@ -40,6 +40,7 @@
 #include "args.h"
 #include "config.h"
 #include "rbaudio_bin.h"
+#include "pcm_ring.h"
 #include "rbaudio.h"
 #include "console.h"
 #include "timer.h"
@@ -332,13 +333,7 @@ static double s_resample_frac = 0.0;
 
 /* ── Ring buffer (identical pattern to TSF music) ────────────────────── */
 
-#define RB_SHIFT   18
-#define RB_SAMPLES (1 << RB_SHIFT) /* 262144 samples ≈ 2.7 s @ 48 kHz */
-#define RB_MASK    (RB_SAMPLES - 1)
-
-static short s_rb[RB_SAMPLES];
-static volatile int s_rb_wpos = 0;
-static volatile int s_rb_rpos = 0;
+static struct pcm_ring s_rb;
 
 static SDL_Thread *s_render_thread = NULL;
 static volatile int s_render_running = 0;
@@ -348,47 +343,6 @@ static pthread_cond_t s_background_cond = PTHREAD_COND_INITIALIZER;
 static int s_render_thread_alive;
 static int s_background_waiting;
 #endif
-
-static void rb_discard(void)
-{
-	int write_position = __atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE);
-	__atomic_store_n(&s_rb_rpos, write_position, __ATOMIC_RELEASE);
-}
-
-static void rb_write(const short *data, int count)
-{
-	unsigned int wpos = (unsigned int) __atomic_load_n(&s_rb_wpos, __ATOMIC_RELAXED);
-	unsigned int idx = wpos & RB_MASK;
-	int first = RB_SAMPLES - (int) idx;
-	if (first > count) first = count;
-	memcpy(&s_rb[idx], data, first * sizeof(short));
-	if (count > first)
-		memcpy(&s_rb[0], data + first, (count - first) * sizeof(short));
-	__atomic_store_n(&s_rb_wpos, (int) (wpos + (unsigned int) count), __ATOMIC_RELEASE);
-}
-
-static int rb_read(short *out, int count)
-{
-	unsigned int wpos = (unsigned int) __atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE);
-	unsigned int rpos = (unsigned int) __atomic_load_n(&s_rb_rpos, __ATOMIC_RELAXED);
-	unsigned int avail = wpos - rpos;
-	if ((int) avail < count) count = (int) avail;
-	if (count <= 0) return 0;
-	unsigned int idx = rpos & RB_MASK;
-	int first = RB_SAMPLES - (int) idx;
-	if (first > count) first = count;
-	memcpy(out, &s_rb[idx], first * sizeof(short));
-	if (count > first)
-		memcpy(out + first, &s_rb[0], (count - first) * sizeof(short));
-	__atomic_store_n(&s_rb_rpos, (int) (rpos + (unsigned int) count), __ATOMIC_RELEASE);
-	return count;
-}
-
-static unsigned int rb_available(void)
-{
-	return (unsigned int) __atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE) -
-	       (unsigned int) __atomic_load_n(&s_rb_rpos, __ATOMIC_ACQUIRE);
-}
 
 /* ── File helpers ────────────────────────────────────────────────────── */
 
@@ -1308,7 +1262,7 @@ static int apply_pending_request(void)
 	s_pcm_len = 0;
 	s_pcm_pos = 0;
 	s_resample_frac = 0.0;
-	rb_discard();
+	pcm_ring_discard(&s_rb);
 	if (request.operation == RBA_REQUEST_STOP)
 		return 0;
 
@@ -1379,7 +1333,7 @@ static int render_thread_func(void *data)
 		render_generation = s_applied_request_generation;
 		pthread_mutex_unlock(&s_background_mutex);
 
-		unsigned int space = RB_SAMPLES - rb_available();
+		unsigned int space = PCM_RING_SAMPLES - pcm_ring_available(&s_rb);
 		if (space < CHUNK * 2u) {
 			SDL_Delay(5);
 			continue;
@@ -1390,7 +1344,7 @@ static int render_thread_func(void *data)
 			pthread_mutex_lock(&s_background_mutex);
 			if (render_generation == __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE) &&
 			    render_generation == s_applied_request_generation && s_playing) {
-				rb_write(buf, got * 2);
+				pcm_ring_write(&s_rb, buf, got * 2);
 			} else {
 				__atomic_add_fetch(&s_stale_render_chunks_total, 1, __ATOMIC_RELAXED);
 				got = 0;
@@ -1425,7 +1379,7 @@ static int render_thread_func(void *data)
 static int render_thread_start(void)
 {
 	if (s_render_thread) return 1;
-	rb_discard();
+	pcm_ring_discard(&s_rb);
 	__atomic_store_n(&s_render_running, 1, __ATOMIC_SEQ_CST);
 	pthread_mutex_lock(&s_background_mutex);
 	s_render_thread_alive = 1;
@@ -1469,7 +1423,7 @@ static void rba_music_callback(void *udata, Uint8 *stream, int len)
 		return;
 	}
 
-	got = rb_read(out, needed);
+	got = pcm_ring_read(&s_rb, out, needed);
 	if (got > 0) {
 		unsigned int generation;
 		unsigned long long source_total;
@@ -1504,7 +1458,7 @@ static void rba_music_callback(void *udata, Uint8 *stream, int len)
 			s_rb_underruns++;
 			if (s_rb_underruns <= 10 || (s_rb_underruns % 50) == 0)
 				RBA_LOG("CD underrun #%d: got=%d needed=%d rb_fill=%u",
-				        s_rb_underruns, got, needed, rb_available());
+				        s_rb_underruns, got, needed, pcm_ring_available(&s_rb));
 		}
 	}
 	/* Volume scaling */
@@ -1684,11 +1638,9 @@ void RBAGetPlaybackTerminalDiagnostics(int *terminal_state, int *source_index,
 #ifdef INTROSPECT_ON
 int RBAInvalidateCurrentSourceForTest(void)
 {
-	int write_position;
 	if (!s_playing) return 0;
 	__atomic_store_n(&s_test_source_failure_operation, RBA_IO_HANDLE, __ATOMIC_RELEASE);
-	write_position = __atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE);
-	__atomic_store_n(&s_rb_rpos, write_position, __ATOMIC_RELEASE);
+	pcm_ring_discard(&s_rb);
 	return 1;
 }
 #endif
@@ -1751,7 +1703,7 @@ static int queue_playback_request(int first, int last, void (*hook_finished)(voi
 	s_paused = 0;
 	s_song_finished = 0;
 	__atomic_store_n(&s_terminal_state, RBA_TERMINAL_NONE, __ATOMIC_RELEASE);
-	rb_discard();
+	pcm_ring_discard(&s_rb);
 	pthread_cond_broadcast(&s_background_cond);
 	pthread_mutex_unlock(&s_background_mutex);
 
@@ -1832,7 +1784,7 @@ void RBAStop(void)
 	s_pending_request.started_ticks = SDL_GetTicks();
 	__atomic_add_fetch(&s_request_generation, 1, __ATOMIC_ACQ_REL);
 	s_logical_track = 0;
-	rb_discard();
+	pcm_ring_discard(&s_rb);
 	pthread_cond_broadcast(&s_background_cond);
 	pthread_mutex_unlock(&s_background_mutex);
 	__atomic_store_n(&s_last_stop_wait_ms, 0, __ATOMIC_RELEASE);
@@ -1842,7 +1794,7 @@ void RBAStop(void)
 #ifdef INTROSPECT_ON
 	__atomic_store_n(&s_test_source_failure_operation, RBA_IO_NONE, __ATOMIC_RELEASE);
 #endif
-	rb_discard();
+	pcm_ring_discard(&s_rb);
 
 	RBA_LOG("Playback stopped");
 }

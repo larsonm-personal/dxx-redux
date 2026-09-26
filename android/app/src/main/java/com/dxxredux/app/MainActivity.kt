@@ -404,6 +404,8 @@ class MainActivity :
 
     external fun nativeSetGuidebotRoutingDefault(mode: Int)
 
+    external fun nativeGuidebotRoutingIsEnhanced(): Boolean
+
     external fun nativeSetCoopIndicatorOptions(
         showNearestPlayerLine: Boolean,
         showGuidebotLine: Boolean,
@@ -686,6 +688,7 @@ class MainActivity :
         secretEntryLevels: IntArray,
         requestGeneration: Int,
         missionAssetContext: String,
+        contentGame: String,
     ) {
         routeMetadataJob?.cancel()
         routeMetadataCurrentLevelCalculating =
@@ -696,6 +699,7 @@ class MainActivity :
                 RouteMetadataBackground.computeMission(
                     this@MainActivity,
                     game,
+                    contentGame,
                     mission,
                     levelNum,
                     levelFile,
@@ -2840,6 +2844,7 @@ class MainActivity :
                                 )
                             val wasActive = touchOverlay.isActive
                             touchOverlay.updateGamePausedState(gamePaused)
+                            touchOverlay.enhancedGuidebotRouting = nativeGuidebotRoutingIsEnhanced()
                             touchOverlay.isActive = shouldShow
                             touchOverlay.automapActive = automap
                             touchOverlay.updateDemoRecordingState(demoRecording)
@@ -2986,6 +2991,8 @@ class MainActivity :
                         .put("touch_overlay_attached", touchOverlay.isAttachedToWindow)
                         .put("controller_menu_open", touchOverlay.isControllerMenuOpen())
                         .put("admin_tray_open", touchOverlay.isAdminTrayOpen())
+                        .put("guidebot_enhanced_routing", touchOverlay.enhancedGuidebotRouting)
+                        .put("guidebot_goal_bindings", org.json.JSONArray(touchOverlay.visibleRadialBindings("Guide")))
                 runCatching {
                     File(filesDir, "introspect_ui.json").writeText(uiState.toString(2) + "\n")
                 }.onFailure { Log.w("DXX-Introspect", "Could not write Android view state", it) }

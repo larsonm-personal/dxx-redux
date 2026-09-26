@@ -33,6 +33,8 @@ class LevelMetadataResultCacheTest {
                 normalLevelFiles = listOf("uneasy4.rl2"),
             )
         val firstIdentity = checkNotNull(LevelMetadataResultCache.identify(target))
+        val importedIdentity = checkNotNull(LevelMetadataResultCache.identify(target.copy(contentGame = "d1")))
+        assertNotEquals(firstIdentity.key, importedIdentity.key)
         val resultText = resultJson("d2")
         val result = LevelMetadataResult.fromJson(resultText)
         val routeFile = File(checkNotNull(root.parentFile), "d2x-redux/route-cache/g6/test.bin").apply {

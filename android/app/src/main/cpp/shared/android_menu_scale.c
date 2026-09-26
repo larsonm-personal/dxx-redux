@@ -715,6 +715,20 @@ void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,
 		grs_canvas *save_canvas = grd_curcanv;
 		grs_bitmap *target_bitmap = &grd_curscreen->sc_canvas.cv_bitmap;
 		int old_flags;
+#ifdef ANDROID
+		/* Direct-rendered menu text already has the final pixel dimensions */
+		if (bitmap->bm_type == BM_LINEAR && !(bitmap->bm_flags & BM_FLAG_RLE) &&
+			bitmap->bm_w == result->dst.w && bitmap->bm_h == result->dst.h &&
+			target_bitmap && target_bitmap->bm_type == BM_OGL) {
+			grs_bitmap direct = *bitmap;
+			direct.bm_flags = masked ? BM_FLAG_TRANSPARENT : 0;
+			ogl_android_prepare_overlay_blit();
+			ogl_ubitblt_i(result->dst.w, result->dst.h, result->dst.x,
+				result->dst.y, result->dst.w, result->dst.h, 0, 0,
+				&direct, target_bitmap, 1);
+			return;
+		}
+#endif
 		gr_init_bitmap_alloc(&scaled, BM_LINEAR, 0, 0, result->dst.w,
 		                     result->dst.h, result->dst.w);
 		if (masked)

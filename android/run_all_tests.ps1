@@ -198,16 +198,12 @@ $script:cancelHandler =
 # -- Environment probes (non-provisioning) --
 
 function Test-SingleEmulator {
-    $out = Adb-Timeout -AdbArgs @("devices") -Seconds 5
-    if ($out -match "emulator-\d+\s+device") { return $true }
-    return $false
+    return Test-DeviceOnline -Serial $script:PRIMARY_EMULATOR_SERIAL
 }
 
 function Test-TwoEmulators {
-    $out = Adb-Timeout -AdbArgs @("devices") -Seconds 5
-    if (-not $out) { return $false }
-    $m = [regex]::Matches($out, "emulator-\d+\s+device")
-    return ($m.Count -ge 2)
+    return ((Test-DeviceOnline -Serial $script:PRIMARY_EMULATOR_SERIAL) -and
+        (Test-DeviceOnline -Serial $script:SECONDARY_EMULATOR_SERIAL))
 }
 
 function Test-MatchmakingServer {
@@ -354,7 +350,7 @@ $manualTests = @(
 )
 
 # Infrastructure requirement classification
-$twoEmuTests = @("test_mp", "test_lan", "test_lan_discovery", "test_lan_broadcast", "test_lan_lobby_discovery")
+$twoEmuTests = @("test_mp", "test_lan", "test_lan_discovery", "test_lan_broadcast", "test_lan_lobby_discovery", "test_emulator_recovery")
 $serverTests = @("test_bot_client")
 $tierServerManagedDualEmuTests = @()
 
@@ -1004,17 +1000,6 @@ function Test-HostToolPrerequisites {
     return $false
 }
 
-function Restart-AdbServer {
-    Write-Status "Restarting ADB server..." "DarkGray"
-    Get-Process adb -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 1
-    $prevEAP = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    & $script:ADB start-server 2>&1 | Out-Null
-    $ErrorActionPreference = $prevEAP
-    Start-Sleep -Seconds 2
-}
-
 function Invoke-AutomaticStaleEmulatorCleanup {
     $cleanupScript = Join-Path $helpersDir "kill-stale-emulators.ps1"
     if (-not (Test-Path -LiteralPath $cleanupScript)) {
@@ -1022,7 +1007,7 @@ function Invoke-AutomaticStaleEmulatorCleanup {
     }
 
     Write-Status "Checking for stale emulator background state..." "DarkGray"
-    & $cleanupScript -Kill
+    & $cleanupScript -Kill -Serial $script:PRIMARY_EMULATOR_SERIAL
     $cleanupExit = $LASTEXITCODE
     if ($cleanupExit -eq 2) {
         Write-Status "Stale emulator state was cleaned before preflight" "Yellow"
@@ -1031,45 +1016,15 @@ function Invoke-AutomaticStaleEmulatorCleanup {
     }
 }
 
-function Get-OnlineEmulatorSerials {
-    $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
-    if (-not $devices) {
-        return @()
-    }
-
-    return @([regex]::Matches($devices, "(emulator-\d+)\s+device") |
-            ForEach-Object { $_.Groups[1].Value } |
-            Sort-Object -Unique)
-}
-
 function Stop-TestSuiteEmulators {
-    $onlineSerials = @(Get-OnlineEmulatorSerials)
-    if ($onlineSerials.Count -eq 0) {
-        return
-    }
-
     $targetSerials = @()
-    if ($script:startedEmu1 -and $onlineSerials -contains $script:PRIMARY_EMULATOR_SERIAL) {
-        $targetSerials += $script:PRIMARY_EMULATOR_SERIAL
-    }
-    if ($script:startedEmu2 -and $onlineSerials -contains $script:SECONDARY_EMULATOR_SERIAL) {
-        $targetSerials += $script:SECONDARY_EMULATOR_SERIAL
-    }
-
-    if ($targetSerials.Count -eq 0) {
-        return
-    }
-
-    Write-Host "Stopping Android emulators..." -ForegroundColor Yellow
+    if ($script:startedEmu1) { $targetSerials += $script:PRIMARY_EMULATOR_SERIAL }
+    if ($script:startedEmu2) { $targetSerials += $script:SECONDARY_EMULATOR_SERIAL }
     foreach ($serial in $targetSerials) {
         Write-Status "Stopping emulator $serial" "Yellow"
-        $null = Adb-Timeout -AdbArgs @("-s", $serial, "emu", "kill") -Seconds 10
-    }
-
-    Start-Sleep -Seconds 2
-    $remaining = @(Get-OnlineEmulatorSerials | Where-Object { $targetSerials -contains $_ })
-    if ($remaining.Count -gt 0) {
-        Write-Status "Emulator shutdown did not complete for: $($remaining -join ', ')" "Yellow"
+        if (-not (Stop-ManagedEmulator -Serial $serial)) {
+            Write-Status "Emulator shutdown did not complete for $serial" "Yellow"
+        }
     }
 }
 
@@ -1101,18 +1056,18 @@ function Recover-SingleEmulatorEnvironment {
 
     Write-Status "Single-emulator recovery: restarting primary emulator and reprovisioning app/data" "Yellow"
     Invoke-AutomaticStaleEmulatorCleanup
-    Restart-AdbServer
+    Reconnect-AdbDevice
 
     $healthScript = Join-Path $helpersDir "emu_health.ps1"
-    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 180 -AvdName $script:PRIMARY_AVD_NAME
+    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 180 -AvdName $script:PRIMARY_AVD_NAME -PreferredSerial $script:PRIMARY_EMULATOR_SERIAL
     $healthExit = $LASTEXITCODE
     if ($healthExit -ne 0 -and $healthExit -ne 2) {
         Write-Status "Single-emulator recovery failed: emulator restart exit $healthExit" "Red"
         return $false
     }
 
-    $serial = Get-OnlineEmulatorSerials | Select-Object -First 1
-    if (-not $serial) {
+    $serial = $script:PRIMARY_EMULATOR_SERIAL
+    if (-not (Test-DeviceOnline -Serial $serial)) {
         Write-Status "Single-emulator recovery failed: no online emulator after restart" "Red"
         return $false
     }
@@ -1132,7 +1087,7 @@ function Recover-DualEmulatorEnvironment {
 
     Write-Status "Dual-emulator recovery: forcing clean emulator recycle and reprovisioning app/data" "Yellow"
     Invoke-AutomaticStaleEmulatorCleanup
-    Restart-AdbServer
+    Reconnect-AdbDevice
 
     if ($script:autoServerProc -and -not $script:autoServerProc.HasExited) {
         try { $script:autoServerProc.Kill() } catch {}
@@ -1141,32 +1096,25 @@ function Recover-DualEmulatorEnvironment {
     }
 
     $healthScript = Join-Path $helpersDir "emu_health.ps1"
-    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 240 -AvdName $script:PRIMARY_AVD_NAME
+    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 240 -AvdName $script:PRIMARY_AVD_NAME -PreferredSerial $script:PRIMARY_EMULATOR_SERIAL
     $healthExit = $LASTEXITCODE
     if ($healthExit -ne 0 -and $healthExit -ne 2) {
         Write-Status "Dual-emulator recovery failed: primary emulator restart exit $healthExit" "Red"
         return $false
     }
 
+    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 240 -AvdName $script:SECONDARY_AVD_NAME -PreferredSerial $script:SECONDARY_EMULATOR_SERIAL
+    if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 2) { return $false }
+
     if (-not (Start-SecondEmulator)) {
         Write-Status "Dual-emulator recovery failed: could not start second emulator" "Red"
         return $false
     }
 
-    $serials = Get-OnlineEmulatorSerials
-    $primarySerial = if ($serials -contains $script:PRIMARY_EMULATOR_SERIAL) {
-        $script:PRIMARY_EMULATOR_SERIAL
-    } else {
-        $serials | Select-Object -First 1
-    }
-    $secondarySerial = if ($serials -contains $script:SECONDARY_EMULATOR_SERIAL) {
-        $script:SECONDARY_EMULATOR_SERIAL
-    } else {
-        $serials | Select-Object -Last 1
-    }
-
-    if (-not $primarySerial -or -not $secondarySerial -or $primarySerial -eq $secondarySerial) {
-        Write-Status "Dual-emulator recovery failed: online emulator set incomplete after restart" "Red"
+    $primarySerial = $script:PRIMARY_EMULATOR_SERIAL
+    $secondarySerial = $script:SECONDARY_EMULATOR_SERIAL
+    if (-not (Test-DeviceOnline -Serial $primarySerial) -or -not (Test-DeviceOnline -Serial $secondarySerial)) {
+        Write-Status "Dual-emulator recovery failed: configured devices are not online" "Red"
         return $false
     }
 
@@ -1268,10 +1216,10 @@ function Invoke-PrimaryEmulatorPreflight {
             $script:startedEmu1 = $true
         }
 
-        Ensure-EmulatorHealthy | Out-Null
+        Invoke-WithAndroidSerial -Serial $script:PRIMARY_EMULATOR_SERIAL -ScriptBlock { Ensure-EmulatorHealthy } | Out-Null
 
-        $serial = Get-OnlineEmulatorSerials | Select-Object -First 1
-        if (-not $serial) {
+        $serial = $script:PRIMARY_EMULATOR_SERIAL
+        if (-not (Test-DeviceOnline -Serial $serial)) {
             Write-Status "Preflight: no online primary emulator found" "Red"
             return $null
         }
@@ -1287,7 +1235,7 @@ function Invoke-PrimaryEmulatorPreflight {
 
         if ($attempt -lt 2) {
             Write-Status "Preflight: restarting primary emulator and retrying launcher readiness" "Yellow"
-            & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 180 -AvdName $script:PRIMARY_AVD_NAME
+            & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 180 -AvdName $script:PRIMARY_AVD_NAME -PreferredSerial $script:PRIMARY_EMULATOR_SERIAL
             $healthExit = $LASTEXITCODE
             if ($healthExit -ne 0 -and $healthExit -ne 2) {
                 Write-Status "Preflight: emulator restart failed (exit $healthExit)" "Red"
@@ -1311,13 +1259,8 @@ function Invoke-SecondaryEmulatorPreflight {
         $script:startedEmu2 = $true
     }
 
-    $serials = Get-OnlineEmulatorSerials
-    if ($serials.Count -lt 2) {
-        Write-Status "Preflight: second emulator not visible in adb" "Red"
-        return $null
-    }
-
-    $serial = $serials | Select-Object -Last 1
+    $serial = $script:SECONDARY_EMULATOR_SERIAL
+    if (-not (Test-DeviceOnline -Serial $serial)) { return $null }
     $appDataOk = Install-AppAndData -Serial $serial
     if ($RequireStandardGameData -and -not $appDataOk) {
         Write-Status "Preflight: standard game data provisioning failed on $serial" "Red"
@@ -1354,7 +1297,7 @@ function Invoke-SuitePreflight {
             return $false
         }
         Invoke-AutomaticStaleEmulatorCleanup
-        Restart-AdbServer
+        Reconnect-AdbDevice
         $preflightEmu1 = Invoke-PrimaryEmulatorPreflight -RequireStandardGameData:$needsStandardGameData
         if (-not $preflightEmu1) {
             Write-Host "FAIL: Suite preflight could not prepare a healthy primary emulator" -ForegroundColor Red
@@ -1828,8 +1771,8 @@ if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
     Write-Host ""
     Write-Host "== Tier 2: Single-emulator tests ==" -ForegroundColor Cyan
 
-    # Kill stale ADB server to prevent hangs on the first device command in this tier.
-    Restart-AdbServer
+    # Reconnect only the selected transport before this tier
+    Reconnect-AdbDevice
 
     # Ensure emulator is running
     if (-not (Test-SingleEmulator)) {
@@ -1841,10 +1784,7 @@ if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
 
     if ($emu1Ok) {
         # Install APK and push game data via SHA256-indexed deps
-        $emu1Serial = (Adb-Timeout -AdbArgs @("devices") -Seconds 5) |
-            Select-String "(emulator-\d+)\s+device" |
-            ForEach-Object { $_.Matches[0].Groups[1].Value } |
-            Select-Object -First 1
+        $emu1Serial = $script:PRIMARY_EMULATOR_SERIAL
         if ($emu1Serial) {
             Install-AppAndData -Serial $emu1Serial
         } else {
@@ -1906,7 +1846,7 @@ if ($tierExtract.Count -gt 0 -and -not $stopEarly) {
         }
 
         if ($emu1Ok) {
-            $emu1Serial = Get-OnlineEmulatorSerials | Select-Object -First 1
+            $emu1Serial = $script:PRIMARY_EMULATOR_SERIAL
             Install-ApkOnDevice | Out-Null
             Push-GameDataToDevice
             foreach ($test in $tierExtract) {
@@ -1968,16 +1908,9 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
 
     if ($emu2Ok -and $serverOk) {
         # Install APK + push data on the second emulator
-        $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
-        $serials = [regex]::Matches($devices, "(emulator-\d+)\s+device") |
-            ForEach-Object { $_.Groups[1].Value } | Sort-Object
-        $emu1Serial = $null
-        $emu2Serial = $null
-        if ($serials.Count -ge 2) {
-            $emu1Serial = $serials | Select-Object -First 1
-            $emu2Serial = $serials | Select-Object -Last 1
-            Install-AppAndData -Serial $emu2Serial
-        }
+        $emu1Serial = $script:PRIMARY_EMULATOR_SERIAL
+        $emu2Serial = $script:SECONDARY_EMULATOR_SERIAL
+        Install-AppAndData -Serial $emu2Serial
 
         foreach ($test in $tierDualEmu) {
             if ($stopEarly) { break }

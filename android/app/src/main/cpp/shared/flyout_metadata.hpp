@@ -211,11 +211,7 @@ inline json collect(int level_num, const char *level_file)
 	for (int i = 0; i < Num_walls; ++i) {
 		const int trigger = Walls[i].trigger;
 		if (trigger < 0 || trigger >= Num_triggers) continue;
-#ifdef DXX_BUILD_DESCENT_II
-		if (Triggers[trigger].type != TT_EXIT) continue;
-#else
-		if (!(Triggers[trigger].flags & TRIGGER_EXIT)) continue;
-#endif
+		if (!(trigger_exit_flags(trigger) & TRIGGER_EXIT)) continue;
 		auto path = route(i);
 		if (path["seconds"].is_number()) seconds = (std::max)(seconds, path["seconds"].get<double>());
 		routes.push_back(path);

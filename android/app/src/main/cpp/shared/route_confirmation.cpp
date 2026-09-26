@@ -196,8 +196,7 @@ int find_requested_key_source(int key)
 int requested_exit_wall(void)
 {
 	const int trigger = State.summary.requested_exit_trigger;
-	if (trigger < 0 || trigger >= Num_triggers ||
-	    (Triggers[trigger].type != TT_EXIT && Triggers[trigger].type != TT_SECRET_EXIT))
+	if (!trigger_exit_flags(trigger))
 		return -1;
 	for (int wall = 0; wall < Num_walls; ++wall)
 		if (Walls[wall].trigger == trigger)
@@ -1155,8 +1154,7 @@ void apply_incidental_crossed_trigger(object *actor)
 	 * and closes; restricting this to OPEN_WALL loses real route state */
 	/* Level transitions belong to the explicit exit objective, which verifies
 	 * completion without loading a different level into the running proof */
-	if (Triggers[trigger_num].type == TT_EXIT ||
-	    Triggers[trigger_num].type == TT_SECRET_EXIT)
+	if (trigger_exit_flags(trigger_num))
 		return;
 	/* The named trigger objective below owns both activation and timing. */
 	if ((State.step.activation_kind ==
@@ -2019,7 +2017,7 @@ extern "C" int route_confirmation_run_exit_transition(void)
 {
 	const int wall = requested_exit_wall();
 	if (wall < 0 || !route_confirmation_commit_player_position() ||
-	    (Current_level_num >= 0 && Triggers[State.summary.requested_exit_trigger].type != TT_SECRET_EXIT))
+	    (Current_level_num >= 0 && !(trigger_exit_flags(State.summary.requested_exit_trigger) & TRIGGER_SECRET_EXIT)))
 		return 0;
 	const int previous_level = Current_level_num;
 	check_trigger(&Segments[Walls[wall].segnum], static_cast<short>(Walls[wall].sidenum),

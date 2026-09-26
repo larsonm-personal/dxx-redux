@@ -23,8 +23,10 @@
 extern "C" {
 #ifdef __ANDROID__
 #include "android_crash_handler.h"
+#include "android_log.h"
 #include "android_mission_assets.h"
 #include "jni_string.h"
+#include "physfsx_android_shared.h"
 #endif
 #include "args.h"
 #include "bm.h"
@@ -54,6 +56,9 @@ extern "C" {
 #include "text.h"
 #include "u_mem.h"
 #include "wall.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "d1_in_d2/d1_in_d2.h"
+#endif
 }
 
 #include "level_statistics.hpp"
@@ -64,7 +69,6 @@ extern "C" {
 #include "mission_provenance.hpp"
 
 #ifdef DXX_BUILD_DESCENT_II
-extern "C" void piggy_init_pigfile(char *filename);
 #include "level_metadata_replacements.hpp"
 static level_metadata_base_definitions Level_metadata_base_definitions = {};
 #endif
@@ -83,6 +87,7 @@ static unsigned char *levelmeta_screen_pixels = NULL;
 static int levelmeta_runtime_ready = 0;
 static int levelmeta_runtime_poisoned = 0;
 static std::string levelmeta_data_dir;
+static std::string levelmeta_content_game;
 
 static json failed_result(const json &request, const char *problem);
 
@@ -414,20 +419,36 @@ static std::vector<std::string> build_runtime_args(const std::string &data_dir)
 static int init_levelmeta_runtime(levelmeta_env env, levelmeta_context context, const json &request, char *error, size_t error_size)
 {
 	const std::string requested_data_dir = request.value("data_dir", "");
+#ifdef DXX_BUILD_DESCENT_II
+	const std::string content_game = request.value("content_game", "d2");
+#else
+	const std::string content_game = request.value("content_game", "d1");
+#endif
 	std::vector<std::string> arg_storage = build_runtime_args(requested_data_dir);
 	std::vector<char *> argv;
 #ifdef __ANDROID__
 	PHYSFS_AndroidInit android_init;
 #endif
 
+	if (content_game != "d1" && content_game != "d2") {
+		snprintf(error, error_size, "%s", "invalid metadata content game");
+		return 0;
+	}
+#ifndef DXX_BUILD_DESCENT_II
+	if (content_game != "d1") {
+		snprintf(error, error_size, "%s", "D1 metadata worker cannot analyze D2 content");
+		return 0;
+	}
+#endif
+	if (levelmeta_runtime_poisoned) {
+		snprintf(error, error_size, "%s", "metadata worker requires restart");
+		return 0;
+	}
 	if (levelmeta_runtime_ready) {
-		if (levelmeta_runtime_poisoned) {
-			snprintf(error, error_size, "%s", "metadata worker requires restart");
-			return 0;
-		}
-		if (requested_data_dir != levelmeta_data_dir) {
-			snprintf(error, error_size, "%s", "metadata worker data directory changed");
-			return 0;
+		if (requested_data_dir != levelmeta_data_dir || content_game != levelmeta_content_game) {
+			levelmeta_runtime_poisoned = 1;
+			snprintf(error, error_size, "%s", "metadata worker runtime context changed");
+			return -1;
 		}
 		return 1;
 	}
@@ -443,13 +464,23 @@ static int init_levelmeta_runtime(levelmeta_env env, levelmeta_context context, 
 #endif
 
 	write_checkpoint(request, "init", "memory");
+	/* Partial engine initialization cannot be safely repeated in this process */
+	levelmeta_runtime_poisoned = 1;
 	mem_init();
 	error_init(msgbox_error);
 	set_warn_func(msgbox_warning);
-	PHYSFSX_init((int) argv.size(), argv.data());
 #ifdef __ANDROID__
-	/* Metadata requests manage their own isolated mounts and asset lifetimes */
-	android_mission_assets_shutdown();
+	const char *game_dir =
+#ifdef DXX_BUILD_DESCENT_II
+	    "d2x-redux";
+#else
+	    "d1x-redux";
+#endif
+	if (!physfsx_android_init_metadata((int) argv.size(), argv.data(), game_dir,
+	                                   requested_data_dir.c_str(), error, error_size))
+		return 0;
+#else
+	PHYSFSX_init((int) argv.size(), argv.data());
 #endif
 	if (GameArg.SysShowCmdHelp) {
 		snprintf(error, error_size, "%s", "help requested");
@@ -460,9 +491,9 @@ static int init_levelmeta_runtime(levelmeta_env env, levelmeta_context context, 
 		return 0;
 	}
 #ifdef DXX_BUILD_DESCENT_II
-	write_checkpoint(request, "mount", "descent2.hog");
-	if (!PHYSFSX_contfile_init("descent2.hog", 1) && !PHYSFSX_contfile_init("d2demo.hog", 1)) {
-		snprintf(error, error_size, "%s", "could not find descent2.hog or d2demo.hog");
+	write_checkpoint(request, "mount", content_game == "d1" ? "descent.hog" : "descent2.hog");
+	if (!d1_in_d2_init_base_resources(content_game == "d1" ? 1 : 2)) {
+		snprintf(error, error_size, "%s", content_game == "d1" ? "could not find descent.hog with descent.pig" : "could not find descent2.hog or d2demo.hog");
 		return 0;
 	}
 #else
@@ -486,10 +517,7 @@ static int init_levelmeta_runtime(levelmeta_env env, levelmeta_context context, 
 #endif
 	texmerge_init(10);
 #ifdef DXX_BUILD_DESCENT_II
-	{
-		char groupa_pig[] = "groupa.pig";
-		piggy_init_pigfile(groupa_pig);
-	}
+	d1_in_d2_init_startup_bitmaps();
 #endif
 	if (!init_levelmeta_screen(error, error_size))
 		return 0;
@@ -499,7 +527,9 @@ static int init_levelmeta_runtime(levelmeta_env env, levelmeta_context context, 
 	GameArg.SysUseNiceFPS = 0;
 	GameArg.SysInputDemoNoRender = 1;
 	levelmeta_data_dir = requested_data_dir;
+	levelmeta_content_game = content_game;
 	levelmeta_runtime_ready = 1;
+	levelmeta_runtime_poisoned = 0;
 	return 1;
 }
 
@@ -620,7 +650,7 @@ static int load_requested_mission(const json &request, LevelMetadataRequestMount
 	std::string mission = request.value("mission_name", "");
 #ifdef DXX_BUILD_DESCENT_II
 	if (mission.empty())
-		mission = "d2";
+		mission = levelmeta_content_game == "d1" ? "descent" : "d2";
 	// Descriptor-only requests rely on load_mission to mount the mission HOG
 	// Mount Vertigo first so its safety check can see the embedded HAM
 	if (!d_stricmp(mission.c_str(), "d2x") && !PHYSFSX_exists("d2x.ham", 1)) {
@@ -644,8 +674,9 @@ static int load_requested_mission(const json &request, LevelMetadataRequestMount
 	write_checkpoint(request, "mission", mission.c_str());
 	std::vector<char> mission_name(mission.begin(), mission.end());
 	mission_name.push_back('\0');
+	std::string descriptor = mission + (levelmeta_content_game == "d1" ? ".msn" : ".mn2");
 	if (!request.value("mission_asset_context", "").empty()) {
-		const int loaded = load_mission_by_name_from_current_dir(mission_name.data());
+		const int loaded = load_mission_from_current_dir(descriptor.data());
 		mounts.set_mission_loaded(loaded);
 		if (!loaded)
 			snprintf(error, error_size, "could not load active mission %s", mission.c_str());
@@ -653,7 +684,7 @@ static int load_requested_mission(const json &request, LevelMetadataRequestMount
 	}
 
 	if (load_mission_by_name(mission_name.data()) ||
-	    load_mission_by_name_from_current_dir(mission_name.data())) {
+	    load_mission_from_current_dir(descriptor.data())) {
 		mounts.set_mission_loaded(1);
 		return 1;
 	}
@@ -670,7 +701,7 @@ static int mission_descriptor_available(const json &request)
 	if (mission.empty())
 		return 0;
 #ifdef DXX_BUILD_DESCENT_II
-	filename = mission + ".mn2";
+	filename = mission + (levelmeta_content_game == "d1" ? ".msn" : ".mn2");
 #else
 	filename = mission + ".msn";
 #endif
@@ -1197,7 +1228,9 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 	}
 #ifdef DXX_BUILD_DESCENT_II
 	level_metadata_set_switch_projectile_radius_override(0);
-	reset_level_robots_file();
+	std::string writable_level_file(level_file);
+	if (!d1_in_d2_prepare_level_assets(writable_level_file.data()))
+		reset_level_robots_file();
 	const int base_switch_projectile_radius =
 	    level_metadata_get_switch_projectile_radius();
 #endif
@@ -1371,6 +1404,12 @@ static json analyze_loaded_mission(const json &request)
 
 static json failed_result(const json &request, const char *problem)
 {
+	/* Preserve Android failures after the launcher disposes the request directory */
+#ifdef __ANDROID__
+	debug_log_force(DLOG_GAME, "Level metadata failed request=%s ready=%d poisoned=%d: %s",
+	                request.value("request_id", "").c_str(), levelmeta_runtime_ready,
+	                levelmeta_runtime_poisoned, problem ? problem : "analysis failed");
+#endif
 	json root;
 	root["schema"] = "dxx-level-metadata-v1";
 	root["status"] = "failed";
@@ -1381,6 +1420,9 @@ static json failed_result(const json &request, const char *problem)
 	root["mission_filename"] = request.value("mission_filename", "");
 	root["levels"] = json::array();
 	root["failure_kind"] = "analysis_failed";
+	// Consumed by LevelMetadataAnalysisService and helpers/host_metadata_worker.ps1
+	if (levelmeta_runtime_poisoned)
+		root["worker_restart_required"] = true;
 	root["problems"] = json::array({ problem ? problem : "analysis failed" });
 	return root;
 }
@@ -1398,8 +1440,14 @@ static json analyze_request(levelmeta_env env, levelmeta_context context, const 
 		for (;;)
 			SDL_Delay(1000);
 	}
-	if (!init_levelmeta_runtime(env, context, request, error, sizeof(error)))
-		return failed_result(request, error);
+	const int initialized = init_levelmeta_runtime(env, context, request, error, sizeof(error));
+	if (initialized != 1) {
+		json result = failed_result(request, error);
+		// Retry a valid request after retiring an incompatible initialized worker
+		if (initialized < 0)
+			result["failure_kind"] = "busy";
+		return result;
+	}
 	LevelMetadataRequestMounts mounts;
 	const std::string flyout_movie_library = request.value("flyout_movie_library", "");
 	if (!flyout_movie_library.empty() && !mounts.mount(flyout_movie_library))

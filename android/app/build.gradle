@@ -360,6 +360,7 @@ android {
 
         externalNativeBuild {
             cmake {
+                targets 'dxx-redux-d1', 'dxx-redux-d2'
                 arguments '-DANDROID_STL=c++_shared',
                           '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON',
                           "-DANDROID_USE_OPENGL=${project.findProperty('useOpenGL') ?: 'true'}"

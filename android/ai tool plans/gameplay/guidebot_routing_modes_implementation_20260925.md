@@ -133,3 +133,23 @@ with Nexus5X_Light_2/DxxSdk36 while another task used 5554
 Host tests support `-NoBuild -BuildDir temp/guidebot-modes-build` for the isolated
 validation build used while other tasks were building the shared worktree
 
+## Follow-up: goal menu visibility
+
+- Android reads the effective native session policy, including saves and co-op,
+  through the existing overlay polling loop
+- Original hides Secret and Unexplored from the Guide wheel, custom touch
+  controls, and controller overflow. Enhanced restores them without modifying
+  the saved layout. Secret still follows its existing reveal requirement
+- A mode change releases active touch controls and closes open selectors before
+  their item lists change. Classic goals, Next, Recall, and Warp remain available
+- Native desktop Guidebot menus already contain no Enhanced-only goals
+- Regression entry point: `android/tests/test_guidebot_routing_menus.ps1 -Install`
+  checks actual UI bindings in Original, Enhanced, and after restoring an
+  Original save against an Enhanced default. Focused Kotlin tests cover the
+  shared filter, overflow actions, and preservation of configured bindings
+- Validation: scoped formatting/lint and all 30 focused Kotlin tests passed
+  (`RemainingKeyTouchActionsTest`, `GuidebotLockedWheelTest`). Android APK
+  assembly was attempted twice, but the native retention startup guard refused
+  while unrelated native builds/replay tests were active. The new device test
+  remains unrun until APK assembly can proceed
+

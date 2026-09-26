@@ -15,6 +15,7 @@
  */
 
 #include "cd_preview.h"
+#include "pcm_ring.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,54 +49,7 @@ typedef struct {
 
 /* ── Ring buffer (same lock-free pattern as rbaudio_bin.c) ───────────── */
 
-#define RB_SHIFT   18
-#define RB_SAMPLES (1 << RB_SHIFT) /* 262144 samples */
-#define RB_MASK    (RB_SAMPLES - 1)
-
-static short s_rb[RB_SAMPLES];
-static volatile int s_rb_wpos = 0;
-static volatile int s_rb_rpos = 0;
-
-static void rb_reset(void)
-{
-	__atomic_store_n(&s_rb_wpos, 0, __ATOMIC_SEQ_CST);
-	__atomic_store_n(&s_rb_rpos, 0, __ATOMIC_SEQ_CST);
-}
-
-static void rb_write(const short *data, int count)
-{
-	unsigned int wpos = (unsigned int) __atomic_load_n(&s_rb_wpos, __ATOMIC_RELAXED);
-	unsigned int idx = wpos & RB_MASK;
-	int first = RB_SAMPLES - (int) idx;
-	if (first > count) first = count;
-	memcpy(&s_rb[idx], data, first * sizeof(short));
-	if (count > first)
-		memcpy(&s_rb[0], data + first, (count - first) * sizeof(short));
-	__atomic_store_n(&s_rb_wpos, (int) (wpos + (unsigned int) count), __ATOMIC_RELEASE);
-}
-
-static int rb_read(short *out, int count)
-{
-	unsigned int wpos = (unsigned int) __atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE);
-	unsigned int rpos = (unsigned int) __atomic_load_n(&s_rb_rpos, __ATOMIC_RELAXED);
-	unsigned int avail = wpos - rpos;
-	if ((int) avail < count) count = (int) avail;
-	if (count <= 0) return 0;
-	unsigned int idx = rpos & RB_MASK;
-	int first = RB_SAMPLES - (int) idx;
-	if (first > count) first = count;
-	memcpy(out, &s_rb[idx], first * sizeof(short));
-	if (count > first)
-		memcpy(out + first, &s_rb[0], (count - first) * sizeof(short));
-	__atomic_store_n(&s_rb_rpos, (int) (rpos + (unsigned int) count), __ATOMIC_RELEASE);
-	return count;
-}
-
-static unsigned int rb_available(void)
-{
-	return (unsigned int) __atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE) -
-	       (unsigned int) __atomic_load_n(&s_rb_rpos, __ATOMIC_ACQUIRE);
-}
+static struct pcm_ring s_rb;
 
 /* ── Playback state ──────────────────────────────────────────────────── */
 
@@ -283,13 +237,13 @@ static void *render_thread_func(void *data)
 		} else if (!s_playing || s_paused) {
 			sleep_usec = 20000;
 		} else {
-			unsigned int space = RB_SAMPLES - rb_available();
+			unsigned int space = PCM_RING_SAMPLES - pcm_ring_available(&s_rb);
 			if (space < CHUNK * 2u) {
 				sleep_usec = 5000;
 			} else {
 				int got = render_cd_frames(buf, CHUNK);
 				if (got > 0)
-					rb_write(buf, got * 2);
+					pcm_ring_write(&s_rb, buf, got * 2);
 				stop = !s_playing;
 			}
 		}
@@ -339,7 +293,7 @@ static void osl_callback(SLAndroidSimpleBufferQueueItf bq, void *ctx)
 	memset(buf, 0, needed * sizeof(short));
 
 	if (__atomic_load_n(&s_output_enabled, __ATOMIC_ACQUIRE)) {
-		got = rb_read(buf, needed);
+		got = pcm_ring_read(&s_rb, buf, needed);
 		/* Volume scaling */
 		if (s_volume < 0.99f && got > 0) {
 			int i;
@@ -627,7 +581,7 @@ static int cd_preview_start_common(const char *cue_path,
 	__atomic_store_n(&s_output_failed, 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
 	pthread_mutex_lock(&s_ring_reset_mutex);
-	rb_reset();
+	pcm_ring_reset(&s_rb);
 	pthread_mutex_unlock(&s_ring_reset_mutex);
 
 	LOGI("Starting track %d (audio #%d): file=%d sectors %d-%d (%d), rate=%d",
@@ -775,7 +729,7 @@ static void cd_preview_stop_internal(void)
 	osl_shutdown();
 	pthread_mutex_lock(&s_playback_mutex);
 	close_bin_files();
-	rb_reset();
+	pcm_ring_reset(&s_rb);
 	pthread_mutex_unlock(&s_playback_mutex);
 }
 
@@ -828,7 +782,7 @@ int cd_preview_seek(float fraction)
 	s_pcm_len = 0;
 	s_pcm_pos = 0;
 	s_resample_frac = 0.0;
-	rb_reset();
+	pcm_ring_reset(&s_rb);
 
 	/* Update output frame counter to reflect seek position */
 	{

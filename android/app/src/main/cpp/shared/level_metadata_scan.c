@@ -7,6 +7,46 @@
 #include <stdio.h>
 #include <string.h>
 
+static int level_metadata_trigger_actions(const level_metadata_scan_view *view, int trigger, int types[LEVEL_METADATA_MAX_TRIGGER_ACTIONS])
+{
+	int count;
+	if (!view || trigger < 0 || trigger >= view->num_triggers) return 0;
+	if (view->trigger_action_types) {
+		count = view->trigger_action_types(view->user, trigger, types);
+		return count >= 0 && count <= LEVEL_METADATA_MAX_TRIGGER_ACTIONS ? count : 0;
+	}
+	if (!view->trigger_type) return 0;
+	types[0] = view->trigger_type(view->user, trigger);
+	return 1;
+}
+
+int level_metadata_trigger_has_action(const level_metadata_scan_view *view, int trigger, int type)
+{
+	int types[LEVEL_METADATA_MAX_TRIGGER_ACTIONS];
+	const int count = level_metadata_trigger_actions(view, trigger, types);
+	for (int i = 0; i < count; ++i)
+		if (types[i] == type) return 1;
+	return 0;
+}
+
+int level_metadata_trigger_effect_type(const level_metadata_scan_view *view, int trigger)
+{
+	int types[LEVEL_METADATA_MAX_TRIGGER_ACTIONS];
+	const int count = level_metadata_trigger_actions(view, trigger, types);
+	int result = -1;
+	for (int i = 0; i < count; ++i) {
+		const int type = types[i];
+		if (type == view->trigger_type_exit || type == view->trigger_type_secret_exit) return -1;
+		if (type == view->trigger_type_open_door || type == view->trigger_type_close_door ||
+		    type == view->trigger_type_toggle_door || type == view->trigger_type_illusion_on ||
+		    type == view->trigger_type_illusion_off || type == view->trigger_type_open_wall ||
+		    type == view->trigger_type_close_wall || type == view->trigger_type_illusory_wall ||
+		    type == view->trigger_type_lock_door || type == view->trigger_type_unlock_door)
+			result = type;
+	}
+	return result;
+}
+
 static int component_id[LEVEL_METADATA_MAX_SEGMENTS];
 static int queue[LEVEL_METADATA_MAX_SEGMENTS];
 static int energy_segments[LEVEL_METADATA_MAX_SEGMENTS];
@@ -142,9 +182,14 @@ int level_metadata_route_step_required_by_world_state(
     const level_metadata_route_step *step)
 {
 	int link;
+	int effect_type;
 
 	if (!view || !step)
 		return 1;
+	effect_type = step->trigger_num >= 0 && step->trigger_num < view->num_triggers &&
+	                      (view->trigger_action_types || view->trigger_type)
+	                  ? level_metadata_trigger_effect_type(view, step->trigger_num)
+	                  : step->trigger_type;
 	switch (step->kind) {
 		case LEVEL_METADATA_ROUTE_START:
 			return 0;
@@ -176,8 +221,8 @@ int level_metadata_route_step_required_by_world_state(
 			/* A close transition is complete only while its linked surface is
 			 * currently closed. This lets a prepared route deliberately restore
 			 * a switch surface that an earlier open-wall trigger removed. */
-			if (step->trigger_type == view->trigger_type_close_wall ||
-			    step->trigger_type == view->trigger_type_close_door) {
+			if (effect_type == view->trigger_type_close_wall ||
+			    effect_type == view->trigger_type_close_door || effect_type == view->trigger_type_illusion_on) {
 				if (step->opened_link_count <= 0)
 					return 1;
 				for (link = 0; link < step->opened_link_count; ++link)
@@ -204,7 +249,7 @@ int level_metadata_route_step_required_by_world_state(
 				return 1;
 			for (link = 0; link < step->opened_link_count; ++link) {
 				int wall = step->opened_link_wall[link];
-				if (step->trigger_type == view->trigger_type_unlock_door) {
+				if (effect_type == view->trigger_type_unlock_door) {
 					if (wall < 0 || wall >= view->num_walls || !view->wall_flags ||
 					    (view->wall_flags(view->user, wall) &
 					     view->wall_flag_door_locked) != 0)

@@ -26,6 +26,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "weapon.h"
 #include "multi.h"
 #include "escort.h"
+#include "d1_in_d2/d1_in_d2_weapons.h"
 
 #define N_SAVE_SLOTS    10
 #define GAME_NAME_LEN   25      // +1 for terminating zero = 26
@@ -44,6 +45,7 @@ typedef struct player_config
 	ubyte ControlType;
 	ubyte PrimaryOrder[MAX_PRIMARY_WEAPONS+1];
 	ubyte SecondaryOrder[MAX_SECONDARY_WEAPONS+1];
+	d1_in_d2_weapon_order_config D1WeaponOrder;
 	ubyte KeySettings[3][MAX_CONTROLS];
 	ubyte KeySettingsD2X[MAX_D2X_CONTROLS];
 	int DefaultDifficulty;

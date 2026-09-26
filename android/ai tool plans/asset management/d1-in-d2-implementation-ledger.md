@@ -3426,3 +3426,1412 @@ temp/d1-frozen-corpus-build.log. The fresh eight-demo run is active under
 temp/d1_replay_parity_20260925_223823_asset_retirement (session 82504), with
 manifested binaries/assets and the actually executed harness. This is pending
 corpus evidence, not a pass or completion of F1-F5.
+
+### September 25: first-frame cockpit overlay correction
+
+The extended registered-data fixture reproduced ordinary D2 gauge loss: the
+first blue-key pixel was black instead of its original blue. Both original
+engines' cockpit_decode_alpha uploaded the decoded camera surround by drawing
+the entire cockpit, covering gauges already rendered in that frame. Both now
+use ogl_loadbmtexture_f directly and free the decoded texture being replaced,
+matching the existing imported D1 owner. No simulation, timing or RNG changed.
+The fixture also completes normal level-palette restoration with gr_palette_load
+after load_palette, fixing the display colors used by its camera labels.
+
+Both host game/fixture builds and scoped quality pass. Native D1 and D2 each
+pass the graphics/integration invocation, with a shared assertion that preparing
+the camera surround leaves framebuffer pixels intact. The full registered
+D1/D2/D1 integration passes with original source-key pixels checked in both
+profiles, cameras/GL state checked, and full/status PNGs visually reviewed.
+Evidence: temp/d1-cockpit-foreground-native,
+temp/d1-cockpit-foreground-d2-graphics, and
+temp/d1-cockpit-foreground-resources. The original failure remains under
+temp/d1-cockpit-foreground-before. A combined graphics/resource invocation failed
+at second graphics initialization; the final separate processes above both pass.
+Android compile/runtime for these latest mirrored renderer edits remains pending.
+
+The frozen eight-demo corpus has completed its first case: all level-15 native
+repeatability and native/imported checks pass for 2006 frames, full observed
+objects/world state, SIM RNG and terminal state. Historical recording/native
+diagnostics remain failed separately, while SIM RNG values and terminal state
+match. Its report is preserved in the output directory above; long level-7
+144212 is now running. F1-F5 remain open.
+
+### September 25: query compound exit actions through the level owner
+
+The neutral trigger_exit_flags operation now returns both normal/secret exit
+actions, independently of activation admission. Native D1 reads its source
+flags; D2 dispatches marked native records to levels and otherwise uses its
+ordinary single-type interpretation. Invalid indices return no actions. The
+query changes no world state, resource state or RNG.
+
+Guide-Bot exit selection, route confirmation, the exit cheat, guided-missile
+exit retirement, shared exit indicators and the shared side-exit query use this
+operation. A native trigger carrying both EXIT and SECRET_EXIT no longer loses
+its normal-exit meaning because its representative D2 type is TT_SECRET_EXIT.
+Original Guide-Bot routing still chooses the external flythrough endpoint;
+enhanced routing retains its trigger fallback. Native execution remains in
+activate/cross, and no travel ordering or co-op interception was changed.
+
+Both host game/fixture builds and scoped mixed quality pass. The native and D2
+integration suites pass, including actual Guide-Bot destination selection for
+all four exit combinations, original/enhanced mode behavior, ordinary D2 types,
+invalid indices, and exit queries after all 3072 flag/layout serialization round
+trips. The D2 invocation also passes the full original-resource D1/D2/D1 cycle.
+Existing Redux-reference Guide-Bot checks pass twice each on real D2 levels 1 and
+11, including save-mode checks and byte-identical repeated reports. Evidence:
+temp/d1-trigger-exit-{native,imported,original},
+temp/d1-trigger-exit-build.log and temp/d1-trigger-exit-quality.log.
+
+Remaining E3/E4 consumers are explicit: newdemo's TT_SECRET_EXIT condition is a
+D2 byte-framing decision, not a runtime exit query; the physical co-op protocol
+excludes native D1; the metadata scanner still projects one representative
+action; old imported-save single-type execution still has a legacy fallback.
+Android compilation/runtime for this slice and the preceding cockpit correction
+remain pending while the frozen corpus is active. The corpus uses its own
+earlier pinned binaries and is not evidence for these later query changes.
+
+### September 25: current serialized-identity inventory for E3
+
+This is a source audit and gap inventory, not completed persistence qualification.
+
+| Record | Discriminator and ID meaning | Decoder/restore owner and current evidence limit |
+| --- | --- | --- |
+| Native D1 save | Native state writer currently emits version 18; objects/textures/robots retain original D1 IDs | Native state accepts version 6 onward, but d1_save_translate explicitly accepts only 15 through 18. Existing translated checkpoint tests do not establish support for versions 6-14 |
+| Imported D1 save from D2 | Imported writer emits version 40; native base IDs remain original and optional resources use appended runtime IDs. A mandatory base/custom digest and optional companion digest precede objects. Native trigger actions are marked in the core record; original trigger type/link storage begins at version 34 | After mission resolution, the asset/format owner admits only imported version 40, before replacing the world. state.c then reloads level definitions before checking identity and restoring objects; levels/AI restore source extensions. Current-format custom/companion identity and archived version-38 rejection are tested below. No runtime-ID range guessing or old imported migration |
+| Ordinary D2 save | D2 core versions 20 onward, current writer 38, retain D2 runtime IDs. The native trigger-storage extension has count zero | Ordinary state.c remains the reader. Actual level-1 versions 36/37/38 restore with the correct saved/default routing mode. This does not establish every historical save version or custom-definition identity |
+| Input replay checkpoint | dximdemo carries engine/mission context and a saved checkpoint interpreted by its engine/adapter; the paired runner separately pins original assets and binaries | Current full-corpus evidence is against the staged D1-only asset set. It does not establish restoration with changed optional/custom sources |
+| Legacy rendering demo | Native registered D1 emits version 13/game type 2; ordinary D2 emits version 16/game type 3 | Original newdemo readers own framing. Native D1 .dem files remain explicitly unsupported by D2. Ordinary D2 header/event framing is unchanged. Imported D1 recordings formerly using type 3 are rejected because they cannot identify their runtime asset namespace |
+| Imported D1 rendering demo | Version 16/game type 4; event 52 before the first object of each recorded frame contains level byte, length byte, and 32-byte base/custom digest plus optional 32-byte extension digest | newdemo owns framing and seeking; the asset generation owns digest capture and validation. Object decoding requires a matching identity in that frame. Normal playback, export and endian rewrite prepare the correct level definitions. Missing/changed definitions fail explicitly; a native-only recording permits newly available optional assets. Type 4 is rejected by older D2 readers instead of exposing native IDs as D2 IDs. Registered host source/lifecycle evidence below does not establish every historical opcode or Android runtime |
+| Android save metadata | DXAS version 7 carries mission_asset_key, documented as an owner/descriptor/game digest independent of package revision | This key is not evidence of optional definition-content identity. It does not by itself resolve appended runtime IDs after their source package changes |
+| Android rewind snapshot | android_rewind_capture_snapshot calls the ordinary state_save_to_memory path and keeps timeline/time overrides alongside its buffer | Rewind inherits the engine save namespace; same-assets rewind evidence does not prove changed-definition admission. Complete the format/lifetime audit through the existing state restore path |
+
+Subsequent host evidence below closes the demonstrated base/custom/companion
+source substitution and validates complete opposite-endian current saves:
+native D1 18, imported 40 and ordinary D2 38. The native checkpoint adapter also
+restores the complete opposite-endian version-18 world. This does not qualify
+every historical version, cooperative save framing or a big-endian machine.
+Next E3 work is Android format-40 memory rewind and remaining legacy-demo/network
+consumer review. Resource identities are checked before installing saved actors;
+no native/extension namespace is inferred from numeric range.
+
+### September 25: bind current companion saves to their optional source
+
+The actual registered-data reproduction is retained under
+`temp/d1-companion-save-assets-repro` (exit 1). A deployed companion uses runtime
+robot ID 24. A save made with mass 22937 restored successfully against a modified
+source with mass 88473, silently changing the actor's definition. Removing the
+optional package returned failure later in restore. This is direct save-loader
+evidence, not just a source-range concern.
+
+Imported D1 now writes version 39, with a length and optional SHA-256 digest
+immediately before its object count. Ordinary D2 still writes version 38 and
+has no additional record. The asset owner binds the exact registered HAM, PIG,
+palette and selected sound-bank bytes, source sample rate and explicit
+source-to-runtime mapping in a canonical byte order. Paths, host struct layout,
+rendered frames, output mixer conversion and RNG are not part of the digest.
+The digest is prepared once with the generation and retired with it. It binds
+the whole optional package, including unselected source content; it is a
+conservative package identity, not a claim to recognize equivalent editions.
+Every save with a published optional generation records that dependency.
+
+Restore checks the prepared generation before installing saved objects. Missing,
+changed, malformed or truncated identities fail explicitly. A save without an
+optional generation can still restore when that package becomes available.
+The existing event-boundary return-to-menu request now also handles this D2
+host failure, restoring window visibility and preventing a partly restored
+world from running. Its real event handler closes the game, and a subsequent
+valid restore succeeds. The record codec uses the existing rewind I/O wrapper;
+Android rewind execution for this new field is still pending.
+
+Both host games/fixtures build. Native and imported integration suites, the
+complete original D1/D2/D1 resource cycle, and all seven native/imported dynamic
+checkpoint scenarios pass; the resumed frame JSON matches exactly. Evidence:
+`temp/d1-companion-save-assets-final`, validation session 4479 terminal 0.
+Original Guide-Bot navigation and saved routing modes pass twice each on D2
+levels 1 and 11 (`temp/d1-companion-save-assets-original`, 58255 terminal 0);
+the actual resulting save header remains version 38.
+
+Final targeted recovery evidence is
+`temp/d1-companion-save-assets-recovery-final` (75972 terminal 0), fixture SHA256
+3A61C17D596F1964508F95E6C6AEEAD2D4CC0CB9AC95E4B66A68FA6CBA3A5D3B.
+It covers unchanged/changed/missing packages, reinstall recovery, a native-only
+save with optional data newly present, opposite-endian identity reading, five
+malformed/truncated records, actual game-window closure and subsequent restore.
+The earlier `before`, `fixed` and `recovery` outputs include interrupted or
+failed fixture-development runs and are not passing qualification evidence.
+
+Formatting audit found that the earlier space-separated PowerShell -Paths
+invocation bound only its first file. The corrected single mixed invocation
+uses an explicit array and passes in
+`temp/d1-companion-save-assets-quality-complete.log`. The helper intentionally
+formats only shared Android C/C++; the fixture and new owner CPP were also
+formatted explicitly with the pinned clang-format. Upstream bodies retain
+existing style. Whitespace checks pass; final formatting-only rebuild is
+recorded in `temp/d1-companion-save-assets-formatted-build.log`.
+
+E3 is still open. Version-38-and-earlier imported saves cannot establish this
+identity and retain their old reader behavior. Next reproduce the archived old
+companion save against changed/missing packages using the new reader, then
+choose an explicit admission outcome without inferring provenance from numeric
+indices. Base/custom definition identity, full swapped saves, Android rewind,
+legacy rendering-demo framing and applicable network evidence also remain.
+This current-format fix is not a claim to close F3-F5.
+
+### September 26: explicit admission for older imported saves
+
+The archived version-38 companion save reproduced the remaining defect with
+the new loader: a saved mass of 22937 became 88473 after changing the optional
+HAM, while restore still returned success. Evidence is retained in
+`temp/d1-legacy-save-admission-before` (expected failing exit 1). Version 31
+also spans both the old overlay implementation and the later native-resource
+implementation (`3482c13c` and `cf1f4876` both write 31). Neither its version nor
+a range-valid actor ID identifies the resource definitions used by that save.
+
+The asset/format owner now admits only version 39 for D2-format saves targeting
+D1 content. Older and unknown future imported versions are explicitly rejected
+after mission resolution and before replacing the world, clocks or saved
+runtime references. Because mission selection can change mounts, rejection
+restores game-window visibility and requests the existing return-to-menu path.
+No compatibility guess or migration has been added. Native D1 checkpoint
+translation remains separate; ordinary D2 retains its reader and version-38
+writer. This supersedes the unresolved legacy-admission note above, without
+claiming identity coverage for base/custom definitions.
+
+The archived save now fails with unchanged, changed and missing optional
+packages. Assertions verify unchanged object extent, game clock, SIM RNG state
+and call count, a visible game window and a pending recovery request. A new
+current-format D1-only save still saves/restores afterward. The current companion
+fixture retains unchanged-source success, changed/missing/malformed rejection,
+actual event-loop menu recovery and successful subsequent restore. Its new
+ordinary D2 controls restore real level-1 saves with versions 36, 37 and 38 and
+verify the appropriate default or saved Guide-Bot routing mode.
+
+Both complete host integration suites and registered D1/D2/D1 resource tests
+pass. All seven native/imported dynamic checkpoint scenarios pass, including
+native prior-format import, current imported re-save and old imported rejection
+without changing the complete observed dynamic state. Their 28 resumed frame
+records match exactly. Final evidence is `temp/d1-legacy-save-admission-recovery`
+(session 95702, terminal 0), with native fixture SHA256
+FF7F5ABDBF9CA9A975718DFADBE683BD061ED48915A674E899751580A0BD7E89 and imported
+D331ABB1095F4F3891CD52D77FFDEB21B998A6D0E41B16FC5E7E463BBA6A0F1B.
+The earlier directory named `d1-legacy-save-admission-final` contains the caught
+hidden-window failure and is not passing evidence. Scoped mixed quality,
+explicit fixture/new-owner clang-format and whitespace checks pass.
+
+Android compilation/rewind runtime, base/custom definition identity, full
+opposite-endian save execution and legacy rendering-demo framing remain open.
+The frozen corpus finished all three long level-7 captures and is now comparing
+them in the same live process; no verdict for this case has been claimed.
+The wider E3/E4 and F1-F5 gates remain open.
+
+### September 26: bind base and custom definition sources
+
+The actual custom-checkpoint fixture confirmed another version-39 gap. An
+imported save with robot mass 458752 restored successfully after its HX1 mass
+changed to 524288, and also after HX1 removal substituted stock mass 98304.
+The saved actor was installed in both cases. This failing reproduction remains
+under `temp/d1-custom-save-identity-before` (88939 terminal 1).
+
+Imported D1 now writes and admits version 40. Its existing pre-object identity
+record contains a mandatory 32-byte base/custom digest, followed by the optional
+32-byte companion digest when required; only lengths 32 and 64 are valid.
+Version 39 does not meet the complete identity contract and is rejected by the
+same early admission rule as older imported records. Ordinary D2 still writes
+38, and native D1 checkpoint translation remains separate and unchanged.
+
+`read_assets` binds the exact source PIG and palette bytes before publication.
+`d1_custom_read_assets` extends that identity with PG1, DTX and HX1 in native
+precedence order, including explicit absence markers. Both identities belong
+to the unpublished/published generation and retire with it. Hash inputs use
+versioned domain tags, canonical lengths and source bytes; paths, archive versus
+loose placement, host structs, output sample conversion, mutable world state,
+animation history and RNG are excluded. Hashing streams through a 64-KiB buffer
+at preparation, not during simulation or each save. A source-hashing failure
+rejects unpublished preparation. The existing save adapter checks the
+prepared identity before installing saved actors and uses the established menu
+recovery path on rejection.
+
+This deliberately binds complete selected source files, including overridden
+or unused entries. It does not claim semantic equivalence across different
+editions, nor bind unrelated mission metadata or level geometry. Original
+source IDs stay original; companion mapping remains explicitly included in its
+own digest. There is no table-range inference or cross-level animation state.
+
+The expanded custom fixture passes all nine cases: unchanged, changed/missing
+HX1, changed PG1/DTX/base PIG/palette, and identical PIG/palette relocated to
+loose files. Failed restores never install the distinctive saved actor, and
+reinstalling the original sources recovers the save. All seven paired custom
+checkpoint scenarios and 28 resumed frames match exactly. Evidence:
+`temp/d1-custom-save-identity-fixed` (13066 terminal 0).
+
+The broader validation also passes: archived version-38 rejection, current
+companion source identity, opposite-endian identity codec, six malformed or
+truncated identities, actual event-loop recovery, ordinary D2 36/37/38 saves,
+both host integration suites, registered D1/D2/D1 resource cycling and seven
+exact native/imported dynamic checkpoint cases. Evidence:
+`temp/d1-base-custom-identity-validation` (44841 terminal 0). Both runs pin native
+fixture 58F3A31F7CD567F2384063CF0B577C7CB4DF5432DD158BC1DFBC43FEB4284E0C and
+imported fixture 5EC07C218D20039A0E722658843050E76D77DDE4EE45BB053152DD4E850BC8C7.
+Scoped mixed quality, explicit fixture/new-owner clang-format and changed-file
+whitespace checks pass.
+
+E3 still requires full swapped-save execution, Android rewind/platform
+qualification and the remaining legacy-demo/applicable network review. E4
+compound metadata consumers and the wider F1-F5 gates remain open. The preserved
+long level-7 corpus comparison is live, still comparing native repeatability;
+its older frozen binaries do not qualify this new format.
+
+### September 26: original object endian angle widths
+
+Both original object_rw_swap readers applied SWAPINT to 16-bit physics.turnroll
+and polygon animation p/b/h angles. The shared fixture independently constructs
+opposite-endian bytes for signed extrema, positive/negative/nonzero values and
+poly/morph/ghost render records. Both engines failed before the fix in
+`temp/d1-object-endian-before`; both now use SWAPSHORT for those four fields.
+The test checks disabled conversion, actual opposite-endian decoding and exact
+wire bytes on output. This introduces no runtime or cross-level animation state.
+
+Both complete host integration suites pass in `temp/d1-object-endian-fixed`,
+including registered D1/D2/D1 resources. Native fixture SHA256 is
+53E5B774E7A84624F4C997913DD0EFA41B2C670298ACF367D7611A09B26ADB41;
+imported is 9F0DD3B9161BB91F9A79EA7FF825BB5532963D5561C3792882C88836AD08AC8B.
+The engine build, scoped quality, explicit fixture formatting and whitespace
+checks pass. These object tests do not establish full swapped-save execution or
+Android memory-rewind behavior; both remain open.
+
+### September 26: preserve native boss health on ordinary re-save
+
+The existing checkpoint adapter preserved D1 boss health, but the ordinary D2
+save reader still applied D2's health repair after reading imported objects.
+An actual level-7 imported re-save changed 4000 shields to 1000 on difficulty 0;
+mass, drag, size and damage history survived. Native D1 passed all 30 control
+cases. Failing evidence is `temp/d1-boss-resave-before` (7666 terminal 1).
+
+The original state.c repair now dispatches only for D1_AI_ENGINE_ACTOR through
+the existing owner role selector. Native D1 enemies retain the saved value;
+ordinary D2 and engine companions retain D2 policy. No save format, RNG or
+animation lifetime changes were needed.
+
+The shared checkpoint fixture now re-saves and reloads each boss through the
+ordinary game serializer, after actual native checkpoint restoration/import.
+Both levels 7 and 27 pass all five difficulties and six health values each:
+over-default, full, half, one, zero and negative. Assertions retain exact health,
+physics and actual damage history. All 60 paired boss cases and the 56 resumed
+frame records from 14 checkpoint scenarios match exactly. Evidence:
+`temp/d1-boss-resave-fixed` (29175 terminal 0).
+
+An actual Counterstrike level-8 control saves/reloads 30 health/difficulty cases
+and confirms the original D2 repair policy is unchanged. The same run passes
+companion asset identity, malformed-source rejection, real menu recovery and
+ordinary D2 versions 36/37/38. Evidence: `temp/d1-boss-resave-d2-control`
+(51705 terminal 0). The tested native fixture SHA256 is
+470C5BA21A92DDA6FE9BDA1B1E2741FDA54D7D5C58781755039FA080E621BBAF;
+imported is BD98EC3DAF5B031225A4FC1F214D7674952B95621FAF174954A7DCD9F2BDFEF3.
+Both engine builds, scoped quality, explicit fixture formatting and whitespace
+checks pass. These checks cover host file saves, not Android rewind or complete
+opposite-endian saves. The preserved corpus remains live in its long level-7
+native-repeatability comparison, with its pinned older artifacts unchanged.
+
+### September 26: complete opposite-endian restore execution
+
+Added an independent current-save wire-layout fixture shared by both engine
+integration targets. It visits every byte through EOF, reverses host-order fields
+and leaves explicit little-endian subrecords unchanged. Double conversion must
+recover the original file exactly. Full opposite-endian saves are then restored
+through ordinary state readers and the native checkpoint import adapter. Complete
+world/object observations and SIM seed must match the corresponding native-order
+restore. Non-resumable flyout cosmetic history is excluded, per the user contract.
+
+This found actual reader defects rather than just exercising swap primitives.
+Both ordinary readers corrupted 48 morph coordinates. Populating all four saved
+physics vectors increased the mismatch to 60 values. Native D1 also failed to
+swap CT_MORPH's static AI, changing its path index and hide segment. The imported
+companion save with Enhanced routing was rejected because the routing field is
+written explicitly little-endian but was read in header byte order. Reproductions
+are in `temp/d1-complete-endian-before` and
+`temp/d1-complete-endian-populated-before` (each failing as expected). The separate
+native checkpoint adapter reproduced the same 60 morph/physics differences in
+`temp/d1-checkpoint-endian-before` (78312 terminal 1).
+
+Both original readers now match their existing explicit-LE vector writes for
+morph points, saved morph physics and appended AI awareness/belief positions.
+Ordinary D2's last-fired position uses that same fixed-order rule. Native D1's
+object swap includes CT_MORPH. D2's routing validation and application both read
+the fixed-LE record. The D1 checkpoint owner uses a dedicated bounded LE-vector
+decoder only at those appended fields; original raw object, AI path/cloak and
+matcen vectors continue to follow save byte order. No writer framing, version,
+SIM/FX policy or animation lifetime changed.
+
+Final matrix `temp/d1-complete-endian-final` (52434 terminal 0) contains 23 empty
+full-world difference reports: seven native ordinary restores, seven imported
+ordinary restores, seven native checkpoint endian imports, a real optional
+companion restore and an ordinary Counterstrike restore. Inputs include nonzero
+awareness/belief, all four morph physics vectors, active morph coordinates, wide
+cadence clocks, source identity and Enhanced routing. All seven scenarios and 28
+resumed native/imported frame records match exactly. Companion identity/recovery,
+ordinary D2 versions 36/37/38 and all 30 ordinary D2 boss-health controls also pass.
+
+Both complete host integration suites pass in
+`temp/d1-complete-endian-integration`, including registered D1/D2/D1 resource
+cycling (imported session 81057 terminal 0). Tested native fixture SHA256:
+6D767CC08815D013780FBDD505E010B7C2C07801F3A31159CA29FFCE8F78AE04;
+imported: 8AC71614A7CB90AE067EA1C5A303791F94479FD005CC5F5F48153CE872D8F6CF.
+Both engine builds, scoped mixed quality, explicit fixture formatting and
+whitespace checks pass without new build warnings.
+
+This qualifies complete current single-player file saves on the host, not Android
+memory rewind, cooperative framing, every legacy version or execution on physical
+big-endian hardware. E3/E4 and F1-F5 remain open. The same frozen corpus 82504 is
+live and has advanced to the long level-7 native-to-imported comparison; do not
+infer its verdict from the phase or treat its older binaries as this fix's proof.
+
+### September 26: compound navigation metadata and route snapshots
+
+The E4 audit confirmed metadata discarded native compound actions. The new
+snapshot carries ordered navigation actions, hashes the complete sequence and
+uses it for route dependencies, wall effects, exit discovery and labels. The
+engine adapter decodes imported source flags through the existing D1 owner;
+ordinary D2 remains a single-action record. Flyout exit metadata and headless
+exit diagnostics now use trigger_exit_flags. Native wall_toggle opens closed
+doors or destroys blastable walls; the previous planner incorrectly toggled an
+already-open door closed. Native one-shot flags do not prevent another crossing,
+so the metadata admission adapter no longer treats them as D2 consumable triggers.
+
+The actual before-fix snapshot/progression test fails in
+`temp/d1-compound-metadata-before/test.log`: illusion-on plus illusion-off does
+not produce the final open surface. Route snapshot and metadata-scan tests passed
+after the ordered-action change. Added order/hash reversal, repeated door and
+blastable handling, terminal compound-exit selection and a nested dependency
+whose exported label includes all actions. The native engine integration passes
+1024 native flag combinations and actual published flyout-exit metadata. Build
+artifacts and final validation are being retained under
+`temp/d1-compound-metadata-fixed`.
+
+The first complete native CTest run was 53/54 passing and caught an introduced
+alternative-exit regression: an explicit requested destination was inferred from
+a changed live trigger. Preserve `ctest-d1-early.log`; fix by preserving explicit
+normal/secret destinations and checking candidate action membership. No complete
+validation claim yet. Build 74577 is still active at this entry; no Android build
+or runtime qualification has occurred. The frozen corpus remains untouched.
+
+The preserved corpus advanced from long level-7 144212 to level 14. Its report
+now records native repeatability passing all six checks. Native/imported world,
+objects, SIM RNG, clock and terminal result pass across 16873 frames; frame
+checks fail on primary_weapon_picked_up and its runtime hash for 45 frames,
+starting at 2908 (native 1, imported 0). This is a remaining gameplay-state latch,
+not permission to remove diagnostics. Source audit found D1 quads call
+pick_up_quads/pick_up_primary_helper while imported D2's quad pickup lacks that
+native autoselection path; reproduce pickup/selection variants before fixing.
+The current corpus predates the recent fixes and remains pinned to its manifest.
+
+Validation completed for this E4 host slice. The exit-recovery regression was
+fixed by preserving an explicit requested normal/secret destination while
+checking every candidate action. The step representative is now the first
+ordered navigation action, so native compound exits precede linked wall actions;
+all actions remain in the snapshot. Added a direct certifier regression where
+one candidate has a door action followed by both exit actions: both destination
+requests select it without changing the requested type. Both engine builds pass
+this extended certifier test.
+
+Final results in `temp/d1-compound-metadata-fixed`:
+
+- Full Windows builds complete, including headless metadata/route tools. The
+  initial all-target build exposed only existing POrderList/SOrderList missing-
+  return warnings; the final incremental build adds no warning
+- Native CTest 54/54 and imported/D2 CTest 62/62 pass
+- Both complete host integration fixtures pass, including registered D1/D2/D1
+  resource cycling. Validation runner 13938 completed with exit 0
+- Original Guide-Bot controls pass 3695 checks on level 1 and 7415 on level 11,
+  each run twice with byte-identical JSON results
+- Native and imported level-1 metadata tools both exit 0. Selected route metrics,
+  key masks, four route steps and flyout geometry agree. The only route-step
+  field difference is exit trigger_type_id (native 8, D2 3). Movie status strings
+  remain not_applicable_d1 versus not_selected_for_level; the in-engine flyout
+  estimate and all tunnel geometry match (10.199 seconds). This is not a claim
+  that every top-level metadata field is identical
+- The original snapshot failure and the caught intermediate certifier failure
+  remain retained. Scoped quality, explicit changed-test formatting and final
+  changed-file whitespace checks pass
+
+Tested integration executable SHA-256:
+
+- native B869096EBFF466EEA9F3B8001F25299DAB24FDDB9A447E1C85D5B3A031A14668
+- imported 5E1274C30DEEDC7F7713145DF90310242C2BB1D6CBDDEE95005F401A7ED4372D
+
+All new build/test sessions are terminal. The sole task-owned ongoing job remains
+corpus 82504; its level-14 native-repeat process 3636 was verified live/responding.
+Next prioritize the actual level-7 pickup/autoselection mismatch, then imported
+rendering-demo trigger framing and Android format-40/rewind/platform checks when
+the retention guard is free. The current source query at newdemo.c:2252 consumes
+ND_EVENT_SECRET_THINGY solely from the representative TT_SECRET_EXIT type, while
+native activation stops recording without emitting D2's truth record. Reproduce
+writer/reader framing before changing that branch; do not substitute a semantic
+exit-mask check for a binary-format decision. F1-F5 remain open.
+
+### September 26: primary pickup and queued quad selection
+
+The frozen level-7 mismatch is a laser upgrade while already using quads, not a
+new quad pickup. The compact source-trace extraction at
+`temp/d1-pickup-frame-probe/laser-upgrade.json` shows frame 2908 increasing laser
+level from 0 to 1, with primary 0 and quad flag 1024 unchanged. Native D1 consumes
+the first-primary-pickup allowance; imported D2 did not. Native D1 ranks the
+current quad laser as logical selection 16 and the acquired laser upgrade as 0.
+
+Added actual do_powerup/release/followup integration, covering four ordering
+contexts, eleven pickup/duplicate/ammo scenarios, firing policies, first-only
+settings, consumed allowances and existing queued choices. Before fixing,
+`temp/d1-pickup-autoselect-before/report.json` records 360 of 2112 differing
+cases, including actual selected weapons, queued switches, rearm and fusion
+state. Its first difference reproduces the frozen frame's latch mismatch.
+
+D1 acquisition policy now lives in d1_in_d2_weapons.c. Minimal D2 hooks preserve
+the native quad identity for ranking, queueing and selection, invoke acquisition
+for quad powerups, and compare ammo acquisition against the logical current
+weapon. An ordinary D2 pilot has no separate quad entry: native mode places it
+below the cutoff as native D1 defaults do, without changing the D2 pilot order.
+Existing native order entries are respected. This does not add a quad-order
+pilot UI or claim complete weapon-order/profile integration.
+
+The intermediate fixed matrix still failed 48 ammo cases, retained in
+`temp/d1-pickup-autoselect-fixed`: D2's outer Vulcan ammo helper restored the old
+selected weapon after a successful switch. Preserve the new choice only for D1
+gameplay. Final `temp/d1-pickup-autoselect-verified` passes all 2112 cases, with
+ordinary D2's complete matrix byte-identical to the before-fix baseline. Every
+case checks that acquisition and selection consume no SIM RNG.
+
+Native pending selection 16 now survives checkpoint import rather than being
+collapsed to laser 0. Imported save/rewind runtime validation accepts that value
+only in D1 gameplay; ordinary D2 still rejects it. Actual file/memory adapter
+tests acquire quads, write/validate/restore the queue, acquire another weapon
+while firing and release to the correct inventory slot. Opposite-endian records
+also retain the identity. The full save runner passes in
+`temp/d1-pickup-endian-verified`: 23 complete native/imported/companion/D2 world,
+object and SIM-seed comparisons plus 28 matching resumed checkpoint frames.
+The existing checkpoint assertion now requires native 16 in both engines.
+
+Both complete host integrations pass in `temp/d1-pickup-integration`, including
+registered D1/D2/D1 resource cycling. Both game executables and host fixtures
+build; only the existing POrderList/SOrderList missing-return warnings remain.
+Scoped mixed quality, explicit fixture formatting and whitespace checks pass.
+Reusable runner: `android/tests/test_pickup_autoselect_parity.ps1`.
+The matrix/save-tested fixture hashes are native
+A4A6B201A9F1270052A076EB5D7AA165D391257DF8333579A304154401CC2E9C and imported
+86FA8E0965FDA8FBF67BA042ED82859FE0404EE6A2B0FFA7712FB701AD56CDEE.
+Final source formatting only changed test-file line endings; the final fixture
+rebuild also passes. Android runtime qualification and a fresh full-corpus run
+of this implementation remain pending.
+
+Next audit the other weapon-order consumers: imported replay configuration
+currently copies seven native order entries into the D2 array, while cycling,
+empty-weapon fallback and reorder UI still assume D2 indices. Source review
+shows player_has_weapon indexes D2 tables directly and therefore needs an
+actual native-quad-domain reproduction before broader selection claims. Then
+continue E3 rendering-demo framing and Android format-40/platform checks when
+the preserved corpus releases its guard. Corpus 82504/controller 35700 is still
+active in level-14 native-to-imported comparison, with its frozen files and
+binaries untouched. No F1-F5 completion claim.
+
+### September 26: native weapon order, pilot UI and replay configuration
+
+The next reproduction exercised actual cycling and empty-weapon fallback rather
+than only acquisition. `temp/d1-weapon-selection-before/report.json` shows 2234
+of 8640 native/imported cases differing. Native replay metadata had been copied
+into the eleven-entry D2 pilot arrays even though D1 uses seven primary entries
+(including logical quad 16) and six secondary entries. The remaining consumers
+still interpreted those entries as D2 inventory/table indices.
+
+Native preferences now have separate, validated PlayerCfg fields owned by
+d1_in_d2_weapons. D1 menus, ranks, cycling, classic/modern fallback and inventory
+availability use those fields. The optional `[d1 weapon order]` text-pilot section
+persists both permutations; the original D2 binary pilot layout and its orders
+remain unchanged. Missing or malformed optional preferences reset to native
+defaults. This supersedes the previous pickup slice's temporary below-cutoff
+quad fallback and its explicit lack of native ordering UI.
+
+An intermediate matrix caught 1298 remaining differences: native Fusion needs
+two energy units before it is available, unlike D2's zero-energy table entry.
+After implementing native availability the original 8640 cases matched.
+Expanding the native orders then reproduced a real native D1 infinite loop:
+with `{16,4,0,3,2,1,255}`, empty Vulcan and no energy, classic fallback reset the
+candidate slot at five and could never reach the cutoff at six. The isolated
+before-fix process used 9.125 CPU seconds and was stopped by a ten-second timeout
+(`temp/d1-classic-cutoff-before`). Removed the wrong primary-slot wrap in native
+D1 and its imported implementation. A zero-position secondary cutoff now also
+skips the sentinel before querying inventory. This is a proven fallback hang;
+it is not evidence that every reported Preparing for Descent hang has this cause.
+
+Actual menu edits, pilot reload and recorder output passed, but the first full
+replay startup test exposed another real boundary bug: level-entry progress
+bookkeeping reloads the pilot after recorded settings were applied. Native D1
+also failed the conflicting-pilot test (`temp/d1-weapon-profile-corrected`). A
+shared hook now reapplies recorded player configuration immediately after that
+reload in both engines. Regular gameplay returns without changing settings.
+This fixes configuration initialization in the engine; replay comparison and
+simulation state are not compensated or weakened.
+
+D2 recordings in native gameplay now include separate native order arrays while
+retaining their D2 arrays. Native D1 recordings keep their existing seven/six
+entry format, and imported playback routes those entries to native preferences.
+The parser validates both new permutations together, including exact lengths,
+domain and uniqueness. Restored-player diagnostics hash the active native order.
+
+Final fixture validation:
+
+- `temp/d1-weapon-selection-verified`: all 18240 native/imported selections
+  match (14400 primary and 3840 secondary cases). Covers repeated cycling,
+  classic/modern fallback, quads, inventory, energy/ammo, restricted cycling,
+  reordered weapons and cutoffs at both extremes. The ordinary D2 8640-case
+  output is byte-identical to its before-fix baseline
+- `temp/d1-weapon-pickup-verified`: all 2112 acquisition/queue/release cases
+  still match; ordinary D2 is byte-identical to its original baseline. Both
+  matrices assert that selection consumes no SIM RNG
+- `temp/d1-weapon-profile-verified`: real native/imported reorder menus, actual
+  pilot write/read, malformed/missing optional fields, recorder output, imported
+  native-D1 recordings, conflicting saved preferences at full replay startup,
+  and actual D1 -> D2 -> D1 mission entry pass. D2 order arrays remain intact
+- `temp/d1-weapon-order-support-tests`: parser, recorder and replay CTests pass
+  in both engine configurations, including invalid separate-order metadata
+- Both game executables and fixture/support targets build from the final source
+  (`temp/d1-weapon-order-final-build.log`). Existing POrderList/SOrderList
+  missing-return warnings remain; no new compiler warnings were introduced
+- `temp/d1-weapon-order-integration`: both complete host integrations pass
+- `temp/d1-weapon-order-endian`: all 23 complete world/object/SIM-seed restore
+  comparisons pass (seven native, seven imported, seven native-to-imported
+  adapters and two companion/ordinary-D2 controls); 28 resumed checkpoint frames
+  match exactly, including pending native quad identity
+- Scoped mixed quality, explicit fixture formatting and changed-file whitespace
+  checks pass; all new build/test sessions are terminal
+
+Matrix/profile-tested fixture SHA-256:
+
+- native FCB3E63AF6359688E27B142D089C63678B0BA49746241CB3A5BA7C0790D9AF8B
+- imported F0272F637B4518BA72505911BC30B4B28EC77A499CA3E5EEE58201EA7FB7A6AF
+
+The preserved corpus also completed levels 14 and 16: native repeatability and
+native/imported comparison pass all six checks. These are older frozen binaries
+and do not qualify the current changes. The level-7 pickup-latch mismatch remains
+in that historical output; do not rewrite it. Android runtime and a fresh full
+corpus of the new implementation remain pending. F1-F5 remain open.
+
+The only ongoing task job is frozen corpus 82504/controller 35700, now on level-18
+native-repeat with its staged files untouched. Next continue E3 rendering-demo
+trigger framing, then current Android format-40/rewind/platform qualification
+when the corpus releases its retention guard. outstanding_bugs.md is unchanged.
+
+### September 26: rendering-demo trigger framing and export ownership
+
+Reproduced the actual writer/reader mismatch with a native secret trigger. D2
+records the crossing, but native activation never writes ND_EVENT_SECRET_THINGY.
+The reader inferred its presence from the representative trigger type and ate
+the following event. The corrected, terminated before-fix fragment in
+`temp/d1-classic-trigger-before-valid` returns -1 at byte 22 instead of reaching
+the frame boundary at byte 31. Earlier initial fragments lacked an EOF marker;
+those are retained as test-development failures, not the qualified reproduction.
+
+The original D2 reader now detects the optional status event from the stream.
+Rejected ordinary D2 secret crossings can also omit it, and must not take the
+exit during playback. Geometry is checked only when applying the event, not to
+guess its byte length. Native compound exit masks do not select a binary format.
+The normal writer and the native activation policy remain unchanged.
+
+Added a bounded reusable runner, `android/tests/test_classic_trigger_demo.ps1`,
+and registered its asset-free ten-case decoder/rewrite matrix with D2 CTest.
+The matrix covers native secret/compound exits, rejected ordinary D2 exits,
+both D2 status values, ordinary door events, and crossings without a wall or
+trigger. Each reaches the exact next-frame boundary, rewrites identical bytes
+and consumes no SIM RNG. Final CTest: `temp/d1-classic-final-ctest.log`.
+
+Actual recording/export tests use First Strike level 10 and Counterstrike
+level 3, discovered through real mission loading. All four recordings export;
+normal no-interpolation playback reaches the following energy update for the
+native exit, rejected D2 exit and destroyed-secret status. Accepted D2 status 0
+is covered by decoding/export/rewrite, not by a new secret-level travel test.
+Four independently byte-swapped, object-free complete recordings, including
+headers, initial walls, frames and trailers, are restored byte for byte by the
+public endian converter. This does not claim every object opcode or a big-endian
+platform. The converter's success dialog is driven through the normal menu event
+handler; the initial unattended dialog run was stopped and retained separately.
+
+The malformed-status tests exposed an actual exporter ownership bug: attempting
+to mount an already mounted source directory under a new alias failed to open
+the file, then removed the caller's existing mount. Export now reuses an existing
+mount, verifies that its virtual filename resolves to the requested source,
+rejects shadows, and retires only mounts and input handles it acquired itself.
+Successful and rejected exports preserve the caller's mounts. All eight partial
+status payloads now reach the decoder, fail explicitly and preserve prior output.
+The test reloads the mission after malformed playback releases it, before the
+next independent recording/conversion operation.
+
+Final complete evidence is `temp/d1-classic-final-missions`: four complete
+recordings/exports, three playback boundaries, four full endian conversions,
+eight truncated status records, successful reuse of existing mounts and a
+shadowed-source rejection. The existing actual-executable dump transaction
+suite also passes against the original D2 CD demo
+(`temp/d1-classic-final-dump.log`).
+
+The actual Anniversary Edition D1 descent.dem is 2211582 bytes with header
+event/version/game type 1/13/2. D2 rejects it with exit 1 and keeps prior output
+(`temp/d1-classic-native-format`). Supporting native D1 rendering demos has not
+been silently substituted with support for D2-format recordings of D1 gameplay.
+
+Final tested SHA-256:
+
+- D2 fixture 53C6A7AA44A8AD29944B65F92E75FA11EEB7E002DA530A1A62A9300345D20180
+- D2 executable 0D5C99BBAE42F2C0C266DF407B265AF997D254539F0B98919D60C3AE22562C64
+
+Both engine/fixture builds pass. The preserved corpus completed level 18 with
+all six native-repeat/native-imported checks passing, and is now comparing
+level 5. Its older frozen binaries remain untouched and do not qualify the new
+implementation. Android format-40/rewind/platform and the broader F1-F5 gates
+remain open; outstanding_bugs.md is unchanged.
+
+Both final full host integrations pass in `temp/d1-classic-final-integration`.
+Final scoped mixed quality, explicit fixture formatting and changed-file
+whitespace checks pass, with no new compiler warnings. All new build/test
+sessions are terminal. The sole ongoing task remains frozen corpus
+82504/controller 35700, verified live while comparing level-5 repeatability.
+Continue optional/custom rendering-demo source identity and applicable network
+format review, then Android format-40 rewind/platform qualification when the
+corpus releases its retention guard. No F1-F5 completion claim.
+
+### September 26: rendering-demo asset namespace and console startup
+
+Previous goal turn was progress on trigger framing and export ownership. This
+slice reproduced a separate source-identity failure with an actual recorded
+companion, then closed that boundary for imported D1 object records.
+
+`temp/d1-classic-assets-before` uses the real recorder and cold level entry.
+All three exports succeeded: matching sources (25 robots, companion mass 22937),
+changed HAM (mass 88473), and the optional package absent (only 24 robots for
+recorded robot ID 24). The original exporter silently admitted incompatible
+runtime definitions. Installed sources were never modified; the changed HAM
+and custom files belong to each isolated fixture directory.
+
+Imported D1 recordings now use version 16/game type 4. The ordinary D2 writer
+continues to emit type 3 with unchanged event framing. Old imported recordings
+using type 3 cannot prove their namespace and are rejected after mission
+resolution. Original native D1 version-13/type-2 files remain unsupported.
+A separate game-type discriminator is necessary because older D2 readers do
+not reject every version greater than 16.
+
+Event 52 precedes the first object in each recorded frame. Its payload is a
+signed level byte, a length byte (32 or 64), the generation's base/custom digest,
+and its optional Guide-Bot digest when present. These are the same original
+source/mapping identities used by save version 40, not newly computed hashes
+per frame. Framing and seek behavior belong to newdemo; capture/validation
+policy belongs to d1_in_d2_asset_identity.cpp. Save framing remains byte-for-byte
+the same length-plus-digest layout. Native-only data can still load when optional
+assets become available.
+
+Each decoded frame must supply a valid identity before objects are read. Level
+entry, direct seeks, rewind, export and rewrite prepare the appropriate native
+level definitions; they do not infer the namespace from numeric robot/model
+IDs. Native object and model indices are bounded against the admitted generation.
+Export also resets the level-loader's initial objects so unrecorded level actors
+are not emitted as a recorded frame.
+
+Actual failure playback exposed startup creating a game window even after its
+initial decode had stopped. Startup now returns immediately after that failure,
+and the no-window stop path restores hidden menus. Evidence before that fix is
+`temp/d1-classic-assets-play`; both changed/missing cases failed decoding but
+left a window. Final cases return to normal state with no game window.
+
+The public endian converter now requires successful decoding through EOF and
+successful publication before reporting success. It preserves an existing
+backup, reports a rejected publication, and attempts rollback if installing the
+converted file fails. The custom test initially caught success reported with
+an unchanged opposite-endian input because the backup filename already existed
+(`temp/d1-classic-assets-custom`). Final repeated-backup coverage preserves
+both input and backup and reports failure.
+
+Final integrated evidence is `temp/d1-classic-assets-interpolation-verified`.
+The reusable runner is android/tests/test_classic_trigger_demo.ps1 with
+-AssetIdentity, -D1Assets, -D2Assets and optional -GameExe. Its actual coverage:
+
+- Complete companion recording: matching-source playback/export/rewrite,
+  direct end seek and backwards playback; changed/missing source rejection,
+  preserved output/input, clean menu recovery, and recovery after remounting
+  the original package
+- Default interpolated playback reaches the actual companion after advancing
+  its frame clock. The first interpolation fixture checked immediately at
+  startup, before the first recorded object frame; that premature assertion
+  is retained separately in d1-classic-assets-interpolation
+- Eleven unsupported/malformed cases: legacy imported game type, unsupported
+  native-format version, four invalid identity lengths, changed base/optional
+  digests, truncated digest, missing identity and an invalid robot ID
+- Actual HX1 model/robot recording with matching, changed, missing and restored
+  sources, plus newly added optional assets for a native-only recording
+- Complete independent opposite-endian conversion of real player and non-boss
+  robot records, including identity bytes, animation angles, frames and trailer;
+  matching bytes after public conversion and preserved rejected inputs
+- Real StartNewLevelSub transition from custom level 1 to stock level 2,
+  export, direct last-frame seek, backwards crossing and beginning seek with
+  the original custom pose restored
+- SIM seed and draw count unchanged through all five custom export cases
+
+The actual desktop console executable exposed an additional D1 startup crash,
+independent of decoding: headless gamedata_init retired an asset generation
+before selecting audio service callbacks. The retained minidump in
+`temp/d1-classic-assets-cli` resolves the null call through digi_stop_digi_sounds
+and d1_in_d2_publish_asset_data. The console dump branch now selects the audio
+service and disables sound/music without opening a device. The reusable runner
+stages the actual game executable, verifies successful native custom export,
+then removes only its isolated custom file and verifies exit 1 with prior
+output and input preserved. Both cases pass in the final evidence directory.
+
+Other verification:
+
+- Both engine/fixture builds pass with no new compiler warnings
+- Both complete host integrations pass in d1-classic-assets-integration
+- Complete endian save suite passes in d1-classic-assets-endian: 23 comparisons
+  and 28 resumed frames, including companion/source admission through the
+  shared identity validator
+- Registered classic trigger CTest passes (d1-classic-assets-ctest.log)
+- Four real mission trigger/export/endian controls pass in
+  d1-classic-assets-trigger-control, including the new native game type
+- Actual ordinary D2 CD demo dump transaction suite passes after the console
+  startup fix (d1-classic-assets-qualified-dump.log)
+- Scoped mixed quality, explicit clang-format 20 fixture formatting and
+  changed-file whitespace checks pass; outstanding_bugs.md is untouched
+
+Final asset-suite binary SHA-256:
+
+- D2 fixture 8BAECCCCF7066240AA1030ACD1A46FC3A1DDF823E0FEC3C991B2CB8BD68E9B8A
+- D2 executable F13EF4BF90F68E1BC0F1DC70006EB96EA34F57C35F8B406029F11315D9F9B5A8
+
+This is registered-PC host evidence. Every historical demo opcode, native D1
+.dem compatibility, every interpolated transition and Android/platform runtime
+are not inferred from these tests. F1-F5 remain open.
+
+The preserved corpus additionally completed level 5 (2430 frames) and level 7
+144813 (2253 frames): all six native-repeat/native-imported checks pass. Its
+aggregate historical-recording comparisons can still fail and its binaries
+predate these changes. Do not rewrite that evidence or use it to qualify the
+current implementation. Frozen session 82504/controller 35700 is still live on
+the final level-7 recording 181652, imported capture. All new jobs are terminal.
+Next review applicable network format/source identity and remaining travel
+consumers, then run current Android format-40/rewind/platform checks once the
+corpus releases the build retention guard.
+
+## September 26: network source admission and completed frozen corpus
+
+The previous turn was progress. Actual late-join serialization reproduced a
+source-namespace failure: with optional assets the host sent robot 24, while a
+cold native-only client had 24 definitions and nevertheless installed that ID.
+Evidence: `temp/d1-network-assets-before/network-asset-report.json` and stderr.
+Matching/restored clients had 25 robots; the missing-source client reported
+accepted=true, valid=false and world mutation. No transport identity existed
+before the object-array clear marker or the final level sync.
+
+The asset owner now writes and checks a fixed 65-byte network record. Length zero
+explicitly denotes ordinary D2, 32 binds native base/custom sources, and 64 also
+binds the optional package and mapping. Network admission requires optional
+availability in both directions because every peer can originate objects; the
+more permissive one-way save/demo policy is unchanged. Unprepared native assets,
+unknown lengths and nonzero padding fail. There is no numeric-ID inference,
+presentation-history carry, or SIM RNG compensation.
+
+D2 object packets carry this record before any clear/object/completion marker.
+Full game info carries the same record, admitted on actual level sync before
+parser/world changes; lobby discovery does not require a prepared level.
+Rejected source identity closes the join and reports the cause. Object record
+boundaries are checked before any array mutation. Desktop full-info lengths and
+the Android full-info preflight include the record; Android's existing stale
+packet probe retains its correct authority/visit offsets. D2 protocol versions
+are now 30078 on Android and 30025 on desktop. Native D1 wire framing is unchanged.
+
+Reusable `android/tests/test_d1_network_assets.ps1` captures the real engine's
+object, completion, sync and lobby writers over ephemeral localhost UDP sockets,
+then uses the actual object and initial/final sync readers across cold loads.
+`temp/d1-network-assets-verified` passes matching, changed, missing and restored
+optional sources; custom HX1 native-only sources; optional availability mismatch
+in the reverse direction; ordinary D2; and both D1/D2 namespace mismatch
+directions. Successful transfers reach NETSTAT_PLAYING. Rejections preserve
+complete object storage and session metadata. Sixty-four malformed object/sync
+cases also preserve the world, metadata and SIM RNG. Both regular and Retro
+sync layouts are exercised. These are host wire/reader tests, not a claim about
+Android transport or every malformed object field.
+
+Intermediate socket fixture failures were test setup issues: SDL_Delay alone
+does not advance the engine timer cache, and the host's Netgame callsigns must
+be initialized as a real lobby does. The malformed zero-length sync test must
+pass a nonnull payload because a null pointer deliberately selects host-local
+sync. None of those required gameplay compensation.
+
+Final host fixture SHA-256:
+8DED0BC4706BA4A2F69C5135811B91AD6473AA1AD7560CD1309CC87E76B2D880
+
+Final D2 executable SHA-256:
+032D9E3A6C273AF74AD1C3FE09CDB533DCAE6E8ED2CBC15ED8D12E4B7B350AB8
+
+Both engine/fixture builds and scoped quality pass. Three native D1 and five D2
+focused CTests pass (`temp/d1-network-assets-ctest-{d1,d2}.log`). Both complete
+host integrations pass in `temp/d1-network-assets-integration`. Android
+assembleDebug passes for ARMv7, ARM64 and x86-64 in
+`temp/d1-network-assets-android-build.log`. APK SHA-256:
+7A5C0BED590493AC8EF6A7D532F2A5732E1ACD51D20557DEFA7F3AA45E304FF3
+No changes to outstanding_bugs.md.
+
+The initial emulator transition run timed out before client game entry, with
+the log jumping from 04:20 to 08:30 during its 120-second wait. The retry then
+failed before the host launcher started; basic ADB still answered while
+activity-service queries stalled. Preserve both runs in
+`temp/d1-network-assets-android-transition{,-retry}` without interpreting them
+as engine transition qualification. Both managed emulators were cold restarted
+successfully through emu_health.ps1. The fresh transition run is
+`temp/d1-network-assets-android-transition-cold`, terminal exit 0. Both peers
+complete their initial sync, actual reactor/flyout/score/briefing sequence and
+level-2 gameplay input checks. Android overlays are active on both peers, and
+Android Back opens the menu and returns to the playable mine on each device.
+This is x86-64 emulator runtime coverage; ARMv7/ARM64 are build-only here.
+
+Ordinary D2 also passes actual Android initial sync, cooperative save, cold
+host-only restore and late join with the saved plasma weapon and six homing
+missiles (`temp/d1-network-assets-android-d2-latejoin`, exit 0). Native D1's
+unchanged wire path passes both-peer initial sync in
+`temp/d1-network-assets-android-native`, exit 0. The shared JNI startup log says
+"Starting D2X-Redux" even for native D1; MainActivity selects dxx-redux-d1 for
+the tested game=d1 launch, so that generic log string is not a profile test.
+Existing allocator warnings appear in these startup logs and are not certified
+away by the successful scenarios.
+
+All jobs started in this slice are terminal, including the frozen corpus. The
+updated APK remains installed on both healthy x86-64 emulators. Next qualify
+native imported format-40 cooperative save/restore and memory rewind, remaining
+travel/asset lifecycle consumers, and the open independent F1-F5 gates. No
+claim of ARM runtime, every malformed object field, or complete fidelity is
+made from this network slice.
+
+Frozen session 82504/controller 35700 is now terminal (exit 1: qualification
+incomplete), with all eight captures and their comparisons finished in
+`temp/d1_replay_parity_20260925_223823_asset_retirement/report.json`. Every native
+repeatability comparison passes all six checks. Seven native/imported cases
+pass all six; level-7 144212 has the previously isolated 45 diagnostic frames
+starting at 2908, while objects, world, SIM RNG, collision clock and terminal
+result pass. That pickup-latch/runtime-hash issue was fixed later in unfrozen
+source and is not retroactively certified by this capture. Historical
+recording/native frame and RNG comparisons fail in all eight cases; both short
+level-7 recordings also fail the historical terminal comparison. These results
+remain separate. Explicit lifetime/static-runtime, mapping, presentation and
+platform gaps keep full qualification incomplete. Do not restart or rewrite the
+finished corpus. The build retention guard is now free; F1-F5 remain open.
+
+### September 26: Android format-40 save and cooperative memory rewind
+
+Current x86-64 Android qualification uses the unchanged APK SHA-256
+7A5C0BED590493AC8EF6A7D532F2A5732E1ACD51D20557DEFA7F3AA45E304FF3.
+Both emulators were responsive before the serial runs. No engine behavior or
+asset/source policy changed in this slice.
+
+`temp/d1-format40-android-latejoin` passed actual First Strike cooperative save,
+cold host-only restore and a returning client's restored plasma weapon, six
+homing missiles and laser level 2. The host file retrieved from
+`files/d2x-redux/Players/save_sets/coop/descent/coopsave.mg5` is DGSS version 40,
+381265 bytes, SHA-256
+89379A74B43BBA94DAAE253DD93C80A2405745A6C2B850F08643820546B497C8.
+The run log, original bytes and independent header check are retained together.
+
+The first consecutive client-requested rewind run passed behavior checks in
+`temp/d1-format40-android-client-rewind`, but the runner disabled game logs and
+did not capture the native diagnostic/automation tags. `test_lan.ps1` now enables
+the existing game/co-op diagnostic categories for its rewind scenarios and
+retains DXX-DLOG and DXX-Automate on both peers. Its background ADB readers use
+hidden windows. Scoped quality passes in `temp/d1-format40-lan-quality.log`.
+The test or engine does not substitute save versions or bypass source admission.
+
+The diagnostic rerun, `temp/d1-format40-android-client-rewind-verified`, exits 0.
+Both peers log two actual `Players/__rewind__.d2sg` restores, each version 40.
+Both requests move the world visit forward once and the simulation clock
+backward by more than ten seconds. The second restore precedes the first;
+host history remains 7 then 3 snapshots. Private homing ammo/score restore to
+8/4567 on the host and 9/4568 on the client. The reactor is intact, presentation
+counts remain unchanged, the game is unpaused and clocks subsequently advance.
+Saved initial-sync introspection identifies descent in d1-in-d2 mode with no
+deployed companion; it is not a post-restore state snapshot. The restored state
+is verified by the actual automation checks and native logs. Durable automation
+results, logs and `verification.json` are saved.
+
+`temp/d1-format40-android-host-rewind` also exits 0. The actual selected host
+snapshot and both loaded clocks are exactly 1988231; host history retains five
+snapshots and an older selectable point. Both peers log version 40. Baseline
+inventory, reactor, level and resumed time checks pass. This path additionally
+passes the existing three-stage pause/retry probes with source/loaded pauses
+and deliberate packet drops (both peers report failed=0). The client has no
+local selected target: its logged target=0 is not used as the equality oracle.
+The host-selected time is the authoritative comparison for both loaded clocks.
+
+These scenarios qualify imported D1 cooperative file restore and natural
+network memory rewind on the current x86-64 APK. They do not cover a deployed
+companion's memory history, source changes during an Android rewind, every
+custom mission, or ARM runtime. Native D1 and ordinary D2 save/network controls
+from the preceding slice remain separate evidence. F1-F5 remain open and
+outstanding_bugs.md is untouched.
+
+The current optional-companion Android scenario also passed its original 45
+steps in `temp/d1-launch-runtime-20260926-090045`. The reusable script now adds
+natural memory history: dock the companion, wait fifteen seconds with an
+explicit ten-second rewind target, redeploy, then invoke META_REWIND and require
+the docked single-companion state with an active, unpaused game window. No
+snapshot or restored state is injected by this additional coverage.
+
+The first extended run (`temp/d1-launch-runtime-20260926-090400`) passed 54/54,
+but the final logcat dump had evicted the early restore messages. The isolated
+runner now continuously captures native diagnostics and automation output,
+stops its own ADB reader during cleanup, and retains the final platform log as
+well. Sound/flyout diagnostics read the continuous capture. Guide-Bot logging
+does not incorrectly require flyout samples from a scenario without a flyout.
+Fresh test preferences explicitly enable rewind and select ten seconds; the
+helper still restores the original app files/preferences afterward.
+
+The final optional run in `temp/d1-launch-runtime-20260926-090800` passes 54/54
+in 60.261 seconds, helper exit 0. Its retained native log records both the
+single-player quick-save restore and actual memory restore as version 40.
+The rewind goes from GameTime64 1060110 to 327680 (11 reported seconds), with
+two snapshots retained. Captured scene state proves released companion after
+file restore, docked companion after rewind, ordinary D2, then released native
+companion after D1/D2/D1 switching. Each has one companion; D2's own caged
+companion is not mistaken for leaked D1 ownership. `verification.json` records
+these observations and the unchanged APK hash. The backup directory is gone
+after successful cleanup and the original files/preferences are restored.
+
+Final mixed scoped quality passes in
+`temp/d1-format40-capture-final-quality.log`. Only test scripts/helpers and the
+existing plans/ledger changed in this slice; no native build was required.
+The new single-player test covers docked companion memory restore with matching
+sources. Missing/changed sources during Android rewind, deployed companion
+cooperative history, the independent strict corpus/static-runtime audit and
+wider F1-F5 gates remain open.
+
+The updated continuous logger also passes the actual D1-only interaction and
+flyout path in `temp/d1-launch-runtime-20260926-090959`: 67/67 steps in 53.468
+seconds, helper exit 0, nineteen valid tunnel-location observations. Setup
+confirms D2 assets unavailable. The current APK reaches playable First Strike
+level 2 with exactly 78 native models, an active front game window and native
+asset mode. The helper restores the original installation and leaves no backup
+directory or background logcat reader. This is x86-64 runtime evidence only.
+
+All test/quality jobs in this slice are terminal. Continue the remaining source
+failure and companion cooperative persistence cases alongside the independent
+F1 state/lifetime/mapping audit; the completed older frozen corpus is not a
+qualification of the later source tree. No outstanding_bugs.md edits or commits.
+
+### September 26: deployed companion cooperative history and source failures
+
+The previous format-40 slice is now followed by actual deployed companion
+cooperative history. `test_lan.ps1 -GuidebotRewind` reuses the existing client
+deployment/shield setup and natural rewind scenario. It removes unrelated robot
+fire, records a client-owned companion with 37 shields, docks it after history
+collection and requires the restored deployed actor, unique companion count,
+health, owner and local robot-control slot on both peers. This does not claim
+native-enemy behavior comparison; those actors are deliberately absent here.
+
+`temp/d1-coop-companion-rewind-client` passes First Strike in the D2 engine with
+two successive client-requested rewinds. Both actual memory restore headers are
+40 on both peers. After both restores, each peer has exactly one live released
+companion with 37 shields and owner/remote-owner 1. The client owns the local
+robot-control slot; the host is its replica. World visit is 3 and both original
+player inventory/clock/history checks pass. The same case passes ordinary D2 in
+`temp/d1-coop-companion-rewind-d2-control`, with both memory headers version 38.
+Both runs exit 0. Each directory contains durable result/state/log files and an
+independent `verification.json`; the explicit final introspection is current,
+unlike the earlier base rewind runner's initial-sync snapshot.
+
+No native changes were needed. These runs use the same previously qualified
+APK SHA-256 7A5C0BED590493AC8EF6A7D532F2A5732E1ACD51D20557DEFA7F3AA45E304FF3.
+The new reusable scripts belong to the existing LAN catalog owner. Earlier
+optional single-player and D1-only format-40 device evidence is additionally
+retained under `temp/d1-format40-device-evidence/{companion,d1-only}` so normal
+three-generation scratch retention does not erase those referenced checks.
+
+The isolated Android helper now has `-RewindSourceCase missing|changed` for the
+optional sound-source boundary. It records live companion history and a file
+save, pauses, alters only its disposable staged source, requests actual memory
+rewind, and expects source-identity rejection plus return to the menu. It then
+restores the source and attempts a normal new game followed by the valid file
+save, all in the same engine process. Phase run IDs and durable diagnostics
+prevent an earlier PASS from satisfying a later phase. The changed-source case
+appends an unused byte, preserving decoded sample records while changing the
+complete source identity; it is not a semantic sound-decoder mutation test.
+
+The first missing-source attempt (`temp/d1-launch-runtime-20260926-092307`)
+failed before any source mutation because the pause window briefly made the
+derived in_game flag false. The fixture now waits for paused time, the loaded
+level and a non-front game window, matching the actual pause contract. Its
+failed output remains preserved; no engine behavior was changed to satisfy it.
+Source rejection/recovery and the default host companion variant still require
+their actual final verdicts. F1-F5 remain open.
+
+The next missing-source attempt (`temp/d1-launch-runtime-20260926-092522`)
+correctly rejected the rewind and closed the game window, but the fixture
+incorrectly required Current_level_num to become zero. The error-close path
+retains that number. The fixture now requires the actual main menu, one menu
+window and in_game=false. Phase diagnostics request fresh introspection even
+when a failed action prevented the script's final introspection. The failed
+run is preserved under `temp/d1-rewind-source-device-evidence/menu-expectation-failure`;
+this was another fixture correction, not a production behavior change.
+
+Both final source cases pass, each with 21 preparation, 6 rejection and 9
+recovery steps. Missing-source evidence is
+`temp/d1-launch-runtime-20260926-093138`; changed-source evidence is
+`temp/d1-launch-runtime-20260926-093303`. Stable complete copies, including
+independent verification reports, are in
+`temp/d1-rewind-source-device-evidence/{missing,changed}`. Both explicitly log
+format-40 memory admission failure for the optional source, reach the single
+main-menu window with zero companions, then start a new game and load the
+valid format-40 file after restoring the source. The restored game is active
+and unpaused, with exactly one released OBJ_ROBOT companion. All phases retain
+the same engine PID (15269 missing, 16254 changed), so an app restart does not
+hide recovery failure. Each phase uses a distinct durable automation run ID.
+
+The changed fixture is exactly one byte longer than the original S22 and has
+a different SHA-256; decoded sound records remain unchanged. These checks
+qualify the optional-source identity boundary on the current x86-64 APK, not
+all source corruption, custom missions or ARM runtime. Existing unrelated
+MEM_FREE_NULL resource-load diagnostics still occur. No native edits or build
+were needed; default host companion coverage is the remaining live test in
+this slice, and the independent F1-F5 gates remain open.
+
+The default host companion variant also passes in
+`temp/d1-coop-companion-rewind-host` (exit 0). Each peer logs one actual
+format-40 memory restore. The selected host time and both loaded times are
+exactly 2606432, with six retained host snapshots. After the restore and all
+three pause/retry stages, each peer explicitly introspects one released
+companion with 37 shields and owner/remote-owner 1; only the client has local
+control. Both peers report failed=0 for the deliberate packet-loss probes.
+The final player inventory, world visit and advancing-clock checks also pass.
+The saved companion introspection precedes that final player/clock verification,
+and is not the initial-sync snapshot. Durable results, logs, state and an
+independent verification report are preserved alongside the APK hash.
+
+All test and scoped-quality jobs in this slice are terminal. Final scoped
+quality passed in `temp/d1-rewind-source-menu-quality.log`; diff whitespace
+checks pass. Both emulators remain online; neither has an isolated-test backup
+and no ADB logcat reader remains. No outstanding_bugs.md edits or commits were
+made. Continue the independent state/lifetime/mapping audit and remaining
+F1-F5 qualification; these persistence cases do not close that wider scope.
+
+### September 26: persist and observe native wall-blast gameplay lifetime
+
+The private-state audit reproduced a real native checkpoint omission. The
+exploding-wall pool schedules damaging explosions using SIM RNG and sets
+WALL_BLASTED after three quarters of a second. Native D1's save writer omitted
+that pool; level preparation clears it before restore. Actual campaign saves
+at elapsed frames 0, 8 and 24 of 32 therefore left the wall permanently blocked,
+and saves at 25 and 31 lost the remaining explosions/RNG draws. The same five
+uninterrupted-versus-restored cases already passed imported D1 and ordinary D2,
+whose base save layout contains the pool. Before-fix evidence is preserved in
+`temp/d1-wall-blast-before`; this is gameplay lifetime, not exit animation history.
+
+Native saves now use version 19, appending ten explicit segment/side/time
+records through the shared exploding-wall codec. Only active slots carry
+state; unused payloads are canonicalized because explode_wall overwrites them
+before use. Validation checks record length, slot values, clocks and safe
+connected-wall geometry before applying the pool. The original D1 blast type
+is exposed in its engine header, without changing blast execution or RNG.
+The existing native checkpoint adapter accepts the new suffix, validates it
+with the same codec and commits it with the rest of the prepared world.
+Ordinary/imported D2 save layouts remain 38/40. Older native formats retain
+their previous admission and empty-pool behavior; their missing elapsed blast
+time cannot be reconstructed by this change.
+
+World observation schema 9 now requires the capacity and every active pool
+slot/time at restore, per-frame and terminal boundaries. Inactive history is
+excluded explicitly. The comparator rejects schema 8 as incomplete and tests
+missing, malformed, silently dropped and single-tick-different blast state.
+No tolerance, source mapping, exit-history persistence or SIM RNG rule changed.
+The 62 comparator tests pass. Both host builds and all 54 native/63 D2 CTests
+pass; existing warnings in unrelated weapon code remain.
+
+`test_d1_wall_blast_save.ps1` is the reusable actual-campaign integration runner.
+`temp/d1-wall-blast-verified` passes all five save times for native D1, imported
+D1 and ordinary D2, in both byte orders. The imported adapter additionally
+loads all ten actual native checkpoints (five times, two byte orders), with
+exact passability, object-count and SIM continuation. Sixty truncated/invalid
+checkpoint mutations fail without changing live objects or the blast pool.
+Legacy version-18 import clears an intentionally contaminated pool. These are
+current-format correctness tests, not a claim that historical mid-blast D1
+saves contained enough data for faithful restoration.
+
+Android assembleDebug passes all three ABIs. Current APK SHA-256 is
+4B0480EE830BF045E5B203D1835F06FA92AE0063E6C3F463D9D09A92C83F026C and is installed
+on both emulators. Actual x86-64 native and imported memory-save/rewind/GPU
+checks pass 16/16 each in `temp/d1-launch-runtime-20260926-{095649,095802}`;
+imported firing state and Spreadfire pixels match the fresh native reference.
+These Android cases cover ordinary memory restore with the new native suffix;
+the active wall-blast schedule itself is currently host integration evidence.
+
+The wider complete-checkpoint/endian suite initially found one stale test-only
+secret-record offset after the new suffix (`temp/d1-wall-blast-complete-endian`).
+That fixture offset is corrected; the full rerun in
+`temp/d1-wall-blast-endian-verified` has finished with exit 0. All 23
+complete-save byte-order comparisons have empty differences: seven native,
+seven imported, seven native-to-imported adapter cases, companion and ordinary
+D2. Native/imported resumed-frame files are byte-identical (SHA-256
+48B625ABA55704F91D2F4BA7968DC38EC54AD8A6F22525132079ADA8F143B4DD).
+Stable Android evidence copies are in
+`temp/d1-wall-blast-device-evidence/{native,imported}`, with the installed APK
+hash in `apk.json`. All test/build jobs are terminal; no replay process or ADB
+logcat reader remains.
+
+Audit follow-up remains concrete: pending primary/secondary autoselect indices
+are serialized but absent from the complete world observer; frame diagnostics
+currently expose only their picked-up latches. Death-phase runtime, native
+boss network effect caching and remaining transition-owned globals still need
+classification against their consumers. Preserve cosmetic exclusions and
+actual death/save-admission tests instead of serializing incidental history.
+F1-F5 remain open, with the finished earlier frozen corpus unchanged.
+
+### September 26: observe pending selection and active death gameplay
+
+World schema 10 adds both pending weapon indices and both pickup latches. These
+already have save/restore owners; the missing piece was complete boundary and
+per-frame observation. Native quad selection remains source value 16. The
+comparator requires their exact values, rejects out-of-domain source selections
+and does not map them to D2 weapon IDs.
+
+Both object owners now expose a read-only death gameplay snapshot: active,
+exploded, eggs dropped, abort request, elapsed clock and saved flags/control.
+AI reads the exploded flag, the elapsed clock gates damaging ship destruction
+and gear drops, and saved control restores the playable ship. Active death
+remains unsaveable. No death serialization or simulation mutation was added.
+The snapshot excludes camera/render history; inactive sequence caches are zero
+because entry overwrites them before any consumer can use them. Explosion/drop
+flags remain directly observed even outside the sequence.
+
+The existing actual-death integration now checks twelve phases, including two
+consecutive deaths with no alive frame between them, the strict two-second
+boundary, early abort and respawn. It verifies the emitted world records and
+both RNG call counts. Native/imported traces match exactly; ordinary D2 passes
+the same twelve-phase gameplay contract. Campaign comparison also passes its
+21 travel/state phases and three ordinary D2 cadence restores. Stable copies
+are in `temp/d1-selection-death-host-evidence/{death,campaign}`, alongside
+hashes of the eight changed source/test files.
+
+All 64 comparator tests pass. Both host builds and scoped mixed quality pass.
+The initial host suites found stale test-only schema/count assertions; those
+were updated to include the new fields. All other 53 native/62 D2 tests passed
+initially, and both failed upstream fixtures pass their reruns. Full checkpoint
+integration in `temp/d1-selection-death-checkpoints` passes all 23 byte-order
+comparisons and exact native/imported resumed-frame equality. Android builds
+all three ABIs. Actual native/imported x86-64 restore, rewind and GPU checks
+pass 16/16 steps each; the imported Spreadfire pixels match the fresh native
+reference. Evidence is in `temp/d1-selection-death-device-evidence`. Both
+emulators have APK SHA-256
+EA4F31FC169FFF1F3A71B5DB409C9873DEEB36B52AD73492FF1E1774EAFE3F73 installed.
+Active death world records were exercised by host integration, not the device
+weapon-art check. Device files/preferences are restored.
+
+Additional consumer classification: native `do_super_boss_stuff::eclip_state`
+and imported `Boss_gate_effect_state` only suppress duplicate network effect
+start/stop messages. Both receive actions call restart_effect/stop_effect;
+they do not choose gated robots, advance their deadline or consume SIM RNG.
+Keep this presentation/network cache out of gameplay save history. The imported
+owner already resets it at boss-state initialization. GameProcessFrame's private
+frame ID is Android profiling only; wall-clock pacing/pause state controls the
+outer event loop and is covered by live pause/travel checks, rather than being
+replaced with replay simulation state. Allocator/signature/homing clocks and
+fixed simulation ticks already have complete object/world observation.
+
+These changes close the named observation gaps, not the entire independent
+state/identity audit or F1-F5. Preserve the completed earlier frozen corpus.
+The fresh eight-recording run is live in `temp/d1-selection-death-corpus`,
+launched through `temp/d1-selection-death-corpus-run.ps1`; outer log is
+`temp/d1-selection-death-corpus.log`. It freezes both executables, assets,
+harness and working-tree source evidence before capturing two native runs and
+one imported run per recording. Its terminal verdict is still required.
+
+### September 26: edition readiness and actual Android preflight
+
+The Android launcher previously treated native D1 and imported D1 readiness as
+the same required-file test. Actual data from Descent_demo_extracted is a Mac
+demo (PIG 2714487 bytes), despite the directory's generic name. It was marked
+ready for both targets, then imported startup failed decoding vclips. Preserve
+that reproduction in `temp/d1-edition-scope-evidence/mac-demo-before`.
+
+Known unsupported base-layout policy now belongs to the native reader's
+d1_in_d2_source_edition_error operation. The actual reader and a small JNI
+query share it. Android uses the local or SAF PIG size to obtain that decision,
+without duplicating binary-format constants in Kotlin or initializing a game.
+Native D1 readiness is unchanged. Registered/OEM and unknown layouts still need
+the full existing reader; passing this query is not proof of valid content.
+Original Mac layouts are explicitly unsupported by the imported reader, rather
+than entering its known failing decoder path. No new edition decoder is added.
+
+Both Windows executables build. All 63 imported CTests, the native upstream
+fixture and 14 launch-readiness JVM tests pass. Those tests cover the seven
+known unsupported sizes, admitted registered/OEM/unknown sizes, local and SAF
+readiness, local-file precedence and unaffected native D1/ordinary D2 admission.
+Scoped code quality passes. Android packages all three ABIs; current APK hash
+is 9D1E80526E261DB169084730A1C1F7665B10693EB2F280FAB74590C44BD7587B.
+Existing DGSS string/compiler and Gradle deprecation warnings are unchanged.
+
+Actual emulator admission passes: the Mac demo is rejected before a game
+process starts, the launcher reports the unsupported edition and native D1
+remains ready. Registered PC data then passes all 67 interaction/physical
+level-transition steps on the same APK. The runner isolates and restores data
+between cases; this is not same-process recovery. Stable evidence is in
+`temp/d1-edition-scope-evidence/{mac-demo-rejected,registered-control}`.
+implementation.json pins the APK and ten source/test files.
+
+Two failed fixture attempts are retained, not counted as product failures:
+single-step-fixture-failure serialized an object instead of a script array;
+missing-introspection-fixture-failure queried a launch_error field which was
+only exposed in multiplayer introspection. The fixed script uses two steps,
+and ordinary setup introspection now reports the same existing preflight
+error. Logcat had already confirmed the production rejection in the latter
+attempt. Neither failure required new game-state/error plumbing.
+
+The new support matrix records edition, platform, network and save/demo scope
+with unverified rows visible. It does not close F5. The all-eight corpus in
+temp/d1-selection-death-corpus remains live on its frozen pre-edition sources;
+do not attribute the edition changes to that run. No outstanding_bugs.md edit.
+
+The same admission case also passes with registered D2 files present: native
+D1 and ordinary D2 stay ready, imported Mac-demo startup is rejected, and no
+game process starts. Evidence is mac-demo-with-d2-rejected under the same
+stable directory. Both emulators now have the final APK. Test data/preferences
+were restored, both backup directories are absent and no ADB logcat reader
+remains. Only the frozen host corpus continues running.
+
+The user's non-render throughput observation is confirmed by the preserved
+same-2006-frame measurement: 5.092 seconds/393.95 fps with tracing disabled,
+110.951 seconds/18.08 fps with full state/RNG output. Terminal JSON files are
+byte-identical. Including wrapper overhead gives 6.521 and 112.824 seconds.
+Evidence is temp/d1-replay-throughput. This is the normal executable with
+drawing/presentation bypassed; the dedicated console runner currently admits
+ordinary D2 accelerated checkpoint replays only. Full tracing is the measured
+slowdown, and this run is not a measurement of console-runner throughput.
+
+### September 26: published bitmap metadata and registry boundary
+
+E2 review found a concrete missing imported-D1 operation. The shared bitmap
+flags reader always returned unavailable when the requested mission was D1
+or the palette name was palette.256. The secret-area scanner consequently
+could not evaluate concealed-liquid texture facts. The published D1 generation
+already owns the required base/custom source flags. The new integration
+assertion failed on the prior code at that query, preserved in
+temp/d1-bitmap-facts-before.log.
+
+The engine now dispatches by the existing committed-content owner. Its small
+read-only bitmap metadata operation copies flags from the published D1
+generation, marks absent entries unavailable and rejects undersized outputs.
+It does not consult renderer flags, reopen potentially changed custom files
+or interpret a selected-but-unpublished mission as installed content. Ordinary
+D2 still uses its existing PIG/POG reader. No generation layout moves into the
+engine, and no duplicate stored bitmap metadata is introduced.
+
+The retained converted-light cleanup is necessary: it restores original paging
+state before the shared replacement arena is freed, while preserving a newer
+replacement in the same slot. Existing integration exercises both cases and
+original transparency/palette conversion. The declaration now belongs to the
+public lifecycle facade, removing piggy.c's private bitmap-generation include;
+the converter and its implementation stay with the bitmap owner.
+
+The extended asset integration covers PG1/DTX flag precedence, three
+custom-to-stock cycles, renderer/paging flag mutation, pending D2 selection,
+rejected HX1 and PG1/DTX staging, output capacity and retired metadata. All 63
+D2 CTests and the native upstream fixture pass. Actual registered data passes
+D1-only 1 -> 2 -> 1 loading and D1 -> D2 -> D1 through both mission and level
+preparation. Every registered D1 source bitmap flag matches the prepared
+reference, including with optional D2 content; D2 metadata remains available
+while D1 is selected but not yet published. Logs are
+temp/d1-bitmap-facts-imported-tests.log, temp/d1-bitmap-facts-native-tests.log
+and temp/d1-bitmap-facts-registered.log. The final declaration-only cleanup
+also rebuilds both Windows binaries and passes scoped quality.
+
+Cache review: secret_area_level_loaded invalidates the secret inventory;
+secret_area_scan_current_level rebuilds it using these flags. The persistent
+route-cache decoder and pending publication adoption operate on route state
+and do not overwrite Secret_area_state. There is no cached secret inventory
+format to migrate for this fix.
+
+The initial Android attempt did not execute its game script: ADB disconnected
+at the automation broadcast. The helper's finally block restored original
+files/preferences, and both emulators were subsequently reachable. Preserve
+the attempt in temp/d1-bitmap-facts-evidence/adb-dispatch-failure; it is neither
+a gameplay failure nor a device pass. Final-APK retry evidence follows below.
+The live corpus remains frozen before this change; its qualification is still
+pending and cannot certify this new metadata behavior. F1-F5 remain open.
+
+The final private-header inventory also found newdemo.c included the asset
+generation header solely for capture/check_asset_identity. Those two existing
+serialized-identity declarations now live in the same public facade, and
+newdemo.c includes it directly. Implementations and wire bytes are unchanged.
+Both Windows binaries and all Android ABIs rebuild; the actual classic-trigger
+rendering-demo integration passes after this declaration move. No original D2
+engine file now includes the private asset or bitmap generation headers.
+
+The frozen corpus has completed its first case, level 14 (5696 frames): all
+six required native-repeatability and native/imported checks pass, including the
+schema-10 world observation. Historical recording/native still fails full
+diagnostics and RNG context metadata, while terminal results pass. The runner
+has advanced to level 15; this partial result does not close the corpus gate.
+
+Final device verification passes 67/67 steps in 57.023 seconds with APK
+AC700AD52C6D97F8880A229538595262E298B9D1F85967619C3DFA5851F3B029. The unchanged
+APK/script passed after restarting the primary emulator. Before restart, one
+retry timed out waiting 60 seconds for launcher introspection; a second used
+a 180-second startup limit, reached the game and then timed out at New game
+selection. Logs showed one-second launcher frames and slow class verification.
+Both timeouts and the initial ADB failure remain preserved alongside device-pass
+under temp/d1-bitmap-facts-evidence. The prior script reached step 6, so its
+timeout is not counted as a passed game test or a failed assertion. Restart
+used the existing AVD without a wipe. Both emulators now have the final APK;
+the test's original files/preferences are restored and no backup/logcat reader
+remains. implementation.json pins the seven changed source/test files and APK.
+
+The timeout evidence also exposes a separate E5 lifecycle issue to follow:
+native D1 metadata-worker logs report PhysFS already initialized on a later
+request. The worker only commits its ready flag after all initialization,
+despite fallible returns after PhysFS initialization. The first failure still
+needs identification and an actual sequential-request reproduction. This is
+not yet repaired and is not proved to cause the emulator-wide slowdown.
+
+### September 26: metadata initialization ownership and recovery
+
+Controlled native D1 Android service requests reproduce the error chain with
+registered files present: the requested data directory was ignored during
+Android startup, producing "could not find descent.hog"; the next initialization
+called PhysFS again and terminated. A diagnostic-only APK preserved both errors
+before the repair. The missing first result from the earlier timeout was not
+recovered and is not asserted to be byte-identical to this reproduction.
+
+The shared Android search-path helper now accepts an explicit isolated data
+directory. Metadata uses that root and its SAF manifest, skips selected-game
+mods/catalogs, and returns setup errors as structured results. Ordinary game
+and preview callers preserve their existing path selection. Native runtime
+initialization is unusable until fully committed; failed initialization or
+mount retirement marks worker_restart_required. Android drains accepted work
+and retires, returning busy for queued requests so existing callers resubmit.
+The host helper retires before returning the original failure. Healthy analysis
+and recoverable request errors retain the worker. Sparse native diagnostics
+survive request-directory deletion.
+
+Both actual native D1/D2 console workers pass sequential failed initialization,
+guarded repeat, process recovery, ordinary request failure and identical healthy
+repeat results. Both Android service processes pass the same recovery/reuse
+lifecycle. D1's healthy PID was 6291 and D2's was 6588, preserved across each
+request-level failure. Shared path/SAF isolation tests, all 59 metadata JVM
+tests, existing host protocol/watchdog tests, scoped quality and the three-ABI
+APK build pass. The path-test main now returns nonzero on a failed test.
+
+Stable evidence is temp/d1-metadata-init-evidence; implementation.json pins the
+sources and final APK A24451D814A12A5A75108D00FD76AF5E8F3548BCAB37F90C64D4721CF491A5A6.
+Both emulators have that APK. The D1-only registered interaction and physical
+exit-to-level-2 control passes 67 steps in 50.926 seconds. Original files,
+preferences and cache are restored. The first new C fixture's variable-name
+compile error and initial diagnostic service/background setup failure remain
+separate from passing evidence.
+
+The game control exposed a remaining imported-content metadata issue: active
+D1-in-D2 requests still choose the D2 metadata worker and fail without D2 base
+files. Preserve that finding for the engine/content/cache ownership audit; the
+gameplay control pass is not proof of successful in-game route metadata. See
+the current continuation for the request ID and next investigation. This repair
+also does not explain the prior emulator-wide slowdown or change replay speed.
+
+The live frozen corpus has completed levels 14/15/16 with all six native-repeat
+and native/imported checks passing. Historical frame/RNG differences remain;
+level 18 capture is live in session 35090. Corpus qualification remains partial
+and predates this repair. F1-F5 remain open; outstanding_bugs.md is untouched.

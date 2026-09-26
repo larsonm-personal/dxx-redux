@@ -14,17 +14,22 @@ extern "C" {
 #include "endlevel.h"
 #include "endlevel_runtime.h"
 #include "fuelcen.h"
+#include "fireball.h"
 #include "game.h"
 #include "gameseq.h"
 #include "laser.h"
 #include "morph.h"
 #include "player.h"
+#include "player_death_runtime.h"
 #include "secretarea.h"
 #include "segment.h"
 #include "automap.h"
 #include "switch.h"
 #include "textures.h"
 #include "wall.h"
+#include "weapon.h"
+extern int delayed_primary_autoselect_weapon_index;
+extern int delayed_secondary_autoselect_weapon_index;
 }
 
 namespace
@@ -163,6 +168,22 @@ json world_state()
 	json out = json::object();
 	out["ai"] = input_demo_ai_trace_snapshot();
 	out["endlevel"] = endlevel_state();
+	player_death_runtime_state death = {};
+	player_death_get_runtime_state(&death);
+	auto &death_state = out["death"];
+	FIELD(death_state, death, active);
+	FIELD(death_state, death, exploded);
+	FIELD(death_state, death, eggs_dropped);
+	FIELD(death_state, death, aborted);
+	FIELD(death_state, death, elapsed);
+	FIELD(death_state, death, saved_flags);
+	FIELD(death_state, death, saved_control);
+	out["exploding_walls"] = { { "capacity", MAX_EXPLODING_WALLS }, { "slots", json::object() } };
+	for (int i = 0; i < MAX_EXPLODING_WALLS; ++i) {
+		const auto &wall = expl_wall_list[i];
+		if (wall.segnum != -1)
+			out["exploding_walls"]["slots"][std::to_string(i)] = { wall.segnum, wall.sidenum, wall.time };
+	}
 	auto &globals = out["globals"];
 	GLOBAL(globals, Player_num);
 	GLOBAL(globals, N_players);
@@ -189,6 +210,10 @@ json world_state()
 	out["players"] = json::array();
 	for (int i = 0; i < N_players; ++i) out["players"].push_back(player_state(Players[i]));
 	auto &weapons = out["weapons"];
+	GLOBAL(weapons, PrimaryWeaponPickedUp);
+	GLOBAL(weapons, SecondaryWeaponPickedUp);
+	GLOBAL(weapons, delayed_primary_autoselect_weapon_index);
+	GLOBAL(weapons, delayed_secondary_autoselect_weapon_index);
 	GLOBAL(weapons, Next_laser_fire_time);
 	GLOBAL(weapons, Last_laser_fired_time);
 	GLOBAL(weapons, Next_missile_fire_time);
@@ -379,7 +404,7 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	static json previous;
 	json current = world_state();
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", 8 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)
 		if (boundary || frame == 0 || !previous.contains(it.key()) || previous[it.key()] != it.value()) record["state"][it.key()] = it.value();

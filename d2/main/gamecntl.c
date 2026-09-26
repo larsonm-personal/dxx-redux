@@ -1402,7 +1402,7 @@ void kill_and_so_forth(void)
 	do_controlcen_destroyed_stuff(NULL);
 
 	for (i=0; i<Num_triggers; i++) {
-		if (Triggers[i].type == TT_EXIT) {
+		if (trigger_exit_flags(i) & TRIGGER_EXIT) {
 			for (j=0; j<Num_walls; j++) {
 				if (Walls[j].trigger == i) {
 					compute_segment_center(&ConsoleObject->pos, &Segments[Walls[j].segnum]);
@@ -2373,4 +2373,3 @@ int ReadControls(d_event *event)
 
 	return 0;
 }
-

@@ -1,6 +1,10 @@
 #ifndef AUTOSELECT_RUNTIME_H
 #define AUTOSELECT_RUNTIME_H
 
+#ifdef DXX_BUILD_DESCENT_II
+#include "d1_in_d2/d1_in_d2_weapons.h"
+#endif
+
 /* Included after the save/rewind file adapter and engine weapon declarations */
 extern int delayed_primary_autoselect_weapon_index;
 extern int delayed_secondary_autoselect_weapon_index;
@@ -25,7 +29,7 @@ static inline int autoselect_read_runtime_state(PHYSFS_file *fp, int swap, int a
 	if (state[0] < 0 || state[0] > 1 || state[1] < 0 || state[1] > 1 ||
 	    state[2] < -1 ||
 #ifdef DXX_BUILD_DESCENT_II
-	    state[2] >= MAX_PRIMARY_WEAPONS ||
+	    (state[2] >= MAX_PRIMARY_WEAPONS && !d1_in_d2_is_quad_selection(state[2])) ||
 #else
 	    (state[2] >= MAX_PRIMARY_WEAPONS && state[2] != 16) ||
 #endif

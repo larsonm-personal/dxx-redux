@@ -29,9 +29,20 @@ int d1_in_d2_decode_trigger(trigger *out, const v29_trigger *source, int native_
 int d1_in_d2_decode_level_trigger(trigger *out, const v29_trigger *source);
 /* Returns 1 and the original flags for a native record, 0 for an ordinary D2 record */
 int d1_in_d2_trigger_source_flags(const trigger *source, short *flags);
+/* Runtime exit queries retain both compound actions; -1 selects the D2 type query */
+int d1_in_d2_trigger_exit_flags(const trigger *source);
 int d1_in_d2_trigger_source_link(const trigger *source);
 void d1_in_d2_write_trigger_storage(rewind_file *fp);
 int d1_in_d2_read_trigger_storage(rewind_file *fp, int swap, int apply);
+/* Version 40 binds base/custom and optional definitions before reading objects */
+#define D1_IN_D2_SAVE_VERSION 40
+/* Distinct from D2 type 3: old D2 readers must reject native runtime IDs */
+#define D1_IN_D2_DEMO_GAME_TYPE 4
+#define D1_IN_D2_DEMO_VERSION 16
+/* After mission resolution, before replacing world or interpreting runtime IDs */
+int d1_in_d2_saved_format_supported(int version);
+int d1_in_d2_write_saved_asset_identity(rewind_file *fp);
+int d1_in_d2_read_saved_asset_identity(rewind_file *fp, int swap);
 /* Bind native wall backlinks after world loading: -1 D2, 0 invalid, 1 bound */
 int d1_in_d2_bind_trigger_links(int trigger_num);
 

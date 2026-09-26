@@ -34,6 +34,7 @@
 #   .\test_lan.ps1 -GuidebotSlotRemapRestore
 #   .\test_lan.ps1 -SavedLateJoin -Game d2
 #   .\test_lan.ps1 -SavedLateJoin -RestoreStatus -Game d2
+#   .\test_lan.ps1 -Game d2 -MissionFile descent -ClientRewind -GuidebotRewind
 #   .\test_lan.ps1 -HostMigration
 #   .\test_lan.ps1 -GuidebotRoutingMode Original -HostMigration
 #   .\test_lan.ps1 -HostDevice emulator-5556 -HostAvd Nexus5X_Light_2 -JoinDevice emulator-5558 -JoinAvd DxxSdk36
@@ -124,6 +125,7 @@ param(
     [switch]$LevelRestart,
     [switch]$CoopRewind,
     [switch]$ClientRewind,
+    [switch]$GuidebotRewind,
     [switch]$SecretRewind,
     [switch]$SecretRestart,
     [switch]$AllowSecretWarps,
@@ -201,6 +203,12 @@ if ($Endgame -and -not $MissionFile -and $InitialLevel -eq 1) {
     $InitialLevel = if ($Game -eq "d1") { 27 } else { 24 }
 }
 if ($ClientRewind) { $CoopRewind = $true }
+if ($GuidebotRewind) {
+    if ($Game -ne 'd2' -or $InitialLevel -ne 1 -or ($MissionFile -and $MissionFile -ne 'descent')) {
+        throw 'GuidebotRewind requires First Strike or Counterstrike level 1 in the D2 engine'
+    }
+    $CoopRewind = $true
+}
 if ($RestoreLossResume -and -not $RestoreFailure) { throw "RestoreLossResume requires RestoreFailure" }
 if ($RestoreFailure -and ($MissionFile -or $InitialLevel -ne 1 -or $CountdownSave -or $CoopRewind -or
         $LevelRestart -or $SecretWorld -or $SecretPhysical -or $SecretSaveRestore -or $SecretRewind -or $SecretRestart)) {
@@ -579,6 +587,24 @@ function Invoke-CoopRewindScenario {
         if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
                     -SecondarySerial $EMU2 -SecondaryScript $clientScript `
                     -Description "Natural co-op rewind: $phase" -TimeoutSec $phaseTimeout)) { throw "Co-op rewind $phase failed" }
+        if ($GuidebotRewind -and $phase -eq 'seed') {
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_rewind_guidebot_prepare.jsonc' `
+                        -SecondarySerial $EMU2 -SecondaryScript 'test_coop_rewind_guidebot_prepare.jsonc' `
+                        -Description 'Clear authored robot fire before companion rewind history' -TimeoutSec 20)) { throw 'Companion rewind preparation failed' }
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_guidebot_travel_seed_host.jsonc' `
+                        -SecondarySerial $EMU2 -SecondaryScript 'test_coop_guidebot_travel_seed_client.jsonc' `
+                        -Description 'Deploy client-owned companion before collecting rewind history' -TimeoutSec 40)) { throw 'Companion rewind deployment failed' }
+        }
+        if ($GuidebotRewind -and $phase -in @('record', 'client_record')) {
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_rewind_guidebot_dock_host.jsonc' `
+                        -SecondarySerial $EMU2 -SecondaryScript 'test_coop_rewind_guidebot_dock_client.jsonc' `
+                        -Description 'Dock the recorded companion before team rewind' -TimeoutSec 40)) { throw 'Companion rewind mutation failed' }
+        }
+        if ($GuidebotRewind -and $phase -in @('rewind', 'client_requests')) {
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_rewind_guidebot_verify_host.jsonc' `
+                        -SecondarySerial $EMU2 -SecondaryScript 'test_coop_rewind_guidebot_verify_client.jsonc' `
+                        -Description 'Team rewind restores deployed companion and client ownership' -TimeoutSec 30)) { throw 'Companion rewind restore failed' }
+        }
     }
     return $true
 }
@@ -2175,7 +2201,18 @@ try {
         }
     }
 
-    if ($BriefingRestore -or $MaximumExitProbe) {
+    if ($CoopRewind) {
+        # Record memory restore format and target clocks alongside the behavior checks
+        foreach ($serial in @($EMU1, $EMU2)) {
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @(
+                'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+                '--es', 'command', 'write_bool_pref',
+                '--es', 'key', "'dlog_game logs_enabled'", '--ez', 'value', 'true'
+            ) -Seconds 10 | Out-Null
+        }
+    }
+
+    if ($BriefingRestore -or $MaximumExitProbe -or $CoopRewind) {
         foreach ($serial in @($EMU1, $EMU2)) {
             Adb-Dev-Timeout -Serial $serial -AdbArgs @(
                 "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
@@ -2276,8 +2313,8 @@ try {
             "shell", "run-as", $PACKAGE, "rm", "-f", "files/introspect.json"
         ) -Seconds 10 | Out-Null
     }
-    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu1_logcat_err.txt")
-    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*", "MatchmakingService:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu2_logcat_err.txt")
+    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "DXX-DLOG:*", "DXX-Automate:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*" -PassThru -WindowStyle Hidden -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu1_logcat_err.txt")
+    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "DXX-DLOG:*", "DXX-Automate:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*", "MatchmakingService:*" -PassThru -WindowStyle Hidden -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu2_logcat_err.txt")
     Start-Sleep -Seconds 1
 
     # Host (EMU1)

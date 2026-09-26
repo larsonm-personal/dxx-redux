@@ -336,6 +336,14 @@ static void input_demo_fill_recorder_player_cfg(input_demo_recorder_settings *se
 		settings->player_cfg.primary_order[i] = PlayerCfg.PrimaryOrder[i];
 	for (i = 0; i < MAX_SECONDARY_WEAPONS + 1; i++)
 		settings->player_cfg.secondary_order[i] = PlayerCfg.SecondaryOrder[i];
+#ifdef DXX_BUILD_DESCENT_II
+	if (EMULATING_D1) {
+		settings->player_cfg.d1_primary_order_count = D1_IN_D2_PRIMARY_ORDER_COUNT;
+		settings->player_cfg.d1_secondary_order_count = D1_IN_D2_SECONDARY_ORDER_COUNT;
+		memcpy(settings->player_cfg.d1_primary_order, d1_in_d2_weapon_order(0), D1_IN_D2_PRIMARY_ORDER_COUNT);
+		memcpy(settings->player_cfg.d1_secondary_order, d1_in_d2_weapon_order(1), D1_IN_D2_SECONDARY_ORDER_COUNT);
+	}
+#endif
 }
 
 static void input_demo_strip_hog_extension(char *value)

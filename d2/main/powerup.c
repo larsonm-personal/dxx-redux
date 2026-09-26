@@ -47,7 +47,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "kconfig.h"
 #include "newdemo.h"
 #include "escort.h"
+#include "d1_in_d2/d1_in_d2.h"
 #include "d1_in_d2/d1_in_d2_semantics.h"
+#include "d1_in_d2/d1_in_d2_weapons.h"
 #include "input_demo_energy_trace.h"
 #include "input_demo_hooks.h"
 #ifdef EDITOR
@@ -330,7 +332,8 @@ static int pick_up_vulcan_ammo(int amount)
 		HUD_init_message(HM_DEFAULT|HM_REDUNDANT|HM_MAYDUPL, "%s %d %s!",TXT_ALREADY_HAVE,f2i((unsigned) VULCAN_AMMO_SCALE * (unsigned) max),TXT_VULCAN_ROUNDS);
 		used = 0;
 	}
-	Players[Player_num].primary_weapon = pwsave;
+	if (!d1_in_d2_use_d1_gameplay())
+		Players[Player_num].primary_weapon = pwsave;
 
 	return used;
 }
@@ -508,6 +511,7 @@ int do_powerup(object *obj)
 				Players[Player_num].flags |= PLAYER_FLAGS_QUAD_LASERS;
 				powerup_basic(15, 15, 7, QUAD_FIRE_SCORE, "%s!",TXT_QUAD_LASERS);
 				update_laser_weapon_info();
+				d1_in_d2_pick_up_primary(LASER_INDEX, 1);
 				used=1;
 
 				if (Game_mode & GM_MULTI) {

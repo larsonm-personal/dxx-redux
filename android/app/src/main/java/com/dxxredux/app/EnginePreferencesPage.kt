@@ -237,6 +237,7 @@ fun EnginePreferencesPage(
                     .edit()
                     .putBoolean(PREF_GUIDEBOT_HELPER_LINE, showGuidebotLine)
                     .putBoolean(PREF_PERSIST_GUIDEBOT_GOAL, persistGuidebotGoal)
+                    .putInt(PREF_GUIDEBOT_ROUTING_MODE, guidebotRoutingMode)
                     .putBoolean(PREF_REWIND_SUPPORT_ENABLED, rewindSupportEnabled)
                     .putBoolean(PREF_SKIP_INTRO_MOVIE, skipIntroMovie)
                     .putBoolean(HostGameDefaults.COOP_QOL_PREF, serverCoopQol)
@@ -307,6 +308,7 @@ fun EnginePreferencesPage(
                     mapCheatsAccessible = preset.helpersEnabled
                     showGuidebotLine = preset.helpersEnabled
                     persistGuidebotGoal = preset.helpersEnabled
+                    guidebotRoutingMode = preset.guidebotRoutingMode
                     mainViewFov = preset.mainViewFov
                     serverCoopQol = preset.serverCoopQol
                     rewindSupportEnabled = preset.rewindEnabled

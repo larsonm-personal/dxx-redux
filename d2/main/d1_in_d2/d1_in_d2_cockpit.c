@@ -1560,7 +1560,9 @@ int d1_in_d2_render_gauges(int *added_score, fix *added_time)
 		if (Newdemo_state == ND_STATE_RECORDING)
 			newdemo_record_player_energy(energy);
 		d1_draw_energy_bar(energy);
+#if !defined(ANDROID) || !defined(OGL)
 		d1_draw_numerical_display(shields, energy);
+#endif
 		if (!PlayerCfg.HudMode)
 			d1_show_bomb_count(HUD_SCALE_X(BOMB_COUNT_X), HUD_SCALE_Y(BOMB_COUNT_Y), gr_find_closest_color(0, 0, 0), 0, 0);
 		d1_draw_player_ship(cloak, SHIP_GAUGE_X, SHIP_GAUGE_Y);

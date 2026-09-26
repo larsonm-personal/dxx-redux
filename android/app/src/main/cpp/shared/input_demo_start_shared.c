@@ -179,15 +179,43 @@ static void input_demo_apply_replay_player_cfg(const input_demo_player_cfg *play
 	PlayerCfg.ClassicAutoselectWeapon = player_cfg->classic_autoselect_weapon;
 	PlayerCfg.AutoselectOnlyOnce = player_cfg->autoselect_only_once;
 	PlayerCfg.OriginalHoming = player_cfg->original_homing;
-	memcpy(PlayerCfg.PrimaryOrder, player_cfg->primary_order,
-	       input_demo_primary_order_copy_count());
-	memcpy(PlayerCfg.SecondaryOrder, player_cfg->secondary_order,
-	       MAX_SECONDARY_WEAPONS + 1);
+#ifdef DXX_BUILD_DESCENT_II
+	/* Native recordings configure the native domain, never D2's pilot array */
+	if (player_cfg->primary_order_count == D1_IN_D2_PRIMARY_ORDER_COUNT) {
+		d1_in_d2_set_weapon_order(0, player_cfg->primary_order, player_cfg->primary_order_count);
+		d1_in_d2_set_weapon_order(1, player_cfg->secondary_order, player_cfg->secondary_order_count);
+	} else
+#endif
+	{
+		memcpy(PlayerCfg.PrimaryOrder, player_cfg->primary_order,
+		       input_demo_primary_order_copy_count());
+		memcpy(PlayerCfg.SecondaryOrder, player_cfg->secondary_order,
+		       MAX_SECONDARY_WEAPONS + 1);
+	}
+#ifdef DXX_BUILD_DESCENT_II
+	if (player_cfg->d1_primary_order_count) {
+		d1_in_d2_set_weapon_order(0, player_cfg->d1_primary_order, player_cfg->d1_primary_order_count);
+		d1_in_d2_set_weapon_order(1, player_cfg->d1_secondary_order, player_cfg->d1_secondary_order_count);
+	}
+#endif
 }
 
 static void input_demo_apply_legacy_replay_homing_default(void)
 {
 	PlayerCfg.OriginalHoming = 0;
+}
+
+void input_demo_apply_level_player_cfg(void)
+{
+	input_demo_player_cfg cfg;
+	if (!input_demo_replay_is_loaded())
+		return;
+	/* Level-entry progress/window bookkeeping reloads the pilot. Recorded
+	 * settings remain authoritative for the simulation that starts afterward */
+	if (input_demo_replay_get_player_cfg(&cfg))
+		input_demo_apply_replay_player_cfg(&cfg);
+	else
+		input_demo_apply_legacy_replay_homing_default();
 }
 
 void input_demo_set_skip_level_intro(int skip)
@@ -744,6 +772,12 @@ static void input_demo_capture_restored_player_diag(
 	    PlayerCfg.PrimaryOrder, input_demo_primary_order_copy_count());
 	diag->secondary_order_hash = input_demo_replay_hash_u8_sequence(
 	    PlayerCfg.SecondaryOrder, MAX_SECONDARY_WEAPONS + 1);
+#ifdef DXX_BUILD_DESCENT_II
+	if (EMULATING_D1) {
+		diag->primary_order_hash = input_demo_replay_hash_u8_sequence(d1_in_d2_weapon_order(0), D1_IN_D2_PRIMARY_ORDER_COUNT);
+		diag->secondary_order_hash = input_demo_replay_hash_u8_sequence(d1_in_d2_weapon_order(1), D1_IN_D2_SECONDARY_ORDER_COUNT);
+	}
+#endif
 	diag->replay_callsign = Players[Player_num].callsign[0] ? Players[Player_num].callsign : "<empty>";
 	if (ConsoleObject) {
 		diag->player_mass = ConsoleObject->mtype.phys_info.mass;

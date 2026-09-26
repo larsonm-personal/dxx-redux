@@ -5,6 +5,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 #include "inferno.h"
 #include "object.h"
 #include "weapon.h"
@@ -17,8 +19,320 @@
 #include "dxxerror.h"
 #include "homing_compat.h"
 #include "input_demo_hooks.h"
+#include "game.h"
+#include "hudmsg.h"
+#include "kconfig.h"
+#include "playsave.h"
+#include "text.h"
+#include "newmenu.h"
+#include "physfsx.h"
+#include "strutil.h"
 #include "d1_in_d2.h"
 #include "d1_in_d2_weapons.h"
+
+enum { D1_QUAD_SELECTION = 16 };
+extern int delayed_primary_autoselect_weapon_index;
+int POrderList(int num);
+
+static const ubyte d1_primary_order[] = { 4, 3, 2, 1, 0, 255, 16 };
+static const ubyte d1_secondary_order[] = { 4, 3, 1, 0, 255, 2 };
+
+void d1_in_d2_reset_weapon_order(void)
+{
+	memcpy(PlayerCfg.D1WeaponOrder.primary, d1_primary_order, sizeof(d1_primary_order));
+	memcpy(PlayerCfg.D1WeaponOrder.secondary, d1_secondary_order, sizeof(d1_secondary_order));
+}
+
+const ubyte *d1_in_d2_weapon_order(int secondary)
+{
+	return secondary ? PlayerCfg.D1WeaponOrder.secondary : PlayerCfg.D1WeaponOrder.primary;
+}
+
+int d1_in_d2_set_weapon_order(int secondary, const ubyte *order, int count)
+{
+	const ubyte *domain = secondary ? d1_secondary_order : d1_primary_order;
+	const int expected = secondary ? D1_IN_D2_SECONDARY_ORDER_COUNT : D1_IN_D2_PRIMARY_ORDER_COUNT;
+	int i, j;
+	unsigned seen = 0;
+	if (!order || count != expected)
+		return 0;
+	for (i = 0; i < count; ++i) {
+		for (j = 0; j < expected; ++j)
+			if (order[i] == domain[j])
+				break;
+		if (j == expected || (seen & (1u << j)))
+			return 0;
+		seen |= 1u << j;
+	}
+	memcpy(secondary ? PlayerCfg.D1WeaponOrder.secondary : PlayerCfg.D1WeaponOrder.primary, order, count);
+	return 1;
+}
+
+void d1_in_d2_read_weapon_order(PHYSFS_file *file)
+{
+	char line[64];
+	while (!PHYSFS_eof(file) && PHYSFSX_fgets(line, sizeof(line), file)) {
+		char *cursor, *end;
+		ubyte order[D1_IN_D2_PRIMARY_ORDER_COUNT];
+		int i, secondary, count;
+		if (!d_strnicmp(line, "[end]", 5))
+			break;
+		if (!d_strnicmp(line, "primary=", 8)) {
+			secondary = 0;
+			cursor = line + 8;
+		} else if (!d_strnicmp(line, "secondary=", 10)) {
+			secondary = 1;
+			cursor = line + 10;
+		} else
+			continue;
+		count = secondary ? D1_IN_D2_SECONDARY_ORDER_COUNT : D1_IN_D2_PRIMARY_ORDER_COUNT;
+		for (i = 0; i < count; ++i) {
+			const unsigned long value = strtoul(cursor, &end, 0);
+			if (cursor == end || value > 255 || (i + 1 < count && *end != ','))
+				break;
+			order[i] = (ubyte)value;
+			cursor = end + (i + 1 < count);
+		}
+		while (isspace((unsigned char)*cursor)) ++cursor;
+		if (i == count && !*cursor)
+			d1_in_d2_set_weapon_order(secondary, order, count);
+	}
+}
+
+void d1_in_d2_write_weapon_order(PHYSFS_file *file)
+{
+	int secondary, i;
+	PHYSFSX_printf(file, "[d1 weapon order]\n");
+	for (secondary = 0; secondary < 2; ++secondary) {
+		const ubyte *order = d1_in_d2_weapon_order(secondary);
+		const int count = secondary ? D1_IN_D2_SECONDARY_ORDER_COUNT : D1_IN_D2_PRIMARY_ORDER_COUNT;
+		PHYSFSX_printf(file, "%s=", secondary ? "secondary" : "primary");
+		for (i = 0; i < count; ++i)
+			PHYSFSX_printf(file, "%s%u", i ? "," : "", (unsigned)order[i]);
+		PHYSFSX_printf(file, "\n");
+	}
+	PHYSFSX_printf(file, "[end]\n");
+}
+
+int d1_in_d2_is_quad_selection(int weapon_index)
+{
+	return d1_in_d2_use_d1_gameplay() && weapon_index == D1_QUAD_SELECTION;
+}
+
+int d1_in_d2_primary_selection_index(int weapon_index)
+{
+	if (d1_in_d2_use_d1_gameplay() && weapon_index == LASER_INDEX &&
+		(Players[Player_num].flags & PLAYER_FLAGS_QUAD_LASERS))
+		return D1_QUAD_SELECTION;
+	return weapon_index;
+}
+
+static int native_weapon_rank(int weapon_index, int secondary)
+{
+	int i;
+	const ubyte *order = d1_in_d2_weapon_order(secondary);
+	const int count = secondary ? D1_IN_D2_SECONDARY_ORDER_COUNT : D1_IN_D2_PRIMARY_ORDER_COUNT;
+	for (i = 0; i < count; ++i)
+		if (order[i] == weapon_index)
+			return i;
+	return -1;
+}
+
+int d1_in_d2_primary_order(int weapon_index)
+{
+	return d1_in_d2_use_d1_gameplay() ? native_weapon_rank(weapon_index, 0) : -1;
+}
+
+int d1_in_d2_secondary_order(int weapon_index)
+{
+	return d1_in_d2_use_d1_gameplay() ? native_weapon_rank(weapon_index, 1) : -1;
+}
+
+static int native_order_weapon_available(int weapon_index, int secondary)
+{
+	if (!secondary) {
+		const int quads = (Players[Player_num].flags & PLAYER_FLAGS_QUAD_LASERS) != 0;
+		if (weapon_index == D1_QUAD_SELECTION)
+			return quads && player_has_weapon(Player_num, LASER_INDEX, 0) == HAS_ALL;
+		if (weapon_index == LASER_INDEX && quads)
+			return 0;
+	}
+	return weapon_index >= 0 && weapon_index < 5 &&
+		player_has_weapon(Player_num, weapon_index, secondary) == HAS_ALL;
+}
+
+int d1_in_d2_weapon_availability(ubyte player_num, int weapon_index, int secondary)
+{
+	int info, result = 0;
+	player *ship = &Players[player_num];
+	if (!d1_in_d2_use_d1_gameplay())
+		return -1;
+	if (ship->energy < 0) ship->energy = 0;
+	if (!secondary && weapon_index >= 5) {
+		/* Native direct-selection aliases distinguish four laser levels,
+		 * with and without quads, before looking up the laser inventory slot */
+		const int variant = weapon_index - 5;
+		if (variant < 8 && (ship->laser_level != variant % 4 ||
+			((ship->flags & PLAYER_FLAGS_QUAD_LASERS) != 0) != (variant >= 4)))
+			return 0;
+		if (variant >= 8 && weapon_index != D1_QUAD_SELECTION)
+			return 0;
+		weapon_index = LASER_INDEX;
+	}
+	if (weapon_index < 0 || weapon_index >= 5)
+		return 0;
+	info = secondary ? Secondary_weapon_to_weapon_info[weapon_index] : Primary_weapon_to_weapon_info[weapon_index];
+	if ((secondary ? ship->secondary_weapon_flags : ship->primary_weapon_flags) & (1 << weapon_index))
+		result |= HAS_WEAPON_FLAG;
+	if (Weapon_info[info].ammo_usage <= (secondary ? ship->secondary_ammo[weapon_index] : ship->primary_ammo[weapon_index]))
+		result |= HAS_AMMO_FLAG;
+	if ((!secondary && weapon_index == FUSION_INDEX ? F1_0 * 2 : Weapon_info[info].energy_usage) <= ship->energy)
+		result |= HAS_ENERGY_FLAG;
+	return result;
+}
+
+int d1_in_d2_cycle_weapon(int secondary)
+{
+	int slot, step;
+	const ubyte *order;
+	int count, cutoff, restricted;
+	if (!d1_in_d2_use_d1_gameplay())
+		return 0;
+	order = d1_in_d2_weapon_order(secondary);
+	count = secondary ? D1_IN_D2_SECONDARY_ORDER_COUNT : D1_IN_D2_PRIMARY_ORDER_COUNT;
+	slot = native_weapon_rank(secondary ? Players[Player_num].secondary_weapon :
+		d1_in_d2_primary_selection_index(Players[Player_num].primary_weapon), secondary);
+	cutoff = native_weapon_rank(255, secondary);
+	restricted = slot < cutoff && cutoff > 1 && PlayerCfg.CycleAutoselectOnly;
+	for (step = 0; step < count; ++step) {
+		slot = (slot + 1) % count;
+		if (slot == cutoff) {
+			if (restricted) slot = 0;
+			else continue;
+		}
+		if (native_order_weapon_available(order[slot], secondary)) {
+			/* Native cycling maps before select_weapon, including an already
+			 * selected laser; queued/autoselection maps at the selection boundary */
+			select_weapon(order[slot] == D1_QUAD_SELECTION ? LASER_INDEX : order[slot], secondary, 1, 1);
+			break;
+		}
+	}
+	return 1;
+}
+
+int d1_in_d2_auto_select_weapon(int secondary, int classic)
+{
+	const ubyte *order;
+	int current, slot, cutoff, looped = 0;
+	if (!d1_in_d2_use_d1_gameplay())
+		return 0;
+	current = secondary ? Players[Player_num].secondary_weapon : Players[Player_num].primary_weapon;
+	if (player_has_weapon(Player_num, current, secondary) == HAS_ALL)
+		return 1;
+	order = d1_in_d2_weapon_order(secondary);
+	cutoff = native_weapon_rank(255, secondary);
+	if (classic) {
+		slot = native_weapon_rank(secondary ? current : d1_in_d2_primary_selection_index(current), secondary);
+		for (;;) {
+			++slot;
+			if (slot >= cutoff) {
+				if (looped) break;
+				slot = 0;
+				looped = 1;
+			}
+			if (order[slot] == current) break;
+			if (native_order_weapon_available(order[slot], secondary)) {
+				select_weapon(order[slot], secondary, 1, 1);
+				return 1;
+			}
+		}
+	} else {
+		for (slot = 0; slot < cutoff; ++slot) {
+			if (secondary && order[slot] == PROXIMITY_INDEX) continue;
+			if (native_order_weapon_available(order[slot], secondary)) {
+				select_weapon(order[slot], secondary, 0, 1);
+				return 1;
+			}
+		}
+	}
+	if (!secondary) select_weapon(LASER_INDEX, 0, 0, 1);
+	HUD_init_message_literal(HM_DEFAULT, secondary ? "No secondary weapons available!" : "No primary weapons available!");
+	return 1;
+}
+
+int d1_in_d2_reorder_weapons(int secondary)
+{
+	newmenu_item items[D1_IN_D2_PRIMARY_ORDER_COUNT];
+	ubyte reordered[D1_IN_D2_PRIMARY_ORDER_COUNT];
+	const ubyte *order;
+	int count, i;
+	if (!d1_in_d2_use_d1_gameplay())
+		return 0;
+	order = d1_in_d2_weapon_order(secondary);
+	count = secondary ? D1_IN_D2_SECONDARY_ORDER_COUNT : D1_IN_D2_PRIMARY_ORDER_COUNT;
+	memset(items, 0, sizeof(items));
+	for (i = 0; i < count; ++i) {
+		const int weapon = order[i];
+		items[i].type = NM_TYPE_MENU;
+		items[i].value = weapon;
+		items[i].text = (char *)(weapon == 255 ? "--- Never Autoselect below ---" :
+			weapon == D1_QUAD_SELECTION ? TXT_QUAD_LASERS :
+			secondary ? SECONDARY_WEAPON_NAMES(weapon) : PRIMARY_WEAPON_NAMES(weapon));
+	}
+	newmenu_doreorder(secondary ? "Reorder Secondary" : "Reorder Primary",
+#ifdef ANDROID
+		"Long-press item or hold A to move",
+#else
+		"Shift+Up/Down arrow to move item",
+#endif
+		count, items, NULL, NULL);
+	for (i = 0; i < count; ++i) reordered[i] = (ubyte)items[i].value;
+	d1_in_d2_set_weapon_order(secondary, reordered, count);
+	return 1;
+}
+
+/* Acquisition semantics from native D1 weapon.c, including the first-pickup
+ * latch and the logical quad identity while a switch waits for firing release */
+int d1_in_d2_pick_up_primary(int weapon_index, int is_quads)
+{
+	int primary_weapon_index, cutpoint, suppress_autoselect;
+	unsigned flag;
+	if (!d1_in_d2_use_d1_gameplay())
+		return -1;
+	flag = 1u << weapon_index;
+	suppress_autoselect = PlayerCfg.AutoselectOnlyOnce && PrimaryWeaponPickedUp;
+	if (weapon_index != LASER_INDEX && (Players[Player_num].primary_weapon_flags & flag)) {
+		HUD_init_message(HM_DEFAULT | HM_REDUNDANT | HM_MAYDUPL, "%s %s!", TXT_ALREADY_HAVE_THE, PRIMARY_WEAPON_NAMES(weapon_index));
+		return 0;
+	}
+	Players[Player_num].primary_weapon_flags |= flag;
+	cutpoint = POrderList(255);
+	if (is_quads)
+		weapon_index = D1_QUAD_SELECTION;
+	primary_weapon_index = d1_in_d2_primary_selection_index(Players[Player_num].primary_weapon);
+	if (weapon_index != primary_weapon_index)
+		PrimaryWeaponPickedUp = 1;
+	if (!suppress_autoselect && POrderList(weapon_index) < cutpoint &&
+		POrderList(weapon_index) < POrderList(primary_weapon_index)) {
+		if (Controls.fire_primary_state) {
+			if (PlayerCfg.SelectAfterFire) {
+				if (delayed_primary_autoselect_weapon_index == -1 ||
+					POrderList(weapon_index) < POrderList(delayed_primary_autoselect_weapon_index))
+					delayed_primary_autoselect_weapon_index = weapon_index;
+			} else if (!PlayerCfg.NoFireAutoselect)
+				select_weapon(weapon_index, 0, 0, 1);
+		} else
+			select_weapon(weapon_index, 0, 0, 1);
+	}
+	if (!(Game_mode & GM_MULTI) || !Netgame.ReducedFlash)
+		PALETTE_FLASH_ADD(7, 14, 21);
+	if (weapon_index != LASER_INDEX)
+		HUD_init_message(HM_DEFAULT, "%s!", is_quads ? TXT_QUAD_LASERS : PRIMARY_WEAPON_NAMES(weapon_index));
+	/* The outer quad powerup path already sends native ship status */
+	if (!is_quads && (Game_mode & GM_MULTI))
+		multi_send_ship_status();
+	return 1;
+}
 
 int d1_in_d2_laser_are_related(int first, int second)
 {

@@ -33,6 +33,18 @@
 #include "android_lifecycle_actions.h"
 #include "jni_string.h"
 
+#ifdef DXX_BUILD_DESCENT_II
+#include "d1_in_d2/d1_in_d2.h"
+
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_NativeGameDataSupport_nativeD1InD2EditionError(JNIEnv *env, jclass cls, jlong pig_size)
+{
+	(void) cls;
+	const char *error = d1_in_d2_source_edition_error(pig_size);
+	return error ? (*env)->NewStringUTF(env, error) : NULL;
+}
+#endif
+
 #define LOG_TAG   "DXX-Redux"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
@@ -1071,6 +1083,19 @@ Java_com_dxxredux_app_MainActivity_nativeSetGuidebotRoutingDefault(JNIEnv *env, 
 	guidebot_routing_set_default(mode);
 #else
 	(void) mode;
+#endif
+}
+
+/* Report the active mode, including saved games and the synchronized co-op policy */
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGuidebotRoutingIsEnhanced(JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+#ifdef DXX_BUILD_DESCENT_II
+	return guidebot_routing_is_enhanced() ? JNI_TRUE : JNI_FALSE;
+#else
+	return JNI_FALSE;
 #endif
 }
 

@@ -30,6 +30,7 @@
 #include "segment.h"
 #include "automap.h"
 #include "switch.h"
+#include "trigger_navigation_actions.h"
 #include "wall.h"
 #include "weapon.h"
 #ifdef __ANDROID__
@@ -45,6 +46,7 @@
 #include "ai.h"
 #include "escort.h"
 #include "mission.h"
+#include "d1_in_d2/d1_in_d2.h"
 #endif
 #ifdef NETWORK
 #include "multi.h"
@@ -1777,11 +1779,7 @@ static int secret_area_side_has_exit_trigger(void *user, int seg, int side)
 	trigger_num = Walls[wall_num].trigger;
 	if (trigger_num < 0 || trigger_num >= Num_triggers)
 		return 0;
-#ifdef DXX_BUILD_DESCENT_II
-	return Triggers[trigger_num].type == TT_EXIT || Triggers[trigger_num].type == TT_SECRET_EXIT;
-#else
-	return (Triggers[trigger_num].flags & (TRIGGER_EXIT | TRIGGER_SECRET_EXIT)) != 0;
-#endif
+	return trigger_exit_flags(trigger_num) != 0;
 }
 
 static int level_metadata_fvi_segment_chain_valid(
@@ -2610,27 +2608,11 @@ static int secret_area_wall_shootable_without_transparency_from_position(
 	    seg, from_pos, wall_num, 0, 0);
 }
 
-static int secret_area_trigger_opens_links(int trigger_num)
-{
-	if (trigger_num < 0 || trigger_num >= Num_triggers)
-		return 0;
-#ifdef DXX_BUILD_DESCENT_II
-	return Triggers[trigger_num].type == TT_OPEN_DOOR ||
-	       Triggers[trigger_num].type == TT_ILLUSION_OFF ||
-	       Triggers[trigger_num].type == TT_UNLOCK_DOOR ||
-	       Triggers[trigger_num].type == TT_OPEN_WALL ||
-	       Triggers[trigger_num].type == TT_ILLUSORY_WALL;
-#else
-	return (Triggers[trigger_num].flags &
-	        (TRIGGER_CONTROL_DOORS | TRIGGER_ILLUSION_OFF)) != 0;
-#endif
-}
-
 static int secret_area_trigger_opens_side(int trigger_num, int seg, int side)
 {
 	int i;
 
-	if (!secret_area_trigger_opens_links(trigger_num))
+	if (!trigger_navigation_opens_links(trigger_num))
 		return 0;
 	for (i = 0; i < secret_area_bounded_trigger_link_count(trigger_num); ++i)
 		if (Triggers[trigger_num].seg[i] == seg && Triggers[trigger_num].side[i] == side)
@@ -2707,7 +2689,7 @@ static void secret_area_rebuild_level_topology(int clearance_radius)
 	for (trigger_num = 0; trigger_num < Num_triggers; ++trigger_num) {
 		int link;
 
-		if (!secret_area_trigger_opens_links(trigger_num))
+		if (!trigger_navigation_opens_links(trigger_num))
 			continue;
 		for (link = 0; link < secret_area_bounded_trigger_link_count(trigger_num); ++link) {
 			int prior_link;
@@ -2864,37 +2846,22 @@ static int secret_area_metadata_triggered_side_opener_wall_num(void *user, int s
 
 static int secret_area_trigger_type(void *user, int trigger_num)
 {
+	int types[LEVEL_METADATA_MAX_TRIGGER_ACTIONS];
 	(void) user;
-#ifdef DXX_BUILD_DESCENT_II
-	if (trigger_num < 0 || trigger_num >= Num_triggers)
-		return -1;
-	return Triggers[trigger_num].type;
-#else
-	int flags;
-
-	if (trigger_num < 0 || trigger_num >= Num_triggers)
-		return -1;
-	flags = Triggers[trigger_num].flags;
-	if (flags & TRIGGER_CONTROL_DOORS)
-		return TRIGGER_CONTROL_DOORS;
-	if (flags & TRIGGER_ILLUSION_OFF)
-		return TRIGGER_ILLUSION_OFF;
-	if (flags & TRIGGER_ILLUSION_ON)
-		return TRIGGER_ILLUSION_ON;
-	if (flags & TRIGGER_EXIT)
-		return TRIGGER_EXIT;
-	if (flags & TRIGGER_SECRET_EXIT)
-		return TRIGGER_SECRET_EXIT;
-	return -1;
-#endif
+	/* The step's representative exit destination precedes linked wall actions */
+	return trigger_navigation_action_types(trigger_num, types) ? types[0] : -1;
 }
 
 static int secret_area_trigger_flags(void *user, int trigger_num)
 {
 	(void) user;
-	if (trigger_num < 0 || trigger_num >= Num_triggers)
-		return 0;
-	return Triggers[trigger_num].flags;
+	return trigger_navigation_flags(trigger_num);
+}
+
+static int secret_area_trigger_action_types(void *user, int trigger_num, int types[LEVEL_METADATA_MAX_TRIGGER_ACTIONS])
+{
+	(void) user;
+	return trigger_navigation_action_types(trigger_num, types);
 }
 
 #if defined(DXX_BUILD_DESCENT_II) && (defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER))
@@ -2972,7 +2939,7 @@ static void level_metadata_initialize_scan_view(void)
 #ifdef DXX_BUILD_DESCENT_II
 	view->trigger_type_open_door = TT_OPEN_DOOR;
 	view->trigger_type_close_door = TT_CLOSE_DOOR;
-	view->trigger_type_toggle_door = -1;
+	view->trigger_type_toggle_door = TRIGGER_NAVIGATION_TOGGLE_DOOR;
 	view->trigger_type_exit = TT_EXIT;
 	view->trigger_type_secret_exit = TT_SECRET_EXIT;
 	view->trigger_type_illusion_off = TT_ILLUSION_OFF;
@@ -3041,6 +3008,7 @@ static void level_metadata_initialize_scan_view(void)
 	view->triggered_side_opener_count = secret_area_metadata_triggered_side_opener_count;
 	view->triggered_side_opener_wall_num = secret_area_metadata_triggered_side_opener_wall_num;
 	view->trigger_type = secret_area_trigger_type;
+	view->trigger_action_types = secret_area_trigger_action_types;
 	view->trigger_flags = secret_area_trigger_flags;
 #if defined(DXX_BUILD_DESCENT_II) && (defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER))
 	view->trigger_was_activated = secret_area_trigger_was_activated;
@@ -3126,6 +3094,14 @@ static unsigned long long level_metadata_analysis_profile_hash(
 {
 	unsigned long long analysis_profile_hash = 1469598103934665603ULL;
 
+	/* Content semantics can differ even when an engine sees identical geometry */
+	analysis_profile_hash = level_metadata_visibility_hash_int(
+	    analysis_profile_hash,
+#ifdef DXX_BUILD_DESCENT_II
+	    d1_in_d2_use_d1_gameplay() ? ROUTE_ANALYSIS_CACHE_GAME_D1 : ROUTE_ANALYSIS_CACHE_GAME_D2);
+#else
+	    ROUTE_ANALYSIS_CACHE_GAME_D1);
+#endif
 	analysis_profile_hash = level_metadata_visibility_hash_int(
 	    analysis_profile_hash, view->navigator_radius);
 	analysis_profile_hash = level_metadata_visibility_hash_int(

@@ -11,8 +11,10 @@
 #include "input_demo_ai_trace.h"
 #include "input_demo_world_trace.h"
 #include "input_demo_state_trace.h"
+#include "input_demo_recorder.h"
 #include "render_gameplay_view.h"
 #include <nlohmann/json.hpp>
+#include "flyout_metadata.hpp"
 #include <SDL.h>
 #ifdef USE_SDLMIXER
 #include <SDL_mixer.h>
@@ -68,9 +70,11 @@ void cockpit_decode_alpha(grs_bitmap *bm);
 #include "newdemo.h"
 #include "newmenu.h"
 #include "object.h"
+#include "player_death_runtime.h"
 #include "palette.h"
 #include "physfsx.h"
 #include "cadence_runtime.h"
+#include "exploding_wall_runtime.h"
 #include "physics.h"
 #include "piggy.h"
 #include "polyobj.h"
@@ -84,6 +88,8 @@ void cockpit_decode_alpha(grs_bitmap *bm);
 #include "secretarea.h"
 #include "state.h"
 #ifdef DXX_BUILD_DESCENT_II
+#include "guidebot_routing.h"
+int find_exit_segment(void);
 int read_hamfile(void);
 void state_object_to_object_rw(object *obj, object_rw *saved);
 void state_object_rw_to_object(object_rw *saved, object *obj, int native_ai_format);
@@ -96,6 +102,7 @@ void state_object_rw_to_object(object_rw *saved, object *obj, int native_ai_form
 #include "kconfig.h"
 #include "mouse.h"
 #include "switch.h"
+#include "trigger_navigation_actions.h"
 #include "text.h"
 #include "titles.h"
 #include "textures.h"
@@ -110,6 +117,13 @@ void do_endlevel_flythrough(int n);
 void apply_force_damage(object *obj, fix force, object *other);
 void kill_stuck_objects(int wallnum);
 void InitWeaponOrdering(void);
+void CyclePrimary(void);
+void CycleSecondary(void);
+void ReorderPrimary(void);
+void ReorderSecondary(void);
+extern fix ThisLevelTime;
+#include "input_demo_newdemo_shared.h"
+#include "input_demo_start_shared.h"
 void FireLaser(void);
 int check_collision_delayfunc_exec(void);
 int object_create_egg(object *obj);
@@ -827,6 +841,61 @@ static void install_native_trigger(int index, short flags)
 #endif
 }
 
+static void test_object_endian_angles()
+{
+	const auto swap = [](object_rw &value, int enabled) {
+#ifdef DXX_BUILD_DESCENT_II
+		object_rw_swap(&value, enabled, 1);
+#else
+		object_rw_swap(&value, enabled);
+#endif
+	};
+	for (int render : { RT_POLYOBJ, RT_MORPH, RT_NONE }) {
+		for (int value : { 0, 1, -1, 0x1234, -0x1234, SHRT_MIN, SHRT_MAX }) {
+			object_rw original = {};
+			original.type = render == RT_NONE ? OBJ_GHOST : OBJ_PLAYER;
+			original.control_type = CT_NONE;
+			original.movement_type = MT_PHYSICS;
+			original.render_type = static_cast<ubyte>(render);
+			original.signature = 0x12345678;
+			original.mtype.phys_info.turnroll = static_cast<fixang>(value);
+			original.mtype.phys_info.flags = 0x53a5;
+			original.rtype.pobj_info.model_num = 0x01020304;
+			for (auto &angle : original.rtype.pobj_info.anim_angles) {
+				angle.p = static_cast<fixang>(value);
+				angle.b = static_cast<fixang>(value ^ 0x5a5a);
+				angle.h = static_cast<fixang>(~value);
+			}
+			static_assert(sizeof(original.mtype.phys_info.turnroll) == 2 && sizeof(original.rtype.pobj_info.anim_angles[0]) == 6,
+			              "object bank and joint angles use 16-bit serialized fields");
+			const auto *start = reinterpret_cast<const ubyte *>(&original);
+			bytes expected(start, start + sizeof(original));
+			const auto reverse = [&](const void *field, size_t width) {
+				const size_t offset = static_cast<const ubyte *>(field) - start;
+				std::reverse(expected.begin() + offset, expected.begin() + offset + width);
+			};
+			// Construct opposite-endian bytes independently of the engine swap macros
+			reverse(&original.signature, 4);
+			reverse(&original.mtype.phys_info.turnroll, 2);
+			reverse(&original.mtype.phys_info.flags, 2);
+			reverse(&original.rtype.pobj_info.model_num, 4);
+			for (const auto &angle : original.rtype.pobj_info.anim_angles) {
+				reverse(&angle.p, 2);
+				reverse(&angle.b, 2);
+				reverse(&angle.h, 2);
+			}
+			object_rw actual = original;
+			swap(actual, 0);
+			require(!std::memcmp(&actual, &original, sizeof(actual)), "native-endian object input retains all bytes");
+			std::memcpy(&actual, expected.data(), sizeof(actual));
+			swap(actual, 1);
+			require(!std::memcmp(&actual, &original, sizeof(actual)), "opposite-endian object input retains signed 16-bit bank and joint angles");
+			swap(actual, 1);
+			require(!std::memcmp(&actual, expected.data(), sizeof(actual)), "object endian conversion also emits the independently specified byte layout");
+		}
+	}
+}
+
 static void test_object_state_trace()
 {
 	for (const char *path : { "object-state-test.jsonl", "object-state-test.jsonl.gz" }) {
@@ -868,7 +937,8 @@ static void test_object_state_trace()
 		require(rows[1]["slots"][key]["signature"] == signature && rows[1]["slots"][key]["orient"][2][2] == F1_0, "trace retains source identity and orientation");
 		require(rows[2]["slots"].empty(), "unchanged slots are losslessly elided");
 		require(rows[3]["slots"][key]["orient"][2][2] == 123 && rows[3]["slots"][key]["physics"]["rotthrust"][1] == 456 &&
-			rows[3]["slots"][key]["weapon"]["hitobj_list"][MAX_OBJECTS - 1] == 1, "observe fields absent from old hashes");
+		            rows[3]["slots"][key]["weapon"]["hitobj_list"][MAX_OBJECTS - 1] == 1,
+		        "observe fields absent from old hashes");
 		require(rows[4]["slots"].contains(key) && rows[4]["slots"][key].is_null(), "deleted slots emit tombstones");
 		require(rows[5]["slots"][key]["signature"] != signature && rows[5]["slots"][key]["weapon"]["hitobj_list"][MAX_OBJECTS - 1] == 0, "reused slot replaces its complete state");
 		require(rows[5]["allocator"]["free_obj_list"].size() == MAX_OBJECTS && rows[5]["rng"].size() == 2, "allocator and both actual RNG streams are observed");
@@ -878,6 +948,15 @@ static void test_object_state_trace()
 static void test_world_state_trace()
 {
 	init_test_corridor();
+	const int saved_selection[] = { PrimaryWeaponPickedUp, SecondaryWeaponPickedUp,
+		delayed_primary_autoselect_weapon_index, delayed_secondary_autoselect_weapon_index };
+	PrimaryWeaponPickedUp = 1;
+	SecondaryWeaponPickedUp = 0;
+	delayed_primary_autoselect_weapon_index = 16;
+	delayed_secondary_autoselect_weapon_index = 4;
+	const std::vector<expl_wall> saved_blasts(expl_wall_list, expl_wall_list + MAX_EXPLODING_WALLS);
+	init_exploding_walls();
+	expl_wall_list[MAX_EXPLODING_WALLS - 1] = { 0, 4, F1_0 / 2 };
 	const fix64 saved_collision_clock = collide_get_collision_delay_last_play_time();
 	const fix64 saved_fusion_clock = game_get_fusion_next_sound_time();
 	const fix64 saved_refuel_clock = fuelcen_get_last_sound_time();
@@ -925,6 +1004,11 @@ static void test_world_state_trace()
 	Walls[0].hps -= 3 * F1_0;
 	Ai_local_info[inactive].next_fire++;
 	Ai_local_info[0].time_player_seen++;
+	expl_wall_list[MAX_EXPLODING_WALLS - 1].time++;
+	PrimaryWeaponPickedUp = 0;
+	SecondaryWeaponPickedUp = 1;
+	delayed_primary_autoselect_weapon_index = -1;
+	delayed_secondary_autoselect_weapon_index = -1;
 	require(input_demo_world_trace_write(2, "terminal", error, sizeof(error)), "capture terminal-only inventory and world changes");
 	require(input_demo_world_trace_write(2, nullptr, error, sizeof(error)), "boundary does not replace the per-frame delta baseline");
 	input_demo_state_trace_stop();
@@ -953,7 +1037,7 @@ static void test_world_state_trace()
 	require(ai["local_default"]["d1_saved"] == nlohmann::json({ { "last_see_time", 123 }, { "last_attack_time", -456 }, { "wait_time", 789 } }),
 	        "world observer retains all original saved AI fields in its complete default");
 #endif
-	require(rows[1]["version"] == 8 && ai["local_capacity"] == MAX_OBJECTS &&
+	require(rows[1]["version"] == 10 && ai["local_capacity"] == MAX_OBJECTS &&
 	            ai["locals"][std::to_string(inactive)]["next_fire"] == 123456,
 	        "complete AI observation retains populated inactive local storage");
 	require(ai["locals"].size() == 1 && ai["local_default"]["time_player_seen"] == -7 * F1_0,
@@ -974,7 +1058,7 @@ static void test_world_state_trace()
 		std::fprintf(stderr, "World observer initial difference=%s unchanged delta=%s\n", nlohmann::json::diff(rows[1]["state"], rows[2]["state"]).dump().c_str(), rows[3]["state"].dump().c_str());
 	require(rows[2]["reset"].is_boolean() && rows[2]["reset"].get<bool>() && rows[2]["state"] == rows[1]["state"] && rows[3]["state"].empty(), "initial and unchanged world deltas retain the boundary state");
 	require(rows[4]["phase"] == "terminal" && rows[4]["state"]["walls"][0]["hps"] == 97 * F1_0 && rows[4]["state"]["players"][0]["shields"] == 76 * F1_0, "terminal snapshot retains final world and inventory changes");
-	require(rows[5]["state"].size() == 4 && rows[5]["state"].contains("walls") && rows[5]["state"].contains("players") &&
+	require(rows[5]["state"].size() == 6 && rows[5]["state"].contains("walls") && rows[5]["state"].contains("players") &&
 	            rows[5]["state"]["ai"]["locals"][std::to_string(inactive)]["next_fire"] == 123457,
 	        "terminal observation does not consume later world or inactive AI deltas");
 	for (int i = 0; i < MAX_OBJECTS; ++i) {
@@ -989,6 +1073,23 @@ static void test_world_state_trace()
 		}
 	}
 	std::copy(saved_locals.begin(), saved_locals.end(), Ai_local_info);
+	for (int row : { 1, 2, 4, 5 }) {
+		const auto &blasts = rows[row]["state"]["exploding_walls"];
+		require(blasts["capacity"] == MAX_EXPLODING_WALLS && blasts["slots"].size() == 1 &&
+		            blasts["slots"]["9"] == nlohmann::json({ 0, 4, F1_0 / 2 + (row >= 4) }),
+		        "world boundaries and deltas retain active wall-blast slot and exact lifetime");
+		const auto &selection = rows[row]["state"]["weapons"];
+		require(selection["PrimaryWeaponPickedUp"] == (row < 4 ? 1 : 0) &&
+		            selection["SecondaryWeaponPickedUp"] == (row >= 4 ? 1 : 0) &&
+		            selection["delayed_primary_autoselect_weapon_index"] == (row < 4 ? 16 : -1) &&
+		            selection["delayed_secondary_autoselect_weapon_index"] == (row < 4 ? 4 : -1),
+		        "world boundaries and deltas retain pending native selection and both pickup latches");
+	}
+	PrimaryWeaponPickedUp = saved_selection[0];
+	SecondaryWeaponPickedUp = saved_selection[1];
+	delayed_primary_autoselect_weapon_index = saved_selection[2];
+	delayed_secondary_autoselect_weapon_index = saved_selection[3];
+	std::copy(saved_blasts.begin(), saved_blasts.end(), expl_wall_list);
 	Point_segs[MAX_POINT_SEGS - 1] = saved_point;
 	Awareness_events[MAX_AWARENESS_EVENTS - 1] = saved_awareness;
 	collide_set_collision_delay_last_play_time(saved_collision_clock);
@@ -1166,7 +1267,7 @@ static void test_reactor_diagnostic_identity()
 #ifdef DXX_BUILD_DESCENT_II
 		mission.descent_version = profile;
 #else
-		(void)profile;
+		(void) profile;
 #endif
 		init_test_corridor();
 		vms_vector point = {};
@@ -1309,6 +1410,86 @@ static nlohmann::json snapshot_native_triggers()
 	return result;
 }
 
+static void test_trigger_exit_queries()
+{
+	init_test_corridor();
+	Game_mode = 0;
+	Num_walls = Num_triggers = 1;
+	Walls[0] = {};
+	Walls[0].segnum = 0;
+	Walls[0].sidenum = 4;
+	Walls[0].trigger = 0;
+	Segments[0].sides[4].wall_num = 0;
+#ifdef DXX_BUILD_DESCENT_II
+	const int saved_routing = guidebot_routing_mode();
+#endif
+	for (const short exits : { 0, TRIGGER_EXIT, TRIGGER_SECRET_EXIT, TRIGGER_EXIT | TRIGGER_SECRET_EXIT }) {
+		install_native_trigger(0, exits | TRIGGER_CONTROL_DOORS | TRIGGER_ONE_SHOT);
+		require(trigger_exit_flags(0) == exits, "native exit queries retain both compound actions with source ON clear");
+		require(!trigger_exit_flags(-1) && !trigger_exit_flags(Num_triggers) && !trigger_exit_flags(MAX_TRIGGERS),
+		        "invalid trigger references never identify an exit");
+#ifdef DXX_BUILD_DESCENT_II
+		guidebot_routing_restore_mode(GUIDEBOT_ROUTING_ENHANCED);
+		require(find_exit_segment() == ((exits & TRIGGER_EXIT) ? 0 : -1),
+		        "enhanced Guide-Bot finds the normal exit even when its native record also contains a secret exit");
+		guidebot_routing_restore_mode(GUIDEBOT_ROUTING_ORIGINAL);
+		require(find_exit_segment() == -1, "original Guide-Bot retains its external-endpoint destination policy");
+		Segments[1].children[0] = -2;
+		require(find_exit_segment() == 1, "original Guide-Bot still selects an external exit endpoint");
+		Segments[1].children[0] = -1;
+#endif
+	}
+#ifdef DXX_BUILD_DESCENT_II
+	guidebot_routing_restore_mode(GUIDEBOT_ROUTING_ENHANCED);
+	for (int type = 0; type < NUM_TRIGGER_TYPES; ++type) {
+		Triggers[0] = {};
+		Triggers[0].type = type;
+		Triggers[0].flags = TF_DISABLED | TF_ONE_SHOT;
+		const int expected = type == TT_EXIT ? TRIGGER_EXIT : type == TT_SECRET_EXIT ? TRIGGER_SECRET_EXIT
+		                                                                             : 0;
+		require(trigger_exit_flags(0) == expected, "ordinary D2 exit queries retain type semantics independently of admission flags");
+		int types[LEVEL_METADATA_MAX_TRIGGER_ACTIONS] = {};
+		require(trigger_navigation_action_types(0, types) == 1 && types[0] == type,
+		        "ordinary D2 metadata retains exactly its stored action");
+		require(trigger_navigation_flags(0) == Triggers[0].flags, "ordinary D2 routing preserves one-shot and disabled admission flags");
+		require(find_exit_segment() == (type == TT_EXIT ? 0 : -1), "ordinary D2 Guide-Bot destinations retain normal-exit semantics");
+	}
+	guidebot_routing_restore_mode(saved_routing);
+#endif
+	for (int flags = 0; flags < 1024; ++flags) {
+		install_native_trigger(0, static_cast<short>(flags));
+		int types[LEVEL_METADATA_MAX_TRIGGER_ACTIONS] = {};
+		const int count = trigger_navigation_action_types(0, types);
+#ifdef DXX_BUILD_DESCENT_II
+		require(!(trigger_navigation_flags(0) & TF_ONE_SHOT), "imported routing admits repeated native one-shot crossings");
+#else
+		require(!(trigger_navigation_flags(0) & TRIGGER_ONE_SHOT), "native routing admits repeated native one-shot crossings");
+#endif
+		std::vector<int> expected;
+#ifdef DXX_BUILD_DESCENT_II
+		if (flags & TRIGGER_EXIT) expected.push_back(TT_EXIT);
+		if (flags & TRIGGER_SECRET_EXIT) expected.push_back(TT_SECRET_EXIT);
+		if (flags & TRIGGER_CONTROL_DOORS) expected.push_back(TRIGGER_NAVIGATION_TOGGLE_DOOR);
+		if (flags & TRIGGER_ILLUSION_ON) expected.push_back(TT_ILLUSION_ON);
+		if (flags & TRIGGER_ILLUSION_OFF) expected.push_back(TT_ILLUSION_OFF);
+#else
+		for (const int action : { TRIGGER_EXIT, TRIGGER_SECRET_EXIT, TRIGGER_CONTROL_DOORS, TRIGGER_ILLUSION_ON, TRIGGER_ILLUSION_OFF })
+			if (flags & action) expected.push_back(action);
+#endif
+		require(std::vector<int>(types, types + count) == expected, "metadata retains all native navigation actions in engine execution order");
+		const bool opener = !(flags & (TRIGGER_EXIT | TRIGGER_SECRET_EXIT)) &&
+		                    ((flags & TRIGGER_ILLUSION_OFF) || (!(flags & TRIGGER_ILLUSION_ON) && (flags & TRIGGER_CONTROL_DOORS)));
+		require((trigger_navigation_opens_links(0) != 0) == opener, "metadata openers honor final compound wall effect and terminal exits");
+	}
+	for (const short exits : { TRIGGER_EXIT, TRIGGER_SECRET_EXIT, TRIGGER_EXIT | TRIGGER_SECRET_EXIT }) {
+		install_native_trigger(0, exits | TRIGGER_CONTROL_DOORS);
+		const auto metadata = flyout_metadata::collect(1, nullptr);
+		require(metadata["exit_trigger"] == ((exits & TRIGGER_EXIT) ? "present" : "absent"),
+		        "published flyout metadata retains a normal exit inside compound native triggers");
+	}
+	Num_triggers = Num_walls = 0;
+}
+
 static void test_native_triggers()
 {
 #ifdef DXX_BUILD_DESCENT_II
@@ -1378,6 +1559,7 @@ static void test_native_trigger_serialization()
 {
 	static_assert(TRIGGER_DISK_SIZE == 52, "core D2 trigger disk record must stay unchanged");
 	static_assert(sizeof(trigger) == TRIGGER_DISK_SIZE + 2, "original trigger bytes are runtime-only storage");
+	Num_triggers = 1;
 	for (const int version : { 29, 30, 31 }) {
 		PHYSFS_file *file = PHYSFS_openWrite("triggers.bin");
 		require(file != nullptr, "open trigger round-trip output");
@@ -1409,6 +1591,8 @@ static void test_native_trigger_serialization()
 			require(native_trigger_flags(0) == flags && Triggers[0].value == 3 * F1_0 &&
 			            Triggers[0].time == 9 * F1_0 && Triggers[0].num_links == 1 && Triggers[0].side[0] == 4,
 			        "all native flag combinations and linked state survive trigger serialization");
+			require(trigger_exit_flags(0) == (flags & (TRIGGER_EXIT | TRIGGER_SECRET_EXIT)),
+			        "runtime exit queries use compound actions restored from every supported trigger record layout");
 			require(Triggers[0].d1_saved.type == 0 && Triggers[0].d1_saved.link_num == (version == 29 ? flags % 256 - 128 : 0),
 			        "legacy D1 output retains signed link bytes; newer core-only records clear unavailable source bytes");
 		}
@@ -1688,7 +1872,8 @@ static void test_d1_follow_path_frame()
 #endif
 			object *spawned = create_morph_robot(&Segments[1], &origin, id);
 			require(spawned && spawned->ctype.ai_info.path_length > 1, "factory spawn constructs a usable exit path");
-			const int expected_mode = id == 10 ? AIM_RUN_FROM_OBJECT : profile == 1 ? AIM_FOLLOW_PATH : AIM_CHASE_OBJECT;
+			const int expected_mode = id == 10 ? AIM_RUN_FROM_OBJECT : profile == 1 ? AIM_FOLLOW_PATH
+			                                                                        : AIM_CHASE_OBJECT;
 			require(Ai_local_info[spawned - Objects].mode == expected_mode,
 			        "native factory robots retain their exit path mode while D2 retains behavior-based startup");
 		}
@@ -5470,14 +5655,21 @@ static void test_d1_registered_bitmaps(const char *directory, const char *d2_dir
 	require(PHYSFS_mount(directory, "native-d1", 0) && PHYSFS_mount(hog.c_str(), "native-d1", 0), "mount original D1 sources for the independent bitmap reader");
 	d1_bitmap_generation *generation = d1_in_d2_read_bitmaps("native-d1/DESCENT.PIG", "native-d1/palette.256");
 	require(generation && generation->bitmap_count > 1000, "prepare a complete registered D1 bitmap collection");
+	std::vector<int> original_bitmap_flags(MAX_BITMAP_FILES, -1);
 	int large_images = 0;
 	for (int i = 1; i <= generation->bitmap_count; ++i) {
 		require(generation->bitmaps[i].bm_data && generation->names[i][0], "every registered D1 image has source pixels and a name");
+		original_bitmap_flags[i] = generation->bitmaps[i].bm_flags;
 		if (generation->bitmaps[i].bm_w > 255) ++large_images;
 	}
 	require(large_images > 0, "registered D1 includes original wide cockpit images");
 	std::fprintf(stderr, "Prepared %d original D1 bitmaps, including %d wide images\n", generation->bitmap_count, large_images);
 	d1_in_d2_free_bitmaps(generation);
+	auto check_bitmap_flags = [&]() {
+		std::vector<int> flags(MAX_BITMAP_FILES, 99);
+		require(piggy_read_level_bitmap_flags("level01.rdl", flags.data(), MAX_BITMAP_FILES) && flags == original_bitmap_flags,
+		        "registered D1 metadata retains every source bitmap flag across publication and profile changes");
+	};
 	const char *error = nullptr;
 	d1_asset_generation *assets = d1_in_d2_read_assets("native-d1/DESCENT.PIG", "native-d1/palette.256", &error);
 	require(assets != nullptr, error ? error : "prepare registered D1 definitions independently");
@@ -5598,6 +5790,7 @@ static void test_d1_registered_bitmaps(const char *directory, const char *d2_dir
 	for (int level : { 1, 2, 1 }) {
 		LoadLevel(level, 0);
 		require(d1_in_d2_has_native_assets() && NumTextures == 584 && N_polygon_models == 78 && Reactors[0].model_num == 39, "normal level lifecycle retains the complete original D1 tables");
+		check_bitmap_flags();
 		require(load_exit_models() && N_polygon_models == 78, "D1 exit models remain part of the base generation");
 		require(GameSounds[0].data != nullptr && GameSounds[0].freq == 11025 && Effects[27].vc.num_frames == 10, "normal level finalization does not overwrite D1 sounds or animations");
 	}
@@ -5609,6 +5802,7 @@ static void test_d1_registered_bitmaps(const char *directory, const char *d2_dir
 		for (int entry = 0; entry < 2; ++entry) {
 			mission.descent_version = 2;
 			require(d1_in_d2_use_d1_gameplay(), "requesting D2 does not change policy while D1 definitions remain active");
+			check_bitmap_flags();
 			check_profile_resources(true);
 			mission.path = mission.filename = const_cast<char *>("d2");
 			std::strcpy(levels[0], "d2leva-1.rl2");
@@ -5636,6 +5830,10 @@ static void test_d1_registered_bitmaps(const char *directory, const char *d2_dir
 			require(!d1_in_d2_use_d1_gameplay(), "requesting D1 leaves D2 policy active until D1 publication");
 			d1_in_d2_load_mission_assets();
 			require(!d1_in_d2_use_d1_gameplay() && !d1_in_d2_has_native_assets(), "deferred D1 mission preparation does not relabel D2 tables");
+			int d2_flags[MAX_BITMAP_FILES];
+			require(piggy_read_level_bitmap_flags("d2leva-1.rl2", d2_flags, MAX_BITMAP_FILES) &&
+			            d2_flags[1] == piggy_bitmap_get_file_flags(1),
+			        "D2 bitmap metadata remains available while a D1 mission is selected but not published");
 			check_profile_resources(false);
 			if (!entry) {
 				d1_in_d2_prepare_intro_assets();
@@ -5651,6 +5849,7 @@ static void test_d1_registered_bitmaps(const char *directory, const char *d2_dir
 			std::strcpy(levels[0], "level01.rdl");
 			LoadLevel(1, 0);
 			require(d1_in_d2_has_native_assets() && N_polygon_models == 78 + optional.models && NumTextures == 584 && Effects[27].vc.num_frames == 10, "returning to D1 restores original definitions and independently sourced optional models after D2 loading");
+			check_bitmap_flags();
 			require(TXT_SECRET_EXIT == d1_secret_text && std::strstr(d2_secret_text, "Secret Teleporter"), "returning to D1 restores its text bank without invalidating D2 references");
 			check_profile_resources(true);
 			if (graphics) check_profile_fonts(true);
@@ -5899,7 +6098,9 @@ static void test_d1_weapon_creation()
 static void test_d1_custom_definitions()
 {
 	const bytes custom = d1_custom_definition_fixture();
-	const bytes pg1 = d1_custom_dpog_fixture(), dtx = d1_custom_dtx_fixture();
+	bytes pg1 = d1_custom_dpog_fixture(), dtx = d1_custom_dtx_fixture();
+	pg1[26] = BM_FLAG_TRANSPARENT;
+	dtx[19] = BM_FLAG_SUPER_TRANSPARENT;
 	const char *error = nullptr;
 	const int previous_rate = GameArg.SndDigiSampleRate;
 	GameArg.SndDigiSampleRate = SAMPLE_RATE_22K;
@@ -5922,6 +6123,20 @@ static void test_d1_custom_definitions()
 		require(d1_in_d2_prepare_level_assets(level), "prepare custom D1 definitions through the level lifecycle");
 		require(GameBitmaps[1].bm_data[0] == 21 && GameBitmaps[1].bm_data[3] == 24 && GameBitmaps[1].avg_color == 7,
 		        "DTX takes precedence over PG1 while preserving source palette indices");
+		int bitmap_flags[MAX_BITMAP_FILES];
+		require(piggy_read_level_bitmap_flags(level, bitmap_flags, MAX_BITMAP_FILES) &&
+		            bitmap_flags[0] == -1 && bitmap_flags[1] == BM_FLAG_SUPER_TRANSPARENT && bitmap_flags[2] == -1,
+		        "published D1 custom bitmap flags are available to the secret-area scanner");
+		const ubyte live_flags = GameBitmaps[1].bm_flags;
+		GameBitmaps[1].bm_flags = BM_FLAG_PAGED_OUT | BM_FLAG_TRANSPARENT;
+		mission.descent_version = 2;
+		require(piggy_read_level_bitmap_flags(level, bitmap_flags, MAX_BITMAP_FILES) && bitmap_flags[1] == BM_FLAG_SUPER_TRANSPARENT,
+		        "renderer state and a pending D2 descriptor cannot change published D1 texture facts");
+		GameBitmaps[1].bm_flags = live_flags;
+		mission.descent_version = 1;
+		int undersized = 99;
+		require(!d1_in_d2_read_level_bitmap_flags(&undersized, 1) && undersized == 99,
+		        "bitmap metadata rejects insufficient capacity without writing it");
 		int output_rate = SAMPLE_RATE_22K, output_length = 6;
 #ifdef USE_SDLMIXER
 		if (!GameArg.SndDisableSdlMixer) {
@@ -5979,6 +6194,8 @@ static void test_d1_custom_definitions()
 				require(Polygon_models[0].model_data == active_model && GameBitmaps[1].bm_data == active_pixels && GameSounds[0].data == active_samples &&
 				            std::memcmp(&Robot_info[0], &active_robot, sizeof(active_robot)) == 0 && d1_in_d2_has_native_assets(),
 				        "failed custom staging and cleanup leave all active assets intact");
+				require(piggy_read_level_bitmap_flags(level, bitmap_flags, MAX_BITMAP_FILES) && bitmap_flags[1] == BM_FLAG_SUPER_TRANSPARENT,
+				        "rejected custom staging preserves the published bitmap metadata");
 			}
 			write_fixture("native.hx1", custom);
 			for (const char *file : { "native.pg1", "native.dtx" }) {
@@ -6008,6 +6225,8 @@ static void test_d1_custom_definitions()
 					require(Polygon_models[0].model_data == active_model && GameBitmaps[1].bm_data == active_pixels && GameSounds[0].data == active_samples &&
 					            std::memcmp(&stats, &active_stats, sizeof(stats)) == 0 && GameBitmaps[1].bm_data[0] == 21 && GameSounds[0].data[0] == 31,
 					        "failed PG1/DTX preparation cannot alter active buffers or published diagnostics");
+					require(piggy_read_level_bitmap_flags(level, bitmap_flags, MAX_BITMAP_FILES) && bitmap_flags[1] == BM_FLAG_SUPER_TRANSPARENT,
+					        "malformed replacement files do not replace published texture facts");
 				}
 				write_fixture(file, source);
 			}
@@ -6078,6 +6297,8 @@ static void test_d1_custom_definitions()
 			require(PHYSFS_delete("formats.pg1"), "remove alternate custom format fixtures");
 		}
 		require(d1_in_d2_prepare_level_assets(stock), "prepare a stock level after custom definitions");
+		require(piggy_read_level_bitmap_flags(stock, bitmap_flags, MAX_BITMAP_FILES) && bitmap_flags[1] == 0,
+		        "stock publication retires the previous custom bitmap flags");
 		require(Robot_info[0].mass == 0 && !Robot_info[0].n_guns && Polygon_models[0].rad == F1_0 && Dying_modelnums[0] == -1 && Dead_modelnums[0] == -1 &&
 		            ObjBitmaps[0].index == 0 && Robot_joints[0].angles.p == 0,
 		        "custom-to-stock transition removes all prior HX1 replacements");
@@ -6367,6 +6588,10 @@ static void test_d1_reactor()
 	free_polygon_models();
 	piggy_reset_asset_registry();
 	require(!d1_in_d2_has_native_assets() && Num_bitmap_files == 1 && Num_sound_files == 0 && GameBitmaps[1].bm_data == nullptr, "registry cleanup retires the D1 generation without reloading D2 files");
+	int retired_flags[MAX_BITMAP_FILES];
+	require(!d1_in_d2_read_level_bitmap_flags(retired_flags, MAX_BITMAP_FILES) &&
+	            std::all_of(std::begin(retired_flags), std::end(retired_flags), [](int flag) { return flag == -1; }),
+	        "retirement leaves no stale D1 bitmap metadata");
 	d1_in_d2_asset_stats retired_stats = {}, empty_stats = {};
 	d1_in_d2_get_stats(&retired_stats);
 	require(std::memcmp(&retired_stats, &empty_stats, sizeof(retired_stats)) == 0,
@@ -6871,6 +7096,71 @@ static nlohmann::json checkpoint_dynamic_state()
 	return result;
 }
 
+#include "save_endian_fixture.hpp"
+
+static bytes read_save_fixture(const std::string &filename)
+{
+	PHYSFS_file *file = PHYSFS_openRead(filename.c_str());
+	require(file && PHYSFS_fileLength(file) > 0, "open complete save fixture");
+	bytes data(static_cast<size_t>(PHYSFS_fileLength(file)));
+	require(PHYSFS_readBytes(file, data.data(), data.size()) == static_cast<PHYSFS_sint64>(data.size()) && PHYSFS_close(file),
+	        "read complete save fixture");
+	return data;
+}
+
+static nlohmann::json saved_world_snapshot(const std::string &stem)
+{
+	using nlohmann::json;
+	const std::string path = stem + ".jsonl";
+	char error[256] = {};
+	require(input_demo_state_trace_start(path.c_str(), "replay", "endian-fixture", "descent", Current_level_num, 0,
+	                                     "save_checkpoint", 5, error, sizeof(error)),
+	        "open complete restored-world observation");
+	require(input_demo_world_trace_write(0, "restored", error, sizeof(error)), "observe the complete restored world");
+	input_demo_state_trace_stop();
+	const auto data = read_save_fixture(path);
+	std::istringstream stream(std::string(data.begin(), data.end()));
+	std::string line;
+	json world;
+	while (std::getline(stream, line)) {
+		const json row = json::parse(line);
+		if (row["type"] == "world_boundary") world = row["state"];
+	}
+	require(!world.empty() && Endlevel_sequence == 0, "save observation contains the complete playable world");
+	// Save admission excludes flyout animation; its cosmetic history is irrelevant
+	world.erase("endlevel");
+	world["objects"] = json::array();
+	for (int i = 0; i <= Highest_object_index; ++i)
+		world["objects"].push_back(input_demo_object_trace_snapshot(Objects[i], i));
+	unsigned seed;
+	require(d_rand_get_state(&seed), "observe restored simulation RNG state");
+	world["simulation_seed"] = seed;
+	return world;
+}
+
+static void test_complete_save_endian(char *filename, const std::string &stem)
+{
+	const bytes original = read_save_fixture(filename);
+	const bytes opposite = save_endian_fixture(original).convert();
+	require(save_endian_fixture(opposite).convert() == original, "independent endian layout converts every save byte reversibly");
+	std::string converted = stem + ".sav";
+	write_fixture((stem + "-source.sav").c_str(), original);
+	write_fixture(converted.c_str(), opposite);
+	const auto expected = saved_world_snapshot(stem + "-native");
+#ifdef DXX_BUILD_DESCENT_II
+	require(state_restore_all_sub(&converted[0], 0), "restore complete opposite-endian save through the ordinary D2 reader");
+#else
+	require(state_restore_all_sub(&converted[0]), "restore complete opposite-endian save through the ordinary D1 reader");
+#endif
+	const auto actual = saved_world_snapshot(stem + "-opposite");
+	const auto differences = nlohmann::json::diff(expected, actual);
+	const std::string report = differences.dump(2) + "\n";
+	write_fixture((stem + "-differences.json").c_str(), bytes(report.begin(), report.end()));
+	if (!differences.empty()) std::fprintf(stderr, "Complete endian restore %s: %s\n", stem.c_str(), differences.front().dump().c_str());
+	require(differences.empty(), "complete opposite-endian restore retains the observed world, objects and SIM seed");
+	std::printf("Complete opposite-endian save passed: %s\n", stem.c_str());
+}
+
 #ifdef DXX_BUILD_DESCENT_II
 static void test_native_ai_object_encoding()
 {
@@ -7014,6 +7304,329 @@ static void test_d1_ai_storage_scope()
 	file = PHYSFS_openRead("d1-trigger-storage-foreign.bin");
 	require(file && !d1_in_d2_read_trigger_storage(file, 0, 1) && PHYSFS_close(file), "ordinary D2 rejects a native trigger extension");
 	Current_mission = saved_mission;
+}
+#endif
+
+#ifdef DXX_BUILD_DESCENT_II
+static void remove_saved_asset_identity(bytes &save)
+{
+	// Imported single-player saves bind definitions immediately before objects
+	const size_t offset = 8 + 20 + 100 * 50 * 3 + 4 + 9 + 12 + sizeof(player_rw) + 2 + 16 + 4;
+	int length;
+	require(save.size() >= offset + 4, "locate saved asset identity for a legacy fixture");
+	std::memcpy(&length, save.data() + offset, sizeof(length));
+	require((length == 32 || length == 64) && save.size() >= offset + 4 + length, "legacy fixture contains a complete asset identity");
+	save.erase(save.begin() + offset, save.begin() + offset + 4 + length);
+}
+
+static void test_guidebot_save_assets(const char *directory, const char *d2_directory, const char *legacy_directory = nullptr)
+{
+	using nlohmann::json;
+	const std::string hog = std::string(directory) + "/DESCENT.HOG";
+	const std::string d2_hog = std::string(d2_directory) + "/DESCENT2.HOG";
+	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1) &&
+	            PHYSFS_mount(d2_directory, nullptr, 1) && PHYSFS_mount(d2_hog.c_str(), nullptr, 1),
+	        "mount original packages for companion persistence");
+	Game_mode = 0;
+	GameArg.SndNoSound = GameArg.SndNoMusic = 1;
+	GameArg.SndDigiSampleRate = SAMPLE_RATE_11K;
+	GameArg.SysInputDemoNoRender = 1;
+	GameArg.SysWindow = GameCfg.WindowMode = 1;
+	GameCfg.AspectX = 4;
+	GameCfg.AspectY = 3;
+	Game_screen_mode = SM(640, 480);
+	digi_select_system(SDLAUDIO_SYSTEM);
+	require(d1_in_d2_init_base_resources(1), "select D1 for companion persistence");
+	load_text();
+	require(SDL_Init(SDL_INIT_VIDEO) == 0 && gr_init(Game_screen_mode) == 0, "initialize save restore window services");
+	gr_use_palette_table("palette.256");
+	gamefont_init();
+	gamedata_init();
+	d1_in_d2_init_startup_bitmaps();
+	texmerge_init(10);
+	init_game();
+	char mission[] = "descent";
+	require(load_mission_by_name(mission), "select First Strike for companion persistence");
+	Player_num = 0;
+	N_players = 1;
+	std::strcpy(Players[0].callsign, "gbassets");
+	init_player_stats_game(0);
+	Difficulty_level = 2;
+	input_demo_set_skip_level_intro(1);
+	GameArg.SysInputDemoNoRender = 0;
+	StartNewGame(1);
+	GameArg.SysInputDemoNoRender = 1; // Keep the real window, but save blank thumbnails
+	require(Game_wind && window_is_visible(Game_wind), "companion persistence uses the real game window");
+	const int buddy = create_buddy_bot_at_player(0);
+	require(buddy > 0 && Objects[buddy].type == OBJ_ROBOT && Robot_info[Objects[buddy].id].companion,
+	        "deploy the registered companion through the actual actor factory");
+	const int robot_id = Objects[buddy].id;
+	const fix original_mass = Robot_info[robot_id].mass;
+	const fix saved_shields = Objects[buddy].shields = 73 * F1_0 + 123;
+	const auto saved_actor_present = [&] {
+		return buddy <= Highest_object_index && Objects[buddy].type == OBJ_ROBOT &&
+		       Objects[buddy].id == robot_id && Objects[buddy].shields == saved_shields;
+	};
+	char filename[] = "companion.sav", description[21] = "Companion assets";
+	require(state_save_all_sub(filename, description), "save an actual imported game with its companion");
+	if (legacy_directory) {
+		require(PHYSFS_mount(legacy_directory, "legacy-reference", 1), "mount the archived pre-identity save read-only");
+		PHYSFS_file *file = PHYSFS_openRead("legacy-reference/companion.sav");
+		require(file != nullptr, "open the actual version-38 companion save");
+		bytes legacy(static_cast<size_t>(PHYSFS_fileLength(file)));
+		require(PHYSFS_readBytes(file, legacy.data(), legacy.size()) == static_cast<PHYSFS_sint64>(legacy.size()) && PHYSFS_close(file),
+		        "copy the archived save into the isolated write directory");
+		int version;
+		require(legacy.size() >= 8, "archived save contains its format header");
+		std::memcpy(&version, legacy.data() + 4, sizeof(version));
+		require(version == 38 && PHYSFS_unmount(legacy_directory), "legacy evidence uses the original version-38 record");
+		write_fixture(filename, legacy);
+	}
+	json report = json::array();
+	bool rejected_incompatible = true;
+	for (const char *scenario : { "same", "changed", "missing" }) {
+		std::fprintf(stderr, "Companion restore scenario: %s\n", scenario);
+		if (!std::strcmp(scenario, "changed")) {
+			PHYSFS_file *file = PHYSFSX_openReadBuffered("descent2.ham");
+			require(file && PHYSFS_fileLength(file) > 8, "read original optional HAM for a changed-definition control");
+			bytes data(static_cast<size_t>(PHYSFS_fileLength(file)));
+			require(PHYSFS_readBytes(file, data.data(), data.size()) == static_cast<PHYSFS_sint64>(data.size()) && PHYSFS_seek(file, 8),
+			        "copy original optional definitions without changing installed assets");
+			// Registered v3 tables preceding robots: textures, sound maps, clips, effects, walls
+			for (int width : { 22, 2, 82, 130, 126 }) {
+				const int count = PHYSFSX_readInt(file);
+				require(count >= 0 && PHYSFS_seek(file, PHYSFS_tell(file) + static_cast<PHYSFS_sint64>(count) * width), "locate the source robot table");
+			}
+			require(PHYSFSX_readInt(file) > 33, "registered source contains companion robot 33");
+			const size_t mass_offset = static_cast<size_t>(PHYSFS_tell(file)) + 33 * 480 + 136;
+			require(mass_offset + 4 <= data.size() && PHYSFS_close(file), "locate the companion mass in the unchanged disk format");
+			set_int(data, mass_offset, original_mass + F1_0);
+			write_fixture("descent2.ham", data);
+		}
+		if (!std::strcmp(scenario, "missing")) {
+			require(PHYSFS_delete("descent2.ham"), "remove only the isolated changed source");
+			require(PHYSFS_unmount(d2_hog.c_str()) && PHYSFS_unmount(d2_directory), "remove optional source package before restore");
+			require(!PHYSFSX_exists("descent2.ham", 1), "missing-source control has no optional HAM");
+		}
+		// A new level retires the old generation before the actual save loader runs
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+		const int prepared_robots = N_robot_types;
+		const fix prepared_mass = robot_id < N_robot_types ? Robot_info[robot_id].mass : -1;
+		const int prepared_highest = Highest_object_index;
+		const fix64 prepared_time = GameTime64;
+		unsigned prepared_rng = 0;
+		require(d_rand_get_state(&prepared_rng), "observe SIM RNG before save admission");
+		const unsigned prepared_rng_calls = d_rand_get_call_count();
+		const int restored = state_restore_all_sub(filename, 0);
+		const bool actor_valid = restored && buddy <= Highest_object_index && Objects[buddy].type == OBJ_ROBOT &&
+		                         Objects[buddy].id < N_robot_types && Robot_info[Objects[buddy].id].companion;
+		report.push_back({ { "scenario", scenario }, { "prepared_robots", prepared_robots }, { "prepared_mass", prepared_mass }, { "restored", restored }, { "saved_robot_id", robot_id }, { "saved_mass", original_mass }, { "restored_robots", N_robot_types }, { "actor_valid", actor_valid }, { "saved_actor_present", saved_actor_present() }, { "restored_mass", actor_valid ? Robot_info[Objects[buddy].id].mass : -1 } });
+		const std::string output = report.dump(2) + "\n";
+		write_fixture("companion-save-assets.json", bytes(output.begin(), output.end()));
+		if (legacy_directory) {
+			rejected_incompatible = rejected_incompatible && !restored;
+			if (!restored) {
+				unsigned restored_rng = 0;
+				require(Highest_object_index == prepared_highest && GameTime64 == prepared_time &&
+				            d_rand_get_state(&restored_rng) && restored_rng == prepared_rng && d_rand_get_call_count() == prepared_rng_calls,
+				        "legacy rejection leaves the loaded world's objects, clock and SIM RNG intact");
+				require(Game_wind && window_is_visible(Game_wind) && state_restore_take_menu_request(),
+				        "legacy namespace rejection requests menu recovery before entering another world");
+			}
+			continue;
+		}
+		if (!std::strcmp(scenario, "same"))
+			require(actor_valid && Robot_info[Objects[buddy].id].mass == original_mass, "same-source restore retains the actual companion definition");
+		else {
+			require(!std::strcmp(scenario, "changed") ? prepared_mass == original_mass + F1_0 : prepared_robots == 24,
+			        "cold preparation observes the requested changed or missing source");
+			rejected_incompatible = rejected_incompatible && !restored;
+			if (!restored) {
+				require(!saved_actor_present(), "incompatible source is rejected before saved actors replace the fresh level");
+				require(Game_wind && window_is_visible(Game_wind) && state_restore_take_menu_request(),
+				        "failed identity restore requests the menu instead of leaving a hidden or partial game running");
+			}
+		}
+	}
+	if (legacy_directory) {
+		require(rejected_incompatible, "legacy companion saves cannot prove optional definition identity");
+		GameArg.SysInputDemoNoRender = 0;
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+		require(state_save_all_sub(filename, description) && state_restore_all_sub(filename, 0),
+		        "a current D1-only save still works after legacy rejection");
+		std::puts("Legacy companion save admission tests passed");
+		return;
+	}
+	require(rejected_incompatible, "companion saves reject missing or changed optional definitions");
+	char native_save[] = "without-companion.sav";
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(1);
+	require(N_robot_types == 24 && state_save_all_sub(native_save, description), "D1 without optional content remains playable and saveable");
+	require(PHYSFS_mount(d2_directory, nullptr, 1) && PHYSFS_mount(d2_hog.c_str(), nullptr, 1), "restore the original optional package");
+	require(state_restore_all_sub(filename, 0) && Objects[buddy].id == robot_id && Robot_info[robot_id].mass == original_mass,
+	        "restoring the original source makes the companion save usable again");
+	require(state_restore_all_sub(native_save, 0) && N_robot_types == 25 && !saved_actor_present(),
+	        "a native-only save can restore with an optional package newly available");
+	PHYSFS_file *file = PHYSFS_openRead(filename);
+	require(file != nullptr, "read the real companion save for malformed identity cases");
+	bytes save(static_cast<size_t>(PHYSFS_fileLength(file)));
+	require(PHYSFS_readBytes(file, save.data(), save.size()) == static_cast<PHYSFS_sint64>(save.size()) && PHYSFS_close(file),
+	        "copy the complete companion save");
+	const size_t identity_offset = 8 + 20 + 100 * 50 * 3 + 4 + 9 + 12 + sizeof(player_rw) + 2 + 16 + 4;
+	bytes identity(save.begin() + identity_offset, save.begin() + identity_offset + 68);
+	std::reverse(identity.begin(), identity.begin() + 4);
+	write_fixture("asset-identity-swapped.bin", identity);
+	file = PHYSFS_openRead("asset-identity-swapped.bin");
+	require(file && d1_in_d2_read_saved_asset_identity(file, 1) && PHYSFS_close(file),
+	        "opposite-endian identity length accepts the same source digest");
+	for (int invalid = 0; invalid < 6; ++invalid) {
+		bytes damaged = save;
+		if (invalid < 4) set_int(damaged, identity_offset, invalid == 0 ? -1 : invalid == 1 ? 0
+			                                                               : invalid == 2   ? 1
+			                                                                                : 33);
+		else if (invalid == 4) damaged[identity_offset + 4] ^= 1;
+		else damaged.resize(identity_offset + 67);
+		char damaged_name[] = "asset-identity-invalid.sav";
+		write_fixture(damaged_name, damaged);
+		require(!state_restore_all_sub(damaged_name, 0) && !saved_actor_present(), "invalid or truncated identity is rejected before saved actors are installed");
+		require(Game_wind && window_is_visible(Game_wind) && state_restore_take_menu_request(), "malformed identity also returns through the menu recovery path");
+	}
+	require(state_restore_all_sub(filename, 0) && saved_actor_present(), "valid restore still works after malformed identity rejection");
+	char rejected[] = "asset-identity-invalid.sav";
+	require(!state_restore_all_sub(rejected, 0) && Game_wind && window_is_visible(Game_wind),
+	        "rejected save leaves a visible window to deliver menu recovery");
+	if (!setjmp(LeaveEvents)) {
+		d_event idle = { EVENT_IDLE };
+		window_send_event(Game_wind, &idle);
+		require(false, "failed restore must leave the game through its normal event handler");
+	}
+	require(!Game_wind && !state_restore_take_menu_request(), "actual event processing closes the failed world and consumes recovery");
+	GameArg.SysInputDemoNoRender = 0;
+	require(state_restore_all_sub(filename, 0) && Game_wind && window_is_visible(Game_wind) && saved_actor_present(),
+	        "the valid save restores after actual return-to-menu recovery");
+	guidebot_routing_set_mode(GUIDEBOT_ROUTING_ENHANCED);
+	Last_fired_upon_player_pos = { F1_0 / 4, -F1_0 / 2, 3 * F1_0 };
+	require(state_save_all_sub(filename, description) && state_restore_all_sub(filename, 0), "prepare a companion save with populated routing state");
+	test_complete_save_endian(filename, "companion-endian");
+	char d2_mission[] = "d2";
+	require(load_mission_by_name(d2_mission), "select ordinary D2 for legacy persistence controls");
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(1);
+	GameArg.SysInputDemoNoRender = 1;
+	char d2_save[] = "ordinary-d2.sav";
+	guidebot_routing_set_default(GUIDEBOT_ROUTING_ORIGINAL);
+	guidebot_routing_set_mode(GUIDEBOT_ROUTING_ENHANCED);
+	require(state_save_all_sub(d2_save, description), "save an actual ordinary D2 world");
+	file = PHYSFS_openRead(d2_save);
+	require(file != nullptr, "read ordinary D2 save for earlier supported versions");
+	bytes d2_saved(static_cast<size_t>(PHYSFS_fileLength(file)));
+	require(PHYSFS_readBytes(file, d2_saved.data(), d2_saved.size()) == static_cast<PHYSFS_sint64>(d2_saved.size()) && PHYSFS_close(file),
+	        "copy the ordinary D2 record");
+	const int d2_objects = Highest_object_index;
+	for (int version : { 38, 37, 36 }) {
+		bytes older = d2_saved;
+		if (version < 38) older.resize(older.size() - 4);
+		if (version < 37) older.resize(older.size() - CADENCE_RUNTIME_DISK_BYTES);
+		set_int(older, 4, version);
+		write_fixture(d2_save, older);
+		require(state_restore_all_sub(d2_save, 0) && !d1_in_d2_use_d1_gameplay() && Highest_object_index == d2_objects &&
+		            guidebot_routing_mode() == (version == 38 ? GUIDEBOT_ROUTING_ENHANCED : GUIDEBOT_ROUTING_ORIGINAL),
+		        "ordinary D2 retains current and legacy save framing and routing defaults");
+	}
+	guidebot_routing_set_mode(GUIDEBOT_ROUTING_ENHANCED);
+	Last_fired_upon_player_pos = { -F1_0 / 4, F1_0 / 2, -3 * F1_0 };
+	require(state_save_all_sub(d2_save, description) && state_restore_all_sub(d2_save, 0), "prepare an ordinary D2 endian control");
+	test_complete_save_endian(d2_save, "ordinary-d2-endian");
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(8);
+	int boss_slot = -1;
+	for (int slot = 0; slot <= Highest_object_index; ++slot)
+		if (Objects[slot].type == OBJ_ROBOT && Robot_info[Objects[slot].id].boss_flag)
+			boss_slot = slot;
+	require(boss_slot >= 0 && !d1_in_d2_use_d1_gameplay(), "ordinary D2 restore control contains an actual Counterstrike boss");
+	nlohmann::json boss_controls = nlohmann::json::array();
+	for (int difficulty = 0; difficulty < NDL; ++difficulty) {
+		const fix strength = Robot_info[Objects[boss_slot].id].strength;
+		const fix maximum = strength / 8 * (difficulty + 4) / (difficulty == 0 ? 2 : 1);
+		for (fix health : { maximum * 2, maximum, maximum / 2, 1, 0, -F1_0 }) {
+			Difficulty_level = difficulty;
+			Objects[boss_slot].shields = health;
+			require(state_save_all_sub(d2_save, description), "save actual ordinary D2 boss health");
+			Objects[boss_slot].shields ^= 0x5a5a;
+			require(state_restore_all_sub(d2_save, 0), "restore actual ordinary D2 boss health");
+			const fix expected = health > 0 && health <= maximum ? health : maximum / 2;
+			require(Objects[boss_slot].shields == expected && Difficulty_level == difficulty && !d1_in_d2_use_d1_gameplay(),
+			        "ordinary D2 retains its original boss health repair at every difficulty");
+			boss_controls.push_back({ difficulty, health, maximum, Objects[boss_slot].shields });
+		}
+	}
+	const std::string boss_output = boss_controls.dump(2) + "\n";
+	write_fixture("ordinary-d2-boss-health.json", bytes(boss_output.begin(), boss_output.end()));
+	std::puts("Companion save asset identity and ordinary D2 boss restore tests passed");
+}
+#endif
+
+#ifdef DXX_BUILD_DESCENT_II
+static void test_custom_save_identity(const std::string &stem, int robot_slot)
+{
+	using nlohmann::json;
+	const std::array<std::string, 5> paths = { stem + ".hx1", stem + ".pg1", stem + ".dtx", "descent.pig", "palette.256" };
+	std::array<bytes, 5> originals;
+	for (size_t i = 0; i < paths.size(); ++i) {
+		PHYSFS_file *file = PHYSFSX_openReadBuffered(paths[i].c_str());
+		require(file && PHYSFS_fileLength(file) > 0, "read the original definition source for save identity");
+		originals[i].resize(static_cast<size_t>(PHYSFS_fileLength(file)));
+		require(PHYSFS_readBytes(file, originals[i].data(), originals[i].size()) == static_cast<PHYSFS_sint64>(originals[i].size()) && PHYSFS_close(file),
+		        "copy the complete source without changing installed data or the native reference");
+	}
+	require(originals[0].size() > 152, "custom HX1 contains the serialized robot mass");
+	const int robot_id = Objects[robot_slot].id;
+	const fix saved_mass = Robot_info[robot_id].mass;
+	const fix saved_shields = Objects[robot_slot].shields = 111 * F1_0 + 321;
+	char filename[] = "custom-identity.sav", description[21] = "Custom definitions";
+	require(state_save_all_sub(filename, description), "save the actual imported custom world");
+	json report = json::array();
+	bool rejected = true;
+	const struct {
+		const char *name;
+		int source;
+		bool missing, unchanged;
+	} scenarios[] = { { "same", -1, false, true }, { "changed-hx1", 0, false, false }, { "missing-hx1", 0, true, false }, { "changed-pg1", 1, false, false }, { "changed-dtx", 2, false, false }, { "changed-pig", 3, false, false }, { "changed-palette", 4, false, false }, { "relocated-pig", 3, false, true }, { "relocated-palette", 4, false, true } };
+	for (const auto &scenario : scenarios) {
+		if (scenario.source >= 0) {
+			bytes source = originals[scenario.source];
+			if (!scenario.unchanged) {
+				if (scenario.source == 0) set_int(source, 16 + 136, saved_mass + F1_0);
+				else source.back() ^= 1; // Valid pixel/sample/fade data, preserving the source format
+			}
+			write_fixture(paths[scenario.source].c_str(), source);
+			if (scenario.missing) require(PHYSFS_delete(paths[scenario.source].c_str()), "remove only the isolated custom source");
+		}
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+		const fix prepared_mass = Robot_info[robot_id].mass;
+		const int restored = state_restore_all_sub(filename, 0);
+		const bool saved_actor = robot_slot <= Highest_object_index && Objects[robot_slot].type == OBJ_ROBOT &&
+		                         Objects[robot_slot].id == robot_id && Objects[robot_slot].shields == saved_shields;
+		report.push_back({ { "scenario", scenario.name }, { "saved_mass", saved_mass }, { "prepared_mass", prepared_mass }, { "restored", restored }, { "restored_mass", Robot_info[robot_id].mass }, { "saved_actor_present", saved_actor } });
+		const std::string result = report.dump(2) + "\n";
+		write_fixture("custom-save-identity.json", bytes(result.begin(), result.end()));
+		if (scenario.unchanged)
+			require(restored && saved_actor && Robot_info[robot_id].mass == saved_mass, "unchanged source bytes restore across loose/archive placement");
+		else {
+			if (scenario.source == 0) require(prepared_mass != saved_mass, "cold preparation observes changed or absent HX1 definitions");
+			rejected = rejected && !restored;
+			if (!restored) require(!saved_actor && state_restore_take_menu_request(), "custom identity rejection precedes saved actors and requests recovery");
+		}
+		if (scenario.source >= 0) {
+			if (scenario.source < 3) write_fixture(paths[scenario.source].c_str(), originals[scenario.source]);
+			else require(PHYSFS_delete(paths[scenario.source].c_str()), "remove only the isolated base-source shadow");
+		}
+	}
+	require(state_restore_all_sub(filename, 0) && Robot_info[robot_id].mass == saved_mass, "restoring the custom source recovers the saved world");
+	require(rejected, "saved native actor IDs require their original custom definitions");
 }
 #endif
 
@@ -7236,8 +7849,8 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				if (!invalid)
 					damaged.pop_back();
 				else if (invalid < 4) {
-					// Version 18 appends cadence clocks after the four autoselect integers
-					const size_t offset = damaged.size() - CADENCE_RUNTIME_DISK_BYTES - (invalid == 1 ? 16 : invalid == 2 ? 8
+					// Current native save appends cadence and wall state after autoselect
+					const size_t offset = damaged.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES - (invalid == 1 ? 16 : invalid == 2 ? 8
 					                                                                                                      : 4);
 					set_int(damaged, offset, invalid == 1 ? 2 : 5);
 				} else {
@@ -7263,7 +7876,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		if (dynamic && std::strcmp(filename, "route-0.sav") == 0) {
 			const json current = checkpoint_dynamic_state();
 			auto legacy = data;
-			legacy.resize(legacy.size() - CADENCE_RUNTIME_DISK_BYTES);
+			legacy.resize(legacy.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES);
 			set_int(legacy, 4, CADENCE_D1_SAVE_VERSION - 1);
 			d1_save_translate_checkpoint_start legacy_start = {};
 			require(d1_save_translate_read_checkpoint_start(legacy.data(), legacy.size(), &legacy_start) &&
@@ -7308,7 +7921,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			}
 			require(found_effect, "malformed effect fixtures start with a one-shot effect");
 			const size_t effect_offset = locate_record(effect_record);
-			const size_t secret_offset = data.size() - CADENCE_RUNTIME_DISK_BYTES - 16 - SECRET_AREA_IDENTITY_SAVE_SIZE;
+			const size_t secret_offset = data.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES - 16 - SECRET_AREA_IDENTITY_SAVE_SIZE;
 			const std::pair<size_t, int> corruptions[] = {
 				{ morph_offset + 8, -1 }, { active_offset, 3 }, { stuck_offset + 8, -1 }, { effect_offset, Num_effects }, { effect_offset + 8, 9999 }, { effect_offset + 20, MAX_SIDES_PER_SEGMENT }, { secret_offset, 0 }, { secret_offset + 8, SECRET_AREA_MAX_GENERATED + 1 }
 			};
@@ -7378,8 +7991,10 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		// These saved fields no longer drive AI, but must survive import and
 		// ordinary re-save, including local storage outside the live object range
 		if (dynamic) {
-			Boss_been_hit = scenario == 1 ? 0 : scenario == 2 ? 1 : -12345 - scenario;
-			Boss_hit_this_frame = scenario == 1 ? 0 : scenario == 2 ? 1 : 23456 + scenario;
+			Boss_been_hit = scenario == 1 ? 0 : scenario == 2 ? 1
+			                                                  : -12345 - scenario;
+			Boss_hit_this_frame = scenario == 1 ? 0 : scenario == 2 ? 1
+			                                                        : 23456 + scenario;
 			const int sound_states[] = { 256, 0, 1, -129, 127, INT_MAX, INT_MIN };
 			Boss_dying_sound_playing = sound_states[scenario];
 			for (int trigger = 0; trigger < Num_triggers; ++trigger) {
@@ -7490,6 +8105,23 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			game_set_fusion_next_sound_time(GameTime64 + (scenario & 1 ? -wide : F1_0 / 8));
 			fuelcen_set_last_sound_time(GameTime64 + (scenario & 1 ? wide : -F1_0 / 4));
 			collide_set_collision_delay_last_play_time(GameTime64 - wide);
+			Believed_player_pos = ConsoleObject->pos;
+			Believed_player_pos.x += F1_0;
+			Believed_player_pos.y -= F1_0 / 2;
+			Believed_player_pos.z += F1_0 / 4;
+			Num_awareness_events = 1;
+			Awareness_events[0].segnum = ConsoleObject->segnum;
+			Awareness_events[0].type = PA_WEAPON_ROBOT_COLLISION;
+			Awareness_events[0].pos = Believed_player_pos;
+			for (int slot = 0; slot < MAX_MORPH_OBJECTS; ++slot) {
+				auto &morph = morph_objects[slot];
+				if (morph.obj && morph.obj->signature == morph.Morph_sig && morph.obj->type != OBJ_NONE) {
+					morph.morph_save_phys_info.velocity = { F1_0, -2 * F1_0, 3 * F1_0 };
+					morph.morph_save_phys_info.thrust = { -F1_0, 2 * F1_0, -3 * F1_0 };
+					morph.morph_save_phys_info.rotvel = { F1_0 / 4, -F1_0 / 8, F1_0 / 16 };
+					morph.morph_save_phys_info.rotthrust = { -F1_0 / 4, F1_0 / 8, -F1_0 / 16 };
+				}
+			}
 		}
 		require(state_save_all_sub(filename, description), "write native hide/follow checkpoint");
 		if (dynamic) {
@@ -7527,22 +8159,25 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				bytes legacy(static_cast<size_t>(PHYSFS_fileLength(file)));
 				require(PHYSFS_readBytes(file, legacy.data(), legacy.size()) == static_cast<PHYSFS_sint64>(legacy.size()) && PHYSFS_close(file), "read complete cadence legacy control");
 #ifdef DXX_BUILD_DESCENT_II
+				remove_saved_asset_identity(legacy);
 				legacy.resize(legacy.size() - CADENCE_RUNTIME_DISK_BYTES - 4); // Guidebot mode follows cadence
 				set_int(legacy, 4, CADENCE_D2_SAVE_VERSION - 1);
 #else
-				legacy.resize(legacy.size() - CADENCE_RUNTIME_DISK_BYTES);
+				legacy.resize(legacy.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES);
 				set_int(legacy, 4, CADENCE_D1_SAVE_VERSION - 1);
 #endif
 				char legacy_name[] = "cadence-prior-format.sav";
 				write_fixture(legacy_name, legacy);
 #ifdef DXX_BUILD_DESCENT_II
-				require(state_restore_all_sub(legacy_name, 0), "restore prior D2 format without cadence clocks");
+				require(!state_restore_all_sub(legacy_name, 0) && checkpoint_dynamic_state() == actual,
+				        "pre-identity imported format is rejected before replacing native runtime state");
+				state_restore_take_menu_request();
 #else
 				require(state_restore_all_sub(legacy_name), "restore prior D1 format without cadence clocks");
-#endif
 				json expected_legacy = actual;
 				expected_legacy["cadence_clock_deltas"] = { 0, 0, 0 };
 				require(checkpoint_dynamic_state() == expected_legacy, "legacy restore resets only unavailable cadence state");
+#endif
 #ifdef DXX_BUILD_DESCENT_II
 				require(state_restore_all_sub(roundtrip, 0), "restore current D2 cadence record after a legacy load");
 #else
@@ -7642,80 +8277,14 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				bytes previous_format(static_cast<size_t>(PHYSFS_fileLength(file)));
 				require(PHYSFS_readBytes(file, previous_format.data(), previous_format.size()) == static_cast<PHYSFS_sint64>(previous_format.size()) && PHYSFS_close(file),
 				        "read the complete current save");
-				// Build the legacy object layout, not merely an older header
-				// Single-player prefix from state_save_all_sub's RGB thumbnail
-				const size_t object_count_offset = 8 + 20 + 100 * 50 * 3 + 4 + 9 + 12 + sizeof(player_rw) + 2 + 16 + 4;
-				int object_count;
-				std::memcpy(&object_count, previous_format.data() + object_count_offset, sizeof(object_count));
-				require(!(Game_mode & GM_MULTI_COOP) && object_count == Highest_object_index + 1 &&
-				            object_count_offset + 4 + object_count * sizeof(object_rw) < previous_format.size(),
-				        "legacy fixture locates the complete single-player object array");
-				for (int slot = 0; slot < object_count; ++slot) {
-					const size_t offset = object_count_offset + 4 + slot * sizeof(object_rw);
-					object_rw saved;
-					std::memcpy(&saved, previous_format.data() + offset, sizeof(saved));
-					object decoded = {};
-					if (!d1_in_d2_ai_read_object(&saved, &decoded)) continue;
-					const auto original = saved.ctype.d1_ai_info;
-					auto &legacy = saved.ctype.ai_info;
-					legacy.behavior = original.behavior;
-					std::memcpy(legacy.flags, original.flags, sizeof(legacy.flags));
-					legacy.hide_segment = original.hide_segment;
-					legacy.hide_index = original.hide_index;
-					legacy.path_length = original.path_length;
-					legacy.cur_path_index = static_cast<sbyte>(original.cur_path_index);
-					legacy.dying_sound_playing = 0;
-					legacy.danger_laser_signature = original.danger_laser_signature;
-					legacy.danger_laser_num = original.danger_laser_num;
-					legacy.dying_start_time = 0;
-					std::memcpy(previous_format.data() + offset, &saved, sizeof(saved));
-				}
-				previous_format.resize(previous_format.size() - CADENCE_RUNTIME_DISK_BYTES - 4); // Guidebot routing mode
-				set_int(previous_format, 4, 35);
-				char prior_path[] = "ai-path-prior-format.sav";
+				// Version 38 uses the current object layout but has no asset identity
+				remove_saved_asset_identity(previous_format);
+				set_int(previous_format, 4, 38);
+				char prior_path[] = "pre-identity-imported.sav";
 				write_fixture(prior_path, previous_format);
-				require(state_restore_all_sub(prior_path, 0), "load version 35 with the legacy AI object layout");
-				json expected_prior_path = actual;
-				expected_prior_path["cadence_clock_deltas"] = { 0, 0, 0 };
-				for (auto &row : expected_prior_path["ai_path_indices"]) row[1] = static_cast<sbyte>(row[1].get<int>());
-				require(checkpoint_dynamic_state() == expected_prior_path, "legacy object restore retains the byte index and extension follow fields");
-				set_int(previous_format, 4, 34);
-				char prior_sound[] = "boss-sound-prior-format.sav";
-				write_fixture(prior_sound, previous_format);
-				require(state_restore_all_sub(prior_sound, 0), "load version 34 with the legacy byte-sized boss sound flag");
-				json expected_prior_sound = expected_prior_path;
-				expected_prior_sound["boss_dying_sound_playing"] = static_cast<sbyte>(actual["boss_dying_sound_playing"].get<int>());
-				require(checkpoint_dynamic_state() == expected_prior_sound, "prior-format restore changes only the legacy boss sound interpretation");
-				previous_format.resize(previous_format.size() - 4 - 2 * Num_triggers);
-				set_int(previous_format, 4, 33);
-				char prior_trigger[] = "trigger-prior-format.sav";
-				write_fixture(prior_trigger, previous_format);
-				require(state_restore_all_sub(prior_trigger, 0), "load version 33 without original trigger bytes");
-				json expected_prior_trigger = expected_prior_sound;
-				for (auto &row : expected_prior_trigger["triggers"]) {
-					row["type"] = 0;
-					row["link_num"] = 0;
-				}
-				require(checkpoint_dynamic_state() == expected_prior_trigger, "prior-format restore clears only unavailable original trigger bytes");
-				// Version 33 appends exact boss integers after version-32 AI storage
-				previous_format.resize(previous_format.size() - 8);
-				set_int(previous_format, 4, 32);
-				char prior_boss[] = "boss-prior-format.sav";
-				write_fixture(prior_boss, previous_format);
-				require(state_restore_all_sub(prior_boss, 0), "load version 32 without a native boss-damage marker");
-				json expected_prior_boss = expected_prior_trigger;
-				expected_prior_boss["boss_hit"][0] = actual["boss_hit"][0].get<int>() != 0 ? 1 : 0;
-				expected_prior_boss["boss_hit"][1] = 0;
-				require(checkpoint_dynamic_state() == expected_prior_boss, "prior format retains Boolean contact and clears unavailable damage history");
-				previous_format.resize(previous_format.size() - storage.size());
-				set_int(previous_format, 4, 31);
-				char previous_name[] = "ai-prior-format.sav";
-				write_fixture(previous_name, previous_format);
-				require(state_restore_all_sub(previous_name, 0), "load the prior D2 save format without a native AI extension");
-				const json previous_state = checkpoint_dynamic_state();
-				for (const auto &row : previous_state["ai_saved_storage"])
-					for (const auto &value : row)
-						require(value == 0, "prior-format restore clears unavailable original AI storage instead of inheriting it");
+				require(!state_restore_all_sub(prior_path, 0) && checkpoint_dynamic_state() == actual,
+				        "legacy imported saves cannot replace state using unidentified runtime references");
+				state_restore_take_menu_request();
 			}
 			d1_in_d2_ai_reset_saved_storage();
 			d1_in_d2_ai_init_boss_for_ship();
@@ -7725,6 +8294,21 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			require(state_restore_all_sub(roundtrip), "reload runtime state through the ordinary D1 save path");
 #endif
 			require(checkpoint_dynamic_state() == actual, "ordinary save/reload retains the imported dynamic records");
+			test_complete_save_endian(roundtrip, "dynamic-endian-" + std::to_string(scenario));
+#ifdef DXX_BUILD_DESCENT_II
+			const std::string endian_stem = "dynamic-endian-" + std::to_string(scenario);
+			std::string native_source = endian_stem + "-source.sav", native_opposite = endian_stem + ".sav";
+			restore(&native_source[0]);
+			const auto native_expected = saved_world_snapshot(endian_stem + "-adapter-native");
+			restore(&native_opposite[0]);
+			const auto native_actual = saved_world_snapshot(endian_stem + "-adapter-opposite");
+			const auto differences = json::diff(native_expected, native_actual);
+			const std::string report = differences.dump(2) + "\n";
+			write_fixture((endian_stem + "-adapter-differences.json").c_str(), bytes(report.begin(), report.end()));
+			if (!differences.empty()) std::fprintf(stderr, "Native checkpoint endian import: %s\n", differences.front().dump().c_str());
+			require(differences.empty(), "native checkpoint adapter preserves the complete opposite-endian world and SIM seed");
+			require(state_restore_all_sub(roundtrip, 0), "resume the imported ordinary-save world after native endian controls");
+#endif
 			ConsoleObject = Viewer = &Objects[Players[Player_num].objnum];
 			FrameTime = F1_0 / 64;
 		}
@@ -7758,15 +8342,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		require(PrimaryWeaponPickedUp == scenario % 2 && SecondaryWeaponPickedUp == (scenario / 2) % 2 &&
 		            delayed_secondary_autoselect_weapon_index == scenario % 6 - 1,
 		        "checkpoint preserves pending pickup and secondary selection state");
-		require(delayed_primary_autoselect_weapon_index == (scenario == 6 ?
-#ifdef DXX_BUILD_DESCENT_II
-		                                                                  LASER_INDEX
-		                                                                  :
-#else
-		                                                                  16
-		                                                                  :
-#endif
-		                                                                  scenario - 1),
+		require(delayed_primary_autoselect_weapon_index == (scenario == 6 ? 16 : scenario - 1),
 		        "checkpoint preserves the pending primary selection, including native quad lasers");
 		d_tick_count = 100;
 		d_srand(0x1234);
@@ -7885,6 +8461,25 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				            boss.mtype.phys_info.drag == original.mtype.phys_info.drag + 1 && boss.size == original.size,
 				        "native checkpoint retains boss physics instead of copying definition defaults");
 				require(boss_hit_state()[1] == (variant % 2 == 0 ? 1 : 0), "checkpoint retains actual boss damage history");
+				const auto boss_state = [&]() {
+					const object &saved = Objects[boss_slot];
+					return json::array({ Difficulty_level, saved.type, saved.id, saved.shields,
+					                     saved.mtype.phys_info.mass, saved.mtype.phys_info.drag, saved.size, boss_hit_state() });
+				};
+				const json expected_boss = boss_state();
+				char roundtrip[] = "boss-roundtrip.sav", roundtrip_description[21] = "Boss re-save";
+				require(state_save_all_sub(roundtrip, roundtrip_description), "re-save native boss state through the ordinary game serializer");
+				Objects[boss_slot].shields ^= 0x5a5a;
+#ifdef DXX_BUILD_DESCENT_II
+				require(state_restore_all_sub(roundtrip, 0), "reload native boss state through the ordinary D2 save path");
+#else
+				require(state_restore_all_sub(roundtrip), "reload native boss state through the ordinary D1 save path");
+#endif
+				const json restored_boss = boss_state();
+				if (restored_boss != expected_boss)
+					std::fprintf(stderr, "Boss re-save level=%d difficulty=%d variant=%d: expected=%s actual=%s\n",
+					             level, difficulty, variant, expected_boss.dump().c_str(), restored_boss.dump().c_str());
+				require(restored_boss == expected_boss, "ordinary re-save retains native boss health, physics and damage history exactly");
 				boss_checkpoints.push_back({ difficulty, variant, boss_slot, boss.id, boss.shields,
 				                             boss.mtype.phys_info.mass, boss.mtype.phys_info.drag, boss.size, boss_hit_state() });
 			}
@@ -7895,6 +8490,9 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 	const std::string result = json({ { "fresh_textures", fresh_textures }, { "fresh_triggers", fresh_triggers }, { "fresh_assets", fresh_assets }, { "reactor_guns", fresh_reactor_guns }, { "hidden_reactors", fresh_hidden_reactors }, { "boss_checkpoints", boss_checkpoints }, { "cases", cases } }).dump(2) + "\n";
 	require(std::fwrite(result.data(), 1, result.size(), output) == result.size(), "write complete restored frame trace");
 	std::fclose(output);
+#ifdef DXX_BUILD_DESCENT_II
+	if (custom) test_custom_save_identity(stem, robot_index);
+#endif
 	std::puts("Restored robot frame trace passed");
 }
 
@@ -7998,17 +8596,33 @@ static void write_death_sequence_trace(const char *filename = "death.json")
 	StartNewGame(1);
 	Players[0].lives = 5;
 	const fix saved_frame = FrameTime;
+	const std::string world_path = std::string(filename) + ".world.jsonl";
+	char error[256] = {};
+	bool native_content = true;
+#ifdef DXX_BUILD_DESCENT_II
+	native_content = d1_in_d2_use_d1_gameplay();
+#endif
+	require(input_demo_state_trace_start(world_path.c_str(), "fixture", native_content ? "d1" : "d2", Current_mission->filename, Current_level_num, Difficulty_level, "level_start", 12, error, sizeof(error)), "open death gameplay observation");
 	const auto powerups = [] {
 		int count = 0;
 		for (int slot = 0; slot <= Highest_object_index; ++slot)
 			if (Objects[slot].type == OBJ_POWERUP) ++count;
 		return count;
 	};
-	const auto snapshot = [&](const char *phase) {
-		trace.push_back({ { "phase", phase }, { "dead", Player_is_dead },
-		                 { "exploded", Player_exploded }, { "dropped", Player_eggs_dropped },
-		                 { "lives", Players[0].lives }, { "hostages", Players[0].hostages_on_board },
-		                 { "powerups", powerups() } });
+	const auto snapshot = [&](const char *phase, fix elapsed) {
+		const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+		player_death_runtime_state state = {};
+		player_death_get_runtime_state(&state);
+		require(state.elapsed == elapsed && state.active == Player_is_dead && state.exploded == Player_exploded &&
+		            state.eggs_dropped == Player_eggs_dropped && state.aborted == (Player_is_dead ? Death_sequence_aborted : 0),
+		        "death observation follows the actual explosion clock and gameplay flags");
+		if (!Player_is_dead)
+			require(!state.saved_flags && !state.saved_control, "idle death observation excludes overwritten sequence history");
+		require(input_demo_world_trace_write(static_cast<uint32_t>(trace.size()), nullptr, error, sizeof(error)), "observe actual death lifecycle in world stream");
+		require(sim == d_rand_get_call_count() && fx == d_rand_get_stream_call_count(D_RNG_FX), "death observation never consumes RNG");
+		trace.push_back({ { "phase", phase }, { "dead", Player_is_dead }, { "exploded", Player_exploded }, { "dropped", Player_eggs_dropped }, { "lives", Players[0].lives }, { "hostages", Players[0].hostages_on_board }, { "powerups", powerups() } });
+		trace.back()["runtime"] = { { "active", state.active }, { "exploded", state.exploded }, { "eggs_dropped", state.eggs_dropped },
+		    { "aborted", state.aborted }, { "elapsed", state.elapsed }, { "saved_flags", state.saved_flags }, { "saved_control", state.saved_control } };
 	};
 	const auto advance = [](fix dt) {
 		FrameTime = dt;
@@ -8023,21 +8637,26 @@ static void write_death_sequence_trace(const char *filename = "death.json")
 		Players[0].secondary_ammo[HOMING_INDEX] = 7;
 		Players[0].secondary_weapon_flags |= 1 << HOMING_INDEX;
 		Players[0].shields = -F1_0;
+		const int saved_flags = ConsoleObject->flags, saved_control = ConsoleObject->control_type;
 		start_player_death_sequence(ConsoleObject);
 		require(Player_is_dead && Dead_player_camera != nullptr, "actual death starts its camera phase");
+		snapshot("started", 0);
+		require(trace.back()["runtime"]["saved_flags"] == saved_flags && trace.back()["runtime"]["saved_control"] == saved_control,
+		        "death observation retains gameplay flags and control restored on respawn");
 		char checkpoint[] = "active-death.sav", description[21] = "Active death";
 		require(!state_save_all_sub(checkpoint, description), "active death cannot create an incomplete gameplay checkpoint");
 		const int before = powerups();
 		advance(3 * F1_0 / 2);
 		require(!Player_exploded && !Player_eggs_dropped && Players[0].hostages_on_board == 2 && powerups() == before,
 		        "each new death retains gear and hostages before its own explosion deadline");
-		snapshot("before_explosion");
+		snapshot("before_explosion", 3 * F1_0 / 2);
 		advance(F1_0 / 2);
 		require(!Player_exploded && !Player_eggs_dropped, "death explosion waits through exact two-second boundary");
+		snapshot("exact_deadline", 2 * F1_0);
 		advance(1);
 		require(Player_exploded && Player_eggs_dropped && Players[0].hostages_on_board == 0 && powerups() > before,
 		        "death explosion drops real carried gear and clears hostages after two seconds");
-		snapshot("exploded");
+		snapshot("exploded", 2 * F1_0 + 1);
 		const int dropped = powerups();
 		advance(F1_0 / 4);
 		require(powerups() == dropped, "continued death phase does not duplicate gear drops");
@@ -8059,13 +8678,13 @@ static void write_death_sequence_trace(const char *filename = "death.json")
 #endif
 			const vms_vector expected = refresh ? death_position : vms_vector{ i * F1_0, -F1_0, 3 * F1_0 };
 			require(Ai_cloak_info[i].last_time == (refresh ? respawn_time : -F1_0 - i) &&
-			        !std::memcmp(&Ai_cloak_info[i].last_position, &expected, sizeof(expected)),
+			            !std::memcmp(&Ai_cloak_info[i].last_position, &expected, sizeof(expected)),
 			        "actual respawn preserves native D1 cloak memory and refreshes ordinary D2");
 		}
 		require(!Player_is_dead && !Player_exploded && !Player_eggs_dropped && Players[0].lives == lives - 1,
 		        "actual death dismissal respawns a live ship exactly once");
 		require(powerups() == dropped, "death dismissal does not duplicate completed drops");
-		snapshot("respawned");
+		snapshot("respawned", 0);
 	}
 	// Early dismissal must drop carried gear once even before the blast
 	Players[0].primary_weapon_flags |= 1 << PLASMA_INDEX;
@@ -8073,19 +8692,36 @@ static void write_death_sequence_trace(const char *filename = "death.json")
 	start_player_death_sequence(ConsoleObject);
 	const int before_abort = powerups(), lives_before_abort = Players[0].lives;
 	Death_sequence_aborted = 1;
+	snapshot("abort_pending", 0);
 	advance(F1_0 / 4);
 	require(!Player_is_dead && Players[0].lives == lives_before_abort - 1 && powerups() > before_abort,
 	        "early death dismissal drops gear and respawns exactly once");
-	snapshot("early_respawn");
+	snapshot("early_respawn", 0);
 	const int after_abort = powerups();
 	advance(F1_0 / 4);
 	require(powerups() == after_abort && Players[0].lives == lives_before_abort - 1,
 	        "alive frame after early dismissal does not repeat drops or death");
 	FrameTime = saved_frame;
+	input_demo_state_trace_stop();
+	PHYSFS_file *world_file = PHYSFS_openRead(world_path.c_str());
+	require(world_file != nullptr, "read actual death world trace");
+	std::string world_text(static_cast<size_t>(PHYSFS_fileLength(world_file)), '\0');
+	require(PHYSFS_readBytes(world_file, &world_text[0], world_text.size()) == static_cast<PHYSFS_sint64>(world_text.size()) && PHYSFS_close(world_file), "read complete death world records");
+	std::istringstream world_lines(world_text);
+	std::string world_line;
+	json death_state;
+	size_t observed = 0;
+	while (std::getline(world_lines, world_line)) {
+		const auto row = json::parse(world_line);
+		if (row["type"] != "world_state") continue;
+		if (row["state"].contains("death")) death_state = row["state"]["death"];
+		require(observed < trace.size() && death_state == trace[observed]["runtime"], "complete world observation retains each actual death phase without camera history");
+		++observed;
+	}
+	require(observed == trace.size(), "all actual death phases appear in the world trace");
 	const std::string output = trace.dump(2) + "\n";
 	write_fixture(filename, bytes(output.begin(), output.end()));
 }
-
 
 static void write_campaign_trace(const char *directory, const char *d2_directory, bool endlevel_only = false, bool death_only = false)
 {
@@ -8703,7 +9339,10 @@ static nlohmann::json exercise_robot_drops(bool native)
 				int powerups = 0;
 				for (int i = 1; i <= Highest_object_index; ++i) {
 					const object &obj = Objects[i];
-					if (obj.type == OBJ_POWERUP) { ++powerups; continue; }
+					if (obj.type == OBJ_POWERUP) {
+						++powerups;
+						continue;
+					}
 					if (obj.type != OBJ_ROBOT) continue;
 #ifdef DXX_BUILD_DESCENT_II
 					if (!native) require(obj.size == Polygon_models[Robot_info[id].model_num].rad, "ordinary D2 robot egg uses its own model radius");
@@ -8711,12 +9350,12 @@ static nlohmann::json exercise_robot_drops(bool native)
 					require(obj.size == Polygon_models[Robot_info[ObjId[OBJ_ROBOT]].model_num].rad, "native robot egg uses the original object-table radius");
 #endif
 					objects.push_back({ obj.id, obj.signature, obj.size, obj.shields, obj.rtype.pobj_info.model_num,
-						obj.pos.x, obj.pos.y, obj.pos.z, obj.mtype.phys_info.velocity.x,
-						obj.mtype.phys_info.velocity.y, obj.mtype.phys_info.velocity.z,
-						obj.mtype.phys_info.mass, obj.mtype.phys_info.drag, obj.mtype.phys_info.flags,
-						obj.ctype.ai_info.behavior, obj.ctype.ai_info.CURRENT_STATE,
-						obj.ctype.ai_info.GOAL_STATE, obj.ctype.ai_info.REMOTE_OWNER,
-						Ai_local_info[i].player_awareness_type, Ai_local_info[i].player_awareness_time });
+					                    obj.pos.x, obj.pos.y, obj.pos.z, obj.mtype.phys_info.velocity.x,
+					                    obj.mtype.phys_info.velocity.y, obj.mtype.phys_info.velocity.z,
+					                    obj.mtype.phys_info.mass, obj.mtype.phys_info.drag, obj.mtype.phys_info.flags,
+					                    obj.ctype.ai_info.behavior, obj.ctype.ai_info.CURRENT_STATE,
+					                    obj.ctype.ai_info.GOAL_STATE, obj.ctype.ai_info.REMOTE_OWNER,
+					                    Ai_local_info[i].player_awareness_type, Ai_local_info[i].player_awareness_time });
 				}
 				require(objects.size() == static_cast<size_t>(count), "robot egg count is exact");
 				require(Players[0].num_robots_level == count && Players[0].num_robots_total == count, "robot eggs update both player counts");
@@ -9118,7 +9757,8 @@ static nlohmann::json exercise_reactor_frames(bool native)
 					Reactor_strength = -1;
 #endif
 					init_controlcen_for_level();
-					require(reactor_object.shields == 200 * F1_0 + level * F1_0 * (level >= 0 ? 50 : native ? -100 : -150),
+					require(reactor_object.shields == 200 * F1_0 + level * F1_0 * (level >= 0 ? 50 : native ? -100
+					                                                                                        : -150),
 					        "reactor initialization retains original normal and secret-level health");
 					if (scenario == 8) {
 						Segments[0].children[4] = -1;
@@ -9167,11 +9807,7 @@ static nlohmann::json exercise_reactor_frames(bool native)
 					unsigned sim_state = 0, fx_state = 0;
 					const int sim_available = d_rand_get_stream_state(D_RNG_SIM, &sim_state);
 					const int fx_available = d_rand_get_stream_state(D_RNG_FX, &fx_state);
-					result.push_back({ { "level", level }, { "difficulty", difficulty }, { "seed", seed }, { "scenario", scenario },
-					                   { "shots", shots }, { "hit", Control_center_been_hit }, { "seen", Control_center_player_been_seen },
-					                   { "shields", reactor_object.shields }, { "sim_state", { sim_available, sim_state } }, { "fx_state", { fx_available, fx_state } },
-					                   { "next_fire", Control_center_next_fire_time }, { "death_silence", controlcen_death_silence },
-					                   { "sim_draws", d_rand_get_call_count() }, { "fx_draws", d_rand_get_stream_call_count(D_RNG_FX) } });
+					result.push_back({ { "level", level }, { "difficulty", difficulty }, { "seed", seed }, { "scenario", scenario }, { "shots", shots }, { "hit", Control_center_been_hit }, { "seen", Control_center_player_been_seen }, { "shields", reactor_object.shields }, { "sim_state", { sim_available, sim_state } }, { "fx_state", { fx_available, fx_state } }, { "next_fire", Control_center_next_fire_time }, { "death_silence", controlcen_death_silence }, { "sim_draws", d_rand_get_call_count() }, { "fx_draws", d_rand_get_stream_call_count(D_RNG_FX) } });
 				}
 	Player_is_dead = 0;
 	return result;
@@ -9218,14 +9854,15 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 			vms_matrix orientation;
 			vm_angles_2_matrix(&orientation, &angles);
 			const int index = obj_create(type, type == OBJ_WEAPON ? VULCAN_ID : 0, 0, &point,
-				supplied ? &orientation : nullptr, F1_0, CT_NONE, MT_NONE, RT_NONE);
+			                             supplied ? &orientation : nullptr, F1_0, CT_NONE, MT_NONE, RT_NONE);
 			require(index > 0, "create object with optional orientation");
 			const vms_matrix zero = {};
-			const vms_matrix &expected = supplied ? orientation : native ? zero : vmd_identity_matrix;
+			const vms_matrix &expected = supplied ? orientation : native ? zero
+			                                                             : vmd_identity_matrix;
 			const auto &actual = Objects[index].orient;
 			require(!std::memcmp(&actual, &expected, sizeof(actual)), "object initialization preserves the source orientation default");
 			object_orientations.push_back({ type, supplied, actual.rvec.x, actual.rvec.y, actual.rvec.z,
-				actual.uvec.x, actual.uvec.y, actual.uvec.z, actual.fvec.x, actual.fvec.y, actual.fvec.z });
+			                                actual.uvec.x, actual.uvec.y, actual.uvec.z, actual.fvec.x, actual.fvec.y, actual.fvec.z });
 		}
 	}
 	json small_fireballs = json::array();
@@ -9249,7 +9886,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 		        "reactor burn retains native source scale or ordinary D2 scale");
 		require(d_rand_get_call_count() == sim_calls, "reactor burn consumes only FX RNG");
 		reactor_fireballs.push_back({ seed, fireball.size, fireball.lifeleft, fireball.pos.x, fireball.pos.y, fireball.pos.z,
-		                             d_rand_get_stream_call_count(D_RNG_FX) });
+		                              d_rand_get_stream_call_count(D_RNG_FX) });
 	}
 	Dead_controlcen_object_num = -1;
 	for (const auto type : { OBJ_PLAYER, OBJ_ROBOT, OBJ_CNTRLCEN })
@@ -9270,8 +9907,8 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 				require(fireball.size >= (native ? scale : scale / 2) && fireball.size < (native ? scale * 3 : scale * 3 / 2),
 				        "native fireball size range retains D1 presentation while ordinary D2 stays smaller");
 				small_fireballs.push_back({ type, scale, seed, fireball.size, fireball.lifeleft, fireball.flags,
-				                           fireball.pos.x, fireball.pos.y, fireball.pos.z, fireball.rtype.vclip_info.vclip_num,
-				                           d_rand_get_stream_call_count(D_RNG_FX) });
+				                            fireball.pos.x, fireball.pos.y, fireball.pos.z, fireball.rtype.vclip_info.vclip_num,
+				                            d_rand_get_stream_call_count(D_RNG_FX) });
 			}
 	for (const bool owned : { false, true })
 		for (const int contents : { 0, VULCAN_AMMO_AMOUNT, VULCAN_WEAPON_AMMO_AMOUNT }) {
@@ -9419,9 +10056,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 				require(invulnerable ? delta == 0 : delta > 0, "real contact/lava/blast honors invulnerability");
 				const auto &physics = ConsoleObject->mtype.phys_info;
 				// Equal RNG counts do not prove equal order: lava shove and spin share the stream
-				damage.push_back({ difficulty, invulnerable, kind, delta, d_rand_get_call_count(),
-				                   { physics.velocity.x, physics.velocity.y, physics.velocity.z },
-				                   { physics.rotvel.x, physics.rotvel.y, physics.rotvel.z } });
+				damage.push_back({ difficulty, invulnerable, kind, delta, d_rand_get_call_count(), { physics.velocity.x, physics.velocity.y, physics.velocity.z }, { physics.rotvel.x, physics.rotvel.y, physics.rotvel.z } });
 			}
 	}
 	for (const int id : { POW_CLOAK, POW_VULCAN_WEAPON, POW_SPREADFIRE_WEAPON, POW_PLASMA_WEAPON, POW_FUSION_WEAPON, POW_QUAD_FIRE, POW_VULCAN_AMMO, POW_ENERGY, POW_EXTRA_LIFE })
@@ -9467,7 +10102,14 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 	return { { "opening_doors", opening_doors }, { "exploding_walls", exploding_walls }, { "reactor_impacts", reactor_impacts }, { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "powerup_animation", powerup_animation }, { "object_orientations", object_orientations }, { "small_fireballs", small_fireballs }, { "reactor_fireballs", reactor_fireballs }, { "volatile_impacts", volatile_impacts }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "weapon_drops", weapon_drops }, { "robot_drops", robot_drops }, { "reactor_frames", reactor_frames }, { "secondary_explosions", secondary_explosions } };
 }
 
-static void write_gameplay_rules_trace(const char *directory, const char *d2_directory)
+#include "pickup_autoselect_fixture.hpp"
+#include "weapon_order_profile_fixture.hpp"
+#include "classic_trigger_demo_fixture.hpp"
+#include "classic_asset_demo_fixture.hpp"
+#include "network_asset_fixture.hpp"
+#include "wall_blast_save_fixture.hpp"
+
+static void write_gameplay_rules_trace(const char *directory, const char *d2_directory, int weapon_trace = 0, const char *native_demo = nullptr)
 {
 	const std::string hog = std::string(directory) + "/DESCENT.HOG";
 	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "mount native gameplay resources");
@@ -9493,9 +10135,32 @@ static void write_gameplay_rules_trace(const char *directory, const char *d2_dir
 	(void) d2_directory;
 #endif
 	require(load_mission_by_name(mission), "select native gameplay mission");
-	const auto native = exercise_gameplay_rules(true);
+	if (weapon_trace == 8) {
+		write_wall_blast_save_trace(d2_directory, native_demo);
+		return;
+	}
+#ifdef DXX_BUILD_DESCENT_II
+	if (weapon_trace == 7) {
+		exercise_network_asset_missions(d2_directory);
+		return;
+	}
+	if (weapon_trace == 6) {
+		exercise_classic_asset_missions(d2_directory);
+		return;
+	}
+	if (weapon_trace == 5) {
+		const auto report = exercise_classic_trigger_missions(d2_directory).dump(2) + "\n";
+		write_fixture("classic-mission-report.json", bytes(report.begin(), report.end()));
+		return;
+	}
+#endif
+	const auto native = weapon_trace == 4 ? exercise_weapon_order_profile(native_demo, d2_directory) : weapon_trace == 3 ? exercise_classic_cutoff()
+	                                                                                               : weapon_trace == 2   ? exercise_weapon_selection(true)
+	                                                                                               : weapon_trace == 1   ? exercise_pickup_autoselect(true)
+	                                                                                                                     : exercise_gameplay_rules(true);
 	const std::string result = native.dump(2) + "\n";
 	write_fixture("rules.json", bytes(result.begin(), result.end()));
+	if (weapon_trace == 4) return;
 #ifdef DXX_BUILD_DESCENT_II
 	if (d2_directory) {
 		const std::string d2_hog = std::string(d2_directory) + "/descent2.hog";
@@ -9510,8 +10175,9 @@ static void write_gameplay_rules_trace(const char *directory, const char *d2_dir
 		for (int difficulty = 0; difficulty < NDL; ++difficulty)
 			require(boss_health_maximum_for_difficulty(2000 * F1_0, difficulty) == boss_health[difficulty],
 			        "ordinary D2 retains difficulty-scaled boss health");
-		const auto d2 = exercise_gameplay_rules(false);
-		for (size_t i = 0; i < native["damage"].size(); ++i) {
+		const auto d2 = weapon_trace == 2 ? exercise_weapon_selection(false) : weapon_trace == 1 ? exercise_pickup_autoselect(false)
+		                                                                                         : exercise_gameplay_rules(false);
+		for (size_t i = 0; !weapon_trace && i < native["damage"].size(); ++i) {
 			const auto &entry = native["damage"][i];
 			const int divisor = entry[0] == 0 ? (entry[2] == 2 ? 4 : 2) : 1;
 			require(d2["damage"][i][3] == entry[3].get<int>() / divisor, "ordinary D2 retains its contact and explosion trainee reductions");
@@ -9734,7 +10400,7 @@ static void write_render_candidates_trace(const char *directory)
 		update_rendered_data(0, Viewer, rear, 0);
 		render_frame(offset, 0);
 		const std::vector<short> drawn(Window_rendered_data[0].rendered_objects,
-		    Window_rendered_data[0].rendered_objects + Window_rendered_data[0].num_objects);
+		                               Window_rendered_data[0].rendered_objects + Window_rendered_data[0].num_objects);
 #else
 		render_frame(offset);
 		const std::vector<short> drawn(Ordered_rendered_object_list, Ordered_rendered_object_list + Num_rendered_objects);
@@ -9749,11 +10415,9 @@ static void write_render_candidates_trace(const char *directory)
 		require(!std::memcmp(before.data(), Objects, before.size() * sizeof(object)), "CPU candidate preparation does not mutate live objects");
 		unsigned after_sim = 0, after_fx = 0;
 		require(d_rand_get_state(&after_sim) == has_sim && d_rand_get_stream_state(D_RNG_FX, &after_fx) == has_fx &&
-		        after_sim == sim_state && after_fx == fx_state && sim_calls == d_rand_get_call_count() && fx_calls == d_rand_get_stream_call_count(D_RNG_FX),
+		            after_sim == sim_state && after_fx == fx_state && sim_calls == d_rand_get_call_count() && fx_calls == d_rand_get_stream_call_count(D_RNG_FX),
 		        "CPU candidate preparation preserves both RNG states and counts");
-		trace.push_back({ { "scene", scene }, { "pose", pose }, { "width", width }, { "height", height },
-		    { "rear", rear }, { "classic", classic }, { "offset", offset }, { "candidates", drawn },
-		    { "segments", std::vector<short>(Render_list, Render_list + N_render_segs) } });
+		trace.push_back({ { "scene", scene }, { "pose", pose }, { "width", width }, { "height", height }, { "rear", rear }, { "classic", classic }, { "offset", offset }, { "candidates", drawn }, { "segments", std::vector<short>(Render_list, Render_list + N_render_segs) } });
 		gr_set_current_canvas(nullptr);
 	};
 	for (const int level : { 1, 14, 27 }) {
@@ -9790,7 +10454,8 @@ static void write_render_candidates_trace(const char *directory)
 			compute_segment_center(&position, &Segments[segment]);
 			position.x += (i % 5 - 2) * F1_0 / 4;
 			position.z += (i % 7 - 3) * F1_0;
-			const auto type = i % 4 == 0 ? OBJ_ROBOT : i % 4 == 1 ? OBJ_FIREBALL : OBJ_WEAPON;
+			const auto type = i % 4 == 0 ? OBJ_ROBOT : i % 4 == 1 ? OBJ_FIREBALL
+			                                                      : OBJ_WEAPON;
 			require(obj_create(type, 0, segment, &position, &vmd_identity_matrix, (i % 3 + 1) * 4 * F1_0, CT_NONE, MT_NONE, RT_NONE) > 0, "create dense candidate scene");
 		}
 		for (const int classic : { 0, 1 })
@@ -9901,6 +10566,32 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+#ifdef DXX_BUILD_DESCENT_II
+	if (argc == 2 && std::strcmp(argv[1], "--classic-trigger-demo") == 0) {
+		test_classic_trigger_demo();
+		return 0;
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--classic-trigger-missions") == 0) {
+		write_gameplay_rules_trace(argv[2], argv[3], 5);
+		return 0;
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--classic-asset-missions") == 0) {
+		write_gameplay_rules_trace(argv[2], argv[3], 6);
+		return 0;
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--network-asset-missions") == 0) {
+		write_gameplay_rules_trace(argv[2], argv[3], 7);
+		return 0;
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--guidebot-save-assets") == 0) {
+		test_guidebot_save_assets(argv[2], argv[3]);
+		return 0;
+	}
+	if (argc == 5 && std::strcmp(argv[1], "--legacy-guidebot-save-assets") == 0) {
+		test_guidebot_save_assets(argv[2], argv[3], argv[4]);
+		return 0;
+	}
+#endif
 #ifdef USE_SDLMIXER
 	if (argc == 2 && std::strcmp(argv[1], "--sound-mixer-test") == 0) {
 		test_mixed_rate_sound_conversion();
@@ -9917,6 +10608,26 @@ int main(int argc, char **argv)
 	}
 	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--gameplay-rules-trace") == 0) {
 		write_gameplay_rules_trace(argv[2], argc == 4 ? argv[3] : nullptr);
+		return 0;
+	}
+	if ((argc == 4 || argc == 5) && std::strcmp(argv[1], "--wall-blast-save-trace") == 0) {
+		write_gameplay_rules_trace(argv[2], argv[3], 8, argc == 5 ? argv[4] : nullptr);
+		return 0;
+	}
+	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--pickup-autoselect-trace") == 0) {
+		write_gameplay_rules_trace(argv[2], argc == 4 ? argv[3] : nullptr, true);
+		return 0;
+	}
+	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--selection-autoselect-trace") == 0) {
+		write_gameplay_rules_trace(argv[2], argc == 4 ? argv[3] : nullptr, 2);
+		return 0;
+	}
+	if (argc == 3 && std::strcmp(argv[1], "--selection-cutoff-autoselect-trace") == 0) {
+		write_gameplay_rules_trace(argv[2], nullptr, 3);
+		return 0;
+	}
+	if ((argc == 4 || argc == 5) && std::strcmp(argv[1], "--profile-autoselect-trace") == 0) {
+		write_gameplay_rules_trace(argv[2], argv[3], 4, argc == 5 ? argv[4] : nullptr);
 		return 0;
 	}
 	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--briefing-trace") == 0) {
@@ -9958,6 +10669,7 @@ int main(int argc, char **argv)
 #endif
 #endif
 	std::fprintf(stderr, "Testing life limits\n");
+	test_object_endian_angles();
 	test_object_state_trace();
 	test_world_state_trace();
 	test_cadence_saved_record();
@@ -9967,6 +10679,11 @@ int main(int argc, char **argv)
 	test_ai_diagnostic_profiles();
 #ifdef DXX_BUILD_DESCENT_II
 	test_native_ai_object_encoding();
+	for (const int size : { D1_SHARE_BIG_PIGSIZE, D1_SHARE_10_PIGSIZE, D1_SHARE_PIGSIZE,
+	         D1_10_BIG_PIGSIZE, D1_10_PIGSIZE, D1_MAC_PIGSIZE, D1_MAC_SHARE_PIGSIZE })
+		require(d1_in_d2_source_edition_error(size) != nullptr, "unsupported native source layouts have explicit imported admission errors");
+	for (const int size : { D1_PIGSIZE, D1_OEM_PIGSIZE, 123456 })
+		require(d1_in_d2_source_edition_error(size) == nullptr, "registered and unknown layouts continue through full source validation");
 #endif
 #ifdef DXX_BUILD_DESCENT_II
 	test_d1_ai_storage_scope();
@@ -9979,6 +10696,7 @@ int main(int argc, char **argv)
 	test_wall_crossing();
 	test_door_open_completion();
 	std::fprintf(stderr, "Testing native compound triggers and paired crossing state\n");
+	test_trigger_exit_queries();
 	test_native_triggers();
 #ifdef DXX_BUILD_DESCENT_II
 	test_native_trigger_serialization();

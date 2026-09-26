@@ -20,21 +20,21 @@ def normalize(text: str, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 class RegressionToolContractsTest(unittest.TestCase):
-    def test_mission_batch_selects_primary_emulator_and_health_arrays_are_stable(self) -> None:
+    def test_mission_batch_and_health_use_selected_emulator(self) -> None:
         batch = (ROOT / "android/helpers/run_mission_zip_batch.ps1").read_text(
             encoding="utf-8"
         )
         health = (ROOT / "android/helpers/emu_health.ps1").read_text(encoding="utf-8")
         self.assertIn("if (-not $env:ANDROID_SERIAL)", batch)
         self.assertIn("$env:ANDROID_SERIAL = $script:PRIMARY_EMULATOR_SERIAL", batch)
-        self.assertEqual(2, health.count("@(Get-OnlineEmulatorSerials)"))
+        self.assertIn("test_helpers.ps1", health)
         self.assertIn("[string]$PreferredSerial = $env:ANDROID_SERIAL", health)
-        self.assertIn("Test-EmulatorHealth -PreferredSerial $PreferredSerial", health)
+        self.assertIn("Test-EmulatorHealthy -Serial $PreferredSerial", health)
 
-    def test_host_mission_variant_order_mirrors_launcher_policy(self) -> None:
+    def test_host_uses_shared_mission_variant_policy(self) -> None:
         policy = (
             ROOT
-            / "android/app/src/main/java/com/dxxredux/app/MissionVariantPolicy.kt"
+            / "android/mission-metadata-core/src/main/kotlin/com/dxxredux/app/MissionVariantPolicy.kt"
         ).read_text(encoding="utf-8")
         host_generator = (
             ROOT / "android/helpers/regenerate_all_mission_metadata_host.ps1"
@@ -44,10 +44,11 @@ class RegressionToolContractsTest(unittest.TestCase):
             for variant in ("rebirth", "dos", "d2x")
         ]
         self.assertEqual(sorted(positions), positions)
-        self.assertIn(
-            '$missionVariantDirectoryMaskPrecedence = @("REBIRTH", "DOS", "D2X")',
-            host_generator,
+        self.assertIn('"mission_archive_variants.ps1"', host_generator)
+        helper = (ROOT / "android/helpers/mission_archive_variants.ps1").read_text(
+            encoding="utf-8"
         )
+        self.assertIn("--select-archive-variant @Names", helper)
 
     def test_mission_archive_appendage_is_shared_across_regression_workflows(self) -> None:
         helper = (ROOT / "android/helpers/mission_archive_sources.ps1").read_text(

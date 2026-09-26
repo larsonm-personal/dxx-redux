@@ -83,6 +83,15 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define ET_MULTI_START  1   //first part of multi-part explosion
 #define ET_MULTI_SECOND 2   //second part of multi-part explosion
 
+// Gameplay lifetime: schedules damaging blasts and opens the wall
+typedef struct expl_wall {
+	int segnum, sidenum;
+	fix time;
+} expl_wall;
+
+#define MAX_EXPLODING_WALLS 10
+extern expl_wall expl_wall_list[MAX_EXPLODING_WALLS];
+
 object *object_create_explosion(short segnum, vms_vector *position, fix size, int vclip_type);
 object *object_create_muzzle_flash(short segnum, vms_vector *position, fix size, int vclip_type);
 

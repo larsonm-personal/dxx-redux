@@ -348,14 +348,193 @@ A/B performance result. No physical phone was available. The baseline screenshot
 also contains Android's first-use immersive-mode overlay and is not used as a
 pixel-comparison reference
 
-### Remaining experiments
+## Complete-list follow-up
 
-Early merged-cache hits remain worthwhile, but the current route deliberately
-pages in source bitmaps before checking super-transparency and generated masks.
-A pre-bind fast path must preserve those first-use and invalidation rules
+Authorized on 2026-09-25: finish the initial list, retaining changes according
+to measured gains. The first pass is now the baseline, not the completion scope
 
-Transient blit reuse needs separate menu/movie lifetime and filtering coverage.
-World/model/sprite/text batching needs counts of consecutive compatible runs
-before changing draw order or extending state ownership. The previous phone
-regression from buffer streaming remains a reason to require phone measurements
-for those broader experiments
+- [x] Measure early merged-cache lookup and decide whether to retain it; require
+  cold-load, transparency, invalidation and diagnostic qualification if retained
+- [x] Measure transient texture reuse, mipmap elimination, and scaling costs;
+  validate menus, palette changes, crops/stride/tiles, and movie-style updates
+- [x] Count consecutive compatible world/model/sprite runs and benchmark a
+  conservative implementation where counts justify it
+- [x] Count compatible adjacent strings and benchmark text-pass batching where
+  counts justify it
+- [x] Measure the repeated billboard-center transform and duplicate numerical
+  gauges; retain only useful, visually equivalent changes
+- [x] Attribute GL error polling and reconsider broader state caching only if
+  evidence warrants it
+- [x] Revisit first-pass workload measurements at multiple resolutions and
+  full/half/empty gauges so retained work has workload-level evidence
+- [x] Finish D1/D2/D1-in-D2 correctness, platform builds, scoped quality checks,
+  and an item-by-item retained/rejected results table
+
+Use the existing private native build and source snapshot after verifying file
+identity, with separate round-two artifacts. Do not reuse other tasks' devices
+or build outputs. Instrumentation runs and timing runs must be separate; keep
+resolution, GPU backend, assets, settings and view fixed across each A/B pair
+
+### Round-two decisions and measurement limits
+
+Every initial candidate was evaluated. Not every promising microbenchmark is a
+retained engine change. No physical phone was attached, and unrelated emulator
+work shared the host CPU/GPU. Frame-time A/B windows varied substantially; GPU
+query results were unavailable (zero). No gameplay FPS or handset speedup is
+claimed from this run
+
+The private Android x86_64 Debug build used host GPU acceleration on emulator
+5580. Separate optimized native Windows microbenchmarks used the production GLES
+shim with ANGLE on Intel Arc 140T and with SwiftShader. Driver microbenchmarks
+include `glFinish` around repeated workloads; they are not Android frame times
+
+Temporary trace instrumentation counts submissions across render passes until
+presentation. Detailed compatibility tracing performs extra state queries and
+is excluded from timing windows. Its matches are candidate runs, not proof that
+all external GL owners can safely be deferred. All measurement switches and
+framebuffer fixtures remain in the isolated scratch tree, not production
+
+| Candidate | Measurement / outcome | Production decision |
+| --- | --- | --- |
+| Gauge batching | Half energy plus empty afterburner: 162 mask draws to 3 at 1280x720; 121 to 3 at 960x540 | Keep first-pass implementation |
+| Buffer-binding tracking | Removes the pointer/draw binding queries; VBO-offset and binding-restoration probes passed in both engines and host drivers | Keep first-pass implementation |
+| Inactive merged diagnostics | 93 face/cover calls per cockpit frame: ungated 128 / 103 us versus gated 13 / 10 us in four 59-frame windows | Keep first-pass implementation |
+| Early composite lookup | Cockpit binds 142 to 77 and active-unit calls 126 to 84; unchanged draw counts; no repeatable frame-time improvement | Do not retain the prototype |
+| Transient texture names | Main menu creates/deletes 7 to 5 per frame; contents still converted/uploaded every call | Keep one bounded reusable texture |
+| 1:1 mipmaps | Main-menu mip generations 2 to 0; identical pixels; removal alone had inconsistent driver timing | Keep with reuse; preserve linear filtering |
+| Redundant CPU scaling | Already-sized menu layer bypasses allocation and indexed-pixel copy; sampled combined scale work drops from 1.607 / 1.951 ms to 0.498 / 0.885 ms | Keep the exact-size bypass |
+| General CPU-to-GPU scaling | Integer CPU scaling and ordinary GPU nearest sampling choose different source columns at fractional ratios | Keep existing scaling for different sizes |
+| Adjacent world/model draws | Cockpit: 20 candidate transitions among 72 draws; reactor: about 45 among 90; bounded host prototype reduces submission cost | Do not ship deferred engine submission without an engine/phone gain and complete state-barrier validation |
+| Adjacent sprites | 0 candidate transitions among 3-4 reactor sprites per frame | No batching change justified in these views |
+| Adjacent strings | 6 candidate transitions among 12 cockpit strings; scaled menus use software-rendered canvases, not many GL strings | Do not extend text-pass ownership for this measured workload |
+| Billboard center transform | Optimized host arithmetic prototype saves about 7-11 ns per sprite, with identical checksums | Leave unchanged; negligible at observed sprite counts |
+| Duplicate numerical gauges | Removes 2 string draws per full cockpit; gauge-region pixels identical for D1, D2 and D1-in-D2 | Keep Android-only removal of the first call |
+| GL error polling | Median 1-2 us per frame in the fixed-view timing windows | Keep diagnostics |
+| Broad uniform/attribute caching | Previous uniform experiment had no meaningful gain; current results do not justify wider state ownership | No new cache |
+
+The early-cache prototype retained cold/unresident, super-transparent, forced
+two-pass and texture-log routes. Its cockpit render medians were 9.214 / 10.107 ms
+for the original path and 17.867 / 12.398 ms for the shortcut; reactor pairs did
+not agree on a winner. Host texture-unit/bind microbenchmarks saved approximately
+0.11-0.31 us per warm-hit setup. Fewer API calls alone do not establish a useful
+end-to-end improvement. Since it was rejected, the more extensive invalidation
+and context-loss qualification of that shortcut was not pursued
+
+### Retained upload path
+
+Each engine retains one transient texture name for uploads with padded dimensions
+no larger than 2048 per axis and at most 2,097,152 base pixels (8 MiB RGBA, plus
+any mip levels). Larger images retain the previous temporary lifetime. Texture
+list initialization forgets old-context ownership; texture-list destruction
+deletes the retained name and invalidates binding caches. The existing texture
+memory estimate includes the retained object
+
+Every blit still converts the current palette and calls `glTexImage2D` with the
+complete current image. There is no pointer-identity content cache and no
+`glTexSubImage2D` streaming in the retained change. Wrap/filter state is set for
+each use, including resetting anisotropy inherited from a previous upload.
+Filtered 1:1 blits use linear minification/magnification without generating a
+mip chain. Actual rescaling retains its previous filter behavior
+
+The exact-size menu shortcut preserves the caller's masking choice through a
+local bitmap view, keeps row stride, and applies only to uncompressed linear
+bitmaps targeting the GL screen. Fractional CPU scaling is unchanged: for
+320-to-1088 scaling, a direct nearest-sampled GPU quad selects a different source
+column at 128 of 1088 positions (256 positions for 640-to-1088). Replacing that
+path blindly would change pixel placement
+
+Optimized host upload/draw microbenchmarks, 12 updates per trial, six measured
+trials after warmup, interleaved forward/reverse variant order:
+
+| Driver / visible size | New texture + mipmaps | Reuse + full image upload + no mipmaps |
+| --- | ---: | ---: |
+| ANGLE / 320x200 | 1.313 ms | 0.220 ms |
+| ANGLE / 1280x720 | 4.635 ms | 2.246 ms |
+| SwiftShader / 320x200 | 1.216 ms | 0.687 ms |
+| SwiftShader / 1280x720 | 13.526 ms | 6.277 ms |
+
+All nine tested upload/filter variants at both sizes produced the same final
+pixel hash on each driver. Changed content was uploaded between iterations.
+These tests exclude engine palette conversion and CPU scaling. Reuse plus
+`glTexSubImage2D` was also measured but not selected: the retained full-image
+upload gives a benefit without introducing another streaming policy
+
+In a separate Android menu run, baseline blit medians were 36.014 / 34.717 ms
+and combined reuse/no-mipmap medians were 25.505 / 23.400 ms. A later run under
+varying host load was less consistent (including a 30.606 ms candidate window).
+The deterministic reductions are two texture creates/deletes and two mipmap
+generations per frame; uploaded bytes remain 11.25 MiB at 1280x720. Host and
+emulator timings should not be translated into a phone FPS estimate
+
+### Larger batching experiments
+
+An explicit-boundary host prototype copies client arrays immediately, expands
+fans in their original triangle order, and batches only the prescribed adjacent
+runs. It uses the production GLES shader/upload path. Full 8x8 framebuffer bytes
+match for both drivers. The workloads use the observed draw/run counts with
+synthetic geometry; they do not replay a complete engine frame or include the
+cost of discovering all renderer state boundaries
+
+| Workload | ANGLE immediate / batched | SwiftShader immediate / batched |
+| --- | ---: | ---: |
+| 72 world faces, 20 compatible transitions | 0.932 / 0.561 ms | 5.737 / 2.927 ms |
+| 90 world faces, 45 compatible transitions | 0.624 / 0.316 ms | 6.924 / 4.275 ms |
+| 12 five-glyph strings, 6 compatible transitions | 0.118 / 0.059 ms | 2.618 / 2.100 ms |
+
+These results justify revisiting world/model batching on a target phone, but
+do not qualify a general deferred renderer for production. Safe integration
+would have to flush before texture changes/uploads, raster-state changes,
+framebuffer operations/readbacks, external shader/VBO draws, and presentation,
+while preserving model recursion and transparency order. The prior phone
+buffer-streaming regression makes a synthetic host-only win insufficient for
+that change. The approximately 0.059 ms host text saving is a weaker priority
+than the retained menu upload work
+
+### Round-two validation
+
+Scratch artifacts: `temp/opengl-efficiency-round2-20260925/`, with the isolated
+source/build still under `temp/opengl-efficiency-20260925/`. Raw measurements,
+experimental source backups and production file hashes are retained there;
+this document records the durable conclusions
+
+- Experimental cockpit/reactor A/B scenarios: 61/61 steps each
+- Full/half/empty D2 gauge counter matrix: 170/170 steps at each resolution
+- D2 transient upload fixture: 92/92 steps, plus 92/92 with the exact-size bypass
+- Upload fixture framebuffer bytes: identical for reuse/no-mip variants, padded
+  stride, nonzero crop offsets, transparency, 1024-sized tiles and scaled updates
+- Changed palette/content fixture changed 260,478 pixels, identically in baseline
+  and candidate; restoring the input restored the original framebuffer
+- Numerical-gauge A/B/A scenarios: D2 78/78, D1 79/79 and D1-in-D2 78/78 steps;
+  zero differing pixels in the checked 179x115 gauge region at 1280x720
+- D2 960x540 numerical-gauge and full-menu comparisons also matched exactly
+- Additional D2 numerical comparison with texture/menu/HUD filtering enabled:
+  67/67 steps; energy 0, 50 and 200 all have zero differing gauge-region pixels
+- Android CMake/Ninja x86_64 Debug: both production engine libraries link
+- MSVC x86: affected GL sources, both non-GL gauge variants and imported cockpit
+  compile; no new warnings in the affected Android upload code
+- Scoped mixed-language code quality passes
+- Updated maintained menu regression: D2 90/90, D1 78/78 steps, including pilot
+  keyboard offset, listbox, zoom, anisotropy changes, controls and pause menus,
+  plus engine relaunch
+- Save/load and preview navigation: D2 57/57, D1 56/56 steps
+- Production imported D1 cockpit/GPU regression: 84/84 steps
+- D2 lifecycle/background-resume regression: 32/32 steps
+- Native runtime filtering and MSAA checks: 58/58 steps
+
+Two initially overlapping menu runners were stopped and their results discarded;
+the final suite ran serially. The frozen snapshot then exposed a pre-existing
+controller-menu close crash: `EVENT_WINDOW_CLOSED` passes null userdata, and an
+old controller-event guard dereferenced it. The live worktree already contained
+the fix. Only that matching event-type guard was copied into both snapshot
+engines; no controller source changes are part of this work
+
+The full runtime-options scenario stopped at its launcher-only About/Advanced
+navigation before native graphics started. The packaged frozen launcher presents
+an About dialog instead. A private variant excluded those stale navigation steps
+and passed every remaining preference, filter and MSAA assertion. This is not a
+claim that the original launcher-navigation scenario passed
+
+Final production source hashes match the validated isolated tree. Measurement
+hooks are absent from the production renderer, and desktop/software paths retain
+their original behavior. No changes from other active tasks were restored or
+included in the rendering patch

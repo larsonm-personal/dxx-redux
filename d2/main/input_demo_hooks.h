@@ -26,6 +26,7 @@ typedef struct input_demo_render_probe_lists {
 extern "C" {
 #endif
 
+int input_demo_disable_homing_player_bump(void);
 void input_demo_record_game_frame(void);
 void input_demo_record_direct_command_guidebot_goal(int special_key,
 	int from_menu);

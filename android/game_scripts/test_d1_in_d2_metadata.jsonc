@@ -1,0 +1,24 @@
+[
+    {"_info": {"_standalone": false, "_owner": "test_d1_in_d2_android", "description": "Imported D1 publishes and adopts D2 route metadata from its D1 content profile"}},
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
+    {"action": "wait_for", "timeout_ms": 120000, "expect": {
+        "level_metadata_route.readiness": "complete",
+        "level_metadata_route.analysis_cache.hits": {"gt": 0},
+        "level_metadata_route.analysis_cache.misses": {"gt": 0}
+    }},
+    {"action": "assert", "expect": {
+        "current_level_num": 1,
+        "asset_trace.runtime_engine": "d2",
+        "asset_trace.mode": "d1-in-d2",
+        "level_metadata_route.analysis_cache.filename": {"contains": "/d2-"},
+        "level_metadata_route.analysis_cache.publication_adoption_failures": 0,
+        "level_metadata_route.analysis_cache.writes": 0,
+        "level_metadata_route.step_count": {"gt": 3},
+        "level_metadata_route.problem": ""
+    }},
+    {"action": "introspect"},
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "log", "message": "Imported D1 route metadata published and adopted in the D2 cache namespace"}
+]

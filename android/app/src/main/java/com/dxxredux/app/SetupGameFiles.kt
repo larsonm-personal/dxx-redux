@@ -28,6 +28,7 @@ internal data class D1InD2Readiness(
     val d2Ready: Boolean,
     val d1AssetsReady: Boolean,
     val d1AssetStatuses: List<FileStatus>,
+    val unsupportedReason: String?,
 )
 
 internal fun launcherDumpDirectoryState(
@@ -129,14 +130,23 @@ internal fun launchDataReadyForGame(
     setDir: File,
     manifest: AssetManifest,
     safManifest: SafManifest,
+    d1EditionError: (Long) -> String? = { NativeGameDataSupport.d1InD2EditionError(it) },
 ): Boolean {
-    val content = GameLaunchTarget.fromId(game).content
+    val target = GameLaunchTarget.fromId(game)
+    val content = target.content
     if (content == "d1" && isD1TestFlightSet(setDir, manifest, safManifest)) return false
     val fileList = if (content == "d1") D1_FILES else detectD2FileList(setDir, safManifest)
     return checkFiles(setDir, fileList, manifest, safManifest)
         .filter { it.info.required }
-        .all { it.found }
+        .all { it.found } &&
+        (target != GameLaunchTarget.D1_IN_D2 || d1InD2EditionError(setDir, safManifest, d1EditionError) == null)
 }
+
+internal fun d1InD2EditionError(
+    setDir: File,
+    safManifest: SafManifest,
+    classify: (Long) -> String? = { NativeGameDataSupport.d1InD2EditionError(it) },
+): String? = fileSizeForLaunchCheck(setDir, safManifest.read(), "descent.pig")?.let(classify)
 
 internal fun lanGameReadinessWarning(
     game: String,
@@ -159,18 +169,22 @@ internal fun d1InD2Readiness(
     setDir: File,
     manifest: AssetManifest,
     safManifest: SafManifest,
+    d1EditionError: (Long) -> String? = { NativeGameDataSupport.d1InD2EditionError(it) },
 ): D1InD2Readiness {
     val d2Ready = launchDataReadyForGame("d2", setDir, manifest, safManifest)
     val d1Ready = launchDataReadyForGame("d1", setDir, manifest, safManifest)
+    val unsupportedReason = if (d1Ready) d1InD2EditionError(setDir, safManifest, d1EditionError) else null
+    val ready = d1Ready && unsupportedReason == null
     val needed = ModManager(filesDir, setDir = setDir).hasEnabledD1MissionZipForD2()
     return D1InD2Readiness(
         needed = needed,
-        ready = d1Ready,
-        degraded = needed && d2Ready && !d1Ready,
-        blocked = !d1Ready && !d2Ready,
+        ready = ready,
+        degraded = needed && d2Ready && !ready,
+        blocked = !ready && !d2Ready,
         d2Ready = d2Ready,
         d1AssetsReady = d1Ready,
         d1AssetStatuses = checkFiles(setDir, D1_FILES, manifest, safManifest),
+        unsupportedReason = unsupportedReason,
     )
 }
 

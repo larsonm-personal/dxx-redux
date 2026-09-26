@@ -39,8 +39,7 @@ $AVD1 = "Nexus5X_Light_1"
 $AVD2 = "Nexus5X_Light_2"
 
 $script:serverProcess = $null
-$script:emu1Proc = $null
-$script:emu2Proc = $null
+$script:ownedEmulatorSerials = @()
 $script:dockerNatActive = $false
 
 $script:LogFile = Join-Path $REPO_ROOT "temp\dual_emu_log.txt"
@@ -71,22 +70,6 @@ function Read-NumberedChoice {
     }
 }
 
-function Wait-ForBoot {
-    param([string]$Serial, [int]$TimeoutSec = 240)
-    Write-Status "Waiting for $Serial to boot (timeout ${TimeoutSec}s)..."
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSec) {
-        $result = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 5
-        if ($result -and $result.Trim() -eq "1") {
-            Write-Status "  $Serial booted" "Green"
-            return $true
-        }
-        Start-Sleep -Seconds 2
-    }
-    Write-Status "  TIMEOUT: $Serial did not boot" "Red"
-    return $false
-}
-
 function Cleanup {
     Write-Status ""
     Write-Status "Cleaning up..." "White"
@@ -103,11 +86,9 @@ function Cleanup {
         try { $script:serverProcess.WaitForExit(5000) } catch {}
     }
     if ($KillOnExit) {
-        Write-Status "  Stopping emulators..."
-        Adb-Dev-Timeout -Serial $EMU1_SERIAL -AdbArgs @("emu", "kill") -Seconds 5 | Out-Null
-        Adb-Dev-Timeout -Serial $EMU2_SERIAL -AdbArgs @("emu", "kill") -Seconds 5 | Out-Null
-        Start-Sleep -Seconds 2
-        Get-Process -Name "qemu-system*" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+        foreach ($serial in $script:ownedEmulatorSerials) {
+            Stop-ManagedEmulator -Serial $serial | Out-Null
+        }
     }
 }
 
@@ -193,19 +174,13 @@ function Setup-DockerNat {
 Write-Status "=== Dual Emulator Test Setup ===" "White"
 Write-Status ""
 
-# Kill stale processes
-Write-Status "Cleaning stale processes..."
-Get-Process powershell -ErrorAction SilentlyContinue |
-    Where-Object { $_.Id -ne $PID -and $_.StartTime -lt (Get-Date).AddMinutes(-30) } |
-    ForEach-Object { try { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue } catch {} }
-
-$existingServer = Get-NetTCPConnection -LocalPort 9000 -ErrorAction SilentlyContinue | Select-Object -First 1
-if ($existingServer) {
-    Write-Status "  Killing stale server on port 9000 (PID $($existingServer.OwningProcess))"
-    Stop-Process -Id $existingServer.OwningProcess -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 1
-}
-Get-Process cl -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+$listener = [System.Net.Sockets.TcpClient]::new()
+try {
+    $listener.Connect("127.0.0.1", 9000)
+    throw "Port 9000 is already in use; stop its server before starting this setup"
+} catch [System.Net.Sockets.SocketException] {
+    # No server is listening
+} finally { $listener.Dispose() }
 
 # ── Phase B: Build APK ──────────────────────────────────────────────────
 
@@ -234,45 +209,16 @@ if (-not (Test-Path $APK)) {
 Write-Status ""
 Write-Status "--- Launching emulators ---" "White"
 
-$emu1Running = Test-DeviceOnline -Serial $EMU1_SERIAL
-$emu2Running = Test-DeviceOnline -Serial $EMU2_SERIAL
-
-if ($emu1Running) {
-    Write-Status "  $AVD1 ($EMU1_SERIAL) already running"
-} else {
-    Write-Status "  Starting $AVD1..."
-    $script:emu1Proc = Start-Process $EMULATOR -ArgumentList "-avd", $AVD1, "-no-snapshot-save", "-gpu", "host" -PassThru
-    Write-Status "  $AVD1 started (PID $($script:emu1Proc.Id))"
-}
-
-if ($emu2Running) {
-    Write-Status "  $AVD2 ($EMU2_SERIAL) already running"
-} else {
-    Write-Status "  Starting $AVD2..."
-    $script:emu2Proc = Start-Process $EMULATOR -ArgumentList "-avd", $AVD2, "-no-snapshot-save", "-gpu", "host" -PassThru
-    Write-Status "  $AVD2 started (PID $($script:emu2Proc.Id))"
-}
-
-if (-not $emu1Running) {
-    Write-Status "  Waiting for $EMU1_SERIAL to appear in adb..."
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($sw.Elapsed.TotalSeconds -lt 60 -and -not (Test-DeviceOnline -Serial $EMU1_SERIAL)) {
-        Start-Sleep -Seconds 2
+foreach ($device in @(
+        @{ Serial = $EMU1_SERIAL; Avd = $AVD1 },
+        @{ Serial = $EMU2_SERIAL; Avd = $AVD2 }
+    )) {
+    $alreadyRunning = Test-DeviceOnline -Serial $device.Serial
+    if (-not (Start-ManagedEmulator -AvdName $device.Avd -Serial $device.Serial)) {
+        Cleanup
+        throw "Could not start $($device.Serial)"
     }
-}
-if (-not $emu2Running) {
-    Write-Status "  Waiting for $EMU2_SERIAL to appear in adb..."
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($sw.Elapsed.TotalSeconds -lt 60 -and -not (Test-DeviceOnline -Serial $EMU2_SERIAL)) {
-        Start-Sleep -Seconds 2
-    }
-}
-
-$boot1 = Wait-ForBoot -Serial $EMU1_SERIAL -TimeoutSec 240
-$boot2 = Wait-ForBoot -Serial $EMU2_SERIAL -TimeoutSec 240
-if (-not $boot1 -or -not $boot2) {
-    Write-Status "FAIL: Not all emulators booted successfully" "Red"
-    exit 1
+    if (-not $alreadyRunning) { $script:ownedEmulatorSerials += $device.Serial }
 }
 Write-Status "Both emulators booted" "Green"
 

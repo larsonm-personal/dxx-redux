@@ -388,57 +388,73 @@ bool state_flag(const std::vector<unsigned char> &values, int index)
 	       values[index] != 0;
 }
 
+struct trigger_wall_effect {
+	route_wall_kind kind;
+	bool locked;
+	bool opened;
+	bool clears_shot = false;
+	trigger_wall_effect(route_wall_kind k, bool l, bool o) : kind(k), locked(l), opened(o) {}
+};
+
+trigger_wall_effect apply_trigger_wall_actions(
+    const route_topology_trigger &trigger, trigger_wall_effect effect, bool paired)
+{
+	// Exits terminate route progression; their links are not intermediate openers
+	if (trigger.ends_level()) return effect;
+	for (const auto action : trigger.actions) {
+		if (paired && (action == route_trigger_kind::unlock_door || action == route_trigger_kind::lock_door))
+			continue;
+		switch (action) {
+			case route_trigger_kind::open_door: effect.opened = true; break;
+			case route_trigger_kind::close_door:
+				effect.opened = false;
+				effect.clears_shot = true;
+				break;
+			case route_trigger_kind::toggle_door:
+				// Native wall_toggle opens closed doors and destroys blastable walls
+				if (effect.kind == route_wall_kind::door) effect.opened = true;
+				else if (effect.kind == route_wall_kind::blastable) effect.kind = route_wall_kind::open;
+				break;
+			case route_trigger_kind::illusion_off:
+			case route_trigger_kind::open_wall: effect.kind = route_wall_kind::open; break;
+			case route_trigger_kind::illusion_on:
+			case route_trigger_kind::illusory_wall: effect.kind = route_wall_kind::illusion; break;
+			case route_trigger_kind::unlock_door: effect.locked = false; break;
+			case route_trigger_kind::lock_door:
+				effect.locked = true;
+				effect.clears_shot = true;
+				break;
+			case route_trigger_kind::close_wall:
+				effect.kind = route_wall_kind::closed;
+				effect.clears_shot = true;
+				break;
+			default: break;
+		}
+	}
+	return effect;
+}
+
 bool trigger_effect_needed(
     const route_snapshot &snapshot,
     const route_progress_state &progress,
     int trigger)
 {
-	if (!valid_trigger(snapshot, trigger))
-		return false;
-	const auto kind = snapshot.topology.triggers[trigger].kind;
-	auto wall_needs_effect = [&](int wall) {
-		if (!valid_wall(snapshot, wall))
-			return false;
-		switch (kind) {
-			case route_trigger_kind::open_door:
-			case route_trigger_kind::toggle_door:
-				return !route_progress_wall_opened(snapshot, progress, wall);
-			case route_trigger_kind::close_door:
-				return route_progress_wall_opened(snapshot, progress, wall);
-			case route_trigger_kind::illusion_off:
-			case route_trigger_kind::open_wall:
-				return route_progress_wall_kind(snapshot, progress, wall) !=
-				       route_wall_kind::open;
-			case route_trigger_kind::illusion_on:
-			case route_trigger_kind::illusory_wall:
-				return route_progress_wall_kind(snapshot, progress, wall) !=
-				       route_wall_kind::illusion;
-			case route_trigger_kind::unlock_door:
-				return route_progress_wall_locked(snapshot, progress, wall);
-			case route_trigger_kind::lock_door:
-				return !route_progress_wall_locked(snapshot, progress, wall);
-			case route_trigger_kind::close_wall:
-				return route_progress_wall_kind(snapshot, progress, wall) !=
-				       route_wall_kind::closed;
-			default: return false;
-		}
+	if (!valid_trigger(snapshot, trigger)) return false;
+	const auto &actions = snapshot.topology.triggers[trigger];
+	auto wall_needs_effect = [&](int wall, bool paired) {
+		if (!valid_wall(snapshot, wall)) return false;
+		const trigger_wall_effect before(route_progress_wall_kind(snapshot, progress, wall),
+		                                 route_progress_wall_locked(snapshot, progress, wall), route_progress_wall_opened(snapshot, progress, wall));
+		const auto after = apply_trigger_wall_actions(actions, before, paired);
+		return before.kind != after.kind || before.locked != after.locked || before.opened != after.opened;
 	};
-	for (const auto &link : snapshot.topology.triggers[trigger].links) {
-		if (!valid_segment(snapshot, link.segment) || link.side < 0 ||
-		    link.side >= LEVEL_METADATA_MAX_SIDES)
+	for (const auto &link : actions.links) {
+		if (!valid_segment(snapshot, link.segment) || link.side < 0 || link.side >= LEVEL_METADATA_MAX_SIDES)
 			continue;
 		const auto &side = snapshot.topology.segments[link.segment].sides[link.side];
-		if (wall_needs_effect(side.wall))
-			return true;
-		if (kind == route_trigger_kind::unlock_door ||
-		    kind == route_trigger_kind::lock_door)
-			continue;
-		if (valid_segment(snapshot, side.child) && side.reverse_side >= 0 &&
-		    side.reverse_side < LEVEL_METADATA_MAX_SIDES &&
-		    wall_needs_effect(snapshot.topology.segments[side.child]
-		                          .sides[side.reverse_side]
-		                          .wall))
-			return true;
+		if (wall_needs_effect(side.wall, false)) return true;
+		if (valid_segment(snapshot, side.child) && side.reverse_side >= 0 && side.reverse_side < LEVEL_METADATA_MAX_SIDES &&
+		    wall_needs_effect(snapshot.topology.segments[side.child].sides[side.reverse_side].wall, true)) return true;
 	}
 	return false;
 }
@@ -466,7 +482,7 @@ bool trigger_source_wall_valid(
 	return valid_trigger(snapshot, trigger) &&
 	       !snapshot.state.triggers[trigger].disabled &&
 	       (!require_path_opener || route_trigger_changes_navigation(
-	                                    snapshot.topology.triggers[trigger].kind)) &&
+	                                    snapshot.topology.triggers[trigger])) &&
 	       (!snapshot.topology.has_switch_reveal_pattern ||
 	        trigger_effect_needed(snapshot, progress, trigger)) &&
 	       !state_flag(progress.consumed_one_shot_triggers, trigger) &&
@@ -868,7 +884,7 @@ std::vector<route_trigger_source> discover_trigger_sources_internal(
 		source.source_segment = source_topology.segment;
 		source.source_side = source_topology.side;
 		source.trigger = trigger;
-		source.trigger_kind = snapshot.topology.triggers[trigger].kind;
+		source.trigger_actions = snapshot.topology.triggers[trigger].actions;
 		source.source_position = source_position;
 		result.push_back(source);
 	}
@@ -901,7 +917,7 @@ std::vector<route_trigger_source> discover_sources_for_trigger(
 		source.source_segment = source_topology.segment;
 		source.source_side = source_topology.side;
 		source.trigger = trigger;
-		source.trigger_kind = snapshot.topology.triggers[trigger].kind;
+		source.trigger_actions = snapshot.topology.triggers[trigger].actions;
 		source.source_position = source_position;
 		if (!snapshot.topology.triggers[trigger].links.empty()) {
 			const auto &link = snapshot.topology.triggers[trigger].links.front();
@@ -932,9 +948,9 @@ bool trigger_targets_wall(
 		const auto &side = snapshot.topology.segments[link.segment].sides[link.side];
 		if (side.wall == target_wall)
 			return true;
-		const auto kind = snapshot.topology.triggers[trigger].kind;
-		if (kind == route_trigger_kind::unlock_door ||
-		    kind == route_trigger_kind::lock_door)
+		const auto &actions = snapshot.topology.triggers[trigger].actions;
+		if (actions.size() == 1 && (actions[0] == route_trigger_kind::unlock_door ||
+		                            actions[0] == route_trigger_kind::lock_door))
 			continue;
 		if (valid_segment(snapshot, side.child) && side.reverse_side >= 0 &&
 		    side.reverse_side < LEVEL_METADATA_MAX_SIDES &&
@@ -1044,75 +1060,31 @@ bool route_progress_apply_trigger(
 	    snapshot.state.triggers[trigger].disabled ||
 	    state_flag(progress.consumed_one_shot_triggers, trigger))
 		return false;
-	const auto kind = snapshot.topology.triggers[trigger].kind;
-	if (!route_trigger_changes_navigation(kind))
+	const auto &actions = snapshot.topology.triggers[trigger];
+	if (!route_trigger_changes_navigation(actions))
 		return route_progress_fire_trigger(progress, trigger);
 	std::vector<int> changed_walls;
-	auto apply_wall = [&](int wall) {
-		if (!valid_wall(snapshot, wall))
-			return;
-		const auto previous_kind = progress.wall_kinds[wall];
-		const auto previous_locked = progress.wall_locked[wall];
-		const auto previous_opened = progress.wall_opened[wall];
-		// A later close or lock supersedes a door opened by a shot
-		if ((kind == route_trigger_kind::close_door || kind == route_trigger_kind::lock_door ||
-		     kind == route_trigger_kind::close_wall || kind == route_trigger_kind::toggle_door) &&
-		    wall < static_cast<int>(progress.opened_hidden_walls.size()))
+	auto apply_wall = [&](int wall, bool paired) {
+		if (!valid_wall(snapshot, wall)) return;
+		const trigger_wall_effect before(progress.wall_kinds[wall], progress.wall_locked[wall] != 0, progress.wall_opened[wall] != 0);
+		const auto after = apply_trigger_wall_actions(actions, before, paired);
+		progress.wall_kinds[wall] = after.kind;
+		progress.wall_locked[wall] = after.locked;
+		progress.wall_opened[wall] = after.opened;
+		if (after.clears_shot && wall < static_cast<int>(progress.opened_hidden_walls.size()))
 			progress.opened_hidden_walls[wall] = 0;
-		switch (kind) {
-			case route_trigger_kind::open_door:
-				progress.wall_opened[wall] = 1;
-				break;
-			case route_trigger_kind::close_door:
-				progress.wall_opened[wall] = 0;
-				break;
-			case route_trigger_kind::toggle_door:
-				progress.wall_opened[wall] =
-				    progress.wall_opened[wall] ? 0 : 1;
-				break;
-			case route_trigger_kind::illusion_off:
-			case route_trigger_kind::open_wall:
-				progress.wall_kinds[wall] = route_wall_kind::open;
-				break;
-			case route_trigger_kind::illusion_on:
-			case route_trigger_kind::illusory_wall:
-				progress.wall_kinds[wall] = route_wall_kind::illusion;
-				break;
-			case route_trigger_kind::unlock_door:
-				progress.wall_locked[wall] = 0;
-				break;
-			case route_trigger_kind::lock_door:
-				progress.wall_locked[wall] = 1;
-				break;
-			case route_trigger_kind::close_wall:
-				progress.wall_kinds[wall] = route_wall_kind::closed;
-				break;
-			default: break;
-		}
-		if ((previous_kind != progress.wall_kinds[wall] ||
-		     previous_locked != progress.wall_locked[wall] ||
-		     previous_opened != progress.wall_opened[wall]) &&
-		    std::find(changed_walls.begin(), changed_walls.end(), wall) ==
-		        changed_walls.end())
+		if ((before.kind != after.kind || before.locked != after.locked || before.opened != after.opened) &&
+		    std::find(changed_walls.begin(), changed_walls.end(), wall) == changed_walls.end())
 			changed_walls.push_back(wall);
 	};
-	for (const auto &link : snapshot.topology.triggers[trigger].links) {
-		if (!valid_segment(snapshot, link.segment) || link.side < 0 ||
-		    link.side >= LEVEL_METADATA_MAX_SIDES)
+	for (const auto &link : actions.links) {
+		if (!valid_segment(snapshot, link.segment) || link.side < 0 || link.side >= LEVEL_METADATA_MAX_SIDES)
 			continue;
 		const auto &side = snapshot.topology.segments[link.segment].sides[link.side];
-		apply_wall(side.wall);
-		/* Native lock/unlock triggers affect only the linked face.  Door
-		 * animation is paired, but access permissions are directional */
-		if (kind == route_trigger_kind::unlock_door ||
-		    kind == route_trigger_kind::lock_door)
+		apply_wall(side.wall, false);
+		if (!valid_segment(snapshot, side.child) || side.reverse_side < 0 || side.reverse_side >= LEVEL_METADATA_MAX_SIDES)
 			continue;
-		if (!valid_segment(snapshot, side.child) || side.reverse_side < 0 ||
-		    side.reverse_side >= LEVEL_METADATA_MAX_SIDES)
-			continue;
-		apply_wall(snapshot.topology.segments[side.child]
-		               .sides[side.reverse_side]
-		               .wall);
+		apply_wall(snapshot.topology.segments[side.child].sides[side.reverse_side].wall, true);
 	}
 	/* A contrary transition rearms only the previously fired actions whose
 	 * linked effect is needed again. This permits useful open/close cycles
@@ -1161,7 +1133,7 @@ void route_progress_traverse_path(
 		if (complete_trigger_effects)
 			route_progress_apply_trigger(snapshot, progress, trigger);
 		else if (route_trigger_opens_path(
-		             snapshot.topology.triggers[trigger].kind))
+		             snapshot.topology.triggers[trigger]))
 			route_progress_fire_trigger(progress, trigger);
 	}
 }
@@ -2187,8 +2159,8 @@ route_target_inventory discover_route_targets(const route_snapshot &snapshot)
 					const int trigger = snapshot.state.walls[wall].trigger;
 					if (trigger >= 0 &&
 					    trigger < static_cast<int>(snapshot.topology.triggers.size()) &&
-					    snapshot.topology.triggers[trigger].kind ==
-					        route_trigger_kind::secret_exit)
+					    snapshot.topology.triggers[trigger].has_action(route_trigger_kind::secret_exit) &&
+					    !snapshot.topology.triggers[trigger].has_action(route_trigger_kind::exit))
 						route_exit = false;
 				}
 			}
@@ -2234,6 +2206,16 @@ const char *dependency_trigger_type_name(route_trigger_kind kind)
 		case route_trigger_kind::illusory_wall: return "illusory_wall";
 		default: return "unknown";
 	}
+}
+
+std::string dependency_trigger_type_name(const route_topology_trigger &trigger)
+{
+	std::string result;
+	for (const auto action : trigger.actions) {
+		if (!result.empty()) result += "+";
+		result += dependency_trigger_type_name(action);
+	}
+	return result.empty() ? "unknown" : result;
 }
 
 struct dependency_state {
@@ -2898,7 +2880,7 @@ class dependency_planner
 			    snapshot_.state.triggers[trigger].disabled)
 				continue;
 			const bool navigation_transition = route_trigger_changes_navigation(
-			    snapshot_.topology.triggers[trigger].kind);
+			    snapshot_.topology.triggers[trigger]);
 			if (!route_progress_apply_trigger(
 			        snapshot_, state_.progress, trigger) ||
 			    !navigation_transition || index + 1 == path.sides.size())
@@ -3070,8 +3052,8 @@ class dependency_planner
 			return true;
 		const int trigger = snapshot_.state.walls[wall].trigger;
 		return !valid_trigger(snapshot_, trigger) ||
-		       snapshot_.topology.triggers[trigger].kind !=
-		           route_trigger_kind::secret_exit;
+		       !snapshot_.topology.triggers[trigger].has_action(route_trigger_kind::secret_exit) ||
+		       snapshot_.topology.triggers[trigger].has_action(route_trigger_kind::exit);
 	}
 
 	bool append_target_step(
@@ -3112,7 +3094,7 @@ class dependency_planner
 					    snapshot_.topology.triggers[step.trigger];
 					step.trigger_raw_type = trigger.raw_type;
 					step.trigger_type_name =
-					    dependency_trigger_type_name(trigger.kind);
+					    dependency_trigger_type_name(trigger);
 				}
 			}
 		}
@@ -3837,7 +3819,7 @@ class dependency_planner
 		step.trigger = source.trigger;
 		const auto &trigger = snapshot_.topology.triggers[source.trigger];
 		step.trigger_raw_type = trigger.raw_type;
-		step.trigger_type_name = dependency_trigger_type_name(trigger.kind);
+		step.trigger_type_name = dependency_trigger_type_name(trigger);
 		if (unresolved)
 			step.activation = route_activation_kind::unresolved_trigger;
 		else if (valid_wall(snapshot_, source.source_wall) &&
@@ -3934,10 +3916,10 @@ class dependency_planner
 		for (int trigger = 0;
 		     trigger < static_cast<int>(snapshot_.topology.triggers.size());
 		     ++trigger) {
-			const auto kind = snapshot_.topology.triggers[trigger].kind;
-			if (kind != route_trigger_kind::close_wall &&
-			    kind != route_trigger_kind::illusion_on &&
-			    kind != route_trigger_kind::close_door)
+			const auto &actions = snapshot_.topology.triggers[trigger];
+			if (!actions.has_action(route_trigger_kind::close_wall) &&
+			    !actions.has_action(route_trigger_kind::illusion_on) &&
+			    !actions.has_action(route_trigger_kind::close_door))
 				continue;
 			if (!trigger_targets_wall(
 			        snapshot_, trigger, hidden_source.source_wall))
@@ -4004,7 +3986,7 @@ class dependency_planner
 			     ++trigger) {
 				if (trigger == source.trigger ||
 				    !route_trigger_opens_path(
-				        snapshot_.topology.triggers[trigger].kind) ||
+				        snapshot_.topology.triggers[trigger]) ||
 				    (trigger_targets_wall(snapshot_, trigger, source.source_wall) != (pass == 0)) ||
 				    (pass == 1 && source_boundary_target(trigger) < 0) ||
 				    !trigger_effect_needed(snapshot_, state_.progress, trigger))

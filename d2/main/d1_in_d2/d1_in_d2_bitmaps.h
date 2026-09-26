@@ -21,6 +21,5 @@ d1_bitmap_generation *d1_in_d2_read_feature_bitmaps(const char *pig_name, const 
 	const ubyte *selected, int selected_count);
 int d1_in_d2_remap_feature_bitmaps(d1_bitmap_generation *images, const ubyte *palette);
 void d1_in_d2_free_bitmaps(d1_bitmap_generation *generation);
-void d1_in_d2_reset_bitmap_replacements(void);
 
 #endif

@@ -52,6 +52,7 @@ int android_route_metadata_get_request_generation(void)
 
 void android_route_metadata_request(
     const char *game,
+    const char *content_game,
     const char *mission,
     int level_num,
     const char *level_file,
@@ -65,6 +66,7 @@ void android_route_metadata_request(
 	jclass cls;
 	jmethodID method;
 	jstring jgame;
+	jstring jcontent_game;
 	jstring jmission;
 	jstring jasset_context;
 	jstring jlevel_file;
@@ -76,7 +78,7 @@ void android_route_metadata_request(
 	int request_generation;
 	int attached = 0;
 
-	if (!g_jvm || !g_activity || !game || !level_file)
+	if (!g_jvm || !g_activity || !game || !content_game || !level_file)
 		return;
 	if ((*g_jvm)->GetEnv(g_jvm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
 		if ((*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL) != JNI_OK)
@@ -93,15 +95,16 @@ void android_route_metadata_request(
 	             ANDROID_ROUTE_METADATA_CALCULATING);
 	android_route_metadata_unlock_progress();
 	debug_log(DLOG_PROFILING,
-	          "route_metadata request generation=%d game=%s mission=%s level=%d file=%s",
-	          request_generation, game, mission ? mission : "", level_num,
+	          "route_metadata request generation=%d game=%s content=%s mission=%s level=%d file=%s",
+	          request_generation, game, content_game, mission ? mission : "", level_num,
 	          level_file);
 	method = cls ? (*env)->GetMethodID(
 	                   env, cls, "onRouteMetadataNeeded",
 	                   "(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;"
-	                   "[Ljava/lang/String;[Ljava/lang/String;[IILjava/lang/String;)V")
+	                   "[Ljava/lang/String;[Ljava/lang/String;[IILjava/lang/String;Ljava/lang/String;)V")
 	             : NULL;
 	jgame = (*env)->NewStringUTF(env, game);
+	jcontent_game = (*env)->NewStringUTF(env, content_game);
 	jmission = (*env)->NewStringUTF(env, mission ? mission : "");
 	/* Keep this snapshot argument synchronized with MainActivity */
 	jasset_context = (*env)->NewStringUTF(env, android_mission_assets_context_json());
@@ -140,13 +143,15 @@ void android_route_metadata_request(
 		(*env)->SetIntArrayRegion(
 		    env, jsecret_entry_levels, 0, secret_level_count,
 		    (const jint *) secret_entry_levels);
-	if (method && jgame && jmission && jasset_context && jlevel_file && jroute_readiness &&
+	if (method && jgame && jcontent_game && jmission && jasset_context && jlevel_file && jroute_readiness &&
 	    jnormal_level_files && jsecret_level_files && jsecret_entry_levels)
 		(*env)->CallVoidMethod(
 		    env, g_activity, method, jgame, jmission, (jint) level_num,
 		    jlevel_file, jroute_readiness, jnormal_level_files,
 		    jsecret_level_files,
-		    jsecret_entry_levels, (jint) request_generation, jasset_context);
+		    jsecret_entry_levels, (jint) request_generation, jasset_context, jcontent_game);
+	if (jcontent_game)
+		(*env)->DeleteLocalRef(env, jcontent_game);
 	if (jasset_context)
 		(*env)->DeleteLocalRef(env, jasset_context);
 	if (jsecret_entry_levels)

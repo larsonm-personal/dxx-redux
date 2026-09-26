@@ -1354,12 +1354,6 @@ void do_explosion_sequence(object *obj)
 	}
 }
 
-typedef struct expl_wall {
-	int segnum,sidenum;
-	fix time;
-} expl_wall;
-
-#define MAX_EXPLODING_WALLS 			10
 #define EXPL_WALL_TIME					(f1_0)
 #define EXPL_WALL_TOTAL_FIREBALLS	32
 #define EXPL_WALL_FIREBALL_SIZE 		0x48000	//smallest size

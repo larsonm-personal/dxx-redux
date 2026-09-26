@@ -5,6 +5,7 @@
 
 void android_route_metadata_request(
     const char *game,
+    const char *content_game,
     const char *mission,
     int level_num,
     const char *level_file,

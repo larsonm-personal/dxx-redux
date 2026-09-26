@@ -60,7 +60,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "makesig.h"
 #include "console.h"
 #include "effects.h"
-#include "d1_in_d2/d1_in_d2_bitmaps.h"
 #include "d1_in_d2/d1_in_d2.h"
 #include "dxa_metadata_patch.h"
 #ifdef OGL
@@ -1853,12 +1852,10 @@ int piggy_read_level_bitmap_flags(const char *level_name, int *flags, int capaci
 	DiskBitmapHeader header;
 	if (!flags || !level_name || strlen(level_name) >= sizeof(name) || capacity < MAX_BITMAP_FILES)
 		return 0;
+	if (d1_in_d2_use_d1_gameplay())
+		return d1_in_d2_read_level_bitmap_flags(flags, capacity);
 	for (i = 0; i < capacity; ++i)
 		flags[i] = -1;
-	/* D1-in-D2 uses a different replacement mapping, not the D2 PIG ordering */
-	if ((Current_mission && EMULATING_D1) ||
-	    d_stricmp(Current_level_palette, D1_DEFAULT_PALETTE) == 0)
-		return 0;
 	d_splitpath(Current_level_palette, NULL, NULL, name, NULL);
 	if (strlen(name) + 4 >= sizeof(name))
 		return 0;

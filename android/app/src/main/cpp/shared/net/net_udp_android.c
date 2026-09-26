@@ -234,11 +234,17 @@ const char *android_net_udp_game_info_preflight(
 	const int token_offset = master_offset + 1 + (is_sync ? 4 : 0);
 	const int generation_offset = token_offset + 4;
 	const int visit_offset = generation_offset + ANDROID_NET_UDP_RECONNECT_GENERATION_SIZE;
+#ifdef DXX_BUILD_DESCENT_II
+	/* D2 appends the asset owner's fixed identity; D1 wire layout is unchanged */
+	const int asset_bytes = D1_IN_D2_NET_ASSET_SIZE;
+#else
+	const int asset_bytes = 0;
+#endif
 	android_net_udp_reconnect_identity identity = android_net_udp_local_identity;
 	uint32_t received_session;
 	uint64_t received_visit;
 
-	if (!data || size != visit_offset + 8)
+	if (!data || size != visit_offset + 8 + asset_bytes)
 		return "full game info size incorrect";
 	/* D2 settings index 29 is GuidebotRouting: Original=0, Enhanced=1,
 	 * synchronized with guidebot_routing.h and net_udp_send_game_info */

@@ -111,32 +111,38 @@ void d1_in_d2_get_stats(d1_in_d2_asset_stats *stats)
 		*stats = Last_stats;
 }
 
-static PHYSFS_file *open_d1_registered_pig(const char *filename)
+const char *d1_in_d2_source_edition_error(int64_t pig_size)
 {
-	PHYSFS_file *fp;
-	int pigsize;
-
-	fp = PHYSFSX_openReadBuffered(filename);
-	if (!fp)
-		return NULL;
-
-	pigsize = (int)PHYSFS_fileLength(fp);
-	switch (pigsize) {
+	switch (pig_size) {
 		case D1_SHARE_BIG_PIGSIZE:
 		case D1_SHARE_10_PIGSIZE:
 		case D1_SHARE_PIGSIZE:
 		case D1_10_BIG_PIGSIZE:
 		case D1_10_PIGSIZE:
-			PHYSFS_close(fp);
-			return NULL;
-		case D1_PIGSIZE:
-		case D1_OEM_PIGSIZE:
 		case D1_MAC_PIGSIZE:
 		case D1_MAC_SHARE_PIGSIZE:
+			return "This Descent 1 edition is not supported in the Descent 2 engine. Launch it with Descent 1";
 		default:
-			PHYSFSX_readInt(fp);
-			break;
+			return NULL;
 	}
+}
+
+static PHYSFS_file *open_d1_registered_pig(const char *filename, const char **error)
+{
+	PHYSFS_file *fp;
+	const char *edition_error;
+
+	fp = PHYSFSX_openReadBuffered(filename);
+	if (!fp)
+		return NULL;
+
+	edition_error = d1_in_d2_source_edition_error(PHYSFS_fileLength(fp));
+	if (edition_error) {
+		*error = edition_error;
+		PHYSFS_close(fp);
+		return NULL;
+	}
+	PHYSFSX_readInt(fp);
 	return fp;
 }
 
@@ -783,7 +789,7 @@ d1_asset_generation *d1_in_d2_read_assets(const char *pig_name, const char *pale
 	int property_end;
 	const char *stage = "registered D1 PIG";
 
-	if (!pig_name || !palette_name || !(fp = open_d1_registered_pig(pig_name)))
+	if (!pig_name || !palette_name || !(fp = open_d1_registered_pig(pig_name, &stage)))
 		goto failed;
 	file_size = PHYSFS_fileLength(fp);
 	if (file_size < 8 || file_size > 0x7fffffff || !PHYSFS_seek(fp, 0))
@@ -809,6 +815,13 @@ d1_asset_generation *d1_in_d2_read_assets(const char *pig_name, const char *pale
 	if (!generation->bitmap_data || !d1_in_d2_validate_asset_references(generation, &stage) ||
 	    !read_d1_sound_bank(fp, (int)file_size, generation->sound_maps, &generation->sound_bank, &stage))
 		goto failed;
+	stage = "base source identity";
+	{
+		const char *custom[3] = { NULL, NULL, NULL };
+		if (!d1_in_d2_hash_base_source(pig_name, palette_name, generation->base_identity) ||
+		    !d1_in_d2_hash_custom_sources(generation->base_identity, custom, generation->definition_identity))
+			goto failed;
+	}
 	PHYSFS_close(fp);
 	if (error)
 		*error = NULL;
@@ -997,9 +1010,30 @@ int d1_in_d2_has_native_assets(void)
 	return Active_d1_assets != NULL;
 }
 
+int d1_in_d2_read_level_bitmap_flags(int *flags, int capacity)
+{
+	int i;
+	if (!flags || capacity < MAX_BITMAP_FILES)
+		return 0;
+	for (i = 0; i < capacity; ++i)
+		flags[i] = -1;
+	if (!Active_d1_assets)
+		return 0;
+	/* Publication includes custom replacements; live bitmap flags may change
+	 * when rendering, and reopening files could describe a different source */
+	for (i = 1; i <= Active_d1_assets->bitmap_data->bitmap_count; ++i)
+		flags[i] = Active_d1_assets->bitmap_data->bitmaps[i].bm_flags;
+	return 1;
+}
+
 int d1_in_d2_native_texture_count(void)
 {
 	return Active_d1_assets ? Active_d1_assets->num_textures : 0;
+}
+
+const ubyte *d1_in_d2_definition_identity(void)
+{
+	return Active_d1_assets ? Active_d1_assets->definition_identity : NULL;
 }
 
 void d1_custom_get_stats(d1_custom_texture_stats *stats)

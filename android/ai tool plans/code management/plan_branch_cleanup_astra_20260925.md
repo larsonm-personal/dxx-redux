@@ -481,3 +481,163 @@ changed. No commits or staging were performed, and concurrent work was preserved
 These are assessed future candidates, not unfinished validation for the five
 completed batches. Retain the frozen inventory and exact owned patches when
 starting another round so concurrent feature growth is not counted as cleanup.
+
+## Continuation requested after the first round
+
+The user asked to continue the cleanup plan until finished. The four priorities
+above are now active scope. The preceding turn was progress: five implemented
+and validated batches. Current HEAD is `80af2244`; it contains the first-round
+work. The graphics opportunity plan is already modified by other work.
+
+- [x] Unify the four audio ring copies, preserve reset/discard and synchronization,
+      and pass executable concurrent-buffer and real preview/game audio coverage
+- [x] Consolidate emulator provisioning/recovery and verify ownership boundaries
+      with independent emulator sessions plus maintained multiplayer setup checks
+- [x] Select required native build targets and verify packaged libraries and
+      audio/import/game behavior across supported ABIs
+- [x] Resolve the replay diagnostic and network fixture candidates against current
+      source, with behavioral parity checks for accepted extractions
+- [x] Audit the complete continuation against the plan, review owned diffs, and
+      record verified results and reasoned dispositions for rejected candidates
+
+### Audio implementation boundary
+
+Current source has a fourth equivalent buffer in `digi_tsf_music.c`. Share only
+the fixed-size SPSC PCM buffer as an explicit instance with read/write/available,
+quiescent reset, and reader-side discard operations. Keep each player's locks,
+OpenSL/SDL callbacks, decoder state, lifetime, and transport policy local. A
+small inline header preserves the existing GCC/Clang atomics and avoids adding
+link dependencies. Exercise wraparound, cursor overflow, partial reads,
+underruns, reuse after reset/discard, independent instances, and actual producer/
+consumer threads. The maintained launcher media integration already drives real
+MIDI and CD start/pause/seek/resume/stop and will be reused for device coverage.
+
+### Current audio and build evidence
+
+- Executable NDK/CMake ring test passed on emulator-5556: complete/partial reads,
+  underflow, array and integer-cursor wraparound, discard/reset, separate instances,
+  and four concurrent producer/consumer streams totaling 33,554,432 samples
+- All 18 affected production object targets compiled without errors across three
+  Android ABIs: both games' synth/CD backends and the launcher's two D2 previews
+- All 37 audio/preview source contracts passed after updating call names and one
+  stale constructor assertion to include the current explicit file-set argument
+- Scoped quality passed; the new standalone C/CMake test lies outside the legacy
+  helper allowlists and was additionally formatted/linted with the pinned tools
+- Native target-selection trial now requests the two game libraries. Their
+  CMake dependencies include dxx_fingerprint, SDL, PhysFS, synth, codec, texture,
+  and compression libraries. APK entry parity and real audio/import tests remain
+  required before this trial is accepted
+- Current replay audit: the FVI weapon/robot logger is already in input_demo_hooks;
+  the remaining collide.c homing-bump environment gate still needs disposition
+
+### Continuation decisions and validation
+
+- Shared PCM storage replaces four duplicate ring implementations. The product
+  change is +108/-230, including the new header. Each player retains its own
+  instance, producer/consumer synchronization, callbacks and transport policy
+- Device buffer testing passed wraparound at array and integer limits, underruns,
+  partial reads, reset/discard, instance isolation, and 33,554,432 samples delivered
+  by concurrent producer/consumer threads. All 18 production objects compiled for
+  arm64-v8a, armeabi-v7a and x86_64
+- Fresh APK media integration passed real MIDI, CD and MP3 pause/seek/resume/stop.
+  D1 music controls passed 41 steps; D2 passed 48, including HMP memory conversion.
+  The GOG Windows installer test passed all 55 steps: extraction, fingerprinted
+  audio registration, MIDI/CD preview, and in-game redbook playback
+- Emulator startup and recovery now share test_helpers. Every managed launch
+  binds its requested console port; health checks inspect that serial's boot and
+  package service. Recovery reconnects only that ADB transport and stops only the
+  selected console port. It no longer resets the global ADB server or removes all
+  devices' temporary files. Unscoped destructive stale cleanup is rejected
+- Both manual multiplayer setup scripts reuse the managed launcher and track only
+  emulators they started. Removed global PowerShell/compiler/emulator kills and
+  unconditionally killing the owner of port 9000. An occupied server port now
+  produces a clear failure; the no-server setup bypasses that prerequisite
+- The suite now requires its configured primary/secondary serials, rather than
+  treating another task's emulator as its first or second device. Teardown stops
+  only owned serials, including a crashed/offline owned emulator
+- Executable recovery coverage passed a selected reboot while the guard device's
+  boot ID and temporary marker survived. Three other sessions were present during
+  this validation. A shutdown race found by the test was fixed with a bounded
+  completion wait. Android may clear its own /data/local/tmp during reboot, so
+  preservation is asserted on the guard device, whose lifecycle must not change
+- Actual suite and both setup cleanup functions passed owned/reused/offline
+  selection checks. The no-server setup completed with KillOnExit and preserved
+  both reused emulators. Maintained direct-LAN integration passed for D1 and D2
+- Fifty Python source/deployment contracts and the PowerShell helper contract
+  runner passed. Updated stale assertions for the current file-set constructor
+  and shared mission-metadata policy owner; no product behavior was changed to
+  satisfy those stale assertions
+- AGP now selects only dxx-redux-d1 and dxx-redux-d2, retaining their dependency
+  graph. Its logged build task names confirm those two targets for all ABIs.
+  The first continuation APK had exactly the previous 45 native-library entries;
+  all six packaged game build IDs matched their linked artifacts
+- Full assemble startup was rejected by retention while another task's copied
+  replay executable was active. packageDebug built the same native dependencies
+  using the existing 4p5c715t generation, without pruning active build directories
+
+### Inherited-engine candidate disposition
+
+- FVI weapon/robot diagnostics were already in input_demo_hooks before this
+  continuation. That part of the old DMR1-CHUNK-006 proposal is superseded
+- Moved only the 15-line homing-player-bump environment gate from collide.c into
+  the existing D2 input-demo owner. Its body, first-call caching, predicate and
+  call-site ordering are unchanged. Added the declaration and explicit stdlib
+  include; no collision policy or RNG operation moved
+- The May 5 level-4 homing fixtures named by the old investigation are absent
+  from the current corpus. Used current level-9 checkpoint recording
+  d2_descent2_level9_20260511_192533 instead. It executes all 66 frames. Its old
+  recorded RNG comparison already fails before this extraction, so that failure
+  was preserved rather than changing expectations. Current-branch before/after
+  results match exactly: final result, all 203 state records, and 887 RNG records
+  (886 events plus metadata). Only the known 15-line source-location shift for
+  collide.c RNG annotations is normalized. The moved gate body is byte-identical
+- D2 Windows game and headless replay targets built, and both affected production
+  objects compiled across all three Android ABIs. The broader initial Windows
+  build hit concurrent test_upstream_compat linkage work; a subsequent rebuild
+  completed once those concurrent definitions were available
+- Rejected network fixture extraction for this round. The paired MDATA fixtures
+  mutate UDP_MData sequence numbers, inject the retry queue, cache game-info/sync
+  packets, deliberately drop a full packet, and collect ACK state inside receive
+  processing. The state is spread across the top-level fixture block, game-info
+  parsing, ACK handling and send/drop paths. Moving only the large block would
+  require exporting fixture state/private helpers or a source-fragment include;
+  moving the whole facility adds capture/ACK/drop interfaces solely for test code.
+  Keep this policy and queue observation beside the private transport machinery.
+  No queue, packet, retry, or validation behavior was changed or weakened
+- A final combined Android build exposed a missing declaration in concurrently
+  changed state.c. Added only d1_in_d2/d1_in_d2.h; its save-format and identity
+  changes remain owned by the other work. The separate include patch is recorded
+  against a saved preimage so those changes are not counted as cleanup
+
+### Continuation audit
+
+- Owned changes, excluding this plan: +624/-1,130, net 506 lines removed across
+  26 paths. Tests account for much of the added code. Audio product code removes
+  122 net lines; emulator product/setup code removes 636. The replay relocation
+  adds two lines overall while removing 15 inherited additions
+- The one necessary state.c include makes this continuation's inherited-engine
+  reduction 14 lines. Cumulative two-round totals: 2,091 net lines removed and
+  228 fewer added lines in inherited engine files
+- Exact ownership manifest, new-file copies, replay comparisons, APK library
+  manifest and reverse-applicable tracked patch are in
+  temp/cleanup_astra_20260925. All owned tracked hunks passed reverse-apply and
+  whitespace checks. Concurrent graphics, Guidebot and D1-in-D2 edits are excluded
+- Scoped formatting/lint passed. New standalone PCM C/CMake tests were also run
+  through the pinned formatters outside the wrapper's legacy allowlists. The
+  inherited C files retain their existing style, which that wrapper excludes
+- No commits or staging were performed
+
+### Final continuation result
+
+All four continuation priorities are resolved: the accepted audio, emulator,
+build-target and replay-gate changes are implemented and verified; the already
+extracted FVI logger and retained network fixtures have explicit dispositions.
+No required cleanup or validation remains in this plan.
+
+- Final Windows D2 game and headless replay targets pass after the include fix
+- Final all-ABI APK package build passes; all six game ELF build IDs match the
+  linked artifacts and the native entry set remains exactly 45 libraries
+- Final APK D1 and D2 launch/game/texture-overlay smoke checks each pass 26 steps
+- Final before/after replay result, state and RNG parity passes again
+- Final owned patch reverse-apply and whitespace checks pass; metrics remain
+  +624/-1,130 for this continuation, excluding the plan and concurrent changes

@@ -44,7 +44,7 @@ class CdPreviewSynchronizationTest(unittest.TestCase):
             body,
             "pthread_mutex_lock(&s_playback_mutex)",
             "render_cd_frames(buf, CHUNK)",
-            "rb_write(buf, got * 2)",
+            "pcm_ring_write(&s_rb, buf, got * 2)",
             "pthread_mutex_unlock(&s_playback_mutex)",
         )
 
@@ -58,7 +58,7 @@ class CdPreviewSynchronizationTest(unittest.TestCase):
             "__atomic_store_n(&s_output_enabled, 0",
             "pthread_mutex_lock(&s_ring_reset_mutex)",
             "s_read_sector = target",
-            "rb_reset()",
+            "pcm_ring_reset(&s_rb)",
             "osl_reprime_queue_locked()",
             "__atomic_store_n(&s_output_enabled, s_paused ? 0 : 1",
             "pthread_mutex_unlock(&s_ring_reset_mutex)",
@@ -72,7 +72,7 @@ class CdPreviewSynchronizationTest(unittest.TestCase):
             self,
             body,
             "pthread_mutex_trylock(&s_ring_reset_mutex)",
-            "rb_read(buf, needed)",
+            "pcm_ring_read(&s_rb, buf, needed)",
             "(*bq)->Enqueue",
             "pthread_mutex_unlock(&s_ring_reset_mutex)",
         )
