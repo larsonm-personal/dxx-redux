@@ -440,6 +440,8 @@ $extractTests = @(
     "test_gog_installer_redbook_unified"
 )  # single emulator + game data, run before the dual-emulator tier
 $noInfraTests = @(
+    "test_code_quality_files",
+    "test_input_demo_replay_failures",
     "test_guidebot_route_regressions",
     "test_acoustid_config_packaging",
     "test_guided_shot_annotations",

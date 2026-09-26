@@ -1,5 +1,5 @@
 [
-    {"_info": {"_standalone": false, "_owner": "test_d1_in_d2_android", "description": "Imported D1 publishes and adopts D2 route metadata from its D1 content profile"}},
+    {"_info": {"_standalone": false, "_owner": "test_d1_in_d2_standalone", "description": "Imported D1 publishes and adopts D2 route metadata from its D1 content profile"}},
     {"action": "key", "key": "tab", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
     {"action": "wait_for", "timeout_ms": 120000, "expect": {

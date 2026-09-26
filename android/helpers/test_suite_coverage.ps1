@@ -29,6 +29,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_sound_trace'
             'test_soundfont_download_catalog'
             'test_music_track_controls_unified'
+            'test_launcher_media_controls'
+            'test_pcm_ring'
             'test_music_save_source_restore_d2'
             'test_title_music_skip_pref_unified'
         )
@@ -64,6 +66,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_clean_old_artifacts'
             'test_clean_workspace'
             'test_client_identity_backup'
+            'test_code_quality_files'
             'test_coop_start_fanout_mapset'
             'test_counterstrike_level2_trigger21_route'
             'test_cue_iso'
@@ -103,6 +106,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_input_demo_host_build_guard'
             'test_input_demo_regressions'
             'test_input_demo_replay_menu'
+            'test_input_demo_replay_failures'
             'test_input_demo_rng_trace_compare'
             'test_input_demo_runtime_smoke'
             'test_input_demo_state_trace_compare'
@@ -149,6 +153,15 @@ function Get-TestSuiteCoveragePolicy {
             'test_xfing_asset_validation'
         )
         explicit = @(
+            # These probes require caller-supplied binaries or data directories
+            'test_android_metadata_worker'
+            'test_classic_trigger_demo'
+            'test_d1_network_assets'
+            'test_d1_wall_blast_save'
+            'test_native_metadata_worker'
+            'test_pickup_autoselect_parity'
+            # Requires two healthy, idle emulators before recovery starts
+            'test_emulator_recovery'
             # Full semantic coverage is still incomplete; retain a nonzero gate
             'test_d1_replay_parity'
             'test_dual_emu'
@@ -181,6 +194,7 @@ function Get-TestSuiteCoveragePolicy {
         graphics_scenarios = @(
             'test_vertigo_merge_creation'
             'test_ogl_runtime_texture_options_unified'
+            'test_ogl_gauge_batch_unified'
             'test_trine2_d1_in_d2_custom_textures'
             'test_newmenu_render_paths_unified'
             'test_boss_health_bar'
@@ -205,8 +219,10 @@ function Get-TestSuiteCoveragePolicy {
             'test_autoselect_crash_unified'
             'test_controls_readability_d2'
             'test_engine_prefs_unified'
+            'test_gamepad_menu_navigation_unified'
             'test_intro_skip_inputs_unified'
             'test_pilot_long_hold_delete_unified'
+            'test_touch_layout_format'
         )
         launcher = @(
             'test_random_level_preview'
@@ -238,6 +254,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_guidebot_goal_message'
             'test_guidebot_info_overlay'
             'test_guidebot_mission_metadata'
+            'test_guidebot_routing_menus'
+            'test_guidebot_routing_modes'
             'test_guidebot_simulation_headed_headless_parity'
             'test_obsidian_level1_objective_markers'
             'test_automap_objective_readiness_progress'
