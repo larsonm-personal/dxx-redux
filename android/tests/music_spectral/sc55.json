@@ -1,0 +1,20 @@
+{
+  "family": "SC-55 recordings versus bundled SF2 / production FluidSynth",
+  "soundfont": "android/app/src/main/assets/gm.sf2",
+  "games": [
+    {
+      "game": "d1",
+      "hog": "game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/descent.hog",
+      "references": "game_data/music/D1 MIDI mp3 sc55",
+      "songs": ["descent", "briefing", "credits", "endlevel", "endgame", "game01", "game02", "game03", "game04", "game05", "game06", "game07", "game08", "game09", "game10", "game11", "game12", "game13", "game15", "game16", "game17", "game18", "game19", "game20", "game21", "game22"]
+    },
+    {
+      "game": "d2",
+      "hog": "game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/DESCENT2.HOG",
+      "references": "game_data/music/D2 midi mp3 sc55",
+      "songs": ["briefing", "credits", "game01", "game02", "game03", "game04"],
+      "aliases": {"descent": "descent2"}
+    }
+  ],
+  "excluded": "D1 game14 has no matching OGG. D2 D2-SC55 bonus and endgame/endlevel are omitted pending song provenance verification. Reference family labels are not proof of identical hardware patches or mastering."
+}

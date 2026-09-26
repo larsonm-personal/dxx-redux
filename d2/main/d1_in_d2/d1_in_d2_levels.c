@@ -21,8 +21,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "d1_in_d2_assets.h"
 #include "gamemine.h"
 #include "piggy.h"
+#include "vclip.h"
 #include "textures.h"
 #include "console.h"
+#include "dxxerror.h"
 #include "cntrlcen.h"
 #include <string.h>
 #include "fuelcen.h"
@@ -160,6 +162,38 @@ int d1_in_d2_decode_trigger(trigger *out, const v29_trigger *source, int native_
 	}
 	*out = result;
 	return 1;
+}
+
+int d1_in_d2_decode_level_trigger(trigger *out, const v29_trigger *source)
+{
+	v29_trigger repaired = *source;
+	/* D1 ignores flags outside its native action mask */
+	repaired.flags &= 1023;
+	const int linked_actions = TRIGGER_CONTROL_DOORS | TRIGGER_MATCEN | TRIGGER_ILLUSION_ON | TRIGGER_ILLUSION_OFF;
+	if (repaired.num_links < 0 || repaired.num_links > MAX_WALLS_PER_LINK) {
+		if (!(repaired.flags & linked_actions))
+			repaired.num_links = 0;
+		else {
+			/* Some editors leave high-byte garbage in the count. The old D2
+			 * level adapter narrowed it to a byte; retain only a bounded count */
+			const int count = (ubyte)repaired.num_links;
+			if (repaired.num_links < 0 || count == 0 || count > MAX_WALLS_PER_LINK)
+				return 0;
+			repaired.num_links = count;
+		}
+	}
+	int count = 0;
+	for (int i = 0; i < repaired.num_links; ++i) {
+		if (repaired.seg[i] < 0 || repaired.seg[i] > Highest_segment_index ||
+		    repaired.side[i] < 0 || repaired.side[i] >= 6)
+			continue;
+		repaired.seg[count] = repaired.seg[i];
+		repaired.side[count++] = repaired.side[i];
+	}
+	repaired.num_links = count;
+	if (repaired.flags != source->flags || repaired.num_links != source->num_links)
+		Warning("Repaired D1 level trigger flags=%d->%d links=%d->%d", source->flags, repaired.flags, source->num_links, repaired.num_links);
+	return d1_in_d2_decode_trigger(out, &repaired, 1);
 }
 
 int d1_in_d2_bind_trigger_links(int trigger_num)
@@ -449,6 +483,16 @@ int d1_in_d2_decode_level_textures(short *primary, short *overlay, int new_file_
 
 void d1_in_d2_fixup_level_object(object *obj, int level_version)
 {
+	if (level_version <= 1 && (obj->render_type == RT_WEAPON_VCLIP || obj->render_type == RT_HOSTAGE ||
+	                           obj->render_type == RT_POWERUP || obj->render_type == RT_FIREBALL)) {
+		const int clip = obj->rtype.vclip_info.vclip_num;
+		/* Native D1 also replaces unavailable level vclips with clip zero */
+		if (clip < 0 || clip >= Num_vclips || clip >= VCLIP_MAXNUM ||
+		    Vclip[clip].num_frames <= 0 || Vclip[clip].frame_time <= 0) {
+			Warning("Invalid D1 level object vclip %d, using clip 0", clip);
+			obj->rtype.vclip_info.vclip_num = 0;
+		}
+	}
 	if (level_version <= 1 && obj->type == OBJ_CNTRLCEN) {
 		/* D1 has one reactor definition, including its original model */
 		obj->id = 0;

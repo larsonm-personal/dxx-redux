@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 12,
-    "failed": 1,
-    "timeout": 1
+    "timeout": 1,
+    "unsupported": 1
   },
   "levels": [
     {
@@ -102,19 +102,19 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 91
+          "s": 90
         },
         {
           "n": "reactor",
-          "s": 115
+          "s": 114
         },
         {
           "n": "fly-through 9",
-          "s": 115
+          "s": 114
         },
         {
           "n": "switch 12",
-          "s": 116
+          "s": 115
         },
         {
           "n": "switch 11",
@@ -122,17 +122,17 @@
         },
         {
           "n": "exit",
-          "s": 129
+          "s": 128
         }
       ],
-      "total_frames": 7722,
+      "total_frames": 7696,
       "rng_end": {
-        "state": 2151072086,
-        "calls": 11281
+        "state": 3560631068,
+        "calls": 11355
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 14.016678,
+        "simulated_seconds": 14.600006,
         "difficulty": 2
       }
     },
@@ -172,19 +172,19 @@
         },
         {
           "n": "gold key",
-          "s": 97
+          "s": 96
         },
         {
           "n": "hidden door",
-          "s": 110
+          "s": 109
         },
         {
           "n": "switch 0",
-          "s": 112
+          "s": 111
         },
         {
           "n": "hidden door",
-          "s": 118
+          "s": 117
         },
         {
           "n": "switch 20",
@@ -196,31 +196,31 @@
         },
         {
           "n": "hidden door",
-          "s": 136
+          "s": 135
         },
         {
           "n": "switch 10",
-          "s": 136
+          "s": 135
         },
         {
           "n": "hidden door",
-          "s": 148
+          "s": 147
         },
         {
           "n": "switch 26",
-          "s": 150
+          "s": 149
         },
         {
           "n": "hidden door",
-          "s": 159
+          "s": 158
         },
         {
           "n": "switch 22",
-          "s": 160
+          "s": 159
         },
         {
           "n": "switch 24",
-          "s": 167
+          "s": 166
         },
         {
           "n": "red key",
@@ -228,7 +228,7 @@
         },
         {
           "n": "reactor",
-          "s": 196
+          "s": 195
         },
         {
           "n": "switch 3",
@@ -236,10 +236,10 @@
         },
         {
           "n": "exit",
-          "s": 218
+          "s": 217
         }
       ],
-      "total_frames": 13081,
+      "total_frames": 13043,
       "rng_end": {
         "state": 1185791702,
         "calls": 13457
@@ -465,19 +465,19 @@
     {
       "level_num": 8,
       "level_file": "guide.rl2",
-      "route_input_sha256": "3419093A9AE64D0CC92BC86A68AA993DB5A09CA77F6371DA79B7A824B7EFF55F",
-      "status": "failed",
+      "route_input_sha256": "C5765BCA74042121698B96DF30D004749447EFFB5DF31CC45ED176A05FC898A1",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 0,
+      "total_frames": 130,
       "rng_end": {
-        "state": 1,
-        "calls": 0
+        "state": 856000655,
+        "calls": 90
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "route objective activation is not supported"
     },
     {
       "level_num": 9,
@@ -605,25 +605,25 @@
         },
         {
           "n": "switch 15",
-          "s": 139
+          "s": 138
         },
         {
           "n": "reactor",
-          "s": 141
+          "s": 140
         },
         {
           "n": "exit",
-          "s": 159
+          "s": 158
         }
       ],
-      "total_frames": 9568,
+      "total_frames": 9462,
       "rng_end": {
-        "state": 1898726726,
-        "calls": 8161
+        "state": 4118529229,
+        "calls": 8180
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 18.166672,
+        "simulated_seconds": 17.78334,
         "difficulty": 2
       }
     },
@@ -659,45 +659,45 @@
         },
         {
           "n": "switch 2",
-          "s": 31
+          "s": 33
         },
         {
           "n": "gold key",
-          "s": 35
+          "s": 38
         },
         {
           "n": "hidden door",
-          "s": 45
+          "s": 48
         },
         {
           "n": "switch 11",
-          "s": 56
-        },
-        {
-          "n": "red key",
           "s": 58
         },
         {
+          "n": "red key",
+          "s": 60
+        },
+        {
           "n": "hidden door",
-          "s": 76
+          "s": 80
         },
         {
           "n": "reactor",
-          "s": 79
+          "s": 83
         },
         {
           "n": "hidden door",
-          "s": 94
+          "s": 98
         },
         {
           "n": "exit",
-          "s": 94
+          "s": 98
         }
       ],
-      "total_frames": 5637,
+      "total_frames": 5869,
       "rng_end": {
-        "state": 1207947477,
-        "calls": 10540
+        "state": 3637544382,
+        "calls": 11209
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,

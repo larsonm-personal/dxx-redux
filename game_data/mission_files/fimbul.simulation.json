@@ -23,30 +23,30 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 17
+          "s": 16
         },
         {
           "n": "blastable wall",
-          "s": 39
+          "s": 38
         },
         {
           "n": "gold key",
-          "s": 42
+          "s": 41
         },
         {
           "n": "red key",
-          "s": 74
+          "s": 73
         },
         {
           "n": "reactor",
-          "s": 101
+          "s": 100
         },
         {
           "n": "exit",
-          "s": 105
+          "s": 104
         }
       ],
-      "total_frames": 6327,
+      "total_frames": 6259,
       "rng_end": {
         "state": 794565647,
         "calls": 5338
@@ -108,7 +108,7 @@
           "s": 144
         }
       ],
-      "total_frames": 8616,
+      "total_frames": 8615,
       "rng_end": {
         "state": 1686525773,
         "calls": 6516

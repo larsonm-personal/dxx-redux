@@ -136,13 +136,30 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3940,
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 7
+        },
+        {
+          "n": "blue key",
+          "s": 23
+        },
+        {
+          "n": "gold key",
+          "s": 39
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 60
+        }
+      ],
+      "total_frames": 11521,
       "rng_end": {
-        "state": 1452336924,
-        "calls": 91
+        "state": 841352768,
+        "calls": 118471
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 192-second simulation budget"
     },
     {
       "level_num": 6,
@@ -213,14 +230,14 @@
           "s": 127
         }
       ],
-      "total_frames": 7607,
+      "total_frames": 7614,
       "rng_end": {
         "state": 544445334,
         "calls": 6865
       },
       "reactor_escape": {
         "countdown_seconds": 1000.0,
-        "simulated_seconds": 117.033325,
+        "simulated_seconds": 117.149994,
         "difficulty": 2
       }
     }

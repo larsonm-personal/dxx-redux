@@ -6,10 +6,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 2,
-    "timeout": 1
+    "ok": 3
   },
   "levels": [
     {
@@ -24,25 +23,25 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 14
+          "s": 13
         },
         {
           "n": "reactor",
-          "s": 39
+          "s": 38
         },
         {
           "n": "exit",
-          "s": 61
+          "s": 60
         }
       ],
-      "total_frames": 3675,
+      "total_frames": 3582,
       "rng_end": {
-        "state": 995405759,
-        "calls": 42
+        "state": 3799286760,
+        "calls": 1535
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 22.53334,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 21.433334,
         "difficulty": 2
       }
     },
@@ -62,29 +61,29 @@
         },
         {
           "n": "gold key",
-          "s": 53
+          "s": 56
         },
         {
           "n": "red key",
-          "s": 76
+          "s": 79
         },
         {
           "n": "reactor",
-          "s": 101
+          "s": 106
         },
         {
           "n": "exit",
-          "s": 110
+          "s": 115
         }
       ],
-      "total_frames": 6576,
+      "total_frames": 6891,
       "rng_end": {
-        "state": 2077067425,
-        "calls": 96
+        "state": 2100382284,
+        "calls": 2411
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 9.066666,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 8.866669,
         "difficulty": 2
       }
     },
@@ -92,7 +91,7 @@
       "level_num": 3,
       "level_file": "sirius3.rdl",
       "route_input_sha256": "833A28F8B8D0D2A2FE982F93F9FD36C17A232558B58FDC2666C20F333B8B763C",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -100,19 +99,35 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 8
+          "s": 7
         },
         {
           "n": "gold key",
-          "s": 29
+          "s": 28
+        },
+        {
+          "n": "red key",
+          "s": 72
+        },
+        {
+          "n": "reactor",
+          "s": 103
+        },
+        {
+          "n": "exit",
+          "s": 110
         }
       ],
-      "total_frames": 8099,
+      "total_frames": 6591,
       "rng_end": {
-        "state": 995405759,
-        "calls": 42
+        "state": 3921887095,
+        "calls": 5234
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 7.033325,
+        "difficulty": 2
+      }
     }
   ]
 }

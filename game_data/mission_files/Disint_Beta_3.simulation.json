@@ -8,9 +8,9 @@
   "status": "partial",
   "level_counts": {
     "ok": 10,
-    "failed": 3,
+    "failed": 2,
     "timeout": 1,
-    "unsupported": 3
+    "unsupported": 4
   },
   "levels": [
     {
@@ -45,7 +45,7 @@
         },
         {
           "n": "switch 2",
-          "s": 30
+          "s": 29
         },
         {
           "n": "red key",
@@ -60,7 +60,7 @@
           "s": 53
         }
       ],
-      "total_frames": 3192,
+      "total_frames": 3184,
       "rng_end": {
         "state": 3952730275,
         "calls": 2022
@@ -95,14 +95,14 @@
         },
         {
           "n": "red key",
-          "s": 17
+          "s": 16
         },
         {
           "n": "reactor",
-          "s": 52
+          "s": 45
         }
       ],
-      "total_frames": 8048,
+      "total_frames": 8238,
       "rng_end": {
         "state": 1803392592,
         "calls": 3191
@@ -235,19 +235,19 @@
     {
       "level_num": 7,
       "level_file": "11grlm.rl2",
-      "route_input_sha256": "F9392EEE4DCD499E5A7B5E555F5821A426636D3C23DFB4F27BA7A925BFC01436",
-      "status": "failed",
+      "route_input_sha256": "5FE9A78927037359551AE9F4FBF8D1F52D574008821386DBD2A65A4E55E5E6B1",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 0,
+      "total_frames": 1105,
       "rng_end": {
-        "state": 4015624929,
-        "calls": 32
+        "state": 1047820095,
+        "calls": 170
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "route objective activation is not supported"
     },
     {
       "level_num": 8,
@@ -496,7 +496,7 @@
           "s": 120
         }
       ],
-      "total_frames": 7174,
+      "total_frames": 7170,
       "rng_end": {
         "state": 1493199978,
         "calls": 9133

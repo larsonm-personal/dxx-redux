@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "failed": 2,
+    "ok": 2,
+    "failed": 1,
     "unsupported": 1
   },
   "levels": [
@@ -53,19 +53,68 @@
     {
       "level_num": 2,
       "level_file": "fearon.rl2",
-      "route_input_sha256": "C0DF2015AEA541DED5F3E84E64EE6EE0461479AA7D970BEC66A57EE57C02C911",
-      "status": "failed",
+      "route_input_sha256": "C5A8A1AEE3FA0E61BEDE6935FA9E369250AAC1653EAD5022B41570F11F4481AD",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "switch 29",
+          "s": 9
+        },
+        {
+          "n": "switch 1",
+          "s": 20
+        },
+        {
+          "n": "fly-through 3",
+          "s": 26
+        },
+        {
+          "n": "switch 2",
+          "s": 28
+        },
+        {
+          "n": "fly-through 28",
+          "s": 33
+        },
+        {
+          "n": "pass-through 7",
+          "s": 33
+        },
+        {
+          "n": "switch 9",
+          "s": 39
+        },
+        {
+          "n": "switch 10",
+          "s": 48
+        },
+        {
+          "n": "switch 4",
+          "s": 65
+        },
+        {
+          "n": "reactor",
+          "s": 76
+        },
+        {
+          "n": "exit",
+          "s": 89
+        }
+      ],
+      "total_frames": 5324,
       "rng_end": {
-        "state": 1627576247,
-        "calls": 50
+        "state": 1710521454,
+        "calls": 4569
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 12.649994,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 3,
@@ -100,14 +149,14 @@
         },
         {
           "n": "pass-through 5",
-          "s": 33
+          "s": 32
         },
         {
           "n": "exit",
           "s": 43
         }
       ],
-      "total_frames": 2604,
+      "total_frames": 2550,
       "rng_end": {
         "state": 729003353,
         "calls": 2536

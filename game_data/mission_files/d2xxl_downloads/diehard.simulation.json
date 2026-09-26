@@ -136,18 +136,18 @@
         },
         {
           "n": "switch 16",
-          "s": 87
+          "s": 88
         },
         {
           "n": "boss",
-          "s": 119
+          "s": 120
         },
         {
           "n": "exit",
-          "s": 131
+          "s": 132
         }
       ],
-      "total_frames": 7870,
+      "total_frames": 7911,
       "rng_end": {
         "state": 1186941160,
         "calls": 3327
@@ -226,14 +226,14 @@
         },
         {
           "n": "boss",
-          "s": 249
+          "s": 247
         },
         {
           "n": "exit",
-          "s": 255
+          "s": 253
         }
       ],
-      "total_frames": 15292,
+      "total_frames": 15190,
       "rng_end": {
         "state": 1429369868,
         "calls": 17579
@@ -285,7 +285,7 @@
     {
       "level_num": 6,
       "level_file": "DH06.RL2",
-      "route_input_sha256": "25A51770F15FF7B515F1E21DBAF902E532B6079468526D94025578889885A9BA",
+      "route_input_sha256": "5A95B369A833F55AEA5BA398922D64E2A1780098BE25A1DDFF2EDD4844F37F87",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -331,8 +331,8 @@
       ],
       "total_frames": 4820,
       "rng_end": {
-        "state": 3165702531,
-        "calls": 2822
+        "state": 816574494,
+        "calls": 2793
       },
       "reactor_escape": {
         "countdown_seconds": 82.0,
@@ -375,7 +375,7 @@
           "s": 104
         }
       ],
-      "total_frames": 6250,
+      "total_frames": 6242,
       "rng_end": {
         "state": 3263107330,
         "calls": 9845
@@ -460,7 +460,7 @@
     {
       "level_num": 10,
       "level_file": "DH10.RL2",
-      "route_input_sha256": "25D1C8486DAF8A44D0AEC41DE14A14401A66576A4881D1AA349AD11EE14916AE",
+      "route_input_sha256": "230275699CC5EC22AB5A5184510D7552162AA9B7B0C6CEC67D5475949AADF435",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -468,24 +468,44 @@
       },
       "objectives": [
         {
-          "n": "hidden door",
-          "s": 13
-        },
-        {
           "n": "pass-through 0",
-          "s": 21
+          "s": 18
         },
         {
           "n": "pass-through 6",
-          "s": 21
+          "s": 18
+        },
+        {
+          "n": "hidden door",
+          "s": 25
+        },
+        {
+          "n": "hidden door",
+          "s": 26
+        },
+        {
+          "n": "switch 1",
+          "s": 26
+        },
+        {
+          "n": "hidden door",
+          "s": 40
+        },
+        {
+          "n": "blue key",
+          "s": 41
+        },
+        {
+          "n": "pass-through 11",
+          "s": 65
         }
       ],
-      "total_frames": 5795,
+      "total_frames": 4379,
       "rng_end": {
-        "state": 3146348398,
-        "calls": 729
+        "state": 3709231479,
+        "calls": 4722
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 11,
@@ -923,10 +943,10 @@
         },
         {
           "n": "exit",
-          "s": 15
+          "s": 16
         }
       ],
-      "total_frames": 904,
+      "total_frames": 938,
       "rng_end": {
         "state": 1026108661,
         "calls": 2060

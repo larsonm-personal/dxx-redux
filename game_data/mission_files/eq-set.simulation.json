@@ -92,7 +92,7 @@
           "s": 44
         }
       ],
-      "total_frames": 6391,
+      "total_frames": 6392,
       "rng_end": {
         "state": 3027255562,
         "calls": 909
@@ -415,21 +415,21 @@
         },
         {
           "n": "switch 6",
-          "s": 25
+          "s": 29
         },
         {
           "n": "gold key",
-          "s": 52
+          "s": 55
         },
         {
           "n": "blue key",
-          "s": 68
+          "s": 70
         }
       ],
-      "total_frames": 7802,
+      "total_frames": 7952,
       "rng_end": {
-        "state": 3272733375,
-        "calls": 3370
+        "state": 1629224592,
+        "calls": 4919
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -498,32 +498,32 @@
         },
         {
           "n": "red key",
-          "s": 188
+          "s": 183
         },
         {
           "n": "reactor",
-          "s": 207
+          "s": 215
         },
         {
           "n": "exit",
-          "s": 228
+          "s": 235
         }
       ],
-      "total_frames": 13651,
+      "total_frames": 14124,
       "rng_end": {
-        "state": 2856347449,
-        "calls": 3848
+        "state": 659310578,
+        "calls": 3653
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 20.216675,
+        "simulated_seconds": 20.183334,
         "difficulty": 2
       }
     },
     {
       "level_num": 12,
       "level_file": "ecypher2.rl2",
-      "route_input_sha256": "FAEFCF42981C037DF98DEA28BE56A12C90FDA25AA3B493E282BDDDB3F6299EAB",
+      "route_input_sha256": "A908F12CD316FE543029E6E60C0CA6669F7E019C4EAC6ECD74BB8AF02CB4A423",
       "status": "timeout",
       "rng_start": {
         "state": 1,

@@ -102,7 +102,7 @@
     {
       "level_num": 3,
       "level_file": "lvn-hyp.rl2",
-      "route_input_sha256": "3AE29E1CC87527D6B96BC8FB57129FB1886210E60BC9B8CD3158CF0A353AD43F",
+      "route_input_sha256": "DBD082AB71B2CD0530CD3E561D672DBF975CE9E9E66DD1541A2D2410DE84B4DA",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -135,11 +135,11 @@
         },
         {
           "n": "fly-through 26",
-          "s": 80
+          "s": 81
         },
         {
           "n": "switch 0",
-          "s": 87
+          "s": 88
         },
         {
           "n": "red key",
@@ -147,21 +147,21 @@
         },
         {
           "n": "boss",
-          "s": 134
+          "s": 130
         },
         {
           "n": "exit",
-          "s": 160
+          "s": 156
         }
       ],
-      "total_frames": 9611,
+      "total_frames": 9371,
       "rng_end": {
-        "state": 678014304,
-        "calls": 8999
+        "state": 3727152232,
+        "calls": 9087
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 26.649994,
+        "simulated_seconds": 26.46666,
         "difficulty": 2
       }
     },
@@ -381,25 +381,25 @@
         },
         {
           "n": "fly-through 5",
-          "s": 160
-        },
-        {
-          "n": "reactor",
           "s": 161
         },
         {
+          "n": "reactor",
+          "s": 162
+        },
+        {
           "n": "exit",
-          "s": 183
+          "s": 185
         }
       ],
-      "total_frames": 11000,
+      "total_frames": 11071,
       "rng_end": {
         "state": 2483196487,
         "calls": 13474
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 22.216675,
+        "simulated_seconds": 22.78334,
         "difficulty": 2
       }
     },
@@ -427,7 +427,7 @@
         },
         {
           "n": "gold key",
-          "s": 47
+          "s": 48
         },
         {
           "n": "red key",
@@ -435,11 +435,11 @@
         },
         {
           "n": "switch 8",
-          "s": 90
+          "s": 91
         },
         {
           "n": "switch 9",
-          "s": 116
+          "s": 117
         },
         {
           "n": "reactor",
@@ -447,21 +447,21 @@
         },
         {
           "n": "switch 5",
-          "s": 151
+          "s": 152
         },
         {
           "n": "exit",
           "s": 192
         }
       ],
-      "total_frames": 11509,
+      "total_frames": 11546,
       "rng_end": {
         "state": 3243165886,
         "calls": 13513
       },
       "reactor_escape": {
         "countdown_seconds": 300.0,
-        "simulated_seconds": 68.200012,
+        "simulated_seconds": 68.199997,
         "difficulty": 2
       }
     }

@@ -22,18 +22,18 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 13
+          "s": 14
         },
         {
           "n": "reactor",
-          "s": 35
+          "s": 36
         },
         {
           "n": "exit",
-          "s": 42
+          "s": 43
         }
       ],
-      "total_frames": 2548,
+      "total_frames": 2573,
       "rng_end": {
         "state": 1568376933,
         "calls": 1308
@@ -163,14 +163,14 @@
           "s": 96
         }
       ],
-      "total_frames": 5762,
+      "total_frames": 5752,
       "rng_end": {
         "state": 2347170264,
         "calls": 4175
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 2.766663,
+        "simulated_seconds": 2.75,
         "difficulty": 2
       }
     },

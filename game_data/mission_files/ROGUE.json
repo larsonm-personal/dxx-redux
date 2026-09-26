@@ -594,8 +594,16 @@
         "route_status": "failed",
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
-        "route_steps": [],
-        "route_problem": "shared route planning exceeded its work budget"
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 595
+          }
+        ],
+        "route_problem": "red key unreachable"
       },
       {
         "level_num": 3,
@@ -805,7 +813,7 @@
             "activation_kind": "unresolved_trigger",
             "calculated": false,
             "label": "Locate and activate switch trigger 2",
-            "seg": 336,
+            "seg": 509,
             "wall": 158,
             "label_pos": {
               "x": 0.0,
@@ -849,7 +857,7 @@
             ]
           }
         ],
-        "route_problem": "shared route planning reached its work budget"
+        "route_problem": "unlocked door face has no reachable firing position"
       },
       {
         "level_num": 4,

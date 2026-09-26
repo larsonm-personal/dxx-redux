@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 1
+    "ok": 1,
+    "timeout": 2
   },
   "levels": [
     {
@@ -28,21 +28,21 @@
         },
         {
           "n": "reactor",
-          "s": 39
+          "s": 40
         },
         {
           "n": "exit",
           "s": 45
         }
       ],
-      "total_frames": 2679,
+      "total_frames": 2729,
       "rng_end": {
-        "state": 1775811865,
-        "calls": 40
+        "state": 764320203,
+        "calls": 1342
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 5.316666,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 5.333328,
         "difficulty": 2
       }
     },
@@ -56,10 +56,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 1033,
+      "total_frames": 1046,
       "rng_end": {
-        "state": 2937909499,
-        "calls": 14
+        "state": 3433853922,
+        "calls": 277
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -67,7 +67,7 @@
       "level_num": 3,
       "level_file": "level03.rdl",
       "route_input_sha256": "19F50EE01620C7B0BD800C515E4238566E710E3F69103529F834BABD1B56C1E3",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -75,7 +75,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 23
+          "s": 22
         },
         {
           "n": "gold key",
@@ -90,24 +90,16 @@
           "s": 76
         },
         {
-          "n": "reactor",
-          "s": 76
-        },
-        {
-          "n": "exit",
-          "s": 85
+          "n": "fly-through 1",
+          "s": 77
         }
       ],
-      "total_frames": 5129,
+      "total_frames": 7353,
       "rng_end": {
-        "state": 3501331596,
-        "calls": 2603
+        "state": 2977436762,
+        "calls": 2173
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 9.233322,
-        "difficulty": 2
-      }
+      "problem": "semantic objective repeated without route advancement"
     }
   ]
 }

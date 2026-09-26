@@ -81,16 +81,16 @@
           "s": 151
         }
       ],
-      "total_frames": 9078,
+      "total_frames": 9074,
       "rng_end": {
-        "state": 432798957,
-        "calls": 9940
+        "state": 2981431152,
+        "calls": 9943
       }
     },
     {
       "level_num": 3,
       "level_file": "kcxf2_n3.rl2",
-      "route_input_sha256": "441394D8E53576547924EFE5DA0F81D6D2FDE7EDD7C12F501F5D5238A91083EF",
+      "route_input_sha256": "B57E48C8360BF6194A62C1C7A98916D16D951C1AD96ED1D65CFC830900E8266A",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -107,7 +107,7 @@
         },
         {
           "n": "switch 15",
-          "s": 73
+          "s": 72
         },
         {
           "n": "fly-through 9",
@@ -123,7 +123,7 @@
         },
         {
           "n": "red key",
-          "s": 138
+          "s": 137
         },
         {
           "n": "switch 19",
@@ -131,30 +131,30 @@
         },
         {
           "n": "pass-through 4",
-          "s": 169
+          "s": 170
         },
         {
           "n": "fly-through 26",
-          "s": 172
+          "s": 174
         },
         {
           "n": "switch 2",
-          "s": 182
+          "s": 183
         },
         {
           "n": "switch 22",
-          "s": 188
+          "s": 189
         },
         {
           "n": "switch 21",
-          "s": 188
+          "s": 189
         },
         {
           "n": "exit",
-          "s": 194
+          "s": 195
         }
       ],
-      "total_frames": 11629,
+      "total_frames": 11705,
       "rng_end": {
         "state": 2179209090,
         "calls": 12789
@@ -237,10 +237,10 @@
           "s": 104
         }
       ],
-      "total_frames": 10769,
+      "total_frames": 10628,
       "rng_end": {
-        "state": 994575823,
-        "calls": 7962
+        "state": 3157248330,
+        "calls": 8269
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

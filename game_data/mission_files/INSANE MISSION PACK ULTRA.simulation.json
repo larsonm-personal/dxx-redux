@@ -27,17 +27,17 @@
         },
         {
           "n": "exit",
-          "s": 7
+          "s": 8
         }
       ],
-      "total_frames": 431,
+      "total_frames": 464,
       "rng_end": {
-        "state": 675780521,
-        "calls": 24
+        "state": 2886505125,
+        "calls": 220
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 1.066666,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 2.0,
         "difficulty": 2
       }
     },
@@ -53,25 +53,25 @@
       "objectives": [
         {
           "n": "destroy robot carrying red key",
-          "s": 8
+          "s": 9
         },
         {
           "n": "reactor",
-          "s": 13
+          "s": 14
         },
         {
           "n": "exit",
-          "s": 14
+          "s": 15
         }
       ],
-      "total_frames": 859,
+      "total_frames": 921,
       "rng_end": {
-        "state": 924723277,
-        "calls": 116
+        "state": 4043410875,
+        "calls": 846
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 1.466675,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 1.533325,
         "difficulty": 2
       }
     },
@@ -95,21 +95,21 @@
         },
         {
           "n": "reactor",
-          "s": 29
+          "s": 28
         },
         {
           "n": "exit",
-          "s": 32
+          "s": 31
         }
       ],
-      "total_frames": 1939,
+      "total_frames": 1881,
       "rng_end": {
-        "state": 1024943020,
-        "calls": 139
+        "state": 2901314047,
+        "calls": 490
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 3.450012,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 3.349991,
         "difficulty": 2
       }
     },
@@ -129,17 +129,17 @@
         },
         {
           "n": "exit",
-          "s": 15
+          "s": 14
         }
       ],
-      "total_frames": 897,
+      "total_frames": 862,
       "rng_end": {
-        "state": 1266032265,
-        "calls": 56
+        "state": 1340209086,
+        "calls": 457
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 5.650009,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 5.283325,
         "difficulty": 2
       }
     },
@@ -155,21 +155,21 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 14
+          "s": 15
         },
         {
           "n": "exit",
-          "s": 16
+          "s": 17
         }
       ],
-      "total_frames": 960,
+      "total_frames": 1031,
       "rng_end": {
-        "state": 675780521,
-        "calls": 24
+        "state": 3246260699,
+        "calls": 1838
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 1.950012,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 1.849991,
         "difficulty": 2
       }
     },
@@ -185,7 +185,7 @@
       "objectives": [
         {
           "n": "destroy robot carrying red key",
-          "s": 8
+          "s": 7
         },
         {
           "n": "boss",
@@ -193,17 +193,17 @@
         },
         {
           "n": "exit",
-          "s": 18
+          "s": 17
         }
       ],
-      "total_frames": 1090,
+      "total_frames": 1042,
       "rng_end": {
-        "state": 2965106811,
-        "calls": 142
+        "state": 2005546136,
+        "calls": 655
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 0.833328,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 0.733322,
         "difficulty": 2
       }
     },
@@ -223,21 +223,21 @@
         },
         {
           "n": "boss",
-          "s": 17
+          "s": 16
         },
         {
           "n": "exit",
-          "s": 22
+          "s": 21
         }
       ],
-      "total_frames": 1337,
+      "total_frames": 1282,
       "rng_end": {
-        "state": 3737188581,
-        "calls": 156
+        "state": 816952759,
+        "calls": 562
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 5.350006,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 5.149994,
         "difficulty": 2
       }
     },
@@ -257,17 +257,17 @@
         },
         {
           "n": "exit",
-          "s": 72
+          "s": 73
         }
       ],
-      "total_frames": 4343,
+      "total_frames": 4365,
       "rng_end": {
-        "state": 2081135787,
-        "calls": 606
+        "state": 696687669,
+        "calls": 1740
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 2.350006,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 50.716675,
         "difficulty": 2
       }
     }

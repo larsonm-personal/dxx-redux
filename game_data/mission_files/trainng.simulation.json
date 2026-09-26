@@ -6,10 +6,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "failed",
   "level_counts": {
-    "ok": 5,
-    "timeout": 2,
+    "timeout": 7,
     "route_mismatch": 2
   },
   "levels": [
@@ -33,7 +32,7 @@
         },
         {
           "n": "open door",
-          "s": 22
+          "s": 21
         },
         {
           "n": "open door",
@@ -42,8 +41,8 @@
       ],
       "total_frames": 9061,
       "rng_end": {
-        "state": 3424728103,
-        "calls": 194
+        "state": 4114961108,
+        "calls": 1219
       },
       "problem": "route confirmation exceeded 151-second simulation budget"
     },
@@ -51,7 +50,7 @@
       "level_num": 2,
       "level_file": "01easytr.rdl",
       "route_input_sha256": "45061E6D10BF9CFAB03C85F00EB147B6057D242217F76DF585B477E15AB88841",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -62,30 +61,22 @@
           "s": 1
         },
         {
-          "n": "reactor",
-          "s": 8
-        },
-        {
-          "n": "exit",
-          "s": 9
+          "n": "fly-through 1",
+          "s": 1
         }
       ],
-      "total_frames": 546,
+      "total_frames": 3541,
       "rng_end": {
-        "state": 3834121963,
-        "calls": 30
+        "state": 1007748763,
+        "calls": 622
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 1.349991,
-        "difficulty": 2
-      }
+      "problem": "route confirmation exceeded 59-second simulation budget"
     },
     {
       "level_num": 3,
       "level_file": "09easyrv.rdl",
       "route_input_sha256": "7102ABFA655EBF233D7925331A1742804AA4AADB9483DB8F7B5257773DDA220F",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -96,30 +87,22 @@
           "s": 1
         },
         {
-          "n": "reactor",
-          "s": 8
-        },
-        {
-          "n": "exit",
-          "s": 9
+          "n": "fly-through 1",
+          "s": 5
         }
       ],
-      "total_frames": 562,
+      "total_frames": 3661,
       "rng_end": {
-        "state": 3397090333,
-        "calls": 36
+        "state": 1759879576,
+        "calls": 399
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 1.366653,
-        "difficulty": 2
-      }
+      "problem": "route confirmation exceeded 61-second simulation budget"
     },
     {
       "level_num": 4,
       "level_file": "05gngrnd.rdl",
       "route_input_sha256": "43BE8B36CA2217596D4DC47FD05BDEACC45AFC00C2F7044641C2F5666CF8C0D6",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -130,58 +113,22 @@
           "s": 0
         },
         {
-          "n": "fly-through 7",
+          "n": "fly-through 8",
           "s": 5
-        },
-        {
-          "n": "fly-through 5",
-          "s": 11
-        },
-        {
-          "n": "fly-through 6",
-          "s": 16
-        },
-        {
-          "n": "fly-through 3",
-          "s": 22
-        },
-        {
-          "n": "fly-through 4",
-          "s": 27
-        },
-        {
-          "n": "fly-through 1",
-          "s": 32
-        },
-        {
-          "n": "fly-through 2",
-          "s": 38
-        },
-        {
-          "n": "reactor",
-          "s": 44
-        },
-        {
-          "n": "exit",
-          "s": 45
         }
       ],
-      "total_frames": 2700,
+      "total_frames": 5783,
       "rng_end": {
-        "state": 4247911497,
-        "calls": 120
+        "state": 699646382,
+        "calls": 409
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 1.350006,
-        "difficulty": 2
-      }
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 5,
       "level_file": "02ddgng1.rdl",
       "route_input_sha256": "07CD3385C40C8863DD84421C4BEC441B461144ACBBA1E0434D6E159E2DBB2FC1",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -192,36 +139,16 @@
           "s": 2
         },
         {
-          "n": "pass-through 3",
-          "s": 15
-        },
-        {
-          "n": "pass-through 4",
-          "s": 25
-        },
-        {
-          "n": "pass-through 6",
-          "s": 38
-        },
-        {
-          "n": "reactor",
-          "s": 44
-        },
-        {
-          "n": "exit",
-          "s": 46
+          "n": "pass-through 1",
+          "s": 3
         }
       ],
-      "total_frames": 2736,
+      "total_frames": 2617,
       "rng_end": {
-        "state": 500965035,
-        "calls": 94
+        "state": 480213583,
+        "calls": 666
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 1.349991,
-        "difficulty": 2
-      }
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 6,
@@ -238,30 +165,14 @@
           "s": 0
         },
         {
-          "n": "pass-through 2",
-          "s": 6
-        },
-        {
-          "n": "pass-through 3",
-          "s": 11
-        },
-        {
-          "n": "pass-through 4",
-          "s": 17
-        },
-        {
-          "n": "pass-through 5",
-          "s": 22
-        },
-        {
-          "n": "pass-through 6",
-          "s": 28
+          "n": "fly-through 1",
+          "s": 1
         }
       ],
-      "total_frames": 1801,
+      "total_frames": 1639,
       "rng_end": {
-        "state": 493907821,
-        "calls": 84
+        "state": 4088347979,
+        "calls": 446
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -269,7 +180,7 @@
       "level_num": 7,
       "level_file": "06ddgths.rdl",
       "route_input_sha256": "EEE1F70282FD77BA1F245D13E0BA27560ED6A7C9E8CB0204E959C04DC70B6983",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -280,40 +191,16 @@
           "s": 2
         },
         {
-          "n": "pass-through 4",
-          "s": 6
-        },
-        {
-          "n": "pass-through 3",
-          "s": 11
-        },
-        {
-          "n": "pass-through 2",
-          "s": 15
-        },
-        {
-          "n": "pass-through 1",
-          "s": 19
-        },
-        {
-          "n": "reactor",
-          "s": 23
-        },
-        {
-          "n": "exit",
-          "s": 25
+          "n": "pass-through 5",
+          "s": 7
         }
       ],
-      "total_frames": 1490,
+      "total_frames": 5821,
       "rng_end": {
-        "state": 3758492830,
-        "calls": 105
+        "state": 3092922746,
+        "calls": 477
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 1.350006,
-        "difficulty": 2
-      }
+      "problem": "route confirmation exceeded 97-second simulation budget"
     },
     {
       "level_num": 8,
@@ -330,31 +217,14 @@
           "s": 0
         },
         {
-          "n": "pass-through 2",
-          "s": 5
-        },
-        {
-          "n": "pass-through 3",
-          "s": 10
-        },
-        {
-          "n": "reactor",
-          "s": 17
-        },
-        {
-          "n": "exit",
-          "s": 18
+          "n": "fly-through 1",
+          "s": 2
         }
       ],
-      "total_frames": 1088,
+      "total_frames": 1801,
       "rng_end": {
-        "state": 2274957893,
-        "calls": 60
-      },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 1.350006,
-        "difficulty": 2
+        "state": 3266513840,
+        "calls": 407
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -371,14 +241,18 @@
         {
           "n": "fly-through 1",
           "s": 1
+        },
+        {
+          "n": "fly-through 1",
+          "s": 4
         }
       ],
-      "total_frames": 7021,
+      "total_frames": 3955,
       "rng_end": {
-        "state": 3279009521,
-        "calls": 144
+        "state": 4088347979,
+        "calls": 446
       },
-      "problem": "route confirmation exceeded 117-second simulation budget"
+      "problem": "semantic objective repeated without route advancement"
     }
   ]
 }

@@ -6,9 +6,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "ok",
+  "status": "partial",
   "level_counts": {
-    "ok": 4
+    "ok": 3,
+    "timeout": 1
   },
   "levels": [
     {
@@ -23,33 +24,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 6
+          "s": 7
         },
         {
           "n": "gold key",
-          "s": 25
+          "s": 23
         },
         {
           "n": "red key",
-          "s": 48
+          "s": 44
         },
         {
           "n": "reactor",
-          "s": 62
+          "s": 59
         },
         {
           "n": "exit",
-          "s": 71
+          "s": 66
         }
       ],
-      "total_frames": 4251,
+      "total_frames": 3968,
       "rng_end": {
-        "state": 500965035,
-        "calls": 94
+        "state": 4159927135,
+        "calls": 2698
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 8.383331,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 7.200012,
         "difficulty": 2
       }
     },
@@ -65,33 +66,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 11
+          "s": 9
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 29
+          "s": 26
         },
         {
           "n": "red key",
-          "s": 47
+          "s": 44
         },
         {
           "n": "reactor",
-          "s": 59
+          "s": 55
         },
         {
           "n": "exit",
-          "s": 73
+          "s": 64
         }
       ],
-      "total_frames": 4394,
+      "total_frames": 3832,
       "rng_end": {
-        "state": 1848832019,
-        "calls": 118
+        "state": 1121449599,
+        "calls": 3434
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 13.75,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 8.583328,
         "difficulty": 2
       }
     },
@@ -99,7 +100,7 @@
       "level_num": 3,
       "level_file": "warehos.rdl",
       "route_input_sha256": "14914172A1C026F7732BC7E6FEBF25606E8E9F5082A208E28CBD0A049E448598",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -107,43 +108,19 @@
       "objectives": [
         {
           "n": "fly-through 0",
+          "s": 6
+        },
+        {
+          "n": "fly-through 0",
           "s": 7
-        },
-        {
-          "n": "blue key",
-          "s": 8
-        },
-        {
-          "n": "gold key",
-          "s": 23
-        },
-        {
-          "n": "red key",
-          "s": 47
-        },
-        {
-          "n": "fly-through 5",
-          "s": 78
-        },
-        {
-          "n": "reactor",
-          "s": 79
-        },
-        {
-          "n": "exit",
-          "s": 105
         }
       ],
-      "total_frames": 6305,
+      "total_frames": 1696,
       "rng_end": {
-        "state": 2581092098,
-        "calls": 6261
+        "state": 3274223484,
+        "calls": 1147
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 25.900009,
-        "difficulty": 2
-      }
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 4,
@@ -157,33 +134,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 12
+          "s": 11
         },
         {
           "n": "gold key",
-          "s": 44
+          "s": 43
         },
         {
           "n": "red key",
-          "s": 81
+          "s": 79
         },
         {
           "n": "boss",
-          "s": 109
+          "s": 105
         },
         {
           "n": "exit",
-          "s": 111
+          "s": 107
         }
       ],
-      "total_frames": 6664,
+      "total_frames": 6402,
       "rng_end": {
-        "state": 2675232640,
-        "calls": 135
+        "state": 1365130408,
+        "calls": 4671
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 2.050003,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 1.883331,
         "difficulty": 2
       }
     }

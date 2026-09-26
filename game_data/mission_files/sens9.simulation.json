@@ -8,25 +8,25 @@
   "status": "partial",
   "level_counts": {
     "ok": 4,
-    "failed": 1
+    "unsupported": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "guide.rl2",
-      "route_input_sha256": "8240463CB075B3CBE87E1D82409D904772B1EF4EFB8019CA2ED268871058088A",
-      "status": "failed",
+      "route_input_sha256": "BB62336D21AA43F29B521FD84CA575C0871F1CE4F85D969A0506F16AE30AC3D8",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 0,
+      "total_frames": 130,
       "rng_end": {
-        "state": 1,
-        "calls": 0
+        "state": 856000655,
+        "calls": 90
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "route objective activation is not supported"
     },
     {
       "level_num": 2,
@@ -154,25 +154,25 @@
         },
         {
           "n": "switch 15",
-          "s": 139
+          "s": 138
         },
         {
           "n": "reactor",
-          "s": 141
+          "s": 140
         },
         {
           "n": "exit",
-          "s": 159
+          "s": 158
         }
       ],
-      "total_frames": 9568,
+      "total_frames": 9462,
       "rng_end": {
-        "state": 1898726726,
-        "calls": 8161
+        "state": 4118529229,
+        "calls": 8180
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 18.166672,
+        "simulated_seconds": 17.78334,
         "difficulty": 2
       }
     },
@@ -208,45 +208,45 @@
         },
         {
           "n": "switch 2",
-          "s": 31
+          "s": 33
         },
         {
           "n": "gold key",
-          "s": 35
+          "s": 38
         },
         {
           "n": "hidden door",
-          "s": 45
+          "s": 48
         },
         {
           "n": "switch 11",
-          "s": 56
-        },
-        {
-          "n": "red key",
           "s": 58
         },
         {
+          "n": "red key",
+          "s": 60
+        },
+        {
           "n": "hidden door",
-          "s": 76
+          "s": 80
         },
         {
           "n": "reactor",
-          "s": 79
+          "s": 83
         },
         {
           "n": "hidden door",
-          "s": 94
+          "s": 98
         },
         {
           "n": "exit",
-          "s": 94
+          "s": 98
         }
       ],
-      "total_frames": 5637,
+      "total_frames": 5869,
       "rng_end": {
-        "state": 1207947477,
-        "calls": 10540
+        "state": 3637544382,
+        "calls": 11209
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,

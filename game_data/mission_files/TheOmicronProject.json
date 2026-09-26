@@ -1747,9 +1747,9 @@
         "mine_volume": 5951230.0,
         "mine_volume_normalized": 1.30141,
         "mine_volume_text": "1.3x",
-        "travel_distance": 495.3,
-        "travel_time_seconds": 10,
-        "travel_time_text": "0M:10S",
+        "travel_distance": 1895.8,
+        "travel_time_seconds": 38,
+        "travel_time_text": "0M:38S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -1852,6 +1852,210 @@
           {
             "index": 3,
             "kind": "trigger",
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 16",
+            "seg": 279,
+            "wall": 132,
+            "label_pos": {
+              "x": 60.0,
+              "y": -79.2,
+              "z": -117.0
+            },
+            "trigger": 16,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 273,
+                "side": 4,
+                "wall": 64
+              },
+              {
+                "seg": 274,
+                "side": 3,
+                "wall": 66
+              },
+              {
+                "seg": 275,
+                "side": 5,
+                "wall": 68
+              },
+              {
+                "seg": 276,
+                "side": 5,
+                "wall": 70
+              },
+              {
+                "seg": 277,
+                "side": 4,
+                "wall": 72
+              },
+              {
+                "seg": 278,
+                "side": 4,
+                "wall": 74
+              },
+              {
+                "seg": 279,
+                "side": 1,
+                "wall": 76
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 303,
+            "label_pos": {
+              "x": 60.0,
+              "y": 20.0,
+              "z": 20.0
+            },
+            "distance": 372.3,
+            "key": "blue"
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 19",
+            "seg": 167,
+            "wall": 135,
+            "label_pos": {
+              "x": 50.0,
+              "y": -79.5,
+              "z": -127.0
+            },
+            "trigger": 19,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 161,
+                "side": 4,
+                "wall": 20
+              },
+              {
+                "seg": 162,
+                "side": 3,
+                "wall": 21
+              },
+              {
+                "seg": 163,
+                "side": 5,
+                "wall": 22
+              },
+              {
+                "seg": 164,
+                "side": 5,
+                "wall": 23
+              },
+              {
+                "seg": 165,
+                "side": 4,
+                "wall": 24
+              },
+              {
+                "seg": 166,
+                "side": 4,
+                "wall": 25
+              },
+              {
+                "seg": 167,
+                "side": 1,
+                "wall": 26
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 191,
+            "label_pos": {
+              "x": -84.0,
+              "y": 21.0,
+              "z": -127.0
+            },
+            "distance": 372.3,
+            "key": "gold"
+          },
+          {
+            "index": 7,
+            "kind": "trigger",
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 17",
+            "seg": 223,
+            "wall": 133,
+            "label_pos": {
+              "x": 70.0,
+              "y": -79.0,
+              "z": -127.0
+            },
+            "trigger": 17,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 217,
+                "side": 4,
+                "wall": 40
+              },
+              {
+                "seg": 218,
+                "side": 3,
+                "wall": 41
+              },
+              {
+                "seg": 219,
+                "side": 5,
+                "wall": 42
+              },
+              {
+                "seg": 220,
+                "side": 5,
+                "wall": 43
+              },
+              {
+                "seg": 221,
+                "side": 4,
+                "wall": 44
+              },
+              {
+                "seg": 222,
+                "side": 4,
+                "wall": 45
+              },
+              {
+                "seg": 223,
+                "side": 1,
+                "wall": 46
+              }
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 247,
+            "label_pos": {
+              "x": 204.0,
+              "y": 20.0,
+              "z": -126.0
+            },
+            "distance": 369.8,
+            "key": "red"
+          },
+          {
+            "index": 9,
+            "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 22",
             "seg": 54,
@@ -1861,7 +2065,7 @@
               "y": 114.0,
               "z": -126.0
             },
-            "distance": 253.0,
+            "distance": 252.1,
             "trigger": 22,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1914,7 +2118,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 10,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -1925,10 +2129,28 @@
               "z": -126.0
             },
             "distance": 106.3
+          },
+          {
+            "index": 11,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 333,
+            "side": 1,
+            "wall": 191,
+            "label_pos": {
+              "x": 61.0,
+              "y": -109.5,
+              "z": -127.0
+            },
+            "distance": 287.1,
+            "trigger": 23,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "red key route dependency loop",
+        "route_problem": "switch activation route unresolved",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]

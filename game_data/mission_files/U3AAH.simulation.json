@@ -8,14 +8,14 @@
   "status": "partial",
   "level_counts": {
     "ok": 1,
-    "failed": 1
+    "unsupported": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "U3AAH.rl2",
-      "route_input_sha256": "AA1EF7F2CFCFE60566A1494E23DA3A0BAAFB4805CA020E0716F9F8126938C772",
-      "status": "failed",
+      "route_input_sha256": "5531EEC82FB6E32D1171ABE8A9CC1C3E8E78ABCFDC1A4CC59E6826075C43E370",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -26,12 +26,12 @@
           "s": 8
         }
       ],
-      "total_frames": 454,
+      "total_frames": 710,
       "rng_end": {
-        "state": 1578208502,
-        "calls": 753
+        "state": 3984842223,
+        "calls": 1274
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "route objective activation is not supported"
     },
     {
       "level_num": 2,
@@ -72,7 +72,7 @@
           "s": 94
         }
       ],
-      "total_frames": 5614,
+      "total_frames": 5617,
       "rng_end": {
         "state": 1440631753,
         "calls": 19704

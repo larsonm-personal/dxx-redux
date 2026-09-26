@@ -305,10 +305,10 @@
           "s": 47
         }
       ],
-      "total_frames": 6512,
+      "total_frames": 6511,
       "rng_end": {
-        "state": 2572306584,
-        "calls": 7823
+        "state": 1114599401,
+        "calls": 6616
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -428,29 +428,29 @@
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 46
         },
         {
           "n": "fly-through 23",
-          "s": 83
+          "s": 92
         },
         {
           "n": "hidden door",
-          "s": 83
+          "s": 92
         },
         {
           "n": "switch 15",
-          "s": 83
+          "s": 92
         },
         {
           "n": "red key",
-          "s": 84
+          "s": 93
         }
       ],
-      "total_frames": 5030,
+      "total_frames": 5585,
       "rng_end": {
-        "state": 4267232669,
-        "calls": 8868
+        "state": 4189003308,
+        "calls": 9227
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -486,21 +486,21 @@
         },
         {
           "n": "boss",
-          "s": 62
+          "s": 63
         },
         {
           "n": "exit",
-          "s": 78
+          "s": 79
         }
       ],
-      "total_frames": 4664,
+      "total_frames": 4711,
       "rng_end": {
-        "state": 3328851602,
-        "calls": 8229
+        "state": 1534563424,
+        "calls": 8231
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 15.683334,
+        "simulated_seconds": 15.699997,
         "difficulty": 2
       }
     },
@@ -627,10 +627,10 @@
           "s": 94
         }
       ],
-      "total_frames": 5646,
+      "total_frames": 5639,
       "rng_end": {
-        "state": 2107945363,
-        "calls": 12022
+        "state": 3132008066,
+        "calls": 12021
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -662,7 +662,7 @@
         },
         {
           "n": "switch 0",
-          "s": 173
+          "s": 172
         },
         {
           "n": "boss",
@@ -673,7 +673,7 @@
           "s": 199
         }
       ],
-      "total_frames": 11915,
+      "total_frames": 11912,
       "rng_end": {
         "state": 3939361404,
         "calls": 13691

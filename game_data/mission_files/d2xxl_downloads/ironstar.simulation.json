@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 8,
-    "timeout": 2,
+    "ok": 5,
+    "timeout": 5,
     "route_mismatch": 1
   },
   "levels": [
@@ -25,33 +25,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 16
+          "s": 12
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 33
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 54
         },
         {
           "n": "reactor",
-          "s": 75
+          "s": 70
         },
         {
           "n": "exit",
-          "s": 81
+          "s": 76
         }
       ],
-      "total_frames": 4883,
+      "total_frames": 4582,
       "rng_end": {
-        "state": 559510963,
-        "calls": 5846
+        "state": 1087965676,
+        "calls": 5451
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 6.600006,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 6.46666,
         "difficulty": 2
       }
     },
@@ -67,33 +67,33 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 8
+          "s": 7
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 20
+          "s": 17
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 45
+          "s": 40
         },
         {
           "n": "reactor",
-          "s": 67
+          "s": 61
         },
         {
           "n": "exit",
-          "s": 74
+          "s": 68
         }
       ],
-      "total_frames": 4417,
+      "total_frames": 4062,
       "rng_end": {
-        "state": 2455359789,
-        "calls": 148
+        "state": 3100814004,
+        "calls": 3939
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 6.683334,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 6.266678,
         "difficulty": 2
       }
     },
@@ -107,10 +107,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4935,
+      "total_frames": 6369,
       "rng_end": {
-        "state": 2937909499,
-        "calls": 14
+        "state": 11650907,
+        "calls": 430
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -126,21 +126,29 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 9
+          "s": 7
+        },
+        {
+          "n": "red key",
+          "s": 98
+        },
+        {
+          "n": "reactor",
+          "s": 137
         }
       ],
-      "total_frames": 4685,
+      "total_frames": 9061,
       "rng_end": {
-        "state": 2455359789,
-        "calls": 148
+        "state": 3922322432,
+        "calls": 6663
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 151-second simulation budget"
     },
     {
       "level_num": 5,
       "level_file": "epsilon.rdl",
       "route_input_sha256": "38F48D1F55CB5AAC4DF8D409D81D94BC4DFB0E9BDA379696D35880F93FB056B3",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -148,53 +156,25 @@
       "objectives": [
         {
           "n": "fly-through 1",
-          "s": 15
-        },
-        {
-          "n": "pass-through 2",
           "s": 16
         },
         {
-          "n": "destroy robot carrying blue key",
-          "s": 21
-        },
-        {
-          "n": "gold key",
-          "s": 42
-        },
-        {
-          "n": "hidden door",
-          "s": 69
-        },
-        {
-          "n": "red key",
-          "s": 69
-        },
-        {
-          "n": "reactor",
-          "s": 83
-        },
-        {
-          "n": "exit",
-          "s": 95
+          "n": "fly-through 1",
+          "s": 16
         }
       ],
-      "total_frames": 5699,
+      "total_frames": 1916,
       "rng_end": {
-        "state": 3040535893,
-        "calls": 172
+        "state": 1441401739,
+        "calls": 894
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 11.699997,
-        "difficulty": 2
-      }
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 6,
       "level_file": "chapel.rdl",
       "route_input_sha256": "F42F406DC8A4E57940437571BCCEBEB0B0B252840C8185C759E6189E4DE18F15",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -206,39 +186,19 @@
         },
         {
           "n": "fly-through 7",
-          "s": 22
+          "s": 23
         },
         {
-          "n": "gold key",
-          "s": 26
-        },
-        {
-          "n": "fly-through 8",
-          "s": 49
-        },
-        {
-          "n": "red key",
-          "s": 65
-        },
-        {
-          "n": "reactor",
-          "s": 73
-        },
-        {
-          "n": "exit",
-          "s": 82
+          "n": "fly-through 7",
+          "s": 23
         }
       ],
-      "total_frames": 4931,
+      "total_frames": 2273,
       "rng_end": {
-        "state": 4043710265,
-        "calls": 5896
+        "state": 1185205632,
+        "calls": 2695
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 8.699997,
-        "difficulty": 2
-      }
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 7,
@@ -252,45 +212,45 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 72
+          "s": 25
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 90
+          "s": 42
         },
         {
           "n": "hidden door",
-          "s": 141
+          "s": 93
         },
         {
           "n": "hidden door",
-          "s": 142
+          "s": 94
         },
         {
           "n": "hidden door",
-          "s": 143
+          "s": 96
         },
         {
           "n": "red key",
-          "s": 146
+          "s": 98
         },
         {
           "n": "reactor",
-          "s": 201
+          "s": 157
         },
         {
           "n": "exit",
-          "s": 209
+          "s": 165
         }
       ],
-      "total_frames": 12518,
+      "total_frames": 9881,
       "rng_end": {
-        "state": 3178100118,
-        "calls": 209
+        "state": 2812341783,
+        "calls": 6098
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 8.0,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 7.933319,
         "difficulty": 2
       }
     },
@@ -298,7 +258,7 @@
       "level_num": 8,
       "level_file": "ironstr1.rdl",
       "route_input_sha256": "65FE1DD3B6CA703D8D62F4D3332B4D6EE4B1194CDA2B318CDE4D8881FD89015C",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -306,43 +266,19 @@
       "objectives": [
         {
           "n": "fly-through 4",
+          "s": 8
+        },
+        {
+          "n": "fly-through 4",
           "s": 9
-        },
-        {
-          "n": "destroy robot carrying blue key",
-          "s": 12
-        },
-        {
-          "n": "gold key",
-          "s": 36
-        },
-        {
-          "n": "red key",
-          "s": 81
-        },
-        {
-          "n": "fly-through 1",
-          "s": 105
-        },
-        {
-          "n": "reactor",
-          "s": 105
-        },
-        {
-          "n": "exit",
-          "s": 121
         }
       ],
-      "total_frames": 7284,
+      "total_frames": 1758,
       "rng_end": {
-        "state": 762780427,
-        "calls": 5118
+        "state": 3427645392,
+        "calls": 1271
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 16.133331,
-        "difficulty": 2
-      }
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": -1,
@@ -359,75 +295,14 @@
           "s": 3
         },
         {
-          "n": "fly-through 4",
-          "s": 5
-        },
-        {
-          "n": "fly-through 3",
-          "s": 8
-        },
-        {
-          "n": "pass-through 5",
-          "s": 9
-        },
-        {
-          "n": "pass-through 6",
-          "s": 11
-        },
-        {
-          "n": "hidden door",
-          "s": 12
-        },
-        {
-          "n": "hidden door",
-          "s": 18
-        },
-        {
-          "n": "red key",
-          "s": 18
-        },
-        {
-          "n": "fly-through 11",
-          "s": 27
-        },
-        {
-          "n": "fly-through 10",
-          "s": 27
-        },
-        {
-          "n": "fly-through 4",
-          "s": 30
-        },
-        {
           "n": "fly-through 1",
-          "s": 32
-        },
-        {
-          "n": "fly-through 8",
-          "s": 35
-        },
-        {
-          "n": "fly-through 10",
-          "s": 40
-        },
-        {
-          "n": "reactor",
-          "s": 51
-        },
-        {
-          "n": "exit",
-          "s": 58
+          "s": 4
         }
       ],
-      "total_frames": 3451,
+      "total_frames": 1482,
       "rng_end": {
-        "state": 2391715014,
-        "calls": 1633
-      },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 6.916672,
-        "difficulty": 2
+        "state": 625495087,
+        "calls": 698
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -443,7 +318,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 6
+          "s": 5
         },
         {
           "n": "gold key",
@@ -451,25 +326,25 @@
         },
         {
           "n": "red key",
-          "s": 57
+          "s": 58
         },
         {
           "n": "reactor",
-          "s": 78
+          "s": 79
         },
         {
           "n": "exit",
-          "s": 81
+          "s": 82
         }
       ],
-      "total_frames": 4871,
+      "total_frames": 4917,
       "rng_end": {
-        "state": 3000285449,
-        "calls": 6584
+        "state": 3913123202,
+        "calls": 7157
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 2.733322,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 2.633331,
         "difficulty": 2
       }
     },
@@ -485,37 +360,37 @@
       "objectives": [
         {
           "n": "open door",
-          "s": 15
+          "s": 16
         },
         {
           "n": "blue key",
-          "s": 28
+          "s": 30
         },
         {
           "n": "gold key",
-          "s": 46
+          "s": 48
         },
         {
           "n": "red key",
-          "s": 73
+          "s": 72
         },
         {
           "n": "boss",
-          "s": 109
+          "s": 108
         },
         {
           "n": "exit",
-          "s": 112
+          "s": 110
         }
       ],
-      "total_frames": 6698,
+      "total_frames": 6611,
       "rng_end": {
-        "state": 338329566,
-        "calls": 2601
+        "state": 695870830,
+        "calls": 3289
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 2.800003,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 2.516663,
         "difficulty": 2
       }
     }

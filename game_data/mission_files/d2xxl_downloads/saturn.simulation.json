@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 5,
     "failed": 1,
-    "timeout": 2
+    "timeout": 1
   },
   "levels": [
     {
@@ -71,7 +71,7 @@
       "level_num": 3,
       "level_file": "TUNNEL.RL2",
       "route_input_sha256": "7DBCE0207A9C5D77F4ACE5DF4F02CF8D7E2D74D4AEF237405C2571C2F10AEB5E",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -87,19 +87,19 @@
         },
         {
           "n": "switch 22",
-          "s": 40
+          "s": 39
         },
         {
           "n": "switch 15",
-          "s": 64
+          "s": 63
         },
         {
           "n": "hidden door",
-          "s": 65
+          "s": 66
         },
         {
           "n": "switch 17",
-          "s": 65
+          "s": 66
         },
         {
           "n": "switch 2",
@@ -107,15 +107,34 @@
         },
         {
           "n": "switch 6",
-          "s": 72
+          "s": 71
+        },
+        {
+          "n": "pass-through 23",
+          "s": 83
+        },
+        {
+          "n": "pass-through 4",
+          "s": 90
+        },
+        {
+          "n": "switch 7",
+          "s": 98
+        },
+        {
+          "n": "switch 24",
+          "s": 106
+        },
+        {
+          "n": "exit",
+          "s": 138
         }
       ],
-      "total_frames": 5530,
+      "total_frames": 8294,
       "rng_end": {
-        "state": 2561765455,
-        "calls": 11418
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 4136516265,
+        "calls": 13592
+      }
     },
     {
       "level_num": 4,
@@ -180,14 +199,14 @@
           "s": 235
         }
       ],
-      "total_frames": 14074,
+      "total_frames": 14081,
       "rng_end": {
         "state": 408805855,
         "calls": 13322
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 24.483337,
+        "simulated_seconds": 24.599991,
         "difficulty": 2
       }
     },

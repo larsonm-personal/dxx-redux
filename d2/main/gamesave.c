@@ -941,7 +941,8 @@ int load_game_data(PHYSFS_file *LoadFile)
 				memcpy(source.seg, old.seg, sizeof(source.seg));
 				memcpy(source.side, old.side, sizeof(source.side));
 			}
-			if (!d1_in_d2_decode_trigger(&Triggers[i], &source, Gamesave_current_version <= 1))
+			if (!(Gamesave_current_version <= 1 ? d1_in_d2_decode_level_trigger(&Triggers[i], &source) :
+			      d1_in_d2_decode_trigger(&Triggers[i], &source, 0)))
 				return -1;
 		}
 		else

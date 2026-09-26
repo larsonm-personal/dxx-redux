@@ -6,9 +6,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "ok",
+  "status": "partial",
   "level_counts": {
-    "ok": 4
+    "ok": 3,
+    "timeout": 1
   },
   "levels": [
     {
@@ -23,37 +24,37 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 11
-        },
-        {
-          "n": "blue key",
           "s": 12
         },
         {
+          "n": "blue key",
+          "s": 13
+        },
+        {
           "n": "gold key",
-          "s": 30
+          "s": 31
         },
         {
           "n": "red key",
-          "s": 45
+          "s": 47
         },
         {
           "n": "reactor",
-          "s": 65
+          "s": 66
         },
         {
           "n": "exit",
-          "s": 73
+          "s": 70
         }
       ],
-      "total_frames": 4360,
+      "total_frames": 4218,
       "rng_end": {
-        "state": 2224273656,
-        "calls": 175
+        "state": 2814069502,
+        "calls": 2953
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 7.533325,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 4.683334,
         "difficulty": 2
       }
     },
@@ -69,33 +70,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 6
+          "s": 7
         },
         {
           "n": "gold key",
-          "s": 12
+          "s": 14
         },
         {
           "n": "red key",
-          "s": 24
+          "s": 22
         },
         {
           "n": "reactor",
-          "s": 44
+          "s": 41
         },
         {
           "n": "exit",
-          "s": 47
+          "s": 44
         }
       ],
-      "total_frames": 2815,
+      "total_frames": 2656,
       "rng_end": {
-        "state": 3720683301,
-        "calls": 92
+        "state": 3345593417,
+        "calls": 2168
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 3.283325,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 3.150009,
         "difficulty": 2
       }
     },
@@ -115,29 +116,29 @@
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 35
         },
         {
           "n": "red key",
-          "s": 53
+          "s": 52
         },
         {
           "n": "reactor",
-          "s": 77
+          "s": 75
         },
         {
           "n": "exit",
-          "s": 79
+          "s": 77
         }
       ],
-      "total_frames": 4744,
+      "total_frames": 4609,
       "rng_end": {
-        "state": 1452336924,
-        "calls": 91
+        "state": 917813531,
+        "calls": 4078
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 2.133347,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 1.866669,
         "difficulty": 2
       }
     },
@@ -145,7 +146,7 @@
       "level_num": -1,
       "level_file": "ifpun.rdl",
       "route_input_sha256": "F0AD583C961476D901731906D2734A887FE050C89843D76BFBE18F4487E54023",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -157,39 +158,23 @@
         },
         {
           "n": "gold key",
-          "s": 17
+          "s": 16
         },
         {
           "n": "fly-through 0",
           "s": 37
         },
         {
-          "n": "red key",
-          "s": 44
-        },
-        {
-          "n": "fly-through 1",
-          "s": 61
-        },
-        {
-          "n": "reactor",
-          "s": 61
-        },
-        {
-          "n": "exit",
-          "s": 69
+          "n": "fly-through 0",
+          "s": 38
         }
       ],
-      "total_frames": 4127,
+      "total_frames": 3593,
       "rng_end": {
-        "state": 4273116023,
-        "calls": 114
+        "state": 3850758163,
+        "calls": 2166
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 7.816666,
-        "difficulty": 2
-      }
+      "problem": "semantic objective repeated without route advancement"
     }
   ]
 }

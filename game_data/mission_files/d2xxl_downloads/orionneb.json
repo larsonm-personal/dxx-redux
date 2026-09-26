@@ -346,7 +346,7 @@
             "key": "blue"
           }
         ],
-        "route_problem": "shared route planning reached its work budget"
+        "route_problem": "gold key unreachable"
       },
       {
         "level_num": 2,

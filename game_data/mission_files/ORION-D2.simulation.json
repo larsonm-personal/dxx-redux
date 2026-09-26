@@ -65,10 +65,10 @@
         },
         {
           "n": "exit",
-          "s": 81
+          "s": 82
         }
       ],
-      "total_frames": 4889,
+      "total_frames": 4892,
       "rng_end": {
         "state": 738489466,
         "calls": 2781
@@ -129,15 +129,15 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 16
+          "s": 15
         },
         {
           "n": "gold key",
-          "s": 38
+          "s": 37
         },
         {
           "n": "red key",
-          "s": 56
+          "s": 55
         },
         {
           "n": "reactor",
@@ -148,14 +148,14 @@
           "s": 93
         }
       ],
-      "total_frames": 5601,
+      "total_frames": 5569,
       "rng_end": {
         "state": 1410616673,
         "calls": 2464
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 7.333328,
+        "simulated_seconds": 7.316666,
         "difficulty": 2
       }
     },
@@ -225,7 +225,7 @@
         },
         {
           "n": "hidden door",
-          "s": 82
+          "s": 83
         },
         {
           "n": "red key",
@@ -240,7 +240,7 @@
           "s": 134
         }
       ],
-      "total_frames": 8010,
+      "total_frames": 8023,
       "rng_end": {
         "state": 1850151498,
         "calls": 2893
@@ -267,29 +267,29 @@
         },
         {
           "n": "gold key",
-          "s": 61
+          "s": 62
         },
         {
           "n": "red key",
-          "s": 88
+          "s": 89
         },
         {
           "n": "boss",
-          "s": 139
+          "s": 132
         },
         {
           "n": "exit",
-          "s": 157
+          "s": 150
         }
       ],
-      "total_frames": 9430,
+      "total_frames": 9018,
       "rng_end": {
         "state": 2957197388,
         "calls": 7019
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 18.616669,
+        "simulated_seconds": 18.383331,
         "difficulty": 2
       }
     },

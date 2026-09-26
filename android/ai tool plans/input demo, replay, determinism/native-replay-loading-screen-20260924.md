@@ -52,3 +52,21 @@ Implementation and verification:
   window-report.json and trace-verification.json
 - Scope: fixes stale loading UI and hidden modal/pause UI in fast windowed
   replays. Does not establish that every possible startup stall is resolved
+
+Throughput follow-up:
+
+- Same current native binary, level 15 recording, accelerated windowed no-render:
+  no trace 5.092 seconds / 393.95 fps; state+RNG trace 110.951 seconds / 18.08 fps
+  Runner-reported elapsed times include engine startup, exclude wrapper setup
+- Traces serialize 742,577,818 bytes for 2006 frames, compressed to 64,111,051
+  bytes in the earlier identical native capture. State/object/world JSON builds
+  and serialization run on the replay thread, with synchronous per-record flush
+- Final result JSON is identical with and without traces. Evidence:
+  temp/d1-replay-throughput/{no-trace,traced}.log and corresponding result JSON
+- Separate ad hoc process-exit timing was invalid: windowed replay writes its
+  result then remains open, and the existing runner closes it. The direct launch
+  completed its result but timed out waiting for process exit; do not use that
+  timeout as a replay-throughput or startup-hang finding
+- This demonstrates diagnostic capture cost, not a 25-fps windowed cap. Exact
+  console-vs-window throughput was not compared: helper currently permits the
+  console runner only for native D2 accelerated checkpoint replays, not D1 mode

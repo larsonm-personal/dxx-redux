@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 4,
-    "failed": 1,
-    "timeout": 2
+    "timeout": 2,
+    "unsupported": 1
   },
   "levels": [
     {
@@ -170,14 +170,14 @@
           "s": 78
         }
       ],
-      "total_frames": 4685,
+      "total_frames": 4693,
       "rng_end": {
         "state": 866325920,
         "calls": 6631
       },
       "reactor_escape": {
         "countdown_seconds": 80.0,
-        "simulated_seconds": 26.350006,
+        "simulated_seconds": 26.483337,
         "difficulty": 2
       }
     },
@@ -234,8 +234,8 @@
     {
       "level_num": 7,
       "level_file": "pyromax.rl2",
-      "route_input_sha256": "EDF4E028384BDE374924C1ACE349F6DC0AEA7166D5D58F608B81E83DBB16AEEF",
-      "status": "failed",
+      "route_input_sha256": "707647DBB65F3514ABF78225B31C2E21E6C7B326ECC0A2C676A90B620C317E67",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -248,22 +248,14 @@
         {
           "n": "switch 10",
           "s": 3
-        },
-        {
-          "n": "switch 22",
-          "s": 5
-        },
-        {
-          "n": "reactor",
-          "s": 9
         }
       ],
-      "total_frames": 510,
+      "total_frames": 375,
       "rng_end": {
-        "state": 1962007293,
-        "calls": 580
+        "state": 1923026025,
+        "calls": 344
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "route objective activation is not supported"
     }
   ]
 }

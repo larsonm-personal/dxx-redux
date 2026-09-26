@@ -6,9 +6,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "ok",
+  "status": "partial",
   "level_counts": {
-    "ok": 16
+    "ok": 15,
+    "timeout": 1
   },
   "levels": [
     {
@@ -27,21 +28,21 @@
         },
         {
           "n": "reactor",
-          "s": 24
+          "s": 25
         },
         {
           "n": "exit",
           "s": 26
         }
       ],
-      "total_frames": 1537,
+      "total_frames": 1584,
       "rng_end": {
-        "state": 835903122,
-        "calls": 37
+        "state": 1532216684,
+        "calls": 971
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 1.766663,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 1.78334,
         "difficulty": 2
       }
     },
@@ -61,25 +62,25 @@
         },
         {
           "n": "red key",
-          "s": 30
+          "s": 33
         },
         {
           "n": "reactor",
-          "s": 52
+          "s": 54
         },
         {
           "n": "exit",
-          "s": 60
+          "s": 62
         }
       ],
-      "total_frames": 3604,
+      "total_frames": 3716,
       "rng_end": {
-        "state": 2274957893,
-        "calls": 60
+        "state": 2757827055,
+        "calls": 2298
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 8.233337,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 7.683319,
         "difficulty": 2
       }
     },
@@ -95,33 +96,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 19
+          "s": 18
         },
         {
           "n": "gold key",
-          "s": 39
+          "s": 38
         },
         {
           "n": "red key",
-          "s": 52
+          "s": 51
         },
         {
           "n": "reactor",
-          "s": 61
+          "s": 52
         },
         {
           "n": "exit",
-          "s": 70
+          "s": 54
         }
       ],
-      "total_frames": 4195,
+      "total_frames": 3233,
       "rng_end": {
-        "state": 2080448134,
-        "calls": 5025
+        "state": 2089501113,
+        "calls": 2184
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 8.866669,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 1.75,
         "difficulty": 2
       }
     },
@@ -141,7 +142,7 @@
         },
         {
           "n": "gold key",
-          "s": 33
+          "s": 32
         },
         {
           "n": "red key",
@@ -153,17 +154,17 @@
         },
         {
           "n": "exit",
-          "s": 88
+          "s": 86
         }
       ],
-      "total_frames": 5255,
+      "total_frames": 5176,
       "rng_end": {
-        "state": 2298479762,
-        "calls": 4645
+        "state": 1689723728,
+        "calls": 2935
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 9.133331,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 8.716675,
         "difficulty": 2
       }
     },
@@ -179,33 +180,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 11
+          "s": 10
         },
         {
           "n": "gold key",
-          "s": 26
+          "s": 24
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 56
         },
         {
           "n": "reactor",
-          "s": 65
+          "s": 63
         },
         {
           "n": "exit",
-          "s": 74
+          "s": 73
         }
       ],
-      "total_frames": 4466,
+      "total_frames": 4358,
       "rng_end": {
-        "state": 2598014293,
-        "calls": 6316
+        "state": 2086237693,
+        "calls": 3908
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 9.733322,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 9.78334,
         "difficulty": 2
       }
     },
@@ -221,33 +222,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 15
+          "s": 14
         },
         {
           "n": "gold key",
-          "s": 39
+          "s": 37
         },
         {
           "n": "red key",
-          "s": 56
+          "s": 55
         },
         {
           "n": "reactor",
-          "s": 67
+          "s": 65
         },
         {
           "n": "exit",
-          "s": 69
+          "s": 68
         }
       ],
-      "total_frames": 4157,
+      "total_frames": 4066,
       "rng_end": {
-        "state": 167833353,
-        "calls": 5048
+        "state": 930714825,
+        "calls": 3064
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 2.166672,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 2.883331,
         "difficulty": 2
       }
     },
@@ -263,11 +264,11 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 17
+          "s": 16
         },
         {
           "n": "gold key",
-          "s": 34
+          "s": 33
         },
         {
           "n": "red key",
@@ -275,21 +276,21 @@
         },
         {
           "n": "boss",
-          "s": 108
+          "s": 107
         },
         {
           "n": "exit",
-          "s": 109
+          "s": 108
         }
       ],
-      "total_frames": 6528,
+      "total_frames": 6457,
       "rng_end": {
-        "state": 2029357497,
-        "calls": 136
+        "state": 2759124682,
+        "calls": 4301
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 1.066666,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 1.049988,
         "difficulty": 2
       }
     },
@@ -313,25 +314,25 @@
         },
         {
           "n": "red key",
-          "s": 60
+          "s": 59
         },
         {
           "n": "reactor",
-          "s": 90
+          "s": 88
         },
         {
           "n": "exit",
-          "s": 100
+          "s": 98
         }
       ],
-      "total_frames": 6012,
+      "total_frames": 5883,
       "rng_end": {
-        "state": 3241005425,
-        "calls": 2576
+        "state": 4235254792,
+        "calls": 4447
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 9.716675,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 9.616669,
         "difficulty": 2
       }
     },
@@ -347,33 +348,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 17
+          "s": 16
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 34
         },
         {
           "n": "red key",
-          "s": 50
+          "s": 47
         },
         {
           "n": "reactor",
-          "s": 61
+          "s": 58
         },
         {
           "n": "exit",
-          "s": 69
+          "s": 65
         }
       ],
-      "total_frames": 4124,
+      "total_frames": 3893,
       "rng_end": {
-        "state": 3938177000,
-        "calls": 2559
+        "state": 998679724,
+        "calls": 2955
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 8.033325,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 7.333344,
         "difficulty": 2
       }
     },
@@ -381,7 +382,7 @@
       "level_num": 10,
       "level_file": "level10.rdl",
       "route_input_sha256": "FC618E1C5C2D52B239E229CAD27D3729B8294D8664BDCD7D34CC229F4335BDD0",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -389,7 +390,7 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 20
+          "s": 19
         },
         {
           "n": "blue key",
@@ -397,35 +398,27 @@
         },
         {
           "n": "gold key",
-          "s": 39
+          "s": 38
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 57
         },
         {
           "n": "fly-through 3",
-          "s": 92
+          "s": 90
         },
         {
-          "n": "reactor",
-          "s": 92
-        },
-        {
-          "n": "exit",
-          "s": 106
+          "n": "fly-through 3",
+          "s": 91
         }
       ],
-      "total_frames": 6381,
+      "total_frames": 6845,
       "rng_end": {
-        "state": 1547220486,
-        "calls": 2593
+        "state": 1846501461,
+        "calls": 3500
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 13.96666,
-        "difficulty": 2
-      }
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 11,
@@ -451,21 +444,21 @@
         },
         {
           "n": "reactor",
-          "s": 74
+          "s": 72
         },
         {
           "n": "exit",
-          "s": 86
+          "s": 84
         }
       ],
-      "total_frames": 5149,
+      "total_frames": 5019,
       "rng_end": {
-        "state": 1017304121,
-        "calls": 2568
+        "state": 1771496390,
+        "calls": 2913
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 12.150009,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 11.483337,
         "difficulty": 2
       }
     },
@@ -485,29 +478,29 @@
         },
         {
           "n": "gold key",
-          "s": 33
+          "s": 31
         },
         {
           "n": "red key",
-          "s": 55
+          "s": 52
         },
         {
           "n": "reactor",
-          "s": 77
+          "s": 73
         },
         {
           "n": "exit",
-          "s": 80
+          "s": 76
         }
       ],
-      "total_frames": 4797,
+      "total_frames": 4576,
       "rng_end": {
-        "state": 970220964,
-        "calls": 5043
+        "state": 1426074426,
+        "calls": 2845
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 2.900009,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 2.850006,
         "difficulty": 2
       }
     },
@@ -523,33 +516,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 6
+          "s": 5
         },
         {
           "n": "gold key",
-          "s": 39
+          "s": 38
         },
         {
           "n": "red key",
-          "s": 65
+          "s": 63
         },
         {
           "n": "reactor",
-          "s": 84
+          "s": 82
         },
         {
           "n": "exit",
-          "s": 107
+          "s": 105
         }
       ],
-      "total_frames": 6399,
+      "total_frames": 6325,
       "rng_end": {
-        "state": 340946258,
-        "calls": 101
+        "state": 3690697608,
+        "calls": 3039
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 22.983337,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 23.916656,
         "difficulty": 2
       }
     },
@@ -565,32 +558,32 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 38
+          "s": 35
         },
         {
           "n": "gold key",
-          "s": 70
+          "s": 66
         },
         {
           "n": "red key",
-          "s": 95
+          "s": 89
         },
         {
           "n": "reactor",
-          "s": 126
+          "s": 117
         },
         {
           "n": "exit",
-          "s": 129
+          "s": 119
         }
       ],
-      "total_frames": 7741,
+      "total_frames": 7165,
       "rng_end": {
-        "state": 3382580102,
-        "calls": 4769
+        "state": 1449074641,
+        "calls": 4784
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
+        "countdown_seconds": 40.0,
         "simulated_seconds": 2.733337,
         "difficulty": 2
       }
@@ -611,33 +604,33 @@
         },
         {
           "n": "gold key",
-          "s": 23
+          "s": 22
         },
         {
           "n": "hidden door",
-          "s": 32
+          "s": 31
         },
         {
           "n": "red key",
-          "s": 33
+          "s": 32
         },
         {
           "n": "boss",
-          "s": 63
+          "s": 60
         },
         {
           "n": "exit",
-          "s": 66
+          "s": 63
         }
       ],
-      "total_frames": 3935,
+      "total_frames": 3783,
       "rng_end": {
-        "state": 1516963895,
-        "calls": 6066
+        "state": 4028954632,
+        "calls": 1375
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 2.949997,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 3.016663,
         "difficulty": 2
       }
     },
@@ -653,11 +646,11 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 5
+          "s": 6
         },
         {
           "n": "gold key",
-          "s": 25
+          "s": 24
         },
         {
           "n": "red key",
@@ -665,21 +658,21 @@
         },
         {
           "n": "reactor",
-          "s": 75
+          "s": 74
         },
         {
           "n": "exit",
-          "s": 85
+          "s": 84
         }
       ],
-      "total_frames": 5126,
+      "total_frames": 5053,
       "rng_end": {
-        "state": 3787985421,
-        "calls": 6324
+        "state": 1004316454,
+        "calls": 2433
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 10.633331,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 10.399994,
         "difficulty": 2
       }
     }

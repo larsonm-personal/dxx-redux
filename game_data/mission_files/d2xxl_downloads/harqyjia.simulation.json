@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
-    "timeout": 1
+    "ok": 3,
+    "timeout": 2
   },
   "levels": [
     {
@@ -96,8 +96,8 @@
     {
       "level_num": 2,
       "level_file": "HARQYJ02.RL2",
-      "route_input_sha256": "1ABF909E01825041FA0A0B8804FFFB86F99A944A49976833AD07763635D3B313",
-      "status": "ok",
+      "route_input_sha256": "B6E4EA4DCA01253BF72EB55A64A20C1A699589211500D9DD87814518E784501B",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -164,44 +164,20 @@
           "s": 130
         },
         {
-          "n": "fly-through 49",
-          "s": 136
-        },
-        {
-          "n": "fly-through 50",
-          "s": 136
-        },
-        {
-          "n": "fly-through 48",
-          "s": 136
-        },
-        {
           "n": "switch 63",
-          "s": 140
+          "s": 134
         },
         {
           "n": "red key",
-          "s": 151
-        },
-        {
-          "n": "reactor",
-          "s": 178
-        },
-        {
-          "n": "exit",
-          "s": 185
+          "s": 145
         }
       ],
-      "total_frames": 11101,
+      "total_frames": 13240,
       "rng_end": {
-        "state": 352727154,
-        "calls": 16325
+        "state": 3098518025,
+        "calls": 14520
       },
-      "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 7.0,
-        "difficulty": 2
-      }
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,

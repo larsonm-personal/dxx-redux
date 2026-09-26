@@ -22,7 +22,7 @@
       "objectives": [
         {
           "n": "fly-through 1",
-          "s": 40
+          "s": 39
         },
         {
           "n": "blastable wall",
@@ -33,7 +33,7 @@
           "s": 52
         }
       ],
-      "total_frames": 3095,
+      "total_frames": 3094,
       "rng_end": {
         "state": 1491536401,
         "calls": 624
@@ -133,21 +133,21 @@
         },
         {
           "n": "red key",
-          "s": 133
+          "s": 132
         },
         {
           "n": "exit",
           "s": 149
         }
       ],
-      "total_frames": 8938,
+      "total_frames": 8934,
       "rng_end": {
         "state": 1913502954,
         "calls": 7469
       },
       "reactor_escape": {
         "countdown_seconds": 208.0,
-        "simulated_seconds": 70.050003,
+        "simulated_seconds": 69.983337,
         "difficulty": 2
       }
     },

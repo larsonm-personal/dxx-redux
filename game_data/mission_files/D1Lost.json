@@ -1638,10 +1638,6 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "route_note": "key-route optimization reached its work budget",
-        "notes": [
-          "key-route optimization reached its work budget"
         ]
       },
       {

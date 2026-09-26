@@ -65,15 +65,15 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 3
+          "s": 4
         },
         {
           "n": "switch 10",
-          "s": 14
+          "s": 15
         },
         {
           "n": "red key",
-          "s": 28
+          "s": 29
         },
         {
           "n": "switch 5",
@@ -85,17 +85,17 @@
         },
         {
           "n": "exit",
-          "s": 52
+          "s": 53
         }
       ],
-      "total_frames": 3131,
+      "total_frames": 3183,
       "rng_end": {
-        "state": 2697746170,
-        "calls": 14941
+        "state": 3748609697,
+        "calls": 14944
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 3.433319,
+        "simulated_seconds": 3.583328,
         "difficulty": 2
       }
     },

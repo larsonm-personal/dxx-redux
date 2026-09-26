@@ -38,21 +38,21 @@
         },
         {
           "n": "reactor",
-          "s": 41
+          "s": 42
         },
         {
           "n": "exit",
           "s": 46
         }
       ],
-      "total_frames": 2765,
+      "total_frames": 2772,
       "rng_end": {
         "state": 3838301999,
         "calls": 1978
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 4.633331,
+        "simulated_seconds": 4.583344,
         "difficulty": 2
       }
     },
@@ -114,7 +114,7 @@
         },
         {
           "n": "switch 3",
-          "s": 21
+          "s": 22
         },
         {
           "n": "gold key",
@@ -133,7 +133,7 @@
           "s": 44
         }
       ],
-      "total_frames": 2638,
+      "total_frames": 2642,
       "rng_end": {
         "state": 3922779228,
         "calls": 2587
@@ -176,21 +176,21 @@
         },
         {
           "n": "reactor",
-          "s": 69
+          "s": 70
         },
         {
           "n": "exit",
           "s": 78
         }
       ],
-      "total_frames": 4692,
+      "total_frames": 4705,
       "rng_end": {
-        "state": 3564915959,
-        "calls": 7922
+        "state": 3278723788,
+        "calls": 7915
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 8.900009,
+        "simulated_seconds": 8.766663,
         "difficulty": 2
       }
     },
@@ -264,25 +264,25 @@
         },
         {
           "n": "red key",
-          "s": 21
+          "s": 20
         },
         {
           "n": "reactor",
-          "s": 40
+          "s": 39
         },
         {
           "n": "exit",
-          "s": 65
+          "s": 64
         }
       ],
-      "total_frames": 3878,
+      "total_frames": 3829,
       "rng_end": {
         "state": 3460419822,
         "calls": 3929
       },
       "reactor_escape": {
         "countdown_seconds": 30.0,
-        "simulated_seconds": 24.650009,
+        "simulated_seconds": 24.666672,
         "difficulty": 2
       }
     },
@@ -314,7 +314,7 @@
         },
         {
           "n": "switch 2",
-          "s": 47
+          "s": 46
         },
         {
           "n": "hidden door",
@@ -333,7 +333,7 @@
           "s": 70
         }
       ],
-      "total_frames": 4186,
+      "total_frames": 4194,
       "rng_end": {
         "state": 3866917681,
         "calls": 1616

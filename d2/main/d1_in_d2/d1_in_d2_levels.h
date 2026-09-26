@@ -25,6 +25,8 @@ int d1_in_d2_initialize_level_ambience(void);
  * native_d1 selects D1 semantics explicitly; old D2 formats retain their adapter
  * Link segment bounds are checked against the loaded/restored world by its loader */
 int d1_in_d2_decode_trigger(trigger *out, const v29_trigger *source, int native_d1);
+/* Level files may contain stale editor flags and links; save translation stays strict */
+int d1_in_d2_decode_level_trigger(trigger *out, const v29_trigger *source);
 /* Returns 1 and the original flags for a native record, 0 for an ordinary D2 record */
 int d1_in_d2_trigger_source_flags(const trigger *source, short *flags);
 int d1_in_d2_trigger_source_link(const trigger *source);

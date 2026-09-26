@@ -1428,6 +1428,60 @@ static void test_native_trigger_serialization()
 	Triggers[0].flags |= TF_DISABLED;
 	Num_triggers = 1;
 	require(check_trigger_sub(0, 0, 0) == 1, "ordinary D2 disabled gate is unchanged");
+	const int saved_highest_segment = Highest_segment_index;
+	Highest_segment_index = 2;
+	source.flags = 0x1500;
+	require(d1_in_d2_decode_level_trigger(&Triggers[0], &source) && native_trigger_flags(0) == TRIGGER_SECRET_EXIT,
+	        "Orion level trigger ignores nonnative editor flag bits");
+	source.flags = 0;
+	for (const int count : { -1, -256, 1280 }) {
+		source.num_links = count;
+		require(d1_in_d2_decode_level_trigger(&Triggers[0], &source) && Triggers[0].num_links == 0,
+		        "Orion inert trigger tolerates an unused invalid link count");
+	}
+	source.flags = TRIGGER_CONTROL_DOORS;
+	require(!d1_in_d2_decode_level_trigger(&Triggers[0], &source), "active links still require a bounded count");
+	for (const int count : { 257, 258, 260 }) {
+		source.num_links = count;
+		require(d1_in_d2_decode_level_trigger(&Triggers[0], &source) && Triggers[0].num_links == count % 256,
+		        "Orion variants retain bounded legacy byte counts despite editor high-byte garbage");
+	}
+	source.flags = TRIGGER_MATCEN;
+	source.num_links = 4;
+	source.seg[0] = 1;
+	source.seg[1] = -1;
+	source.seg[2] = 3;
+	source.seg[3] = 2;
+	source.side[0] = source.side[1] = source.side[2] = source.side[3] = 0;
+	require(d1_in_d2_decode_level_trigger(&Triggers[0], &source) && Triggers[0].num_links == 2 &&
+	            Triggers[0].seg[0] == 1 && Triggers[0].seg[1] == 2,
+	        "Descend Again malformed matcen links retain the valid linked centers");
+	Highest_segment_index = saved_highest_segment;
+	const int saved_num_vclips = Num_vclips;
+	const vclip saved_clip = Vclip[1];
+	Num_vclips = 2;
+	Vclip[1].num_frames = 2;
+	Vclip[1].frame_time = F1_0;
+	object powerup = {};
+	powerup.type = OBJ_POWERUP;
+	powerup.render_type = RT_POWERUP;
+	powerup.rtype.vclip_info.vclip_num = 1;
+	d1_in_d2_fixup_level_object(&powerup, 1);
+	require(powerup.rtype.vclip_info.vclip_num == 1, "retain valid custom D1 object animations");
+	for (const int clip : { -1, 2, 81, VCLIP_MAXNUM }) {
+		powerup.rtype.vclip_info.vclip_num = clip;
+		d1_in_d2_fixup_level_object(&powerup, 1);
+		require(powerup.rtype.vclip_info.vclip_num == 0, "unavailable D1 object clips use the native fallback");
+	}
+	Vclip[1].frame_time = 0;
+	powerup.rtype.vclip_info.vclip_num = 1;
+	d1_in_d2_fixup_level_object(&powerup, 1);
+	require(powerup.rtype.vclip_info.vclip_num == 0, "zero-duration D1 object clips cannot enter animation loops");
+	powerup.rtype.vclip_info.vclip_num = 81;
+	d1_in_d2_fixup_level_object(&powerup, 2);
+	require(powerup.rtype.vclip_info.vclip_num == 81, "D1 fallback does not remap D2 level clips");
+	Num_vclips = saved_num_vclips;
+	Vclip[1] = saved_clip;
 	Num_triggers = 0;
 }
 #endif

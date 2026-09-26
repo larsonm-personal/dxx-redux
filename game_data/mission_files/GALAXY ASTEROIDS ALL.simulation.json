@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
-    "failed": 1,
-    "timeout": 1
+    "ok": 6,
+    "failed": 1
   },
   "levels": [
     {
@@ -51,7 +50,7 @@
           "s": 92
         }
       ],
-      "total_frames": 5538,
+      "total_frames": 5537,
       "rng_end": {
         "state": 71833247,
         "calls": 4938
@@ -86,11 +85,11 @@
         },
         {
           "n": "switch 3",
-          "s": 114
+          "s": 113
         },
         {
           "n": "red key",
-          "s": 128
+          "s": 127
         },
         {
           "n": "boss",
@@ -101,14 +100,14 @@
           "s": 191
         }
       ],
-      "total_frames": 11448,
+      "total_frames": 11437,
       "rng_end": {
-        "state": 1664613581,
-        "calls": 10228
+        "state": 1211594024,
+        "calls": 10175
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 21.333328,
+        "simulated_seconds": 21.46666,
         "difficulty": 2
       }
     },
@@ -132,22 +131,22 @@
         },
         {
           "n": "gold key",
-          "s": 79
+          "s": 78
         },
         {
           "n": "red key",
-          "s": 106
+          "s": 104
         },
         {
           "n": "reactor",
-          "s": 123
+          "s": 122
         },
         {
           "n": "exit",
-          "s": 137
+          "s": 135
         }
       ],
-      "total_frames": 8230,
+      "total_frames": 8126,
       "rng_end": {
         "state": 1750188052,
         "calls": 7811
@@ -178,7 +177,7 @@
         },
         {
           "n": "gold key",
-          "s": 68
+          "s": 69
         },
         {
           "n": "switch 24",
@@ -197,7 +196,7 @@
           "s": 196
         }
       ],
-      "total_frames": 11737,
+      "total_frames": 11748,
       "rng_end": {
         "state": 2955174371,
         "calls": 7846
@@ -301,14 +300,14 @@
           "s": 207
         }
       ],
-      "total_frames": 12411,
+      "total_frames": 12415,
       "rng_end": {
         "state": 3678545556,
         "calls": 5635
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 22.933334,
+        "simulated_seconds": 22.916656,
         "difficulty": 2
       }
     },
@@ -316,7 +315,7 @@
       "level_num": -1,
       "level_file": "PSYCHE5S.RL2",
       "route_input_sha256": "84C82AFD5C4B52CA275F251C43001D7A18BAEAB4A6E81D1207D9192C8DE4BC98",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -329,14 +328,21 @@
         {
           "n": "switch 1",
           "s": 5
+        },
+        {
+          "n": "red key",
+          "s": 13
+        },
+        {
+          "n": "exit",
+          "s": 23
         }
       ],
-      "total_frames": 4177,
+      "total_frames": 1407,
       "rng_end": {
-        "state": 342273387,
-        "calls": 414
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3167993577,
+        "calls": 728
+      }
     }
   ]
 }

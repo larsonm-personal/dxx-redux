@@ -28,21 +28,21 @@
         },
         {
           "n": "reactor",
-          "s": 28
+          "s": 27
         },
         {
           "n": "exit",
           "s": 30
         }
       ],
-      "total_frames": 1822,
+      "total_frames": 1801,
       "rng_end": {
-        "state": 2102736524,
-        "calls": 43
+        "state": 3949761703,
+        "calls": 2114
       },
       "reactor_escape": {
-        "countdown_seconds": 45.0,
-        "simulated_seconds": 2.783325,
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 3.350006,
         "difficulty": 2
       }
     },
@@ -58,17 +58,17 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 13
+          "s": 12
         },
         {
           "n": "red key",
-          "s": 34
+          "s": 35
         }
       ],
-      "total_frames": 9251,
+      "total_frames": 8698,
       "rng_end": {
-        "state": 3269224778,
-        "calls": 77
+        "state": 454377481,
+        "calls": 2744
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -82,10 +82,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 546,
+      "total_frames": 542,
       "rng_end": {
-        "state": 3535774167,
-        "calls": 18
+        "state": 1598124042,
+        "calls": 141
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     }
