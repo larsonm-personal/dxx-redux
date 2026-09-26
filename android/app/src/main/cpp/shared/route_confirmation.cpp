@@ -1166,7 +1166,7 @@ void apply_incidental_crossed_trigger(object *actor)
 		return;
 	const int closes_path = closing_trigger_intersects_path(actor, trigger_num);
 	check_trigger(&Segments[State.previous_actor_seg], (short) side,
-	              (short) State.actor_objnum, 0);
+	              (short) State.player_objnum, 0);
 	if (closes_path) {
 		State.crossed_path_closure = trigger_num + 1;
 		State.replan_wait_frames = 0;
@@ -1656,7 +1656,7 @@ void apply_objective_action(object *actor)
 			    objective_source(&segnum, &sidenum)) {
 				State.action_applied = 1;
 				check_trigger(&Segments[segnum], (short) sidenum,
-				              (short) State.actor_objnum, 1);
+				              (short) State.player_objnum, 1);
 				record_objective_and_replan();
 			}
 			break;
@@ -1744,8 +1744,9 @@ void apply_objective_action(object *actor)
 				     (State.previous_actor_seg == child &&
 				      actor->segnum == segnum));
 				if (crossed) {
+					// The full-radius proxy proves the player's crossing; D1 triggers reject robots
 					check_trigger(&Segments[segnum], (short) sidenum,
-					              (short) State.actor_objnum, 0);
+					              (short) State.player_objnum, 0);
 					record_objective_and_replan();
 					break;
 				}

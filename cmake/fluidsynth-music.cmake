@@ -45,7 +45,7 @@ function(dxx_add_fluidsynth)
     set(BUILD_SHARED_LIBS ON)
     set(osal cpp11 CACHE STRING "No GLib dependency" FORCE)
     FetchContent_Declare(fluid URL "${FLUIDSYNTH_URL}" URL_HASH "SHA256=${FLUIDSYNTH_SHA256}"
-                         DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
+                         SOURCE_SUBDIR dxx-populate-only DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
     # Match upstream's pinned Apache-2.0 compile-time math dependency, fetched with TLS verification
     FetchContent_Declare(gcem URL "${GCEM_URL}" URL_HASH "SHA256=${GCEM_SHA256}"
                          SOURCE_SUBDIR dxx-populate-only DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
@@ -53,6 +53,23 @@ function(dxx_add_fluidsynth)
     FetchContent_MakeAvailable(gcem)
     set(GCEM_INCLUDE_DIR "${gcem_SOURCE_DIR}/include" CACHE PATH "Pinned GCEM" FORCE)
     FetchContent_MakeAvailable(fluid)
+    # Upstream registers tests unconditionally but excludes their binaries from the build Keep those
+    # third-party tests out of the application's CTest suite
+    set(test_config "${fluid_SOURCE_DIR}/CMakeLists.txt")
+    file(READ "${test_config}" contents)
+    set(before "add_subdirectory ( test )")
+    set(after "# DXX: upstream tests are not part of the embedded synthesis library")
+    string(FIND "${contents}" "${before}" position)
+    if(NOT position EQUAL -1)
+        string(REPLACE "${before}" "${after}" contents "${contents}")
+        file(WRITE "${test_config}" "${contents}")
+    else()
+        string(FIND "${contents}" "${after}" position)
+        if(position EQUAL -1)
+            message(FATAL_ERROR "Unexpected FluidSynth source while disabling upstream tests")
+        endif()
+    endif()
+    add_subdirectory("${fluid_SOURCE_DIR}" "${fluid_BINARY_DIR}" EXCLUDE_FROM_ALL)
     # Build only the linked library, not upstream CLI, examples or test executables
     set_property(DIRECTORY "${fluid_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
     if(ANDROID)

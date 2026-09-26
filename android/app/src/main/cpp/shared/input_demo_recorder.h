@@ -13,6 +13,10 @@
 extern "C" {
 #endif
 
+/* Engine headers select byte packing on MSVC; keep the recorder API layout stable */
+#if defined(_MSC_VER)
+#pragma pack(push, 8)
+#endif
 typedef struct input_demo_recorder_settings {
 	int game;
 	const char *mission;
@@ -32,6 +36,9 @@ typedef struct input_demo_recorder_settings {
 	input_demo_checkpoint_thief_state checkpoint_thief_state;
 	int record_per_frame_state;
 } input_demo_recorder_settings;
+#if defined(_MSC_VER)
+#pragma pack(pop)
+#endif
 
 void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings);
 int input_demo_recorder_is_active(void);

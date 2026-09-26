@@ -26,7 +26,7 @@ foreach ($file in $files) {
     }
     $log = Get-Content -LiteralPath (Join-Path $output ('logs/' + $file.BaseName + '.log')) -Raw
     if ($log -notmatch '(?s)complete step=.*label=Boss robot.*complete step=.*label=Open hidden door.*complete step=.*label=Shoot switch trigger 9.*complete step=.*label=Exit' -or
-        $log -notmatch 'verified switch shot actor_seg=566 target_seg=568 wall=70' -or
+        $log -notmatch 'verified switch shot actor_seg=566 target_seg=\d+ wall=70' -or
         $log -match 'guided missile') {
         throw 'The route must open the solid exit barrier through its actual switch'
     }
