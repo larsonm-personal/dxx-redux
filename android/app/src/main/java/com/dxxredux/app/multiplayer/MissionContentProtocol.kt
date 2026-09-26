@@ -5,8 +5,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonPrimitive
 
 internal const val MISSION_REQUIREMENT_SCHEMA = 1
 internal const val MISSION_TRANSFER_MAX_BYTES = 256L * 1024L * 1024L
@@ -157,16 +155,3 @@ internal fun missionRequirementFromGameInfo(gameInfo: JsonObject): MissionRequir
             .getOrNull()
             ?.takeIf(MissionRequirement::isValid)
     }
-
-internal fun legacyMissionRequirement(gameInfo: JsonObject): MissionRequirement? {
-    val game = gameInfo["game"]?.jsonPrimitive?.contentOrNull ?: return null
-    val mission = gameInfo["mission"]?.jsonPrimitive?.contentOrNull ?: return null
-    val revision = "legacy:$game:$mission"
-    return MissionRequirement(
-        revision = revision,
-        game = game,
-        missionKey = mission,
-        displayName = mission,
-        kind = MissionRequirement.KIND_LOOSE,
-    )
-}

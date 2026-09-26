@@ -29,14 +29,18 @@ class CdAudioSourceVisibilityTest {
 
     @Test
     fun reportsMissingBinsButUsesLocalCueInsteadOfOriginalImportUri() {
-        val root = kotlin.io.path.createTempDirectory("music-source-diagnostics").toFile()
+        val root =
+            kotlin.io.path
+                .createTempDirectory("music-source-diagnostics")
+                .toFile()
         try {
             File(root, "disc.cue").writeText("FILE disc.bin BINARY")
-            val source = testSource(
-                id = "vertigo",
-                binContentUris = listOf("content://good-bin", "content://broken-bin"),
-                cueContentUri = "content://broken-original-cue",
-            )
+            val source =
+                testSource(
+                    id = "vertigo",
+                    binContentUris = listOf("content://good-bin", "content://broken-bin"),
+                    cueContentUri = "content://broken-original-cue",
+                )
             assertEquals(
                 listOf("BIN: content://broken-bin"),
                 inaccessibleCdSourceFiles(root, source) { uri, _ -> !uri.contains("broken") },
@@ -53,7 +57,10 @@ class CdAudioSourceVisibilityTest {
 
     @Test
     fun registryRetainsUnavailableAndDeselectedSourcesForSettings() {
-        val root = kotlin.io.path.createTempDirectory("music-settings-registry").toFile()
+        val root =
+            kotlin.io.path
+                .createTempDirectory("music-settings-registry")
+                .toFile()
         try {
             val setDir = File(root, "sets/default").apply { mkdirs() }
             val manager = AudioSourceManager(root, setDir)
@@ -62,7 +69,7 @@ class CdAudioSourceVisibilityTest {
                 set(
                     manager,
                     mutableListOf(
-                        testSource("vertigo", binContentUri = "content://missing"),
+                        testSource("vertigo", binContentUris = listOf("content://missing")),
                         testSource("macplay").copy(enabled = false),
                         testSource("abyss"),
                     ),
@@ -88,7 +95,7 @@ class CdAudioSourceVisibilityTest {
         val mergedBinB = File.createTempFile("merged-disc-b", ".bin")
         mergedBinB.deleteOnExit()
 
-        val mergedSource = testSource(id = "merged", binContentUri = mergedBin.absolutePath)
+        val mergedSource = testSource(id = "merged", binContentUris = listOf(mergedBin.absolutePath))
         val multiMergedSource =
             testSource(
                 id = "multi-merged",
@@ -96,7 +103,7 @@ class CdAudioSourceVisibilityTest {
                 binPaths = listOf("disc-a.bin", "disc-b.bin"),
             )
         val relativeSource = testSource(id = "relative")
-        val safSource = testSource(id = "saf", binContentUri = "content://good-bin")
+        val safSource = testSource(id = "saf", binContentUris = listOf("content://good-bin"))
         val multiRelativeSource = testSource(id = "multi-relative", binPaths = listOf("disc-a.bin", "disc-b.bin"))
 
         assertEquals(mergedBin.absolutePath, resolveCdPreviewLocalBinPath(filesDir, mergedSource))
@@ -119,7 +126,7 @@ class CdAudioSourceVisibilityTest {
         filesDir.mkdirs()
         val localCue = File(filesDir, "disc.cue")
         localCue.writeText("FILE \"disc.bin\" BINARY\n")
-        val mergedSource = testSource(id = "merged", binContentUri = File(filesDir, "merged.bin").absolutePath)
+        val mergedSource = testSource(id = "merged", binContentUris = listOf(File(filesDir, "merged.bin").absolutePath))
 
         assertEquals(localCue.absolutePath, resolvePlaylistCuePath(filesDir, mergedSource) { "fallback.cue" })
     }
@@ -136,7 +143,7 @@ class CdAudioSourceVisibilityTest {
         val mergedSource =
             testSource(
                 id = "merged-import-root",
-                binContentUri = localBin.absolutePath,
+                binContentUris = listOf(localBin.absolutePath),
                 cuePath = localCue.absolutePath,
             )
 
@@ -147,7 +154,7 @@ class CdAudioSourceVisibilityTest {
     fun fallsBackToStagedCuePathForSafPlaylistSources() {
         val filesDir = File("build/test-playlist-cue-fallback").absoluteFile
         filesDir.mkdirs()
-        val safSource = testSource(id = "saf", binContentUri = "content://good-bin")
+        val safSource = testSource(id = "saf", binContentUris = listOf("content://good-bin"))
 
         assertEquals("fallback.cue", resolvePlaylistCuePath(filesDir, safSource) { "fallback.cue" })
     }
@@ -155,9 +162,11 @@ class CdAudioSourceVisibilityTest {
     @Test
     fun reservesSafEntriesForActualSafBackedCdSources() {
         val localSource = testSource(id = "local")
-        val mergedLocalSource = testSource(id = "merged", binContentUri = File("/tmp/merged.bin").absolutePath)
-        val safSource = testSource(id = "saf", binContentUri = "content://good-bin", cueContentUri = "content://good-cue")
-        val multiSafSource = testSource(id = "multi-saf", binContentUris = listOf("content://good-bin-1", "content://good-bin-2"))
+        val mergedLocalSource = testSource(id = "merged", binContentUris = listOf(File("/tmp/merged.bin").absolutePath))
+        val safSource =
+            testSource(id = "saf", binContentUris = listOf("content://good-bin"), cueContentUri = "content://good-cue")
+        val multiSafSource =
+            testSource(id = "multi-saf", binContentUris = listOf("content://good-bin-1", "content://good-bin-2"))
 
         assertEquals(false, hasSafLinkedCdContent(localSource))
         assertEquals(false, hasSafLinkedCdContent(mergedLocalSource))
@@ -167,7 +176,6 @@ class CdAudioSourceVisibilityTest {
 
     private fun testSource(
         id: String,
-        binContentUri: String? = null,
         binContentUris: List<String> = emptyList(),
         cueContentUri: String? = null,
         cuePath: String = "disc.cue",
@@ -175,20 +183,18 @@ class CdAudioSourceVisibilityTest {
         trackCount: Int = 10,
         audioTrackNumbers: List<Int> = emptyList(),
         trackNames: Map<Int, String> = emptyMap(),
-    ) =
-        AudioSourceManager.AudioSource(
-            id = id,
-            cuePath = cuePath,
-            binPaths = binPaths,
-            discLabel = id,
-            discId = "unknown",
-            trackCount = trackCount,
-            audioTrackCount = if (audioTrackNumbers.isEmpty()) 9 else audioTrackNumbers.size,
-            audioTrackNumbers = audioTrackNumbers,
-            legacyDiscId = 0L,
-            trackNames = trackNames,
-            binContentUri = binContentUri,
-            binContentUris = binContentUris,
-            cueContentUri = cueContentUri,
-        )
+    ) = AudioSourceManager.AudioSource(
+        id = id,
+        cuePath = cuePath,
+        binPaths = binPaths,
+        discLabel = id,
+        discId = "unknown",
+        trackCount = trackCount,
+        audioTrackCount = if (audioTrackNumbers.isEmpty()) 9 else audioTrackNumbers.size,
+        audioTrackNumbers = audioTrackNumbers,
+        legacyDiscId = 0L,
+        trackNames = trackNames,
+        binContentUris = binContentUris,
+        cueContentUri = cueContentUri,
+    )
 }

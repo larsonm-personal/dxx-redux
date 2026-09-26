@@ -639,7 +639,6 @@ internal fun registerDiscAudioSourceFromPath(
             audioTrackNumbers = tracks.filter { it.isAudio }.map { it.trackNum },
             legacyDiscId = legacyDiscId,
             trackNames = trackNames,
-            binContentUri = orderedBinFiles.first().absolutePath,
             binContentUris = orderedBinFiles.map { it.absolutePath },
         ),
     )

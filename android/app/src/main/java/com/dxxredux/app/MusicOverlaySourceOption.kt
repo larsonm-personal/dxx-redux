@@ -29,7 +29,7 @@ internal fun musicOverlaySourceOptions(
                     cdSources.filter { source ->
                         audioSourceManager.sourceFilesAvailable(source) &&
                             source
-                                .binContentUriList()
+                                .binContentUris
                                 .filterNot(::isLocalCdContentPath)
                                 .all { canAccessUri(it, true) }
                     }

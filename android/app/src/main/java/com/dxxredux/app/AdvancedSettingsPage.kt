@@ -152,7 +152,7 @@ private suspend fun loadSafEntries(
         runCatching {
             for (source in AudioSourceManager.forActiveSet(filesDir).getSources()) {
                 if (!hasSafLinkedCdContent(source)) continue
-                val binUris = source.binContentUriList().filterNot(::isLocalCdContentPath)
+                val binUris = source.binContentUris.filterNot(::isLocalCdContentPath)
                 val cueUri = source.cueContentUri?.takeUnless(::isLocalCdContentPath)
                 (binUris + listOfNotNull(cueUri)).forEach(trackedSafUris::add)
                 val displayUri = cueUri ?: binUris.firstOrNull() ?: continue
@@ -371,7 +371,7 @@ private fun storageFileNameComparator(): Comparator<StorageFileEntry> =
         .thenBy { it.relativePath }
 
 private fun buildCdSourceSafLabel(source: AudioSourceManager.AudioSource): String {
-    val safBinCount = source.binContentUriList().count { !isLocalCdContentPath(it) }
+    val safBinCount = source.binContentUris.count { !isLocalCdContentPath(it) }
     val hasSafCue = source.cueContentUri?.let { !isLocalCdContentPath(it) } == true
     val summary =
         when {

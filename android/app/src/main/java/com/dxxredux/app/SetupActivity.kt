@@ -1380,7 +1380,7 @@ class SetupActivity : ComponentActivity() {
                             }
                             val cuePath = resolveCdAudioSourceFile(filesDir, src.cuePath).absolutePath
                             val localBinPaths = resolveCdPreviewLocalBinPaths(filesDir, src)
-                            val safBinUris = src.binContentUriList().filterNot(::isLocalCdContentPath)
+                            val safBinUris = src.binContentUris.filterNot(::isLocalCdContentPath)
                             val sr = CdPreviewBridge.getNativeSampleRate(this@SetupActivity)
                             val ok =
                                 if (localBinPaths != null) {
@@ -1509,7 +1509,6 @@ class SetupActivity : ComponentActivity() {
                                 trackCount = parsedTracks.size,
                                 audioTrackCount = parsedTracks.count { it.isAudio },
                                 legacyDiscId = 0,
-                                binContentUri = orderedBinPaths.first(),
                                 binContentUris = orderedBinPaths,
                             ),
                         )

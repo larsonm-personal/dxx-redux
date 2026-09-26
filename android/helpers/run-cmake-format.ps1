@@ -15,51 +15,8 @@ $ErrorActionPreference = "Stop"
 $androidRoot = Split-Path $PSScriptRoot
 $repoRoot = Split-Path $androidRoot
 
-# --- In-scope cmake files (added by the cmake branch) ---
-# These globs are evaluated relative to $repoRoot. d1/, d2/ are excluded.
-$inScopeGlobs = @(
-    "android\app\src\main\cpp\CMakeLists.txt",
-    "android\app\src\main\cpp\extract\CMakeLists.txt",
-    "android\tests\CMakeLists.txt",
-    "cmake\*.cmake",
-    "android\tools\etc2tool\CMakeLists.txt"
-)
+. (Join-Path $PSScriptRoot "code-quality-files.ps1")
 
-function Resolve-InScopeFiles {
-    $all = @()
-    foreach ($g in $inScopeGlobs) {
-        $matches = Get-ChildItem -Path (Join-Path $repoRoot $g) -ErrorAction SilentlyContinue
-        if ($matches) { $all += $matches }
-    }
-    return @($all | Sort-Object FullName -Unique)
-}
-
-function Filter-ToInputPaths {
-    param([System.IO.FileInfo[]]$AllFiles, [string[]]$InputPaths)
-    if (-not $InputPaths -or $InputPaths.Count -eq 0) { return $AllFiles }
-    $resolvedInputs = @()
-    foreach ($p in $InputPaths) {
-        if ([string]::IsNullOrWhiteSpace($p)) { continue }
-        $candidate = $p
-        if (-not [System.IO.Path]::IsPathRooted($candidate)) {
-            $candidate = Join-Path $repoRoot $candidate
-        }
-        $item = Get-Item -LiteralPath $candidate -ErrorAction SilentlyContinue
-        if ($item) { $resolvedInputs += $item }
-    }
-    if ($resolvedInputs.Count -eq 0) { return @() }
-    return @($AllFiles | Where-Object {
-            $f = $_
-            foreach ($r in $resolvedInputs) {
-                if ($r.PSIsContainer) {
-                    if ($f.FullName.StartsWith($r.FullName, [System.StringComparison]::OrdinalIgnoreCase)) { return $true }
-                } elseif ($f.FullName -ieq $r.FullName) { return $true }
-            }
-            return $false
-        })
-}
-
-# --- Locate cmake-format ---
 $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
 if (-not (Test-Path $depBaseFile)) {
     Write-Error "dependency_base.txt not found at $depBaseFile"
@@ -92,7 +49,7 @@ Write-Host "Using: $cmakeFormat"
 & $cmakeFormat --version
 
 # --- Gather files ---
-$files = Filter-ToInputPaths -AllFiles (Resolve-InScopeFiles) -InputPaths $Paths
+$files = @(Get-CodeQualityCmakeFiles -RepoRoot $repoRoot -InputPaths $Paths)
 if ($files.Count -eq 0) {
     Write-Host "No cmake files in scope to format"
     exit 0

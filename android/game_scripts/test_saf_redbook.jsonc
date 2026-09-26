@@ -1,7 +1,7 @@
 // TEST: SAF Redbook Audio Regression
 //
 // Verifies that BIN/CUE CD audio registered via SAF-style reference
-// (binContentUri) is playable in-game. The BIN is opened via fd in the
+// (binContentUris) is playable in-game. The BIN is opened via fd in the
 // game process.
 //
 // Root cause of the original bug: MainActivity runs in :game process,

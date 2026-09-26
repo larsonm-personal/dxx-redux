@@ -55,7 +55,7 @@ internal fun inaccessibleCdSourceFiles(
 ): List<String> =
     buildList {
         val bins =
-            source.binContentUriList().ifEmpty {
+            source.binContentUris.ifEmpty {
                 source.binPaths
             }
         val cue = source.cuePath
@@ -80,11 +80,11 @@ internal fun resolveCdPreviewLocalBinPaths(
     source: AudioSourceManager.AudioSource,
 ): List<String>? =
     when {
-        source.binContentUriList().isNotEmpty() && source.binContentUriList().all(::isLocalCdContentPath) -> {
-            source.binContentUriList()
+        source.binContentUris.isNotEmpty() && source.binContentUris.all(::isLocalCdContentPath) -> {
+            source.binContentUris
         }
 
-        source.binContentUriList().isEmpty() && source.binPaths.isNotEmpty() -> {
+        source.binContentUris.isEmpty() && source.binPaths.isNotEmpty() -> {
             source.binPaths.map { resolveCdAudioSourceFile(filesDir, it).absolutePath }
         }
 
@@ -888,7 +888,7 @@ private fun CdAudioSection(
                             Text("CUE: ${src.cuePath} (local copy)", fontSize = 12.sp)
                             Text("BIN: ${src.binPaths.joinToString(", ")}", fontSize = 12.sp)
                         } else {
-                            val localBinContentUris = src.binContentUriList().filter(::isLocalCdContentPath)
+                            val localBinContentUris = src.binContentUris.filter(::isLocalCdContentPath)
                             val binPaths =
                                 localBinContentUris
                                     .takeIf { it.isNotEmpty() }
@@ -1495,7 +1495,7 @@ private fun CdTrackDetailDialog(
         if (CdPreviewBridge.getState().state != CdPreviewBridge.STATE_PAUSED) {
             val cuePath = resolveCdAudioSourceFile(filesDir, source.cuePath).absolutePath
             val localBinPaths = resolveCdPreviewLocalBinPaths(filesDir, source)
-            val binUris = source.binContentUriList()
+            val binUris = source.binContentUris
             val started =
                 if (localBinPaths != null) {
                     val localStarted =

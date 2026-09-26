@@ -1449,13 +1449,11 @@ internal fun DiscImportDialog(
                                                 val audioCount = parsedTracks.count { it.isAudio }
 
                                                 val binNames = mutableListOf<String>()
-                                                var firstBinUri: Uri? = null
                                                 for ((name, uri) in orderedBinUris) {
                                                     if (!persistReadPermissionForUri(context, uri)) {
                                                         Log.w("DXX-DiscImport", "Could not persist URI for $name")
                                                     }
                                                     binNames.add(name.lowercase())
-                                                    if (firstBinUri == null) firstBinUri = uri
                                                 }
 
                                                 // Try to identify the disc via SAF fd
@@ -1583,7 +1581,6 @@ internal fun DiscImportDialog(
                                                             parsedTracks.filter { it.isAudio }.map { it.trackNum },
                                                         legacyDiscId = legacyDiscId,
                                                         trackNames = trackNames,
-                                                        binContentUri = firstBinUri?.toString(),
                                                         binContentUris = orderedBinUris.map { it.second.toString() },
                                                         cueContentUri = cueUri.toString(),
                                                     ),

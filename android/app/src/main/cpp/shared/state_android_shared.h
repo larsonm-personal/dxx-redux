@@ -11,6 +11,8 @@
 
 extern int g_android_save_blank_thumbnail;
 
+void state_android_cache_launcher_thumbnail(void);
+
 rewind_file *state_android_open_read_buffered(const char *filename);
 rewind_file *state_android_open_write_buffered(const char *filename);
 int state_android_close_file(rewind_file *file);

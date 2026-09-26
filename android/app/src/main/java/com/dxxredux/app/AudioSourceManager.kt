@@ -56,16 +56,13 @@ internal fun getSafLinkedHelperArtifactPaths(
     sources: List<AudioSourceManager.AudioSource>,
 ): Set<String> = getManagedInternalArtifactPaths(filesDir, sources.filter(::hasSafLinkedCdContent))
 
-internal fun AudioSourceManager.AudioSource.binContentUriList(): List<String> =
-    if (binContentUris.isNotEmpty()) binContentUris else listOfNotNull(binContentUri)
-
 internal fun resolvePlaylistCuePath(
     filesDir: File,
     source: AudioSourceManager.AudioSource,
     fallback: () -> String,
 ): String {
     val localCue = resolveCdAudioSourceFile(filesDir, source.cuePath)
-    val binContentUris = source.binContentUriList()
+    val binContentUris = source.binContentUris
     return if (binContentUris.isNotEmpty() && binContentUris.all(::isLocalCdContentPath) && localCue.exists()) {
         localCue.absolutePath
     } else {
@@ -83,13 +80,13 @@ private fun getManagedInternalArtifactFilesForSource(
         files.add(cueFile)
     }
 
-    val localBinContentPaths = source.binContentUriList().filter(::isLocalCdContentPath)
+    val localBinContentPaths = source.binContentUris.filter(::isLocalCdContentPath)
     if (localBinContentPaths.isNotEmpty()) {
         localBinContentPaths
             .map(::File)
             .filter { file -> isManagedCdArtifactFile(file, filesDir) }
             .forEach(files::add)
-    } else if (source.binContentUriList().isEmpty()) {
+    } else if (source.binContentUris.isEmpty()) {
         source.binPaths
             .map { resolveCdAudioSourceFile(filesDir, it) }
             .filter { file -> isManagedCdArtifactFile(file, filesDir) }
@@ -200,8 +197,6 @@ class AudioSourceManager(
         val order: Int = 0,
         // fingerprint-matched track names: 1-based track number -> name
         val trackNames: Map<Int, String> = emptyMap(),
-        // SAF content URI for BIN file (when referenced in-place, not copied)
-        val binContentUri: String? = null,
         // SAF content URI(s) for BIN file(s) when referenced in-place, not copied
         val binContentUris: List<String> = emptyList(),
         // SAF content URI for CUE file (when referenced in-place, not copied)
@@ -304,7 +299,7 @@ class AudioSourceManager(
     }
 
     private fun AudioSource.trackedSafUris(): List<String> =
-        (binContentUriList() + listOfNotNull(cueContentUri)).filterNot(::isLocalCdContentPath)
+        (binContentUris + listOfNotNull(cueContentUri)).filterNot(::isLocalCdContentPath)
 
     private fun managedInternalFilesForSource(source: AudioSource): List<File> =
         getManagedInternalArtifactFilesForSource(filesDir, source)
@@ -378,7 +373,7 @@ class AudioSourceManager(
             val pruned = mutableListOf<String>()
             val toRemove =
                 sources.filter { src ->
-                    val binContentUris = src.binContentUriList()
+                    val binContentUris = src.binContentUris
                     if (binContentUris.any { !isLocalCdContentPath(it) }) return@filter false
                     val allFiles =
                         if (binContentUris.isNotEmpty()) {
@@ -483,7 +478,7 @@ class AudioSourceManager(
         resolver: ContentResolver?,
         activeSetDir: File?,
     ): List<String> {
-        val binContentUris = src.binContentUriList()
+        val binContentUris = src.binContentUris
         if (binContentUris.isEmpty()) {
             return src.binPaths.map { resolveBinPath(it, activeSetDir) }
         }
@@ -555,7 +550,7 @@ class AudioSourceManager(
         activeSetDir: File?,
     ): Boolean {
         if (resolveExistingFile(source.cuePath, activeSetDir) == null) return false
-        val contentBins = source.binContentUriList()
+        val contentBins = source.binContentUris
         val localBins =
             if (contentBins.isEmpty()) source.binPaths else contentBins.filter(::isLocalCdContentPath)
         return localBins.all { resolveExistingFile(it, activeSetDir) != null }
@@ -618,13 +613,12 @@ class AudioSourceManager(
                     .map { i ->
                         val obj = arr.getJSONObject(i)
                         val binArr = obj.getJSONArray("bins")
-                        val legacyBinContentUri = obj.optString("bin_content_uri", "").ifEmpty { null }
                         val binContentUris =
                             obj.optJSONArray("bin_content_uris")?.let { uriArr ->
                                 (0 until uriArr.length()).mapNotNull { index ->
                                     uriArr.optString(index).ifEmpty { null }
                                 }
-                            } ?: legacyBinContentUri?.let(::listOf) ?: emptyList()
+                            } ?: emptyList()
                         AudioSource(
                             id = obj.getString("id"),
                             cuePath = obj.getString("cue"),
@@ -644,7 +638,6 @@ class AudioSourceManager(
                                 obj.optJSONObject("track_names")?.let { tn ->
                                     tn.keys().asSequence().associate { k -> k.toInt() to tn.getString(k) }
                                 } ?: emptyMap(),
-                            binContentUri = legacyBinContentUri ?: binContentUris.firstOrNull(),
                             binContentUris = binContentUris,
                             cueContentUri = obj.optString("cue_content_uri", "").ifEmpty { null },
                         )
@@ -684,12 +677,11 @@ class AudioSourceManager(
                 src.trackNames.forEach { (k, v) -> tn.put(k.toString(), v) }
                 obj.put("track_names", tn)
             }
-            val binContentUris = src.binContentUriList()
+            val binContentUris = src.binContentUris
             if (binContentUris.isNotEmpty()) {
                 val binUriArray = JSONArray()
                 binContentUris.forEach(binUriArray::put)
                 obj.put("bin_content_uris", binUriArray)
-                obj.put("bin_content_uri", binContentUris.first())
             }
             src.cueContentUri?.let { obj.put("cue_content_uri", it) }
             arr.put(obj)

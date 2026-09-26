@@ -31,46 +31,7 @@ function Get-ToolVersionSetting {
     return $null
 }
 
-function Get-ScopedFiles {
-    param(
-        [string]$RootPath,
-        [string[]]$InputPaths,
-        [string[]]$ValidExtensions
-    )
-
-    $results = @()
-    if ($InputPaths -and $InputPaths.Count -gt 0) {
-        foreach ($inputPath in $InputPaths) {
-            if ([string]::IsNullOrWhiteSpace($inputPath)) {
-                continue
-            }
-
-            $candidate = $inputPath
-            if (-not [System.IO.Path]::IsPathRooted($candidate)) {
-                $candidate = Join-Path $repoRoot $candidate
-            }
-
-            $item = Get-Item -LiteralPath $candidate -ErrorAction SilentlyContinue
-            if (-not $item) {
-                continue
-            }
-
-            if ($item.PSIsContainer) {
-                $results += Get-ChildItem -LiteralPath $item.FullName -Recurse -File
-            } else {
-                $results += $item
-            }
-        }
-    } else {
-        $results = Get-ChildItem -Path $RootPath -Recurse -File
-    }
-
-    return @($results | Where-Object {
-            $_.FullName.StartsWith($RootPath, [System.StringComparison]::OrdinalIgnoreCase) -and
-            ($ValidExtensions -contains $_.Extension.ToLowerInvariant()) -and
-            $_.FullName -notmatch '[\\/](build|\.cxx|temp)[\\/]'
-        } | Sort-Object FullName -Unique)
-}
+. (Join-Path $PSScriptRoot "code-quality-files.ps1")
 
 # --- Ensure PSScriptAnalyzer is available ---
 $analyzerVersion = Get-ToolVersionSetting -Name "PSSCRIPTANALYZER_VERSION"
@@ -121,7 +82,7 @@ if (-not (Test-Path $settingsFile)) {
 
 # --- Gather .ps1 files ---
 # Exclude build outputs, gradle wrapper, and NDK cmake cache
-$files = Get-ScopedFiles -RootPath $repoRoot -InputPaths $Paths -ValidExtensions @('.ps1')
+$files = Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $repoRoot -InputPaths $Paths -ValidExtensions @('.ps1') -ExcludePattern '[\\/](build|\.cxx|temp)[\\/]'
 
 if ($files.Count -eq 0) {
     Write-Host "No PowerShell files found"

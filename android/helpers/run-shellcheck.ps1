@@ -16,46 +16,7 @@ $repoRoot = Split-Path $androidRoot
 $platformHelper = Join-Path $androidRoot "get_deps/helpers/Get-DepPlatform.ps1"
 . $platformHelper
 
-function Get-ScopedFiles {
-    param(
-        [string]$RootPath,
-        [string[]]$InputPaths,
-        [string[]]$ValidExtensions
-    )
-
-    $results = @()
-    if ($InputPaths -and $InputPaths.Count -gt 0) {
-        foreach ($inputPath in $InputPaths) {
-            if ([string]::IsNullOrWhiteSpace($inputPath)) {
-                continue
-            }
-
-            $candidate = $inputPath
-            if (-not [System.IO.Path]::IsPathRooted($candidate)) {
-                $candidate = Join-Path $repoRoot $candidate
-            }
-
-            $item = Get-Item -LiteralPath $candidate -ErrorAction SilentlyContinue
-            if (-not $item) {
-                continue
-            }
-
-            if ($item.PSIsContainer) {
-                $results += Get-ChildItem -LiteralPath $item.FullName -Recurse -File
-            } else {
-                $results += $item
-            }
-        }
-    } else {
-        $results = Get-ChildItem -Path $RootPath -Recurse -File
-    }
-
-    return @($results | Where-Object {
-            $_.FullName.StartsWith($RootPath, [System.StringComparison]::OrdinalIgnoreCase) -and
-            ($ValidExtensions -contains $_.Extension.ToLowerInvariant()) -and
-            $_.FullName -notmatch '[\\/](build|build-outputs|\.cxx)[\\/]'
-        } | Sort-Object FullName -Unique)
-}
+. (Join-Path $PSScriptRoot "code-quality-files.ps1")
 
 # --- Locate shellcheck ---
 $DEP_BASE = Get-DependencyBase -RepoRoot $repoRoot
@@ -88,7 +49,7 @@ Write-Host "Using: $shellcheck"
 & $shellcheck --version | Select-Object -First 2
 
 # --- Gather .sh files ---
-$files = Get-ScopedFiles -RootPath $androidRoot -InputPaths $Paths -ValidExtensions @('.sh')
+$files = Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $androidRoot -InputPaths $Paths -ValidExtensions @('.sh') -ExcludePattern '[\\/](build|build-outputs|\.cxx)[\\/]'
 
 if ($files.Count -eq 0) {
     Write-Host "No shell scripts found"

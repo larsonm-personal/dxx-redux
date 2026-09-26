@@ -197,9 +197,9 @@ if ($LauncherButtons) {
     $steps = @($steps[0..($firstTravelStep - 1)])
     $musicRegistry = @{
         sources = @(
-            @{ id = 'vertigo'; label = 'Vertigo Series'; cue = 'missing.cue'; bins = @('missing.bin'); audio_track_count = 7; track_count = 8; bin_content_uri = 'content://missing/vertigo' },
-            @{ id = 'macplay'; label = 'Macplay'; cue = 'missing.cue'; bins = @('missing.bin'); audio_track_count = 13; track_count = 14; enabled = $false; bin_content_uri = 'content://missing/macplay' },
-            @{ id = 'abyss'; label = 'Abyss'; cue = 'missing.cue'; bins = @('missing.bin'); audio_track_count = 10; track_count = 11; bin_content_uri = 'content://missing/abyss' }
+            @{ id = 'vertigo'; label = 'Vertigo Series'; cue = 'missing.cue'; bins = @('missing.bin'); audio_track_count = 7; track_count = 8; bin_content_uris = @('content://missing/vertigo') },
+            @{ id = 'macplay'; label = 'Macplay'; cue = 'missing.cue'; bins = @('missing.bin'); audio_track_count = 13; track_count = 14; enabled = $false; bin_content_uris = @('content://missing/macplay') },
+            @{ id = 'abyss'; label = 'Abyss'; cue = 'missing.cue'; bins = @('missing.bin'); audio_track_count = 10; track_count = 11; bin_content_uris = @('content://missing/abyss') }
         )
     } | ConvertTo-Json -Depth 5
     $steps = @($steps[0]) + @(

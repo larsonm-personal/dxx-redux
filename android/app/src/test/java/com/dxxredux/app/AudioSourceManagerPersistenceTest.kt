@@ -1,10 +1,10 @@
 package com.dxxredux.app
 
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.json.JSONObject
 import java.io.File
 
 class AudioSourceManagerPersistenceTest {
@@ -71,7 +71,12 @@ class AudioSourceManagerPersistenceTest {
         File(setDir, "disc.cue").writeText("FILE disc.bin BINARY\n  TRACK 01 MODE1/2352\n")
         File(setDir, "disc.bin").writeText("disc")
         val contentManager = FileSetContentManager(setDir)
-        val contentId = contentManager.reconcile().entries.single().id
+        val contentId =
+            contentManager
+                .reconcile()
+                .entries
+                .single()
+                .id
         val audioManager = AudioSourceManager(filesDir, setDir)
         val source =
             AudioSourceManager.AudioSource(
@@ -135,9 +140,13 @@ class AudioSourceManagerPersistenceTest {
         val savedUris = savedSource.getJSONArray("bin_content_uris")
         val savedTrackNumbers = savedSource.getJSONArray("audio_track_numbers")
 
-        assertEquals(listOf("content://disc-a", "content://disc-b"), (0 until savedUris.length()).map(savedUris::getString))
+        assertEquals(
+            listOf("content://disc-a", "content://disc-b"),
+            (0 until savedUris.length()).map(savedUris::getString),
+        )
         assertEquals((2..12).toList(), (0 until savedTrackNumbers.length()).map(savedTrackNumbers::getInt))
-        assertEquals("content://disc-a", savedSource.getString("bin_content_uri"))
+        assertFalse(savedSource.has("bin_content_uri"))
+        assertEquals(source.binContentUris, AudioSourceManager(filesDir).getSources().single().binContentUris)
         assertEquals("content://disc-cue", savedSource.getString("cue_content_uri"))
         assertEquals((2..12).toList(), AudioSourceManager(filesDir).getSources().single().audioTrackNumbers)
     }
@@ -152,18 +161,20 @@ class AudioSourceManagerPersistenceTest {
         val secondBin = "$tree/document/music%2Fsecond.bin"
         val manager = AudioSourceManager(filesDir)
 
-        fun source(id: String, binUri: String) =
-            AudioSourceManager.AudioSource(
-                id = id,
-                cuePath = "$id.cue",
-                binPaths = listOf("$id.bin"),
-                discLabel = id,
-                discId = "unknown",
-                trackCount = 2,
-                audioTrackCount = 1,
-                legacyDiscId = 0L,
-                binContentUris = listOf(binUri),
-            )
+        fun source(
+            id: String,
+            binUri: String,
+        ) = AudioSourceManager.AudioSource(
+            id = id,
+            cuePath = "$id.cue",
+            binPaths = listOf("$id.bin"),
+            discLabel = id,
+            discId = "unknown",
+            trackCount = 2,
+            audioTrackCount = 1,
+            legacyDiscId = 0L,
+            binContentUris = listOf(binUri),
+        )
 
         AudioSourceManager::class.java.getDeclaredField("sources").apply {
             isAccessible = true

@@ -13,47 +13,7 @@ $ErrorActionPreference = "Stop"
 $androidRoot = Split-Path $PSScriptRoot
 $repoRoot = Split-Path $androidRoot
 
-$inScopeGlobs = @(
-    "android\app\src\main\cpp\CMakeLists.txt",
-    "android\app\src\main\cpp\extract\CMakeLists.txt",
-    "android\tests\CMakeLists.txt",
-    "cmake\*.cmake",
-    "android\tools\etc2tool\CMakeLists.txt"
-)
-
-function Resolve-InScopeFiles {
-    $all = @()
-    foreach ($g in $inScopeGlobs) {
-        $matches = Get-ChildItem -Path (Join-Path $repoRoot $g) -ErrorAction SilentlyContinue
-        if ($matches) { $all += $matches }
-    }
-    return @($all | Sort-Object FullName -Unique)
-}
-
-function Filter-ToInputPaths {
-    param([System.IO.FileInfo[]]$AllFiles, [string[]]$InputPaths)
-    if (-not $InputPaths -or $InputPaths.Count -eq 0) { return $AllFiles }
-    $resolvedInputs = @()
-    foreach ($p in $InputPaths) {
-        if ([string]::IsNullOrWhiteSpace($p)) { continue }
-        $candidate = $p
-        if (-not [System.IO.Path]::IsPathRooted($candidate)) {
-            $candidate = Join-Path $repoRoot $candidate
-        }
-        $item = Get-Item -LiteralPath $candidate -ErrorAction SilentlyContinue
-        if ($item) { $resolvedInputs += $item }
-    }
-    if ($resolvedInputs.Count -eq 0) { return @() }
-    return @($AllFiles | Where-Object {
-            $f = $_
-            foreach ($r in $resolvedInputs) {
-                if ($r.PSIsContainer) {
-                    if ($f.FullName.StartsWith($r.FullName, [System.StringComparison]::OrdinalIgnoreCase)) { return $true }
-                } elseif ($f.FullName -ieq $r.FullName) { return $true }
-            }
-            return $false
-        })
-}
+. (Join-Path $PSScriptRoot "code-quality-files.ps1")
 
 $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
 if (-not (Test-Path $depBaseFile)) {
@@ -86,7 +46,7 @@ if (-not $cmakeLint) {
 Write-Host "Using: $cmakeLint"
 & $cmakeLint --version
 
-$files = Filter-ToInputPaths -AllFiles (Resolve-InScopeFiles) -InputPaths $Paths
+$files = @(Get-CodeQualityCmakeFiles -RepoRoot $repoRoot -InputPaths $Paths)
 if ($files.Count -eq 0) {
     Write-Host "No cmake files in scope to lint"
     exit 0

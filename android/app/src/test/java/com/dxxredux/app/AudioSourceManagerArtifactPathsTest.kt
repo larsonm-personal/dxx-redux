@@ -24,7 +24,7 @@ class AudioSourceManagerArtifactPathsTest {
                     trackCount = 2,
                     audioTrackCount = 1,
                     legacyDiscId = 0L,
-                    binContentUri = File(filesDir, "custom-123.bin").absolutePath,
+                    binContentUris = listOf(File(filesDir, "custom-123.bin").absolutePath),
                 ),
             )
 
@@ -59,7 +59,7 @@ class AudioSourceManagerArtifactPathsTest {
                     trackCount = 2,
                     audioTrackCount = 1,
                     legacyDiscId = 0L,
-                    binContentUri = binFile.absolutePath,
+                    binContentUris = listOf(binFile.absolutePath),
                 ),
             )
 
@@ -85,7 +85,7 @@ class AudioSourceManagerArtifactPathsTest {
                     trackCount = 2,
                     audioTrackCount = 1,
                     legacyDiscId = 0L,
-                    binContentUri = File(filesDir.parentFile, "external.bin").absolutePath,
+                    binContentUris = listOf(File(filesDir.parentFile, "external.bin").absolutePath),
                 ),
             )
 
@@ -195,7 +195,7 @@ class AudioSourceManagerArtifactPathsTest {
                     trackCount = 2,
                     audioTrackCount = 1,
                     legacyDiscId = 0L,
-                    binContentUri = "content://good-bin",
+                    binContentUris = listOf("content://good-bin"),
                     cueContentUri = "content://good-cue",
                 ),
                 AudioSourceManager.AudioSource(
@@ -207,7 +207,7 @@ class AudioSourceManagerArtifactPathsTest {
                     trackCount = 2,
                     audioTrackCount = 1,
                     legacyDiscId = 0L,
-                    binContentUri = File(filesDir, "merged_disc.bin").absolutePath,
+                    binContentUris = listOf(File(filesDir, "merged_disc.bin").absolutePath),
                 ),
             )
 
@@ -220,18 +220,17 @@ class AudioSourceManagerArtifactPathsTest {
     private fun externalCustomSource(
         cuePath: String,
         binFile: File,
-    ) =
-        AudioSourceManager.AudioSource(
-            id = "external-custom",
-            cuePath = cuePath,
-            binPaths = listOf(binFile.name),
-            discLabel = "External custom",
-            discId = "unknown",
-            trackCount = 2,
-            audioTrackCount = 1,
-            legacyDiscId = 0L,
-            binContentUri = binFile.absolutePath,
-        )
+    ) = AudioSourceManager.AudioSource(
+        id = "external-custom",
+        cuePath = cuePath,
+        binPaths = listOf(binFile.name),
+        discLabel = "External custom",
+        discId = "unknown",
+        trackCount = 2,
+        audioTrackCount = 1,
+        legacyDiscId = 0L,
+        binContentUris = listOf(binFile.absolutePath),
+    )
 
     private fun AudioSourceManager.installTestSource(source: AudioSourceManager.AudioSource) {
         AudioSourceManager::class.java.getDeclaredField("sources").apply {

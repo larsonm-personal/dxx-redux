@@ -60,7 +60,10 @@
         "resume_candidate.game": "${GAME}",
         "resume_candidate.save_kind": "auto_exit",
         "resume_candidate.description": "[auto] exit L1",
-        "resume_candidate.level_num": "1"
+        "resume_candidate.level_num": "1",
+        "resume_candidate.has_thumbnail": true,
+        "resume_candidate.thumbnail_width": 200,
+        "resume_candidate.thumbnail_height": 100
     }},
     {"action": "assert_button", "text": "Load Last Save", "enabled": true},
     {"action": "assert_button", "text": "Save Explorer", "enabled": true},
@@ -81,7 +84,10 @@
         "resume_candidate.game": "${GAME}",
         "resume_candidate.save_kind": "auto_exit",
         "resume_candidate.description": "[auto] exit L1",
-        "resume_candidate.level_num": "1"
+        "resume_candidate.level_num": "1",
+        "resume_candidate.has_thumbnail": true,
+        "resume_candidate.thumbnail_width": 200,
+        "resume_candidate.thumbnail_height": 100
     }},
     {"action": "setup_command", "command": "clear_pilot_files", "post_delay_ms": 500},
     {"action": "tap_button", "text": "Load Last Save", "launches_game": true},
@@ -102,7 +108,10 @@
         "resume_candidate.game": "${GAME}",
         "resume_candidate.save_kind": "auto_exit",
         "resume_candidate.description": "[auto] exit L1",
-        "resume_candidate.level_num": "1"
+        "resume_candidate.level_num": "1",
+        "resume_candidate.has_thumbnail": true,
+        "resume_candidate.thumbnail_width": 200,
+        "resume_candidate.thumbnail_height": 100
     }},
     {"action": "assert_button", "text": "Load Last Save", "enabled": true},
     {"action": "assert_button", "text": "Save Explorer", "enabled": true},
