@@ -5,6 +5,32 @@
 # todo
 * remove debug state tracing from the early demos
 
+# Guide-Bot routing for new regression recordings
+
+Use **Original** Guide-Bot routing for new D2 recordings intended to protect
+general gameplay and engine behavior. Keep **Enhanced** recordings for cases
+that specifically exercise its prerequisite planning, route recovery, and
+other added behavior, alongside the physical route and live-navigation tests
+
+Choose Original before starting a new game. The launcher setting applies to
+new games; loading an existing save retains that save's routing mode. For a
+checkpoint recording, use a save created in the intended mode. Verify the new
+recording's header contains `player_cfg.guidebot_routing_mode`: `0` for Original
+or `1` for Enhanced
+
+This is a recording policy, not a playback override. Playback must honor the
+recorded mode regardless of launcher defaults or checkpoint settings. Do not
+force an Enhanced recording to Original, edit historical headers to make a
+test pass, or copy a replay's final result into the recorded expectation
+
+The May 2026 D2 recordings predate the explicit mode field. Their Guide-Bot
+behavior is not identical to current Original or Enhanced routing. Preserve
+divergent recordings as investigation evidence until fresh gameplay recordings
+cover their scenarios. Accept a replacement only after it matches its recorded
+state on immediate playback, repeated clean playback, and the supported headed
+and headless paths. Include Android-to-host checks for recordings captured on
+Android. Repeated replay results alone do not establish recording fidelity
+
 # Watch one recording
 
 Run `android/run_all_tests.ps1` without arguments and choose **R. Replay a demo**.
