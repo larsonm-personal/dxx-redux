@@ -53,3 +53,48 @@ These are cold-start host renders with production defaults, not device captures.
 The reference family name does not establish original hardware, SoundFont identity,
 lossless provenance or mastering. Codec cutoffs, different patches and effects can
 all influence the result. No EQ is fitted or applied by this tool
+
+## Shared measured EQ
+
+After generating the baseline, fit the shared D1+D2 correction and publish its
+parameters to the app:
+
+```powershell
+temp/music-spectral-venv/Scripts/python.exe android/tests/fit_music_eq.py --publish
+# Rebuild test_music_synth after publishing the generated header
+temp/music-spectral-venv/Scripts/python.exe android/tests/validate_music_eq.py
+```
+
+`temp/music-eq/report.html` compares Detail/Balanced/Broad smoothing and reports
+leave-one-song-out validation. `temp/music-eq/native/report.html` contains the
+actual corrected production renders, before/after graphs and listening clips
+
+The fit uses the arithmetic mean of dB differences, with each of the 28 accepted
+songs weighted equally (23 D1, 5 D2). Gaussian smoothing has 0.5/1/2 octave full
+width at half maximum on log2 frequency. Five broad RBJ biquads approximate its
+inverse over 60 Hz-12 kHz; the shelf response extends outside the fitted range.
+The final preset uses all accepted songs. No per-song adjustment occurs at runtime
+
+Published parameters and provenance live in `assets/music_eq_sc55.json`; native
+parameters are generated into `shared/music_eq_presets.h`. Native playback checks
+the loaded bank's byte count and FNV64 content fingerprint before enabling the
+correction. The catalog uses the SHA-256 identity in `MusicEq.kt` for imported
+copies of the same bank. Update that identity and UI attribution when calibrating
+a different bank; never relabel an existing curve for another bank
+
+The editor exposes Flat and Measured EQ, with selectable smoothing. Balanced is
+the recommended measured setting; Flat remains the default. Settings persist
+globally for launcher previews and the next D1/D2 launch, including SF2 fallback.
+Changing the profile stops the preview using the existing replacement path.
+FM, recorded tracks and effects audio are unchanged
+
+Installed-app tests (debug APK, emulator with D1/D2 base data):
+
+```powershell
+python android/tests/test_music_eq_device.py --adb C:/local/android-sdk/platform-tools/adb.exe --serial emulator-5554 --output temp/music-eq/device --game-launch
+python android/tests/music_realtime/probe.py --adb C:/local/android-sdk/platform-tools/adb.exe --serial emulator-5554 --output temp/music-eq/realtime --renderer sf2 --eq measured-sc55-balanced --seconds 35 --max-render-ratio .5
+```
+
+Native `music_synth_tests` checks the EQ against independently computed responses,
+exact Flat PCM, stereo isolation, reset, sample-rate and chunk-size behavior. The
+corpus validator checks Flat parity with pre-EQ D1/D2 renders and corrected peaks

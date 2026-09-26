@@ -25,6 +25,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--seconds', type=int, default=45)
     parser.add_argument('--renderer', choices=['both', 'ymfm', 'sf2'], default='both')
+    parser.add_argument('--eq', choices=['flat', 'measured-sc55-detail', 'measured-sc55-balanced', 'measured-sc55-broad'], default='flat')
     parser.add_argument('--source', default='d1-builtin')
     parser.add_argument('--measure-only', action='store_true', help='Record a failing baseline without a nonzero exit')
     parser.add_argument('--max-render-ratio', type=float,
@@ -72,6 +73,7 @@ def main():
             command('music_renderer_select', '--es', 'renderer', renderer)
             command('music_soundfont_select')
             command('music_effects_select', '--ez', 'reverb', 'true', '--ez', 'chorus', 'true')
+            command('music_eq_select', '--es', 'preset', args.eq)
             songs = ('descent.hmp', 'briefing.hmp', 'game01.hmp') if renderer == 'ymfm' else ('game01.hmp',)
             for song in songs:
                 call('logcat', '-c')
@@ -90,7 +92,7 @@ def main():
                     for key, value in re.findall(r'(\w+)=([\w.]+)', line.split('Progress: ', 1)[1]):
                         sample[key] = value if key == 'renderer' else float(value)
                     samples.append(sample)
-                result = {'renderer': renderer, 'song': song, 'command_reply_ms': reply_ms, 'samples': samples}
+                result = {'renderer': renderer, 'eq': args.eq, 'song': song, 'command_reply_ms': reply_ms, 'samples': samples}
                 failures = []
                 if len(samples) >= 2:
                     first, last = samples[0], samples[-1]

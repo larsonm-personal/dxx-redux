@@ -254,7 +254,7 @@ static int render_comparison(int argc, char **argv)
 	CHECK(music_synth_convert_hmp(s, hmp, (int) size, !strcmp(argv[1], "--render-repeat"), &midi, &midi_size, &info));
 	tml_message *messages = tml_load_memory(midi, midi_size);
 	CHECK(messages);
-	if (argc == 9) {
+	if (argc == 9 && strcmp(argv[1], "--render-eq")) {
 		trace_file = fopen(argv[8], "wb");
 		CHECK(trace_file);
 		trace_frame = 0;
@@ -264,6 +264,10 @@ static int render_comparison(int argc, char **argv)
 	music_synth_hmp_begin(s, &initial);
 	music_synth_set_output(s, TSF_STEREO_INTERLEAVED, 48000, -10);
 	music_synth_set_max_voices(s, 128);
+	if (!strcmp(argv[1], "--render-eq")) {
+		CHECK(argc == 9);
+		music_synth_set_eq(s, atoi(argv[8]));
+	}
 	int seconds = argc >= 8 ? atoi(argv[7]) : 20;
 	CHECK(seconds > 0 && seconds <= 120);
 	const int frames = seconds * 48000;
@@ -295,6 +299,7 @@ static int render_comparison(int argc, char **argv)
 	for (int i = 0; i < frames * 2; ++i) write_le(file, (unsigned short) pcm[i], 2);
 	CHECK(!fclose(file));
 	printf("selected=%s actual=%s song=%s pcm_fnv=%016llx\n", argv[6], music_synth_is_fm(s) ? "ymfm" : "sf2", argv[4], checksum(pcm, frames * 2));
+	printf("equalizer=%d\n", music_synth_get_eq(s));
 	free(pcm);
 	tml_free(messages);
 	free(midi);
@@ -305,7 +310,7 @@ static int render_comparison(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	if (argc >= 7 && argc <= 9 && (!strcmp(argv[1], "--render") || !strcmp(argv[1], "--render-repeat"))) return render_comparison(argc, argv);
+	if (argc >= 7 && argc <= 9 && (!strcmp(argv[1], "--render") || !strcmp(argv[1], "--render-repeat") || !strcmp(argv[1], "--render-eq"))) return render_comparison(argc, argv);
 	CHECK(argc == 2 || argc == 5 || (argc == 6 && !strcmp(argv[5], "--expect-sf2")));
 	test_music_fluid_interpolation(argv[1]);
 	music_synth *s = music_synth_load(NULL, argv[1], 1);

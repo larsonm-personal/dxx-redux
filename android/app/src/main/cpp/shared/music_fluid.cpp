@@ -65,6 +65,7 @@ bool music_fluid::load(AAssetManager *assets, const char *path)
 	size_t size = 0;
 	std::unique_ptr<void, decltype(&std::free)> bytes(music_soundfont_read(assets, path, &size), std::free);
 	if (!bytes) return false;
+	eq_compatible = music_eq::matches_font(bytes.get(), size);
 	settings.reset(new_fluid_settings());
 	if (!settings) return false;
 	auto *cfg = settings.get();
@@ -128,6 +129,7 @@ bool music_fluid::recreate()
 
 void music_fluid::reset()
 {
+	equalizer.reset();
 	if (!recreate()) {
 		fluid_synth_system_reset(get());
 		fluid_synth_all_sounds_off(get(), -1);
@@ -138,7 +140,10 @@ void music_fluid::output(int sample_rate, float gain_db)
 	// The caller changes rate only before playback; runtime volume keeps voices
 	if (sample_rate != rate) {
 		if (fluid_settings_setnum(settings.get(), "synth.sample-rate", sample_rate) != FLUID_OK) return;
-		if (recreate()) rate = sample_rate;
+		if (recreate()) {
+			rate = sample_rate;
+			equalizer.configure(equalizer.preset(), rate);
+		}
 	}
 	const double gain = std::max(0.0, std::min(10.0, default_gain * std::pow(10.0, (gain_db + 10.0) / 20.0)));
 	fluid_settings_setnum(settings.get(), "synth.gain", gain);
@@ -166,6 +171,7 @@ void music_fluid::render(short *out, int frames, int mixing)
 	while (frames > 0) {
 		const int count = std::min(frames, 256);
 		if (fluid_synth_write_float(get(), count, pcm, 0, 2, pcm, 1, 2) != FLUID_OK) std::fill_n(pcm, count * 2, 0.f);
+		equalizer.process(pcm, count);
 		for (int i = 0; i < count * 2; ++i) {
 			const double value = (std::isfinite(pcm[i]) ? double(pcm[i]) * 32768 : 0) + (mixing ? out[i] : 0);
 			out[i] = short(std::lround(std::max(-32768.0, std::min(32767.0, value))));

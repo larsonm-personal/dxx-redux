@@ -30,6 +30,7 @@ class SoundfontStore(
         val renderer: String = DEFAULT_RENDERER,
         val reverb: Boolean = true,
         val chorus: Boolean = true,
+        val eq: String = MusicEq.FLAT,
     )
 
     private val directory = File(filesDir, "soundfonts")
@@ -53,6 +54,7 @@ class SoundfontStore(
                 catalog,
                 reverb = preferences.getBoolean(PREF_REVERB, true),
                 chorus = preferences.getBoolean(PREF_CHORUS, true),
+                eq = preferences.getString(PREF_EQ, MusicEq.FLAT)?.takeIf { it in MusicEq.presets } ?: MusicEq.FLAT,
                 renderer =
                     preferences
                         .getString(PREF_RENDERER, DEFAULT_RENDERER)
@@ -225,7 +227,15 @@ class SoundfontStore(
             val state = read()
             check(activate("", DEFAULT_RENDERER == "ymfm")) { "Could not load default MIDI profile" }
             try {
-                saveSelection(state.copy(selected = "", renderer = DEFAULT_RENDERER, reverb = true, chorus = true))
+                saveSelection(
+                    state.copy(
+                        selected = "",
+                        renderer = DEFAULT_RENDERER,
+                        reverb = true,
+                        chorus = true,
+                        eq = MusicEq.FLAT,
+                    ),
+                )
             } catch (error: Exception) {
                 activate(path(state.selected), state.renderer == "ymfm")
                 throw error
@@ -247,17 +257,34 @@ class SoundfontStore(
         }
     }
 
+    fun selectEq(
+        preset: String,
+        activate: (String) -> Boolean,
+    ) = synchronized(lock) {
+        require(preset in MusicEq.presets) { "Unknown music EQ preset" }
+        val state = read()
+        check(activate(preset)) { "Could not change music EQ" }
+        try {
+            saveSelection(state.copy(eq = preset))
+        } catch (error: Exception) {
+            activate(state.eq)
+            throw error
+        }
+    }
+
     private fun saveSelection(state: State) {
         val previousRenderer = preferences.getString(PREF_RENDERER, null)
         val previousFont = preferences.getString(PREF_SOUNDFONT, null)
         val previousReverb = preferences.getBoolean(PREF_REVERB, true)
         val previousChorus = preferences.getBoolean(PREF_CHORUS, true)
+        val previousEq = preferences.getString(PREF_EQ, MusicEq.FLAT)
         if (!preferences
                 .edit()
                 .putString(PREF_RENDERER, state.renderer)
                 .putString(PREF_SOUNDFONT, state.selected)
                 .putBoolean(PREF_REVERB, state.reverb)
                 .putBoolean(PREF_CHORUS, state.chorus)
+                .putString(PREF_EQ, state.eq)
                 .commit()
         ) {
             // SharedPreferences updates memory even when writing to disk fails
@@ -267,6 +294,7 @@ class SoundfontStore(
                 .putString(PREF_SOUNDFONT, previousFont)
                 .putBoolean(PREF_REVERB, previousReverb)
                 .putBoolean(PREF_CHORUS, previousChorus)
+                .putString(PREF_EQ, previousEq)
                 .commit()
             throw IOException("Could not save MIDI preferences")
         }
@@ -277,6 +305,7 @@ class SoundfontStore(
         const val PREF_SOUNDFONT = "midi_soundfont"
         const val PREF_REVERB = "midi_reverb"
         const val PREF_CHORUS = "midi_chorus"
+        const val PREF_EQ = "midi_eq"
         const val DEFAULT_RENDERER = "ymfm"
         val RENDERERS = setOf("sf2", "ymfm")
 

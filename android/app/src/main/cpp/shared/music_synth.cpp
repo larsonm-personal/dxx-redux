@@ -290,6 +290,14 @@ void music_synth_set_max_voices(music_synth *s, int voices)
 {
 	if (voices >= 8 && voices <= 256) s->sf.voices(voices);
 }
+void music_synth_set_eq(music_synth *s, int preset)
+{
+	if (s) s->sf.eq(preset);
+}
+int music_synth_get_eq(const music_synth *s)
+{
+	return s && !s->fm ? s->sf.eq_preset() : 0;
+}
 int music_synth_get_presetcount(music_synth *s)
 {
 	return s->fm ? 256 : s->sf.preset_count();

@@ -103,6 +103,7 @@ static unsigned int rb_available(void)
 static music_synth *s_tsf = NULL; /* SoundFont synth (persistent)    */
 static char *s_soundfont_path;
 static int s_reverb = 1, s_chorus = 1;
+static int s_equalizer = 0;
 static int s_prefer_fm;
 static int s_renderer_snapshot;
 static tml_message *s_midi = NULL;       /* parsed MIDI message list        */
@@ -480,10 +481,10 @@ static void *render_thread_func(void *data)
 		publish_playback_state();
 		if (s_diagnostics && preview_now_ms() - report_at >= 1000) {
 			debug_log_force(DLOG_PROFILING, "MIDI preview Progress: renderer=%s position_ms=%d rendered_frames=%u consumed_frames=%u callbacks=%u underruns=%u queued_frames=%u render_ms=%.3f max_render_ms=%.3f voices=%d first_audio_ms=%u",
-			     music_synth_is_fm(s_tsf) ? "ymfm" : "fluidsynth", (int) s_playback_msec, rendered_frames,
-			     __atomic_load_n(&s_consumed_frames, __ATOMIC_RELAXED), __atomic_load_n(&s_callback_count, __ATOMIC_RELAXED),
-			     __atomic_load_n(&s_underrun_count, __ATOMIC_RELAXED), rb_available() / 2, render_ms, max_render_ms,
-			     music_synth_active_voice_count(s_tsf), __atomic_load_n(&s_first_audio_ms, __ATOMIC_RELAXED));
+			                music_synth_is_fm(s_tsf) ? "ymfm" : "fluidsynth", (int) s_playback_msec, rendered_frames,
+			                __atomic_load_n(&s_consumed_frames, __ATOMIC_RELAXED), __atomic_load_n(&s_callback_count, __ATOMIC_RELAXED),
+			                __atomic_load_n(&s_underrun_count, __ATOMIC_RELAXED), rb_available() / 2, render_ms, max_render_ms,
+			                music_synth_active_voice_count(s_tsf), __atomic_load_n(&s_first_audio_ms, __ATOMIC_RELAXED));
 			report_at = preview_now_ms();
 			render_ms = max_render_ms = 0;
 		}
@@ -701,13 +702,13 @@ static void osl_shutdown(void)
 
 static void midi_preview_stop_internal(void);
 
-int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer_fm, int reverb, int chorus)
+int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer_fm, int reverb, int chorus, int equalizer)
 {
 	music_synth *replacement;
 	char *path;
 	if (!soundfont_path) return 0;
 	pthread_mutex_lock(&s_control_mutex);
-	if (s_tsf && s_soundfont_path && s_prefer_fm == prefer_fm && s_reverb == reverb && s_chorus == chorus && !strcmp(s_soundfont_path, soundfont_path)) {
+	if (s_tsf && s_soundfont_path && s_prefer_fm == prefer_fm && s_reverb == reverb && s_chorus == chorus && s_equalizer == equalizer && !strcmp(s_soundfont_path, soundfont_path)) {
 		pthread_mutex_unlock(&s_control_mutex);
 		return 1;
 	}
@@ -724,6 +725,8 @@ int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer
 	free(s_soundfont_path);
 	s_tsf = replacement;
 	music_synth_set_effects(s_tsf, reverb, chorus);
+	music_synth_set_eq(s_tsf, equalizer);
+	s_equalizer = equalizer;
 	s_reverb = reverb;
 	s_chorus = chorus;
 	memset(&s_hmp_saved_state, 0, sizeof(s_hmp_saved_state));
@@ -733,6 +736,14 @@ int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer
 	LOGI("SoundFont loaded (%d presets)", music_synth_get_presetcount(s_tsf));
 	pthread_mutex_unlock(&s_control_mutex);
 	return 1;
+}
+
+int midi_preview_get_eq(void)
+{
+	pthread_mutex_lock(&s_control_mutex);
+	int result = music_synth_get_eq(s_tsf);
+	pthread_mutex_unlock(&s_control_mutex);
+	return result;
 }
 
 int midi_preview_start(const unsigned char *data, int len,

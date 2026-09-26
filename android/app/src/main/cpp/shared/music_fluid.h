@@ -1,6 +1,7 @@
 #ifndef DXX_MUSIC_FLUID_H
 #define DXX_MUSIC_FLUID_H
 #include "hmp_tsf_state.h"
+#include "music_eq.h"
 #include <fluidsynth.h>
 #include <memory>
 
@@ -13,6 +14,8 @@ class music_fluid
 	int rate = 48000;
 	bool reverb = true, chorus = true;
 	int presets = 0;
+	music_eq equalizer;
+	bool eq_compatible = false;
 	bool recreate();
 
   public:
@@ -29,6 +32,14 @@ class music_fluid
 	void output(int sample_rate, float gain_db);
 	void voices(int count);
 	void effects(bool use_reverb, bool use_chorus);
+	void eq(int preset)
+	{
+		equalizer.configure(eq_compatible ? preset : 0, rate);
+	}
+	int eq_preset() const
+	{
+		return equalizer.preset();
+	}
 	void render(short *out, int frames, int mixing);
 	void begin(const hmp_tsf_state *state);
 	void capture(hmp_tsf_state *state);

@@ -42,7 +42,7 @@ object MidiPreviewBridge {
         fm: Boolean,
     ): Boolean {
         val state = SoundfontStore(context).read()
-        return nativeInit(context.assets, path, fm, state.reverb, state.chorus)
+        return nativeInit(context.assets, path, fm, state.reverb, state.chorus, MusicEq.nativeId(state.eq))
     }
 
     fun selectEffects(
@@ -53,11 +53,39 @@ object MidiPreviewBridge {
         requestedGeneration.incrementAndGet()
         val store = SoundfontStore(context)
         store.selectEffects(reverb, chorus) { rev, cho ->
-            nativeInit(context.assets, store.selectedPath(), store.read().renderer == "ymfm", rev, cho)
+            nativeInit(
+                context.assets,
+                store.selectedPath(),
+                store.read().renderer == "ymfm",
+                rev,
+                cho,
+                MusicEq.nativeId(store.read().eq),
+            )
         }
     }
 
     /** Resolve the same persisted instrument asset used at game startup. Call on IO. */
+    fun selectEq(
+        context: Context,
+        preset: String,
+    ) = synchronized(lifecycleLock) {
+        requestedGeneration.incrementAndGet()
+        val store = SoundfontStore(context)
+        store.selectEq(preset) { selected ->
+            val state = store.read()
+            nativeInit(
+                context.assets,
+                store.selectedPath(),
+                state.renderer == "ymfm",
+                state.reverb,
+                state.chorus,
+                MusicEq.nativeId(selected),
+            )
+        }
+    }
+
+    fun getEqualizer(): Int = synchronized(lifecycleLock) { nativeGetEq() }
+
     fun init(context: Context): Boolean =
         synchronized(lifecycleLock) {
             val store = SoundfontStore(context)
@@ -104,7 +132,14 @@ object MidiPreviewBridge {
         var first = true
         preset.resetMidiPreferences(store) { path, fm ->
             val result =
-                nativeInit(context.assets, path, fm, if (first) true else old.reverb, if (first) true else old.chorus)
+                nativeInit(
+                    context.assets,
+                    path,
+                    fm,
+                    if (first) true else old.reverb,
+                    if (first) true else old.chorus,
+                    if (first) 0 else MusicEq.nativeId(old.eq),
+                )
             first = false
             result
         }
@@ -175,7 +210,10 @@ object MidiPreviewBridge {
         preferFm: Boolean,
         reverb: Boolean,
         chorus: Boolean,
+        equalizer: Int,
     ): Boolean
+
+    @JvmStatic private external fun nativeGetEq(): Int
 
     @JvmStatic private external fun nativeValidateSoundfont(path: String): Boolean
 

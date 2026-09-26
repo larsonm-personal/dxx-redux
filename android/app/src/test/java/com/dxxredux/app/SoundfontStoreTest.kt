@@ -11,6 +11,28 @@ class SoundfontStoreTest {
     @get:Rule val temporary = TemporaryFolder()
     private val preferences = memoryPreferences()
 
+    @Test fun measuredEqPersistsAcrossFontsAndResetRestoresFlat() {
+        val store = SoundfontStore(temporary.root, preferences)
+        assertEquals(MusicEq.FLAT, store.read().eq)
+        store.selectEq(MusicEq.BALANCED) { true }
+        val imported = store.import(byteArrayOf(1, 2, 3).inputStream(), "Other bank") { true }
+        store.select(imported.id) { true }
+        val reopened = SoundfontStore(temporary.root, preferences)
+        assertEquals(MusicEq.BALANCED, reopened.read().eq)
+        assertFalse(MusicEq.supports(reopened.read().selected))
+        reopened.select("") { true }
+        assertTrue(MusicEq.supports(reopened.read().selected))
+        assertEquals(2, MusicEq.nativeId(reopened.read().eq))
+        try {
+            reopened.selectEq(MusicEq.BROAD) { false }
+            fail("Persisted failed EQ activation")
+        } catch (_: IllegalStateException) {
+        }
+        assertEquals(MusicEq.BALANCED, reopened.read().eq)
+        reopened.resetPreferences { _, _ -> true }
+        assertEquals(MusicEq.FLAT, reopened.read().eq)
+    }
+
     @Test fun deletingInactiveFontKeepsActiveFontAndDoesNotRestartPlayback() {
         val store = SoundfontStore(temporary.root, preferences)
         val active = store.import(byteArrayOf(1).inputStream(), "Active") { true }
@@ -103,6 +125,7 @@ class SoundfontStoreTest {
         val font = store.import(byteArrayOf(4).inputStream(), "Saved bank") { true }
         store.select(font.id) { true }
         store.selectRenderer("sf2") { _, _ -> true }
+        store.selectEq(MusicEq.BROAD) { true }
         val exported = ConfigImportExport.exportPreferenceValues(preferences.all)
         val decoded = ConfigImportExport.decodePreferenceValues(exported)
         assertNull(decoded.error)
@@ -113,6 +136,7 @@ class SoundfontStoreTest {
             editor.commit()
         }
         assertEquals(store.read(), SoundfontStore(temporary.root, restored).read())
+        assertEquals(MusicEq.BROAD, SoundfontStore(temporary.root, restored).read().eq)
         val missing = TemporaryFolder().also { it.create() }
         try {
             assertEquals("", SoundfontStore(missing.root, restored).selectedPath())

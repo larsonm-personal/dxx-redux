@@ -166,6 +166,7 @@ extern AAssetManager *g_asset_manager; /* set in jni_main.c              */
 extern char *g_music_soundfont_path;
 extern int g_music_prefer_fm;
 extern int g_music_reverb, g_music_chorus;
+extern int g_music_equalizer;
 #endif
 
 /* ── Soundfont loading ───────────────────────────────────────────────── */
@@ -205,6 +206,7 @@ static int tsf_music_load_soundfont(void)
 	}
 
 	music_synth_set_effects(g_tsf, g_music_reverb, g_music_chorus);
+	music_synth_set_eq(g_tsf, g_music_equalizer);
 	TSFMUSIC_LOG("Soundfont loaded (%d presets)", music_synth_get_presetcount(g_tsf));
 #endif
 
@@ -1398,6 +1400,11 @@ int tsf_music_get_active_voices_max(void)
 {
 	return tsf_atomic_load_int(&g_active_voices_max);
 }
+int tsf_music_get_eq(void)
+{
+	return music_synth_get_eq(g_tsf);
+}
+
 int tsf_music_get_max_voices(void)
 {
 	return tsf_atomic_load_int(&g_max_voices);

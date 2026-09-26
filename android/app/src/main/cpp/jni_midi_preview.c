@@ -24,15 +24,23 @@
 
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MidiPreviewBridge_nativeInit(
-    JNIEnv *env, jclass clazz, jobject assetManager, jstring jpath, jboolean preferFm, jboolean reverb, jboolean chorus)
+    JNIEnv *env, jclass clazz, jobject assetManager, jstring jpath, jboolean preferFm, jboolean reverb, jboolean chorus, jint equalizer)
 {
 	AAssetManager *mgr = AAssetManager_fromJava(env, assetManager);
 	char *path = NULL;
 	int result;
 	if (!dxx_jni_string_to_utf8(env, jpath, &path)) return JNI_FALSE;
-	result = midi_preview_init(mgr, path, preferFm == JNI_TRUE, reverb == JNI_TRUE, chorus == JNI_TRUE);
+	result = midi_preview_init(mgr, path, preferFm == JNI_TRUE, reverb == JNI_TRUE, chorus == JNI_TRUE, equalizer);
 	free(path);
 	return result ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MidiPreviewBridge_nativeGetEq(JNIEnv *env, jclass clazz)
+{
+	(void) env;
+	(void) clazz;
+	return midi_preview_get_eq();
 }
 
 JNIEXPORT jboolean JNICALL

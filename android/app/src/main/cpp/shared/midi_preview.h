@@ -31,7 +31,8 @@
  * A successful replacement stops playback; failure preserves the old synth.
  * Returns 1 on success, 0 on failure.
  */
-int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer_fm, int reverb, int chorus);
+int midi_preview_init(AAssetManager *mgr, const char *soundfont_path, int prefer_fm, int reverb, int chorus, int equalizer);
+int midi_preview_get_eq(void);
 
 /*
  * Start playback of MIDI data.

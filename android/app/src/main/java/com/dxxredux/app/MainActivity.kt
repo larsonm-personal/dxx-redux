@@ -915,6 +915,9 @@ class MainActivity :
     @androidx.annotation.Keep
     fun getMidiChorus(): Boolean = SoundfontStore(this).read().chorus
 
+    @androidx.annotation.Keep
+    fun getMidiEqualizer(): Int = MusicEq.nativeId(SoundfontStore(this).read().eq)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         if (BuildConfig.DEBUG) {
             Log.i(

@@ -24,6 +24,10 @@ void music_synth_reset(music_synth *synth);
 void music_synth_set_output(music_synth *synth, enum TSFOutputMode mode, int rate, float gain);
 /* Change effects only while playback is stopped */
 void music_synth_set_effects(music_synth *synth, int reverb, int chorus);
+/* 0 Flat, 1 measured Detail, 2 Balanced, 3 Broad; synchronized with MusicEq.kt */
+/* Configure while stopped; native bank identity check bypasses other SF2 files */
+void music_synth_set_eq(music_synth *synth, int preset);
+int music_synth_get_eq(const music_synth *synth);
 void music_synth_set_max_voices(music_synth *synth, int voices);
 int music_synth_get_presetcount(music_synth *synth);
 int music_synth_active_voice_count(music_synth *synth);
