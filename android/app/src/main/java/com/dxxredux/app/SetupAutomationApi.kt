@@ -1036,7 +1036,7 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
                                 ) {
                                     d1InD2.ready
                                 } else {
-                                    target.filesReady(d1Ready, d2Ready)
+                                    target.filesReady(d1Ready, d2Ready || d1InD2.ready)
                                 },
                             ),
                     )

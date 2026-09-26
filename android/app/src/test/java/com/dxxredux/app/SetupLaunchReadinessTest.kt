@@ -12,6 +12,31 @@ import kotlin.io.path.createTempDirectory
 
 class SetupLaunchReadinessTest {
     @Test
+    fun launcherExplainsBothAssetChoicesAndUsesD1StartupOnlyWhenNeeded() {
+        val root = createTempDirectory("launcher-engine-choice").toFile()
+        try {
+            val manifest = AssetManifest(root)
+            val saf = SafManifest.forDir(root)
+            val missing = launchDataBlockers("d2", root, manifest, saf) { null }!!
+            assertTrue(missing.contains("descent2.hog"))
+            assertTrue(missing.contains("descent.hog"))
+            assertTrue(missing.contains("descent.pig"))
+            writeFile(root, "descent.hog")
+            writeFile(root, "descent.pig")
+            assertEquals(null, launchDataBlockers("d2", root, manifest, saf) { null })
+            assertEquals(GameLaunchTarget.D1_IN_D2, resolveLauncherTarget("d2", root, manifest, saf))
+            assertTrue(launchDataBlockers("d2", root, manifest, saf) { "Unsupported edition" }!!.contains("descent.pig: Unsupported edition"))
+            writeD2Files(root)
+            assertEquals(null, launchDataBlockers("d2", root, manifest, saf) { "Unsupported edition" })
+            assertEquals(GameLaunchTarget.D2, resolveLauncherTarget("d2", root, manifest, saf))
+            File(root, "descent.pig").delete()
+            assertTrue(launchDataBlockers("d1", root, manifest, saf)!!.startsWith("Missing: descent.pig"))
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun launcherOffersOnlyTheTwoEngines() {
         assertEquals(listOf("d1", "d2"), GameLaunchTarget.launcherChoices.map { it.id })
     }

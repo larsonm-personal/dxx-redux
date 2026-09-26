@@ -529,6 +529,9 @@ class AudioSourceManager(
             null
         }
 
+    internal fun resolveSourceFile(path: String): File? =
+        resolveExistingFile(path, activeSetDirOrNull(), includeDisabledManaged = true)
+
     private fun resolveExistingFile(
         path: String,
         activeSetDir: File?,

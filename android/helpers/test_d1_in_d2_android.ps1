@@ -2,6 +2,7 @@ param(
     [Parameter(Mandatory)][string]$D1DataDirectory,
     [string]$D2DataDirectory,
     [switch]$GameLog,
+    [switch]$LauncherButtons,
     [switch]$SoundCheck,
     [switch]$WeaponArt,
     [switch]$Guidebot,
@@ -184,6 +185,46 @@ foreach ($dataFile in $dataFiles) {
 }
 $steps = @(Get-Content (Join-Path $repo 'android/game_scripts/test_d1_in_d2_standalone.jsonc') -Raw | ConvertFrom-Json |
         Where-Object { -not $_._info })
+if ($LauncherButtons) {
+    if ($D2DataDirectory -or $SoundCheck -or $WeaponArt -or $Guidebot -or $Metadata -or $EditionAdmission -or $RewindSourceCase) {
+        throw 'LauncherButtons requires its own D1-only run'
+    }
+    # This integration owns launcher behavior and a playable start, not the fixture-specific exit route
+    $firstTravelStep = 0
+    while ($firstTravelStep -lt $steps.Count -and $steps[$firstTravelStep].action -ne 'pose_view') {
+        $firstTravelStep++
+    }
+    $steps = @($steps[0..($firstTravelStep - 1)])
+    $musicRegistry = @{
+        sources = @(
+            @{ id = 'vertigo'; label = 'Vertigo Series'; cue = 'missing.cue'; bins = @('missing.bin'); audio_track_count = 7; track_count = 8; bin_content_uri = 'content://missing/vertigo' },
+            @{ id = 'macplay'; label = 'Macplay'; cue = 'missing.cue'; bins = @('missing.bin'); audio_track_count = 13; track_count = 14; enabled = $false; bin_content_uri = 'content://missing/macplay' },
+            @{ id = 'abyss'; label = 'Abyss'; cue = 'missing.cue'; bins = @('missing.bin'); audio_track_count = 10; track_count = 11; bin_content_uri = 'content://missing/abyss' }
+        )
+    } | ConvertTo-Json -Depth 5
+    $steps = @($steps[0]) + @(
+        @{ action = 'setup_command'; command = 'create_set'; args = @{ name = 'launcher-empty' }; post_delay_ms = 500 },
+        @{ action = 'setup_command'; command = 'switch_set'; args = @{ name = 'launcher-empty' }; post_delay_ms = 500 },
+        @{ action = 'tap_button'; text = 'Launch Descent 1'; exact = $true },
+        @{ action = 'assert_button'; text = 'OK'; exact = $true },
+        @{ action = 'tap_button'; text = 'OK'; exact = $true },
+        @{ action = 'tap_button'; text = 'Launch Descent 2'; exact = $true },
+        @{ action = 'assert_button'; text = 'OK'; exact = $true },
+        @{ action = 'tap_button'; text = 'OK'; exact = $true },
+        @{ action = 'write_set_file'; file = '.content/audio/audio_sources.json'; content = $musicRegistry },
+        @{ action = 'tap_button'; text = 'Settings'; exact = $true },
+        @{ action = 'tap_button'; text = 'CD Audio'; exact = $true },
+        @{ action = 'assert_button'; text = 'Vertigo Series (7 tracks)'; exact = $true },
+        @{ action = 'assert_button'; text = 'Macplay (13 tracks)'; exact = $true },
+        @{ action = 'assert_button'; text = 'Abyss (10 tracks)'; exact = $true },
+        @{ action = 'tap_button'; text = 'MIDI'; exact = $true },
+        @{ action = 'tap_button'; text = '< Back'; exact = $true },
+        @{ action = 'setup_command'; command = 'switch_set'; args = @{ name = 'default' }; post_delay_ms = 500 },
+        @{ action = 'assert_button'; text = 'Launch Descent 1'; exact = $true; enabled = $true },
+        @{ action = 'assert_button'; text = 'Launch Descent 2'; exact = $true; enabled = $true },
+        @{ action = 'tap_button'; text = 'Launch Descent 2'; exact = $true; launches_game = $true }
+    ) + @($steps[2..($steps.Count - 1)])
+}
 if ($SoundCheck) {
     # Reuse cold startup and real laser firing, ending before the travel scenario
     $last = -1
@@ -280,7 +321,7 @@ try {
     # Keep startup and restore records even when later level loads fill logcat's ring
     $logcatStart = @{
         FilePath = $AdbPath
-        ArgumentList = @('-s', $Serial, 'logcat', '-s', 'DXX-DLOG:*', 'DXX-Automate:*', 'AndroidRuntime:*', 'libc:*')
+        ArgumentList = @('-s', $Serial, 'logcat', '-s', 'DXX-DLOG:*', 'DXX-Automate:*', 'DXX-LauncherScript:*', 'DXX-Launcher:*', 'AndroidRuntime:*', 'libc:*')
         PassThru = $true
         RedirectStandardOutput = $nativeLogcat
         RedirectStandardError = Join-Path $outputDirectory 'native-logcat-error.txt'
@@ -401,6 +442,7 @@ try {
     elseif ($RewindSourceCase) { Write-Output "Android rewind source recovery evidence: $outputDirectory" }
     elseif ($Guidebot) { Write-Output 'PASS: Android optional Guide-Bot cold deploy, save/restore, memory rewind and D1/D2/D1 lifecycle' }
     elseif ($Metadata) { Write-Output "$testLabel imported-D1 route-cache publication and adoption passed" }
+    elseif ($LauncherButtons) { Write-Output "Launcher buttons, missing-file dialogs, music source visibility and D1-only D2 gameplay passed" }
     else { Write-Output "$testLabel Android First Strike interaction and level-transition checks passed" }
 } finally {
     try {

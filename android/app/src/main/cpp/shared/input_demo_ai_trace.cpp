@@ -82,6 +82,8 @@ nlohmann::ordered_json input_demo_ai_local_trace_snapshot(int slot)
 nlohmann::ordered_json input_demo_ai_trace_snapshot()
 {
 	json out = json::object();
+	// ordered_json vector growth copies const-key pairs and their nested storage
+	out.get_ref<json::object_t &>().reserve(16);
 	GLOBAL(out, Ai_initialized);
 	GLOBAL(out, Overall_agitation);
 	out["Believed_player_pos"] = vector(Believed_player_pos);
@@ -98,6 +100,7 @@ nlohmann::ordered_json input_demo_ai_trace_snapshot()
 	out["local_capacity"] = MAX_OBJECTS;
 	out["local_default"] = local_default;
 	out["locals"] = json::object();
+	out["locals"].get_ref<json::object_t &>().reserve(MAX_OBJECTS);
 	for (int i = 1; i < MAX_OBJECTS; ++i) {
 		// Unequal padding still takes the full field comparison below
 		if (std::memcmp(&Ai_local_info[i], &default_source, sizeof(default_source)) == 0) continue;

@@ -9,7 +9,7 @@ internal enum class GameLaunchTarget(
 ) {
     D1("d1", "d1", "d1", "Descent 1"),
 
-    // Internal startup profile for standalone engine regression scripts, not a launcher choice
+    // D1-only startup profile for the D2 engine, also selectable by regression scripts
     D1_IN_D2("d1-in-d2", "d2", "d1", "Descent 1 in D2"),
     D2("d2", "d2", "d2", "Descent 2"),
     ;

@@ -2709,13 +2709,13 @@ internal fun MusicInfoSection(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var audioSrcManager by remember(refreshTrigger) { mutableStateOf<AudioSourceManager?>(null) }
-    var audioSources by remember(refreshTrigger) {
+    var audioSrcManager by remember(setDir, refreshTrigger) { mutableStateOf<AudioSourceManager?>(null) }
+    var audioSources by remember(setDir, refreshTrigger) {
         mutableStateOf<List<AudioSourceManager.AudioSource>>(emptyList())
     }
     var audioMutationActive by remember { mutableStateOf(false) }
     var pendingAudioSourceRemoval by remember { mutableStateOf<AudioSourceManager.AudioSource?>(null) }
-    LaunchedEffect(filesDir.absolutePath, refreshTrigger) {
+    LaunchedEffect(filesDir.absolutePath, setDir, refreshTrigger) {
         val loaded =
             withContext(kotlinx.coroutines.Dispatchers.IO) {
                 val manager = AudioSourceManager(filesDir, setDir)
@@ -2791,7 +2791,7 @@ internal fun MusicInfoSection(
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
             modifier = Modifier.height(28.dp),
         ) {
-            Text("Edit", fontSize = 12.sp)
+            Text("Settings", fontSize = 12.sp)
         }
         TextButton(
             onClick = { expanded = !expanded },
@@ -2799,7 +2799,7 @@ internal fun MusicInfoSection(
             modifier = Modifier.height(28.dp),
         ) {
             Text(
-                text = if (expanded) "Hide" else "Files",
+                text = if (expanded) "Hide files" else "Show files",
                 fontSize = 12.sp,
             )
         }

@@ -28,34 +28,56 @@ class CdAudioSourceVisibilityTest {
     }
 
     @Test
-    fun hidesSourcesWithBrokenSafUris() {
-        val localSource = testSource(id = "local")
-        val localPathFile = File.createTempFile("disc", ".bin")
-        localPathFile.deleteOnExit()
-        val localPathSource = testSource(id = "local-path", binContentUri = localPathFile.absolutePath)
-        val goodSafSource = testSource(id = "good", binContentUri = "content://good-bin", cueContentUri = "content://good-cue")
-        val goodMultiSafSource =
-            testSource(
-                id = "good-multi",
-                binContentUris = listOf("content://good-bin-1", "content://good-bin-2"),
-                cueContentUri = "content://good-cue",
-            )
-        val brokenBinSource = testSource(id = "broken-bin", binContentUri = "content://broken-bin", cueContentUri = "content://good-cue")
-        val brokenMultiBinSource =
-            testSource(
-                id = "broken-multi-bin",
+    fun reportsMissingBinsButUsesLocalCueInsteadOfOriginalImportUri() {
+        val root = kotlin.io.path.createTempDirectory("music-source-diagnostics").toFile()
+        try {
+            File(root, "disc.cue").writeText("FILE disc.bin BINARY")
+            val source = testSource(
+                id = "vertigo",
                 binContentUris = listOf("content://good-bin", "content://broken-bin"),
-                cueContentUri = "content://good-cue",
+                cueContentUri = "content://broken-original-cue",
             )
-        val brokenCueSource = testSource(id = "broken-cue", binContentUri = "content://good-bin", cueContentUri = "content://broken-cue")
+            assertEquals(
+                listOf("BIN: content://broken-bin"),
+                inaccessibleCdSourceFiles(root, source) { uri, _ -> !uri.contains("broken") },
+            )
+            File(root, "disc.cue").delete()
+            assertEquals(
+                listOf("BIN: content://broken-bin", "CUE: disc.cue"),
+                inaccessibleCdSourceFiles(root, source) { uri, _ -> !uri.contains("broken") },
+            )
+        } finally {
+            root.deleteRecursively()
+        }
+    }
 
-        val visibleIds =
-            listOf(localSource, localPathSource, goodSafSource, goodMultiSafSource, brokenBinSource, brokenMultiBinSource, brokenCueSource)
-                .filter { source ->
-                    shouldDisplayCdAudioSource(source) { uri, _ -> !uri.contains("broken") }
-                }.map { it.id }
-
-        assertEquals(listOf("local", "local-path", "good", "good-multi"), visibleIds)
+    @Test
+    fun registryRetainsUnavailableAndDeselectedSourcesForSettings() {
+        val root = kotlin.io.path.createTempDirectory("music-settings-registry").toFile()
+        try {
+            val setDir = File(root, "sets/default").apply { mkdirs() }
+            val manager = AudioSourceManager(root, setDir)
+            AudioSourceManager::class.java.getDeclaredField("sources").apply {
+                isAccessible = true
+                set(
+                    manager,
+                    mutableListOf(
+                        testSource("vertigo", binContentUri = "content://missing"),
+                        testSource("macplay").copy(enabled = false),
+                        testSource("abyss"),
+                    ),
+                )
+            }
+            AudioSourceManager::class.java.getDeclaredMethod("save").apply {
+                isAccessible = true
+                invoke(manager)
+            }
+            val sources = AudioSourceManager(root, setDir).getSources()
+            assertEquals(listOf("vertigo", "macplay", "abyss"), sources.map { it.id })
+            assertEquals(false, sources[1].enabled)
+        } finally {
+            root.deleteRecursively()
+        }
     }
 
     @Test

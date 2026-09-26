@@ -148,6 +148,52 @@ internal fun d1InD2EditionError(
     classify: (Long) -> String? = { NativeGameDataSupport.d1InD2EditionError(it) },
 ): String? = fileSizeForLaunchCheck(setDir, safManifest.read(), "descent.pig")?.let(classify)
 
+// Keep content readiness separate from engine startup: D2 can start with either game's assets
+internal fun resolveLauncherTarget(
+    game: String,
+    setDir: File,
+    manifest: AssetManifest,
+    safManifest: SafManifest,
+): GameLaunchTarget =
+    if (game == "d2" && !launchDataReadyForGame("d2", setDir, manifest, safManifest)) {
+        GameLaunchTarget.D1_IN_D2
+    } else {
+        GameLaunchTarget.fromId(game)
+    }
+
+internal fun launchDataBlockers(
+    game: String,
+    setDir: File,
+    manifest: AssetManifest,
+    safManifest: SafManifest,
+    d1EditionError: (Long) -> String? = { NativeGameDataSupport.d1InD2EditionError(it) },
+): String? {
+    fun problems(target: GameLaunchTarget): List<String> {
+        val files = if (target.content == "d1") D1_FILES else detectD2FileList(setDir, safManifest)
+        return buildList {
+            checkFiles(setDir, files, manifest, safManifest).filter { it.info.required && !it.found }.forEach {
+                val names = (listOf(it.info.filename) + it.info.alternatives).joinToString(" or ")
+                add("Missing: $names (${it.info.description})")
+            }
+            if (target.content == "d1" && isD1TestFlightSet(setDir, manifest, safManifest)) {
+                add("descent.hog and descent.pig: the Test Flight edition is unsupported")
+            } else if (target == GameLaunchTarget.D1_IN_D2) {
+                d1InD2EditionError(setDir, safManifest, d1EditionError)?.let { add("descent.pig: $it") }
+            }
+        }
+    }
+    val target = GameLaunchTarget.fromId(game)
+    val missing = problems(target)
+    if (missing.isEmpty()) return null
+    if (target == GameLaunchTarget.D2) {
+        val d1Missing = problems(GameLaunchTarget.D1_IN_D2)
+        if (d1Missing.isEmpty()) return null
+        return "Descent 2 can use either complete D2 assets or supported D1 assets.\n\n" +
+            "D2 assets:\n${missing.joinToString("\n")}\n\nD1 assets:\n${d1Missing.joinToString("\n")}"
+    }
+    return missing.joinToString("\n")
+}
+
 internal fun lanGameReadinessWarning(
     game: String,
     setDir: File,

@@ -166,6 +166,9 @@ json player_state(const player &p)
 json world_state()
 {
 	json out = json::object();
+	// ordered_json stores const-key pairs in a vector: growing it copies whole
+	// subtrees instead of moving them, including the large AI and segment arrays
+	out.get_ref<json::object_t &>().reserve(32);
 	out["ai"] = input_demo_ai_trace_snapshot();
 	out["endlevel"] = endlevel_state();
 	player_death_runtime_state death = {};
@@ -405,6 +408,7 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	json current = world_state();
 	const bool boundary = phase != nullptr;
 	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)
 		if (boundary || frame == 0 || !previous.contains(it.key()) || previous[it.key()] != it.value()) record["state"][it.key()] = it.value();

@@ -47,25 +47,28 @@ private const val MUSIC_MODE_FILES = "files"
 
 private const val TAG = "DXX-MusicPicker"
 
-internal fun shouldDisplayCdAudioSource(
+internal fun inaccessibleCdSourceFiles(
+    filesDir: File,
     source: AudioSourceManager.AudioSource,
+    resolveLocalFile: (String) -> File? = { resolveCdAudioSourceFile(filesDir, it) },
     canAccessUri: (uri: String, useFileDescriptor: Boolean) -> Boolean,
-): Boolean {
-    val binUris = source.binContentUriList()
-    val binOk =
-        if (binUris.isEmpty()) {
-            true
-        } else {
-            binUris.all { uri ->
-                if (isLocalCdContentPath(uri)) File(uri).isFile else canAccessUri(uri, true)
+): List<String> =
+    buildList {
+        val bins =
+            source.binContentUriList().ifEmpty {
+                source.binPaths
             }
+        val cue = source.cuePath
+        (bins.map { "BIN" to it } + listOf("CUE" to cue)).forEach { (kind, path) ->
+            val accessible =
+                if (path.startsWith("content://")) {
+                    canAccessUri(path, true)
+                } else {
+                    resolveLocalFile(path)?.isFile == true
+                }
+            if (!accessible) add("$kind: $path")
         }
-    val cueOk =
-        source.cueContentUri?.let { uri ->
-            if (isLocalCdContentPath(uri)) File(uri).isFile else canAccessUri(uri, false)
-        } ?: true
-    return binOk && cueOk
-}
+    }
 
 internal fun resolveCdPreviewLocalBinPath(
     filesDir: File,
@@ -87,16 +90,6 @@ internal fun resolveCdPreviewLocalBinPaths(
 
         else -> {
             null
-        }
-    }
-
-private fun visibleCdAudioSources(
-    ctx: Context,
-    audioSrcManager: AudioSourceManager,
-): List<AudioSourceManager.AudioSource> =
-    audioSrcManager.getSources().filter { source ->
-        shouldDisplayCdAudioSource(source) { uri, useFileDescriptor ->
-            canAccessSafUri(ctx, Uri.parse(uri), useFileDescriptor = useFileDescriptor)
         }
     }
 
@@ -148,7 +141,26 @@ fun MusicPickerPage(
 
     // Redbook source management
     val audioSrcManager = remember { AudioSourceManager.forActiveSet(filesDir) }
-    var audioSources by remember { mutableStateOf(visibleCdAudioSources(ctx, audioSrcManager)) }
+    var audioSources by remember { mutableStateOf(audioSrcManager.getSources()) }
+
+    LaunchedEffect(audioSources) {
+        withContext(Dispatchers.IO) {
+            LauncherDebugLog.log(
+                "music-settings registry=${audioSrcManager.registryFile()} sources=${audioSources.size}",
+            )
+            audioSources.forEach { source ->
+                val missing =
+                    inaccessibleCdSourceFiles(filesDir, source, audioSrcManager::resolveSourceFile) { uri, fd ->
+                        canAccessSafUri(ctx, Uri.parse(uri), useFileDescriptor = fd)
+                    }
+                LauncherDebugLog.log(
+                    "music-settings source=${source.id} enabled=${source.enabled} " +
+                        "tracks=${source.audioTrackCount} inaccessible=${missing.joinToString(" | ")} " +
+                        "original_cue=${source.cueContentUri}",
+                )
+            }
+        }
+    }
 
     // Custom audio set management
     val customMgr = remember { CustomAudioSetManager.forActiveSet(filesDir) }
@@ -261,7 +273,7 @@ fun MusicPickerPage(
                             CdAudioSection(
                                 audioSrcManager = audioSrcManager,
                                 audioSources = audioSources,
-                                onSourcesChanged = { audioSources = visibleCdAudioSources(ctx, audioSrcManager) },
+                                onSourcesChanged = { audioSources = audioSrcManager.getSources() },
                                 onShowTrackPreview = { showTrackPreview = true },
                             )
                         }
@@ -774,6 +786,8 @@ private fun CdAudioSection(
     onSourcesChanged: () -> Unit,
     onShowTrackPreview: () -> Unit,
 ) {
+    val ctx = LocalContext.current
+    val filesDir = ctx.filesDir
     Text(
         "Redbook CD audio from disc images (BIN/CUE or GOG/INST).",
         fontSize = 13.sp,
@@ -914,6 +928,22 @@ private fun CdAudioSection(
             modifier = Modifier.padding(bottom = 4.dp),
         )
         audioSources.forEachIndexed { index, src ->
+            val inaccessible by produceState<List<String>>(emptyList(), src) {
+                value =
+                    withContext(Dispatchers.IO) {
+                        inaccessibleCdSourceFiles(filesDir, src, audioSrcManager::resolveSourceFile) { uri, fd ->
+                            canAccessSafUri(ctx, Uri.parse(uri), useFileDescriptor = fd)
+                        }
+                    }
+            }
+            if (inaccessible.isNotEmpty()) {
+                Text(
+                    "${src.discLabel}: unavailable files. Reimport the source to restore access.\n" +
+                        inaccessible.joinToString("\n"),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             AudioSourceRow(
                 src = src,
                 index = index,

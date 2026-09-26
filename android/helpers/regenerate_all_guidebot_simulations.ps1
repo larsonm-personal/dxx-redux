@@ -455,7 +455,6 @@ function New-GuidebotHeadedScript {
                 label = 'guidebot_manual'
                 display_name = $DeviceArchiveName
             })
-        $steps.Add([ordered]@{ action = 'tap_button'; text = 'Descent 2'; post_delay_ms = 0 })
         $steps.Add([ordered]@{ action = 'tap_button'; text = 'Launch Descent 2'; launches_game = $true })
     } else {
         $steps.Add([ordered]@{ action = 'enter_game'; game = 'd2' })

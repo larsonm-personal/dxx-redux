@@ -518,7 +518,7 @@ class SetupActivity : ComponentActivity() {
         val setDir = fsm.getSetDir(activeSet)
         val manifest = AssetManifest(setDir)
         val safManifest = fsm.safManifestForSet(activeSet)
-        return launchDataReadyForGame(game, setDir, manifest, safManifest)
+        return launchDataBlockers(game, setDir, manifest, safManifest) == null
     }
 
     private fun launchInputDemoReplay(demo: StagedInputDemo) {
@@ -550,7 +550,10 @@ class SetupActivity : ComponentActivity() {
         resumeSavePath: String? = null,
         resumeCallsign: String? = null,
     ): Intent {
-        val target = GameLaunchTarget.fromId(game)
+        val fileSets = FileSetManager(filesDir)
+        val setDir = fileSets.getSetDir(fileSets.getActive())
+        val target =
+            resolveLauncherTarget(game, setDir, AssetManifest(setDir), fileSets.safManifestForSet(fileSets.getActive()))
         val intent = Intent(this, MainActivity::class.java)
         val cleanInputDemoReplayPath = inputDemoReplayPath?.takeIf { it.isNotBlank() }
         val cleanResumeSavePath = resumeSavePath?.takeIf { it.isNotBlank() }
@@ -611,11 +614,8 @@ class SetupActivity : ComponentActivity() {
         val activeSet = fileSetManager.getActive()
         val activeSetDir = fileSetManager.getSetDir(activeSet)
         val safManifest = fileSetManager.safManifestForSet(activeSet)
-        if (!launchDataReadyForGame(target.id, activeSetDir, AssetManifest(activeSetDir), safManifest)) {
-            if (target == GameLaunchTarget.D1_IN_D2) {
-                d1InD2EditionError(activeSetDir, safManifest)?.let { return complete(it) }
-            }
-            return complete("${target.displayName} data is not ready")
+        launchDataBlockers(target.id, activeSetDir, AssetManifest(activeSetDir), safManifest)?.let {
+            return complete(it)
         }
         LauncherDebugLog.log("launch-target id=${target.id} engine=${target.engine} content=${target.content}")
         val modManager = ModManager(filesDir, this, activeSetDir)
@@ -3022,9 +3022,13 @@ private fun SetupScreen(
     var resultImporting by remember { mutableStateOf(false) }
     val isHashing = hashingFile != null
 
-    val d2RequiredOk =
+    val d2DataRequiredOk =
         remember(refreshTrigger, activeSetName) {
             launchDataReadyForGame("d2", setDir, manifest, safManifest)
+        }
+    val d2RequiredOk =
+        remember(refreshTrigger, activeSetName) {
+            launchDataBlockers("d2", setDir, manifest, safManifest) == null
         }
     val d1RequiredOk =
         remember(refreshTrigger, activeSetName) {
@@ -3224,7 +3228,7 @@ private fun SetupScreen(
         visibleDemoInstallerOffers(
             showDemoInstallerOffer = showDemoInstallerOffer,
             d1Ready = d1RequiredOk,
-            d2Ready = d2RequiredOk,
+            d2Ready = d2DataRequiredOk,
         )
     var selectedGame by remember {
         val saved = gamePrefs.getString("selected_game", null)
@@ -5237,33 +5241,6 @@ private fun SetupScreen(
                     var d1Expanded by remember { mutableStateOf(false) }
 
                     GameSectionHeader(
-                        title = "Descent 2",
-                        ready = d2RequiredOk,
-                        expanded = d2Expanded,
-                        onToggle = { d2Expanded = !d2Expanded },
-                    )
-
-                    if (d2Expanded) {
-                        SectionHeader("Required Files")
-                        d2Statuses.filter { it.info.required }.forEach {
-                            FileStatusRow(it) {
-                                detailStatus = it
-                                detailIsD2 = true
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        SectionHeader("Optional Files")
-                        d2Statuses.filter { !it.info.required }.forEach {
-                            FileStatusRow(it) {
-                                detailStatus = it
-                                detailIsD2 = true
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    GameSectionHeader(
                         title = "Descent 1",
                         ready = d1RequiredOk,
                         expanded = d1Expanded,
@@ -5328,6 +5305,33 @@ private fun SetupScreen(
                     } // end if (d1Expanded)
 
                     Spacer(modifier = Modifier.height(16.dp))
+                    GameSectionHeader(
+                        title = "Descent 2",
+                        ready = d2DataRequiredOk,
+                        expanded = d2Expanded,
+                        onToggle = { d2Expanded = !d2Expanded },
+                    )
+
+                    if (d2Expanded) {
+                        SectionHeader("Required Files")
+                        d2Statuses.filter { it.info.required }.forEach {
+                            FileStatusRow(it) {
+                                detailStatus = it
+                                detailIsD2 = true
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        SectionHeader("Optional Files")
+                        d2Statuses.filter { !it.info.required }.forEach {
+                            FileStatusRow(it) {
+                                detailStatus = it
+                                detailIsD2 = true
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     MusicInfoSection(
                         filesDir = filesDir,
                         setDir = setDir,
@@ -5365,28 +5369,6 @@ private fun SetupScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // -- Game selection toggle ----------------
-                    if (d1RequiredOk) {
-                        Text("Select Game", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            val availableTargets =
-                                GameLaunchTarget.launcherChoices.filter { it.filesReady(d1RequiredOk, d2RequiredOk) }
-                            availableTargets.forEach { target ->
-                                FilterChip(
-                                    selected = selectedGame == target.id,
-                                    onClick = {
-                                        selectedGame = target.id
-                                        gamePrefs.edit().putString("selected_game", target.id).apply()
-                                    },
-                                    label = { Text(target.displayName) },
-                                    modifier = Modifier.weight(1f).tvFocusBorder(),
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-
                     Button(
                         onClick = {
                             com.dxxredux.app.multiplayer.MatchmakingStateHolder.update {
@@ -5409,31 +5391,59 @@ private fun SetupScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Button(
-                        onClick = { onLaunchGame(selectedGame, null) },
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                        enabled = (canLaunch || gameRunning) && !isHashing,
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor =
-                                    if ((!canLaunch && !gameRunning) || isHashing) {
-                                        MaterialTheme.colorScheme.surfaceVariant
-                                    } else {
-                                        MaterialTheme.colorScheme.primary
+                    if (gameRunning) {
+                        Button(
+                            onClick = { onLaunchGame(selectedGame, null) },
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                        ) {
+                            Text("Return to Game", fontSize = 18.sp)
+                        }
+                    } else {
+                        var blockedLaunch by remember { mutableStateOf<Pair<String, String>?>(null) }
+                        blockedLaunch?.let { (title, message) ->
+                            AlertDialog(
+                                onDismissRequest = { blockedLaunch = null },
+                                title = { Text(title) },
+                                text = { Text(message, modifier = Modifier.verticalScroll(rememberScrollState())) },
+                                confirmButton = { TextButton(onClick = { blockedLaunch = null }) { Text("OK") } },
+                            )
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            GameLaunchTarget.launcherChoices.forEach { target ->
+                                val ready = target.filesReady(d1RequiredOk, d2RequiredOk)
+                                Button(
+                                    onClick = {
+                                        val blockers = launchDataBlockers(target.id, setDir, manifest, safManifest)
+                                        if (blockers != null) {
+                                            blockedLaunch = "${target.displayName} files not ready" to blockers
+                                        } else {
+                                            selectedGame = target.id
+                                            gamePrefs.edit().putString("selected_game", target.id).apply()
+                                            onLaunchGame(target.id, null)
+                                        }
                                     },
-                            ),
-                    ) {
-                        Text(
-                            text =
-                                when {
-                                    gameRunning -> "Return to Game"
-                                    else -> "Launch ${GameLaunchTarget.fromId(selectedGame).displayName}"
-                                },
-                            fontSize = 18.sp,
-                        )
+                                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                                    enabled = !isHashing,
+                                    colors =
+                                        ButtonDefaults.buttonColors(
+                                            containerColor =
+                                                if (ready) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.surfaceVariant
+                                                },
+                                            contentColor =
+                                                if (ready) {
+                                                    MaterialTheme.colorScheme.onPrimary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                                },
+                                        ),
+                                ) {
+                                    Text("Launch ${target.displayName}", fontSize = 16.sp)
+                                }
+                            }
+                        }
                     }
                 }
 

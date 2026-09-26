@@ -178,6 +178,8 @@ static int write_object_state(uint32_t frame, const char *phase, char *error, si
 	static std::array<json, MAX_OBJECTS> previous;
 	if (frame == 0 && !phase) previous.fill(nullptr);
 	json record = { { "type", phase ? "object_boundary" : "object_state" }, { "version", 2 }, { "f", frame }, { "reset", phase || frame == 0 }, { "capacity", MAX_OBJECTS }, { "slots", json::object() } };
+	// Avoid repeatedly copying earlier object snapshots as this ordered map grows
+	record["slots"].get_ref<json::object_t &>().reserve(MAX_OBJECTS);
 	if (phase) record["phase"] = phase;
 	for (int i = 0; i < MAX_OBJECTS; ++i) {
 		json current = Objects[i].type == OBJ_NONE ? json(nullptr) : object_state(Objects[i], i);
