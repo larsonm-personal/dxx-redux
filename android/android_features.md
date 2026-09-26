@@ -22,12 +22,12 @@
 - D2: allow spawning the guidebot at the player’s position if it hasn’t been released yet, or the map maker didn’t include it. If it’s blown up it can be respawned, as well
 - Guidebot now routes to switches that control locked doors/walls, and fly-through triggers, in addition to keys->reactor->exit. The routing is pretty good, for example obsidian level 3’s notorious 20-step sequence is correctly decoded, as well as obsidian level 4’s keys-after-reactor sequence. Castaway level 2 is another tough one that it handles. Switches and “shoot from” points are shown on the automap if that is toggled on (default is off since it’s like a cheat). My intent is to de-fang some of the more egregious routefinding-for-routefinding’s sake that’s in early level packs (which, at its worst, is virtually impossible to get on the first try without save scumming). At the same time, you don’t have to use guidebot if you don’t want to - some people like these levels in their original form, and many people like manual routefinding/map reading too
 - Some extra guidebot goals such as “find the largest unexplored mine section”
-- Allow switching difficulty mid-level (this will only change ongoing effects such as robot speed and damage, not initial conditions like health of existing robots or initial ammo loadout)
+- Allow switching difficulty mid-level (this will only change ongoing effects such as robot weapon speed and damage, not initial conditions like initial ammo loadout. boss/thief/guidebot have special health handling on change)
 - Automatically scans levels for secret areas and gives a text message when one is discovered (flown into). When game progress tracking is turned on, the secrets found/total counts appear next to hostage and robot counts
 - A new special cheat that highlights and labels secret areas on the automap. When the cheat is active, guidebot can navigate to a secret as a task. Secret area classification isn’t perfect because the actual areas aren’t labeled by the map maker (like they are in doom), so the game is using some hints based on map geometry
 - Boss health bar (optional)
-- FoV slider for 90-100-110-120 degrees
-- D1 missions played within D2 have support for their textures etc. so they look right, plus an attempt to get weapon and robot behavior to match (with a sort of emulation layer). This gives the advantages of D2 (basically: hud cameras, and can spawn guidebot if desired). I recommend playing D1 this way if you own both games (it needs both sets of files). Long term there should be a unification of the game engines like d2xxl has done and rebirth has partially done
+- FoV slider for 90-100-110-120 degrees. when playing in landscape mode on a phone I find that 110-120 is best just so the up/down field of view works out. this is locked to the original 90 for competitive multiplayer
+- D1 missions played within D2 have support for their textures etc. so they look right, plus an attempt to get weapon and robot behavior to match (with a sort of emulation layer). This gives the advantages of D2 (basically: hud cameras, and can spawn guidebot if desired). I recommend playing D1 this way. Long-term, there should be a unification of the game engines like d2xxl has done and rebirth has partially done and I've laid the groundwork for that
 
 # LAN play quality-of-life
 
@@ -36,7 +36,7 @@
 - Coop: allow secret areas (optional setting. The base game behavior is to disable them). If a player enters a secret warp door, the remaining players are brought to the secret area after a short countdown. Secret doors are blocked if a normal exit door is used by another player (all players are still in a “beat the reactor countdown to the exit” race). Secret doors taken during reactor countdown work normally: they bring the whole party to the secret area, then the next level after the secret
 - Coop: track a player’s loot so if they leave and rejoin they get it back (they still generate spew on exit, and any uncollected spew is given to them on return)
 - Coop: remove absorption time from player spew (optional)
-- Special case for two player local coop games: if the host leaves, the client can take over as host (allowing the host to rejoin what is now the server)
+- if the host leaves, the client can take over as host (allowing the host to rejoin what is now the server)
 - Warp to other player button is shown when a player is some distance away (optional). Helps prevent softlocks, makes the game more cooperative
 - breadcrumb-like path to nearest other player, and to guidebot (optional)
 - QoL changes can be enabled/disabled when launching a game
@@ -47,7 +47,7 @@
 
 # Mod/level management
 
-- (todo) recommends high res, sound fix etc. mods to improve the base game and automatically downloads them
+- recommends high res, sound fix mods to improve the base game and assists in downloading them. this is an area for future work, there are a few more mods I'd like to include
 - allows using dxa mod files and choosing which ones are active at game start (mod manager functionality). Multiple mods can be active at once with a priority order in case of masking. Mission sets are also managed this way. Multiple missions can be active at once and their changes won’t mask to other missions when they aren’t being played (for example, ewithin changes some robot sounds. Those sounds only change while ewithin is being played, even if it’s active in the mod list)
 - Extensive mod/mission metadata inspection - tap on files to dive into their embedded assets, with lists of changes. The viewer includes:
   - a readme file viewer
@@ -55,17 +55,18 @@
   - individual level metadata: number of robots, matcens, hostages, normalized volume and par time metrics, etc., along with route analysis
   - 3d map preview
 - allows importing custom missions (level packs) and choosing which ones are active at game start
-- Can import .zip/.rar/.7z level packages from [sectorgame.com](http://sectorgame.com) without extracting. Allows picking music from the zip (midi/hmp or mp3/ogg/etc.; level makers are doing both now) or from one of the other audio sources
+- Can import .zip/.rar/.7z level packages from [sectorgame.com](http://sectorgame.com) without manually extracting. Allows picking music from the zip (midi/hmp or mp3/ogg/etc.; level makers are doing both now) or from one of the other audio sources
 
 # Save file management
 
-- auto save on minimize (best effort: android minimize can be done in different ways) (can be disabled) and auto save on quit to launcher (can be disabled). Three slots dedicated to this
-- Auto save every 5 minutes. Two slots dedicated to this
+- auto save on minimize (best effort: android minimize can be done in different ways) (can be disabled) and auto save on quit to launcher (can be disabled)
+- Auto save every 5 minutes of game time. Two slots dedicated to this. some special handling around deaths etc.
 - Quick save/load which can be mapped to controller buttons. One slot dedicated to this
+- the various kinds of auto saves overwrite different save slots. the first few slots are reserved for normal on-demand player saves
 - Pre-fill manual save names like “level N” to save typing
-- show the most recent save game in the launcher and offer to directly load (can be disabled)
+- show the most recent (and also highest progress) save game in the launcher and offer to directly load (can be disabled)
 - Rewind button: automatically saves every 5 seconds and allows binding a rewind button to go back to 5/10/20 seconds earlier (can be disabled)
-- Saves are de-duplicated between mission sets and cooperative play so players can switch between missions and not overwrite/lose saves on the previous mission. The in-game “load” menu will show the saves for the mission with the most recent save. The launcher’s “save explorer” allows browsing all of them
+- Saves are deconflicted between mission sets and cooperative play so players can switch between missions and not overwrite/lose saves on the previous mission. The in-game “load” menu will show the saves for the mission with the most recent save. The launcher’s “save explorer” allows browsing all of them
 
 # Music
 
@@ -78,6 +79,7 @@
 - mp3/ogg/flac music file sets are supported (for example, the midi->mp3 rips that are floating around to showcase various synthesizers). These are also recognized with chromaprint in most cases
 - Chromaprint web lookups (off by default) for unrecognized tracks using acoust-id
 - Preference for CD audio vs. midi vs. discrete files is saved in save games, so it can be preserved when playing different level packs (these sometimes come with midi audio, sometimes discrete, sometimes none)
+- launcher music preview to play with midi soundfont options, explore bundled mission music, etc.
 
 # Touch interfaces
 
@@ -98,10 +100,12 @@
 
 - Enlarge all menus to .85x of screen height to help with touch navigation. Some menus are enlarged to .85x of width and then made scrollable (such as the controls editing pages). When in the main game menus, they can be further enlarged by two-finger zoom in an inactive region
 - Add “ok” to some menus to be able to touch through them
-- Allow swiping to scroll through menus. Other touch interface improvements like moving the text entry area into view when the android keyboard opens
+- Allow swiping to scroll through menus
+- Other touch interface improvements like moving the text entry area into view when the android keyboard opens
 - Controller menu support: d-pad and analog sticks move up/down menus, a selects, b cancels
 - Some special case things like long-press on the weapon autoselect menu in-game to drag (although the launcher’s menu for this setting is preferred)
-- Please submit bug reports for touch limitations, the intent is to have this be complete
+- Please submit bug reports for touch and controller limitations, the intent is to have this be complete
+- android supports regular old mouse+keyboard, I haven't tested this but it should work (at least minimally) based on the original code. please submit bug reports if you need this and it doesn't work
 
 # Graphics
 
@@ -125,11 +129,11 @@
 
 # Demo System
 
-- A new demo format which is done in the style of doom’s demos: only player inputs are recorded, then they’re replayed for the demo, with RNG maintained as repeatable.  These “input-based” demos can be started mid-level, in which case they first capture an embedded save game and then per-frame inputs
+- A new demo format which is done in the style of doom’s demos: only player inputs (and related things) are recorded, then they’re replayed for the demo, with RNG maintained as repeatable.  These “input-based” demos can be started mid-level, in which case they first capture an embedded save game and then per-frame inputs
 - The advantage of this demo format is that they’re typically smaller than descent’s original .DEM demos (which encoded visible object positions for each frame), and they can be used to build up a body of game engine regression tests which re-run demo files and compare to a known-good final state
 - Having this demo system lets us ensure the PC vs. android port behavior is the same (which is tricky because there are some floating point operations that can vary between architectures)
 - Cleaned up the RNG paths such that the game engine’s RNG is separated from rendering side effects: there is now a headless demo runner that can verify demo files very quickly, and game engine determinism is slightly improved in terms of being fully independent of rendering
-- With a large enough body of test files, we can then make large refactorings to the game engine code without worrying about changing behavior.  The biggest changes needed are to de-duplicate the d1/ and d2/ source
+- With a large enough body of test files (more are needed), we can then make large refactorings to the game engine code without worrying about changing behavior.  The biggest changes needed are to de-duplicate the d1/ and d2/ source
 
 # Technical improvements
 
@@ -145,4 +149,3 @@
 
 - Swap sha code to a cmake fetch dependency of some kind (?)
 - Swap bin/cue parser to a cmake fetch dependency also (?)
-- Versioning in vcpkg dependencies? Auto update scripts once pinned?
