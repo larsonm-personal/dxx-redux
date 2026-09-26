@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1240" viewBox="0 0 1800 1240">
+<title>Default controller controls</title>
+<desc>Unbranded asymmetric-stick controller schematic showing the default DXX Redux Android bindings. All artwork, labels, and connectors are editable vectors.</desc>
+<!-- Bindings: app/src/main/assets/configs/controller/default.json. Original simplified schematic, no manufacturer artwork. -->
+<style>
+text{font-family:Arial,Helvetica,sans-serif}
+.title{fill:#ffe260;font-size:32px;font-weight:700}
+.label{fill:#ffe260;font-size:25px;font-weight:700}
+.detail{fill:#ffe260;font-size:22px}
+.small{fill:#ffe260;font-size:19px}
+.hardware{fill:#ddd;font-size:24px;text-anchor:middle;font-weight:700}
+.leader{fill:none;stroke:#ffe260;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.part{fill:#202020;stroke:#898989;stroke-width:2.5}
+</style>
+<rect width="1800" height="1240" fill="#171717"/>
+<text class="title" x="90" y="65">DEFAULT CONTROLLER CONTROLS</text>
+<text class="detail" x="1710" y="65" text-anchor="end">Android / default preset</text>
+<!-- Triggers are exposed above the bumpers for clarity. -->
+<g id="controller">
+<path id="left-trigger" class="part" d="M563 387 L565 354 Q565 341 592 339 L684 337 Q710 337 715 351 L724 385 Z"/>
+<path id="right-trigger" class="part" d="M1076 385 L1085 351 Q1090 337 1116 337 L1208 339 Q1235 341 1235 354 L1237 387 Z"/>
+<text class="hardware" x="641" y="367">LT</text><text class="hardware" x="1159" y="367">RT</text>
+<path id="body" d="M562 395 Q603 368 686 387 L768 408 Q900 430 1032 408 L1114 387 Q1197 368 1238 395 Q1281 427 1307 535 L1382 913 Q1397 986 1345 1014 Q1298 1039 1253 988 L1121 843 Q1067 817 1020 837 Q900 869 780 837 Q733 817 679 843 L547 988 Q502 1039 455 1014 Q403 986 418 913 L493 535 Q519 427 562 395 Z" fill="#353535" stroke="#999" stroke-width="3"/>
+<path d="M473 974 Q496 920 536 783 M1327 974 Q1304 920 1264 783" fill="none" stroke="#555" stroke-width="3"/>
+<path id="left-bumper" class="part" d="M551 418 Q568 379 615 378 L690 380 Q721 384 731 420 Z"/>
+<path id="right-bumper" class="part" d="M1069 420 Q1079 384 1110 380 L1185 378 Q1232 379 1249 418 Z"/>
+<text class="hardware" x="642" y="409" font-size="20">LB</text><text class="hardware" x="1158" y="409" font-size="20">RB</text>
+<g id="left-stick"><circle class="part" cx="636" cy="562" r="95"/><circle cx="636" cy="562" r="67" fill="#292929" stroke="#777" stroke-width="3"/><circle cx="636" cy="562" r="54" fill="none" stroke="#444" stroke-width="2"/></g>
+<g id="right-stick"><circle class="part" cx="1038" cy="746" r="91"/><circle cx="1038" cy="746" r="64" fill="#292929" stroke="#777" stroke-width="3"/><circle cx="1038" cy="746" r="51" fill="none" stroke="#444" stroke-width="2"/></g>
+<g id="dpad"><circle cx="761" cy="746" r="88" fill="#2a2a2a" stroke="#555" stroke-width="2"/><path class="part" d="M736 674 H786 V721 H833 V771 H786 V818 H736 V771 H689 V721 H736 Z"/><path d="M752 695 L761 686 L770 695 M810 737 L819 746 L810 755 M752 797 L761 806 L770 797 M712 737 L703 746 L712 755" fill="none" stroke="#bbb" stroke-width="2"/></g>
+<g id="select"><rect class="part" x="796" y="502" width="64" height="44" rx="20"/><rect x="815" y="515" width="17" height="13" fill="none" stroke="#ccc" stroke-width="2"/><path d="M823 511 H840 V525" fill="none" stroke="#ccc" stroke-width="2"/></g>
+<g id="start"><rect class="part" x="940" y="502" width="64" height="44" rx="20"/><path d="M962 516 H983 M962 524 H983 M962 532 H983" fill="none" stroke="#ccc" stroke-width="2"/></g>
+<g id="face-buttons">
+<circle class="part" cx="1160" cy="493" r="33"/><text class="hardware" x="1160" y="502">Y</text>
+<circle class="part" cx="1099" cy="554" r="33"/><text class="hardware" x="1099" y="563">X</text>
+<circle class="part" cx="1221" cy="554" r="33"/><text class="hardware" x="1221" y="563">B</text>
+<circle class="part" cx="1160" cy="615" r="33"/><text class="hardware" x="1160" y="624">A</text>
+</g></g>
+<g id="lt-label"><text class="label" x="400" y="168" text-anchor="middle">LT / SECONDARY FIRE</text>
+</g>
+<polyline id="lt-line" class="leader" points="400,188 400,244 620,345"/><circle cx="620" cy="345" r="4" fill="#ffe260"/>
+<g id="rt-label"><text class="label" x="1400" y="168" text-anchor="middle">RT / PRIMARY FIRE</text>
+</g>
+<polyline id="rt-line" class="leader" points="1400,188 1400,244 1180,345"/><circle cx="1180" cy="345" r="4" fill="#ffe260"/>
+<g id="select-label"><text class="label" x="750" y="168" text-anchor="middle">SELECT / VIEW</text>
+<text class="detail" x="750" y="199" text-anchor="middle">Cycle overlay menus</text>
+</g>
+<polyline id="select-line" class="leader" points="810,218 828,272 828,504"/><circle cx="828" cy="504" r="4" fill="#ffe260"/>
+<g id="start-label"><text class="label" x="1050" y="168" text-anchor="middle">START / MENU</text>
+<text class="detail" x="1050" y="199" text-anchor="middle">Open game menu</text>
+</g>
+<polyline id="start-line" class="leader" points="990,218 972,272 972,504"/><circle cx="972" cy="504" r="4" fill="#ffe260"/>
+<g id="lb-label"><text class="label" x="90" y="365" text-anchor="start">LB / LEFT BUMPER</text>
+<text class="detail" x="90" y="396" text-anchor="start">Cycle secondary weapon</text>
+</g>
+<polyline id="lb-line" class="leader" points="90,415 375,415 572,405"/><circle cx="572" cy="405" r="4" fill="#ffe260"/>
+<g id="rb-label"><text class="label" x="1460" y="365" text-anchor="start">RB / RIGHT BUMPER</text>
+<text class="detail" x="1460" y="396" text-anchor="start">Cycle primary weapon</text>
+</g>
+<polyline id="rb-line" class="leader" points="1460,415 1370,415 1228,405"/><circle cx="1228" cy="405" r="4" fill="#ffe260"/>
+<g id="left-stick-label"><text class="label" x="90" y="550" text-anchor="start">LEFT STICK</text>
+<text class="detail" x="90" y="581" text-anchor="start">Up / down: forward / reverse</text>
+<text class="detail" x="90" y="612" text-anchor="start">Left / right: strafe</text>
+<text class="detail" x="90" y="643" text-anchor="start">Press (L3): afterburner</text>
+</g>
+<polyline id="left-stick-line" class="leader" points="90,669 385,669 547,585"/><circle cx="547" cy="585" r="4" fill="#ffe260"/>
+<g id="face-label">
+<text class="detail" x="1460" y="571" text-anchor="start">Y  Guidebot menu</text>
+<text class="detail" x="1460" y="602" text-anchor="start">X  Energy to shields</text>
+<text class="detail" x="1460" y="633" text-anchor="start">B  extra actions/settings menu</text>
+<text class="detail" x="1460" y="664" text-anchor="start">A  Fire flare</text>
+</g>
+<polyline id="face-line" class="leader" points="1440,574 1360,574 1252,554"/><circle cx="1252" cy="554" r="4" fill="#ffe260"/>
+<g id="dpad-label"><text class="label" x="770" y="985" text-anchor="middle">D-PAD</text>
+<text class="detail" x="770" y="1016" text-anchor="middle">Up / down: slide up / down</text>
+<text class="detail" x="770" y="1047" text-anchor="middle">Left / right: roll</text>
+</g>
+<polyline id="dpad-line" class="leader" points="770,959 770,818"/><circle cx="770" cy="818" r="4" fill="#ffe260"/>
+<g id="right-stick-label"><text class="label" x="1030" y="985" text-anchor="middle">RIGHT STICK</text>
+<text class="detail" x="1030" y="1016" text-anchor="middle">Left / right: turn</text>
+<text class="detail" x="1030" y="1047" text-anchor="middle">Up / down: pitch</text>
+<text class="detail" x="1030" y="1078" text-anchor="middle">Press (R3): drop bomb</text>
+</g>
+<polyline id="right-stick-line" class="leader" points="1030,959 1030,837"/><circle cx="1030" cy="837" r="4" fill="#ffe260"/>
+<g id="menu-reference" transform="translate(-55 -145)">
+<rect x="90" y="1000" width="355" height="205" fill="#202020" stroke="#ffe260" stroke-width="2"/>
+<text class="small" x="110" y="1032" font-weight="700">Game / Guidebot menus</text>
+<text class="small" x="110" y="1058" font-weight="700">Extra actions / Settings menus</text>
+<path class="leader" d="M110 1074 H425"/>
+<text class="detail" x="110" y="1108">D-pad</text><text class="detail" x="218" y="1108">Pick / adjust</text>
+<text class="detail" x="110" y="1144">A</text><text class="detail" x="218" y="1144">Select</text>
+<text class="detail" x="110" y="1180">B</text><text class="detail" x="218" y="1180">Cancel / close</text>
+</g>
+</svg>

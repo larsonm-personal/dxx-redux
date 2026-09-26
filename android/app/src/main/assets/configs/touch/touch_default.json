@@ -1,14 +1,14 @@
 {
   "type": "touch_layout",
   "version": 11,
-  "name": "Claw",
+  "name": "Touch Default",
   "globalOpacity": 0.699999988079071,
   "sticks": [
     {
       "type": "analog_stick",
       "id": "move",
-      "x": 29.03537368774414,
-      "y": 30.779264450073242,
+      "x": 29,
+      "y": 30,
       "size": 1,
       "opacity": 0.699999988079071,
       "axisX": "Bank",
@@ -29,13 +29,13 @@
         "bottom": 59.6356315612793
       },
       "haptic": true,
-      "doubleTapBinding": "Toggle Bomb"
+      "doubleTapBinding": "Drop Bomb"
     },
     {
       "type": "analog_stick",
       "id": "look",
-      "x": 9.398295402526855,
-      "y": 29.069137573242188,
+      "x": 9.5,
+      "y": 30,
       "size": 1,
       "opacity": 0.699999988079071,
       "axisX": "Left Stick X",
@@ -72,8 +72,8 @@
     {
       "type": "analog_stick",
       "id": "stick_2",
-      "x": 79.1548080444336,
-      "y": 27.078439712524414,
+      "x": 79,
+      "y": 30,
       "size": 1,
       "opacity": 0.699999988079071,
       "axisX": "Right Stick X",
@@ -109,9 +109,9 @@
     {
       "type": "button",
       "id": "map",
-      "x": 5.567464351654053,
-      "y": 84.88591003417969,
-      "size": 1.399999976158142,
+      "x": 6,
+      "y": 84,
+      "size": 1.4,
       "opacity": 0.699999988079071,
       "binding": "Automap",
       "label": "MAP",
@@ -122,9 +122,9 @@
     {
       "type": "button",
       "id": "btn_1",
-      "x": 14.736032485961914,
-      "y": 84.87553405761719,
-      "size": 1.4289437532424927,
+      "x": 14.5,
+      "y": 84,
+      "size": 1.4,
       "opacity": 0.699999988079071,
       "binding": "Fire Flare",
       "label": "FLR",
@@ -135,8 +135,8 @@
     {
       "type": "button",
       "id": "btn_2",
-      "x": 31.310176849365234,
-      "y": 82.74771881103516,
+      "x": 31.5,
+      "y": 84,
       "size": 1,
       "opacity": 0.699999988079071,
       "binding": "Meta: Rewind",
@@ -148,8 +148,8 @@
     {
       "type": "button",
       "id": "btn_3",
-      "x": 23.723072052001953,
-      "y": 82.83344268798828,
+      "x": 23,
+      "y": 84,
       "size": 1,
       "opacity": 0.699999988079071,
       "binding": "Energy->Shield",
@@ -161,8 +161,8 @@
     {
       "type": "button",
       "id": "btn_4",
-      "x": 37.38686752319336,
-      "y": 71.778076171875,
+      "x": 37.5,
+      "y": 72,
       "size": 1,
       "opacity": 0.699999988079071,
       "binding": "Meta: Quick Save",
@@ -174,8 +174,8 @@
     {
       "type": "button",
       "id": "btn_5",
-      "x": 37.45186233520508,
-      "y": 88.6786880493164,
+      "x": 37.5,
+      "y": 89,
       "size": 1,
       "opacity": 0.699999988079071,
       "binding": "Meta: Quick Load",
@@ -190,8 +190,8 @@
     {
       "type": "radial_menu",
       "id": "Guide",
-      "x": 49.254310607910156,
-      "y": 63.633880615234375,
+      "x": 49,
+      "y": 64,
       "size": 1,
       "ringSize": 1,
       "opacity": 0.699999988079071,
@@ -274,8 +274,8 @@
     {
       "type": "radial_menu",
       "id": "PriWpn",
-      "x": 89.03182983398438,
-      "y": 89.49766540527344,
+      "x": 89,
+      "y": 88,
       "size": 1,
       "ringSize": 1,
       "opacity": 0.699999988079071,
@@ -323,8 +323,8 @@
     {
       "type": "radial_menu",
       "id": "SecWpn",
-      "x": 66.66519927978516,
-      "y": 85.80615234375,
+      "x": 67,
+      "y": 88,
       "size": 1,
       "ringSize": 1,
       "opacity": 0.699999988079071,
@@ -393,8 +393,8 @@
     {
       "type": "diagnostic",
       "id": "diag_0",
-      "x": 49.064117431640625,
-      "y": 81.24696350097656,
+      "x": 49,
+      "y": 81,
       "size": 1,
       "opacity": 0.699999988079071,
       "diagType": "SETTINGS"
@@ -411,8 +411,8 @@
   ],
   "moreActions": {
     "type": "more_actions",
-    "x": 48.60746765136719,
-    "y": 93.44257354736328,
+    "x": 49,
+    "y": 93.5,
     "size": 1,
     "opacity": 0.699999988079071
   }

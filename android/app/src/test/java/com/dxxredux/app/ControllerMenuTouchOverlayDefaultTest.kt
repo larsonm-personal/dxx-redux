@@ -7,8 +7,8 @@ import org.junit.Test
 
 class ControllerMenuTouchOverlayDefaultTest {
     @Test
-    fun touchDevicesDefaultToClawPreset() {
-        assertEquals("Claw", defaultTouchPresetName(hasTouchscreen = true))
+    fun touchDevicesDefaultToTouchDefaultPreset() {
+        assertEquals("Touch Default", defaultTouchPresetName(hasTouchscreen = true))
     }
 
     @Test
