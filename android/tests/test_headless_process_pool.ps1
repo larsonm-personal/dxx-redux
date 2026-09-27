@@ -24,8 +24,9 @@ $powershell = (Get-Process -Id $PID).Path
 $tasks = @(
     [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', 'Start-Sleep -Milliseconds 250; Write-Output slow'); TimeoutSeconds = 30; WorkingDirectory = ''; Id = 'slow' }
     [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', 'Write-Output fast'); TimeoutSeconds = 30; WorkingDirectory = ''; Id = 'fast' }
-    [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', 'exit 7'); TimeoutSeconds = 30; WorkingDirectory = ''; Id = 'failed' }
+    [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', '[Console]::Error.Write("failure detail"); exit 7'); TimeoutSeconds = 30; WorkingDirectory = ''; Id = 'failed' }
     [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', 'Start-Sleep -Seconds 5'); TimeoutSeconds = 1; WorkingDirectory = ''; Id = 'timeout' }
+    [pscustomobject]@{ FilePath = $powershell; Arguments = @('-NoProfile', '-Command', '[Console]::Out.Write("o" * 131072); [Console]::Error.Write("e" * 131072)'); TimeoutSeconds = 30; WorkingDirectory = ''; Id = 'large-output' }
 )
 $testState = @{ Active = 0; Peak = 0; Results = [Collections.Generic.List[object]]::new() }
 Invoke-HeadlessProcessPool -Tasks $tasks -MaxParallel 2 -OnStarted {
@@ -39,11 +40,16 @@ Invoke-HeadlessProcessPool -Tasks $tasks -MaxParallel 2 -OnStarted {
 
 Assert-Equal 2 $testState.Peak 'parallelism cap'
 Assert-Equal 0 $testState.Active 'active process balance'
-Assert-Equal 4 $testState.Results.Count 'completion count'
+Assert-Equal 5 $testState.Results.Count 'completion count'
 Assert-Equal 'fast' $testState.Results[0].Id 'retirement order'
 Assert-Equal 7 @($testState.Results | Where-Object Id -eq 'failed')[0].Result.ExitCode 'exit code'
 Assert-Equal $true @($testState.Results | Where-Object Id -eq 'timeout')[0].Result.TimedOut 'timeout flag'
 Assert-Equal 'fast' @($testState.Results | Where-Object Id -eq 'fast')[0].Result.StandardOutput.Trim() 'stdout capture'
+Assert-Equal 'failure detail' @($testState.Results | Where-Object Id -eq 'failed')[0].Result.StandardError 'stderr capture on failure'
+$large = @($testState.Results | Where-Object Id -eq 'large-output')[0].Result
+Assert-Equal 0 $large.ExitCode 'large output exit code'
+Assert-Equal ('o' * 131072) $large.StandardOutput 'stdout beyond pipe capacity'
+Assert-Equal ('e' * 131072) $large.StandardError 'stderr beyond pipe capacity'
 
 if ([Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Runtime.InteropServices.OSPlatform]::Linux)) {
     $python = Resolve-RegressionPythonCommand

@@ -8,6 +8,9 @@ $command = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Payload)
 $start = [Diagnostics.ProcessStartInfo]::new([string]$command.FileName)
 $start.UseShellExecute = $false
 $start.CreateNoWindow = $true
+# Redirecting one stream makes .NET explicitly pass all three standard handles
+# CREATE_NO_WINDOW otherwise loses inherited stdout/stderr on Windows
+$start.RedirectStandardInput = $true
 if ($command.Arguments) {
     $start.Arguments = [string]$command.Arguments
 } else {
@@ -15,6 +18,8 @@ if ($command.Arguments) {
 }
 $process = [Diagnostics.Process]::Start($start)
 try {
+    # Headless workers receive EOF rather than waiting for interactive input
+    $process.StandardInput.Close()
     $process.WaitForExit()
     $exitCode = $process.ExitCode
 } finally {

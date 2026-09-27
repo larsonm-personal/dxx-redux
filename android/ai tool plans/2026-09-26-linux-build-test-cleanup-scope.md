@@ -793,3 +793,12 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Scoped quality passes (android/temp/ci-tooling-repair-quality.log). All 23 extended Linux tooling checks pass: android/temp/tooling_smoke/run_89defb96b1ab45798e07a755289d8ccb/summary.json and android/temp/ci-tooling-repair-smoke.log
 - The Windows supervisor's payload decoding, inherited stdout/stderr and exit-code forwarding were also exercised directly on Linux; this does not validate Windows job semantics
 - Downloaded CI diagnostics were removed after inspection; test scratch cleanup and retained smoke generations remain bounded. git diff --check passes, all invoked sessions exited, and outstanding_bugs.md is unchanged. Changes are local; native Windows CI validation is pending
+
+### Windows supervisor output repair
+
+- Run 36334206740 passes SDK cleanup and the Windows process-lifetime integration, but every Windows artifact log is empty. The pool, SDK writer and catalog checks fail because they depend on captured output
+- The prior supervisor started a windowless child without explicitly supplying standard handles. [.NET's Windows process startup](https://github.com/dotnet/runtime/blob/v8.0.0/src/libraries/System.Diagnostics.Process/src/System/Diagnostics/Process.Windows.cs#L462) sets STARTF_USESTDHANDLES only when at least one stream is redirected
+- Redirect and immediately close stdin to provide EOF for headless workers while explicitly inheriting stdout/stderr. Keep the existing job lifetime and direct output pipes, avoiding a relay that could wait on surviving descendants
+- Extend pool integration with stderr on nonzero exit and 128 KiB on each stream. The direct supervisor probe passes stdin EOF, both complete output streams and exit 37 on Linux; Windows handle semantics still require native CI validation
+- Scoped quality passes (android/temp/ci-output-repair-quality.log). All 23 extended Linux smoke checks pass: android/temp/tooling_smoke/run_74d71e648f05432a86534292ebd03937/summary.json and android/temp/ci-output-repair-smoke.log
+- Downloaded CI artifacts were removed, all invoked sessions exited, git diff --check passes and outstanding_bugs.md is unchanged. This repair remains local pending native Windows CI
