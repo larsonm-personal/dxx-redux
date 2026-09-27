@@ -48,6 +48,7 @@ function Start-HeadlessProcessPoolItem {
     $startInfo.UseShellExecute = $false
     $startInfo.CreateNoWindow = $true
     if ($Task.WorkingDirectory) { $startInfo.WorkingDirectory = [string]$Task.WorkingDirectory }
+    Set-RegressionProcessLifetimeStartInfo -StartInfo $startInfo
     $process = [Diagnostics.Process]::Start($startInfo)
     return [pscustomobject]@{
         Task = $Task

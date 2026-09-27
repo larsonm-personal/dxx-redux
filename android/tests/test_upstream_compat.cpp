@@ -1325,14 +1325,17 @@ static void test_ai_diagnostic_profiles()
 		auto &local = Ai_local_info[slot];
 		local = {};
 #ifdef DXX_BUILD_DESCENT_II
-		auto &original_static = aip.d1_saved;
+		auto original_static = aip.d1_saved;
+		const auto publish_original_static = [&]() { aip.d1_saved = original_static; };
 		auto &original_local = local.d1_saved;
 #else
-		auto &original_static = aip;
+		auto original_static = aip;
+		const auto publish_original_static = [&]() { aip = original_static; };
 		auto &original_local = local;
 #endif
 		original_static.follow_path_start_seg = -123;
 		original_static.follow_path_end_seg = 456;
+		publish_original_static();
 		original_local.last_see_time = -234;
 		original_local.last_attack_time = 567;
 		original_local.wait_time = -890;
@@ -1344,6 +1347,7 @@ static void test_ai_diagnostic_profiles()
 			const auto before = capture_ai_diagnostics();
 			if (field == 0) ++original_static.follow_path_start_seg;
 			else ++original_static.follow_path_end_seg;
+			publish_original_static();
 			const auto changed = capture_ai_diagnostics(false);
 			require((changed.robot_ai_static_state_hash != before.robot_ai_static_state_hash) == (profile == 1),
 			        "native static hashes include both original follow fields; D2 ignores that extension");
@@ -1394,18 +1398,24 @@ static short native_trigger_flags(int index)
 #endif
 }
 
+// Copy packed scalar fields by value before forwarding them to JSON constructors
 static nlohmann::json snapshot_native_triggers()
 {
 	auto result = nlohmann::json::array();
 	for (int i = 0; i < Num_triggers; ++i) {
 		auto links = nlohmann::json::array();
-		for (int j = 0; j < Triggers[i].num_links; ++j) links.push_back({ Triggers[i].seg[j], Triggers[i].side[j] });
+		std::vector<short> segments(MAX_WALLS_PER_LINK), sides(MAX_WALLS_PER_LINK);
+		for (int j = 0; j < MAX_WALLS_PER_LINK; ++j) {
+			segments[j] = Triggers[i].seg[j];
+			sides[j] = Triggers[i].side[j];
+		}
+		for (int j = 0; j < Triggers[i].num_links; ++j) links.push_back({ +Triggers[i].seg[j], +Triggers[i].side[j] });
 #ifdef DXX_BUILD_DESCENT_II
 		const auto &original = Triggers[i].d1_saved;
 #else
 		const auto &original = Triggers[i];
 #endif
-		result.push_back({ { "type", static_cast<int>(original.type) }, { "link_num", static_cast<int>(original.link_num) }, { "flags", native_trigger_flags(i) }, { "value", Triggers[i].value }, { "time", Triggers[i].time }, { "links", links }, { "segments", std::vector<short>(Triggers[i].seg, Triggers[i].seg + MAX_WALLS_PER_LINK) }, { "sides", std::vector<short>(Triggers[i].side, Triggers[i].side + MAX_WALLS_PER_LINK) } });
+		result.push_back({ { "type", static_cast<int>(original.type) }, { "link_num", static_cast<int>(original.link_num) }, { "flags", native_trigger_flags(i) }, { "value", +Triggers[i].value }, { "time", +Triggers[i].time }, { "links", links }, { "segments", segments }, { "sides", sides } });
 	}
 	return result;
 }
@@ -2699,7 +2709,7 @@ static void write_robot_frame_trace(const char *filename)
 								const object &shot = Objects[i];
 								shots.push_back({ { "id", shot.id }, { "parent", shot.ctype.laser_info.parent_num }, { "position", vector(shot.pos) }, { "velocity", vector(shot.mtype.phys_info.velocity) }, { "life", shot.lifeleft } });
 							}
-						frames.push_back({ { "mode", local.mode }, { "behavior", aip.behavior }, { "state", aip.CURRENT_STATE }, { "goal", aip.GOAL_STATE }, { "gun", aip.CURRENT_GUN }, { "skip", aip.SKIP_AI_COUNT }, { "submode", aip.flags[4] }, { "position", vector(robot.pos) }, { "segment", robot.segnum }, { "velocity", vector(robot.mtype.phys_info.velocity) }, { "forward", vector(robot.orient.fvec) }, { "right", vector(robot.orient.rvec) }, { "up", vector(robot.orient.uvec) }, { "rotvel", vector(robot.mtype.phys_info.rotvel) }, { "next_fire", local.next_fire }, { "burst", local.rapidfire_count }, { "danger_laser", aip.danger_laser_num }, { "cloak_belief", vector(Ai_cloak_info[&robot - Objects].last_position) }, { "cloak_time", Ai_cloak_info[&robot - Objects].last_time }, { "previous_visibility", local.previous_visibility }, { "last_seen", local.time_player_seen }, { "awareness", local.player_awareness_type }, { "awareness_time", local.player_awareness_time }, { "processed_time", local.time_since_processed }, { "path_index", aip.cur_path_index }, { "path_direction", aip.PATH_DIR }, { "path", path }, { "shots", shots }, { "events", Num_awareness_events }, { "agitation", Overall_agitation }, { "sim_draws", d_rand_get_call_count() - sim }, { "fx_draws", d_rand_get_stream_call_count(D_RNG_FX) - fx } });
+						frames.push_back({ { "mode", local.mode }, { "behavior", +aip.behavior }, { "state", +aip.CURRENT_STATE }, { "goal", +aip.GOAL_STATE }, { "gun", +aip.CURRENT_GUN }, { "skip", +aip.SKIP_AI_COUNT }, { "submode", +aip.flags[4] }, { "position", vector(robot.pos) }, { "segment", +robot.segnum }, { "velocity", vector(robot.mtype.phys_info.velocity) }, { "forward", vector(robot.orient.fvec) }, { "right", vector(robot.orient.rvec) }, { "up", vector(robot.orient.uvec) }, { "rotvel", vector(robot.mtype.phys_info.rotvel) }, { "next_fire", local.next_fire }, { "burst", local.rapidfire_count }, { "danger_laser", +aip.danger_laser_num }, { "cloak_belief", vector(Ai_cloak_info[&robot - Objects].last_position) }, { "cloak_time", Ai_cloak_info[&robot - Objects].last_time }, { "previous_visibility", local.previous_visibility }, { "last_seen", local.time_player_seen }, { "awareness", local.player_awareness_type }, { "awareness_time", local.player_awareness_time }, { "processed_time", local.time_since_processed }, { "path_index", +aip.cur_path_index }, { "path_direction", +aip.PATH_DIR }, { "path", path }, { "shots", shots }, { "events", Num_awareness_events }, { "agitation", Overall_agitation }, { "sim_draws", d_rand_get_call_count() - sim }, { "fx_draws", d_rand_get_stream_call_count(D_RNG_FX) - fx } });
 						GameTime64 += FrameTime;
 						++d_tick_count;
 					}
@@ -3440,10 +3450,10 @@ static void test_companion_physics()
 						do_physics_sim(&robot);
 						const auto &p = robot.mtype.phys_info;
 						const auto &o = robot.orient;
-						trace.push_back({ free_spin, thrust, bounce, frame, robot.pos.x, robot.pos.y, robot.pos.z,
+						trace.push_back({ free_spin, thrust, bounce, frame, +robot.pos.x, +robot.pos.y, +robot.pos.z,
 						                  p.velocity.x, p.velocity.y, p.velocity.z, p.rotvel.x, p.rotvel.y, p.rotvel.z,
 						                  o.rvec.x, o.rvec.y, o.rvec.z, o.uvec.x, o.uvec.y, o.uvec.z, o.fvec.x, o.fvec.y, o.fvec.z,
-						                  robot.ctype.ai_info.SKIP_AI_COUNT, d_rand_get_call_count() });
+						                  +robot.ctype.ai_info.SKIP_AI_COUNT, d_rand_get_call_count() });
 					}
 				}
 		if (expected.is_null()) expected = trace;
@@ -4596,6 +4606,8 @@ static void test_homing_targets()
 			homer.ctype.laser_info.track_goal = -1;
 			ConsoleObject->pos = { 0, 0, 8 * F1_0 };
 			require(find_homing_object(&origin, &homer) == 0 && track_track_goal(-1, &homer, &dot, scan_frame, original) == 0, "robot-fired missiles acquire and reacquire the player");
+			// Keep the stored target in sync with the acquired target passed on the next frame
+			homer.ctype.laser_info.track_goal = 0;
 			Players[0].flags = PLAYER_FLAGS_CLOAKED;
 			require(find_homing_object(&origin, &homer) == -1 && track_track_goal(0, &homer, &dot, scan_frame, original) == -1, "robot-fired missiles lose the cloaked player");
 			Players[0].flags = 0;
@@ -7131,7 +7143,7 @@ static nlohmann::json saved_world_snapshot(const std::string &stem)
 	world.erase("endlevel");
 	world["objects"] = json::array();
 	for (int i = 0; i <= Highest_object_index; ++i)
-		world["objects"].push_back(input_demo_object_trace_snapshot(Objects[i], i));
+		world["objects"].push_back(json(input_demo_object_trace_snapshot(Objects[i], i)));
 	unsigned seed;
 	require(d_rand_get_state(&seed), "observe restored simulation RNG state");
 	world["simulation_seed"] = seed;
@@ -7559,7 +7571,7 @@ static void test_guidebot_save_assets(const char *directory, const char *d2_dire
 			const fix expected = health > 0 && health <= maximum ? health : maximum / 2;
 			require(Objects[boss_slot].shields == expected && Difficulty_level == difficulty && !d1_in_d2_use_d1_gameplay(),
 			        "ordinary D2 retains its original boss health repair at every difficulty");
-			boss_controls.push_back({ difficulty, health, maximum, Objects[boss_slot].shields });
+			boss_controls.push_back({ difficulty, health, maximum, +Objects[boss_slot].shields });
 		}
 	}
 	const std::string boss_output = boss_controls.dump(2) + "\n";
@@ -7610,7 +7622,7 @@ static void test_custom_save_identity(const std::string &stem, int robot_slot)
 		const int restored = state_restore_all_sub(filename, 0);
 		const bool saved_actor = robot_slot <= Highest_object_index && Objects[robot_slot].type == OBJ_ROBOT &&
 		                         Objects[robot_slot].id == robot_id && Objects[robot_slot].shields == saved_shields;
-		report.push_back({ { "scenario", scenario.name }, { "saved_mass", saved_mass }, { "prepared_mass", prepared_mass }, { "restored", restored }, { "restored_mass", Robot_info[robot_id].mass }, { "saved_actor_present", saved_actor } });
+		report.push_back({ { "scenario", scenario.name }, { "saved_mass", saved_mass }, { "prepared_mass", prepared_mass }, { "restored", restored }, { "restored_mass", +Robot_info[robot_id].mass }, { "saved_actor_present", saved_actor } });
 		const std::string result = report.dump(2) + "\n";
 		write_fixture("custom-save-identity.json", bytes(result.begin(), result.end()));
 		if (scenario.unchanged)
@@ -7746,7 +7758,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		        "checkpoint level preparation installs the original custom pixels and samples");
 		require(ObjBitmaps[0].index == custom_bitmap && Robot_joints[0].angles.p == 123 && Robot_joints[0].angles.b == 234 && Robot_joints[0].angles.h == 345,
 		        "checkpoint level preparation installs custom joint and object texture references");
-		return { { "robot", Objects[robot_index].id }, { "model", info.model_num }, { "mass", info.mass }, { "drag", info.drag }, { "strength", info.strength }, { "model_radius", model.rad }, { "submodels", model.n_models }, { "model_bytes", model.model_data_size }, { "bitmap", custom_bitmap }, { "pixels", bytes(bitmap.bm_data, bitmap.bm_data + bitmap.bm_w * bitmap.bm_h) }, { "samples", bytes(sample.data, sample.data + sample.length) }, { "joint", { Robot_joints[0].jointnum, Robot_joints[0].angles.p, Robot_joints[0].angles.b, Robot_joints[0].angles.h } } };
+		return { { "robot", +Objects[robot_index].id }, { "model", info.model_num }, { "mass", info.mass }, { "drag", info.drag }, { "strength", info.strength }, { "model_radius", model.rad }, { "submodels", model.n_models }, { "model_bytes", model.model_data_size }, { "bitmap", custom_bitmap }, { "pixels", bytes(bitmap.bm_data, bitmap.bm_data + bitmap.bm_w * bitmap.bm_h) }, { "samples", bytes(sample.data, sample.data + sample.length) }, { "joint", { +Robot_joints[0].jointnum, +Robot_joints[0].angles.p, +Robot_joints[0].angles.b, +Robot_joints[0].angles.h } } };
 	};
 	const json fresh_assets = asset_snapshot();
 #ifndef DXX_BUILD_DESCENT_II
@@ -8384,7 +8396,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				path.push_back({ { "segment", point.segnum }, { "point", vector(point.point) } });
 			}
 			frames.push_back({ { "mode", local.mode }, { "behavior", aip.behavior }, { "submode", aip.flags[4] }, { "skip", aip.SKIP_AI_COUNT }, { "state", aip.CURRENT_STATE }, { "goal", aip.GOAL_STATE }, { "position", vector(robot.pos) }, { "velocity", vector(robot.mtype.phys_info.velocity) }, { "forward", vector(robot.orient.fvec) }, { "right", vector(robot.orient.rvec) }, { "up", vector(robot.orient.uvec) }, { "next_fire", local.next_fire }, { "last_seen", local.time_player_seen }, { "path_index", aip.cur_path_index }, { "path_direction", aip.PATH_DIR }, { "path", path }, { "sim_draws", d_rand_get_call_count() - sim }, { "fx_draws", d_rand_get_stream_call_count(D_RNG_FX) - fx } });
-			frames.back()["object_physics"] = { robot.size, robot.mtype.phys_info.mass, robot.mtype.phys_info.drag, robot.shields, robot.rtype.pobj_info.model_num };
+			frames.back()["object_physics"] = { +robot.size, +robot.mtype.phys_info.mass, +robot.mtype.phys_info.drag, +robot.shields, +robot.rtype.pobj_info.model_num };
 			const auto diagnostics = capture_ai_diagnostics();
 			frames.back()["ai_diagnostics"] = {
 				{ "static_hash", diagnostics.robot_ai_static_state_hash }, { "local_hash", diagnostics.robot_ai_local_state_hash }, { "static_buckets", diagnostics.robot_ai_static_bucket_hashes }, { "local_buckets", diagnostics.robot_ai_local_bucket_hashes }, { "trace_hashes", diagnostics.robot_ai_static_trace_hashes }, { "follow_starts", diagnostics.robot_ai_static_trace_follow_starts }, { "follow_ends", diagnostics.robot_ai_static_trace_follow_ends }
@@ -8422,7 +8434,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			        "opening the restored door retires its saved stuck flare");
 			const physics_info &physics = morphing.mtype.phys_info;
 			cases.back()["completed_runtime"] = {
-				{ "morph_frame", completion_frame }, { "slot", morph_slot }, { "robot", { morphing.control_type, morphing.movement_type, morphing.render_type, morphing.ctype.ai_info.behavior } }, { "physics", { vector(physics.velocity), vector(physics.thrust), physics.mass, physics.drag, physics.brakes, vector(physics.rotvel), vector(physics.rotthrust), physics.turnroll, physics.flags } }, { "flare", { stuck_slot, Objects[stuck_slot].lifeleft, Num_stuck_objects } }, { "dynamic", checkpoint_dynamic_state() }
+				{ "morph_frame", completion_frame }, { "slot", morph_slot }, { "robot", { morphing.control_type, morphing.movement_type, morphing.render_type, morphing.ctype.ai_info.behavior } }, { "physics", { vector(physics.velocity), vector(physics.thrust), physics.mass, physics.drag, physics.brakes, vector(physics.rotvel), vector(physics.rotthrust), physics.turnroll, physics.flags } }, { "flare", { stuck_slot, +Objects[stuck_slot].lifeleft, Num_stuck_objects } }, { "dynamic", checkpoint_dynamic_state() }
 			};
 		}
 	}
@@ -9207,7 +9219,7 @@ static nlohmann::json exercise_robot_pairs(bool native)
 					const auto sim = d_rand_get_call_count();
 					const int fate = find_vector_intersection(&query, &hit);
 					require(fate == (native && first_attack && second_attack && !offset ? HIT_OBJECT : HIT_NONE), "only two native melee robots collide; engine robots remain passable");
-					result.push_back({ first_attack, second_attack, direction, offset, fate, hit.hit_pnt.x, hit.hit_pnt.y, hit.hit_pnt.z,
+					result.push_back({ first_attack, second_attack, direction, offset, fate, +hit.hit_pnt.x, +hit.hit_pnt.y, +hit.hit_pnt.z,
 					                   fate == HIT_OBJECT ? hit.hit_object : -1, d_rand_get_call_count() - sim });
 #ifdef DXX_BUILD_DESCENT_II
 					if (native) {
@@ -9310,7 +9322,7 @@ static nlohmann::json exercise_weapon_drops(bool native)
 						require(used && Players[0].primary_ammo[VULCAN_INDEX] == 100 + gain, "collect actual dropped Vulcan with original first-acquisition minimum");
 						require(pickup.ctype.powerup_info.count == expected - gain, "retain exact collected pickup contents until retirement");
 					}
-					objects.push_back({ pickup.id, expected, pickup.ctype.powerup_info.count });
+					objects.push_back({ +pickup.id, expected, +pickup.ctype.powerup_info.count });
 				}
 				require(objects.size() == static_cast<size_t>(count), "weapon egg preserves the full drop count");
 				result.push_back({ type, id, count, objects, d_rand_get_call_count(), d_rand_get_stream_call_count(D_RNG_FX) });
@@ -9409,7 +9421,7 @@ static nlohmann::json exercise_secondary_explosions(bool native)
 		require(Players[0].shields == 100 * F1_0 - expected_damage, "native secondary explosions are visual; D2 explosive robots retain radial damage");
 		const object &explosion = Objects[Highest_object_index];
 		require(explosion.type == OBJ_FIREBALL && explosion.ctype.expl_info.delete_objnum == index, "secondary explosion retains the source deletion lifecycle");
-		result.push_back({ id, Players[0].shields, Objects[index].flags, explosion.id, explosion.size, explosion.lifeleft,
+		result.push_back({ id, +Players[0].shields, +Objects[index].flags, explosion.id, explosion.size, explosion.lifeleft,
 		                   explosion.ctype.expl_info.delete_time, d_rand_get_call_count() });
 	}
 	return result;
@@ -9459,8 +9471,8 @@ static nlohmann::json exercise_robot_blasts(bool native)
 				const fix expected = (20 - 2 * distance) * F1_0 / (resistant ? 4 : 1);
 				require(100 * F1_0 - robot.shields == expected, "D1 bosses take native blast damage; D2 matter-resistant bosses keep quarter damage");
 				require(robot.ctype.ai_info.SKIP_AI_COUNT == (!native && flash && !boss ? 2 : 0), "native robots reject flash stun while D2 enemies and companions retain it");
-				result.push_back({ id, distance, flash, robot.shields, robot.ctype.ai_info.SKIP_AI_COUNT,
-				                   robot.mtype.phys_info.rotthrust.x, robot.mtype.phys_info.rotthrust.y, robot.mtype.phys_info.rotthrust.z,
+				result.push_back({ id, distance, flash, +robot.shields, +robot.ctype.ai_info.SKIP_AI_COUNT,
+				                   +robot.mtype.phys_info.rotthrust.x, +robot.mtype.phys_info.rotthrust.y, +robot.mtype.phys_info.rotthrust.z,
 				                   d_rand_get_call_count(), d_rand_get_stream_call_count(D_RNG_FX) });
 			}
 #ifdef DXX_BUILD_DESCENT_II
@@ -9523,7 +9535,7 @@ static nlohmann::json exercise_contact_motion(bool native)
 						do_physics_sim(&actor);
 						const auto &v = actor.mtype.phys_info.velocity;
 						const auto &o = actor.orient;
-						frames.push_back({ { "pos", { actor.pos.x, actor.pos.y, actor.pos.z } }, { "velocity", { v.x, v.y, v.z } }, { "orientation", { o.rvec.x, o.rvec.y, o.rvec.z, o.uvec.x, o.uvec.y, o.uvec.z, o.fvec.x, o.fvec.y, o.fvec.z } }, { "segment", actor.segnum }, { "flags", actor.flags }, { "physics_flags", actor.mtype.phys_info.flags }, { "sim", d_rand_get_call_count() }, { "fx", d_rand_get_stream_call_count(D_RNG_FX) } });
+						frames.push_back({ { "pos", { +actor.pos.x, +actor.pos.y, +actor.pos.z } }, { "velocity", { v.x, v.y, v.z } }, { "orientation", { o.rvec.x, o.rvec.y, o.rvec.z, o.uvec.x, o.uvec.y, o.uvec.z, o.fvec.x, o.fvec.y, o.fvec.z } }, { "segment", +actor.segnum }, { "flags", +actor.flags }, { "physics_flags", +actor.mtype.phys_info.flags }, { "sim", d_rand_get_call_count() }, { "fx", d_rand_get_stream_call_count(D_RNG_FX) } });
 						if (actor.flags & OF_SHOULD_BE_DEAD) break;
 					}
 					if (type == OBJ_WEAPON && bounce) {
@@ -9562,8 +9574,8 @@ static nlohmann::json exercise_contact_motion(bool native)
 				collide_robot_and_player(&robot, ConsoleObject, &point);
 				const bool allowed = native || !exploding;
 				require(Num_awareness_events == (allowed ? 1 : 0), "real native contact admits exploding robots while D2 rejects them");
-				contacts.push_back({ exploding, invulnerable, speed, Players[0].shields, robot.shields, ConsoleObject->mtype.phys_info.velocity.z,
-				                     robot.mtype.phys_info.velocity.z, Num_awareness_events, d_rand_get_call_count(), d_rand_get_stream_call_count(D_RNG_FX) });
+				contacts.push_back({ exploding, invulnerable, speed, +Players[0].shields, +robot.shields, +ConsoleObject->mtype.phys_info.velocity.z,
+				                     +robot.mtype.phys_info.velocity.z, Num_awareness_events, d_rand_get_call_count(), d_rand_get_stream_call_count(D_RNG_FX) });
 			}
 	TmapInfo[1] = original_texture;
 	return { { "motion", motion }, { "contacts", contacts } };
@@ -9617,9 +9629,9 @@ static nlohmann::json exercise_volatile_impacts(bool native)
 				const bool boosted = native || Weapon_info[id].damage_radius < 15 * F1_0;
 				require(explosion.size == Weapon_info[id].impact_size + (boosted ? 3 * F1_0 : 0), "native lava keeps its original impact size even for powerful weapons");
 				result.push_back({ id, difficulty, exploding, explosion.id, explosion.size, explosion.lifeleft,
-				                   explosion.pos.x, explosion.pos.y, explosion.pos.z, robot.shields,
-				                   robot.mtype.phys_info.velocity.x, robot.mtype.phys_info.velocity.y, robot.mtype.phys_info.velocity.z,
-				                   robot.mtype.phys_info.rotvel.x, robot.mtype.phys_info.rotvel.y, robot.mtype.phys_info.rotvel.z,
+				                   explosion.pos.x, explosion.pos.y, explosion.pos.z, +robot.shields,
+				                   +robot.mtype.phys_info.velocity.x, +robot.mtype.phys_info.velocity.y, +robot.mtype.phys_info.velocity.z,
+				                   +robot.mtype.phys_info.rotvel.x, +robot.mtype.phys_info.rotvel.y, +robot.mtype.phys_info.rotvel.z,
 				                   d_rand_get_call_count(), d_rand_get_stream_call_count(D_RNG_FX) });
 			}
 	TmapInfo[1] = original;
@@ -9672,7 +9684,7 @@ static nlohmann::json exercise_exploding_walls(bool native)
 		}
 		require(flashes.size() == 32 && (Walls[0].flags & WALL_BLASTED) && (Walls[1].flags & WALL_BLASTED),
 		        "actual blastable wall completes all fireballs and opens both sides");
-		result.push_back({ { "seed", seed }, { "flashes", flashes }, { "textures", { Segments[0].sides[4].tmap_num, Segments[1].sides[5].tmap_num } }, { "player_motion", { ConsoleObject->mtype.phys_info.velocity.x, ConsoleObject->mtype.phys_info.velocity.y, ConsoleObject->mtype.phys_info.velocity.z, ConsoleObject->mtype.phys_info.rotvel.x, ConsoleObject->mtype.phys_info.rotvel.y, ConsoleObject->mtype.phys_info.rotvel.z } }, { "sim_calls", d_rand_get_call_count() }, { "fx_calls", d_rand_get_stream_call_count(D_RNG_FX) } });
+		result.push_back({ { "seed", seed }, { "flashes", flashes }, { "textures", { Segments[0].sides[4].tmap_num, Segments[1].sides[5].tmap_num } }, { "player_motion", { +ConsoleObject->mtype.phys_info.velocity.x, +ConsoleObject->mtype.phys_info.velocity.y, +ConsoleObject->mtype.phys_info.velocity.z, +ConsoleObject->mtype.phys_info.rotvel.x, +ConsoleObject->mtype.phys_info.rotvel.y, +ConsoleObject->mtype.phys_info.rotvel.z } }, { "sim_calls", d_rand_get_call_count() }, { "fx_calls", d_rand_get_stream_call_count(D_RNG_FX) } });
 	}
 	WallAnims[0] = original_clip;
 	return result;
@@ -9719,7 +9731,7 @@ static nlohmann::json exercise_reactor_impacts(bool native)
 				        "real reactor hit creates a small explosion and retires the projectile");
 				require(effect.size == (native ? ((size / 3) * 3) / 4 : size * 3 / 20), "reactor impact uses its original rounded effect radius");
 				result.push_back({ size, parent_type, physical, effect.size, effect.lifeleft, effect.pos.x, effect.pos.y, effect.pos.z,
-				                   Objects[target].shields, Control_center_been_hit });
+				                   +Objects[target].shields, Control_center_been_hit });
 			}
 	return result;
 }
@@ -9807,7 +9819,7 @@ static nlohmann::json exercise_reactor_frames(bool native)
 					unsigned sim_state = 0, fx_state = 0;
 					const int sim_available = d_rand_get_stream_state(D_RNG_SIM, &sim_state);
 					const int fx_available = d_rand_get_stream_state(D_RNG_FX, &fx_state);
-					result.push_back({ { "level", level }, { "difficulty", difficulty }, { "seed", seed }, { "scenario", scenario }, { "shots", shots }, { "hit", Control_center_been_hit }, { "seen", Control_center_player_been_seen }, { "shields", reactor_object.shields }, { "sim_state", { sim_available, sim_state } }, { "fx_state", { fx_available, fx_state } }, { "next_fire", Control_center_next_fire_time }, { "death_silence", controlcen_death_silence }, { "sim_draws", d_rand_get_call_count() }, { "fx_draws", d_rand_get_stream_call_count(D_RNG_FX) } });
+					result.push_back({ { "level", level }, { "difficulty", difficulty }, { "seed", seed }, { "scenario", scenario }, { "shots", shots }, { "hit", Control_center_been_hit }, { "seen", Control_center_player_been_seen }, { "shields", +reactor_object.shields }, { "sim_state", { sim_available, sim_state } }, { "fx_state", { fx_available, fx_state } }, { "next_fire", Control_center_next_fire_time }, { "death_silence", controlcen_death_silence }, { "sim_draws", d_rand_get_call_count() }, { "fx_draws", d_rand_get_stream_call_count(D_RNG_FX) } });
 				}
 	Player_is_dead = 0;
 	return result;
@@ -9842,7 +9854,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 			do_powerup_frame(&Objects[slot]);
 			if (step == 2)
 				require(animation.framenum == (native || !(slot & 1) ? 0 : clip.num_frames - 2), "native pickups advance forward while ordinary D2 keeps alternating direction");
-			powerup_animation.push_back({ slot, step++, elapsed, animation.frametime, animation.framenum });
+			powerup_animation.push_back({ slot, step++, elapsed, +animation.frametime, +animation.framenum });
 		}
 		require(sim_calls == d_rand_get_call_count() && fx_calls == d_rand_get_stream_call_count(D_RNG_FX), "pickup animation consumes neither RNG stream");
 	}
@@ -9927,7 +9939,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 			const int used = do_powerup(&pickup);
 			const int gain = native ? (owned ? VULCAN_AMMO_AMOUNT : VULCAN_WEAPON_AMMO_AMOUNT) : contents;
 			require(Players[0].primary_ammo[VULCAN_INDEX] == 100 + gain, "native Vulcan pickup grants its first-weapon minimum or one duplicate ammo box");
-			vulcan.push_back({ owned, contents, used, Players[0].primary_ammo[VULCAN_INDEX], pickup.ctype.powerup_info.count, Players[0].score });
+			vulcan.push_back({ owned, contents, used, +Players[0].primary_ammo[VULCAN_INDEX], +pickup.ctype.powerup_info.count, +Players[0].score });
 		}
 	json surfaces = json::array();
 	for (int i = 0; i < NumTextures; ++i) {
@@ -9999,7 +10011,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 						do_door_close(0);
 						require(Walls[0].state == ((!native && blocked) ? WALL_DOOR_OPENING : WALL_DOOR_CLOSING), "obstructed native door pauses while D2 reopens");
 						require(!native || !blocked || ActiveDoors[0].time == 0, "native obstruction does not advance animation time");
-						json frame = { { "parts", parts }, { "block_part", block_part }, { "back", back }, { "type", type }, { "radius", radius }, { "wait", wait_state }, { "close", Walls[0].state }, { "time", ActiveDoors[0].time } };
+						json frame = { { "parts", parts }, { "block_part", block_part }, { "back", back }, { "type", type }, { "radius", radius }, { "wait", wait_state }, { "close", +Walls[0].state }, { "time", +ActiveDoors[0].time } };
 						frame["walls"] = json::array();
 						for (int i = 0; i < parts * 2; ++i)
 							frame["walls"].push_back({ Walls[i].state, Walls[i].flags, Segments[i].sides[Walls[i].sidenum].tmap_num });
@@ -10029,7 +10041,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 				const fix result = id == POW_ENERGY ? Players[0].energy : Players[0].shields;
 				const fix amount = (difficulty == 0 && !native ? 27 : 18 - 3 * difficulty) * F1_0;
 				require(result == (std::min) (MAX_ENERGY, start + amount) && used == (start < MAX_ENERGY), "real pickup uses native or D2 difficulty amount and retains saturation/consumption");
-				pickups.push_back({ difficulty, id, start, used, result, Players[0].score });
+				pickups.push_back({ difficulty, id, start, used, result, +Players[0].score });
 			}
 		for (const int invulnerable : { 0, 1 })
 			for (int kind = 0; kind < 3; ++kind) {
@@ -10229,7 +10241,7 @@ static void write_weapon_art_trace(const char *directory, const char *d2_directo
 	PHYSFS_delete(custom_name.c_str());
 	Player_num = 0;
 	N_players = 1;
-	std::strcpy(Players[0].callsign, "weaponart");
+	std::strcpy(Players[0].callsign, "weapnart");
 	Difficulty_level = 2;
 	init_player_stats_game(0);
 	json trace = json::array();
@@ -10479,6 +10491,9 @@ void test_autoselect();
 static void test_mixed_rate_sound_conversion()
 {
 	static char dummy_driver[] = "SDL_AUDIODRIVER=dummy";
+	// sdl12-compat defaults to SDL2 resampling; this control requires SDL1 sample-and-hold
+	static char legacy_conversion[] = "SDL12COMPAT_COMPATIBILITY_AUDIOCVT=1";
+	require(SDL_putenv(legacy_conversion) == 0, "select legacy SDL conversion control");
 	require(SDL_putenv(dummy_driver) == 0 && SDL_InitSubSystem(SDL_INIT_AUDIO) == 0,
 	        "initialize isolated mixer audio device");
 #ifdef DXX_BUILD_DESCENT_II

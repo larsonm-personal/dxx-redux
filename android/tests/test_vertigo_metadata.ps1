@@ -3,33 +3,47 @@
 param(
     [string]$DataDir = '',
     [string]$VertigoDir = '',
-    [string]$Worker = ''
+    [string]$Worker = '',
+    [switch]$NoBuild
 )
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-if (-not $DataDir) { $DataDir = Join-Path $repoRoot 'game_data_to_copy_to_emulator/temp' }
-if (-not $VertigoDir) { $VertigoDir = Join-Path $repoRoot 'game_data/CD images/Descent II - The Vertigo Series (USA)/data_tracks/vertigo' }
-if (-not $Worker) { $Worker = Join-Path $repoRoot 'buildd2/main/dxx-redux-d2-metadata-worker.exe' }
-$fixture = Join-Path $repoRoot 'android/temp/vertigo_metadata_fixture'
-New-Item -ItemType Directory -Path $fixture -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $VertigoDir 'd2x.mn2') -Destination $fixture -Force
-[IO.File]::WriteAllBytes((Join-Path $fixture 'd2x.hog'), [Text.Encoding]::ASCII.GetBytes('DHF'))
-$collection = Join-Path $fixture 'collection'
-New-Item -ItemType Directory -Path $collection -Force | Out-Null
-foreach ($name in @('d2x.mn2', 'd2x.hog')) {
-    Copy-Item -LiteralPath (Join-Path $VertigoDir $name) -Destination $collection -Force
+. (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1')
+. (Join-Path $repoRoot 'android/helpers/standard_game_data.ps1')
+if (-not $DataDir) {
+    $candidates = @(Get-StandardGameDataCandidates -RepoRoot $repoRoot -Game d2)
+    $dependencies = @(Get-StandardGameDataDeps | Where-Object file -in @('descent2.hog', 'descent2.ham', 'groupa.pig'))
+    $DataDir = (Resolve-StandardGameDataDirectory -Candidates $candidates -Dependencies $dependencies -Label D2).Path
 }
-[IO.File]::WriteAllText((Join-Path $collection 'unrelated.hog'), 'Unsupported unrelated archive')
-$start = [Diagnostics.ProcessStartInfo]::new($Worker)
-$start.UseShellExecute = $false
-$start.CreateNoWindow = $true
-$start.RedirectStandardInput = $true
-$start.RedirectStandardOutput = $true
-$start.RedirectStandardError = $true
-$process = [Diagnostics.Process]::Start($start)
-$stderr = $process.StandardError.ReadToEndAsync()
+if (-not $VertigoDir) { $VertigoDir = Join-Path $repoRoot 'game_data/CD images/Descent II - The Vertigo Series (USA)/data_tracks/vertigo' }
+if (-not $Worker) {
+    if (-not $NoBuild) { Invoke-RegressionHostBuild -RepoRoot $repoRoot -Target d2 }
+    $Worker = Join-RegressionPath $repoRoot buildd2 main (Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d2-metadata-worker')[0]
+}
+$fixture = Join-Path $repoRoot ('android/temp/vertigo_metadata_fixture/run_' + [guid]::NewGuid().ToString('N'))
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $fixture -DirectoryPrefix run_
+New-Item -ItemType Directory -Path $fixture -Force | Out-Null
+$fixtureLock = $null
+$process = $null
 try {
+    $fixtureLock = [IO.File]::Open((Join-Path $fixture 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+    Copy-Item -LiteralPath (Join-Path $VertigoDir 'd2x.mn2') -Destination $fixture -Force
+    [IO.File]::WriteAllBytes((Join-Path $fixture 'd2x.hog'), [Text.Encoding]::ASCII.GetBytes('DHF'))
+    $collection = Join-Path $fixture 'collection'
+    New-Item -ItemType Directory -Path $collection -Force | Out-Null
+    foreach ($name in @('d2x.mn2', 'd2x.hog')) {
+        Copy-Item -LiteralPath (Join-Path $VertigoDir $name) -Destination $collection -Force
+    }
+    [IO.File]::WriteAllText((Join-Path $collection 'unrelated.hog'), 'Unsupported unrelated archive')
+    $start = [Diagnostics.ProcessStartInfo]::new($Worker)
+    $start.UseShellExecute = $false
+    $start.CreateNoWindow = $true
+    $start.RedirectStandardInput = $true
+    $start.RedirectStandardOutput = $true
+    $start.RedirectStandardError = $true
+    $process = [Diagnostics.Process]::Start($start)
+    $stderr = $process.StandardError.ReadToEndAsync()
     foreach ($stage in @($fixture, $VertigoDir, $collection, $fixture, $VertigoDir)) {
         $request = @{
             schema = 'dxx-level-metadata-request-v1'; request_id = [guid]::NewGuid().ToString('N')
@@ -59,6 +73,13 @@ try {
     if (-not $process.WaitForExit(10000) -or $process.ExitCode -ne 0) { throw 'Worker did not exit cleanly' }
     Write-Output 'PASS: Vertigo descriptor-only loading, unrelated HOG isolation, missing HAM rejection, and worker mount cleanup'
 } finally {
-    if (-not $process.HasExited) { $process.Kill(); $process.WaitForExit() }
-    $process.Dispose()
+    try {
+        if ($process) {
+            if (-not $process.HasExited) { $process.Kill($true); $process.WaitForExit() }
+            $process.Dispose()
+        }
+    } finally {
+        if ($fixtureLock) { $fixtureLock.Dispose() }
+        Remove-Item -LiteralPath $fixture -Recurse -Force
+    }
 }

@@ -189,7 +189,8 @@ $APK = Join-Path $ANDROID_DIR "app\build\outputs\apk\debug\app-debug.apk"
 if (-not $NoBuild) {
     Write-Status ""
     Write-Status "--- Building APK ---" "White"
-    $gradleOut = & (Join-Path $ANDROID_DIR "gradlew.bat") -p $ANDROID_DIR assembleDebug 2>&1 | Out-String
+    Initialize-RegressionJavaEnvironment -RepoRoot $REPO_ROOT
+    $gradleOut = & (Resolve-RegressionGradleWrapper -AndroidDir $ANDROID_DIR) -p $ANDROID_DIR assembleDebug 2>&1 | Out-String
     $gradleExit = $LASTEXITCODE
     if ($gradleExit -ne 0) {
         Write-Status "FAIL: Gradle build failed" "Red"

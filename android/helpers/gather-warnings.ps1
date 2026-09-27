@@ -30,30 +30,19 @@ $datestamp = Get-Date -Format "yyyy-MM-dd"
 $logFile = Join-Path $tempDir "warnings-$datestamp.log"
 & (Join-Path $PSScriptRoot "retain-recent-artifacts.ps1") -Artifacts $logFile
 
-# --- Set JAVA_HOME if needed ---
-$depBaseFile = Join-Path $repoRoot "dependency_base.txt"
-if (-not $env:JAVA_HOME -and (Test-Path $depBaseFile)) {
-    $DEP_BASE = (Get-Content $depBaseFile -First 1).Trim()
-    $jdk = Get-ChildItem "$DEP_BASE\jdk-*" -Directory -ErrorAction SilentlyContinue |
-        Sort-Object Name -Descending | Select-Object -First 1
-    if ($jdk) {
-        $env:JAVA_HOME = $jdk.FullName
-        Write-Host "JAVA_HOME = $env:JAVA_HOME"
-    }
-}
+. (Join-Path $PSScriptRoot 'test_host_platform.ps1')
+Initialize-RegressionJavaEnvironment -RepoRoot $repoRoot
 
 # --- Run Gradle build and capture output ---
 Write-Host "Running assembleDebug to gather warnings..."
 Write-Host "Log file: $logFile"
 
-$gradlew = Join-Path $androidRoot "gradlew.bat"
-if (-not (Test-Path $gradlew)) {
-    Write-Error "gradlew.bat not found at $gradlew"
-    exit 1
-}
+$gradlew = Resolve-RegressionGradleWrapper -AndroidDir $androidRoot
 
 # Run build, capturing both stdout and stderr
 $output = & $gradlew -p $androidRoot assembleDebug --no-daemon 2>&1 | Out-String -Stream
+
+$buildExitCode = $LASTEXITCODE
 
 # Filter for warning lines
 $warnings = @()
@@ -90,3 +79,5 @@ Write-Host "  Kotlin:       $kotlinCount"
 Write-Host "  Total:        $($warnings.Count)"
 Write-Host ""
 Write-Host "Written to: $logFile"
+
+if ($buildExitCode -ne 0) { throw "Gradle build failed with exit code $buildExitCode" }

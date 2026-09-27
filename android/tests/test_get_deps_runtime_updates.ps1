@@ -66,9 +66,11 @@ Assert-Matches $vscodeSync 'java\.import\.gradle\.java\.home' `
 $tempSettings = Join-Path ([System.IO.Path]::GetTempPath()) "dxx-vscode-settings-$([guid]::NewGuid()).json"
 try {
     Copy-Item -LiteralPath $vscodeSettingsPath -Destination $tempSettings
-    & $vscodeSyncPath -SettingsPath $tempSettings -DependencyBase 'C:\managed tools' -JdkMajor 25
+    $managedBase = Join-Path ([IO.Path]::GetTempPath()) 'managed tools'
+    & $vscodeSyncPath -SettingsPath $tempSettings -DependencyBase $managedBase -JdkMajor 25
     $syncedSettings = Get-Content -LiteralPath $tempSettings -Raw
-    Assert-Matches $syncedSettings '"java\.import\.gradle\.java\.home"\s*:\s*"C:\\\\managed tools\\\\jdk-25"' `
+    $expectedJdk = ConvertTo-Json -InputObject (Join-Path $managedBase 'jdk-25') -Compress
+    Assert-Matches $syncedSettings ('"java\.import\.gradle\.java\.home"\s*:\s*' + [regex]::Escape($expectedJdk)) `
         "VS Code synchronization writes the managed Gradle JVM path"
     Assert-Matches $syncedSettings '"name"\s*:\s*"JavaSE-25"' `
         "VS Code synchronization updates the Java runtime major version"
@@ -185,6 +187,49 @@ try {
     }
 } finally {
     Remove-Item -LiteralPath $confFile -Force -ErrorAction SilentlyContinue
+}
+
+# Exercise exact JDK pin updates, including patch releases and partial metadata failures
+& {
+    $jdkFunction = $updateAst.Find({ param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Update-JdkReleasePins'
+        }, $true)
+    . ([scriptblock]::Create($jdkFunction.Extent.Text))
+    $publishedPins = @{}
+    $failure = ''
+    function Update-Conf($key, $value) { $publishedPins[$key] = $value }
+    function Get-AdoptiumOsToken { return 'linux' }
+    function Invoke-LoggedWebRequest($Uri, $TimeoutSec) {
+        if ($TimeoutSec -le 0 -or $Uri -notmatch 'os=(windows|linux|mac)&') { throw 'Unexpected JDK metadata request' }
+        $token = $Matches[1]
+        if ($failure -eq 'network' -and $token -eq 'mac') { throw 'Synthetic network failure' }
+        $release = 'jdk-21.0.12.1+1'
+        $hash = 'a' * 64
+        if ($token -eq 'mac') {
+            if ($failure -eq 'missing') { $release = 'jdk-21.0.11+10' }
+            if ($failure -eq 'build') { $release = 'jdk-21.0.12.1+2' }
+            if ($failure -eq 'checksum') { $hash = 'invalid' }
+        }
+        return @{ Content = ConvertTo-Json -Depth 5 -InputObject @(@{
+                    release_name = $release
+                    binaries = @(@{ package = @{ link = "https://example.com/$token.zip"; checksum = $hash } })
+                })
+        }
+    }
+    foreach ($mode in @('network', 'missing', 'build', 'checksum')) {
+        $failure = $mode
+        $rejected = $false
+        try { Update-JdkReleasePins 21 '21.0.12.1' } catch { $rejected = $true }
+        if (-not $rejected -or $publishedPins.Count) { throw "JDK $mode failure published partial pins" }
+    }
+    $failure = ''
+    Update-JdkReleasePins 21 '21.0.12.1'
+    if ($publishedPins.Count -ne 7 -or $publishedPins.JDK_VERSION -ne '21.0.12.1' -or $publishedPins.JDK_BUILD -ne '1' -or
+        $publishedPins.JDK_URL -ne 'https://example.com/linux.zip') { throw 'Exact JDK pins were not published' }
+    foreach ($token in @('WINDOWS', 'LINUX', 'MAC')) {
+        if ($publishedPins["JDK_${token}_SHA256"] -ne ('a' * 64)) { throw "JDK checksum missing for $token" }
+    }
+    Write-Host 'PASS: exact JDK host pins and all-or-nothing metadata validation'
 }
 
 Write-Host "All get_deps runtime update tests passed"

@@ -13,6 +13,7 @@ source "$SCRIPT_DIR/verify_sha256.sh"
 INSTALL_DIR="$LOCAL_DIR"
 
 DEST="$INSTALL_DIR/$DOSBOX_DIR_NAME"
+begin_dependency_install "$DEST"
 
 if [ -d "$DEST" ] && [ -f "$DEST/dosbox-x.exe" ]; then
     verify_sha256 "$DEST/dosbox-x.exe" "$DOSBOX_EXE_SHA256" "cached dosbox-x.exe"
@@ -21,7 +22,8 @@ if [ -d "$DEST" ] && [ -f "$DEST/dosbox-x.exe" ]; then
 fi
 
 echo "Download URL: $DOSBOX_URL"
-TMPFILE="$(create_temp_file dosbox.zip)"
+prepare_dependency_workspace "$DEST"
+TMPFILE="$DEPENDENCY_ARCHIVE"
 
 echo "Downloading DOSBox-X $DOSBOX_VERSION..."
 download_file "$TMPFILE" "$DOSBOX_URL"
@@ -39,7 +41,8 @@ to_win_path() {
 }
 
 echo "Extracting..."
-TMPDIR2="$(create_temp_dir dosbox-extract)"
+TMPDIR2="$DEPENDENCY_WORK_DIR/extracted"
+mkdir -p "$TMPDIR2"
 if command -v unzip >/dev/null 2>&1; then
     unzip -q -o "$TMPFILE" -d "$TMPDIR2"
 else
@@ -60,8 +63,8 @@ verify_sha256 "$DOSBOX_EXE" "$DOSBOX_EXE_SHA256" "staged dosbox-x.exe"
 
 # Move the directory containing dosbox-x.exe to the destination
 DOSBOX_DIR=$(dirname "$DOSBOX_EXE")
-mkdir -p "$DEST"
-cp -r "$DOSBOX_DIR"/* "$DEST"/
+cp -r "$DOSBOX_DIR"/. "$DEPENDENCY_STAGE_DIR"/
+publish_dependency_directory "$DEPENDENCY_STAGE_DIR" "$DEST"
 
 rm -rf "$TMPDIR2" "$TMPFILE"
 

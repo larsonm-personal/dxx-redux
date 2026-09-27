@@ -24,6 +24,8 @@ else
 fi
 
 LATEST_DIR="$DEST/cmdline-tools/latest"
+mkdir -p "$DEST/cmdline-tools"
+begin_dependency_install "$LATEST_DIR"
 MARKER_FILE="$LATEST_DIR/.dxx-cmdline-tools-build-id"
 if [ -x "$LATEST_DIR/bin/sdkmanager" ] || [ -f "$LATEST_DIR/bin/sdkmanager.bat" ]; then
     INSTALLED_BUILD_ID=""
@@ -44,21 +46,17 @@ if [ -x "$LATEST_DIR/bin/sdkmanager" ] || [ -f "$LATEST_DIR/bin/sdkmanager.bat" 
     echo "Refreshing Android SDK command-line tools build ${INSTALLED_BUILD_ID:-unknown} -> $BUILD_ID"
 fi
 
-TMPFILE="$(create_temp_file sdk.zip)"
-EXTRACT_DIR="$(create_temp_dir sdk-extract)"
-cleanup() {
-    rm -f "$TMPFILE"
-    rm -rf "$EXTRACT_DIR"
-}
-trap cleanup EXIT
+prepare_dependency_workspace "$LATEST_DIR"
+TMPFILE="$DEPENDENCY_ARCHIVE"
+EXTRACT_DIR="$DEPENDENCY_STAGE_DIR"
 
 echo "Downloading Android SDK command-line tools..."
 download_file "$TMPFILE" "$URL"
 
 echo "Extracting to $LATEST_DIR..."
 unzip -q -o "$TMPFILE" -d "$EXTRACT_DIR"
-if [ ! -d "$EXTRACT_DIR/cmdline-tools" ]; then
-    echo "ERROR: command-line tools archive did not contain cmdline-tools" >&2
+if [ ! -x "$EXTRACT_DIR/cmdline-tools/bin/sdkmanager" ] && [ ! -f "$EXTRACT_DIR/cmdline-tools/bin/sdkmanager.bat" ]; then
+    echo "ERROR: command-line tools archive did not contain sdkmanager" >&2
     exit 1
 fi
 
@@ -70,12 +68,10 @@ case "$LATEST_DIR" in
     exit 1
     ;;
 esac
-rm -rf "$LATEST_DIR"
-mkdir -p "$LATEST_DIR"
-mv "$EXTRACT_DIR/cmdline-tools"/* "$LATEST_DIR/"
 if [ -n "$BUILD_ID" ]; then
-    printf '%s\n' "$BUILD_ID" >"$MARKER_FILE"
+    printf '%s\n' "$BUILD_ID" >"$EXTRACT_DIR/cmdline-tools/.dxx-cmdline-tools-build-id"
 fi
+publish_dependency_directory "$EXTRACT_DIR/cmdline-tools" "$LATEST_DIR"
 
 echo "Android SDK command-line tools installed at $DEST"
 echo "Run finalize.sh next to accept licenses and install platform packages"

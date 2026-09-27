@@ -24,6 +24,10 @@
 .PARAMETER Filter
     Glob filter for test names (e.g. "test_death*").
 
+.PARAMETER HostOnly
+    Run tests catalogued as no-infrastructure host tests. Other infrastructure
+    tiers are reported as skipped. Host tests may still need game fixtures or tools.
+
 .PARAMETER ReplayDemo
     Open the interactive single-demo picker instead of running the suite.
 
@@ -87,6 +91,7 @@
 
 param(
     [string]$Filter,
+    [switch]$HostOnly,
     [switch]$ReplayDemo,
     [switch]$IncludeManual,
     [switch]$StopOnFail,
@@ -143,7 +148,7 @@ if ($ReplayDemo) {
 
 if ($FullSuite) { $FullRouteCorpus = $true }
 
-if (-not $Filter -and -not $Target45Minutes -and -not $IncludeManual -and -not $FullSuite) {
+if (-not $HostOnly -and -not $Filter -and -not $Target45Minutes -and -not $IncludeManual -and -not $FullSuite) {
     $extendedSample = Get-TestSuiteExtendedSample -Seed $routeSampleSeed
     if ($extendedSample.Graphics) { $ExtendedGraphics = $true }
     if ($extendedSample.Multiplayer) { $ExtendedMultiplayer = $true }
@@ -440,14 +445,47 @@ $extractTests = @(
     "test_gog_installer_redbook_unified"
 )  # single emulator + game data, run before the dual-emulator tier
 $noInfraTests = @(
+    "test_guidebot_simulation_browser",
+    "test_guidebot_simulation_timeout_policy",
+    "test_jsonc_and_tracklist_parsing",
+    "test_standard_game_data_resolution",
+    "test_mission_metadata_archive_sources",
+    "test_mission_metadata_json_normalization",
+    "test_mission_intent_regression_schema",
+    "test_runtime_targeted_sampling",
+    "test_metadata_parallel_results",
+    "test_cd_level_metadata_sources",
+    "test_7zip_install",
+    "test_managed_dependencies",
+    "test_guidebot_simulation_schema",
+    "test_guidebot_simulation_runner",
+    "test_guidebot_simulation_reporting",
+    "test_guidebot_publication_batching",
+    "test_clean_workspace",
+    "test_clean_old_artifacts",
+    "test_dep_platform",
+    "test_dependency_install",
+    "test_get_deps_runtime_updates",
+    "test_host_process_cleanup",
+    "test_mission_archive_variants",
+    "test_headless_process_pool",
+    "test_host_metadata_worker",
+    "test_host_metadata_workspace",
+    "test_windows_mission_metadata_runner",
     "test_code_quality_files",
     "test_input_demo_replay_failures",
     "test_guidebot_route_regressions",
+    "test_guidebot_saved_world",
+    "test_counterstrike_level2_trigger21_route",
     "test_acoustid_config_packaging",
     "test_guided_shot_annotations",
     "test_primary_target_grates",
     "test_route_regeneration_audit",
     "test_vertigo_metadata_checkpoints",
+    "test_vertigo_metadata",
+    "test_metadata_level_headers",
+    "test_mission_metadata_flyouts",
+    "test_mission_provenance",
     "test_test_runner_result",
     "test_cue_iso",
     "test_fpcalc_and_acoustid",
@@ -751,6 +789,13 @@ if ($Filter) {
 
 $extendedGraphicsTests = @("test_merged_wall_two_pass_probe")
 $profileSkipped = @()
+if ($HostOnly) {
+    $allTests = @($allTests | Where-Object {
+            if ($_.Requires -eq 'none') { return $true }
+            $profileSkipped += @{ Name = $_.Name; Type = $_.Type; Reason = "host-only profile excludes declared infrastructure: $($_.Requires)" }
+            return $false
+        })
+}
 if (-not $ExtendedGraphics) {
     $allTests = @($allTests | Where-Object {
             if ($_.Name -in $extendedGraphicsTests) {
@@ -812,6 +857,8 @@ if (-not $Filter -and -not $Target45Minutes -and -not $IncludeManual) {
     $runnableTests = $coverageSelection
     if (-not $FullSuite) { $suiteCoverageProfile = "fixed integration owners + rotating scenario families; seed $routeSampleSeed" }
 }
+
+if ($HostOnly) { $suiteCoverageProfile = "host only; $suiteCoverageProfile" }
 
 function Sort-TestsForExecution {
     param([object[]]$Tests)

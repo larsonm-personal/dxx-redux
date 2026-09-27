@@ -15,6 +15,29 @@ function Get-StandardGameDataDeps {
     )
 }
 
+function Get-StandardGameDataCandidates {
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][ValidateSet('d1', 'd2')][string]$Game
+    )
+
+    # Prefer existing staging; discover extracted media without copying game data
+    $legacy = if ($Game -eq 'd1') {
+        @('game_data/extracted/d1 mac extracted', 'game_data_to_copy_to_emulator/data', 'game_data_to_copy_to_emulator/temp')
+    } else {
+        @('game_data_to_copy_to_emulator/temp', 'game_data_to_copy_to_emulator/data', 'game_data/extracted/descent 2 demo 1-0_extracted')
+    }
+    $candidates = @($legacy | ForEach-Object { Join-Path $RepoRoot $_ })
+    $gameData = Join-Path $RepoRoot 'game_data'
+    $archiveName = if ($Game -eq 'd1') { 'descent.hog' } else { 'descent2.hog' }
+    if (Test-Path -LiteralPath $gameData -PathType Container) {
+        $candidates += @(Get-ChildItem -LiteralPath $gameData -Recurse -File -Filter '*.hog' |
+                Where-Object Name -eq $archiveName | Select-Object -ExpandProperty DirectoryName | Sort-Object -Unique)
+    }
+    # Resolution must still validate all required hashes, not only the HOG name
+    $candidates | Select-Object -Unique
+}
+
 function Resolve-StandardGameDataDirectory {
     param(
         [Parameter(Mandatory = $true)][string[]]$Candidates,

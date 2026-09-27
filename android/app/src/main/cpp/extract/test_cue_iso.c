@@ -92,8 +92,17 @@ static int make_absolute_path(char *output, size_t output_size,
 #ifdef _WIN32
 	return _fullpath(output, path, output_size) ? 0 : -1;
 #else
-	(void) output_size;
-	return realpath(path, output) ? 0 : -1;
+	char *absolute = realpath(path, NULL);
+	size_t length;
+	if (!absolute) return -1;
+	length = strlen(absolute);
+	if (length >= output_size) {
+		free(absolute);
+		return -1;
+	}
+	memcpy(output, absolute, length + 1);
+	free(absolute);
+	return 0;
 #endif
 }
 

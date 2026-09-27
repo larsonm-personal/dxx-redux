@@ -9,24 +9,16 @@ source "$SCRIPT_DIR/resolve_dep_base.sh"
 
 INSTALL_DIR="$LOCAL_DIR"
 DEST="$INSTALL_DIR/shfmt-$SHFMT_VERSION"
+begin_dependency_install "$DEST"
 
-if [ -f "$DEST/shfmt.exe" ] || [ -f "$DEST/shfmt" ]; then
-    echo "shfmt $SHFMT_VERSION already installed at $DEST"
+DEST_NAME="$(get_platform_executable_name shfmt "$DEST")"
+if [ -f "$DEST/$DEST_NAME" ] && verify_dependency_tool_version "${SHFMT_VERSION}" exact "$DEST/$DEST_NAME" --version >/dev/null 2>&1; then
+    echo "Verified shfmt ${SHFMT_VERSION} already installed at $DEST"
     exit 0
 fi
 
 # Pick URL for the current platform
-_is_windows_target() {
-    case "$DEST" in
-    /mnt/[a-z]/*) return 0 ;;
-    esac
-    case "$(uname -s)" in
-    MINGW* | MSYS* | CYGWIN* | *_NT*) return 0 ;;
-    esac
-    return 1
-}
-
-if _is_windows_target; then
+if is_windows_target_path "$DEST"; then
     URL="https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_windows_amd64.exe"
     DEST_NAME="shfmt.exe"
 elif [ "$(uname -s)" = "Darwin" ]; then
@@ -40,9 +32,11 @@ fi
 echo "Downloading shfmt $SHFMT_VERSION..."
 echo "  URL: $URL"
 
-mkdir -p "$DEST"
-TMPFILE="$(create_temp_file shfmt)"
+prepare_dependency_workspace "$DEST"
+TMPFILE="$DEPENDENCY_ARCHIVE"
 download_file "$TMPFILE" "$URL"
-mv "$TMPFILE" "$DEST/$DEST_NAME"
-chmod +x "$DEST/$DEST_NAME" 2>/dev/null || true
+mv "$TMPFILE" "$DEPENDENCY_STAGE_DIR/$DEST_NAME"
+chmod +x "$DEPENDENCY_STAGE_DIR/$DEST_NAME"
+verify_dependency_tool_version "${SHFMT_VERSION}" exact "$DEPENDENCY_STAGE_DIR/$DEST_NAME" --version
+publish_dependency_directory "$DEPENDENCY_STAGE_DIR" "$DEST"
 echo "shfmt $SHFMT_VERSION installed at $DEST"

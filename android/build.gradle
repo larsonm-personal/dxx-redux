@@ -5,10 +5,13 @@ plugins {
 }
 
 // Trim prior native generations before AGP configures or creates the next hash directory
-if (System.getProperty('os.name').toLowerCase().contains('windows') &&
+def cleanupHost = System.getProperty('os.name').toLowerCase()
+if ((cleanupHost.contains('windows') || cleanupHost.contains('linux')) &&
         gradle.startParameter.taskNames.any { it ==~ /(?i).*(assemble|bundle|externalNativeBuild|configureCMake|buildCMake|:build$|^build$).*/ }) {
     def cleanup = new File(rootDir, 'clean-workspace.ps1')
-    def process = new ProcessBuilder('powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+    def windowsHost = cleanupHost.contains('windows')
+    def shell = windowsHost ? 'powershell.exe' : 'pwsh'
+    def process = new ProcessBuilder(shell, '-NoProfile', '-ExecutionPolicy', 'Bypass',
         '-File', cleanup.absolutePath, '-BuildsOnly', '-Producer', '-KeepBuildGenerations', '3',
         '-BuildRoots', new File(rootDir, 'app/.cxx').absolutePath).redirectErrorStream(true).start()
     process.inputStream.withReader { reader -> reader.eachLine { logger.lifecycle(it) } }

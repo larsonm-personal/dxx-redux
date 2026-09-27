@@ -34,6 +34,35 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
         return @($BaseName, "$BaseName.exe")
     }
 
+    function Resolve-RegressionPythonCommand {
+        # Ordinary host utilities; extraction admission uses its separately verified runtime
+        $candidates = if (Test-RegressionWindowsHost) { @('py', 'python3', 'python') } else { @('python3', 'python') }
+        foreach ($name in $candidates) {
+            $command = Get-Command $name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($command) {
+                return [pscustomobject]@{
+                    Path = $command.Source
+                    PrefixArguments = if ($name -eq 'py') { @('-3') } else { @() }
+                }
+            }
+        }
+        return $null
+    }
+
+    function Get-RegressionRuntimeLibraries {
+        param([Parameter(Mandatory)][string]$Directory)
+
+        foreach ($file in Get-ChildItem -LiteralPath $Directory -File) {
+            if ($file.Name -notmatch '\.(dll|dylib)$|\.so(\.[0-9]+)*$') { continue }
+            if (-not (Test-RegressionWindowsHost) -and ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+                # Optional ABI compatibility links can point to absent system libraries
+                $target = $file.ResolveLinkTarget($true)
+                if (-not $target -or -not $target.Exists) { continue }
+            }
+            $file
+        }
+    }
+
     function Get-RegressionHomeDirectory {
         if ($env:USERPROFILE) {
             return $env:USERPROFILE
@@ -75,6 +104,38 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
             return $null
         }
         return $firstLine.Trim()
+    }
+
+    function Initialize-RegressionJavaEnvironment {
+        param(
+            [Parameter(Mandatory)][string]$RepoRoot,
+            [switch]$Optional
+        )
+
+        if (-not $env:JAVA_HOME) {
+            $versionsPath = Join-RegressionPath $RepoRoot "android" "get_deps" "tool_versions.conf"
+            $majorPin = Select-String -LiteralPath $versionsPath -Pattern '^JDK_MAJOR=([0-9]+)$' |
+                Select-Object -First 1
+            if (-not $majorPin) { throw "JDK_MAJOR pin missing in $versionsPath" }
+            $depBase = Get-RegressionDependencyBase -RepoRoot $RepoRoot
+            $jdk = if ($depBase) { Join-RegressionPath $depBase "jdk-$($majorPin.Matches[0].Groups[1].Value)" } else { $null }
+            $javaName = (Get-RegressionHostExecutableNames -BaseName 'java')[0]
+            if ($jdk -and (Test-Path -LiteralPath (Join-RegressionPath $jdk 'bin' $javaName) -PathType Leaf)) {
+                $env:JAVA_HOME = $jdk
+            } elseif ($Optional) {
+                return
+            } else {
+                throw "Configured JDK is not installed. Run android/get_deps/get_all.sh or set JAVA_HOME explicitly"
+            }
+        }
+        $javaBin = Join-RegressionPath $env:JAVA_HOME 'bin'
+        $javaName = (Get-RegressionHostExecutableNames -BaseName 'java')[0]
+        if (-not (Test-Path -LiteralPath (Join-RegressionPath $javaBin $javaName) -PathType Leaf)) {
+            throw "JAVA_HOME does not contain $javaName`: $env:JAVA_HOME"
+        }
+        $separator = [IO.Path]::PathSeparator
+        $pathParts = @($env:PATH -split [regex]::Escape($separator) | Where-Object { $_ -and $_ -ne $javaBin })
+        $env:PATH = (@($javaBin) + $pathParts) -join $separator
     }
 
     function Get-RegressionAndroidSdkCMakeBinDirs {
@@ -474,7 +535,9 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
         param(
             [Parameter(Mandatory)][string]$RepoRoot,
             [Parameter(Mandatory)][string]$Target,
-            [string]$Label = $Target
+            [string]$Label = $Target,
+            [ValidateSet('none', 'address')][string]$Sanitizer = 'none',
+            [ValidateRange(0, 128)][int]$MaxParallel = 0
         )
 
         if (Test-RegressionWindowsHost) {
@@ -483,8 +546,10 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
                 throw "Host build script not found: $buildScript"
             }
 
+            $buildOptions = @{ Target = $Target; Sanitizer = $Sanitizer }
+            if ($MaxParallel -gt 0) { $buildOptions.MaxParallel = $MaxParallel }
             try {
-                & $buildScript -Target $Target
+                & $buildScript @buildOptions
                 if ($LASTEXITCODE -eq 0) {
                     return
                 }
@@ -501,7 +566,7 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
 
                 $fallbackArch = $supportedArchList[0]
                 Write-Host "Build guardrail: retrying host build with -VcVarsArch $fallbackArch"
-                & $buildScript -Target $Target -VcVarsArch $fallbackArch
+                & $buildScript @buildOptions -VcVarsArch $fallbackArch
                 if ($LASTEXITCODE -ne 0) {
                     throw "Host build failed for $Label with exit code $LASTEXITCODE (fallback arch: $fallbackArch)"
                 }
@@ -520,7 +585,9 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
             throw "bash was not found on PATH"
         }
 
-        & $bash.Source $buildScript --target $Target
+        $buildOptions = @('--target', $Target, '--sanitizer', $Sanitizer)
+        if ($MaxParallel -gt 0) { $buildOptions += @('--jobs', [string]$MaxParallel) }
+        & $bash.Source $buildScript @buildOptions
         if ($LASTEXITCODE -ne 0) {
             throw "Host build failed for $Label with exit code $LASTEXITCODE"
         }

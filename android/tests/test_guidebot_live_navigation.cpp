@@ -286,7 +286,7 @@ static void grate_detour(object *bot, int moving_target)
 		if (frames % 3 == 0) ++d_tick_count;
 	}
 	Results["grate_frames"] = frames;
-	Results["grate_final_segment"] = bot->segnum;
+	Results["grate_final_segment"] = +bot->segnum;
 	Results["grate_final_distance"] = vm_vec_dist(&bot->pos, &ConsoleObject->pos) / F1_0;
 	Results["grate_final_clear"] = guidebot_route_waypoint_leg_clear(bot, &bot->pos, bot->segnum, &ConsoleObject->pos);
 	Results["grate_final_mode"] = Ai_local_info[bot - Objects].mode;
@@ -303,12 +303,12 @@ static void grate_detour(object *bot, int moving_target)
 		if (frames % 3 == 0) ++d_tick_count;
 	}
 	Results["moving_player_return_frames"] = frames;
-	Results["moving_return_segment"] = bot->segnum;
+	Results["moving_return_segment"] = +bot->segnum;
 	Results["moving_return_mode"] = Ai_local_info[bot - Objects].mode;
 	Results["moving_return_distance"] = vm_vec_dist(&bot->pos, &ConsoleObject->pos) / F1_0;
 	Results["moving_return_clear"] = guidebot_route_waypoint_leg_clear(bot, &bot->pos, bot->segnum, &ConsoleObject->pos);
-	Results["moving_return_path_index"] = bot->ctype.ai_info.cur_path_index;
-	Results["moving_return_path_length"] = bot->ctype.ai_info.path_length;
+	Results["moving_return_path_index"] = +bot->ctype.ai_info.cur_path_index;
+	Results["moving_return_path_length"] = +bot->ctype.ai_info.path_length;
 	Results["moving_return_since_seen"] = (GameTime64 - Buddy_last_seen_player) / F1_0;
 	check("return_repaths_to_moving_player", rejoined());
 }

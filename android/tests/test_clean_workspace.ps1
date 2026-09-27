@@ -17,13 +17,11 @@ ${function:Read-Host} = {
     return $state.Answers.Dequeue()
 }.GetNewClosure()
 
-${function:Get-CimInstance} = {
-    param([string]$ClassName)
-    if ($ClassName -ne 'Win32_Process') { throw "Unexpected inventory: $ClassName" }
+${function:Get-DxxHostProcessInventory} = {
     $state.IdleChecks++
     if ($state.OnIdle) { & $state.OnIdle }
     if ($state.Busy) {
-        [pscustomobject]@{ ProcessId = -10; Name = $state.BusyName; CommandLine = 'synthetic active build' }
+        [pscustomobject]@{ ProcessId = -10; ParentProcessId = 0; Name = $state.BusyName; CommandLine = 'synthetic active build' }
     }
 }.GetNewClosure()
 
@@ -64,12 +62,13 @@ try {
     # Junctions are created and removed by native PowerShell without following them
     $link = Join-Path $fixture 'android/temp/link'
     New-Item -ItemType Directory -Path (Split-Path $link) -Force | Out-Null
-    New-Item -ItemType Junction -Path $link -Target (Join-Path $fixture 'outside') | Out-Null
+    $linkType = if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) { 'Junction' } else { 'SymbolicLink' }
+    New-Item -ItemType $linkType -Path $link -Target (Join-Path $fixture 'outside') | Out-Null
     foreach ($item in Get-ChildItem -LiteralPath $fixture -Recurse -Force | Where-Object {
             -not ($_.Attributes -band [IO.FileAttributes]::ReparsePoint)
         }) { $item.LastWriteTimeUtc = $old }
-    (Get-Item -LiteralPath (Join-Path $fixture 'temp/recent.log')).LastWriteTimeUtc = [DateTime]::UtcNow
-    (Get-Item -LiteralPath (Join-Path $fixture 'temp/runs/new/result.json')).LastWriteTimeUtc = [DateTime]::UtcNow
+    (Get-Item -Force -LiteralPath (Join-Path $fixture 'temp/recent.log')).LastWriteTimeUtc = [DateTime]::UtcNow
+    (Get-Item -Force -LiteralPath (Join-Path $fixture 'temp/runs/new/result.json')).LastWriteTimeUtc = [DateTime]::UtcNow
     $heldLock = [IO.File]::Open((Join-Path $fixture 'temp/locked/owner.lock'), 'Open', 'Read', 'None')
 
     & $helper -RepositoryRoot $fixture -Preview
@@ -173,6 +172,10 @@ try {
     New-CleanupFixtureFile 'android/app/.cxx/Debug/11111111/arm64-v8a/CMakeCache.txt'
     New-CleanupFixtureFile 'android/app/.cxx/Debug/11111111/arm64-v8a/_deps/vendor-src/.git/config'
     New-CleanupFixtureFile 'android/app/.cxx/Debug/11111111/arm64-v8a/_deps/vendor-src/source.c'
+    if ([Environment]::OSVersion.Platform -eq [PlatformID]::Unix) {
+        $sourcePath = Join-Path $fixture 'android/app/.cxx/Debug/11111111/arm64-v8a/_deps/vendor-src/source.c'
+        New-Item -ItemType SymbolicLink -Path ($sourcePath + '.link') -Target $sourcePath | Out-Null
+    }
     New-CleanupFixtureFile 'android/app/.cxx/Debug/11111111/arm64-v8a/_deps/vendor-src/tests/submodule/.git'
     New-CleanupFixtureFile 'android/app/.cxx/Debug/11111111/arm64-v8a.stale-20260101-1/_deps/vendor-src/.git/config'
     foreach ($buildName in @('build-native-old', 'temp/experiment/build-native-new', 'build-other-arch')) {
@@ -186,14 +189,14 @@ try {
         foreach ($item in Get-ChildItem -LiteralPath (Join-Path $fixture $tree) -Recurse -Force) {
             $item.LastWriteTimeUtc = $old
         }
-        (Get-Item -LiteralPath (Join-Path $fixture $tree)).LastWriteTimeUtc = $old
+        (Get-Item -Force -LiteralPath (Join-Path $fixture $tree)).LastWriteTimeUtc = $old
     }
     foreach ($path in @($generationFiles[1], $generationFiles[5], $generationFiles[7], $generationFiles[9], $generationFiles[12],
             'temp/experiment/build-native-new/output.o')) {
-        (Get-Item -LiteralPath (Join-Path $fixture $path)).LastWriteTimeUtc = $old.AddDays(20)
+        (Get-Item -Force -LiteralPath (Join-Path $fixture $path)).LastWriteTimeUtc = $old.AddDays(20)
     }
-    (Get-Item -LiteralPath (Join-Path $fixture $generationFiles[2])).LastWriteTimeUtc = [DateTime]::UtcNow.AddHours(-2)
-    (Get-Item -LiteralPath (Join-Path $fixture $generationFiles[3])).LastWriteTimeUtc = [DateTime]::UtcNow.AddHours(-1)
+    (Get-Item -Force -LiteralPath (Join-Path $fixture $generationFiles[2])).LastWriteTimeUtc = [DateTime]::UtcNow.AddHours(-2)
+    (Get-Item -Force -LiteralPath (Join-Path $fixture $generationFiles[3])).LastWriteTimeUtc = [DateTime]::UtcNow.AddHours(-1)
     $beforeBuilds = $state.Prompts
     & $helper -RepositoryRoot $fixture -Preview
     Assert-CleanupExists $generationFiles[0]
@@ -202,7 +205,7 @@ try {
     Assert-CleanupExists $generationFiles[1] $false
     Assert-CleanupExists $generationFiles[4]
     New-CleanupFixtureFile 'temp/builds-only.log'
-    (Get-Item -LiteralPath (Join-Path $fixture 'temp/builds-only.log')).LastWriteTimeUtc = $old
+    (Get-Item -Force -LiteralPath (Join-Path $fixture 'temp/builds-only.log')).LastWriteTimeUtc = $old
     & $helper -RepositoryRoot $fixture -BuildsOnly -BuildGraceHours 24
     Assert-CleanupExists 'temp/builds-only.log'
     Assert-CleanupExists 'android/app/.cxx/tools/internal/tool-info.txt'
@@ -259,7 +262,7 @@ try {
         }
     }
     # Copied assets can have old modification dates but new creation dates
-    (Get-Item -LiteralPath (Join-Path $fixture "$run/raw/recent/assets.hog")).CreationTimeUtc = [DateTime]::UtcNow
+    (Get-Item -Force -LiteralPath (Join-Path $fixture "$run/raw/recent/assets.hog")).CreationTimeUtc = [DateTime]::UtcNow
     & $helper -RepositoryRoot $fixture -PayloadsOnly -Preview
     Assert-CleanupExists "$run/raw/mission/assets.hog"
     $state.Busy = $true

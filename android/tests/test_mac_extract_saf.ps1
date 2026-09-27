@@ -153,10 +153,9 @@ if ($dfFields.Count -ge 4 -and $dfFields[3] -match '^\d+$') {
 $exitCode = 1
 try {
     if (-not $SkipBuild) {
-        $env:JAVA_HOME = "C:\local\jdk-21"
-        $env:Path = "$env:JAVA_HOME\bin;$env:Path"
+        Initialize-RegressionJavaEnvironment -RepoRoot $repoRoot
         Push-Location (Join-Path $repoRoot "android")
-        try { & .\gradlew.bat :app:assembleDebug } finally { Pop-Location }
+        try { & (Resolve-RegressionGradleWrapper -AndroidDir (Join-Path $repoRoot "android")) :app:assembleDebug } finally { Pop-Location }
         if ($LASTEXITCODE -ne 0) { throw "Debug APK build failed" }
     }
     $apk = Join-Path $repoRoot "android\app\build\outputs\apk\debug\app-debug.apk"

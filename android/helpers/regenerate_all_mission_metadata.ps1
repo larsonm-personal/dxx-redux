@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 
 param(
-    [ValidateSet('Windows', 'Emulator')][string]$Engine = 'Windows',
+    [ValidateSet('Host', 'Windows', 'Emulator')][string]$Engine = 'Host',
     [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
     [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
     [string]$SampleStatePath,
@@ -20,12 +20,12 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
-$jdkHome = "C:\local\jdk-21"
+. (Join-Path $scriptDir 'test_host_platform.ps1')
 $zipDir = Join-Path $repoRoot "game_data\mission_files"
 $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $outDir = Join-Path $androidRoot "temp\mission_zip_batch\regen_all_metadata_only_$stamp"
 & (Join-Path $scriptDir "retain-recent-artifacts.ps1") -Artifacts $outDir
-$gradle = Join-Path $androidRoot "gradlew.bat"
+$gradle = Resolve-RegressionGradleWrapper -AndroidDir $androidRoot
 $batch = Join-Path $scriptDir "run_mission_zip_batch.ps1"
 $hostBatch = Join-Path $scriptDir "regenerate_all_mission_metadata_host.ps1"
 . (Join-Path $scriptDir 'runtime_targeted_sampling.ps1')
@@ -71,7 +71,7 @@ if ($MissingOnly -and $eligibleArchiveCount -eq 0) {
     exit 0
 }
 
-if ($Engine -eq 'Windows') {
+if ($Engine -in @('Host', 'Windows')) {
     $hostArgs = @{ MaxParallel = $MaxParallel }
     if ($IncludeBuiltInCounterstrike) { $hostArgs.IncludeBuiltInCounterstrike = $true }
     if ($IncludeBuiltInFirstStrike) { $hostArgs.IncludeBuiltInFirstStrike = $true }
@@ -99,24 +99,18 @@ if ($Engine -eq 'Windows') {
                     -RingName "regenerate:metadata:archives:$($source.Id)" | Select-Object -ExpandProperty Name)
         }
         if ($selectedNames.Count -eq 0) {
-            Write-Status 'Windows metadata sample selected no mission archives' 'Yellow'
+            Write-Status 'Host metadata sample selected no mission archives' 'Yellow'
             exit 0
         }
         $hostArgs.ArchiveNames = $selectedNames
         $hostArgs.CdSourceIds = @('__none__')
     }
-    Write-Status 'Using Windows-native mission metadata regeneration'
+    Write-Status 'Using host-native mission metadata regeneration'
     & $hostBatch @hostArgs
     exit $LASTEXITCODE
 }
 
-if (Test-Path -LiteralPath $jdkHome -PathType Container) {
-    $env:JAVA_HOME = $jdkHome
-    $env:Path = "$env:JAVA_HOME\bin;$env:Path"
-    Write-Status "Using JAVA_HOME=$env:JAVA_HOME"
-} else {
-    Write-Status "JDK 21 not found at $jdkHome, using current Java environment" "Yellow"
-}
+Initialize-RegressionJavaEnvironment -RepoRoot $repoRoot
 
 Write-Status "Building debug APK"
 & $gradle -p $androidRoot assembleDebug

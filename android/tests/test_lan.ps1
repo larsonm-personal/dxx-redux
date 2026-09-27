@@ -402,7 +402,10 @@ function Initialize-EndgameContent {
         if (-not (Test-Path -LiteralPath $library)) { throw "Pass -EndgameMovieLibrary with an owned intro-h.mvl or intro-l.mvl containing end.mve" }
         $arguments += @("--movie-library", $library)
     }
-    & python @arguments
+    $python = Resolve-RegressionPythonCommand
+    if (-not $python) { throw 'Python 3 is required to prepare ending fixtures' }
+    $pythonPrefix = @($python.PrefixArguments)
+    & $python.Path @pythonPrefix @arguments
     if ($LASTEXITCODE) { throw "Could not prepare ending fixtures" }
     foreach ($serial in @($EMU1, $EMU2)) {
         if ($EndgameContent -eq "builtin") {
@@ -2113,7 +2116,10 @@ try {
         if (-not (Test-Path -LiteralPath $library)) { throw 'Pass -FlyoutMovieLibrary with an owned OTHER-L.MVL or OTHER-H.MVL' }
         $fixture = Join-Path $REPO_ROOT 'temp/coop-flyout-fixture'
         & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $fixture | Out-Null
-        & python "$PSScriptRoot/prepare_coop_endgame_fixture.py" --output $fixture --movie-library $library --movie-name esa.mve
+        $python = Resolve-RegressionPythonCommand
+        if (-not $python) { throw 'Python 3 is required to prepare flyout fixtures' }
+        $pythonPrefix = @($python.PrefixArguments)
+        & $python.Path @pythonPrefix "$PSScriptRoot/prepare_coop_endgame_fixture.py" --output $fixture --movie-library $library --movie-name esa.mve
         if ($LASTEXITCODE) { throw 'Could not extract escape movie' }
         foreach ($serial in @($EMU1, $EMU2)) {
             Stage-EndgameFile -Serial $serial -LocalPath "$fixture/esa.mve" -DevicePath 'files/d2x-redux/esa.mve'

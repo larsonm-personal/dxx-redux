@@ -4,7 +4,9 @@ Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $runner = Join-Path $repoRoot 'android\helpers\regenerate_all_guidebot_simulations.ps1'
-$tempRoot = Join-Path $repoRoot 'android\temp\guidebot_simulation_runner_test'
+$tempRoot = Join-Path $repoRoot ('android/temp/guidebot-runner-' + [guid]::NewGuid().ToString('N'))
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $tempRoot -DirectoryPrefix 'guidebot-runner-' -MinimumFreeSpaceGB 0.01
+$fixtureLock = $null
 New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
 
 function Invoke-DryRun {
@@ -19,7 +21,7 @@ function Invoke-DryRun {
         [ValidateSet('Headless', 'Headed', 'Desktop')][string]$Mode = 'Headless'
     )
     $output = Join-Path $tempRoot "$Name.json"
-    $parameters = @{ DryRun = $true; NoBuild = $true; DryRunJsonOut = $output; Mode = $Mode }
+    $parameters = @{ HogDir = $tempRoot; DryRun = $true; NoBuild = $true; DryRunJsonOut = $output; Mode = $Mode }
     if ($MissionJson) { $parameters.MissionJson = $MissionJson }
     if ($Level) { $parameters.Level = $Level }
     if ($SampleFraction -lt 1) { $parameters.SampleFraction = $SampleFraction; $parameters.SampleSeed = $SampleSeed }
@@ -30,6 +32,7 @@ function Invoke-DryRun {
 }
 
 try {
+    $fixtureLock = [IO.File]::Open((Join-Path $tempRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     $runnerSource = Get-Content -LiteralPath $runner -Raw
     $runnerAst = [Management.Automation.Language.Parser]::ParseInput($runnerSource, [ref]$null, [ref]$null)
     $stageFunction = $runnerAst.Find({
@@ -128,7 +131,7 @@ try {
     $failureArguments = @(
         '-NoProfile', '-File', $runner,
         '-Mode', 'Headless', '-MissionJson', 'Counterstrike.json', '-Level', '1',
-        '-Repeat', '1', '-NoBuild', '-OutputRoot', $failureRoot,
+        '-Repeat', '1', '-NoBuild', '-OutputRoot', $failureRoot, '-HogDir', $tempRoot,
         '-HeadlessExecutable', $pwsh
     ) | ForEach-Object {
         $argument = [string]$_
@@ -138,6 +141,10 @@ try {
         -Wait -PassThru -NoNewWindow -RedirectStandardOutput $failureLog -RedirectStandardError "$failureLog.stderr"
     if ($failureProcess.ExitCode -eq 0) {
         throw 'Injected route engine failure unexpectedly succeeded'
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $failureRoot 'results/Counterstrike.simulation.json'))) {
+        Get-Content -LiteralPath $failureLog, "$failureLog.stderr" | Write-Host
+        throw 'Injected engine failure did not reach result publication'
     }
     $failureOutput = Get-Content -LiteralPath (Join-Path $failureRoot 'results\Counterstrike.simulation.json') `
         -Raw | ConvertFrom-Json
@@ -155,7 +162,7 @@ try {
         $mission.levels[0] | Add-Member -NotePropertyName status -NotePropertyValue failed -Force
         [IO.File]::WriteAllText((Join-Path $unsupportedMetadata 'unsupported.json'), ($mission | ConvertTo-Json -Depth 100))
         $unsupportedRoot = Join-Path $tempRoot ('unsupported-' + [guid]::NewGuid().ToString('N'))
-        & $runner -NoBuild -MissionMetadataRoot $unsupportedMetadata -OutputRoot $unsupportedRoot -HeadlessExecutable $pwsh | Out-Null
+        & $runner -NoBuild -HogDir $tempRoot -MissionMetadataRoot $unsupportedMetadata -OutputRoot $unsupportedRoot -HeadlessExecutable $pwsh | Out-Null
         if ($LASTEXITCODE -ne 0) { throw 'Known unreadable level launched the route engine' }
         $unsupported = Get-Content -LiteralPath (Join-Path $unsupportedRoot 'results/unsupported.simulation.json') -Raw | ConvertFrom-Json
         if ($unsupported.levels[0].status -ne 'unsupported' -or $unsupported.levels[0].problem -ne $problem) {
@@ -164,5 +171,6 @@ try {
     }
     Write-Host 'GuideBot simulation runner discovery and sampling passed'
 } finally {
+    if ($fixtureLock) { $fixtureLock.Dispose() }
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }

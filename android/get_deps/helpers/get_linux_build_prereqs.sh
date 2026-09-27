@@ -58,7 +58,7 @@ fi
 source /etc/os-release
 
 missing_commands=()
-for command_name in unzip zip tar xz gzip git python3 cc c++ make cmake cargo rustc; do
+for command_name in unzip zip tar xz gzip git python3 cc c++ make cmake cargo rustc flock; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
         missing_commands+=("$command_name")
     fi
@@ -133,6 +133,7 @@ if [[ "${ID:-}" == "ubuntu" || "${ID:-}" == "debian" || " ${ID_LIKE:-} " == *" u
         tar
         xz-utils
         gzip
+        util-linux
         git
         python3
         python3-venv
@@ -167,6 +168,7 @@ if [[ "${ID:-}" == "fedora" || " ${ID_LIKE:-} " == *" fedora "* || " ${ID_LIKE:-
         tar
         xz
         gzip
+        util-linux
         git
         python3
         python3-pip

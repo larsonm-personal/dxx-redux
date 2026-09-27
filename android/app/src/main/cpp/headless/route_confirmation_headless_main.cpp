@@ -125,6 +125,13 @@ int init_headless_screen(char *error, size_t error_size)
 	return 1;
 }
 
+void close_headless_game_data()
+{
+	// Stop the audio callback before releasing its game-data buffers
+	digi_close();
+	gamedata_close();
+}
+
 int init_headless_runtime(int argc, char *argv[], char *error,
                           size_t error_size)
 {
@@ -173,6 +180,8 @@ int init_headless_runtime(int argc, char *argv[], char *error,
 	PHYSFSX_addArchiveContent();
 	fprintf(stderr, "ROUTE-CONFIRM phase=gamedata-init\n");
 	gamedata_init();
+	// Match the normal engine lifecycle, including early exits after initialization
+	atexit(close_headless_game_data);
 	texmerge_init(10);
 	{
 		char groupa_pig[] = "groupa.pig";

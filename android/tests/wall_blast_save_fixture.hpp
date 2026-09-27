@@ -41,7 +41,7 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 				do_exploding_wall_frame();
 				unsigned seed = 0;
 				require(d_rand_get_state(&seed), "observe wall blast SIM seed");
-				frames.push_back({ { "frame", frame }, { "flags", Walls[wall].flags }, { "hps", Walls[wall].hps },
+				frames.push_back({ { "frame", frame }, { "flags", +Walls[wall].flags }, { "hps", +Walls[wall].hps },
 				                   { "doorway", wall_is_doorway(&Segments[segment], side) },
 				                   { "objects", Highest_object_index + 1 }, { "rng", seed },
 				                   { "draws", d_rand_get_call_count() - initial_draws } });

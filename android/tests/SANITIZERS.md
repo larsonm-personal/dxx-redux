@@ -1,6 +1,6 @@
 # Engine sanitizer runs
 
-From the repository root, using PowerShell 7 and Visual Studio's C++ AddressSanitizer component:
+From the repository root, use PowerShell 7 with Visual Studio's C++ AddressSanitizer component on Windows, or GCC/Clang and the normal native build prerequisites on Linux:
 
 ```powershell
 # Incrementally rebuild both instrumented games, then all engine CTests,
@@ -19,7 +19,7 @@ From the repository root, using PowerShell 7 and Visual Studio's C++ AddressSani
 
 `-Category` accepts an array. `-DemoFileName`, `-CTestFilter`, `-MissionJson`, and `-Level` restrict their respective categories. `-MaxParallel` defaults to four, limiting compiler, CTest, and route-worker concurrency. Demos are serial because their replay sandboxes are not a parallel corpus runner.
 
-The runner always invokes the incremental build before testing. MSVC AddressSanitizer builds use `buildd1-asan` and `buildd2-asan`, with their own freshness stamps, runtime DLLs, and symbols. Normal builds and checked-in regression JSON/demo expectations are not changed. Run one sanitizer suite at a time; build directories and demo sandboxes are shared between sanitizer invocations.
+The runner always invokes the incremental build before testing. AddressSanitizer builds use `buildd1-asan` and `buildd2-asan`, with their own freshness stamps and symbols. Windows builds also copy the MSVC runtime DLLs. Linux builds check for 4 GiB of build headroom above the configured dependency free-space reserve before each game. These fixed trees are reused on subsequent runs. Normal builds and checked-in regression JSON/demo expectations are not changed. Run one sanitizer suite at a time; build directories and demo sandboxes are shared between sanitizer invocations.
 
 Results go to a fresh `android/temp/engine_sanitizers/<timestamp>` directory, or `-OutputRoot`. Each stage has a log and a summary entry written as it completes. Later test categories still run after a test failure; a build failure stops testing. A nonzero exit means a build/test/asset failure or a sanitizer diagnostic, not necessarily a navigation regression. Route `timeout`/`partial` results remain route outcomes; native process errors fail the stage. Inspect route results for navigation changes separately.
 
@@ -33,8 +33,10 @@ For individual manual replays or builds:
 
 ```powershell
 ./run-windows-build.ps1 -Target both -Sanitizer address
+# Linux equivalent:
+bash ./run-linux-build.sh --target both --sanitizer address --jobs 2
 ./android/tests/run_input_demo_replay.ps1 -Sanitizer address -DemoPath <demo.dximdemo> -Mode realtime
 ./android/tests/run_input_demo_regressions.ps1 -Sanitizer address -RunMode headless
 ```
 
-The CMake option is shared by both engines and all their registered CTests. On a supported Clang/GCC host, configure a separate build directory with `-DDXX_SANITIZERS=address,undefined` and run its CTest suite. This combination is not offered by MSVC or the Windows wrapper. Source-built dependencies inherit instrumentation; prebuilt vcpkg libraries, graphics drivers, and operating-system DLLs do not. AddressSanitizer does not detect every undefined behavior or data race. This suite does not run Android/emulator tests, and does not yet drive the Kotlin/JNI metadata corpus through instrumented workers.
+The CMake option is shared by both engines and all their registered CTests. On a supported Clang/GCC host, configure a separate build directory with `-DDXX_SANITIZERS=address,undefined` and run its CTest suite. This combination is not offered by MSVC or the build wrappers. Source-built dependencies inherit instrumentation; prebuilt vcpkg libraries, graphics drivers, and operating-system DLLs do not. AddressSanitizer does not detect every undefined behavior or data race. This suite does not run Android/emulator tests, and does not yet drive the Kotlin/JNI metadata corpus through instrumented workers.

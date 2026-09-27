@@ -27,56 +27,7 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
 
     # -- JAVA_HOME ---------------------------------------------------------------
 
-    if (-not $env:JAVA_HOME) {
-        $found = $false
-        # 1. Check DEP_BASE\jdk-* (project convention)
-        if ($script:_ENV_DEP_BASE) {
-            $jdk = Get-ChildItem (Join-RegressionPath $script:_ENV_DEP_BASE "jdk-*") -Directory -ErrorAction SilentlyContinue |
-                Sort-Object Name -Descending | Select-Object -First 1
-            if ($jdk) {
-                $env:JAVA_HOME = $jdk.FullName
-                $found = $true
-            }
-        }
-        # 2. Check Android Studio bundled JBR
-        if (-not $found -and (Test-RegressionWindowsHost)) {
-            $studioJbr = Join-RegressionPath $env:ProgramFiles "Android" "Android Studio" "jbr"
-            if (Test-Path (Join-RegressionPath $studioJbr "bin" "java.exe")) {
-                $env:JAVA_HOME = $studioJbr
-                $found = $true
-            }
-        }
-        # 3. Check registry (Oracle/Adoptium)
-        if (-not $found -and (Test-RegressionWindowsHost)) {
-            foreach ($regPath in @(
-                    "HKLM:\SOFTWARE\JavaSoft\JDK",
-                    "HKLM:\SOFTWARE\Eclipse Adoptium\JDK"
-                )) {
-                if (Test-Path $regPath) {
-                    $ver = Get-ChildItem $regPath -ErrorAction SilentlyContinue |
-                        Sort-Object PSChildName -Descending | Select-Object -First 1
-                    if ($ver) {
-                        $javaHome = (Get-ItemProperty $ver.PSPath -ErrorAction SilentlyContinue).JavaHome
-                        if ($javaHome -and (Test-Path (Join-RegressionPath $javaHome "bin" "java.exe"))) {
-                            $env:JAVA_HOME = $javaHome
-                            $found = $true
-                            break
-                        }
-                    }
-                }
-            }
-        }
-    }
-    if ($env:JAVA_HOME) {
-        $javaBin = Join-RegressionPath $env:JAVA_HOME "bin"
-        $javaName = (Get-RegressionHostExecutableNames -BaseName "java")[0]
-        if (Test-Path (Join-RegressionPath $javaBin $javaName)) {
-            $pathParts = @($env:PATH -split [regex]::Escape([System.IO.Path]::PathSeparator) | Where-Object { $_ })
-            if (-not ($pathParts | Where-Object { $_ -eq $javaBin })) {
-                $env:PATH = "$javaBin$([System.IO.Path]::PathSeparator)$env:PATH"
-            }
-        }
-    }
+    Initialize-RegressionJavaEnvironment -RepoRoot $_envRepoRoot -Optional
 
     # -- CMAKE -------------------------------------------------------------------
 

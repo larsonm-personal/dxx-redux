@@ -87,8 +87,8 @@ foreach ($candidate in @(
 }
 
 if (-not $testTrack) {
-    Write-Warning "No D2 redbook MP3 files found; skipping fpcalc/AcoustID audio test"
-    exit 0
+    Write-Host "RESULT: SKIP (fpcalc/AcoustID audio test requires missing D2 redbook MP3 files)"
+    exit 2
 }
 $testMp3 = $testTrack.FullName
 Write-Host "Test track: $($testTrack.Name) (from $redbookDir)"

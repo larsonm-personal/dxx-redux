@@ -486,9 +486,9 @@ void multi_send_coop_restore_status(int status);
 void multi_do_coop_restore_status(const ubyte *buf, int authenticated_sender);
 void multi_reset_coop_restore_status(void);
 void multi_save_transfer_frame(void);
+#endif
 void multi_send_difficulty(int difficulty);
 void multi_do_difficulty(const ubyte *buf);
-#endif
 
 // Multiplayer powerup capping
 extern void multi_powcap_count_powerups_in_mine(void);

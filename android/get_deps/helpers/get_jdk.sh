@@ -6,25 +6,14 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../tool_versions.conf"
 source "$SCRIPT_DIR/platform.sh"
+source "$SCRIPT_DIR/verify_sha256.sh"
 source "$SCRIPT_DIR/resolve_dep_base.sh"
 
 JDK_DIR_NAME="jdk-$JDK_MAJOR"
 INSTALL_DIR="$LOCAL_DIR"
 
 DEST="$INSTALL_DIR/$JDK_DIR_NAME"
-STAGE_DIR=""
-BACKUP_DIR=""
-TMPFILE=""
-
-cleanup() {
-    if [ -n "$TMPFILE" ]; then
-        rm -f "$TMPFILE"
-    fi
-    if [ -n "$STAGE_DIR" ] && [ -d "$STAGE_DIR" ]; then
-        rm -rf "$STAGE_DIR"
-    fi
-}
-trap cleanup EXIT
+begin_dependency_install "$DEST"
 
 get_installed_jdk_version() {
     local release_file="$1/release"
@@ -34,6 +23,12 @@ get_installed_jdk_version() {
     fi
 
     sed -n 's/^JAVA_VERSION="\(.*\)"$/\1/p' "$release_file" | tr -d '\r' | head -n1
+}
+
+has_expected_jdk_runtime() {
+    local runtime
+    runtime="$(sed -n 's/^JAVA_RUNTIME_VERSION="\(.*\)"$/\1/p' "$1/release" | tr -d '\r' | head -n1)"
+    [ "${runtime%%-*}" = "$JDK_VERSION+$JDK_BUILD" ]
 }
 
 recover_matching_incomplete_install() {
@@ -60,7 +55,7 @@ recover_matching_incomplete_install() {
 INSTALLED_VERSION=""
 if [ -d "$DEST" ]; then
     INSTALLED_VERSION="$(get_installed_jdk_version "$DEST" || true)"
-    if { [ -x "$DEST/bin/java" ] || [ -x "$DEST/bin/java.exe" ]; } && [ "$INSTALLED_VERSION" = "$JDK_VERSION" ]; then
+    if { [ -x "$DEST/bin/java" ] || [ -x "$DEST/bin/java.exe" ]; } && [ "$INSTALLED_VERSION" = "$JDK_VERSION" ] && has_expected_jdk_runtime "$DEST"; then
         echo "JDK $JDK_MAJOR already installed at $DEST ($INSTALLED_VERSION)"
         exit 0
     fi
@@ -74,17 +69,31 @@ fi
 
 URL="$JDK_URL"
 ARCHIVE_KIND="zip"
-if DERIVED_URL="$(get_jdk_download_url "$JDK_MAJOR" 2>/dev/null)"; then
+if DERIVED_URL="$(get_jdk_download_url "$JDK_MAJOR" "$JDK_VERSION" "$JDK_BUILD" 2>/dev/null)"; then
     URL="$DERIVED_URL"
 fi
 case "$(get_host_os)" in
-linux | macos) ARCHIVE_KIND="tar.gz" ;;
+linux)
+    ARCHIVE_KIND="tar.gz"
+    ARCHIVE_SHA256="$JDK_LINUX_SHA256"
+    ;;
+macos)
+    ARCHIVE_KIND="tar.gz"
+    ARCHIVE_SHA256="$JDK_MAC_SHA256"
+    ;;
+windows) ARCHIVE_SHA256="$JDK_WINDOWS_SHA256" ;;
+*)
+    echo "Unsupported JDK host" >&2
+    exit 1
+    ;;
 esac
-TMPFILE="$(create_temp_file jdk)"
-STAGE_DIR="$(create_temp_dir ".jdk-$JDK_MAJOR-stage" "$INSTALL_DIR")"
+prepare_dependency_workspace "$DEST" 2
+TMPFILE="$DEPENDENCY_ARCHIVE"
+STAGE_DIR="$DEPENDENCY_STAGE_DIR"
 
 echo "Downloading OpenJDK $JDK_VERSION..."
 download_file "$TMPFILE" "$URL"
+verify_sha256 "$TMPFILE" "$ARCHIVE_SHA256" "OpenJDK $JDK_VERSION+$JDK_BUILD"
 
 echo "Extracting OpenJDK $JDK_VERSION to a staging directory..."
 if [ "$ARCHIVE_KIND" = "zip" ]; then
@@ -99,6 +108,7 @@ NEW_JDK_DIR=""
 for _d in "$STAGE_DIR"/jdk-"${JDK_VERSION}"*; do
     if [ -d "$_d" ]; then
         NEW_JDK_DIR="$_d"
+        if [ -d "$NEW_JDK_DIR/Contents/Home" ]; then NEW_JDK_DIR="$NEW_JDK_DIR/Contents/Home"; fi
         break
     fi
 done
@@ -108,7 +118,7 @@ if [ -z "$NEW_JDK_DIR" ]; then
 fi
 
 STAGED_VERSION="$(get_installed_jdk_version "$NEW_JDK_DIR" || true)"
-if { [ ! -x "$NEW_JDK_DIR/bin/java" ] && [ ! -x "$NEW_JDK_DIR/bin/java.exe" ]; } || [ "$STAGED_VERSION" != "$JDK_VERSION" ]; then
+if { [ ! -x "$NEW_JDK_DIR/bin/java" ] && [ ! -x "$NEW_JDK_DIR/bin/java.exe" ]; } || [ "$STAGED_VERSION" != "$JDK_VERSION" ] || ! has_expected_jdk_runtime "$NEW_JDK_DIR"; then
     echo "Staged JDK is incomplete or version $STAGED_VERSION, expected $JDK_VERSION" >&2
     exit 1
 fi
@@ -119,28 +129,7 @@ if [ -d "$DEST" ] && [ -z "$INSTALLED_VERSION" ] && recover_matching_incomplete_
     exit 0
 fi
 
-if [ -d "$DEST" ]; then
-    BACKUP_DIR="$INSTALL_DIR/.jdk-$JDK_MAJOR-backup-$$"
-    echo "Replacing JDK $JDK_MAJOR at $DEST..."
-    if ! mv "$DEST" "$BACKUP_DIR"; then
-        echo "Unable to move the current JDK because a file is in use" >&2
-        echo "Close Gradle daemons and other processes using $DEST, then retry" >&2
-        exit 1
-    fi
-fi
-
-if ! mv "$NEW_JDK_DIR" "$DEST"; then
-    echo "Unable to move the staged JDK into $DEST" >&2
-    if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR" ]; then
-        mv "$BACKUP_DIR" "$DEST" || true
-        echo "Restored the previous JDK directory" >&2
-    fi
-    exit 1
-fi
-
-if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR" ] && ! rm -rf "$BACKUP_DIR"; then
-    echo "WARNING: The old JDK remains at $BACKUP_DIR because a file is still in use" >&2
-fi
+publish_dependency_directory "$NEW_JDK_DIR" "$DEST"
 
 echo "JDK $JDK_MAJOR installed at $DEST"
 "$DEST/bin/java" -version 2>&1 | head -1

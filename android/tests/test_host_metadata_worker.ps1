@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 $androidRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $androidRoot 'helpers/normalized_json_text.ps1')
 . (Join-Path $androidRoot 'helpers/host_metadata_worker.ps1')
-$root = Join-Path $androidRoot 'temp/test_host_metadata_worker'
+$root = Join-Path $androidRoot ('temp/test_host_metadata_worker-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $root -Force | Out-Null
 $fixture = Join-Path $root 'worker.ps1'
 [IO.File]::WriteAllText($fixture, @'
@@ -71,5 +71,6 @@ try {
     if ($result.request_id -ne 'after-exit') { throw 'Exited worker was not replaced' }
 } finally {
     Stop-MetadataWorkerProcess -Worker $worker
+    Remove-Item -LiteralPath $root -Recurse -Force
 }
 Write-Host 'PASS metadata worker progress watchdog, invalid/stale checkpoint rejection, and crash/exit recovery'

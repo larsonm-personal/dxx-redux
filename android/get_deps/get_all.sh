@@ -68,7 +68,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-TOTAL_STEPS=12
+TOTAL_STEPS=14
 if [ "$(get_host_os)" = "linux" ] && [ "$SKIP_HOST_PREREQS" -eq 0 ]; then
     TOTAL_STEPS=$((TOTAL_STEPS + 1))
 fi
@@ -103,6 +103,18 @@ elif command -v pwsh >/dev/null 2>&1; then
     echo "PowerShell already available: $(command -v pwsh)"
 fi
 
+# Register this checkout before downloading or replacing shared tools
+source "$HELPER_DIR/resolve_dep_base.sh"
+if command -v pwsh >/dev/null 2>&1; then
+    DEPENDENCY_POWERSHELL=pwsh
+elif command -v powershell.exe >/dev/null 2>&1; then
+    DEPENDENCY_POWERSHELL=powershell.exe
+else
+    echo "ERROR: PowerShell is required for managed dependencies; install pwsh and rerun bootstrap" >&2
+    exit 1
+fi
+"$DEPENDENCY_POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File "$SCRIPT_DIR/clean-dependencies.ps1" -RegisterRepository
+
 run_step "JDK" bash "$HELPER_DIR/get_jdk.sh"
 
 run_step "Android SDK" bash "$HELPER_DIR/get_sdk.sh"
@@ -128,6 +140,8 @@ if [ "$SKIP_AVD" -eq 0 ]; then
     fi
 fi
 
+run_step "Verified 7-Zip" "$DEPENDENCY_POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File "$HELPER_DIR/get_7zip.ps1"
+
 run_step "clang-format" bash "$HELPER_DIR/get_clang_format.sh"
 
 run_step "shellcheck" bash "$HELPER_DIR/get_shellcheck.sh"
@@ -137,6 +151,8 @@ run_step "shfmt" bash "$HELPER_DIR/get_shfmt.sh"
 run_step "ktlint" bash "$HELPER_DIR/get_ktlint.sh"
 
 run_step "cmake-format / cmake-lint" bash "$HELPER_DIR/get_cmake_format.sh"
+
+run_step "Managed dependency retention" "$DEPENDENCY_POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File "$SCRIPT_DIR/clean-dependencies.ps1" -RegisterCurrent -Apply
 
 echo ""
 echo "=== All dependencies installed. ==="

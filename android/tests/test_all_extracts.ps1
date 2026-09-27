@@ -217,7 +217,8 @@ function Write-ExtractRegressionSummary {
 }
 
 if ($BuildAndInstall) {
-    $gradle = Join-Path (Join-Path $REPO_ROOT 'android') 'gradlew.bat'
+    Initialize-RegressionJavaEnvironment -RepoRoot $REPO_ROOT
+    $gradle = Resolve-RegressionGradleWrapper -AndroidDir (Join-Path $REPO_ROOT 'android')
     Write-Host 'Building current debug APK for extraction regressions...' -ForegroundColor Cyan
     & $gradle -p (Join-Path $REPO_ROOT 'android') assembleDebug
     if ($LASTEXITCODE -ne 0) {

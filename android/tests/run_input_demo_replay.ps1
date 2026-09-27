@@ -53,6 +53,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = if ($RepositoryRoot) { [IO.Path]::GetFullPath($RepositoryRoot) } else { Split-Path (Split-Path $PSScriptRoot) }
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/test_host_platform.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/input_demo_replay_menu.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/output_disk_space.ps1')
 $script:InputDemoSanitizer = $Sanitizer
@@ -648,9 +649,12 @@ function New-LaunchSandbox {
         $sandboxExe = Join-Path $sandboxDir (Split-Path $Config.Exe -Leaf)
 
         Copy-Item -LiteralPath $Config.Exe -Destination $sandboxExe -Force
-        Get-ChildItem -LiteralPath $sourceDir -File |
-            Where-Object { $_.Extension -eq '.dll' -or ($Sanitizer -eq 'address' -and $_.Extension -eq '.pdb' -and $_.BaseName -eq [IO.Path]::GetFileNameWithoutExtension($Config.Exe)) } |
-            Copy-Item -Destination $sandboxDir -Force
+        Get-RegressionRuntimeLibraries -Directory $sourceDir | Copy-Item -Destination $sandboxDir -Force
+        if ($Sanitizer -eq 'address') {
+            Get-ChildItem -LiteralPath $sourceDir -File -Filter '*.pdb' |
+                Where-Object { $_.BaseName -eq [IO.Path]::GetFileNameWithoutExtension($Config.Exe) } |
+                Copy-Item -Destination $sandboxDir -Force
+        }
     }
 
     Write-ReplayConfig -Path (Join-Path $sandboxDir 'descent.cfg')

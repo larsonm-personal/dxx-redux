@@ -561,12 +561,30 @@ function Get-NdkUrlForPlatform($version) {
     return "https://dl.google.com/android/repository/android-ndk-$version-$token.zip"
 }
 
-function Get-JdkUrlForPlatform($majorVersion) {
-    $token = Get-AdoptiumOsToken
-    if (-not $token) {
-        $token = "windows"
+function Update-JdkReleasePins($majorVersion, $version) {
+    # Resolve all supported host archives before changing any pins
+    $pins = @{}
+    $releaseBuild = $null
+    $hostUrl = $null
+    foreach ($token in @('windows', 'linux', 'mac')) {
+        $url = "https://api.adoptium.net/v3/assets/feature_releases/$majorVersion/ga?architecture=x64&heap_size=normal&image_type=jdk&jvm_impl=hotspot&os=$token&project=jdk&page_size=20"
+        $releases = (Invoke-LoggedWebRequest -Uri $url -TimeoutSec 30).Content | ConvertFrom-Json
+        $release = $releases | Where-Object { $_.release_name -match "^jdk-$([regex]::Escape($version))\+\d+$" } | Select-Object -First 1
+        if (-not $release) { throw "No exact JDK $version release for $token" }
+        $build = ($release.release_name -split '\+')[1]
+        if ($releaseBuild -and $releaseBuild -ne $build) { throw 'JDK host builds do not match' }
+        $releaseBuild = $build
+        $package = @($release.binaries)[0].package
+        if ($package.checksum -notmatch '^[a-fA-F0-9]{64}$') { throw "Invalid JDK checksum for $token" }
+        $pins["JDK_$($token.ToUpperInvariant())_SHA256"] = $package.checksum
+        if ($token -eq (Get-AdoptiumOsToken)) { $hostUrl = $package.link }
     }
-    return "https://api.adoptium.net/v3/binary/latest/$majorVersion/ga/$token/x64/jdk/hotspot/normal/eclipse?project=jdk"
+    if (-not $hostUrl) { throw 'Unsupported JDK host platform' }
+    Update-Conf 'JDK_MAJOR' $majorVersion
+    Update-Conf 'JDK_VERSION' $version
+    Update-Conf 'JDK_BUILD' $releaseBuild
+    foreach ($key in $pins.Keys) { Update-Conf $key $pins[$key] }
+    Update-Conf 'JDK_URL' $hostUrl
 }
 
 function Get-CmakeUrlForPlatform($version) {
@@ -1034,6 +1052,7 @@ function Get-LatestJDKVersion {
             if ($json.versions.Count -gt 0) {
                 $v = $json.versions[0]
                 $semver = "$($v.major).$($v.minor).$($v.security)"
+                if ($v.patch -gt 0) { $semver += ".$($v.patch)" }
                 $versions += @{ Major = $major; Version = $semver }
             }
         } catch {}
@@ -1392,10 +1411,7 @@ $deps = @(
         Current = $conf["SEVENZIP_VERSION"];
         Latest = Get-LatestSevenZipVersion;
         SuppressTargetUpdate = $true;
-        BlockedTargetLabel = "pinned";
-        LinuxManualOnly = $script:hostPlatform -eq "Linux";
-        DriftLabel = "manual-linux";
-        ManualInstallHint = "Install a host 7z binary such as p7zip-full or 7zip"
+        BlockedTargetLabel = "pinned"
     },
 
     @{ Name = "PowerShell 7"; ConfKey = "POWERSHELL_VERSION";
@@ -1746,7 +1762,10 @@ function Invoke-InstallSyncForDependency($dep, $target) {
     }
 
     Write-Host "  Syncing installed $($dep.Name) to target $target ..."
+    $retentionScript = Join-Path $scriptDir 'clean-dependencies.ps1'
+    & $retentionScript -RepoRoot $repoRoot -RegisterRepository
     Invoke-ConfiguredActionCommand $installCmdKey
+    & $retentionScript -RepoRoot $repoRoot -RegisterCurrent -Apply | Format-Table -AutoSize | Out-Host
     $script:executedInstallCommands[$installCmd] = $true
 }
 
@@ -1809,16 +1828,8 @@ foreach ($item in $selectedTarget) {
             }
         }
         "JDK*" {
-            if ($dep.JDKMajor) {
-                # Upgrading major version (e.g. 17 -> 21)
-                Update-Conf "JDK_MAJOR" $dep.JDKMajor
-                Update-Conf "JDK_VERSION" $new
-                $url = Get-JdkUrlForPlatform $dep.JDKMajor
-                Update-Conf "JDK_URL" $url
-            } else {
-                Update-Conf "JDK_VERSION" $new
-                Update-Conf "JDK_URL" (Get-JdkUrlForPlatform $currentJDKMajor)
-            }
+            $major = if ($dep.JDKMajor) { $dep.JDKMajor } else { $currentJDKMajor }
+            Update-JdkReleasePins $major $new
             if ($dep.ContainsKey("InstallCmdKey")) {
                 Invoke-InstallSyncForDependency $dep $new
             } else {

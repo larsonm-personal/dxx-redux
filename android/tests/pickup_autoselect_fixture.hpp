@@ -198,7 +198,7 @@ static nlohmann::json exercise_pickup_autoselect(bool native)
 							d_srand(1234);
 							const auto draws = d_rand_get_call_count();
 							const auto snapshot = [&]() -> json {
-								return { { "selected", player.primary_weapon }, { "pending", delayed_primary_autoselect_weapon_index }, { "picked_up", PrimaryWeaponPickedUp }, { "inventory", player.primary_weapon_flags }, { "flags", player.flags }, { "laser_level", player.laser_level }, { "energy", player.energy }, { "ammo", player.primary_ammo[VULCAN_INDEX] }, { "rearm", Next_laser_fire_time - GameTime64 }, { "firing_count", Global_laser_firing_count }, { "fusion_charge", Fusion_charge } };
+								return { { "selected", +player.primary_weapon }, { "pending", delayed_primary_autoselect_weapon_index }, { "picked_up", PrimaryWeaponPickedUp }, { "inventory", +player.primary_weapon_flags }, { "flags", +player.flags }, { "laser_level", +player.laser_level }, { "energy", +player.energy }, { "ammo", +player.primary_ammo[VULCAN_INDEX] }, { "rearm", Next_laser_fire_time - GameTime64 }, { "firing_count", Global_laser_firing_count }, { "fusion_charge", Fusion_charge } };
 							};
 							object pickup = {};
 							pickup.type = OBJ_POWERUP;

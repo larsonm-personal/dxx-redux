@@ -411,6 +411,9 @@ endif()
 set(_CP_TEST_DATA "${chromaprint_SOURCE_DIR}/tests/data")
 add_test(NAME fingerprint_tests COMMAND test_fingerprint "${_CP_TEST_DATA}")
 
+# FluidSynth unconditionally defines the Unix uninstall target; TagLib reuses an existing one
+include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/fluidsynth-music.cmake)
+
 # Audio tag metadata parser. TagLib's compact upstream media fixtures provide valid MP3, OGG, and
 # FLAC containers; the test writes controlled tags into temporary copies.
 dxx_audio_tag_prepare_deps()
@@ -517,7 +520,6 @@ if(NOT MSVC)
     target_link_libraries(soundfont_coverage PRIVATE m)
 endif()
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/ymfm-music.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/fluidsynth-music.cmake)
 add_executable(
     test_music_synth
     test_music_synth.c

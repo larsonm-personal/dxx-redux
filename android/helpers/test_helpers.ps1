@@ -2413,7 +2413,13 @@ function Test-EmulatorAccelerationAvailable {
     foreach ($line in ($output -split "`n" | Where-Object { $_.Trim() })) {
         Write-Status "  $($line.TrimEnd())" "Red"
     }
-    Write-Status "Install or enable Windows Hypervisor Platform or Android Emulator Hypervisor Driver, then rerun" "Yellow"
+    if (Test-RegressionWindowsHost) {
+        Write-Status "Install or enable Windows Hypervisor Platform or Android Emulator Hypervisor Driver, then rerun" "Yellow"
+    } elseif ([Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Runtime.InteropServices.OSPlatform]::Linux)) {
+        Write-Status "Linux emulator tests require accessible /dev/kvm and CPU virtualization support from the host" "Yellow"
+    } else {
+        Write-Status "Configure emulator acceleration for this host, then rerun" "Yellow"
+    }
     return $false
 }
 

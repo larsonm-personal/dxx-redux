@@ -29,6 +29,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'helpers/host_processes.ps1')
 if ($Producer -and (-not $BuildsOnly -or -not $BuildRoots)) { throw 'Producer cleanup requires BuildsOnly and explicit BuildRoots' }
 if (@($BuildsOnly, $PayloadsOnly, $TemporaryOnly | Where-Object { $_ }).Count -gt 1) { throw 'BuildsOnly, PayloadsOnly and TemporaryOnly are mutually exclusive' }
 Set-StrictMode -Version Latest
@@ -109,48 +110,44 @@ function Test-CleanupGitProtection {
 
 function Assert-CleanupIdle {
     # Do not kill processes or confuse idle Gradle/Kotlin daemons with active builds
-    if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
-        $idleWait = [Diagnostics.Stopwatch]::StartNew()
-        while ($true) {
-            $processes = @(Get-CimInstance Win32_Process)
-            $producerAncestors = @($PID)
-            if ($Producer) {
-                # Gradle daemons launch cleanup separately from the wrapper's test/build caller
-                $clients = @($PID) + @($processes | Where-Object {
-                        $_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and $_.CommandLine -match 'GradleWrapperMain'
-                    } | ForEach-Object ProcessId)
-                foreach ($clientId in $clients) {
-                    $currentId = $clientId
-                    if ($currentId -notin $producerAncestors) { $producerAncestors += $currentId }
-                    while ($currentId) {
-                        $owner = $processes | Where-Object ProcessId -eq $currentId | Select-Object -First 1
-                        if (-not $owner -or $owner.ParentProcessId -in $producerAncestors) { break }
-                        $currentId = $owner.ParentProcessId
-                        $producerAncestors += $currentId
-                    }
+    $idleWait = [Diagnostics.Stopwatch]::StartNew()
+    while ($true) {
+        $processes = @(Get-DxxHostProcessInventory)
+        $producerAncestors = @($PID)
+        if ($Producer) {
+            # Gradle daemons launch cleanup separately from the wrapper's test/build caller
+            $clients = @($PID) + @($processes | Where-Object {
+                    $_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and $_.CommandLine -match 'GradleWrapperMain'
+                } | ForEach-Object ProcessId)
+            foreach ($clientId in $clients) {
+                $currentId = $clientId
+                if ($currentId -notin $producerAncestors) { $producerAncestors += $currentId }
+                while ($currentId) {
+                    $owner = $processes | Where-Object ProcessId -eq $currentId | Select-Object -First 1
+                    if (-not $owner -or $owner.ParentProcessId -in $producerAncestors) { break }
+                    $currentId = $owner.ParentProcessId
+                    $producerAncestors += $currentId
                 }
             }
-            $busy = @($processes | Where-Object {
-                    $_.ProcessId -notin $producerAncestors -and
-                    # Emulators use installed APKs, not the producer's scoped native build generations
-                    -not ($Producer -and $_.Name -match '^(emulator|qemu-system-.*)\.exe$') -and
-                    (
-                        $_.Name -match '^(cl|clang|clang\+\+|ninja|cmake|ctest|cargo|rustc|dxx-redux.*|d[12]x-redux|emulator|qemu-system-.*)\.exe$' -or
-                        ($_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and
-                        $_.CommandLine -match '(GradleWrapperMain|run[_-].*tests?\.ps1|test_[^ ]+\.ps1|regenerate[^ ]*\.ps1|run_mission[^ ]*\.ps1|run-code-quality\.ps1)')
-                    )
-                })
-            if (-not $busy.Count) { break }
-            if ($idleWait.Elapsed.TotalSeconds -ge $BusyWaitSeconds) {
-                throw "Build/test/formatter processes are active (PIDs: $($busy.ProcessId -join ', ')); idle wait expired after $BusyWaitSeconds seconds"
-            }
-            Write-Progress -Activity 'Waiting for active jobs before cleanup' -Status (($busy | ForEach-Object { "$($_.Name) PID $($_.ProcessId)" }) -join ', ')
-            Start-Sleep -Seconds 1
         }
-        Write-Progress -Activity 'Waiting for active jobs before cleanup' -Completed
-    } else {
-        throw 'Deletion currently requires Windows process checks; use -Preview on other hosts'
+        $busy = @($processes | Where-Object {
+                $_.ProcessId -notin $producerAncestors -and
+                # Emulators use installed APKs, not the producer's scoped native build generations
+                -not ($Producer -and $_.Name -match '^(emulator|qemu-system-.*)(?:\.exe)?$') -and
+                (
+                    $_.Name -match '^(cl|cc|c\+\+|gcc|g\+\+|cc1|cc1plus|clang|clang\+\+|ninja|cmake|ctest|cargo|rustc|dxx-redux.*|d[12]x-redux|emulator|qemu-system-.*)(?:\.exe)?$' -or
+                    ($_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and
+                    $_.CommandLine -match '(GradleWrapperMain|run[_-].*tests?\.ps1|test_[^ ]+\.ps1|regenerate[^ ]*\.ps1|run_mission[^ ]*\.ps1|run-code-quality\.ps1)')
+                )
+            })
+        if (-not $busy.Count) { break }
+        if ($idleWait.Elapsed.TotalSeconds -ge $BusyWaitSeconds) {
+            throw "Build/test/formatter processes are active (PIDs: $($busy.ProcessId -join ', ')); idle wait expired after $BusyWaitSeconds seconds"
+        }
+        Write-Progress -Activity 'Waiting for active jobs before cleanup' -Status (($busy | ForEach-Object { "$($_.Name) PID $($_.ProcessId)" }) -join ', ')
+        Start-Sleep -Seconds 1
     }
+    Write-Progress -Activity 'Waiting for active jobs before cleanup' -Completed
 }
 
 function Get-CleanupTreeInfo {
@@ -165,6 +162,28 @@ function Get-CleanupTreeInfo {
         $item = $stack.Pop()
         if ($count % 512 -eq 0) { Write-CleanupStatus "Inspecting $Path ($count files, $(Format-CleanupBytes $bytes))" }
         if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+            # Native dependencies on Unix contain file symlinks (for example chromaprint.h)
+            # Count but never traverse a link whose final file remains in this owned build
+            if ($AllowBuildDependencies -and [Environment]::OSVersion.Platform -eq [PlatformID]::Unix -and
+                $item -is [IO.FileInfo]) {
+                $owner = $item.Directory
+                $ownedBuild = $false
+                while ($owner -and ($owner.FullName.Equals($Path, $comparison) -or
+                        $owner.FullName.StartsWith($Path + [IO.Path]::DirectorySeparatorChar, $comparison))) {
+                    if (Test-Path -LiteralPath (Join-Path $owner.FullName 'CMakeCache.txt') -PathType Leaf) {
+                        $ownedBuild = $true
+                        break
+                    }
+                    $owner = $owner.Parent
+                }
+                $target = $item.ResolveLinkTarget($true)
+                if ($ownedBuild -and $target -is [IO.FileInfo] -and $target.Exists -and
+                    $target.FullName.StartsWith($Path + [IO.Path]::DirectorySeparatorChar, $comparison)) {
+                    if ($item.LastWriteTimeUtc -gt $latest) { $latest = $item.LastWriteTimeUtc }
+                    $count++
+                    continue
+                }
+            }
             throw "Preserving tree containing a link: $($item.FullName)"
         }
         if ((-not $IgnoreRootWriteTime -or $item.FullName -ne $Path) -and $item.LastWriteTimeUtc -gt $latest) { $latest = $item.LastWriteTimeUtc }
@@ -172,7 +191,8 @@ function Get-CleanupTreeInfo {
         if ($item -is [IO.DirectoryInfo]) {
             foreach ($child in $item.EnumerateFileSystemInfos()) {
                 if ($child.Attributes -band [IO.FileAttributes]::ReparsePoint) {
-                    throw "Preserving tree containing a link: $($child.FullName)"
+                    $stack.Push($child)
+                    continue
                 }
                 if ($child.Name -in @('.git', '.hg', '.svn')) {
                     # FetchContent clones live below an owning CMake binary directory
@@ -504,7 +524,7 @@ if ($BuildRoots) {
         $full = [IO.Path]::GetFullPath($buildRoot)
         if (-not (Test-Path -LiteralPath $full -PathType Container)) { continue }
         Assert-CleanupPath $full
-        $item = Get-Item -LiteralPath $full
+        $item = Get-Item -LiteralPath $full -Force
         if ($item.Name -notmatch '^(\.cxx(?:$|[-_])|build-outputs$)') {
             throw "Explicit build roots must be .cxx or build-outputs directories: $full"
         }

@@ -168,13 +168,7 @@ function Invoke-InputDemoHostBuild {
 
     $buildTarget = Get-InputDemoBuildTarget -GameName $GameName
     Write-Host "Build guardrail: rebuilding host target $buildTarget"
-    if ($script:InputDemoSanitizer -eq 'address') {
-        if (-not $IsWindows) { throw 'Sanitizer demo builds currently require the Windows host runner' }
-        & (Join-Path $RepoRoot 'run-windows-build.ps1') -Target $buildTarget -Sanitizer address
-        if ($LASTEXITCODE -ne 0) { throw "Sanitizer build failed for $buildTarget" }
-        return
-    }
-    Invoke-RegressionHostBuild -RepoRoot $RepoRoot -Target $buildTarget -Label $GameName
+    Invoke-RegressionHostBuild -RepoRoot $RepoRoot -Target $buildTarget -Label $GameName -Sanitizer $script:InputDemoSanitizer
 }
 
 function Get-InputDemoExecutableFreshnessIssue {

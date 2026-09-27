@@ -25,6 +25,7 @@ extern int Num_args;
 extern char *Args[];
 extern void InitArgs(int argc, char **argv);
 extern void InitArgsAndroid(int argc, char **argv);
+extern void ReadCmdArgs(void);
 extern void args_exit();
 
 // Struct that keeps all variables used by FindArg

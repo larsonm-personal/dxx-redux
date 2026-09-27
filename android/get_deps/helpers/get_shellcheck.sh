@@ -9,53 +9,35 @@ source "$SCRIPT_DIR/resolve_dep_base.sh"
 
 INSTALL_DIR="$LOCAL_DIR"
 DEST="$INSTALL_DIR/shellcheck-$SHELLCHECK_VERSION"
+begin_dependency_install "$DEST"
 
-if [ -f "$DEST/shellcheck.exe" ] || [ -f "$DEST/shellcheck" ]; then
-    echo "shellcheck $SHELLCHECK_VERSION already installed at $DEST"
+DEST_NAME="$(get_platform_executable_name shellcheck "$DEST")"
+if [ -f "$DEST/$DEST_NAME" ] && verify_dependency_tool_version "${SHELLCHECK_VERSION}" exact "$DEST/$DEST_NAME" --version >/dev/null 2>&1; then
+    echo "Verified shellcheck ${SHELLCHECK_VERSION} already installed at $DEST"
     exit 0
 fi
 
-# Pick URL for the current platform
-_is_windows_target() {
-    case "$DEST" in
-    /mnt/[a-z]/*) return 0 ;;
-    esac
-    case "$(uname -s)" in
-    MINGW* | MSYS* | CYGWIN* | *_NT*) return 0 ;;
-    esac
-    return 1
-}
-
-if _is_windows_target; then
+prepare_dependency_workspace "$DEST"
+DEST_NAME="$(get_platform_executable_name shellcheck "$DEST")"
+if is_windows_target_path "$DEST"; then
     URL="https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.zip"
-    echo "Downloading shellcheck $SHELLCHECK_VERSION..."
-    echo "  URL: $URL"
-    mkdir -p "$DEST"
-    TMPFILE="$(create_temp_file shellcheck.zip)"
-    download_file "$TMPFILE" "$URL"
-    TMPDIR2="$(create_temp_dir shellcheck-extract)"
-    unzip -q "$TMPFILE" -d "$TMPDIR2"
-    mv "$TMPDIR2/shellcheck.exe" "$DEST/shellcheck.exe"
-    rm -rf "$TMPFILE" "$TMPDIR2"
-elif [ "$(uname -s)" = "Darwin" ]; then
-    URL="https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.darwin.x86_64.tar.xz"
-    echo "Downloading shellcheck $SHELLCHECK_VERSION..."
-    echo "  URL: $URL"
-    mkdir -p "$DEST"
-    TMPFILE="$(create_temp_file shellcheck.tar.xz)"
-    download_file "$TMPFILE" "$URL"
-    tar -xJf "$TMPFILE" -C "$DEST" --strip-components=1 "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
-    rm -f "$TMPFILE"
+    download_file "$DEPENDENCY_ARCHIVE" "$URL"
+    unzip -q "$DEPENDENCY_ARCHIVE" -d "$DEPENDENCY_STAGE_DIR"
 else
-    URL="https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz"
-    echo "Downloading shellcheck $SHELLCHECK_VERSION..."
-    echo "  URL: $URL"
-    mkdir -p "$DEST"
-    TMPFILE="$(create_temp_file shellcheck.tar.xz)"
-    download_file "$TMPFILE" "$URL"
-    tar -xJf "$TMPFILE" -C "$DEST" --strip-components=1 "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
-    rm -f "$TMPFILE"
+    OS_TOKEN="$(get_host_os)"
+    if [ "$OS_TOKEN" = macos ]; then OS_TOKEN=darwin; fi
+    case "$OS_TOKEN" in
+    linux | darwin) ;;
+    *)
+        echo "Unsupported shellcheck host: $OS_TOKEN" >&2
+        exit 1
+        ;;
+    esac
+    URL="https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.$OS_TOKEN.x86_64.tar.xz"
+    download_file "$DEPENDENCY_ARCHIVE" "$URL"
+    tar -xJf "$DEPENDENCY_ARCHIVE" -C "$DEPENDENCY_STAGE_DIR" --strip-components=1 "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
 fi
-
-chmod +x "$DEST/shellcheck"* 2>/dev/null || true
+chmod +x "$DEPENDENCY_STAGE_DIR/$DEST_NAME"
+verify_dependency_tool_version "${SHELLCHECK_VERSION}" exact "$DEPENDENCY_STAGE_DIR/$DEST_NAME" --version
+publish_dependency_directory "$DEPENDENCY_STAGE_DIR" "$DEST"
 echo "shellcheck $SHELLCHECK_VERSION installed at $DEST"

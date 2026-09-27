@@ -32,7 +32,7 @@ Run commands from the repository root
 - Before Android Gradle tasks on Windows, set JDK 21:
   `$env:JAVA_HOME='C:\local\jdk-21'; $env:Path="$env:JAVA_HOME\bin;$env:Path"`
 - Check devices with `adb devices`; Windows fallback: `C:\local\android-sdk\platform-tools\adb.exe`
-- Start/provision an emulator with `.\android\Run-Emulator.ps1` (`-NoBuild` if the APK is current), or `android/run_emulator.sh` on bash hosts. Start one when needed for testing; the PowerShell helper may keep tailing logcat after setup
+- Start/provision an emulator with `.\android\Run-Emulator.ps1` (`-NoBuild` if the APK is current), or `pwsh android/Run-Emulator.ps1` on Linux hosts. Start one when needed for testing; the PowerShell helper may keep tailing logcat after setup
 - Run emulator tests serially because they share device state. Clear logcat first, capture output to a file, and check the exit code. Keep temporary artifacts under repo-local `temp/` or `android/temp/`
 
 ```powershell
@@ -62,6 +62,6 @@ Write-Output "EXIT: $testExitCode"
 
 ## Mission metadata regeneration
 
-- Default full regeneration: `.\android\helpers\regenerate_all_mission_metadata.ps1` builds/installs the APK, runs the emulator ZIP batch, and analyzes configured extracted-CD missions on the host
+- Default full regeneration: `.\android\helpers\regenerate_all_mission_metadata.ps1` uses the native host on Windows/Linux. Pass `-Engine Emulator` to build/install the APK and run the emulator ZIP batch
 - Fast host-only refresh: `.\android\helpers\regenerate_all_mission_metadata_host.ps1`. This does not validate Android import, storage, staging, or automation behavior
 - For custom filters or options, use `android/helpers/run_mission_zip_batch.ps1`; omit `-NoRegressionJson` when regenerating checked-in metadata. Use the emulator path for Android behavior/parity checks

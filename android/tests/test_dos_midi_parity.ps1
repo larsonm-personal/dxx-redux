@@ -21,13 +21,16 @@ if (-not (Test-Path -LiteralPath $exporter)) { $exporter = Join-Path $BuildDirec
 ctest --test-dir $BuildDirectory -C Release --output-on-failure -R '^(hmp_android_shared_tests|midi_seek_timeline_tests|hmp_playback_tests)$'
 if ($LASTEXITCODE -ne 0) { throw 'Native MIDI tests failed' }
 if (-not $SyntheticOnly) {
+    $python = Resolve-RegressionPythonCommand
+    if (-not $python) { throw 'Python 3 is required for DOS MIDI reference parity' }
+    $pythonPrefix = @($python.PrefixArguments)
     & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $OutputDirectory
     $levels = if ($Level -eq 'all') { @(2, 7, 8) } else { @([int]$Level) }
     foreach ($number in $levels) {
         $name = 'descent14-game{0:D2}' -f $number
         $reference = Join-Path $ReferenceDirectory $name
         $output = Join-Path $OutputDirectory $name
-        python "$PSScriptRoot/run_dos_midi_parity.py" --exporter $exporter --fixture "$PSScriptRoot/fixtures/dos-midi/$name.json" --reference $reference --output $output
+        & $python.Path @pythonPrefix "$PSScriptRoot/run_dos_midi_parity.py" --exporter $exporter --fixture "$PSScriptRoot/fixtures/dos-midi/$name.json" --reference $reference --output $output
         if ($LASTEXITCODE -ne 0) { throw "DOS MIDI Level $number reference parity failed" }
     }
 }

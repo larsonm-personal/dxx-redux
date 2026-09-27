@@ -22,8 +22,8 @@ $projection = [IO.File]::ReadAllText((Join-Path $repoRoot 'android\mission-metad
 $d1Cmake = [IO.File]::ReadAllText((Join-Path $repoRoot 'd1\main\CMakeLists.txt'))
 $d2Cmake = [IO.File]::ReadAllText((Join-Path $repoRoot 'd2\main\CMakeLists.txt'))
 
-Assert-Contains $publicRunner "[string]`$Engine = 'Windows'" 'Windows must be the default metadata engine'
-Assert-Contains $publicRunner "`$Engine -eq 'Windows'" 'The public runner must dispatch to the Windows path'
+Assert-Contains $publicRunner "[string]`$Engine = 'Host'" 'The native host must be the default metadata engine'
+Assert-Contains $publicRunner "`$Engine -in @('Host', 'Windows')" 'The public runner must dispatch Host and the legacy Windows alias to the native host path'
 Assert-Contains $publicRunner 'IncludeBuiltInCounterstrike' 'The public runner must forward focused built-in Counterstrike requests'
 Assert-Contains $publicRunner 'IncludeBuiltInFirstStrike' 'The public runner must forward focused built-in First Strike requests'
 Assert-Contains $publicRunner 'if ($RoutingDevelopmentSet)' 'The public runner must resolve the shared routing development set'
@@ -54,4 +54,46 @@ if ($fixtureResult.Count -ne 1 -or $fixtureResult[0] -ne 'metadata-cli.bat') {
     throw "Noisy build output leaked into the function result: $($fixtureResult -join ', ')"
 }
 
-Write-Host 'Windows mission metadata runner wiring passed' -ForegroundColor Green
+Write-Host 'Host mission metadata runner wiring passed' -ForegroundColor Green
+
+# Exercise the actual persistent Kotlin protocol without requiring retail game data
+$androidRoot = Join-Path $repoRoot 'android'
+. (Join-Path $androidRoot 'helpers/mission_archive_variants.ps1')
+. (Join-Path $androidRoot 'helpers/host_metadata_worker.ps1')
+$NoBuild = $false
+$cli = Initialize-MetadataKotlinCli
+$ast = [Management.Automation.Language.Parser]::ParseInput($hostRunner, [ref]$null, [ref]$null)
+foreach ($name in @('New-MetadataKotlinWorker', 'Invoke-MetadataKotlinWorker')) {
+    $function = $ast.Find({
+            param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
+        }, $true)
+    if (-not $function) { throw "Missing worker function: $name" }
+    . ([scriptblock]::Create($function.Extent.Text))
+}
+$fixtureRoot = Join-Path $androidRoot ('temp/kotlin-worker-' + [guid]::NewGuid().ToString('N'))
+& (Join-Path $androidRoot 'helpers/retain-recent-artifacts.ps1') -Artifacts $fixtureRoot -DirectoryPrefix 'kotlin-worker-' -MinimumFreeSpaceGB 0.01
+New-Item -ItemType Directory -Path $fixtureRoot | Out-Null
+$worker = $null
+$fixtureLock = $null
+try {
+    $fixtureLock = [IO.File]::Open((Join-Path $fixtureRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+    $descriptor = Join-Path $fixtureRoot 'worker fixture.mn2'
+    [IO.File]::WriteAllText($descriptor, "name = Worker Fixture`ntype = normal`nnum_levels = 1`nlevel01.rl2`n")
+    $worker = New-MetadataKotlinWorker -CliPath $cli
+    $workerPid = $worker.Process.Id
+    foreach ($iteration in 1..2) {
+        $result = Invoke-MetadataKotlinWorker -Worker $worker -Request ([ordered]@{ op = 'descriptor'; path = $descriptor })
+        if (-not $result.valid -or $result.display_name -ne 'Worker Fixture' -or
+            @($result.normal_level_files).Count -ne 1 -or $result.normal_level_files[0] -ne 'level01.rl2') {
+            throw "Persistent Kotlin descriptor request $iteration returned invalid metadata"
+        }
+        if ($worker.Process.Id -ne $workerPid -or $worker.Process.HasExited) { throw 'Kotlin worker was not persistent' }
+    }
+} finally {
+    Stop-MetadataWorkerProcess -Worker $worker
+    if ($fixtureLock) { $fixtureLock.Dispose() }
+    Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
+}
+if (Get-Process -Id $workerPid -ErrorAction SilentlyContinue) { throw 'Kotlin worker survived shutdown' }
+Write-Host 'Persistent Kotlin metadata requests and shutdown passed'

@@ -57,6 +57,7 @@ foreach ($case in $selected) {
             if ($exitCode -eq 0) { $status = 'PASS' }
         }
         $text = $stdout.GetAwaiter().GetResult() + $stderr.GetAwaiter().GetResult()
+        if ($exitCode -eq 2 -and $text -match 'RESULT: SKIP \(') { $status = 'SKIP' }
         Write-Utf8NoBomTextAtomically -Path $logPath -Text $text
         if ($status -eq 'PASS') { Remove-GuidebotTestPayloads -RepoRoot $repoRoot -OutputText $text }
     } catch {
@@ -82,6 +83,11 @@ foreach ($case in $selected) {
     Write-Utf8NoBomTextAtomically -Path (Join-Path $output 'summary.json') -Text (($summary | ConvertTo-Json -Depth 6) + "`n")
 }
 Write-Host "Route case report: $output/summary.json"
-$failures = @($results | Where-Object status -ne 'PASS')
+$failures = @($results | Where-Object { $_.status -notin @('PASS', 'SKIP') })
 if ($failures.Count) { throw "$($failures.Count) physical route case(s) failed; see individual logs in $output" }
+$skips = @($results | Where-Object status -eq 'SKIP')
+if ($skips.Count) {
+    Write-Host "RESULT: SKIP ($($skips.Count) physical route case(s) have unavailable fixtures; see individual logs in $output)"
+    exit 2
+}
 Write-Host "PASS $($results.Count) physical route cases"

@@ -12,16 +12,21 @@ SHARED = (REPO / "android/app/src/main/cpp/shared/physfsx_android_shared.c").rea
 class PhysfsxAndroidInitContracts(unittest.TestCase):
     def test_shared_owner_preserves_initialization_order_and_diagnostics(self):
         expected = [
-            "PHYSFS_init(argv[0])",
-            'Error("PhysicsFS initialization failed: %s"',
+            "PHYSFS_init(argv0)",
+            'snprintf(error, error_size, "PhysicsFS initialization failed: %s"',
             "PHYSFS_permitSymbolicLinks(1)",
-            "physfsx_android_setup_search_paths(game_dir, &ops, &result)",
-            'Error("Android content setup failed during %s for %s: %s"',
+            "physfsx_android_setup_search_paths(game_dir, data_dir, &ops, &result)",
+            'snprintf(error, error_size, "Android content setup failed during %s for %s: %s"',
             "InitArgsAndroid(argc, argv)",
         ]
         positions = [SHARED.index(fragment) for fragment in expected]
         self.assertEqual(positions, sorted(positions))
         self.assertIn("result.operation, result.path, result.detail", SHARED)
+        self.assertIn('Error("%s", error)', SHARED)
+        self.assertRegex(
+            SHARED,
+            r'if \(!init_search_paths\(argv\[0\], game_dir, data_dir, error, error_size\)\)\s*return 0;',
+        )
 
     def test_games_retain_only_parameterized_android_init_seams(self):
         for game, game_dir in (("d1", "d1x-redux"), ("d2", "d2x-redux")):

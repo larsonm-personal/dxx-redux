@@ -12,6 +12,7 @@ CMAKE_DIR_NAME="cmake-$CMAKE_VERSION"
 INSTALL_DIR="$LOCAL_DIR"
 
 DEST="$INSTALL_DIR/$CMAKE_DIR_NAME"
+begin_dependency_install "$DEST"
 
 if [ -d "$DEST" ] && { [ -x "$DEST/bin/cmake" ] || [ -x "$DEST/bin/cmake.exe" ]; }; then
     echo "CMake $CMAKE_VERSION already installed at $DEST"
@@ -31,26 +32,33 @@ macos)
     ARCHIVE_KIND="tar.gz"
     ;;
 esac
-TMPFILE="$(create_temp_file cmake)"
+prepare_dependency_workspace "$DEST" 1
+TMPFILE="$DEPENDENCY_ARCHIVE"
+STAGE_DIR="$DEPENDENCY_STAGE_DIR"
 
 echo "Downloading CMake $CMAKE_VERSION..."
 download_file "$TMPFILE" "$URL"
 
 echo "Extracting to $DEST..."
 if [ "$ARCHIVE_KIND" = "zip" ]; then
-    unzip -q -o "$TMPFILE" -d "$INSTALL_DIR"
+    unzip -q -o "$TMPFILE" -d "$STAGE_DIR"
 else
-    tar -xzf "$TMPFILE" -C "$INSTALL_DIR"
+    tar -xzf "$TMPFILE" -C "$STAGE_DIR"
 fi
-# Rename the extracted folder to the canonical name.
-if [ ! -d "$DEST" ]; then
-    for _d in "$INSTALL_DIR"/cmake-"${CMAKE_VERSION}"*; do
-        if [ -d "$_d" ]; then
-            mv "$_d" "$DEST"
-            break
-        fi
-    done
+STAGED_CMAKE=""
+for candidate in "$STAGE_DIR"/cmake-"${CMAKE_VERSION}"*; do
+    if [ -d "$candidate/CMake.app/Contents" ]; then candidate="$candidate/CMake.app/Contents"; fi
+    if [ -x "$candidate/bin/cmake" ] || [ -x "$candidate/bin/cmake.exe" ]; then
+        STAGED_CMAKE="$candidate"
+        break
+    fi
+done
+if [ -z "$STAGED_CMAKE" ]; then
+    echo "ERROR: CMake archive did not contain the expected executable" >&2
+    exit 1
 fi
+"$STAGED_CMAKE/bin/cmake" --version
+publish_dependency_directory "$STAGED_CMAKE" "$DEST"
 
 rm -f "$TMPFILE"
 echo "CMake $CMAKE_VERSION installed at $DEST"

@@ -729,7 +729,7 @@ static nlohmann::ordered_json serialize_coop_start_slot(int slot, int real_start
 	result["generated"] = slot >= real_start_count;
 	result["seg"] = Player_init[slot].segnum;
 	result["pos"] = serialize_vector(Player_init[slot].pos);
-	result["objnum"] = Players[slot].objnum;
+	result["objnum"] = (int) Players[slot].objnum;
 	if (Players[slot].objnum >= 0 && Players[slot].objnum <= Highest_object_index)
 		result["object_type"] = (int) Objects[Players[slot].objnum].type;
 	else
@@ -785,7 +785,7 @@ static nlohmann::ordered_json serialize_coop_level(int level_num, const char *le
 	result["real_start_count"] = real_start_count;
 	result["num_net_player_positions"] = NumNetPlayerPositions;
 	result["max_players"] = MAX_PLAYERS;
-	result["ship_radius"] = Polygon_models[Player_ship->model_num].rad;
+	result["ship_radius"] = (fix) Polygon_models[Player_ship->model_num].rad;
 	result["minimum_allowed_distance"] = Polygon_models[Player_ship->model_num].rad * 2;
 	result["minimum_pair_distance"] = minimum_pair_distance == 0x7fffffff ? 0 : minimum_pair_distance;
 	result["duplicate_position_pairs"] = duplicate_pairs;
@@ -1095,7 +1095,7 @@ static nlohmann::ordered_json serialize_current_level(
 		    { "kind", "player_ship_size" },
 		    { "label", "Player ship size" },
 		    { "base_game", base_player_ship_radius },
-		    { "mod", Polygon_models[Player_ship->model_num].rad },
+		    { "mod", (fix) Polygon_models[Player_ship->model_num].rad },
 		});
 	}
 	result["replacement_groups"] =

@@ -362,11 +362,38 @@ static int test_sequence_title_fallbacks(void)
 	return 1;
 }
 
+static int test_long_composer(void)
+{
+	byte_buffer buffer;
+	midi_metadata metadata;
+	char credit[104] = "By ";
+	size_t track;
+	memset(credit + 3, 'A', 100);
+	credit[103] = '\0';
+	begin_midi(&buffer, 1);
+	track = begin_track(&buffer);
+	put_text(&buffer, 3, "A long composition");
+	put_text(&buffer, 1, credit);
+	put_end(&buffer);
+	finish_track(&buffer, track);
+	midi_metadata_init(&metadata);
+	if (midi_metadata_parse(buffer.data, buffer.length, 0, &metadata) != MIDI_METADATA_OK ||
+	    strlen(metadata.composer) != 100 ||
+	    strlen(metadata.display_name) != sizeof(metadata.display_name) - 1 ||
+	    strncmp(metadata.display_name, "... (AAAA", 9)) {
+		fprintf(stderr, "Long composer display bound failed: '%s'\n", metadata.display_name);
+		midi_metadata_free(&metadata);
+		return 0;
+	}
+	midi_metadata_free(&metadata);
+	return 1;
+}
+
 int main(void)
 {
 	if (!test_obsidian_style() || !test_copyright_and_cp1252() ||
 	    !test_hmp_metadata() || !test_rejections() || !test_duration() ||
-	    !test_sequence_title_fallbacks())
+	    !test_sequence_title_fallbacks() || !test_long_composer())
 		return 1;
 	printf("MIDI metadata tests passed\n");
 	return 0;

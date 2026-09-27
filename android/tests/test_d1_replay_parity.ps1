@@ -14,6 +14,10 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
 . (Join-Path $repoRoot 'android/helpers/output_disk_space.ps1')
+. (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1')
+$python = Resolve-RegressionPythonCommand
+if (-not $python) { throw 'Python 3 is required for replay parity' }
+$pythonPrefix = @($python.PrefixArguments)
 if (-not $OutputPath) {
     $OutputPath = Join-Path $repoRoot "temp/d1_replay_parity_$(Get-Date -Format 'yyyyMMdd_HHmmss_fff')"
 }
@@ -55,5 +59,5 @@ $arguments = @(
     '--minimum-free-gb', $MinimumFreeSpaceGB.ToString([Globalization.CultureInfo]::InvariantCulture)
 )
 foreach ($demo in $demos) { $arguments += @('--demo', $demo.FullName) }
-& python @arguments
+& $python.Path @pythonPrefix @arguments
 exit $LASTEXITCODE

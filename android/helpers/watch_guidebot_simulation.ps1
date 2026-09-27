@@ -14,6 +14,7 @@ $ErrorActionPreference = 'Stop'
 $scriptDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
+. (Join-Path $scriptDir 'test_host_platform.ps1')
 $missionRoot = Join-Path $repoRoot 'game_data\mission_files'
 $manualRoot = Join-Path $androidRoot 'temp\guidebot_simulation_manual'
 
@@ -187,9 +188,8 @@ function Stop-GuidebotBrowserRun {
 
 function Invoke-GuidebotBrowserBuild {
     if ($NoBuild) { return }
-    Write-Host 'Building Windows GuideBot runner' -ForegroundColor Cyan
-    & (Join-Path $repoRoot 'run-windows-build.ps1') -Target d2
-    if ($LASTEXITCODE -ne 0) { throw "D2 build failed with exit code $LASTEXITCODE" }
+    Write-Host 'Building desktop GuideBot runner' -ForegroundColor Cyan
+    Invoke-RegressionHostBuild -RepoRoot $repoRoot -Target d2
 }
 
 function Invoke-GuidebotBrowserRun {
@@ -210,11 +210,13 @@ function Invoke-GuidebotBrowserRun {
             $argument = [string]$_
             if ($argument -match '[\s"]') { '"' + $argument.Replace('"', '\"') + '"' } else { $argument }
         }) -join ' '
+    $launchOptions = @{}
+    if (Test-RegressionWindowsHost) { $launchOptions.WindowStyle = 'Hidden' }
     $process = Start-Process -FilePath (Get-Process -Id $PID).Path -ArgumentList $processArguments -PassThru `
-        -RedirectStandardOutput $stdout -RedirectStandardError $stderr -WindowStyle Hidden
+        -RedirectStandardOutput $stdout -RedirectStandardError $stderr @launchOptions
     $aborted = $false
     $stopwatch = [Diagnostics.Stopwatch]::StartNew()
-    Write-Host 'Launching visible Windows game. Q aborts, R restarts' -ForegroundColor Cyan
+    Write-Host 'Launching visible desktop game. Q aborts, R restarts' -ForegroundColor Cyan
     while (-not $process.HasExited) {
         if ([Console]::KeyAvailable) {
             $key = [Console]::ReadKey($true)
@@ -234,7 +236,7 @@ function Invoke-GuidebotBrowserRun {
                 $engineText = ", frame $($fields.frames), objectives $($fields.objectives)"
             } catch {}
         }
-        $progress = 'Windows route running: {0:n0}s{1}' -f $stopwatch.Elapsed.TotalSeconds, $engineText
+        $progress = 'desktop route running: {0:n0}s{1}' -f $stopwatch.Elapsed.TotalSeconds, $engineText
         Write-Host "`r$($progress.PadRight([Math]::Max(1, [Console]::WindowWidth - 1)))" -NoNewline
         Start-Sleep -Milliseconds 400
     }
@@ -242,7 +244,7 @@ function Invoke-GuidebotBrowserRun {
     if ($aborted) { Write-Host 'Route run aborted'; return 'back' }
     $process.WaitForExit()
     Get-Content -LiteralPath $stdout, $stderr -ErrorAction SilentlyContinue | Select-Object -Last 20
-    if ($process.ExitCode -ne 0) { Write-Host "Windows runner failed with exit $($process.ExitCode)" -ForegroundColor Red }
+    if ($process.ExitCode -ne 0) { Write-Host "desktop runner failed with exit $($process.ExitCode)" -ForegroundColor Red }
     $resultFile = @(Get-ChildItem (Join-Path $manualRunRoot 'results') -Filter '*.simulation.json' -ErrorAction SilentlyContinue |
             Select-Object -First 1)
     if ($resultFile.Count) {
@@ -260,7 +262,7 @@ function Invoke-GuidebotBrowserRun {
             Write-Host "Checked-in headless: status=$($Item.SimulationStatus), frames=$($Item.PriorFrames)"
         }
     }
-    Write-Host 'Enter repeats visible Windows, H runs headless, B returns to search, Q quits'
+    Write-Host 'Enter repeats visible desktop, H runs headless, B returns to search, Q quits'
     while ($true) {
         $key = [Console]::ReadKey($true)
         if ($key.Key -eq 'Enter') { return 'restart' }
@@ -270,7 +272,7 @@ function Invoke-GuidebotBrowserRun {
             $headlessRoot = Join-Path $manualRunRoot 'headless_comparison'
             & (Get-Process -Id $PID).Path -NoProfile -File $runner -Mode Headless -MissionJson $Item.MissionJson `
                 -Level $Item.Level -Repeat 2 -NoBuild -OutputRoot $headlessRoot
-            Write-Host 'Headless comparison complete. Enter repeats visible Windows, B returns, Q quits'
+            Write-Host 'Headless comparison complete. Enter repeats visible desktop, B returns, Q quits'
         }
     }
 }

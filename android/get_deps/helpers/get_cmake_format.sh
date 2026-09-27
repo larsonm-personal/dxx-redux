@@ -39,19 +39,58 @@ else
     CMAKE_FORMAT="$DEST/venv/bin/cmake-format"
 fi
 
-if [ -f "$CMAKE_FORMAT" ]; then
+check_cmakelang_install() {
+    [ -f "$CMAKE_FORMAT" ] && [ -f "$PY_EXE" ] || return 1
+    "$PY_EXE" -c 'import sys; from importlib.metadata import version; sys.exit(0 if [version(p) for p in ("cmakelang", "PyYAML", "six")] == sys.argv[1:] else 1)' \
+        "$CMAKELANG_VERSION" "$CMAKELANG_PYYAML_VERSION" "$CMAKELANG_SIX_VERSION" || return 1
+    "$CMAKE_FORMAT" --version || return 1
+    "$PY_EXE" -m cmakelang.lint --version
+}
+
+if check_cmakelang_install >/dev/null 2>&1; then
     echo "cmakelang $CMAKELANG_VERSION already installed at $DEST"
-    "$CMAKE_FORMAT" --version || true
+    "$CMAKE_FORMAT" --version
     exit 0
 fi
 
+# Python console launchers embed the final interpreter path, so install in place
+# Preserve the previous tree until validation and roll back ordinary failures
+assert_dependency_disk_space "$INSTALL_DIR" 1
+if [ -L "$DEST" ]; then
+    echo "ERROR: refusing linked installation path: $DEST" >&2
+    exit 1
+fi
+WORK_DIR="$(create_temp_dir .dxx-cmakelang-stage "$INSTALL_DIR")"
+INSTALL_STARTED=0
+INSTALL_VALIDATED=0
+cleanup_cmakelang_install() {
+    local status=$?
+    if [ "$INSTALL_VALIDATED" != 1 ]; then
+        if [ -d "$WORK_DIR/previous" ]; then
+            rm -rf "$DEST"
+            if ! mv "$WORK_DIR/previous" "$DEST"; then
+                echo "ERROR: restore $WORK_DIR/previous to $DEST before retrying" >&2
+                return 1
+            fi
+        elif [ "$INSTALL_STARTED" = 1 ]; then
+            rm -rf "$DEST"
+        fi
+    fi
+    rm -rf "$WORK_DIR"
+    return "$status"
+}
+trap cleanup_cmakelang_install EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+if [ -e "$DEST" ]; then mv "$DEST" "$WORK_DIR/previous"; fi
+INSTALL_STARTED=1
 mkdir -p "$DEST"
 
 if _is_windows_target; then
     # --- Windows: download embeddable Python distribution ---
     echo "Downloading Python $PYTHON_EMBED_VERSION embeddable..."
     echo "  URL: $PYTHON_EMBED_URL"
-    PY_ZIP="$(create_temp_file python-embed.zip)"
+    PY_ZIP="$WORK_DIR/python-embed.zip"
     download_file "$PY_ZIP" "$PYTHON_EMBED_URL"
     rm -rf "$DEST/python"
     mkdir -p "$DEST/python"
@@ -74,9 +113,9 @@ EOF
     fi
 
     echo "Bootstrapping pip..."
-    GET_PIP="$(create_temp_file get-pip.py)"
+    GET_PIP="$WORK_DIR/get-pip.py"
     download_file "$GET_PIP" https://bootstrap.pypa.io/get-pip.py
-    "$PY_EXE" "$GET_PIP" --no-warn-script-location --disable-pip-version-check
+    "$PY_EXE" "$GET_PIP" --no-cache-dir --no-warn-script-location --disable-pip-version-check
     rm -f "$GET_PIP"
 else
     # --- Linux/macOS: use host python3 with a virtualenv ---
@@ -89,7 +128,7 @@ else
     if python3 -c 'import venv, ensurepip' >/dev/null 2>&1; then
         python3 -m venv "$DEST/venv"
     else
-        VENV_PYZ="$(create_temp_file virtualenv.pyz)"
+        VENV_PYZ="$WORK_DIR/virtualenv.pyz"
         echo "python3 venv support missing, bootstrapping virtualenv $VIRTUALENV_VERSION..."
         download_file "$VENV_PYZ" "$VIRTUALENV_PYZ_URL"
         python3 "$VENV_PYZ" "$DEST/venv"
@@ -98,11 +137,12 @@ else
 fi
 
 echo "Installing cmakelang $CMAKELANG_VERSION..."
-"$PY_EXE" -m pip install --no-warn-script-location --disable-pip-version-check \
-    "cmakelang==$CMAKELANG_VERSION" pyyaml
+"$PY_EXE" -m pip install --no-cache-dir --no-warn-script-location --disable-pip-version-check \
+    --no-deps "cmakelang==$CMAKELANG_VERSION" "pyyaml==$CMAKELANG_PYYAML_VERSION" "six==$CMAKELANG_SIX_VERSION"
 
+check_cmakelang_install
+INSTALL_VALIDATED=1
 echo "cmakelang $CMAKELANG_VERSION installed at $DEST"
-"$CMAKE_FORMAT" --version
 
 if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then
     echo ""

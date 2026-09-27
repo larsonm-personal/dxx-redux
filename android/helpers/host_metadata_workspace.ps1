@@ -28,8 +28,31 @@ function Remove-GuidebotTestPayloads {
                 throw "Refusing to release a linked route engine: $engine"
             }
             # Keep engine hashes and settings; only successful tests release executable copies
-            Get-ChildItem -LiteralPath $engine -File | Where-Object Extension -in @('.exe', '.dll', '.pdb') |
-                ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
+            $manifestPath = Join-Path $engine 'files.json'
+            if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
+                if ((Get-Item -LiteralPath $manifestPath -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                    throw "Refusing to read a linked engine manifest: $manifestPath"
+                }
+                $artifacts = @(Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json)
+                foreach ($artifact in $artifacts) {
+                    if (-not $artifact.name -or $artifact.name -match '[/\\]' -or
+                        $artifact.name -in @('.', '..', 'files.json', 'settings.json') -or
+                        $artifact.sha256 -notmatch '^[0-9a-fA-F]{64}$') {
+                        throw "Invalid engine artifact manifest: $manifestPath"
+                    }
+                }
+                foreach ($artifact in $artifacts) {
+                    $path = Join-Path $engine $artifact.name
+                    if ((Test-Path -LiteralPath $path -PathType Leaf) -and
+                        (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -eq $artifact.sha256) {
+                        Remove-Item -LiteralPath $path -Force
+                    }
+                }
+            } else {
+                # Older Windows runs predate the snapshot manifest
+                Get-ChildItem -LiteralPath $engine -File | Where-Object Extension -in @('.exe', '.dll', '.pdb') |
+                    ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
+            }
         }
     }
 }

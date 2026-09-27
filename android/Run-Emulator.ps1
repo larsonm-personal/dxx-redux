@@ -41,29 +41,11 @@ if (-not (Test-Path $depBaseFile)) {
 }
 $DEP_BASE = (Get-Content $depBaseFile -First 1).Trim()
 
-# Find newest folder matching a prefix
-function Find-Newest {
-    param([string]$Prefix)
-    $matchDirs = Get-ChildItem -Path $DEP_BASE -Directory -Filter "${Prefix}*" -ErrorAction SilentlyContinue |
-        Sort-Object Name
-    if ($matchDirs) { return $matchDirs[-1].FullName }
-    return $null
-}
-
-if (-not $env:JAVA_HOME) {
-    $jdk = Find-Newest "jdk-"
-    if ($jdk) { $env:JAVA_HOME = $jdk }
-    else { Write-Host "WARNING: No jdk-* folder found in $DEP_BASE" -ForegroundColor Yellow }
-}
+Initialize-RegressionJavaEnvironment -RepoRoot $RepoRoot
 if (-not $env:ANDROID_HOME) {
-    $sdk = Find-Newest "android-sdk"
-    if ($sdk) {
-        $env:ANDROID_HOME = $sdk
-        $env:ANDROID_SDK_ROOT = $sdk
-    } else {
-        Write-Host "WARNING: No android-sdk* folder found in $DEP_BASE" -ForegroundColor Yellow
-    }
+    $env:ANDROID_HOME = if ($env:ANDROID_SDK_ROOT) { $env:ANDROID_SDK_ROOT } else { Join-Path $DEP_BASE 'android-sdk' }
 }
+$env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
 
 Write-Host "JAVA_HOME=$env:JAVA_HOME"
 Write-Host "ANDROID_HOME=$env:ANDROID_HOME"

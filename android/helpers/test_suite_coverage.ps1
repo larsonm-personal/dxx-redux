@@ -53,6 +53,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_saf_redbook'
         )
         core = @(
+            'test_7zip_install'
+            'test_managed_dependencies'
             'test_acoustid_regeneration'
             'test_active_game_data_reset'
             'test_android_saveload_dispatch_unified'
@@ -74,6 +76,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_d2xxl_sound_format'
             'test_d2xxl_tga_layout'
             'test_dep_platform'
+            'test_dependency_install'
+            'test_host_process_cleanup'
             'test_download_verification'
             'test_extract_all_cds_batch'
             'test_extract_all_gog_batch'

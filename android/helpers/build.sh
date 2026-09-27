@@ -1,6 +1,6 @@
 #!/bin/bash
 # build.sh - Source environment vars and run the Gradle build.
-# Works under Git Bash, MSYS2, or WSL.
+# Works under Windows Git Bash and Linux Bash.
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -18,6 +18,3 @@ shift 2>/dev/null || true
 
 echo "Running: ./gradlew $TASK $*"
 ./gradlew "$TASK" "$@"
-echo ""
-echo "Press any key to exit..."
-read -r -n1 -s

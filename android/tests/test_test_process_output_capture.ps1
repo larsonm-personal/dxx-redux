@@ -10,7 +10,10 @@ $stdoutPath = Join-Path $testRoot "stdout.log"
 $stderrPath = Join-Path $testRoot "stderr.log"
 $holderPidPath = Join-Path $testRoot "holder.pid"
 $holderProcess = $null
+$process = $null
+$fixtureLock = $null
 
+& (Join-Path (Split-Path $PSScriptRoot) 'helpers/retain-recent-artifacts.ps1') -Artifacts $testRoot -DirectoryPrefix 'test_process_output_capture_' -MinimumFreeSpaceGB 0.01
 New-Item -Path $testRoot -ItemType Directory -Force | Out-Null
 $utf8NoBom = [Text.UTF8Encoding]::new($false)
 $holderContent = @'
@@ -29,6 +32,7 @@ exit 1
 [IO.File]::WriteAllText($parentScript, $parentContent, $utf8NoBom)
 
 try {
+    $fixtureLock = [IO.File]::Open((Join-Path $testRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     $process = Start-Process -FilePath "pwsh" `
         -ArgumentList "-NoProfile", "-File", "`"$parentScript`"", "`"$holderScript`"", "`"$holderPidPath`"" `
         -WorkingDirectory $testRoot -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath `
@@ -36,7 +40,8 @@ try {
     if (-not $process.WaitForExit(10000)) {
         throw "Parent capture process did not exit"
     }
-    $process.WaitForExit()
+    # The parameterless wait also waits for inherited output pipes to close
+    # Keep the holder alive while exercising shared log reads
     $process.Refresh()
     # Windows PowerShell 5.1 Start-Process can detach the returned Process
     # object when file redirection is used, leaving ExitCode unavailable
@@ -68,7 +73,15 @@ try {
 } finally {
     if ($holderProcess -and -not $holderProcess.HasExited) {
         Stop-Process -Id $holderProcess.Id -Force -ErrorAction SilentlyContinue
+        $holderProcess.WaitForExit()
     }
+    if ($holderProcess) { $holderProcess.Dispose() }
+    if ($process) {
+        if (-not $process.HasExited) { $process.Kill($true); $process.WaitForExit() }
+        $process.Dispose()
+    }
+    if ($fixtureLock) { $fixtureLock.Dispose() }
+    Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host "PASS"

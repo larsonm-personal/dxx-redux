@@ -12,16 +12,16 @@ if (-not $tempRoot.StartsWith($tempParent + [IO.Path]::DirectorySeparatorChar, [
 
 try {
     $wrongDir = Join-Path $tempRoot "wrong"
-    $validDir = Join-Path $tempRoot "valid"
+    $validDir = Join-Path $tempRoot "game_data/CD images/retail disc/data_tracks/descent"
     New-Item -ItemType Directory -Force -Path $wrongDir, $validDir | Out-Null
     Set-Content -LiteralPath (Join-Path $wrongDir "DESCENT.HOG") -Value "wrong hog" -NoNewline
     Set-Content -LiteralPath (Join-Path $wrongDir "DESCENT.PIG") -Value "wrong pig" -NoNewline
-    Set-Content -LiteralPath (Join-Path $validDir "descent.hog") -Value "expected hog" -NoNewline
-    Set-Content -LiteralPath (Join-Path $validDir "descent.pig") -Value "expected pig" -NoNewline
+    Set-Content -LiteralPath (Join-Path $validDir "DESCENT.HOG") -Value "expected hog" -NoNewline
+    Set-Content -LiteralPath (Join-Path $validDir "DESCENT.PIG") -Value "expected pig" -NoNewline
 
     $dependencies = @(
-        @{file = "descent.hog"; sha256 = (Get-FileHash -LiteralPath (Join-Path $validDir "descent.hog") -Algorithm SHA256).Hash }
-        @{file = "descent.pig"; sha256 = (Get-FileHash -LiteralPath (Join-Path $validDir "descent.pig") -Algorithm SHA256).Hash }
+        @{file = "descent.hog"; sha256 = (Get-FileHash -LiteralPath (Join-Path $validDir "DESCENT.HOG") -Algorithm SHA256).Hash }
+        @{file = "descent.pig"; sha256 = (Get-FileHash -LiteralPath (Join-Path $validDir "DESCENT.PIG") -Algorithm SHA256).Hash }
     )
     $selection = Resolve-StandardGameDataDirectory -Candidates @($wrongDir, $validDir) -Dependencies $dependencies -Label "test"
     if ($selection.Path -cne (Resolve-Path -LiteralPath $validDir).Path) {
@@ -30,6 +30,10 @@ try {
     if ($selection.Hashes.Count -ne 2) {
         throw "Resolver did not report every validated hash"
     }
+
+    $discovered = @(Get-StandardGameDataCandidates -RepoRoot $tempRoot -Game d1)
+    $fromMedia = Resolve-StandardGameDataDirectory -Candidates $discovered -Dependencies $dependencies -Label 'extracted media'
+    if ($fromMedia.Path -cne $selection.Path) { throw 'Extracted uppercase CD data was not discovered and validated' }
 
     $rejected = $false
     try {

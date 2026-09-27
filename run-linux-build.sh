@@ -9,6 +9,7 @@ GENERATOR=""
 CMAKE_PATH=""
 NINJA_PATH=""
 LIST_TOOLS=0
+SANITIZER="none"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
@@ -21,6 +22,7 @@ Usage: ./run-linux-build.sh [options]
 Options:
   --target {both|d1|d2}   Select which game to build [default: both]
   --build-type TYPE       CMake build type [default: RelWithDebInfo]
+  --sanitizer {none|address}  Use a separate AddressSanitizer build tree
   --clean                 Delete the target build directory before configuring
   --jobs N                Parallel build job count
   --generator NAME        Override the CMake generator
@@ -99,6 +101,10 @@ while [[ $# -gt 0 ]]; do
             BUILD_TYPE="$2"
             shift 2
             ;;
+        --sanitizer)
+            SANITIZER="$2"
+            shift 2
+            ;;
         --clean)
             CLEAN=1
             shift
@@ -142,6 +148,11 @@ case "$TARGET" in
         echo "Unsupported target '$TARGET'. Expected both, d1, or d2" >&2
         exit 1
         ;;
+esac
+
+case "$SANITIZER" in
+    none|address) ;;
+    *) echo "Unsupported sanitizer '$SANITIZER'. Expected none or address" >&2; exit 1 ;;
 esac
 
 DEP_BASE=""
@@ -216,6 +227,15 @@ build_one() {
     else
         build_dir_name="buildd2"
     fi
+    local stamp_name="$game"
+    if [[ "$SANITIZER" == "address" ]]; then
+        build_dir_name+="-asan"
+        stamp_name+="-asan"
+        # Instrumented trees are reusable, but a first build needs replacement headroom
+        # shellcheck disable=SC1091
+        source "$REPO_ROOT/android/get_deps/helpers/platform.sh"
+        assert_dependency_disk_space "$REPO_ROOT" 4
+    fi
     build_dir="$REPO_ROOT/$build_dir_name"
 
     if [[ "$CLEAN" -eq 1 && -d "$build_dir" ]]; then
@@ -226,7 +246,9 @@ build_one() {
         -S "$game"
         -B "$build_dir"
         -D "CMAKE_BUILD_TYPE=$BUILD_TYPE"
+        -D "DXX_SANITIZERS=$(if [[ "$SANITIZER" == address ]]; then echo address; fi)"
     )
+    if [[ "$SANITIZER" == address ]]; then configure_args+=(-D "BUILD_TESTING=ON"); fi
     if [[ -n "$GENERATOR" ]]; then
         configure_args=(-G "$GENERATOR" "${configure_args[@]}")
     fi
@@ -251,7 +273,7 @@ build_one() {
     if [[ -n "$source_revision" ]]; then
         stamp_dir="$REPO_ROOT/temp/input_demo_build_stamps"
         mkdir -p "$stamp_dir"
-        printf '%s' "$source_revision" >"$stamp_dir/$game.stamp"
+        printf '%s' "$source_revision" >"$stamp_dir/$stamp_name.stamp"
     fi
 }
 

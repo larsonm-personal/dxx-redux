@@ -533,13 +533,16 @@ static void infer_summary(midi_metadata *metadata,
 			copy_trimmed(metadata->display_name, sizeof(metadata->display_name), combined);
 		else {
 			size_t suffix_length = strlen(metadata->composer) + 3u;
-			size_t title_bytes = sizeof(metadata->display_name) - suffix_length - 4u;
+			size_t title_bytes = suffix_length + 4u < sizeof(metadata->display_name)
+			                         ? sizeof(metadata->display_name) - suffix_length - 4u
+			                         : 0;
 			if (title_bytes > strlen(display_title)) title_bytes = strlen(display_title);
 			while (title_bytes &&
 			       ((unsigned char) display_title[title_bytes] & 0xc0) == 0x80)
 				--title_bytes;
-			snprintf(metadata->display_name, sizeof(metadata->display_name), "%.*s... (%s)",
+			snprintf(combined, sizeof(combined), "%.*s... (%s)",
 			         (int) title_bytes, display_title, metadata->composer);
+			copy_trimmed(metadata->display_name, sizeof(metadata->display_name), combined);
 		}
 	} else if (metadata->title[0] && !generic_title(metadata->title))
 		copy_trimmed(metadata->display_name, sizeof(metadata->display_name), metadata->title);

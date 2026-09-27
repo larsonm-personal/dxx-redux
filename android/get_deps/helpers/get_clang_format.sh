@@ -10,25 +10,17 @@ source "$SCRIPT_DIR/resolve_dep_base.sh"
 
 INSTALL_DIR="$LOCAL_DIR"
 DEST="$INSTALL_DIR/clang-format-$CLANG_FORMAT_VERSION"
+begin_dependency_install "$DEST"
 
-if [ -f "$DEST/clang-format.exe" ] || [ -f "$DEST/clang-format" ]; then
-    echo "clang-format $CLANG_FORMAT_VERSION already installed at $DEST"
+DEST_NAME="$(get_platform_executable_name clang-format "$DEST")"
+if [ -f "$DEST/$DEST_NAME" ] && verify_dependency_tool_version "${CLANG_FORMAT_VERSION}" prefix "$DEST/$DEST_NAME" --version >/dev/null 2>&1; then
+    echo "Verified clang-format ${CLANG_FORMAT_VERSION} already installed at $DEST"
     exit 0
 fi
 
 # Pick the right binary name for the current platform.
 # When running in WSL but targeting a Windows filesystem (/mnt/), use Windows binary.
-_is_windows_target() {
-    case "$DEST" in
-    /mnt/[a-z]/*) return 0 ;; # WSL path to Windows drive
-    esac
-    case "$(uname -s)" in
-    MINGW* | MSYS* | CYGWIN* | *_NT*) return 0 ;;
-    esac
-    return 1
-}
-
-if _is_windows_target; then
+if is_windows_target_path "$DEST"; then
     ASSET_NAME="clang-format-${CLANG_FORMAT_VERSION}_windows-amd64.exe"
     DEST_NAME="clang-format.exe"
 elif [ "$(uname -s)" = "Darwin" ]; then
@@ -44,23 +36,23 @@ URL="https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/
 echo "Downloading clang-format $CLANG_FORMAT_VERSION..."
 echo "  URL: $URL"
 
-mkdir -p "$DEST"
-TMPFILE="$(create_temp_file clang-format)"
+prepare_dependency_workspace "$DEST"
+TMPFILE="$DEPENDENCY_ARCHIVE"
 download_file "$TMPFILE" "$URL"
-mv "$TMPFILE" "$DEST/$DEST_NAME"
-chmod +x "$DEST/$DEST_NAME"
+mv "$TMPFILE" "$DEPENDENCY_STAGE_DIR/$DEST_NAME"
+chmod +x "$DEPENDENCY_STAGE_DIR/$DEST_NAME"
 
 # --- Windows VC++ runtime check --------------------------------------------
-if _is_windows_target; then
+if is_windows_target_path "$DEST"; then
     echo "Checking clang-format runtime..."
 
-    if ! "$DEST/$DEST_NAME" --version >/dev/null 2>&1; then
+    if ! "$DEPENDENCY_STAGE_DIR/$DEST_NAME" --version >/dev/null 2>&1; then
         echo "clang-format failed to run; attempting to install Microsoft Visual C++ Redistributable..."
 
         VC_REDIST_URL="https://aka.ms/vs/17/release/vc_redist.x64.exe"
-        VC_TMP_DIR="$(create_temp_dir vc-redist)"
+        VC_TMP_DIR="$DEPENDENCY_WORK_DIR/vc-redist"
+        mkdir "$VC_TMP_DIR"
         VC_TMP="$VC_TMP_DIR/vc_redist.exe"
-        trap 'rm -rf "$VC_TMP_DIR"' EXIT
 
         echo "  Downloading VC++ Redistributable from:"
         echo "    $VC_REDIST_URL"
@@ -73,18 +65,18 @@ if _is_windows_target; then
             exit 1
         }
         rm -rf "$VC_TMP_DIR"
-        trap - EXIT
 
         echo "VC++ Redistributable installed. Re-testing clang-format..."
-        "$DEST/$DEST_NAME" --version
+        "$DEPENDENCY_STAGE_DIR/$DEST_NAME" --version
     else
         echo "clang-format runs successfully; VC++ runtime appears to be present"
     fi
 fi
 # ---------------------------------------------------------------------------
 
+verify_dependency_tool_version "${CLANG_FORMAT_VERSION}" prefix "$DEPENDENCY_STAGE_DIR/$DEST_NAME" --version
+publish_dependency_directory "$DEPENDENCY_STAGE_DIR" "$DEST"
 echo "clang-format $CLANG_FORMAT_VERSION installed at $DEST/$DEST_NAME"
-"$DEST/$DEST_NAME" --version
 
 if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then
     echo ""

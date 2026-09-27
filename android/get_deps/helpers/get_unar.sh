@@ -26,7 +26,8 @@ if [ -f "$DEST/unar.exe" ]; then
 fi
 
 echo "Downloading unar from $UNAR_URL..."
-TMPFILE="$(create_temp_file unar.zip)"
+prepare_dependency_workspace "$DEST"
+TMPFILE="$DEPENDENCY_ARCHIVE"
 download_file "$TMPFILE" "$UNAR_URL"
 verify_sha256 "$TMPFILE" "$UNAR_ARCHIVE_SHA256" "unar Windows package"
 
@@ -42,20 +43,20 @@ to_win_path() {
 }
 
 echo "Extracting..."
-mkdir -p "$DEST"
 if command -v unzip >/dev/null 2>&1; then
-    unzip -q -o "$TMPFILE" -d "$DEST"
+    unzip -q -o "$TMPFILE" -d "$DEPENDENCY_STAGE_DIR"
 else
-    powershell.exe -NoProfile -Command "Expand-Archive -Path '$(to_win_path "$TMPFILE")' -DestinationPath '$(to_win_path "$DEST")' -Force"
+    powershell.exe -NoProfile -Command "Expand-Archive -Path '$(to_win_path "$TMPFILE")' -DestinationPath '$(to_win_path "$DEPENDENCY_STAGE_DIR")' -Force"
 fi
 
 rm -f "$TMPFILE"
 
 # Clean up macOS metadata if present
-rm -rf "$DEST/__MACOSX"
+rm -rf "$DEPENDENCY_STAGE_DIR/__MACOSX"
 
-verify_sha256 "$DEST/unar.exe" "$UNAR_EXE_SHA256" "installed unar.exe"
-verify_sha256 "$DEST/lsar.exe" "$LSAR_EXE_SHA256" "installed lsar.exe"
+verify_sha256 "$DEPENDENCY_STAGE_DIR/unar.exe" "$UNAR_EXE_SHA256" "staged unar.exe"
+verify_sha256 "$DEPENDENCY_STAGE_DIR/lsar.exe" "$LSAR_EXE_SHA256" "staged lsar.exe"
+publish_dependency_directory "$DEPENDENCY_STAGE_DIR" "$DEST"
 echo "unar installed and verified at $DEST"
 
 if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then

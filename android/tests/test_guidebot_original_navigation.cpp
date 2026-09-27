@@ -122,8 +122,8 @@ static void compare(object *bot, const std::string &name, const std::function<vo
 	Snapshot actual(bot);
 	check(name, actual.same(reference));
 	if (!actual.same(reference)) {
-		Results["differences"][name] = { { "actual", { actual.goal, actual.special, actual.index, actual.count, actual.bot.ctype.ai_info.path_length, actual.local.mode, actual.calls } },
-			                             { "reference", { reference.goal, reference.special, reference.index, reference.count, reference.bot.ctype.ai_info.path_length, reference.local.mode, reference.calls } } };
+		Results["differences"][name] = { { "actual", { actual.goal, actual.special, actual.index, actual.count, +actual.bot.ctype.ai_info.path_length, actual.local.mode, actual.calls } },
+			                             { "reference", { reference.goal, reference.special, reference.index, reference.count, +reference.bot.ctype.ai_info.path_length, reference.local.mode, reference.calls } } };
 	}
 	start.restore(bot);
 }

@@ -35,6 +35,7 @@ if ($TestSpeedPercent -ne 160 -and ($WriteRegression -or $Mode -eq 'Headed')) {
 $scriptDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
+. (Join-Path $scriptDir 'test_host_platform.ps1')
 $missionRoot = if ($MissionMetadataRoot) {
     $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($MissionMetadataRoot)
 } else {
@@ -53,9 +54,9 @@ $resultRoot = Join-Path $runRoot 'results'
 $exe = if ($HeadlessExecutable) {
     $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($HeadlessExecutable)
 } else {
-    Join-Path $repoRoot 'buildd2\main\dxx-redux-d2-headless-route.exe'
+    Join-RegressionPath $repoRoot 'buildd2' 'main' (Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d2-headless-route')[0]
 }
-$desktopExe = Join-Path $repoRoot 'buildd2\main\d2x-redux.exe'
+$desktopExe = Join-RegressionPath $repoRoot 'buildd2' 'main' (Get-RegressionHostExecutableNames -BaseName 'd2x-redux')[0]
 $batchStart = [DateTime]::UtcNow
 . (Join-Path $scriptDir 'guidebot_simulation_regression.ps1')
 . (Join-Path $scriptDir 'mission_archive_variants.ps1')
@@ -381,11 +382,8 @@ function Invoke-GuidebotDesktopLevel {
 }
 
 function Get-GuidebotAdb {
-    $candidate = Join-Path $env:LOCALAPPDATA 'Android\Sdk\platform-tools\adb.exe'
-    if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
-    $candidate = 'C:\local\android-sdk\platform-tools\adb.exe'
-    if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
-    return 'adb'
+    return Resolve-RegressionAndroidSdkTool -DepBase (Get-RegressionDependencyBase -RepoRoot $repoRoot) `
+        -Subdir 'platform-tools' -ToolName 'adb' -EnvironmentVariable 'ADB'
 }
 
 function Push-GuidebotMissionArchive {
@@ -691,11 +689,10 @@ if ($Mode -eq 'Headed' -and $WriteRegression) {
 }
 if (-not $NoBuild) {
     if ($Mode -in @('Headless', 'Desktop')) {
-        & (Join-Path $repoRoot 'run-windows-build.ps1') -Target d2
-        if ($LASTEXITCODE -ne 0) { throw "D2 build failed with exit code $LASTEXITCODE" }
+        Invoke-RegressionHostBuild -RepoRoot $repoRoot -Target d2
     } else {
-        $env:JAVA_HOME = 'C:\local\jdk-21'
-        & (Join-Path $androidRoot 'gradlew.bat') -p $androidRoot :app:assembleDebug
+        Initialize-RegressionJavaEnvironment -RepoRoot $repoRoot
+        & (Resolve-RegressionGradleWrapper -AndroidDir $androidRoot) -p $androidRoot :app:assembleDebug
         if ($LASTEXITCODE -ne 0) { throw "Android build failed with exit code $LASTEXITCODE" }
     }
 }
@@ -806,7 +803,7 @@ if ($Mode -eq 'Headless') {
         # Keep the exact image and available symbols even if a later build replaces them
         $engineSnapshot = Join-Path $runRoot 'engine'
         New-Item -ItemType Directory -Path $engineSnapshot | Out-Null
-        $engineArtifacts = @((Get-Item -LiteralPath $exe)) + @(Get-ChildItem -LiteralPath (Split-Path $exe) -File -Filter '*.dll')
+        $engineArtifacts = @((Get-Item -LiteralPath $exe)) + @(Get-RegressionRuntimeLibraries -Directory (Split-Path $exe))
         $enginePdb = [IO.Path]::ChangeExtension($exe, '.pdb')
         if (Test-Path -LiteralPath $enginePdb) { $engineArtifacts += Get-Item -LiteralPath $enginePdb }
         $artifactHashes = @($engineArtifacts | ForEach-Object {

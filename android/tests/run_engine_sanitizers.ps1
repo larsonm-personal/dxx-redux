@@ -14,7 +14,6 @@ param(
     [string]$OutputRoot
 )
 $ErrorActionPreference = 'Stop'
-if (-not $IsWindows) { throw 'This runner currently requires Windows MSVC AddressSanitizer; see SANITIZERS.md for CMake usage on other hosts' }
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1')
 if (-not $OutputRoot) { $OutputRoot = Join-Path $repoRoot ('android/temp/engine_sanitizers/' + (Get-Date -Format 'yyyyMMdd_HHmmss')) }
@@ -48,10 +47,13 @@ function Invoke-SanitizerStage {
     return ($exitCode -eq 0)
 }
 
+$producerLock = $null
 try {
+    $producerLock = [IO.File]::Open((Join-Path $OutputRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     foreach ($buildGame in $games) {
         if (-not (Invoke-SanitizerStage "build-$buildGame" {
-                    & $pwsh -NoProfile -File (Join-Path $repoRoot 'run-windows-build.ps1') -Target $buildGame -Sanitizer address -MaxParallel $MaxParallel
+                    Invoke-RegressionHostBuild -RepoRoot $repoRoot -Target $buildGame -Sanitizer address -MaxParallel $MaxParallel
+                    $global:LASTEXITCODE = 0
                 })) { throw "Cannot test without a successful instrumented $buildGame build" }
         $buildDir = Join-Path $repoRoot "build$buildGame-asan"
         $cache = Get-Content -LiteralPath (Join-Path $buildDir 'CMakeCache.txt') -Raw
@@ -61,20 +63,20 @@ try {
             sanitizer = 'address'
             options = $env:ASAN_OPTIONS
             revision = ([string](& git -C $repoRoot rev-parse HEAD)).Trim()
-            binaries = @(Get-ChildItem -LiteralPath (Join-Path $buildDir 'main') -File | Where-Object Extension -in @('.exe', '.pdb') | ForEach-Object {
+            binaries = @(Get-ChildItem -LiteralPath (Join-Path $buildDir 'main') -File | Where-Object Extension -in @('.exe', '.pdb', '') | ForEach-Object {
                     [ordered]@{ file = $_.FullName; sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
                 })
         }
         $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $OutputRoot "build-$buildGame.manifest.json") -Encoding utf8
     }
-    $routeExe = Join-Path $repoRoot 'buildd2-asan/main/dxx-redux-d2-headless-route.exe'
+    $routeExe = Join-RegressionPath $repoRoot buildd2-asan main (Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d2-headless-route')[0]
     foreach ($stage in $categories) {
         switch ($stage) {
             'EngineTests' {
                 foreach ($testGame in $games) {
                     $buildDir = Join-Path $repoRoot "build$testGame-asan"
                     $cmake = Resolve-RegressionCMakePath -RepoRoot $repoRoot -BuildDir $buildDir
-                    $ctest = Join-Path (Split-Path $cmake) 'ctest.exe'
+                    $ctest = Join-Path (Split-Path $cmake) (Get-RegressionHostExecutableNames -BaseName ctest)[0]
                     $testArgs = @('--test-dir', $buildDir, '--output-on-failure', '--no-tests=error', '--parallel', $MaxParallel, '--timeout', '300')
                     if ($CTestFilter) { $testArgs += @('-R', $CTestFilter) }
                     $null = Invoke-SanitizerStage "ctest-$testGame" { & $ctest @testArgs }
@@ -112,9 +114,10 @@ try {
     }
 } finally {
     $env:ASAN_OPTIONS = $oldAsanOptions
+    if ($producerLock) { $producerLock.Dispose() }
 }
 # Native diagnostics are failures even if an expected-error test swallowed its child's exit status
-$findings = @(Get-ChildItem -LiteralPath $OutputRoot -Recurse -File -Filter '*.log' | Select-String -Pattern 'ERROR: AddressSanitizer|SUMMARY: AddressSanitizer|AddressSanitizer:DEADLYSIGNAL')
+$findings = @(Get-ChildItem -LiteralPath $OutputRoot -Recurse -File -Filter '*.log' | Select-String -Pattern 'ERROR: (Address|Leak)Sanitizer|SUMMARY: (Address|Leak)Sanitizer|AddressSanitizer:DEADLYSIGNAL')
 $results | Format-Table name, exit_code, seconds | Out-Host
 Write-Host "Sanitizer reports: $OutputRoot"
 if ($findings.Count -or @($results | Where-Object exit_code -ne 0).Count) { exit 1 }

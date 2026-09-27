@@ -1,3 +1,5 @@
+. (Join-Path $PSScriptRoot 'test_host_platform.ps1')
+
 function ConvertTo-WindowsProcessArgument {
     param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Argument)
 
@@ -52,27 +54,18 @@ function ConvertTo-NormalizedJsonText {
     if (-not (Test-Path -LiteralPath $formatterPath -PathType Leaf)) {
         throw "JSON formatter not found: $formatterPath"
     }
-    $python = Get-Command python -ErrorAction SilentlyContinue
-    $usePyLauncher = $false
-    if (-not $python) {
-        $python = Get-Command py -ErrorAction SilentlyContinue
-        $usePyLauncher = $true
-    }
-    if (-not $python) {
-        throw "Python not found for JSON formatting"
-    }
+    $python = Resolve-RegressionPythonCommand
+    if (-not $python) { throw "Python 3 not found for JSON formatting" }
 
     $arguments = [System.Collections.Generic.List[string]]::new()
-    if ($usePyLauncher) {
-        $arguments.Add("-3")
-    }
+    foreach ($argument in $python.PrefixArguments) { $arguments.Add($argument) }
     $arguments.Add($formatterPath)
     if ($MissionMetadata) {
         $arguments.Add("--mission-metadata")
     }
 
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-    $startInfo.FileName = $python.Source
+    $startInfo.FileName = $python.Path
     Set-CompatibleProcessArguments -StartInfo $startInfo -Arguments $arguments
     $startInfo.RedirectStandardInput = $true
     $startInfo.RedirectStandardOutput = $true

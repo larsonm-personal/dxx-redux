@@ -7,37 +7,32 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../tool_versions.conf"
 source "$SCRIPT_DIR/platform.sh"
+source "$SCRIPT_DIR/verify_sha256.sh"
 
 DEST="$SCRIPT_DIR/../../app/src/main/assets/gm.sf2"
 
-# --- Check if already present with correct hash ---
-if [ -f "$DEST" ]; then
-    ACTUAL=$(sha256sum "$DEST" | awk '{print $1}')
-    if [ "$ACTUAL" = "$SOUNDFONT_SHA256" ]; then
-        echo "Soundfont already present and verified: $DEST"
-        exit 0
-    fi
-    echo "Soundfont hash mismatch (expected ${SOUNDFONT_SHA256:0:16}..., got ${ACTUAL:0:16}...)"
-    echo "Re-downloading..."
-    rm -f "$DEST"
+if [ -L "$DEST" ]; then
+    echo "ERROR: refusing linked soundfont destination: $DEST" >&2
+    exit 1
+fi
+if [ -f "$DEST" ] && verify_sha256 "$DEST" "$SOUNDFONT_SHA256" "bundled soundfont"; then
+    echo "Soundfont already present and verified: $DEST"
+    exit 0
 fi
 
 # --- Download ---
 mkdir -p "$(dirname "$DEST")"
-TMPFILE="$(create_temp_file sf2)"
+assert_dependency_disk_space "$(dirname "$DEST")" 0
+TMPFILE="$(create_temp_file .dxx-soundfont "$(dirname "$DEST")")"
+trap 'rm -f "$TMPFILE"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 echo "Downloading bundled soundfont (v${SOUNDFONT_VERSION})..."
 download_file "$TMPFILE" "$SOUNDFONT_URL"
 
-# --- Verify hash ---
-ACTUAL=$(sha256sum "$TMPFILE" | awk '{print $1}')
-if [ "$ACTUAL" != "$SOUNDFONT_SHA256" ]; then
-    echo "ERROR: SHA256 mismatch after download!"
-    echo "  Expected: $SOUNDFONT_SHA256"
-    echo "  Got:      $ACTUAL"
-    rm -f "$TMPFILE"
-    exit 1
-fi
+# Keep the existing asset until the replacement is verified
+verify_sha256 "$TMPFILE" "$SOUNDFONT_SHA256" "downloaded soundfont"
 
 mv "$TMPFILE" "$DEST"
 echo "Soundfont installed: $DEST"

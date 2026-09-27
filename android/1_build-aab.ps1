@@ -11,6 +11,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path $PSScriptRoot
+. (Join-Path $PSScriptRoot "helpers/test_host_platform.ps1")
 
 function Read-NumberedChoice {
     param(
@@ -34,22 +35,7 @@ function Read-NumberedChoice {
     }
 }
 
-# Set JAVA_HOME if not already set
-if (-not $env:JAVA_HOME) {
-    $_depBaseFile = Join-Path $repoRoot "dependency_base.txt"
-    if (-not (Test-Path $_depBaseFile)) {
-        Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
-        exit 1
-    }
-    $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
-    $jdk = Get-ChildItem "$DEP_BASE\jdk-*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
-    if ($jdk) {
-        $env:JAVA_HOME = $jdk.FullName
-        Write-Host "JAVA_HOME = $env:JAVA_HOME"
-    } else {
-        Write-Error "No JDK found in $DEP_BASE\jdk-*. Set JAVA_HOME manually"
-    }
-}
+Initialize-RegressionJavaEnvironment -RepoRoot $repoRoot
 
 # Prompt for build type (or use parameter)
 Write-Host ""
@@ -145,7 +131,7 @@ if (-not (Test-Path $gradleWrapperJar) -or -not (Test-Path $gradleWrapperProps))
 Write-Host ""
 Write-Host "Building AAB ($variant) for armeabi-v7a, arm64-v8a, x86_64..."
 Write-Host ""
-& (Join-Path $PSScriptRoot "gradlew.bat") -p $PSScriptRoot $task "-PskipBuildInfo" "-PversionCodeOverride=$versionCode"
+& (Resolve-RegressionGradleWrapper -AndroidDir $PSScriptRoot) -p $PSScriptRoot $task "-PskipBuildInfo" "-PversionCodeOverride=$versionCode"
 if ($LASTEXITCODE -ne 0) { throw "Gradle build failed with exit code $LASTEXITCODE" }
 
 # Find the AAB

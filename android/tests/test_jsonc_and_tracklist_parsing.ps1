@@ -56,7 +56,8 @@ try {
         throw 'Strict .tracklist.json parsing accepted a JSONC comment'
     }
 
-    $tracklistFiles = @(Get-AvailableMissionArchiveSources -Sources (Get-MissionArchiveSources -RepoRoot $repoRoot) |
+    # Sidecar validation requires checked-in JSON, not optional archive payloads
+    $tracklistFiles = @(Get-AvailableMissionArchiveSources -Sources (Get-MissionArchiveSources -RepoRoot $repoRoot) -Extensions @('.json') |
             ForEach-Object { Get-MissionTracklistFiles -Source $_ })
     foreach ($tracklistFile in $tracklistFiles) {
         $current = Read-StrictJsonFile -Path $tracklistFile.FullName

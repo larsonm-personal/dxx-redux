@@ -1010,7 +1010,7 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 		    { "kind", "player_ship_size" },
 		    { "label", "Player ship size" },
 		    { "base_game", base_player_ship_radius },
-		    { "mod", Polygon_models[Player_ship->model_num].rad },
+		    { "mod", (fix) Polygon_models[Player_ship->model_num].rad },
 		});
 	}
 	row["replacement_groups"] =

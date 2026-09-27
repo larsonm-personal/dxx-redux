@@ -7,31 +7,23 @@ _SET_VARS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _ANDROID_DIR="$(cd "$_SET_VARS_DIR/.." && pwd)"
 source "$_ANDROID_DIR/get_deps/helpers/resolve_dep_base.sh"
 
-# Find newest folder matching a prefix.
-# Uses a bash glob (expands in ascending order) instead of ls|sort -rV,
-# because Windows sort.exe shadows /usr/bin/sort in some Git Bash setups.
-_find_newest() {
-    local prefix="$1" result=""
-    for _d in "${LOCAL_DIR}/${prefix}"*; do
-        [ -d "$_d" ] && result="$_d"
-    done
-    echo "$result"
-}
+# Resolve configured versions rather than whichever directory sorts last
+source "$_ANDROID_DIR/get_deps/tool_versions.conf"
 
 # --- JDK ---
 if [ -z "${JAVA_HOME:-}" ]; then
-    _jdk=$(_find_newest "jdk-")
-    if [ -n "$_jdk" ]; then
+    _jdk="$LOCAL_DIR/jdk-$JDK_MAJOR"
+    if [ -d "$_jdk" ]; then
         export JAVA_HOME="$_jdk"
     else
-        echo "WARNING: No jdk-* folder found in $LOCAL_DIR" >&2
+        echo "WARNING: Configured JDK $JDK_MAJOR not found in $LOCAL_DIR" >&2
     fi
 fi
 
 # --- Android SDK ---
 if [ -z "${ANDROID_HOME:-}" ]; then
-    _sdk=$(_find_newest "android-sdk")
-    if [ -n "$_sdk" ]; then
+    _sdk="$LOCAL_DIR/android-sdk"
+    if [ -d "$_sdk" ]; then
         export ANDROID_HOME="$_sdk"
         export ANDROID_SDK_ROOT="$_sdk"
     else
@@ -41,13 +33,15 @@ fi
 
 # --- Android NDK ---
 if [ -z "${ANDROID_NDK_ROOT:-}" ]; then
-    _ndk=$(_find_newest "android-ndk-")
-    if [ -n "$_ndk" ]; then
+    _ndk="$LOCAL_DIR/android-ndk-$NDK_VERSION"
+    if [ -d "$_ndk" ]; then
         export ANDROID_NDK_ROOT="$_ndk"
     else
-        echo "WARNING: No android-ndk-* folder found in $LOCAL_DIR" >&2
+        echo "WARNING: Configured NDK $NDK_VERSION not found in $LOCAL_DIR" >&2
     fi
 fi
+
+if [ -n "${JAVA_HOME:-}" ]; then export PATH="$JAVA_HOME/bin:$PATH"; fi
 
 echo "JAVA_HOME=${JAVA_HOME:-}"
 echo "ANDROID_HOME=${ANDROID_HOME:-}"

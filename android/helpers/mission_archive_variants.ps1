@@ -1,14 +1,12 @@
 # Shared host access to the launcher mission archive variant policy
+. (Join-Path $PSScriptRoot 'test_host_platform.ps1')
 
 function Initialize-MetadataKotlinCli {
-    $cli = Join-Path $androidRoot 'mission-metadata-cli\build\install\mission-metadata-cli\bin\mission-metadata-cli.bat'
-    $jdkHome = 'C:\local\jdk-21'
-    if (Test-Path -LiteralPath $jdkHome -PathType Container) {
-        $env:JAVA_HOME = $jdkHome
-        $env:Path = "$jdkHome\bin;$env:Path"
-    }
+    Initialize-RegressionJavaEnvironment -RepoRoot (Split-Path $androidRoot)
+    $cliName = if (Test-RegressionWindowsHost) { 'mission-metadata-cli.bat' } else { 'mission-metadata-cli' }
+    $cli = Join-Path $androidRoot "mission-metadata-cli/build/install/mission-metadata-cli/bin/$cliName"
     if (-not $NoBuild) {
-        & (Join-Path $androidRoot 'gradlew.bat') -p $androidRoot :mission-metadata-cli:installDist --console=plain 2>&1 |
+        & (Resolve-RegressionGradleWrapper -AndroidDir $androidRoot) -p $androidRoot :mission-metadata-cli:installDist --console=plain 2>&1 |
             ForEach-Object { Write-Host ([string]$_) }
         if ($LASTEXITCODE -ne 0) { throw "Mission metadata Kotlin CLI build failed with exit code $LASTEXITCODE" }
     }

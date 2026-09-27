@@ -65,9 +65,15 @@ if ($conversion.Count -ne 1 -or $conversion[0].MissionJson -ne 'descent.fan_d2_c
     $conversion[0].MissionName -notmatch 'fan D2 conversion') {
     throw 'Fan conversion identity is ambiguous'
 }
-foreach ($suffix in @('zip', 'json', 'simulation.json')) {
+foreach ($suffix in @('json', 'simulation.json')) {
     if (-not (Test-Path -LiteralPath (Join-Path $repoRoot "game_data\mission_files\descent.fan_d2_conversion.$suffix"))) {
         throw "Renamed conversion is missing its paired $suffix file"
     }
 }
 Write-Host 'Original D1 and fan conversion identity and search priority passed'
+
+$archivePath = Join-Path $repoRoot 'game_data/mission_files/descent.fan_d2_conversion.zip'
+if (-not (Test-Path -LiteralPath $archivePath -PathType Leaf)) {
+    Write-Host 'RESULT: SKIP (browser checks passed; paired archive validation requires descent.fan_d2_conversion.zip)'
+    exit 2
+}

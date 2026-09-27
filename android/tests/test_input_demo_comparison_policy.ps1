@@ -66,5 +66,9 @@ try {
 }
 if (-not $spaceRejected) { throw 'Replay did not check available space during its wait loop' }
 Write-Host 'PASS: replay rejects low space before launch and checks its reserve during execution'
-& python -m unittest discover -s $PSScriptRoot -p test_d1_replay_parity_compare.py
+. (Join-Path (Split-Path $PSScriptRoot) 'helpers/test_host_platform.ps1')
+$python = Resolve-RegressionPythonCommand
+if (-not $python) { throw 'Python 3 is required for paired replay evidence tests' }
+$pythonPrefix = @($python.PrefixArguments)
+& $python.Path @pythonPrefix -m unittest discover -s $PSScriptRoot -p test_d1_replay_parity_compare.py
 if ($LASTEXITCODE -ne 0) { throw 'Paired replay evidence tests failed' }

@@ -35,7 +35,10 @@ class StrictJniUtf8Contracts(unittest.TestCase):
         self.assertNotIn("GetStringUTFChars", source)
         self.assertNotIn("ReleaseStringUTFChars", source)
         self.assertNotIn("NewStringUTF", source)
-        self.assertEqual(source.count("dxx_jni_string_to_utf8"), 3)
+        for argument in ("jpath", "jhog", "jsong", "jfilesDir", "jsourceFilename",
+                         "jextension", "jhogPath", "jentryName"):
+            with self.subTest(argument=argument):
+                self.assertIn(f"dxx_jni_string_to_utf8(env, {argument},", source)
         self.assertGreaterEqual(source.count("dxx_jni_string_from_utf8"), 2)
         self.assertLess(
             source.index("dxx_jni_string_to_utf8(env, jfilesDir"),

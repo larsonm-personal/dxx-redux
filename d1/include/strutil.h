@@ -1,6 +1,8 @@
 #ifndef _STRUTILS_H
 #define _STRUTILS_H
 
+#include <stddef.h>
+
 #if defined(macintosh)
 extern void snprintf(char *out_string, int size, char * format, ... );
 #endif

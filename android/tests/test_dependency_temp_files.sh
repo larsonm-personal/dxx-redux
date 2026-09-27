@@ -70,3 +70,17 @@ for helper in "$REPO_ROOT"/android/get_deps/helpers/*.sh; do
 done
 
 echo "PASS: dependency temporary files use portable final-X templates"
+
+# A caller may inspect failure in an if statement, disabling Bash errexit
+# The shared download helpers must still propagate the transport exit status
+curl() { return 23; }
+if download_file "$TEST_ROOT/failed-download" https://fixture.invalid/archive; then
+    echo 'Download helper swallowed curl failure' >&2
+    exit 1
+fi
+if download_text https://fixture.invalid/metadata; then
+    echo 'Metadata download helper swallowed curl failure' >&2
+    exit 1
+fi
+unset -f curl
+echo 'PASS: transport errors propagate through conditional callers'

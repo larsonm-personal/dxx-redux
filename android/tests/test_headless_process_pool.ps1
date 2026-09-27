@@ -45,4 +45,10 @@ Assert-Equal 7 @($testState.Results | Where-Object Id -eq 'failed')[0].Result.Ex
 Assert-Equal $true @($testState.Results | Where-Object Id -eq 'timeout')[0].Result.TimedOut 'timeout flag'
 Assert-Equal 'fast' @($testState.Results | Where-Object Id -eq 'fast')[0].Result.StandardOutput.Trim() 'stdout capture'
 
+if ([Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Runtime.InteropServices.OSPlatform]::Linux)) {
+    $python = Resolve-RegressionPythonCommand
+    & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_linux_process_lifetime.py')
+    if ($LASTEXITCODE -ne 0) { throw 'Linux process lifetime integration failed' }
+}
+
 Write-Host 'Headless process pool tests passed'

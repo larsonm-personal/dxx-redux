@@ -11,6 +11,7 @@ source "$SCRIPT_DIR/resolve_dep_base.sh"
 INSTALL_DIR="$LOCAL_DIR"
 
 DEST="$INSTALL_DIR/android-ndk-$NDK_VERSION"
+begin_dependency_install "$DEST"
 
 if [ -f "$DEST/build/cmake/android.toolchain.cmake" ]; then
     echo "Android NDK $NDK_VERSION already installed at $DEST"
@@ -21,13 +22,22 @@ URL="$NDK_URL"
 if DERIVED_URL="$(get_ndk_download_url "$NDK_VERSION" 2>/dev/null)"; then
     URL="$DERIVED_URL"
 fi
-TMPFILE="$(create_temp_file ndk.zip)"
+prepare_dependency_workspace "$DEST" 4
+TMPFILE="$DEPENDENCY_ARCHIVE"
+STAGE_DIR="$DEPENDENCY_STAGE_DIR"
 
 echo "Downloading Android NDK $NDK_VERSION (~1.1 GB)..."
 download_file "$TMPFILE" "$URL"
 
 echo "Extracting to $INSTALL_DIR..."
-unzip -q -o "$TMPFILE" -d "$INSTALL_DIR"
+unzip -q -o "$TMPFILE" -d "$STAGE_DIR"
+STAGED_NDK="$STAGE_DIR/android-ndk-$NDK_VERSION"
+if [ ! -f "$STAGED_NDK/build/cmake/android.toolchain.cmake" ] \
+    || [ "$(sed -n 's/^Pkg.Revision[[:space:]]*=[[:space:]]*//p' "$STAGED_NDK/source.properties" | tr -d '\r')" != "$NDK_FULL_VERSION" ]; then
+    echo "ERROR: staged NDK does not match $NDK_FULL_VERSION" >&2
+    exit 1
+fi
+publish_dependency_directory "$STAGED_NDK" "$DEST"
 
 rm -f "$TMPFILE"
 

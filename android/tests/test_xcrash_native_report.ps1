@@ -18,7 +18,7 @@ $apk = Join-Path $androidDir "app\build\outputs\apk\debug\app-debug.apk"
 $depBase = (Get-Content (Join-Path $repoRoot "dependency_base.txt") -First 1).Trim()
 $adb = Resolve-RegressionAndroidSdkTool -DepBase $depBase -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
 $sdkRoot = Split-Path (Split-Path $adb)
-$aapt2 = Get-ChildItem (Join-Path $sdkRoot "build-tools") -Filter "aapt2.exe" -Recurse |
+$aapt2 = Get-ChildItem (Join-Path $sdkRoot "build-tools") -Filter (Get-RegressionHostExecutableNames -BaseName "aapt2")[0] -Recurse |
     Sort-Object FullName -Descending |
     Select-Object -First 1 -ExpandProperty FullName
 $package = "com.dxxredux.app"
@@ -41,9 +41,8 @@ if ($Serial -notlike "emulator-*") {
     Fail "Refusing to signal-crash a non-emulator device"
 }
 if (-not $NoBuild) {
-    $env:JAVA_HOME = "C:\local\jdk-21"
-    $env:Path = "$env:JAVA_HOME\bin;$env:Path"
-    & (Join-Path $androidDir "gradlew.bat") -p $androidDir :app:assembleDebug
+    Initialize-RegressionJavaEnvironment -RepoRoot $repoRoot
+    & (Resolve-RegressionGradleWrapper -AndroidDir $androidDir) -p $androidDir :app:assembleDebug
     if ($LASTEXITCODE -ne 0) {
         Fail "Android build failed"
     }

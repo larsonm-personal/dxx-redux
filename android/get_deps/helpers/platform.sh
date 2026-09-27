@@ -80,9 +80,13 @@ get_ndk_download_url() {
 
 get_jdk_download_url() {
     local jdk_major="$1"
-    local os_token
+    local version="$2"
+    local build="$3"
+    local os_token archive_kind="tar.gz"
     os_token="$(get_adoptium_os_token)" || return 1
-    printf 'https://api.adoptium.net/v3/binary/latest/%s/ga/%s/x64/jdk/hotspot/normal/eclipse?project=jdk\n' "$jdk_major" "$os_token"
+    [ "$os_token" != "windows" ] || archive_kind="zip"
+    printf 'https://github.com/adoptium/temurin%s-binaries/releases/download/jdk-%s%%2B%s/OpenJDK%sU-jdk_x64_%s_hotspot_%s_%s.%s\n' \
+        "$jdk_major" "$version" "$build" "$jdk_major" "$os_token" "$version" "$build" "$archive_kind"
 }
 
 is_windows_target_path() {
@@ -118,12 +122,12 @@ download_file() {
 
     if command -v curl >/dev/null 2>&1; then
         curl -fSL --progress-bar -o "$destination" "$url"
-        return 0
+        return $?
     fi
 
     if command -v wget >/dev/null 2>&1; then
         wget --progress=dot:giga -O "$destination" "$url"
-        return 0
+        return $?
     fi
 
     echo "ERROR: neither curl nor wget is available for downloads" >&2
@@ -141,7 +145,7 @@ download_text() {
             curl_args+=(-H "$header")
         done
         curl -fsSL "${curl_args[@]}" "$url"
-        return 0
+        return $?
     fi
 
     if command -v wget >/dev/null 2>&1; then
@@ -151,9 +155,188 @@ download_text() {
             wget_args+=(--header="$header")
         done
         wget -qO- "${wget_args[@]}" "$url"
-        return 0
+        return $?
     fi
 
     echo "ERROR: neither curl nor wget is available for downloads" >&2
     return 1
+}
+
+# Check the reported version before reusing or publishing executable tools
+verify_dependency_tool_version() {
+    local expected="$1" mode="$2"
+    shift 2
+    local output actual
+    output="$("$@")" || return 1
+    if [[ ! "$output" =~ (^|[[:space:]])v?([0-9]+(\.[0-9]+)+([+-][[:alnum:].-]+)?)($|[[:space:]]) ]]; then
+        echo "ERROR: tool did not report a version: $output" >&2
+        return 1
+    fi
+    actual="${BASH_REMATCH[2]}"
+    if [ "$actual" != "$expected" ]; then
+        if [ "$mode" != prefix ] || [[ "$actual" != "$expected".* ]]; then
+            echo "ERROR: expected tool version $expected, found $actual" >&2
+            return 1
+        fi
+    fi
+    printf '%s\n' "$output"
+}
+
+# Publish a validated, staged directory and restore the old install on failure
+publish_dependency_directory() {
+    local staged="$1" destination="$2"
+    local backup=""
+    if [ -n "${DEPENDENCY_INSTALL_STATE:-}" ]; then
+        destination="$(cd "$(dirname "$destination")" && pwd -P)/$(basename "$destination")"
+        if [ "$destination" != "$DEPENDENCY_INSTALL_DESTINATION" ]; then
+            echo "ERROR: publication destination does not match the held installer lock" >&2
+            return 1
+        fi
+    fi
+    if [ ! -d "$staged" ] || [ -L "$staged" ] || [ -L "$destination" ]; then
+        echo "ERROR: refusing invalid or linked installation path: $destination" >&2
+        return 1
+    fi
+    if [ -e "$destination" ]; then
+        if [ -n "${DEPENDENCY_INSTALL_STATE:-}" ]; then
+            backup="$DEPENDENCY_INSTALL_STATE/work/previous"
+        else
+            backup="$(create_temp_dir .dxx-install-backup "$(dirname "$destination")")" || return 1
+            rmdir "$backup" || return 1
+        fi
+        if ! mv "$destination" "$backup"; then return 1; fi
+    fi
+    if ! mv "$staged" "$destination"; then
+        if [ -n "$backup" ]; then
+            if ! mv "$backup" "$destination"; then
+                echo "ERROR: restore $backup to $destination before retrying" >&2
+            fi
+        fi
+        return 1
+    fi
+    if [ -n "$backup" ]; then rm -rf "$backup"; fi
+}
+
+# Recover only our fixed transaction, while holding the shared destination-volume lock
+recover_dependency_install() {
+    local work="$DEPENDENCY_INSTALL_STATE/work" leaf destination
+    if [ ! -e "$work" ] && [ ! -L "$work" ]; then return 0; fi
+    if [ ! -d "$work" ] || [ -L "$work" ]; then
+        echo "ERROR: unsafe dependency transaction directory: $work" >&2
+        return 1
+    fi
+    if [ -e "$work/previous" ] || [ -L "$work/previous" ]; then
+        if [ ! -f "$work/destination" ] || [ -L "$work/destination" ]; then return 1; fi
+        leaf="$(cat "$work/destination")" || return 1
+        if [[ ! "$leaf" =~ ^[[:alnum:]][[:alnum:]._+-]*$ ]]; then
+            echo "ERROR: invalid dependency recovery destination" >&2
+            return 1
+        fi
+        destination="$(dirname "$DEPENDENCY_INSTALL_STATE")/$leaf"
+        if [ -L "$destination" ] || [ -L "$work/previous" ] || [ ! -d "$work/previous" ]; then
+            echo "ERROR: unsafe dependency recovery paths" >&2
+            return 1
+        fi
+        if [ ! -e "$destination" ]; then
+            mv "$work/previous" "$destination" || return 1
+        elif [ ! -d "$destination" ]; then
+            echo "ERROR: unexpected file at dependency recovery destination" >&2
+            return 1
+        fi
+    fi
+    rm -rf "$work"
+}
+
+finish_dependency_install() {
+    local status=$?
+    recover_dependency_install || status=1
+    exit "$status"
+}
+
+# Linux flock descriptors stay open in installer children, including after parent SIGKILL
+# Keep the lock inode permanently: unlinking it would permit two simultaneous owners
+begin_dependency_install() {
+    local destination="$1" parent timeout="${DXX_DEPENDENCY_LOCK_TIMEOUT_SECONDS:-60}"
+    if [ "$(get_host_os)" != linux ]; then return 0; fi
+    if ! command -v flock >/dev/null 2>&1; then
+        echo "ERROR: Linux dependency installation requires flock (util-linux)" >&2
+        return 1
+    fi
+    if [[ ! "$timeout" =~ ^[0-9]{1,4}$ ]] || [ "$timeout" -gt 3600 ]; then
+        echo "ERROR: dependency lock timeout must be 0..3600 seconds" >&2
+        return 1
+    fi
+    parent="$(cd "$(dirname "$destination")" && pwd -P)" || return 1
+    DEPENDENCY_INSTALL_DESTINATION="$parent/$(basename "$destination")"
+    DEPENDENCY_INSTALL_STATE="$parent/.dxx-install-state"
+    if [ -L "$DEPENDENCY_INSTALL_STATE" ]; then return 1; fi
+    mkdir -p "$DEPENDENCY_INSTALL_STATE" || return 1
+    if [ -L "$DEPENDENCY_INSTALL_STATE/lock" ] || { [ -e "$DEPENDENCY_INSTALL_STATE/lock" ] && [ ! -f "$DEPENDENCY_INSTALL_STATE/lock" ]; }; then return 1; fi
+    exec {DEPENDENCY_INSTALL_LOCK_FD}>>"$DEPENDENCY_INSTALL_STATE/lock" || return 1
+    if ! flock -w "$timeout" "$DEPENDENCY_INSTALL_LOCK_FD"; then
+        echo "ERROR: another dependency installer owns $parent; retry after it finishes" >&2
+        return 1
+    fi
+    if [ ! -e "$DEPENDENCY_INSTALL_STATE/format" ]; then
+        if [ -n "$(find "$DEPENDENCY_INSTALL_STATE" -mindepth 1 -maxdepth 1 ! -name lock -print -quit)" ]; then
+            echo "ERROR: refusing unrecognized dependency transaction state" >&2
+            return 1
+        fi
+        printf '%s\n' dxx-install-v1 >"$DEPENDENCY_INSTALL_STATE/format"
+    fi
+    if [ -L "$DEPENDENCY_INSTALL_STATE/format" ] || [ ! -f "$DEPENDENCY_INSTALL_STATE/format" ] || [ "$(cat "$DEPENDENCY_INSTALL_STATE/format")" != dxx-install-v1 ]; then return 1; fi
+    recover_dependency_install || return 1
+    trap finish_dependency_install EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+}
+
+# Keep a reserve in addition to estimated archive and unpacked installation bytes
+assert_dependency_disk_space() {
+    local directory="$1" expansion_gb="${2:-0}"
+    local reserve_gb="${DXX_DEPENDENCY_MIN_FREE_GB:-4}"
+    local disk_info available_kb required_kb
+    if [[ ! "$reserve_gb" =~ ^[0-9]{1,7}$ ]] || [[ ! "$expansion_gb" =~ ^[0-9]{1,7}$ ]]; then
+        echo "ERROR: dependency disk space limits must be whole GiB values" >&2
+        return 1
+    fi
+    reserve_gb=$((10#$reserve_gb))
+    expansion_gb=$((10#$expansion_gb))
+    if [ "$reserve_gb" -lt 1 ] || [ "$reserve_gb" -gt 1048576 ] || [ "$expansion_gb" -gt 1048576 ]; then
+        echo "ERROR: dependency disk space limit is out of range" >&2
+        return 1
+    fi
+    disk_info="$(df -Pk "$directory")" || return 1
+    available_kb="$(printf '%s\n' "$disk_info" | awk 'NR == 2 {print $4}')"
+    if [[ ! "$available_kb" =~ ^[0-9]+$ ]]; then
+        echo "ERROR: cannot determine free space for $directory" >&2
+        return 1
+    fi
+    required_kb=$(((reserve_gb + expansion_gb) * 1024 * 1024))
+    if [ "$available_kb" -lt "$required_kb" ]; then
+        echo "ERROR: insufficient space at $directory: $available_kb KiB free, $required_kb KiB required for installation and reserve" >&2
+        return 1
+    fi
+}
+
+# Use one owned workspace on the destination volume for small tool installers
+# Call in the installer process, after any early already-installed return
+prepare_dependency_workspace() {
+    local destination="$1"
+    assert_dependency_disk_space "$(dirname "$destination")" "${2:-1}"
+    if [ -n "${DEPENDENCY_INSTALL_STATE:-}" ]; then
+        DEPENDENCY_WORK_DIR="$DEPENDENCY_INSTALL_STATE/work"
+        mkdir "$DEPENDENCY_WORK_DIR" || return 1
+        printf '%s\n' "$(basename "$destination")" >"$DEPENDENCY_WORK_DIR/destination"
+    else
+        DEPENDENCY_WORK_DIR="$(create_temp_dir .dxx-tool-stage "$(dirname "$destination")")" || return 1
+        trap 'rm -rf "$DEPENDENCY_WORK_DIR"' EXIT
+        trap 'exit 130' INT
+        trap 'exit 143' TERM
+    fi
+    DEPENDENCY_STAGE_DIR="$DEPENDENCY_WORK_DIR/install"
+    # Used by the calling installer after this helper returns
+    # shellcheck disable=SC2034
+    DEPENDENCY_ARCHIVE="$DEPENDENCY_WORK_DIR/archive"
+    mkdir "$DEPENDENCY_STAGE_DIR"
 }

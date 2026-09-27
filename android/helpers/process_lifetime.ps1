@@ -1,3 +1,5 @@
+. (Join-Path $PSScriptRoot 'test_host_platform.ps1')
+
 function Initialize-RegressionProcessLifetime {
     if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) { return }
     if (-not ('DxxRegression.ProcessLifetime' -as [type])) {
@@ -18,4 +20,19 @@ function Stop-RegressionChildProcess {
         } else { $Process.Kill() }
     }
     $Process.WaitForExit()
+}
+
+function Set-RegressionProcessLifetimeStartInfo {
+    param([Parameter(Mandatory)][Diagnostics.ProcessStartInfo]$StartInfo)
+
+    if (-not [Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Runtime.InteropServices.OSPlatform]::Linux)) { return }
+    if ($StartInfo.Arguments) { throw 'Linux supervision requires ArgumentList instead of a quoted Arguments string' }
+    $python = Resolve-RegressionPythonCommand
+    if (-not $python) { throw 'Python 3.9+ is required for Linux child supervision' }
+    $command = @($StartInfo.FileName) + @($StartInfo.ArgumentList)
+    $StartInfo.ArgumentList.Clear()
+    foreach ($argument in @($python.PrefixArguments) + @('-I', (Join-Path $PSScriptRoot 'process_lifetime_linux.py'), [string]$PID, '--') + $command) {
+        $StartInfo.ArgumentList.Add($argument)
+    }
+    $StartInfo.FileName = $python.Path
 }
