@@ -433,20 +433,22 @@ void show_order_form()
 		return;
 #ifndef EDITOR
 	char    exit_screen[PATH_MAX];
+	char    presentation_screen[PATH_MAX];
 
 	key_flush();
 
 	strcpy(exit_screen, select_screen_resolution("ordrd2o.pcx", "ordrd2ob.pcx")); // OEM
-	if (! PHYSFSX_exists(exit_screen,1))
+	// Check the same presentation archive that show_title_screen will read
+	if (!d1_in_d2_presentation_resource(exit_screen, presentation_screen, sizeof(presentation_screen)))
 		strcpy(exit_screen, select_screen_resolution("orderd2.pcx", "orderd2b.pcx")); // SHAREWARE, prefer mac if hires
-	if (! PHYSFSX_exists(exit_screen,1))
+	if (!d1_in_d2_presentation_resource(exit_screen, presentation_screen, sizeof(presentation_screen)))
 		strcpy(exit_screen, HIRESMODE?"orderd2.pcx":"orderd2b.pcx"); // SHAREWARE, have to rescale
-	if (! PHYSFSX_exists(exit_screen,1))
+	if (!d1_in_d2_presentation_resource(exit_screen, presentation_screen, sizeof(presentation_screen)))
 		strcpy(exit_screen, select_screen_resolution("warning.pcx", "warningb.pcx")); // D1
-	if (! PHYSFSX_exists(exit_screen,1))
+	if (!d1_in_d2_presentation_resource(exit_screen, presentation_screen, sizeof(presentation_screen)))
 		return; // D2 registered
 
-	show_title_screen(exit_screen,1,0);
+	show_title_screen(presentation_screen,1,0);
 
 #endif
 }
