@@ -767,12 +767,12 @@ fun EnginePreferencesPage(
                     Triple(
                         GuidebotRoutingMode.ENHANCED,
                         "Enhanced",
-                        "Finds prerequisites and recovers from difficult routes",
+                        "improved routing: finds switch prereqs, etc.",
                     ),
                     Triple(
                         GuidebotRoutingMode.ORIGINAL,
                         "Original",
-                        "Classic Redux routing, including its limitations",
+                        "classic descent routing and goals",
                     ),
                 ).forEach { (mode, label, description) ->
                     Row(
