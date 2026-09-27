@@ -15,6 +15,7 @@ Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot '../helpers/host_processes.ps1')
 . (Join-Path $PSScriptRoot '../helpers/test_host_platform.ps1')
 . (Join-Path $PSScriptRoot '../helpers/headless_process_pool.ps1')
+. (Join-Path $PSScriptRoot '../helpers/atomic_text_file.ps1')
 $RepoRoot = [IO.Path]::GetFullPath($RepoRoot)
 $comparison = if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
 $base = [IO.Path]::GetFullPath((Get-Content -LiteralPath (Join-Path $RepoRoot 'dependency_base.txt') -First 1).Trim())
@@ -33,12 +34,7 @@ $lock = $null
 function Save-SdkOwnership {
     # Older cleaners must reject pending quarantine recovery rather than orphan it
     $state.Schema = if (@($state.Packages | Where-Object { $_.Retirement -and $_.Retirement.Recovering }).Count) { 2 } else { 1 }
-    $temporary = "$statePath.new"
-    try {
-        [IO.File]::WriteAllText($temporary, ($state | ConvertTo-Json -Depth 8) + "`n", [Text.UTF8Encoding]::new($false))
-        if (Test-Path -LiteralPath $statePath) { [IO.File]::Replace($temporary, $statePath, [NullString]::Value) }
-        else { [IO.File]::Move($temporary, $statePath) }
-    } finally { if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Force } }
+    Write-Utf8NoBomTextAtomically -Path $statePath -Text (($state | ConvertTo-Json -Depth 8) + "`n")
 }
 function Get-SdkFamily([string]$Id) {
     if ($Id -match '^(build-tools|platforms|cmake|ndk);[A-Za-z0-9][A-Za-z0-9._+-]*$') { return $Matches[1] }

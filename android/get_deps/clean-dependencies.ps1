@@ -14,6 +14,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot '../helpers/host_processes.ps1')
 . (Join-Path $PSScriptRoot '../helpers/verified_dependencies.ps1')
+. (Join-Path $PSScriptRoot '../helpers/atomic_text_file.ps1')
 $comparison = if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
 $pathComparer = if ($comparison -eq [StringComparison]::Ordinal) { [StringComparer]::Ordinal } else { [StringComparer]::OrdinalIgnoreCase }
 $RepoRoot = [IO.Path]::GetFullPath($RepoRoot)
@@ -65,17 +66,7 @@ function Get-ConfiguredDependencyNames([string]$Checkout) {
 }
 
 function Save-DependencyOwnership {
-    $temporary = "$statePath.new"
-    try {
-        [IO.File]::WriteAllText($temporary, ($state | ConvertTo-Json -Depth 8) + "`n", [Text.UTF8Encoding]::new($false))
-        if (Test-Path -LiteralPath $statePath) {
-            [IO.File]::Replace($temporary, $statePath, [NullString]::Value)
-        } else {
-            [IO.File]::Move($temporary, $statePath)
-        }
-    } finally {
-        if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Force }
-    }
+    Write-Utf8NoBomTextAtomically -Path $statePath -Text (($state | ConvertTo-Json -Depth 8) + "`n")
 }
 
 function Get-DependencyTree([string]$Path) {

@@ -92,7 +92,7 @@ function Test-AllLobbyPlayersReady {
     param([string]$Serial, [int]$ExpectedPlayers = 2)
 
     $mp = Get-MpIntrospection -Serial $Serial
-    if (-not $mp -or -not $mp.lobby) {
+    if (-not $mp -or -not $mp.PSObject.Properties['lobby'] -or -not $mp.lobby) {
         return $false
     }
 
@@ -340,7 +340,7 @@ try {
 
     $lobbyCreated = Wait-ForCondition -Description "Player 1 in lobby" -TimeoutSec 10 -PollMs 750 -Condition {
         $mp = Get-MpIntrospection -Serial $EMU1
-        return ($mp -and $mp.lobby -and $mp.lobby.is_host -eq $true)
+        return ($mp -and $mp.PSObject.Properties['lobby'] -and $mp.lobby -and $mp.lobby.is_host -eq $true)
     }
     if (-not $lobbyCreated) {
         Write-Status "FAIL: Lobby not created" "Red"
@@ -368,7 +368,7 @@ try {
 
     $joined = Wait-ForCondition -Description "Both players in lobby" -TimeoutSec 10 -PollMs 750 -Condition {
         $mp = Get-MpIntrospection -Serial $EMU2
-        return ($mp -and $mp.lobby -and $mp.lobby.player_count -eq 2)
+        return ($mp -and $mp.PSObject.Properties['lobby'] -and $mp.lobby -and $mp.lobby.player_count -eq 2)
     }
     if (-not $joined) {
         Write-Status "FAIL: Player 2 didn't join lobby" "Red"
@@ -410,7 +410,7 @@ try {
     }
     if (-not $bothReady) {
         $mp = Get-MpIntrospection -Serial $EMU1
-        if ($mp -and $mp.lobby -and $mp.lobby.PSObject.Properties['players']) {
+        if ($mp -and $mp.PSObject.Properties['lobby'] -and $mp.lobby -and $mp.lobby.PSObject.Properties['players']) {
             $readySummary = @($mp.lobby.players) | ForEach-Object {
                 "$($_.callsign)=$($_.ready)"
             }

@@ -13,11 +13,26 @@ function Write-Utf8NoBomTextAtomically {
     try {
         [System.IO.File]::WriteAllText($temporary, $Text, [System.Text.UTF8Encoding]::new($false))
         if (Test-Path -LiteralPath $fullPath -PathType Leaf) {
-            [System.IO.File]::Replace($temporary, $fullPath, $backup)
+            $deadline = [DateTime]::UtcNow.AddSeconds(3)
+            while ($true) {
+                try {
+                    [System.IO.File]::Replace($temporary, $fullPath, $backup)
+                    break
+                } catch {
+                    $cause = $_.Exception.GetBaseException()
+                    $nativeError = $cause.HResult -band 0xffff
+                    # Windows readers/scanners can briefly deny replacement of the old file
+                    if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+                        $nativeError -notin @(32, 33, 1175) -or [DateTime]::UtcNow -ge $deadline) { throw }
+                    Start-Sleep -Milliseconds 50
+                }
+            }
         } else {
             [System.IO.File]::Move($temporary, $fullPath)
         }
     } finally {
-        Remove-Item -LiteralPath $temporary, $backup -Force -ErrorAction SilentlyContinue
+        foreach ($scratch in @($temporary, $backup)) {
+            Remove-Item -LiteralPath $scratch -Force -ErrorAction SilentlyContinue
+        }
     }
 }

@@ -4,9 +4,40 @@ param([switch]$Integration)
 $ErrorActionPreference = 'Stop'
 $androidRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $androidRoot 'helpers/host_metadata_workspace.ps1')
+. (Join-Path $androidRoot 'helpers/atomic_text_file.ps1')
 $root = Join-Path $androidRoot ('temp/metadata-workspace-test-' + [guid]::NewGuid().ToString('N'))
 try {
     New-Item -ItemType Directory -Path $root | Out-Null
+    # Exercise atomic publication while a Windows reader temporarily denies deletion
+    if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
+        Add-Type -TypeDefinition @'
+public static class AtomicPublicationReader {
+    public static async System.Threading.Tasks.Task ReleaseLater(System.IDisposable reader) {
+        await System.Threading.Tasks.Task.Delay(250);
+        reader.Dispose();
+    }
+}
+'@
+        $publication = Join-Path $root 'publication.json'
+        [IO.File]::WriteAllText($publication, 'old')
+        $reader = [IO.File]::Open($publication, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        $release = [AtomicPublicationReader]::ReleaseLater($reader)
+        try { Write-Utf8NoBomTextAtomically -Path $publication -Text 'new' }
+        finally { $release.GetAwaiter().GetResult() | Out-Null; $reader.Dispose() }
+        if ([IO.File]::ReadAllText($publication) -ne 'new') { throw 'Transient reader prevented atomic publication' }
+        $reader = [IO.File]::Open($publication, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        $rejected = $false
+        try {
+            try { Write-Utf8NoBomTextAtomically -Path $publication -Text 'must not publish' }
+            catch { $rejected = $true }
+        } finally { $reader.Dispose() }
+        if (-not $rejected -or [IO.File]::ReadAllText($publication) -ne 'new') {
+            throw 'Persistent reader did not preserve the previous publication'
+        }
+        if (@(Get-ChildItem -LiteralPath $root -Force | Where-Object Name -Match '\.(tmp|bak)$').Count) {
+            throw 'Atomic publication left scratch files behind'
+        }
+    }
     foreach ($path in @('raw/mission/mission.hog', 'stages/mission/mission.hog',
             'raw/mission.metadata.json', 'metadata/mission.json', 'logs/mission.log', 'summary.json')) {
         $full = Join-Path $root $path

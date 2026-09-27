@@ -6,10 +6,11 @@ $helpersDir = Join-Path $scriptDir 'helpers'
 . "$helpersDir/test_process_output.ps1"
 . "$helpersDir/test_suite_progress.ps1"
 . "$helpersDir/test_host_platform.ps1"
+. "$helpersDir/test_execution_evidence.ps1"
 
 # Load the real runner functions without starting the full suite
 foreach ($source in @(
-        @{ Path = "$scriptDir/run_all_tests.ps1"; Names = @('Invoke-SingleTest', 'ConvertTo-ArgumentText', 'Get-PassingResultNotes', 'Add-ReportSidecarLog', 'Test-SingleEmulatorFailureNeedsRecovery') },
+        @{ Path = "$scriptDir/run_all_tests.ps1"; Names = @('Invoke-SingleTest', 'Save-SuiteTestEvidence', 'ConvertTo-ArgumentText', 'Get-PassingResultNotes', 'Add-ReportSidecarLog', 'Test-SingleEmulatorFailureNeedsRecovery') },
         @{ Path = "$helpersDir/test_helpers.ps1"; Names = @('Get-TestStatusFromExitCode') }
     )) {
     $ast = [Management.Automation.Language.Parser]::ParseFile($source.Path, [ref]$null, [ref]$null)
@@ -26,6 +27,8 @@ foreach ($source in @(
 $ReportDir = Join-Path $scriptDir 'temp/test_runner_result'
 New-Item -ItemType Directory -Force -Path $ReportDir | Out-Null
 $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+$evidenceContext = New-TestExecutionEvidenceContext -RepositoryRoot (Split-Path $scriptDir) -ReportDir $ReportDir -ReportPath (Join-Path $ReportDir "report_$timestamp.md")
+$script:evidenceFailed = $false
 $TestTimeoutSeconds = 10
 $StopOnFail = $false
 $reportSidecarLogsByTestName = @{}
@@ -78,5 +81,13 @@ foreach ($test in $executionTests) {
 if ($script:results.Count -ne 3 -or $script:timeoutCount -ne 1 -or
     $script:failCount -ne 1 -or $script:passCount -ne 1) {
     throw 'Runner did not retain all results and counters after timeout'
+}
+if ($script:evidenceFailed) { throw 'Runner failed to save execution evidence' }
+$evidence = Get-Content -LiteralPath $evidenceContext.Path -Raw | ConvertFrom-Json
+foreach ($test in $executionTests) {
+    $observations = @($evidence.observations | Where-Object { $_.name -eq $test.Name -and $_.run_id -eq $evidenceContext.RunId })
+    if ($observations.Count -ne 1 -or $observations[0].status -ne $test.Outcome) {
+        throw "Runner did not finalize execution evidence for $($test.Name)"
+    }
 }
 Write-Host 'Runner result regression passed'
