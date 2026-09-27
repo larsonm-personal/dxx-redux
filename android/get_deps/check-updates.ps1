@@ -701,16 +701,6 @@ function Resolve-Selection($inputString, $items) {
     return $resolved
 }
 
-function Get-BashCommandPath {
-    foreach ($name in @("bash", "sh")) {
-        $command = Get-Command $name -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($command) {
-            return $command.Source
-        }
-    }
-    return $null
-}
-
 function Invoke-InstallerScript($path) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "Installer script not found: $path"
@@ -725,9 +715,6 @@ function Invoke-InstallerScript($path) {
             }
             ".sh" {
                 $bash = Get-BashCommandPath
-                if (-not $bash) {
-                    throw "bash or sh was not found on PATH"
-                }
                 & $bash $path
                 if ($LASTEXITCODE -ne 0) {
                     throw "Installer script failed with exit code $LASTEXITCODE`: $path"

@@ -182,6 +182,16 @@ verify_dependency_tool_version() {
     printf '%s\n' "$output"
 }
 
+# Windows cannot replace an installation while its executables are running
+# Keep native process inspection here so individual installers stay portable
+assert_dependency_not_in_use() {
+    local destination="$1" helper powershell
+    if [ "$(get_host_os)" != windows ] || [ ! -d "$destination" ]; then return 0; fi
+    helper="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/assert_install_not_in_use.ps1"
+    powershell="$(command -v powershell.exe || command -v pwsh.exe)" || return 1
+    "$powershell" -NoProfile -NonInteractive -File "$(cygpath -w "$helper")" -InstallDirectory "$(cygpath -w "$destination")"
+}
+
 # Publish a validated, staged directory and restore the old install on failure
 publish_dependency_directory() {
     local staged="$1" destination="$2"
@@ -204,7 +214,10 @@ publish_dependency_directory() {
             backup="$(create_temp_dir .dxx-install-backup "$(dirname "$destination")")" || return 1
             rmdir "$backup" || return 1
         fi
-        if ! mv "$destination" "$backup"; then return 1; fi
+        if ! mv "$destination" "$backup"; then
+            echo "ERROR: cannot move the existing installation at $destination; check directory permissions and close applications using it, then retry" >&2
+            return 1
+        fi
     fi
     if ! mv "$staged" "$destination"; then
         if [ -n "$backup" ]; then

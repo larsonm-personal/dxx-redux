@@ -11,12 +11,38 @@ function Get-HomeDirectory {
         return $env:HOME
     }
 
-    $home = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
-    if ($home) {
-        return $home
+    $userHome = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+    if ($userHome) {
+        return $userHome
     }
 
     return "~"
+}
+
+# Dependency shell scripts require Bash, and Windows installs require MSYS/Git
+# Bash rather than the WSL launcher (which would select Linux downloads)
+function Get-BashCommandPath {
+    $windowsHost = (Get-HostPlatform) -eq 'Windows'
+    $candidates = @(Get-Command bash -CommandType Application -All -ErrorAction SilentlyContinue | ForEach-Object { $_.Source })
+    if ($windowsHost) {
+        $git = Get-Command git -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($git) {
+            $gitRoot = Split-Path (Split-Path $git.Source -Parent) -Parent
+            $candidates += Join-Path $gitRoot 'bin/bash.exe'
+        }
+        foreach ($base in @($env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:LOCALAPPDATA)) {
+            if ($base) { $candidates += Join-Path $base 'Git/bin/bash.exe' }
+        }
+    }
+    foreach ($candidate in @($candidates | Select-Object -Unique)) {
+        if (-not (Test-Path -LiteralPath $candidate)) { continue }
+        # Do not launch WSL just to discover it is the wrong host
+        if ($windowsHost -and $env:WINDIR -and $candidate.StartsWith($env:WINDIR + '\', [StringComparison]::OrdinalIgnoreCase)) { continue }
+        $hostName = @(& $candidate -c 'test -n "$BASH_VERSION" && uname -s' 2>$null)
+        if ($LASTEXITCODE -ne 0) { continue }
+        if (-not $windowsHost -or ($hostName -match '^(MINGW|MSYS|CYGWIN|.*_NT)')) { return $candidate }
+    }
+    throw 'Native Bash was not found; install Git for Windows on Windows or Bash on Linux/macOS'
 }
 
 function Get-DefaultDependencyBase {

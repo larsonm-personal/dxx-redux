@@ -15,6 +15,7 @@ $checkUpdates = Get-Content -LiteralPath $checkUpdatesPath -Raw
 $powerShellUpdater = Get-Content -LiteralPath $powerShellUpdaterPath -Raw
 $versions = Get-Content -LiteralPath $versionsPath -Raw
 $jdkUpdater = Get-Content -LiteralPath $jdkUpdaterPath -Raw
+$platformHelper = Get-Content -LiteralPath (Join-Path $repoRoot 'android/get_deps/helpers/platform.sh') -Raw
 $vscodeSync = Get-Content -LiteralPath $vscodeSyncPath -Raw
 $vscodeSettings = Get-Content -LiteralPath $vscodeSettingsPath -Raw
 . (Join-Path $repoRoot 'android/get_deps/helpers/safe_conf_value.ps1')
@@ -34,11 +35,11 @@ Assert-Matches $checkUpdates '\$selectedInstall\s*=\s*@\(@\(\$selectedInstall\)\
     "target-update install selections use array addition"
 Assert-Matches $checkUpdates 'Installer script failed with exit code \$LASTEXITCODE' `
     "a failed Bash installer stops check-updates"
-Assert-Matches $jdkUpdater 'create_temp_dir "\.jdk-\$JDK_MAJOR-stage" "\$INSTALL_DIR"' `
+Assert-Matches $jdkUpdater 'prepare_dependency_workspace "\$DEST"' `
     "JDK updates extract into a staging directory"
-Assert-Matches $jdkUpdater '(?s)STAGED_VERSION=.*?mv "\$DEST" "\$BACKUP_DIR"' `
+Assert-Matches $jdkUpdater '(?s)STAGED_VERSION=.*?publish_dependency_directory "\$NEW_JDK_DIR" "\$DEST"' `
     "the staged JDK is validated before the current install is moved"
-Assert-Matches $jdkUpdater 'mv "\$BACKUP_DIR" "\$DEST"' `
+Assert-Matches $platformHelper 'mv "\$backup" "\$destination"' `
     "a failed replacement restores the previous JDK directory"
 Assert-Matches $jdkUpdater '(?s)recover_matching_incomplete_install.*?cmp -s.*?cp -a -n' `
     "an incomplete JDK is recovered only when surviving files match the staged replacement"

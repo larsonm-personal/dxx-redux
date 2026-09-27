@@ -22,16 +22,6 @@ Get-Content (Join-Path $PSScriptRoot "../tool_versions.conf") | ForEach-Object {
 $version = $conf["POWERSHELL_VERSION"]
 $url = $conf["POWERSHELL_URL"]
 
-function Get-BashCommandPath {
-    foreach ($name in @("bash", "sh")) {
-        $command = Get-Command $name -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($command) {
-            return $command.Source
-        }
-    }
-    return $null
-}
-
 function Get-PwshVersion($path) {
     if (-not (Test-Path -LiteralPath $path)) { return $null }
     try {
@@ -82,10 +72,8 @@ function Ensure-WindowsPwshShim($pwshPath) {
 
 if ($hostPlatform -eq "Linux") {
     $bash = Get-BashCommandPath
-    if (-not $bash) {
-        throw "bash or sh was not found on PATH"
-    }
     & $bash (Join-Path $PSScriptRoot "get_powershell.sh")
+    if ($LASTEXITCODE -ne 0) { throw "PowerShell installer failed with exit code $LASTEXITCODE" }
     return
 }
 

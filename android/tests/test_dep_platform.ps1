@@ -25,6 +25,32 @@ if ($windowsPowerShell) {
 
 Write-Host "Dependency platform detection tests passed"
 
+$savedHome = $env:HOME
+try {
+    $env:HOME = $null
+    if ((Get-HomeDirectory) -ne [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) {
+        throw 'Home fallback did not resolve the user profile'
+    }
+} finally { $env:HOME = $savedHome }
+
+$bash = Get-BashCommandPath
+$shellHost = & $bash -c 'test -n "$BASH_VERSION" && uname -s'
+if ($LASTEXITCODE -ne 0) { throw 'Selected shell is not Bash' }
+if ($platform -eq 'Windows' -and $shellHost -notmatch '^(MINGW|MSYS|CYGWIN|.*_NT)') {
+    throw 'Windows dependency installs selected a Linux shell'
+}
+if ($platform -eq 'Windows') {
+    $preflight = Join-Path $repoRoot 'android/get_deps/helpers/assert_install_not_in_use.ps1'
+    # The test runner itself holds this directory open, requiring no extra process
+    $output = & $windowsPowerShell.Source -NoProfile -NonInteractive -File $preflight -InstallDirectory $PSHOME 2>&1
+    if ($LASTEXITCODE -ne 1 -or ($output -join "`n") -notmatch "PID $PID") {
+        throw 'Windows preflight failed to identify the running process'
+    }
+    & $windowsPowerShell.Source -NoProfile -NonInteractive -File $preflight -InstallDirectory "$PSHOME-other"
+    if ($LASTEXITCODE -ne 0) { throw 'Windows preflight matched a different directory' }
+}
+Write-Host 'Native Bash selection and Windows process preflight passed'
+
 # Exercise actual tool selection with a dependency path containing spaces and
 # a misleading newer directory, preserving explicit user overrides
 . (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1')

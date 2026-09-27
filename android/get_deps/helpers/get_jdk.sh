@@ -67,6 +67,12 @@ if [ -d "$DEST" ]; then
     fi
 fi
 
+# An incomplete install can still be recovered below without replacing open files
+if [ -n "$INSTALLED_VERSION" ] && ! assert_dependency_not_in_use "$DEST"; then
+    echo "For Gradle daemons, run the matching Gradle version with --stop; close IDE Java/Gradle sessions if they restart the daemon, then rerun helpers/get_jdk.sh" >&2
+    exit 1
+fi
+
 URL="$JDK_URL"
 ARCHIVE_KIND="zip"
 if DERIVED_URL="$(get_jdk_download_url "$JDK_MAJOR" "$JDK_VERSION" "$JDK_BUILD" 2>/dev/null)"; then
