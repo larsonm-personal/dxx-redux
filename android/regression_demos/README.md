@@ -17,13 +17,18 @@ setting applies to new games and loaded single-player saves. Verify the new
 recording's header contains `player_cfg.guidebot_routing_mode`: `0` for Original
 or `1` for Enhanced
 
-Ordinary save/load is not yet qualified as equivalent to uninterrupted play.
-The opt-in `android/tests/test_guidebot_original_navigation.ps1 -SaveContinuity`
-probe currently detects lost guidebot goals/timers and divergent movement/RNG
-in both modes. It uses real saves and live navigation/physics on level geometry,
-not the full game frame loop. Demo checkpoint headers restore extra escort state
-that ordinary saves omit; passing checkpoint playback does not certify ordinary
-save/load continuity
+New saves preserve Guide-Bot commands, timers, HUD messages and Enhanced planner
+progress. The opt-in `android/tests/test_guidebot_original_navigation.ps1
+-SaveContinuity` probe compares uninterrupted navigation with a midpoint save/load
+in both modes: Scram, Next, Exit, Hostages and Enhanced Unexplored. It checks
+state immediately around saving/loading and every subsequent frame, including
+movement and RNG state, on levels 1 and 11 with repeat runs
+
+This uses real saves and live navigation/physics on level geometry, not the full
+game frame loop. It does not certify full-world demo equivalence or Android's
+wall-clock-budgeted planner scheduling. Older saves retain the legacy restore
+fallback because they lack the new runtime fields. Passing checkpoint playback
+alone does not certify ordinary save/load continuity
 
 This is a recording policy, not a playback override. Playback must honor the
 recorded mode regardless of launcher defaults or checkpoint settings. Do not

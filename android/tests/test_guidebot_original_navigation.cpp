@@ -20,6 +20,7 @@ extern "C" {
 #include "wall.h"
 #include "cntrlcen.h"
 #include "state.h"
+#include "guidebot_save_io.h"
 #include "physics.h"
 #include "physfsx.h"
 #include "playsave.h"
@@ -137,6 +138,9 @@ static void place(object *o, int seg)
 static json continuity_state()
 {
 	const object &bot = Objects[Buddy_objnum];
+	// The legacy HUD message contains palette bytes, not UTF-8 text
+	const char *message = escort_goal_message() ? escort_goal_message() : "";
+	const auto *message_bytes = reinterpret_cast<const unsigned char *>(message);
 	unsigned rng;
 	d_rand_get_state(&rng);
 	return {
@@ -144,10 +148,16 @@ static json continuity_state()
 		{ "goal", Escort_goal_object }, { "special_goal", Escort_special_goal }, { "goal_index", Escort_goal_index },
 		{ "marker", Looking_for_marker }, { "last_key", Last_buddy_key },
 		{ "released", Buddy_allowed_to_talk }, { "messages_suppressed", Buddy_messages_suppressed },
+		{ "goal_message_bytes", std::vector<unsigned char>(message_bytes, message_bytes + std::strlen(message)) },
 		{ "seen_delta", Buddy_last_seen_player - GameTime64 },
 		{ "player_path_delta", Buddy_last_player_path_created - GameTime64 },
 		{ "path_created_delta", Escort_last_path_created - GameTime64 },
 		{ "route_target_mode", Escort_route_target_mode }, { "route_active", Escort_route_goal.active },
+		{ "route_goal", { Escort_route_goal.target_seg, Escort_route_goal.objective_kind, Escort_route_goal.objective_seg,
+		                  Escort_route_goal.objective_trigger, Escort_route_goal.objective_object, Escort_route_goal.guidance_mode } },
+		{ "secret_goal", { escort_get_secret_goal_seg(), escort_get_secret_goal_side() } },
+		{ "comeback_delta", Last_come_back_message_time - GameTime64 },
+		{ "sorry_delta", Buddy_sorry_time - GameTime64 },
 		{ "ai_mode", Ai_local_info[Buddy_objnum].mode },
 		{ "path_length", bot.ctype.ai_info.path_length }, { "path_index", bot.ctype.ai_info.cur_path_index },
 		{ "path_allocator", Point_segs_free_ptr - Point_segs },
@@ -163,6 +173,8 @@ static void continuity_step(int frame)
 	if (frame % 3 == 0) ++d_tick_count;
 	Believed_player_seg = ConsoleObject->segnum;
 	Believed_player_pos = ConsoleObject->pos;
+	escort_goal_message_frame();
+	escort_route_monitor_completion();
 	object *bot = &Objects[Buddy_objnum];
 	do_escort_frame(bot, vm_vec_dist_quick(&bot->pos, &ConsoleObject->pos), 2);
 	ai_follow_path(bot, 2, 2, nullptr);
@@ -175,58 +187,111 @@ static bool continuity_equal(json left, json right)
 	right.erase("rng_calls");
 	return left == right;
 }
+static bool continuity_payload_validation()
+{
+
+	const json before = continuity_state();
+	PHYSFS_file *file = PHYSFS_openWrite("guidebot-runtime.bin");
+	if (!file) return false;
+	guidebot_save_stream stream = { file, 1, 0, 1, GameTime64, 0 };
+	const bool written = escort_save_runtime(&stream) && (PHYSFS_sint64)stream.bytes == PHYSFS_tell(file);
+
+	PHYSFS_close(file);
+	if (!written) return false;
+	file = PHYSFS_openRead("guidebot-runtime.bin");
+	if (!file) return false;
+
+	std::vector<unsigned char> bytes((size_t)PHYSFS_fileLength(file));
+	const bool read = PHYSFS_readBytes(file, bytes.data(), bytes.size()) == (PHYSFS_sint64)bytes.size();
+	PHYSFS_close(file);
+	if (!read || bytes.empty()) return false;
+	for (int truncated : { 0, 1 }) {
+
+		file = PHYSFS_openWrite("guidebot-runtime-probe.bin");
+		if (!file) return false;
+		const size_t size = bytes.size() - truncated;
+		const bool copied = PHYSFS_writeBytes(file, bytes.data(), size) == (PHYSFS_sint64)size;
+		PHYSFS_close(file);
+		if (!copied) return false;
+		file = PHYSFS_openRead("guidebot-runtime-probe.bin");
+		if (!file) return false;
+		stream = { file, 0, 0, 1, GameTime64, 0 };
+		const bool valid = escort_save_runtime(&stream) != 0;
+
+		PHYSFS_close(file);
+		if (valid == (truncated != 0) || !continuity_equal(before, continuity_state())) return false;
+	}
+
+	return true;
+}
 static int audit_save_continuity(const char *output)
 {
+	escort_set_goal_message_persistent(1);
 	json report;
 	bool passed = true;
 	for (int mode : { GUIDEBOT_ROUTING_ORIGINAL, GUIDEBOT_ROUTING_ENHANCED }) {
-		guidebot_routing_set_default(mode);
-		// Level restoration rereads the pilot configuration on desktop
-		if (write_player_file() != 0) return 2;
-		guidebot_routing_set_mode(mode);
-		GameTime64 = 20 * F1_0;
-		place(&Objects[Buddy_objnum], ConsoleObject->segnum);
-		Buddy_allowed_to_talk = 1;
-		Buddy_messages_suppressed = 1;
-		// Scram is a real command supported by both routing modes
-		set_escort_special_goal(KEY_7);
-		for (int frame = 0; frame < 120; ++frame) continuity_step(frame);
-		json result;
-		result["before_save"] = continuity_state();
-		char name[] = "guidebot-continuity.sav", desc[] = "Guidebot continuity audit";
-		stop_time();
-		if (!state_save_all_sub(name, desc)) return 2;
-		result["after_save"] = continuity_state();
-		std::vector<json> reference;
-		for (int frame = 0; frame < 120; ++frame) {
-			continuity_step(frame);
-			reference.push_back(continuity_state());
-		}
-		if (!state_restore_all_sub(name, 0)) return 2;
-		result["after_load"] = continuity_state();
-		result["save_unchanged"] = continuity_equal(result["before_save"], result["after_save"]);
-		result["restore_unchanged"] = continuity_equal(result["after_save"], result["after_load"]);
-		result["first_divergent_frame"] = nullptr;
-		for (int frame = 0; frame < 120; ++frame) {
-			continuity_step(frame);
-			const json actual = continuity_state();
-			if (!continuity_equal(actual, reference[frame]) && result["first_divergent_frame"].is_null()) {
-				result["first_divergent_frame"] = frame + 1;
-				result["uninterrupted"] = reference[frame];
-				result["resumed"] = actual;
+		for (int command : { KEY_7, KEY_0, KEY_9, KEY_6, -1 }) {
+			if (command == -1 && mode == GUIDEBOT_ROUTING_ORIGINAL) continue;
+			std::fprintf(stderr, "CONTINUITY mode=%d command=%d start\n", mode, command);
+			guidebot_routing_set_default(mode);
+			// Level restoration rereads the pilot configuration on desktop
+			if (write_player_file() != 0) return 2;
+			guidebot_routing_set_mode(mode);
+			GameTime64 = 20 * F1_0;
+			place(&Objects[Buddy_objnum], ConsoleObject->segnum);
+			Buddy_allowed_to_talk = 1;
+			Buddy_messages_suppressed = 1;
+			escort_reset_routing();
+			// Scram, Next, Exit and Hostages exercise classic and Enhanced guidance
+			if (command == -1) escort_find_unexplored_goal();
+			else set_escort_special_goal(command);
+			for (int frame = 0; frame < 120; ++frame) continuity_step(frame);
+			json result;
+
+			result["before_save"] = continuity_state();
+			char name[] = "guidebot-continuity.sav", desc[] = "Guidebot continuity audit";
+			stop_time();
+			if (!state_save_all_sub(name, desc)) return 2;
+			result["after_save"] = continuity_state();
+			std::vector<json> reference;
+			for (int frame = 0; frame < 120; ++frame) {
+				continuity_step(frame);
+				reference.push_back(continuity_state());
 			}
-			if (frame == 119) {
-				result["uninterrupted_final"] = reference[frame];
-				result["resumed_final"] = actual;
+
+			if (!state_restore_all_sub(name, 0)) return 2;
+			result["after_load"] = continuity_state();
+			result["save_unchanged"] = continuity_equal(result["before_save"], result["after_save"]);
+			result["restore_unchanged"] = continuity_equal(result["after_save"], result["after_load"]);
+			result["first_divergent_frame"] = nullptr;
+			for (int frame = 0; frame < 120; ++frame) {
+				continuity_step(frame);
+				const json actual = continuity_state();
+				if (!continuity_equal(actual, reference[frame]) && result["first_divergent_frame"].is_null()) {
+					result["first_divergent_frame"] = frame + 1;
+					result["uninterrupted"] = reference[frame];
+					result["resumed"] = actual;
+				}
+				if (frame == 119) {
+					result["uninterrupted_final"] = reference[frame];
+					result["resumed_final"] = actual;
+				}
 			}
+
+			result["passed"] = result["save_unchanged"].get<bool>() && result["restore_unchanged"].get<bool>() && result["first_divergent_frame"].is_null();
+			passed = passed && result["passed"].get<bool>();
+			const char *scenario = command == KEY_7 ? "scram" : command == KEY_0 ? "next" : command == KEY_9 ? "exit" : command == KEY_6 ? "hostages" : "unexplored";
+			report[mode == GUIDEBOT_ROUTING_ORIGINAL ? "Original" : "Enhanced"][scenario] = result;
 		}
-		result["passed"] = result["save_unchanged"].get<bool>() && result["restore_unchanged"].get<bool>() && result["first_divergent_frame"].is_null();
-		passed = passed && result["passed"].get<bool>();
-		report[mode == GUIDEBOT_ROUTING_ORIGINAL ? "Original" : "Enhanced"] = result;
 	}
+
+	report["payload_validation"] = continuity_payload_validation();
+
+	passed = passed && report["payload_validation"].get<bool>();
 	report["passed"] = passed;
 	std::ofstream file(output);
-	file << report.dump(2) << '\n';
+	try { file << report.dump(2) << '\n'; }
+	catch (const std::exception &error) { std::fprintf(stderr, "CONTINUITY report: %s\n", error.what()); return 2; }
 	return file.good() && passed ? 0 : 1;
 }
 int test_guidebot_live_navigation(const char *output, const char *audit)

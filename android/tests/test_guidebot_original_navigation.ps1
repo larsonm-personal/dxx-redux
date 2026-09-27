@@ -36,7 +36,8 @@ try {
             elseif ($result -cne $reference) { throw "Original results differ across repeats: level $level" }
         }
     }
-    Write-Host 'Original Redux routing comparisons and native save modes passed twice on levels 1 and 11'
+    if ($SaveContinuity) { Write-Host 'Same-mode Guidebot save continuity passed for both modes, four shared commands and Enhanced Unexplored, twice on levels 1 and 11' }
+    else { Write-Host 'Original Redux routing comparisons and native save modes passed twice on levels 1 and 11' }
 } finally {
     # Remove copied mission and player data, retaining bounded JSON/log diagnostics
     try {

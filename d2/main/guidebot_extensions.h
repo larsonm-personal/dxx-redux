@@ -131,7 +131,7 @@ extern void escort_get_path_parity_result(escort_path_parity_result *result);
 extern void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu);
 extern void input_demo_apply_recorded_guidebot_find_secret(void);
 extern void input_demo_apply_recorded_guidebot_find_unexplored(void);
-extern void escort_rebuild_runtime_state_after_restore(void);
+extern void escort_rebuild_runtime_state_after_restore(int preserve_runtime);
 extern int escort_buddy_is_active(void);
 extern int escort_buddy_is_docked(void);
 extern void escort_spawn_at_player(void);

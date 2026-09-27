@@ -83,6 +83,7 @@ static const int Escort_route_debug_log_enabled[1] = { 0 };
 #endif
 
 #include "guidebot_route_internal.h"
+#include "guidebot_save_io.h"
 #include "guidebot_info_overlay.h"
 
 extern fix64 Buddy_last_seen_player, Buddy_last_player_path_created;
@@ -181,6 +182,132 @@ static int Escort_route_path_recalc_goal_kind = -1;
 static int Escort_route_path_recalc_goal_seg = -1;
 static int Escort_route_path_recalc_goal_trigger = -1;
 static int Escort_route_path_recalc_goal_wall = -1;
+
+static void gb_save_escort_route_goal(guidebot_save_stream *s, escort_route_goal *v)
+{
+	GB_FIELD(s, v->active, GB_SIGNED);
+	GB_FIELD(s, v->target_seg, GB_SIGNED);
+	GB_FIELD(s, v->objective_kind, GB_SIGNED);
+	GB_FIELD(s, v->activation_kind, GB_SIGNED);
+	GB_FIELD(s, v->requires_guided_missile, GB_SIGNED);
+	GB_FIELD(s, v->objective_seg, GB_SIGNED);
+	GB_FIELD(s, v->objective_side, GB_SIGNED);
+	GB_FIELD(s, v->objective_wall, GB_SIGNED);
+	GB_FIELD(s, v->objective_trigger, GB_SIGNED);
+	GB_FIELD(s, v->objective_object, GB_SIGNED);
+	GB_FIELD(s, v->objective_key_index, GB_SIGNED);
+	GB_FIELD(s, v->guidance_mode, GB_SIGNED);
+	GB_FIELD(s, v->guidance_seg, GB_SIGNED);
+	GB_FIELD(s, v->frontier_player_openable_door, GB_SIGNED);
+	GB_TEXT(s, v->label);
+}
+
+static void gb_save_escort_unexplored_route_target(guidebot_save_stream *s, escort_unexplored_route_target *v)
+{
+	GB_FIELD(s, v->active, GB_SIGNED);
+	GB_FIELD(s, v->component_size, GB_SIGNED);
+	GB_FIELD(s, v->target_seg, GB_SIGNED);
+	GB_FIELD(s, v->waypoint_seg, GB_SIGNED);
+	GB_FIELD(s, v->direct_reachable, GB_SIGNED);
+}
+
+void escort_route_save_runtime(guidebot_save_stream *s)
+{
+	gb_save_escort_route_goal(s, &Escort_route_goal);
+	gb_save_escort_unexplored_route_target(s, &Escort_unexplored_route_target);
+	GB_FIELD(s, Escort_hostage_object, GB_SIGNED);
+	GB_FIELD(s, Escort_hostage_signature, GB_SIGNED);
+	GB_FIELD(s, Escort_hostage_next_plan, GB_CLOCK);
+	GB_LIMIT(s, Escort_route_target_mode, GB_SIGNED, ESCORT_ROUTE_TARGET_END_OF_LEVEL, ESCORT_ROUTE_TARGET_EXIT);
+	GB_FIELD(s, Escort_route_metadata_dirty, GB_SIGNED);
+	GB_FIELD(s, Escort_route_cache_improvement_pending, GB_SIGNED);
+	GB_FIELD(s, Escort_route_seen_revision, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_metadata_rescan_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_guidance_full_search_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_ignored_nonowner_key_change_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_boss_move_invalidation_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_wall_generation, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_trigger_generation, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_object_generation, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_reactor_generation, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_automap_generation, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_pending_event_mask, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_pending_audit_mask, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_deferred_live_event_mask, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_event_notification_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_notification_coalesced_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_redundant_dirty_domain_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_event_coalesced_rescan_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_publish_latency_sample_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_publish_latency_last_ticks, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_publish_latency_max_ticks, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_first_dirty_notification_time, GB_CLOCK);
+	GB_FIELD(s, Escort_route_dirty_notification_time_valid, GB_SIGNED);
+	GB_FIELD(s, Escort_route_ignored_nonowner_event_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_audit_check_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_audit_discovery_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_audit_only_discovery_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_audit_work_total, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_audit_work_max, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_audit_deferred_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_certificate_check_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_certificate_failure_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_certificate_work_total, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_certificate_work_max, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_path_retained_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_path_replaced_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_invalid_path_stopped_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_audit_domain_cursor, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_audit_next_time, GB_CLOCK);
+	GB_FIELD(s, Escort_route_last_audit_rescan_time, GB_CLOCK);
+	GB_FIELD(s, Escort_route_last_audit_rescan_time_valid, GB_SIGNED);
+	GB_FIELD(s, Escort_route_completion_check_time, GB_CLOCK);
+	GB_FIELD(s, Escort_route_goal_request_pending, GB_SIGNED);
+	GB_FIELD(s, Escort_nav_trace_next_time, GB_CLOCK);
+	GB_FIELD(s, Escort_nav_trace_last_pos.x, GB_SIGNED);
+	GB_FIELD(s, Escort_nav_trace_last_pos.y, GB_SIGNED);
+	GB_FIELD(s, Escort_nav_trace_last_pos.z, GB_SIGNED);
+	GB_FIELD(s, Escort_nav_trace_last_signature, GB_SIGNED);
+	GB_FIELD(s, Escort_nav_trace_last_goal, GB_SIGNED);
+	GB_FIELD(s, Escort_nav_trace_last_path_index, GB_SIGNED);
+	GB_FIELD(s, Escort_nav_trace_stall_samples, GB_SIGNED);
+	GB_FIELD(s, Escort_nav_liveness_anchor.x, GB_SIGNED);
+	GB_FIELD(s, Escort_nav_liveness_anchor.y, GB_SIGNED);
+	GB_FIELD(s, Escort_nav_liveness_anchor.z, GB_SIGNED);
+	GB_FIELD(s, Escort_nav_liveness_signature, GB_SIGNED);
+	GB_FIELD(s, Escort_nav_liveness_last_progress_time, GB_CLOCK);
+	GB_ARRAY(s, Escort_route_activated_triggers, GB_BYTES);
+	GB_FIELD(s, Escort_route_avoid_from_seg, GB_SIGNED);
+	GB_FIELD(s, Escort_route_avoid_seg, GB_SIGNED);
+	GB_FIELD(s, Escort_route_avoid_from_seg2, GB_SIGNED);
+	GB_FIELD(s, Escort_route_avoid_seg2, GB_SIGNED);
+	GB_FIELD(s, Escort_route_avoid_trigger, GB_SIGNED);
+	GB_FIELD(s, Escort_route_avoid_wall, GB_SIGNED);
+	GB_FIELD(s, Escort_route_progress_next_time, GB_CLOCK);
+	GB_FIELD(s, Escort_route_progress_signature, GB_SIGNED);
+	GB_FIELD(s, Escort_route_progress_seg, GB_SIGNED);
+	GB_FIELD(s, Escort_route_progress_path_index, GB_SIGNED);
+	GB_FIELD(s, Escort_route_progress_target_seg, GB_SIGNED);
+	GB_FIELD(s, Escort_route_progress_stall_samples, GB_SIGNED);
+	GB_FIELD(s, Escort_route_stall_recovery_count, GB_UNSIGNED);
+	GB_ARRAY(s, Escort_route_path_recalc_limiter.timestamps, GB_CLOCK);
+	GB_LIMIT(s, Escort_route_path_recalc_limiter.count, GB_UNSIGNED, 0, ESCORT_PATH_RECALC_LIMIT_PER_SECOND);
+	GB_FIELD(s, Escort_route_path_recalc_pending, GB_SIGNED);
+	GB_FIELD(s, Escort_route_path_recalc_requested_time, GB_CLOCK);
+	GB_FIELD(s, Escort_route_path_recalc_due_time, GB_CLOCK);
+	GB_FIELD(s, Escort_route_path_recalc_suppressed_count, GB_UNSIGNED);
+	GB_FIELD(s, Escort_route_path_recalc_goal_kind, GB_SIGNED);
+	GB_FIELD(s, Escort_route_path_recalc_goal_seg, GB_SIGNED);
+	GB_FIELD(s, Escort_route_path_recalc_goal_trigger, GB_SIGNED);
+	GB_FIELD(s, Escort_route_path_recalc_goal_wall, GB_SIGNED);
+	{
+		const int64_t epoch = s->epoch;
+		s->epoch = timer_query();
+		GB_FIELD(s, Escort_route_cache_poll_time, GB_CLOCK);
+		s->epoch = epoch;
+	}
+	GB_FIELD(s, Escort_route_logged_readiness, GB_SIGNED);
+}
 
 static void escort_route_path_recalc_cancel_pending(void)
 {

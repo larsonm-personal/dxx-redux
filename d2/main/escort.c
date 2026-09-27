@@ -56,6 +56,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "automap.h"
 #include "laser.h"
 #include "escort.h"
+#include "guidebot_save_io.h"
 #include "thief_network_policy.h"
 #include "escort_exit_policy.h"
 #include "escort_goal_policy.h"
@@ -2142,8 +2143,86 @@ static void escort_restore_companion_robot_control(void)
 }
 #endif
 
-void escort_rebuild_runtime_state_after_restore(void)
+int escort_save_runtime(guidebot_save_stream *s)
 {
+	GB_FIELD(s, Max_escort_length, GB_SIGNED);
+	GB_FIELD(s, Escort_kill_object, GB_SIGNED);
+	GB_FIELD(s, Escort_goal_object, GB_SIGNED);
+	GB_FIELD(s, Escort_special_goal, GB_SIGNED);
+	GB_FIELD(s, Escort_goal_index, GB_SIGNED);
+	GB_FIELD(s, Buddy_messages_suppressed, GB_SIGNED);
+	GB_FIELD(s, Escort_goal_secret_seg, GB_SIGNED);
+	GB_FIELD(s, Escort_goal_secret_side, GB_SIGNED);
+	GB_LIMIT(s, Buddy_objnum, GB_SIGNED, -1, MAX_OBJECTS - 1);
+	GB_FIELD(s, Buddy_allowed_to_talk, GB_SIGNED);
+	GB_FIELD(s, Looking_for_marker, GB_SIGNED);
+	GB_FIELD(s, Last_buddy_key, GB_SIGNED);
+	GB_LIMIT(s, Stolen_item_index, GB_SIGNED, 0, MAX_STOLEN_ITEMS - 1);
+	GB_TEXT(s, Escort_goal_message_text);
+	GB_FIELD(s, Escort_goal_message_signature, GB_SIGNED);
+	GB_FIELD(s, Escort_goal_message_owner, GB_SIGNED);
+	GB_FIELD(s, Escort_goal_message_generation, GB_UNSIGNED);
+	GB_FIELD(s, Escort_goal_message_sequence, GB_UNSIGNED);
+	GB_FIELD(s, Escort_goal_message_next_send, GB_CLOCK);
+	GB_FIELD(s, Escort_last_path_created, GB_CLOCK);
+	GB_FIELD(s, Buddy_sorry_time, GB_CLOCK);
+	GB_FIELD(s, Last_buddy_message_time, GB_CLOCK);
+	GB_FIELD(s, Buddy_last_seen_player, GB_CLOCK);
+	GB_FIELD(s, Buddy_last_player_path_created, GB_CLOCK);
+	GB_FIELD(s, Last_come_back_message_time, GB_CLOCK);
+	GB_FIELD(s, Buddy_last_missile_time, GB_CLOCK);
+	GB_FIELD(s, Re_init_thief_time, GB_CLOCK);
+	GB_FIELD(s, Last_thief_hit_time, GB_CLOCK);
+	/* Framing lets metadata-only builds consume saves from live-routing builds */
+	{
+		unsigned int route_bytes = 0;
+		guidebot_save_stream field;
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		if (s->writing) {
+			guidebot_save_stream measure = *s;
+			measure.writing = 2;
+			measure.bytes = 0;
+			escort_route_save_runtime(&measure);
+			level_metadata_save_runtime(&measure);
+			if (!measure.ok || measure.bytes > 2 * 1024 * 1024) return s->ok = 0;
+			route_bytes = (unsigned int)measure.bytes;
+		}
+#endif
+		field = *s;
+		field.apply = 1;
+		GB_LIMIT(&field, route_bytes, GB_UNSIGNED, 0, 2 * 1024 * 1024);
+		s->ok = field.ok;
+		s->bytes = field.bytes;
+		if (route_bytes && s->ok) {
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+			const size_t start = s->bytes;
+			escort_route_save_runtime(s);
+			level_metadata_save_runtime(s);
+			if (s->bytes - start != route_bytes) s->ok = 0;
+#else
+			unsigned char skipped[4096];
+			while (route_bytes && s->ok) {
+				const size_t count = route_bytes < sizeof(skipped) ? route_bytes : sizeof(skipped);
+				guidebot_save_bytes(s, skipped, count);
+				route_bytes -= (unsigned int)count;
+			}
+#endif
+		}
+	}
+	return s->ok;
+}
+
+void escort_rebuild_runtime_state_after_restore(int preserve_runtime)
+{
+	if (preserve_runtime) {
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		Escort_route_target_mode_restore_pending = 0;
+#endif
+#ifdef NETWORK
+		escort_restore_companion_robot_control();
+#endif
+		return;
+	}
 	escort_goal_message_reset();
 	ai_local *ailp = NULL;
 	object *buddy_objp = NULL;

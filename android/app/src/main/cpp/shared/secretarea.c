@@ -15,6 +15,9 @@
 #include "hudmsg.h"
 #include "laser.h"
 #include "guidebot_route_certifier.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "guidebot_metadata_save_fields.h"
+#endif
 #include "level_metadata_scan.h"
 #include "object.h"
 #include "player.h"
@@ -5438,3 +5441,42 @@ void level_metadata_cycle_objective_mode(void)
 	    (Level_metadata_objective_mode + 1) %
 	    LEVEL_METADATA_OBJECTIVES_MODE_COUNT);
 }
+
+#ifdef DXX_BUILD_DESCENT_II
+void level_metadata_save_runtime(guidebot_save_stream *s)
+{
+	gb_save_level_metadata_state(s, &Level_metadata_canonical_state);
+	gb_save_route_planner_plan_summary(s, &Level_metadata_canonical_plan_summary);
+	GB_FIELD(s, Level_metadata_canonical_plan_summary_valid, GB_SIGNED);
+	gb_save_level_metadata_state(s, &Level_metadata_live_route_state);
+	GB_FIELD(s, Level_metadata_live_route_state_valid, GB_SIGNED);
+	gb_save_route_planner_plan_summary(s, &Level_metadata_live_plan_summary);
+	GB_FIELD(s, Level_metadata_live_plan_summary_valid, GB_SIGNED);
+	gb_save_level_metadata_state(s, &Level_metadata_live_candidate_state);
+	gb_save_route_planner_plan_summary(s, &Level_metadata_live_candidate_summary);
+	gb_save_guidebot_route_validity_certificate(s, &Level_metadata_live_candidate_certificate);
+	gb_save_route_snapshot_summary(s, &Level_metadata_canonical_snapshot);
+	GB_FIELD(s, Level_metadata_canonical_snapshot_valid, GB_SIGNED);
+	GB_FIELD(s, Level_metadata_canonical_analysis_profile_hash, GB_UNSIGNED);
+	gb_save_route_snapshot_summary(s, &Level_metadata_live_snapshot);
+	GB_FIELD(s, Level_metadata_live_snapshot_valid, GB_SIGNED);
+	GB_FIELD(s, Level_metadata_progression_object_audit_hash, GB_UNSIGNED);
+	GB_FIELD(s, Level_metadata_progression_object_audit_hash_valid, GB_SIGNED);
+	GB_FIELD(s, Level_metadata_navigation_access_audit_hash, GB_UNSIGNED);
+	GB_FIELD(s, Level_metadata_navigation_access_audit_hash_valid, GB_SIGNED);
+	GB_FIELD(s, Level_metadata_route_start_objnum, GB_SIGNED);
+	GB_FIELD(s, Level_metadata_route_start_seg, GB_SIGNED);
+	GB_FIELD(s, Level_metadata_live_route_target_seg, GB_SIGNED);
+	GB_FIELD(s, Level_metadata_route_readiness, GB_SIGNED);
+	GB_FIELD(s, Level_metadata_route_revision, GB_UNSIGNED);
+	gb_save_guidebot_route_certifier_workspace(s, &Level_metadata_route_certifier_workspace);
+	gb_save_guidebot_route_certifier_workspace(s, &Level_metadata_route_frontier_workspace);
+	gb_save_guidebot_route_certifier_summary(s, &Level_metadata_route_certifier_summary);
+	gb_save_guidebot_route_validity_certificate(s, &Level_metadata_live_certificate);
+	gb_save_guidebot_route_decision(s, &Level_metadata_published_route_decision);
+	GB_FIELD(s, Level_metadata_published_route_decision_valid, GB_SIGNED);
+	GB_FIELD(s, Level_metadata_live_route_provenance, GB_SIGNED);
+	gb_save_level_metadata_live_work_summary(s, &Level_metadata_live_work_summary);
+	GB_FIELD(s, Level_metadata_live_route_work_pending, GB_SIGNED);
+}
+#endif

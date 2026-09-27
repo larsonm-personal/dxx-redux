@@ -72,6 +72,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "collide.h"
 #include "multi.h"
 #include "escort.h"
+#include "guidebot_save_io.h"
 #include "escort_owner_policy.h"
 #include "gr.h"
 #include "palette.h"
@@ -101,7 +102,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // Version 38 records the session Guidebot routing algorithm
 // Version 39 binds imported D1 optional asset IDs before the object array
 // Version 40 also binds original base and custom definition sources
-#define STATE_VERSION 38
+// Versions 41 (D2) and 42 (D1-in-D2) preserve Guidebot runtime state
+#define STATE_VERSION GUIDEBOT_RUNTIME_SAVE_VERSION
 #define STATE_GUIDEBOT_ROUTING_VERSION 38
 #define STATE_D1_TRIGGER_STORAGE_VERSION       34
 #define STATE_D1_BOSS_STATE_VERSION 33
@@ -776,7 +778,7 @@ static void state_log_checkpoint_allocator_snapshot(const char *label,
 		message);
 }
 
-static void state_write_runtime_state(PHYSFS_file *fp)
+static int state_write_runtime_state(PHYSFS_file *fp)
 {
 	object_runtime_state object_state;
 	ai_path_runtime_state ai_path_state;
@@ -848,6 +850,10 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	d1_in_d2_write_trigger_storage(fp);
 	cadence_runtime_write(fp, GameTime64);
 	PHYSFS_writeSLE32(fp, guidebot_routing_mode());
+	{
+		guidebot_save_stream stream = { fp, 1, 0, 1, GameTime64, 0 };
+		return escort_save_runtime(&stream);
+	}
 }
 
 /* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
@@ -1126,6 +1132,11 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 		if (!state_runtime_read_s32(fp, 0, &mode) || !guidebot_routing_valid(INTEL_INT(mode)))
 			goto done;
 	}
+	validation_stage = "Guidebot runtime";
+	if (version >= GUIDEBOT_RUNTIME_SAVE_VERSION) {
+		guidebot_save_stream stream = { fp, 0, 0, 1, GameTime64, 0 };
+		if (!escort_save_runtime(&stream)) goto done;
+	}
 	valid = 1;
 done:
 #ifdef __ANDROID__
@@ -1143,7 +1154,7 @@ done:
 	return valid;
 }
 
-static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_restore, int version)
+static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_restore, int version, int *saved_guidebot_mode)
 {
 	object_runtime_state object_state;
 	ai_path_runtime_state ai_path_state;
@@ -1228,10 +1239,16 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 		cadence_runtime_read(fp, swap, !secret_restore, GameTime64);
 	if (version >= STATE_GUIDEBOT_ROUTING_VERSION) {
 		int mode = PHYSFSX_readInt(fp);
+		*saved_guidebot_mode = mode;
 		if (!secret_restore)
 			guidebot_routing_restore_mode(mode);
 	} else if (!secret_restore)
 		guidebot_routing_restore_mode(guidebot_routing_default());
+
+	if (version >= GUIDEBOT_RUNTIME_SAVE_VERSION) {
+		guidebot_save_stream stream = { fp, 0, !secret_restore, 1, GameTime64, 0 };
+		escort_save_runtime(&stream);
+	}
 
 	if (secret_restore)
 		return;
@@ -2666,7 +2683,10 @@ int state_save_all_sub(char *filename, char *desc)
 		PHYSFS_write(fp, &Netgame.level_time, sizeof(int), 1);
 	}
 
-	state_write_runtime_state(fp);
+	if (!state_write_runtime_state(fp)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
 
 #ifdef __ANDROID__
 	if (!state_android_write_save_metadata(fp, desc, mission_filename)) {
@@ -2924,6 +2944,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 #endif
 {
 	int version,i, j, segnum, coop_player_got[MAX_PLAYERS], coop_org_objnum = Players[Player_num].objnum;
+	int saved_guidebot_mode = -1;
 	object * obj;
 	PHYSFS_file *fp;
 	int swap = 0;	// if file is not endian native, have to swap all shorts and ints
@@ -3277,7 +3298,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	cheats.enabled = PHYSFSX_readSXE32(fp, swap);
 
 	/* Definitions are now prepared, but no saved object references are installed */
-	if (version >= D1_IN_D2_SAVE_VERSION && !d1_in_d2_read_saved_asset_identity(fp, swap)) {
+	if ((version == 40 || version == D1_IN_D2_SAVE_VERSION) && !d1_in_d2_read_saved_asset_identity(fp, swap)) {
 		PHYSFS_close(fp);
 		/* The fresh world must not run with partly restored player state */
 		if (Game_wind && !window_is_visible(Game_wind)) window_set_visible(Game_wind, 1);
@@ -3737,7 +3758,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			PHYSFS_close(fp);
 			return 0;
 		}
-		state_read_runtime_state(fp, swap, secret_restore, version);
+		state_read_runtime_state(fp, swap, secret_restore, version, &saved_guidebot_mode);
 	} else if (!secret_restore)
 		guidebot_routing_restore_mode(guidebot_routing_default());
 	if (version < CADENCE_D2_SAVE_VERSION && !secret_restore)
@@ -3856,7 +3877,10 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			collide_set_collision_delay_last_play_time((fix64)collision_delay_last_play_time);
 	}
 	#endif
-	escort_rebuild_runtime_state_after_restore();
+	escort_rebuild_runtime_state_after_restore(version >= GUIDEBOT_RUNTIME_SAVE_VERSION && !secret_restore);
+	/* Replay metadata or a synchronized co-op policy can override the saved mode */
+	if (!secret_restore && saved_guidebot_mode >= 0 && saved_guidebot_mode != guidebot_routing_mode())
+		escort_reset_routing();
 	/* A single-player save resumes with the current routing preference
 	 * Apply it after rebuilding the companion so a change clears saved paths */
 	if (!secret_restore && !(Game_mode & GM_MULTI) && !input_demo_replay_is_loaded())

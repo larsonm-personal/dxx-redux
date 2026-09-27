@@ -242,6 +242,106 @@
         "value": "Enhanced"
     },
     {
+        "action": "set_debug",
+        "field": "guidebot_routing_default",
+        "value": "Original"
+    },
+    {
+        "action": "set_debug",
+        "field": "guidebot_routing_mode",
+        "value": "Original"
+    },
+    {
+        "action": "select_radial",
+        "menu": "Guide",
+        "text": "Scram",
+        "post_delay_ms": 500
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "guidebot.special_goal": 13
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 750
+    },
+    {
+        "action": "select_radial",
+        "menu": "Guide",
+        "text": "Next",
+        "post_delay_ms": 300
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load"
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "guidebot.routing_mode_name": "Original",
+            "guidebot.special_goal": 13,
+            "guidebot.released": true,
+            "game_window_is_front": true,
+            "time_paused": false
+        },
+        "timeout_ms": 30000
+    },
+    {
+        "action": "set_debug",
+        "field": "guidebot_routing_default",
+        "value": "Enhanced"
+    },
+    {
+        "action": "set_debug",
+        "field": "guidebot_routing_mode",
+        "value": "Enhanced"
+    },
+    {
+        "action": "select_radial",
+        "menu": "Guide",
+        "text": "Scram",
+        "post_delay_ms": 500
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "guidebot.special_goal": 13
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 750
+    },
+    {
+        "action": "select_radial",
+        "menu": "Guide",
+        "text": "Next",
+        "post_delay_ms": 300
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load"
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "guidebot.routing_mode_name": "Enhanced",
+            "guidebot.special_goal": 13,
+            "guidebot.released": true,
+            "game_window_is_front": true,
+            "time_paused": false
+        },
+        "timeout_ms": 30000
+    },
+    {
         "action": "introspect"
     },
     {
