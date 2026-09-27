@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "timeout": 2
+    "ok": 2,
+    "timeout": 1
   },
   "levels": [
     {
@@ -67,7 +67,7 @@
       "level_num": 3,
       "level_file": "level03.rdl",
       "route_input_sha256": "19F50EE01620C7B0BD800C515E4238566E710E3F69103529F834BABD1B56C1E3",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -90,16 +90,24 @@
           "s": 76
         },
         {
-          "n": "fly-through 1",
-          "s": 77
+          "n": "reactor",
+          "s": 76
+        },
+        {
+          "n": "exit",
+          "s": 84
         }
       ],
-      "total_frames": 7353,
+      "total_frames": 5049,
       "rng_end": {
-        "state": 2977436762,
-        "calls": 2173
+        "state": 3275376816,
+        "calls": 4247
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 8.25,
+        "difficulty": 2
+      }
     }
   ]
 }

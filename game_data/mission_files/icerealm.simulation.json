@@ -8,15 +8,15 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
-    "timeout": 4
+    "ok": 8,
+    "timeout": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "outpost1.rdl",
       "route_input_sha256": "B9046E64B0AD124A86FBD93F06FDD5F5FB7EB50136D8701E83C003B2D8A6E410",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -28,25 +28,33 @@
         },
         {
           "n": "red key",
-          "s": 47
+          "s": 46
         },
         {
-          "n": "fly-through 9",
-          "s": 57
+          "n": "reactor",
+          "s": 74
+        },
+        {
+          "n": "exit",
+          "s": 77
         }
       ],
-      "total_frames": 4404,
+      "total_frames": 4603,
       "rng_end": {
-        "state": 956006015,
-        "calls": 1386
+        "state": 2497710527,
+        "calls": 1578
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 2.816666,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 2,
       "level_file": "sewers.rdl",
       "route_input_sha256": "CA5DF6BFB5032240AE108724489BDCC89B0B132B858D5615BFA266E4B05A82E1",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -73,16 +81,20 @@
           "s": 67
         },
         {
-          "n": "fly-through 2",
-          "s": 68
+          "n": "exit",
+          "s": 74
         }
       ],
-      "total_frames": 5085,
+      "total_frames": 4419,
       "rng_end": {
-        "state": 4222562952,
-        "calls": 4319
+        "state": 1019796429,
+        "calls": 4340
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 15.683334,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 3,
@@ -130,21 +142,21 @@
         },
         {
           "n": "reactor",
-          "s": 114
+          "s": 116
         },
         {
           "n": "exit",
-          "s": 117
+          "s": 119
         }
       ],
-      "total_frames": 7000,
+      "total_frames": 7144,
       "rng_end": {
-        "state": 3295244852,
-        "calls": 4579
+        "state": 218595359,
+        "calls": 4554
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
-        "simulated_seconds": 2.899994,
+        "simulated_seconds": 2.900009,
         "difficulty": 2
       }
     },
@@ -201,8 +213,8 @@
       ],
       "total_frames": 2108,
       "rng_end": {
-        "state": 1289456864,
-        "calls": 1447
+        "state": 1334668553,
+        "calls": 1464
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -285,8 +297,8 @@
       ],
       "total_frames": 4551,
       "rng_end": {
-        "state": 2861925083,
-        "calls": 1582
+        "state": 1519023060,
+        "calls": 4035
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -298,7 +310,7 @@
       "level_num": 8,
       "level_file": "recycle.rdl",
       "route_input_sha256": "1549E5C8283A6E048366B9A0A715BBA0160292628ED5BE26A47DD3DCCD9AE78B",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -322,19 +334,31 @@
         },
         {
           "n": "fly-through 4",
+          "s": 73
+        },
+        {
+          "n": "red key",
           "s": 74
         },
         {
-          "n": "fly-through 4",
-          "s": 74
+          "n": "reactor",
+          "s": 98
+        },
+        {
+          "n": "exit",
+          "s": 104
         }
       ],
-      "total_frames": 5362,
+      "total_frames": 6254,
       "rng_end": {
-        "state": 4206198186,
-        "calls": 2925
+        "state": 4032200759,
+        "calls": 8114
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 6.21666,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 9,

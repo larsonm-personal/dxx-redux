@@ -54,7 +54,7 @@
       "level_num": 2,
       "level_file": "p2.rdl",
       "route_input_sha256": "17179E95F9D46B2BDCF5B4827BBAE81A6218C718124024449E3F50C39B24A237",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -67,30 +67,14 @@
         {
           "n": "gold key",
           "s": 62
-        },
-        {
-          "n": "red key",
-          "s": 89
-        },
-        {
-          "n": "reactor",
-          "s": 112
-        },
-        {
-          "n": "exit",
-          "s": 123
         }
       ],
-      "total_frames": 7384,
+      "total_frames": 8931,
       "rng_end": {
-        "state": 1108062054,
-        "calls": 2625
+        "state": 3909714790,
+        "calls": 1601
       },
-      "reactor_escape": {
-        "countdown_seconds": 40.0,
-        "simulated_seconds": 10.800003,
-        "difficulty": 2
-      }
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
@@ -222,7 +206,7 @@
       "level_num": 6,
       "level_file": "p6.rdl",
       "route_input_sha256": "BF57FC528B22DFDBD046253F42687551E77A113864529C2EE0E9CF7F5B218806",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -242,19 +226,27 @@
         },
         {
           "n": "fly-through 3",
+          "s": 110
+        },
+        {
+          "n": "reactor",
           "s": 111
         },
         {
-          "n": "fly-through 3",
-          "s": 112
+          "n": "exit",
+          "s": 115
         }
       ],
-      "total_frames": 8159,
+      "total_frames": 6925,
       "rng_end": {
-        "state": 1592347699,
-        "calls": 4182
+        "state": 3282454627,
+        "calls": 10278
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 4.833328,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 7,

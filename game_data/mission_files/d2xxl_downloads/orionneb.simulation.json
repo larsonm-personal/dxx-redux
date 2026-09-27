@@ -146,17 +146,17 @@
         },
         {
           "n": "exit",
-          "s": 93
+          "s": 94
         }
       ],
-      "total_frames": 5569,
+      "total_frames": 5631,
       "rng_end": {
-        "state": 1410616673,
-        "calls": 2464
+        "state": 3241005425,
+        "calls": 2576
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
-        "simulated_seconds": 7.316666,
+        "simulated_seconds": 7.483337,
         "difficulty": 2
       }
     },
@@ -180,7 +180,7 @@
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 57
         },
         {
           "n": "reactor",
@@ -191,14 +191,14 @@
           "s": 81
         }
       ],
-      "total_frames": 4860,
+      "total_frames": 4842,
       "rng_end": {
         "state": 3256495106,
         "calls": 1909
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
-        "simulated_seconds": 6.700012,
+        "simulated_seconds": 6.75,
         "difficulty": 2
       }
     },
@@ -285,8 +285,8 @@
       ],
       "total_frames": 8285,
       "rng_end": {
-        "state": 2908269169,
-        "calls": 6416
+        "state": 1652325549,
+        "calls": 6420
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -310,29 +310,29 @@
         },
         {
           "n": "gold key",
-          "s": 38
+          "s": 37
         },
         {
           "n": "red key",
-          "s": 74
+          "s": 73
         },
         {
           "n": "reactor",
-          "s": 88
+          "s": 87
         },
         {
           "n": "exit",
-          "s": 94
+          "s": 93
         }
       ],
-      "total_frames": 5661,
+      "total_frames": 5595,
       "rng_end": {
-        "state": 1047822082,
-        "calls": 4213
+        "state": 307267490,
+        "calls": 4181
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
-        "simulated_seconds": 6.516663,
+        "simulated_seconds": 6.5,
         "difficulty": 2
       }
     }

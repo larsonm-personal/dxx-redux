@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 7,
-    "timeout": 5
+    "ok": 11,
+    "timeout": 1
   },
   "levels": [
     {
@@ -100,7 +100,7 @@
       "level_num": 3,
       "level_file": "toigol.rdl",
       "route_input_sha256": "C185F46A23271E85D93179263BC3481D5E190BA33946E15B5F729644B6F54B6A",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -119,16 +119,28 @@
           "s": 68
         },
         {
-          "n": "fly-through 1",
-          "s": 69
+          "n": "red key",
+          "s": 76
+        },
+        {
+          "n": "reactor",
+          "s": 99
+        },
+        {
+          "n": "exit",
+          "s": 113
         }
       ],
-      "total_frames": 5244,
+      "total_frames": 6768,
       "rng_end": {
-        "state": 1771496390,
-        "calls": 2913
+        "state": 1446252890,
+        "calls": 3965
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 14.133331,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 4,
@@ -218,7 +230,7 @@
       "level_num": 6,
       "level_file": "wutermi.rdl",
       "route_input_sha256": "2DBAB5386904F4EFD777DD08C081789B198AA670407021606D57EE9E2492BDBC",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -237,22 +249,30 @@
           "s": 94
         },
         {
-          "n": "fly-through 1",
-          "s": 95
+          "n": "reactor",
+          "s": 101
+        },
+        {
+          "n": "exit",
+          "s": 107
         }
       ],
-      "total_frames": 7609,
+      "total_frames": 6446,
       "rng_end": {
-        "state": 3229202267,
-        "calls": 4526
+        "state": 2125936082,
+        "calls": 4581
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 6.199997,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 7,
       "level_file": "phytmi.rdl",
       "route_input_sha256": "D0CDFBA924759C9700441E24D905D1CB529B7F5CF4B30664BB05F9EF3B4258BF",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -275,16 +295,36 @@
           "s": 56
         },
         {
-          "n": "fly-through 3",
-          "s": 56
+          "n": "fly-through 4",
+          "s": 69
+        },
+        {
+          "n": "red key",
+          "s": 81
+        },
+        {
+          "n": "fly-through 5",
+          "s": 101
+        },
+        {
+          "n": "reactor",
+          "s": 101
+        },
+        {
+          "n": "exit",
+          "s": 110
         }
       ],
-      "total_frames": 4409,
+      "total_frames": 6583,
       "rng_end": {
-        "state": 3804397787,
-        "calls": 2094
+        "state": 3679947859,
+        "calls": 11318
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 8.300003,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 8,
@@ -341,8 +381,8 @@
       ],
       "total_frames": 6435,
       "rng_end": {
-        "state": 892402610,
-        "calls": 3461
+        "state": 587816489,
+        "calls": 3480
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
@@ -396,7 +436,7 @@
       "level_num": 11,
       "level_file": "tokexfa.rdl",
       "route_input_sha256": "DC7AF16D8A4FEDE2B7833B805C8D6A4C49304C3FAC4382B572B73F6222EC2B96",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -416,19 +456,27 @@
         },
         {
           "n": "fly-through 2",
-          "s": 56
+          "s": 58
         },
         {
-          "n": "fly-through 2",
-          "s": 56
+          "n": "reactor",
+          "s": 59
+        },
+        {
+          "n": "exit",
+          "s": 65
         }
       ],
-      "total_frames": 4498,
+      "total_frames": 3875,
       "rng_end": {
-        "state": 742409870,
-        "calls": 2105
+        "state": 211712836,
+        "calls": 5523
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 5.933334,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 12,

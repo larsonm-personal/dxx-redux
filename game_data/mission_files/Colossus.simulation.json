@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "timeout": 3
+    "ok": 3,
+    "timeout": 1
   },
   "levels": [
     {
@@ -35,17 +35,17 @@
           "s": 70
         }
       ],
-      "total_frames": 4209,
+      "total_frames": 4211,
       "rng_end": {
-        "state": 615596362,
-        "calls": 2125
+        "state": 4008303606,
+        "calls": 4081
       }
     },
     {
       "level_num": 2,
       "level_file": "BLUE.RDL",
       "route_input_sha256": "7145F3FDBB223DB8462122111C827F3539BB3E07631996269A328EFD84357B2B",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -60,16 +60,31 @@
           "s": 86
         },
         {
-          "n": "pass-through 13",
-          "s": 86
+          "n": "blastable wall",
+          "s": 117
+        },
+        {
+          "n": "blastable wall",
+          "s": 118
+        },
+        {
+          "n": "blastable wall",
+          "s": 120
+        },
+        {
+          "n": "gold key",
+          "s": 120
+        },
+        {
+          "n": "exit",
+          "s": 137
         }
       ],
-      "total_frames": 6275,
+      "total_frames": 8211,
       "rng_end": {
-        "state": 2895563420,
-        "calls": 1755
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 3503092839,
+        "calls": 5250
+      }
     },
     {
       "level_num": 3,
@@ -88,24 +103,20 @@
         {
           "n": "pass-through 31",
           "s": 4
-        },
-        {
-          "n": "pass-through 31",
-          "s": 5
         }
       ],
-      "total_frames": 1468,
+      "total_frames": 1221,
       "rng_end": {
-        "state": 4013917488,
-        "calls": 535
+        "state": 3951027826,
+        "calls": 453
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 4,
       "level_file": "RED.RDL",
       "route_input_sha256": "32445AD6D75FD1BFE2842A873740DFA9F7BF2FF3ABB2F6EDE6196E4685BCC391",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -116,16 +127,36 @@
           "s": 17
         },
         {
-          "n": "pass-through 5",
-          "s": 17
+          "n": "pass-through 3",
+          "s": 30
+        },
+        {
+          "n": "pass-through 4",
+          "s": 41
+        },
+        {
+          "n": "pass-through 11",
+          "s": 54
+        },
+        {
+          "n": "boss",
+          "s": 74
+        },
+        {
+          "n": "exit",
+          "s": 88
         }
       ],
-      "total_frames": 2148,
+      "total_frames": 5304,
       "rng_end": {
-        "state": 1274009874,
-        "calls": 1957
+        "state": 1622287303,
+        "calls": 6946
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 14.766663,
+        "difficulty": 2
+      }
     }
   ]
 }

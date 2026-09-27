@@ -736,20 +736,6 @@
             "index": 1,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 195,
-            "label_pos": {
-              "x": 0.0,
-              "y": 23.2,
-              "z": -145.5
-            },
-            "distance": 373.1,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 146,
             "label_pos": {
@@ -757,8 +743,22 @@
               "y": 130.5,
               "z": -162.5
             },
-            "distance": 497.7,
+            "distance": 426.7,
             "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 195,
+            "label_pos": {
+              "x": 0.0,
+              "y": 23.2,
+              "z": -145.5
+            },
+            "distance": 497.7,
+            "key": "blue"
           },
           {
             "index": 3,
@@ -771,7 +771,7 @@
               "y": -380.0,
               "z": -37.5
             },
-            "distance": 1988.8
+            "distance": 1935.2
           },
           {
             "index": 4,
@@ -1735,15 +1735,15 @@
         "mine_volume": 5132680.0,
         "mine_volume_normalized": 1.12241,
         "mine_volume_text": "1.1x",
-        "travel_distance": 2774.4,
-        "travel_time_seconds": 55,
-        "travel_time_text": "0M:55S",
+        "travel_distance": 2272.6,
+        "travel_time_seconds": 45,
+        "travel_time_text": "0M:45S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
-        "route_required_key_mask": 3,
-        "route_completing_key_mask_set": 136,
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 140,
         "route_steps": [
           {
             "index": 0,
@@ -1754,21 +1754,6 @@
           },
           {
             "index": 1,
-            "kind": "key",
-            "activation_kind": "destroy_key_carrier",
-            "label": "Destroy robot carrying blue key",
-            "seg": 68,
-            "label_pos": {
-              "x": 18.3,
-              "y": -22.8,
-              "z": -103.3
-            },
-            "distance": 529.2,
-            "key": "blue",
-            "key_carrier_objnum": 25
-          },
-          {
-            "index": 2,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 1",
@@ -1780,7 +1765,7 @@
               "y": -102.8,
               "z": -39.0
             },
-            "distance": 395.8,
+            "distance": 250.0,
             "trigger": 1,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
@@ -1793,20 +1778,70 @@
             ]
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 8",
-            "seg": 43,
-            "side": 5,
-            "wall": 26,
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 4",
+            "seg": 20,
+            "side": 3,
+            "wall": 30,
             "label_pos": {
               "x": 0.0,
               "y": -182.8,
-              "z": -49.0
+              "z": -79.0
             },
-            "distance": 126.6,
-            "trigger": 8,
+            "distance": 86.6,
+            "trigger": 4,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 43,
+                "side": 5,
+                "wall": 26
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 3",
+            "seg": 19,
+            "side": 3,
+            "wall": 29,
+            "label_pos": {
+              "x": 0.0,
+              "y": -182.8,
+              "z": 1.0
+            },
+            "distance": 143.1,
+            "trigger": 3,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 45,
+                "side": 5,
+                "wall": 28
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 5",
+            "seg": 45,
+            "side": 5,
+            "wall": 28,
+            "label_pos": {
+              "x": 0.0,
+              "y": -182.8,
+              "z": -29.0
+            },
+            "distance": 70.0,
+            "trigger": 5,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
             "opens": [
@@ -1818,7 +1853,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 6",
@@ -1843,7 +1878,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -1869,7 +1904,7 @@
             ]
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -1896,7 +1931,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -1910,7 +1945,7 @@
             "key": "red"
           },
           {
-            "index": 8,
+            "index": 9,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 10",
@@ -1955,7 +1990,7 @@
             ]
           },
           {
-            "index": 9,
+            "index": 10,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -1968,7 +2003,7 @@
             "distance": 170.0
           },
           {
-            "index": 10,
+            "index": 11,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -1987,6 +2022,7 @@
           }
         ],
         "notes": [
+          "blue key not necessary",
           "gold key not necessary"
         ]
       },

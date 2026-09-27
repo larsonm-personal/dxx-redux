@@ -293,15 +293,15 @@
         "mine_volume": 12406100.0,
         "mine_volume_normalized": 2.71296,
         "mine_volume_text": "2.7x",
-        "travel_distance": 2967.2,
-        "travel_time_seconds": 59,
-        "travel_time_text": "0M:59S",
+        "travel_distance": 6391.7,
+        "travel_time_seconds": 128,
+        "travel_time_text": "2M:08S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -365,9 +365,173 @@
             },
             "distance": 2847.3,
             "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 7",
+            "seg": 480,
+            "side": 1,
+            "wall": 12,
+            "label_pos": {
+              "x": 81.0,
+              "y": 173.0,
+              "z": 0.0
+            },
+            "distance": 1288.8,
+            "trigger": 7,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 536,
+                "side": 3,
+                "wall": 20
+              },
+              {
+                "seg": 522,
+                "side": 2,
+                "wall": 21
+              },
+              {
+                "seg": 545,
+                "side": 3,
+                "wall": 22
+              },
+              {
+                "seg": 513,
+                "side": 2,
+                "wall": 23
+              },
+              {
+                "seg": 563,
+                "side": 3,
+                "wall": 24
+              },
+              {
+                "seg": 495,
+                "side": 2,
+                "wall": 25
+              },
+              {
+                "seg": 554,
+                "side": 3,
+                "wall": 26
+              },
+              {
+                "seg": 504,
+                "side": 2,
+                "wall": 27
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 19",
+            "seg": 480,
+            "side": 3,
+            "wall": 16,
+            "label_pos": {
+              "x": -81.0,
+              "y": 173.0,
+              "z": 0.0
+            },
+            "distance": 63.0,
+            "trigger": 19,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 536,
+                "side": 3,
+                "wall": 20
+              },
+              {
+                "seg": 522,
+                "side": 2,
+                "wall": 21
+              },
+              {
+                "seg": 545,
+                "side": 3,
+                "wall": 22
+              },
+              {
+                "seg": 513,
+                "side": 2,
+                "wall": 23
+              },
+              {
+                "seg": 563,
+                "side": 3,
+                "wall": 24
+              },
+              {
+                "seg": 495,
+                "side": 2,
+                "wall": 25
+              },
+              {
+                "seg": 554,
+                "side": 3,
+                "wall": 26
+              },
+              {
+                "seg": 504,
+                "side": 2,
+                "wall": 27
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 437,
+            "label_pos": {
+              "x": 1.2,
+              "y": -363.0,
+              "z": -0.5
+            },
+            "distance": 718.6,
+            "key": "red"
+          },
+          {
+            "index": 7,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 477,
+            "label_pos": {
+              "x": 1.0,
+              "y": 104.0,
+              "z": 0.0
+            },
+            "distance": 783.2
+          },
+          {
+            "index": 8,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 467,
+            "side": 2,
+            "wall": 9,
+            "label_pos": {
+              "x": 130.0,
+              "y": 40.0,
+              "z": 44.0
+            },
+            "distance": 571.0,
+            "trigger": 5,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "shared route planning reached its work budget"
+        ]
       }
     ],
     "target_index": 0

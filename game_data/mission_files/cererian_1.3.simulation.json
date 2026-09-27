@@ -66,21 +66,21 @@
         },
         {
           "n": "reactor",
-          "s": 49
+          "s": 50
         },
         {
           "n": "exit",
-          "s": 60
+          "s": 61
         }
       ],
-      "total_frames": 3587,
+      "total_frames": 3630,
       "rng_end": {
-        "state": 2246317869,
-        "calls": 2708
+        "state": 1430025122,
+        "calls": 5205
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
-        "simulated_seconds": 11.0,
+        "simulated_seconds": 10.866669,
         "difficulty": 2
       }
     },
@@ -115,14 +115,14 @@
           "s": 126
         }
       ],
-      "total_frames": 7589,
+      "total_frames": 7579,
       "rng_end": {
-        "state": 3813413828,
-        "calls": 4883
+        "state": 2790703867,
+        "calls": 11790
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
-        "simulated_seconds": 4.633331,
+        "simulated_seconds": 4.25,
         "difficulty": 2
       }
     },
@@ -146,7 +146,7 @@
         },
         {
           "n": "red key",
-          "s": 111
+          "s": 110
         },
         {
           "n": "reactor",
@@ -157,14 +157,14 @@
           "s": 154
         }
       ],
-      "total_frames": 9240,
+      "total_frames": 9211,
       "rng_end": {
-        "state": 1614146353,
-        "calls": 5712
+        "state": 1265792371,
+        "calls": 12054
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
-        "simulated_seconds": 6.75,
+        "simulated_seconds": 6.666672,
         "difficulty": 2
       }
     },
@@ -197,8 +197,8 @@
       ],
       "total_frames": 8000,
       "rng_end": {
-        "state": 3514459224,
-        "calls": 3023
+        "state": 3891096828,
+        "calls": 10491
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -233,14 +233,14 @@
           "s": 79
         }
       ],
-      "total_frames": 4740,
+      "total_frames": 4716,
       "rng_end": {
-        "state": 4018476216,
-        "calls": 3567
+        "state": 1422849092,
+        "calls": 10387
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
-        "simulated_seconds": 6.816681,
+        "simulated_seconds": 6.816666,
         "difficulty": 2
       }
     },

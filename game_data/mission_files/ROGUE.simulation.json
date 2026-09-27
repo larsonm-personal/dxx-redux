@@ -6,10 +6,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 2,
     "failed": 2,
-    "timeout": 2,
     "unsupported": 1
   },
   "levels": [
@@ -17,7 +17,7 @@
       "level_num": 1,
       "level_file": "level01.rdl",
       "route_input_sha256": "9295F630577B2AA6B8F7AEDE94A7E8E68B250478D169233E6A1A7677763E418F",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -36,16 +36,36 @@
           "s": 25
         },
         {
-          "n": "pass-through 7",
-          "s": 26
+          "n": "pass-through 6",
+          "s": 27
+        },
+        {
+          "n": "blastable wall",
+          "s": 30
+        },
+        {
+          "n": "fly-through 8",
+          "s": 30
+        },
+        {
+          "n": "reactor",
+          "s": 37
+        },
+        {
+          "n": "exit",
+          "s": 46
         }
       ],
-      "total_frames": 3786,
+      "total_frames": 2753,
       "rng_end": {
-        "state": 1071068649,
-        "calls": 984
+        "state": 1752636946,
+        "calls": 1701
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 9.066666,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 2,
@@ -84,37 +104,37 @@
         },
         {
           "n": "open door",
-          "s": 76
+          "s": 78
         },
         {
           "n": "blue key",
-          "s": 107
+          "s": 109
         },
         {
           "n": "hidden door",
-          "s": 125
+          "s": 127
         },
         {
           "n": "red key",
-          "s": 128
+          "s": 130
         },
         {
           "n": "reactor",
-          "s": 147
+          "s": 149
         }
       ],
-      "total_frames": 9152,
+      "total_frames": 9266,
       "rng_end": {
-        "state": 3256023730,
-        "calls": 6789
+        "state": 2810050940,
+        "calls": 12923
       },
       "problem": "route objective activation is not supported"
     },
     {
       "level_num": 4,
       "level_file": "level04.rdl",
-      "route_input_sha256": "315A1AF236F5660195A093D1380AF428B1A683028E4B924A2833A7DCC89F6BCA",
-      "status": "timeout",
+      "route_input_sha256": "79C9686CD8AD0514A81B12076521155757BEDE17872AEEFC5061DCCB7D3CF95D",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -125,16 +145,72 @@
           "s": 11
         },
         {
-          "n": "fly-through 9",
-          "s": 11
+          "n": "open door",
+          "s": 24
+        },
+        {
+          "n": "pass-through 10",
+          "s": 28
+        },
+        {
+          "n": "open door",
+          "s": 34
+        },
+        {
+          "n": "blue key",
+          "s": 48
+        },
+        {
+          "n": "fly-through 15",
+          "s": 81
+        },
+        {
+          "n": "blastable wall",
+          "s": 87
+        },
+        {
+          "n": "fly-through 12",
+          "s": 94
+        },
+        {
+          "n": "blastable wall",
+          "s": 96
+        },
+        {
+          "n": "pass-through 13",
+          "s": 98
+        },
+        {
+          "n": "blastable wall",
+          "s": 106
+        },
+        {
+          "n": "gold key",
+          "s": 109
+        },
+        {
+          "n": "red key",
+          "s": 158
+        },
+        {
+          "n": "reactor",
+          "s": 192
+        },
+        {
+          "n": "exit",
+          "s": 203
         }
       ],
-      "total_frames": 1796,
+      "total_frames": 12194,
       "rng_end": {
-        "state": 4120937883,
-        "calls": 878
+        "state": 3404800141,
+        "calls": 13876
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 10.983322,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 5,

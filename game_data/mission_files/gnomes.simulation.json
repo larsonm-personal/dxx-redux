@@ -6,10 +6,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 3,
-    "timeout": 1
+    "ok": 4
   },
   "levels": [
     {
@@ -100,7 +99,7 @@
       "level_num": 3,
       "level_file": "warehos.rdl",
       "route_input_sha256": "14914172A1C026F7732BC7E6FEBF25606E8E9F5082A208E28CBD0A049E448598",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -111,16 +110,40 @@
           "s": 6
         },
         {
-          "n": "fly-through 0",
+          "n": "blue key",
           "s": 7
+        },
+        {
+          "n": "gold key",
+          "s": 20
+        },
+        {
+          "n": "red key",
+          "s": 42
+        },
+        {
+          "n": "fly-through 5",
+          "s": 68
+        },
+        {
+          "n": "reactor",
+          "s": 70
+        },
+        {
+          "n": "exit",
+          "s": 93
         }
       ],
-      "total_frames": 1696,
+      "total_frames": 5554,
       "rng_end": {
-        "state": 3274223484,
-        "calls": 1147
+        "state": 3121450758,
+        "calls": 13601
       },
-      "problem": "semantic objective repeated without route advancement"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 22.966675,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 4,

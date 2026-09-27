@@ -1396,9 +1396,9 @@
         "mine_volume": 12230600.0,
         "mine_volume_normalized": 2.67459,
         "mine_volume_text": "2.7x",
-        "travel_distance": 3245.0,
-        "travel_time_seconds": 65,
-        "travel_time_text": "1M:05S",
+        "travel_distance": 3298.5,
+        "travel_time_seconds": 66,
+        "travel_time_text": "1M:06S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1417,17 +1417,17 @@
             "index": 1,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 13",
-            "seg": 2,
-            "side": 0,
-            "wall": 90,
+            "label": "Fly-through trigger 12",
+            "seg": 6,
+            "side": 2,
+            "wall": 89,
             "label_pos": {
               "x": -112.3,
               "y": 111.0,
               "z": 30.2
             },
-            "distance": 61.0,
-            "trigger": 13,
+            "distance": 121.0,
+            "trigger": 12,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
             "opens": [
@@ -1450,6 +1450,31 @@
           },
           {
             "index": 2,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 0",
+            "seg": 11,
+            "side": 3,
+            "wall": 10,
+            "label_pos": {
+              "x": -112.3,
+              "y": 91.0,
+              "z": 30.2
+            },
+            "distance": 50.0,
+            "trigger": 0,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 10,
+                "side": 0,
+                "wall": 6
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -1459,11 +1484,11 @@
               "y": 141.0,
               "z": -405.2
             },
-            "distance": 1054.2,
+            "distance": 997.7,
             "key": "red"
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -1476,7 +1501,7 @@
             "distance": 1634.7
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
