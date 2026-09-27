@@ -581,7 +581,9 @@ fun AdvancedSettingsPage(
     }
     RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
 
-    LaunchedEffect(ctx, filesDir, refreshTrigger) {
+    // Load once per page visit; returning from an export/share activity must not reset the page
+    // Sections refresh their own lists after mutations
+    LaunchedEffect(ctx, filesDir) {
         val appContext = ctx.applicationContext
         var completed = 0
         initialLists = null
