@@ -8,6 +8,28 @@ $deps = Join-Path $root 'shared tools'
 $checkouts = @((Join-Path $root 'checkout one'), (Join-Path $root 'checkout two'))
 $child = $null
 $fixtureLock = $null
+. (Join-Path $repoRoot 'android/helpers/host_processes.ps1')
+$realProcessInventory = ${function:Get-DxxHostProcessInventory}
+# Hosted runners can have unreadable system tools. Isolate only those already
+# present before this fixture starts; retain real inspection of fixture children
+$unreadableBackground = @(& $realProcessInventory -IncludePaths | Where-Object PathInspectionFailed)
+$injectUnreadableTool = $false
+function Get-DxxHostProcessInventory {
+    param([switch]$IncludePaths)
+    foreach ($process in (& $realProcessInventory -IncludePaths:$IncludePaths)) {
+        $background = @($unreadableBackground | Where-Object {
+                $_.ProcessId -eq $process.ProcessId -and $_.Name -ceq $process.Name -and $_.CommandLine -ceq $process.CommandLine
+            })
+        if (-not ($process.PathInspectionFailed -and $background.Count)) { $process }
+    }
+    if ($injectUnreadableTool) {
+        [pscustomobject]@{
+            ProcessId = -1; ParentProcessId = 0; Name = 'python3'
+            CommandLine = 'python3 background-service'; ExecutablePath = $null
+            WorkingDirectory = $null; PathInspectionFailed = $true
+        }
+    }
+}
 
 function Set-FixtureVersion([string]$Checkout, [int]$Version) {
     Set-Content -LiteralPath (Join-Path $Checkout 'android/get_deps/tool_versions.conf') -Value "SHFMT_VERSION=$Version"
@@ -65,6 +87,11 @@ try {
     Remove-Item -LiteralPath $replacementTool -Force
     Assert-Result @(& $cleaner -RepoRoot $checkouts[0] -Apply) 'shfmt-1' Protected 'replacement is not installed'
     Set-Content -LiteralPath $replacementTool -Value 'replacement'
+    $injectUnreadableTool = $true
+    try {
+        Assert-Result @(& $cleaner -RepoRoot $checkouts[0] -Apply) 'shfmt-1' Protected 'cannot inspect tool process -1'
+        if (-not (Test-Path -LiteralPath (Join-Path $deps 'shfmt-1'))) { throw 'Unreadable tool process did not prevent deletion' }
+    } finally { $injectUnreadableTool = $false }
     $savedPath = $env:PATH
     try {
         $env:PATH = (Join-Path $deps 'shfmt-1') + [IO.Path]::PathSeparator + $savedPath
@@ -143,8 +170,14 @@ try {
     # finally blocks and leaving the real on-disk retirement journal to recover
     $interruptedCleaner = Join-Path $root 'interrupt-cleaner.ps1'
     Set-Content -LiteralPath $interruptedCleaner -Value @'
-param($Cleaner, $Checkout)
+param($Cleaner, $Checkout, $InventoryHelper, $IgnoredProcesses, $FilterDefinition)
 $ErrorActionPreference = 'Stop'
+# The crash-recovery child must use the same fixture isolation as its parent
+. $InventoryHelper
+$realProcessInventory = ${function:Get-DxxHostProcessInventory}
+$unreadableBackground = @(ConvertFrom-Json $IgnoredProcesses)
+$injectUnreadableTool = $false
+Set-Item Function:Get-DxxHostProcessInventory -Value ([scriptblock]::Create($FilterDefinition))
 function Remove-Item {
     [CmdletBinding()]
     param([string]$LiteralPath, [switch]$Recurse, [switch]$Force)
@@ -159,7 +192,12 @@ function Remove-Item {
 throw 'Fixture never interrupted retirement'
 '@
     $start = [Diagnostics.ProcessStartInfo]::new((Get-Process -Id $PID).Path)
-    Set-HeadlessProcessArguments -StartInfo $start -Arguments @('-NoProfile', '-File', $interruptedCleaner, $cleaner, $checkouts[0])
+    Set-HeadlessProcessArguments -StartInfo $start -Arguments @(
+        '-NoProfile', '-File', $interruptedCleaner, $cleaner, $checkouts[0],
+        (Join-Path $repoRoot 'android/helpers/host_processes.ps1'),
+        (ConvertTo-Json -InputObject $unreadableBackground -Compress),
+        ${function:Get-DxxHostProcessInventory}.ToString()
+    )
     $start.UseShellExecute = $false
     $child = [Diagnostics.Process]::Start($start)
     if (-not $child.WaitForExit(30000)) { throw 'Interrupted cleaner did not exit' }
