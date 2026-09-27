@@ -104,7 +104,7 @@ internal object SoundfontCatalog {
                 url = "https://github.com/arbruijn/TimGM6mb/releases/download/v20100822/TimGM6mb.sf2",
                 description =
                     "Compact General MIDI bank by Tim Brechbill, with contributions by David Bolton. " +
-                        "Version 20100822, 5.7 MiB. Previously bundled with the app.",
+                        "Version 20100822, 5.7 MiB",
                 websiteUrl = "https://github.com/arbruijn/TimGM6mb",
                 license = timGmLicense,
             ),
