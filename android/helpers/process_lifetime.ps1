@@ -25,6 +25,23 @@ function Stop-RegressionChildProcess {
 function Set-RegressionProcessLifetimeStartInfo {
     param([Parameter(Mandatory)][Diagnostics.ProcessStartInfo]$StartInfo)
 
+    if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
+        # A worker-local job also retires descendants when the immediate child exits
+        # Tree enumeration alone can miss reparented Git Bash/MSYS descendants
+        $payload = @{
+            FileName = $StartInfo.FileName
+            Arguments = $StartInfo.Arguments
+            ArgumentList = @($StartInfo.ArgumentList)
+        } | ConvertTo-Json -Compress
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($payload))
+        $StartInfo.Arguments = ''
+        if ($null -ne $StartInfo.ArgumentList) { $StartInfo.ArgumentList.Clear() }
+        Set-HeadlessProcessArguments -StartInfo $StartInfo -Arguments @(
+            '-NoProfile', '-NonInteractive', '-File', (Join-Path $PSScriptRoot 'process_lifetime_windows.ps1'), '-Payload', $encoded
+        )
+        $StartInfo.FileName = Get-RegressionCurrentPwshPath
+        return
+    }
     if (-not [Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Runtime.InteropServices.OSPlatform]::Linux)) { return }
     if ($StartInfo.Arguments) { throw 'Linux supervision requires ArgumentList instead of a quoted Arguments string' }
     $python = Resolve-RegressionPythonCommand

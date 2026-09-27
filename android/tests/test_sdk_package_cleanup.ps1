@@ -31,7 +31,7 @@ function New-Package([int]$Version) {
 }
 function Assert-Action($Results, [int]$Version, [string]$Action, [string]$Reason = '') {
     $item = @($Results | Where-Object PackageId -CEQ "build-tools;$Version.0.0")
-    if ($item.Count -ne 1 -or $item[0].Action -ne $Action -or ($Reason -and $item[0].Reason -notmatch $Reason)) { throw "Unexpected cleanup result: $($item | ConvertTo-Json -Compress)" }
+    if ($item.Count -ne 1 -or $item[0].Action -ne $Action -or ($Reason -and $item[0].Reason -notmatch $Reason)) { throw "Expected $Action ($Reason), got cleanup result: $($item | ConvertTo-Json -Compress)" }
 }
 try {
     New-Item -ItemType Directory -Path $root | Out-Null
@@ -51,9 +51,13 @@ try {
     $env:DXX_FIXTURE_PWSH = (Get-Process -Id $PID).Path
     Set-Content -LiteralPath (Join-Path $tools 'fixture_sdkmanager.ps1') -Value @'
 $ErrorActionPreference = 'Stop'
-if ($args.Count -ne 3 -or -not $args[0].StartsWith('--sdk_root=') -or $args[1] -ne '--uninstall') { throw 'Incorrect SDK invocation' }
-$sdk = $args[0].Substring('--sdk_root='.Length)
-$id = $args[2]
+# Inspect native argv: -File interprets the colon in --sdk_root=D:\... as parameter syntax
+$nativeArgs = [Environment]::GetCommandLineArgs()
+$fileIndex = [Array]::IndexOf($nativeArgs, '-File')
+$sdkArgs = @($nativeArgs | Select-Object -Skip ($fileIndex + 2))
+if ($fileIndex -lt 0 -or $sdkArgs.Count -ne 3 -or -not $sdkArgs[0].StartsWith('--sdk_root=') -or $sdkArgs[1] -ne '--uninstall') { throw "Incorrect SDK invocation: $($sdkArgs | ConvertTo-Json -Compress)" }
+$sdk = $sdkArgs[0].Substring('--sdk_root='.Length)
+$id = $sdkArgs[2]
 Add-Content -LiteralPath (Join-Path $sdk 'uninstall.log') -Value $id
 if (Test-Path -LiteralPath (Join-Path $sdk 'fail-uninstall')) { exit 23 }
 if (Test-Path -LiteralPath (Join-Path $sdk 'fail-partial')) {
@@ -91,15 +95,21 @@ exit 0
     try { Assert-Action @(& $cleaner -RepoRoot $checkout -AvdRoots $avds -Apply) 35 Protected 'cannot inspect' }
     finally { $injectTool = $false }
     . (Join-Path $repoRoot 'android/helpers/headless_process_pool.ps1')
-    $start = [Diagnostics.ProcessStartInfo]::new((Get-Process -Id $PID).Path)
-    Set-HeadlessProcessArguments -StartInfo $start -Arguments @('-NoProfile', '-Command', 'Start-Sleep -Seconds 30')
-    $start.UseShellExecute = $false
-    $start.WorkingDirectory = $sdk
-    $child = [Diagnostics.Process]::Start($start)
-    try { Assert-Action @(& $cleaner -RepoRoot $checkout -AvdRoots $avds -Apply) 35 Protected "active SDK process $($child.Id)" }
-    finally {
-        if (-not $child.HasExited) { $child.Kill(); $child.WaitForExit() }
-        $child.Dispose()
+    $processModes = @('command-line')
+    if (-not $windows) { $processModes += 'working-directory' }
+    foreach ($mode in $processModes) {
+        $start = [Diagnostics.ProcessStartInfo]::new((Get-Process -Id $PID).Path)
+        $command = 'Start-Sleep -Seconds 30'
+        if ($mode -eq 'command-line') { $command += "; # $sdk" }
+        Set-HeadlessProcessArguments -StartInfo $start -Arguments @('-NoProfile', '-Command', $command)
+        $start.UseShellExecute = $false
+        $start.WorkingDirectory = if ($mode -eq 'working-directory') { $sdk } else { $checkout }
+        $child = [Diagnostics.Process]::Start($start)
+        try { Assert-Action @(& $cleaner -RepoRoot $checkout -AvdRoots $avds -Apply) 35 Protected "active SDK process $($child.Id)" }
+        finally {
+            if (-not $child.HasExited) { $child.Kill(); $child.WaitForExit() }
+            $child.Dispose()
+        }
     }
     $cache = Join-Path $checkout 'buildd2-asan/CMakeCache.txt'
     New-Item -ItemType Directory -Path (Split-Path $cache) -Force | Out-Null

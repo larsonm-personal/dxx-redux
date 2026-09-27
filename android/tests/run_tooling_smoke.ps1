@@ -18,6 +18,7 @@ $tests = @(
 # These shell fixtures simulate Linux installations and Windows archive packages
 $linuxInstallerFixtures = [Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Runtime.InteropServices.OSPlatform]::Linux)
 if ($linuxInstallerFixtures) { $tests += 'test_dependency_install' }
+if (Test-RegressionWindowsHost) { $tests += 'test_regression_process_lifetime' }
 if ($IncludeBoundedRuntime) { $tests += @('test_bounded_python_runtime', 'test_bounded_extraction') }
 if (-not $OutputRoot) {
     $OutputRoot = Join-Path $repoRoot ('android/temp/tooling_smoke/run_' + [guid]::NewGuid().ToString('N'))

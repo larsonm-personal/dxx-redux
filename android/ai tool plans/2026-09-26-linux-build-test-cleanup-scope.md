@@ -781,3 +781,15 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Windows shell-branch fixture restores an interrupted command-line publication through the real wrapper on Linux. Complete six-fixture installer owner passes in 23 seconds, zero failures/timeouts/skips: temp/test_reports/report_20260926_234728.md (linux-sdk-recovery-installers.log)
 - Scoped mixed-language quality and git diff --check pass (linux-sdk-recovery-quality.log). All sessions exited and outstanding_bugs.md is unchanged. No real SDK payloads or AVDs were created or removed
 - Actual Windows execution, other Windows dependency transaction recovery, standalone non-SDK producer retention and sdkmanager internal partial-download cleanup remain open
+
+### Windows tooling CI repair at f7258946
+
+- Run 36332568050 passed Linux and failed Windows SDK cleanup and writer-timeout checks
+- Fix the fake native sdkmanager's argument capture: PowerShell -File splits a Windows drive colon into a parameter/value pair. Use original process arguments to test the native invocation faithfully
+- Exercise command-line SDK use on both hosts and keep cwd-only coverage on Linux, where process inventory exposes it
+- Give each Windows pool worker its own job-owning supervisor so timeout and normal exit retire descendants before captured pipes drain; retain runner-wide protection against forced parent exit
+- Strengthen descendant/timeout checks and failure diagnostics, run scoped quality and Linux tooling smoke. Native Windows validation requires the next CI run
+- Implemented worker-local Windows job supervision with inherited output handles, plus normal-exit/timeout descendant tests in the Windows smoke suite. The SDK timeout fixture now confirms its shell actually started and includes captured failure details
+- Scoped quality passes (android/temp/ci-tooling-repair-quality.log). All 23 extended Linux tooling checks pass: android/temp/tooling_smoke/run_89defb96b1ab45798e07a755289d8ccb/summary.json and android/temp/ci-tooling-repair-smoke.log
+- The Windows supervisor's payload decoding, inherited stdout/stderr and exit-code forwarding were also exercised directly on Linux; this does not validate Windows job semantics
+- Downloaded CI diagnostics were removed after inspection; test scratch cleanup and retained smoke generations remain bounded. git diff --check passes, all invoked sessions exited, and outstanding_bugs.md is unchanged. Changes are local; native Windows CI validation is pending

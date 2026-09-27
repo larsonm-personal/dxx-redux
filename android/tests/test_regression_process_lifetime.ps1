@@ -13,7 +13,7 @@ New-Item -ItemType Directory -Path $output -Force | Out-Null
 $producerLock = $null
 try {
     $producerLock = [IO.File]::Open((Join-Path $output 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
-    foreach ($mode in @('pool', 'stage', 'error')) {
+    foreach ($mode in @('pool', 'stage', 'error', 'exit', 'timeout')) {
         $directory = New-Item -ItemType Directory -Path (Join-Path $output $mode)
         $start = [Diagnostics.ProcessStartInfo]::new((Get-Process -Id $PID).Path)
         Set-HeadlessProcessArguments -StartInfo $start -Arguments @('-NoProfile', '-File', $fixture, '-Mode', $mode, '-OutputRoot', $directory.FullName)
@@ -32,10 +32,10 @@ try {
                     # Error cleanup may already have retired the child before we read its PID
                     Get-Process -Id $_ -ErrorAction SilentlyContinue
                 })
-            if ($mode -ne 'error' -and $descendants.Count -ne 2) { throw "$mode descendants exited before owner termination" }
-            if ($mode -eq 'error') {
+            if ($mode -in @('pool', 'stage', 'timeout') -and $descendants.Count -ne 2) { throw "$mode descendants exited before owner termination" }
+            if ($mode -in @('error', 'exit', 'timeout')) {
                 while (-not (Test-Path -LiteralPath (Join-Path $directory.FullName 'returned'))) {
-                    if ($owner.HasExited -or [DateTime]::UtcNow -gt $deadline) { throw 'Callback failure did not unwind the pool' }
+                    if ($owner.HasExited -or [DateTime]::UtcNow -gt $deadline) { throw "$mode did not return from the pool" }
                     Start-Sleep -Milliseconds 50
                 }
             } else {

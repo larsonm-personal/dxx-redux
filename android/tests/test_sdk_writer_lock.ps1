@@ -71,14 +71,15 @@ begin_dependency_install "$PWD/other-tools/latest"
         $execution.Results += $result
     }
     if ($execution.Results[0].ExitCode -ne 37) { throw 'SDK writer lost the child failure code' }
-    [IO.File]::WriteAllText((Join-Path $helpers 'get_sdk.sh'), "#!/usr/bin/env bash`nsleep 30`necho survived > timeout-survivor`n")
-    $task.Arguments += @('-TimeoutSeconds', '1')
+    [IO.File]::WriteAllText((Join-Path $helpers 'get_sdk.sh'), "#!/usr/bin/env bash`necho started > timeout-started`nsleep 30`necho survived > timeout-survivor`n")
+    $task.Arguments += @('-TimeoutSeconds', '5')
     $execution.Results = @()
     Invoke-HeadlessProcessPool -Tasks @($task) -MaxParallel 1 -OnCompleted {
         param($task, $result)
         $execution.Results += $result
     }
-    if ($execution.Results[0].TimedOut -or $execution.Results[0].ExitCode -eq 0 -or $execution.Results[0].StandardError -notmatch 'SDK writer timed out') { throw 'SDK writer did not enforce its own timeout' }
+    if ($execution.Results[0].TimedOut -or $execution.Results[0].ExitCode -eq 0 -or $execution.Results[0].StandardError -notmatch 'SDK writer timed out') { throw "SDK writer did not enforce its own timeout: $($execution.Results[0] | ConvertTo-Json -Compress)" }
+    if (-not (Test-Path -LiteralPath (Join-Path $fixture 'timeout-started'))) { throw 'Timeout test did not start the SDK writer' }
     $lock = [IO.File]::Open($sdkLock, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     if (Test-Path -LiteralPath (Join-Path $fixture 'timeout-survivor')) { throw 'Timed-out SDK writer continued' }
     $lock.Dispose()
