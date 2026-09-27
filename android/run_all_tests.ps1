@@ -24,6 +24,12 @@
 .PARAMETER Filter
     Glob filter for test names (e.g. "test_death*").
 
+.PARAMETER ListTests
+    Emit the complete discovered catalog as JSON and exit without running tests,
+    probing infrastructure, or creating/pruning reports. Execution filters are
+    ignored; -ExtendedGraphics controls the replay variants listed. Declared
+    requirements describe scheduling, not verified host capability or results.
+
 .PARAMETER HostOnly
     Run tests catalogued as no-infrastructure host tests. Other infrastructure
     tiers are reported as skipped. Host tests may still need game fixtures or tools.
@@ -92,6 +98,7 @@
 param(
     [string]$Filter,
     [switch]$HostOnly,
+    [switch]$ListTests,
     [switch]$ReplayDemo,
     [switch]$IncludeManual,
     [switch]$StopOnFail,
@@ -141,6 +148,8 @@ if (Test-RunAllTestsProfileMenuEnabled -ExplicitParameterCount $explicitParamete
     }
 }
 
+if ($ListTests -and $ReplayDemo) { throw '-ListTests cannot be combined with -ReplayDemo' }
+
 if ($ReplayDemo) {
     & (Join-Path $scriptDir 'tests/run_input_demo_replay.ps1') -Interactive
     exit $LASTEXITCODE
@@ -148,7 +157,7 @@ if ($ReplayDemo) {
 
 if ($FullSuite) { $FullRouteCorpus = $true }
 
-if (-not $HostOnly -and -not $Filter -and -not $Target45Minutes -and -not $IncludeManual -and -not $FullSuite) {
+if (-not $ListTests -and -not $HostOnly -and -not $Filter -and -not $Target45Minutes -and -not $IncludeManual -and -not $FullSuite) {
     $extendedSample = Get-TestSuiteExtendedSample -Seed $routeSampleSeed
     if ($extendedSample.Graphics) { $ExtendedGraphics = $true }
     if ($extendedSample.Multiplayer) { $ExtendedMultiplayer = $true }
@@ -160,11 +169,11 @@ if (-not $HostOnly -and -not $Filter -and -not $Target45Minutes -and -not $Inclu
 if (-not $ReportDir) {
     $ReportDir = Join-Path $repoRoot "temp\test_reports"
 }
-New-Item -Path $ReportDir -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+if (-not $ListTests) { New-Item -Path $ReportDir -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null }
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $reportFile = Join-Path $ReportDir "report_$timestamp.md"
-& (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $reportFile
+if (-not $ListTests) { & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $reportFile }
 $script:cancelRequested = $false
 $script:cancelCleanupStarted = $false
 
@@ -198,7 +207,7 @@ $script:cancelHandler =
     Request-TestSuiteCancel
     [Environment]::Exit(130)
 }
-[Console]::add_CancelKeyPress($script:cancelHandler)
+if (-not $ListTests) { [Console]::add_CancelKeyPress($script:cancelHandler) }
 
 # -- Environment probes (non-provisioning) --
 
@@ -383,6 +392,7 @@ $testTimeouts = @{
     "test_d1_replay_parity"               = 1800
     "test_d1_in_d2_standalone"            = 300
     "test_input_demo_regressions_graphics" = 900
+    "test_dos_midi_parity"                = 1500
     "test_level_metadata_benchmark"       = 300
     "test_launcher_dpad"                  = 180
     "test_mission_zip_batch"              = 3600
@@ -445,6 +455,31 @@ $extractTests = @(
     "test_gog_installer_redbook_unified"
 )  # single emulator + game data, run before the dual-emulator tier
 $noInfraTests = @(
+    "test_download_verification",
+    "test_d2xxl_sound_format",
+    "test_d2xxl_tga_layout",
+    "test_d2xxl_tga_pixels",
+    "test_cd_regression_runner",
+    "test_extract_all_cds_batch",
+    "test_extract_all_gog_batch",
+    "test_generate_regression_specs",
+    "test_extract_suite_device_preflight",
+    "test_extract_regression_workflow",
+    "test_extraction_cache_provenance",
+    "test_extraction_publication",
+    "test_fingerprint_audio_enumeration",
+    "test_fingerprint_manifest_publication",
+    "test_fingerprint_mission_zip_budgets",
+    "test_fingerprint_music_pack_build_guard",
+    "test_fingerprint_source_identity",
+    "test_fingerprint_threshold",
+    "test_input_demo_explicit_path",
+    "test_input_demo_host_build_guard",
+    "test_repository_artifact_policy",
+    "test_mission_zip_batch_publication",
+    "test_mission_zip_batch_recovery",
+    "test_regression_process_lifetime",
+    "test_powershell_51_compatibility",
     "test_guidebot_simulation_browser",
     "test_guidebot_simulation_timeout_policy",
     "test_jsonc_and_tracklist_parsing",
@@ -458,6 +493,8 @@ $noInfraTests = @(
     "test_7zip_install",
     "test_managed_dependencies",
     "test_sdk_package_inventory",
+    "test_sdk_package_cleanup",
+    "test_sdk_writer_lock",
     "test_bounded_python_runtime",
     "test_bounded_extraction",
     "test_guidebot_simulation_schema",
@@ -467,6 +504,7 @@ $noInfraTests = @(
     "test_clean_workspace",
     "test_clean_old_artifacts",
     "test_dep_platform",
+    "test_run_all_tests_catalog",
     "test_dependency_install",
     "test_get_deps_runtime_updates",
     "test_host_process_cleanup",
@@ -476,6 +514,7 @@ $noInfraTests = @(
     "test_host_metadata_workspace",
     "test_windows_mission_metadata_runner",
     "test_code_quality_files",
+    "test_formatter_process_cleanup",
     "test_input_demo_replay_failures",
     "test_guidebot_route_regressions",
     "test_guidebot_saved_world",
@@ -491,6 +530,7 @@ $noInfraTests = @(
     "test_mission_provenance",
     "test_test_runner_result",
     "test_cue_iso",
+    "test_dos_midi_parity",
     "test_fpcalc_and_acoustid",
     "test_game_data_asset_manifest_writer",
     "test_gradle_unit_tests",
@@ -508,6 +548,7 @@ $noInfraTests = @(
     "test_input_demo_state_trace_compare",
     "test_input_demo_rng_trace_compare",
     "test_test_report_runtimes",
+    "test_test_execution_evidence",
     "test_test_helpers_process_wait",
     "test_test_process_output_capture",
     "test_test_suite_progress",
@@ -653,7 +694,7 @@ $inputDemoCanaryManifest = Read-InputDemoGraphicsCanaryManifest -ManifestPath (J
 $d1GraphicsCanary = $inputDemoCanaryManifest['d1']
 $d2GraphicsCanary = $inputDemoCanaryManifest['d2']
 $inputDemoPrimaryRoot = Join-Path $repoRoot "temp\input_demo_primary_results_$timestamp"
-& (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $inputDemoPrimaryRoot
+if (-not $ListTests) { & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $inputDemoPrimaryRoot }
 $d1PrimaryResultRoot = Join-Path $inputDemoPrimaryRoot "d1"
 $d2PrimaryResultRoot = Join-Path $inputDemoPrimaryRoot "d2"
 $d1InD2PrimaryResultRoot = Join-Path $inputDemoPrimaryRoot "d1-in-d2"
@@ -773,6 +814,35 @@ foreach ($definition in $inputDemoRegressionMatrix) {
     }
     $allTests += $entry
 }
+
+if ($ListTests) {
+    $catalog = [ordered]@{
+        schema = 1
+        scope = 'complete discovery before execution filters; requirements are declared, not probed'
+        extended_graphics = [bool]$ExtendedGraphics
+        tests = @($allTests | Sort-Object Name | ForEach-Object {
+                [ordered]@{
+                    name = $_.Name
+                    base_name = $_.BaseName
+                    type = $_.Type
+                    path = $_.Path.Substring($repoRoot.Length + 1).Replace('\', '/')
+                    requires = $_.Requires
+                    manual = ($_.Name -in $manualTests)
+                    timeout_seconds = if ($_.TimeoutSeconds -gt 0) { $_.TimeoutSeconds } else { $TestTimeoutSeconds }
+                    run_mode = $_.DemoRunMode
+                }
+            })
+        support = @($supportScripts | Sort-Object Type, Name | ForEach-Object {
+                [ordered]@{ name = $_.Name; type = $_.Type; owner = $_.Owner }
+            })
+    }
+    $catalog | ConvertTo-Json -Depth 6
+    exit 0
+}
+
+# Preserve declarations for skipped observations after execution filters
+$evidenceTestsByName = @{}
+foreach ($test in $allTests) { $evidenceTestsByName[$test.Name] = $test }
 
 # Apply filter
 if ($Filter) {
@@ -997,6 +1067,7 @@ function Test-HostToolPrerequisites {
 
     $hostToolTests = @(
         "test_cue_iso",
+        "test_dos_midi_parity",
         "test_fpcalc_and_acoustid",
         "test_input_demo_determinism_matrix",
         "test_input_demo_regressions",
@@ -1547,6 +1618,21 @@ if ($runnableTests.Count -gt 0 -and -not (Invoke-SuitePreflight)) {
 
 # -- Execution helpers --
 
+. (Join-Path $helpersDir 'test_execution_evidence.ps1')
+$evidenceContext = New-TestExecutionEvidenceContext -RepositoryRoot $repoRoot -ReportDir $ReportDir -ReportPath $reportFile
+$evidenceStartedUtc = [DateTime]::UtcNow.ToString('o')
+$script:evidenceFailed = $false
+function Save-SuiteTestEvidence {
+    param([hashtable]$Test, [hashtable]$Result, [string]$StartedUtc, [string]$SourceSha256)
+    try {
+        $observation = New-TestExecutionObservation -Context $evidenceContext -Test $Test -Result $Result -StartedUtc $StartedUtc -SourceSha256 $SourceSha256
+        Write-TestExecutionEvidence -Path $evidenceContext.Path -HostKey $evidenceContext.HostKey -Observations @($observation)
+    } catch {
+        $script:evidenceFailed = $true
+        Write-Warning "Could not save test execution evidence: $_"
+    }
+}
+
 $runTestScript = Join-Path $helpersDir "run_test.ps1"
 $results = @()
 $passCount = 0
@@ -1585,6 +1671,9 @@ function Invoke-SingleTest {
     Write-Host "  Running: $name  [$($Test.Type)]  (timeout: ${testTimeout}s)" -ForegroundColor White
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     $startedAt = Get-Date
+    $testStartedUtc = $startedAt.ToUniversalTime().ToString('o')
+    $sourceSha256 = (Get-FileHash -LiteralPath $Test.Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    Save-SuiteTestEvidence -Test $Test -StartedUtc $testStartedUtc -SourceSha256 $sourceSha256
 
     if ($Test.Type -eq "jsonc") {
         $psScript = $runTestScript
@@ -1701,6 +1790,7 @@ function Invoke-SingleTest {
         } else { "" }
     }
     $script:results += $result
+    Save-SuiteTestEvidence -Test $Test -Result $result -StartedUtc $testStartedUtc -SourceSha256 $sourceSha256
 
     if ($StopOnFail -and $status -in @("FAIL", "TIMEOUT")) {
         Write-Host "  Stopping early (-StopOnFail)" -ForegroundColor Yellow
@@ -2005,6 +2095,23 @@ $notRun = @(
         }
 )
 
+try {
+    $pendingObservations = @(foreach ($item in @($allSkipped) + @($notRun)) {
+            $definition = $evidenceTestsByName[$item.Name]
+            $observationResult = @{
+                Status = if ($item -in $notRun) { 'NOT_RUN' } else { 'SKIP' }
+                Reason = $item.Reason
+            }
+            New-TestExecutionObservation -Context $evidenceContext -Test $definition -Result $observationResult -StartedUtc $evidenceStartedUtc
+        })
+    if ($pendingObservations.Count) {
+        Write-TestExecutionEvidence -Path $evidenceContext.Path -HostKey $evidenceContext.HostKey -Observations $pendingObservations
+    }
+} catch {
+    $script:evidenceFailed = $true
+    Write-Warning "Could not save skipped/not-run test evidence: $_"
+}
+
 # -- Generate report --
 
 Write-Host ""
@@ -2108,6 +2215,7 @@ if ($failCount -gt 0 -or $timeoutCount -gt 0) {
 
 [IO.File]::WriteAllText($reportFile, ($md -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
 Write-Host "  Report: $reportFile" -ForegroundColor Cyan
+Write-Host "  Execution evidence: $($evidenceContext.Path)" -ForegroundColor Cyan
 Write-Host ""
 
 
@@ -2123,4 +2231,4 @@ Stop-TestSuiteEmulators
 
 # Note: tests that own a server lifecycle clean it up themselves
 
-if ($failCount -gt 0 -or $timeoutCount -gt 0 -or $notRun.Count -gt 0) { exit 1 } else { exit 0 }
+if ($evidenceFailed -or $failCount -gt 0 -or $timeoutCount -gt 0 -or $notRun.Count -gt 0) { exit 1 } else { exit 0 }

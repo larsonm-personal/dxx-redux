@@ -1,13 +1,14 @@
 # TEST-SUPPORT: owner=test_guidebot_route_regressions
 # Native escort loop and physics, without rendering or player auto-follow
-param([switch]$NoBuild, [ValidateRange(0, 899)][int]$ReturnTargetSegment = 35, [string]$BuildDir = 'buildd2')
+param([switch]$NoBuild, [ValidateRange(0, 899)][int]$ReturnTargetSegment = 35, [string]$BuildDir = 'buildd2', [string]$HogDir, [ValidateRange(1, 300)][int]$ProcessTimeoutSeconds = 90)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1')
+. (Join-Path $PSScriptRoot 'guidebot_navigation_host.ps1')
+if (-not [IO.Path]::IsPathRooted($BuildDir)) { $BuildDir = Join-Path $repoRoot $BuildDir }
 $outputRoot = Join-Path $repoRoot ('android/temp/guidebot_live_navigation/run_' + [guid]::NewGuid().ToString('N'))
-$hogDir = Join-Path $repoRoot 'game_data/CD images/Descent II (USA) (v1.1)/data_tracks/d2data'
-$exe = Join-RegressionPath $repoRoot $BuildDir 'main' (Get-RegressionHostExecutableNames -BaseName 'test_guidebot_live_navigation')[0]
+$exe = Join-RegressionPath $BuildDir 'main' (Get-RegressionHostExecutableNames -BaseName 'test_guidebot_live_navigation')[0]
 if (-not $NoBuild) {
     Invoke-RegressionHostBuild -RepoRoot $repoRoot -Target d2
 }
@@ -16,6 +17,9 @@ New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
 $fixtureLock = $null
 try {
     $fixtureLock = [IO.File]::Open((Join-Path $outputRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+    Write-Host "Navigation diagnostics: $outputRoot"
+    if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "Navigation executable not found: $exe" }
+    $dataDir = New-GuidebotNavigationData -RepoRoot $repoRoot -OutputRoot $outputRoot -HogDir $HogDir
     $extraDir = Join-Path $outputRoot 'maximum'
     New-Item -ItemType Directory -Path $extraDir | Out-Null
     $maximumArchive = Join-Path $repoRoot 'game_data/mission_files/descent_maximum_fixed.zip'
@@ -36,10 +40,9 @@ try {
             $log = Join-Path $outputRoot "$($case.Name)_$repeat.log"
             $userDir = Join-Path $outputRoot "$($case.Name)_user_$repeat"
             New-Item -ItemType Directory -Force -Path $userDir | Out-Null
-            & $exe -hogdir $hogDir -extra-dir $extraDir -mission $case.Mission -level $case.Level `
-                -route-confirm-user-dir $userDir -route-confirm-json-out $output -escort-return-target $ReturnTargetSegment 2>&1 |
-                Out-File -LiteralPath $log -Encoding utf8
-            if ($LASTEXITCODE -ne 0) { throw "Escort test failed: $($case.Name), see $log" }
+            Invoke-GuidebotNavigationProcess -Exe $exe -RepoRoot $repoRoot -LogPath $log -TimeoutSeconds $ProcessTimeoutSeconds -Arguments @(
+                '-hogdir', $dataDir, '-extra-dir', $extraDir, '-mission', $case.Mission, '-level', [string]$case.Level,
+                '-route-confirm-user-dir', $userDir, '-route-confirm-json-out', $output, '-escort-return-target', [string]$ReturnTargetSegment)
             $result = Get-Content -LiteralPath $output -Raw
             if (-not ($result | ConvertFrom-Json).passed) { throw "Escort assertions failed: $output" }
             if ($repeat -eq 1) { $reference = $result }

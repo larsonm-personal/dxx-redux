@@ -63,11 +63,13 @@ function Get-DxxSdkInventory {
         $checkouts += @($state.Repositories)
     }
     $references = [Collections.Generic.List[object]]::new()
+    $relevantCheckouts = @()
     foreach ($checkout in @($checkouts | Select-Object -Unique)) {
         $otherBaseFile = Join-Path $checkout 'dependency_base.txt'
         Assert-DxxPlainSdkPath $otherBaseFile
         $otherBase = [IO.Path]::GetFullPath((Get-Content -LiteralPath $otherBaseFile -First 1 -ErrorAction Stop).Trim())
         if (-not $otherBase.Equals($dependencyRoot, $comparison)) { continue }
+        $relevantCheckouts += $checkout
         Assert-DxxPlainSdkPath (Join-Path $checkout 'android/get_deps/tool_versions.conf')
         $config = Read-DxxDependencyConfig -RepoRoot $checkout
         foreach ($key in @('COMPILE_SDK', 'EMULATOR_API_LEVEL', 'BUILD_TOOLS_VERSION', 'CMAKE_VERSION')) {
@@ -179,7 +181,8 @@ function Get-DxxSdkInventory {
         }
     }
     [pscustomobject]@{
-        SdkRoot = $sdkRoot; AvdRoots = $AvdRoots; Packages = @($packages | Sort-Object PackageId)
+        SdkRoot = $sdkRoot; AvdRoots = $AvdRoots; Checkouts = $relevantCheckouts; Packages = @($packages | Sort-Object PackageId)
+        References = @($references.ToArray())
         Coverage = @('registered checkout configuration', 'visible AVD configuration')
         RetirementReady = $false
     }

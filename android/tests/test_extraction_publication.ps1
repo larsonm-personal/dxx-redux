@@ -2,9 +2,13 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $repoRoot 'android\helpers\bounded_extraction.ps1')
 
-$testRoot = Join-Path $repoRoot "android\temp\publication-$([Guid]::NewGuid().ToString('N'))"
+$testRoot = Join-Path $repoRoot ('android/temp/test_extraction_publication/run_' + [guid]::NewGuid().ToString('N'))
 $destination = Join-Path $testRoot 'published'
 $staging = Join-Path $testRoot 'staging'
+
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $testRoot -DirectoryPrefix run_
+New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+$producerLock = [IO.File]::Open((Join-Path $testRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 
 try {
     New-Item -ItemType Directory -Path $destination, $staging | Out-Null
@@ -38,5 +42,6 @@ try {
     }
     Write-Host 'extraction publication tests passed'
 } finally {
+    $producerLock.Dispose()
     Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
 }

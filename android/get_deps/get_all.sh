@@ -68,7 +68,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-TOTAL_STEPS=15
+TOTAL_STEPS=16
 if [ "$(get_host_os)" = "linux" ] && [ "$SKIP_HOST_PREREQS" -eq 0 ]; then
     TOTAL_STEPS=$((TOTAL_STEPS + 1))
 fi
@@ -155,6 +155,7 @@ run_step "cmake-format / cmake-lint" bash "$HELPER_DIR/get_cmake_format.sh"
 run_step "Verified bounded Python runtime" bash "$HELPER_DIR/get_bounded_python.sh"
 
 run_step "Managed dependency retention" "$DEPENDENCY_POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File "$SCRIPT_DIR/clean-dependencies.ps1" -RegisterCurrent -Apply
+run_step "Managed SDK package retention" "$DEPENDENCY_POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File "$SCRIPT_DIR/clean-sdk-packages.ps1" -RegisterCurrent -Apply
 
 echo ""
 echo "=== All dependencies installed. ==="

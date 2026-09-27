@@ -7,7 +7,9 @@ Set-StrictMode -Version Latest
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $repoRoot 'android\helpers\verified_dependencies.ps1')
 
-$tempRoot = Join-Path $repoRoot "temp\download-verification-$([Guid]::NewGuid().ToString('N'))"
+$tempRoot = Join-Path $repoRoot "android/temp/download_verification/run_$([Guid]::NewGuid().ToString('N'))"
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $tempRoot -DirectoryPrefix run_
+$producerLock = $null
 $filePath = Join-Path $tempRoot 'source.bin'
 $treePath = Join-Path $tempRoot 'tree'
 
@@ -42,6 +44,7 @@ function Assert-Contains {
 
 try {
     New-Item -ItemType Directory -Path $treePath -Force | Out-Null
+    $producerLock = [IO.File]::Open((Join-Path $tempRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     [IO.File]::WriteAllBytes($filePath, [byte[]](1, 2, 3, 4))
     $fileHash = (Get-FileHash -LiteralPath $filePath -Algorithm SHA256).Hash
     Assert-DxxFileSha256 -Path $filePath -ExpectedSha256 $fileHash -Label 'test source' | Out-Null
@@ -125,6 +128,7 @@ try {
     }
     Write-Host 'PASS: StuffIt manifests record verified executable identities'
 } finally {
+    if ($producerLock) { $producerLock.Dispose() }
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 

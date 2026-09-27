@@ -13,6 +13,10 @@ param(
     [string[]]$Paths
 )
 
+# PowerShell script calls bind only the first space-separated value to a named
+# array parameter; preserve remaining positional paths used by the documented CLI
+$explicitScope = $PSBoundParameters.ContainsKey('Paths') -or $args.Count -gt 0
+$Paths = if ($explicitScope) { @($Paths) + @($args) } else { @() }
 $ErrorActionPreference = "Continue"
 $scriptDir = $PSScriptRoot
 $helpersDir = Join-Path $scriptDir "helpers"
@@ -33,7 +37,7 @@ function Resolve-CodeQualityPaths {
     $results = @()
     foreach ($inputPath in $InputPaths) {
         if ([string]::IsNullOrWhiteSpace($inputPath)) {
-            continue
+            throw 'An explicit code-quality path cannot be empty'
         }
 
         $candidate = $inputPath
@@ -41,10 +45,9 @@ function Resolve-CodeQualityPaths {
             $candidate = Join-Path $repoRoot $candidate
         }
 
-        $item = Get-Item -LiteralPath $candidate -ErrorAction SilentlyContinue
+        $item = Get-Item -LiteralPath $candidate -Force -ErrorAction SilentlyContinue
         if (-not $item) {
-            Write-Warning "Skipping missing path: $inputPath"
-            continue
+            throw "Code-quality path not found: $inputPath"
         }
 
         $results += $item.FullName
@@ -111,7 +114,7 @@ function Get-CodeQualityFiles {
     $results = @()
     if ($TargetPaths.Count -gt 0) {
         foreach ($targetPath in $TargetPaths) {
-            $item = Get-Item -LiteralPath $targetPath -ErrorAction SilentlyContinue
+            $item = Get-Item -LiteralPath $targetPath -Force -ErrorAction SilentlyContinue
             if (-not $item) {
                 continue
             }
@@ -253,6 +256,8 @@ function Write-CodeQualityLock {
 
     $lockJson = @{
         pid = $PID
+        process_start_ticks = (Get-Process -Id $PID).StartTime.ToUniversalTime().Ticks.ToString()
+        repository_root = $repoRoot
         started = (Get-Date).ToString("s")
         fix = [bool]$Fix
         host = $Host.Name
@@ -329,7 +334,13 @@ if (-not (Test-Path -LiteralPath $lockDir)) {
     New-Item -ItemType Directory -Path $lockDir | Out-Null
 }
 
-$resolvedPaths = Resolve-CodeQualityPaths $Paths
+try {
+    $resolvedPaths = @(Resolve-CodeQualityPaths $Paths)
+    if ($explicitScope -and $resolvedPaths.Count -eq 0) { throw 'Explicit code-quality scope resolved to no paths' }
+} catch {
+    Write-Error $_
+    exit 1
+}
 $toolParams = @{}
 if ($resolvedPaths.Count -gt 0) {
     $toolParams.Paths = $resolvedPaths

@@ -9,9 +9,10 @@ The gap inventory below records the starting state. The execution record documen
 
 - Linux bootstrap, APK/AAB builds, JVM tests, normal and sanitizer native builds have execution evidence below. Latest normal native run passed all 54 D1 and 63 D2 CTest cases
 - Shared tooling CI passed on Windows 2022 and Ubuntu 24.04 after the cleanup-fixture correction. New uncommitted work extends that workflow with pinned-runtime/extraction checks; this extension has local Linux evidence only so far
-- Latest extended Linux tooling smoke passed 13 tests. Pinned Python 3.12.8 now supports bounded extraction on Linux x86-64, with archive/tree admission and no PATH fallback. Both bounded test entries passed through the master runner; all four available demo packages passed extraction
+- Latest extended Linux tooling smoke passed 17 tests. Pinned Python 3.12.8 now supports bounded extraction on Linux x86-64, with archive/tree admission and no PATH fallback. Both bounded test entries passed through the master runner; all four available demo packages passed extraction
 - Native retail route runs now discover and stage mixed D1/D2 data on either host. All 60 FirstStrike/Counterstrike levels passed two repeats on Linux; temporary base-data copies were removed on success and injected engine failure
 - Managed version retirement covers DOSBox and the Linux Python runtime and protects sanitizer build-cache references. Linux directory, in-place cmakelang and soundfont installers recover from forced termination; Windows transaction parity and SDK cleanup remain unfinished
+- SDK bootstrap now registers current versioned packages and invokes managed retirement through sdkmanager. The cleanup integration passes on Linux; real registration owns five current packages and preserves four unowned legacy packages. Verified partial-uninstall recovery now uses directory identity and payload manifests; Windows writer locking and legacy SDK adoption remain unfinished
 - Remaining work includes a complete test/capability ledger, remaining asset-dependent wrappers, replay/benchmark content differences, broader build CI, and device validation. This host has no KVM and its two bounded software-emulator attempts did not boot; those tests require another usable device/host
 - No native, test, or formatter process from the latest completed tranche remains running. The protected outstanding_bugs.md file has not been changed
 
@@ -598,3 +599,185 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Integration passes for two sharing checkouts, integer/.0 platform aliases, command-line latest aliases, moved absolute/relative AVD descriptors, environment roots, malformed metadata, unavailable checkout/AVD data and linked-path rejection. The test is included in the shared tooling smoke profile and master no-infrastructure catalog
 - Master HostOnly filter passes one test, zero failures/timeouts/skips (temp/test_reports/report_20260926_213936.md; linux-sdk-inventory-master.log). Scoped quality passes (linux-sdk-inventory-quality.log)
 - Final extended tooling smoke passes all 13 checks (android/temp/tooling_smoke/run_30692a932d154f649a416ff05f43ab71/summary.json; linux-sdk-inventory-smoke.log), including corrected managed PowerShell retirement, all installer recovery fixtures and bounded extraction. Every session from this tranche is terminal; git diff --check passes and outstanding_bugs.md remains unchanged. Inventory does not authorize deletion; ownership registration, process/cache checks and SDK uninstall integration remain open
+
+
+### Managed SDK package retirement
+
+- Previous goal turn made progress: SDK/reference inventory, master classification and all 13 extended tooling checks passed
+- Add explicit current-package ownership registration, persistent AVD search roots, process/cache guards, replacement admission and SDK-manager uninstall through the supervised process pool. Preserve unowned packages and unknown metadata
+- Use the command-line installer lock for cleanup as well; verified FileShare.None blocks Linux flock on the same inode. Journal before uninstall, reconcile missing packages on retry and preserve incomplete or changed payloads rather than deleting blindly
+- Validate in an isolated SDK fixture before any real registration or cleanup. Windows shell writers still need full lock parity; SDK partial-uninstall recovery with missing identity remains an explicit incomplete case
+- Initial SDK cleanup integration passed. Expanded smoke caught a fixture-only hidden-marker removal issue; corrected the simulated uninstall to use Force. All 13 other smoke checks passed (android/temp/tooling_smoke/run_95c7972d018f4c54bfc5921a82d6d166/summary.json)
+- Corrected master HostOnly SDK cleanup test passes (13 seconds, zero failures/timeouts/skips): temp/test_reports/report_20260926_215323.md and linux-sdk-cleanup-master.log. Coverage includes live SDK working-directory process protection, PATH override, unreadable Java process, retained sanitizer cache, uninstall failure/retry, lost success reconciliation, preserving partial payloads after marker loss, persistent AVD roots and actual old-image deletion in a fixture
+- Scoped quality passes (linux-sdk-cleanup-quality.log). Bootstrap now includes SDK registration/apply after successful provisioning, with its step count updated to 16 before optional steps
+- Real registration/apply succeeded: build-tools 37.0.0, CMake 3.31.6, platforms 34/37.0 and the API 34 image are registered and protected; four legacy unowned packages remain protected. No real SDK package was removed. The default AVD root is persisted in the SDK ownership registry (android/temp/linux-sdk-cleanup-registered.json)
+- All sessions from this tranche are terminal. git diff --check passes and outstanding_bugs.md is unchanged. The full smoke report retains the original fixture failure; the corrected master rerun is the final cleanup validation, with the 13 other smoke checks already passing
+- Remaining SDK work: fully automatic interrupted removal when identity metadata was deleted, Windows writer lock parity, and separately reviewed adoption of legacy SDK packages. Standalone provisioning helpers do not yet trigger retirement independently of the final bootstrap step
+
+
+### Interrupted SDK uninstall recovery
+
+- Previous goal turn made progress: owned SDK retirement, fixture uninstalls, persisted AVD roots, master validation and real registration of five current packages succeeded
+- Record directory identity and a bounded SHA-256 manifest before sdkmanager starts uninstalling. Reconcile only surviving original files after interruption, retaining all reference/process/cache/replacement checks even when package.xml or the ownership marker disappeared
+- Move verified partial payloads into a deterministic quarantine before deletion; journal that transition and reject older cleaners with a temporary schema version while quarantine recovery is pending
+- A direct probe showed .NET CreationTime changes when directory contents change on this Linux host, so use native device/inode/birth identity on Linux and volume/file ID/creation identity on Windows in a shared helper
+- Expanded SDK recovery integration passes changed-content/new-file/replaced-directory protection, references renewed after retirement began, missing package.xml/ownership marker recovery, and actual process termination after quarantine move and during quarantine deletion. Preview preserves quarantines; retry removes remaining known files and restores schema 1
+- Final extended Linux smoke passes all 14 checks (android/temp/tooling_smoke/run_14f48b2708c2423d9bf0ac7aff5e9ba4/summary.json; linux-sdk-recovery-smoke.log). Scoped quality passes (linux-sdk-recovery-quality.log), git diff --check passes, and all sessions from this tranche are terminal
+- Windows directory-identity interop source compiles on this host, but native Windows execution of this new recovery path remains pending. A fresh real SDK preview preserves five configured packages and four unowned legacy packages; no real payload was removed or hashed for retirement (linux-sdk-recovery-preview.json)
+- User pushed commit 95f3c7fc during this work. GitHub run 36295068814 passes on both Ubuntu 24.04 and Windows 2022: https://github.com/larsonm-personal/dxx-redux/actions/runs/36295068814. This covers the prior committed tooling work, not the newer uncommitted SDK cleaner/recovery changes
+- outstanding_bugs.md remains unchanged. Remaining goal work still includes Windows writer lock parity, legacy SDK adoption after reference review, standalone producer integration, the remaining test/capability ledger and other recorded build/device gaps
+
+### DOS MIDI host test runner
+
+- Reuse the shared extraction build tree, resolve host executable names and cached CMake, and normalize paths relative to the checkout
+- Supervise configure/build/CTest/reference conversion with bounded child processes; retain per-run diagnostics under a producer lock and check disk reserve before building
+- Verify all three synthetic tests are registered and execute them even without local DOS captures. Missing captures produce SKIP/exit 2; changed hashes and failed negative controls remain failures
+- Catalogue this as a no-infrastructure host test and validate synthetic execution, missing-reference classification and failure behavior without changing reference fixtures
+- Real Linux configure/build and all three synthetic CTest cases pass using the existing shared extraction tree (android/temp/linux-midi-synthetic.log). No duplicate extraction build tree was created
+- Master HostOnly selects this as Tier 0 and reports SKIP after synthetic PASS because all three proprietary captures are unavailable; zero failures/timeouts (temp/test_reports/report_20260926_221943.md; linux-midi-master.log)
+- Injected wrong reference hashes fail after the real synthetic tests pass; an empty CTest catalog fails explicitly. Spaced paths and invocation from /tmp work with checkout-relative arguments, and the temporary policy fixture was removed (linux-midi-policy-checks.log)
+- Updated listening-command examples to select the shared build tools and the chosen retained run. The separate game08 listening helper still hardcodes Windows executable names and remains a portability gap; reference/audio parity cannot be validated here without the captures
+- Scoped quality passes (android/temp/linux-midi-quality.log), git diff --check passes, and all processes from this tranche are terminal. outstanding_bugs.md remains unchanged. Current runner changes have Linux evidence; Windows execution and real capture parity remain unverified
+
+### Original and live GuideBot navigation runners
+
+- Previous goal turn made progress: DOS MIDI host runner uses shared builds and supervised processes; real synthetic, skip classification and failure-policy checks passed
+- Replace fixed CD-layout assumptions in both navigation runners with shared pinned D2 discovery and temporary lowercase staging. Preserve all native assertions and repeated-result comparisons
+- Share supervised native invocation with bounded timeouts and retained logs; remove staged base data and user/mission payloads through existing finally cleanup
+- Validate both real retail runners using current binaries, route-owner classification, and cleanup after injected native failure/timeout. Missing Maximum media remains a reported coverage skip
+- Both real retail runners pass their native assertions twice with identical JSON: Original D2 levels 1/11 and live Counterstrike grate/reactor cases (linux-original-navigation.log, linux-live-navigation.log). Live returns SKIP/2 for the unavailable Maximum archive after retail coverage succeeds
+- Route owner correctly reports Original PASS and live SKIP, with no failures: android/temp/route_regression_cases/run_20260926_222338_760/summary.json (linux-navigation-owner.log)
+- Injected exit 7 and a sleeping native child exercise failure and timeout paths through the real runners. Both child processes are gone, staged data/user/mission directories are removed, and diagnostic logs remain. Absolute spaced build paths work when invoked outside the checkout (linux-navigation-faults.log); temporary executable fixtures were removed
+- Native assertions and repeated-result comparisons were not changed. Actual Windows execution and the missing Maximum case remain unverified
+- Scoped quality passes (linux-navigation-quality.log), git diff --check passes and all sessions from this tranche are terminal. No new native build or dependency download was needed; outstanding_bugs.md remains unchanged
+
+### Executable test catalog for parity accounting
+
+- Previous goal turn made progress: Original/live native navigation passed retail repeats and injected failure/timeout cleanup through portable data discovery and supervision
+- Add a read-only master catalog export from the actual discovery path, before profile/filter selection and environment probes. Include every top-level execution entry plus support ownership; expose declared infrastructure and manual status without claiming host capability or execution success
+- Ensure catalog mode neither creates/prunes reports nor registers cancellation handlers/provisions infrastructure. Test completeness against on-disk PS1/JSONC discovery and test normal/extended replay variants; include the fixture in tooling CI
+- Use this export to quantify remaining coverage gaps. A catalog is not a parity pass report; per-test Windows/Linux execution and exception evidence remains required
+- Actual default export contains 236 top-level entries: 75 no-master-infrastructure, 150 single-emulator, four extraction, one server and six dual-emulator; six entries are manual. It also lists 324 owned PS1/JSONC support scripts (android/temp/linux-test-catalog.json). These are scheduling counts, not execution/capability claims
+- Initial catalog integration passes against actual discovery, including both replay matrices and every discovered PS1/JSONC file. Expanded coverage now also seeds six old reports to verify listing preserves them; tests are part of the portable tooling smoke profile
+- Final extended Linux tooling smoke passes all 15 checks, including catalog completeness and old-report preservation: android/temp/tooling_smoke/run_f6505aaf5c4743f790967c7d51f60cdb/summary.json (linux-test-catalog-smoke.log)
+- Scoped quality passes (linux-test-catalog-quality.log), git diff --check passes, and all sessions from this tranche are terminal. outstanding_bugs.md remains unchanged
+- Remaining accounting work: retain compact per-test execution evidence across report pruning and join it to this catalog. Older full-suite Markdown reports have aged out under generation retention, so their historical plan entries cannot substitute for current per-test evidence. Device/media constraints and Windows execution still require explicit accounting
+
+### Host classification and explicit Windows capability skips
+
+- Previous goal turn made progress: read-only master catalog and all 15 extended tooling checks passed
+- Catalog review found seven host checks still defaulting to the emulator tier: explicit replay-path discovery, replay build guard, repository artifact policy, mission ZIP publication/recovery, Windows Job Object lifetime, and Windows PowerShell 5.1 compatibility
+- Classify these as host checks, preserve Windows-specific coverage, run portable compatibility helper assertions on every host, and replace success-on-skip with the master's explicit SKIP/2 contract
+- Bound Windows process-lifetime fixture generations and clean its owned temporary output after completion/failure. Validate corrected host checks directly and through the master without starting infrastructure
+- Direct Linux sweep passes five newly classified portable checks plus catalog export; the two Windows-specific checks produce explicit SKIP/2. PowerShell compatibility helper assertions pass before its unavailable-5.1 skip (android/temp/host_classification/run_49b2a7cf6653492887393b5c6b89b598/summary.json; linux-host-classification.log)
+- The additional full catalog validator exposed missing suite coverage policy entries for SDK inventory/cleanup. Added both to fixed core and added full catalog validation to tooling smoke. Corrected validator passes: 76 standalone JSON, 156 standalone PS1 and 324 support scripts (linux-host-catalog-validation.log)
+- Master HostOnly reports the PowerShell 5.1 test as Tier 0 and SKIP after portable helper PASS, without device setup (temp/test_reports/report_20260926_223318.md; linux-host-windows-skip.log). The initial nine-check sweep retains its catalog failure as evidence; the corrected validator is recorded separately
+- Master HostOnly catalog filter passes both inventory and full ownership/coverage validators (2 PASS, zero failures/timeouts; soundfont device test correctly excluded): temp/test_reports/report_20260926_223417.md and linux-host-catalog-master.log. Refreshed inventory has 82 no-master-infrastructure entries, 143 single-emulator, four extract, one server and six dual-emulator
+- Scoped quality passes (linux-host-classification-quality.log), git diff --check passes, and all sessions from this tranche are terminal. outstanding_bugs.md remains unchanged. The new Windows lifetime fixture cleanup still requires native Windows execution; latest full extended smoke remains the prior 15-check run, with the added validator validated directly and through the master here
+
+### Fingerprint host tests
+
+- Previous goal turn made progress: seven host classifications, explicit Windows-only skips, SDK suite coverage entries and master catalog validation were corrected and verified
+- Classify six fingerprint policy/native checks as host-side; resolve the threshold matcher through shared host helpers and replace Windows-only publication-fixture shims with host-specific launchers
+- Supervise native audio enumeration and matcher children. Replace fixed publication scratch storage with unique retained/locked runs; retain normal finally cleanup and avoid new builds/downloads where current extraction tools suffice
+- Run real enumeration/threshold tests and synthetic publication/identity/budget/build-policy checks. Preserve publication failure assertions and report any production-workflow Linux gaps exposed by the fixtures
+- All six fingerprint checks pass through the master as Tier 0, with zero failures/timeouts/skips. Revalidated after production default-path fixes: temp/test_reports/report_20260926_223846.md (android/temp/linux-fingerprint-master.log)
+- Production CD, mission-ZIP and music-pack commands also had Windows-only default executable paths. They now resolve shared host filenames after building and use cached CMake with two build workers; the music-pack build guard still requires successful build before artifact admission
+- Real default-tool integration passes: synthetic data-only CD track publishes a fingerprint manifest; mission ZIP containing invalid audio reaches the native decoder, fails, and publishes no sidecar. Both use existing targets and all temporary fixture data is removed (linux-fingerprint-default-tools.log)
+- Music-pack default setup resolves verified Linux 7zz, builds/reuses fingerprint_audio and selects the Linux executable. It then rejects the deliberately nonexistent album selector, as expected; this is tool-admission evidence, not a real album fingerprint run (linux-fingerprint-music-pack-default.log)
+- Both catalog validators pass through the master after the six host classifications (temp/test_reports/report_20260926_224028.md; linux-fingerprint-catalog.log). Native/fixture temporary run directories are empty after successful cleanup
+- Scoped quality passes (linux-fingerprint-quality.log), git diff --check passes, all sessions are terminal and outstanding_bugs.md remains unchanged. No AcoustID requests or dependency downloads were performed. Windows runtime verification and real music-album/mission audio corpus runs remain outstanding
+
+### Extraction policy and fixture isolation
+
+- Previous goal turn made progress: six fingerprint checks, production Linux tool admission and native synthetic fingerprinting passed without new dependency downloads
+- Classify eight inspected host-only extraction checks: CD workflow planning, CD/GOG batch policy, spec generation, mocked device preflight, regression workflow, cache provenance and publication
+- Replace shared scratch-directory deletion with unique retained run directories and producer locks; retain existing finally removal so parallel test invocations cannot delete each other's work
+- Validate all eight through the master runner, then catalog/coverage validators. These fixtures prove host planning, provenance and publication behavior, not Android extraction or complete proprietary-media coverage
+- Six extraction checks pass through the master with zero failures/timeouts/skips (temp/test_reports/report_20260926_224210.md; linux-extraction-policy-master.log)
+- The CD runner exposed a missing game_data/disc_track_manifest.ps1 used by the production hash publisher; its broad ignore rule also hid the missing source from normal additions. Restored complete CUE/track/SHA-1 validation, normalized ordered hash records, a shared CUE reader with fingerprint publication, and a Git visibility exception/assertion
+- Spec-generation fixture omitted Get-DepPlatform.ps1 and host helper dependencies now imported by its copied extraction/JSON helpers. Added those actual source dependencies; the fixture now passes without changing its generation assertions
+- CD runner and spec generation both pass through master Tier 0 (report_20260926_224509.md and report_20260926_224527.md; linux-cd-runner-master.log, linux-spec-generation-master.log). Fingerprint publication integration also passes after sharing the CUE parser (linux-extraction-fingerprint-publication.log)
+- Two actual concurrent spec-generation children passed with distinct run directories (linux-spec-generation-parallel.log). The first temporary concurrency harness used a variable name that collided with the pool callback scope; corrected the probe variable and reran successfully. No production process-pool change was needed
+- Formatting exposed an entry-point bug: the documented space-separated -Paths invocation bound only its first path; Get-Item omitted hidden files, so a .gitignore-first scope became empty and ran all formatters. Stopped the verified formatter PID after the stale-formatter helper failed to recognize its relative invocation, then restored only eight unrelated formatting-only files that were clean before this turn
+- Repaired run-code-quality.ps1 to collect remaining positional paths, resolve hidden files with Force, and reject missing/empty explicit scopes before invoking tools. Default unscoped behavior is preserved. Extended the existing code-quality test with an isolated real entry point and recording tool stubs; multi-path/hidden-path, invalid/empty-scope and default-mode checks pass (linux-quality-scope-test.log)
+- Re-ran quality using an explicit array of all 39 currently changed/new files, covering previous work as well as this tranche. The log lists that scope, reports no C++/Kotlin files, and all checks pass (linux-extraction-policy-quality.log; linux-quality-changed-paths.json). Unrelated formatter changes and protected outstanding_bugs.md have zero diff
+- Final extended Linux smoke passes all 17 checks, including SDK interruption recovery, formatter scope, full catalog/coverage validation, installer recovery and bounded Python/extraction: android/temp/tooling_smoke/run_f02d7c34b0ae4dc6adb90503ef69a08d/summary.json (linux-extraction-policy-smoke.log)
+- Master catalog filter also passes both validators (temp/test_reports/report_20260926_225215.md; linux-extraction-policy-catalog.log). All sessions are terminal, git diff --check passes, unrelated formatter changes have zero diff, and outstanding_bugs.md remains unchanged
+- Actual Windows execution, device extraction and remaining media/capability gaps remain open. The stale-formatter helper's inability to recognize relative command-line invocations is a separate remaining cleanup gap
+
+### Formatter process discovery and cleanup
+
+- Previous goal turn made progress: extraction policy checks, missing manifest source repair, concurrent fixture isolation, formatter scope regression and all 17 extended tooling checks passed
+- Replace duplicated formatter process enumeration with shared host inventory. Resolve relative Linux PowerShell invocations using native argv/cwd; use formatter lock PID/start identity for relative Windows invocations without readable cwd
+- Preserve checkout boundaries, exclude the cleanup process and its ancestors, and recheck live process start identity before stopping a matched tree
+- Validate with isolated sleeping formatter fixtures and an unrelated sibling checkout, covering preview, relative/absolute invocation, stale identity and owned descendant termination without running real formatters
+- Scoped formatting/lint passes for all eight changed PowerShell files (android/temp/linux-formatter-cleanup-quality.log). The initial fixture exposed empty procfs command lines; fixed trailing-NUL handling using an explicit length/character check
+- Final extended Linux smoke passes all 18 checks, including actual formatter parent/child termination, sibling checkout isolation, shared process cleanup, SDK interruption recovery, catalog validation and installer/Python/extraction bounds: android/temp/tooling_smoke/run_0091b5792399425db89d55cac56774fa/summary.json (linux-formatter-cleanup-smoke.log)
+- Latest remote tooling run 36297181507 at b3cda916 passes Ubuntu 24.04 and Windows 2022. This does not validate the current uncommitted formatter changes on Windows; actual Windows execution remains pending
+- Documented explicit formatter preview/stop behavior in CLEANUP.md. No new dependency downloads or native builds were needed; free space is 8.6 GiB. All invoked sessions exited, git diff --check passes, and outstanding_bugs.md is unchanged
+
+### Remaining dependency and D2X-XL host checks
+
+- Previous turn made progress: formatter cleanup integration and 18 extended Linux tooling checks passed
+- Dependency verification and D2X-XL sound contracts already pass directly on Linux but were incorrectly scheduled behind an emulator; classify these and the texture checks as host tests and assert the catalog declarations
+- Separate portable production TGA pixel decoding from System.Drawing allocation. Add Linux/Windows coverage for 24/32-bit pixels, all four origins, alpha, key masks and malformed inputs; preserve the existing bitmap/archive test for Windows with an explicit Linux skip
+- Give dependency and texture fixtures retained unique run directories, producer locks and finally cleanup. Add portable dependency/sound/pixel checks to the cross-platform CI smoke entry point
+- Full texture conversion still uses System.Drawing and Windows tool defaults; this tranche enables real decoder coverage and truthful scheduling, not full Linux texture conversion
+- Master D2X-XL run: two PASS (sound/pixels), one explicit Linux SKIP (bitmap/archive), zero failures/timeouts; temp/test_reports/report_20260926_231114.md and android/temp/linux-d2xxl-master.log
+- Dependency verification passes through master Tier 0: temp/test_reports/report_20260926_231148.md and android/temp/linux-download-verification-master.log
+- Scoped quality passes for all eight changed PowerShell sources (android/temp/linux-d2xxl-quality.log). Final extended smoke passes all 21 checks: android/temp/tooling_smoke/run_9e0c9168ac3a49948407e455903e603c/summary.json and android/temp/linux-d2xxl-smoke.log
+- Actual Windows bitmap execution remains unverified here. No dependency downloads or native rebuilds were required; all invoked sessions exited and outstanding_bugs.md remains unchanged
+
+### Bounded host execution evidence
+
+- Previous turn made progress: portable TGA production decoding, corrected host classifications, retained fixtures and all 21 extended smoke checks passed
+- Master reports age out after later filtered runs, losing the evidence needed for Windows/Linux coverage accounting. Add one bounded atomic summary per OS/architecture, merging latest per-test observations across filtered runs
+- Record actual start/finish status, requirement, arguments, source hash, Git commit/dirty marker, host runtime, skip reason and diagnostic paths. RUNNING means outcome unknown after interruption, not proof a process is live; owner PASS does not imply all owned child cases ran
+- Serialize writers with a bounded file-lock wait, reject corrupt input without overwriting it, limit entries/bytes and report eviction counts. Validate merge, stale updates, failure/skip semantics, interrupted observations, contention and bounds, then exercise the real master runner
+- Implemented master start/completion observations and batch publication for infrastructure/manual/not-run skips, separate by OS/architecture. Evidence write errors make the suite fail after its normal infrastructure cleanup
+- Integration exposed PowerShell JSON timestamp coercion and mixed dictionary/object sorting differences. Normalize timestamps and sort uniform objects; strengthened retention assertions verify exactly which oldest observation is evicted
+- Integration passes merge/status preservation, concurrent writers, stale completion rejection, corrupt-file preservation, entry/byte bounds, interrupted publication scratch recovery, and three real filtered master runs including a Linux capability skip
+- Extended Linux smoke passes all 22 checks: android/temp/tooling_smoke/run_a78ae9b11d6e44e495323757cc798fa2/summary.json (linux-evidence-smoke.log). The final sorting correction additionally passes the strengthened direct integration and the master-owned integration after scoped quality (linux-evidence-integration.log; linux-evidence-final-master.log)
+- Real HostOnly emulator exclusion records SKIP with its infrastructure reason (linux-evidence-infra-skip.log). The durable Linux summary preserves this alongside filtered PASS observations in chronological order and is currently 2,646 bytes; it does not backfill unverifiable older runs
+- Final scoped quality and git diff --check pass; all invoked sessions exited and outstanding_bugs.md is unchanged. Windows execution and complete per-owner/case parity accounting remain open; this summary records actual local top-level observations rather than declaring parity
+
+### Standalone SDK producer retention
+
+- Previous turn made progress: bounded host execution evidence, master integration and 22 Linux tooling checks passed
+- Standalone Linux finalize/emulator provisioning bypassed the owned-package cleaner used by get_all. Invoke the same registration/retirement operation after successful validation, releasing the Linux installer lock before the cleaner acquires it
+- Preserve full-bootstrap deferral, fail the producer if retention fails, and reject successful sdkmanager exits that leave requested package metadata missing. Current and referenced packages remain protected by the existing cleaner
+- Extend actual entry-point fixtures to verify .NET acquisition of the released shell lock, space-containing repository paths, success/failure ordering and deferred full-bootstrap cleanup
+- Windows standalone automatic retirement remains explicitly deferred until shell writers participate in the same lock protocol; no claim of cross-host writer parity is made
+- Entry-point fixtures pass standalone .NET lock reacquisition, cached success, cleaner failure propagation, missing metadata/license failure suppression, full-bootstrap deferral and explicit Windows standalone deferral. The fixture itself now uses retained unique runs, a held producer lock and signal/finally cleanup
+- The shell transaction owner previously ran Linux/flock fixtures indiscriminately through the master despite smoke already excluding them on Windows. It now reports an explicit non-Linux capability skip; portable dependency tests remain independently scheduled
+- Real standalone cached get_emulator.sh succeeded with GET_ALL_RUNNING unset, without downloads (linux-sdk-standalone-real.log). All 11 installed SDK package metadata identities remain unchanged against linux-sdk-standalone-before.json, and all five owned current packages remain Installed under ownership schema 1
+- Final mixed-language scoped quality passes (linux-sdk-standalone-quality.log). The complete six-fixture dependency installer owner passes through the master in 22 seconds, zero failures/timeouts/skips (temp/test_reports/report_20260926_233045.md; linux-sdk-standalone-tests.log); its result is recorded in the bounded Linux evidence summary
+- git diff --check passes; all sessions exited and outstanding_bugs.md is unchanged. No real SDK payload was removed. Windows writer-lock parity, other standalone dependency producers and SDK partial-download recovery remain open
+
+### Shared SDK writer supervision
+
+- Previous turn made progress: standalone Linux SDK retention, cached real-SDK validation and all installer transaction fixtures passed
+- Windows shell SDK producers do not participate in the cleaner's file lock; the PowerShell AVD producer is unlocked on both hosts. Introduce a shared writer wrapper, using existing child supervision, bounded waits and the same SDK lock inode
+- Windows shell producers re-enter under the wrapper; PowerShell AVD creation uses it on both hosts. Linux shell producers keep their existing inherited flock/recovery protocol
+- Defer prompts and retirement until the writer exits and releases its lock; preserve nonzero exit codes and test serialization, contention, timeout and post-success retention with disposable SDK fixtures
+- Actual Windows execution remains a separate validation requirement; latest remote run 36297181507 is green at b3cda916 and predates these edits
+- Added invoke_sdk_writer.ps1 with exclusive SDK file locking, bounded wait/execution, existing Windows Job Object/Linux descendant supervision, child status propagation and finally release. Windows get_sdk/finalize/get_emulator/create_avd shell entry points route through it; create_light_avds uses a dedicated wrapper process on both hosts
+- Successful standalone Windows finalize/emulator calls now run owned package retention after release; bootstrap calls defer it. Interactive shell pauses occur outside the lock. Updated copied fixtures for get_sdk's shared SDK helper dependency
+- Native Linux wrapper integration passes serialization, lock contention, exact nonzero child status, timeout/release and PowerShell switch/AVD-name forwarding. The Windows shell branch passes with actual wrapper execution on Linux and an isolated retention fixture; this is not actual Windows validation
+- Extended Linux tooling smoke passes all 23 checks (android/temp/tooling_smoke/run_a0725c91121a43f7be6bab198a5666a1/summary.json; linux-sdk-writer-smoke.log), including SDK package recovery and the full installer fixture owner
+- Final mixed-language quality passes (linux-sdk-writer-quality.log). Added real PowerShell AVD-entry re-entry coverage with a cached-AVD fixture; the final expanded writer integration passes through the master in eight seconds, with no AVD payload allocation (temp/test_reports/report_20260926_234224.md; linux-sdk-writer-master.log)
+- All sessions exited, git diff --check passes, and outstanding_bugs.md is unchanged. Actual Windows execution, Windows installer transaction recovery after forced interruption, other standalone producer retention and partial SDK downloads remain open
+
+### SDK transaction recovery under the shared wrapper
+
+- Previous turn made progress: SDK writer serialization/supervision, cached AVD entry-point integration and 23 Linux tooling checks passed
+- The new Windows SDK wrapper holds the shared lock, but shell begin_dependency_install still bypassed transaction recovery on Windows. Enable the existing journal/recovery protocol under a wrapper-provided, exact cmdline-tools parent scope; reject attempts to use that lock for another destination
+- PowerShell AVD consumption must also recover an interrupted command-line publication before resolving avdmanager. Run the existing Bash recovery under the held wrapper lock before starting that consumer
+- Validate interrupted previous-tree restoration, abandoned workspace removal, scope mismatch rejection and existing installer checks using isolated fixtures; actual Windows filesystem/process execution remains pending
+- Supervised SDK operations now use the existing fixed transaction workspace and recovery instead of Windows' prior bypass. The wrapper publishes the exact tools-parent scope; unrelated destinations fail before creating transaction state
+- PowerShell AVD consumers run a bounded recovery phase under the already-held SDK lock, restoring tools before resolving executables. Wrapper environment scope is restored on exit
+- Expanded writer integration passes interrupted previous-tree restoration/workspace removal, unrelated destination rejection and cached real AVD entry-point re-entry through the master: temp/test_reports/report_20260926_234713.md (linux-sdk-recovery-master.log)
+- Windows shell-branch fixture restores an interrupted command-line publication through the real wrapper on Linux. Complete six-fixture installer owner passes in 23 seconds, zero failures/timeouts/skips: temp/test_reports/report_20260926_234728.md (linux-sdk-recovery-installers.log)
+- Scoped mixed-language quality and git diff --check pass (linux-sdk-recovery-quality.log). All sessions exited and outstanding_bugs.md is unchanged. No real SDK payloads or AVDs were created or removed
+- Actual Windows execution, other Windows dependency transaction recovery, standalone non-SDK producer retention and sdkmanager internal partial-download cleanup remain open

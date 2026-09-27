@@ -2,7 +2,8 @@
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$testRoot = Join-Path $repoRoot 'android\temp\fingerprint_manifest_publication_test'
+$testRoot = Join-Path $repoRoot ('android/temp/fingerprint_manifest_publication/run_' + [guid]::NewGuid().ToString('N'))
+. (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1')
 $workflow = Join-Path $repoRoot 'game_data\fingerprint_disc_tracks.ps1'
 $missionWorkflow = Join-Path $repoRoot 'game_data\fingerprint_mission_zip_music.ps1'
 $powershellPath = (Get-Process -Id $PID).Path
@@ -46,9 +47,25 @@ function Invoke-MissionWorkflow {
     return $exitCode
 }
 
-if (Test-Path -LiteralPath $testRoot) {
-    Remove-Item -LiteralPath $testRoot -Recurse -Force
+function New-FingerprintFixtureLauncher {
+    param([string]$Path, [string]$ScriptPath)
+    if (Test-RegressionWindowsHost) {
+        $scriptName = [IO.Path]::GetFileName($ScriptPath)
+        $command = "@`"$powershellPath`" -NoProfile -File `"%~dp0$scriptName`" %*`r`n"
+        [IO.File]::WriteAllText($Path, $command, [Text.ASCIIEncoding]::new())
+    } else {
+        # Single-quote executable and script paths; forward each argument unchanged
+        $quotedPowerShell = "'" + $powershellPath.Replace("'", "'`"'`"'") + "'"
+        $quotedScript = "'" + $ScriptPath.Replace("'", "'`"'`"'") + "'"
+        $command = "#!/bin/sh`nexec $quotedPowerShell -NoProfile -File $quotedScript " + '"$@"' + "`n"
+        [IO.File]::WriteAllText($Path, $command, [Text.UTF8Encoding]::new($false))
+        & chmod +x -- $Path
+        if ($LASTEXITCODE -ne 0) { throw 'Could not make fixture launcher executable' }
+    }
 }
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $testRoot -DirectoryPrefix run_
+New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+$producerLock = [IO.File]::Open((Join-Path $testRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 
 try {
     $atomicPath = Join-Path $testRoot 'atomic.txt'
@@ -63,7 +80,7 @@ try {
     $cdRoot = Join-Path $testRoot 'CD images'
     $discDir = Join-Path $cdRoot 'fixture'
     $singleDir = Join-Path $cdRoot 'single'
-    $fakeCli = Join-Path $testRoot 'fake_fingerprint_cd.cmd'
+    $fakeCli = Join-Path $testRoot $(if (Test-RegressionWindowsHost) { 'fake_fingerprint_cd.cmd' } else { 'fake_fingerprint_cd' })
     $fakeInner = Join-Path $testRoot 'fake_fingerprint_cd.ps1'
     $invocationMarker = Join-Path $testRoot 'invoked.txt'
     $manifest = Join-Path $discDir 'track_fingerprints.json'
@@ -103,8 +120,7 @@ Write-Output "{`"track`":2,`"type`":`"audio`",`"sha1`":`"$sha1`",`"chromaprint`"
 exit 0
 '@
     [IO.File]::WriteAllText($fakeInner, $fakeBody, [Text.UTF8Encoding]::new($false))
-    $fakeCommand = "@`"$powershellPath`" -NoProfile -File `"%~dp0fake_fingerprint_cd.ps1`" %*`r`n"
-    [IO.File]::WriteAllText($fakeCli, $fakeCommand, [Text.ASCIIEncoding]::new())
+    New-FingerprintFixtureLauncher -Path $fakeCli -ScriptPath $fakeInner
 
     Assert-True ((Invoke-Workflow -Mode 'partial') -ne 0) `
         'A nonzero CLI with partial JSON should fail the workflow'
@@ -159,7 +175,7 @@ exit 0
     $missionRoot = Join-Path $testRoot 'missions'
     $missionOutput = Join-Path $testRoot 'music'
     $missionZip = Join-Path $missionRoot 'partial.zip'
-    $fakeAudio = Join-Path $testRoot 'fake_fingerprint_audio.cmd'
+    $fakeAudio = Join-Path $testRoot $(if (Test-RegressionWindowsHost) { 'fake_fingerprint_audio.cmd' } else { 'fake_fingerprint_audio' })
     $fakeAudioInner = Join-Path $testRoot 'fake_fingerprint_audio.ps1'
     $audioMarker = Join-Path $testRoot 'audio_invoked.txt'
     New-Item -ItemType Directory -Path $missionRoot, $missionOutput | Out-Null
@@ -193,8 +209,7 @@ Write-Output (ConvertTo-Json -InputObject $results -Compress)
 exit 0
 '@
     [IO.File]::WriteAllText($fakeAudioInner, $fakeAudioBody, [Text.UTF8Encoding]::new($false))
-    $fakeAudioCommand = "@`"$powershellPath`" -NoProfile -File `"%~dp0fake_fingerprint_audio.ps1`" %*`r`n"
-    [IO.File]::WriteAllText($fakeAudio, $fakeAudioCommand, [Text.ASCIIEncoding]::new())
+    New-FingerprintFixtureLauncher -Path $fakeAudio -ScriptPath $fakeAudioInner
 
     $missionAlbum = Join-Path $missionOutput 'Mission ZIP - partial'
     $missionInfo = Join-Path $missionAlbum 'chromaprint_info.jsonc'
@@ -223,6 +238,7 @@ exit 0
 
     Write-Host 'fingerprint manifest publication tests passed' -ForegroundColor Green
 } finally {
+    $producerLock.Dispose()
     Remove-Item Env:DXX_FINGERPRINT_MANIFEST_TEST_MODE -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
 }

@@ -2,7 +2,7 @@
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-$tempRoot = Join-Path $repoRoot 'android\temp\test_extract_regression_workflow'
+$tempRoot = Join-Path $repoRoot ('android/temp/test_extract_regression_workflow/run_' + [guid]::NewGuid().ToString('N'))
 $helperPath = Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1'
 $validatorPath = Join-Path $PSScriptRoot 'validate_extract_regression_specs.ps1'
 $extractPath = Join-Path $PSScriptRoot 'test_extract.ps1'
@@ -12,10 +12,9 @@ $runAllPath = Join-Path $repoRoot 'android\run_all_tests.ps1'
 . $helperPath
 . (Join-Path $PSScriptRoot 'extract_regression_recovery.ps1')
 
-if (Test-Path -LiteralPath $tempRoot) {
-    Remove-Item -LiteralPath $tempRoot -Recurse -Force
-}
-New-Item -ItemType Directory -Path $tempRoot | Out-Null
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $tempRoot -DirectoryPrefix run_
+New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
+$producerLock = [IO.File]::Open((Join-Path $tempRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 
 try {
     $extractSource = [System.IO.File]::ReadAllText($extractPath)
@@ -251,6 +250,7 @@ try {
 
     Write-Host 'Extract regression workflow tests passed'
 } finally {
+    $producerLock.Dispose()
     if (Test-Path -LiteralPath $tempRoot) {
         Remove-Item -LiteralPath $tempRoot -Recurse -Force
     }

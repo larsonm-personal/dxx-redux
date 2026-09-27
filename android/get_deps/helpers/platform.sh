@@ -316,11 +316,24 @@ finish_dependency_install() {
 }
 
 # Linux flock descriptors stay open in installer children, including after parent SIGKILL
+# Supervised SDK writers instead hold the same inode through their PowerShell wrapper
 # Keep the lock inode permanently: unlinking it would permit two simultaneous owners
 begin_dependency_install() {
-    local destination="$1" parent timeout="${DXX_DEPENDENCY_LOCK_TIMEOUT_SECONDS:-60}"
-    if [ "$(get_host_os)" != linux ]; then return 0; fi
-    if ! command -v flock >/dev/null 2>&1; then
+    local destination="$1" parent expected supervised=0 timeout="${DXX_DEPENDENCY_LOCK_TIMEOUT_SECONDS:-60}"
+    if [ -z "${DXX_SDK_WRITER_PARENT_PID:-}" ] && [ "$(get_host_os)" != linux ]; then return 0; fi
+    parent="$(cd "$(dirname "$destination")" && pwd -P)" || return 1
+    if [ -n "${DXX_SDK_WRITER_PARENT_PID:-}" ]; then
+        expected="${DXX_SDK_WRITER_TOOLS_PARENT:-}"
+        if [ -z "$expected" ]; then return 1; fi
+        if command -v cygpath >/dev/null 2>&1; then expected="$(cygpath -u "$expected")" || return 1; fi
+        expected="$(cd "$expected" && pwd -P)" || return 1
+        if [ "$parent" != "$expected" ] || [ "$(basename "$destination")" != latest ]; then
+            echo 'ERROR: SDK writer lock does not cover this installation destination' >&2
+            return 1
+        fi
+        supervised=1
+    fi
+    if [ "$supervised" = 0 ] && ! command -v flock >/dev/null 2>&1; then
         echo "ERROR: Linux dependency installation requires flock (util-linux)" >&2
         return 1
     fi
@@ -328,16 +341,17 @@ begin_dependency_install() {
         echo "ERROR: dependency lock timeout must be 0..3600 seconds" >&2
         return 1
     fi
-    parent="$(cd "$(dirname "$destination")" && pwd -P)" || return 1
     DEPENDENCY_INSTALL_DESTINATION="$parent/$(basename "$destination")"
     DEPENDENCY_INSTALL_STATE="$parent/.dxx-install-state"
     if [ -L "$DEPENDENCY_INSTALL_STATE" ]; then return 1; fi
     mkdir -p "$DEPENDENCY_INSTALL_STATE" || return 1
     if [ -L "$DEPENDENCY_INSTALL_STATE/lock" ] || { [ -e "$DEPENDENCY_INSTALL_STATE/lock" ] && [ ! -f "$DEPENDENCY_INSTALL_STATE/lock" ]; }; then return 1; fi
-    exec {DEPENDENCY_INSTALL_LOCK_FD}>>"$DEPENDENCY_INSTALL_STATE/lock" || return 1
-    if ! flock -w "$timeout" "$DEPENDENCY_INSTALL_LOCK_FD"; then
-        echo "ERROR: another dependency installer owns $parent; retry after it finishes" >&2
-        return 1
+    if [ "$supervised" = 0 ]; then
+        exec {DEPENDENCY_INSTALL_LOCK_FD}>>"$DEPENDENCY_INSTALL_STATE/lock" || return 1
+        if ! flock -w "$timeout" "$DEPENDENCY_INSTALL_LOCK_FD"; then
+            echo "ERROR: another dependency installer owns $parent; retry after it finishes" >&2
+            return 1
+        fi
     fi
     if [ ! -e "$DEPENDENCY_INSTALL_STATE/format" ]; then
         if [ -n "$(find "$DEPENDENCY_INSTALL_STATE" -mindepth 1 -maxdepth 1 ! -name lock -print -quit)" ]; then

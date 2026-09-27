@@ -50,6 +50,8 @@ else
     fi
 fi
 
+complete_sdk_provisioning
+
 echo "Emulator and system image ready"
 if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then
     echo ""

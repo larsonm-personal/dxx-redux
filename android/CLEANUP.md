@@ -17,6 +17,14 @@ The cleaner protects tracked files (even forcibly added ignored files), untracke
 
 Active build/test/formatter/emulator jobs block deletion. The script waits up to 60 seconds for them automatically (`-BusyWaitSeconds` controls this), then exits if they remain active. It does not terminate jobs or ask for permission. Known stale emulator marker directories are removable only through this idle-checked temporary cleanup; held file locks remain protected. It rechecks process activity, Git state, containment, links, modification/creation times, file count and bytes before deletion. Newly changed candidates are preserved. Locked/unreadable artifacts are reported and other eligible artifacts can still be removed. Run again once jobs finish or locks are released
 
+For interrupted formatting, preview this checkout's matching processes with
+`pwsh android/helpers/stop-stale-formatters.ps1`; add `-Kill` to stop the matched
+process trees. This is an explicit stop operation, not an age-based cleanup: it
+can stop a currently running formatter. Linux relative invocations are resolved
+against the process working directory. The formatter lock records repository,
+PID and process start identity for Windows relative invocations. Cleanup rechecks
+process identity before stopping, and excludes its own process and ancestors
+
 `-Preview` and `-WhatIf` never delete; add `-Verbose` to list each candidate. `-AutoOnly` remains accepted by existing callers; cleanup is now always automatic. `-TemporaryOnly`, `-BuildsOnly` and `-PayloadsOnly` are mutually exclusive
 
 Outside scratch roots, normal cleanup also removes old generated build/download artifacts (default `-ArtifactDays 30`) and superseded native/package generations. It preserves the newest generation of each recognized build family; `-KeepBuildGenerations` and `-BuildGraceHours` adjust that retention. Explicit temporary cleanup takes precedence for builds located inside a scratch root. Use `-BuildsOnly` to apply build retention without clearing scratch files
@@ -242,3 +250,95 @@ registers packages. AVD environment locations follow the
 [Android tools documentation](https://developer.android.com/tools/variables);
 eventual removal should use the pinned
 [sdkmanager uninstall interface](https://developer.android.com/tools/sdkmanager).
+
+Managed SDK package cleanup is available separately:
+
+```powershell
+./android/get_deps/clean-sdk-packages.ps1 -RegisterCurrent
+./android/get_deps/clean-sdk-packages.ps1
+./android/get_deps/clean-sdk-packages.ps1 -Apply
+```
+
+Bootstrap registers current packages after successful provisioning and runs apply.
+Only versioned build-tools, platforms, CMake, NDK and system-image packages with
+matching ownership markers and metadata receipts can be retired. Unregistered
+legacy packages remain protected. Current checkout pins, registered AVD roots,
+active SDK tools, unreadable tool processes, linked package content and retained
+CMake caches prevent retirement; the configured replacement must be installed
+and registered. Registration persists visible AVD roots so later environment
+changes do not discard those references. Sharing users must register their
+checkouts and AVD roots before versions are retired.
+
+The cleaner holds the command-line installer lock and rechecks references before
+calling `sdkmanager --uninstall` through the supervised process pool. A fixed
+ownership journal records removal intent, native directory identity and a bounded
+SHA-256 manifest before uninstall begins. Already-removed packages are reconciled
+on the next apply. Partial removals can recover even after package.xml or the
+ownership marker disappears: every surviving entry must be an unchanged original
+file or directory. Added files, changed bytes, replaced directories, links and
+renewed references prevent deletion. References are checked again after hashing.
+
+Verified partial payloads move into a deterministic quarantine for deletion.
+Recovery survives termination after the move or partway through deleting it,
+without creating additional copies. A temporary schema version makes older
+cleaners reject pending quarantine work. Successful recovery restores the normal
+schema and removes its manifest. Preview validates recovery evidence but does not
+move or remove payloads. Journals predating manifests remain protected if ownership
+evidence is missing. Windows shell provisioning
+still needs the same lock discipline as Linux; external SDK managers do not
+participate in this repository's lock.
+
+### DOS MIDI parity
+
+`tests/test_dos_midi_parity.ps1` reuses `android/tests/build` and writes small
+MIDI/JSON diagnostics and process logs under `android/temp/dos_midi_parity/run_<id>`.
+It retains three prior repository runs, holds `producer.lock` while active,
+and checks the output/build volumes for a 4 GiB reserve. All child stages have
+supervised timeouts. `-OutputDirectory` changes the parent of the unique runs;
+external output directories remain outside repository cleanup ownership.
+
+### Native GuideBot navigation
+
+The Original and live navigation runners discover pinned D2 data through the shared
+host helpers. `-HogDir` can select an explicit source directory; it must match the
+same pinned data. Each run stages lowercase copies under its retained `run_` directory
+and removes them, extracted missions and player data in `finally`, including native
+failure and timeout. Source game data is never used as writable scratch storage.
+Each native invocation has a 90-second timeout (`-ProcessTimeoutSeconds` overrides
+it for diagnostics), with process-tree supervision and retained output logs.
+The existing producer lock and three-prior-run policy also bound interrupted runs.
+
+The Windows Job Object lifetime fixture now uses locked, retained
+`android/temp/process_lifetime/run_<id>` directories. Normal and failed completion
+remove that run's fixture data after its owned processes are stopped. Interrupted
+runs remain subject to the three-prior-generation retention policy.
+
+Master test execution evidence is stored separately from retained logs in
+`temp/test_reports/execution_evidence_<os>_<architecture>.json` (or the selected
+report directory). Each summary is bounded to 1,024 latest observations and 4 MiB;
+oldest entries are evicted with a recorded count. It survives normal timestamped
+report retention, but explicit removal of its containing workspace removes it.
+The adjacent `.lock` is a reusable writer lock, not a live-process marker. A
+successful publication also removes matching temporary/backup files left by a
+killed evidence writer. See `tests/README.md` for interpretation and limitations
+
+Standalone Linux `finalize.sh` and `get_emulator.sh` now run managed SDK package
+retention after successful provisioning, including a fully cached invocation.
+The producer finishes recovery and releases its installer lock before the cleaner
+acquires that same lock. Missing requested package metadata, provisioning failure
+or retention failure makes the command fail. Full bootstrap defers this operation
+until all producers finish. Windows shell SDK producers now re-enter through
+`get_deps/helpers/invoke_sdk_writer.ps1`, which holds the same exclusive lock,
+supervises child lifetime and runs standalone package retention after release.
+The PowerShell AVD creator uses this wrapper on both hosts. Writer waits and
+execution are bounded; failed or timed-out producers never trigger retirement.
+Linux shell installers retain their inherited flock and transaction recovery.
+Actual Windows execution of the new wrapper remains pending validation
+
+SDK command-line tool transactions use the same recovery journal under either the
+Linux shell lock or the shared SDK writer wrapper. A supervised shell operation
+must target that wrapper's exact `cmdline-tools/latest` destination. On the next
+invocation, an interrupted replacement restores its previous tools when needed
+and removes the abandoned transaction workspace. The PowerShell AVD producer runs
+this recovery before resolving `avdmanager`. This does not add recovery for
+sdkmanager's internal partial downloads or for other Windows dependency installers

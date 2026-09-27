@@ -28,7 +28,7 @@ def run(exporter, fixture, reference, output):
             source.write_bytes(data)
         playback = mode != 'legacy'
         result = subprocess.run([str(exporter), str(source), str(target), 'repeat' if playback else 'legacy'],
-                                capture_output=True, text=True, check=True)
+                                capture_output=True, text=True, check=True, timeout=60)
         reports[mode] = compare(reference / spec['capture'], Path(str(target) + '.tml.mid'),
                                 reference_start=spec['reference_start_ms'],
                                 duration=spec['duration_ms'] if playback else spec['legacy_duration_ms'],

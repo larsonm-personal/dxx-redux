@@ -33,26 +33,9 @@ $RepoRoot = Split-Path $ScriptDir
 $SrcDir = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
 $BuildDir = Join-Path $RepoRoot "android\tests\build"
 $CdImgDir = if ($CdImageDir) { $CdImageDir } else { Join-Path $ScriptDir "CD images" }
-$ExeName = "fingerprint_cd.exe"
-$ExePath = if ($FingerprintExePath) { $FingerprintExePath } else { Join-Path $BuildDir "Release\$ExeName" }
+$ExePath = $FingerprintExePath
 
-function Get-CueTrackDefinitions {
-    param([Parameter(Mandatory)][string]$Path)
-
-    $tracks = @()
-    $seen = [Collections.Generic.HashSet[int]]::new()
-    $text = [IO.File]::ReadAllText($Path)
-    foreach ($match in [regex]::Matches($text, '(?im)^\s*TRACK\s+([0-9]+)\s+([^\s]+)')) {
-        $number = [int]$match.Groups[1].Value
-        if (-not $seen.Add($number)) { throw "Duplicate CUE track number: $number" }
-        $tracks += [PSCustomObject]@{
-            track = $number
-            type = if ($match.Groups[2].Value -ieq 'AUDIO') { 'audio' } else { 'data' }
-        }
-    }
-    if ($tracks.Count -eq 0) { throw "CUE contains no tracks: $Path" }
-    return $tracks
-}
+. (Join-Path $PSScriptRoot "disc_track_manifest.ps1")
 
 function Assert-DiscFingerprintResults {
     param(
@@ -126,19 +109,24 @@ function Write-AtomicFingerprintManifest {
 # -- Build ------------------------------------------------------------
 
 if (-not $SkipBuild) {
+    $cmake = Resolve-RegressionCMakePath -RepoRoot $RepoRoot -BuildDir $BuildDir
+    if (-not $cmake) { throw 'CMake is required to build fingerprint_cd' }
     if (-not (Test-Path "$BuildDir\CMakeCache.txt")) {
         Write-Host "Configuring cmake..."
-        cmake -S $SrcDir -B $BuildDir
+        & $cmake -S $SrcDir -B $BuildDir
         if ($LASTEXITCODE -ne 0) { throw "cmake configure failed" }
     }
     Write-Host "Building fingerprint_cd..."
-    cmake --build $BuildDir --config Release --target fingerprint_cd
+    & $cmake --build $BuildDir --config Release --parallel 2 --target fingerprint_cd
     if ($LASTEXITCODE -ne 0) { throw "Build failed" }
-    Write-Host "Build OK: $ExePath"
 }
 
-if (-not (Test-Path $ExePath)) {
-    Write-Error "fingerprint_cd.exe not found at $ExePath -- run without -SkipBuild"
+if (-not $FingerprintExePath) {
+    $ExePath = Resolve-RegressionBuildTool -Directory (Join-Path $BuildDir Release) -BaseName fingerprint_cd
+    if (-not $ExePath) { $ExePath = Resolve-RegressionBuildTool -Directory $BuildDir -BaseName fingerprint_cd }
+}
+if (-not $ExePath -or -not (Test-Path -LiteralPath $ExePath -PathType Leaf)) {
+    Write-Error "fingerprint_cd not found in $BuildDir (override: $FingerprintExePath) -- run without -SkipBuild"
     exit 1
 }
 

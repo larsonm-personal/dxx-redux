@@ -2,7 +2,7 @@
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$tempRoot = Join-Path $repoRoot 'android\temp\generate_regression_specs_test'
+$tempRoot = Join-Path $repoRoot ('android/temp/test_generate_regression_specs/run_' + [guid]::NewGuid().ToString('N'))
 
 function Assert-True {
     param([bool]$Condition, [string]$Message)
@@ -11,9 +11,9 @@ function Assert-True {
     }
 }
 
-if (Test-Path -LiteralPath $tempRoot) {
-    Remove-Item -LiteralPath $tempRoot -Recurse -Force
-}
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $tempRoot -DirectoryPrefix run_
+New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
+$producerLock = [IO.File]::Open((Join-Path $tempRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 
 try {
     $gameDataDir = Join-Path $tempRoot 'game_data'
@@ -39,6 +39,11 @@ try {
         -Destination (Join-Path $helpersDir 'jsonc.ps1')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\bounded_extraction.ps1') `
         -Destination (Join-Path $helpersDir 'bounded_extraction.ps1')
+    $depHelpersDir = Join-Path $tempRoot 'android/get_deps/helpers'
+    New-Item -ItemType Directory -Path $depHelpersDir -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'android/get_deps/helpers/Get-DepPlatform.ps1') -Destination $depHelpersDir
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1') -Destination $helpersDir
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'android/helpers/powershell_compat.ps1') -Destination $helpersDir
     Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\normalized_json_text.ps1') `
         -Destination (Join-Path $helpersDir 'normalized_json_text.ps1')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\normalize_json.py') `
@@ -177,6 +182,7 @@ try {
         @($combinedSpec.expected_files) -contains 'groupa.pig') `
         'A combined regression should merge and deduplicate component extraction oracles'
 } finally {
+    $producerLock.Dispose()
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 

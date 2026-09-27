@@ -61,3 +61,101 @@ the repository retention guard deliberately rejects overlapping work. Native
 route runs release successful cases' extracted payloads and copied binaries;
 their logs, result JSON, manifests, and settings remain for review. Failed
 cases retain their payloads as well.
+
+## Read-only catalog and portability accounting
+
+```powershell
+$catalog = & ./android/run_all_tests.ps1 -ListTests | ConvertFrom-Json
+$catalog.tests | Group-Object requires | Select-Object Name, Count
+$catalog.support | Select-Object name, type, owner
+```
+
+`-ListTests` exports the actual master discovery catalog as JSON before execution
+filters, sampling, fixture checks or infrastructure probes. It creates no report
+directory, prunes no artifacts and starts no test/device/build. `-HostOnly`,
+`-Filter` and manual-selection flags do not narrow this inventory. Add
+`-ExtendedGraphics` to list full graphics replay variants instead of canaries.
+`-FullSuite` selects exhaustive route-owner timeout policy; the support table
+still lists all discovered owned scripts either way.
+
+Each top-level entry records its checkout-relative path, declared infrastructure,
+manual flag and effective timeout. `none` means no master-managed device/server
+infrastructure; it does not promise absence of game assets, native tools, displays,
+or other per-test requirements. The support table connects PS1/JSONC children to
+their integration owner. Tests internal to Python, JVM or CTest owners are covered
+by those owners' own reports, not expanded into master entries.
+
+Use this inventory alongside execution reports when accounting for Windows/Linux
+parity. A catalog entry is not a pass, and a support owner passing a sampled run
+is not proof that every child ran. Record missing media, unsupported capabilities
+and unexecuted cases explicitly. `test_run_all_tests_catalog.ps1` checks discovery
+completeness, owners, replay variants and read-only report behavior in tooling CI.
+
+Host scheduling includes replay path/build-guard tests, repository artifact policy,
+mission ZIP publication/recovery policy, Windows Job Object lifetime and Windows
+PowerShell 5.1 compatibility. These checks do not require an emulator. On Linux,
+the two Windows-specific contracts return explicit SKIP/exit 2; the PowerShell
+compatibility test first exercises the portable helper assertions on the current
+runtime. Linux descendant lifetime is exercised by `test_headless_process_pool`.
+
+The `test_fingerprint_*` family is host-side. Its native enumeration and threshold
+checks use `android/tests/build`; publication tests use local synthetic executables
+and archives without AcoustID requests. CD, mission-ZIP and music-pack fingerprint
+commands resolve Windows/Linux executable names in that shared build tree and
+reuse its cached CMake. Native enumeration/matcher checks have 30-second child
+limits; publication, enumeration and threshold fixture runs have retention and
+producer locks, with temporary data removed in `finally`.
+
+Extraction planning and policy tests also run without a device: CD workflow stage
+selection, CD/GOG batch checks, spec generation, provenance, publication, regression
+workflow contracts and mocked launcher preflight. Their isolated fixture directories
+use retained `run_` generations and producer locks, with cleanup in `finally`.
+These tests do not replace actual on-device extraction or proprietary-media runs.
+
+`test_code_quality_files.ps1` also exercises the real formatting entry point in an
+isolated fixture with recording tool stubs. It verifies that space-separated paths
+all reach the tools, hidden files remain in scope, missing/empty explicit scopes
+stop before any tool runs, and intentional unscoped invocation remains available.
+The test runs in tooling smoke without requiring formatter installations.
+
+D2X-XL sound contracts and dependency verification run as host tests on Windows
+and Linux. `test_d2xxl_tga_pixels` exercises the production TGA decoder on both
+hosts, including pixel depth, image origin, alpha and supertransparency masks.
+`test_d2xxl_tga_layout` additionally checks System.Drawing bitmaps and archive
+publication on Windows; it reports an explicit skip on Linux. Full texture-pack
+conversion remains Windows-dependent. Both texture fixtures and dependency
+verification use retained, locked run directories and remove payloads on exit
+
+## Compact host execution evidence
+
+The master runner updates `execution_evidence_<os>_<architecture>.json` in its
+report directory before and after each test. Filtered runs preserve the latest
+observations for other tests even after their logs and Markdown reports age out.
+A separate summary on each host records commit, dirty-worktree flag, test source
+hash, arguments, runtime, declared infrastructure requirement, outcome and skip
+reason. Diagnostic paths may refer to files already removed by retention
+
+`RUNNING` means no completion was recorded, including after an interruption; it
+is not a process-liveness check. `SKIP` and `NOT_RUN` are not passes. A newer skip
+replaces an older pass, and a late completion from an older invocation cannot
+replace a newer attempt. Owner PASS covers that owner's reported contract only;
+consult its case-level report for omitted fixtures, sampled cases or child skips.
+Commit/dirty/source fields do not fingerprint all dependencies or prove that the
+current checkout matches the tested code
+
+Each host summary keeps at most 1,024 latest test observations and 4 MiB, evicting
+oldest observations with an explicit count. Writers serialize, publish atomically,
+and clean interrupted publication scratch after a successful update. Corrupt
+summaries are preserved and reported as errors; evidence write failure makes the
+suite exit nonzero after infrastructure cleanup. `-ListTests` does not create or
+update this evidence. These are local observations, not an automatic Windows/Linux
+parity verdict; absent entries mean execution evidence is missing
+
+`test_dependency_install` owns Linux shell transaction fixtures that require
+`flock`, including Windows archive/wrapper simulations executed on Linux. It
+reports a capability skip on other hosts; those simulations are not actual
+Windows installer validation. Portable dependency/platform/ownership checks remain
+separate tests on Windows and Linux. SDK fixtures exercise standalone retention
+handoff, failed or partial installs, full-bootstrap deferral and Windows shell
+re-entry. `test_sdk_writer_lock` runs on both hosts and checks writer exclusion,
+contention, exit-code propagation, timeouts and PowerShell AVD argument forwarding

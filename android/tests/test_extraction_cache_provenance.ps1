@@ -2,7 +2,7 @@
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$tempRoot = Join-Path $repoRoot 'android\temp\extraction_cache_provenance_test'
+$tempRoot = Join-Path $repoRoot ('android/temp/test_extraction_cache_provenance/run_' + [guid]::NewGuid().ToString('N'))
 . (Join-Path $repoRoot 'android\helpers\bounded_extraction.ps1')
 
 function Assert-True {
@@ -10,9 +10,9 @@ function Assert-True {
     if (-not $Condition) { throw $Message }
 }
 
-if (Test-Path -LiteralPath $tempRoot) {
-    Remove-Item -LiteralPath $tempRoot -Recurse -Force
-}
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $tempRoot -DirectoryPrefix run_
+New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
+$producerLock = [IO.File]::Open((Join-Path $tempRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 
 try {
     $discDir = Join-Path $tempRoot 'disc'
@@ -117,6 +117,7 @@ try {
 
     Write-Host 'extraction cache provenance tests passed' -ForegroundColor Green
 } finally {
+    $producerLock.Dispose()
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 

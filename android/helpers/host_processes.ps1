@@ -17,7 +17,10 @@ if (-not (Get-Command Get-DxxHostProcessInventory -ErrorAction SilentlyContinue)
             if ($entry.Name -notmatch '^\d+$') { continue }
             try {
                 $stat = [IO.File]::ReadAllText((Join-Path $entry.FullName 'stat'))
-                $commandLine = [IO.File]::ReadAllText((Join-Path $entry.FullName 'cmdline')).Replace([char]0, ' ').Trim()
+                $argumentText = [IO.File]::ReadAllText((Join-Path $entry.FullName 'cmdline'))
+                if ($argumentText.Length -gt 0 -and $argumentText[$argumentText.Length - 1] -eq [char]0) { $argumentText = $argumentText.Substring(0, $argumentText.Length - 1) }
+                $arguments = if ($argumentText.Length) { @($argumentText.Split([char]0)) } else { @() }
+                $commandLine = ($arguments -join ' ').Trim()
                 if ($stat -notmatch '^\d+ \((.*)\) \S+ (\d+) ') {
                     throw "Cannot parse process status for $($entry.Name)"
                 }
@@ -38,6 +41,7 @@ if (-not (Get-Command Get-DxxHostProcessInventory -ErrorAction SilentlyContinue)
                     ParentProcessId = $parentId
                     Name = $processName
                     CommandLine = $commandLine
+                    Arguments = $arguments
                     ExecutablePath = $executablePath
                     WorkingDirectory = $workingDirectory
                     PathInspectionFailed = $pathInspectionFailed

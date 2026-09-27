@@ -8,6 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../tool_versions.conf"
 source "$SCRIPT_DIR/platform.sh"
 source "$SCRIPT_DIR/resolve_dep_base.sh"
+source "$SCRIPT_DIR/sdk_tools.sh"
+run_sdk_writer_if_needed
 
 INSTALL_DIR="$LOCAL_DIR"
 

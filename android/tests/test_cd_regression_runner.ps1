@@ -5,6 +5,8 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $runnerPath = Join-Path $repoRoot 'game_data\run_all_cd_regressions.ps1'
 . $runnerPath
 . (Join-Path $repoRoot 'game_data\disc_track_manifest.ps1')
+& git -C $repoRoot check-ignore --quiet --no-index -- game_data/disc_track_manifest.ps1
+if ($LASTEXITCODE -ne 1) { throw 'Disc track manifest source must remain visible to Git' }
 
 function Assert-True {
     param([bool]$Condition, [string]$Message)
@@ -54,11 +56,10 @@ Assert-True ($extractSuiteText.Contains("Join-Path `$ReportDir 'summary.json'"))
 Assert-True ($extractSuiteText.Contains("'logcat', '-d', '-v', 'time'")) `
     'Extraction suite should preserve logcat for failed sources'
 
-$tempRoot = Join-Path $repoRoot 'android\temp\cd_regression_runner_test'
-if (Test-Path -LiteralPath $tempRoot) {
-    Remove-Item -LiteralPath $tempRoot -Recurse -Force
-}
+$tempRoot = Join-Path $repoRoot ('android/temp/test_cd_regression_runner/run_' + [guid]::NewGuid().ToString('N'))
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $tempRoot -DirectoryPrefix run_
 New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
+$producerLock = [IO.File]::Open((Join-Path $tempRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 
 try {
     $logPath = Join-Path $tempRoot 'stages.log'
@@ -92,12 +93,14 @@ exit $($definition.ExitCode)
     $executed = @(Get-Content -LiteralPath $logPath)
     Assert-True (($executed -join ',') -eq 'first,second') 'Runner should stop before the stage after a failure'
 } finally {
+    $producerLock.Dispose()
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-$manifestTemp = Join-Path $repoRoot 'android\temp\disc_track_manifest_test'
-Remove-Item -LiteralPath $manifestTemp -Recurse -Force -ErrorAction SilentlyContinue
+$manifestTemp = Join-Path $repoRoot ('android/temp/disc_track_manifest_test/run_' + [guid]::NewGuid().ToString('N'))
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $manifestTemp -DirectoryPrefix run_
 New-Item -ItemType Directory -Path $manifestTemp -Force | Out-Null
+$manifestLock = [IO.File]::Open((Join-Path $manifestTemp 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 try {
     $cue = Join-Path $manifestTemp 'disc.cue'
     $cueText = @'
@@ -107,15 +110,20 @@ FILE "disc.bin" BINARY
 '@
     [IO.File]::WriteAllText($cue, $cueText + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
     $valid = @(
-        [pscustomobject]@{ track = 2; type = 'audio'; sha1 = ('b' * 40) },
+        [pscustomobject]@{ track = 2; type = 'audio'; sha1 = ('b' * 40); source_format = 'flac' },
         [pscustomobject]@{ track = 1; type = 'data'; sha1 = ('a' * 40) }
     )
     $manifest = @(Get-ValidatedDiscTrackManifest -Manifest $valid -CuePath $cue)
     Assert-True ($manifest.Count -eq 2 -and $manifest[0].track -eq 1 -and $manifest[1].track -eq 2) `
         'Valid manifest should be returned in physical track order'
+    Assert-True ($manifest[1].Contains('source_format') -and $manifest[1].source_format -ceq 'flac') `
+        'Hash catalog publication must receive ordered records preserving source format'
 
     foreach ($case in @(
+            @(),
             @($valid[0]),
+            @([pscustomobject]@{ track = 1.5; type = 'data'; sha1 = ('a' * 40) }, $valid[0]),
+            @([pscustomobject]@{ track = 3; type = 'data'; sha1 = ('a' * 40) }, $valid[0]),
             @($valid[0], $valid[0]),
             @([pscustomobject]@{ track = 1; type = 'data'; sha1 = ('A' * 40) }, $valid[0]),
             @([pscustomobject]@{ track = 1; type = 'audio'; sha1 = ('a' * 40) }, $valid[0]),
@@ -126,6 +134,7 @@ FILE "disc.bin" BINARY
         Assert-True $failed 'Invalid track manifest was accepted'
     }
 } finally {
+    $manifestLock.Dispose()
     Remove-Item -LiteralPath $manifestTemp -Recurse -Force -ErrorAction SilentlyContinue
 }
 

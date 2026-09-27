@@ -13,6 +13,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path (Split-Path (Split-Path $PSScriptRoot))
+if (-not $env:DXX_SDK_WRITER_PARENT_PID) {
+    $writerArguments = @('-NoProfile', '-NonInteractive', '-File', (Join-Path $PSScriptRoot 'invoke_sdk_writer.ps1'), '-RepoRoot', $repoRoot, '-ScriptName', 'create_light_avds.ps1')
+    if ($Force) { $writerArguments += '-Force' }
+    if ($AvdName) { $writerArguments += @('-AvdName', $AvdName) }
+    & (Get-Process -Id $PID).Path @writerArguments
+    exit $LASTEXITCODE
+}
 . (Join-Path $PSScriptRoot "Get-DepPlatform.ps1")
 $depBase = (Get-Content (Join-Path $repoRoot "dependency_base.txt") -First 1).Trim()
 $sdkDir = Join-Path $depBase "android-sdk"

@@ -49,8 +49,13 @@ existing fixed renderer gain; neither clip was independently normalized.
 This establishes event parity, not SC-55 timbre or correct SF2 balance.
 
 ```powershell
-python android/tests/render_game08_gm_reference.py --output temp/game08-gm-reference/comparison
+python android/tests/render_game08_gm_reference.py --bin android/tests/build/Release --output temp/game08-gm-reference/comparison
 ```
+
+This listening helper still requires Windows executable names. Its `--bin`
+argument should name the directory containing the built executables (omit
+`Release` for a single-configuration build). The parity runner itself supports
+Windows and Linux.
 
 The optional `--second-capture PATH` checks a second raw DOS capture against the
 retained reference before writing the listening page and measured audio report.
@@ -115,9 +120,15 @@ It survives scratch-directory retention. Its hashes are in
 
 This builds the host exporter from the production `hmp_android_shared.c` and
 the pinned TinyMidiLoader, runs converter/timeline/synth-state tests, then checks
-both DOS captures. Use `-Level 2` or `-Level 7` to select one reference and
+the selected DOS captures. Use `-Level 2` or `-Level 7` to select one reference and
 `-SyntheticOnly` without proprietary fixtures.
-Use `-SkipBuild` when the host binaries are current.
+Use `-SkipBuild` when the host binaries are current. Windows and Linux use the
+shared `android/tests/build` extraction tree by default; cached CMake and native
+executable names are resolved by the shared host helpers. Relative paths are
+resolved against the checkout, so invocation does not depend on the current directory.
+Missing captures report SKIP (exit 2) after the three synthetic tests run;
+hash mismatches and failed negative controls remain failures. The master runner
+catalogues this as a host test, with no device required.
 
 The reference test requires:
 
@@ -146,7 +157,12 @@ Separate native tests exercise TSF reset/restore and subsequent pan updates.
 Without this shared context, the strict comparison correctly reports the
 briefing's inherited pan positions as different from a cold start.
 
-Outputs are under `temp/midi-parity/reference/descent14-gameNN`: raw converted MIDI,
+Outputs are under `android/temp/dos_midi_parity/run_<id>/descent14-gameNN`:
+`-OutputDirectory` selects the parent for these unique run directories. Repository
+outputs retain three prior runs; a producer lock protects an active run and a
+4 GiB reserve is checked before building. Configure, build, CTest and conversion
+have supervised timeouts and per-step logs, and each run has a status summary.
+Reference outputs include raw converted MIDI,
 `*.mid.tml.mid` containing the actual parsed event stream, per-channel JSON
 diffs, and `summary.json`. The TML export quantizes timestamps exactly as the
 Android MIDI loader does. Loop scheduler tests separately check repeated cursor
@@ -157,7 +173,7 @@ wrapping, retained controller state, and silence through the explicit end time.
 Build once using the regression runner, then:
 
 ```powershell
-& android/build/host-extract-tests/Release/hmp_midi_export.exe `
+& android/tests/build/Release/hmp_midi_export.exe `
   temp/dos-midi-game03/game03.hmp temp/game03.mid repeat
 
 python android/tests/midi_diff.py temp/dos-midi-game03/captures/descentr_000.mid `
@@ -209,9 +225,15 @@ After running the regression:
 
 ```powershell
 python android/tests/render_dos_midi_comparison.py `
+  --renderer android/tests/build/Release/midi_tsf_render.exe `
+  --midi-directory "android/temp/dos_midi_parity/run_<id>/descent14-game07" `
   --output game_data/music/dos-references/descent14-game07/listening `
   --adlib-wav game_data/music/dos-references/descent14-game07/adlib/dos.wav
 ```
+
+Replace `<id>` with the run directory printed by the parity runner. On Linux,
+use `--renderer android/tests/build/midi_tsf_render`; Windows Ninja builds use
+`android/tests/build/midi_tsf_render.exe`.
 
 Open `listen.html` in that directory. The host `midi_tsf_render` tool uses the
 same pinned synth, soundfont, 48-voice limit, -10 dB gain and sample scheduler

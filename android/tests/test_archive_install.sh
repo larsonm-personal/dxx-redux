@@ -12,7 +12,7 @@ export TMPDIR="$TEST_ROOT/downloads"
 export GET_ALL_RUNNING=1
 mkdir -p "$HELPERS" "$TMPDIR" "$TEST_ROOT/local" "$TEST_ROOT/payload"
 printf '%s\n' "$TEST_ROOT/local" >"$FIXTURE/dependency_base.txt"
-for helper in get_unar.sh get_dosbox.sh get_soundfont.sh verify_sha256.sh get_ndk.sh get_sdk.sh get_cmake.sh get_shfmt.sh get_shellcheck.sh get_clang_format.sh get_ktlint.sh platform.sh resolve_dep_base.sh; do
+for helper in get_unar.sh get_dosbox.sh get_soundfont.sh verify_sha256.sh get_ndk.sh get_sdk.sh get_cmake.sh get_shfmt.sh get_shellcheck.sh get_clang_format.sh get_ktlint.sh platform.sh resolve_dep_base.sh sdk_tools.sh; do
     cp "$REPO_ROOT/android/get_deps/helpers/$helper" "$HELPERS/"
 done
 cat >>"$HELPERS/platform.sh" <<'MOCK'
@@ -260,8 +260,6 @@ fi
 [ ! -e "$soundfont_state/work" ]
 rm -rf "$asset"
 bash "$HELPERS/get_soundfont.sh"
-
-
 
 # Exercise the actual formatter installer across SIGKILL and publication boundaries
 destination="$TEST_ROOT/local/shfmt-99.0.0"

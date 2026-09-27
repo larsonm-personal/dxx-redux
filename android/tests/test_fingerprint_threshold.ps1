@@ -1,10 +1,13 @@
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-. (Join-Path $repoRoot 'android\helpers\fingerprint_config.ps1')
+. (Join-Path $repoRoot 'android/helpers/fingerprint_config.ps1')
+. (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1')
+. (Join-Path $repoRoot 'android/helpers/headless_process_pool.ps1')
 
-$testRoot = Join-Path (Resolve-Path (Join-Path $repoRoot 'android\temp')).Path `
-('fingerprint_threshold_' + [guid]::NewGuid().ToString('N'))
-New-Item -ItemType Directory -Path $testRoot | Out-Null
+$testRoot = Join-Path $repoRoot ('android/temp/fingerprint_threshold/run_' + [guid]::NewGuid().ToString('N'))
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $testRoot -DirectoryPrefix run_
+New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+$producerLock = [IO.File]::Open((Join-Path $testRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 
 function Write-Config {
     param([string]$Name, [string]$Content)
@@ -29,8 +32,14 @@ function Assert-ConfigRejected {
 function Invoke-Matcher {
     param([string[]]$MatcherArguments)
 
-    $output = & $matchExe @MatcherArguments 2>&1 | Out-String
-    return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output }
+    $execution = @{ Result = $null }
+    $task = [pscustomobject]@{ FilePath = $matchExe; Arguments = $MatcherArguments; WorkingDirectory = $repoRoot; TimeoutSeconds = 30 }
+    Invoke-HeadlessProcessPool -Tasks @($task) -MaxParallel 1 -OnCompleted {
+        param($task, $result)
+        $execution.Result = $result
+    }
+    if ($execution.Result.TimedOut) { throw 'Fingerprint matcher timed out' }
+    return [pscustomobject]@{ ExitCode = $execution.Result.ExitCode; Output = $execution.Result.StandardOutput + $execution.Result.StandardError }
 }
 
 try {
@@ -67,10 +76,10 @@ try {
     Assert-ConfigRejected -Name 'infinity.json' `
         -Content '{"match_threshold":"Infinity","duration_tolerance":0.10}'
 
-    $matchExe = Join-Path $repoRoot 'android\tests\build\Release\fingerprint_match.exe'
-    if (-not (Test-Path -LiteralPath $matchExe -PathType Leaf)) {
-        throw "fingerprint_match.exe not found: $matchExe"
-    }
+    $buildDir = Join-Path $repoRoot 'android/tests/build'
+    $matchExe = Resolve-RegressionBuildTool -Directory (Join-Path $buildDir 'Release') -BaseName fingerprint_match
+    if (-not $matchExe) { $matchExe = Resolve-RegressionBuildTool -Directory $buildDir -BaseName fingerprint_match }
+    if (-not $matchExe) { throw 'fingerprint_match is not built in android/tests/build' }
     $missingDb = Join-Path $testRoot 'missing-db.json'
     foreach ($threshold in @('0.40', '0.65')) {
         $result = Invoke-Matcher -MatcherArguments @($missingDb, $threshold, '0.10')
@@ -112,6 +121,7 @@ try {
 
     Write-Host 'fingerprint threshold tests passed'
 } finally {
+    $producerLock.Dispose()
     Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 $global:LASTEXITCODE = 0

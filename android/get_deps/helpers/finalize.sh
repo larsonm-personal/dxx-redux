@@ -13,7 +13,10 @@ initialize_sdk_environment
 SDKMANAGER="$(resolve_sdk_tool sdkmanager)"
 
 echo "Accepting SDK licenses..."
-(set +o pipefail; yes | "$SDKMANAGER" --licenses >/dev/null)
+(
+    set +o pipefail
+    yes | "$SDKMANAGER" --licenses >/dev/null
+)
 
 resolve_platform_package() {
     local api_level="$1"
@@ -43,6 +46,14 @@ if [ -n "$EMULATOR_API_LEVEL" ] && [ "$EMULATOR_API_LEVEL" != "$COMPILE_SDK" ]; 
 fi
 assert_dependency_disk_space "$SDK_DIR" 1
 "$SDKMANAGER" "${PACKAGES[@]}"
+
+for package in "${PACKAGES[@]}"; do
+    if ! sdk_package_has_metadata "$package"; then
+        echo "ERROR: sdkmanager did not complete package metadata: $package" >&2
+        exit 1
+    fi
+done
+complete_sdk_provisioning
 
 echo "Done. SDK is ready"
 if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then

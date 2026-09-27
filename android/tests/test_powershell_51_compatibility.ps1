@@ -84,10 +84,13 @@ if ($WindowsPowerShellChild) {
     exit 0
 }
 
+Test-CompatibilityHelpers
+Write-Host 'PASS: compatibility helpers on current host runtime'
+
 $windowsPowerShell = Get-Command powershell.exe -ErrorAction SilentlyContinue
 if (-not $windowsPowerShell) {
-    Write-Host 'SKIP: Windows PowerShell 5.1 is unavailable on this host'
-    exit 0
+    Write-Host 'RESULT: SKIP (portable compatibility helpers passed; Windows PowerShell 5.1 is unavailable on this host)'
+    exit 2
 }
 
 $tempRoot = Join-Path $repoRoot "android/temp/powershell-compat-$PID"

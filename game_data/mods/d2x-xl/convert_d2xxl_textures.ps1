@@ -283,7 +283,7 @@ function ConvertTo-D2xxlTgaBitmap {
     return $bitmap
 }
 
-function Read-TGA {
+function Read-D2xxlTgaPixels {
     param([string]$Path)
 
     $fileLength = (Get-Item -LiteralPath $Path).Length
@@ -308,11 +308,6 @@ function Read-TGA {
 
     $useArgb = ($channels -eq 4) -or $hasKeyColor
     $outputChannels = if ($useArgb) { 4 } else { 3 }
-    $pixelFmt = if ($useArgb) {
-        [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
-    } else {
-        [System.Drawing.Imaging.PixelFormat]::Format24bppRgb
-    }
     $outputBytes = [byte[]]::new($pixelCount * $outputChannels)
     [byte[]]$maskBytes = $null
     if ($hasKeyColor) {
@@ -407,6 +402,24 @@ function Read-TGA {
         }
     }
 
+    return [pscustomobject]@{ Width = $width; Height = $height; Channels = $outputChannels; Pixels = $outputBytes; Mask = $maskBytes }
+}
+
+# Keep platform-specific bitmap allocation outside the portable TGA decoder
+function Read-TGA {
+    param([string]$Path)
+
+    $decoded = Read-D2xxlTgaPixels -Path $Path
+    $width = $decoded.Width
+    $height = $decoded.Height
+    $outputChannels = $decoded.Channels
+    $outputBytes = $decoded.Pixels
+    $maskBytes = $decoded.Mask
+    $pixelFmt = if ($outputChannels -eq 4) {
+        [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
+    } else {
+        [System.Drawing.Imaging.PixelFormat]::Format24bppRgb
+    }
     $bitmap = $null
     $maskBitmap = $null
     try {

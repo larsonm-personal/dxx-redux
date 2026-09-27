@@ -3,16 +3,16 @@
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $sourceScript = Join-Path $repoRoot 'game_data\extract_all_gog.ps1'
-$tempRoot = Join-Path $repoRoot 'android\temp\extract_all_gog_batch_test'
+$tempRoot = Join-Path $repoRoot ('android/temp/test_extract_all_gog_batch/run_' + [guid]::NewGuid().ToString('N'))
 
 function Assert-True {
     param([bool]$Condition, [string]$Message)
     if (-not $Condition) { throw $Message }
 }
 
-if (Test-Path -LiteralPath $tempRoot) {
-    Remove-Item -LiteralPath $tempRoot -Recurse -Force
-}
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $tempRoot -DirectoryPrefix run_
+New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
+$producerLock = [IO.File]::Open((Join-Path $tempRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 
 try {
     $gameDataDir = Join-Path $tempRoot 'game_data'
@@ -48,6 +48,7 @@ function Test-ExtractionCompletionManifest { return $false }
         'The collision failure should identify both ambiguous installers'
     Write-Host 'extract_all_gog batch tests passed' -ForegroundColor Green
 } finally {
+    $producerLock.Dispose()
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 

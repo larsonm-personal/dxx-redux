@@ -47,18 +47,21 @@ $7za = Get-7zaPath
 # ── Ensure fingerprint_audio.exe is built ───────────────────────────
 
 $buildDir = "$repoRoot/android/tests/build"
-$fpExe = "$buildDir/Release/fingerprint_audio.exe"
+$cmake = Resolve-RegressionCMakePath -RepoRoot $repoRoot -BuildDir $buildDir
+if (-not $cmake) { throw 'CMake is required to build fingerprint_audio' }
 
 if (-not (Test-Path "$buildDir/CMakeCache.txt")) {
-    cmake -S "$repoRoot/android/app/src/main/cpp/extract" -B $buildDir 2>&1 | Out-Null
+    & $cmake -S "$repoRoot/android/app/src/main/cpp/extract" -B $buildDir 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "fingerprint_audio CMake configuration failed with exit code $LASTEXITCODE" }
 }
 Write-Host "Building fingerprint_audio.exe..."
-cmake --build $buildDir --config Release --target fingerprint_audio 2>&1 | ForEach-Object {
+& $cmake --build $buildDir --config Release --parallel 2 --target fingerprint_audio 2>&1 | ForEach-Object {
     if ($_ -match 'error') { Write-Host $_ }
 }
 if ($LASTEXITCODE -ne 0) { throw "fingerprint_audio build failed with exit code $LASTEXITCODE" }
-if (-not (Test-Path $fpExe)) {
+$fpExe = Resolve-RegressionBuildTool -Directory (Join-Path $buildDir Release) -BaseName fingerprint_audio
+if (-not $fpExe) { $fpExe = Resolve-RegressionBuildTool -Directory $buildDir -BaseName fingerprint_audio }
+if (-not $fpExe -or -not (Test-Path -LiteralPath $fpExe -PathType Leaf)) {
     Write-Error "Failed to build fingerprint_audio.exe"
 }
 Write-Host "Built: $fpExe"

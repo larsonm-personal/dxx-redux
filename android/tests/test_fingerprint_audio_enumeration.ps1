@@ -2,6 +2,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/fingerprint_audio_results.ps1')
 . (Join-Path $repoRoot 'android/helpers/test_env.ps1')
+. (Join-Path $repoRoot 'android/helpers/headless_process_pool.ps1')
 . (Join-Path $repoRoot 'android/helpers/normalized_json_text.ps1')
 . (Join-Path $repoRoot 'android/helpers/powershell_compat.ps1')
 
@@ -21,8 +22,10 @@ if (-not $fingerprintAudioTest) {
     throw 'test_fingerprint_audio_enumeration is not built'
 }
 
-$workRoot = Join-Path $repoRoot "android/temp/fingerprint_audio_enumeration_$([Guid]::NewGuid().ToString('N'))"
-New-Item -ItemType Directory -Path $workRoot | Out-Null
+$workRoot = Join-Path $repoRoot "android/temp/fingerprint_audio_enumeration/run_$([Guid]::NewGuid().ToString('N'))"
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $workRoot -DirectoryPrefix run_
+New-Item -ItemType Directory -Path $workRoot -Force | Out-Null
+$producerLock = [IO.File]::Open((Join-Path $workRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 
 function Invoke-FingerprintAudioTest {
     param(
@@ -39,23 +42,17 @@ function Invoke-FingerprintAudioTest {
             [Environment]::SetEnvironmentVariable('DXX_FINGERPRINT_AUDIO_TEST_FAIL_AFTER', $null)
         }
         $executable = if ($FailAfter -ge 0) { $fingerprintAudioTest } else { $fingerprintAudio }
-        $startInfo = [Diagnostics.ProcessStartInfo]::new($executable)
-        Set-CompatibleProcessArguments -StartInfo $startInfo -Arguments @($Directory)
-        $startInfo.UseShellExecute = $false
-        $startInfo.RedirectStandardOutput = $true
-        $startInfo.RedirectStandardError = $true
-        $startInfo.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
-        $startInfo.StandardErrorEncoding = [Text.UTF8Encoding]::new($false)
-        $process = [Diagnostics.Process]::Start($startInfo)
-        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
-        $stderrTask = $process.StandardError.ReadToEndAsync()
-        $process.WaitForExit()
-        $stdout = $stdoutTask.GetAwaiter().GetResult()
-        $stderr = $stderrTask.GetAwaiter().GetResult()
+        $execution = @{ Result = $null }
+        $task = [pscustomobject]@{ FilePath = $executable; Arguments = @($Directory); WorkingDirectory = $repoRoot; TimeoutSeconds = 30 }
+        Invoke-HeadlessProcessPool -Tasks @($task) -MaxParallel 1 -OnCompleted {
+            param($task, $result)
+            $execution.Result = $result
+        }
+        if ($execution.Result.TimedOut) { throw 'Fingerprint audio enumeration timed out' }
         return [PSCustomObject]@{
-            ExitCode = $process.ExitCode
-            Stdout   = $stdout
-            Stderr   = $stderr
+            ExitCode = $execution.Result.ExitCode
+            Stdout = $execution.Result.StandardOutput
+            Stderr = $execution.Result.StandardError
         }
     } finally {
         [Environment]::SetEnvironmentVariable('DXX_FINGERPRINT_AUDIO_TEST_FAIL_AFTER', $savedInjection)
@@ -141,6 +138,7 @@ try {
 
     Write-Host 'fingerprint audio enumeration tests passed'
 } finally {
+    $producerLock.Dispose()
     Remove-Item -LiteralPath $workRoot -Recurse -Force -ErrorAction SilentlyContinue
     $global:LASTEXITCODE = 0
 }
