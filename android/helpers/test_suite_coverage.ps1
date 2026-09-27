@@ -151,6 +151,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_server_integration'
             'test_standard_game_data_resolution'
             'test_test_helpers_process_wait'
+            'test_managed_emulator_start'
             'test_test_process_output_capture'
             'test_test_report_runtimes'
             'test_test_execution_evidence'
