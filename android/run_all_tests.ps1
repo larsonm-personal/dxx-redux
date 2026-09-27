@@ -464,6 +464,7 @@ $noInfraTests = @(
     "test_extract_all_gog_batch",
     "test_generate_regression_specs",
     "test_extract_suite_device_preflight",
+    "test_managed_emulator_start",
     "test_extract_regression_workflow",
     "test_extraction_cache_provenance",
     "test_extraction_publication",
@@ -1420,7 +1421,6 @@ function Invoke-SuitePreflight {
             return $false
         }
         Invoke-AutomaticStaleEmulatorCleanup
-        Reconnect-AdbDevice
         $preflightEmu1 = Invoke-PrimaryEmulatorPreflight -RequireStandardGameData:$needsStandardGameData
         if (-not $preflightEmu1) {
             Write-Host "FAIL: Suite preflight could not prepare a healthy primary emulator" -ForegroundColor Red

@@ -2450,17 +2450,26 @@ function Start-ManagedEmulator {
         [Parameter(Mandatory)][string]$Serial,
         [int]$AppearTimeoutSeconds = 90,
         [int]$BootTimeoutSeconds = 240,
+        [int]$ExistingProcessRecoverySeconds = 30,
         [string]$GpuRenderer = "host",
         [switch]$Headless
     )
 
     Get-ManagedEmulatorPort -Serial $Serial | Out-Null
     if (Test-DeviceOnline -Serial $Serial) {
-        return Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $BootTimeoutSeconds
+        if (Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $BootTimeoutSeconds) { return $true }
+        Write-Status "Existing $Serial did not become ready; recycling it" "Yellow"
+        if (-not (Stop-ManagedEmulator -Serial $Serial)) { return $false }
     }
     if (@(Get-ManagedEmulatorProcesses -Serial $Serial).Count -gt 0) {
-        Write-Status "FAIL: $Serial already has a process; recover that serial before launching" "Red"
-        return $false
+        # ADB reconnect briefly removes a healthy emulator from the device list
+        Write-Status "Waiting for existing $Serial to recover its ADB connection" "Yellow"
+        if (Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $ExistingProcessRecoverySeconds) { return $true }
+        Write-Status "$Serial is still unresponsive; stopping its stale processes before relaunch" "Yellow"
+        if (-not (Stop-ManagedEmulator -Serial $Serial)) {
+            Write-Status "FAIL: Could not stop stale processes for $Serial" "Red"
+            return $false
+        }
     }
     if (-not (Test-Path $script:EMULATOR_EXE)) {
         Write-Status "FAIL: emulator not found at $script:EMULATOR_EXE" "Red"
