@@ -110,12 +110,6 @@ fun EnginePreferencesPage(
         mutableStateOf(prefs.getBoolean(PREF_GUIDEBOT_HELPER_LINE, true))
     }
     var savedShowGuidebotLine by remember { mutableStateOf(showGuidebotLine) }
-    var mainViewFov by remember {
-        mutableIntStateOf(
-            (readConfigValue(filesDir, "MainViewFov") ?: "0").toIntOrNull() ?: 0,
-        )
-    }
-    var savedMainViewFov by remember { mutableIntStateOf(mainViewFov) }
     var presetNeedsSave by remember { mutableStateOf(false) }
     var pendingPreset by remember { mutableStateOf<GameSettingsPreset?>(null) }
     var persistGuidebotGoal by remember {
@@ -139,14 +133,6 @@ fun EnginePreferencesPage(
     var savedRewindSupportEnabled by remember { mutableStateOf(rewindSupportEnabled) }
     var serverCoopQol by remember { mutableStateOf(HostGameDefaults.load(context).coopQol) }
     var savedServerCoopQol by remember { mutableStateOf(serverCoopQol) }
-    var textureFilter by remember {
-        mutableIntStateOf(
-            (readConfigValue(filesDir, "TexFilt") ?: "0").toIntOrNull() ?: 0,
-        )
-    }
-    var savedTextureFilter by remember { mutableIntStateOf(textureFilter) }
-    var hudFiltering by remember { mutableStateOf((readConfigValue(filesDir, "HudTexFilt") ?: "1") != "0") }
-    var savedHudFiltering by remember { mutableStateOf(hudFiltering) }
     var rewindTargetSeconds by remember {
         mutableIntStateOf(
             sanitizeRewindTargetSeconds(
@@ -169,12 +155,9 @@ fun EnginePreferencesPage(
             mapCheatsAccessible != savedMapCheatsAccessible ||
             originalHoming != savedOriginalHoming ||
             showGuidebotLine != savedShowGuidebotLine ||
-            mainViewFov != savedMainViewFov ||
             skipIntroMovie != savedSkipIntroMovie ||
             rewindSupportEnabled != savedRewindSupportEnabled ||
-            serverCoopQol != savedServerCoopQol ||
-            textureFilter != savedTextureFilter ||
-            hudFiltering != savedHudFiltering
+            serverCoopQol != savedServerCoopQol
 
     fun loadPrefs() {
         val data = NativePilotPreferences.readEnginePrefsForAll(gameVariant, filesDir.absolutePath)
@@ -225,14 +208,16 @@ fun EnginePreferencesPage(
             statusMessage = "Could not save pilot preferences; original files were restored"
         } else if (count > 0) {
             try {
-                updateAllConfigFiles(
-                    filesDir,
-                    listOf(
-                        "MainViewFov" to mainViewFov.toString(),
-                        "TexFilt" to textureFilter.toString(),
-                        "HudTexFilt" to if (hudFiltering) "1" else "0",
-                    ),
-                )
+                if (preset != null) {
+                    updateAllConfigFiles(
+                        filesDir,
+                        listOf(
+                            "MainViewFov" to preset.mainViewFov.toString(),
+                            "TexFilt" to preset.textureFilter.toString(),
+                            "HudTexFilt" to if (preset.hudFiltering) "1" else "0",
+                        ),
+                    )
+                }
                 prefs
                     .edit()
                     .putBoolean(PREF_GUIDEBOT_HELPER_LINE, showGuidebotLine)
@@ -248,9 +233,6 @@ fun EnginePreferencesPage(
                 savedServerCoopQol = serverCoopQol
                 savedRewindSupportEnabled = rewindSupportEnabled
                 savedSkipIntroMovie = skipIntroMovie
-                savedTextureFilter = textureFilter
-                savedHudFiltering = hudFiltering
-                savedMainViewFov = mainViewFov
                 savedShowGuidebotLine = showGuidebotLine
                 if (preset != null) MidiPreviewBridge.resetPreferences(context, preset)
             } catch (_: Exception) {
@@ -309,12 +291,9 @@ fun EnginePreferencesPage(
                     showGuidebotLine = preset.helpersEnabled
                     persistGuidebotGoal = preset.helpersEnabled
                     guidebotRoutingMode = preset.guidebotRoutingMode
-                    mainViewFov = preset.mainViewFov
                     serverCoopQol = preset.serverCoopQol
                     rewindSupportEnabled = preset.rewindEnabled
                     skipIntroMovie = preset.skipIntroMovie
-                    textureFilter = preset.textureFilter
-                    hudFiltering = preset.hudFiltering
                     originalHoming = preset.originalHoming
                     if (preset == GameSettingsPreset.DEFAULTS) {
                         cockpitMode = CM_FULL_COCKPIT
@@ -572,16 +551,6 @@ fun EnginePreferencesPage(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-                MainViewFovControl(value = mainViewFov, onValueChange = { mainViewFov = it })
-                TextureFilterControl(value = textureFilter, onValueChange = { textureFilter = it })
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Switch(
-                        checked = hudFiltering,
-                        onCheckedChange = { hudFiltering = it },
-                        modifier = Modifier.tvFocusBorder(),
-                    )
-                    Text("HUD filtering", fontSize = 10.sp)
-                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Switch(
                         checked = serverCoopQol,
