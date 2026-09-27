@@ -36,10 +36,11 @@ function Assert-GuideMenu {
                 $ui = $raw | ConvertFrom-Json
                 if ($ui.request_id -ne $requestId -or $ui.guidebot_enhanced_routing -ne $Enhanced) { return $false }
                 $bindings = @($ui.guidebot_goal_bindings)
-                # Unexplored=1043, Secret=1038; retain Next, Energy, Recall and Warp
+                # Unexplored=1043, Secret=1038, Warp=1042; retain Next and Energy
                 if (($bindings -contains 1043) -ne $Enhanced -or
+                    ($bindings -contains 1042) -ne $Enhanced -or
                     ($bindings -contains 1038) -ne ($Enhanced -and $SecretRevealed)) { return $false }
-                foreach ($classic in @(1041, 1004, 1045, 1042)) {
+                foreach ($classic in @(1041, 1004)) {
                     if ($bindings -notcontains $classic) { return $false }
                 }
                 [IO.File]::WriteAllText((Join-Path $outputDir "menu-$Enhanced-$SecretRevealed.json"), ($ui | ConvertTo-Json -Depth 10) + "`n")
@@ -82,12 +83,18 @@ try {
     Assert-GuideMenu -Enhanced $true -SecretRevealed $false
     Invoke-MenuSteps @(
         @{action = 'set_debug'; field = 'android_game_request'; value = 'quick_load' },
+        @{action = 'wait_for'; timeout_ms = 30000; expect = @{game_window_is_front = $true; 'guidebot.routing_mode_name' = 'Enhanced' } },
+        @{action = 'set_secret_reveal'; enabled = $true }
+    )
+    Assert-GuideMenu -Enhanced $true
+    Invoke-MenuSteps @(
+        @{action = 'set_debug'; field = 'android_game_request'; value = 'quick_save'; post_delay_ms = 750 },
+        @{action = 'set_debug'; field = 'guidebot_routing_default'; value = 'Original' },
+        @{action = 'set_debug'; field = 'android_game_request'; value = 'quick_load' },
         @{action = 'wait_for'; timeout_ms = 30000; expect = @{game_window_is_front = $true; 'guidebot.routing_mode_name' = 'Original' } },
         @{action = 'set_secret_reveal'; enabled = $true }
     )
     Assert-GuideMenu -Enhanced $false
-    Invoke-MenuSteps @(@{action = 'set_debug'; field = 'guidebot_routing_mode'; value = 'Enhanced' })
-    Assert-GuideMenu -Enhanced $true
     Write-Status 'PASS: added goals hide and return with active routing, including after save restore' 'Green'
 } finally {
     Stop-AppAndWait

@@ -8,7 +8,11 @@ internal fun touchBindingEnabled(
     (rewindEnabled || binding != TouchBindings.META_REWIND) &&
         (
             enhancedGuidebotRouting ||
-                (binding != TouchBindings.META_GUIDE_FIND_SECRET && binding != TouchBindings.META_GUIDE_FIND_UNEXPLORED)
+                (
+                    binding != TouchBindings.META_GUIDE_FIND_SECRET &&
+                        binding != TouchBindings.META_GUIDE_FIND_UNEXPLORED &&
+                        binding != TouchBindings.META_GUIDE_WARP_TO_ME
+                )
         )
 
 internal data class RemainingTouchAction(

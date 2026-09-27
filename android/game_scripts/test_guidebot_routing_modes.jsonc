@@ -198,9 +198,10 @@
     {
         "action": "wait_for",
         "expect": {
-            "guidebot.routing_mode_name": "Original",
+            "guidebot.routing_mode_name": "Enhanced",
             "game_window_is_front": true,
-            "time_paused": false
+            "time_paused": false,
+            "guidebot.released": true
         },
         "timeout_ms": 30000
     },
@@ -217,7 +218,7 @@
     },
     {
         "action": "set_debug",
-        "field": "guidebot_routing_mode",
+        "field": "guidebot_routing_default",
         "value": "Original"
     },
     {
@@ -228,9 +229,10 @@
     {
         "action": "wait_for",
         "expect": {
-            "guidebot.routing_mode_name": "Enhanced",
+            "guidebot.routing_mode_name": "Original",
             "game_window_is_front": true,
-            "time_paused": false
+            "time_paused": false,
+            "guidebot.released": true
         },
         "timeout_ms": 30000
     },

@@ -1,6 +1,6 @@
 # TEST-SUPPORT: owner=test_guidebot_route_regressions
 # Compare live Original decisions with frozen Redux routing on real D2 levels
-param([switch]$NoBuild, [string]$BuildDir = 'buildd2', [string]$HogDir, [ValidateRange(1, 300)][int]$ProcessTimeoutSeconds = 90)
+param([switch]$NoBuild, [switch]$SaveContinuity, [string]$BuildDir = 'buildd2', [string]$HogDir, [ValidateRange(1, 300)][int]$ProcessTimeoutSeconds = 90)
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1')
@@ -26,9 +26,10 @@ try {
             $log = Join-Path $outputRoot "level_${level}_$repeat.log"
             $userDir = Join-Path $outputRoot "level_${level}_user_$repeat"
             New-Item -ItemType Directory -Force -Path $userDir | Out-Null
-            Invoke-GuidebotNavigationProcess -Exe $exe -RepoRoot $repoRoot -LogPath $log -TimeoutSeconds $ProcessTimeoutSeconds -Arguments @(
-                '-hogdir', $dataDir, '-mission', 'd2', '-level', [string]$level,
-                '-route-confirm-user-dir', $userDir, '-route-confirm-json-out', $output)
+            $auditArgs = if ($SaveContinuity) { @('-escort-return-target', 'save-continuity') } else { @() }
+            Invoke-GuidebotNavigationProcess -Exe $exe -RepoRoot $repoRoot -LogPath $log -TimeoutSeconds $ProcessTimeoutSeconds -Arguments (@(
+                    '-hogdir', $dataDir, '-mission', 'd2', '-level', [string]$level,
+                    '-route-confirm-user-dir', $userDir, '-route-confirm-json-out', $output) + $auditArgs)
             $result = Get-Content -LiteralPath $output -Raw
             if (-not ($result | ConvertFrom-Json).passed) { throw "Original assertions failed: $output" }
             if ($repeat -eq 1) { $reference = $result }

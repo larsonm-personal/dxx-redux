@@ -724,7 +724,7 @@ fun EnginePreferencesPage(
 
                 Text("Guidebot routing", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 Text(
-                    "Applies to new games. Saves retain their mode; co-op uses the host's choice",
+                    "Applies to new games and loaded single-player saves; co-op uses the host's choice",
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

@@ -24,9 +24,9 @@ class RemainingKeyTouchActionsTest {
         val snapshot = configured.toList()
         val original = configured.filter { touchBindingEnabled(it.binding, true, false) }
 
-        assertEquals(listOf("Secret", "Unexplored"), configured.filter { it !in original }.map { it.label })
+        assertEquals(listOf("Secret", "Warp to Me", "Unexplored"), configured.filter { it !in original }.map { it.label })
         assertTrue(original.any { it.binding == TouchBindings.META_GUIDE_RECALL })
-        assertTrue(original.any { it.binding == TouchBindings.META_GUIDE_WARP_TO_ME })
+        assertTrue(original.none { it.binding == TouchBindings.META_GUIDE_WARP_TO_ME })
         assertEquals(snapshot, configured.filter { touchBindingEnabled(it.binding, true, true) })
         assertEquals(snapshot, configured)
     }

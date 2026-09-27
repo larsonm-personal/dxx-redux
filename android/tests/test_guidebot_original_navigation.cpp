@@ -132,7 +132,104 @@ static void place(object *o, int seg)
 	obj_relink(o - Objects, seg);
 	compute_segment_center(&o->pos, &Segments[seg]);
 }
-int test_guidebot_live_navigation(const char *output, const char *)
+// Opt-in diagnostic: ordinary save/load, with no demo checkpoint metadata
+// This exercises live navigation and physics, not the entire game frame loop
+static json continuity_state()
+{
+	const object &bot = Objects[Buddy_objnum];
+	unsigned rng;
+	d_rand_get_state(&rng);
+	return {
+		{ "routing_mode", guidebot_routing_mode() },
+		{ "goal", Escort_goal_object }, { "special_goal", Escort_special_goal }, { "goal_index", Escort_goal_index },
+		{ "marker", Looking_for_marker }, { "last_key", Last_buddy_key },
+		{ "released", Buddy_allowed_to_talk }, { "messages_suppressed", Buddy_messages_suppressed },
+		{ "seen_delta", Buddy_last_seen_player - GameTime64 },
+		{ "player_path_delta", Buddy_last_player_path_created - GameTime64 },
+		{ "path_created_delta", Escort_last_path_created - GameTime64 },
+		{ "route_target_mode", Escort_route_target_mode }, { "route_active", Escort_route_goal.active },
+		{ "ai_mode", Ai_local_info[Buddy_objnum].mode },
+		{ "path_length", bot.ctype.ai_info.path_length }, { "path_index", bot.ctype.ai_info.cur_path_index },
+		{ "path_allocator", Point_segs_free_ptr - Point_segs },
+		{ "segment", bot.segnum }, { "position", { bot.pos.x, bot.pos.y, bot.pos.z } },
+		{ "velocity", { bot.mtype.phys_info.velocity.x, bot.mtype.phys_info.velocity.y, bot.mtype.phys_info.velocity.z } },
+		{ "rng", rng }, { "rng_calls", d_rand_get_call_count() }
+	};
+}
+static void continuity_step(int frame)
+{
+	FrameTime = F1_0 / 60;
+	GameTime64 += FrameTime;
+	if (frame % 3 == 0) ++d_tick_count;
+	Believed_player_seg = ConsoleObject->segnum;
+	Believed_player_pos = ConsoleObject->pos;
+	object *bot = &Objects[Buddy_objnum];
+	do_escort_frame(bot, vm_vec_dist_quick(&bot->pos, &ConsoleObject->pos), 2);
+	ai_follow_path(bot, 2, 2, nullptr);
+	do_physics_sim(bot);
+}
+static bool continuity_equal(json left, json right)
+{
+	// Ordinary loads reset this diagnostic counter; compare actual RNG state
+	left.erase("rng_calls");
+	right.erase("rng_calls");
+	return left == right;
+}
+static int audit_save_continuity(const char *output)
+{
+	json report;
+	bool passed = true;
+	for (int mode : { GUIDEBOT_ROUTING_ORIGINAL, GUIDEBOT_ROUTING_ENHANCED }) {
+		guidebot_routing_set_default(mode);
+		// Level restoration rereads the pilot configuration on desktop
+		if (write_player_file() != 0) return 2;
+		guidebot_routing_set_mode(mode);
+		GameTime64 = 20 * F1_0;
+		place(&Objects[Buddy_objnum], ConsoleObject->segnum);
+		Buddy_allowed_to_talk = 1;
+		Buddy_messages_suppressed = 1;
+		// Scram is a real command supported by both routing modes
+		set_escort_special_goal(KEY_7);
+		for (int frame = 0; frame < 120; ++frame) continuity_step(frame);
+		json result;
+		result["before_save"] = continuity_state();
+		char name[] = "guidebot-continuity.sav", desc[] = "Guidebot continuity audit";
+		stop_time();
+		if (!state_save_all_sub(name, desc)) return 2;
+		result["after_save"] = continuity_state();
+		std::vector<json> reference;
+		for (int frame = 0; frame < 120; ++frame) {
+			continuity_step(frame);
+			reference.push_back(continuity_state());
+		}
+		if (!state_restore_all_sub(name, 0)) return 2;
+		result["after_load"] = continuity_state();
+		result["save_unchanged"] = continuity_equal(result["before_save"], result["after_save"]);
+		result["restore_unchanged"] = continuity_equal(result["after_save"], result["after_load"]);
+		result["first_divergent_frame"] = nullptr;
+		for (int frame = 0; frame < 120; ++frame) {
+			continuity_step(frame);
+			const json actual = continuity_state();
+			if (!continuity_equal(actual, reference[frame]) && result["first_divergent_frame"].is_null()) {
+				result["first_divergent_frame"] = frame + 1;
+				result["uninterrupted"] = reference[frame];
+				result["resumed"] = actual;
+			}
+			if (frame == 119) {
+				result["uninterrupted_final"] = reference[frame];
+				result["resumed_final"] = actual;
+			}
+		}
+		result["passed"] = result["save_unchanged"].get<bool>() && result["restore_unchanged"].get<bool>() && result["first_divergent_frame"].is_null();
+		passed = passed && result["passed"].get<bool>();
+		report[mode == GUIDEBOT_ROUTING_ORIGINAL ? "Original" : "Enhanced"] = result;
+	}
+	report["passed"] = passed;
+	std::ofstream file(output);
+	file << report.dump(2) << '\n';
+	return file.good() && passed ? 0 : 1;
+}
+int test_guidebot_live_navigation(const char *output, const char *audit)
 {
 	FrameTime = F1_0 / 60;
 	GameTime64 = 20 * F1_0;
@@ -145,6 +242,7 @@ int test_guidebot_live_navigation(const char *output, const char *)
 	Buddy_messages_suppressed = 1;
 	for (int i = 0; i <= Highest_object_index; ++i)
 		if (i != Buddy_objnum && Objects[i].type == OBJ_ROBOT) obj_delete(i);
+	if (audit && !std::strcmp(audit, "save-continuity")) return audit_save_continuity(output);
 	auto &a = bot->ctype.ai_info;
 	auto &l = Ai_local_info[Buddy_objnum];
 	place(bot, ConsoleObject->segnum);
@@ -264,8 +362,9 @@ int test_guidebot_live_navigation(const char *output, const char *)
 		stop_time();
 		check("save_mode_" + std::to_string(mode), state_save_all_sub(name, desc) != 0);
 		guidebot_routing_set_default(1 - mode);
+		check("save_default_" + std::to_string(mode), write_player_file() == 0);
 		guidebot_routing_set_mode(1 - mode);
-		check("restore_mode_" + std::to_string(mode), state_restore_all_sub(name, 0) != 0 && guidebot_routing_mode() == mode);
+		check("restore_mode_" + std::to_string(mode), state_restore_all_sub(name, 0) != 0 && guidebot_routing_mode() == 1 - mode);
 	}
 	// Replay both real startup paths with a default opposed to recorded mode
 	const std::string replay_path = std::string(output) + ".dximdemo";

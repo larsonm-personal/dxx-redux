@@ -12,11 +12,18 @@ general gameplay and engine behavior. Keep **Enhanced** recordings for cases
 that specifically exercise its prerequisite planning, route recovery, and
 other added behavior, alongside the physical route and live-navigation tests
 
-Choose Original before starting a new game. The launcher setting applies to
-new games; loading an existing save retains that save's routing mode. For a
-checkpoint recording, use a save created in the intended mode. Verify the new
+Choose Original before starting or loading a single-player game. The launcher
+setting applies to new games and loaded single-player saves. Verify the new
 recording's header contains `player_cfg.guidebot_routing_mode`: `0` for Original
 or `1` for Enhanced
+
+Ordinary save/load is not yet qualified as equivalent to uninterrupted play.
+The opt-in `android/tests/test_guidebot_original_navigation.ps1 -SaveContinuity`
+probe currently detects lost guidebot goals/timers and divergent movement/RNG
+in both modes. It uses real saves and live navigation/physics on level geometry,
+not the full game frame loop. Demo checkpoint headers restore extra escort state
+that ordinary saves omit; passing checkpoint playback does not certify ordinary
+save/load continuity
 
 This is a recording policy, not a playback override. Playback must honor the
 recorded mode regardless of launcher defaults or checkpoint settings. Do not

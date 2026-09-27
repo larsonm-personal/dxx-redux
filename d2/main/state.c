@@ -3857,6 +3857,10 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	}
 	#endif
 	escort_rebuild_runtime_state_after_restore();
+	/* A single-player save resumes with the current routing preference
+	 * Apply it after rebuilding the companion so a change clears saved paths */
+	if (!secret_restore && !(Game_mode & GM_MULTI) && !input_demo_replay_is_loaded())
+		guidebot_routing_start_session();
 
 	if (Game_wind)
 		if (!window_is_visible(Game_wind))
