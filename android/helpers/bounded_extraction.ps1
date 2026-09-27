@@ -1,4 +1,5 @@
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot '../get_deps/helpers/Get-DepPlatform.ps1')
 
 function Resolve-BoundedPythonRuntime {
     param(
@@ -20,18 +21,33 @@ function Resolve-BoundedPythonRuntime {
         if (-not [string]::IsNullOrWhiteSpace($ExpectedSha256)) {
             throw 'A bounded Python SHA-256 requires an explicit runtime path'
         }
-        if ($env:OS -ne 'Windows_NT') {
+        $hostPlatform = Get-HostPlatform
+        if ($hostPlatform -notin @('Windows', 'Linux')) {
             throw 'No repository-pinned bounded Python runtime is available for this platform; supply an explicit runtime path and SHA-256'
         }
 
         . (Join-Path $PSScriptRoot 'verified_dependencies.ps1')
         $config = Read-DxxDependencyConfig -RepoRoot $repoRoot
-        foreach ($key in @('PYTHON_EMBED_VERSION', 'PYTHON_EMBED_TREE_SHA256', 'PYTHON_ORACLE_DIR_NAME')) {
+        if ($hostPlatform -eq 'Linux') {
+            if ([Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString() -ne 'X64') {
+                throw 'The repository-pinned bounded Python runtime currently requires Linux x86-64'
+            }
+            $versionKey = 'PYTHON_BOUNDED_VERSION'
+            $treeKey = 'PYTHON_BOUNDED_LINUX_TREE_SHA256'
+            $directoryKey = 'PYTHON_BOUNDED_LINUX_DIR_NAME'
+            $executable = 'bin/python3.12'
+        } else {
+            $versionKey = 'PYTHON_EMBED_VERSION'
+            $treeKey = 'PYTHON_EMBED_TREE_SHA256'
+            $directoryKey = 'PYTHON_ORACLE_DIR_NAME'
+            $executable = 'python.exe'
+        }
+        foreach ($key in @($versionKey, $treeKey, $directoryKey)) {
             if (-not $config.ContainsKey($key) -or [string]::IsNullOrWhiteSpace($config[$key])) {
                 throw "$key not found in tool_versions.conf"
             }
         }
-        if ($config['PYTHON_EMBED_VERSION'] -cne $expectedVersion) {
+        if ($config[$versionKey] -cne $expectedVersion) {
             throw "Bounded Python policy requires version $expectedVersion"
         }
         $depBaseFile = Join-Path $repoRoot 'dependency_base.txt'
@@ -39,10 +55,10 @@ function Resolve-BoundedPythonRuntime {
             throw "dependency_base.txt not found at $depBaseFile"
         }
         $depBase = (Get-Content -LiteralPath $depBaseFile -First 1).Trim()
-        $runtimeRoot = Join-Path $depBase $config['PYTHON_ORACLE_DIR_NAME']
+        $runtimeRoot = Join-Path $depBase $config[$directoryKey]
         $verifiedRoot = Assert-DxxTreeSha256 -Path (Join-Path $runtimeRoot 'python') `
-            -ExpectedSha256 $config['PYTHON_EMBED_TREE_SHA256'] -Label 'bounded Python runtime'
-        $RuntimePath = Join-Path $verifiedRoot 'python.exe'
+            -ExpectedSha256 $config[$treeKey] -Label 'bounded Python runtime'
+        $RuntimePath = Join-Path $verifiedRoot $executable
         $ExpectedSha256 = (Get-FileHash -LiteralPath $RuntimePath -Algorithm SHA256).Hash
         $provenance = 'repository-pinned-tree'
     } elseif ([string]::IsNullOrWhiteSpace($ExpectedSha256)) {
@@ -65,7 +81,7 @@ function Resolve-BoundedPythonRuntime {
     $oldPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        $identityOutput = @(& $runtime -I -c $identityScript 2>&1)
+        $identityOutput = @(& $runtime -I -B -c $identityScript 2>&1)
         $identityExitCode = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $oldPreference
@@ -119,7 +135,7 @@ function Invoke-BoundedExtractor {
 
     $helper = Join-Path $PSScriptRoot 'run_bounded_extractor.py'
     $arguments = @(
-        '-I',
+        '-I', '-B',
         $helper,
         '--output-dir', $OutputDirectory,
         '--timeout-seconds', $TimeoutSeconds,

@@ -15,10 +15,24 @@ for helper in get_cmake_format.sh platform.sh resolve_dep_base.sh; do
 done
 source "$FIXTURE/android/get_deps/tool_versions.conf"
 DEST="$TEST_ROOT/local/cmakelang-$CMAKELANG_VERSION"
+export FIXTURE_DEST="$DEST"
 export FIXTURE_FORMAT_VERSION="$CMAKELANG_VERSION"
 export FIXTURE_YAML_VERSION="$CMAKELANG_PYYAML_VERSION"
 export FIXTURE_SIX_VERSION="$CMAKELANG_SIX_VERSION"
 cat >>"$HELPERS/platform.sh" <<'MOCK'
+mv() {
+    command mv "$@" || return $?
+    case "${FIXTURE_CRASH:-}:$2" in
+        backup:*/.dxx-install-state/work/previous) kill -KILL "$$" ;;
+        restore:"$FIXTURE_DEST") kill -KILL "$$" ;;
+    esac
+}
+touch() {
+    command touch "$@" || return $?
+    case "${FIXTURE_CRASH:-}:$1" in
+        committed:*/.dxx-install-state/work/committed) kill -KILL "$$" ;;
+    esac
+}
 python3() {
     if [ "$1" = -c ]; then return 0; fi
     [ "$1" = -m ] && [ "$2" = venv ] || return 98
@@ -27,6 +41,7 @@ python3() {
 #!/usr/bin/env bash
 set -e
 if [ "$1" = -m ] && [ "$2" = pip ]; then
+    [ "${FIXTURE_CRASH:-}" != pip ] || { kill -KILL "$PPID"; exit 23; }
     [ "${FIXTURE_INSTALL_FAIL:-0}" != 1 ] || exit 23
     [ "${FIXTURE_INTERRUPT:-0}" != 1 ] || { kill -TERM "$PPID"; exit 23; }
     [ "$4" = --no-cache-dir ] || exit 24
@@ -53,10 +68,11 @@ PYTHON
 }
 MOCK
 assert_clean() {
-    if compgen -G "$TEST_ROOT/local/.dxx-cmakelang-stage.*" >/dev/null; then
+    if [ -e "$TEST_ROOT/local/.dxx-install-state/work" ] || compgen -G "$TEST_ROOT/local/.dxx-cmakelang-stage.*" >/dev/null; then
         echo 'Cmakelang workspace leaked' >&2
         exit 1
     fi
+    [ "$(cat "$TEST_ROOT/local/.dxx-install-state/format")" = dxx-install-v1 ]
 }
 export GET_ALL_RUNNING=1
 mkdir -p "$DEST/venv/bin"
@@ -71,6 +87,28 @@ for failure in FIXTURE_INSTALL_FAIL FIXTURE_VALIDATE_FAIL FIXTURE_INTERRUPT; do
     [ "$(cat "$DEST/keep.txt")" = 'last good installation' ]
     assert_clean
 done
+recover() {
+    bash -c 'source "$1"; begin_dependency_install "$2"' _ "$HELPERS/platform.sh" "$TEST_ROOT/local/cached-sibling"
+}
+for point in backup pip; do
+    if FIXTURE_CRASH="$point" bash "$HELPERS/get_cmake_format.sh" >"$TEST_ROOT/crash.log" 2>&1; then exit 1; fi
+    [ "$(cat "$TEST_ROOT/local/.dxx-install-state/format")" = dxx-install-v2 ]
+    [ -d "$TEST_ROOT/local/.dxx-install-state/work/previous" ]
+    recover
+    [ "$(cat "$DEST/keep.txt")" = 'last good installation' ]
+    assert_clean
+done
+# Recovery itself can be killed after restoring the previous installation
+if FIXTURE_CRASH=pip bash "$HELPERS/get_cmake_format.sh" >"$TEST_ROOT/crash.log" 2>&1; then exit 1; fi
+if FIXTURE_CRASH=restore recover >"$TEST_ROOT/recovery-crash.log" 2>&1; then exit 1; fi
+[ "$(cat "$DEST/keep.txt")" = 'last good installation' ]
+recover
+[ "$(cat "$DEST/keep.txt")" = 'last good installation' ]
+assert_clean
+
+# A committed final-path install survives a crash before backup cleanup
+if FIXTURE_CRASH=committed bash "$HELPERS/get_cmake_format.sh" >"$TEST_ROOT/crash.log" 2>&1; then exit 1; fi
+[ -d "$TEST_ROOT/local/.dxx-install-state/work/previous" ]
 bash "$HELPERS/get_cmake_format.sh"
 [ ! -e "$DEST/keep.txt" ]
 [ "$("$DEST/venv/bin/cmake-format" --version)" = "$CMAKELANG_VERSION" ]
@@ -81,4 +119,8 @@ rm -rf "$DEST"
 if FIXTURE_INSTALL_FAIL=1 bash "$HELPERS/get_cmake_format.sh" >"$TEST_ROOT/fresh-failure.log" 2>&1; then exit 1; fi
 [ ! -e "$DEST" ]
 assert_clean
-echo 'PASS: cmakelang final-path install, rollback, validation, termination, cleanup, and repeat run'
+if FIXTURE_CRASH=pip bash "$HELPERS/get_cmake_format.sh" >"$TEST_ROOT/fresh-crash.log" 2>&1; then exit 1; fi
+recover
+[ ! -e "$DEST" ]
+assert_clean
+echo 'PASS: cmakelang final-path install, rollback, validation, termination, SIGKILL and interrupted recovery, cleanup, and repeat run'

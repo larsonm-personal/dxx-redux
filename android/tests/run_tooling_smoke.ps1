@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 # Tooling checks that need no game media, native build, or Android device
 [CmdletBinding()]
-param([string]$OutputRoot)
+param([string]$OutputRoot, [switch]$IncludeBoundedRuntime)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
@@ -11,12 +11,13 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $tests = @(
     'test_dep_platform', 'test_clean_workspace', 'test_clean_old_artifacts',
     'test_host_process_cleanup', 'test_headless_process_pool', 'test_managed_dependencies',
-    'test_standard_game_data_resolution', 'test_test_process_output_capture',
+    'test_standard_game_data_resolution', 'test_sdk_package_inventory', 'test_test_process_output_capture',
     'test_input_demo_comparison_policy'
 )
 # These shell fixtures simulate Linux installations and Windows archive packages
 $linuxInstallerFixtures = [Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Runtime.InteropServices.OSPlatform]::Linux)
 if ($linuxInstallerFixtures) { $tests += 'test_dependency_install' }
+if ($IncludeBoundedRuntime) { $tests += @('test_bounded_python_runtime', 'test_bounded_extraction') }
 if (-not $OutputRoot) {
     $OutputRoot = Join-Path $repoRoot ('android/temp/tooling_smoke/run_' + [guid]::NewGuid().ToString('N'))
 }

@@ -10,37 +10,9 @@ source "$SCRIPT_DIR/../tool_versions.conf"
 source "$SCRIPT_DIR/platform.sh"
 source "$SCRIPT_DIR/resolve_dep_base.sh"
 
-INSTALL_DIR="$LOCAL_DIR"
-
-SDK_DIR="$INSTALL_DIR/android-sdk"
-AVDMANAGER="$SDK_DIR/cmdline-tools/latest/bin/avdmanager"
-
-# On Windows we need .bat
-if [ -f "$AVDMANAGER.bat" ]; then
-    AVDMANAGER="$AVDMANAGER.bat"
-elif [ ! -x "$AVDMANAGER" ]; then
-    echo "ERROR: avdmanager not found. Run get_sdk.sh first"
-    exit 1
-fi
-
-# Need JAVA_HOME
-if [ -z "$JAVA_HOME" ]; then
-    ANDROID_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-    if [ -f "$ANDROID_DIR/helpers/set_vars.sh" ]; then
-        source "$ANDROID_DIR/helpers/set_vars.sh"
-    fi
-fi
-
-# avdmanager.bat needs Windows-style paths; Git Bash's /c/local/... won't work
-if command -v cygpath >/dev/null 2>&1; then
-    ANDROID_HOME="$(cygpath -w "$SDK_DIR")"
-    export ANDROID_HOME
-    ANDROID_SDK_ROOT="$(cygpath -w "$SDK_DIR")"
-    export ANDROID_SDK_ROOT
-else
-    export ANDROID_HOME="$SDK_DIR"
-    export ANDROID_SDK_ROOT="$SDK_DIR"
-fi
+source "$SCRIPT_DIR/sdk_tools.sh"
+initialize_sdk_environment
+AVDMANAGER="$(resolve_sdk_tool avdmanager)"
 
 set_avd_config() {
     local key="$1"

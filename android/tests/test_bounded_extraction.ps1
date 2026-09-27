@@ -7,6 +7,7 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 
 $testRoot = Join-Path $repoRoot "android\temp\bounded_extract_$([guid]::NewGuid().ToString('N'))"
 $junctionPath = $null
+$fixtureLock = $null
 
 function New-ZipFixture {
     param(
@@ -65,8 +66,10 @@ function Assert-RejectedArchive {
 
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $testRoot -DirectoryPrefix bounded_extract_
 New-Item -ItemType Directory -Path $testRoot | Out-Null
 try {
+    $fixtureLock = [IO.File]::Open((Join-Path $testRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     $validZip = Join-Path $testRoot 'valid.zip'
     New-ZipFixture -Path $validZip -Entries @(
         [pscustomobject]@{ Name = 'nested/'; Data = $null },
@@ -199,6 +202,7 @@ try {
 
     Write-Host 'bounded extraction tests passed'
 } finally {
+    if ($fixtureLock) { $fixtureLock.Dispose() }
     if ($junctionPath -and (Test-Path -LiteralPath $junctionPath)) {
         Remove-Item -LiteralPath $junctionPath -Force -ErrorAction SilentlyContinue
     }

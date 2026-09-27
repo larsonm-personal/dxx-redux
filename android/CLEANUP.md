@@ -129,10 +129,21 @@ before retiring versions. Once a checkout is retired, remove its reference with
 protect their dependencies until explicitly unregistered. Linux checkout paths
 remain case-sensitive. These managed installation directories contain only
 replaceable tool files; keep personal files elsewhere.
+DOSBox-X packages participate using their configured `DOSBOX_DIR_NAME` (a
+`dosbox-` prefixed directory), including the Windows extraction package cached
+on Linux. Registration and retirement do not imply native Linux execution.
+The native Linux bounded-extraction Python runtime also participates under its
+configured `PYTHON_BOUNDED_LINUX_DIR_NAME`. Its ownership marker stays outside
+the pinned `python/` tree, and runtime probes disable bytecode writes.
+User-local `powershell-VERSION` installations participate using `POWERSHELL_VERSION`.
+Linux `pwsh` and `pwsh-preview` command symlinks on PATH protect their targets,
+even when the version directory itself is not on PATH. System deb/rpm PowerShell
+installations remain owned by the package manager and are outside this registry.
 
 The ownership registry and stable lock live in the dependency root. Configured
 versions from every registered checkout, explicit environment/PATH overrides, active
-processes, and retained CMake caches are protected. Concurrent installers defer retirement; a
+processes, and retained CMake caches (including `buildd1-asan` and
+`buildd2-asan`) are protected. Concurrent installers defer retirement; a
 configured replacement must be installed and registered before the previous
 working version can be removed. Missing checkout configuration,
 unreadable tool processes, nested repositories, changed identities, and unsafe
@@ -148,7 +159,7 @@ resumes from that journal, including when the installation marker was already
 removed. It does not accumulate new quarantine copies on each retry. Preview does
 not delete files or change ownership records; a stable lock file may be created.
 
-Linux JDK, NDK, CMake, SDK command-line tools, formatter binaries, ktlint, and DOSBox
+Linux JDK, NDK, CMake, SDK command-line tools, formatter binaries, cmakelang, ktlint, and DOSBox
 shell installers serialize through `flock` before inspecting their cached install.
 The default wait is 60 seconds; `DXX_DEPENDENCY_LOCK_TIMEOUT_SECONDS` accepts 0..3600.
 Their fixed `.dxx-install-state/work` directory contains the download, extraction,
@@ -160,8 +171,74 @@ Surviving download/extraction children retain the lock after the Bash parent die
 The small control directory and lock inode remain stable; never delete the lock
 while installers are running. Linked or unrecognized recovery state is rejected.
 
+Cmakelang creates its Python environment at the final path because console
+launchers embed that path. Its transaction records when replacement starts and
+commits only after package-version and executable validation. Recovery discards
+an uncommitted partial environment and restores the previous installation, or
+removes a failed first installation. A committed installation survives recovery,
+which removes its old backup. Recovery can itself be interrupted and retried.
+While this final-path transaction is pending, an atomic format marker makes older
+archive-only installer scripts refuse recovery rather than discard the backup.
+A current installer recovers it and restores the ordinary format marker, so
+completed transactions do not prevent older checkouts from using cached tools.
+
 This recovery is separate from version retirement and repository scratch cleanup.
 Windows shell installers retain ordinary failure rollback but do not yet use this
-Linux lock/recovery path. The in-place cmakelang installer, single-file soundfont
-download, bootstrap PowerShell download, and unowned legacy staging directories
-still require separate recovery handling.
+Linux lock/recovery path. The soundfont downloader also uses the Linux journal,
+located beside the assets directory so recovery files are never packaged in the
+APK. Its same-filesystem workspace preserves the existing asset until a verified
+replacement is published. Recovery removes abandoned downloads before checking
+the cached asset, including after a kill immediately following publication.
+Windows soundfont downloads retain their existing temporary-file failure cleanup.
+PowerShell bootstrap downloads use the same locked workspace under the dependency
+base, including deb/rpm payloads. A retry clears interrupted downloads before
+checking an already-installed PowerShell. User-local tarballs are staged and
+version-checked before publication; interrupted replacement restores the previous
+tree or keeps the committed replacement. A validated local tree can repair its
+command link without another download. Package database recovery remains owned by
+the OS package manager; the helper does not automatically repair interrupted
+system package transactions. Unowned legacy staging still needs separate handling.
+
+Native GuideBot simulation batches discover hash-verified retail D1/D2 assets
+through the shared game-data helper. D1-in-D2 runs copy the required files into a
+lowercase `base-data` directory under their retained output generation; disk
+preflight includes the copy size. Explicit caller-supplied data directories remain
+caller-owned. Automatic base-data copies are removed on both success and failure,
+and partially copied stages are removed if validation fails. A producer lock
+protects each active batch and route-test owner from retention cleanup. After a
+forced producer termination, abandoned data remains bounded by generation retention.
+Result logs/JSON and mission staging needed by downstream tests remain available.
+Route-test children use the shared supervised process pool for timeout and parent
+termination cleanup.
+
+SDK platform finalization, emulator/image provisioning and shell AVD creation
+share the Linux command-line installer lock with `get_sdk.sh`. This keeps a
+command-line tool replacement from racing a running SDK operation and recovers
+an interrupted replacement before locating its executable. Package provisioning
+checks the disk reserve before downloads. Emulator/image cache admission requires
+package metadata and native payload files; incomplete directories are retried.
+These checks do not yet retire obsolete SDK packages or clean sdkmanager-owned
+partial downloads. Package retirement must account for registered checkout pins
+and AVD image references before removing anything.
+
+To inspect SDK package references without changing the SDK, run:
+
+```powershell
+./android/get_deps/inspect-sdk-retention.ps1 | ConvertTo-Json -Depth 8
+```
+
+The inventory reads package metadata, all registered checkout pins sharing the
+dependency base, and AVD configs under the default and environment-selected roots.
+Moved AVDs referenced by `.ini` descriptors are included. `-AvdRoots` can supply
+explicit diagnostic roots; omitting a root does not establish that its images are
+unused. Missing checkout/AVD configs or linked reference paths stop discovery.
+Malformed or inconsistent package metadata is reported as `Unknown`.
+
+`Unreferenced` means absent from those two reference sources only. It is not
+eligibility for deletion: package ownership, running processes, retained build
+caches, other users' AVDs and a fresh check before removal remain necessary. The
+report deliberately sets `RetirementReady=false`; this command never deletes or
+registers packages. AVD environment locations follow the
+[Android tools documentation](https://developer.android.com/tools/variables);
+eventual removal should use the pinned
+[sdkmanager uninstall interface](https://developer.android.com/tools/sdkmanager).

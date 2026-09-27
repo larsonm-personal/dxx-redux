@@ -3,6 +3,18 @@
 Date: 2026-09-26
 Status: implementation in progress; see execution record below
 
+## Current verification status
+
+The gap inventory below records the starting state. The execution record documents repairs and their limits
+
+- Linux bootstrap, APK/AAB builds, JVM tests, normal and sanitizer native builds have execution evidence below. Latest normal native run passed all 54 D1 and 63 D2 CTest cases
+- Shared tooling CI passed on Windows 2022 and Ubuntu 24.04 after the cleanup-fixture correction. New uncommitted work extends that workflow with pinned-runtime/extraction checks; this extension has local Linux evidence only so far
+- Latest extended Linux tooling smoke passed 13 tests. Pinned Python 3.12.8 now supports bounded extraction on Linux x86-64, with archive/tree admission and no PATH fallback. Both bounded test entries passed through the master runner; all four available demo packages passed extraction
+- Native retail route runs now discover and stage mixed D1/D2 data on either host. All 60 FirstStrike/Counterstrike levels passed two repeats on Linux; temporary base-data copies were removed on success and injected engine failure
+- Managed version retirement covers DOSBox and the Linux Python runtime and protects sanitizer build-cache references. Linux directory, in-place cmakelang and soundfont installers recover from forced termination; Windows transaction parity and SDK cleanup remain unfinished
+- Remaining work includes a complete test/capability ledger, remaining asset-dependent wrappers, replay/benchmark content differences, broader build CI, and device validation. This host has no KVM and its two bounded software-emulator attempts did not boot; those tests require another usable device/host
+- No native, test, or formatter process from the latest completed tranche remains running. The protected outstanding_bugs.md file has not been changed
+
 ## Outcome and boundaries
 
 Support the same Android dependency bootstrap, APK/AAB builds, host tools, quality checks, and automated test entry points on Windows and Linux. Keep OS details in shared helpers. Build in bounded storage use and cleanup on success, failure, timeout, and the next invocation after interruption
@@ -450,3 +462,139 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Reproduced the original CI failure locally with a same-user Python process made non-inspectable using prctl(PR_SET_DUMPABLE, 0). Original test exits 1 with the same cannot-inspect reason; fixed log android/temp/ci-managed-original-repro.log. The reproduction process and temporary original-test script are removed after validation
 - Scoped PowerShell formatting/lint passes (android/temp/ci-linux-fix-quality.log). Final full smoke validation runs with the non-inspectable Python process still alive. No native code changed; no native rebuild is needed for this test-only correction
 - Full Linux smoke suite passes all ten checks with the unreadable background process present: android/temp/tooling_smoke/run_87d15579f86e496e872d7cbee4ed55bc/summary.json, fixed log android/temp/ci-linux-smoke.log. Reproduction process terminated successfully; temporary probe script removed. Changes remain local; the GitHub workflow has not been rerun with this fix. outstanding_bugs.md remains unchanged
+
+
+### Remaining dependency retirement coverage
+
+- Previous goal turn made progress: reproduced and corrected the Linux CI managed-cleanup fixture failure, preserving production fail-closed protection; ten Linux tooling checks passed
+- Current work adds the omitted DOSBox-X managed installation family using its explicit DOSBOX_DIR_NAME rather than reconstructing a directory from DOSBOX_VERSION. The installed executable is at the package root after extraction. Unreadable DOSBox processes receive the same conservative protection as other tools
+- Found a safety gap in retained build references: normal D1/D2 caches were inspected but their fixed sanitizer build trees were omitted. Include both sanitizer trees before retiring any managed tool
+- Extend the existing cross-platform cleanup integration to cover all four host build caches, explicit DOSBox directory names, two-checkout pins, incomplete replacements, preview, deletion, and unmanaged/current preservation. Run scoped quality, full tooling smoke, then register the real previously verified DOSBox package and inspect cleanup results
+- All ten local tooling smoke checks pass with the expanded retention cases: android/temp/tooling_smoke/run_01d2884d31984c3aa130495284921482/summary.json, fixed log linux-retention-coverage-smoke.log. Final directory-name validation uses the same safe suffix grammar as retirement records
+- Real get_dosbox.sh cache admission verifies the installed executable hash without downloading; registration/apply now includes /home/user/local/dosbox-x-2026.01.02. All configured installations are protected, and legacy unowned NDK/shfmt remain unmanaged and untouched. Evidence: android/temp/linux-dosbox-cache-verification.log and linux-retention-coverage-real.json
+- User committed the prior CI fixture correction as 6df32f2c during this work. GitHub run 36291204049 completed successfully for both Ubuntu 24.04 and Windows 2022. That remote evidence covers the fixture correction, not these new uncommitted retention changes
+
+
+### Linux metadata benchmark runner
+
+- Prior turn made progress with DOSBox retirement and sanitizer-cache protection; the final targeted cleanup integration and scoped quality passed
+- Port the metadata benchmark to shared Windows/Linux build and executable helpers, shared hash-admitted retail data discovery, and supervised process execution. Remove hardcoded Visual Studio paths, Windows-only process launch options, and incorrect hardcoded x86 build identity
+- Add explicit level IDs for running available retail cases while keeping the full manifest unchanged. Filtered runs must never update full-suite baseline history, and missing full-suite archives remain an explicit skip (exit 2) or failure with RequireAssets
+- Bound unique diagnostic generations using retention and producer locks, serialize current-summary/history writes, and remove extracted mission payloads in finally on success or failure. Verify with real D1/D2 levels and preserve digest checks; missing archive coverage remains outstanding
+- Real retail diagnostic execution completed all seven selected levels (one warmup plus three measured repeats each), with identical metadata hashes within every level and successful live GuideBot benchmark. This does NOT pass expected manifest digest validation: the first normal run failed D1 L1 before diagnostic mode was used
+- Traced a concrete host difference: manifest hashes were recorded with CRLF text output. Removing only the later-added flyout field and converting the Linux output to CRLF reproduces the existing hashes exactly for D1 L1, D2 L1 and D2 secret L3. D1 L10/L21 and D2 L2/L12 have additional differences and remain unaudited. No expected hashes or native output fields were changed
+- Canonicalize only metadata digest line endings to the existing UTF-8 CRLF convention on both platforms, without reserializing JSON or suppressing fields. The policy self-test checks line-ending equivalence and content sensitivity. Reports identify the digest convention, selected IDs, full-suite coverage, and whether expected digest validation was enabled
+- Verified policy-only success, unknown-ID rejection, filtered AcceptBaseline rejection, absent-archive skip exit 2, and RequireAssets failure exit 1. Logs: android/temp/linux-benchmark-policy.log. Manifest/history and protected bug list remain unchanged
+- Shared public build validation is running in session 11692 using managed CMake 3.31.6 and existing fixed trees; D1 reached 457/476 actions at last observation. Wait for this session; do not start another build. It will run the seven-level diagnostic again after both builds. Scoped quality passed after the latest digest handling edits
+- D1 public build completed; all 54 D1 CTest cases pass (4.50 seconds), fixed log android/temp/linux-benchmark-build-ctest-d1.log. Its test session 97629 is terminal
+- Build/diagnostic session 11692 remains LIVE, currently D2 176/1204 actions. Do not restart it. After completion, run D2 CTest, then rerun the selected seven retail benchmark levels with SkipBuild to validate the final CRLF digest/report edits (the already-running PowerShell process parsed the earlier revision). Keep normal digest failure visible and use SkipDigestValidation only as an explicitly labeled diagnostic; do not change manifest hashes without auditing content changes
+- Final scoped quality session 23169 is terminal and passes; policy self-test passes after canonical digest changes. All other test/formatter sessions are terminal. Manifest/history/outstanding_bugs.md remain unchanged, git diff --check passes, free space remains approximately 9.0 GiB
+
+
+### In-place Linux dependency transaction recovery
+
+- Previous turn made progress on benchmark portability and verified D1 native build/tests. Resumed existing session 11692; D2 remains running, with no duplicate build started
+- While native compilation runs, extend the existing shared Linux transaction journal for final-path Python environments. Record in-place mode before backup, record installation start before creating the destination, and commit only after validation. Recovery removes uncommitted partial environments and restores prior versions; committed versions survive while old backup/staging is removed
+- Cover interruption during recovery itself: remove the installation-start marker before moving the backup back so a subsequent recovery cannot delete the restored good tree
+- Integrate get_cmake_format.sh before cached-install admission. Windows ordinary rollback remains unchanged. Test SIGKILL after backup, during pip, after commit, during backup restoration, and during first installation, alongside existing normal failure/validation/TERM/cache cases
+- Initial expanded cmakelang integration passes; fixed log android/temp/linux-cmakelang-recovery.log. Run scoped mixed-language quality and the full installer/tooling smoke suite before accepting shared helper changes. Then validate real cached cmakelang admission and absence of transaction workspace
+- Added an atomic temporary v2 journal-format marker while in-place replacement is pending. Older archive-only helpers reject that state instead of treating a partial destination as committed. Current recovery restores v1 after work is fully reconciled; tests assert both pending and completed markers
+- Final full tooling smoke passes all ten tests, including archive installers and all in-place crash cases: android/temp/tooling_smoke/run_88a4ad57f17b440d9601edec82c0cf78/summary.json, fixed log linux-cmakelang-tooling-smoke.log. Scoped mixed-language quality passes (linux-cmakelang-recovery-quality.log)
+- Real cached cmakelang 0.6.13 passes package/executable admission with the shared lock and no download. /home/user/local/.dxx-install-state contains only format (15 bytes, v1) and empty lock; no work, backup, or pending format remains. Fixed log linux-cmakelang-cache.log
+
+### Completed native build and benchmark validation
+
+- Session 11692 completed successfully: both public native builds and its seven-level diagnostic benchmark. No build remains running. D2 CTest passes all 63 tests (34.95 seconds), complementing the 54 D1 passes; fixed log android/temp/linux-benchmark-build-ctest-d2.log
+- Reran all seven retail levels with the final canonical-digest/report implementation, one warmup plus three measured repeats per level. Repeat determinism passes; the snapshot explicitly records complete_suite=false, expected_digest_validation=false and metadata_digest_format=utf8-crlf-sha256. Fixed log linux-benchmark-final-diagnostic.log and summary android/temp/level_metadata_analysis_filtered_current.json
+- Separately verified that normal expected-digest validation still rejects the changed D1 L1 metadata (exit 1), rather than hiding the stale/content differences. Fixed log linux-benchmark-final-digest-check.log. No manifest expected hashes or benchmark history were modified
+- Master runner initially classified the missing-archive exit 2 as FAIL because its protocol requires an anchored RESULT: SKIP marker. Corrected both benchmark asset-skip messages; master rerun now reports one SKIP, zero failures/timeouts, exit 0 (temp/test_reports/report_20260926_204338.md; fixed log linux-benchmark-master.log). Full custom-archive coverage remains unavailable
+- Final scoped benchmark quality passes; git diff --check passes. All build, test and formatter sessions from this tranche are terminal. Approximately 9.0 GiB remains free. outstanding_bugs.md remains untouched
+- Remaining goal work includes bounded extraction Python on Linux, remaining asset-dependent wrappers, replay/benchmark content differences, Windows installer crash recovery, single-file/bootstrap recovery, SDK package retention, and broader build/device CI. No completion claim is made for these gaps
+
+
+### Pinned bounded-extraction Python on Linux
+
+- Previous turn made progress: completed native builds/117 native tests, cmakelang recovery, final tooling smoke and benchmark runner validation. No prior sessions remained active at turn start
+- Preserve the existing exact Python 3.12.8 policy, full repository-runtime tree admission, explicit digest overrides and prohibition on PATH fallback. Add a native Linux x86-64 package alongside the existing Windows embedded runtime, without claiming macOS or ARM support
+- Upstream source: https://github.com/astral-sh/python-build-standalone/releases/tag/20241219. Selected cpython-3.12.8+20241219-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz (21,296,625 bytes), published SHA-256 698e53b264a9bcd35cfa15cd680c4d78b0878fa529838844b5ffd0cd661d6bc2. Independently downloaded/checked the archive and computed the existing repository tree digest 808a5964f7b4fdf86c86e2870a64e5dcc563a73d165671c38d3b2b1bf004a2a1 (78 MiB extracted). Inspection staging was automatically removed by shared transaction cleanup
+- New shell installer dispatches Windows to its existing verified oracle installer and uses shared Linux lock/staging/publication/recovery plus archive/tree validation for Linux. Add it to bootstrap and register Linux versions for managed retirement
+- Resolve the Linux interpreter by fixed native path only after tree verification. Disable bytecode writes during identity probing and supervision to preserve the pinned tree
+- Next: port runtime policy integration tests to both hosts, test hostile PATH, explicit admission, wrong version/digests, unsupported-host policy and spaced paths; run bounded extraction/supervisor tests and scoped quality, then check reuse and storage cleanup
+- Runtime integration now covers hostile PATH entries on both OS families, full-tree tampering in an isolated checkout, explicit-path SHA/version rejection, unsupported-host policy, spaced paths and the resource-limited supervisor suite. Repository Python bytecode is disabled in probes/supervision and Python child fixtures so the admitted tree remains unchanged
+- All 23 supervisor test cases ran on Linux: 19 passed, four platform/capability skips. All four available verified demo installer ZIP payloads passed bounded extraction. Fixed logs linux-bounded-supervisor-tests.log and linux-bounded-extraction-tests.log
+- Extended local tooling smoke passes all 12 checks: android/temp/tooling_smoke/run_ac48574e7eca42759a788171e2ffe017/summary.json. New IncludeBoundedRuntime option adds the two bounded checks; CI now installs the verified runtime and enables this option on both runner OSes. Workflow YAML parses; remote execution of this extension is still pending a user push
+- Full get_all.sh --skip-host-prereqs --skip-avd --no-prompt completed all 14 selected steps with no duplicate AVD. Runtime cache reuse succeeds and bootstrap registered python-bounded-3.12.8-20241219-linux-x64 in the ownership registry. Fixed log linux-bootstrap-bounded-python.log
+- Master HostOnly filter test_bounded_* passes both entries (1 and 14 seconds), zero failures/timeouts/skips: temp/test_reports/report_20260926_205913.md, fixed log linux-bounded-python-master.log. Its Python sub-suite retains the four documented platform/capability skips
+- Download/staging and copied runtime fixtures are gone. The real runtime occupies about 78 MiB, retains only its original three pyc files, and passes tree admission after all tests. The shared transaction state retains only format and empty lock. Approximately 8.9 GiB remains free
+- Final mixed-language scoped quality passes (linux-bounded-python-final-quality.log), git diff --check passes, and outstanding_bugs.md remains unchanged. Every installer, smoke, master, supervisor, and formatter session in this tranche is terminal
+
+
+### Mixed retail data for native route tests
+
+- Previous goal turn completed pinned Linux extraction-runtime provisioning and verified all 12 extended smoke checks, bootstrap reuse, master classification and cleanup
+- The GuideBot batch runner still assumes a fixed D2 CD path and a preassembled game_data_to_copy_to_emulator/temp directory for D1-in-D2. Replace implicit paths with existing hash-admitted discovery; preserve explicit caller overrides
+- Add a shared mixed-source staging helper that selects exact pinned files, reserves space for copies, normalizes filenames, verifies copied content and removes a partial stage on failure. Reject existing destinations instead of overwriting caller data
+- Hold a producer lock for the entire GuideBot batch and remove its automatically staged base data in finally, preserving result JSON and mission staging used by existing test handoffs. Staging remains under retained run roots if the whole producer is killed
+- Validate synthetic mixed-source and cleanup cases, existing runner discovery/infrastructure fixtures, then real FirstStrike physical route regressions with the existing native build. Do not change their game-state assertions
+
+- Shared mixed-source staging integration passes: exact hashes, case normalization, copy independence, existing-destination protection and partial-stage cleanup. Existing runner discovery/sampling/infrastructure fixtures also pass
+- Both FirstStrike L5 long-path and L21 live-object regressions passed directly and through the route-test owner. The owner now uses the shared process pool, retains its producer lock through execution/reporting and preserves existing skip/failure handling. Owner log: android/temp/linux-firststrike-owner.log
+- Full FirstStrike and Counterstrike batch passed all 60 levels twice (120 engine executions), with every level status ok, no repeat differences and no infrastructure errors. Report: android/temp/guidebot_simulation_regression/20260926_210928/summary.json; fixed log linux-retail-route-batch.log. Retained reports/logs occupy approximately 40 MiB; automatic base-data copies are gone
+- Injected an invalid engine into a real FirstStrike L1 run: runner returned exit 1, preserved the infrastructure error report and removed automatic base-data. Evidence: android/temp/linux-guidebot-stage-failure.log and guidebot_stage_failure/run_20260926_211500/summary.json
+- Latest GitHub Actions status remains run 36291204049, successful on Ubuntu and Windows; it does not cover the newer uncommitted changes. No checked-in mission data or protected bug-list edits were made
+- Final extended tooling smoke passes all 12 checks, including shared staging, installer interruption recovery and bounded runtime/extraction: android/temp/tooling_smoke/run_be3f4ab91a554eb8af3097a2dda0f9bc/summary.json; fixed log linux-mixed-data-tooling-smoke.log. Final scoped quality passes (linux-mixed-data-final-quality.log), git diff --check passes, and all sessions from this tranche are terminal
+
+
+### Single-file soundfont recovery
+
+- Previous goal turn made progress: mixed retail staging, real route coverage, shared owner supervision and all 12 tooling checks passed
+- Reuse the Linux installer lock and fixed workspace for the soundfont, with recovery before cached-file admission. Keep the journal outside packaged assets and enforce same-filesystem publication. Windows retains its existing same-directory temporary-file path
+- Extend the archive integration fixture with forced termination before and after soundfont publication, failed retry preservation, cached recovery and absence of recovery files in assets
+- Full dependency installer suite passes, including JDK, archive-tool and cmakelang forced-termination recovery (android/temp/linux-soundfont-installer-suite.log). Final archive suite additionally passes the Windows-host-shim soundfont fallback checks; this is Linux execution evidence, not a new Windows CI result (linux-soundfont-final-archive.log)
+- Real soundfont cache admission passes without a download or asset modification. The sibling .dxx-install-state retains only its 15-byte format and empty lock, with no work directory or packaged recovery files; its exact path is ignored in android/.gitignore
+- Non-regular soundfont destinations are rejected and preserved. Scoped quality and git diff --check pass, every test session from this tranche is terminal, and outstanding_bugs.md is unchanged. Bootstrap PowerShell recovery, Windows transaction parity, SDK package retention and the other goal gaps remain open
+
+
+### PowerShell bootstrap recovery
+
+- Previous goal turn made progress on soundfont interruption recovery and verified all installer suites
+- Replace random bootstrap download directories with the shared locked workspace, recovering before cached PowerShell admission. Stage and validate user-local tarball installations before shared rollback-capable publication; preserve package-manager ownership for deb/rpm installations
+- Validate the exact installed version and reject unsupported bootstrap architectures explicitly. Add isolated installer fixtures for download/package failure, SIGKILL recovery, tarball validation and replacement boundaries without invoking real package managers
+- Full installer integration passes with the new PowerShell fixture included (android/temp/linux-powershell-installer-suite.log). Coverage includes deb/rpm download/package failures, exact installed-version rejection, SIGKILL before/after package installation, wrong tarball version, publication failure, kills during download/backup/publication, cached recovery and link repair without redownload
+- Scoped mixed-language quality passes (linux-powershell-quality.log), git diff --check passes, all test sessions are terminal, and protected outstanding_bugs.md is unchanged. No actual package manager or PowerShell replacement was run: this host reports 7.7.0-preview.1 while the configured bootstrap pin is 7.6.6
+- Cleanup documentation distinguishes download/local-tree recovery from OS package database recovery. Version retirement for user-local PowerShell installations, Windows transaction parity, SDK package retention, remaining test/capability coverage and other documented gaps still need work
+
+
+### User-local PowerShell version retirement
+
+- Previous goal turn made progress: bootstrap recovery and isolated installer validation passed
+- Register versioned PowerShell trees in shared managed cleanup, preserving checkout pins, replacement availability, active processes and unmanaged installations. Protect bootstrap command links outside the version directory, and fail conservatively when PowerShell processes cannot be inspected
+- Extend the managed-cleanup integration with two-checkout pins, missing replacement, external Linux command link, preview and old-version deletion
+- Initial managed integration passed. Extended smoke then caught an initialization typo in the added unreadable-PowerShell fixture; corrected it and rerunning that test. All 11 other extended smoke checks passed, including bootstrap installer recovery and bounded extraction (android/temp/tooling_smoke/run_b1ff66fe3ee94f76b89f70f23f8a6cb4/summary.json)
+- Real dependency preview preserved all 11 configured installs and both unmanaged legacy directories; no real deletion or registration was needed (linux-powershell-retention-preview.json). This host has system PowerShell rather than a user-local versioned tree
+- SDK follow-up inventory: system images occupy about 7.7 GiB across API 23 and API 34. Both visible AVD config files reference API 34. Further ownership, registered-checkout and process checks are still required before retiring any package; no SDK content was deleted
+- Corrected managed integration passes, including the injected unreadable pwsh process, external command link, shared pins and actual old-version deletion (android/temp/linux-powershell-retention-final.log). Scoped quality and git diff --check pass. All sessions from this tranche are terminal; outstanding_bugs.md remains unchanged. The full smoke report retains its original fixture failure, with the successful targeted rerun recorded separately
+
+
+### SDK provisioning portability and partial-install handling
+
+- Previous goal turn made progress: managed PowerShell retirement and safeguards passed, with the corrected targeted integration recorded separately from the earlier smoke fixture failure
+- Fix SDK executable quoting and package argument arrays for paths with spaces. Share SDK environment and native/bat selection across platform finalization, emulator/image installation and AVD creation
+- Hold the Linux command-line installer lock during SDK tool use, propagate license/list/install failures and stop treating empty image directories as complete packages. Apply disk reserve checks before package downloads
+- Add isolated provisioning integration with spaced paths, host-specific executables, API aliases, partial caches, low-space rejection and failure propagation. SDK ownership-aware retirement remains a separate unfinished part of the goal
+- New SDK provisioning fixture and full installer suite pass (android/temp/linux-sdk-installer-suite.log). Tests cover spaced SDK paths, package argument boundaries, API .0 alias selection, license/list/install failure propagation, disk reserve, partial cache repair, failed post-install admission, native-vs-Windows executable selection, lock contention and interrupted command-line publication recovery
+- Real get_emulator.sh cache reuse passes with configured JDK 21 and API 34, without downloading or booting an emulator (linux-sdk-real-cache.log). Its command-line transaction directory retains only the 15-byte format and empty lock; no work directory remains
+- Scoped quality passes (linux-sdk-provisioning-quality.log), git diff --check passes and all sessions from this tranche are terminal. outstanding_bugs.md remains unchanged. Windows wrapper selection is exercised by a Linux-hosted fixture; actual Windows CI for these newer changes remains pending
+- SDK package ownership registration, safe old-package retirement and sdkmanager partial-download cleanup remain unfinished; this tranche repairs provisioning and does not claim those storage gaps are complete
+
+
+### SDK package and reference inventory
+
+- Previous goal turn made progress: shared SDK provisioning, partial-install admission, actual cache reuse and installer integration passed
+- Build a reusable read-only inventory from local package.xml metadata, registered checkout pins and visible AVD image references, including moved AVD descriptors and environment-specific AVD roots. Distinguish unknown metadata from unreferenced packages; do not label either eligible for deletion
+- Reference sources: https://developer.android.com/tools/variables documents AVD locations and overrides; https://developer.android.com/tools/sdkmanager documents package IDs and --uninstall. Keep the repository's pinned SDK tools; do not migrate tooling versions during this cleanup work
+- Inventory is a prerequisite for package ownership registration and sdkmanager-based retirement. Active processes, retained build caches, cross-user AVD visibility, ownership and destructive-action revalidation still need integration before any deletion
+- Added inspect-sdk-retention.ps1 and shared SDK inventory helper. Real snapshot contains 12 directories: seven referenced packages, four unreferenced packages (build-tools 36, platforms 23/36 and API 23 image), and directly extracted command-line tools with missing package.xml classified Unknown. Evidence: android/temp/linux-sdk-inventory.json. No packages were deleted or registered
+- Integration passes for two sharing checkouts, integer/.0 platform aliases, command-line latest aliases, moved absolute/relative AVD descriptors, environment roots, malformed metadata, unavailable checkout/AVD data and linked-path rejection. The test is included in the shared tooling smoke profile and master no-infrastructure catalog
+- Master HostOnly filter passes one test, zero failures/timeouts/skips (temp/test_reports/report_20260926_213936.md; linux-sdk-inventory-master.log). Scoped quality passes (linux-sdk-inventory-quality.log)
+- Final extended tooling smoke passes all 13 checks (android/temp/tooling_smoke/run_30692a932d154f649a416ff05f43ab71/summary.json; linux-sdk-inventory-smoke.log), including corrected managed PowerShell retirement, all installer recovery fixtures and bounded extraction. Every session from this tranche is terminal; git diff --check passes and outstanding_bugs.md remains unchanged. Inventory does not authorize deletion; ownership registration, process/cache checks and SDK uninstall integration remain open

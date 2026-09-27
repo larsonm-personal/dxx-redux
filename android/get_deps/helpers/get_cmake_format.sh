@@ -20,6 +20,7 @@ source "$SCRIPT_DIR/resolve_dep_base.sh"
 
 INSTALL_DIR="$LOCAL_DIR"
 DEST="$INSTALL_DIR/cmakelang-$CMAKELANG_VERSION"
+begin_dependency_install "$DEST"
 
 _is_windows_target() {
     case "$DEST" in
@@ -55,36 +56,41 @@ fi
 
 # Python console launchers embed the final interpreter path, so install in place
 # Preserve the previous tree until validation and roll back ordinary failures
-assert_dependency_disk_space "$INSTALL_DIR" 1
-if [ -L "$DEST" ]; then
-    echo "ERROR: refusing linked installation path: $DEST" >&2
-    exit 1
-fi
-WORK_DIR="$(create_temp_dir .dxx-cmakelang-stage "$INSTALL_DIR")"
-INSTALL_STARTED=0
-INSTALL_VALIDATED=0
-cleanup_cmakelang_install() {
-    local status=$?
-    if [ "$INSTALL_VALIDATED" != 1 ]; then
-        if [ -d "$WORK_DIR/previous" ]; then
-            rm -rf "$DEST"
-            if ! mv "$WORK_DIR/previous" "$DEST"; then
-                echo "ERROR: restore $WORK_DIR/previous to $DEST before retrying" >&2
-                return 1
-            fi
-        elif [ "$INSTALL_STARTED" = 1 ]; then
-            rm -rf "$DEST"
-        fi
+if [ -n "${DEPENDENCY_INSTALL_STATE:-}" ]; then
+    prepare_in_place_dependency_install "$DEST"
+    WORK_DIR="$DEPENDENCY_WORK_DIR"
+else
+    assert_dependency_disk_space "$INSTALL_DIR" 1
+    if [ -L "$DEST" ]; then
+        echo "ERROR: refusing linked installation path: $DEST" >&2
+        exit 1
     fi
-    rm -rf "$WORK_DIR"
-    return "$status"
-}
-trap cleanup_cmakelang_install EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM
-if [ -e "$DEST" ]; then mv "$DEST" "$WORK_DIR/previous"; fi
-INSTALL_STARTED=1
-mkdir -p "$DEST"
+    WORK_DIR="$(create_temp_dir .dxx-cmakelang-stage "$INSTALL_DIR")"
+    INSTALL_STARTED=0
+    INSTALL_VALIDATED=0
+    cleanup_cmakelang_install() {
+        local status=$?
+        if [ "$INSTALL_VALIDATED" != 1 ]; then
+            if [ -d "$WORK_DIR/previous" ]; then
+                rm -rf "$DEST"
+                if ! mv "$WORK_DIR/previous" "$DEST"; then
+                    echo "ERROR: restore $WORK_DIR/previous to $DEST before retrying" >&2
+                    return 1
+                fi
+            elif [ "$INSTALL_STARTED" = 1 ]; then
+                rm -rf "$DEST"
+            fi
+        fi
+        rm -rf "$WORK_DIR"
+        return "$status"
+    }
+    trap cleanup_cmakelang_install EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    if [ -e "$DEST" ]; then mv "$DEST" "$WORK_DIR/previous"; fi
+    INSTALL_STARTED=1
+    mkdir -p "$DEST"
+fi
 
 if _is_windows_target; then
     # --- Windows: download embeddable Python distribution ---
@@ -142,6 +148,7 @@ echo "Installing cmakelang $CMAKELANG_VERSION..."
 
 check_cmakelang_install
 INSTALL_VALIDATED=1
+if [ -n "${DEPENDENCY_INSTALL_STATE:-}" ]; then commit_in_place_dependency_install; fi
 echo "cmakelang $CMAKELANG_VERSION installed at $DEST"
 
 if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then

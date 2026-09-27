@@ -9,10 +9,23 @@ source "$SCRIPT_DIR/../tool_versions.conf"
 source "$SCRIPT_DIR/platform.sh"
 source "$SCRIPT_DIR/verify_sha256.sh"
 
-DEST="$SCRIPT_DIR/../../app/src/main/assets/gm.sf2"
+ASSETS_DIR="$SCRIPT_DIR/../../app/src/main/assets"
+DEST="$ASSETS_DIR/gm.sf2"
 
-if [ -L "$DEST" ]; then
-    echo "ERROR: refusing linked soundfont destination: $DEST" >&2
+if [ -L "$ASSETS_DIR" ]; then
+    echo "ERROR: refusing linked assets directory: $ASSETS_DIR" >&2
+    exit 1
+fi
+mkdir -p "$ASSETS_DIR"
+# Own the assets installation workspace, keeping recovery files outside the APK
+begin_dependency_install "$ASSETS_DIR"
+if [ -n "${DEPENDENCY_INSTALL_STATE:-}" ] && [ "$(stat -c %d "$ASSETS_DIR")" != "$(stat -c %d "$DEPENDENCY_INSTALL_STATE")" ]; then
+    echo "ERROR: soundfont staging and assets must be on the same filesystem" >&2
+    exit 1
+fi
+
+if [ -L "$DEST" ] || { [ -e "$DEST" ] && [ ! -f "$DEST" ]; }; then
+    echo "ERROR: refusing non-regular soundfont destination: $DEST" >&2
     exit 1
 fi
 if [ -f "$DEST" ] && verify_sha256 "$DEST" "$SOUNDFONT_SHA256" "bundled soundfont"; then
@@ -21,12 +34,16 @@ if [ -f "$DEST" ] && verify_sha256 "$DEST" "$SOUNDFONT_SHA256" "bundled soundfon
 fi
 
 # --- Download ---
-mkdir -p "$(dirname "$DEST")"
-assert_dependency_disk_space "$(dirname "$DEST")" 0
-TMPFILE="$(create_temp_file .dxx-soundfont "$(dirname "$DEST")")"
-trap 'rm -f "$TMPFILE"' EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM
+if [ -n "${DEPENDENCY_INSTALL_STATE:-}" ]; then
+    prepare_dependency_workspace "$ASSETS_DIR" 0
+    TMPFILE="$DEPENDENCY_ARCHIVE"
+else
+    assert_dependency_disk_space "$ASSETS_DIR" 0
+    TMPFILE="$(create_temp_file .dxx-soundfont "$ASSETS_DIR")"
+    trap 'rm -f "$TMPFILE"' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+fi
 
 echo "Downloading bundled soundfont (v${SOUNDFONT_VERSION})..."
 download_file "$TMPFILE" "$SOUNDFONT_URL"

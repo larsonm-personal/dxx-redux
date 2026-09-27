@@ -47,12 +47,12 @@ download_file() {
 mv() {
     if [ "${FIXTURE_PUBLISH_FAIL:-0}" = 1 ]; then
         case "$1" in
-            */.ndk-stage.*/*|*/.sdk-extract.*/*|*/.cmake-stage.*/*|*/.dxx-tool-stage.*/install | */.dxx-tool-stage.*/install/* | */.dxx-install-state/work/install | */.dxx-install-state/work/install/* | */.dxx-soundfont.*) return 23 ;;
+            */.ndk-stage.*/*|*/.sdk-extract.*/*|*/.cmake-stage.*/*|*/.dxx-tool-stage.*/install | */.dxx-tool-stage.*/install/* | */.dxx-install-state/work/install | */.dxx-install-state/work/install/* | */.dxx-soundfont.* | */.dxx-install-state/work/archive) return 23 ;;
         esac
     fi
     command mv "$@" || return
     case "${FIXTURE_CRASH_PUBLICATION:-}:$2" in
-        backup:*/.dxx-install-state/work/previous | publish:*/local/shfmt-99.0.0) kill -KILL "$$" ;;
+        backup:*/.dxx-install-state/work/previous | publish:*/local/shfmt-99.0.0 | soundfont:*/assets/gm.sf2) kill -KILL "$$" ;;
     esac
     return 0
 }
@@ -205,6 +205,7 @@ for failure in FIXTURE_LOW_SPACE FIXTURE_DOWNLOAD_FAIL FIXTURE_BAD_ARCHIVE FIXTU
         exit 1
     fi
     [ "$(cat "$asset")" = 'previous soundfont' ]
+    [ ! -e "$(dirname "$(dirname "$asset")")/.dxx-install-state/work" ]
     if compgen -G "$(dirname "$asset")/.dxx-soundfont.*" >/dev/null; then
         echo 'Soundfont download leaked' >&2
         exit 1
@@ -214,6 +215,53 @@ bash "$HELPERS/get_soundfont.sh"
 cmp "$asset" "$FIXTURE_ARCHIVE"
 FIXTURE_DOWNLOAD_FAIL=1 bash "$HELPERS/get_soundfont.sh"
 echo 'PASS: soundfont failure preservation, verified replacement, cleanup, and repeat run'
+
+# Recovery runs before cache admission and keeps the old file until atomic publication
+soundfont_state="$(dirname "$(dirname "$asset")")/.dxx-install-state"
+for point in download publish; do
+    printf 'previous soundfont' >"$asset"
+    if [ "$point" = download ]; then
+        crash=FIXTURE_CRASH_DOWNLOAD=1
+    else
+        crash=FIXTURE_CRASH_PUBLICATION=soundfont
+    fi
+    if env "$crash" bash "$HELPERS/get_soundfont.sh" >"$TEST_ROOT/soundfont-crash.log" 2>&1; then
+        echo "Soundfont did not stop at $point" >&2
+        exit 1
+    fi
+    [ -d "$soundfont_state/work" ]
+    if [ "$point" = download ]; then
+        [ "$(cat "$asset")" = 'previous soundfont' ]
+        if FIXTURE_DOWNLOAD_FAIL=1 bash "$HELPERS/get_soundfont.sh" >"$TEST_ROOT/soundfont-recovery.log" 2>&1; then
+            echo 'Soundfont accepted a failed retry' >&2
+            exit 1
+        fi
+        [ ! -e "$soundfont_state/work" ]
+        [ "$(cat "$asset")" = 'previous soundfont' ]
+        bash "$HELPERS/get_soundfont.sh"
+    else
+        FIXTURE_DOWNLOAD_FAIL=1 bash "$HELPERS/get_soundfont.sh"
+    fi
+    cmp "$asset" "$FIXTURE_ARCHIVE"
+    [ ! -e "$soundfont_state/work" ]
+    [ "$(find "$(dirname "$asset")" -mindepth 1 -maxdepth 1 | wc -l)" -eq 1 ]
+done
+echo 'PASS: soundfont SIGKILL recovery before and after publication; no recovery files in assets'
+
+# A directory at the leaf must never turn publication into a nested file move
+rm "$asset"
+mkdir "$asset"
+printf preserve >"$asset/sentinel"
+if bash "$HELPERS/get_soundfont.sh" >"$TEST_ROOT/soundfont-directory.log" 2>&1; then
+    echo 'Soundfont accepted a directory destination' >&2
+    exit 1
+fi
+[ "$(cat "$asset/sentinel")" = preserve ]
+[ ! -e "$soundfont_state/work" ]
+rm -rf "$asset"
+bash "$HELPERS/get_soundfont.sh"
+
+
 
 # Exercise the actual formatter installer across SIGKILL and publication boundaries
 destination="$TEST_ROOT/local/shfmt-99.0.0"
@@ -374,3 +422,19 @@ CONF
     assert_clean
 done
 echo 'PASS: Windows unar and DOSBox archive staging, validation, rollback, and cleanup'
+
+# Exercise the unchanged non-Linux single-file fallback with the Windows host shim
+printf 'verified soundfont fixture' >"$FIXTURE_ARCHIVE"
+printf 'previous soundfont' >"$asset"
+for failure in FIXTURE_DOWNLOAD_FAIL FIXTURE_BAD_ARCHIVE FIXTURE_PUBLISH_FAIL FIXTURE_INTERRUPT; do
+    if env "$failure=1" bash "$HELPERS/get_soundfont.sh" >"$TEST_ROOT/windows-soundfont.log" 2>&1; then
+        echo "Windows soundfont accepted $failure" >&2
+        exit 1
+    fi
+    [ "$(cat "$asset")" = 'previous soundfont' ]
+    [ "$(find "$(dirname "$asset")" -mindepth 1 -maxdepth 1 | wc -l)" -eq 1 ]
+done
+bash "$HELPERS/get_soundfont.sh"
+cmp "$asset" "$FIXTURE_ARCHIVE"
+FIXTURE_DOWNLOAD_FAIL=1 bash "$HELPERS/get_soundfont.sh"
+echo 'PASS: Windows soundfont fallback preserves existing data and cleans failed downloads'

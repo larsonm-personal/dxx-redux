@@ -15,8 +15,8 @@ param(
     # Wall-clock watchdog includes CPU contention across parallel workers
     [ValidateRange(10, 7200)][int]$LevelTimeoutSeconds = 360,
     [ValidateRange(0, 128)][int]$MaxParallel = 0,
-    [string]$HogDir = 'game_data/CD images/Descent II (USA) (v1.1)/data_tracks/d2data',
-    [string]$D1InD2HogDir = 'game_data_to_copy_to_emulator/temp',
+    [string]$HogDir,
+    [string]$D1InD2HogDir,
     [string]$OutputRoot,
     [switch]$NoBuild,
     [switch]$WriteRegression,
@@ -36,6 +36,7 @@ $scriptDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
 . (Join-Path $scriptDir 'test_host_platform.ps1')
+. (Join-Path $scriptDir 'standard_game_data.ps1')
 $missionRoot = if ($MissionMetadataRoot) {
     $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($MissionMetadataRoot)
 } else {
@@ -642,10 +643,6 @@ function Write-GuidebotSimulationFile {
     Write-GuidebotSimulationJson -Path $Destination -Value $outputValue
 }
 
-$hogPath = if ([IO.Path]::IsPathRooted($HogDir)) { $HogDir } else { Join-Path $repoRoot $HogDir }
-$resolvedHogDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($hogPath)
-$d1InD2HogPath = if ([IO.Path]::IsPathRooted($D1InD2HogDir)) { $D1InD2HogDir } else { Join-Path $repoRoot $D1InD2HogDir }
-$resolvedD1InD2HogDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($d1InD2HogPath)
 $files = @(Get-GuidebotMissionFiles)
 $allItems = @(Get-GuidebotWorkItems -Files $files)
 $selectedItems = $allItems
@@ -673,300 +670,332 @@ if ($DryRun) {
     exit 0
 }
 & (Join-Path $scriptDir "retain-recent-artifacts.ps1") -Artifacts $runRoot
-if ($Mode -in @('Headless', 'Desktop') -and -not (Test-Path -LiteralPath $resolvedHogDir -PathType Container)) {
-    throw "D2 HOG directory not found: $resolvedHogDir"
-}
-$d1InD2Selected = @($selectedItems | Where-Object D1InD2).Count -gt 0
-if ($Mode -in @('Headless', 'Desktop') -and $d1InD2Selected) {
-    $missingD1InD2Files = @(@('descent2.hog', 'descent2.ham', 'groupa.pig', 'descent.hog', 'descent.pig') |
-            Where-Object { -not (Test-Path -LiteralPath (Join-Path $resolvedD1InD2HogDir $_) -PathType Leaf) })
-    if ($missingD1InD2Files.Count -gt 0) {
-        throw "D1-in-D2 data directory is missing $($missingD1InD2Files -join ', '): $resolvedD1InD2HogDir"
-    }
-}
-if ($Mode -eq 'Headed' -and $WriteRegression) {
-    Write-GuidebotStatus 'Warning: headed results are noncanonical and will update regression files only because -WriteRegression was explicit' 'Yellow'
-}
-if (-not $NoBuild) {
+New-Item -ItemType Directory -Path $runRoot -Force | Out-Null
+$producerLock = $null
+$automaticDataStage = $null
+try {
+    $producerLock = [IO.File]::Open((Join-Path $runRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+    $resolvedHogDir = $null
+    $resolvedD1InD2HogDir = $null
+    $d1InD2Selected = @($selectedItems | Where-Object D1InD2).Count -gt 0
     if ($Mode -in @('Headless', 'Desktop')) {
-        Invoke-RegressionHostBuild -RepoRoot $repoRoot -Target d2
-    } else {
-        Initialize-RegressionJavaEnvironment -RepoRoot $repoRoot
-        & (Resolve-RegressionGradleWrapper -AndroidDir $androidRoot) -p $androidRoot :app:assembleDebug
-        if ($LASTEXITCODE -ne 0) { throw "Android build failed with exit code $LASTEXITCODE" }
-    }
-}
-if ($Mode -eq 'Headless' -and -not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "Route executable not found: $exe" }
-if ($Mode -eq 'Desktop' -and -not (Test-Path -LiteralPath $desktopExe -PathType Leaf)) { throw "Desktop route executable not found: $desktopExe" }
-New-Item -ItemType Directory -Path $runRoot, $rawRoot, $stageRoot, $logRoot, $resultRoot -Force | Out-Null
-
-$selectedByIdentity = @{}
-foreach ($item in $selectedItems) { $selectedByIdentity[$item.Identity] = $item }
-$resultsByIdentity = @{}
-$infrastructureFailures = [Collections.Generic.List[object]]::new()
-$expectedTimeouts = [Collections.Generic.List[object]]::new()
-$changedFiles = [Collections.Generic.List[string]]::new()
-$headedComparisons = [Collections.Generic.List[object]]::new()
-$stageByMetadata = @{}
-$publicationState = @{}
-foreach ($item in $selectedItems) {
-    $publicationKey = $item.MetadataFile.FullName
-    if (-not $publicationState.ContainsKey($publicationKey)) {
-        $publicationState[$publicationKey] = @{ Remaining = 0; Pending = 0; LastWrite = [DateTime]::UtcNow }
-    }
-    $publicationState[$publicationKey].Remaining++
-}
-$installHeaded = $Mode -eq 'Headed' -and -not $NoBuild
-
-function Publish-GuidebotResult {
-    param([Parameter(Mandatory)]$Item)
-
-    # Engine results are durable individually; checkpoint shared collection JSON in batches
-    # Headed comparisons still run for every result against the canonical snapshot
-    $publication = $publicationState[$Item.MetadataFile.FullName]
-    $publication.Remaining--
-    $publication.Pending++
-    if ($Mode -eq 'Headless' -and $publication.Remaining -gt 0 -and
-        $publication.Pending -lt 32 -and
-        ([DateTime]::UtcNow - $publication.LastWrite).TotalSeconds -lt 30) { return }
-
-    $simulationPath = Join-Path $Item.MetadataFile.DirectoryName ($Item.MetadataFile.BaseName + '.simulation.json')
-    $incrementalPath = if ($WriteRegression) {
-        $simulationPath
-    } else {
-        Join-Path $resultRoot $Item.MetadataFile.Name.Replace('.json', '.simulation.json')
-    }
-    Write-GuidebotSimulationFile -MetadataFile $Item.MetadataFile `
-        -ResultsByIdentity $resultsByIdentity -Destination $incrementalPath `
-        -HeadedComparisons $headedComparisons -ComparisonIdentity $Item.Identity
-    if ($WriteRegression -and -not $changedFiles.Contains($simulationPath)) { $changedFiles.Add($simulationPath) }
-    $publication.Pending = 0
-    $publication.LastWrite = [DateTime]::UtcNow
-}
-
-if ($Mode -eq 'Headless') {
-    $runStates = @{}
-    $processTasks = [Collections.Generic.List[object]]::new()
-    $progressState = @{ Retired = 0 }
-    foreach ($item in $selectedItems) {
-        $metadataKey = $item.MetadataFile.FullName.ToLowerInvariant()
-        if (Test-GuidebotLevelAssetUnavailable -LevelRecord $item.Level) {
-            $resultsByIdentity[$item.Identity] = New-GuidebotUnsupportedResult `
-                -Mission $item.Mission -LevelRecord $item.Level
-            $progressState.Retired++
-            Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] Recorded: $($item.Identity)"
-            Publish-GuidebotResult -Item $item
-            continue
+        $dependencies = @(Get-StandardGameDataDeps)
+        $d2Candidates = @(Get-StandardGameDataCandidates -RepoRoot $repoRoot -Game d2)
+        if ($HogDir) {
+            $hogPath = if ([IO.Path]::IsPathRooted($HogDir)) { $HogDir } else { Join-Path $repoRoot $HogDir }
+            $resolvedHogDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($hogPath)
+            if (-not (Test-Path -LiteralPath $resolvedHogDir -PathType Container)) { throw "D2 HOG directory not found: $resolvedHogDir" }
+        } else {
+            $d2Dependencies = @($dependencies | Where-Object file -notin @('descent.hog', 'descent.pig'))
+            $resolvedHogDir = (Resolve-StandardGameDataDirectory -Candidates $d2Candidates -Dependencies $d2Dependencies -Label D2).Path
         }
-        try {
-            if (-not $stageByMetadata.ContainsKey($metadataKey)) {
-                $stageByMetadata[$metadataKey] = Initialize-GuidebotMissionStage -MetadataFile $item.MetadataFile
-            }
-            $stage = $stageByMetadata[$metadataKey]
-            $missionName = [IO.Path]::GetFileNameWithoutExtension(
-                [string](Get-GuidebotPropertyValue $item.Mission 'mission_filename' 'd2')
-            )
-            $safeIdentity = [regex]::Replace($item.Identity, '[^A-Za-z0-9_.-]+', '_')
-            $workItemHogDir = if ($item.D1InD2) { $resolvedD1InD2HogDir } else { $resolvedHogDir }
-            $runStates[$item.Identity] = [pscustomobject]@{
-                Item = $item; Completed = 0; Runs = @{}; Problems = [Collections.Generic.List[string]]::new()
-            }
-            for ($run = 1; $run -le $Repeat; $run++) {
-                $output = Join-Path $resultRoot "${safeIdentity}_run_${run}.json"
-                $log = Join-Path $logRoot "${safeIdentity}_run_${run}.log"
-                $arguments = @(
-                    '-hogdir', $workItemHogDir, '-mission', $missionName,
-                    '-level', [string]$item.EngineLevelNumber,
-                    '-route-confirm-timeout-seconds', [string]$item.SimulationTimeLimitSeconds,
-                    '-route-confirm-speed-percent', [string]$TestSpeedPercent,
-                    '-route-confirm-json-out', $output
-                )
-                if ($stage.ExtraDir) { $arguments += @('-extra-dir', $stage.ExtraDir) }
-                $processTasks.Add([pscustomobject]@{
-                        FilePath = $exe; Arguments = $arguments; TimeoutSeconds = $LevelTimeoutSeconds
-                        WorkingDirectory = ''; Item = $item; Run = $run; Output = $output; Log = $log
-                    })
-            }
-        } catch {
-            $problem = $_.Exception.Message
-            $resultsByIdentity[$item.Identity] = New-GuidebotInfrastructureErrorResult `
-                -Mission $item.Mission -LevelRecord $item.Level -Problem $problem
-            $infrastructureFailures.Add([ordered]@{ identity = $item.Identity; problem = $problem })
-            $progressState.Retired++
-            Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] FAILED: $($item.Identity): $problem" 'Red'
-            Publish-GuidebotResult -Item $item
-        }
-    }
-
-    if ($processTasks.Count -gt 0) {
-        $engineHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash
-        # Keep the exact image and available symbols even if a later build replaces them
-        $engineSnapshot = Join-Path $runRoot 'engine'
-        New-Item -ItemType Directory -Path $engineSnapshot | Out-Null
-        $engineArtifacts = @((Get-Item -LiteralPath $exe)) + @(Get-RegressionRuntimeLibraries -Directory (Split-Path $exe))
-        $enginePdb = [IO.Path]::ChangeExtension($exe, '.pdb')
-        if (Test-Path -LiteralPath $enginePdb) { $engineArtifacts += Get-Item -LiteralPath $enginePdb }
-        $artifactHashes = @($engineArtifacts | ForEach-Object {
-                $destination = Join-Path $engineSnapshot $_.Name
-                Copy-Item -LiteralPath $_.FullName -Destination $destination
-                [ordered]@{ name = $_.Name; sha256 = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash }
-            })
-        $exe = Join-Path $engineSnapshot ([IO.Path]::GetFileName($exe))
-        if ((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash -ne $engineHash) {
-            throw 'Route engine changed while creating its diagnostic snapshot; retry after the build completes'
-        }
-        [IO.File]::WriteAllText((Join-Path $engineSnapshot 'files.json'), (ConvertTo-Json -InputObject $artifactHashes), [Text.UTF8Encoding]::new($false))
-        foreach ($processTask in $processTasks) {
-            $processTask.FilePath = $exe
-            $userDirectory = $processTask.Output + '.user'
-            if (Test-Path -LiteralPath $userDirectory) {
-                throw "Refusing to reuse route worker settings; choose a fresh OutputRoot: $userDirectory"
-            }
-            New-Item -ItemType Directory -Path $userDirectory | Out-Null
-            $processTask.Arguments += @('-route-confirm-user-dir', $userDirectory)
-            $reproduction = [ordered]@{
-                identity = $processTask.Item.Identity
-                route_input_sha256 = Get-GuidebotRouteInputHash -Mission $processTask.Item.Mission -Level $processTask.Item.Level
-                executable = $exe
-                executable_sha256 = $engineHash
-                arguments = $processTask.Arguments
-                working_directory = (Get-Location).Path
-                timeout_seconds = $processTask.TimeoutSeconds
-            }
-            [IO.File]::WriteAllText(($processTask.Output + '.launch.json'), ($reproduction | ConvertTo-Json -Depth 10), [Text.UTF8Encoding]::new($false))
-        }
-        $workerCount = Get-HeadlessProcessWorkerCount -Requested $MaxParallel -ItemCount $processTasks.Count
-        Write-GuidebotStatus "Headless workers: $workerCount for $($processTasks.Count) engine runs on $([Environment]::ProcessorCount) logical processors"
-        # Long budgets first keep slow levels from becoming a single-worker tail
-        $scheduledTasks = @($processTasks | Sort-Object { $_.Item.SimulationTimeLimitSeconds } -Descending)
-        Invoke-HeadlessProcessPool -Tasks $scheduledTasks -MaxParallel $workerCount -OnCompleted {
-            param($task, $processResult)
-
-            [IO.File]::WriteAllText(($task.Output + '.process.json'), ([ordered]@{
-                        exit_code = $processResult.ExitCode
-                        timed_out = $processResult.TimedOut
-                        start_error = $processResult.StartError
-                    } | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
-            $logText = ($processResult.StandardOutput + "`n" + $processResult.StandardError).Trim()
-            [IO.File]::WriteAllText($task.Log, $logText + $(if ($logText) { "`n" } else { '' }), [Text.UTF8Encoding]::new($false))
-            $state = $runStates[$task.Item.Identity]
-            $problem = ''
-            if ($processResult.StartError) {
-                $problem = "Route engine could not start for $($task.Item.Identity): $($processResult.StartError)"
-            } elseif ($processResult.TimedOut) {
-                $problem = "Route engine process timeout after $LevelTimeoutSeconds seconds for $($task.Item.Identity), log=$($task.Log)"
-            } elseif ($processResult.ExitCode -notin @(0, 2) -or -not (Test-Path -LiteralPath $task.Output -PathType Leaf)) {
-                $problem = "Route engine infrastructure failure for $($task.Item.Identity), exit $($processResult.ExitCode), log=$($task.Log)"
+        if ($d1InD2Selected) {
+            if ($D1InD2HogDir) {
+                $dataPath = if ([IO.Path]::IsPathRooted($D1InD2HogDir)) { $D1InD2HogDir } else { Join-Path $repoRoot $D1InD2HogDir }
+                $resolvedD1InD2HogDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($dataPath)
+                $present = @(Get-ChildItem -LiteralPath $resolvedD1InD2HogDir -File | ForEach-Object Name)
+                $missing = @('descent2.hog', 'descent2.ham', 'groupa.pig', 'descent.hog', 'descent.pig') | Where-Object { $_ -notin $present }
+                if ($missing) { throw "D1-in-D2 data directory is missing $($missing -join ', '): $resolvedD1InD2HogDir" }
             } else {
-                try {
-                    $state.Runs[$task.Run] = [pscustomobject]@{
-                        Hash = (Get-FileHash -LiteralPath $task.Output -Algorithm SHA256).Hash
-                        Result = Get-Content -LiteralPath $task.Output -Raw | ConvertFrom-Json
-                    }
-                } catch {
-                    $problem = "Route engine result could not be read for $($task.Item.Identity): $($_.Exception.Message)"
-                }
+                $candidates = @($resolvedHogDir) + $d2Candidates + @(Get-StandardGameDataCandidates -RepoRoot $repoRoot -Game d1)
+                $stage = New-StandardGameDataStage -Destination (Join-Path $runRoot 'base-data') -Candidates $candidates -Dependencies $dependencies
+                $automaticDataStage = $stage.Path
+                $resolvedD1InD2HogDir = $stage.Path
             }
-            if ($problem) { $state.Problems.Add($problem) }
-            $state.Completed++
-            if ($state.Completed -ne $Repeat) { return }
-
-            if ($state.Problems.Count -gt 0) {
-                $problem = $state.Problems[0]
-                $resultsByIdentity[$task.Item.Identity] = New-GuidebotInfrastructureErrorResult `
-                    -Mission $task.Item.Mission -LevelRecord $task.Item.Level -Problem $problem
-                if (Test-GuidebotExpectedProcessTimeout -Identity $task.Item.Identity -Problems $state.Problems.ToArray()) {
-                    $expectedTimeouts.Add([ordered]@{ identity = $task.Item.Identity; problem = $problem })
-                    $color = 'Yellow'
-                    $progressLabel = 'EXPECTED_TIMEOUT'
-                } else {
-                    $infrastructureFailures.Add([ordered]@{ identity = $task.Item.Identity; problem = $problem })
-                    $color = 'Red'
-                    $progressLabel = 'INFRASTRUCTURE_ERROR'
-                }
-            } else {
-                $reference = $state.Runs[1]
-                $result = ConvertTo-GuidebotLevelSimulationResult -Mission $task.Item.Mission `
-                    -Level $task.Item.Level -EngineResult $reference.Result
-                foreach ($run in 2..$Repeat) {
-                    if ($Repeat -gt 1 -and $state.Runs[$run].Hash -ne $reference.Hash) {
-                        $result.status = 'nondeterministic'
-                        $result | Add-Member -NotePropertyName problem -NotePropertyValue "headless repeat $run differed" -Force
-                        break
-                    }
-                }
-                $resultsByIdentity[$task.Item.Identity] = $result
-                # Routing outcomes belong in the regression JSON; console errors mean broken infrastructure
-                $color = 'Cyan'
-                $progressLabel = 'Recorded'
-            }
-            $progressState.Retired++
-            Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] ${progressLabel}: $($task.Item.Identity)" $color
-            Publish-GuidebotResult -Item $task.Item
         }
     }
-} else {
-    $index = 0
+    if ($Mode -eq 'Headed' -and $WriteRegression) {
+        Write-GuidebotStatus 'Warning: headed results are noncanonical and will update regression files only because -WriteRegression was explicit' 'Yellow'
+    }
+    if (-not $NoBuild) {
+        if ($Mode -in @('Headless', 'Desktop')) {
+            Invoke-RegressionHostBuild -RepoRoot $repoRoot -Target d2
+        } else {
+            Initialize-RegressionJavaEnvironment -RepoRoot $repoRoot
+            & (Resolve-RegressionGradleWrapper -AndroidDir $androidRoot) -p $androidRoot :app:assembleDebug
+            if ($LASTEXITCODE -ne 0) { throw "Android build failed with exit code $LASTEXITCODE" }
+        }
+    }
+    if ($Mode -eq 'Headless' -and -not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "Route executable not found: $exe" }
+    if ($Mode -eq 'Desktop' -and -not (Test-Path -LiteralPath $desktopExe -PathType Leaf)) { throw "Desktop route executable not found: $desktopExe" }
+    New-Item -ItemType Directory -Path $runRoot, $rawRoot, $stageRoot, $logRoot, $resultRoot -Force | Out-Null
+
+    $selectedByIdentity = @{}
+    foreach ($item in $selectedItems) { $selectedByIdentity[$item.Identity] = $item }
+    $resultsByIdentity = @{}
+    $infrastructureFailures = [Collections.Generic.List[object]]::new()
+    $expectedTimeouts = [Collections.Generic.List[object]]::new()
+    $changedFiles = [Collections.Generic.List[string]]::new()
+    $headedComparisons = [Collections.Generic.List[object]]::new()
+    $stageByMetadata = @{}
+    $publicationState = @{}
     foreach ($item in $selectedItems) {
-        $index++
-        Write-GuidebotStatus "[$index/$($selectedItems.Count)] $($item.Identity) budget=$($item.SimulationTimeLimitSeconds)s"
-        $metadataKey = $item.MetadataFile.FullName.ToLowerInvariant()
-        try {
+        $publicationKey = $item.MetadataFile.FullName
+        if (-not $publicationState.ContainsKey($publicationKey)) {
+            $publicationState[$publicationKey] = @{ Remaining = 0; Pending = 0; LastWrite = [DateTime]::UtcNow }
+        }
+        $publicationState[$publicationKey].Remaining++
+    }
+    $installHeaded = $Mode -eq 'Headed' -and -not $NoBuild
+
+    function Publish-GuidebotResult {
+        param([Parameter(Mandatory)]$Item)
+
+        # Engine results are durable individually; checkpoint shared collection JSON in batches
+        # Headed comparisons still run for every result against the canonical snapshot
+        $publication = $publicationState[$Item.MetadataFile.FullName]
+        $publication.Remaining--
+        $publication.Pending++
+        if ($Mode -eq 'Headless' -and $publication.Remaining -gt 0 -and
+            $publication.Pending -lt 32 -and
+            ([DateTime]::UtcNow - $publication.LastWrite).TotalSeconds -lt 30) { return }
+
+        $simulationPath = Join-Path $Item.MetadataFile.DirectoryName ($Item.MetadataFile.BaseName + '.simulation.json')
+        $incrementalPath = if ($WriteRegression) {
+            $simulationPath
+        } else {
+            Join-Path $resultRoot $Item.MetadataFile.Name.Replace('.json', '.simulation.json')
+        }
+        Write-GuidebotSimulationFile -MetadataFile $Item.MetadataFile `
+            -ResultsByIdentity $resultsByIdentity -Destination $incrementalPath `
+            -HeadedComparisons $headedComparisons -ComparisonIdentity $Item.Identity
+        if ($WriteRegression -and -not $changedFiles.Contains($simulationPath)) { $changedFiles.Add($simulationPath) }
+        $publication.Pending = 0
+        $publication.LastWrite = [DateTime]::UtcNow
+    }
+
+    if ($Mode -eq 'Headless') {
+        $runStates = @{}
+        $processTasks = [Collections.Generic.List[object]]::new()
+        $progressState = @{ Retired = 0 }
+        foreach ($item in $selectedItems) {
+            $metadataKey = $item.MetadataFile.FullName.ToLowerInvariant()
             if (Test-GuidebotLevelAssetUnavailable -LevelRecord $item.Level) {
                 $resultsByIdentity[$item.Identity] = New-GuidebotUnsupportedResult `
                     -Mission $item.Mission -LevelRecord $item.Level
-                Write-GuidebotStatus "Recorded: $($item.Identity)"
-            } else {
+                $progressState.Retired++
+                Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] Recorded: $($item.Identity)"
+                Publish-GuidebotResult -Item $item
+                continue
+            }
+            try {
                 if (-not $stageByMetadata.ContainsKey($metadataKey)) {
                     $stageByMetadata[$metadataKey] = Initialize-GuidebotMissionStage -MetadataFile $item.MetadataFile
                 }
-                $resultsByIdentity[$item.Identity] = if ($Mode -eq 'Desktop') {
-                    Invoke-GuidebotDesktopLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey]
-                } else {
-                    Invoke-GuidebotHeadedLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey] -Install:$installHeaded
+                $stage = $stageByMetadata[$metadataKey]
+                $missionName = [IO.Path]::GetFileNameWithoutExtension(
+                    [string](Get-GuidebotPropertyValue $item.Mission 'mission_filename' 'd2')
+                )
+                $safeIdentity = [regex]::Replace($item.Identity, '[^A-Za-z0-9_.-]+', '_')
+                $workItemHogDir = if ($item.D1InD2) { $resolvedD1InD2HogDir } else { $resolvedHogDir }
+                $runStates[$item.Identity] = [pscustomobject]@{
+                    Item = $item; Completed = 0; Runs = @{}; Problems = [Collections.Generic.List[string]]::new()
                 }
-                $installHeaded = $false
+                for ($run = 1; $run -le $Repeat; $run++) {
+                    $output = Join-Path $resultRoot "${safeIdentity}_run_${run}.json"
+                    $log = Join-Path $logRoot "${safeIdentity}_run_${run}.log"
+                    $arguments = @(
+                        '-hogdir', $workItemHogDir, '-mission', $missionName,
+                        '-level', [string]$item.EngineLevelNumber,
+                        '-route-confirm-timeout-seconds', [string]$item.SimulationTimeLimitSeconds,
+                        '-route-confirm-speed-percent', [string]$TestSpeedPercent,
+                        '-route-confirm-json-out', $output
+                    )
+                    if ($stage.ExtraDir) { $arguments += @('-extra-dir', $stage.ExtraDir) }
+                    $processTasks.Add([pscustomobject]@{
+                            FilePath = $exe; Arguments = $arguments; TimeoutSeconds = $LevelTimeoutSeconds
+                            WorkingDirectory = ''; Item = $item; Run = $run; Output = $output; Log = $log
+                        })
+                }
+            } catch {
+                $problem = $_.Exception.Message
+                $resultsByIdentity[$item.Identity] = New-GuidebotInfrastructureErrorResult `
+                    -Mission $item.Mission -LevelRecord $item.Level -Problem $problem
+                $infrastructureFailures.Add([ordered]@{ identity = $item.Identity; problem = $problem })
+                $progressState.Retired++
+                Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] FAILED: $($item.Identity): $problem" 'Red'
+                Publish-GuidebotResult -Item $item
             }
-        } catch {
-            $problem = $_.Exception.Message
-            Write-GuidebotStatus "FAILED: $($item.Identity): $problem" 'Red'
-            $resultsByIdentity[$item.Identity] = New-GuidebotInfrastructureErrorResult `
-                -Mission $item.Mission -LevelRecord $item.Level -Problem $problem
-            $infrastructureFailures.Add([ordered]@{ identity = $item.Identity; problem = $problem })
         }
-        Publish-GuidebotResult -Item $item
+
+        if ($processTasks.Count -gt 0) {
+            $engineHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash
+            # Keep the exact image and available symbols even if a later build replaces them
+            $engineSnapshot = Join-Path $runRoot 'engine'
+            New-Item -ItemType Directory -Path $engineSnapshot | Out-Null
+            $engineArtifacts = @((Get-Item -LiteralPath $exe)) + @(Get-RegressionRuntimeLibraries -Directory (Split-Path $exe))
+            $enginePdb = [IO.Path]::ChangeExtension($exe, '.pdb')
+            if (Test-Path -LiteralPath $enginePdb) { $engineArtifacts += Get-Item -LiteralPath $enginePdb }
+            $artifactHashes = @($engineArtifacts | ForEach-Object {
+                    $destination = Join-Path $engineSnapshot $_.Name
+                    Copy-Item -LiteralPath $_.FullName -Destination $destination
+                    [ordered]@{ name = $_.Name; sha256 = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash }
+                })
+            $exe = Join-Path $engineSnapshot ([IO.Path]::GetFileName($exe))
+            if ((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash -ne $engineHash) {
+                throw 'Route engine changed while creating its diagnostic snapshot; retry after the build completes'
+            }
+            [IO.File]::WriteAllText((Join-Path $engineSnapshot 'files.json'), (ConvertTo-Json -InputObject $artifactHashes), [Text.UTF8Encoding]::new($false))
+            foreach ($processTask in $processTasks) {
+                $processTask.FilePath = $exe
+                $userDirectory = $processTask.Output + '.user'
+                if (Test-Path -LiteralPath $userDirectory) {
+                    throw "Refusing to reuse route worker settings; choose a fresh OutputRoot: $userDirectory"
+                }
+                New-Item -ItemType Directory -Path $userDirectory | Out-Null
+                $processTask.Arguments += @('-route-confirm-user-dir', $userDirectory)
+                $reproduction = [ordered]@{
+                    identity = $processTask.Item.Identity
+                    route_input_sha256 = Get-GuidebotRouteInputHash -Mission $processTask.Item.Mission -Level $processTask.Item.Level
+                    executable = $exe
+                    executable_sha256 = $engineHash
+                    arguments = $processTask.Arguments
+                    working_directory = (Get-Location).Path
+                    timeout_seconds = $processTask.TimeoutSeconds
+                }
+                [IO.File]::WriteAllText(($processTask.Output + '.launch.json'), ($reproduction | ConvertTo-Json -Depth 10), [Text.UTF8Encoding]::new($false))
+            }
+            $workerCount = Get-HeadlessProcessWorkerCount -Requested $MaxParallel -ItemCount $processTasks.Count
+            Write-GuidebotStatus "Headless workers: $workerCount for $($processTasks.Count) engine runs on $([Environment]::ProcessorCount) logical processors"
+            # Long budgets first keep slow levels from becoming a single-worker tail
+            $scheduledTasks = @($processTasks | Sort-Object { $_.Item.SimulationTimeLimitSeconds } -Descending)
+            Invoke-HeadlessProcessPool -Tasks $scheduledTasks -MaxParallel $workerCount -OnCompleted {
+                param($task, $processResult)
+
+                [IO.File]::WriteAllText(($task.Output + '.process.json'), ([ordered]@{
+                            exit_code = $processResult.ExitCode
+                            timed_out = $processResult.TimedOut
+                            start_error = $processResult.StartError
+                        } | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
+                $logText = ($processResult.StandardOutput + "`n" + $processResult.StandardError).Trim()
+                [IO.File]::WriteAllText($task.Log, $logText + $(if ($logText) { "`n" } else { '' }), [Text.UTF8Encoding]::new($false))
+                $state = $runStates[$task.Item.Identity]
+                $problem = ''
+                if ($processResult.StartError) {
+                    $problem = "Route engine could not start for $($task.Item.Identity): $($processResult.StartError)"
+                } elseif ($processResult.TimedOut) {
+                    $problem = "Route engine process timeout after $LevelTimeoutSeconds seconds for $($task.Item.Identity), log=$($task.Log)"
+                } elseif ($processResult.ExitCode -notin @(0, 2) -or -not (Test-Path -LiteralPath $task.Output -PathType Leaf)) {
+                    $problem = "Route engine infrastructure failure for $($task.Item.Identity), exit $($processResult.ExitCode), log=$($task.Log)"
+                } else {
+                    try {
+                        $state.Runs[$task.Run] = [pscustomobject]@{
+                            Hash = (Get-FileHash -LiteralPath $task.Output -Algorithm SHA256).Hash
+                            Result = Get-Content -LiteralPath $task.Output -Raw | ConvertFrom-Json
+                        }
+                    } catch {
+                        $problem = "Route engine result could not be read for $($task.Item.Identity): $($_.Exception.Message)"
+                    }
+                }
+                if ($problem) { $state.Problems.Add($problem) }
+                $state.Completed++
+                if ($state.Completed -ne $Repeat) { return }
+
+                if ($state.Problems.Count -gt 0) {
+                    $problem = $state.Problems[0]
+                    $resultsByIdentity[$task.Item.Identity] = New-GuidebotInfrastructureErrorResult `
+                        -Mission $task.Item.Mission -LevelRecord $task.Item.Level -Problem $problem
+                    if (Test-GuidebotExpectedProcessTimeout -Identity $task.Item.Identity -Problems $state.Problems.ToArray()) {
+                        $expectedTimeouts.Add([ordered]@{ identity = $task.Item.Identity; problem = $problem })
+                        $color = 'Yellow'
+                        $progressLabel = 'EXPECTED_TIMEOUT'
+                    } else {
+                        $infrastructureFailures.Add([ordered]@{ identity = $task.Item.Identity; problem = $problem })
+                        $color = 'Red'
+                        $progressLabel = 'INFRASTRUCTURE_ERROR'
+                    }
+                } else {
+                    $reference = $state.Runs[1]
+                    $result = ConvertTo-GuidebotLevelSimulationResult -Mission $task.Item.Mission `
+                        -Level $task.Item.Level -EngineResult $reference.Result
+                    foreach ($run in 2..$Repeat) {
+                        if ($Repeat -gt 1 -and $state.Runs[$run].Hash -ne $reference.Hash) {
+                            $result.status = 'nondeterministic'
+                            $result | Add-Member -NotePropertyName problem -NotePropertyValue "headless repeat $run differed" -Force
+                            break
+                        }
+                    }
+                    $resultsByIdentity[$task.Item.Identity] = $result
+                    # Routing outcomes belong in the regression JSON; console errors mean broken infrastructure
+                    $color = 'Cyan'
+                    $progressLabel = 'Recorded'
+                }
+                $progressState.Retired++
+                Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] ${progressLabel}: $($task.Item.Identity)" $color
+                Publish-GuidebotResult -Item $task.Item
+            }
+        }
+    } else {
+        $index = 0
+        foreach ($item in $selectedItems) {
+            $index++
+            Write-GuidebotStatus "[$index/$($selectedItems.Count)] $($item.Identity) budget=$($item.SimulationTimeLimitSeconds)s"
+            $metadataKey = $item.MetadataFile.FullName.ToLowerInvariant()
+            try {
+                if (Test-GuidebotLevelAssetUnavailable -LevelRecord $item.Level) {
+                    $resultsByIdentity[$item.Identity] = New-GuidebotUnsupportedResult `
+                        -Mission $item.Mission -LevelRecord $item.Level
+                    Write-GuidebotStatus "Recorded: $($item.Identity)"
+                } else {
+                    if (-not $stageByMetadata.ContainsKey($metadataKey)) {
+                        $stageByMetadata[$metadataKey] = Initialize-GuidebotMissionStage -MetadataFile $item.MetadataFile
+                    }
+                    $resultsByIdentity[$item.Identity] = if ($Mode -eq 'Desktop') {
+                        Invoke-GuidebotDesktopLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey]
+                    } else {
+                        Invoke-GuidebotHeadedLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey] -Install:$installHeaded
+                    }
+                    $installHeaded = $false
+                }
+            } catch {
+                $problem = $_.Exception.Message
+                Write-GuidebotStatus "FAILED: $($item.Identity): $problem" 'Red'
+                $resultsByIdentity[$item.Identity] = New-GuidebotInfrastructureErrorResult `
+                    -Mission $item.Mission -LevelRecord $item.Level -Problem $problem
+                $infrastructureFailures.Add([ordered]@{ identity = $item.Identity; problem = $problem })
+            }
+            Publish-GuidebotResult -Item $item
+        }
+    }
+
+    foreach ($file in $files) {
+        $simulationPath = Join-Path $file.DirectoryName ($file.BaseName + '.simulation.json')
+        $targetPath = if ($WriteRegression) { $simulationPath } else { Join-Path $resultRoot $file.Name.Replace('.json', '.simulation.json') }
+        Write-GuidebotSimulationFile -MetadataFile $file -ResultsByIdentity $resultsByIdentity `
+            -Destination $targetPath
+        if ($WriteRegression -and -not $changedFiles.Contains($simulationPath)) { $changedFiles.Add($simulationPath) }
+    }
+
+    $summary = [ordered]@{
+        schema = 'dxx-guidebot-route-simulation-batch-v1'
+        mode = $Mode.ToLowerInvariant()
+        selected_levels = $selectedItems.Count
+        total_levels = $allItems.Count
+        write_regression = [bool]$WriteRegression
+        changed_files = @($changedFiles)
+        elapsed_seconds = [Math]::Round(([DateTime]::UtcNow - $batchStart).TotalSeconds, 3)
+        selected_work_items = @($selectedItems.Identity)
+        infrastructure_failures = @($infrastructureFailures)
+        expected_timeouts = @($expectedTimeouts)
+        headed_comparisons = @($headedComparisons)
+        run_root = $runRoot
+    }
+    Write-GuidebotSimulationJson -Path (Join-Path $runRoot 'summary.json') -Value $summary
+    Write-GuidebotStatus "GuideBot simulation complete: $($selectedItems.Count) levels" 'Green'
+    Write-GuidebotStatus "Output: $runRoot" 'Green'
+    if ($infrastructureFailures.Count) {
+        foreach ($failure in $infrastructureFailures) {
+            Write-GuidebotStatus "$($failure.identity): $($failure.problem)" 'Red'
+        }
+        exit 1
+    }
+    exit 0
+} finally {
+    try {
+        if ($automaticDataStage -and (Test-Path -LiteralPath $automaticDataStage)) {
+            Remove-Item -LiteralPath $automaticDataStage -Recurse -Force
+        }
+    } finally {
+        if ($producerLock) { $producerLock.Dispose() }
     }
 }
-
-foreach ($file in $files) {
-    $simulationPath = Join-Path $file.DirectoryName ($file.BaseName + '.simulation.json')
-    $targetPath = if ($WriteRegression) { $simulationPath } else { Join-Path $resultRoot $file.Name.Replace('.json', '.simulation.json') }
-    Write-GuidebotSimulationFile -MetadataFile $file -ResultsByIdentity $resultsByIdentity `
-        -Destination $targetPath
-    if ($WriteRegression -and -not $changedFiles.Contains($simulationPath)) { $changedFiles.Add($simulationPath) }
-}
-
-$summary = [ordered]@{
-    schema = 'dxx-guidebot-route-simulation-batch-v1'
-    mode = $Mode.ToLowerInvariant()
-    selected_levels = $selectedItems.Count
-    total_levels = $allItems.Count
-    write_regression = [bool]$WriteRegression
-    changed_files = @($changedFiles)
-    elapsed_seconds = [Math]::Round(([DateTime]::UtcNow - $batchStart).TotalSeconds, 3)
-    selected_work_items = @($selectedItems.Identity)
-    infrastructure_failures = @($infrastructureFailures)
-    expected_timeouts = @($expectedTimeouts)
-    headed_comparisons = @($headedComparisons)
-    run_root = $runRoot
-}
-Write-GuidebotSimulationJson -Path (Join-Path $runRoot 'summary.json') -Value $summary
-Write-GuidebotStatus "GuideBot simulation complete: $($selectedItems.Count) levels" 'Green'
-Write-GuidebotStatus "Output: $runRoot" 'Green'
-if ($infrastructureFailures.Count) {
-    foreach ($failure in $infrastructureFailures) {
-        Write-GuidebotStatus "$($failure.identity): $($failure.problem)" 'Red'
-    }
-    exit 1
-}
-exit 0

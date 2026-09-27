@@ -217,15 +217,33 @@ publish_dependency_directory() {
     if [ -n "$backup" ]; then rm -rf "$backup"; fi
 }
 
+# Change the journal format atomically so older checkouts cannot misread in-place work
+set_dependency_install_format() {
+    local temporary="$DEPENDENCY_INSTALL_STATE/format.new"
+    if [ -L "$temporary" ] || { [ -e "$temporary" ] && [ ! -f "$temporary" ]; }; then return 1; fi
+    printf '%s\n' "$1" >"$temporary" || return 1
+    mv "$temporary" "$DEPENDENCY_INSTALL_STATE/format"
+}
+
 # Recover only our fixed transaction, while holding the shared destination-volume lock
 recover_dependency_install() {
-    local work="$DEPENDENCY_INSTALL_STATE/work" leaf destination
-    if [ ! -e "$work" ] && [ ! -L "$work" ]; then return 0; fi
+    local work="$DEPENDENCY_INSTALL_STATE/work" leaf destination in_place=0 marker
+    if [ ! -e "$work" ] && [ ! -L "$work" ]; then
+        if [ "$(cat "$DEPENDENCY_INSTALL_STATE/format")" = dxx-install-v2 ]; then set_dependency_install_format dxx-install-v1 || return 1; fi
+        return 0
+    fi
     if [ ! -d "$work" ] || [ -L "$work" ]; then
         echo "ERROR: unsafe dependency transaction directory: $work" >&2
         return 1
     fi
-    if [ -e "$work/previous" ] || [ -L "$work/previous" ]; then
+    if [ -e "$work/mode" ] || [ -L "$work/mode" ]; then
+        if [ -L "$work/mode" ] || [ ! -f "$work/mode" ] || [ "$(cat "$work/mode")" != in-place ]; then return 1; fi
+        in_place=1
+        for marker in installing committed; do
+            if [ -L "$work/$marker" ] || { [ -e "$work/$marker" ] && [ ! -f "$work/$marker" ]; }; then return 1; fi
+        done
+    fi
+    if [ "$in_place" = 1 ] || [ -e "$work/previous" ] || [ -L "$work/previous" ]; then
         if [ ! -f "$work/destination" ] || [ -L "$work/destination" ]; then return 1; fi
         leaf="$(cat "$work/destination")" || return 1
         if [[ ! "$leaf" =~ ^[[:alnum:]][[:alnum:]._+-]*$ ]]; then
@@ -233,18 +251,49 @@ recover_dependency_install() {
             return 1
         fi
         destination="$(dirname "$DEPENDENCY_INSTALL_STATE")/$leaf"
-        if [ -L "$destination" ] || [ -L "$work/previous" ] || [ ! -d "$work/previous" ]; then
+        if [ -L "$destination" ] || [ -L "$work/previous" ] || { [ -e "$work/previous" ] && [ ! -d "$work/previous" ]; }; then
             echo "ERROR: unsafe dependency recovery paths" >&2
             return 1
         fi
-        if [ ! -e "$destination" ]; then
-            mv "$work/previous" "$destination" || return 1
-        elif [ ! -d "$destination" ]; then
+        if [ -e "$destination" ] && [ ! -d "$destination" ]; then
             echo "ERROR: unexpected file at dependency recovery destination" >&2
             return 1
         fi
+        if [ "$in_place" = 1 ] && [ ! -f "$work/committed" ] && { [ -d "$work/previous" ] || [ -f "$work/installing" ]; }; then
+            rm -rf "$destination" || return 1
+        fi
+        if [ ! -e "$destination" ] && [ -d "$work/previous" ]; then
+            # A second interruption after restoration must not delete the restored tree
+            if [ "$in_place" = 1 ]; then rm -f "$work/installing" || return 1; fi
+            mv "$work/previous" "$destination" || return 1
+        fi
     fi
-    rm -rf "$work"
+    rm -rf "$work" || return 1
+    if [ "$(cat "$DEPENDENCY_INSTALL_STATE/format")" = dxx-install-v2 ]; then set_dependency_install_format dxx-install-v1 || return 1; fi
+}
+
+# Python venv launchers embed their final path, so they cannot be staged and moved
+# Journal each destructive step before installation; only validated installs commit
+prepare_in_place_dependency_install() {
+    local destination="$1"
+    if [ -z "${DEPENDENCY_INSTALL_STATE:-}" ]; then return 1; fi
+    destination="$(cd "$(dirname "$destination")" && pwd -P)/$(basename "$destination")"
+    if [ "$destination" != "$DEPENDENCY_INSTALL_DESTINATION" ] || [ -L "$destination" ]; then return 1; fi
+    # Older archive-only recovery would mistake a partial final-path tree for success
+    set_dependency_install_format dxx-install-v2 || return 1
+    prepare_dependency_workspace "$destination"
+    printf '%s\n' in-place >"$DEPENDENCY_WORK_DIR/mode"
+    if [ -e "$destination" ]; then
+        if [ ! -d "$destination" ]; then return 1; fi
+        mv "$destination" "$DEPENDENCY_WORK_DIR/previous" || return 1
+    fi
+    touch "$DEPENDENCY_WORK_DIR/installing" || return 1
+    mkdir "$destination"
+}
+
+commit_in_place_dependency_install() {
+    if [ -z "${DEPENDENCY_INSTALL_STATE:-}" ] || [ ! -f "$DEPENDENCY_WORK_DIR/installing" ]; then return 1; fi
+    touch "$DEPENDENCY_WORK_DIR/committed"
 }
 
 finish_dependency_install() {
@@ -284,7 +333,11 @@ begin_dependency_install() {
         fi
         printf '%s\n' dxx-install-v1 >"$DEPENDENCY_INSTALL_STATE/format"
     fi
-    if [ -L "$DEPENDENCY_INSTALL_STATE/format" ] || [ ! -f "$DEPENDENCY_INSTALL_STATE/format" ] || [ "$(cat "$DEPENDENCY_INSTALL_STATE/format")" != dxx-install-v1 ]; then return 1; fi
+    if [ -L "$DEPENDENCY_INSTALL_STATE/format" ] || [ ! -f "$DEPENDENCY_INSTALL_STATE/format" ]; then return 1; fi
+    case "$(cat "$DEPENDENCY_INSTALL_STATE/format")" in
+    dxx-install-v1 | dxx-install-v2) ;;
+    *) return 1 ;;
+    esac
     recover_dependency_install || return 1
     trap finish_dependency_install EXIT
     trap 'exit 130' INT

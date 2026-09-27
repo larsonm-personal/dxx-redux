@@ -28,7 +28,10 @@ $families = @(
     @{ Key = 'SHFMT_VERSION'; Prefix = 'shfmt-'; Files = @('shfmt', 'shfmt.exe') },
     @{ Key = 'KTLINT_VERSION'; Prefix = 'ktlint-'; Files = @('ktlint.jar') },
     @{ Key = 'CMAKELANG_VERSION'; Prefix = 'cmakelang-'; Files = @('venv/bin/cmake-format', 'python/python.exe') },
-    @{ Key = 'SEVENZIP_VERSION'; Prefix = '7z-'; Files = @('7zz', '7za.exe') }
+    @{ Key = 'SEVENZIP_VERSION'; Prefix = '7z-'; Files = @('7zz', '7za.exe') },
+    @{ Key = 'POWERSHELL_VERSION'; Prefix = 'powershell-'; Files = @('pwsh', 'pwsh.exe') },
+    @{ Key = 'DOSBOX_DIR_NAME'; Prefix = 'dosbox-'; DirectoryName = $true; Files = @('dosbox-x.exe') },
+    @{ Key = 'PYTHON_BOUNDED_LINUX_DIR_NAME'; Prefix = 'python-bounded-'; DirectoryName = $true; Files = @('python/bin/python3.12') }
 )
 
 function Assert-PlainDependencyPath([string]$Path) {
@@ -49,7 +52,14 @@ function Get-ConfiguredDependencyNames([string]$Checkout) {
         if ($config.ContainsKey($family.Key)) {
             $version = $config[$family.Key]
             if ($version -notmatch '^[A-Za-z0-9][A-Za-z0-9._+-]*$') { throw "Invalid dependency version: $($family.Key)" }
-            $family.Prefix + $version
+            if ($family.ContainsKey('DirectoryName')) {
+                if ($version -cnotmatch ('^' + [regex]::Escape($family.Prefix) + '[A-Za-z0-9][A-Za-z0-9._+-]*$')) {
+                    throw "Invalid dependency directory: $($family.Key)"
+                }
+                $version
+            } else {
+                $family.Prefix + $version
+            }
         }
     }
 }
@@ -109,6 +119,21 @@ function Get-DependencyUse([string]$Path) {
             return 'PATH override'
         }
     }
+    # Linux bootstrap links may live on PATH outside the versioned installation
+    if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
+        foreach ($directory in ($env:PATH -split [regex]::Escape([IO.Path]::PathSeparator))) {
+            if (-not $directory) { continue }
+            foreach ($command in @('pwsh', 'pwsh-preview')) {
+                $entry = Get-Item -LiteralPath (Join-Path $directory $command) -Force -ErrorAction SilentlyContinue
+                if (-not $entry -or -not ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint)) { continue }
+                try { $target = $entry.ResolveLinkTarget($true) }
+                catch { return "cannot resolve PowerShell command link $($entry.FullName)" }
+                if ($target -and ($target.FullName.Equals($Path, $comparison) -or $target.FullName.StartsWith($Path + [IO.Path]::DirectorySeparatorChar, $comparison))) {
+                    return "PowerShell command link $($entry.FullName)"
+                }
+            }
+        }
+    }
     $processes = @(Get-DxxHostProcessInventory -IncludePaths)
     $ancestors = [Collections.Generic.HashSet[int]]::new()
     $ancestorId = $PID
@@ -127,7 +152,7 @@ function Get-DependencyUse([string]$Path) {
             }
         }
         $unreadable = $process.PSObject.Properties['PathInspectionFailed']
-        if ($unreadable -and $unreadable.Value -and $process.Name -match '^(java|cmake|ninja|clang.*|gcc|g\+\+|cc1.*|shfmt|shellcheck|python.*|7zz|7za)(\.exe)?$') {
+        if ($unreadable -and $unreadable.Value -and $process.Name -match '^(java|cmake|ninja|clang.*|gcc|g\+\+|cc1.*|shfmt|shellcheck|python.*|pwsh.*|powershell|7zz|7za|dosbox-x)(\.exe)?$') {
             return "cannot inspect tool process $($process.ProcessId)"
         }
     }
@@ -279,7 +304,7 @@ try {
         $otherBase = [IO.Path]::GetFullPath((Get-Content -LiteralPath (Join-Path $checkout 'dependency_base.txt') -First 1).Trim())
         if (-not $otherBase.Equals($dependencyRoot, $comparison)) { continue }
         $protected += @(Get-ConfiguredDependencyNames $checkout)
-        foreach ($relative in @('buildd1', 'buildd2', 'android/app/.cxx')) {
+        foreach ($relative in @('buildd1', 'buildd2', 'buildd1-asan', 'buildd2-asan', 'android/app/.cxx')) {
             $buildRoot = Join-Path $checkout $relative
             if (Test-Path -LiteralPath $buildRoot -PathType Container) {
                 Assert-PlainDependencyPath $buildRoot

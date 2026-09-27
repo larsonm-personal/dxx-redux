@@ -14,6 +14,7 @@ $realProcessInventory = ${function:Get-DxxHostProcessInventory}
 # present before this fixture starts; retain real inspection of fixture children
 $unreadableBackground = @(& $realProcessInventory -IncludePaths | Where-Object PathInspectionFailed)
 $injectUnreadableTool = $false
+$unreadableToolName = 'python3'
 function Get-DxxHostProcessInventory {
     param([switch]$IncludePaths)
     foreach ($process in (& $realProcessInventory -IncludePaths:$IncludePaths)) {
@@ -24,7 +25,7 @@ function Get-DxxHostProcessInventory {
     }
     if ($injectUnreadableTool) {
         [pscustomobject]@{
-            ProcessId = -1; ParentProcessId = 0; Name = 'python3'
+            ProcessId = -1; ParentProcessId = 0; Name = $unreadableToolName
             CommandLine = 'python3 background-service'; ExecutablePath = $null
             WorkingDirectory = $null; PathInspectionFailed = $true
         }
@@ -125,12 +126,14 @@ try {
     $child.Dispose()
     $child = $null
 
-    $cacheDir = Join-Path $checkouts[1] 'buildd1'
-    New-Item -ItemType Directory -Path $cacheDir | Out-Null
-    $cache = Join-Path $cacheDir 'CMakeCache.txt'
-    Set-Content -LiteralPath $cache -Value (Join-Path $deps 'shfmt-1/shfmt')
-    Assert-Result @(& $cleaner -RepoRoot $checkouts[0] -Apply) 'shfmt-1' Protected 'CMake cache'
-    Remove-Item -LiteralPath $cache -Force
+    foreach ($build in @('buildd1', 'buildd2', 'buildd1-asan', 'buildd2-asan')) {
+        $cacheDir = Join-Path $checkouts[1] $build
+        New-Item -ItemType Directory -Path $cacheDir | Out-Null
+        $cache = Join-Path $cacheDir 'CMakeCache.txt'
+        Set-Content -LiteralPath $cache -Value (Join-Path $deps 'shfmt-1/shfmt')
+        Assert-Result @(& $cleaner -RepoRoot $checkouts[0] -Apply) 'shfmt-1' Protected 'CMake cache'
+        Remove-Item -LiteralPath $cache -Force
+    }
 
     $lock = [IO.File]::Open((Join-Path $deps '.dxx-dependency-ownership.lock'), [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     try {
@@ -223,6 +226,73 @@ throw 'Fixture never interrupted retirement'
     }
     $results = @(& $cleaner -RepoRoot $checkouts[0] -Apply)
     if (@($results | Where-Object Action -eq Removed).Count) { throw 'Repeated cleanup was not idempotent' }
+    # DOSBox uses an explicit directory name rather than a reconstructed version
+    foreach ($name in @('dosbox-old-fixture', 'dosbox-new-fixture', 'dosbox-unmanaged')) {
+        $directory = Join-Path $deps $name
+        New-Item -ItemType Directory -Path $directory | Out-Null
+        Set-Content -LiteralPath (Join-Path $directory 'dosbox-x.exe') -Value 'fixture executable'
+    }
+    foreach ($checkout in $checkouts) {
+        Set-Content -LiteralPath (Join-Path $checkout 'android/get_deps/tool_versions.conf') -Value "SHFMT_VERSION=2`nDOSBOX_DIR_NAME=dosbox-old-fixture"
+    }
+    & $cleaner -RepoRoot $checkouts[0] -RegisterCurrent
+    Set-Content -LiteralPath (Join-Path $checkouts[0] 'android/get_deps/tool_versions.conf') -Value "SHFMT_VERSION=2`nDOSBOX_DIR_NAME=dosbox-new-fixture"
+    & $cleaner -RepoRoot $checkouts[0] -RegisterCurrent
+    Assert-Result @(& $cleaner -RepoRoot $checkouts[0] -Apply) 'dosbox-old-fixture' Protected 'registered checkout'
+    Set-Content -LiteralPath (Join-Path $checkouts[1] 'android/get_deps/tool_versions.conf') -Value "SHFMT_VERSION=2`nDOSBOX_DIR_NAME=dosbox-new-fixture"
+    $dosboxReplacement = Join-Path $deps 'dosbox-new-fixture/dosbox-x.exe'
+    Remove-Item -LiteralPath $dosboxReplacement -Force
+    Assert-Result @(& $cleaner -RepoRoot $checkouts[0] -Apply) 'dosbox-old-fixture' Protected 'replacement is not installed'
+    Set-Content -LiteralPath $dosboxReplacement -Value 'fixture executable'
+    Assert-Result @(& $cleaner -RepoRoot $checkouts[0]) 'dosbox-old-fixture' Eligible '^$'
+    if (-not (Test-Path -LiteralPath (Join-Path $deps 'dosbox-old-fixture'))) { throw 'DOSBox preview deleted an installation' }
+    $results = @(& $cleaner -RepoRoot $checkouts[0] -Apply)
+    Assert-Result $results 'dosbox-old-fixture' Removed '^$'
+    Assert-Result $results 'dosbox-unmanaged' Protected 'unmanaged'
+    if (Test-Path -LiteralPath (Join-Path $deps 'dosbox-old-fixture')) { throw 'Superseded DOSBox survived cleanup' }
+    foreach ($name in @('dosbox-new-fixture', 'dosbox-unmanaged')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $deps "$name/dosbox-x.exe"))) { throw 'Current or unmanaged DOSBox was removed' }
+    }
+    # User-local PowerShell trees share checkout pins and keep external command links
+    foreach ($version in @('1.0.0', '2.0.0', '99.0.0')) {
+        $directory = Join-Path $deps "powershell-$version"
+        New-Item -ItemType Directory -Path $directory | Out-Null
+        Set-Content -LiteralPath (Join-Path $directory 'pwsh') -Value 'fixture executable'
+    }
+    foreach ($checkout in $checkouts) {
+        Set-Content -LiteralPath (Join-Path $checkout 'android/get_deps/tool_versions.conf') -Value "SHFMT_VERSION=2`nDOSBOX_DIR_NAME=dosbox-new-fixture`nPOWERSHELL_VERSION=1.0.0"
+    }
+    & $cleaner -RepoRoot $checkouts[0] -RegisterCurrent
+    Set-Content -LiteralPath (Join-Path $checkouts[0] 'android/get_deps/tool_versions.conf') -Value "SHFMT_VERSION=2`nDOSBOX_DIR_NAME=dosbox-new-fixture`nPOWERSHELL_VERSION=2.0.0"
+    & $cleaner -RepoRoot $checkouts[0] -RegisterCurrent
+    Assert-Result @(& $cleaner -RepoRoot $checkouts[0] -Apply) 'powershell-1.0.0' Protected 'registered checkout'
+    Copy-Item -LiteralPath (Join-Path $checkouts[0] 'android/get_deps/tool_versions.conf') -Destination (Join-Path $checkouts[1] 'android/get_deps/tool_versions.conf')
+    $replacement = Join-Path $deps 'powershell-2.0.0/pwsh'
+    Remove-Item -LiteralPath $replacement
+    Assert-Result @(& $cleaner -RepoRoot $checkouts[0] -Apply) 'powershell-1.0.0' Protected 'replacement is not installed'
+    Set-Content -LiteralPath $replacement -Value 'fixture executable'
+    if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
+        $commands = Join-Path $root 'command links'
+        New-Item -ItemType Directory -Path $commands | Out-Null
+        New-Item -ItemType SymbolicLink -Path (Join-Path $commands 'pwsh') -Target (Join-Path $deps 'powershell-1.0.0/pwsh') | Out-Null
+        $previousPath = $env:PATH
+        try {
+            $env:PATH = $commands + [IO.Path]::PathSeparator + $previousPath
+            Assert-Result @(& $cleaner -RepoRoot $checkouts[0] -Apply) 'powershell-1.0.0' Protected 'PowerShell command link'
+        } finally { $env:PATH = $previousPath }
+        Remove-Item -LiteralPath (Join-Path $commands 'pwsh')
+    }
+    $unreadableToolName = 'pwsh'
+    $injectUnreadableTool = $true
+    try {
+        Assert-Result @(& $cleaner -RepoRoot $checkouts[0] -Apply) 'powershell-1.0.0' Protected 'cannot inspect tool process -1'
+    } finally { $injectUnreadableTool = $false }
+    Assert-Result @(& $cleaner -RepoRoot $checkouts[0]) 'powershell-1.0.0' Eligible '^$'
+    if (-not (Test-Path -LiteralPath (Join-Path $deps 'powershell-1.0.0'))) { throw 'PowerShell preview deleted an installation' }
+    $results = @(& $cleaner -RepoRoot $checkouts[0] -Apply)
+    Assert-Result $results 'powershell-1.0.0' Removed '^$'
+    Assert-Result $results 'powershell-99.0.0' Protected 'unmanaged'
+    if (-not (Test-Path -LiteralPath $replacement)) { throw 'Current PowerShell was removed' }
     Write-Host 'PASS: managed dependency retention, shared pins, active users, caches, locks, links, forced-termination recovery, preview, and repeat cleanup'
 } finally {
     if ($child) {

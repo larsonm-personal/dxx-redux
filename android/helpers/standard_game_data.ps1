@@ -77,3 +77,51 @@ function Resolve-StandardGameDataDirectory {
     }
     throw "$Label data directory matching pinned hashes not found"
 }
+
+function New-StandardGameDataStage {
+    param(
+        [Parameter(Mandatory)][string]$Destination,
+        [Parameter(Mandatory)][string[]]$Candidates,
+        [Parameter(Mandatory)][object[]]$Dependencies
+    )
+
+    # The caller owns the parent run directory and its producer lock
+    $Destination = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination)
+    if (Get-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue) {
+        throw "Game data stage already exists: $Destination"
+    }
+    $files = @($Candidates | Select-Object -Unique | Where-Object { Test-Path -LiteralPath $_ -PathType Container } |
+            ForEach-Object { Get-ChildItem -LiteralPath $_ -File })
+    $selected = [ordered]@{}
+    $bytes = 0L
+    foreach ($dependency in $Dependencies) {
+        $name = ([string]$dependency.file).ToLowerInvariant()
+        if ($name -match '[/\\]' -or $name -in @('', '.', '..') -or $selected.Contains($name)) {
+            throw "Invalid or duplicate game data filename: $name"
+        }
+        $source = @($files | Where-Object Name -ieq $name | Where-Object {
+                (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash -ieq [string]$dependency.sha256
+            } | Select-Object -First 1)
+        if (-not $source.Count) { throw "Game data file matching pinned hash not found: $name" }
+        $selected[$name] = $source[0]
+        $bytes += $source[0].Length
+    }
+    if (-not $selected.Count) { throw 'No game data files were requested' }
+    . (Join-Path $PSScriptRoot 'output_disk_space.ps1')
+    Assert-OutputDiskSpace -Paths @($Destination) -MinimumFreeGB (4 + $bytes / 1GB)
+    $created = $false
+    $complete = $false
+    try {
+        New-Item -ItemType Directory -Path $Destination -ErrorAction Stop | Out-Null
+        $created = $true
+        foreach ($name in $selected.Keys) {
+            [IO.File]::Copy($selected[$name].FullName, (Join-Path $Destination $name), $false)
+        }
+        # Recheck copied bytes, including changes to source files during staging
+        $result = Resolve-StandardGameDataDirectory -Candidates @($Destination) -Dependencies $Dependencies -Label 'staged game'
+        $complete = $true
+        return $result
+    } finally {
+        if ($created -and -not $complete) { Remove-Item -LiteralPath $Destination -Recurse -Force }
+    }
+}

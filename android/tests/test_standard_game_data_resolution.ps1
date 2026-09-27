@@ -10,7 +10,11 @@ if (-not $tempRoot.StartsWith($tempParent + [IO.Path]::DirectorySeparatorChar, [
     throw "Temporary test directory is outside android/temp"
 }
 
+$fixtureLock = $null
+& (Join-Path $androidRoot 'helpers/retain-recent-artifacts.ps1') -Artifacts $tempRoot -DirectoryPrefix standard_game_data_resolution_
+New-Item -ItemType Directory -Path $tempRoot -ErrorAction Stop | Out-Null
 try {
+    $fixtureLock = [IO.File]::Open((Join-Path $tempRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     $wrongDir = Join-Path $tempRoot "wrong"
     $validDir = Join-Path $tempRoot "game_data/CD images/retail disc/data_tracks/descent"
     New-Item -ItemType Directory -Force -Path $wrongDir, $validDir | Out-Null
@@ -50,8 +54,43 @@ try {
         throw "Pinned DOS D1 data dependencies changed unexpectedly"
     }
 
-    Write-Host "PASS: standard game data resolution validates hashes and skips mismatched candidates"
+    $otherDisc = Join-Path $tempRoot 'other disc'
+    New-Item -ItemType Directory -Path $otherDisc | Out-Null
+    Move-Item -LiteralPath (Join-Path $validDir 'DESCENT.PIG') -Destination $otherDisc
+    $sources = @($wrongDir, $validDir, $otherDisc)
+    $stagePath = Join-Path $tempRoot 'combined data'
+    $stage = New-StandardGameDataStage -Destination $stagePath -Candidates $sources -Dependencies $dependencies
+    if ($stage.Hashes.Count -ne 2 -or (Get-ChildItem -LiteralPath $stage.Path -File | Where-Object Name -ceq 'descent.hog').Count -ne 1) {
+        throw 'Combined data stage did not validate and normalize filenames'
+    }
+    Set-Content -LiteralPath (Join-Path $stage.Path 'descent.hog') -Value 'changed copy'
+    if ((Get-FileHash -LiteralPath (Join-Path $validDir 'DESCENT.HOG')).Hash -ne $dependencies[0].sha256) {
+        throw 'Changing staged data modified its source'
+    }
+    $rejected = $false
+    try { New-StandardGameDataStage -Destination $stagePath -Candidates $sources -Dependencies $dependencies | Out-Null }
+    catch { $rejected = $_ -match 'already exists' }
+    if (-not $rejected -or (Get-Content -LiteralPath (Join-Path $stagePath 'descent.hog') -Raw).Trim() -ne 'changed copy') {
+        throw 'Staging replaced an existing directory'
+    }
+
+    $failedStage = Join-Path $tempRoot 'failed stage'
+    $originalResolver = ${function:Resolve-StandardGameDataDirectory}
+    try {
+        function Resolve-StandardGameDataDirectory {
+            param($Candidates, $Dependencies, $Label)
+            if (-not (Test-Path -LiteralPath (Join-Path $Candidates[0] 'descent.hog'))) { throw 'Fixture failed before copying data' }
+            throw 'Injected stage verification failure'
+        }
+        $rejected = $false
+        try { New-StandardGameDataStage -Destination $failedStage -Candidates $sources -Dependencies $dependencies | Out-Null }
+        catch { $rejected = $_ -match 'Injected stage verification failure' }
+        if (-not $rejected -or (Test-Path -LiteralPath $failedStage)) { throw 'Failed verification left copied game data behind' }
+    } finally { Set-Item Function:Resolve-StandardGameDataDirectory -Value $originalResolver }
+
+    Write-Host 'PASS: pinned data discovery, mixed-source staging, source isolation, existing-directory protection and failure cleanup'
 } finally {
+    if ($fixtureLock) { $fixtureLock.Dispose() }
     if (Test-Path -LiteralPath $tempRoot) {
         Remove-Item -LiteralPath $tempRoot -Recurse -Force
     }

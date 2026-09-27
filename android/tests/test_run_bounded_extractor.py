@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# TEST-SUPPORT: owner=test_bounded_python_runtime
 
 import importlib.util
 import pathlib
@@ -28,7 +29,7 @@ class RunBoundedExtractorTests(unittest.TestCase):
         }
         defaults.update(limits)
         return MODULE.run_bounded(
-            [sys.executable, "-c", code, str(output_dir)],
+            [sys.executable, "-B", "-c", code, str(output_dir)],
             str(output_dir),
             **defaults,
         )
@@ -42,13 +43,13 @@ class RunBoundedExtractorTests(unittest.TestCase):
                 "import pathlib,sys,time; time.sleep(0.5); "
                 "pathlib.Path(sys.argv[1]).write_text('alive')")
             sentinel = subprocess.Popen(
-                [sys.executable, "-c", sentinel_code, str(sentinel_marker)])
+                [sys.executable, "-B", "-c", sentinel_code, str(sentinel_marker)])
             descendant_code = (
                 "import pathlib,sys,time; time.sleep(0.8); "
                 "pathlib.Path(sys.argv[1]).write_text('alive')")
             parent_code = (
                 "import pathlib,subprocess,sys,time; "
-                f"subprocess.Popen([sys.executable,'-c',{descendant_code!r},"
+                f"subprocess.Popen([sys.executable,'-B','-c',{descendant_code!r},"
                 "str(pathlib.Path(sys.argv[1])/'descendant-survived')]); "
                 "pathlib.Path(sys.argv[1],'parent-ready').write_text('ready'); "
                 + ({
@@ -146,7 +147,7 @@ class RunBoundedExtractorTests(unittest.TestCase):
                 "import os,pathlib,sys; "
                 "os.link(sys.argv[2],pathlib.Path(sys.argv[1])/'alias')")
             result = MODULE.run_bounded(
-                [sys.executable, "-c", code, str(root), str(sentinel)],
+                [sys.executable, "-B", "-c", code, str(root), str(sentinel)],
                 str(root), 2, 4, 16384, 16384, 128)
             self.assertNotEqual(result, 0)
             self.assertEqual(sentinel.read_text(), "preserve")
@@ -344,23 +345,23 @@ class RunBoundedExtractorTests(unittest.TestCase):
                 "import pathlib,sys,time; time.sleep(0.8); "
                 "pathlib.Path(sys.argv[1]).write_text('alive')")
             sentinel = subprocess.Popen(
-                [sys.executable, "-c", delayed_write, str(sentinel_marker)])
+                [sys.executable, "-B", "-c", delayed_write, str(sentinel_marker)])
             parent_code = (
                 "import pathlib,subprocess,sys,time; "
-                f"subprocess.Popen([sys.executable,'-c',{delayed_write!r},"
+                f"subprocess.Popen([sys.executable,'-B','-c',{delayed_write!r},"
                 "str(pathlib.Path(sys.argv[1])/'descendant-survived')]); "
                 "pathlib.Path(sys.argv[1],'parent-ready').write_text('ready'); "
                 "time.sleep(5)")
             supervisor = subprocess.Popen(
                 [
-                    sys.executable, "-I", str(SCRIPT_PATH),
+                    sys.executable, "-I", "-B", str(SCRIPT_PATH),
                     "--output-dir", str(root),
                     "--timeout-seconds", "4",
                     "--max-files", "20",
                     "--max-file-bytes", "1024",
                     "--max-total-bytes", "4096",
                     "--max-diagnostic-bytes", "1024",
-                    "--", sys.executable, "-c", parent_code, str(root),
+                    "--", sys.executable, "-B", "-c", parent_code, str(root),
                 ],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
