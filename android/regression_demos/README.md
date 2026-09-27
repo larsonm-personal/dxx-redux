@@ -24,9 +24,11 @@ force an Enhanced recording to Original, edit historical headers to make a
 test pass, or copy a replay's final result into the recorded expectation
 
 The May 2026 D2 recordings predate the explicit mode field. Their Guide-Bot
-behavior is not identical to current Original or Enhanced routing. Preserve
-divergent recordings as investigation evidence until fresh gameplay recordings
-cover their scenarios. Accept a replacement only after it matches its recorded
+behavior is not identical to current Original or Enhanced routing. The nine
+divergent recordings and their classic-demo/RNG companions were removed at the
+user's request on 2026-09-27; the two passing recordings remain. The saved-world
+Guide-Bot test retains its standalone checkpoint under `android/tests/fixtures`.
+Accept a replacement only after it matches its recorded
 state on immediate playback, repeated clean playback, and the supported headed
 and headless paths. Include Android-to-host checks for recordings captured on
 Android. Repeated replay results alone do not establish recording fidelity

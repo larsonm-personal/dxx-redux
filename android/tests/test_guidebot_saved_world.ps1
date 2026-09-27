@@ -32,8 +32,8 @@ $fixtureLock = $null
 $save = Join-Path $output 'fixture.sg0'
 try {
     $fixtureLock = [IO.File]::Open((Join-Path $output 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
-    $fixture = Join-Path $repoRoot 'android/regression_demos/d2_descent2_level9_20260511_193107.dximdemo'
-    $checkpoint = Get-Content -LiteralPath $fixture -TotalCount 2 | Select-Object -Last 1 | ConvertFrom-Json
+    $fixture = Join-Path $PSScriptRoot 'fixtures/guidebot_saved_world_checkpoint.json'
+    $checkpoint = Get-Content -LiteralPath $fixture -Raw | ConvertFrom-Json
     $compressed = [IO.MemoryStream]::new([Convert]::FromBase64String($checkpoint.data))
     $decompressed = [IO.MemoryStream]::new()
     $stream = [IO.Compression.ZLibStream]::new($compressed, [IO.Compression.CompressionMode]::Decompress)

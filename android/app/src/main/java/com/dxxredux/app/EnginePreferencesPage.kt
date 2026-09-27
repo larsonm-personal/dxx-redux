@@ -402,10 +402,6 @@ fun EnginePreferencesPage(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text("MIDI music", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                SoundfontSelector()
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(8.dp))
                 Text("Launcher", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
