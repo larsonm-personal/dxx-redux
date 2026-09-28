@@ -29,7 +29,22 @@ int main(void)
 {
 	FILE *file = tmpfile();
 	long end;
+	int version;
 	assert(file);
+	assert(fwrite("DGSS\x1f\x00\x00\x00", 8, 1, file) == 1);
+	assert(coop_save_read_version(file, &version) && version == 31);
+	assert(!d1_in_d2_save_version_supported(version));
+	rewind(file);
+	assert(fwrite("DGSS\x00\x00\x00\x1f", 8, 1, file) == 1);
+	assert(coop_save_read_version(file, &version) && version == 31);
+	assert(!d1_in_d2_save_version_supported(version));
+	assert(d1_in_d2_save_version_supported(40));
+	assert(d1_in_d2_save_version_supported(D1_IN_D2_SAVE_VERSION));
+	assert(!d1_in_d2_save_version_supported(41));
+	assert(!d1_in_d2_save_version_supported(D1_IN_D2_SAVE_VERSION + 1));
+	rewind(file);
+	assert(fwrite("BAD!\x1f\x00\x00\x00", 8, 1, file) == 1);
+	assert(!coop_save_read_version(file, &version));
 	write_save(file, COOP_SAVE_META_VER, 0);
 	end = ftell(file);
 	assert(coop_save_format_supported(file, end));

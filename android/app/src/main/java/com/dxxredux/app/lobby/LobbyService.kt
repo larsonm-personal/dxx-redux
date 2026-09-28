@@ -15,8 +15,10 @@ import com.dxxredux.app.multiplayer.MissionStatusReport
 import com.dxxredux.app.multiplayer.MissionTransferGrant
 import com.dxxredux.app.multiplayer.MissionTransferService
 import com.dxxredux.app.multiplayer.MultiplayerForegroundService
+import com.dxxredux.app.multiplayer.MultiplayerResumePrefs
 import com.dxxredux.app.multiplayer.NetLog
 import com.dxxredux.app.multiplayer.NetworkConstants
+import com.dxxredux.app.multiplayer.RecentAddressPrefs
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +56,9 @@ object LobbyService {
     private const val TAG = "LobbyService"
     private const val RECV_BUF_SIZE = 8 * 1024
     private const val SOCKET_TIMEOUT_MS = 500
+    private const val DISCOVERY_QUERY_INTERVAL_MS = 6000L
+    private var lastDiscoveryQueryMs = 0L
+    private var loggedDiscoveryTargets: List<String>? = null
     private const val LOBBY_EXPIRY_MS = 10_000L
     private const val JOIN_RETRY_COUNT = 3
     private const val JOIN_RETRY_DELAY_MS = 1000L
@@ -766,6 +771,8 @@ object LobbyService {
         NetLog.log("LAN", "Multicast lock: ${multicastLock?.isHeld}")
         Log.i(TAG, "Multicast lock acquired: ${multicastLock?.isHeld}")
         logLocalAddresses()
+        lastDiscoveryQueryMs = 0L
+        loggedDiscoveryTargets = null
 
         // Receive loop
         receiveJob =
@@ -812,10 +819,33 @@ object LobbyService {
             scope?.launch(Dispatchers.IO) {
                 while (isActive) {
                     delay(2000)
+                    queryDiscoveryHosts()
                     pruneStaleLobbies()
                 }
             }
         trackTransportJob("prune", pruneJob) { _isDiscovering.value }
+    }
+
+    private fun queryDiscoveryHosts() {
+        if (!_isDiscovering.value || _isHosting.value || _joinedLobby.value != null || appBackgrounded) return
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastDiscoveryQueryMs < DISCOVERY_QUERY_INTERVAL_MS) return
+        lastDiscoveryQueryMs = now
+        val context = appContext ?: return
+        val lastHost =
+            MultiplayerResumePrefs
+                .load(context)
+                ?.takeIf {
+                    it.transport == "lan" && it.role == "client"
+                }?.lanHostAddr
+        val targets = (RecentAddressPrefs.LAN_IPS.load(context) + listOfNotNull(lastHost)).distinct()
+        if (loggedDiscoveryTargets != targets) {
+            loggedDiscoveryTargets = targets
+            NetLog.log("LAN", "Active discovery: broadcast QUERY plus remembered hosts=$targets")
+        }
+        val query = buildQuery()
+        sendBroadcast(query)
+        targets.forEach { sendTo(query, it) }
     }
 
     @Synchronized
@@ -1014,7 +1044,8 @@ object LobbyService {
                 "Discovered lobby $lobbyId from $senderAddr (${json.optString(
                     "callsign",
                     "?",
-                )} ${json.optString("game", "?")}/${json.optString("mission", "?")})",
+                )} ${json.optString("game", "?")}/${json.optString("mission", "?")}) " +
+                    "source=${if (json.optBoolean("query_reply")) "query-reply" else "broadcast"}",
             )
         }
         Log.i(TAG, "handleAnnounce: ${if (isNew) "NEW" else "update"} lobby=$lobbyId from $senderAddr")
@@ -1902,6 +1933,7 @@ object LobbyService {
                 omittedVisualModNames = hostedOmittedVisualModNames,
                 missionRequirement = hostedMissionRequirement,
                 saveCompatibilityWarning = hostSaveCompatibilityWarning(),
+                queryReply = true,
             )
         sendTo(data, senderAddr)
         Log.i(TAG, "handleQuery: sent ANNOUNCE to $senderAddr for lobby $lid")

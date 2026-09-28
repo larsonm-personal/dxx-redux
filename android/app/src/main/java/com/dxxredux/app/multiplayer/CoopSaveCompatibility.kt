@@ -1,5 +1,6 @@
 package com.dxxredux.app.multiplayer
 
+import com.dxxredux.app.FileSetManager
 import org.json.JSONObject
 import java.io.File
 
@@ -59,12 +60,24 @@ internal object CoopSaveCompatibility {
                 } else {
                     File(nativeSlotPath(root.path, mission.orEmpty(), checkNotNull(selection.slot))).canonicalFile
                 }
-            if (path != null && path.path.startsWith(root.path + File.separator) && path.isFile &&
-                nativeIsCompatible(path.path)
-            ) {
-                null
-            } else {
-                WARNING
+            if (path == null || !path.path.startsWith(root.path + File.separator) || !path.isFile) {
+                return@runCatching WARNING
+            }
+            val contentGame =
+                if (game == "d1") {
+                    "d1"
+                } else {
+                    val fileSets = FileSetManager(filesDir)
+                    resolveMissionSelection(
+                        MissionScanner.scan(filesDir, fileSets.getSetDir(fileSets.getActive()), game, "coop"),
+                        mission.orEmpty(),
+                    )?.contentGame ?: return@runCatching WARNING
+                }
+            val status = nativeCompatibilityStatus(path.path, game == "d1", contentGame == "d1")
+            when {
+                status == 0 -> null
+                status > 0 -> "This D1-in-D2 save uses unsupported version $status. Choose another save or Start fresh."
+                else -> WARNING
             }
         }.getOrDefault(WARNING)
     }
@@ -75,5 +88,10 @@ internal object CoopSaveCompatibility {
         slot: Int,
     ): String
 
-    private external fun nativeIsCompatible(path: String): Boolean
+    // JNI contract: 0 compatible, -1 invalid header/co-op data, positive rejected D1-in-D2 version
+    private external fun nativeCompatibilityStatus(
+        path: String,
+        d1Engine: Boolean,
+        d1Mission: Boolean,
+    ): Int
 }

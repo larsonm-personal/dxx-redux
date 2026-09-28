@@ -61,6 +61,7 @@ object MissionScanner {
         val archiveChunkSizeBytes: Int = 0,
         val archiveChunkSha256: List<String> = emptyList(),
         val downloadPolicy: MissionDownloadPolicy = MissionDistributionPolicy.missionPolicy(filename),
+        val contentGame: String? = null,
     ) {
         val transferable: Boolean
             get() =
@@ -125,23 +126,35 @@ object MissionScanner {
         val d2 =
             when {
                 full.isFile && full.length() == D2_OEM_HOG_SIZE -> {
-                    MissionInfo("d2", "D2 Destination: Quartzon", levelCount = 8, isBuiltin = true)
+                    MissionInfo("d2", "D2 Destination: Quartzon", levelCount = 8, isBuiltin = true, contentGame = "d2")
                 }
 
                 full.isFile -> {
-                    MissionInfo("d2", "Descent 2: Counterstrike!", levelCount = 24, isBuiltin = true)
+                    MissionInfo(
+                        "d2",
+                        "Descent 2: Counterstrike!",
+                        levelCount = 24,
+                        isBuiltin = true,
+                        contentGame = "d2",
+                    )
                 }
 
                 demo.isFile && demo.length() == D2_MAC_SHAREWARE_HOG_SIZE -> {
-                    MissionInfo("d2demo", "Descent 2 Demo", levelCount = 4, isBuiltin = true)
+                    MissionInfo("d2demo", "Descent 2 Demo", levelCount = 4, isBuiltin = true, contentGame = "d2")
                 }
 
                 demo.isFile && demo.length() == D2_SHAREWARE_HOG_SIZE -> {
-                    MissionInfo("d2demo", "Descent 2 Demo", levelCount = 3, isBuiltin = true)
+                    MissionInfo("d2demo", "Descent 2 Demo", levelCount = 3, isBuiltin = true, contentGame = "d2")
                 }
 
                 else -> {
-                    MissionInfo("d2", "Descent 2: Counterstrike!", levelCount = 24, isBuiltin = true)
+                    MissionInfo(
+                        "d2",
+                        "Descent 2: Counterstrike!",
+                        levelCount = 24,
+                        isBuiltin = true,
+                        contentGame = "d2",
+                    )
                 }
             }
         return if (includeD1ForD2) listOf(d2, d1) else listOf(d2)
@@ -159,7 +172,7 @@ object MissionScanner {
                 in D1_OEM_HOG_SIZES -> "Destination Saturn" to 15
                 else -> "Descent: First Strike" to 27
             }
-        return MissionInfo(filename, name, levelCount = levels, isBuiltin = true)
+        return MissionInfo(filename, name, levelCount = levels, isBuiltin = true, contentGame = "d1")
     }
 
     fun scan(
@@ -212,6 +225,7 @@ object MissionScanner {
                     MissionInfo(
                         filename = basename,
                         displayName = descriptor.displayName,
+                        contentGame = descriptor.game,
                         levelCount = descriptor.declaredLevelCount ?: descriptor.levelNames.size,
                         anarchyOnly = anarchyOnly,
                         descriptorPath = descriptor.path,
@@ -258,11 +272,16 @@ object MissionScanner {
             MissionInfo(
                 filename = basename,
                 displayName = descriptor.displayName,
+                contentGame = descriptor.game,
                 levelCount = descriptor.declaredLevelCount ?: descriptor.levelNames.size,
                 anarchyOnly = descriptor.type.equals("anarchy", ignoreCase = true),
             )
         } catch (_: Exception) {
-            MissionInfo(filename = basename, displayName = basename)
+            MissionInfo(
+                filename = basename,
+                displayName = basename,
+                contentGame = GameFileFormats.gameForDescriptor(file.name),
+            )
         }
 }
 

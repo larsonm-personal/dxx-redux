@@ -93,9 +93,11 @@ fun buildAnnounce(
     omittedVisualModNames: List<String> = emptyList(),
     missionRequirement: MissionRequirement? = null,
     saveCompatibilityWarning: String? = null,
+    queryReply: Boolean = false,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_ANNOUNCE)
+    if (queryReply) json.put("query_reply", true)
     json.put("protocol_version", LAN_LOBBY_PROTOCOL_VERSION)
     json.put("lobby_id", lobbyId)
     json.put("callsign", callsign)

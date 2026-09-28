@@ -39,14 +39,23 @@ Java_com_dxxredux_app_multiplayer_CoopSaveCompatibility_nativeSlotPath(
 	return env->NewStringUTF(path.c_str());
 }
 
-extern "C" JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_multiplayer_CoopSaveCompatibility_nativeIsCompatible(
-    JNIEnv *env, jobject, jstring path_arg)
+extern "C" JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_multiplayer_CoopSaveCompatibility_nativeCompatibilityStatus(
+    JNIEnv *env, jobject, jstring path_arg, jboolean d1_engine, jboolean d1_mission)
 {
 	const char *path = env->GetStringUTFChars(path_arg, nullptr);
 	FILE *file = path ? fopen(path, "rb") : nullptr;
 	if (path) env->ReleaseStringUTFChars(path_arg, path);
-	if (!file) return JNI_FALSE;
+	if (!file) return -1;
+	int version = 0;
+	if (!coop_save_read_version(file, &version) || version < (d1_engine ? 6 : 20)) {
+		fclose(file);
+		return -1;
+	}
+	if (!d1_engine && d1_mission && !d1_in_d2_save_version_supported(version)) {
+		fclose(file);
+		return version;
+	}
 	int supported = 0;
 	if (!fseek(file, 0, SEEK_END)) {
 		long end = ftell(file);
@@ -58,7 +67,8 @@ Java_com_dxxredux_app_multiplayer_CoopSaveCompatibility_nativeIsCompatible(
 		supported = coop_save_format_supported(file, end);
 	}
 	fclose(file);
-	return supported ? JNI_TRUE : JNI_FALSE;
+	// Keep status values synchronized with CoopSaveCompatibility.kt
+	return supported ? 0 : -1;
 }
 
 static bool is_save_slot_name(const char *name)

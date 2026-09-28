@@ -14,7 +14,7 @@ extern "C" {
 
 int d1_in_d2_saved_format_supported(int version)
 {
-	if (Current_mission && (Current_mission->descent_version != 1 || (version == 40 || version == D1_IN_D2_SAVE_VERSION))) return 1;
+	if (Current_mission && (Current_mission->descent_version != 1 || d1_in_d2_save_version_supported(version))) return 1;
 	// Earlier imported saves do not bind all original/custom/extension definitions
 	con_printf(CON_URGENT, "Cannot restore D1-in-D2 save version %d: its asset namespace is unsupported (current %d)\n", version, D1_IN_D2_SAVE_VERSION);
 	return 0;

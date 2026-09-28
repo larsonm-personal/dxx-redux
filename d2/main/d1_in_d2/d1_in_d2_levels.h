@@ -3,6 +3,7 @@
 
 #include "object.h"
 #include "switch.h"
+#include "d1_in_d2_save_format.h"
 
 /* Both inputs are serialized D1 texture references, with packed orientation
  * on the overlay. Resolve against the published bank and validate before
@@ -34,8 +35,6 @@ int d1_in_d2_trigger_exit_flags(const trigger *source);
 int d1_in_d2_trigger_source_link(const trigger *source);
 void d1_in_d2_write_trigger_storage(rewind_file *fp);
 int d1_in_d2_read_trigger_storage(rewind_file *fp, int swap, int apply);
-/* Version 40 binds base/custom and optional definitions before reading objects */
-#define D1_IN_D2_SAVE_VERSION 42
 /* Distinct from D2 type 3: old D2 readers must reject native runtime IDs */
 #define D1_IN_D2_DEMO_GAME_TYPE 4
 #define D1_IN_D2_DEMO_VERSION 16

@@ -4,6 +4,25 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "d1_in_d2_save_format.h"
+
+/* DGSS header is common to D1/D2 co-op saves, including byte-swapped saves */
+static inline int coop_save_read_version(FILE *file, int *version)
+{
+	uint8_t header[8];
+	uint32_t value;
+	if (!file || !version || fseek(file, 0, SEEK_SET) ||
+	    fread(header, sizeof(header), 1, file) != 1 || memcmp(header, "DGSS", 4))
+		return 0;
+	value = (uint32_t) header[4] | ((uint32_t) header[5] << 8) |
+	        ((uint32_t) header[6] << 16) | ((uint32_t) header[7] << 24);
+	if (value & 0xffff0000u)
+		value = (value >> 24) | ((value >> 8) & 0xff00u) |
+		        ((value << 8) & 0xff0000u) | (value << 24);
+	if (value > 0xffffu) return 0;
+	*version = (int) value;
+	return 1;
+}
 
 #define COOP_SAVE_META_TAG   0x434F4F50 /* "COOP" */
 #define COOP_SAVE_META_VER   13
