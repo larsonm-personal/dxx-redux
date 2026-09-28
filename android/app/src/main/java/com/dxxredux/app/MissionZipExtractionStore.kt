@@ -7,6 +7,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.security.MessageDigest
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 internal const val MISSION_ZIP_EXTRACTED_DIR = ".extracted_mission_zips"
 internal const val MISSION_ZIP_GENERATED_MISSION_DIR = "missions"
@@ -56,6 +57,12 @@ internal data class MissionZipExtractedEntry(
 internal class MissionZipExtractionStore(
     private val filesDir: File,
 ) {
+    companion object {
+        // Managers for the same store share staging directories and one manifest
+        private val publicationLocks = ConcurrentHashMap<String, Any>()
+    }
+
+    private val publicationLock get() = publicationLocks.computeIfAbsent(rootDir.canonicalPath) { Any() }
     private val modsDir get() = File(filesDir, "mods")
     private val ownerDir get() =
         if (filesDir.name == "mod_support" && filesDir.parentFile?.name == ".content") {
@@ -71,74 +78,81 @@ internal class MissionZipExtractionStore(
         modFile: File,
         scan: MissionZip.ScanResult,
         onProgress: (Long, Long, String) -> Unit = { _, _, _ -> },
-    ): MissionZipExtractionRecord {
-        freshRecord(ownerFilename, modFile)?.let { return it }
-        if (!modFile.isFile) throw IOException("Mission archive is missing: ${modFile.absolutePath}")
-        val ownerSizeBytes = modFile.length()
-        val ownerLastModifiedMs = modFile.lastModified()
-        val ownerSha256 = missionZipFileSha256(modFile)
-        val ownerRoot = extractedRoot(ownerFilename)
-        val tempRoot = File(rootDir, "${safeMissionZipDirName(ownerFilename)}.tmp")
-        tempRoot.deleteRecursively()
-        val extractedFiles =
+    ): MissionZipExtractionRecord =
+        synchronized(publicationLock) {
+            freshRecord(ownerFilename, modFile)?.let { return it }
+            if (!modFile.isFile) throw IOException("Mission archive is missing: ${modFile.absolutePath}")
+            val ownerSizeBytes = modFile.length()
+            val ownerLastModifiedMs = modFile.lastModified()
+            val ownerSha256 = missionZipFileSha256(modFile)
+            val ownerRoot = extractedRoot(ownerFilename)
+            val tempRoot = File(rootDir, "${safeMissionZipDirName(ownerFilename)}.tmp")
+            tempRoot.deleteRecursively()
+            val extractedFiles =
+                try {
+                    extractZipToRoot(modFile, tempRoot, scan, onProgress)
+                } catch (e: Exception) {
+                    tempRoot.deleteRecursively()
+                    throw e
+                }
+            val ownerSha256After = missionZipFileSha256(modFile)
+            if (modFile.length() != ownerSizeBytes ||
+                modFile.lastModified() != ownerLastModifiedMs ||
+                ownerSha256After != ownerSha256
+            ) {
+                tempRoot.deleteRecursively()
+                throw IOException("Mission archive changed during extraction: ${modFile.name}")
+            }
+            val files =
+                extractedFiles.map { file ->
+                    val output = File(tempRoot, file.relativePath.replace('/', File.separatorChar))
+                    file.copy(contentSha256 = missionZipFileSha256(output))
+                }
             try {
-                extractZipToRoot(modFile, tempRoot, scan, onProgress)
+                ownerRoot.deleteRecursively()
+                ownerRoot.parentFile?.mkdirs()
+                if (!tempRoot.renameTo(ownerRoot)) {
+                    tempRoot.copyRecursively(ownerRoot, overwrite = true)
+                    tempRoot.deleteRecursively()
+                }
             } catch (e: Exception) {
+                ownerRoot.deleteRecursively()
                 tempRoot.deleteRecursively()
                 throw e
             }
-        val ownerSha256After = missionZipFileSha256(modFile)
-        if (modFile.length() != ownerSizeBytes ||
-            modFile.lastModified() != ownerLastModifiedMs ||
-            ownerSha256After != ownerSha256
-        ) {
-            tempRoot.deleteRecursively()
-            throw IOException("Mission archive changed during extraction: ${modFile.name}")
+            val record =
+                MissionZipExtractionRecord(
+                    ownerFilename = ownerFilename,
+                    ownerSizeBytes = ownerSizeBytes,
+                    ownerLastModifiedMs = ownerLastModifiedMs,
+                    ownerSha256 = ownerSha256,
+                    rootDir = ownerRoot,
+                    files = files.map { it.copy(lastModifiedMs = File(ownerRoot, it.relativePath).lastModified()) },
+                    archiveFormat = scan.archiveFormat,
+                    importMode = scan.importMode,
+                    sourceArchiveName = modFile.name,
+                )
+            upsert(record)
+            return record
         }
-        val files =
-            extractedFiles.map { file ->
-                val output = File(tempRoot, file.relativePath.replace('/', File.separatorChar))
-                file.copy(contentSha256 = missionZipFileSha256(output))
-            }
-        try {
-            ownerRoot.deleteRecursively()
-            ownerRoot.parentFile?.mkdirs()
-            if (!tempRoot.renameTo(ownerRoot)) {
-                tempRoot.copyRecursively(ownerRoot, overwrite = true)
-                tempRoot.deleteRecursively()
-            }
-        } catch (e: Exception) {
-            ownerRoot.deleteRecursively()
-            tempRoot.deleteRecursively()
-            throw e
-        }
-        val record =
-            MissionZipExtractionRecord(
-                ownerFilename = ownerFilename,
-                ownerSizeBytes = ownerSizeBytes,
-                ownerLastModifiedMs = ownerLastModifiedMs,
-                ownerSha256 = ownerSha256,
-                rootDir = ownerRoot,
-                files = files.map { it.copy(lastModifiedMs = File(ownerRoot, it.relativePath).lastModified()) },
-                archiveFormat = scan.archiveFormat,
-                importMode = scan.importMode,
-                sourceArchiveName = modFile.name,
-            )
-        upsert(record)
-        return record
-    }
 
     /** Full integrity audit, including edits that preserve size and modification time */
     fun freshRecord(
         ownerFilename: String,
         modFile: File? = File(ownerDir, ownerFilename),
-    ): MissionZipExtractionRecord? = checkedRecord(ownerFilename, modFile, verifyContents = true)
+    ): MissionZipExtractionRecord? =
+        synchronized(publicationLock) {
+            checkedRecord(ownerFilename, modFile, verifyContents = true)
+        }
 
     /** Managed payloads are immutable; imports invalidate their owner before replacement */
     fun reusableRecord(
         ownerFilename: String,
         modFile: File? = File(ownerDir, ownerFilename),
-    ): MissionZipExtractionRecord? = checkedRecord(ownerFilename, modFile, verifyContents = false)
+    ): MissionZipExtractionRecord? =
+        synchronized(publicationLock) {
+            checkedRecord(ownerFilename, modFile, verifyContents = false)
+        }
 
     private fun checkedRecord(
         ownerFilename: String,
@@ -211,39 +225,41 @@ internal class MissionZipExtractionStore(
     ): GameFileMetadata.Summary? =
         extractedFileForRecordEntry(record, entryPath)?.let(GameFileMetadata::summarizeLocalFile)
 
-    fun removeOwner(ownerFilename: String): Boolean {
-        var removed = false
-        records().firstOrNull { it.ownerFilename == ownerFilename }?.let {
-            if (it.rootDir.exists()) {
-                it.rootDir.deleteRecursively()
+    fun removeOwner(ownerFilename: String): Boolean =
+        synchronized(publicationLock) {
+            var removed = false
+            records().firstOrNull { it.ownerFilename == ownerFilename }?.let {
+                if (it.rootDir.exists()) {
+                    it.rootDir.deleteRecursively()
+                    removed = true
+                }
+            }
+            val root = extractedRoot(ownerFilename)
+            if (root.exists()) {
+                root.deleteRecursively()
                 removed = true
             }
+            val kept = records().filterNot { it.ownerFilename == ownerFilename }
+            saveRecords(kept)
+            return removed
         }
-        val root = extractedRoot(ownerFilename)
-        if (root.exists()) {
-            root.deleteRecursively()
-            removed = true
-        }
-        val kept = records().filterNot { it.ownerFilename == ownerFilename }
-        saveRecords(kept)
-        return removed
-    }
 
-    fun pruneMissingOwners(): List<String> {
-        val removed = mutableListOf<String>()
-        val kept = mutableListOf<MissionZipExtractionRecord>()
-        for (record in records()) {
-            val owner = File(ownerDir, record.ownerFilename)
-            if (owner.isFile && owner.length() == record.ownerSizeBytes) {
-                kept += record
-            } else {
-                record.rootDir.deleteRecursively()
-                removed += record.ownerFilename
+    fun pruneMissingOwners(): List<String> =
+        synchronized(publicationLock) {
+            val removed = mutableListOf<String>()
+            val kept = mutableListOf<MissionZipExtractionRecord>()
+            for (record in records()) {
+                val owner = File(ownerDir, record.ownerFilename)
+                if (owner.isFile && owner.length() == record.ownerSizeBytes) {
+                    kept += record
+                } else {
+                    record.rootDir.deleteRecursively()
+                    removed += record.ownerFilename
+                }
             }
+            if (removed.isNotEmpty()) saveRecords(kept)
+            return removed
         }
-        if (removed.isNotEmpty()) saveRecords(kept)
-        return removed
-    }
 
     fun linkedFilesByAbsolutePath(): Map<String, MissionZipLinkedFile> =
         buildMap {

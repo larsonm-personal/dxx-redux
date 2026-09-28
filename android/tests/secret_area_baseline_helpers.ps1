@@ -93,6 +93,19 @@ function Compare-JsonStructure {
         if (-not $expectedMap.ContainsKey($path)) {
             $added.Add("+ $path = $(Format-JsonDiffValue -Value $actualMap[$path])")
         } elseif ($expectedMap[$path] -cne $actualMap[$path]) {
+            # Route distances are derived floating-point measurements, not simulation state
+            # Permit at most four adjacent double values across native toolchains
+            if ($path -match '^\$/games/\d+/levels/\d+/(travel_distance|route_steps/\d+/distance)$' -and
+                $expectedMap[$path].StartsWith('Double:') -and $actualMap[$path].StartsWith('Double:')) {
+                $culture = [Globalization.CultureInfo]::InvariantCulture
+                $left = [double]::Parse($expectedMap[$path].Substring(7), $culture)
+                $right = [double]::Parse($actualMap[$path].Substring(7), $culture)
+                if ($left -ge 0 -and $right -ge 0 -and -not [double]::IsInfinity($left) -and -not [double]::IsInfinity($right)) {
+                    $leftBits = [BitConverter]::DoubleToInt64Bits($left)
+                    $rightBits = [BitConverter]::DoubleToInt64Bits($right)
+                    if ([Math]::Abs($leftBits - $rightBits) -le 4) { continue }
+                }
+            }
             $changed.Add("~ $path expected $(Format-JsonDiffValue -Value $expectedMap[$path]) actual $(Format-JsonDiffValue -Value $actualMap[$path])")
         }
     }

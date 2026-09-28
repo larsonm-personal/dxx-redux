@@ -8,10 +8,59 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class MissionZipExtractionStoreTest {
+    @Test
+    fun concurrentManagersDoNotReplaceEachOthersStagingDirectory() {
+        val filesDir = File("build/test-mission-zip-extraction/concurrent-publication").absoluteFile
+        filesDir.deleteRecursively()
+        val archive = File(filesDir, "mods/preview.zip")
+        requireNotNull(archive.parentFile).mkdirs()
+        writeMissionArchive(archive, emptyList())
+        val scan = requireNotNull(MissionZip.inspect(archive))
+        val staged = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val secondStarted = CountDownLatch(1)
+        val secondFinished = CountDownLatch(1)
+        val workers = Executors.newFixedThreadPool(2)
+        try {
+            val first = workers.submit<MissionZipExtractionRecord> {
+                MissionZipExtractionStore(filesDir).ensureExtracted(archive.name, archive, scan) { done, total, path ->
+                    if (total > 0 && done == total && path.isEmpty()) {
+                        staged.countDown()
+                        check(release.await(10, TimeUnit.SECONDS))
+                    }
+                }
+            }
+            assertTrue(staged.await(10, TimeUnit.SECONDS))
+            val second = workers.submit<MissionZipExtractionRecord> {
+                secondStarted.countDown()
+                try {
+                    MissionZipExtractionStore(filesDir).ensureExtracted(archive.name, archive, scan)
+                } finally {
+                    secondFinished.countDown()
+                }
+            }
+            assertTrue(secondStarted.await(10, TimeUnit.SECONDS))
+            assertFalse("A second manager must wait for publication", secondFinished.await(200, TimeUnit.MILLISECONDS))
+            release.countDown()
+            val firstRecord = first.get(10, TimeUnit.SECONDS)
+            val secondRecord = second.get(10, TimeUnit.SECONDS)
+            assertEquals(firstRecord.copy(files = firstRecord.files.sortedBy { it.relativePath }), secondRecord)
+            assertNotNull(MissionZipExtractionStore(filesDir).freshRecord(archive.name, archive))
+            assertTrue(firstRecord.files.all { File(firstRecord.rootDir, it.relativePath).isFile })
+        } finally {
+            release.countDown()
+            workers.shutdownNow()
+            workers.awaitTermination(10, TimeUnit.SECONDS)
+        }
+    }
+
     @Test
     fun launchFreshnessChecksMetadataWhileIntegrityAuditChecksBytes() {
         val filesDir = File("build/test-mission-zip-extraction/launch-freshness").absoluteFile

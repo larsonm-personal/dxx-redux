@@ -31,4 +31,14 @@ if ($matched.Total -ne 0) {
     throw 'Identical JSON produced structural differences'
 }
 
+$distanceExpected = '{"games":[{"levels":[{"travel_distance":1517.2733544172477,"route_steps":[{"distance":1517.2733544172477}],"other":1517.2733544172477}]}]}' | ConvertFrom-Json
+$distanceActual = '{"games":[{"levels":[{"travel_distance":1517.2733544172474,"route_steps":[{"distance":1517.2733544172474}],"other":1517.2733544172474}]}]}' | ConvertFrom-Json
+$distanceDiff = Compare-JsonStructure -Expected $distanceExpected -Actual $distanceActual
+if ($distanceDiff.Total -ne 1 -or $distanceDiff.ChangedDetails[0] -notmatch '/other ') {
+    throw 'Distance rounding tolerance must not apply to unrelated fields'
+}
+$distanceActual.games[0].levels[0].travel_distance += 0.000001
+$distanceDiff = Compare-JsonStructure -Expected $distanceExpected -Actual $distanceActual
+if ($distanceDiff.Total -ne 2) { throw 'Meaningful route distance changes must still fail' }
+
 Write-Host 'PASS'

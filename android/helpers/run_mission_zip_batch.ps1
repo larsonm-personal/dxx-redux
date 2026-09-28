@@ -846,7 +846,7 @@ $failedSummaryPath = Join-Path $OutDir "failed_zips.txt"
 if ($failed.Count -gt 0) {
     $failedLines = @()
     foreach ($item in $failed) {
-        $reason = if ($item.reason) { $item.reason } else { "failed" }
+        $reason = if ($item.Contains("reason") -and $item["reason"]) { $item["reason"] } else { "automation failed" }
         $failedLines += "$($item.name)`t$reason"
     }
     [IO.File]::WriteAllText($failedSummaryPath, ($failedLines -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
@@ -857,7 +857,7 @@ Write-Status "Mission ZIP batch complete: $($results.Count) total, $($passed.Cou
 if ($failed.Count -gt 0) {
     Write-Status "Failed ZIPs:" "Red"
     foreach ($item in $failed) {
-        $reason = if ($item.reason) { $item.reason } else { "failed" }
+        $reason = if ($item.Contains("reason") -and $item["reason"]) { $item["reason"] } else { "automation failed" }
         Write-Host "  $($item.name) -- $reason" -ForegroundColor Red
     }
     Write-Status "Failed ZIP summary: $failedSummaryPath" "Yellow"

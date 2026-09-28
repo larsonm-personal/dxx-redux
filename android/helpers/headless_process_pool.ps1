@@ -45,6 +45,9 @@ function Start-HeadlessProcessPoolItem {
     Set-HeadlessProcessArguments -StartInfo $startInfo -Arguments @($Task.Arguments)
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
+    # Native workers emit UTF-8 JSON; hidden Windows parents may use an OEM code page
+    $startInfo.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
+    $startInfo.StandardErrorEncoding = [Text.UTF8Encoding]::new($false)
     $startInfo.UseShellExecute = $false
     $startInfo.CreateNoWindow = $true
     if ($Task.WorkingDirectory) { $startInfo.WorkingDirectory = [string]$Task.WorkingDirectory }
