@@ -69,6 +69,7 @@ data class LanLobbyAnnounce(
     val omittedVisualTextureCount: Int = 0,
     val omittedVisualModNames: List<String> = emptyList(),
     val missionRequirement: MissionRequirement? = null,
+    val saveCompatibilityWarning: String? = null,
 )
 
 /** Build a JSON ANNOUNCE packet for broadcasting. */
@@ -91,6 +92,7 @@ fun buildAnnounce(
     omittedVisualTextureCount: Int = 0,
     omittedVisualModNames: List<String> = emptyList(),
     missionRequirement: MissionRequirement? = null,
+    saveCompatibilityWarning: String? = null,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_ANNOUNCE)
@@ -101,6 +103,7 @@ fun buildAnnounce(
     json.put("mission", mission)
     missionRequirement?.let { json.put("mission_requirement", it.toJson()) }
     json.put("mode", mode)
+    saveCompatibilityWarning?.let { json.put("save_compatibility_warning", it) }
     json.put("player_count", playerCount)
     json.put("max_players", maxPlayers)
     json.put("build", BuildInfo.GIT_COMMIT_COUNT)
@@ -148,6 +151,7 @@ fun buildJoinAck(
     omittedVisualTextureCount: Int = 0,
     omittedVisualModNames: List<String> = emptyList(),
     missionRequirement: MissionRequirement? = null,
+    saveCompatibilityWarning: String? = null,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_JOIN_ACK)
@@ -157,6 +161,7 @@ fun buildJoinAck(
     json.put("mission", mission)
     missionRequirement?.let { json.put("mission_requirement", it.toJson()) }
     json.put("mode", mode)
+    saveCompatibilityWarning?.let { json.put("save_compatibility_warning", it) }
     json.put("max_players", maxPlayers)
     json.put("build", BuildInfo.GIT_COMMIT_COUNT)
     if (!hostCallsign.isNullOrBlank()) json.put("host_callsign", hostCallsign)

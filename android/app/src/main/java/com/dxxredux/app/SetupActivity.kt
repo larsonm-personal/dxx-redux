@@ -2306,6 +2306,13 @@ class SetupActivity : ComponentActivity() {
                 "elapsed_ms=${SystemClock.elapsedRealtime() - (launchPreparation.value?.startedAtMs ?: 0L)}",
         )
         lifecycleScope.launch {
+            val existingGameWarning = prepareMultiplayerGameProcess()
+            if (existingGameWarning != null) {
+                mpGameLaunching = false
+                finishLaunchPreparation("multiplayer_existing_game")
+                showLaunchPreflightFailure(existingGameWarning)
+                return@launch
+            }
             val preflightMessage =
                 try {
                     withContext(Dispatchers.IO) { prepareGameLaunchFiles(info.game) }
@@ -2337,6 +2344,26 @@ class SetupActivity : ComponentActivity() {
                 }
             }
             continueMultiplayerGameLaunch(info)
+        }
+    }
+
+    private suspend fun prepareMultiplayerGameProcess(): String? {
+        if (hasReturnableGameActivity()) {
+            return "A game is still open. Return to it and exit before starting another multiplayer game."
+        }
+        val orphanPid = runningGameProcessPid() ?: return null
+        // A finished Activity can leave main() blocked in a join/menu loop
+        // Native engine globals require a fresh process before another launch
+        LauncherDebugLog.log("multiplayer launch: retiring orphan game process pid=$orphanPid")
+        android.os.Process.killProcess(orphanPid)
+        val deadline = SystemClock.elapsedRealtime() + 2000L
+        while (runningGameProcessPid() == orphanPid && SystemClock.elapsedRealtime() < deadline) {
+            delay(50L)
+        }
+        return if (runningGameProcessPid() != null) {
+            "The previous game could not close. Please try starting the game again."
+        } else {
+            null
         }
     }
 

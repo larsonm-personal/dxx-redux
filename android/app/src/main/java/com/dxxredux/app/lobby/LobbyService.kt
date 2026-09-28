@@ -151,6 +151,7 @@ object LobbyService {
         val omittedVisualModNames: List<String> = emptyList(),
         val missionRequirement: MissionRequirement? = null,
         val missionStatus: MissionStatusReport? = null,
+        val saveCompatibilityWarning: String? = null,
     )
 
     private val _joinedLobby = MutableStateFlow<JoinedLobbyInfo?>(null)
@@ -1039,6 +1040,7 @@ object LobbyService {
                 omittedVisualModCount = json.optInt(VisualReplacementPolicy.OMITTED_VISUAL_MOD_COUNT, 0),
                 omittedVisualTextureCount = json.optInt(VisualReplacementPolicy.OMITTED_VISUAL_TEXTURE_COUNT, 0),
                 omittedVisualModNames = VisualReplacementPolicy.namesFromJson(json),
+                saveCompatibilityWarning = json.optString("save_compatibility_warning").takeIf { it.isNotBlank() },
                 missionRequirement = missionRequirementFromJson(json.optJSONObject("mission_requirement")),
             )
         lobbies[lobbyId] = DiscoveredLobby(announce = announce)
@@ -1046,6 +1048,7 @@ object LobbyService {
         // Track host liveness: ANNOUNCE from the host of our joined lobby
         if (_joinedLobby.value?.lobbyId == lobbyId) {
             lastHostSeenMs = System.currentTimeMillis()
+            _joinedLobby.value = _joinedLobby.value?.copy(saveCompatibilityWarning = announce.saveCompatibilityWarning)
         }
     }
 
@@ -1504,6 +1507,7 @@ object LobbyService {
                 omittedVisualModCount = json.optInt(VisualReplacementPolicy.OMITTED_VISUAL_MOD_COUNT, 0),
                 omittedVisualTextureCount = json.optInt(VisualReplacementPolicy.OMITTED_VISUAL_TEXTURE_COUNT, 0),
                 omittedVisualModNames = VisualReplacementPolicy.namesFromJson(json),
+                saveCompatibilityWarning = json.optString("save_compatibility_warning").takeIf { it.isNotBlank() },
                 missionRequirement = requirement,
                 missionStatus =
                     previousStatus
@@ -1580,17 +1584,11 @@ object LobbyService {
     ) {
         if (!_isHosting.value) return
         val lid = hostedLobbyId ?: return
-        if (hostedMode == "coop") {
-            val warning =
-                appContext?.let {
-                    com.dxxredux.app.multiplayer.CoopSaveCompatibility
-                        .hostWarning(it.filesDir, hostedGame, hostedMission)
-                }
-            if (warning != null) {
-                _diagnostics.value = warning
-                NetLog.log("LAN", "Start blocked: $warning")
-                return
-            }
+        val saveWarning = hostSaveCompatibilityWarning()
+        if (saveWarning != null) {
+            _diagnostics.value = saveWarning
+            NetLog.log("LAN", "Start blocked: $saveWarning")
+            return
         }
         val players = _hostedLobbyPlayers.value
         if (players.size < 2) {
@@ -1903,6 +1901,7 @@ object LobbyService {
                 omittedVisualTextureCount = hostedOmittedVisualTextureCount,
                 omittedVisualModNames = hostedOmittedVisualModNames,
                 missionRequirement = hostedMissionRequirement,
+                saveCompatibilityWarning = hostSaveCompatibilityWarning(),
             )
         sendTo(data, senderAddr)
         Log.i(TAG, "handleQuery: sent ANNOUNCE to $senderAddr for lobby $lid")
@@ -1978,6 +1977,16 @@ object LobbyService {
         Log.i(TAG, "Kicked from lobby ${joined.lobbyId}")
     }
 
+    private fun hostSaveCompatibilityWarning(): String? =
+        if (hostedMode == "coop" && !gameStarted) {
+            appContext?.let {
+                com.dxxredux.app.multiplayer.CoopSaveCompatibility
+                    .hostWarning(it.filesDir, hostedGame, hostedMission)
+            }
+        } else {
+            null
+        }
+
     private fun broadcastAnnounce() {
         val lid = hostedLobbyId ?: return
         val data =
@@ -1999,6 +2008,7 @@ object LobbyService {
                 omittedVisualModCount = hostedOmittedVisualModCount,
                 omittedVisualTextureCount = hostedOmittedVisualTextureCount,
                 omittedVisualModNames = hostedOmittedVisualModNames,
+                saveCompatibilityWarning = hostSaveCompatibilityWarning(),
             )
         sendBroadcast(data)
     }
@@ -2215,6 +2225,7 @@ object LobbyService {
                         iface.inetAddresses.toList().map { "${iface.name}: ${it.hostAddress}" }
                     }
             NetLog.log("LAN", "Local addresses: $addrs")
+            NetLog.log("LAN", "Broadcast destinations: ${getBroadcastAddresses().map { it.hostAddress }}")
             Log.i(TAG, "Local addresses: $addrs")
         } catch (e: Exception) {
             NetLog.log("LAN", "Failed to enumerate addresses: ${e.message}")
@@ -2278,6 +2289,7 @@ object LobbyService {
                 hostedOmittedVisualTextureCount,
                 hostedOmittedVisualModNames,
                 missionRequirement = hostedMissionRequirement,
+                saveCompatibilityWarning = hostSaveCompatibilityWarning(),
             ),
             address,
         )

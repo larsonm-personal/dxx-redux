@@ -177,6 +177,10 @@ private fun LanJoinedLobbyView(
             Spacer(Modifier.height(8.dp))
         }
 
+        info.saveCompatibilityWarning?.let {
+            Text("Host cannot start: $it", color = MaterialTheme.colorScheme.error)
+        }
+
         // Lobby info
         Text(
             "${info.mission} -- ${info.mode} (${info.game})",
@@ -813,6 +817,9 @@ private fun LanDiscoveryView(
         if (isHosting) {
             item {
                 Text("Your Hosted Lobby", style = MaterialTheme.typography.titleSmall)
+                localIpLabel?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall)
+                }
                 Spacer(Modifier.height(4.dp))
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -874,11 +881,6 @@ private fun LanDiscoveryView(
                 saveWarning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 Button(
                     onClick = {
-                        if (hostedMode == "coop" &&
-                            CoopSaveCompatibility.hostWarning(context.filesDir, hostedGame, hostedMission) != null
-                        ) {
-                            return@Button
-                        }
                         onLaunchRequested(hostedGame)
                         LobbyService.startGame(
                             hostedDifficulty,
@@ -1090,6 +1092,9 @@ private fun LanLobbyCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            lobby.announce.saveCompatibilityWarning?.let {
+                Text("Host cannot start: $it", color = MaterialTheme.colorScheme.error)
+            }
             if (lobby.announce.build.isNotEmpty() && lobby.announce.build != BuildInfo.GIT_COMMIT_COUNT) {
                 Text(
                     "Version mismatch (host: ${lobby.announce.build}, you: ${BuildInfo.GIT_COMMIT_COUNT})",

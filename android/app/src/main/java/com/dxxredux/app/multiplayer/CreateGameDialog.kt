@@ -568,20 +568,27 @@ internal fun CreateGameDialog(
                             enabled = transferable,
                             modifier = Modifier.tvFocusBorder(),
                         )
-                        Text(
-                            if (!missionDownloadSupported) {
-                                "Mission download is currently available for LAN hosting"
-                            } else if (transferable) {
-                                "Offer mission download (share only with permission)"
-                            } else if (selectedMissionInfo?.isBuiltin == true) {
-                                "Base missions are never shared"
-                            } else if (selectedMissionInfo?.downloadPolicy?.explanation != null) {
-                                selectedMissionInfo.downloadPolicy.explanation.orEmpty()
-                            } else {
-                                "This mission cannot be shared automatically"
-                            },
-                            style = MaterialTheme.typography.labelMedium,
-                        )
+                        Column {
+                            Text(
+                                "Offer mission download (share only with permission)",
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                            val downloadNote =
+                                if (!missionDownloadSupported) {
+                                    "Mission download is currently available for LAN hosting"
+                                } else if (transferable) {
+                                    null
+                                } else if (selectedMissionInfo?.isBuiltin == true) {
+                                    "Each player must supply their own base mission files"
+                                } else if (selectedMissionInfo?.downloadPolicy?.explanation != null) {
+                                    selectedMissionInfo.downloadPolicy.explanation.orEmpty()
+                                } else {
+                                    "This mission cannot be shared automatically"
+                                }
+                            downloadNote?.let {
+                                Text(it, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
                     }
                 }
                 ScrollArrows(scrollState)

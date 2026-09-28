@@ -28,6 +28,21 @@ import org.junit.Test
 
 class LobbyProtocolStartOptionsTest {
     @Test
+    fun saveCompatibilityWarningIsIncludedInDiscoveryAndJoinReplies() {
+        val warning = "This save cannot be used by this build"
+        val packets = listOf(
+            buildAnnounce("lobby", "Host", "d2", "descent", "coop", 1, 4, saveCompatibilityWarning = warning),
+            buildJoinAck("lobby", "d2", "descent", "coop", 4, saveCompatibilityWarning = warning),
+        )
+        for (packet in packets) {
+            val json = parsePacket(packet, packet.size) ?: error("packet did not parse")
+            assertEquals(warning, json.getString("save_compatibility_warning"))
+        }
+        val fresh = buildAnnounce("lobby", "Host", "d2", "descent", "coop", 1, 4)
+        assertFalse(parsePacket(fresh, fresh.size)!!.has("save_compatibility_warning"))
+    }
+
+    @Test
     fun buildStart_includesCoopPickupAndDeathSpewOptions() {
         val packet =
             buildStart(
