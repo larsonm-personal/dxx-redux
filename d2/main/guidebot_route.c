@@ -563,8 +563,11 @@ void escort_route_frame(object *objp, fix dist_to_player, int player_visibility)
 	ai_static *aip = &objp->ctype.ai_info;
 	ai_local *ailp = &Ai_local_info[objp - Objects];
 	escort_update_navigation_liveness(objp, ailp);
-	if (!guidebot_routing_is_enhanced())
+	if (!guidebot_routing_is_enhanced()) {
+		/* Classic needs the same diagnostic visibility without running the planner */
+		escort_trace_navigation(objp, ailp, aip, dist_to_player, player_visibility);
 		return;
+	}
 	escort_route_monitor_path_progress(objp, ailp, aip);
 	escort_trace_navigation(objp, ailp, aip, dist_to_player, player_visibility);
 	escort_route_path_recalc_sync_goal();

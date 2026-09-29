@@ -4,12 +4,12 @@
 . (Join-Path $PSScriptRoot '../helpers/atomic_text_file.ps1')
 
 function New-GuidebotNavigationData {
-    param([string]$RepoRoot, [string]$OutputRoot, [string]$HogDir)
+    param([string]$RepoRoot, [string]$OutputRoot, [string]$HogDir, [switch]$IncludeD1)
     $candidates = if ($HogDir) {
         if (-not [IO.Path]::IsPathRooted($HogDir)) { $HogDir = Join-Path $RepoRoot $HogDir }
         @($HogDir)
     } else { @(Get-StandardGameDataCandidates -RepoRoot $RepoRoot -Game d2) }
-    $dependencies = @(Get-StandardGameDataDeps | Where-Object file -notin @('descent.hog', 'descent.pig'))
+    $dependencies = @(Get-StandardGameDataDeps | Where-Object { $IncludeD1 -or $_.file -notin @('descent.hog', 'descent.pig') })
     return (New-StandardGameDataStage -Destination (Join-Path $OutputRoot 'base-data') -Candidates $candidates -Dependencies $dependencies).Path
 }
 

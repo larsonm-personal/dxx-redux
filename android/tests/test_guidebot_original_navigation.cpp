@@ -17,6 +17,9 @@ extern "C" {
 #include "key.h"
 #include "maths.h"
 #include "multi.h"
+#include "mission.h"
+#include "laser.h"
+#include "fvi.h"
 #include "robot.h"
 #include "wall.h"
 #include "cntrlcen.h"
@@ -296,6 +299,149 @@ static int audit_save_continuity(const char *output)
 	catch (const std::exception &error) { std::fprintf(stderr, "CONTINUITY report: %s\n", error.what()); return 2; }
 	return file.good() && passed ? 0 : 1;
 }
+static void audit_redux_return_events(object *bot)
+{
+	Snapshot start(bot);
+	const int destroyed = Control_center_destroyed;
+	const auto flags = Players[Player_num].flags;
+	const auto object_flags = ConsoleObject->flags;
+	Players[Player_num].flags = PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_GOLD_KEY | PLAYER_FLAGS_RED_KEY;
+	ConsoleObject->flags = Players[Player_num].flags;
+	// A distant owner remains periodically visible while the reactor countdown runs
+	for (int visible : { 0, 1, 2 })
+		for (int age : { 0, 3, 5, 16 }) {
+			start.restore(bot);
+			redux_create_n_segment_path(bot, 4, -1);
+			Control_center_destroyed = 1;
+			Escort_special_goal = -1;
+			Escort_goal_object = ESCORT_GOAL_CONTROLCEN;
+			Ai_local_info[Buddy_objnum].mode = AIM_GOTO_PLAYER;
+			Buddy_last_seen_player = GameTime64 - 3 * F1_0;
+			Escort_last_path_created = GameTime64 - age * F1_0;
+			compare(bot, "reactor_return_" + std::to_string(visible) + "_" + std::to_string(age), [&](bool ref) {
+				if (ref) redux_do_escort_frame(bot, MIN_ESCORT_DISTANCE + F1_0, visible);
+				else do_escort_frame(bot, MIN_ESCORT_DISTANCE + F1_0, visible);
+			});
+			// Redux can retain the old return path beyond 16 seconds when sight is refreshed
+			redux_do_escort_frame(bot, MIN_ESCORT_DISTANCE + F1_0, visible);
+			check("redux_waits_for_rejoin", Ai_local_info[Buddy_objnum].mode == AIM_GOTO_PLAYER &&
+			      Escort_goal_object != ESCORT_GOAL_EXIT);
+			place(bot, find_exit_segment());
+			compare(bot, "reactor_rejoin_" + std::to_string(visible) + "_" + std::to_string(age), [&](bool ref) {
+				if (ref) redux_do_escort_frame(bot, MIN_ESCORT_DISTANCE - 1, 2);
+				else do_escort_frame(bot, MIN_ESCORT_DISTANCE - 1, 2);
+			});
+		}
+	const int persistent = escort_goal_message_persistent();
+	Escort_special_goal = ESCORT_GOAL_SHIELD;
+	Escort_goal_index = -1;
+	detect_escort_goal_accomplished(-4);
+	check("fuel_sentinel_does_not_index_objects", Escort_special_goal == ESCORT_GOAL_SHIELD);
+	escort_set_goal_message_persistent(1);
+	Ai_local_info[Buddy_objnum].mode = AIM_GOTO_PLAYER;
+	Escort_special_goal = ESCORT_GOAL_SCRAM;
+	Escort_last_path_created = GameTime64;
+	buddy_goal_message("Staying away...");
+	do_escort_frame(bot, MIN_ESCORT_DISTANCE + F1_0, 2);
+	check("classic_scram_status_preserved", escort_goal_message() && std::strstr(escort_goal_message(), "Staying away"));
+	Escort_special_goal = -1;
+	do_escort_frame(bot, MIN_ESCORT_DISTANCE + F1_0, 2);
+	check("classic_silent_return_status", escort_goal_message() && std::strstr(escort_goal_message(), "Coming back"));
+	escort_set_goal_message_persistent(persistent);
+	start.restore(bot);
+	Control_center_destroyed = destroyed;
+	Players[Player_num].flags = flags;
+	ConsoleObject->flags = object_flags;
+	// A valid byte-sized path must retain its beginning for midpoint and patrol rules
+	ai_reset_all_paths();
+	auto &a = bot->ctype.ai_info;
+	a.hide_index = 0;
+	a.path_length = 124;
+	a.cur_path_index = 120;
+	a.PATH_DIR = 1;
+	Ai_local_info[Buddy_objnum].mode = AIM_GOTO_PLAYER;
+	for (int i = 0; i < a.path_length; ++i) {
+		Point_segs[i].segnum = bot->segnum;
+		Point_segs[i].point = bot->pos;
+		if (i != 120) Point_segs[i].point.x += 50 * F1_0;
+	}
+	Point_segs_free_ptr = Point_segs + a.path_length;
+	compare(bot, "classic_long_return_prefix", [&](bool ref) {
+		if (ref) redux_ai_follow_path(bot, 2, 2, nullptr);
+		else ai_follow_path(bot, 2, 2, nullptr);
+	});
+	start.restore(bot);
+}
+static void audit_reactor_room_return(object *bot)
+{
+	if (std::strcmp(Current_mission_filename, "descent") || Current_level_num != 2) return;
+	Snapshot start(bot);
+	const object player = *ConsoleObject;
+	const auto flags = Players[Player_num].flags;
+	const int destroyed = Control_center_destroyed, game_mode = Game_mode, owner = Escort_owner_player;
+	const fix64 time = GameTime64;
+	const int tick = d_tick_count;
+	const fix dt = FrameTime;
+	const auto believed_pos = Believed_player_pos;
+	const int believed_seg = Believed_player_seg;
+	for (int scenario : { 0, 1, 2, 3 }) {
+		const int coop = scenario & 1, early_retreat = scenario >> 1;
+		start.restore(bot);
+		Game_mode = coop ? GM_NETWORK | GM_MULTI_COOP | GM_MULTI_ROBOTS : 0;
+		Escort_owner_player = Player_num;
+		Players[Player_num].flags = PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_GOLD_KEY | PLAYER_FLAGS_RED_KEY;
+		ConsoleObject->flags = Players[Player_num].flags;
+		place(bot, 355);
+		place(ConsoleObject, 359);
+		Believed_player_pos = ConsoleObject->pos;
+		Believed_player_seg = ConsoleObject->segnum;
+		GameTime64 = time;
+		FrameTime = F1_0 / 60;
+		ai_reset_all_paths();
+		redux_create_path_to_player(bot, Max_escort_length, 1);
+		Ai_local_info[Buddy_objnum].mode = AIM_GOTO_PLAYER;
+		Escort_special_goal = -1;
+		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+		Escort_last_path_created = Buddy_last_seen_player = Buddy_last_player_path_created = GameTime64;
+		Control_center_destroyed = 1;
+		int first_exit = -1, return_frames = 0;
+		// Segment centers approximate the log, not its unrecorded positions/inputs
+		for (int frame = 0; frame < 960; ++frame) {
+			const int seg = frame < 260 ? (early_retreat ? 350 : 358) : frame < 560 ? 350 : frame < 860 ? 348 : 370;
+			if (ConsoleObject->segnum != seg) place(ConsoleObject, seg);
+			Believed_player_pos = ConsoleObject->pos;
+			Believed_player_seg = ConsoleObject->segnum;
+			GameTime64 += FrameTime;
+			if (frame % 3 == 0) ++d_tick_count;
+			const fix distance = vm_vec_dist_quick(&bot->pos, &ConsoleObject->pos);
+			const int visible = object_to_object_visibility(bot, ConsoleObject, FQ_TRANSWALL) ? 2 : 0;
+			compare(bot, "reactor_room_" + std::to_string(scenario) + "_" + std::to_string(frame), [&](bool ref) {
+				if (ref) { redux_do_escort_frame(bot, distance, visible); redux_ai_follow_path(bot, visible, visible, nullptr); }
+				else { do_escort_frame(bot, distance, visible); ai_follow_path(bot, visible, visible, nullptr); }
+			});
+			do_escort_frame(bot, distance, visible);
+			ai_follow_path(bot, visible, visible, nullptr);
+			if (Escort_goal_object == ESCORT_GOAL_EXIT && first_exit < 0) first_exit = frame;
+			if (Ai_local_info[Buddy_objnum].mode == AIM_GOTO_PLAYER) ++return_frames;
+			do_physics_sim(bot);
+		}
+		Results["reactor_room_approximation"][early_retreat ? "early_retreat" : "sampled_segments"][coop ? "coop" : "single_player"] = {
+			{ "frames", 960 }, { "first_exit_frame", first_exit }, { "return_frames", return_frames }
+		};
+	}
+	start.restore(bot);
+	if (ConsoleObject->segnum != player.segnum) obj_relink(ConsoleObject - Objects, player.segnum);
+	*ConsoleObject = player;
+	Players[Player_num].flags = flags;
+	Control_center_destroyed = destroyed;
+	Game_mode = game_mode;
+	Escort_owner_player = owner;
+	GameTime64 = time;
+	d_tick_count = tick;
+	FrameTime = dt;
+	Believed_player_pos = believed_pos;
+	Believed_player_seg = believed_seg;
+}
 int test_guidebot_live_navigation(const char *output, const char *audit)
 {
 	FrameTime = F1_0 / 60;
@@ -379,6 +525,8 @@ int test_guidebot_live_navigation(const char *output, const char *audit)
 	Players[Player_num].flags = player_flags;
 	ConsoleObject->flags = object_flags;
 	Control_center_destroyed = destroyed;
+	audit_redux_return_events(bot);
+	audit_reactor_room_return(bot);
 	check("exit", find_exit_segment() == redux_find_exit_segment());
 	for (int mode : { AIM_GOTO_PLAYER, AIM_GOTO_OBJECT }) {
 		l.mode = mode;
@@ -489,7 +637,7 @@ int test_guidebot_live_navigation(const char *output, const char *audit)
 			input_demo_recorder_settings settings;
 			input_demo_recorder_settings_clear(&settings);
 			settings.game = INPUT_DEMO_GAME_D2;
-			settings.mission = "d2";
+			settings.mission = Current_mission_filename;
 			settings.level = Current_level_num;
 			settings.difficulty = Difficulty_level;
 			settings.rng_mode = "lcg_state";

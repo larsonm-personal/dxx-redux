@@ -1,6 +1,6 @@
 # TEST-SUPPORT: owner=test_guidebot_route_regressions
 # Compare live Original decisions with frozen Redux routing on real D2 levels
-param([switch]$NoBuild, [switch]$SaveContinuity, [string]$BuildDir = 'buildd2', [string]$HogDir, [ValidateRange(1, 300)][int]$ProcessTimeoutSeconds = 90)
+param([switch]$NoBuild, [switch]$SaveContinuity, [switch]$D1InD2, [string]$BuildDir = 'buildd2', [string]$HogDir, [ValidateRange(1, 300)][int]$ProcessTimeoutSeconds = 90)
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1')
@@ -18,8 +18,10 @@ try {
     $fixtureLock = [IO.File]::Open((Join-Path $outputRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     Write-Host "Navigation diagnostics: $outputRoot"
     if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "Navigation executable not found: $exe" }
-    $dataDir = New-GuidebotNavigationData -RepoRoot $repoRoot -OutputRoot $outputRoot -HogDir $HogDir
-    foreach ($level in @(1, 11)) {
+    $dataDir = New-GuidebotNavigationData -RepoRoot $repoRoot -OutputRoot $outputRoot -HogDir $HogDir -IncludeD1:$D1InD2
+    $mission = if ($D1InD2) { 'descent' } else { 'd2' }
+    $levels = if ($D1InD2) { @(2) } else { @(1, 11) }
+    foreach ($level in $levels) {
         $reference = $null
         for ($repeat = 1; $repeat -le 2; ++$repeat) {
             $output = Join-Path $outputRoot "level_${level}_$repeat.json"
@@ -28,7 +30,7 @@ try {
             New-Item -ItemType Directory -Force -Path $userDir | Out-Null
             $auditArgs = if ($SaveContinuity) { @('-escort-return-target', 'save-continuity') } else { @() }
             Invoke-GuidebotNavigationProcess -Exe $exe -RepoRoot $repoRoot -LogPath $log -TimeoutSeconds $ProcessTimeoutSeconds -Arguments (@(
-                    '-hogdir', $dataDir, '-mission', 'd2', '-level', [string]$level,
+                    '-hogdir', $dataDir, '-mission', $mission, '-level', [string]$level,
                     '-route-confirm-user-dir', $userDir, '-route-confirm-json-out', $output) + $auditArgs)
             $result = Get-Content -LiteralPath $output -Raw
             if (-not ($result | ConvertFrom-Json).passed) { throw "Original assertions failed: $output" }
@@ -36,8 +38,8 @@ try {
             elseif ($result -cne $reference) { throw "Original results differ across repeats: level $level" }
         }
     }
-    if ($SaveContinuity) { Write-Host 'Same-mode Guidebot save continuity passed for both modes, four shared commands and Enhanced Unexplored, twice on levels 1 and 11' }
-    else { Write-Host 'Original Redux routing comparisons and native save modes passed twice on levels 1 and 11' }
+    if ($SaveContinuity) { Write-Host "Same-mode Guidebot save continuity passed for both modes, four shared commands and Enhanced Unexplored, twice on $mission levels $($levels -join ', ')" }
+    else { Write-Host "Original Redux routing comparisons and native save modes passed twice on $mission levels $($levels -join ', ')" }
 } finally {
     # Remove copied mission and player data, retaining bounded JSON/log diagnostics
     try {

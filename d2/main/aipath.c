@@ -1569,12 +1569,13 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	       !forced_break) {
 		//	Advance to next point on path.
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
-		/* The legacy cursor is a signed byte, even though route paths may
+		/* The serialized cursor is a signed byte, even though route paths may
 		 * contain hundreds of points. Retire only the consumed prefix of a
-		 * forward companion path before incrementing beyond its range. The
+		 * forward companion path before incrementing beyond its range. Keep
+		 * byte-sized paths intact for Classic midpoint and endpoint patrol. The
 		 * terminal point and every remaining leg stay unchanged, as do the
 		 * save/network AI layouts and ordinary robot patrol behavior */
-		if (robptr->companion &&
+		if (robptr->companion && (guidebot_routing_is_enhanced() || aip->path_length > 128) &&
 		    aip->PATH_DIR > 0 && aip->cur_path_index >= 120) {
 			const int consumed = aip->cur_path_index;
 			aip->hide_index += consumed;

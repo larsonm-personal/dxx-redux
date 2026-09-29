@@ -78,6 +78,22 @@ static void escort_goal_message_store(const char *message)
 	Escort_goal_message_signature = escort_goal_message_live() ? Objects[Buddy_objnum].signature : -1;
 }
 
+/* Persistent status must reflect a silent return, without changing Redux speech
+ * throttling, goal selection, or the simulation clocks */
+static void escort_goal_message_returning(void)
+{
+	char message[GUIDEBOT_GOAL_MESSAGE_LEN];
+#ifdef NETWORK
+	if ((Game_mode & GM_MULTI) && (!(Game_mode & GM_MULTI_COOP) || Escort_owner_player != Player_num))
+		return;
+#endif
+	if (!escort_goal_message_live())
+		return;
+	snprintf(message, sizeof(message), "%c%c%s:%c%c Coming back to get you.",
+	         CC_COLOR, BM_XRGB(28, 0, 0), PlayerCfg.GuidebotName, CC_COLOR, BM_XRGB(0, 31, 0));
+	escort_goal_message_store(message);
+}
+
 const char *escort_goal_message(void)
 {
 	if (!escort_goal_message_persistent() || !escort_goal_message_live() ||

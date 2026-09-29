@@ -50,6 +50,8 @@ int main(void)
     CHECK(transient_messages == 1 && !escort_goal_message());
     escort_set_goal_message_persistent(1);
     CHECK(strstr(escort_goal_message(), "Staying away"));
+    escort_goal_message_returning();
+    CHECK(transient_messages == 1 && strstr(escort_goal_message(), "Coming back"));
     buddy_goal_message("Coming back to get you.");
     CHECK(transient_messages == 1 && strstr(escort_goal_message(), "Coming back"));
     GameTime64 = 20 * F1_0;
@@ -83,6 +85,8 @@ int main(void)
     CHECK(sent_messages == 3);
 
     Player_num = 2; escort_goal_message_reset();
+    escort_goal_message_returning();
+    CHECK(!escort_goal_message()); // Replicas cannot replace the owner's status
     escort_goal_message_receive(packet, 0); // Host relay, preference off
     CHECK(!escort_goal_message() && transient_messages == 4);
     escort_set_goal_message_persistent(1);

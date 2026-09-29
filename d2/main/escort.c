@@ -907,6 +907,10 @@ void detect_escort_goal_accomplished(int index)
 {
 	int	i,j;
 	int	detected = 0;
+	/* Completion callers supply an object index or the fuel-center sentinel */
+	if ((index < 0 && !(index == -4 && Escort_special_goal == ESCORT_GOAL_ENERGYCEN)) ||
+	    index > Highest_object_index)
+		return;
 
 	if (!Buddy_allowed_to_talk)
 		return;
@@ -981,7 +985,8 @@ if ((Escort_goal_index <= ESCORT_GOAL_RED_KEY) && (index >= 0)) {
 			}
 		} else if ((Objects[index].type == OBJ_POWERUP) && (Escort_special_goal == ESCORT_GOAL_POWERUP))
 			detected = 1;	//	Any type of powerup picked up will do.
-		else if ((Objects[index].type == Objects[Escort_goal_index].type) && (Objects[index].id == Objects[Escort_goal_index].id)) {
+		else if (Escort_goal_index >= 0 && Escort_goal_index <= Highest_object_index &&
+		         (Objects[index].type == Objects[Escort_goal_index].type) && (Objects[index].id == Objects[Escort_goal_index].id)) {
 			//	Note: This will help a little bit in making the buddy believe a goal is satisfied.  Won't work for a general goal like "find any powerup"
 			// because of the insistence of both type and id matching.
 			detected = 1;
@@ -2535,6 +2540,9 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		return;
 	}
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
+	if (!guidebot_routing_is_enhanced() && ailp->mode == AIM_GOTO_PLAYER &&
+	    Escort_special_goal != ESCORT_GOAL_SCRAM)
+		escort_goal_message_returning();
 	escort_route_frame(objp, dist_to_player, player_visibility);
 #endif
 
