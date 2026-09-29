@@ -758,16 +758,6 @@ fun EnginePreferencesPage(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Local Visual Helpers", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    "Local display preferences. Path lines also depend on the host's coop QoL setting",
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -790,6 +780,16 @@ fun EnginePreferencesPage(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Local Visual Helpers", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    "Local display preferences. Path lines also depend on the host's coop QoL setting",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
