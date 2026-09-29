@@ -9,11 +9,11 @@
 static inline void briefing_init_canvas(grs_canvas *canvas)
 {
 	const fix aspect = grd_curscreen->sc_aspect > 0 ? grd_curscreen->sc_aspect : F1_0;
-	int width = fixmuldiv(SHEIGHT, 4 * aspect, 3 * F1_0);
+	int width = (int) ((SHEIGHT * 4LL * aspect + 3 * F1_0 / 2) / (3 * F1_0));
 	int height = SHEIGHT;
 	if (width > SWIDTH) {
 		width = SWIDTH;
-		height = fixmuldiv(width, 3 * F1_0, 4 * aspect);
+		height = (int) ((width * 3LL * F1_0 + 2LL * aspect) / (4LL * aspect));
 	}
 	if (width < 1) width = 1;
 	if (height < 1) height = 1;

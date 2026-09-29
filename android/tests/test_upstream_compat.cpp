@@ -8998,6 +8998,7 @@ static struct {
 	int pages;
 	bool complete;
 	bool visited;
+	int expected_x = 0, expected_y = 0, expected_width = 640, expected_height = 480;
 	nlohmann::json frames = nlohmann::json::array();
 } Briefing_trace;
 
@@ -9008,6 +9009,10 @@ static int briefing_trace_event(d_event *event)
 	Briefing_trace.visited = true;
 	window *wind = window_get_front();
 	require(wind != nullptr, "briefing creates its real window");
+	const auto &canvas = window_get_canvas(wind)->cv_bitmap;
+	require(canvas.bm_x == Briefing_trace.expected_x && canvas.bm_y == Briefing_trace.expected_y &&
+	            canvas.bm_w == Briefing_trace.expected_width && canvas.bm_h == Briefing_trace.expected_height,
+	        "briefing fits its authored 4:3 display using the renderer pixel aspect");
 	struct {
 		event_type type;
 		int keycode;
@@ -9025,6 +9030,16 @@ static int briefing_trace_event(d_event *event)
 			glReadBuffer(GL_BACK);
 			glReadPixels(0, 0, SWIDTH, SHEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
 			require(glGetError() == GL_NO_ERROR, "briefing draws with valid graphics resources");
+			for (int y = 0; y < SHEIGHT; ++y)
+				for (int x = 0; x < SWIDTH; ++x) {
+					const int top_y = SHEIGHT - 1 - y;
+					if (x >= canvas.bm_x && x < canvas.bm_x + canvas.bm_w &&
+					    top_y >= canvas.bm_y && top_y < canvas.bm_y + canvas.bm_h)
+						continue;
+					const auto offset = (y * SWIDTH + x) * 3;
+					require(pixels[offset] == 0 && pixels[offset + 1] == 0 && pixels[offset + 2] == 0,
+					        "briefing letterbox and pillarbox margins stay black");
+				}
 			const std::string stem = Briefing_trace.name + "-" + std::to_string(page) + "-" + std::to_string(frame);
 			write_fixture((stem + ".rgb").c_str(), pixels);
 #ifdef HAVE_LIBPNG
@@ -9111,8 +9126,9 @@ static void write_briefing_trace(const char *directory, const char *d2_directory
 		require(PHYSFS_mount(d2_directory, nullptr, 1), "mount optional D2 installation");
 	GameArg.SndNoSound = GameArg.SndNoMusic = 1;
 	GameArg.SysWindow = GameCfg.WindowMode = 1;
-	GameCfg.AspectX = 4;
-	GameCfg.AspectY = 3;
+	GameArg.DbgBpp = 32;
+	GameCfg.AspectX = 3;
+	GameCfg.AspectY = 4;
 	GameCfg.TexFilt = 0;
 	Game_screen_mode = SM(640, 480);
 	digi_select_system(SDLAUDIO_SYSTEM);
@@ -9185,6 +9201,25 @@ static void write_briefing_trace(const char *directory, const char *d2_directory
 	set_default_handler(briefing_trace_event);
 #endif
 	run("after-failures", "owned.tex", 2, 1, false);
+	// Exercise the actual backdrop, text and polygon robot on different displays
+	struct aspect_case {
+		const char *name;
+		int width, height, aspect_x, aspect_y, x, y, canvas_width, canvas_height;
+	};
+	for (const auto &test : {
+	         aspect_case { "wide", 1280, 720, 9, 16, 160, 0, 960, 720 },
+	         aspect_case { "tall", 720, 1280, 16, 9, 0, 370, 720, 540 },
+	         aspect_case { "non-square-pixels", 1280, 720, 3, 4, 0, 0, 1280, 720 } }) {
+		GameCfg.AspectX = test.aspect_x;
+		GameCfg.AspectY = test.aspect_y;
+		Game_screen_mode = SM(test.width, test.height);
+		require(gr_set_mode(Game_screen_mode) == 0, "resize briefing display");
+		Briefing_trace.expected_x = test.x;
+		Briefing_trace.expected_y = test.y;
+		Briefing_trace.expected_width = test.canvas_width;
+		Briefing_trace.expected_height = test.canvas_height;
+		run(test.name, "owned.tex", 2, 2, false);
+	}
 	set_default_handler(nullptr);
 	const std::string result = Briefing_trace.frames.dump(2) + "\n";
 	write_fixture("briefing.json", bytes(result.begin(), result.end()));
