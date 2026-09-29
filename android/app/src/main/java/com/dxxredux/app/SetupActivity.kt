@@ -3135,7 +3135,10 @@ class SetupActivity : ComponentActivity() {
 
 @Composable
 private fun LauncherTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = darkColorScheme(), content = content)
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        // Theme alone does not set the default foreground for screens outside a Surface
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface, content = content)
+    }
 }
 
 @Composable
@@ -4502,7 +4505,7 @@ private fun SetupScreen(
                                     .fillMaxWidth()
                                     .padding(bottom = 8.dp)
                                     .background(
-                                        Color(0xFFFFF3E0),
+                                        MaterialTheme.colorScheme.surfaceContainerHigh,
                                         shape = RoundedCornerShape(6.dp),
                                     ).padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.Top,
@@ -4512,20 +4515,20 @@ private fun SetupScreen(
                                     "Cleaned up stale temporary import files:",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF6D4C00),
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 cleanedTmpFiles.take(8).forEach { name ->
                                     Text(
                                         "  - $name",
                                         fontSize = 11.sp,
-                                        color = Color(0xFF6D4C00),
+                                        color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
                                 if (cleanedTmpFiles.size > 8) {
                                     Text(
                                         "  - and ${cleanedTmpFiles.size - 8} more",
                                         fontSize = 11.sp,
-                                        color = Color(0xFF6D4C00),
+                                        color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
                             }
@@ -4534,7 +4537,7 @@ private fun SetupScreen(
                                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
                                 modifier = Modifier.height(24.dp),
                             ) {
-                                Text("x", fontSize = 12.sp, color = Color(0xFF6D4C00))
+                                Text("x", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }
@@ -4584,7 +4587,7 @@ private fun SetupScreen(
                                     .fillMaxWidth()
                                     .padding(bottom = 8.dp)
                                     .background(
-                                        Color(0xFFFFF3E0),
+                                        MaterialTheme.colorScheme.surfaceContainerHigh,
                                         shape = RoundedCornerShape(6.dp),
                                     ).padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.Top,
@@ -4594,13 +4597,13 @@ private fun SetupScreen(
                                     "Removed stale audio sources (files no longer present):",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF6D4C00),
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 prunedSourceNames.forEach { name ->
                                     Text(
                                         "  - $name",
                                         fontSize = 11.sp,
-                                        color = Color(0xFF6D4C00),
+                                        color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
                             }
@@ -4609,7 +4612,7 @@ private fun SetupScreen(
                                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
                                 modifier = Modifier.height(24.dp),
                             ) {
-                                Text("\u2717", fontSize = 12.sp, color = Color(0xFF6D4C00))
+                                Text("\u2717", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }
@@ -4622,7 +4625,7 @@ private fun SetupScreen(
                                     .fillMaxWidth()
                                     .padding(bottom = 8.dp)
                                     .background(
-                                        Color(0xFFFFF3E0),
+                                        MaterialTheme.colorScheme.surfaceContainerHigh,
                                         shape = RoundedCornerShape(6.dp),
                                     ).padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.Top,
@@ -4632,13 +4635,13 @@ private fun SetupScreen(
                                     "Cleaned up stale file references:",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF6D4C00),
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 prunedDataFiles.forEach { name ->
                                     Text(
                                         "  - $name",
                                         fontSize = 11.sp,
-                                        color = Color(0xFF6D4C00),
+                                        color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
                             }
@@ -4647,7 +4650,7 @@ private fun SetupScreen(
                                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
                                 modifier = Modifier.height(24.dp),
                             ) {
-                                Text("\u2717", fontSize = 12.sp, color = Color(0xFF6D4C00))
+                                Text("\u2717", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }

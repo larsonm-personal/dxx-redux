@@ -2377,7 +2377,7 @@ private fun StorageInspectorSection(
                                             entry.file.name,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF2E7D32),
+                                            color = MaterialTheme.colorScheme.onSurface,
                                             modifier = Modifier.weight(1f),
                                         )
                                         Text(formatSize(entry.size), fontSize = 10.sp)
