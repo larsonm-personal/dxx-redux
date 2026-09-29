@@ -18,6 +18,8 @@
 # Usage:
 #   .\test_lan.ps1
 #   .\test_lan.ps1 -Game d1
+#   .\test_lan.ps1 -Game d1 -D1FlyoutPlayers  # 20-second stagger and exterior waiting
+#   .\test_lan.ps1 -Game d2 -D1FlyoutPlayers -D1FlyoutCase near
 #   .\test_lan.ps1 -Game d2 -D1LevelTransition  # First Strike in the D2 engine
 #   .\test_lan.ps1 -Game d1 -D1LevelTransition  # Native control
 #   .\test_lan.ps1 -Game d2 -EndgameBoss
@@ -104,6 +106,9 @@ param(
     [switch]$SpewPartialPickup,
     [switch]$Briefings,
     [switch]$D1LevelTransition,
+    [switch]$D1FlyoutPlayers,
+    [ValidateSet("late", "near")]
+    [string]$D1FlyoutCase = "late",
     [switch]$Flyouts,
     [ValidateSet("natural", "deadline", "force")]
     [string]$FlyoutCase = "natural",
@@ -178,6 +183,7 @@ if ($GuidebotTravel) {
     }
     $SecretWorld = $SecretRevisit = $true
 }
+if ($D1FlyoutPlayers) { $D1LevelTransition = $true }
 if ($D1LevelTransition) {
     if ($Game -notin @('d1', 'd2') -or $InitialLevel -ne 1 -or $RestoreSavePath -or
         ($MissionFile -and $MissionFile -ne 'descent')) {
@@ -3410,8 +3416,11 @@ try {
     }
 
     if ($testPassed -and $D1LevelTransition) {
-        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_d1_transition_host.jsonc' `
-            -SecondarySerial $EMU2 -SecondaryScript 'test_coop_d1_transition_client.jsonc' `
+        $flyoutPrefix = if ($D1FlyoutCase -eq 'near') { 'test_coop_d1_flyout_near' } else { 'test_coop_d1_flyout_players' }
+        $hostScript = if ($D1FlyoutPlayers) { "${flyoutPrefix}_host.jsonc" } else { 'test_coop_d1_transition_host.jsonc' }
+        $clientScript = if ($D1FlyoutPlayers) { "${flyoutPrefix}_client.jsonc" } else { 'test_coop_d1_transition_client.jsonc' }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
+            -SecondarySerial $EMU2 -SecondaryScript $clientScript `
             -Description 'First Strike flyout, score, briefing and playable level 2' -TimeoutSec 180
         if ($testPassed) { Assert-PostTransitionAndroidControls }
     }

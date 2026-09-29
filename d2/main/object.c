@@ -912,6 +912,10 @@ void render_object(object *obj)
 		return;
 #endif
 
+	/* Flyout peers are rendered separately on their timed cinematic tracks */
+	if (Endlevel_sequence && obj->type == OBJ_PLAYER && obj != ConsoleObject)
+		return;
+
 	if ( obj == Viewer )
 		return;
 

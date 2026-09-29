@@ -20,9 +20,14 @@ function Get-TestSuiteCoveragePolicy {
         )
         network_scenarios = @(
             'test_lan'
+            'test_lan_active_discovery'
             'test_lan_lobby_discovery'
+            'test_lan_orphan_restart'
+            'test_lan_transport_recovery'
+            'test_multiplayer_recovery'
             'test_coop_launch_feedback'
             'test_coop_save_compatibility'
+            'test_coop_session'
         )
         audio_preferences = @(
             'test_dos_midi_parity'
@@ -237,6 +242,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_touch_layout_format'
         )
         launcher = @(
+            'test_host_dialog_loading'
             'test_random_level_preview'
             'test_guidebot_simulation_browser'
             'test_launcher_dpad'

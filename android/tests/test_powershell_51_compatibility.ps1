@@ -40,6 +40,30 @@ function Test-CompatibilityHelpers {
     $items = @(ConvertFrom-CompatibleJsonItems -Json '[{"id":1},{"id":2}]')
     Assert-Equal -Expected 2 -Actual $items.Count -Case 'root JSON array enumeration'
     Assert-Equal -Expected 2 -Actual $items[1].id -Case 'root JSON array item'
+
+    . (Join-Path $repoRoot 'android/helpers/test_execution_evidence.ps1')
+    $context = New-TestExecutionEvidenceContext -RepositoryRoot $repoRoot -ReportDir (Join-Path $repoRoot 'temp') -ReportPath (Join-Path $repoRoot 'temp/report.md')
+    if (-not $context.HostKey -or $context.Runtime -notmatch 'PowerShell') { throw 'Missing execution evidence host identity' }
+    $test = @{ Name = 'fixture'; Type = 'ps1'; Requires = 'none'; Path = Join-Path $repoRoot 'android/tests/fixture.ps1'; Arguments = @('-Fixture') }
+    $observation = New-TestExecutionObservation -Context $context -Test $test -Result @{ Status = 'PASS'; ExitCode = 0 } -StartedUtc ([DateTime]::UtcNow.ToString('o')) -SourceSha256 ('0' * 64)
+    Assert-Equal -Expected 'android/tests/fixture.ps1' -Actual $observation.source -Case 'execution evidence source path'
+    Assert-Equal -Expected 'PASS' -Actual $observation.status -Case 'execution evidence status'
+    if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
+        $savedNativeArchitecture = $env:PROCESSOR_ARCHITEW6432
+        $savedProcessArchitecture = $env:PROCESSOR_ARCHITECTURE
+        try {
+            $env:PROCESSOR_ARCHITECTURE = 'x86'
+            foreach ($native in @('AMD64', 'ARM64')) {
+                $env:PROCESSOR_ARCHITEW6432 = $native
+                $context = New-TestExecutionEvidenceContext -RepositoryRoot $repoRoot -ReportDir (Join-Path $repoRoot 'temp') -ReportPath (Join-Path $repoRoot 'temp/report.md')
+                $expected = if ($native -eq 'AMD64') { 'windows_x64' } else { 'windows_arm64' }
+                Assert-Equal -Expected $expected -Actual $context.HostKey -Case 'native OS architecture from 32-bit shell'
+            }
+        } finally {
+            $env:PROCESSOR_ARCHITEW6432 = $savedNativeArchitecture
+            $env:PROCESSOR_ARCHITECTURE = $savedProcessArchitecture
+        }
+    }
 }
 
 function Test-WindowsPowerShellParser {

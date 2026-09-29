@@ -1,10 +1,26 @@
 # Bounded latest observations; logs and owner-specific case reports remain separate
 . (Join-Path $PSScriptRoot 'atomic_text_file.ps1')
+. (Join-Path $PSScriptRoot 'powershell_compat.ps1')
 
 function New-TestExecutionEvidenceContext {
     param([string]$RepositoryRoot, [string]$ReportDir, [string]$ReportPath)
     $os = if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) { 'windows' } elseif ([Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Runtime.InteropServices.OSPlatform]::Linux)) { 'linux' } else { 'other' }
-    $architecture = [Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
+    if ($os -eq 'windows') {
+        # RuntimeInformation properties can be unavailable in Windows PowerShell
+        # Prefer the native OS architecture even when running a 32-bit shell
+        $nativeArchitecture = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
+        $architecture = switch ($nativeArchitecture) {
+            'AMD64' { 'x64' }
+            'ARM64' { 'arm64' }
+            'ARM' { 'arm' }
+            'x86' { 'x86' }
+            default { if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } }
+        }
+        $osDescription = [Environment]::OSVersion.VersionString
+    } else {
+        $architecture = [Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
+        $osDescription = [Runtime.InteropServices.RuntimeInformation]::OSDescription
+    }
     $commit = (& git -C $RepositoryRoot rev-parse HEAD 2>$null | Out-String).Trim()
     if ($LASTEXITCODE -ne 0) { throw 'Cannot record test evidence without repository identity' }
     $changes = @(& git -C $RepositoryRoot status --porcelain --untracked-files=normal 2>$null)
@@ -17,7 +33,7 @@ function New-TestExecutionEvidenceContext {
         HostKey = "${os}_${architecture}"
         Commit = $commit
         Dirty = $changes.Count -gt 0
-        Runtime = "$([Runtime.InteropServices.RuntimeInformation]::OSDescription); PowerShell $($PSVersionTable.PSVersion)"
+        Runtime = "$osDescription; PowerShell $($PSVersionTable.PSVersion)"
     }
 }
 
@@ -40,7 +56,7 @@ function New-TestExecutionObservation {
         commit = $Context.Commit
         dirty = $Context.Dirty
         runtime = $Context.Runtime
-        source = [IO.Path]::GetRelativePath($Context.RepositoryRoot, $Test.Path).Replace('\', '/')
+        source = (Get-CompatibleRelativePath -BasePath $Context.RepositoryRoot -TargetPath $Test.Path).Replace('\', '/')
         source_sha256 = $SourceSha256
         arguments = $arguments
         exit_code = if ($Result.ContainsKey('ExitCode')) { $Result.ExitCode } else { $null }

@@ -42,6 +42,9 @@ void digi_mixer_free_cached_sounds(void);
 extern Mix_Chunk SoundChunks[];
 #endif
 #include "endlevel.h"
+#include "endlevel_multi.h"
+extern vms_vector mine_side_exit_point;
+extern vms_matrix mine_exit_orient;
 #include "effects.h"
 #include "fuelcen.h"
 #include "fireball.h"
@@ -1734,6 +1737,82 @@ static void test_endlevel_flythrough()
 				require(ship.segnum == exit, "player/camera flyout follows bends and reaches the exit even when a frame ends outside the mine");
 			}
 	FrameTime = saved_frame_time;
+}
+
+// Exercise the real cinematic movement independently of gameplay objects/time
+static void test_multiplayer_endlevel_tracks()
+{
+	const int saved_mode = Game_mode, saved_players = N_players, saved_player = Player_num;
+	const auto saved_time = GameTime64;
+	init_test_corridor();
+	Segments[1].children[4] = -2;
+	for (int v = 8; v < 12; ++v) Vertices[v].z = 300 * F1_0;
+	validate_segment_all();
+	exit_segnum = 1;
+	mine_side_exit_point = { 0, 0, 300 * F1_0 };
+	mine_exit_orient = vmd_identity_matrix;
+	Game_mode = GM_MULTI | GM_MULTI_COOP;
+	N_players = 4;
+	Player_num = 0;
+	Netgame.max_numobservers = 0;
+	ConsoleObject = &Objects[0];
+	ConsoleObject->pos = { 0, 0, 0 };
+	ConsoleObject->last_pos = { 0, 0, -F1_0 };
+	ConsoleObject->orient = vmd_identity_matrix;
+	for (int p = 0; p < N_players; ++p) Players[p].connected = CONNECT_ESCAPE_TUNNEL;
+	const object original = *ConsoleObject;
+	const int objects = Highest_object_index;
+	const auto sim_draws = d_rand_get_call_count();
+	endlevel_multi_reset();
+	endlevel_multi_begin();
+	endlevel_multi_note_exit(1, 2000);
+	endlevel_multi_note_exit(2, 1000);
+	endlevel_multi_frame();
+	endlevel_multi_actor_state ahead, behind, absent;
+	endlevel_multi_get_actor(1, &ahead);
+	endlevel_multi_get_actor(2, &behind);
+	endlevel_multi_get_actor(3, &absent);
+	require(ahead.active && behind.active && !ahead.outside && !behind.outside,
+	        "staggered peers follow a long tunnel before emerging");
+	require(abs(ahead.position.z - behind.position.z - 50 * F1_0) < 2 * F1_0,
+	        "a one-second exit gap separates ships by 50 tunnel units");
+	require(!absent.active && absent.age_ms == UINT32_MAX,
+	        "a player still in the mine has no cinematic ship");
+	const auto age = ahead.age_ms;
+	endlevel_multi_note_exit(1, 0);
+	require(endlevel_multi_exit_age(1) >= age, "duplicate exit notifications never restart a ship");
+	endlevel_multi_note_exit(1, 8000);
+	endlevel_multi_frame();
+	endlevel_multi_get_actor(1, &ahead);
+	require(ahead.active && ahead.outside && ahead.position.z > mine_side_exit_point.z,
+	        "late status catches an already-exited peer up to the exterior");
+	endlevel_multi_note_exit(1, 20000);
+	endlevel_multi_note_exit(3, 0);
+	endlevel_multi_frame();
+	endlevel_multi_get_actor(1, &ahead);
+	endlevel_multi_get_actor(3, &absent);
+	require(ahead.finished && !ahead.active && absent.active && !absent.outside,
+	        "a twenty-second gap retires the first ship while the late ship enters the tunnel");
+	require(!std::memcmp(&original, ConsoleObject, sizeof(original)) && objects == Highest_object_index &&
+	        GameTime64 == saved_time && sim_draws == d_rand_get_call_count(),
+	        "remote flyouts leave gameplay objects, clock and SIM RNG untouched");
+	Players[3].connected = CONNECT_DISCONNECTED;
+	endlevel_multi_frame();
+	endlevel_multi_get_actor(3, &absent);
+	require(!absent.active, "disconnected peers leave the cinematic roster");
+	Players[3].connected = CONNECT_FOUND_SECRET;
+	endlevel_multi_frame();
+	endlevel_multi_get_actor(3, &absent);
+	require(!absent.active, "secret exits do not appear at the normal mine opening");
+	endlevel_multi_end();
+	endlevel_multi_get_actor(2, &behind);
+	require(!behind.active && behind.age_ms != UINT32_MAX, "scene teardown preserves exit timing for waiting peers");
+	endlevel_multi_reset();
+	endlevel_multi_get_actor(3, &absent);
+	require(!absent.active && absent.age_ms == UINT32_MAX, "new worlds clear all flyout actors and exit clocks");
+	Game_mode = saved_mode;
+	N_players = saved_players;
+	Player_num = saved_player;
 }
 
 // Compare actual target acquisition and retention against the native D1 engine
@@ -10741,6 +10820,7 @@ int main(int argc, char **argv)
 	test_lives();
 	std::fprintf(stderr, "Testing wall crossing, door pixels and rotated RLE overlays\n");
 	test_endlevel_flythrough();
+	test_multiplayer_endlevel_tracks();
 	test_death_camera_sim_isolation();
 	test_multiplayer_bump_cadence();
 	test_wall_crossing();

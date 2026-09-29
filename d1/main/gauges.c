@@ -43,6 +43,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "sounds.h"
 #include "multi.h"
 #include "endlevel.h"
+#include "endlevel_multi.h"
 #include "wall.h"
 #include "text.h"
 #include "render.h"
@@ -4004,6 +4005,11 @@ int see_object(int objnum)
 
 void show_HUD_names()
 {
+	if (Endlevel_sequence) {
+		endlevel_multi_render_names();
+		return;
+	}
+
 	int is_friend = 0, show_friend_name = 0, show_enemy_name = 0, show_name = 0, show_name_through_walls = 0,
 		show_shields = 0, show_typing = 0, show_indi = 0, pnum = 0, objnum = 0;
 

@@ -78,6 +78,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 #include "endlevel_runtime.h"
+#include "endlevel_multi.h"
 
 //endlevel sequence states
 
@@ -499,6 +500,7 @@ void start_rendered_endlevel_sequence()
 
 	cur_fly_speed = desired_fly_speed = FLY_SPEED;
 
+	endlevel_multi_begin();
 	start_endlevel_flythrough(0,ConsoleObject,cur_fly_speed);		//initialize
 
 	HUD_init_message_literal(HM_DEFAULT, TXT_EXIT_SEQUENCE );
@@ -596,6 +598,7 @@ void stop_endlevel_sequence()
 
 	select_cockpit(PlayerCfg.PreferredCockpitMode);
 
+	endlevel_multi_end();
 	Endlevel_sequence = EL_OFF;
 #ifdef ANDROID
 	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_ENDLEVEL);
@@ -627,6 +630,7 @@ void do_endlevel_frame()
 #endif
 	vms_vector save_last_pos;
 
+	endlevel_multi_frame();
 	save_last_pos = ConsoleObject->last_pos;	//don't let move code change this
 	object_move_all();
 	ConsoleObject->last_pos = save_last_pos;
@@ -871,6 +875,10 @@ void do_endlevel_frame()
 		}
 
 		case EL_STOPPED: {
+#ifdef __ANDROID__
+			/* Keep the outside camera live while the co-op barrier awaits peers */
+			if (coop_flyout_active() && endlevel_multi_local_finished()) break;
+#endif
 
 			get_angs_to_object(&player_dest_angles,&station_pos,&ConsoleObject->pos);
 			chase_angles(&player_angles,&player_dest_angles);
@@ -891,6 +899,9 @@ void do_endlevel_frame()
 
 				#ifdef SHORT_SEQUENCE
 
+				#ifdef __ANDROID__
+				if (!coop_flyout_active())
+				#endif
 				stop_endlevel_sequence();
 
 				#else
@@ -1247,6 +1258,7 @@ void render_endlevel_frame(fix eye_offset)
 	else
 		render_external_scene(eye_offset);
 
+	endlevel_multi_render();
 	g3_end_frame();
 
 }
@@ -1255,7 +1267,7 @@ void render_endlevel_frame(fix eye_offset)
 ///////////////////////// copy of flythrough code for endlevel
 
 
-#define MAX_FLY_OBJECTS 2
+#define MAX_FLY_OBJECTS (2 + MAX_PLAYERS)
 
 flythrough_data fly_objects[MAX_FLY_OBJECTS];
 
@@ -1327,7 +1339,13 @@ static void do_endlevel_flythrough_step(int n, fix frame_time)
 	//check new player seg
 
 	{
-		const int located = update_object_seg(obj);
+		/* Remote cinematic actors never enter gameplay segment object lists */
+		int located;
+		if (n >= 2) {
+			int segment = find_point_seg(&obj->pos, obj->segnum);
+			located = segment >= 0;
+			if (located) obj->segnum = segment;
+		} else located = update_object_seg(obj);
 #ifdef ANDROID
 		/* Android flyout diagnostics: record segment changes and first loss */
 		static int was_located[MAX_FLY_OBJECTS];
@@ -1478,6 +1496,8 @@ void do_endlevel_flythrough(int n)
 	}
 }
 
+#include "endlevel_multi_impl.h"
+
 #define JOY_NULL 15
 #define ROT_SPEED 8		//rate of rotation while key held down
 #define VEL_SPEED (15)	//rate of acceleration while key held down
@@ -1569,6 +1589,7 @@ void load_endlevel_data(int level_num)
 	int exit_side = 0;
 	int have_binary = 0;
 
+	endlevel_multi_reset();
 	endlevel_data_loaded = 0;		//not loaded yet
 
 try_again:

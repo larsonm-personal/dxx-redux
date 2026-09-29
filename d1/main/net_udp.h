@@ -103,12 +103,14 @@ void net_udp_request_resync_from_host(const char *reason);
 #define UPID_ENDLEVEL_H				 14 // Packet from Host to all Clients containing connect-states and kills information about everyone in the game.
 #define UPID_ENDLEVEL_C				 15 // Packet from Client to Host containing connect-state and kills information from this Client.
 #ifdef __ANDROID__
+#define UPID_ENDLEVEL_AGE_SIZE 4
 #define UPID_ENDLEVEL_STAMP_SIZE COOP_GAMEPLAY_STAMP_BYTES
 #else
+#define UPID_ENDLEVEL_AGE_SIZE 0
 #define UPID_ENDLEVEL_STAMP_SIZE 0
 #endif
-#define UPID_ENDLEVEL_H_SIZE (6 + MAX_PLAYERS * 5 + MAX_PLAYERS * MAX_PLAYERS * 2 + UPID_ENDLEVEL_STAMP_SIZE)
-#define UPID_ENDLEVEL_C_SIZE (12 + MAX_PLAYERS * 2 + UPID_ENDLEVEL_STAMP_SIZE)
+#define UPID_ENDLEVEL_H_SIZE (6 + MAX_PLAYERS * 5 + MAX_PLAYERS * MAX_PLAYERS * 2 + MAX_PLAYERS * UPID_ENDLEVEL_AGE_SIZE + UPID_ENDLEVEL_STAMP_SIZE)
+#define UPID_ENDLEVEL_C_SIZE (12 + MAX_PLAYERS * 2 + UPID_ENDLEVEL_AGE_SIZE + UPID_ENDLEVEL_STAMP_SIZE)
 #define UPID_PDATA				 16 // Packet from player containing his movement data.
 #ifdef __ANDROID__
 #define UPID_PDATA_STAMP_SIZE COOP_GAMEPLAY_STAMP_BYTES

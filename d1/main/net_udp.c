@@ -38,6 +38,7 @@
 #include "game.h"
 #include "multi.h"
 #include "endlevel.h"
+#include "endlevel_multi.h"
 #include "palette.h"
 #include "cntrlcen.h"
 #include "menu.h"
@@ -3446,6 +3447,10 @@ void net_udp_send_endlevel_packet(void)
 		}
 
 #ifdef __ANDROID__
+		for (i = 0; i < MAX_PLAYERS; ++i) {
+			PUT_INTEL_INT(buf + len, endlevel_multi_exit_age(i));
+			len += 4;
+		}
 		if (!coop_gameplay_stamp_write(buf + len, sizeof(buf) - len, &stamp)) return;
 		len += COOP_GAMEPLAY_STAMP_BYTES;
 #ifdef INTROSPECT_ON
@@ -3479,6 +3484,8 @@ void net_udp_send_endlevel_packet(void)
 		}
 
 #ifdef __ANDROID__
+		PUT_INTEL_INT(buf + len, endlevel_multi_exit_age(Player_num));
+		len += 4;
 		if (!coop_gameplay_stamp_write(buf + len, sizeof(buf) - len, &stamp)) return;
 		len += COOP_GAMEPLAY_STAMP_BYTES;
 #ifdef INTROSPECT_ON
@@ -4620,6 +4627,16 @@ void net_udp_read_endlevel_packet( ubyte *data, int data_len, struct _sockaddr s
 	net_udp_endlevel_probe_receive(&android_endlevel_probe, data, data_len, allowed);
 #endif
 	if (!allowed) return;
+	/* Authenticated, world-fenced ages survive missed starts and paused clocks */
+	const ubyte *ages = data + expected - COOP_GAMEPLAY_STAMP_BYTES - (host ? 4 : MAX_PLAYERS * 4);
+	if (host) {
+		if (data[6] == CONNECT_ESCAPE_TUNNEL || data[6] == CONNECT_END_MENU)
+			endlevel_multi_note_exit(data[5], (uint32_t) GET_INTEL_INT(ages));
+	} else {
+		for (int p = 0; p < N_players; ++p)
+			if (p != Player_num && (data[6 + p * 5] == CONNECT_ESCAPE_TUNNEL || data[6 + p * 5] == CONNECT_END_MENU))
+				endlevel_multi_note_exit(p, (uint32_t) GET_INTEL_INT(ages + p * 4));
+	}
 #endif
 	
 	if (multi_i_am_master())

@@ -42,6 +42,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "polyobj.h"
 #include "bm.h"
 #include "endlevel.h"
+#include "endlevel_multi.h"
 #include "key.h"
 #include "playsave.h"
 #include "timer.h"
@@ -3869,6 +3870,8 @@ void
 multi_send_endlevel_start(int secret)
 {
 	if (is_observer()) { return; }
+
+	if (!secret) endlevel_multi_note_exit(Player_num, 0);
 
 	multibuf[0] = (char)MULTI_ENDLEVEL_START;
 	multibuf[1] = Player_num;
@@ -7957,7 +7960,11 @@ static void multi_process_data_scoped(const ubyte *buf, int len, int authenticat
 		case MULTI_KILLGOALS:
 			if (!Endlevel_sequence) multi_do_kill_goal_counts (buf); break;
 		case MULTI_ENDLEVEL_START:
-			if (!Endlevel_sequence) multi_do_escape(buf); break;
+			if (buf[1] < N_players && (authenticated_sender < 0 || authenticated_sender == buf[1])) {
+				if (!buf[2]) endlevel_multi_note_exit(buf[1], 0);
+				if (!Endlevel_sequence) multi_do_escape(buf);
+			}
+			break;
 		case MULTI_END_SYNC:
 			break;
 		case MULTI_CLOAK:

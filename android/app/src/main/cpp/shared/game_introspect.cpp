@@ -25,6 +25,7 @@ using json = nlohmann::json;
 /* Engine headers are pure C -- wrap them for C++ linkage. */
 extern "C" {
 #include "game_introspect.h"
+#include "endlevel_multi.h"
 #include "game_automate.h"
 #include "android_axis_mailbox.h"
 #include "android_mission_assets.h"
@@ -2225,6 +2226,13 @@ extern "C" char *game_introspect_get_state(void)
 	{
 		extern int Endlevel_sequence;
 		j["endlevel_sequence"] = Endlevel_sequence;
+		j["flyout_local_finished"] = (bool) endlevel_multi_local_finished();
+		j["flyout_players"] = json::array();
+		for (int p = 0; p < N_players; ++p) {
+			endlevel_multi_actor_state state;
+			endlevel_multi_get_actor(p, &state);
+			j["flyout_players"].push_back({ { "player", p }, { "exited", state.age_ms != UINT32_MAX }, { "age_ms", state.age_ms == UINT32_MAX ? 0 : state.age_ms }, { "active", (bool) state.active }, { "outside", (bool) state.outside }, { "finished", (bool) state.finished }, { "visible", (bool) state.visible }, { "label_visible", (bool) state.label_visible }, { "segment", state.segment }, { "position", { f2fl(state.position.x), f2fl(state.position.y), f2fl(state.position.z) } } });
+		}
 	}
 
 	/* -- Window stack --------------------------------------------- */

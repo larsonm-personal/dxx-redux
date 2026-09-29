@@ -10,6 +10,7 @@
 
 #include "event.h"
 #include "endlevel.h"
+#include "endlevel_multi.h"
 #include "android_screen_advance.h"
 #include "game.h"
 #include "gameseq.h"
@@ -785,6 +786,12 @@ static int flyout_handler(window *wind, d_event *event, void *unused)
 				coop_flyout_remaining(local_progress.remaining_ms > elapsed ? local_progress.remaining_ms - elapsed : 0);
 				flyout_frame_time = now;
 				do_endlevel_frame();
+				if (endlevel_multi_local_finished() && local_progress.state != COOP_PRESENTATION_READY) {
+					local_progress.completed = local_progress.total;
+					local_progress.remaining_ms = 0;
+					local_progress.state = COOP_PRESENTATION_READY;
+					++local_progress.revision;
+				}
 			}
 			if (Endlevel_sequence) game_render_frame();
 		}

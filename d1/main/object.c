@@ -34,6 +34,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "textures.h"
 #include "byteswap.h"
 #include "object.h"
+#include "endlevel.h"
 #include "player_death_runtime.h"
 #include "physics.h"
 #include "slew.h"
@@ -707,6 +708,10 @@ void render_object(object *obj)
 	if (coop_powerup_duplication_hide(obj))
 		return;
 #endif
+
+	/* Flyout peers are rendered separately on their timed cinematic tracks */
+	if (Endlevel_sequence && obj->type == OBJ_PLAYER && obj != ConsoleObject)
+		return;
 
 	if ( obj == Viewer )
 		return;
