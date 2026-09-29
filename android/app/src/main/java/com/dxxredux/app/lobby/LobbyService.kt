@@ -390,25 +390,23 @@ object LobbyService {
      * Start hosting a LAN lobby. Begins broadcasting ANNOUNCE every 3 seconds.
      * Discovery must already be started.
      */
+    private fun defaultMissionRequirement(game: String, mission: String) =
+        MissionRequirement(
+            revision = "builtin:$game:$mission",
+            game = game,
+            missionKey = mission,
+            displayName = mission.ifBlank { if (game == "d1") "Descent: First Strike" else "Base mission" },
+            kind = if (mission in setOf("", "descent", "d2", "d2demo")) MissionRequirement.KIND_BUILTIN else MissionRequirement.KIND_LOOSE,
+        )
+
+    @Synchronized
     fun hostLobby(
         callsign: String,
         game: String,
         mission: String,
         mode: String,
         maxPlayers: Int,
-        missionRequirement: MissionRequirement =
-            MissionRequirement(
-                revision = "builtin:$game:$mission",
-                game = game,
-                missionKey = mission,
-                displayName = mission.ifBlank { if (game == "d1") "Descent: First Strike" else "Base mission" },
-                kind =
-                    if (mission in setOf("", "descent", "d2", "d2demo")) {
-                        MissionRequirement.KIND_BUILTIN
-                    } else {
-                        MissionRequirement.KIND_LOOSE
-                    },
-            ),
+        missionRequirement: MissionRequirement = defaultMissionRequirement(game, mission),
         restrictNonCoopFovToBase: Boolean = false,
         stockVisualsEnforced: Boolean = false,
         omittedVisualModCount: Int = 0,
@@ -424,6 +422,7 @@ object LobbyService {
             _diagnostics.value = "Cannot host: invalid mission requirement"
             return
         }
+        leaveLanLobby(hostCallsign)
         hostedLobbyId = UUID.randomUUID().toString()
         hostCallsign = callsign
         hostedGame = game
@@ -463,6 +462,7 @@ object LobbyService {
         hostStartJob?.cancel()
         hostStartJob = null
         gameStarted = false
+        hostedHostPort = NetworkConstants.ENGINE_PORT
         updateLanForegroundSession()
 
         restartAnnounceLoop()
@@ -470,11 +470,36 @@ object LobbyService {
         Log.i(TAG, "Hosting LAN lobby $hostedLobbyId ($game, $mission, $mode)")
     }
 
+    /** Advertise an existing engine session without entering the new-game launch flow */
+    @Synchronized
+    fun adoptMigratedHost(
+        callsign: String,
+        game: com.dxxredux.app.multiplayer.GameLaunchInfo,
+        hostPort: Int,
+    ) {
+        hostLobby(
+            callsign, game.game, game.mission, game.mode, game.maxPlayers,
+            missionRequirement = game.missionRequirement ?: defaultMissionRequirement(game.game, game.mission),
+            restrictNonCoopFovToBase = game.restrictNonCoopFovToBase,
+        )
+        if (!_isHosting.value) return
+        _lanLaunchEvent.value = null
+        hostedHostPort = hostPort
+        inGameDifficulty = game.difficulty
+        inGameLevelNum = game.levelNum
+        gameStarted = true
+        _diagnostics.value = ""
+        NetLog.log("LAN", "Adopted migrated host: ${game.game}/${game.mission} level=${game.levelNum} port=$hostPort")
+        // Announcement and query handlers share this lock, so no waiting-lobby packet escapes
+        restartAnnounceLoop()
+    }
+
     /** Stop hosting (but keep discovery running). */
     @Synchronized
     fun stopHosting() {
         NetLog.log("LAN", "Stopped hosting lobby $hostedLobbyId")
         _isHosting.value = false
+        _lanLaunchEvent.value = null
         stopInGameBroadcast()
         announceJob?.cancel()
         announceJob = null
@@ -505,6 +530,12 @@ object LobbyService {
                 }?.announce
                 ?.game
         if (advertisedGame != null && !checkJoinGameReady(advertisedGame)) return
+        if (_isHosting.value) stopHosting()
+        val previous = _joinedLobby.value
+        if (previous != null && (previous.lobbyId != lobbyId || previous.hostAddr != hostAddress)) {
+            leaveLanLobby(hostCallsign)
+        }
+        hostCallsign = callsign
         Log.i(TAG, "joinLobby: lobbyId=$lobbyId host=$hostAddress callsign=$callsign")
         NetLog.log("LAN", "Joining lobby $lobbyId at $hostAddress as $callsign")
         Log.i(TAG, "joinLobby: socket=${socket != null} bound=${socket?.isBound} closed=${socket?.isClosed}")
@@ -606,6 +637,8 @@ object LobbyService {
 
     /** Leave the LAN lobby we've joined (as a joiner). */
     fun leaveLanLobby(callsign: String) {
+        joinRetryJob?.cancel()
+        joinRetryJob = null
         val info = _joinedLobby.value ?: return
         NetLog.log("LAN", "Leaving lobby ${info.lobbyId} (host=${info.hostAddr})")
         val data = buildLeave(info.lobbyId, callsign, localClientId)
@@ -1946,6 +1979,8 @@ object LobbyService {
         if (!checkJoinGameReady(announce.game)) return
         _diagnostics.value = ""
         if (announce.status == "in_game") {
+            if (_isHosting.value) stopHosting()
+            leaveLanLobby(hostCallsign)
             emitInGameJoinLaunch(announce)
         } else {
             joinLobby(announce.lobbyId, announce.hostAddress, callsign)
@@ -2032,6 +2067,7 @@ object LobbyService {
     }
 
     /** Respond to a QUERY with a direct ANNOUNCE so the querier discovers our lobby. */
+    @Synchronized
     private fun handleQuery(senderAddr: String) {
         val lid = hostedLobbyId ?: return // not hosting
         val data =
@@ -2142,6 +2178,7 @@ object LobbyService {
             null
         }
 
+    @Synchronized
     private fun broadcastAnnounce() {
         val lid = hostedLobbyId ?: return
         val data =

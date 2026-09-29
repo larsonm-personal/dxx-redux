@@ -22,6 +22,21 @@ class MissionScannerManagedArchiveTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
 
     @Test
+    fun catalogSnapshotSharesModeFilteringAndReloadsChangedContent() {
+        val filesDir = temporaryFolder.newFolder("catalog-snapshot")
+        val setDir = File(filesDir, "sets/default").apply { mkdirs() }
+        val manager = ModManager(filesDir, setDir = setDir)
+        val archive = createMissionZip("catest", "anarchy")
+        val imported = requireNotNull(manager.importMissionZipFile(archive, "catest.zip"))
+        val snapshot = MissionCatalog.scan(filesDir, setDir, "d2")
+        assertNotNull(snapshot.find("catest", "anarchy"))
+        assertEquals(null, snapshot.find("catest", "coop"))
+        manager.setEnabled(imported.filename, false)
+        assertNotNull(snapshot.find("catest", "anarchy"))
+        assertEquals(null, MissionCatalog.scan(filesDir, setDir, "d2").find("catest", "anarchy"))
+    }
+
+    @Test
     fun managedVertigoIsAnEnabledMissionAndNotABaseAssetOrDownload() {
         assertFalse(D2_FILES.any { it.filename == "d2x.hog" })
         assertFalse("d2x.hog" in ALL_GAME_FILENAMES)

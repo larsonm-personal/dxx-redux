@@ -2110,11 +2110,19 @@ class SetupActivity : ComponentActivity() {
                     com.dxxredux.app.lobby.LobbyService
                         .startDiscovery(context, callsign)
                     com.dxxredux.app.lobby.LobbyService
-                        .hostLobby(callsign, game, mission, mode, maxPlayers)
-                    com.dxxredux.app.lobby.LobbyService
-                        .startGame(
-                            difficulty,
-                            levelNum,
+                        .adoptMigratedHost(
+                            callsign,
+                            GameLaunchInfo(
+                            game = game,
+                            mission = mission,
+                            mode = mode,
+                            difficulty = difficulty,
+                            levelNum = levelNum,
+                            maxPlayers = maxPlayers,
+                            yourSlot = 0,
+                            isHost = true,
+                            peers = emptyList(),
+                            isLan = true,
                             coopQol = coopQol,
                             duplicateEnergyShields = duplicateEnergyShields,
                             fullDeathSpew = fullDeathSpew,
@@ -2123,6 +2131,9 @@ class SetupActivity : ComponentActivity() {
                             playerSpewNoExpire = playerSpewNoExpire,
                             clientsCanRequestRewind = false,
                             restrictNonCoopFovToBase = restrictNonCoopFovToBase,
+                            missionRequirement = pendingMultiplayerLaunch
+                                ?.takeIf { it.game == game && it.mission == mission }?.missionRequirement,
+                            ),
                             hostPort = proxyPort,
                         )
                     // Clean up the migration file
@@ -2940,7 +2951,7 @@ class SetupActivity : ComponentActivity() {
             routeMetadataCoordinator.resumeAfterGame()
         }
         // If a LAN host was broadcasting in-game, stop now
-        if (pendingMultiplayerLaunch == null) {
+        if (pendingMultiplayerLaunch == null && !gameRunningFlag) {
             com.dxxredux.app.lobby.LobbyService
                 .stopInGameBroadcast()
         }

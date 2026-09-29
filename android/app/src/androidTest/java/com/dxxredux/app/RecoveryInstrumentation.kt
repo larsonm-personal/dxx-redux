@@ -42,7 +42,10 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /** Device tests using real sockets and app storage, without additional test dependencies */
 class RecoveryInstrumentation : Instrumentation() {
+    private var missionLoadingOnly = false
+
     override fun onCreate(arguments: Bundle?) {
+        missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         super.onCreate(arguments)
         start()
     }
@@ -50,6 +53,12 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (missionLoadingOnly) {
+                MissionLoadingChecks(this).run()
+                result.putString("stream", "PASS: mission dialog loading, cancellation, retry and catalog reuse\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             missionTransferCancellation()
             missionTransferPhaseCancellation(MissionCompatibilityStatus.VERIFYING)
             missionTransferPhaseCancellation(MissionCompatibilityStatus.FINALIZING)

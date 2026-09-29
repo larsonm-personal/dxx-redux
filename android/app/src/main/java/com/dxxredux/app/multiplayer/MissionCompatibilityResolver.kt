@@ -14,8 +14,8 @@ internal object MissionCompatibilityResolver {
         if (!requirement.isValid) return report(requirement, MissionCompatibilityStatus.ERROR, "invalid_requirement")
         val fileSets = FileSetManager(context.filesDir)
         val setDir = fileSets.getSetDir(fileSets.getActive())
-        val catalog = MissionScanner.scan(context.filesDir, setDir, requirement.game, mode)
-        val local = resolveMissionSelection(catalog, requirement.missionKey)
+        val catalog = MissionCatalog.scan(context.filesDir, setDir, requirement.game)
+        val local = catalog.find(requirement.missionKey, mode)
         if (local == null) {
             if (requirement.isWrapper && matchingDisabledWrapper(context, setDir, requirement)) {
                 return report(requirement, MissionCompatibilityStatus.INSTALLED_DISABLED)

@@ -27,9 +27,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,13 +42,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dxxredux.app.Button
-import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.OutlinedButton
 import com.dxxredux.app.TextButton
 import com.dxxredux.app.VisualReplacementPolicy
 import com.dxxredux.app.dpadTextFieldNavigation
 import com.dxxredux.app.tvFocusBorder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -77,11 +79,13 @@ internal fun CreateGameDialog(
         restrictNonCoopFovToBase: Boolean,
     ) -> Unit,
     onDismiss: () -> Unit,
+    loadCatalog: suspend (
+        android.content.Context,
+        String,
+    ) -> MissionCatalog = { context, game -> MissionCatalog.load(context, game) },
 ) {
     val context = LocalContext.current
     val defaults = remember { HostGameDefaults.load(context) }
-    val fileSetManager = remember { FileSetManager(context.filesDir) }
-    val activeSetDir = remember(fileSetManager) { fileSetManager.getSetDir(fileSetManager.getActive()) }
     var game by remember { mutableStateOf(defaults.game) }
     var mission by remember { mutableStateOf(defaults.mission) }
     var mode by remember { mutableStateOf(defaults.mode) }
@@ -98,19 +102,13 @@ internal fun CreateGameDialog(
     var restrictNonCoopFovToBase by remember { mutableStateOf(defaults.restrictNonCoopFovToBase) }
     var offerMissionDownload by remember { mutableStateOf(defaults.offerMissionDownload) }
     var textEntryActive by remember { mutableStateOf(false) }
-    val availableMissions by
-        produceState(
-            initialValue = MissionScanner.builtins(activeSetDir, game),
-            context.filesDir,
-            activeSetDir,
-            game,
-            mode,
-        ) {
-            value =
-                withContext(Dispatchers.IO) {
-                    MissionScanner.scan(context.filesDir, activeSetDir, game, mode)
-                }
+    var loadAttempt by remember { mutableStateOf(0) }
+    val catalogState =
+        rememberMissionLoad(context, game, loadAttempt, failureMessage = "Could not load missions") {
+            loadCatalog(context, game)
         }
+    val catalog = catalogState.value
+    val availableMissions = remember(catalog, mode) { catalog?.missionsFor(mode).orEmpty() }
     val selectedMissionInfo =
         remember(mission, availableMissions) {
             resolveMissionSelection(availableMissions, mission)
@@ -134,31 +132,31 @@ internal fun CreateGameDialog(
 
     RequestControllerInitialFocus(dialogFocus, revealFocusOnRequest = false)
 
-    // Coop auto-saves and progress
-    val coopSaves =
-        if (mode == "coop") {
-            val saves = readCoopAutosaveHistory(context.filesDir, game, mission, context)
-            val retained = readCoopLevelStartCheckpoints(context.filesDir, game, mission, context)
-            val checkpoint = readCoopProgressAsEntry(context.filesDir, game, mission, context)
-            saves + retained + listOfNotNull(checkpoint)
-        } else {
-            emptyList()
+    val saveState =
+        rememberMissionLoad(
+            context,
+            game,
+            mission,
+            mode,
+            catalog,
+            loadAttempt,
+            failureMessage = "Could not load co-op saves",
+        ) {
+            if (catalog == null) null else CoopSaveOptions.load(context, game, mission, mode, catalog)
         }
-    var selectedSave by remember(coopSaves) {
+    val coopSaves = saveState.value?.saves.orEmpty()
+    val saveWarnings = saveState.value?.warnings.orEmpty()
+    val coopResumeLevel = saveState.value?.resumeLevel
+    val loading =
+        catalogState.loading || saveState.loading ||
+            (catalog != null && saveState.value == null && saveState.error == null)
+    val loadError = catalogState.error ?: saveState.error
+    var selectedSave by remember(game, mission, mode, saveState.value) {
         mutableStateOf(initialCoopSaveSelection(coopSaves))
     }
-    val saveWarnings =
-        remember(game, mission, coopSaves) {
-            coopSaves.associateWith { CoopSaveCompatibility.warning(context.filesDir, game, mission, it) }
-        }
     var launchWarning by remember(game, mission, selectedSave) { mutableStateOf<String?>(null) }
-
-    val coopResumeLevel =
-        if (mode == "coop" && coopSaves.none { it.type == "full_save" }) {
-            readCoopProgress(context.filesDir, game, mission)
-        } else {
-            null
-        }
+    val createScope = key(game, mission, mode, selectedSave, catalog) { rememberCoroutineScope() }
+    var validating by key(game, mission, mode, selectedSave, catalog) { remember { mutableStateOf(false) } }
 
     // When a save is selected, auto-set the level to match
     LaunchedEffect(selectedSave) {
@@ -202,6 +200,12 @@ internal fun CreateGameDialog(
                             .showControllerFocusOnDpad(dialogFocus)
                             .verticalScroll(scrollState),
                 ) {
+                    if (loading) Text("Loading missions and saves...")
+                    launchWarning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    if (loadError != null) {
+                        Text(loadError, color = MaterialTheme.colorScheme.error)
+                        TextButton(onClick = { loadAttempt++ }) { Text("Retry") }
+                    }
                     // Game selector
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("d1", "d2").forEach { g ->
@@ -312,19 +316,19 @@ internal fun CreateGameDialog(
                                     .controllerTextEntryFocus { textEntryActive = it },
                         )
                     }
-                    if (selectedMissionInfo == null) {
+                    if (selectedMissionInfo == null && !loading && loadError == null) {
                         Text(
                             "Select an installed mission.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )
-                    } else if (selectedMissionInfo.levelCount <= 0) {
+                    } else if (selectedMissionInfo != null && selectedMissionInfo.levelCount <= 0) {
                         Text(
                             "This mission does not declare a playable level list.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )
-                    } else if (selectedSave?.secretAreaNumber == null) {
+                    } else if (selectedMissionInfo != null && selectedSave?.secretAreaNumber == null) {
                         Text(
                             "Available levels: 1-${selectedMissionInfo.levelCount}",
                             style = MaterialTheme.typography.bodySmall,
@@ -332,7 +336,6 @@ internal fun CreateGameDialog(
                         )
                     }
                     if (coopSaves.isNotEmpty()) {
-                        launchWarning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                         Text("Restore from save:", style = MaterialTheme.typography.labelMedium)
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             val noSaveSelected = selectedSave == null
@@ -599,76 +602,100 @@ internal fun CreateGameDialog(
             val levelNum = levelNumText.toIntOrNull() ?: 1
             Button(
                 onClick = {
-                    launchWarning = CoopSaveCompatibility.warning(context.filesDir, game, mission, selectedSave)
-                    if (launchWarning != null) return@Button
-                    HostGameDefaults.save(
-                        context,
-                        HostGameDefaults.Defaults(
-                            game = game,
-                            mission = mission,
-                            mode = mode,
-                            difficulty = difficulty,
-                            levelNum = levelNum,
-                            maxPlayers = maxPlayers,
-                            coopQol = coopQol,
-                            duplicateEnergyShields = duplicateEnergyShields,
-                            fullDeathSpew = fullDeathSpew,
-                            coopBriefings = coopBriefings,
-                            allowSecretWarps = allowSecretWarps,
-                            playerSpewNoExpire = playerSpewNoExpire,
-                            clientsCanRequestRewind = clientsCanRequestRewind,
-                            restrictNonCoopFovToBase = restrictNonCoopFovToBase,
-                            offerMissionDownload = offerMissionDownload,
-                        ),
-                    )
-                    val restoreSave = restoreSaveForHostedLevel(selectedSave, levelNum)
-                    val restoreSlot = restoreSave?.slot
-                    if (restoreSave?.checkpointId != null) {
-                        writeCoopRestoreCheckpoint(context.filesDir, game, restoreSave.checkpointId)
-                    } else {
-                        writeCoopRestoreSlot(context.filesDir, game, restoreSlot)
+                    if (validating) return@Button
+                    validating = true
+                    createScope.launch {
+                        try {
+                            launchWarning =
+                                withContext(Dispatchers.IO) {
+                                    CoopSaveCompatibility.warning(
+                                        context.filesDir,
+                                        game,
+                                        mission,
+                                        selectedSave,
+                                        catalog,
+                                    )
+                                }
+                            if (launchWarning != null) return@launch
+                            HostGameDefaults.save(
+                                context,
+                                HostGameDefaults.Defaults(
+                                    game = game,
+                                    mission = mission,
+                                    mode = mode,
+                                    difficulty = difficulty,
+                                    levelNum = levelNum,
+                                    maxPlayers = maxPlayers,
+                                    coopQol = coopQol,
+                                    duplicateEnergyShields = duplicateEnergyShields,
+                                    fullDeathSpew = fullDeathSpew,
+                                    coopBriefings = coopBriefings,
+                                    allowSecretWarps = allowSecretWarps,
+                                    playerSpewNoExpire = playerSpewNoExpire,
+                                    clientsCanRequestRewind = clientsCanRequestRewind,
+                                    restrictNonCoopFovToBase = restrictNonCoopFovToBase,
+                                    offerMissionDownload = offerMissionDownload,
+                                ),
+                            )
+                            val restoreSave = restoreSaveForHostedLevel(selectedSave, levelNum)
+                            val restoreSlot = restoreSave?.slot
+                            if (restoreSave?.checkpointId != null) {
+                                writeCoopRestoreCheckpoint(context.filesDir, game, restoreSave.checkpointId)
+                            } else {
+                                writeCoopRestoreSlot(context.filesDir, game, restoreSlot)
+                            }
+                            if (mode == "coop") {
+                                val selectedSlot = selectedSave?.slot ?: -1
+                                val selectedLevel = selectedSave?.level ?: -1
+                                val restoredSlot = restoreSlot ?: -1
+                                val restoredLevel = restoreSave?.level ?: -1
+                                CoopDesyncLog.log(
+                                    "create host restore selection: game=$game mission=$mission level=$levelNum " +
+                                        "selected_slot=$selectedSlot selected_level=$selectedLevel " +
+                                        "restore_slot=$restoredSlot restore_level=$restoredLevel " +
+                                        "save_count=${coopSaves.size}",
+                                )
+                            }
+                            MultiplayerResumePrefs.saveRestoreSelection(context, game, restoreSave, levelNum)
+                            onCreate(
+                                game,
+                                mission,
+                                MissionScanner.requirement(
+                                    game,
+                                    checkNotNull(selectedMissionInfo),
+                                    offerMissionDownload && missionDownloadSupported,
+                                ),
+                                mode,
+                                maxPlayers,
+                                difficulty,
+                                levelNum,
+                                coopQol,
+                                duplicateEnergyShields,
+                                fullDeathSpew,
+                                coopBriefings,
+                                allowSecretWarps,
+                                playerSpewNoExpire,
+                                clientsCanRequestRewind,
+                                restrictNonCoopFovToBase,
+                            )
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            com.dxxredux.app.LauncherDebugLog
+                                .log("Host preparation failed: ${e.message}")
+                            launchWarning = "Could not prepare the game. Please try again."
+                        } finally {
+                            validating = false
+                        }
                     }
-                    if (mode == "coop") {
-                        val selectedSlot = selectedSave?.slot ?: -1
-                        val selectedLevel = selectedSave?.level ?: -1
-                        val restoredSlot = restoreSlot ?: -1
-                        val restoredLevel = restoreSave?.level ?: -1
-                        CoopDesyncLog.log(
-                            "create host restore selection: game=$game mission=$mission level=$levelNum " +
-                                "selected_slot=$selectedSlot selected_level=$selectedLevel " +
-                                "restore_slot=$restoredSlot restore_level=$restoredLevel " +
-                                "save_count=${coopSaves.size}",
-                        )
-                    }
-                    MultiplayerResumePrefs.saveRestoreSelection(context, game, restoreSave, levelNum)
-                    onCreate(
-                        game,
-                        mission,
-                        MissionScanner.requirement(
-                            game,
-                            checkNotNull(selectedMissionInfo),
-                            offerMissionDownload && missionDownloadSupported,
-                        ),
-                        mode,
-                        maxPlayers,
-                        difficulty,
-                        levelNum,
-                        coopQol,
-                        duplicateEnergyShields,
-                        fullDeathSpew,
-                        coopBriefings,
-                        allowSecretWarps,
-                        playerSpewNoExpire,
-                        clientsCanRequestRewind,
-                        restrictNonCoopFovToBase,
-                    )
                 },
                 enabled =
-                    selectedMissionLevelIsValid(selectedMissionInfo, levelNum) &&
+                    !loading && loadError == null && !validating &&
+                        selectedMissionLevelIsValid(selectedMissionInfo, levelNum) &&
                         maxPlayers in 2..8 && saveWarnings[selectedSave] == null,
                 modifier = Modifier.focusRequester(createFocus),
             ) {
-                Text(confirmLabel)
+                Text(if (validating) "Checking save..." else confirmLabel)
             }
         },
     )

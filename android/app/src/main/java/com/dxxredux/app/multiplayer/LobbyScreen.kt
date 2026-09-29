@@ -21,8 +21,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -31,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.dxxredux.app.Button
 import com.dxxredux.app.OutlinedButton
+import com.dxxredux.app.TextButton
 import com.dxxredux.app.VisualReplacementPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -196,33 +199,36 @@ fun LobbyScreen(
                     it.ready && it.missionStatus?.status == MissionCompatibilityStatus.MATCH
                 }
             val enoughPlayers = lobby.players.size >= 2
-            val saveWarning =
-                if (mode == "coop") {
-                    CoopSaveCompatibility.hostWarning(
-                        context.filesDir,
-                        gi["game"]?.jsonPrimitive?.content ?: "d2",
-                        mission,
-                    )
-                } else {
-                    null
-                }
-            saveWarning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Button(
-                onClick = {
-                    if (mode == "coop" &&
+            var saveCheckAttempt by remember { mutableStateOf(0) }
+            val saveCheck =
+                rememberMissionLoad(
+                    lobby.lobbyId,
+                    gi,
+                    mission,
+                    mode,
+                    saveCheckAttempt,
+                    failureMessage = "Could not check the selected save",
+                ) {
+                    if (mode == "coop") {
                         CoopSaveCompatibility.hostWarning(
                             context.filesDir,
                             gi["game"]?.jsonPrimitive?.content ?: "d2",
                             mission,
-                        ) !=
+                        )
+                    } else {
                         null
-                    ) {
-                        return@Button
                     }
+                }
+            val saveWarning = saveCheck.value ?: saveCheck.error
+            if (saveCheck.loading) Text("Checking save...")
+            saveWarning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            if (saveCheck.error != null) TextButton(onClick = { saveCheckAttempt++ }) { Text("Retry") }
+            Button(
+                onClick = {
                     onLaunchRequested(gi["game"]?.jsonPrimitive?.content ?: "d2")
-                    MatchmakingService.startGame(context.filesDir)
+                    uiScope.launch(Dispatchers.IO) { MatchmakingService.startGame(context.filesDir) }
                 },
-                enabled = allReady && enoughPlayers && saveWarning == null,
+                enabled = !saveCheck.loading && allReady && enoughPlayers && saveWarning == null,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Start Game")

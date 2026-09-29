@@ -55,7 +55,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.dxxredux.app.BuildInfo
 import com.dxxredux.app.Button
-import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.ModManager
 import com.dxxredux.app.OutlinedButton
 import com.dxxredux.app.TextButton
@@ -465,27 +464,25 @@ private fun LanDiscoveryView(
             if (!LobbyService.isDiscovering.value) {
                 LobbyService.startDiscovery(context, hostCallsign)
             }
-            val fileSets = FileSetManager(context.filesDir)
-            val setDir = fileSets.getSetDir(fileSets.getActive())
             val missionInfo =
-                resolveMissionSelection(
-                    MissionScanner.scan(context.filesDir, setDir, record.game, record.mode),
-                    record.mission,
-                ) ?: return@launch
+                MissionCatalog.load(context, record.game).find(record.mission, record.mode)
+                    ?: return@launch
             val requirement = MissionScanner.requirement(record.game, missionInfo, offerDownload = true)
-            LobbyService.hostLobby(
-                hostCallsign,
-                record.game,
-                record.mission,
-                record.mode,
-                record.maxPlayers,
-                missionRequirement = requirement,
-                restrictNonCoopFovToBase = record.restrictNonCoopFovToBase,
-                stockVisualsEnforced = visualSummary.hasOmittedVisuals,
-                omittedVisualModCount = visualSummary.omittedModCount,
-                omittedVisualTextureCount = visualSummary.omittedTextureCount,
-                omittedVisualModNames = visualSummary.omittedModNames,
-            )
+            withContext(Dispatchers.IO) {
+                LobbyService.hostLobby(
+                    hostCallsign,
+                    record.game,
+                    record.mission,
+                    record.mode,
+                    record.maxPlayers,
+                    missionRequirement = requirement,
+                    restrictNonCoopFovToBase = record.restrictNonCoopFovToBase,
+                    stockVisualsEnforced = visualSummary.hasOmittedVisuals,
+                    omittedVisualModCount = visualSummary.omittedModCount,
+                    omittedVisualTextureCount = visualSummary.omittedTextureCount,
+                    omittedVisualModNames = visualSummary.omittedModNames,
+                )
+            }
         }
     }
 
@@ -872,32 +869,46 @@ private fun LanDiscoveryView(
                 if (hostedMode == "coop") {
                     CoopRestoreSelectionSummary(hostedGame, hostedLevelNum)
                 }
-                val saveWarning =
-                    if (hostedMode == "coop") {
-                        CoopSaveCompatibility.hostWarning(context.filesDir, hostedGame, hostedMission)
-                    } else {
-                        null
+                var saveCheckAttempt by remember { mutableStateOf(0) }
+                val saveCheck =
+                    rememberMissionLoad(
+                        hostedGame,
+                        hostedMission,
+                        hostedMode,
+                        saveCheckAttempt,
+                        failureMessage = "Could not check the selected save",
+                    ) {
+                        if (hostedMode == "coop") {
+                            CoopSaveCompatibility.hostWarning(context.filesDir, hostedGame, hostedMission)
+                        } else {
+                            null
+                        }
                     }
+                val saveWarning = saveCheck.value ?: saveCheck.error
+                if (saveCheck.loading) Text("Checking save...")
                 saveWarning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                if (saveCheck.error != null) TextButton(onClick = { saveCheckAttempt++ }) { Text("Retry") }
                 Button(
                     onClick = {
                         onLaunchRequested(hostedGame)
-                        LobbyService.startGame(
-                            hostedDifficulty,
-                            hostedLevelNum,
-                            coopQol = hostedCoopQol,
-                            duplicateEnergyShields = hostedDuplicateEnergyShields,
-                            fullDeathSpew = hostedFullDeathSpew,
-                            coopBriefings = hostedCoopBriefings,
-                            allowSecretWarps = hostedAllowSecretWarps,
-                            playerSpewNoExpire = hostedPlayerSpewNoExpire,
-                            clientsCanRequestRewind = hostedClientsCanRequestRewind,
-                            restrictNonCoopFovToBase = hostedRestrictNonCoopFovToBase,
-                        )
+                        coroutineScope.launch(Dispatchers.IO) {
+                            LobbyService.startGame(
+                                hostedDifficulty,
+                                hostedLevelNum,
+                                coopQol = hostedCoopQol,
+                                duplicateEnergyShields = hostedDuplicateEnergyShields,
+                                fullDeathSpew = hostedFullDeathSpew,
+                                coopBriefings = hostedCoopBriefings,
+                                allowSecretWarps = hostedAllowSecretWarps,
+                                playerSpewNoExpire = hostedPlayerSpewNoExpire,
+                                clientsCanRequestRewind = hostedClientsCanRequestRewind,
+                                restrictNonCoopFovToBase = hostedRestrictNonCoopFovToBase,
+                            )
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled =
-                        saveWarning == null && hostedPlayers.size >= 2 &&
+                        !saveCheck.loading && saveWarning == null && hostedPlayers.size >= 2 &&
                             hostedPlayers.all {
                                 it.connected && it.ready &&
                                     it.missionStatus?.status == MissionCompatibilityStatus.MATCH
@@ -988,19 +999,21 @@ private fun LanDiscoveryView(
                 coroutineScope.launch {
                     val visualSummary = VisualReplacementPolicy.summaryForPvp(context, game, mode)
                     hostedVisualSummary = visualSummary
-                    LobbyService.hostLobby(
-                        callsign,
-                        game,
-                        mission ?: "",
-                        mode,
-                        maxPlayers,
-                        missionRequirement = missionRequirement,
-                        restrictNonCoopFovToBase = restrictNonCoopFovToBase,
-                        stockVisualsEnforced = visualSummary.hasOmittedVisuals,
-                        omittedVisualModCount = visualSummary.omittedModCount,
-                        omittedVisualTextureCount = visualSummary.omittedTextureCount,
-                        omittedVisualModNames = visualSummary.omittedModNames,
-                    )
+                    withContext(Dispatchers.IO) {
+                        LobbyService.hostLobby(
+                            callsign,
+                            game,
+                            mission ?: "",
+                            mode,
+                            maxPlayers,
+                            missionRequirement = missionRequirement,
+                            restrictNonCoopFovToBase = restrictNonCoopFovToBase,
+                            stockVisualsEnforced = visualSummary.hasOmittedVisuals,
+                            omittedVisualModCount = visualSummary.omittedModCount,
+                            omittedVisualTextureCount = visualSummary.omittedTextureCount,
+                            omittedVisualModNames = visualSummary.omittedModNames,
+                        )
+                    }
                 }
             },
             onDismiss = { showHostDialog = false },

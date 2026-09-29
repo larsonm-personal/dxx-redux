@@ -16,6 +16,7 @@ internal object CoopSaveCompatibility {
         game: String,
         mission: String?,
         save: CoopSaveEntry?,
+        catalog: MissionCatalog? = null,
     ): String? {
         if (save == null || save.type == "checkpoint") return null
         if (save.slot !in 0..9 && save.checkpointId == null) return WARNING
@@ -24,6 +25,7 @@ internal object CoopSaveCompatibility {
             game,
             mission,
             CoopRestoreSelection(save.slot.takeIf { it >= 0 }, save.checkpointId),
+            catalog,
         )
     }
 
@@ -38,6 +40,7 @@ internal object CoopSaveCompatibility {
         game: String,
         mission: String?,
         selection: CoopRestoreSelection,
+        catalog: MissionCatalog? = null,
     ): String? {
         if (selection.slot == null && selection.checkpointId == null) return null
         if (!nativeAvailable) return WARNING
@@ -67,11 +70,12 @@ internal object CoopSaveCompatibility {
                 if (game == "d1") {
                     "d1"
                 } else {
-                    val fileSets = FileSetManager(filesDir)
-                    resolveMissionSelection(
-                        MissionScanner.scan(filesDir, fileSets.getSetDir(fileSets.getActive()), game, "coop"),
-                        mission.orEmpty(),
-                    )?.contentGame ?: return@runCatching WARNING
+                    val snapshot =
+                        catalog ?: run {
+                            val fileSets = FileSetManager(filesDir)
+                            MissionCatalog.scan(filesDir, fileSets.getSetDir(fileSets.getActive()), game)
+                        }
+                    snapshot.find(mission.orEmpty())?.contentGame ?: return@runCatching WARNING
                 }
             val status = nativeCompatibilityStatus(path.path, game == "d1", contentGame == "d1")
             when {

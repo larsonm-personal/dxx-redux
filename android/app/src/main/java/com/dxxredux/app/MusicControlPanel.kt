@@ -36,6 +36,7 @@ class MusicControlPanel(
 
     private data class MusicState(
         val source: String = "cd",
+        val midiUsesOpl3: Boolean = false,
         val hasAddonMission: Boolean = false,
         val oneTrackPerLevel: Boolean = false,
         val volume: Int = 8,
@@ -143,6 +144,7 @@ class MusicControlPanel(
                     }
                 MusicState(
                     source = obj.optString("source", "cd"),
+                    midiUsesOpl3 = obj.optBoolean("midiUsesOpl3", false),
                     hasAddonMission = obj.optBoolean("hasAddonMission", false),
                     oneTrackPerLevel = obj.optBoolean("oneTrackPerLevel", false),
                     volume = obj.optInt("volume", 8).coerceIn(0, 8),
@@ -319,7 +321,12 @@ class MusicControlPanel(
         smallTextPaint.textSize = sourceRect.height() * 0.42f
         smallTextPaint.textAlign = Paint.Align.LEFT
         val chevronWidth = smallTextPaint.measureText(" v")
-        val currentLabel = sourceOptions().getOrNull(sourceIndex())?.label ?: "Base game MIDI"
+        val currentLabel =
+            if (state.source == "midi") {
+                if (state.midiUsesOpl3) "OPL3" else "MIDI soundfont"
+            } else {
+                sourceOptions().getOrNull(sourceIndex())?.label ?: "Base game MIDI"
+            }
         val label = trimToWidth("Source: $currentLabel", smallTextPaint, sourceRect.width() - chevronWidth - 20f)
         canvas.drawText(
             label,

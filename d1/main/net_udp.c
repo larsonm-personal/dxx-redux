@@ -4794,7 +4794,12 @@ int net_udp_start_poll( newmenu *menu, d_event *event, void *userdata )
 	int nitems = newmenu_get_nitems(menu);
 	int i,n,nm;
 
+#ifdef __ANDROID__
+	/* Close the lobby before drawing, so the underlying menu is never presented */
+	if (event->type != EVENT_IDLE)
+#else
 	if (event->type != EVENT_WINDOW_DRAW)
+#endif
 		return 0;
 	
 	userdata = userdata;

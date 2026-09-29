@@ -32,6 +32,7 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
 extern int tsf_music_get_paused(void);
+extern int music_get_fm_active(void);
 typedef enum android_music_command_type {
 	MUSIC_COMMAND_SOURCE,
 	MUSIC_COMMAND_NEXT,
@@ -457,12 +458,13 @@ static void music_publish_snapshot(void)
 	if (g_music_snapshot_overlay) {
 		written = snprintf(g_music_snapshot_overlay, g_music_snapshot_overlay_capacity,
 		                   "{\"musicType\":%d,\"source\":\"%s\",\"preferMissionSoundtrack\":%d,"
-		                   "\"hasAddonMission\":%s,"
+		                   "\"hasAddonMission\":%s,\"midiUsesOpl3\":%s,"
 		                   "\"playOrder\":%d,\"oneTrackPerLevel\":%d,\"volume\":%d,"
 		                   "\"paused\":%d,\"currentTrack\":%d,\"totalTracks\":%d,"
 		                   "\"currentName\":\"%s\",\"tracks\":%s}",
 		                   type, music_current_source(), android_music_get_prefer_mission_soundtrack(),
 		                   music_has_addon_mission() ? "true" : "false",
+		                   music_get_fm_active() ? "true" : "false",
 		                   GameCfg.CMLevelMusicPlayOrder,
 		                   GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_LEVEL,
 		                   GameCfg.MusicVolume, music_is_paused(), track, total, escaped_name,

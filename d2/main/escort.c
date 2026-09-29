@@ -2019,16 +2019,17 @@ void escort_create_path_to_goal(object *objp)
 //	Returns goal object.
 int escort_set_goal_object(void)
 {
+	int key_flags = escort_owned_key_flags();
 	if (guidebot_routing_is_enhanced())
-		return escort_enhanced_goal_object(escort_owned_key_flags());
+		return escort_enhanced_goal_object(key_flags);
 
 	if (Escort_special_goal != -1)
 		return ESCORT_GOAL_UNSPECIFIED;
-	else if (!(ConsoleObject->flags & PLAYER_FLAGS_BLUE_KEY) && (exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, POW_KEY_BLUE, -1) != -1))
+	else if (!(key_flags & PLAYER_FLAGS_BLUE_KEY) && (exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, POW_KEY_BLUE, -1) != -1))
 		return ESCORT_GOAL_BLUE_KEY;
-	else if (!(ConsoleObject->flags & PLAYER_FLAGS_GOLD_KEY) && (exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, POW_KEY_GOLD, -1) != -1))
+	else if (!(key_flags & PLAYER_FLAGS_GOLD_KEY) && (exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, POW_KEY_GOLD, -1) != -1))
 		return ESCORT_GOAL_GOLD_KEY;
-	else if (!(ConsoleObject->flags & PLAYER_FLAGS_RED_KEY) && (exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, POW_KEY_RED, -1) != -1))
+	else if (!(key_flags & PLAYER_FLAGS_RED_KEY) && (exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, POW_KEY_RED, -1) != -1))
 		return ESCORT_GOAL_RED_KEY;
 	else if (Control_center_destroyed == 0) {
 		if (Num_boss_teleport_segs)
