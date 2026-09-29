@@ -234,10 +234,10 @@ void MovieShowFrame(ubyte *buf, int dstx, int dsty, int bufw, int bufh, int sw, 
 	}
 	else // Other (robot) movie so set scale to min. screen dimension
 	{
-		if (((float)SWIDTH/bufw) < ((float)SHEIGHT/bufh))
-			scale = ((float)SWIDTH/sw);
+		if (((float)GWIDTH/bufw) < ((float)GHEIGHT/bufh))
+			scale = ((float)GWIDTH/sw);
 		else
-			scale = ((float)SHEIGHT/sh);
+			scale = ((float)GHEIGHT/sh);
 	}
 
 	if (dstx == -1) // center it
@@ -665,7 +665,7 @@ int RotateRobot()
 	if (err == MVE_ERR_EOF)     //end of movie, so reset
 	{
 		SDL_RWseek(RoboFile, 0, SEEK_SET);
-		if (MVE_rmPrepMovie(RoboFile, SWIDTH/2.3, SHEIGHT/2.3, 0))
+		if (MVE_rmPrepMovie(RoboFile, GWIDTH/2.3, GHEIGHT/2.3, 0))
 		{
 			Int3();
 			return 0;
@@ -718,7 +718,7 @@ int InitRobotMovie(char *filename)
 
 	Vid_State = VID_PLAY;
 
-	if (MVE_rmPrepMovie((void *)RoboFile, SWIDTH/2.3, SHEIGHT/2.3, 0)) {
+	if (MVE_rmPrepMovie((void *)RoboFile, GWIDTH/2.3, GHEIGHT/2.3, 0)) {
 		Int3();
 		return 0;
 	}

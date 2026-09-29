@@ -16,6 +16,7 @@ extern "C" {
 #include "gameseq.h"
 #include "key.h"
 #include "maths.h"
+#include "multi.h"
 #include "robot.h"
 #include "wall.h"
 #include "cntrlcen.h"
@@ -24,6 +25,7 @@ extern "C" {
 #include "physics.h"
 #include "physfsx.h"
 #include "playsave.h"
+#include "powerup.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "input_demo_start.h"
@@ -316,14 +318,62 @@ int test_guidebot_live_navigation(const char *output, const char *audit)
 	const auto player_flags = Players[Player_num].flags;
 	const auto object_flags = ConsoleObject->flags;
 	const int destroyed = Control_center_destroyed;
+	const int game_mode = Game_mode;
+	const int protocol = multi_protocol;
+	// Co-op keys stay in the world after pickup; goal selection must follow inventory
+	Game_mode = GM_NETWORK | GM_MULTI_COOP | GM_MULTI_ROBOTS;
+	multi_protocol = MULTI_PROTO_UDP;
+	Players[Player_num].flags = 0;
+	ConsoleObject->flags = 0;
+	Escort_special_goal = -1;
+	const int key_ids[] = { POW_KEY_BLUE, POW_KEY_GOLD, POW_KEY_RED };
+	const int key_flags[] = { PLAYER_FLAGS_BLUE_KEY, PLAYER_FLAGS_GOLD_KEY, PLAYER_FLAGS_RED_KEY };
+	const int key_goals[] = { ESCORT_GOAL_BLUE_KEY, ESCORT_GOAL_GOLD_KEY, ESCORT_GOAL_RED_KEY };
+	for (int k = 0; k < 3; ++k) {
+		int objnum = obj_create(OBJ_POWERUP, key_ids[k], ConsoleObject->segnum, &ConsoleObject->pos,
+		                       nullptr, F1_0, CT_POWERUP, MT_NONE, RT_POWERUP);
+		check("coop_key_created", objnum >= 0);
+		if (objnum < 0) continue;
+		check("coop_key_before_pickup_" + std::to_string(k), escort_set_goal_object() == key_goals[k]);
+		const int consumed = do_powerup(&Objects[objnum]);
+		check("coop_key_remains_" + std::to_string(k), !consumed && Objects[objnum].type == OBJ_POWERUP);
+		check("coop_key_inventory_" + std::to_string(k), (Players[Player_num].flags & key_flags[k]) != 0);
+		check("coop_key_goal_advances_" + std::to_string(k), escort_set_goal_object() != key_goals[k]);
+		obj_delete(objnum);
+	}
+	const int owner = Escort_owner_player;
+	const int remote = (Player_num + 1) % MAX_PLAYERS;
+	const auto remote_flags = Players[remote].flags;
+	const auto remote_connected = Players[remote].connected;
+	const int blue = obj_create(OBJ_POWERUP, POW_KEY_BLUE, ConsoleObject->segnum, &ConsoleObject->pos,
+	                            nullptr, F1_0, CT_POWERUP, MT_NONE, RT_POWERUP);
+	check("owner_key_created", blue >= 0);
+	Escort_owner_player = remote;
+	Players[remote].connected = CONNECT_PLAYING;
+	Players[remote].flags = 0;
+	check("coop_uses_owner_inventory", escort_set_goal_object() == ESCORT_GOAL_BLUE_KEY);
+	Players[remote].flags = PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_GOLD_KEY | PLAYER_FLAGS_RED_KEY;
+	check("coop_owner_keys_advance_goal", escort_set_goal_object() > ESCORT_GOAL_RED_KEY);
+	Players[remote].connected = CONNECT_DISCONNECTED;
+	check("coop_disconnected_owner_uses_local_inventory", escort_set_goal_object() > ESCORT_GOAL_RED_KEY);
+	if (blue >= 0) obj_delete(blue);
+	Players[remote].flags = remote_flags;
+	Players[remote].connected = remote_connected;
+	Escort_owner_player = owner;
+	Game_mode = game_mode;
+	multi_protocol = protocol;
 	for (int flags = 0; flags < 8; ++flags)
 		for (int dead = 0; dead < 2; ++dead) {
 			Players[Player_num].flags = (flags << 1);
 			Control_center_destroyed = dead;
+			Escort_special_goal = -1;
+			// The frozen selector has an upstream bug: it reads inventory from object flags
+			// Supply its intended input, then verify the live selector ignores object flags
+			ConsoleObject->flags = flags << 1;
+			const int expected = redux_escort_set_goal_object();
 			for (int object_keys = 0; object_keys < 8; ++object_keys) {
 				ConsoleObject->flags = object_keys << 1;
-				Escort_special_goal = -1;
-				check("selector_" + std::to_string(flags) + "_" + std::to_string(dead) + "_" + std::to_string(object_keys), escort_set_goal_object() == redux_escort_set_goal_object());
+				check("selector_" + std::to_string(flags) + "_" + std::to_string(dead) + "_" + std::to_string(object_keys), escort_set_goal_object() == expected);
 			}
 		}
 	Players[Player_num].flags = player_flags;

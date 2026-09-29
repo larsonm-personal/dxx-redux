@@ -25,6 +25,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "key.h"
 #include "gr.h"
+#include "../../android/app/src/main/cpp/shared/briefing_canvas.h"
 #include "palette.h"
 #include "iff.h"
 #include "pcx.h"
@@ -962,10 +963,10 @@ void show_animated_bitmap(briefing *br)
 #ifdef OGL
 	float scale = 1.0;
 
-	if (((float)SWIDTH/320) < ((float)SHEIGHT/200))
-		scale = ((float)SWIDTH/320);
+	if (((float)GWIDTH/320) < ((float)GHEIGHT/200))
+		scale = ((float)GWIDTH/320);
 	else
-		scale = ((float)SHEIGHT/200);
+		scale = ((float)GHEIGHT/200);
 #endif
 
 	// Only plot every nth frame.
@@ -1074,15 +1075,15 @@ void show_briefing_bitmap(grs_bitmap *bmp)
 	float scale = 1.0;
 #endif
 
-	bitmap_canv = gr_create_sub_canvas(grd_curcanv, rescale_x(220), rescale_y(55), (bmp->bm_w*(SWIDTH/(HIRESMODE ? 640 : 320))),(bmp->bm_h*(SHEIGHT/(HIRESMODE ? 480 : 200))));
+	bitmap_canv = gr_create_sub_canvas(grd_curcanv, rescale_x(220), rescale_y(55), (bmp->bm_w*(GWIDTH/(HIRESMODE ? 640 : 320))),(bmp->bm_h*(GHEIGHT/(HIRESMODE ? 480 : 200))));
 	curcanv_save = grd_curcanv;
 	gr_set_current_canvas(bitmap_canv);
 
 #ifdef OGL
-	if (((float)SWIDTH/(HIRESMODE ? 640 : 320)) < ((float)SHEIGHT/(HIRESMODE ? 480 : 200)))
-		scale = ((float)SWIDTH/(HIRESMODE ? 640 : 320));
+	if (((float)curcanv_save->cv_bitmap.bm_w/(HIRESMODE ? 640 : 320)) < ((float)curcanv_save->cv_bitmap.bm_h/(HIRESMODE ? 480 : 200)))
+		scale = ((float)curcanv_save->cv_bitmap.bm_w/(HIRESMODE ? 640 : 320));
 	else
-		scale = ((float)SHEIGHT/(HIRESMODE ? 480 : 200));
+		scale = ((float)curcanv_save->cv_bitmap.bm_h/(HIRESMODE ? 480 : 200));
 
 	ogl_ubitmapm_cs(0,0,bmp->bm_w*scale,bmp->bm_h*scale,bmp,255,F1_0);
 #else
@@ -1253,6 +1254,9 @@ int new_briefing_screen(briefing *br, int first)
 //-----------------------------------------------------------------------------
 int briefing_handler(window *wind, d_event *event, briefing *br)
 {
+	if (br)
+		gr_set_current_canvas(window_get_canvas(wind));
+
 #ifdef ANDROID
 	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
 	    android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_BRIEFING)) {
@@ -1358,6 +1362,8 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 
 		case EVENT_WINDOW_DRAW:
 			gr_set_current_canvas(NULL);
+			gr_clear_canvas(BM_XRGB(0,0,0));
+			gr_set_current_canvas(window_get_canvas(wind));
 
 			timer_delay2(50);
 
@@ -1392,6 +1398,7 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 			break;
 
 		case EVENT_WINDOW_CLOSE:
+			gr_set_current_canvas(NULL);
 			free_briefing_screen(br);
 			if (br->hum_channel>-1)
 			{
@@ -1463,7 +1470,8 @@ void do_briefing_screens(char *filename, int level_num)
 	// set screen correctly for robot movies
 	set_screen_mode( SCREEN_MOVIE );
 
-	gr_set_current_canvas(NULL);
+	briefing_init_canvas(window_get_canvas(wind));
+	gr_set_current_canvas(window_get_canvas(wind));
 
 	if (!new_briefing_screen(br, 1))
 	{

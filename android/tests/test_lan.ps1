@@ -1203,22 +1203,18 @@ function Start-MigratedPeerRejoin {
     Adb-Dev-Timeout -Serial $JoiningSerial -AdbArgs @(
         "shell", "run-as", $PACKAGE, "rm", "-f", "files/introspect.json"
     ) -Seconds 10 | Out-Null
-    Write-Status "Rejoining $JoiningSerial to migrated host ${hostIp}:$MIGRATED_HOST_PORT"
-    $rejoinExtras = @(
-        "--es", "game", $Game,
-        "--es", "mp_mode", "join",
-        "--es", "mode", $MODE,
-        "--ei", "max_players", "2",
-        "--ei", "level_num", "1",
-        "--ei", "difficulty", "1",
-        "--es", "callsign", $Callsign,
-        "--es", "host_addr", $hostIp,
-        "--ei", "host_port", $MIGRATED_HOST_PORT.ToString()
-    )
-    if ($MISSION) {
-        $rejoinExtras += @("--es", "mission", $MISSION)
+    Write-Status "Discovering migrated host ${hostIp}:$MIGRATED_HOST_PORT before rejoining $JoiningSerial"
+    Send-MpCommand -Serial $JoiningSerial -Command 'lan_discover' -Extras @('--es', 'callsign', $Callsign)
+    if (-not (Wait-ForCondition -Description 'Migrated host advertises its running engine and proxy port' `
+                -TimeoutSec 30 -PollMs 1000 -Condition {
+                Send-MpCommand -Serial $JoiningSerial -Command 'lan_discover_status'
+                $status = Adb-Dev-Timeout -Serial $JoiningSerial -AdbArgs @('logcat', '-d', '-s', 'DXX-MP:I') -Seconds 5
+                return $status -match "from $([regex]::Escape($hostIp)) status=in_game port=$MIGRATED_HOST_PORT"
+            })) {
+        Write-Status 'FAIL: migrated engine was not discoverable as an in-game lobby' 'Red'
+        return $false
     }
-    Send-MpCommand -Serial $JoiningSerial -Command "lan_launch" -Extras $rejoinExtras
+    Send-MpCommand -Serial $JoiningSerial -Command 'lan_join_first_lobby' -Extras @('--es', 'host_addr', $hostIp)
     if (-not (Wait-ForCondition -Description "Rejoining game process on $JoiningSerial" `
                 -TimeoutSec 30 -PollMs 500 -Condition {
                 $gPid = Adb-Dev-Timeout -Serial $JoiningSerial -AdbArgs @(
@@ -2198,7 +2194,7 @@ try {
         }
     }
 
-    if ($D1LevelTransition) {
+    if ($D1LevelTransition -or $HostMigration) {
         foreach ($serial in @($EMU1, $EMU2)) {
             Adb-Dev-Timeout -Serial $serial -AdbArgs @(
                 'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',

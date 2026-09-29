@@ -11,7 +11,7 @@ Existing unrelated working-tree changes and `android/outstanding_bugs.md` must b
 
 ## Review results
 
-Review completed against the supplied log and current source. No engine or launcher code changed; no build or device reproduction was performed for this review
+Initial review completed against the supplied log and source. The subsequent fix request is tracked below
 
 ### Initial LAN discovery: failure not established
 
@@ -53,3 +53,41 @@ Review completed against the supplied log and current source. No engine or launc
 - Commit `80af2244` reintroduced the incorrect object-flag checks when separating classic and enhanced routing
 - The pickup itself is not captured in guidebot diagnostics, but the second-round repeated blue-key goal is recorded and the source defect directly explains the reported behavior
 - Fix direction: use owner inventory flags for classic automatic key choice while preserving classic pathfinding. Cover blue/gold/red keys that remain in co-op, owner selection, and restored inventory
+
+## Implementation and validation
+
+- Added a migrated-host adoption path that advertises the existing engine as `in_game` on its proxy port, without starting a new game or requiring a second lobby member
+- Switching to another lobby now clears stale hosting and client heartbeat/retry state; migration adoption preserves mission requirements
+- Added per-address receive counters and announcement status/port diagnostics so self-broadcast traffic can be distinguished from remote traffic
+- D1/D2 Android lobby start handling now runs during idle dispatch, before window drawing can expose the underlying main menu
+- Classic automatic guidebot goals now consult owner inventory, matching the existing enhanced-mode inventory source while retaining classic routing
+- Added Android service instrumentation for migration adoption, former-host lobby joins, and joining a running game
+- Extended native classic-guidebot regression coverage with real blue/gold/red co-op pickups that leave the powerups in the mine, remote-owner inventory, disconnected-owner fallback, and independent object flags
+- Extended the two-emulator host-migration test to discover and join the advertised running lobby instead of bypassing discovery with a direct engine launch
+- Windows D1/D2 builds and Android debug/application-test builds passed; service instrumentation, transport recovery, and native classic-guidebot tests passed
+- First full D2 migration run confirmed discovery and engine launch, then exposed another reconnect handshake failure: the host repeatedly sends a challenge while the joining engine has temporary slot 2
+- A diagnostic-only reproduction confirmed `reconnect challenge slot mismatch: host=0 local=2 status=3`. The shared Android challenge handler now permits the master's bounded returning slot during `NETSTAT_WAITING`, while retaining the live-game slot check and all existing source/token, identity, generation, and fresh-challenge proof checks
+- Scoped mixed-language formatting/lint and native reconnect-authentication/initial-sync tests passed
+- The next full run exposed a separate timeout race: reliable retry expiry entered `multi_leave_game()`, whose nested network pump promoted the survivor before the original leave continued and disconnected it. Logs captured the reliable timeout, host promotion, then the no-ACK leave dialog and reset local slot
+- D1/D2 now route reliable timeout of a silent co-op host through the existing disconnect/migration handler before considering leaving. Live hosts that merely fail to acknowledge still follow the existing failure path; observers, non-co-op, and non-playing states are unchanged
+- Corrected the debug discovery command to update the launcher's callsign state, matching the host and direct-launch commands. Without that, the migration integration test could launch a different saved pilot; actual UI identity selection is unchanged
+- D2 full integration passed with Original routing: two host swaps, discovery of each `in_game` host on port 42425, authenticated rejoins, matching object ownership, sustained bidirectional PDATA, and preserved guidebot owner/routing state
+- D1 full integration also passed both host swaps and rejoins. This run exercised the reliable-timeout migration branch (`master=0 age_ms=15297`), confirming that the survivor stayed in-game and accepted the former host afterward
+- Final Android application/instrumentation and Windows D1/D2 builds passed. The main-menu flash fix is supported by the event-loop ordering and successful lobby launches; no frame-by-frame visual capture was taken
+- Normal LAN discovery/join and resume integration passed: host discovered on the first poll, two-player membership, chat, ready-state reflection, 70-second idle stability, and background/resume recovery
+
+### Final verification artifacts
+
+- `temp/coop_session_delivery_android_build.log`: `assembleDebug assembleDebugAndroidTest`, passed
+- `temp/coop_session_delivery_windows_build.log`: Windows D1/D2 build, passed
+- `temp/coop_session_final_quality.log`: scoped mixed-language formatting/lint, passed
+- `temp/coop_session_lan_d2_final_verified.log`: D2 Original routing, two host swaps and discovery-based rejoins, passed
+- `temp/coop_session_lan_d1_verified.log`: D1 two host swaps and discovery-based rejoins, passed
+- `temp/coop_session_timeout_verified.log`: reliable-timeout migration branch exercised successfully
+- `temp/coop_session_lobby_discovery.log`: discovery, join, idle, and resume integration, passed
+- `temp/coop_session_instrumentation.log`: migrated-host service adoption and former-host role transitions, passed
+- `temp/coop_session_transport.log`: transport rebind recovery, passed
+- `temp/coop_session_guidebot.log`: classic guidebot navigation, actual key pickups, owner inventory, and save modes on levels 1 and 11, passed
+- `temp/coop_session_auth_unit.log`: reconnect authentication, initial-sync retry, and host-migration policy tests, passed
+
+The supplied log still cannot establish an initial broadcast delivery failure on the physical LAN. Emulator discovery passes; new per-address receive diagnostics distinguish looped-back self traffic from remote traffic on a future occurrence

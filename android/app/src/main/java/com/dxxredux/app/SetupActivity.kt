@@ -1889,6 +1889,7 @@ class SetupActivity : ComponentActivity() {
                     "lan_discover" -> {
                         val callsign = intent.getStringExtra("callsign") ?: "TestJoin"
                         mpCallsign = callsign
+                        MatchmakingStateHolder.update { it.copy(callsign = callsign) }
                         com.dxxredux.app.lobby.LobbyService
                             .startDiscovery(this@SetupActivity, callsign)
                         Log.i("DXX-MP", "lan_discover: started discovery as $callsign")
@@ -1916,20 +1917,29 @@ class SetupActivity : ComponentActivity() {
                         for (l in lobbies) {
                             Log.i(
                                 "DXX-MP",
-                                "  lobby: ${l.announce.callsign} ${l.announce.game}/${l.announce.mission} from ${l.announce.hostAddress}",
+                                "  lobby: ${l.announce.callsign} ${l.announce.game}/${l.announce.mission} " +
+                                    "from ${l.announce.hostAddress} " +
+                                    "status=${l.announce.status} port=${l.announce.hostPort}",
                             )
                         }
                     }
 
                     "lan_join_first_lobby" -> {
+                        val hostAddress = intent.getStringExtra("host_addr")
                         val lobby =
                             com.dxxredux.app.lobby.LobbyService.discoveredLobbies.value
-                                .firstOrNull()
+                                .firstOrNull { hostAddress == null || it.announce.hostAddress == hostAddress }
                         if (lobby == null) {
                             Log.w("DXX-MP", "lan_join_first_lobby: no lobby discovered")
                         } else {
                             com.dxxredux.app.lobby.LobbyService
                                 .joinDiscoveredLobby(lobby.announce, mpCallsign)
+                            // Automation may run while the multiplayer tab is not composed
+                            com.dxxredux.app.lobby.LobbyService.lanLaunchEvent.value?.let { launch ->
+                                com.dxxredux.app.lobby.LobbyService
+                                    .clearLaunchEvent()
+                                launchMultiplayerGame(launch)
+                            }
                             Log.i("DXX-MP", "lan_join_first_lobby: joining ${lobby.announce.lobbyId}")
                         }
                     }
@@ -2113,26 +2123,28 @@ class SetupActivity : ComponentActivity() {
                         .adoptMigratedHost(
                             callsign,
                             GameLaunchInfo(
-                            game = game,
-                            mission = mission,
-                            mode = mode,
-                            difficulty = difficulty,
-                            levelNum = levelNum,
-                            maxPlayers = maxPlayers,
-                            yourSlot = 0,
-                            isHost = true,
-                            peers = emptyList(),
-                            isLan = true,
-                            coopQol = coopQol,
-                            duplicateEnergyShields = duplicateEnergyShields,
-                            fullDeathSpew = fullDeathSpew,
-                            coopBriefings = coopBriefings,
-                            allowSecretWarps = allowSecretWarps,
-                            playerSpewNoExpire = playerSpewNoExpire,
-                            clientsCanRequestRewind = false,
-                            restrictNonCoopFovToBase = restrictNonCoopFovToBase,
-                            missionRequirement = pendingMultiplayerLaunch
-                                ?.takeIf { it.game == game && it.mission == mission }?.missionRequirement,
+                                game = game,
+                                mission = mission,
+                                mode = mode,
+                                difficulty = difficulty,
+                                levelNum = levelNum,
+                                maxPlayers = maxPlayers,
+                                yourSlot = 0,
+                                isHost = true,
+                                peers = emptyList(),
+                                isLan = true,
+                                coopQol = coopQol,
+                                duplicateEnergyShields = duplicateEnergyShields,
+                                fullDeathSpew = fullDeathSpew,
+                                coopBriefings = coopBriefings,
+                                allowSecretWarps = allowSecretWarps,
+                                playerSpewNoExpire = playerSpewNoExpire,
+                                clientsCanRequestRewind = false,
+                                restrictNonCoopFovToBase = restrictNonCoopFovToBase,
+                                missionRequirement =
+                                    pendingMultiplayerLaunch
+                                        ?.takeIf { it.game == game && it.mission == mission }
+                                        ?.missionRequirement,
                             ),
                             hostPort = proxyPort,
                         )

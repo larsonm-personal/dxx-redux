@@ -18,6 +18,7 @@ typedef void (*android_net_udp_log_connection_status_fn)(int pnum, int old_type)
 
 #ifdef __ANDROID__
 void android_net_udp_mpdiag_pkt_dump(const char *label, const ubyte *buf, int len);
+int android_net_udp_handle_silent_host_timeout(fix64 now, fix64 timeout);
 #endif
 
 int android_net_udp_sockaddr_equal(const struct _sockaddr *a,

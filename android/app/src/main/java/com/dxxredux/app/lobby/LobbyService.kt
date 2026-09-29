@@ -167,6 +167,7 @@ object LobbyService {
     // Diagnostic counters
     internal val packetsSent = AtomicLong(0)
     internal val packetsReceived = AtomicLong(0)
+    private val packetsReceivedByAddress = ConcurrentHashMap<String, AtomicLong>()
     private val _diagnostics = MutableStateFlow("")
     val diagnostics: StateFlow<String> = _diagnostics.asStateFlow()
     private val _broadcastFailing = MutableStateFlow(false)
@@ -361,6 +362,7 @@ object LobbyService {
         missionTransferGrantTimeoutJob = null
         packetsSent.set(0)
         packetsReceived.set(0)
+        packetsReceivedByAddress.clear()
         _diagnostics.value = ""
         _broadcastFailing.value = false
         consecutiveBroadcastFailures = 0
@@ -386,19 +388,28 @@ object LobbyService {
         Log.i(TAG, "LAN discovery stopped")
     }
 
+    private fun defaultMissionRequirement(
+        game: String,
+        mission: String,
+    ) = MissionRequirement(
+        revision = "builtin:$game:$mission",
+        game = game,
+        missionKey = mission,
+        displayName = mission.ifBlank { if (game == "d1") "Descent: First Strike" else "Base mission" },
+        kind =
+            if (mission in
+                setOf("", "descent", "d2", "d2demo")
+            ) {
+                MissionRequirement.KIND_BUILTIN
+            } else {
+                MissionRequirement.KIND_LOOSE
+            },
+    )
+
     /**
      * Start hosting a LAN lobby. Begins broadcasting ANNOUNCE every 3 seconds.
      * Discovery must already be started.
      */
-    private fun defaultMissionRequirement(game: String, mission: String) =
-        MissionRequirement(
-            revision = "builtin:$game:$mission",
-            game = game,
-            missionKey = mission,
-            displayName = mission.ifBlank { if (game == "d1") "Descent: First Strike" else "Base mission" },
-            kind = if (mission in setOf("", "descent", "d2", "d2demo")) MissionRequirement.KIND_BUILTIN else MissionRequirement.KIND_LOOSE,
-        )
-
     @Synchronized
     fun hostLobby(
         callsign: String,
@@ -478,7 +489,11 @@ object LobbyService {
         hostPort: Int,
     ) {
         hostLobby(
-            callsign, game.game, game.mission, game.mode, game.maxPlayers,
+            callsign,
+            game.game,
+            game.mission,
+            game.mode,
+            game.maxPlayers,
             missionRequirement = game.missionRequirement ?: defaultMissionRequirement(game.game, game.mission),
             restrictNonCoopFovToBase = game.restrictNonCoopFovToBase,
         )
@@ -860,6 +875,7 @@ object LobbyService {
                             continue
                         }
                         val rxCount = packetsReceived.incrementAndGet()
+                        packetsReceivedByAddress.getOrPut(senderAddr) { AtomicLong(0) }.incrementAndGet()
                         val msgType = json.optString("type", "?")
                         Log.d(TAG, "recv: $msgType from $senderAddr (${packet.length}B, total=$rxCount)")
                         handlePacket(json, senderAddr)
@@ -1122,7 +1138,11 @@ object LobbyService {
                     "callsign",
                     "?",
                 )} ${json.optString("game", "?")}/${json.optString("mission", "?")}) " +
-                    "source=${if (json.optBoolean("query_reply")) "query-reply" else "broadcast"}",
+                    "source=${if (json.optBoolean("query_reply")) "query-reply" else "broadcast"} " +
+                    "status=${json.optString(
+                        "status",
+                        "lobby",
+                    )} port=${json.optInt("host_port", NetworkConstants.ENGINE_PORT)}",
             )
         }
         Log.i(TAG, "handleAnnounce: ${if (isNew) "NEW" else "update"} lobby=$lobbyId from $senderAddr")
@@ -2448,7 +2468,7 @@ object LobbyService {
                 "${activeSocket?.isClosed} jobs=recv:${receiveJob?.isActive},announce:${announceJob?.isActive}," +
                 "heartbeat:${joinedLobbyRefreshJob?.isActive},prune:${pruneJob?.isActive} " +
                 "packets=tx:${packetsSent.get()},rx:${packetsReceived.get()} hostAge=${hostAgeSeconds}s " +
-                "playerAges=[$playerAges]",
+                "playerAges=[$playerAges] rxByAddress=${packetsReceivedByAddress.toSortedMap()}",
         )
     }
 

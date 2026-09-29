@@ -14,8 +14,26 @@
 #include "strutil.h"
 #include "multi.h"
 #include "player.h"
+#include "game.h"
 
 #ifdef __ANDROID__
+/* Reliable retry expiry can precede the once-per-second liveness check */
+int android_net_udp_handle_silent_host_timeout(fix64 now, fix64 timeout)
+{
+	const int master = multi_who_is_master();
+	if (!(Game_mode & GM_MULTI_COOP) || Network_status != NETSTAT_PLAYING ||
+	    multi_i_am_master() || is_observer() || master < 0 || master >= N_players ||
+	    Players[master].connected == CONNECT_DISCONNECTED ||
+	    Netgame.players[master].LastPacketTime <= 0 ||
+	    now - Netgame.players[master].LastPacketTime < timeout)
+		return 0;
+	debug_log(DLOG_NETWORK,
+	          "[MPDIAG] reliable timeout defers to cooperative host loss: master=%d age_ms=%lld",
+	          master, (long long) ((now - Netgame.players[master].LastPacketTime) * 1000 / F1_0));
+	multi_disconnect_player(master);
+	return 1;
+}
+
 #define ANDROID_NET_UDP_RECONNECT_PENDING_SECONDS 10
 
 typedef struct android_net_udp_pending_reconnect {
@@ -504,8 +522,22 @@ int android_net_udp_auth_answer_challenge(
 	    data_len != ANDROID_NET_UDP_RECONNECT_CHALLENGE_PACKET_SIZE ||
 	    packet_size < ANDROID_NET_UDP_RECONNECT_PROOF_PACKET_SIZE ||
 	    GET_INTEL_INT(data + 1) != game_token ||
-	    data[5] != local_player_num)
+	    data[5] >= MAX_PLAYERS)
 		return 0;
+	/* Joining uses a temporary slot until object sync assigns the real one.
+	 * The master challenges the previously authenticated slot instead. The
+	 * caller has checked the master address and session token; the proof
+	 * still binds our key, session generation, slot and fresh challenge */
+	if (data[5] != local_player_num && Network_status != NETSTAT_WAITING) {
+		debug_log(DLOG_NETWORK,
+		          "[MPDIAG] reconnect challenge slot mismatch: host=%u local=%d status=%d",
+		          (unsigned) data[5], local_player_num, Network_status);
+		return 0;
+	}
+	if (data[5] != local_player_num)
+		debug_log(DLOG_NETWORK,
+		          "[MPDIAG] reconnect challenge for returning slot=%u temporary=%d",
+		          (unsigned) data[5], local_player_num);
 	message_len = android_net_udp_reconnect_build_challenge_message(
 	    game_token, data[5], &android_net_udp_local_identity,
 	    data + 6, message, sizeof(message));

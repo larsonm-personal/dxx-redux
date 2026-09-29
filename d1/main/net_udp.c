@@ -5964,6 +5964,10 @@ int net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sende
 	if ( Player_num < 0 && !is_observer()) {
 		con_printf(CON_DEBUG, "read_sync_packet: Player_num < 0, aborting\n");
 #ifdef __ANDROID__
+		MPDIAG("sync rejected local identity: callsign=%.8s client=%.36s players=%d", temp_callsign, temp_client_id, N_players);
+		for (i = 0; i < N_players; ++i)
+			MPDIAG("sync candidate slot=%d callsign=%.8s client=%.36s isyou=%d", i, Netgame.players[i].callsign,
+			       Netgame.players[i].client_id, Netgame.players[i].protocol.udp.isyou);
 		if (Game_mode & GM_MULTI_COOP)
 			crash_breadcrumb_v("d1 sync reject local_not_found callsign=%.8s client=%.8s players=%d",
 			                   temp_callsign, temp_client_id, N_players);
@@ -7551,6 +7555,10 @@ void net_udp_noloss_process_queue(fix64 time)
 		{
 			if (needack) // packet timed out but still not all have ack'd. SCREW THEM NOW!
 			{
+#ifdef __ANDROID__
+				if (android_net_udp_handle_silent_host_timeout(time, UDP_TIMEOUT))
+					return;
+#endif
 				if (multi_i_am_master())
 				{
 					for ( plc=0; plc<N_players; plc++ )

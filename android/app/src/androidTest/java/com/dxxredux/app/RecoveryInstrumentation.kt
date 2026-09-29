@@ -43,9 +43,11 @@ import java.util.concurrent.atomic.AtomicInteger
 /** Device tests using real sockets and app storage, without additional test dependencies */
 class RecoveryInstrumentation : Instrumentation() {
     private var missionLoadingOnly = false
+    private var coopSessionOnly = false
 
     override fun onCreate(arguments: Bundle?) {
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
+        coopSessionOnly = arguments?.getString("suite") == "coop_session"
         super.onCreate(arguments)
         start()
     }
@@ -53,6 +55,12 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (coopSessionOnly) {
+                CoopSessionChecks(this).run()
+                result.putString("stream", "PASS: migrated lobby adoption and former-host rejoin\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (missionLoadingOnly) {
                 MissionLoadingChecks(this).run()
                 result.putString("stream", "PASS: mission dialog loading, cancellation, retry and catalog reuse\n")
