@@ -44,6 +44,7 @@ object ConnectivityChecker {
         pairs: List<CandidatePair>,
         token: Int = SecureRandom().nextInt(),
         existingSocket: DatagramSocket? = null,
+        checkActive: () -> Unit = {},
     ): ConnectivityResult? {
         if (pairs.isEmpty()) return null
 
@@ -56,6 +57,7 @@ object ConnectivityChecker {
             val sentTimes = mutableMapOf<Short, Pair<Long, CandidatePair>>()
 
             while (System.currentTimeMillis() - startTime < TOTAL_TIMEOUT_MS) {
+                checkActive()
                 // Send a probe to the next pair in round-robin
                 val pairIndex = (seq.toInt() and 0xFFFF) % pairs.size
                 val pair = pairs[pairIndex]

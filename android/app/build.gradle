@@ -338,6 +338,7 @@ android {
     }
 
     defaultConfig {
+        testInstrumentationRunner "com.dxxredux.app.RecoveryInstrumentation"
         applicationId "com.dxxredux.app"
         minSdk toolVersions['MIN_SDK'].toInteger()
         targetSdk toolVersions['TARGET_SDK'].toInteger()

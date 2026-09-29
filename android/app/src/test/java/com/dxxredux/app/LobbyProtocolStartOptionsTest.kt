@@ -156,8 +156,8 @@ class LobbyProtocolStartOptionsTest {
                 bytesPerSecond = 12_345L,
             )
         val statusPacket = buildMissionStatus("lobby", "Wing", "wing-id", status)
-        val request = buildMissionTransferRequest("lobby", "Wing", "wing-id", requirement.revision, 1)
-        val grant = buildMissionTransferGrant("lobby", "secret-token", 42425, requirement.revision, 1)
+        val request = buildMissionTransferRequest("lobby", "Wing", "wing-id", requirement.revision, 1, "request-a")
+        val grant = buildMissionTransferGrant("lobby", "secret-token", 42425, requirement.revision, 1, "request-a")
 
         val announceJson = parsePacket(announce, announce.size) ?: error("announce did not parse")
         val statusJson = parsePacket(statusPacket, statusPacket.size) ?: error("status did not parse")
@@ -165,6 +165,8 @@ class LobbyProtocolStartOptionsTest {
         assertEquals(status, missionStatusFromJson(statusJson.getJSONObject("mission_status")))
         assertEquals(requirement.revision, parsePacket(request, request.size)?.getString("revision"))
         assertEquals("secret-token", parsePacket(grant, grant.size)?.getString("token"))
+        assertEquals("request-a", parsePacket(request, request.size)?.getString("request_id"))
+        assertEquals("request-a", parsePacket(grant, grant.size)?.getString("request_id"))
         assertTrue(announce.size < 8 * 1024)
         assertTrue(statusPacket.size < 8 * 1024)
     }

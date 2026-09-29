@@ -192,6 +192,9 @@ class SetupActivity : ComponentActivity() {
 
     internal var launchPreflightFailure: String? = null
         private set
+    private var launchOwner: Any? = null
+
+    private fun ownsLaunch(owner: Any? = launchOwner): Boolean = owner != null && launcherLaunchOwner.get() === owner
 
     private fun beginLaunchPreparation(
         game: String,
@@ -202,6 +205,7 @@ class SetupActivity : ComponentActivity() {
             return false
         }
         launchPreflightFailure = null
+        launchOwner = Any().also { launcherLaunchOwner.set(it) }
         launchPreparation.value =
             LauncherPreparationState(
                 game = game,
@@ -224,6 +228,8 @@ class SetupActivity : ComponentActivity() {
                 "reason=$reason elapsed_ms=${SystemClock.elapsedRealtime() - state.startedAtMs}",
         )
         launchPreparation.value = null
+        launchOwner?.let { launcherLaunchOwner.compareAndSet(it, null) }
+        launchOwner = null
     }
 
     // -- Setup-screen introspection --------------------------------------
@@ -317,6 +323,10 @@ class SetupActivity : ComponentActivity() {
      *  rapid startActivity calls create two MainActivity instances in the
      *  :game process, causing a FORTIFY pthread_mutex crash. */
     private var mpGameLaunching = false
+    private var pendingMultiplayerLaunch: GameLaunchInfo? = null
+    private var pendingLaunchProxy: com.dxxredux.app.multiplayer.LocalhostProxy? = null
+    private var pendingNetworkGeneration = 0L
+    private var multiplayerActivityStarted = false
     private val multiplayerLaunchRequestTimeout =
         Runnable {
             val state = launchPreparation.value
@@ -428,52 +438,58 @@ class SetupActivity : ComponentActivity() {
             return
         }
         val launchGame = resumeCandidate?.game ?: game
-        prepareGameLaunchFiles(launchGame)?.let { message ->
-            showLaunchPreflightFailure(message)
-            return
-        }
-        val resolvedResumeSavePath =
-            resumeCandidate?.let { candidate ->
-                resolveResumeSaveLaunchPath(filesDir, candidate)
+        if (!beginLaunchPreparation(launchGame, "automation")) return
+        val owner = launchOwner
+        lifecycleScope.launch {
+            val failure = prepareGameLaunchFiles(launchGame)
+            if (!ownsLaunch(owner)) return@launch
+            failure?.let { message ->
+                failGameLaunch("preflight_failed", message, owner)
+                return@launch
             }
-        val resolvedResumeCallsign =
-            resumeCandidate?.let { candidate ->
-                resolveResumeSaveLaunchCallsign(candidate)
+            val resolvedResumeSavePath =
+                resumeCandidate?.let { candidate ->
+                    resolveResumeSaveLaunchPath(filesDir, candidate)
+                }
+            val resolvedResumeCallsign =
+                resumeCandidate?.let { candidate ->
+                    resolveResumeSaveLaunchCallsign(candidate)
+                }
+            if (resumeCandidate != null && resolvedResumeSavePath.isNullOrBlank()) {
+                Log.w(
+                    "DXX-Setup",
+                    "Automation resume candidate has no launch path: path=${resumeCandidate.path} " +
+                        "relative=${resumeCandidate.relativePath} callsign=${resumeCandidate.callsign}",
+                )
+                logResumeCandidateLaunch(
+                    "setup-automation-resume-candidate-invalid",
+                    resumeCandidate,
+                    null,
+                    resolvedResumeCallsign,
+                )
+                failGameLaunch("invalid_save", "Could not read the save launch details", owner)
+                return@launch
             }
-        if (resumeCandidate != null && resolvedResumeSavePath.isNullOrBlank()) {
-            Log.w(
-                "DXX-Setup",
-                "Automation resume candidate has no launch path: path=${resumeCandidate.path} " +
-                    "relative=${resumeCandidate.relativePath} callsign=${resumeCandidate.callsign}",
-            )
-            logResumeCandidateLaunch(
-                "setup-automation-resume-candidate-invalid",
-                resumeCandidate,
-                null,
-                resolvedResumeCallsign,
-            )
-            Toast.makeText(this, "Could not read the save launch details", Toast.LENGTH_SHORT).show()
-            return
+            if (resumeCandidate != null) {
+                logResumeCandidateLaunch(
+                    "setup-automation-resume-candidate-selected",
+                    resumeCandidate,
+                    resolvedResumeSavePath,
+                    resolvedResumeCallsign,
+                )
+            }
+            val intent =
+                createGameLaunchIntent(
+                    game = launchGame,
+                    inputDemoReplayPath = null,
+                    resumeSavePath = resolvedResumeSavePath,
+                    resumeCallsign = resolvedResumeCallsign,
+                )
+            intent.putExtra("automation_script", scriptPath)
+            intent.putExtra("automation_start_step", startStep)
+            intent.putExtra("automation_run_id", automationRunId)
+            startGameAfterRouteMetadataHandoff(intent)
         }
-        if (resumeCandidate != null) {
-            logResumeCandidateLaunch(
-                "setup-automation-resume-candidate-selected",
-                resumeCandidate,
-                resolvedResumeSavePath,
-                resolvedResumeCallsign,
-            )
-        }
-        val intent =
-            createGameLaunchIntent(
-                game = launchGame,
-                inputDemoReplayPath = null,
-                resumeSavePath = resolvedResumeSavePath,
-                resumeCallsign = resolvedResumeCallsign,
-            )
-        intent.putExtra("automation_script", scriptPath)
-        intent.putExtra("automation_start_step", startStep)
-        intent.putExtra("automation_run_id", automationRunId)
-        startGameAfterRouteMetadataHandoff(intent)
     }
 
     private fun startGameAfterRouteMetadataHandoff(intent: Intent) {
@@ -483,28 +499,79 @@ class SetupActivity : ComponentActivity() {
         }
         val game = intent.getStringExtra("launch_target") ?: intent.getStringExtra("game") ?: "d2"
         if (launchPreparation.value == null && !beginLaunchPreparation(game, "game")) return
+        val owner = launchOwner
         updateLaunchPreparation(LauncherPreparationPhase.PAUSING_METADATA)
         routeMetadataLaunchJob =
             routeMetadataScope.launch {
+                if (!ownsLaunch(owner)) return@launch
+                val processWarning =
+                    try {
+                        prepareGameProcess()
+                    } catch (e: Exception) {
+                        Log.e("DXX-Setup", "Could not prepare a fresh game process", e)
+                        "The previous game could not close. Please try starting the game again."
+                    }
+                if (processWarning != null) {
+                    withContext(Dispatchers.Main.immediate) {
+                        failGameLaunch("existing_game", processWarning, owner)
+                    }
+                    return@launch
+                }
                 val startedAt = SystemClock.elapsedRealtime()
                 RouteMetadataDiagnostics.log("Route metadata launcher-to-game handoff started")
-                val metadataStopped = routeMetadataCoordinator.stopForGameLaunch()
+                val metadataStopped =
+                    try {
+                        routeMetadataCoordinator.stopForGameLaunch()
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.e("DXX-Setup", "Route metadata handoff failed", e)
+                        withContext(Dispatchers.Main.immediate) {
+                            failGameLaunch(
+                                "metadata_handoff_failed",
+                                "Could not prepare game startup. Please try again.",
+                                owner,
+                            )
+                        }
+                        return@launch
+                    }
                 RouteMetadataDiagnostics.log(
                     "Route metadata launcher-to-game handoff finished " +
                         "elapsed_ms=${SystemClock.elapsedRealtime() - startedAt} stopped=$metadataStopped",
                 )
                 withContext(Dispatchers.Main.immediate) {
+                    if (!ownsLaunch(owner)) return@withContext
+                    val pending = pendingMultiplayerLaunch
+                    if (pending != null && !pending.isLan &&
+                        pendingNetworkGeneration != MatchmakingService.networkAttempt()
+                    ) {
+                        failGameLaunch(
+                            "network_session_changed",
+                            "The network session changed. Please try starting again.",
+                            owner,
+                        )
+                        return@withContext
+                    }
                     if (!isFinishing && !isDestroyed) {
                         updateLaunchPreparation(LauncherPreparationPhase.STARTING_GAME)
                         try {
                             startActivity(intent)
+                            pendingMultiplayerLaunch?.let { info ->
+                                multiplayerActivityStarted = true
+                                if (info.isLan && info.isHost) {
+                                    com.dxxredux.app.lobby.LobbyService
+                                        .confirmGameLaunch(info)
+                                } else {
+                                    com.dxxredux.app.lobby.LobbyService
+                                        .stopDiscovery()
+                                }
+                            }
                         } catch (e: Exception) {
                             Log.e("DXX-Setup", "Could not start $game", e)
-                            finishLaunchPreparation("activity_start_failed")
-                            showLaunchPreflightFailure("Could not start ${gameDisplayName(game)}")
+                            failGameLaunch("activity_start_failed", "Could not start ${gameDisplayName(game)}", owner)
                         }
                     } else {
-                        finishLaunchPreparation("launcher_unavailable")
+                        failGameLaunch("launcher_unavailable", "Game start was interrupted. Please try again.", owner)
                     }
                 }
             }
@@ -526,7 +593,7 @@ class SetupActivity : ComponentActivity() {
             Toast.makeText(this, "Recorded demo file is missing", Toast.LENGTH_SHORT).show()
             return
         }
-        if (gameRunningFlag || hasReturnableGameActivity()) {
+        if (hasReturnableGameActivity()) {
             Toast.makeText(this, "Close the running game before starting a recorded demo", Toast.LENGTH_SHORT).show()
             return
         }
@@ -535,13 +602,19 @@ class SetupActivity : ComponentActivity() {
             return
         }
 
-        prepareGameLaunchFiles(demo.game)?.let { message ->
-            showLaunchPreflightFailure(message)
-            return
-        }
+        if (!beginLaunchPreparation(demo.game, "demo")) return
+        val owner = launchOwner
+        lifecycleScope.launch {
+            val failure = prepareGameLaunchFiles(demo.game)
+            if (!ownsLaunch(owner)) return@launch
+            failure?.let { message ->
+                failGameLaunch("preflight_failed", message, owner)
+                return@launch
+            }
 
-        val intent = createGameLaunchIntent(demo.game, demo.file.absolutePath)
-        startGameAfterRouteMetadataHandoff(intent)
+            val intent = createGameLaunchIntent(demo.game, demo.file.absolutePath)
+            startGameAfterRouteMetadataHandoff(intent)
+        }
     }
 
     private fun createGameLaunchIntent(
@@ -588,13 +661,26 @@ class SetupActivity : ComponentActivity() {
         return intent
     }
 
-    private fun prepareGameLaunchFiles(launchId: String): String? {
+    private suspend fun prepareGameLaunchFiles(launchId: String): String? =
+        try {
+            launcherFilePreparation.run(120_000L) { prepareGameLaunchFilesBlocking(launchId) }
+        } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
+            "Game preparation timed out. Please try again; previous file work is being stopped."
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e("DXX-Setup", "Launch preflight failed for $launchId", e)
+            "Could not prepare ${gameDisplayName(launchId)}. Please try again."
+        }
+
+    private fun prepareGameLaunchFilesBlocking(launchId: String): String? {
         val target = GameLaunchTarget.fromId(launchId)
         val game = target.engine
         val startedAt = SystemClock.elapsedRealtime()
         var stepStartedAt = startedAt
 
         fun recordStep(step: String) {
+            if (Thread.currentThread().isInterrupted) throw kotlinx.coroutines.CancellationException("Launch cancelled")
             val now = SystemClock.elapsedRealtime()
             RouteMetadataDiagnostics.log(
                 "Launcher preflight game=$game step=$step elapsed_ms=${now - stepStartedAt}",
@@ -709,8 +795,38 @@ class SetupActivity : ComponentActivity() {
 
     private fun showLaunchPreflightFailure(message: String) {
         launchPreflightFailure = message
+        launchFailureMessage.value = message
         Log.e("DXX-Setup", "Launch preflight blocked: $message")
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
+
+    private fun failGameLaunch(
+        reason: String,
+        message: String,
+        owner: Any? = launchOwner,
+    ) {
+        if (!ownsLaunch(owner)) return
+        val info = pendingMultiplayerLaunch
+        val proxy = pendingLaunchProxy
+        pendingLaunchProxy = null
+        pendingMultiplayerLaunch = null
+        multiplayerActivityStarted = false
+        mpGameLaunching = false
+        resumeOfferRefreshHandler.removeCallbacks(multiplayerLaunchRequestTimeout)
+        finishLaunchPreparation(reason)
+        if (info != null) {
+            val healthyGame = hasReturnableGameActivity()
+            if (!healthyGame && proxy != null) MatchmakingService.shutdownProxy(proxy)
+            MatchmakingStateHolder.update { if (it.gameLaunchInfo === info) it.copy(gameLaunchInfo = null) else it }
+            if (info.isLan) {
+                com.dxxredux.app.lobby.LobbyService
+                    .failGameLaunch(info, message)
+            } else if (!healthyGame) {
+                MatchmakingService.failGameLaunch(pendingNetworkGeneration, info.isHost)
+            }
+        }
+        if (!hasReturnableGameActivity()) routeMetadataCoordinator.resumeAfterGame()
+        showLaunchPreflightFailure(message)
     }
 
     private fun logResumeCandidateLaunch(
@@ -770,23 +886,25 @@ class SetupActivity : ComponentActivity() {
                 val cmd = intent?.getStringExtra("command") ?: return
                 when (cmd) {
                     "launch" -> {
-                        if (gameRunningFlag || hasReturnableGameActivity()) {
-                            if (!returnToGame()) {
-                                gameRunningFlag = false
-                                requestSetupRefresh()
-                            }
-                        } else {
+                        if (!returnToGame()) {
+                            gameRunningFlag = false
                             val game = intent.getStringExtra("game") ?: "d2"
                             if (!hasLaunchDataForGame(game)) {
                                 Log.e("DXX-Setup", "Cannot launch $game: ${gameDisplayName(game)} data is not ready")
                                 return
                             }
-                            prepareGameLaunchFiles(game)?.let { message ->
-                                showLaunchPreflightFailure(message)
-                                return
+                            if (!beginLaunchPreparation(game, "game")) return
+                            val owner = launchOwner
+                            lifecycleScope.launch {
+                                val failure = prepareGameLaunchFiles(game)
+                                if (!ownsLaunch(owner)) return@launch
+                                failure?.let { message ->
+                                    failGameLaunch("preflight_failed", message, owner)
+                                    return@launch
+                                }
+                                val launchIntent = createGameLaunchIntent(game)
+                                startGameAfterRouteMetadataHandoff(launchIntent)
                             }
-                            val launchIntent = createGameLaunchIntent(game)
-                            startGameAfterRouteMetadataHandoff(launchIntent)
                         }
                     }
 
@@ -1776,6 +1894,11 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-MP", "lan_discover: started discovery as $callsign")
                     }
 
+                    "lan_fail_recovery" -> {
+                        com.dxxredux.app.lobby.LobbyService
+                            .failNextTransportRecoveryForTest()
+                    }
+
                     "lan_discover_status" -> {
                         val lobbies = com.dxxredux.app.lobby.LobbyService.discoveredLobbies.value
                         val hosting = com.dxxredux.app.lobby.LobbyService.isHosting.value
@@ -2301,60 +2424,80 @@ class SetupActivity : ComponentActivity() {
         resumeOfferRefreshHandler.removeCallbacks(multiplayerLaunchRequestTimeout)
         if (launchPreparation.value == null && !beginLaunchPreparation(info.game, "multiplayer")) return
         mpGameLaunching = true
+        pendingMultiplayerLaunch = info
+        pendingNetworkGeneration = MatchmakingService.networkAttempt()
+        pendingLaunchProxy = if (info.isLan) null else MatchmakingService.currentProxy()
+        multiplayerActivityStarted = false
         RouteMetadataDiagnostics.log(
             "Multiplayer launch event received game=${info.game} mode=${info.mode} " +
                 "elapsed_ms=${SystemClock.elapsedRealtime() - (launchPreparation.value?.startedAtMs ?: 0L)}",
         )
+        val owner = launchOwner
         lifecycleScope.launch {
-            val existingGameWarning = prepareMultiplayerGameProcess()
-            if (existingGameWarning != null) {
-                mpGameLaunching = false
-                finishLaunchPreparation("multiplayer_existing_game")
-                showLaunchPreflightFailure(existingGameWarning)
-                return@launch
-            }
-            val preflightMessage =
-                try {
-                    withContext(Dispatchers.IO) { prepareGameLaunchFiles(info.game) }
-                } catch (e: Exception) {
-                    Log.e("DXX-Setup", "Multiplayer launch preflight failed for ${info.game}", e)
-                    "Could not prepare ${gameDisplayName(info.game)}"
-                }
-            if (preflightMessage != null) {
-                mpGameLaunching = false
-                finishLaunchPreparation("multiplayer_preflight_failed")
-                showLaunchPreflightFailure(preflightMessage)
-                return@launch
-            }
-            val requirement = info.missionRequirement
-            if (requirement != null) {
-                val missionStatus =
-                    withContext(Dispatchers.IO) {
-                        com.dxxredux.app.multiplayer.MissionCompatibilityResolver.resolve(
-                            this@SetupActivity,
-                            requirement,
-                            info.mode,
-                        )
-                    }
-                if (missionStatus.status != com.dxxredux.app.multiplayer.MissionCompatibilityStatus.MATCH) {
-                    mpGameLaunching = false
-                    finishLaunchPreparation("multiplayer_mission_mismatch")
-                    showLaunchPreflightFailure(missionStatus.status.userLabel(missionStatus))
+            try {
+                val existingGameWarning = prepareGameProcess()
+                if (!ownsLaunch(owner)) return@launch
+                if (existingGameWarning != null) {
+                    failGameLaunch("multiplayer_existing_game", existingGameWarning, owner)
                     return@launch
                 }
+                val preflightMessage = prepareGameLaunchFiles(info.game)
+                if (!ownsLaunch(owner)) return@launch
+                if (preflightMessage != null) {
+                    failGameLaunch("multiplayer_preflight_failed", preflightMessage, owner)
+                    return@launch
+                }
+                val requirement = info.missionRequirement
+                if (requirement != null) {
+                    val missionStatus =
+                        withContext(Dispatchers.IO) {
+                            com.dxxredux.app.multiplayer.MissionCompatibilityResolver.resolve(
+                                this@SetupActivity,
+                                requirement,
+                                info.mode,
+                            )
+                        }
+                    if (!ownsLaunch(owner)) return@launch
+                    if (missionStatus.status != com.dxxredux.app.multiplayer.MissionCompatibilityStatus.MATCH) {
+                        failGameLaunch(
+                            "multiplayer_mission_mismatch",
+                            missionStatus.status.userLabel(missionStatus),
+                            owner,
+                        )
+                        return@launch
+                    }
+                }
+                if (!info.isLan && pendingNetworkGeneration != MatchmakingService.networkAttempt()) {
+                    failGameLaunch(
+                        "network_session_changed",
+                        "The network session changed. Please try starting again.",
+                        owner,
+                    )
+                    return@launch
+                }
+                continueMultiplayerGameLaunch(info)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                failGameLaunch("multiplayer_cancelled", "Game start was cancelled. Please try again.", owner)
+                throw e
+            } catch (e: Exception) {
+                Log.e("DXX-Setup", "Multiplayer launch failed", e)
+                failGameLaunch(
+                    "multiplayer_launch_failed",
+                    e.message ?: "Could not start multiplayer. Please try again.",
+                    owner,
+                )
             }
-            continueMultiplayerGameLaunch(info)
         }
     }
 
-    private suspend fun prepareMultiplayerGameProcess(): String? {
+    private suspend fun prepareGameProcess(): String? {
         if (hasReturnableGameActivity()) {
-            return "A game is still open. Return to it and exit before starting another multiplayer game."
+            return "A game is still open. Return to it and exit before starting another game."
         }
         val orphanPid = runningGameProcessPid() ?: return null
         // A finished Activity can leave main() blocked in a join/menu loop
         // Native engine globals require a fresh process before another launch
-        LauncherDebugLog.log("multiplayer launch: retiring orphan game process pid=$orphanPid")
+        LauncherDebugLog.log("game launch: retiring orphan game process pid=$orphanPid")
         android.os.Process.killProcess(orphanPid)
         val deadline = SystemClock.elapsedRealtime() + 2000L
         while (runningGameProcessPid() == orphanPid && SystemClock.elapsedRealtime() < deadline) {
@@ -2368,15 +2511,8 @@ class SetupActivity : ComponentActivity() {
     }
 
     private fun continueMultiplayerGameLaunch(info: GameLaunchInfo) {
-        // For LAN hosts, keep the announce broadcast alive so the game
-        // remains discoverable; for everyone else, shut down fully
+        // Keep the lobby available until Activity launch succeeds, so failures can be retried
         wasLanDiscoveringBeforeLaunch = com.dxxredux.app.lobby.LobbyService.isDiscovering.value
-        if (info.isLan && info.isHost) {
-            // stopInGameBroadcast will be called when the game exits
-        } else {
-            com.dxxredux.app.lobby.LobbyService
-                .stopDiscovery()
-        }
         val launchCallsign =
             MatchmakingStateHolder.state.value.callsign
                 .takeIf { it.isNotBlank() } ?: mpCallsign
@@ -2406,10 +2542,11 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_mode", "join")
             if (info.lanHostAddr != null) {
                 // LAN joiner: route through proxy for packet stats
-                MatchmakingService.createProxy(
-                    peerAddr = info.lanHostAddr,
-                    peerPort = info.lanHostPort,
-                )
+                pendingLaunchProxy =
+                    MatchmakingService.createProxy(
+                        peerAddr = info.lanHostAddr,
+                        peerPort = info.lanHostPort,
+                    )
                 mpIntent.putExtra("mp_host_addr", "127.0.0.1")
                 mpIntent.putExtra("mp_host_port", NetworkConstants.PROXY_PORT_BASE)
             } else {
@@ -2555,11 +2692,8 @@ class SetupActivity : ComponentActivity() {
                             resumeCandidate,
                             pending.runId,
                         )
-                    } else if (resumeCandidate == null && (gameRunningFlag || hasReturnableGameActivity())) {
-                        if (!returnToGame()) {
-                            gameRunningFlag = false
-                            refreshTrigger.intValue++
-                        }
+                    } else if (resumeCandidate == null && returnToGame()) {
+                        gameRunningFlag = true
                     } else if (resumeCandidate != null && hasReturnableGameActivity()) {
                         Toast
                             .makeText(
@@ -2595,14 +2729,10 @@ class SetupActivity : ComponentActivity() {
                             if (!beginLaunchPreparation(launchGame, launchKind)) {
                                 return@onLaunch
                             }
+                            val owner = launchOwner
                             lifecycleScope.launch {
-                                val preflightMessage =
-                                    try {
-                                        withContext(Dispatchers.IO) { prepareGameLaunchFiles(launchGame) }
-                                    } catch (e: Exception) {
-                                        Log.e("DXX-Setup", "Launch preflight failed for $launchGame", e)
-                                        "Could not prepare ${gameDisplayName(launchGame)}"
-                                    }
+                                val preflightMessage = prepareGameLaunchFiles(launchGame)
+                                if (!ownsLaunch(owner)) return@launch
                                 if (preflightMessage != null) {
                                     launchPreflightMessage = preflightMessage
                                     finishLaunchPreparation("preflight_failed")
@@ -2786,7 +2916,14 @@ class SetupActivity : ComponentActivity() {
             Log.e("DXX-Setup", "Could not consume native fatal error", e)
         }
         val returningFromLevelPreview = LevelPreviewReturnRefreshGate.consumeReturn()
-        mpGameLaunching = false
+        if (multiplayerActivityStarted) {
+            mpGameLaunching = false
+            pendingMultiplayerLaunch = null
+            pendingLaunchProxy = null
+            multiplayerActivityStarted = false
+        } else if (pendingMultiplayerLaunch == null) {
+            mpGameLaunching = false
+        }
         val returnableGame = returnableGameActivityState()
         val rawGamePid = runningGameProcessPid()
         GameProcessExitDiagnostics.logRecent(this)
@@ -2803,8 +2940,10 @@ class SetupActivity : ComponentActivity() {
             routeMetadataCoordinator.resumeAfterGame()
         }
         // If a LAN host was broadcasting in-game, stop now
-        com.dxxredux.app.lobby.LobbyService
-            .stopInGameBroadcast()
+        if (pendingMultiplayerLaunch == null) {
+            com.dxxredux.app.lobby.LobbyService
+                .stopInGameBroadcast()
+        }
         // Auto-resume LAN discovery if it was active before game launch
         if (wasLanDiscoveringBeforeLaunch &&
             !com.dxxredux.app.lobby.LobbyService.isDiscovering.value
@@ -2825,7 +2964,7 @@ class SetupActivity : ComponentActivity() {
             com.dxxredux.app.multiplayer.MatchmakingStateHolder
                 .state
                 .value
-        if (mpState.currentLobby?.isHost == true && !hasReturnableGameActivity()) {
+        if (pendingMultiplayerLaunch == null && mpState.currentLobby?.isHost == true && !hasReturnableGameActivity()) {
             com.dxxredux.app.multiplayer.MatchmakingService
                 .endGame()
         }
@@ -2935,6 +3074,9 @@ class SetupActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        if (ownsLaunch() && !multiplayerActivityStarted && !hasReturnableGameActivity()) {
+            failGameLaunch("launcher_destroyed", "Game preparation was interrupted. Please try again.")
+        }
         RouteMetadataPrecomputeFocusBroker.detach(routeMetadataFocusHandler)
         routeMetadataCoordinator.stop("launcher destroyed")
         routeMetadataScope.cancel()

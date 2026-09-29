@@ -10,17 +10,22 @@ import com.dxxredux.app.MissionDownloadPolicy
 import com.dxxredux.app.ModManager
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.InputStream
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.security.MessageDigest
@@ -64,10 +69,20 @@ internal object MissionTransferService {
         val scope: CoroutineScope,
         val authorizations: ConcurrentHashMap<String, Authorization>,
         val slots: Semaphore,
+        val clients: MutableSet<Socket> = ConcurrentHashMap.newKeySet(),
     )
 
     @Volatile private var host: HostSession? = null
-    private var clientJob: Job? = null
+
+    private class ClientTransfer(
+        val socket: Socket = Socket(),
+    ) {
+        lateinit var job: Job
+    }
+
+    private val clientScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val clientWriter = Mutex()
+    private var clientTransfer: ClientTransfer? = null
 
     @Synchronized
     fun startHost(
@@ -118,9 +133,13 @@ internal object MissionTransferService {
     fun stopHost() {
         val session = host ?: return
         host = null
-        runCatching { session.socket.close() }
-        session.scope.cancel()
-        session.authorizations.clear()
+        synchronized(session) {
+            runCatching { session.socket.close() }
+            session.scope.cancel()
+            session.clients.forEach { runCatching { it.close() } }
+            session.clients.clear()
+            session.authorizations.clear()
+        }
     }
 
     fun authorize(
@@ -146,49 +165,77 @@ internal object MissionTransferService {
         onStatus: (MissionStatusReport) -> Unit,
         onFinished: (Boolean) -> Unit,
     ) {
-        clientJob?.cancel()
-        clientJob =
-            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-                try {
-                    receive(context, hostAddress, grant, requirement, attempt, onStatus)
-                    onFinished(true)
-                } catch (_: CancellationException) {
-                    onFinished(false)
-                } catch (e: MissionFinalizationException) {
-                    Log.e(TAG, "Mission finalization failed", e.cause)
-                    onStatus(
-                        transferReport(
-                            requirement,
-                            MissionCompatibilityStatus.ERROR,
-                            requirement.sizeBytes ?: 0L,
-                            grant.token,
-                            attempt,
-                            "mission_finalization_failed",
-                        ),
-                    )
-                    onFinished(false)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Mission transfer or finalization failed", e)
-                    val offset = resumeOffset(context, requirement)
-                    onStatus(
-                        transferReport(
-                            requirement,
-                            MissionCompatibilityStatus.FAILED_RESUMABLE,
-                            offset,
-                            grant.token,
-                            attempt,
-                            "transfer_interrupted",
-                        ),
-                    )
-                    onFinished(false)
+        cancelClient()
+        val transfer = ClientTransfer()
+        clientTransfer = transfer
+        val report: (MissionStatusReport) -> Unit = { status ->
+            transfer.job.ensureActive()
+            publishClientResult(transfer) { onStatus(status) }
+            transfer.job.ensureActive()
+        }
+        transfer.job =
+            clientScope.launch(start = CoroutineStart.LAZY) {
+                // Cancellation does not release file ownership until blocking work has actually returned
+                clientWriter.withLock {
+                    try {
+                        transfer.job.ensureActive()
+                        receive(context, hostAddress, grant, requirement, attempt, transfer.socket, report) {
+                            transfer.job.ensureActive()
+                        }
+                        publishClientResult(transfer) { onFinished(true) }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: MissionFinalizationException) {
+                        transfer.job.ensureActive()
+                        Log.e(TAG, "Mission finalization failed", e.cause)
+                        report(
+                            transferReport(
+                                requirement,
+                                MissionCompatibilityStatus.ERROR,
+                                requirement.sizeBytes ?: 0L,
+                                grant.token,
+                                attempt,
+                                "mission_finalization_failed",
+                            ),
+                        )
+                        publishClientResult(transfer) { onFinished(false) }
+                    } catch (e: Exception) {
+                        transfer.job.ensureActive()
+                        Log.e(TAG, "Mission transfer or finalization failed", e)
+                        val offset = resumeOffset(context, requirement)
+                        report(
+                            transferReport(
+                                requirement,
+                                MissionCompatibilityStatus.FAILED_RESUMABLE,
+                                offset,
+                                grant.token,
+                                attempt,
+                                "transfer_interrupted",
+                            ),
+                        )
+                        publishClientResult(transfer) { onFinished(false) }
+                    } finally {
+                        runCatching { transfer.socket.close() }
+                    }
                 }
             }
+        transfer.job.start()
     }
 
     @Synchronized
     fun cancelClient() {
-        clientJob?.cancel()
-        clientJob = null
+        val previous = clientTransfer ?: return
+        clientTransfer = null
+        previous.job.cancel()
+        runCatching { previous.socket.close() }
+    }
+
+    @Synchronized
+    private fun publishClientResult(
+        transfer: ClientTransfer,
+        publish: () -> Unit,
+    ) {
+        if (clientTransfer === transfer && transfer.job.isActive) publish()
     }
 
     private suspend fun acceptLoop(session: HostSession) {
@@ -199,9 +246,21 @@ internal object MissionTransferService {
                 } catch (_: Exception) {
                     break
                 }
+            val accepted =
+                synchronized(session) {
+                    if (host === session && session.scope.isActive) {
+                        session.clients.add(client)
+                        true
+                    } else {
+                        client.close()
+                        false
+                    }
+                }
+            if (!accepted) break
             session.scope.launch {
                 if (!session.slots.tryAcquire()) {
                     runCatching { client.close() }
+                    session.clients.remove(client)
                     return@launch
                 }
                 try {
@@ -209,6 +268,7 @@ internal object MissionTransferService {
                 } finally {
                     session.slots.release()
                     runCatching { client.close() }
+                    session.clients.remove(client)
                 }
             }
         }
@@ -291,13 +351,17 @@ internal object MissionTransferService {
         grant: MissionTransferGrant,
         requirement: MissionRequirement,
         attempt: Int,
+        socket: Socket,
         onStatus: (MissionStatusReport) -> Unit,
+        checkActive: () -> Unit,
     ) {
         require(grant.revision == requirement.revision)
         val files = partialFiles(context, requirement)
         files.root.mkdirs()
         var offset = resumeOffset(context, requirement)
-        Socket(InetAddress.getByName(hostAddress), grant.port).use { socket ->
+        checkActive()
+        socket.use {
+            socket.connect(InetSocketAddress(hostAddress, grant.port), SOCKET_TIMEOUT_MS)
             socket.soTimeout = SOCKET_TIMEOUT_MS
             val request = JSONObject().put("token", grant.token).put("offset", offset)
             socket.getOutputStream().apply {
@@ -356,6 +420,7 @@ internal object MissionTransferService {
         )
         val identity =
             MissionContentIdentity.compute(files.partial) { verified ->
+                checkActive()
                 val bytesPerSecond = averageBytesPerSecond(verified, System.nanoTime() - verificationStartedAtNs)
                 onStatus(
                     transferReport(
@@ -369,8 +434,11 @@ internal object MissionTransferService {
                 )
             }
         require(identity.sizeBytes == requirement.sizeBytes && identity.sha256 == requirement.sha256)
+        checkActive()
         try {
-            finalizeMission(context, requirement, grant, attempt, files, identity, onStatus)
+            finalizeMission(context, requirement, grant, attempt, files, identity, onStatus, checkActive)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             throw MissionFinalizationException(e)
         }
@@ -384,6 +452,7 @@ internal object MissionTransferService {
         files: PartialFiles,
         identity: MissionContentIdentity,
         onStatus: (MissionStatusReport) -> Unit,
+        checkActive: () -> Unit,
     ) {
         val wrapperSize = identity.sizeBytes
         val importProgressLimit = wrapperSize * 95L / 100L
@@ -394,6 +463,7 @@ internal object MissionTransferService {
             progressBytes: Long = finalizingBytes,
             force: Boolean = false,
         ) {
+            checkActive()
             finalizingBytes = progressBytes.coerceIn(finalizingBytes, wrapperSize)
             val now = System.nanoTime()
             if (!force && now - lastFinalizingReportNs < STATUS_REPORT_INTERVAL_NS) return

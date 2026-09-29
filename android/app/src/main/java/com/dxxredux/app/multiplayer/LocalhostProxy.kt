@@ -2,9 +2,11 @@ package com.dxxredux.app.multiplayer
 
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.io.IOException
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -56,9 +58,13 @@ class LocalhostProxy(
     private val scope: CoroutineScope,
     private val sharedRealSocket: DatagramSocket? = null,
     private val allowDynamicPeers: Boolean = false,
+    private val onFailure: (String) -> Unit = {},
 ) {
     private val peerProxies = mutableListOf<PeerProxy>()
     private val jobs = mutableListOf<Job>()
+    private val stopped = AtomicBoolean(false)
+    private val failureReported = AtomicBoolean(false)
+    private var started = false
 
     // Demux maps for shared-socket mode (concurrent for thread safety with receiver)
     private val directPeersByAddr = ConcurrentHashMap<String, PeerProxy>()
@@ -74,23 +80,44 @@ class LocalhostProxy(
 
     init {
         if (sharedRealSocket != null) {
-            jobs.add(
-                scope.launch(Dispatchers.IO) {
-                    try {
-                        sharedReceiveLoop()
-                        Log.w(TAG, "sharedReceiveLoop returned normally")
-                    } catch (e: kotlinx.coroutines.CancellationException) {
-                        Log.w(TAG, "sharedReceiveLoop cancelled")
-                        throw e
-                    } catch (e: Exception) {
-                        Log.e(TAG, "sharedReceiveLoop CRASHED: ${e.javaClass.simpleName}: ${e.message}", e)
-                    }
-                },
-            )
+            launchWorker("shared receiver") { sharedReceiveLoop() }
         }
     }
 
+    @Synchronized
+    fun start() {
+        check(!stopped.get()) { "Proxy is closed" }
+        started = true
+        jobs.forEach { it.start() }
+    }
+
+    @Synchronized
+    private fun launchWorker(
+        name: String,
+        block: suspend () -> Unit,
+    ) {
+        val job =
+            scope.launch(Dispatchers.IO, start = CoroutineStart.LAZY) {
+                try {
+                    block()
+                    if (!stopped.get()) throw IOException("$name stopped unexpectedly")
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(TAG, "Proxy $name failed", e)
+                    if (!stopped.get() && failureReported.compareAndSet(false, true)) {
+                        shutdown()
+                        onFailure("Network forwarding stopped: ${e.message ?: name}. Return to the lobby and retry.")
+                    }
+                }
+            }
+        jobs.add(job)
+        if (started) job.start()
+    }
+
+    @Synchronized
     fun addPeer(peerConfig: PeerProxyConfig) {
+        check(!stopped.get()) { "Proxy is closed" }
         val realSocket: DatagramSocket
         val ownsRealSocket: Boolean
         if (sharedRealSocket != null) {
@@ -104,10 +131,10 @@ class LocalhostProxy(
         val proxy =
             try {
                 PeerProxy(peerConfig, realSocket, ownsRealSocket)
-            } catch (e: java.net.BindException) {
+            } catch (e: Exception) {
                 Log.e(TAG, "Failed to bind port ${peerConfig.localPort} for slot ${peerConfig.peerSlot}: ${e.message}")
                 if (ownsRealSocket) realSocket.close()
-                return
+                throw IOException("Could not open local game port ${peerConfig.localPort}. Please retry.", e)
             }
         peerProxies.add(proxy)
 
@@ -121,23 +148,7 @@ class LocalhostProxy(
             }
         }
 
-        jobs.add(
-            scope.launch(Dispatchers.IO) {
-                try {
-                    proxy.run()
-                    Log.w(TAG, "proxy.run() returned normally for slot=${peerConfig.peerSlot}")
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    Log.w(TAG, "proxy.run() cancelled for slot=${peerConfig.peerSlot}")
-                    throw e
-                } catch (e: Exception) {
-                    Log.e(
-                        TAG,
-                        "proxy.run() CRASHED for slot=${peerConfig.peerSlot}: ${e.javaClass.simpleName}: ${e.message}",
-                        e,
-                    )
-                }
-            },
-        )
+        launchWorker("peer ${peerConfig.peerSlot}") { proxy.run() }
         Log.i(
             TAG,
             "Added peer proxy: slot=${peerConfig.peerSlot} " +
@@ -151,7 +162,9 @@ class LocalhostProxy(
      * Called from sharedReceiveLoop when an unknown sender is detected.
      * Returns the new PeerProxy or null on failure.
      */
+    @Synchronized
     private fun addDynamicPeer(realAddr: InetSocketAddress): PeerProxy? {
+        if (stopped.get()) return null
         val slot = nextDynamicSlot++
         val localPort = NetworkConstants.PROXY_PORT_BASE + slot
         val config =
@@ -166,22 +179,13 @@ class LocalhostProxy(
                 PeerProxy(config, sharedRealSocket!!, ownsRealSocket = false)
             } catch (e: java.net.BindException) {
                 Log.e(TAG, "Host-mode: failed to bind port $localPort for dynamic peer $realAddr: ${e.message}")
-                return null
+                throw e
             }
         peerProxies.add(proxy)
         val addrKey = "${realAddr.address.hostAddress}:${realAddr.port}"
         directPeersByAddr[addrKey] = proxy
         // Start the local->real forwarding coroutine
-        jobs.add(
-            scope.launch(Dispatchers.IO) {
-                try {
-                    proxy.run()
-                } catch (_: kotlinx.coroutines.CancellationException) {
-                } catch (e: Exception) {
-                    Log.e(TAG, "Dynamic peer CRASHED slot=$slot: ${e.message}")
-                }
-            },
-        )
+        launchWorker("dynamic peer $slot") { proxy.run() }
         Log.i(TAG, "Host-mode: dynamic peer slot=$slot local=127.0.0.1:$localPort -> $addrKey")
         return proxy
     }
@@ -275,6 +279,7 @@ class LocalhostProxy(
         )
     }
 
+    @Synchronized
     fun getStats(): List<PeerProxyStats> = peerProxies.map { it.getStats() }
 
     /**
@@ -308,7 +313,9 @@ class LocalhostProxy(
         }
     }
 
+    @Synchronized
     fun shutdown() {
+        if (stopped.getAndSet(true)) return
         val trace = Throwable("shutdown caller").stackTraceToString()
         Log.w(TAG, "Proxy shutdown called, peers=${peerProxies.size} jobs=${jobs.size}\n$trace")
         // C10: close sockets first to unblock receive() calls, then cancel jobs
@@ -371,14 +378,23 @@ private class PeerProxy(
 
     suspend fun run() {
         kotlinx.coroutines.coroutineScope {
+            suspend fun forward(block: suspend () -> Unit) {
+                try {
+                    block()
+                    throw IOException("Peer ${config.peerSlot} forwarding loop stopped")
+                } finally {
+                    // Unblock sibling receivers before coroutineScope waits for them
+                    close()
+                }
+            }
             // local -> real: engine sends to our local port, we forward to peer
-            launch { forwardLocalToReal() }
+            launch { forward { forwardLocalToReal() } }
             // real -> local: only when we own the socket (non-shared mode)
             if (ownsRealSocket) {
-                launch { forwardRealToLocal() }
+                launch { forward { forwardRealToLocal() } }
             }
             // NAT keepalive (direct and relay)
-            launch { keepalive() }
+            launch { forward { keepalive() } }
         }
     }
 

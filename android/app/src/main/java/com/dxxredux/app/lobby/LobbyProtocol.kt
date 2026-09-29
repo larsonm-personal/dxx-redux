@@ -409,9 +409,11 @@ fun buildMissionTransferRequest(
     clientId: String?,
     revision: String,
     attempt: Int,
+    requestId: String,
 ): ByteArray =
     JSONObject()
         .put("type", MSG_MISSION_TRANSFER_REQUEST)
+        .put("request_id", requestId)
         .put("lobby_id", lobbyId)
         .put("callsign", callsign)
         .put("revision", revision)
@@ -426,9 +428,11 @@ fun buildMissionTransferGrant(
     port: Int,
     revision: String,
     attempt: Int,
+    requestId: String,
 ): ByteArray =
     JSONObject()
         .put("type", MSG_MISSION_TRANSFER_GRANT)
+        .put("request_id", requestId)
         .put("lobby_id", lobbyId)
         .put("token", token)
         .put("port", port)

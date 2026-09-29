@@ -56,6 +56,8 @@ object LobbyService {
     private const val TAG = "LobbyService"
     private const val RECV_BUF_SIZE = 8 * 1024
     private const val SOCKET_TIMEOUT_MS = 500
+
+    @Volatile private var failNextSocketOpenForTest = false
     private const val DISCOVERY_QUERY_INTERVAL_MS = 6000L
     private var lastDiscoveryQueryMs = 0L
     private var loggedDiscoveryTargets: List<String>? = null
@@ -180,6 +182,12 @@ object LobbyService {
         _lanLaunchEvent.value = null
     }
 
+    internal fun failNextTransportRecoveryForTest() {
+        check(com.dxxredux.app.BuildConfig.DEBUG)
+        failNextSocketOpenForTest = true
+        socket?.close()
+    }
+
     fun notifyAppBackgrounded() {
         if (!_isDiscovering.value) return
         appBackgrounded = true
@@ -187,6 +195,7 @@ object LobbyService {
         NetLog.log("LAN", "App backgrounded with LAN discovery active")
     }
 
+    @Synchronized
     fun notifyAppResumed(
         context: Context,
         callsign: String,
@@ -207,29 +216,17 @@ object LobbyService {
             "App resumed, refreshing LAN discovery socket " +
                 "(wasBackgrounded=$wasBackgrounded, socketUnavailable=$socketUnavailable)",
         )
-        try {
-            openSocket(context)
-            val now = System.currentTimeMillis()
-            if (_isHosting.value) {
-                _hostedLobbyPlayers.value = refreshLanPlayerLeasesAfterResume(_hostedLobbyPlayers.value, now)
-                restartAnnounceLoop()
-            }
-            if (_joinedLobby.value != null) {
-                lastHostSeenMs = now
-                lastHostPongMs = now
-                hostReconnectStartedMs = 0L
-                startJoinedLobbyRefresh(immediate = true)
-            }
-        } catch (e: Exception) {
-            socketRefreshNeededOnResume = true
-            _diagnostics.value = "LAN discovery resume failed: ${e.message ?: e.javaClass.simpleName}"
-            Log.w(TAG, "Failed to refresh LAN discovery after resume: ${e.message}", e)
-        }
+        appContext = context.applicationContext
+        startTransportWatchdog()
+        recoverTransport("app resumed")
     }
 
     // -- Internal state --
 
     private var scope: CoroutineScope? = null
+
+    // Socket replacement must not cancel the owner responsible for retrying it
+    private val transportSupervisorScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     @Volatile private var socket: DatagramSocket? = null
     private var multicastLock: WifiManager.MulticastLock? = null
@@ -252,6 +249,10 @@ object LobbyService {
     @Volatile private var joinedLobbyReady = false
 
     @Volatile private var clientTransferAttempt = 0
+
+    @Volatile private var pendingMissionTransferRequest: String? = null
+
+    @Volatile private var acceptedMissionTransferRequest: String? = null
 
     @Volatile private var appBackgrounded = false
 
@@ -283,6 +284,16 @@ object LobbyService {
 
     @Volatile private var gameStarted: Boolean = false
 
+    private data class PendingHostStart(
+        val lobbyId: String,
+        val info: com.dxxredux.app.multiplayer.GameLaunchInfo,
+        val packet: ByteArray,
+        val players: List<LanPlayer>,
+    )
+
+    @Volatile private var pendingHostStart: PendingHostStart? = null
+    private var hostStartJob: Job? = null
+
     @Volatile private var inGameDifficulty: Int = -1
 
     @Volatile private var inGameLevelNum: Int = -1
@@ -304,28 +315,38 @@ object LobbyService {
      * Start discovery mode. Acquires multicast lock, opens the UDP socket,
      * and begins listening for ANNOUNCE packets.
      */
+    @Synchronized
     fun startDiscovery(
         context: Context,
         callsign: String,
     ) {
-        if (_isDiscovering.value) return
         hostCallsign = callsign
         appContext = context.applicationContext
         localClientId = ClientIdentity.getInstallationId(context)
-        openSocket(context)
+        appBackgrounded = false
         _isDiscovering.value = true
+        startTransportWatchdog()
+        if (isSocketUnavailable() || receiveJob?.isActive != true) {
+            recoverTransport("discovery requested")
+        }
         NetLog.log("LAN", "Discovery started on port ${NetworkConstants.LAN_LOBBY_PORT}, callsign=$callsign")
         Log.i(TAG, "LAN discovery started on port ${NetworkConstants.LAN_LOBBY_PORT}")
     }
 
     /** Stop discovery (and hosting if active). Releases all resources. */
+    @Synchronized
     fun stopDiscovery() {
         NetLog.log(
             "LAN",
             "Discovery stopping (wasHosting=${_isHosting.value}, wasJoined=${_joinedLobby.value != null})",
         )
         _isDiscovering.value = false
+        transportWatchdogJob?.cancel()
+        transportWatchdogJob = null
         _isHosting.value = false
+        pendingHostStart = null
+        hostStartJob?.cancel()
+        hostStartJob = null
         hostedLobbyId = null
         lobbies.clear()
         _discoveredLobbies.value = emptyList()
@@ -354,7 +375,7 @@ object LobbyService {
         localClientId = null
         hostedMissionRequirement = null
         MissionTransferService.stopHost()
-        MissionTransferService.cancelClient()
+        cancelMissionDownload()
         updateLanForegroundSession()
         appContext = null
         joinedLobbyReady = false
@@ -438,6 +459,9 @@ object LobbyService {
                 ),
             )
         _isHosting.value = true
+        pendingHostStart = null
+        hostStartJob?.cancel()
+        hostStartJob = null
         gameStarted = false
         updateLanForegroundSession()
 
@@ -447,9 +471,11 @@ object LobbyService {
     }
 
     /** Stop hosting (but keep discovery running). */
+    @Synchronized
     fun stopHosting() {
         NetLog.log("LAN", "Stopped hosting lobby $hostedLobbyId")
         _isHosting.value = false
+        stopInGameBroadcast()
         announceJob?.cancel()
         announceJob = null
         hostedLobbyId = null
@@ -601,7 +627,7 @@ object LobbyService {
         joinedLobbyRefreshJob = null
         missionTransferGrantTimeoutJob?.cancel()
         missionTransferGrantTimeoutJob = null
-        MissionTransferService.cancelClient()
+        cancelMissionDownload()
         updateLanForegroundSession()
         Log.i(TAG, "Left LAN lobby ${info.lobbyId}")
     }
@@ -756,13 +782,23 @@ object LobbyService {
                 acquire()
             }
 
-        socket =
-            DatagramSocket(null).apply {
+        val openedSocket = DatagramSocket(null)
+        socket = openedSocket
+        try {
+            openedSocket.apply {
+                if (failNextSocketOpenForTest) {
+                    failNextSocketOpenForTest = false
+                    throw java.net.BindException("Injected LAN socket bind failure")
+                }
                 reuseAddress = true
                 broadcast = true
                 bind(InetSocketAddress(NetworkConstants.LAN_LOBBY_PORT))
                 soTimeout = SOCKET_TIMEOUT_MS
             }
+        } catch (e: Exception) {
+            closeSocket()
+            throw e
+        }
         NetLog.log(
             "LAN",
             "Socket opened: port=${socket?.localPort} bound=${socket?.isBound} broadcast=${socket?.broadcast}",
@@ -782,7 +818,8 @@ object LobbyService {
                 while (isActive) {
                     try {
                         val packet = DatagramPacket(buf, buf.size)
-                        socket?.receive(packet)
+                        openedSocket.receive(packet)
+                        if (!isActive || socket !== openedSocket) break
                         val senderAddr = packet.address.hostAddress ?: continue
                         val json = parsePacket(packet.data, packet.length)
                         if (json == null) {
@@ -802,7 +839,7 @@ object LobbyService {
                             NetLog.log("LAN", "Receive error: ${e.message}")
                             Log.w(TAG, "receive error: ${e.message}")
                         }
-                        if (socket?.isClosed != false) break
+                        if (openedSocket.isClosed) break
                     }
                 }
                 Log.i(TAG, "Receive loop ended")
@@ -810,7 +847,6 @@ object LobbyService {
         trackTransportJob("receive", receiveJob) { _isDiscovering.value }
 
         startPruneLoop()
-        startTransportWatchdog()
     }
 
     private fun startPruneLoop() {
@@ -862,7 +898,6 @@ object LobbyService {
         receiveJob = null
         announceJob = null
         pruneJob = null
-        transportWatchdogJob = null
         joinRetryJob = null
         joinedLobbyRefreshJob = null
         try {
@@ -873,10 +908,11 @@ object LobbyService {
         multicastLock = null
     }
 
+    @Synchronized
     private fun startTransportWatchdog() {
-        transportWatchdogJob?.cancel()
+        if (transportWatchdogJob?.isActive == true) return
         transportWatchdogJob =
-            scope?.launch(Dispatchers.IO) {
+            transportSupervisorScope.launch {
                 while (isActive) {
                     delay(TRANSPORT_WATCHDOG_MS)
                     val recoveryReason =
@@ -888,7 +924,7 @@ object LobbyService {
                         )
                     if (recoveryReason != null) {
                         recoverTransport(recoveryReason)
-                        return@launch
+                        continue
                     }
                     if (_isDiscovering.value && pruneJob?.isActive != true) {
                         NetLog.log("LAN", "Restarting stopped prune loop")
@@ -911,7 +947,9 @@ object LobbyService {
             }
     }
 
+    @Synchronized
     private fun recoverTransport(reason: String) {
+        if (!_isDiscovering.value || appBackgrounded) return
         val context = appContext ?: return
         NetLog.log("LAN", "Recovering lobby transport: $reason")
         Log.w(TAG, "Recovering lobby transport: $reason")
@@ -924,11 +962,17 @@ object LobbyService {
             }
             if (_joinedLobby.value != null) {
                 lastHostSeenMs = now
+                lastHostPongMs = now
+                hostReconnectStartedMs = 0L
                 startJoinedLobbyRefresh(immediate = true)
             }
+            socketRefreshNeededOnResume = false
+            if (_diagnostics.value.startsWith("LAN transport unavailable:")) _diagnostics.value = ""
             NetLog.log("LAN", "Lobby transport recovery complete")
         } catch (e: Exception) {
+            closeSocket()
             socketRefreshNeededOnResume = true
+            _diagnostics.value = "LAN transport unavailable: ${e.message ?: e.javaClass.simpleName}. Retrying..."
             NetLog.log("LAN", "Lobby transport recovery failed: ${e.message}")
             Log.w(TAG, "Lobby transport recovery failed", e)
         }
@@ -1299,12 +1343,22 @@ object LobbyService {
         }
     }
 
+    @Synchronized
     fun requestMissionDownload() {
         val joined = _joinedLobby.value ?: return
         val requirement = joined.missionRequirement ?: return
         if (!requirement.isWrapper || !requirement.offerAvailable) return
         clientTransferAttempt = 1
         sendMissionTransferRequest(joined, requirement, clientTransferAttempt)
+    }
+
+    @Synchronized
+    private fun cancelMissionDownload() {
+        pendingMissionTransferRequest = null
+        acceptedMissionTransferRequest = null
+        missionTransferGrantTimeoutJob?.cancel()
+        missionTransferGrantTimeoutJob = null
+        MissionTransferService.cancelClient()
     }
 
     fun enableMatchingMission() {
@@ -1320,11 +1374,16 @@ object LobbyService {
         }
     }
 
+    @Synchronized
     private fun sendMissionTransferRequest(
         joined: JoinedLobbyInfo,
         requirement: MissionRequirement,
         attempt: Int,
     ) {
+        val requestId = UUID.randomUUID().toString()
+        pendingMissionTransferRequest = requestId
+        acceptedMissionTransferRequest = null
+        MissionTransferService.cancelClient()
         val queued =
             MissionStatusReport(
                 revision = requirement.revision,
@@ -1342,6 +1401,7 @@ object LobbyService {
                     localClientId,
                     requirement.revision,
                     attempt,
+                    requestId,
                 ),
                 joined.hostAddr,
             )
@@ -1350,30 +1410,46 @@ object LobbyService {
         missionTransferGrantTimeoutJob =
             scope?.launch(Dispatchers.IO) {
                 delay(5_000L)
-                val current = _joinedLobby.value ?: return@launch
-                val status = current.missionStatus ?: return@launch
-                if (
-                    current.missionRequirement?.revision == requirement.revision &&
-                    status.attempt == attempt &&
-                    status.status in setOf(MissionCompatibilityStatus.QUEUED, MissionCompatibilityStatus.RETRYING)
-                ) {
-                    if (attempt < 3) {
-                        clientTransferAttempt = attempt + 1
-                        sendMissionTransferRequest(current, requirement, attempt + 1)
-                    } else {
-                        val failed =
-                            status.copy(
-                                status = MissionCompatibilityStatus.FAILED_RESUMABLE,
-                                failureCode = "grant_timeout",
+                synchronized(this@LobbyService) {
+                    if (pendingMissionTransferRequest != requestId) return@synchronized
+                    val current = _joinedLobby.value ?: return@synchronized
+                    val status = current.missionStatus ?: return@synchronized
+                    if (
+                        current.missionRequirement?.revision == requirement.revision &&
+                        status.attempt == attempt &&
+                        status.status in setOf(MissionCompatibilityStatus.QUEUED, MissionCompatibilityStatus.RETRYING)
+                    ) {
+                        if (attempt < 3) {
+                            clientTransferAttempt = attempt + 1
+                            sendMissionTransferRequest(current, requirement, attempt + 1)
+                        } else {
+                            val failed =
+                                status.copy(
+                                    status = MissionCompatibilityStatus.FAILED_RESUMABLE,
+                                    failureCode = "grant_timeout",
+                                )
+                            _joinedLobby.value = current.copy(missionStatus = failed)
+                            sendTo(
+                                buildMissionStatus(current.lobbyId, hostCallsign, localClientId, failed),
+                                current.hostAddr,
                             )
-                        _joinedLobby.value = current.copy(missionStatus = failed)
-                        sendTo(
-                            buildMissionStatus(current.lobbyId, hostCallsign, localClientId, failed),
-                            current.hostAddr,
-                        )
+                        }
                     }
                 }
             }
+    }
+
+    @Synchronized
+    private fun retryMissionTransfer(
+        requestId: String,
+        requirement: MissionRequirement,
+        attempt: Int,
+    ) {
+        if (pendingMissionTransferRequest != requestId) return
+        val current = _joinedLobby.value ?: return
+        if (current.missionRequirement?.revision != requirement.revision) return
+        clientTransferAttempt = attempt
+        sendMissionTransferRequest(current, requirement, attempt)
     }
 
     private fun handleMissionTransferRequest(
@@ -1384,6 +1460,8 @@ object LobbyService {
         val requirement = hostedMissionRequirement ?: return
         val revision = json.optString("revision")
         val attempt = json.optInt("attempt", 1).coerceIn(1, 10)
+        val requestId = json.optString("request_id")
+        if (requestId.isBlank() || requestId.length > 64) return
         val callsign = json.optString("callsign")
         val clientId = json.optString("client_id").takeIf(String::isNotBlank)
         val player =
@@ -1408,11 +1486,13 @@ object LobbyService {
                 grant.port,
                 requirement.revision,
                 attempt,
+                requestId,
             ),
             senderAddr,
         )
     }
 
+    @Synchronized
     private fun handleMissionTransferGrant(
         json: JSONObject,
         senderAddr: String,
@@ -1424,7 +1504,11 @@ object LobbyService {
         val token = json.optString("token")
         val port = json.optInt("port", 0)
         val attempt = json.optInt("attempt", 1).coerceIn(1, 10)
+        val requestId = json.optString("request_id")
+        if (requestId != pendingMissionTransferRequest || requestId == acceptedMissionTransferRequest) return
+        if (attempt != joined.missionStatus?.attempt) return
         if (revision != requirement.revision || token.length !in 1..64 || port !in 1..65535) return
+        acceptedMissionTransferRequest = requestId
         noteDirectedHostContact("MISSION_TRANSFER_GRANT")
         missionTransferGrantTimeoutJob?.cancel()
         missionTransferGrantTimeoutJob = null
@@ -1437,25 +1521,27 @@ object LobbyService {
             attempt,
             onStatus = { report ->
                 val current = _joinedLobby.value ?: return@download
-                if (current.missionRequirement?.revision != report.revision) return@download
-                _joinedLobby.value = current.copy(missionStatus = report)
+                if (pendingMissionTransferRequest != requestId || current.lobbyId != joined.lobbyId ||
+                    current.hostAddr != senderAddr || current.missionRequirement?.revision != report.revision
+                ) {
+                    return@download
+                }
+                if (!_joinedLobby.compareAndSet(current, current.copy(missionStatus = report))) return@download
                 scope?.launch(Dispatchers.IO) {
+                    if (pendingMissionTransferRequest != requestId) return@launch
                     sendTo(buildMissionStatus(current.lobbyId, hostCallsign, localClientId, report), current.hostAddr)
                 }
             },
             onFinished = { success ->
                 if (
                     !success &&
+                    pendingMissionTransferRequest == requestId &&
                     attempt < 3 &&
                     _joinedLobby.value?.missionStatus?.status == MissionCompatibilityStatus.FAILED_RESUMABLE
                 ) {
                     scope?.launch(Dispatchers.IO) {
                         delay(500L shl (attempt - 1))
-                        val current = _joinedLobby.value ?: return@launch
-                        if (current.missionRequirement?.revision == requirement.revision) {
-                            clientTransferAttempt = attempt + 1
-                            sendMissionTransferRequest(current, requirement, attempt + 1)
-                        }
+                        retryMissionTransfer(requestId, requirement, attempt + 1)
                     }
                 }
             },
@@ -1517,6 +1603,11 @@ object LobbyService {
         }
         val requirement = missionRequirementFromJson(json.optJSONObject("mission_requirement"))
         val previous = _joinedLobby.value
+        if (previous?.lobbyId != lobbyId || previous.hostAddr != senderAddr ||
+            previous.missionRequirement?.revision != requirement?.revision
+        ) {
+            cancelMissionDownload()
+        }
         val previousStatus =
             previous
                 ?.takeIf {
@@ -1589,6 +1680,7 @@ object LobbyService {
         // Clear joined state in case we were in a retry
         if (_joinedLobby.value?.lobbyId == lobbyId) {
             _joinedLobby.value = null
+            cancelMissionDownload()
             joinedLobbyRefreshJob?.cancel()
             joinedLobbyRefreshJob = null
             joinedLobbyReady = false
@@ -1600,6 +1692,7 @@ object LobbyService {
      * Host calls this to start the game. Sends START to all joiners
      * and emits a launch event for the host side.
      */
+    @Synchronized
     fun startGame(
         difficulty: Int,
         levelNum: Int,
@@ -1614,6 +1707,7 @@ object LobbyService {
         hostPort: Int = NetworkConstants.ENGINE_PORT,
     ) {
         if (!_isHosting.value) return
+        if (pendingHostStart != null || gameStarted) return
         val lid = hostedLobbyId ?: return
         val saveWarning = hostSaveCompatibilityWarning()
         if (saveWarning != null) {
@@ -1663,21 +1757,14 @@ object LobbyService {
                 omittedVisualModNames = hostedOmittedVisualModNames,
                 missionRequirement = hostedMissionRequirement,
             )
-        // Mark game started (rejects further JOINs) but keep announcing
-        // so in-game lobbies remain discoverable on LAN
-        gameStarted = true
-        inGameDifficulty = difficulty
-        inGameLevelNum = levelNum
-
         // Capture values before launching coroutine (host fields are @Volatile)
         val game = hostedGame
         val mission = hostedMission
         val mode = hostedMode
         val maxPlayers = hostedMaxPlayers
 
-        // Launch the local host immediately. Discovery remains active for a
-        // LAN host, so client START retries can continue in the background.
-        _lanLaunchEvent.value =
+        // Prepare the host first; clients stay in the lobby until Activity launch succeeds
+        val info =
             com.dxxredux.app.multiplayer.GameLaunchInfo(
                 game = game,
                 mission = mission,
@@ -1701,35 +1788,70 @@ object LobbyService {
                 restrictNonCoopFovToBase = restrictNonCoopFovToBase,
                 missionRequirement = hostedMissionRequirement,
             )
+        pendingHostStart = PendingHostStart(lid, info, data, players)
+        _lanLaunchEvent.value = info
         NetLog.log("LAN", "Local host launch emitted: $game/$mission lvl=$levelNum diff=$difficulty")
+    }
+
+    @Synchronized
+    fun confirmGameLaunch(info: com.dxxredux.app.multiplayer.GameLaunchInfo) {
+        val pending = pendingHostStart ?: return
+        if (pending.info !== info || pending.lobbyId != hostedLobbyId || !_isHosting.value || gameStarted) return
+        // Mark game started (rejects further JOINs) but keep announcing
+        // so in-game lobbies remain discoverable on LAN
+        gameStarted = true
+        inGameDifficulty = info.difficulty
+        inGameLevelNum = info.levelNum
+        val data = pending.packet
+        val players = pending.players
 
         // Send START to every joiner on the IO thread with redundant retries.
-        scope?.launch(Dispatchers.IO) {
-            for (p in players) {
-                if (p.address != "127.0.0.1") {
-                    NetLog.log("LAN", "Sending START to ${p.callsign} at ${p.address}")
-                    sendTo(data, p.address)
-                }
-            }
-            // Redundant retries for unreliable networks
-            for (retry in 1..2) {
-                delay(200)
+        hostStartJob =
+            scope?.launch(Dispatchers.IO) {
                 for (p in players) {
                     if (p.address != "127.0.0.1") {
-                        NetLog.log("LAN", "START retry $retry to ${p.callsign} at ${p.address}")
+                        NetLog.log("LAN", "Sending START to ${p.callsign} at ${p.address}")
                         sendTo(data, p.address)
                     }
                 }
+                // Redundant retries for unreliable networks
+                for (retry in 1..2) {
+                    delay(200)
+                    for (p in players) {
+                        if (p.address != "127.0.0.1") {
+                            NetLog.log("LAN", "START retry $retry to ${p.callsign} at ${p.address}")
+                            sendTo(data, p.address)
+                        }
+                    }
+                }
+                NetLog.log(
+                    "LAN",
+                    "Game started: ${info.game}/${info.mission} " +
+                        "lvl=${info.levelNum} diff=${info.difficulty}",
+                )
             }
-            NetLog.log("LAN", "Game started: $game/$mission lvl=$levelNum diff=$difficulty")
-            Log.i(TAG, "Game started: $game/$mission lvl=$levelNum diff=$difficulty")
-        }
+    }
+
+    @Synchronized
+    fun failGameLaunch(
+        info: com.dxxredux.app.multiplayer.GameLaunchInfo,
+        message: String,
+    ) {
+        if (pendingHostStart?.info !== info) return
+        stopInGameBroadcast()
+        if (_lanLaunchEvent.value === info) _lanLaunchEvent.value = null
+        _diagnostics.value = message
+        notifyLobbySystemMessage("Game start failed: $message")
     }
 
     /** Stop the in-game announce loop when the game exits back to setup.
      *  If still hosting, restart lobby-mode announces so the lobby remains
      *  discoverable for new joins. */
+    @Synchronized
     fun stopInGameBroadcast() {
+        pendingHostStart = null
+        hostStartJob?.cancel()
+        hostStartJob = null
         announceJob?.cancel()
         announceJob = null
         gameStarted = false
@@ -1996,6 +2118,7 @@ object LobbyService {
         // Joiners receive KICK from host -- leave the lobby
         val joined = _joinedLobby.value ?: return
         _joinedLobby.value = null
+        cancelMissionDownload()
         _hostedLobbyPlayers.value = emptyList()
         _chatMessages.value = emptyList()
         lastHostSeenMs = 0L
@@ -2212,6 +2335,7 @@ object LobbyService {
             } else if (now - hostReconnectStartedMs > LAN_RECONNECT_GRACE_MS) {
                 NetLog.log("LAN", "Host reconnect grace expired for ${joined.hostAddr}")
                 _joinedLobby.value = null
+                cancelMissionDownload()
                 _hostedLobbyPlayers.value = emptyList()
                 _diagnostics.value = "Host disconnected after reconnect timeout"
                 lastHostSeenMs = 0L
