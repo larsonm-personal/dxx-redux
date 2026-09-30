@@ -372,11 +372,17 @@ private fun LanDiscoveryView(
     val lanLaunchEvent by LobbyService.lanLaunchEvent.collectAsState()
     val diagnostics by LobbyService.diagnostics.collectAsState()
     val broadcastFailing by LobbyService.broadcastFailing.collectAsState()
+    val saveWarning by LobbyService.hostedSaveWarning.collectAsState()
+    val saveChecking by LobbyService.hostedSaveChecking.collectAsState()
+    val discoveryExperiment by LobbyService.discoveryExperiment.collectAsState()
+    val discoveryExperimentActive by LobbyService.discoveryExperimentActive.collectAsState()
+    var diagnosticHost by remember { mutableStateOf("") }
     val actionFocus = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
 
     var showHostDialog by remember { mutableStateOf(false) }
     var showJoinByIpDialog by remember { mutableStateOf(false) }
+    var manualJoinStatus by remember { mutableStateOf("") }
     val hostDefaults = remember { HostGameDefaults.load(context) }
     var hostedGame by remember { mutableStateOf(hostDefaults.game) }
     var hostedMode by remember { mutableStateOf(hostDefaults.mode) }
@@ -869,25 +875,13 @@ private fun LanDiscoveryView(
                 if (hostedMode == "coop") {
                     CoopRestoreSelectionSummary(hostedGame, hostedLevelNum)
                 }
-                var saveCheckAttempt by remember { mutableStateOf(0) }
-                val saveCheck =
-                    rememberMissionLoad(
-                        hostedGame,
-                        hostedMission,
-                        hostedMode,
-                        saveCheckAttempt,
-                        failureMessage = "Could not check the selected save",
-                    ) {
-                        if (hostedMode == "coop") {
-                            CoopSaveCompatibility.hostWarning(context.filesDir, hostedGame, hostedMission)
-                        } else {
-                            null
-                        }
-                    }
-                val saveWarning = saveCheck.value ?: saveCheck.error
-                if (saveCheck.loading) Text("Checking save...")
+                if (saveChecking) Text("Checking save...")
                 saveWarning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                if (saveCheck.error != null) TextButton(onClick = { saveCheckAttempt++ }) { Text("Retry") }
+                if (saveWarning !=
+                    null
+                ) {
+                    TextButton(onClick = { LobbyService.refreshHostedSaveWarning() }) { Text("Retry") }
+                }
                 Button(
                     onClick = {
                         onLaunchRequested(hostedGame)
@@ -908,7 +902,7 @@ private fun LanDiscoveryView(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled =
-                        !saveCheck.loading && saveWarning == null && hostedPlayers.size >= 2 &&
+                        !saveChecking && saveWarning == null && hostedPlayers.size >= 2 &&
                             hostedPlayers.all {
                                 it.connected && it.ready &&
                                     it.missionStatus?.status == MissionCompatibilityStatus.MATCH
@@ -931,6 +925,39 @@ private fun LanDiscoveryView(
                 Spacer(Modifier.height(8.dp))
             }
         }
+
+        if (!isHosting) {
+            item {
+                HorizontalDivider()
+                Text("LAN discovery test", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    "Enable Network logging on both phones. Keep the host in its lobby and run this 80-second test before joining.",
+                )
+                OutlinedTextField(
+                    value = diagnosticHost,
+                    onValueChange = { diagnosticHost = it },
+                    label = { Text("Host IP (optional)") },
+                    singleLine = true,
+                    enabled = !discoveryExperimentActive,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedButton(
+                    enabled = isDiscovering,
+                    onClick = {
+                        if (discoveryExperimentActive) {
+                            LobbyService.stopDiscoveryExperiment()
+                        } else {
+                            LobbyService.startDiscoveryExperiment(diagnosticHost)
+                        }
+                    },
+                ) {
+                    Text(if (discoveryExperimentActive) "Stop discovery test" else "Run discovery test")
+                }
+                if (discoveryExperiment.isNotEmpty()) Text(discoveryExperiment)
+            }
+        }
+
+        if (manualJoinStatus.isNotEmpty()) item { Text(manualJoinStatus) }
 
         // Diagnostics status line
         if (diagnostics.isNotEmpty()) {
@@ -1023,32 +1050,24 @@ private fun LanDiscoveryView(
     if (showJoinByIpDialog) {
         JoinByIpDialog(
             recentIps = recentIps.value,
-            onJoin = { hostAddr, game ->
+            onJoin = { hostAddr ->
                 showJoinByIpDialog = false
                 LanIpsPrefs.add(context, hostAddr)
                 recentIps.value = LanIpsPrefs.load(context)
-                // Try lobby join first (1s probe), fall back to direct game engine join
-                coroutineScope.launch(Dispatchers.IO) {
-                    val foundLobby = LobbyService.tryJoinLobbyByIp(hostAddr, callsign)
-                    if (!foundLobby) {
-                        withContext(Dispatchers.Main) {
-                            onLaunchGame(
-                                GameLaunchInfo(
-                                    game = game,
-                                    mission = "",
-                                    mode = "coop",
-                                    difficulty = 1,
-                                    levelNum = 1,
-                                    maxPlayers = 4,
-                                    yourSlot = 1,
-                                    isHost = false,
-                                    peers = emptyList(),
-                                    lanHostAddr = hostAddr,
-                                    isLan = true,
-                                ),
-                            )
+                manualJoinStatus = "Looking for a lobby or running game at $hostAddr..."
+                coroutineScope.launch {
+                    val foundLobby =
+                        withContext(Dispatchers.IO) {
+                            LobbyService.tryJoinLobbyByIp(hostAddr, callsign, probeEngine = true)
                         }
-                    }
+                    manualJoinStatus =
+                        if (foundLobby) {
+                            ""
+                        } else {
+                            LobbyService.diagnostics.value.ifBlank {
+                                "No live lobby or compatible game replied at $hostAddr. Check the address and try again."
+                            }
+                        }
                 }
             },
             onDismiss = { showJoinByIpDialog = false },
@@ -1129,15 +1148,13 @@ private fun LanLobbyCard(
 @Composable
 private fun JoinByIpDialog(
     recentIps: List<String>,
-    onJoin: (hostAddr: String, game: String) -> Unit,
+    onJoin: (hostAddr: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var hostIp by remember { mutableStateOf(getDefaultIpPrefix()) }
-    var selectedGame by remember { mutableStateOf("d2") }
     var textEntryActive by remember { mutableStateOf(false) }
     val dismissFocus = remember { FocusRequester() }
     val hostIpFocus = remember { FocusRequester() }
-    val gameFocus = remember { FocusRequester() }
     val isValidIp = isValidIpAddress(hostIp)
     val dismissOrEndTextEntry =
         rememberControllerTextEntryDismiss(textEntryActive, dismissFocus, { textEntryActive = it }, onDismiss)
@@ -1150,7 +1167,7 @@ private fun JoinByIpDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Enter the host's IP address. Will try lobby join first, then direct connect.",
+                    "Enter the host's IP address to find its lobby or running game.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 OutlinedTextField(
@@ -1164,32 +1181,15 @@ private fun JoinByIpDialog(
                         Modifier
                             .fillMaxWidth()
                             .focusRequester(hostIpFocus)
-                            .controllerTextFieldDpadExit(up = dismissFocus, down = gameFocus)
+                            .controllerTextFieldDpadExit(up = dismissFocus, down = dismissFocus)
                             .controllerTextEntryFocus { textEntryActive = it },
                 )
                 RecentSuggestions(recentIps) { hostIp = it }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("Game:", style = MaterialTheme.typography.bodyMedium)
-                    listOf("d1" to "Descent 1", "d2" to "Descent 2").forEachIndexed { index, (key, label) ->
-                        FilterChip(
-                            selected = selectedGame == key,
-                            onClick = { selectedGame = key },
-                            label = { Text(label) },
-                            modifier =
-                                Modifier
-                                    .then(if (index == 0) Modifier.focusRequester(gameFocus) else Modifier)
-                                    .tvFocusBorder(),
-                        )
-                    }
-                }
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { onJoin(hostIp, selectedGame) },
+                onClick = { onJoin(hostIp) },
                 enabled = isValidIp,
             ) {
                 Text("Join")

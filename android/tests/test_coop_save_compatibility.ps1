@@ -15,6 +15,7 @@ $probe = $null
 $redirectAdded = $false
 
 function Read-HostAnnouncement {
+    param([string]$ExpectedWarning = "")
     $query = [Text.Encoding]::UTF8.GetBytes('{"type":"QUERY"}')
     $deadline = [DateTime]::UtcNow.AddSeconds(10)
     while ([DateTime]::UtcNow -lt $deadline) {
@@ -23,7 +24,10 @@ function Read-HostAnnouncement {
         try {
             $packet = $probe.Receive([ref]$sender)
             $json = [Text.Encoding]::UTF8.GetString($packet) | ConvertFrom-Json
-            if ($json.type -eq 'ANNOUNCE') { return $json }
+            if ($json.type -eq 'ANNOUNCE') {
+                $warning = if ($json.PSObject.Properties.Name -contains 'save_compatibility_warning') { $json.save_compatibility_warning } else { '' }
+                if (($ExpectedWarning -eq '' -and $warning -eq '') -or ($ExpectedWarning -ne '' -and $warning -match $ExpectedWarning)) { return $json }
+            }
         } catch [Net.Sockets.SocketException] {
             if ($_.Exception.SocketErrorCode -ne [Net.Sockets.SocketError]::TimedOut) { throw }
         }
@@ -106,14 +110,14 @@ try {
     $redirect = Adb -AdbArgs @('emu', 'redir', 'add', 'udp:42490:42400')
     if ($redirect -notmatch 'OK') { throw "Could not forward discovery probe: $redirect" }
     $redirectAdded = $true
-    $announce = Read-HostAnnouncement
+    $announce = Read-HostAnnouncement -ExpectedWarning 'This save cannot be used by this build'
     if ($announce.save_compatibility_warning -notmatch 'This save cannot be used by this build') {
         throw 'Client discovery reply omitted the incompatible-save warning'
     }
 
     Write-VersionFixture $oldSave 31
     Push-AppFixture $oldSave $save
-    $announce = Read-HostAnnouncement
+    $announce = Read-HostAnnouncement -ExpectedWarning 'D1-in-D2 save uses unsupported version 31'
     if ($announce.save_compatibility_warning -notmatch 'D1-in-D2 save uses unsupported version 31') {
         throw 'Current co-op trailer hid the unsupported engine save version from clients'
     }

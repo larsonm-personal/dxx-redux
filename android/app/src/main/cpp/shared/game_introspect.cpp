@@ -2200,6 +2200,13 @@ extern "C" char *game_introspect_get_state(void)
 		if (grd_curscreen) {
 			res["render_width"] = (int) grd_curscreen->sc_w;
 			res["render_height"] = (int) grd_curscreen->sc_h;
+			res["pixel_aspect"] = grd_curscreen->sc_aspect;
+		}
+		if (window *front = window_get_front()) {
+			const grs_bitmap &canvas = window_get_canvas(front)->cv_bitmap;
+			res["front_canvas"] = {
+				{ "x", canvas.bm_x }, { "y", canvas.bm_y }, { "width", canvas.bm_w }, { "height", canvas.bm_h }
+			};
 		}
 		res["display_width"] = android_surface_get_display_width();
 		res["display_height"] = android_surface_get_display_height();

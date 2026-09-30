@@ -511,6 +511,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_level_preview.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_level_metadata.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_resume_save.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/jni_engine_query.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/cd_read_contract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/extract_attempt_budget.c
@@ -692,6 +693,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_level_preview.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_level_metadata.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_resume_save.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/jni_engine_query.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/cd_read_contract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/extract_attempt_budget.c

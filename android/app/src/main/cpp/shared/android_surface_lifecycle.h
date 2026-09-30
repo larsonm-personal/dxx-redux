@@ -15,6 +15,8 @@ struct android_surface_snapshot {
 
 void android_surface_acquire_snapshot(struct android_surface_snapshot *snapshot);
 void android_surface_release_snapshot(struct android_surface_snapshot *snapshot);
+int android_surface_get_display_width(void);
+int android_surface_get_display_height(void);
 
 #endif
 

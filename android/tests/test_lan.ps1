@@ -70,6 +70,7 @@
 #   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretCrossRestore -AllowSecretWarps -NoCoopQol
 #   .\test_lan.ps1 -Game d2 -InitialLevel 8 -TravelGate -AllowSecretWarps -NoCoopQol
 #   .\test_lan.ps1 -UseRelay
+#   .\test_lan.ps1 -Game d2 -MissionFile descent -InitialLevel 3 -BriefingAspect
 #   .\test_lan.ps1 -SkipBuild
 #   .\test_lan.ps1 -Game d2 -MissionFile max_f -InitialLevel 18 -AllowSecretWarps -MaximumExitProbe
 
@@ -105,6 +106,7 @@ param(
     [switch]$SpewPickup,
     [switch]$SpewPartialPickup,
     [switch]$Briefings,
+    [switch]$BriefingAspect,
     [switch]$D1LevelTransition,
     [switch]$D1FlyoutPlayers,
     [ValidateSet("late", "near")]
@@ -268,6 +270,11 @@ if ($SecretEndgameHostLeaves) { $SecretEndgameModal = $true }
 if ($SecretEndgameModal) { $SecretEndgame = $true }
 if ($SecretEndgame) { $SecretExitRace = $Briefings = $true }
 if ($SecretEndgame -and $SecretAdvance) { throw "Run secret campaign advancement and ending separately" }
+if ($BriefingAspect) {
+    $Briefings = $true
+    if ($BriefingCase -ne 'force') { throw 'BriefingAspect uses the force-launch scenario' }
+}
+
 if ($Briefings -and $Game -eq "d2" -and $InitialLevel -eq 8 -and -not $MissionFile -and $BriefingCase -ne "force") {
     throw "Counterstrike level 8 has no authored briefing; use level 1 to exercise briefing timing and input cases"
 }
@@ -2191,6 +2198,27 @@ try {
     Start-Sleep -Seconds 1
     Write-Status "Normalized music preferences for LAN launch" "Green"
 
+    if ($BriefingAspect) {
+        foreach ($serial in @($EMU1, $EMU2)) {
+            $size = Adb-Dev -Serial $serial -AdbArgs @('shell', 'wm', 'size')
+            $sizes = [regex]::Matches($size, '(\d+)x(\d+)')
+            if ($sizes.Count -eq 0) { throw "No display dimensions for $serial" }
+            $dimensions = $sizes[$sizes.Count - 1]
+            $width = [Math]::Max([int]$dimensions.Groups[1].Value, [int]$dimensions.Groups[2].Value)
+            $height = [Math]::Min([int]$dimensions.Groups[1].Value, [int]$dimensions.Groups[2].Value)
+            $fixture = Join-Path $REPO_ROOT 'temp/briefing-aspect.cfg'
+            # Reset-DeviceGameState removed configs; seed an old desktop aspect before launch
+            [IO.File]::WriteAllText($fixture, "AspectX=3`nAspectY=4`nResolutionX=$width`nResolutionY=$height`n", (New-Object Text.UTF8Encoding($false)))
+            Adb-Dev -Serial $serial -AdbArgs @('push', $fixture, '/data/local/tmp/briefing-aspect.cfg') | Out-Null
+            Adb-Dev -Serial $serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'cp',
+                '/data/local/tmp/briefing-aspect.cfg', 'files/descent.cfg') | Out-Null
+            $configured = Adb-Dev -Serial $serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/descent.cfg')
+            if ($configured -notmatch '(?m)^AspectX=3\r?$' -or $configured -notmatch '(?m)^AspectY=4\r?$') {
+                throw "Could not seed saved 4:3 aspect on $serial"
+            }
+        }
+    }
+
     if ($Briefings -and -not $RestoreSavePath) {
         foreach ($serial in @($EMU1, $EMU2)) {
             Adb-Dev-Timeout -Serial $serial -AdbArgs @(
@@ -2450,6 +2478,30 @@ try {
             $hostIntro.coop_briefing.presenting -and $clientIntro.coop_briefing.presenting
         }
         if (-not $briefingReady) { throw "Both peers must enter the synchronized briefing phase" }
+        if ($BriefingAspect) {
+            foreach ($serial in @($EMU1, $EMU2)) {
+                $state = Get-GameIntrospection -Serial $serial
+                $res = $state.resolution
+                $canvas = $res.front_canvas
+                if (-not $canvas) { throw 'Briefing aspect coverage requires canvas introspection' }
+                $physicalWidth = $canvas.width * $res.display_width / $res.render_width
+                $physicalHeight = $canvas.height * $res.display_height / $res.render_height
+                if ([Math]::Abs($physicalWidth / $physicalHeight - 4.0 / 3.0) -gt 0.005) {
+                    throw "Briefing is stretched on ${serial}: canvas=$($canvas.width)x$($canvas.height), display=$($res.display_width)x$($res.display_height), render=$($res.render_width)x$($res.render_height)"
+                }
+                if ([Math]::Abs(2 * $canvas.x + $canvas.width - $res.render_width) -gt 1 -or
+                    [Math]::Abs(2 * $canvas.y + $canvas.height - $res.render_height) -gt 1) {
+                    throw "Briefing is not centered on $serial"
+                }
+                Write-Status "Briefing aspect correct on ${serial}: $($canvas.width)x$($canvas.height) at $($canvas.x),$($canvas.y) despite saved 4:3 display settings" 'Green'
+                $capture = Join-Path $REPO_ROOT "temp/briefing-aspect-$serial.png"
+                & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $capture | Out-Null
+                Adb-Dev -Serial $serial -AdbArgs @('shell', 'screencap', '-p', '/sdcard/briefing-aspect.png') | Out-Null
+                Adb-Dev -Serial $serial -AdbArgs @('pull', '/sdcard/briefing-aspect.png', $capture) | Out-Null
+
+            }
+        }
+
         if ($BriefingCase -eq 'rejoin') {
             $testPassed = Invoke-BriefingRejoinScenario
             Write-Status '=== BRIEFING REJOIN TEST PASSED ===' 'Green'
@@ -3451,6 +3503,12 @@ try {
 
 } finally {
     Cleanup
+    if ($BriefingAspect) {
+        foreach ($serial in @($EMU1, $EMU2)) {
+            Adb-Dev -Serial $serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f',
+                'files/descent.cfg', "files/${Game}x-redux/descent.cfg") | Out-Null
+        }
+    }
     if (-not $testPassed) {
         if (Test-Path $script:LogFile) {
             Get-Content $script:LogFile -ErrorAction SilentlyContinue | Write-Output

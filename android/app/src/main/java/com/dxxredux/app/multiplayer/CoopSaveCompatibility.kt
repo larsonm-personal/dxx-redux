@@ -35,6 +35,46 @@ internal object CoopSaveCompatibility {
         mission: String?,
     ): String? = readCoopRestoreSelection(filesDir, game)?.let { selectionWarning(filesDir, game, mission, it) }
 
+    private fun selectedPath(
+        filesDir: File,
+        game: String,
+        mission: String?,
+        selection: CoopRestoreSelection,
+    ): File? {
+        if (selection.slot == null && selection.checkpointId == null) return null
+        val root = File(filesDir, if (game == "d1") "d1x-redux" else "d2x-redux").canonicalFile
+        val path =
+            if (selection.checkpointId != null) {
+                root
+                    .listFiles { file -> file.name.startsWith("coop_level_start_") && file.extension == "json" }
+                    ?.firstNotNullOfOrNull { manifest ->
+                        val json = runCatching { JSONObject(manifest.readText()) }.getOrNull()
+                        if (json?.optString("checkpoint_id") == selection.checkpointId &&
+                            json.optString("mission").equals(mission, ignoreCase = true)
+                        ) {
+                            File(root, json.getString("save_path")).canonicalFile
+                        } else {
+                            null
+                        }
+                    }
+            } else {
+                File(nativeSlotPath(root.path, mission.orEmpty(), checkNotNull(selection.slot))).canonicalFile
+            }
+        return path?.takeIf { it.path.startsWith(root.path + File.separator) }
+    }
+
+    // No catalog scan or save parsing: poll only the chosen file and selection
+    fun hostRevision(
+        filesDir: File,
+        game: String,
+        mission: String?,
+    ): String =
+        runCatching {
+            val selection = readCoopRestoreSelection(filesDir, game)
+            val path = selection?.let { selectedPath(filesDir, game, mission, it) }
+            "$selection|${path?.path}|${path?.length()}|${path?.lastModified()}"
+        }.getOrDefault("unreadable")
+
     private fun selectionWarning(
         filesDir: File,
         game: String,
@@ -45,27 +85,8 @@ internal object CoopSaveCompatibility {
         if (selection.slot == null && selection.checkpointId == null) return null
         if (!nativeAvailable) return WARNING
         return runCatching {
-            val root = File(filesDir, if (game == "d1") "d1x-redux" else "d2x-redux").canonicalFile
-            val path =
-                if (selection.checkpointId != null) {
-                    root
-                        .listFiles { file -> file.name.startsWith("coop_level_start_") && file.extension == "json" }
-                        ?.firstNotNullOfOrNull { manifest ->
-                            val json = runCatching { JSONObject(manifest.readText()) }.getOrNull()
-                            if (json?.optString("checkpoint_id") == selection.checkpointId &&
-                                json.optString("mission").equals(mission, ignoreCase = true)
-                            ) {
-                                File(root, json.getString("save_path")).canonicalFile
-                            } else {
-                                null
-                            }
-                        }
-                } else {
-                    File(nativeSlotPath(root.path, mission.orEmpty(), checkNotNull(selection.slot))).canonicalFile
-                }
-            if (path == null || !path.path.startsWith(root.path + File.separator) || !path.isFile) {
-                return@runCatching WARNING
-            }
+            val path = selectedPath(filesDir, game, mission, selection)
+            if (path == null || !path.isFile) return@runCatching WARNING
             val contentGame =
                 if (game == "d1") {
                     "d1"

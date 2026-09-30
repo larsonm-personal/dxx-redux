@@ -24,13 +24,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
 import java.net.DatagramPacket
 import java.net.DatagramSocket
@@ -61,6 +68,12 @@ object LobbyService {
     private const val DISCOVERY_QUERY_INTERVAL_MS = 6000L
     private var lastDiscoveryQueryMs = 0L
     private var loggedDiscoveryTargets: List<String>? = null
+    private val socketGeneration = AtomicLong(0)
+    private val _discoveryExperiment = MutableStateFlow("")
+    val discoveryExperiment: StateFlow<String> = _discoveryExperiment.asStateFlow()
+    private val _discoveryExperimentActive = MutableStateFlow(false)
+    val discoveryExperimentActive: StateFlow<Boolean> = _discoveryExperimentActive.asStateFlow()
+    private var discoveryExperimentJob: Job? = null
     private const val LOBBY_EXPIRY_MS = 10_000L
     private const val JOIN_RETRY_COUNT = 3
     private const val JOIN_RETRY_DELAY_MS = 1000L
@@ -190,6 +203,7 @@ object LobbyService {
     }
 
     fun notifyAppBackgrounded() {
+        stopDiscoveryExperiment()
         if (!_isDiscovering.value) return
         appBackgrounded = true
         socketRefreshNeededOnResume = true
@@ -294,6 +308,25 @@ object LobbyService {
 
     @Volatile private var pendingHostStart: PendingHostStart? = null
     private var hostStartJob: Job? = null
+    private val manualIpAttempt =
+        java.util.concurrent.atomic
+            .AtomicLong()
+    private var hostLaunchAttempt = 0L
+
+    @Volatile private var hostLaunchPacket: ByteArray? = null
+    private val clientLaunchPreparation = MutableStateFlow<LanLaunchPreparation?>(null)
+    private val _hostedSaveWarning = MutableStateFlow<String?>(null)
+    val hostedSaveWarning: StateFlow<String?> = _hostedSaveWarning.asStateFlow()
+    private val _hostedSaveChecking = MutableStateFlow(false)
+    val hostedSaveChecking: StateFlow<Boolean> = _hostedSaveChecking.asStateFlow()
+    private var hostedSaveCheckJob: Job? = null
+    private var hostedSaveCheckGeneration = 0L
+    private var hostedSaveRevision: String? = null
+    internal var hostedSaveCheckForTest: ((String, String) -> String?)? = null
+        set(value) {
+            check(com.dxxredux.app.BuildConfig.DEBUG)
+            field = value
+        }
 
     @Volatile private var inGameDifficulty: Int = -1
 
@@ -337,6 +370,11 @@ object LobbyService {
     /** Stop discovery (and hosting if active). Releases all resources. */
     @Synchronized
     fun stopDiscovery() {
+        manualIpAttempt.incrementAndGet()
+        stopDiscoveryExperiment()
+        cancelHostedSaveCheck()
+        clientLaunchPreparation.value = null
+        hostLaunchPacket = null
         NetLog.log(
             "LAN",
             "Discovery stopping (wasHosting=${_isHosting.value}, wasJoined=${_joinedLobby.value != null})",
@@ -424,6 +462,7 @@ object LobbyService {
         omittedVisualTextureCount: Int = 0,
         omittedVisualModNames: List<String> = emptyList(),
     ) {
+        stopDiscoveryExperiment()
         if (!_isDiscovering.value) return
         if (
             !missionRequirement.isValid ||
@@ -435,6 +474,8 @@ object LobbyService {
         }
         leaveLanLobby(hostCallsign)
         hostedLobbyId = UUID.randomUUID().toString()
+        hostLaunchAttempt = 0L
+        hostLaunchPacket = null
         hostCallsign = callsign
         hostedGame = game
         hostedMission = mission
@@ -474,6 +515,7 @@ object LobbyService {
         hostStartJob = null
         gameStarted = false
         hostedHostPort = NetworkConstants.ENGINE_PORT
+        refreshHostedSaveWarning()
         updateLanForegroundSession()
 
         restartAnnounceLoop()
@@ -512,6 +554,7 @@ object LobbyService {
     /** Stop hosting (but keep discovery running). */
     @Synchronized
     fun stopHosting() {
+        cancelHostedSaveCheck()
         NetLog.log("LAN", "Stopped hosting lobby $hostedLobbyId")
         _isHosting.value = false
         _lanLaunchEvent.value = null
@@ -538,6 +581,7 @@ object LobbyService {
         hostAddress: String,
         callsign: String,
     ) {
+        stopDiscoveryExperiment()
         val advertisedGame =
             _discoveredLobbies.value
                 .find {
@@ -618,37 +662,111 @@ object LobbyService {
     }
 
     /**
-     * Quick lobby probe: send one QUERY and wait up to [timeoutMs] for an ANNOUNCE.
-     * If a lobby is found, auto-join it and return true. Otherwise return false.
+     * Prefer a fresh launcher lobby; optionally verify the engine in parallel for manual joins
+     * Resume callers keep their identity-filtered launcher-only behavior
      * Runs on the caller's coroutine context (should be called from Dispatchers.IO).
      */
     suspend fun tryJoinLobbyByIp(
         hostAddress: String,
         callsign: String,
         timeoutMs: Long = 1000L,
+        probeEngine: Boolean = false,
         acceptLobby: (LanLobbyAnnounce) -> Boolean = { true },
-    ): Boolean {
-        Log.i(TAG, "tryJoinLobbyByIp: probing $hostAddress (timeout=${timeoutMs}ms)")
-        val query = buildQuery()
-        sendTo(query, hostAddress)
-        // Poll for an ANNOUNCE response at 100ms intervals
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            val lobby =
-                _discoveredLobbies.value.find {
-                    it.announce.hostAddress == hostAddress &&
-                        acceptLobby(it.announce)
+    ): Boolean =
+        coroutineScope {
+            stopDiscoveryExperiment()
+            val attempt = manualIpAttempt.incrementAndGet()
+            val started = System.currentTimeMillis()
+            val joinedBefore = _joinedLobby.value
+            val hostingBefore = hostedLobbyId
+
+            fun stillCurrent() =
+                _isDiscovering.value && manualIpAttempt.get() == attempt &&
+                    _joinedLobby.value === joinedBefore && hostedLobbyId == hostingBefore
+            _diagnostics.value = ""
+            val engine =
+                if (probeEngine) {
+                    async(
+                        Dispatchers.IO,
+                    ) { EngineQuery.probe(hostAddress, timeoutMs = timeoutMs) }
+                } else {
+                    null
                 }
-            if (lobby != null) {
-                Log.i(TAG, "tryJoinLobbyByIp: found lobby ${lobby.announce.lobbyId}, joining")
-                joinDiscoveredLobby(lobby.announce, callsign)
-                return true
+            NetLog.log(
+                "LAN",
+                "Manual IP probe begin host=$hostAddress timeout_ms=$timeoutMs generation=${socketGeneration.get()}",
+            )
+            Log.i(TAG, "tryJoinLobbyByIp: probing $hostAddress (timeout=${timeoutMs}ms)")
+            val query = buildQuery()
+            val deadline = android.os.SystemClock.elapsedRealtime() + timeoutMs
+            var nextQuery = 0L
+            while (android.os.SystemClock.elapsedRealtime() < deadline && stillCurrent()) {
+                val now = android.os.SystemClock.elapsedRealtime()
+                if (now >= nextQuery) {
+                    sendTo(query, hostAddress)
+                    nextQuery = now + 250L
+                }
+                val lobby =
+                    _discoveredLobbies.value.find {
+                        it.announce.hostAddress == hostAddress &&
+                            it.lastSeenMs >= started &&
+                            acceptLobby(it.announce)
+                    }
+                if (lobby != null && (!probeEngine || lobby.announce.status != "in_game")) {
+                    NetLog.log("LAN", "Manual IP probe found host=$hostAddress status=${lobby.announce.status}")
+                    Log.i(TAG, "tryJoinLobbyByIp: found lobby ${lobby.announce.lobbyId}, joining")
+                    joinDiscoveredLobby(lobby.announce, callsign)
+                    engine?.cancel()
+                    return@coroutineScope true
+                }
+                delay(50)
             }
-            delay(100)
+            currentCoroutineContext().ensureActive()
+            if (!stillCurrent()) {
+                engine?.cancel()
+                return@coroutineScope false
+            }
+            if (engine != null) {
+                val advertised =
+                    _discoveredLobbies.value
+                        .firstOrNull {
+                            it.announce.hostAddress == hostAddress && it.lastSeenMs >= started &&
+                                acceptLobby(it.announce)
+                        }?.announce
+                // A lobby reply arriving at the deadline still wins over an engine reply
+                if (advertised != null && advertised.status != "in_game") {
+                    engine.cancel()
+                    joinDiscoveredLobby(advertised, callsign)
+                    return@coroutineScope true
+                }
+                val result =
+                    if (advertised != null && advertised.hostPort != NetworkConstants.ENGINE_PORT) {
+                        engine.cancel()
+                        EngineQuery.probe(hostAddress, advertised.hostPort, timeoutMs, advertised.game)
+                    } else {
+                        engine.await()
+                    }
+                currentCoroutineContext().ensureActive()
+                if (!stillCurrent()) return@coroutineScope false
+                val verified = result.game
+                if (verified != null && acceptLobby(verified)) {
+                    val target =
+                        advertised?.takeIf {
+                            it.game == verified.game && it.mission == verified.mission &&
+                                it.hostPort == verified.hostPort
+                        } ?: verified
+                    if (!checkJoinGameReady(target.game)) return@coroutineScope false
+                    joinDiscoveredLobby(target, callsign)
+                    return@coroutineScope true
+                }
+                _diagnostics.value =
+                    result.error
+                        ?: "No live lobby or compatible game replied at $hostAddress. Check the address and try again."
+            }
+            Log.i(TAG, "tryJoinLobbyByIp: no lobby found at $hostAddress within ${timeoutMs}ms")
+            NetLog.log("LAN", "Manual IP probe timeout host=$hostAddress elapsed_ms=$timeoutMs")
+            false
         }
-        Log.i(TAG, "tryJoinLobbyByIp: no lobby found at $hostAddress within ${timeoutMs}ms")
-        return false
-    }
 
     /** Leave the LAN lobby we've joined (as a joiner). */
     fun leaveLanLobby(callsign: String) {
@@ -831,6 +949,7 @@ object LobbyService {
             }
 
         val openedSocket = DatagramSocket(null)
+        val generation = socketGeneration.incrementAndGet()
         socket = openedSocket
         try {
             openedSocket.apply {
@@ -849,7 +968,7 @@ object LobbyService {
         }
         NetLog.log(
             "LAN",
-            "Socket opened: port=${socket?.localPort} bound=${socket?.isBound} broadcast=${socket?.broadcast}",
+            "Socket opened: generation=$generation local=${openedSocket.localSocketAddress} port=${socket?.localPort} bound=${socket?.isBound} broadcast=${socket?.broadcast}",
         )
         Log.i(TAG, "Socket opened: port=${socket?.localPort} bound=${socket?.isBound} broadcast=${socket?.broadcast}")
         NetLog.log("LAN", "Multicast lock: ${multicastLock?.isHeld}")
@@ -871,14 +990,37 @@ object LobbyService {
                         val senderAddr = packet.address.hostAddress ?: continue
                         val json = parsePacket(packet.data, packet.length)
                         if (json == null) {
+                            NetLog.log(
+                                "LAN",
+                                "UDP RX invalid generation=$generation from=$senderAddr:${packet.port} bytes=${packet.length}",
+                            )
                             Log.w(TAG, "recv: unparseable ${packet.length} bytes from $senderAddr")
                             continue
                         }
                         val rxCount = packetsReceived.incrementAndGet()
                         packetsReceivedByAddress.getOrPut(senderAddr) { AtomicLong(0) }.incrementAndGet()
                         val msgType = json.optString("type", "?")
+                        if (msgType == MSG_QUERY || msgType == MSG_ANNOUNCE) {
+                            NetLog.log(
+                                "LAN",
+                                "UDP RX generation=$generation socket_id=${System.identityHashCode(openedSocket)} " +
+                                    "recv_ms=${android.os.SystemClock.elapsedRealtime()} " +
+                                    "from=$senderAddr:${packet.port} " +
+                                    "bytes=${packet.length} ${discoveryTraceSummary(json)}",
+                            )
+                        }
                         Log.d(TAG, "recv: $msgType from $senderAddr (${packet.length}B, total=$rxCount)")
+                        val handlingStarted = android.os.SystemClock.elapsedRealtime()
                         handlePacket(json, senderAddr)
+                        val handlingMs = android.os.SystemClock.elapsedRealtime() - handlingStarted
+                        if (msgType == MSG_QUERY || handlingMs >= 100) {
+                            NetLog.log(
+                                "LAN",
+                                "UDP handled generation=$generation type=$msgType id=${json.optString(
+                                    "trace_id",
+                                )} elapsed_ms=$handlingMs",
+                            )
+                        }
                     } catch (_: SocketTimeoutException) {
                         // Normal, just loop back to check isActive
                     } catch (e: CancellationException) {
@@ -905,6 +1047,7 @@ object LobbyService {
                 while (isActive) {
                     delay(2000)
                     queryDiscoveryHosts()
+                    refreshChangedHostedSave()
                     pruneStaleLobbies()
                 }
             }
@@ -912,6 +1055,7 @@ object LobbyService {
     }
 
     private fun queryDiscoveryHosts() {
+        if (_discoveryExperimentActive.value) return
         if (!_isDiscovering.value || _isHosting.value || _joinedLobby.value != null || appBackgrounded) return
         val now = android.os.SystemClock.elapsedRealtime()
         if (now - lastDiscoveryQueryMs < DISCOVERY_QUERY_INTERVAL_MS) return
@@ -931,6 +1075,138 @@ object LobbyService {
         val query = buildQuery()
         sendBroadcast(query)
         targets.forEach { sendTo(query, it) }
+    }
+
+    /** Explicit experiment; its owner survives the socket replacement being tested */
+    @Synchronized
+    fun startDiscoveryExperiment(hostAddress: String) {
+        if (!_isDiscovering.value || _isHosting.value || _joinedLobby.value != null || appBackgrounded) return
+        stopDiscoveryExperiment()
+        val explicitHost = hostAddress.trim()
+        if (explicitHost.isNotEmpty() &&
+            (explicitHost.split('.').size != 4 || explicitHost.split('.').any { it.toIntOrNull() !in 0..255 })
+        ) {
+            _discoveryExperiment.value = "Enter an IPv4 address, or leave the host field empty"
+            return
+        }
+        val context = appContext ?: return
+        val targets =
+            (
+                listOf(
+                    explicitHost,
+                ) + RecentAddressPrefs.LAN_IPS.load(context)
+            ).filter { it.isNotBlank() }.distinct()
+        val run = UUID.randomUUID().toString()
+        _discoveryExperimentActive.value = true
+        _discoveryExperiment.value = "Starting discovery test"
+        NetLog.log("LAN", "DISCOVERY TEST begin run=$run targets=$targets duration_s=80")
+        discoveryExperimentJob =
+            transportSupervisorScope.launch {
+                try {
+                    repeat(8) { phase ->
+                        val strategy =
+                            listOf("subnet-broadcast", "limited-broadcast", "direct-ip", "reopened-subnet")[
+                                phase %
+                                    4,
+                            ]
+                        synchronized(this@LobbyService) {
+                            if (!isActive || !_discoveryExperimentActive.value) return@launch
+                            if (phase % 4 == 3) recoverTransport("discovery experiment run=$run phase=$phase")
+                            NetLog.log(
+                                "LAN",
+                                "DISCOVERY TEST phase begin run=$run phase=$phase strategy=$strategy generation=${socketGeneration.get()}",
+                            )
+                            logLocalAddresses()
+                        }
+                        repeat(5) { attempt ->
+                            synchronized(this@LobbyService) {
+                                if (!isActive || !_discoveryExperimentActive.value) return@launch
+                                _discoveryExperiment.value =
+                                    "Discovery test ${phase + 1}/8: $strategy (${phase * 10 + attempt * 2}/80 seconds)"
+                                val query =
+                                    JSONObject(String(buildQuery(), Charsets.UTF_8))
+                                        .put("trace_run", run)
+                                        .put("trace_phase", phase)
+                                        .toString()
+                                        .toByteArray(Charsets.UTF_8)
+                                when (phase % 4) {
+                                    0, 3 -> {
+                                        sendBroadcast(query)
+                                    }
+
+                                    1 -> {
+                                        sendTo(query, "255.255.255.255", "limited-broadcast")
+                                    }
+
+                                    2 -> {
+                                        if (targets.isEmpty()) {
+                                            NetLog.log(
+                                                "LAN",
+                                                "DISCOVERY TEST unicast skipped: no targets run=$run phase=$phase",
+                                            )
+                                        }
+                                        targets.forEach { sendTo(query, it, "direct-ip") }
+                                    }
+                                }
+                            }
+                            delay(2000)
+                        }
+                        NetLog.log("LAN", "DISCOVERY TEST phase end run=$run phase=$phase")
+                    }
+                    synchronized(this@LobbyService) {
+                        if (!isActive) return@launch
+                        _discoveryExperiment.value = "Discovery test complete. Export Network logs from both phones."
+                        NetLog.log("LAN", "DISCOVERY TEST complete run=$run")
+                        _discoveryExperimentActive.value = false
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    synchronized(this@LobbyService) {
+                        _discoveryExperiment.value = "Discovery test failed: ${e.message}"
+                        _discoveryExperimentActive.value = false
+                        NetLog.log("LAN", "DISCOVERY TEST failed run=$run error=${e.message}")
+                    }
+                }
+            }
+    }
+
+    @Synchronized
+    fun stopDiscoveryExperiment() {
+        if (_discoveryExperimentActive.value) {
+            NetLog.log("LAN", "DISCOVERY TEST cancelled: ${_discoveryExperiment.value}")
+            _discoveryExperiment.value = "Discovery test stopped"
+        }
+        _discoveryExperimentActive.value = false
+        discoveryExperimentJob?.cancel()
+        discoveryExperimentJob = null
+    }
+
+    private fun traceDiscoverySend(
+        data: ByteArray,
+        destination: String,
+        strategy: String,
+        activeSocket: DatagramSocket,
+    ): ByteArray {
+        val json = parsePacket(data, data.size) ?: return data
+        if (json.optString("type") !in listOf(MSG_QUERY, MSG_ANNOUNCE)) return data
+        json.put("trace_id", UUID.randomUUID().toString())
+        json.put("trace_ms", android.os.SystemClock.elapsedRealtime())
+        json.put("trace_strategy", strategy)
+        NetLog.log(
+            "LAN",
+            "UDP TX attempt generation=${socketGeneration.get()} socket_id=${System.identityHashCode(activeSocket)} " +
+                "local=${activeSocket.localSocketAddress} to=$destination:${NetworkConstants.LAN_LOBBY_PORT} " +
+                discoveryTraceSummary(json),
+        )
+        return json.toString().toByteArray(Charsets.UTF_8)
+    }
+
+    private fun logDiscoverySent(data: ByteArray) {
+        val json = parsePacket(data, data.size) ?: return
+        if (json.optString("type") in listOf(MSG_QUERY, MSG_ANNOUNCE)) {
+            NetLog.log("LAN", "UDP TX accepted id=${json.optString("trace_id")} bytes=${data.size}")
+        }
     }
 
     @Synchronized
@@ -1079,7 +1355,7 @@ object LobbyService {
                 handlePlayerList(json)
             }
 
-            MSG_START -> {
+            MSG_START, MSG_PREPARE, MSG_START_CANCEL -> {
                 handleStart(json, senderAddr)
             }
 
@@ -1100,7 +1376,7 @@ object LobbyService {
             }
 
             MSG_QUERY -> {
-                handleQuery(senderAddr)
+                handleQuery(json, senderAddr)
             }
 
             MSG_CHAT -> {
@@ -1220,6 +1496,11 @@ object LobbyService {
                 senderAddr,
             )
             NetLog.log("LAN", "Mid-game JOIN_ACK sent to $callsign at $senderAddr")
+            if (lobbyId == hostedLobbyId &&
+                current.any { lanPlayerMatchesJoinIdentity(it, callsign, clientId, senderAddr) }
+            ) {
+                hostLaunchPacket?.let { sendTo(it, senderAddr) }
+            }
             return
         }
         if (lobbyId != hostedLobbyId) {
@@ -1247,6 +1528,8 @@ object LobbyService {
                     }
                 }
             sendJoinAck(lobbyId, senderAddr)
+            // Heartbeat JOINs recover a lost prepare/commit/cancel without restarting preparation
+            hostLaunchPacket?.let { sendTo(it, senderAddr) }
             if (reconnected) {
                 notifyPlayerConnectionChanged(callsign, connected = true)
             } else {
@@ -1762,6 +2045,10 @@ object LobbyService {
         if (!_isHosting.value) return
         if (pendingHostStart != null || gameStarted) return
         val lid = hostedLobbyId ?: return
+        if (_hostedSaveChecking.value) {
+            _diagnostics.value = "Checking the selected save. Please try again shortly."
+            return
+        }
         val saveWarning = hostSaveCompatibilityWarning()
         if (saveWarning != null) {
             _diagnostics.value = saveWarning
@@ -1785,6 +2072,7 @@ object LobbyService {
         hostedRestrictNonCoopFovToBase = restrictNonCoopFovToBase
 
         // Send START to every joiner (redundant sends for reliability)
+        val launchAttempt = ++hostLaunchAttempt
         val data =
             buildStart(
                 lobbyId = lid,
@@ -1816,7 +2104,7 @@ object LobbyService {
         val mode = hostedMode
         val maxPlayers = hostedMaxPlayers
 
-        // Prepare the host first; clients stay in the lobby until Activity launch succeeds
+        // Both launchers prepare concurrently; clients enter the engine only after commit
         val info =
             com.dxxredux.app.multiplayer.GameLaunchInfo(
                 game = game,
@@ -1840,8 +2128,16 @@ object LobbyService {
                 clientsCanRequestRewind = clientsCanRequestRewind,
                 restrictNonCoopFovToBase = restrictNonCoopFovToBase,
                 missionRequirement = hostedMissionRequirement,
+                lanLobbyId = lid,
+                lanLaunchId = launchAttempt,
             )
-        pendingHostStart = PendingHostStart(lid, info, data, players)
+        val packet =
+            JSONObject(String(data, Charsets.UTF_8))
+                .put("launch_id", launchAttempt)
+                .toString()
+                .toByteArray(Charsets.UTF_8)
+        pendingHostStart = PendingHostStart(lid, info, packet, players)
+        publishHostLaunchPacket(MSG_PREPARE)
         _lanLaunchEvent.value = info
         NetLog.log("LAN", "Local host launch emitted: $game/$mission lvl=$levelNum diff=$difficulty")
     }
@@ -1855,33 +2151,37 @@ object LobbyService {
         gameStarted = true
         inGameDifficulty = info.difficulty
         inGameLevelNum = info.levelNum
-        val data = pending.packet
-        val players = pending.players
+        publishHostLaunchPacket(MSG_START)
+        NetLog.log("LAN", "Game started: ${info.game}/${info.mission} lvl=${info.levelNum} diff=${info.difficulty}")
+    }
 
-        // Send START to every joiner on the IO thread with redundant retries.
+    private fun publishHostLaunchPacket(
+        type: String,
+        reason: String? = null,
+    ) {
+        val pending = pendingHostStart ?: return
+        val packet = JSONObject(String(pending.packet, Charsets.UTF_8)).put("type", type)
+        if (reason != null) packet.put("reason", reason)
+        val data = packet.toString().toByteArray(Charsets.UTF_8)
+        hostLaunchPacket = data
+        hostStartJob?.cancel()
         hostStartJob =
             scope?.launch(Dispatchers.IO) {
-                for (p in players) {
-                    if (p.address != "127.0.0.1") {
-                        NetLog.log("LAN", "Sending START to ${p.callsign} at ${p.address}")
-                        sendTo(data, p.address)
-                    }
-                }
-                // Redundant retries for unreliable networks
-                for (retry in 1..2) {
-                    delay(200)
-                    for (p in players) {
-                        if (p.address != "127.0.0.1") {
-                            NetLog.log("LAN", "START retry $retry to ${p.callsign} at ${p.address}")
-                            sendTo(data, p.address)
+                repeat(3) { retry ->
+                    synchronized(this@LobbyService) {
+                        if (!isActive || hostLaunchPacket !== data) return@launch
+                        for (player in pending.players) {
+                            if (player.address != "127.0.0.1") {
+                                NetLog.log(
+                                    "LAN",
+                                    "Sending $type attempt=${pending.info.lanLaunchId} retry=$retry to=${player.address}",
+                                )
+                                sendTo(data, player.address)
+                            }
                         }
                     }
+                    delay(200)
                 }
-                NetLog.log(
-                    "LAN",
-                    "Game started: ${info.game}/${info.mission} " +
-                        "lvl=${info.levelNum} diff=${info.difficulty}",
-                )
             }
     }
 
@@ -1890,8 +2190,16 @@ object LobbyService {
         info: com.dxxredux.app.multiplayer.GameLaunchInfo,
         message: String,
     ) {
+        if (!info.isHost && info.lanLaunchId > 0) {
+            val current = clientLaunchPreparation.value
+            if (current != null && current.lobbyId == info.lanLobbyId && current.attempt == info.lanLaunchId) {
+                clientLaunchPreparation.value = current.copy(stage = LanLaunchStage.CANCELLED, reason = message)
+            }
+            return
+        }
         if (pendingHostStart?.info !== info) return
         stopInGameBroadcast()
+        refreshHostedSaveWarning()
         if (_lanLaunchEvent.value === info) _lanLaunchEvent.value = null
         _diagnostics.value = message
         notifyLobbySystemMessage("Game start failed: $message")
@@ -1902,9 +2210,14 @@ object LobbyService {
      *  discoverable for new joins. */
     @Synchronized
     fun stopInGameBroadcast() {
+        val preparing = pendingHostStart != null && !gameStarted
+        if (preparing) publishHostLaunchPacket(MSG_START_CANCEL, "Host cancelled game start")
         pendingHostStart = null
-        hostStartJob?.cancel()
-        hostStartJob = null
+        if (!preparing) {
+            hostStartJob?.cancel()
+            hostStartJob = null
+            hostLaunchPacket = null
+        }
         announceJob?.cancel()
         announceJob = null
         gameStarted = false
@@ -1916,6 +2229,7 @@ object LobbyService {
         }
     }
 
+    @Synchronized
     private fun handleStart(
         json: JSONObject,
         senderAddr: String,
@@ -1937,13 +2251,39 @@ object LobbyService {
         val clientsCanRequestRewind = json.optBoolean("clients_can_request_rewind", false)
         val restrictNonCoopFovToBase = json.optBoolean("restrict_noncoop_fov_to_base", false)
         val requirement = missionRequirementFromJson(json.optJSONObject("mission_requirement"))
-        NetLog.log("LAN", "START received: $game/$mission lvl=$levelNum diff=$difficulty from $senderAddr")
+        NetLog.log(
+            "LAN",
+            "${json.optString("type")} received: $game/$mission lvl=$levelNum diff=$difficulty from $senderAddr",
+        )
         Log.i(TAG, "START received for lobby $lobbyId: $game/$mission at $senderAddr:$hostPort")
 
         val joinedInfo = _joinedLobby.value
         if (joinedInfo == null) {
             NetLog.log("LAN", "START ignored: not in a joined lobby")
             Log.w(TAG, "START received but not in a joined lobby, ignoring")
+            return
+        }
+        if (senderAddr != joinedInfo.hostAddr || lobbyId != joinedInfo.lobbyId) return
+        val attempt = json.optLong("launch_id", 0L)
+        val stage =
+            when (json.optString("type")) {
+                MSG_PREPARE -> LanLaunchStage.PREPARING
+                MSG_START_CANCEL -> LanLaunchStage.CANCELLED
+                else -> LanLaunchStage.COMMITTED
+            }
+        if (stage != LanLaunchStage.COMMITTED && attempt <= 0L) return
+        val previous = clientLaunchPreparation.value
+        val next =
+            LanLaunchPreparation(
+                lobbyId,
+                senderAddr,
+                attempt,
+                stage,
+                json.optString("reason").takeIf { it.isNotBlank() },
+            )
+        if (!acceptLanLaunchUpdate(previous, next)) return
+        if (stage == LanLaunchStage.CANCELLED) {
+            clientLaunchPreparation.value = next
             return
         }
         if (requirement != null &&
@@ -1961,7 +2301,10 @@ object LobbyService {
             return
         }
 
-        // Emit launch event for the joiner
+        clientLaunchPreparation.value = next
+        NetLog.log("LAN", "Launch stage=$stage lobby=$lobbyId attempt=$attempt")
+        if (previous?.lobbyId == lobbyId && previous.attempt == attempt) return
+        // Emit exactly once, including when START arrives before PREPARE
         _lanLaunchEvent.value =
             com.dxxredux.app.multiplayer.GameLaunchInfo(
                 game = game,
@@ -1987,8 +2330,46 @@ object LobbyService {
                 clientsCanRequestRewind = clientsCanRequestRewind,
                 restrictNonCoopFovToBase = restrictNonCoopFovToBase,
                 missionRequirement = requirement,
+                lanLobbyId = lobbyId,
+                lanLaunchId = attempt,
             )
         NetLog.log("LAN", "Launch event emitted for joiner: game=$game host=$senderAddr")
+    }
+
+    suspend fun awaitHostLaunch(info: com.dxxredux.app.multiplayer.GameLaunchInfo): String? {
+        if (!info.isLan || info.isHost || info.lanLaunchId == 0L) return null
+        NetLog.log(
+            "LAN",
+            "Client preparation ready; waiting for host lobby=${info.lanLobbyId} attempt=${info.lanLaunchId}",
+        )
+        val outcome =
+            withTimeoutOrNull(120_000L) {
+                combine(clientLaunchPreparation, _joinedLobby) { state, joined ->
+                    when {
+                        joined == null || joined.lobbyId != info.lanLobbyId || joined.hostAddr != info.lanHostAddr -> {
+                            "Left the host lobby"
+                        }
+
+                        state == null || state.lobbyId != info.lanLobbyId || state.attempt != info.lanLaunchId -> {
+                            "Host replaced this game start"
+                        }
+
+                        state.stage == LanLaunchStage.CANCELLED -> {
+                            state.reason ?: "Host cancelled game start"
+                        }
+
+                        state.stage == LanLaunchStage.COMMITTED -> {
+                            ""
+                        }
+
+                        else -> {
+                            null
+                        }
+                    }
+                }.first { it != null }
+            }
+        return outcome?.takeIf { it.isNotEmpty() }
+            ?: if (outcome == null) "Host did not finish starting. Please try again." else null
     }
 
     // Discovery and joins use the host's engine, independently of single-player preferences
@@ -1996,6 +2377,7 @@ object LobbyService {
         announce: LanLobbyAnnounce,
         callsign: String,
     ) {
+        stopDiscoveryExperiment()
         if (!checkJoinGameReady(announce.game)) return
         _diagnostics.value = ""
         if (announce.status == "in_game") {
@@ -2088,8 +2470,15 @@ object LobbyService {
 
     /** Respond to a QUERY with a direct ANNOUNCE so the querier discovers our lobby. */
     @Synchronized
-    private fun handleQuery(senderAddr: String) {
-        val lid = hostedLobbyId ?: return // not hosting
+    private fun handleQuery(
+        query: JSONObject,
+        senderAddr: String,
+    ) {
+        val lid = hostedLobbyId
+        if (lid == null) {
+            NetLog.log("LAN", "QUERY ignored: not hosting from=$senderAddr id=${query.optString("trace_id")}")
+            return
+        }
         val data =
             buildAnnounce(
                 lobbyId = lid,
@@ -2113,7 +2502,7 @@ object LobbyService {
                 saveCompatibilityWarning = hostSaveCompatibilityWarning(),
                 queryReply = true,
             )
-        sendTo(data, senderAddr)
+        sendTo(discoveryQueryReply(data, query), senderAddr)
         Log.i(TAG, "handleQuery: sent ANNOUNCE to $senderAddr for lobby $lid")
     }
 
@@ -2190,13 +2579,85 @@ object LobbyService {
 
     private fun hostSaveCompatibilityWarning(): String? =
         if (hostedMode == "coop" && !gameStarted) {
-            appContext?.let {
-                com.dxxredux.app.multiplayer.CoopSaveCompatibility
-                    .hostWarning(it.filesDir, hostedGame, hostedMission)
-            }
+            if (_hostedSaveChecking.value) "Checking the selected save" else _hostedSaveWarning.value
         } else {
             null
         }
+
+    private fun cancelHostedSaveCheck() {
+        hostedSaveCheckGeneration++
+        hostedSaveCheckJob?.cancel()
+        hostedSaveCheckJob = null
+        _hostedSaveChecking.value = false
+        _hostedSaveWarning.value = null
+        hostedSaveRevision = null
+    }
+
+    private fun refreshChangedHostedSave() {
+        val context = appContext ?: return
+        val lobbyId = hostedLobbyId ?: return
+        if (!_isHosting.value || hostedMode != "coop" || gameStarted || _hostedSaveChecking.value) return
+        val revision =
+            com.dxxredux.app.multiplayer.CoopSaveCompatibility.hostRevision(
+                context.filesDir,
+                hostedGame,
+                hostedMission,
+            )
+        synchronized(this) {
+            if (lobbyId == hostedLobbyId && !_hostedSaveChecking.value && revision != hostedSaveRevision) {
+                refreshHostedSaveWarning()
+            }
+        }
+    }
+
+    @Synchronized
+    fun refreshHostedSaveWarning() {
+        cancelHostedSaveCheck()
+        if (!_isHosting.value || hostedMode != "coop" || gameStarted) return
+        val context = appContext ?: return
+        val generation = hostedSaveCheckGeneration
+        val lobbyId = hostedLobbyId
+        val game = hostedGame
+        val mission = hostedMission
+        _hostedSaveChecking.value = true
+        // Transport replacement must not cancel validation and leave Checking stuck
+        hostedSaveCheckJob =
+            transportSupervisorScope.launch {
+                val started = android.os.SystemClock.elapsedRealtime()
+                val revision =
+                    com.dxxredux.app.multiplayer.CoopSaveCompatibility.hostRevision(
+                        context.filesDir,
+                        game,
+                        mission,
+                    )
+                val validator = hostedSaveCheckForTest
+                val warning =
+                    try {
+                        if (validator != null) {
+                            validator(game, mission)
+                        } else {
+                            com.dxxredux.app.multiplayer.CoopSaveCompatibility
+                                .hostWarning(context.filesDir, game, mission)
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        NetLog.log("LAN", "Hosted save check failed lobby=$lobbyId error=${e.message}")
+                        "Could not check the selected save. Please retry."
+                    }
+                synchronized(this@LobbyService) {
+                    if (!isActive || generation != hostedSaveCheckGeneration || lobbyId != hostedLobbyId) return@launch
+                    _hostedSaveWarning.value = warning
+                    hostedSaveRevision = revision
+                    _hostedSaveChecking.value = false
+                    if (warning != null) _diagnostics.value = warning
+                    NetLog.log(
+                        "LAN",
+                        "Hosted save check complete lobby=$lobbyId elapsed_ms=${android.os.SystemClock.elapsedRealtime() - started} compatible=${warning == null}",
+                    )
+                }
+            }
+    }
 
     @Synchronized
     private fun broadcastAnnounce() {
@@ -2249,14 +2710,16 @@ object LobbyService {
         var anySuccess = false
         for (addr in addresses) {
             try {
+                val wireData = traceDiscoverySend(data, addr.hostAddress.orEmpty(), "subnet-broadcast", activeSocket)
                 val packet =
                     DatagramPacket(
-                        data,
-                        data.size,
+                        wireData,
+                        wireData.size,
                         addr,
                         NetworkConstants.LAN_LOBBY_PORT,
                     )
                 activeSocket.send(packet)
+                logDiscoverySent(wireData)
                 anySuccess = true
                 val txCount = packetsSent.incrementAndGet()
                 Log.d(
@@ -2323,6 +2786,7 @@ object LobbyService {
     private fun sendTo(
         data: ByteArray,
         address: String,
+        strategy: String = "unicast",
     ) {
         try {
             val activeSocket = socket
@@ -2331,14 +2795,16 @@ object LobbyService {
                 return
             }
             val addr = InetAddress.getByName(address)
+            val wireData = traceDiscoverySend(data, address, strategy, activeSocket)
             val packet =
                 DatagramPacket(
-                    data,
-                    data.size,
+                    wireData,
+                    wireData.size,
                     addr,
                     NetworkConstants.LAN_LOBBY_PORT,
                 )
             activeSocket.send(packet)
+            logDiscoverySent(wireData)
             val txCount = packetsSent.incrementAndGet()
             Log.d(TAG, "sendTo: ${data.size}B -> $address:${NetworkConstants.LAN_LOBBY_PORT} (total=$txCount)")
         } catch (e: Exception) {

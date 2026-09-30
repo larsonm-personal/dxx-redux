@@ -42,10 +42,20 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /** Device tests using real sockets and app storage, without additional test dependencies */
 class RecoveryInstrumentation : Instrumentation() {
+    private var engineProbeHost: String? = null
+    private var engineProbeGame = "d2"
     private var missionLoadingOnly = false
     private var coopSessionOnly = false
+    private var discoveryOnly = false
+    private var lobbyLatencyOnly = false
 
     override fun onCreate(arguments: Bundle?) {
+        if (arguments?.getString("suite") == "engine_query") {
+            engineProbeHost = arguments.getString("host")
+            engineProbeGame = arguments.getString("game") ?: "d2"
+        }
+        lobbyLatencyOnly = arguments?.getString("suite") == "lobby_latency"
+        discoveryOnly = arguments?.getString("suite") == "discovery"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         coopSessionOnly = arguments?.getString("suite") == "coop_session"
         super.onCreate(arguments)
@@ -55,6 +65,24 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            engineProbeHost?.let { host ->
+                EngineQueryChecks(this).run(host, engineProbeGame)
+                result.putString("stream", "PASS: engine query, loss, malformed replies, sender checks, lobby preference, engine fallback, mismatch and cancellation\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
+            if (lobbyLatencyOnly) {
+                LobbyLatencyChecks(this).run()
+                result.putString("stream", "PASS: responsive discovery during save checks, concurrent launch preparation, commit/abort/retry and manual IP recovery\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
+            if (discoveryOnly) {
+                DiscoveryExperimentChecks(this).run()
+                result.putString("stream", "PASS: discovery phases, UDP replies, socket replacement, query correlation and cancellation\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (coopSessionOnly) {
                 CoopSessionChecks(this).run()
                 result.putString("stream", "PASS: migrated lobby adoption and former-host rejoin\n")

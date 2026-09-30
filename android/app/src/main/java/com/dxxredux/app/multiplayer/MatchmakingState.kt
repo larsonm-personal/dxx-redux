@@ -99,6 +99,9 @@ data class GameLaunchInfo(
     val restrictNonCoopFovToBase: Boolean = false,
     val hostObserver: Boolean = false,
     val missionRequirement: MissionRequirement? = null,
+    // Launcher-only LAN preparation barrier, scoped to the host's lobby and attempt
+    val lanLobbyId: String? = null,
+    val lanLaunchId: Long = 0L,
 )
 
 data class MatchmakingState(

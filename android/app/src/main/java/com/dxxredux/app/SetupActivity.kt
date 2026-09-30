@@ -323,6 +323,7 @@ class SetupActivity : ComponentActivity() {
      *  rapid startActivity calls create two MainActivity instances in the
      *  :game process, causing a FORTIFY pthread_mutex crash. */
     private var mpGameLaunching = false
+    private var multiplayerPreparationJob: kotlinx.coroutines.Job? = null
     private var pendingMultiplayerLaunch: GameLaunchInfo? = null
     private var pendingLaunchProxy: com.dxxredux.app.multiplayer.LocalhostProxy? = null
     private var pendingNetworkGeneration = 0L
@@ -804,6 +805,7 @@ class SetupActivity : ComponentActivity() {
         reason: String,
         message: String,
         owner: Any? = launchOwner,
+        showFailure: Boolean = true,
     ) {
         if (!ownsLaunch(owner)) return
         val info = pendingMultiplayerLaunch
@@ -826,7 +828,7 @@ class SetupActivity : ComponentActivity() {
             }
         }
         if (!hasReturnableGameActivity()) routeMetadataCoordinator.resumeAfterGame()
-        showLaunchPreflightFailure(message)
+        if (showFailure) showLaunchPreflightFailure(message)
     }
 
     private fun logResumeCandidateLaunch(
@@ -1763,8 +1765,14 @@ class SetupActivity : ComponentActivity() {
 
                     "launch_game" -> {
                         // Trigger the actual game launch from pending gameLaunchInfo
-                        val info = MatchmakingStateHolder.state.value.gameLaunchInfo
+                        val info =
+                            MatchmakingStateHolder.state.value.gameLaunchInfo
+                                ?: com.dxxredux.app.lobby.LobbyService.lanLaunchEvent.value
                         if (info != null) {
+                            if (com.dxxredux.app.lobby.LobbyService.lanLaunchEvent.value === info) {
+                                com.dxxredux.app.lobby.LobbyService
+                                    .clearLaunchEvent()
+                            }
                             Log.i("DXX-MP", "Launching game: ${info.game} ${info.mission} slot=${info.yourSlot}")
                             launchMultiplayerGame(info)
                         } else {
@@ -1921,6 +1929,29 @@ class SetupActivity : ComponentActivity() {
                                     "from ${l.announce.hostAddress} " +
                                     "status=${l.announce.status} port=${l.announce.hostPort}",
                             )
+                        }
+                    }
+
+                    "lan_join_ip" -> {
+                        val hostAddress = intent.getStringExtra("host_addr") ?: return
+                        lifecycleScope.launch {
+                            val found =
+                                withContext(Dispatchers.IO) {
+                                    com.dxxredux.app.lobby.LobbyService.tryJoinLobbyByIp(
+                                        hostAddress,
+                                        mpCallsign,
+                                        probeEngine = true,
+                                    )
+                                }
+                            Log.i(
+                                "DXX-MP",
+                                "lan_join_ip: found=$found diag=${com.dxxredux.app.lobby.LobbyService.diagnostics.value}",
+                            )
+                            com.dxxredux.app.lobby.LobbyService.lanLaunchEvent.value?.let { launch ->
+                                com.dxxredux.app.lobby.LobbyService
+                                    .clearLaunchEvent()
+                                launchMultiplayerGame(launch)
+                            }
                         }
                     }
 
@@ -2440,6 +2471,13 @@ class SetupActivity : ComponentActivity() {
     }
 
     private fun launchMultiplayerGame(info: GameLaunchInfo) {
+        val previous = pendingMultiplayerLaunch
+        if (mpGameLaunching && !multiplayerActivityStarted && info.isLan && !info.isHost &&
+            previous?.lanLobbyId == info.lanLobbyId && info.lanLaunchId > (previous?.lanLaunchId ?: 0L)
+        ) {
+            multiplayerPreparationJob?.cancel()
+            failGameLaunch("host_restarted_launch", "Host replaced this game start", showFailure = false)
+        }
         if (mpGameLaunching) {
             Log.w("DXX-MP", "Game already launching, ignoring duplicate")
             return
@@ -2456,61 +2494,98 @@ class SetupActivity : ComponentActivity() {
                 "elapsed_ms=${SystemClock.elapsedRealtime() - (launchPreparation.value?.startedAtMs ?: 0L)}",
         )
         val owner = launchOwner
-        lifecycleScope.launch {
-            try {
-                val existingGameWarning = prepareGameProcess()
-                if (!ownsLaunch(owner)) return@launch
-                if (existingGameWarning != null) {
-                    failGameLaunch("multiplayer_existing_game", existingGameWarning, owner)
-                    return@launch
-                }
-                val preflightMessage = prepareGameLaunchFiles(info.game)
-                if (!ownsLaunch(owner)) return@launch
-                if (preflightMessage != null) {
-                    failGameLaunch("multiplayer_preflight_failed", preflightMessage, owner)
-                    return@launch
-                }
-                val requirement = info.missionRequirement
-                if (requirement != null) {
-                    val missionStatus =
-                        withContext(Dispatchers.IO) {
-                            com.dxxredux.app.multiplayer.MissionCompatibilityResolver.resolve(
-                                this@SetupActivity,
-                                requirement,
-                                info.mode,
-                            )
-                        }
+        multiplayerPreparationJob =
+            lifecycleScope.launch {
+                try {
+                    val preparationStarted = SystemClock.elapsedRealtime()
+
+                    fun logPreparationStep(step: String) {
+                        LauncherDebugLog.log(
+                            "mp preparation role=${if (info.isHost) "host" else "client"} attempt=${info.lanLaunchId} step=$step elapsed_ms=${SystemClock.elapsedRealtime() - preparationStarted}",
+                        )
+                    }
+                    logPreparationStep("begin")
+                    val existingGameWarning = prepareGameProcess()
                     if (!ownsLaunch(owner)) return@launch
-                    if (missionStatus.status != com.dxxredux.app.multiplayer.MissionCompatibilityStatus.MATCH) {
+                    if (existingGameWarning != null) {
+                        failGameLaunch("multiplayer_existing_game", existingGameWarning, owner)
+                        return@launch
+                    }
+                    // Validate again at launch, outside LobbyService's receive loop and monitor
+                    if (info.isLan && info.isHost && info.mode == "coop") {
+                        val warning =
+                            withContext(Dispatchers.IO) {
+                                com.dxxredux.app.multiplayer.CoopSaveCompatibility.hostWarning(
+                                    filesDir,
+                                    info.game,
+                                    info.mission,
+                                )
+                            }
+                        if (!ownsLaunch(owner)) return@launch
+                        logPreparationStep("save_checked")
+                        if (warning != null) {
+                            failGameLaunch("host_save_invalid", warning, owner)
+                            return@launch
+                        }
+                    }
+                    val preflightMessage = prepareGameLaunchFiles(info.game)
+                    logPreparationStep("files_ready")
+                    if (!ownsLaunch(owner)) return@launch
+                    if (preflightMessage != null) {
+                        failGameLaunch("multiplayer_preflight_failed", preflightMessage, owner)
+                        return@launch
+                    }
+                    val requirement = info.missionRequirement
+                    if (requirement != null) {
+                        val missionStatus =
+                            withContext(Dispatchers.IO) {
+                                com.dxxredux.app.multiplayer.MissionCompatibilityResolver.resolve(
+                                    this@SetupActivity,
+                                    requirement,
+                                    info.mode,
+                                )
+                            }
+                        if (!ownsLaunch(owner)) return@launch
+                        if (missionStatus.status != com.dxxredux.app.multiplayer.MissionCompatibilityStatus.MATCH) {
+                            failGameLaunch(
+                                "multiplayer_mission_mismatch",
+                                missionStatus.status.userLabel(missionStatus),
+                                owner,
+                            )
+                            return@launch
+                        }
+                    }
+                    if (!info.isLan && pendingNetworkGeneration != MatchmakingService.networkAttempt()) {
                         failGameLaunch(
-                            "multiplayer_mission_mismatch",
-                            missionStatus.status.userLabel(missionStatus),
+                            "network_session_changed",
+                            "The network session changed. Please try starting again.",
                             owner,
                         )
                         return@launch
                     }
-                }
-                if (!info.isLan && pendingNetworkGeneration != MatchmakingService.networkAttempt()) {
+                    logPreparationStep("mission_ready")
+                    val hostFailure =
+                        com.dxxredux.app.lobby.LobbyService
+                            .awaitHostLaunch(info)
+                    if (!ownsLaunch(owner)) return@launch
+                    if (hostFailure != null) {
+                        failGameLaunch("host_start_not_committed", hostFailure, owner)
+                        return@launch
+                    }
+                    logPreparationStep("launch_released")
+                    continueMultiplayerGameLaunch(info)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    failGameLaunch("multiplayer_cancelled", "Game start was cancelled. Please try again.", owner)
+                    throw e
+                } catch (e: Exception) {
+                    Log.e("DXX-Setup", "Multiplayer launch failed", e)
                     failGameLaunch(
-                        "network_session_changed",
-                        "The network session changed. Please try starting again.",
+                        "multiplayer_launch_failed",
+                        e.message ?: "Could not start multiplayer. Please try again.",
                         owner,
                     )
-                    return@launch
                 }
-                continueMultiplayerGameLaunch(info)
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                failGameLaunch("multiplayer_cancelled", "Game start was cancelled. Please try again.", owner)
-                throw e
-            } catch (e: Exception) {
-                Log.e("DXX-Setup", "Multiplayer launch failed", e)
-                failGameLaunch(
-                    "multiplayer_launch_failed",
-                    e.message ?: "Could not start multiplayer. Please try again.",
-                    owner,
-                )
             }
-        }
     }
 
     private suspend fun prepareGameProcess(): String? {

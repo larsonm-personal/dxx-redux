@@ -33,11 +33,12 @@
 
 - Optional guidebot for coop games. The player to release the guidebot becomes the owner. If they leave the game the guidebot attaches to another player. Ownership can be abdicated, giving the guidebot to another random player
 - Coop: allow briefings (optional setting. Base game behavior is to omit them). The host can force a mine start instead of waiting for players to finish watching them
-- Coop: allow secret areas (optional setting. The base game behavior is to disable them). If a player enters a secret warp door, the remaining players are brought to the secret area after a short countdown. Secret doors are blocked if a normal exit door is used by another player (all players are still in a “beat the reactor countdown to the exit” race). Secret doors taken during reactor countdown work normally: they bring the whole party to the secret area, then the next level after the secret
+- Coop: allow mine exits. in d1's rendered exits, show other players exiting
+- Coop: allow traveling to secret areas (optional setting. The base game behavior is to disable them). If a player enters a secret warp door, the remaining players are brought to the secret area after a short countdown. Secret doors are blocked if a normal exit door is used by another player (all players then remain in the “beat the reactor countdown to the exit” race). Secret doors taken during reactor countdown work normally: they bring the whole party to the secret area, then to the next level after the secret area is completed
 - Coop: track a player’s loot so if they leave and rejoin they get it back (they still generate spew on exit, and any uncollected spew is given to them on return)
 - Coop: remove absorption time from player spew (optional)
-- if the host leaves, the client can take over as host (allowing the host to rejoin what is now the server)
-- Warp to other player button is shown when a player is some distance away (optional). Helps prevent softlocks, makes the game more cooperative
+- if the host leaves, a client can take over as host (allowing the host to rejoin what is now the server)
+- Warp to other player button is shown when a player is some distance away (optional). Helps prevent softlocks and makes the game more cooperative
 - breadcrumb-like path to nearest other player, and to guidebot (optional)
 - QoL changes can be enabled/disabled when launching a game
 - The game tries to automatically save cooperative game progress and show available saves to resume from the launcher. Resuming from the launcher (starting a game with a save game selected) is possible, it starts the level then loads the save when all players have joined

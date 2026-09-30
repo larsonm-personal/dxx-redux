@@ -179,11 +179,6 @@ try {
         Reset-DeviceGameState -Serial $emu
     }
 
-    # Kill stale PowerShell processes to prevent handle leaks
-    Get-Process powershell -ErrorAction SilentlyContinue |
-        Where-Object { $_.Id -ne $PID -and $_.StartTime -lt (Get-Date).AddMinutes(-10) } |
-        ForEach-Object { try { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue } catch {} }
-
     # -- Step 1: Start matchmaking server --
     Write-Status ""
     Write-Status "--- Phase 1: Start matchmaking server ---" "White"

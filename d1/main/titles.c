@@ -938,7 +938,11 @@ static void show_spinning_robot_frame(briefing *br, int robot_num)
 		curcanv_save = grd_curcanv;
 		grd_curcanv = br->robot_canv;
 		Assert(Robot_info[robot_num].model_num != -1);
+		/* Match the briefing's live display correction without changing gameplay */
+		const fix saved_aspect = grd_curscreen->sc_aspect;
+		grd_curscreen->sc_aspect = briefing_pixel_aspect();
 		draw_model_picture(Robot_info[robot_num].model_num, &br->robot_angles);
+		grd_curscreen->sc_aspect = saved_aspect;
 		grd_curcanv = curcanv_save;
 	}
 
