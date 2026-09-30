@@ -13,7 +13,7 @@ class SoundfontStoreTest {
 
     @Test fun eqProfilesHaveIndependentDefaultsSelectionsAndReset() {
         val store = SoundfontStore(temporary.root, preferences)
-        assertEquals(MusicEq.FLAT, store.read().eq)
+        assertEquals(MusicEq.BALANCED, store.read().eq)
         assertEquals(MusicEq.BALANCED, store.read().soundfontEq)
         store.selectRenderer("sf2") { _, _ -> true }
         assertEquals(MusicEq.BALANCED, store.read().eq)
@@ -45,7 +45,7 @@ class SoundfontStoreTest {
         reopened.selectEq(MusicEq.FLAT) { true }
         assertEquals(MusicEq.FLAT, SoundfontStore(temporary.root, preferences).read().eq)
         reopened.resetPreferences { _, _ -> true }
-        assertEquals(MusicEq.FLAT, reopened.read().eq)
+        assertEquals(MusicEq.BALANCED, reopened.read().eq)
         assertEquals(MusicEq.BALANCED, reopened.read().soundfontEq)
         assertTrue(reopened.read().eqProfiles.isEmpty())
     }
@@ -102,23 +102,24 @@ class SoundfontStoreTest {
         assertTrue(File(store.selectedPath()).isFile)
     }
 
-    @Test fun defaultAndBothPresetsUseAdlibWithoutDeletingImportedFonts() {
+    @Test fun defaultAndBothPresetsUseBundledSoundfontWithoutDeletingImportedFonts() {
         val store = SoundfontStore(temporary.root, preferences)
-        assertEquals("ymfm", store.read().renderer)
+        assertEquals("sf2", store.read().renderer)
+        assertEquals("", store.selectedPath())
         val font = store.import(byteArrayOf(9).inputStream(), "Remembered sound") { true }
         for (preset in GameSettingsPreset.entries) {
             store.select(font.id) { true }
-            store.selectRenderer("sf2") { _, _ -> true }
+            store.selectRenderer("ymfm") { _, _ -> true }
             store.selectEffects(false, false) { _, _ -> true }
-            preset.resetMidiPreferences(store) { path, fm -> path.isEmpty() && fm }
+            preset.resetMidiPreferences(store) { path, fm -> path.isEmpty() && !fm }
             val reopened = SoundfontStore(temporary.root, preferences)
-            assertEquals("ymfm", reopened.read().renderer)
+            assertEquals("sf2", reopened.read().renderer)
             assertTrue(reopened.read().reverb)
             assertTrue(reopened.read().chorus)
             assertEquals("", reopened.read().selected)
             assertEquals(listOf(font), reopened.read().fonts)
             assertTrue(File(temporary.root, "soundfonts/${font.id}.sf2").isFile)
-            assertEquals("ymfm", preferences.getString(SoundfontStore.PREF_RENDERER, null))
+            assertEquals("sf2", preferences.getString(SoundfontStore.PREF_RENDERER, null))
         }
     }
 

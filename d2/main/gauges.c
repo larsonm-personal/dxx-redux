@@ -2580,22 +2580,34 @@ void show_reticle(int reticle_type, int secondary_display)
 		{
 			grs_bitmap *cross, *primary, *secondary;
 
-			use_hires_reticle = (HIRESMODE != 0);
+			use_hires_reticle = d1_in_d2_hud_hires();
 			ofs = (use_hires_reticle?0:2);
 			gauge_index = RETICLE_CROSS + cross_bm_num;
 			PAGE_IN_GAUGE( gauge_index );
 			cross = &GameBitmaps[GET_GAUGE_INDEX(gauge_index)];
-			hud_bitblt_free(x+HUD_SCALE_X_AR(cross_offsets[ofs].x),y+HUD_SCALE_Y_AR(cross_offsets[ofs].y), HUD_SCALE_X_AR(cross->bm_w), HUD_SCALE_Y_AR(cross->bm_h), cross);
+#ifdef ANDROID
+			/* Android diagnostic: imported bitmap resolution can differ from HIRESMODE */
+			{
+				static int logged_screen_hires = -1, logged_asset_hires = -1;
+				const int asset_hires = d1_in_d2_hud_hires();
+				if (logged_screen_hires != (HIRESMODE != 0) || logged_asset_hires != asset_hires) {
+					con_printf(CON_NORMAL, "Reticle layout: screen_hires=%d asset_hires=%d layout_hires=%d cross=%dx%d", HIRESMODE != 0, asset_hires, use_hires_reticle, cross->bm_w, cross->bm_h);
+					logged_screen_hires = (HIRESMODE != 0);
+					logged_asset_hires = asset_hires;
+				}
+			}
+#endif
+			hud_bitblt_free(x+hud_gauge_scale(cross_offsets[ofs].x),y+hud_gauge_scale(cross_offsets[ofs].y), hud_gauge_scale(cross->bm_w), hud_gauge_scale(cross->bm_h), cross);
 
 			gauge_index = RETICLE_PRIMARY + primary_bm_num;
 			PAGE_IN_GAUGE( gauge_index );
 			primary = &GameBitmaps[GET_GAUGE_INDEX(gauge_index)];
-			hud_bitblt_free(x+HUD_SCALE_X_AR(primary_offsets[ofs].x),y+HUD_SCALE_Y_AR(primary_offsets[ofs].y), HUD_SCALE_X_AR(primary->bm_w), HUD_SCALE_Y_AR(primary->bm_h), primary);
+			hud_bitblt_free(x+hud_gauge_scale(primary_offsets[ofs].x),y+hud_gauge_scale(primary_offsets[ofs].y), hud_gauge_scale(primary->bm_w), hud_gauge_scale(primary->bm_h), primary);
 
 			gauge_index = RETICLE_SECONDARY + secondary_bm_num;
 			PAGE_IN_GAUGE( gauge_index );
 			secondary = &GameBitmaps[GET_GAUGE_INDEX(gauge_index)];
-			hud_bitblt_free(x+HUD_SCALE_X_AR(secondary_offsets[ofs].x),y+HUD_SCALE_Y_AR(secondary_offsets[ofs].y), HUD_SCALE_X_AR(secondary->bm_w), HUD_SCALE_Y_AR(secondary->bm_h), secondary);
+			hud_bitblt_free(x+hud_gauge_scale(secondary_offsets[ofs].x),y+hud_gauge_scale(secondary_offsets[ofs].y), hud_gauge_scale(secondary->bm_w), hud_gauge_scale(secondary->bm_h), secondary);
 			break;
 		}
 		case RET_TYPE_CLASSIC_REBOOT:
@@ -2628,9 +2640,6 @@ void show_reticle(int reticle_type, int secondary_display)
 				gr_uline(i2f(x), i2f(y+(size/2)+(size/5)), i2f(x), i2f(y+(size/5)+(size/5)));
 			break;
 		case RET_TYPE_CIRCLE:
-			// Hack!  Something is going wrong in OGL-land with these numbers (???)
-			if(size == 33 && x == 960 && y == 540) { size = 24; }
-
 			gr_ucircle(i2f(x),i2f(y),i2f(size/4));
 			if (secondary_display && secondary_bm_num == 1)
 				gr_uline(i2f(x-(size/2)-(size/5)), i2f(y-(size/2)), i2f(x-(size/5)-(size/5)), i2f(y-(size/5)));

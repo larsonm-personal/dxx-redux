@@ -1172,8 +1172,14 @@ int gr_ucircle(fix xc1, fix yc1, fix r1)
 	             1.0 - (f2fl(yc1) + grd_curcanv->cv_bitmap.bm_y + 0.5) / (float)last_height,0);
 	glScalef(f2fl(r1) / last_width, f2fl(r1) / last_height, 1.0);
 	nsides = 10 + 2 * (int)(M_PI * f2fl(r1) / 19);
-	if(!circle_va)
+	/* Radius changes require a matching vertex count in the cached unit circle */
+	static int circle_sides = 0;
+	if (!circle_va || circle_sides != nsides) {
+		if (circle_va)
+			d_free(circle_va);
 		circle_va = circle_array_init(nsides);
+		circle_sides = nsides;
+	}
 	ogl_drawcircle(nsides, GL_LINE_LOOP, circle_va);
 	glPopMatrix();
 	return 0;
@@ -1195,8 +1201,14 @@ int gr_disk(fix x,fix y,fix r)
 	             1.0 - (f2fl(y) + grd_curcanv->cv_bitmap.bm_y + 0.5) / (float)last_height,0);
 	glScalef(f2fl(r) / last_width, f2fl(r) / last_height, 1.0);
 	nsides = 10 + 2 * (int)(M_PI * f2fl(r) / 19);
-	if(!disk_va)
+	/* Radius changes require a matching vertex count in the cached unit circle */
+	static int disk_sides = 0;
+	if (!disk_va || disk_sides != nsides) {
+		if (disk_va)
+			d_free(disk_va);
 		disk_va = circle_array_init(nsides);
+		disk_sides = nsides;
+	}
 	ogl_drawcircle(nsides, GL_TRIANGLE_FAN, disk_va);
 	glPopMatrix();
 	return 0;

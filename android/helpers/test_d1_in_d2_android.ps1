@@ -2,6 +2,7 @@ param(
     [Parameter(Mandatory)][string]$D1DataDirectory,
     [string]$D2DataDirectory,
     [switch]$GameLog,
+    [switch]$Reticles,
     [switch]$LauncherButtons,
     [switch]$SoundCheck,
     [switch]$WeaponArt,
@@ -29,6 +30,11 @@ if ($NativeD1 -and (-not $WeaponArt -or $D2DataDirectory)) { throw 'NativeD1 req
 if ($WeaponArt -and $SoundCheck) { throw 'Run weapon rendering and sound checks separately' }
 if ($WeaponArt -and -not $NativeD1 -and -not $WeaponArtReference) { throw 'Imported weapon art requires a native-D1 WeaponArtReference directory' }
 if ($SoundCheck) { $GameLog = $true }
+if ($Reticles) {
+    if ($D2DataDirectory -or $LauncherButtons -or $SoundCheck -or $WeaponArt -or $Guidebot -or $EditionAdmission -or $Metadata -or $RewindSourceCase -or $NativeD1) { throw 'Reticles requires its own D1-only run' }
+    $GameLog = $true
+    $TimeoutSeconds = [Math]::Max($TimeoutSeconds, 360)
+}
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $outputDirectory = Join-Path $repo ('temp/d1-launch-runtime-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 & (Join-Path $PSScriptRoot 'retain-recent-artifacts.ps1') -Artifacts $outputDirectory
@@ -185,6 +191,32 @@ foreach ($dataFile in $dataFiles) {
 }
 $steps = @(Get-Content (Join-Path $repo 'android/game_scripts/test_d1_in_d2_standalone.jsonc') -Raw | ConvertFrom-Json |
         Where-Object { -not $_._info })
+if ($Reticles) {
+    # Exercise every reticle and grow/shrink the Circle/Dot caches in one game session
+    $steps = @($steps[0..11])
+    $reticleIteration = 0
+    foreach ($reticle in @('Classic', 'Classic Reboot', 'X', 'Dot', 'Circle', 'Cross V1', 'Cross V2', 'Angle', 'None', 'Circle', 'Circle', 'Dot', 'Dot', 'Classic')) {
+        $steps += @(
+            @{ action = 'key'; key = 'f2'; post_delay_ms = 200 },
+            @{ action = 'select'; text = 'Graphics Options'; timeout_ms = 5000 },
+            @{ action = 'select'; text = 'Reticle Options'; timeout_ms = 5000 },
+            @{ action = 'select'; text = $reticle; timeout_ms = 5000 },
+            @{ action = 'key'; key = 'end' }
+        )
+        # Alternate the extreme slider values to invalidate both vertex caches
+        $direction = if ($reticleIteration++ % 2) { 'left' } else { 'right' }
+        1..4 | ForEach-Object { $steps += @{ action = 'key'; key = $direction } }
+        $sizeValue = if ($direction -eq 'right') { 4 } else { 0 }
+        $expectedSize = @{ 'menu.selected_index' = 17; 'menu.items[17].value' = $sizeValue }
+        $steps += @{ action = 'assert'; expect = $expectedSize }
+        1..3 | ForEach-Object { $steps += @{ action = 'key'; key = 'escape'; post_delay_ms = 100 } }
+        $steps += @(
+            @{ action = 'wait_for'; field = 'game_window_is_front'; value = 'true'; timeout_ms = 5000 },
+            @{ action = 'wait_ms'; ms = 500 },
+            @{ action = 'log'; message = "Rendered reticle: $reticle ($direction size limit)" }
+        )
+    }
+}
 if ($LauncherButtons) {
     if ($D2DataDirectory -or $SoundCheck -or $WeaponArt -or $Guidebot -or $Metadata -or $EditionAdmission -or $RewindSourceCase) {
         throw 'LauncherButtons requires its own D1-only run'
@@ -426,6 +458,12 @@ try {
         }
         if (-not $checked -or -not $laser) { throw 'Missing converted original laser sound evidence' }
         Write-Output "PASS: $checked original D1 sample conversions retain source rate and duration, including laser playback"
+    } elseif ($Reticles) {
+        $trace = Get-Content -LiteralPath $nativeLogcat -Raw
+        if ($trace -notmatch 'Reticle layout: screen_hires=1 asset_hires=0 layout_hires=0') {
+            throw 'Missing asset-aware classic reticle evidence on the high-resolution display'
+        }
+        Write-Output 'PASS: all reticle styles rendered; Circle/Dot size transitions and imported classic layout checked'
     } elseif ($GameLog -and -not $Guidebot) {
         $trace = Get-Content -LiteralPath $nativeLogcat -Raw
         $samples = [regex]::Matches($trace, '\[FLYOUT\].*? seg=(?<segment>\d+) located=(?<located>[01]) exit=(?<exit>\d+)')
@@ -438,6 +476,7 @@ try {
     }
     & $AdbPath -s $Serial exec-out screencap -p > (Join-Path $outputDirectory 'first-strike.png')
     if ($WeaponArt) { Write-Output "Android weapon rendering evidence: $outputDirectory/weapon-art" }
+    elseif ($Reticles) { Write-Output "Android reticle rendering evidence: $outputDirectory" }
     elseif ($SoundCheck) { Write-Output "$testLabel Android First Strike sound conversion checks passed" }
     elseif ($RewindSourceCase) { Write-Output "Android rewind source recovery evidence: $outputDirectory" }
     elseif ($Guidebot) { Write-Output 'PASS: Android optional Guide-Bot cold deploy, save/restore, memory rewind and D1/D2/D1 lifecycle' }

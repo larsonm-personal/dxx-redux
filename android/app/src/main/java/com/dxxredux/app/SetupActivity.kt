@@ -3037,10 +3037,10 @@ class SetupActivity : ComponentActivity() {
         } else {
             routeMetadataCoordinator.resumeAfterGame()
         }
-        // If a LAN host was broadcasting in-game, stop now
+        // Release LAN hosting after game exit so we can join the migrated host
         if (pendingMultiplayerLaunch == null && !gameRunningFlag) {
             com.dxxredux.app.lobby.LobbyService
-                .stopInGameBroadcast()
+                .onGameExited()
         }
         // Auto-resume LAN discovery if it was active before game launch
         if (wasLanDiscoveringBeforeLaunch &&

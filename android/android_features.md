@@ -24,7 +24,7 @@
 - Some extra guidebot goals such as “find the largest unexplored mine section”
 - Allow switching difficulty mid-level (this will only change ongoing effects such as robot weapon speed and damage, not initial conditions like initial ammo loadout. boss/thief/guidebot have special health handling on change)
 - Automatically scans levels for secret areas and gives a text message when one is discovered (flown into). When game progress tracking is turned on, the secrets found/total counts appear next to hostage and robot counts
-- A new special cheat that highlights and labels secret areas on the automap. When the cheat is active, guidebot can navigate to a secret as a task. Secret area classification isn’t perfect because the actual areas aren’t labeled by the map maker (like they are in doom), so the game is using some hints based on map geometry
+- A new special cheat that highlights and labels secret areas on the automap. When this cheat is active, guidebot can navigate to a secret as a task. Secret area classification isn’t perfect because the actual areas aren’t labeled by the map maker (like they are in doom), so the game is using some hints based on map geometry
 - Boss health bar (optional)
 - FoV slider for 90-100-110-120 degrees. when playing in landscape mode on a phone I find that 110-120 is best just so the up/down field of view works out. this is locked to the original 90 for competitive multiplayer
 - D1 missions played within D2 have support for their textures etc. so they look right, plus an attempt to get weapon and robot behavior to match (with a sort of emulation layer). This gives the advantages of D2 (basically: hud cameras, and can spawn guidebot if desired). I recommend playing D1 this way. Long-term, there should be a unification of the game engines like d2xxl has done and rebirth has partially done and I've laid the groundwork for that
@@ -33,7 +33,7 @@
 
 - Optional guidebot for coop games. The player to release the guidebot becomes the owner. If they leave the game the guidebot attaches to another player. Ownership can be abdicated, giving the guidebot to another random player
 - Coop: allow briefings (optional setting. Base game behavior is to omit them). The host can force a mine start instead of waiting for players to finish watching them
-- Coop: allow mine exits. in d1's rendered exits, show other players exiting
+- Coop: allow mine exit sequences. in d1's in-engine exits, show other players exiting (as they exit)
 - Coop: allow traveling to secret areas (optional setting. The base game behavior is to disable them). If a player enters a secret warp door, the remaining players are brought to the secret area after a short countdown. Secret doors are blocked if a normal exit door is used by another player (all players then remain in the “beat the reactor countdown to the exit” race). Secret doors taken during reactor countdown work normally: they bring the whole party to the secret area, then to the next level after the secret area is completed
 - Coop: track a player’s loot so if they leave and rejoin they get it back (they still generate spew on exit, and any uncollected spew is given to them on return)
 - Coop: remove absorption time from player spew (optional)

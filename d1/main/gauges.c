@@ -2279,9 +2279,6 @@ void show_reticle(int reticle_type, int secondary_display)
 				gr_uline(i2f(x), i2f(y+(size/2)+(size/5)), i2f(x), i2f(y+(size/5)+(size/5)));
 			break;
 		case RET_TYPE_CIRCLE:
-			// Hack!  Something is going wrong in OGL-land with these numbers (???)
-			if(size == 33 && x == 960 && y == 540) { size = 24; }
-
 			gr_ucircle(i2f(x),i2f(y),i2f(size/4));
 			if (secondary_display && secondary_bm_num == 1)
 				gr_uline(i2f(x-(size/2)-(size/5)), i2f(y-(size/2)), i2f(x-(size/5)-(size/5)), i2f(y-(size/5)));

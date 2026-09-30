@@ -2205,11 +2205,19 @@ object LobbyService {
         notifyLobbySystemMessage("Game start failed: $message")
     }
 
-    /** Stop the in-game announce loop when the game exits back to setup.
-     *  If still hosting, restart lobby-mode announces so the lobby remains
-     *  discoverable for new joins. */
+    /** Release a finished game's host session without discarding a waiting lobby */
     @Synchronized
-    fun stopInGameBroadcast() {
+    fun onGameExited() {
+        if (gameStarted && _isHosting.value) {
+            stopHosting()
+        } else {
+            stopInGameBroadcast()
+        }
+    }
+
+    /** Reset launch state, preserving the waiting lobby when a launch fails or is cancelled */
+    @Synchronized
+    private fun stopInGameBroadcast() {
         val preparing = pendingHostStart != null && !gameStarted
         if (preparing) publishHostLaunchPacket(MSG_START_CANCEL, "Host cancelled game start")
         pendingHostStart = null

@@ -69,8 +69,8 @@ internal enum class GameSettingsPreset(
                 add(PresetSettingPreview("Skip intro movie on launch", skipIntroMovie))
                 add(PresetSettingPreview("Autoselect Only Once", false))
                 add(PresetSettingPreview("Original homing (Single/Coop)", originalHoming))
-                add(PresetSettingPreview("MIDI renderer", value = "AdLib (OPL3) FM"))
-                add(PresetSettingPreview("MIDI soundfont fallback", value = "Bundled"))
+                add(PresetSettingPreview("MIDI renderer", value = "MIDI soundfont"))
+                add(PresetSettingPreview("MIDI soundfont", value = "Bundled"))
                 add(PresetSettingPreview("MIDI reverb and chorus", true))
                 if (this@GameSettingsPreset == DEFAULTS) {
                     add(PresetSettingPreview("HUD size", value = "Cockpit"))

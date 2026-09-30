@@ -318,7 +318,7 @@ class SoundfontStore(
         const val PREF_REVERB = "midi_reverb"
         const val PREF_CHORUS = "midi_chorus"
         const val PREF_EQ = "midi_eq_profiles"
-        const val DEFAULT_RENDERER = "ymfm"
+        const val DEFAULT_RENDERER = "sf2"
         val RENDERERS = setOf("sf2", "ymfm")
 
         // Synchronized with MUSIC_SOUNDFONT_MAX_BYTES in music_soundfont.h
