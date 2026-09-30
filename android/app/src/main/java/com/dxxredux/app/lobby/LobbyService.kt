@@ -69,6 +69,9 @@ object LobbyService {
     private var lastDiscoveryQueryMs = 0L
     private var loggedDiscoveryTargets: List<String>? = null
     private val socketGeneration = AtomicLong(0)
+    private const val DISCOVERY_PEER_EXPIRY_MS = 30_000L
+    private const val MAX_DISCOVERY_PEERS = 64
+    private val discoveryPeers = ConcurrentHashMap<String, Long>()
     private const val LOBBY_EXPIRY_MS = 10_000L
     private const val JOIN_RETRY_COUNT = 3
     private const val JOIN_RETRY_DELAY_MS = 1000L
@@ -198,6 +201,7 @@ object LobbyService {
     }
 
     fun notifyAppBackgrounded() {
+        manualIpAttempt.incrementAndGet()
         if (!_isDiscovering.value) return
         appBackgrounded = true
         socketRefreshNeededOnResume = true
@@ -381,6 +385,7 @@ object LobbyService {
         hostStartJob = null
         hostedLobbyId = null
         lobbies.clear()
+        discoveryPeers.clear()
         _discoveredLobbies.value = emptyList()
         _hostedLobbyPlayers.value = emptyList()
         _lanLaunchEvent.value = null
@@ -549,6 +554,7 @@ object LobbyService {
         cancelHostedSaveCheck()
         NetLog.log("LAN", "Stopped hosting lobby $hostedLobbyId")
         _isHosting.value = false
+        discoveryPeers.clear()
         _lanLaunchEvent.value = null
         stopInGameBroadcast()
         announceJob?.cancel()
@@ -573,6 +579,7 @@ object LobbyService {
         hostAddress: String,
         callsign: String,
     ) {
+        manualIpAttempt.incrementAndGet()
         val advertisedGame =
             _discoveredLobbies.value
                 .find {
@@ -654,24 +661,25 @@ object LobbyService {
 
     /**
      * Prefer a fresh launcher lobby; optionally verify the engine in parallel for manual joins
-     * Resume callers keep their identity-filtered launcher-only behavior
+     * Allow delayed Wi-Fi replies for manual joins; resume callers supply their shorter deadline
      * Runs on the caller's coroutine context (should be called from Dispatchers.IO).
      */
     suspend fun tryJoinLobbyByIp(
         hostAddress: String,
         callsign: String,
-        timeoutMs: Long = 1000L,
+        timeoutMs: Long = 30_000L,
         probeEngine: Boolean = false,
         acceptLobby: (LanLobbyAnnounce) -> Boolean = { true },
     ): Boolean =
         coroutineScope {
             val attempt = manualIpAttempt.incrementAndGet()
             val started = System.currentTimeMillis()
+            val startedElapsed = android.os.SystemClock.elapsedRealtime()
             val joinedBefore = _joinedLobby.value
             val hostingBefore = hostedLobbyId
 
             fun stillCurrent() =
-                _isDiscovering.value && manualIpAttempt.get() == attempt &&
+                _isDiscovering.value && !appBackgrounded && manualIpAttempt.get() == attempt &&
                     _joinedLobby.value === joinedBefore && hostedLobbyId == hostingBefore
             _diagnostics.value = ""
             val engine =
@@ -688,7 +696,7 @@ object LobbyService {
             )
             Log.i(TAG, "tryJoinLobbyByIp: probing $hostAddress (timeout=${timeoutMs}ms)")
             val query = buildQuery()
-            val deadline = android.os.SystemClock.elapsedRealtime() + timeoutMs
+            val deadline = startedElapsed + timeoutMs
             var nextQuery = 0L
             while (android.os.SystemClock.elapsedRealtime() < deadline && stillCurrent()) {
                 val now = android.os.SystemClock.elapsedRealtime()
@@ -708,6 +716,12 @@ object LobbyService {
                     joinDiscoveredLobby(lobby.announce, callsign)
                     engine?.cancel()
                     return@coroutineScope true
+                }
+                // Give a launcher lobby first refusal, but do not wait the whole loss-retry
+                // window once an engine has actually answered
+                if (engine?.isCompleted == true && now - startedElapsed >= 1000L) {
+                    val result = engine.await()
+                    if (result.game != null || result.error != null) break
                 }
                 delay(50)
             }
@@ -749,12 +763,18 @@ object LobbyService {
                     joinDiscoveredLobby(target, callsign)
                     return@coroutineScope true
                 }
-                _diagnostics.value =
-                    result.error
-                        ?: "No live lobby or compatible game replied at $hostAddress. Check the address and try again."
+                if (result.error != null) {
+                    _diagnostics.value = result.error
+                    return@coroutineScope false
+                }
             }
+            _diagnostics.value =
+                "No response from $hostAddress. Check the address and that both devices are on the same network, then try again."
             Log.i(TAG, "tryJoinLobbyByIp: no lobby found at $hostAddress within ${timeoutMs}ms")
-            NetLog.log("LAN", "Manual IP probe timeout host=$hostAddress elapsed_ms=$timeoutMs")
+            NetLog.log(
+                "LAN",
+                "Manual IP probe timeout host=$hostAddress elapsed_ms=${android.os.SystemClock.elapsedRealtime() - startedElapsed}",
+            )
             false
         }
 
@@ -2269,6 +2289,7 @@ object LobbyService {
         announce: LanLobbyAnnounce,
         callsign: String,
     ) {
+        manualIpAttempt.incrementAndGet()
         if (!checkJoinGameReady(announce.game)) return
         _diagnostics.value = ""
         if (announce.status == "in_game") {
@@ -2369,6 +2390,13 @@ object LobbyService {
         if (lid == null) {
             NetLog.log("LAN", "QUERY ignored: not hosting from=$senderAddr id=${query.optString("trace_id")}")
             return
+        }
+        // A client query may get through even when it cannot receive our broadcasts
+        // Keep sending to that client for a bounded time if the first reply is lost
+        if (discoveryPeers.containsKey(senderAddr) || discoveryPeers.size < MAX_DISCOVERY_PEERS) {
+            if (discoveryPeers.put(senderAddr, android.os.SystemClock.elapsedRealtime()) == null) {
+                NetLog.log("LAN", "Discovery unicast peer added address=$senderAddr")
+            }
         }
         val data =
             buildAnnounce(
@@ -2575,6 +2603,9 @@ object LobbyService {
                 saveCompatibilityWarning = hostSaveCompatibilityWarning(),
             )
         sendBroadcast(data)
+        val now = android.os.SystemClock.elapsedRealtime()
+        discoveryPeers.entries.removeAll { now - it.value >= DISCOVERY_PEER_EXPIRY_MS }
+        discoveryPeers.keys.forEach { sendTo(data, it, "discovery-peer") }
     }
 
     private fun broadcastPlayerList() {

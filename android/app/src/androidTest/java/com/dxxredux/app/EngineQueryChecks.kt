@@ -62,7 +62,9 @@ internal class EngineQueryChecks(private val instrumentation: Instrumentation) {
             }
         }
         try {
-            check(EngineQuery.probe("127.0.0.2", timeoutMs = 1500).game?.game == game)
+            val queryStarted = android.os.SystemClock.elapsedRealtime()
+            check(EngineQuery.probe("127.0.0.2", timeoutMs = 10_000).game?.game == game)
+            check(android.os.SystemClock.elapsedRealtime() - queryStarted < 3000) { "Successful engine query waited for the other engine's timeout" }
             check(requests.get() >= 3) { "Lost/malformed packet did not trigger retries" }
             behavior.set(3)
             check(EngineQuery.probe("127.0.0.2", timeoutMs = 350).game == null) { "Accepted wrong source port" }
@@ -82,16 +84,18 @@ internal class EngineQueryChecks(private val instrumentation: Instrumentation) {
             lobbyResponder.cancelAndJoin()
             LobbyService.stopDiscovery()
             LobbyService.startDiscovery(instrumentation.targetContext, "ProbeTest")
+            val joinStarted = android.os.SystemClock.elapsedRealtime()
             check(LobbyService.tryJoinLobbyByIp("127.0.0.2", "ProbeTest", probeEngine = true))
+            check(android.os.SystemClock.elapsedRealtime() - joinStarted < 3000) { "Verified engine waited for the full manual join timeout" }
             check(LobbyService.lanLaunchEvent.value?.game == game) { "Engine-only host did not emit launch" }
             LobbyService.stopDiscovery()
             LobbyService.startDiscovery(instrumentation.targetContext, "ProbeTest")
             behavior.set(1)
-            check(!LobbyService.tryJoinLobbyByIp("127.0.0.2", "ProbeTest", probeEngine = true))
+            check(!LobbyService.tryJoinLobbyByIp("127.0.0.2", "ProbeTest", timeoutMs = 1000, probeEngine = true))
             check(LobbyService.diagnostics.value.contains("incompatible"))
             check(LobbyService.lanLaunchEvent.value == null)
             behavior.set(2)
-            check(!LobbyService.tryJoinLobbyByIp("127.0.0.2", "ProbeTest", probeEngine = true))
+            check(!LobbyService.tryJoinLobbyByIp("127.0.0.2", "ProbeTest", timeoutMs = 350, probeEngine = true))
             check(LobbyService.lanLaunchEvent.value == null)
             val pending = async(Dispatchers.IO) { LobbyService.tryJoinLobbyByIp("127.0.0.2", "ProbeTest", probeEngine = true) }
             delay(100)

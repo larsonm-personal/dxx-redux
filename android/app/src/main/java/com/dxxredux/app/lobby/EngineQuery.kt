@@ -4,11 +4,11 @@ import android.os.SystemClock
 import com.dxxredux.app.multiplayer.NetLog
 import com.dxxredux.app.multiplayer.NetworkConstants
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.DatagramPacket
@@ -51,12 +51,22 @@ internal object EngineQuery {
         gameHint: String? = null,
     ): EngineQueryResult =
         coroutineScope {
-            val results =
+            val results = Channel<EngineQueryResult>(2)
+            val queries =
                 (gameHint?.let { listOf(it) } ?: listOf("d1", "d2"))
                     .map { game ->
-                        async(Dispatchers.IO) { query(host, port, timeoutMs, game) }
-                    }.awaitAll()
-            results.firstOrNull { it.game != null } ?: results.firstOrNull { it.error != null } ?: EngineQueryResult()
+                        launch(Dispatchers.IO) { results.send(query(host, port, timeoutMs, game)) }
+                    }
+            var failure = EngineQueryResult()
+            repeat(queries.size) {
+                val result = results.receive()
+                if (result.game != null) {
+                    queries.forEach { it.cancel() }
+                    return@coroutineScope result
+                }
+                if (failure.error == null && result.error != null) failure = result
+            }
+            failure
         }
 
     private suspend fun query(

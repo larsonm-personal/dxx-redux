@@ -14,6 +14,7 @@ import com.dxxredux.app.multiplayer.MissionCompatibilityStatus
 import com.dxxredux.app.multiplayer.MissionStatusReport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -26,6 +27,7 @@ import java.net.InetSocketAddress
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentHashMap
 
 /** Real UDP exercises for the measured slow-save/serialized-start regressions */
 internal class LobbyLatencyChecks(private val instrumentation: Instrumentation) {
@@ -47,10 +49,10 @@ internal class LobbyLatencyChecks(private val instrumentation: Instrumentation) 
             peer.send(DatagramPacket(data, data.size, InetAddress.getByName("127.0.0.1"), 42400))
         }
         fun receive(type: String): JSONObject {
-            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3)
+            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
             while (System.nanoTime() < deadline) {
                 val packet = DatagramPacket(ByteArray(8192), 8192)
-                peer.receive(packet)
+                try { peer.receive(packet) } catch (_: java.net.SocketTimeoutException) { continue }
                 val json = JSONObject(String(packet.data, 0, packet.length, Charsets.UTF_8))
                 if (json.optString("type") == type) return json
             }
@@ -85,6 +87,16 @@ internal class LobbyLatencyChecks(private val instrumentation: Instrumentation) 
             check(release.count == 1L && checks.get() == 1) { "Packet path reran save validation" }
             release.countDown()
             waitUntil("Save check did not publish") { !LobbyService.hostedSaveChecking.value }
+            // Discard the immediate replies above and stop sending queries. Broadcasts do
+            // not reach this loopback-bound peer; periodic unicast must keep discovery alive
+            val repeated = receive(MSG_ANNOUNCE)
+            check(repeated.getString("trace_strategy") == "discovery-peer") { "Lost query reply had no unicast recovery" }
+            check(!repeated.has("reply_trace_id")) { "Periodic announcement reused an old query correlation" }
+            val discoveryPeers = field("discoveryPeers").get(null) as ConcurrentHashMap<String, Long>
+            discoveryPeers["127.0.0.2"] = android.os.SystemClock.elapsedRealtime() - 30_000
+            val announce = LobbyService::class.java.getDeclaredMethod("broadcastAnnounce").apply { isAccessible = true }
+            announce.invoke(LobbyService)
+            check(discoveryPeers.isEmpty()) { "Expired discovery peer kept receiving announcements" }
             val players = field("_hostedLobbyPlayers").get(null) as MutableStateFlow<List<LanPlayer>>
             players.value = players.value.map { it.copy(ready = true, missionStatus = MissionStatusReport("fixture", MissionCompatibilityStatus.MATCH)) }
             LobbyService.startGame(1, 1)
@@ -157,7 +169,26 @@ internal class LobbyLatencyChecks(private val instrumentation: Instrumentation) 
             check(withTimeout(2000) { probe.await() }) { "Manual IP did not retry a lost query" }
             LobbyService.stopDiscovery()
             LobbyService.startDiscovery(context, "ManualClient")
-            check(!LobbyService.tryJoinLobbyByIp("127.0.0.2", "ManualClient"))
+            val delayed = async(Dispatchers.IO) { LobbyService.tryJoinLobbyByIp("127.0.0.2", "ManualClient", probeEngine = true) }
+            receive(MSG_QUERY)
+            delay(1500)
+            check(!delayed.isCompleted) { "Manual IP still gives up after one second" }
+            send(JSONObject().put("type", MSG_ANNOUNCE).put("lobby_id", "delayed").put("game", "d2").put("status", "lobby"))
+            check(withTimeout(2000) { delayed.await() }) { "Delayed launcher reply was not joined" }
+            check(LobbyService.lanLaunchEvent.value == null) { "Launcher reply entered the engine before the host started" }
+            LobbyService.stopDiscovery()
+            check(discoveryPeers.isEmpty()) { "Stopping discovery retained unicast peers" }
+            LobbyService.startDiscovery(context, "ManualClient")
+            val cancelled = async(Dispatchers.IO) { LobbyService.tryJoinLobbyByIp("127.0.0.2", "ManualClient", probeEngine = true) }
+            delay(100)
+            cancelled.cancelAndJoin()
+            send(JSONObject().put("type", MSG_ANNOUNCE).put("lobby_id", "cancelled").put("game", "d2").put("status", "lobby"))
+            delay(300)
+            check(LobbyService.joinedLobby.value == null && LobbyService.lanLaunchEvent.value == null) { "Cancelled manual probe joined after a late reply" }
+            LobbyService.stopDiscovery()
+            LobbyService.startDiscovery(context, "ManualClient")
+            check(!LobbyService.tryJoinLobbyByIp("127.0.0.2", "ManualClient", timeoutMs = 350))
+            check(LobbyService.diagnostics.value.startsWith("No response from")) { "Silence was reported as incompatibility" }
             check(LobbyService.lanLaunchEvent.value == null) { "Silence launched an engine join" }
 
             val oldCheckEntered = CountDownLatch(1)

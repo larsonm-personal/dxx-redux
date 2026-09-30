@@ -63,6 +63,8 @@ import com.dxxredux.app.formatBinarySize
 import com.dxxredux.app.lobby.LobbyService
 import com.dxxredux.app.tvFocusBorder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.Inet4Address
@@ -380,6 +382,7 @@ private fun LanDiscoveryView(
     var showHostDialog by remember { mutableStateOf(false) }
     var showJoinByIpDialog by remember { mutableStateOf(false) }
     var manualJoinStatus by remember { mutableStateOf("") }
+    var manualJoinJob by remember { mutableStateOf<Job?>(null) }
     val hostDefaults = remember { HostGameDefaults.load(context) }
     var hostedGame by remember { mutableStateOf(hostDefaults.game) }
     var hostedMode by remember { mutableStateOf(hostDefaults.mode) }
@@ -923,7 +926,18 @@ private fun LanDiscoveryView(
             }
         }
 
-        if (manualJoinStatus.isNotEmpty()) item { Text(manualJoinStatus) }
+        if (manualJoinStatus.isNotEmpty()) {
+            item {
+                Text(manualJoinStatus)
+                if (manualJoinJob != null) {
+                    TextButton(onClick = {
+                        manualJoinJob?.cancel()
+                        manualJoinJob = null
+                        manualJoinStatus = ""
+                    }) { Text("Cancel") }
+                }
+            }
+        }
 
         // Diagnostics status line
         if (diagnostics.isNotEmpty()) {
@@ -1021,20 +1035,26 @@ private fun LanDiscoveryView(
                 LanIpsPrefs.add(context, hostAddr)
                 recentIps.value = LanIpsPrefs.load(context)
                 manualJoinStatus = "Looking for a lobby or running game at $hostAddr..."
-                coroutineScope.launch {
-                    val foundLobby =
-                        withContext(Dispatchers.IO) {
-                            LobbyService.tryJoinLobbyByIp(hostAddr, callsign, probeEngine = true)
-                        }
-                    manualJoinStatus =
-                        if (foundLobby) {
-                            ""
-                        } else {
-                            LobbyService.diagnostics.value.ifBlank {
-                                "No live lobby or compatible game replied at $hostAddr. Check the address and try again."
+                manualJoinJob?.cancel()
+                manualJoinJob =
+                    coroutineScope.launch {
+                        try {
+                            val foundLobby =
+                                withContext(Dispatchers.IO) {
+                                    LobbyService.tryJoinLobbyByIp(hostAddr, callsign, probeEngine = true)
+                                }
+                            manualJoinStatus =
+                                if (foundLobby) {
+                                    ""
+                                } else {
+                                    LobbyService.diagnostics.value
+                                }
+                        } finally {
+                            if (manualJoinJob == currentCoroutineContext()[Job]) {
+                                manualJoinJob = null
                             }
                         }
-                }
+                    }
             },
             onDismiss = { showJoinByIpDialog = false },
         )
