@@ -46,7 +46,6 @@ class RecoveryInstrumentation : Instrumentation() {
     private var engineProbeGame = "d2"
     private var missionLoadingOnly = false
     private var coopSessionOnly = false
-    private var discoveryOnly = false
     private var lobbyLatencyOnly = false
 
     override fun onCreate(arguments: Bundle?) {
@@ -55,7 +54,6 @@ class RecoveryInstrumentation : Instrumentation() {
             engineProbeGame = arguments.getString("game") ?: "d2"
         }
         lobbyLatencyOnly = arguments?.getString("suite") == "lobby_latency"
-        discoveryOnly = arguments?.getString("suite") == "discovery"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         coopSessionOnly = arguments?.getString("suite") == "coop_session"
         super.onCreate(arguments)
@@ -74,12 +72,6 @@ class RecoveryInstrumentation : Instrumentation() {
             if (lobbyLatencyOnly) {
                 LobbyLatencyChecks(this).run()
                 result.putString("stream", "PASS: responsive discovery during save checks, concurrent launch preparation, commit/abort/retry and manual IP recovery\n")
-                finish(Activity.RESULT_OK, result)
-                return
-            }
-            if (discoveryOnly) {
-                DiscoveryExperimentChecks(this).run()
-                result.putString("stream", "PASS: discovery phases, UDP replies, socket replacement, query correlation and cancellation\n")
                 finish(Activity.RESULT_OK, result)
                 return
             }

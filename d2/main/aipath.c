@@ -41,6 +41,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fireball.h"
 #include "game.h"
 #include "deterministic_math.h"
+#include "d1_in_d2/d1_in_d2.h"
 #include "d1_in_d2/d1_in_d2_ai.h"
 #include "input_demo_hooks.h"
 #include "guidebot_routing.h"
@@ -1025,6 +1026,12 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 
 	ailp->time_player_seen = GameTime64;			//	Prevent from resetting path quickly.
 	ailp->goal_segment = Believed_player_seg;
+	/* D1 enemy memory is event-driven, unlike D2's continuous tracking
+	 * Let the optional companion rejoin an uncloaked player without updating
+	 * the shared enemy awareness cache */
+	if (d1_in_d2_use_d1_gameplay() && Robot_info[objp->id].companion &&
+	    !(Players[Player_num].flags & PLAYER_FLAGS_CLOAKED))
+		ailp->goal_segment = ConsoleObject->segnum;
 
 	start_seg = objp->segnum;
 	end_seg = ailp->goal_segment;

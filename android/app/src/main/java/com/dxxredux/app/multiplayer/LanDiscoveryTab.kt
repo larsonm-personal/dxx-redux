@@ -374,9 +374,6 @@ private fun LanDiscoveryView(
     val broadcastFailing by LobbyService.broadcastFailing.collectAsState()
     val saveWarning by LobbyService.hostedSaveWarning.collectAsState()
     val saveChecking by LobbyService.hostedSaveChecking.collectAsState()
-    val discoveryExperiment by LobbyService.discoveryExperiment.collectAsState()
-    val discoveryExperimentActive by LobbyService.discoveryExperimentActive.collectAsState()
-    var diagnosticHost by remember { mutableStateOf("") }
     val actionFocus = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -923,37 +920,6 @@ private fun LanDiscoveryView(
                 Spacer(Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(Modifier.height(8.dp))
-            }
-        }
-
-        if (!isHosting) {
-            item {
-                HorizontalDivider()
-                Text("LAN discovery test", style = MaterialTheme.typography.titleSmall)
-                Text(
-                    "Enable Network logging on both phones. Keep the host in its lobby and run this 80-second test before joining.",
-                )
-                OutlinedTextField(
-                    value = diagnosticHost,
-                    onValueChange = { diagnosticHost = it },
-                    label = { Text("Host IP (optional)") },
-                    singleLine = true,
-                    enabled = !discoveryExperimentActive,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedButton(
-                    enabled = isDiscovering,
-                    onClick = {
-                        if (discoveryExperimentActive) {
-                            LobbyService.stopDiscoveryExperiment()
-                        } else {
-                            LobbyService.startDiscoveryExperiment(diagnosticHost)
-                        }
-                    },
-                ) {
-                    Text(if (discoveryExperimentActive) "Stop discovery test" else "Run discovery test")
-                }
-                if (discoveryExperiment.isNotEmpty()) Text(discoveryExperiment)
             }
         }
 

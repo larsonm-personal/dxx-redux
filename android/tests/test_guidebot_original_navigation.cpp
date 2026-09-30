@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 extern "C" {
 #include "inferno.h"
+#include "d1_in_d2/d1_in_d2.h"
 #include "ai.h"
 #include "escort.h"
 #include "guidebot_route_internal.h"
@@ -372,6 +373,58 @@ static void audit_redux_return_events(object *bot)
 	});
 	start.restore(bot);
 }
+static void audit_stale_player_return(object *bot)
+{
+	if (!d1_in_d2_use_d1_gameplay()) return;
+	Snapshot start(bot);
+	const object player = *ConsoleObject;
+	const int believed_seg = Believed_player_seg;
+	const auto flags = Players[Player_num].flags;
+	// Keep the requested center within Classic's finite path search depth
+	for (int seg = 0; seg <= Highest_segment_index; ++seg)
+		if (Segment2s[seg].special == SEGMENT_IS_FUELCEN) {
+			place(ConsoleObject, seg);
+			break;
+		}
+	int stale_seg = -1;
+	for (int side = 0; side < MAX_SIDES_PER_SEGMENT; ++side)
+		if (WALL_IS_DOORWAY(&Segments[ConsoleObject->segnum], side) & WID_FLY_FLAG) {
+			stale_seg = Segments[ConsoleObject->segnum].children[side];
+			if (stale_seg >= 0) break;
+		}
+	check("stale_return_fixture", stale_seg >= 0);
+	for (int cloaked = 0; stale_seg >= 0 && cloaked <= 1; ++cloaked) {
+		start.restore(bot);
+		place(bot, stale_seg);
+		Believed_player_seg = stale_seg;
+		Players[Player_num].flags = (flags & ~PLAYER_FLAGS_CLOAKED) | (cloaked ? PLAYER_FLAGS_CLOAKED : 0);
+		ai_reset_all_paths();
+		create_path_to_player(bot, Max_escort_length, 1);
+		const int target = cloaked ? stale_seg : ConsoleObject->segnum;
+		const auto &path = bot->ctype.ai_info;
+		check("stale_return_target_" + std::to_string(cloaked), Ai_local_info[Buddy_objnum].goal_segment == target);
+		check("stale_return_endpoint_" + std::to_string(cloaked), path.path_length > 0 &&
+		      Point_segs[path.hide_index + path.path_length - 1].segnum == target);
+		check("stale_return_preserves_enemy_memory_" + std::to_string(cloaked), Believed_player_seg == stale_seg);
+		if (!cloaked) {
+			Looking_for_marker = Last_buddy_key = -1;
+			set_escort_special_goal(KEY_2);
+			check("stale_return_accepts_energy_center", Escort_special_goal == ESCORT_GOAL_ENERGYCEN);
+			place(bot, target);
+			Ai_local_info[Buddy_objnum].mode = AIM_GOTO_PLAYER;
+			Buddy_last_seen_player = Buddy_last_player_path_created = GameTime64;
+			do_escort_frame(bot, 0, 2);
+			check("stale_return_resumes_energy_center", Escort_goal_object == ESCORT_GOAL_ENERGYCEN &&
+			      Escort_goal_index >= 0 && Ai_local_info[Buddy_objnum].mode == AIM_GOTO_OBJECT);
+		}
+	}
+	start.restore(bot);
+	obj_relink(ConsoleObject - Objects, player.segnum);
+	*ConsoleObject = player;
+	Believed_player_seg = believed_seg;
+	Players[Player_num].flags = flags;
+}
+
 static void audit_reactor_room_return(object *bot)
 {
 	if (std::strcmp(Current_mission_filename, "descent") || Current_level_num != 2) return;
@@ -527,6 +580,7 @@ int test_guidebot_live_navigation(const char *output, const char *audit)
 	Control_center_destroyed = destroyed;
 	audit_redux_return_events(bot);
 	audit_reactor_room_return(bot);
+	audit_stale_player_return(bot);
 	check("exit", find_exit_segment() == redux_find_exit_segment());
 	for (int mode : { AIM_GOTO_PLAYER, AIM_GOTO_OBJECT }) {
 		l.mode = mode;

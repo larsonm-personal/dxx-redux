@@ -69,11 +69,6 @@ object LobbyService {
     private var lastDiscoveryQueryMs = 0L
     private var loggedDiscoveryTargets: List<String>? = null
     private val socketGeneration = AtomicLong(0)
-    private val _discoveryExperiment = MutableStateFlow("")
-    val discoveryExperiment: StateFlow<String> = _discoveryExperiment.asStateFlow()
-    private val _discoveryExperimentActive = MutableStateFlow(false)
-    val discoveryExperimentActive: StateFlow<Boolean> = _discoveryExperimentActive.asStateFlow()
-    private var discoveryExperimentJob: Job? = null
     private const val LOBBY_EXPIRY_MS = 10_000L
     private const val JOIN_RETRY_COUNT = 3
     private const val JOIN_RETRY_DELAY_MS = 1000L
@@ -203,7 +198,6 @@ object LobbyService {
     }
 
     fun notifyAppBackgrounded() {
-        stopDiscoveryExperiment()
         if (!_isDiscovering.value) return
         appBackgrounded = true
         socketRefreshNeededOnResume = true
@@ -371,7 +365,6 @@ object LobbyService {
     @Synchronized
     fun stopDiscovery() {
         manualIpAttempt.incrementAndGet()
-        stopDiscoveryExperiment()
         cancelHostedSaveCheck()
         clientLaunchPreparation.value = null
         hostLaunchPacket = null
@@ -462,7 +455,6 @@ object LobbyService {
         omittedVisualTextureCount: Int = 0,
         omittedVisualModNames: List<String> = emptyList(),
     ) {
-        stopDiscoveryExperiment()
         if (!_isDiscovering.value) return
         if (
             !missionRequirement.isValid ||
@@ -581,7 +573,6 @@ object LobbyService {
         hostAddress: String,
         callsign: String,
     ) {
-        stopDiscoveryExperiment()
         val advertisedGame =
             _discoveredLobbies.value
                 .find {
@@ -674,7 +665,6 @@ object LobbyService {
         acceptLobby: (LanLobbyAnnounce) -> Boolean = { true },
     ): Boolean =
         coroutineScope {
-            stopDiscoveryExperiment()
             val attempt = manualIpAttempt.incrementAndGet()
             val started = System.currentTimeMillis()
             val joinedBefore = _joinedLobby.value
@@ -1055,7 +1045,6 @@ object LobbyService {
     }
 
     private fun queryDiscoveryHosts() {
-        if (_discoveryExperimentActive.value) return
         if (!_isDiscovering.value || _isHosting.value || _joinedLobby.value != null || appBackgrounded) return
         val now = android.os.SystemClock.elapsedRealtime()
         if (now - lastDiscoveryQueryMs < DISCOVERY_QUERY_INTERVAL_MS) return
@@ -1075,111 +1064,6 @@ object LobbyService {
         val query = buildQuery()
         sendBroadcast(query)
         targets.forEach { sendTo(query, it) }
-    }
-
-    /** Explicit experiment; its owner survives the socket replacement being tested */
-    @Synchronized
-    fun startDiscoveryExperiment(hostAddress: String) {
-        if (!_isDiscovering.value || _isHosting.value || _joinedLobby.value != null || appBackgrounded) return
-        stopDiscoveryExperiment()
-        val explicitHost = hostAddress.trim()
-        if (explicitHost.isNotEmpty() &&
-            (explicitHost.split('.').size != 4 || explicitHost.split('.').any { it.toIntOrNull() !in 0..255 })
-        ) {
-            _discoveryExperiment.value = "Enter an IPv4 address, or leave the host field empty"
-            return
-        }
-        val context = appContext ?: return
-        val targets =
-            (
-                listOf(
-                    explicitHost,
-                ) + RecentAddressPrefs.LAN_IPS.load(context)
-            ).filter { it.isNotBlank() }.distinct()
-        val run = UUID.randomUUID().toString()
-        _discoveryExperimentActive.value = true
-        _discoveryExperiment.value = "Starting discovery test"
-        NetLog.log("LAN", "DISCOVERY TEST begin run=$run targets=$targets duration_s=80")
-        discoveryExperimentJob =
-            transportSupervisorScope.launch {
-                try {
-                    repeat(8) { phase ->
-                        val strategy =
-                            listOf("subnet-broadcast", "limited-broadcast", "direct-ip", "reopened-subnet")[
-                                phase %
-                                    4,
-                            ]
-                        synchronized(this@LobbyService) {
-                            if (!isActive || !_discoveryExperimentActive.value) return@launch
-                            if (phase % 4 == 3) recoverTransport("discovery experiment run=$run phase=$phase")
-                            NetLog.log(
-                                "LAN",
-                                "DISCOVERY TEST phase begin run=$run phase=$phase strategy=$strategy generation=${socketGeneration.get()}",
-                            )
-                            logLocalAddresses()
-                        }
-                        repeat(5) { attempt ->
-                            synchronized(this@LobbyService) {
-                                if (!isActive || !_discoveryExperimentActive.value) return@launch
-                                _discoveryExperiment.value =
-                                    "Discovery test ${phase + 1}/8: $strategy (${phase * 10 + attempt * 2}/80 seconds)"
-                                val query =
-                                    JSONObject(String(buildQuery(), Charsets.UTF_8))
-                                        .put("trace_run", run)
-                                        .put("trace_phase", phase)
-                                        .toString()
-                                        .toByteArray(Charsets.UTF_8)
-                                when (phase % 4) {
-                                    0, 3 -> {
-                                        sendBroadcast(query)
-                                    }
-
-                                    1 -> {
-                                        sendTo(query, "255.255.255.255", "limited-broadcast")
-                                    }
-
-                                    2 -> {
-                                        if (targets.isEmpty()) {
-                                            NetLog.log(
-                                                "LAN",
-                                                "DISCOVERY TEST unicast skipped: no targets run=$run phase=$phase",
-                                            )
-                                        }
-                                        targets.forEach { sendTo(query, it, "direct-ip") }
-                                    }
-                                }
-                            }
-                            delay(2000)
-                        }
-                        NetLog.log("LAN", "DISCOVERY TEST phase end run=$run phase=$phase")
-                    }
-                    synchronized(this@LobbyService) {
-                        if (!isActive) return@launch
-                        _discoveryExperiment.value = "Discovery test complete. Export Network logs from both phones."
-                        NetLog.log("LAN", "DISCOVERY TEST complete run=$run")
-                        _discoveryExperimentActive.value = false
-                    }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    synchronized(this@LobbyService) {
-                        _discoveryExperiment.value = "Discovery test failed: ${e.message}"
-                        _discoveryExperimentActive.value = false
-                        NetLog.log("LAN", "DISCOVERY TEST failed run=$run error=${e.message}")
-                    }
-                }
-            }
-    }
-
-    @Synchronized
-    fun stopDiscoveryExperiment() {
-        if (_discoveryExperimentActive.value) {
-            NetLog.log("LAN", "DISCOVERY TEST cancelled: ${_discoveryExperiment.value}")
-            _discoveryExperiment.value = "Discovery test stopped"
-        }
-        _discoveryExperimentActive.value = false
-        discoveryExperimentJob?.cancel()
-        discoveryExperimentJob = null
     }
 
     private fun traceDiscoverySend(
@@ -2385,7 +2269,6 @@ object LobbyService {
         announce: LanLobbyAnnounce,
         callsign: String,
     ) {
-        stopDiscoveryExperiment()
         if (!checkJoinGameReady(announce.game)) return
         _diagnostics.value = ""
         if (announce.status == "in_game") {

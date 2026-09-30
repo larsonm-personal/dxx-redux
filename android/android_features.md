@@ -71,7 +71,7 @@
 
 # Music
 
-- MIDI(hmp/hmq) tracks work using an included MIDI library. Soundfonts are selectable. Some enhancements to midi playback accuracy based on a/b tests vs. dosbox that found some limitations in redux. Optional adlib/opl3-style FM playback as an alternative, this was also tuned using a/b testing. Both of these sound good to my ear and match youtube recordings pretty well (even though they’re synthesized on the fly)
+- MIDI(hmp/hmq) tracks work using an included MIDI library. Soundfonts are selectable (one is bundled, an sc55 recreation). Some enhancements to midi playback accuracy based on a/b tests vs. dosbox that found some limitations in redux. Optional adlib/opl3-style FM playback as an alternative, this was also tuned using a/b testing. Both of these sound good to my ear and match youtube recordings pretty well (even though they’re synthesized on the fly)
 - Parses and plays redbook audio from the gog CD image if available, or other bin+cue images
   - allows loading multiple disc images and combining them into one playlist. This is a neat feature for multi-cd releases such as the definitive edition
 - Track name (if known) is shown when a new song starts. Can come from mp3/midi metadata or a chromaprint match
