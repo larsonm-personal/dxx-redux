@@ -1,5 +1,23 @@
 # GitHub APK releases
 
+## Build and publication recovery follow-up
+
+1. Explain the final source check and exempt only the release script, which is not an APK input
+2. Report dirty paths and distinguish a missing remote commit from authentication/network errors before building
+3. Add explicit UploadOnly recovery using saved build metadata and fresh APK/hash/signature checks, without changing normal fresh rebuilds
+4. Mark whether source validation completed so an interrupted or changed-source build cannot bypass checks on retry
+5. Cover helper edits, actual source/HEAD changes, missing commits and upload retries on PowerShell 5.1 and 7
+6. Run scoped formatting/lint and orchestration tests without publishing a real release
+
+Validation:
+
+- All 60 release integration scenarios passed on Windows PowerShell 5.1.26100.9444 and PowerShell 7.6.6
+- Release-helper edits before/during builds are allowed; app edits, staged source changes and HEAD changes during builds remain blocked with useful diagnostics
+- UploadOnly retains the saved APK's commit/versionCode, skips Gradle and rejects mismatched APK hashes, certificates, checksums, missing files and incomplete source validation
+- Tested recovery of older saved output after helper-only changes, including sourceClean=false metadata from the reported failure
+- The actual saved 1.0.0 APK passed Android signing/package/ABI/checksum verification and the complete UploadOnly flow on PowerShell 5.1 with every GitHub call mocked
+- Scoped formatting/lint and git diff --check passed; the saved APK was unchanged and no real tag or release was modified
+
 ## Plan
 
 1. Add a local PowerShell release command accepting a version, with build-only and draft modes

@@ -6,8 +6,9 @@
 Build, verify and publish a signed universal APK for Android 7.0 or newer
 .DESCRIPTION
 Run from the repo root with PowerShell 5.1/7, Android tools/JDK 21 and keystore.properties
-Publishing needs clean, pushed source and gh auth login; origin is the default (-Repository overrides)
+Publishing needs clean, pushed app source and gh auth login; origin is the default (-Repository overrides)
 Reusing a version does a clean build, moves android-vVERSION and replaces APK/checksums/build metadata
+Use -UploadOnly to verify and upload saved release files without rebuilding; the saved source commit is used
 Output: android/build-outputs/github/android-vVERSION/; -BuildOnly stays local, -Draft stages new releases
 .EXAMPLE
 ./android/release-github.ps1 -Version 1.2.0
@@ -23,6 +24,7 @@ param(
     [ValidatePattern('^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')][string]$Repository,
     [string]$NotesFile,
     [switch]$BuildOnly,
+    [switch]$UploadOnly,
     [switch]$Draft
 )
 
@@ -30,6 +32,9 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repoRoot = Split-Path $PSScriptRoot
 . (Join-Path $PSScriptRoot 'helpers/test_host_platform.ps1')
+# These release-only files are not Gradle/APK inputs
+$sourcePaths = @('.', ':(exclude)android/release-github.ps1',
+    ':(exclude)android/tests/test_github_release.ps1', ':(exclude)android/ai tool plans')
 
 function Invoke-ReleaseTool {
     param([string]$Tool, [string[]]$Arguments)
@@ -42,13 +47,34 @@ function Get-ReleaseGit {
     return ((Invoke-ReleaseTool git (@('-C', $repoRoot) + $Arguments)) -join "`n").Trim()
 }
 
+function Get-ReleaseSourceStatus {
+    return Get-ReleaseGit (@('status', '--porcelain', '--untracked-files=all', '--') + $sourcePaths)
+}
+
 function Assert-ReleaseSource {
     if ((Get-ReleaseGit @('rev-parse', 'HEAD')) -ne $commit) {
-        throw 'HEAD changed during the build; rebuild from the intended commit'
+        throw "HEAD changed during the build of $commit; rebuild from the intended commit. App source must stay unchanged while Gradle reads it"
     }
-    if (Get-ReleaseGit @('status', '--porcelain', '--untracked-files=normal')) {
-        throw 'Publishing requires a clean working tree, including untracked source files; commit changes first or use -BuildOnly'
+    $status = Get-ReleaseSourceStatus
+    if ($status) {
+        throw "Publishing requires a clean working tree for app source. Changed files:`n$status`nCommit or stash these before building (or use -BuildOnly). The final check prevents publishing an APK built from changing source; release-only helper edits are allowed"
     }
+}
+
+function Assert-RemoteCommit {
+    # Capture gh's diagnostic so HTTP 422 becomes an actionable error on PowerShell 5.1 too
+    $ErrorActionPreference = 'Continue'
+    $PSNativeCommandUseErrorActionPreference = $false
+    $result = @(& gh api --hostname github.com "repos/$Repository/commits/$commit" --jq .sha 2>&1)
+    $exitCode = $LASTEXITCODE
+    $detail = ($result -join "`n").Trim()
+    if ($exitCode -ne 0) {
+        if ($detail -match 'HTTP (404|422)|No commit found') {
+            throw "GitHub cannot find source commit $commit in $Repository. Push the branch containing it to that repository (usually: git push origin HEAD), then rerun. Check -Repository and gh auth status if the commit was already pushed; private repositories can also return 404 for missing access. GitHub said: $detail"
+        }
+        throw "Could not verify source commit $commit in $Repository; check gh auth status, repository access and the network. GitHub said: $detail"
+    }
+    if ($detail -ne $commit) { throw "GitHub returned a different source commit for $commit in $Repository" }
 }
 
 function Get-ExistingRelease {
@@ -81,21 +107,59 @@ function Set-ReleaseTag {
     if ($tagCommit -ne $commit) { throw "Remote tag $tag does not resolve to the built commit after updating" }
 }
 
-$commit = Get-ReleaseGit @('rev-parse', 'HEAD')
-if ((Get-ReleaseGit @('rev-parse', '--is-shallow-repository')) -eq 'true') {
+if ($BuildOnly -and $UploadOnly) { throw '-BuildOnly and -UploadOnly cannot be combined' }
+$tag = "android-v$Version"
+$outDir = Join-Path $PSScriptRoot "build-outputs/github/$tag"
+$apkName = "dxx-redux-$Version-android-universal.apk"
+$apk = Join-Path $outDir $apkName
+$checksumPath = Join-Path $outDir 'SHA256SUMS.txt'
+$metadataPath = Join-Path $outDir 'build-info.json'
+$notesPath = Join-Path $outDir 'release-notes.md'
+$savedMetadata = $null
+if ($UploadOnly) {
+    if ($NotesFile) { throw '-UploadOnly uses saved release notes; omit -NotesFile' }
+    foreach ($file in @($apk, $checksumPath, $metadataPath, $notesPath)) {
+        if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Saved release file missing: $file. Run without -UploadOnly to build first" }
+    }
+    $savedMetadata = Get-Content -LiteralPath $metadataPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($savedMetadata.version -ne $Version -or $savedMetadata.commit -notmatch '^[0-9a-f]{40}$' -or
+        $savedMetadata.versionCode -lt 1 -or $savedMetadata.versionCode -gt 2100000000) {
+        throw 'Saved release metadata has an invalid version or source commit; rebuild without -UploadOnly'
+    }
+    $commit = $savedMetadata.commit
+    if ($PSBoundParameters.ContainsKey('VersionCode') -and $VersionCode -ne $savedMetadata.versionCode) {
+        throw '-VersionCode differs from the saved build; omit it or rebuild without -UploadOnly'
+    }
+    $VersionCode = [int]$savedMetadata.versionCode
+    if ($savedMetadata.PSObject.Properties['sourceVerified']) {
+        if ($savedMetadata.sourceVerified -isnot [bool] -or -not $savedMetadata.sourceVerified) {
+            throw 'Saved APK source validation did not pass; rebuild without -UploadOnly'
+        }
+    } else {
+        # Older helpers wrote metadata before the final check; verify their recorded tree locally
+        $status = Get-ReleaseSourceStatus
+        $differences = Get-ReleaseGit (@('diff', '--name-only', $commit, '--') + $sourcePaths)
+        if ($status -or $differences) {
+            throw "Cannot validate app source for this older saved APK. Changed files:`n$status`n$differences`nRebuild without -UploadOnly from clean app source"
+        }
+    }
+} else {
+    $commit = Get-ReleaseGit @('rev-parse', 'HEAD')
+    $sourceCleanAtStart = -not [bool](Get-ReleaseSourceStatus)
+}
+if (-not $UploadOnly -and (Get-ReleaseGit @('rev-parse', '--is-shallow-repository')) -eq 'true') {
     throw 'Use a full clone (git fetch --unshallow) for the commit-count versionCode'
 }
 # Version labels/codes do not set the engine multiplayer protocol; GitHub and Play use separate app IDs
 # Increase versionCode for app upgrades; use -VersionCode when the commit-count default is insufficient
-if (-not $PSBoundParameters.ContainsKey('VersionCode')) {
+if (-not $UploadOnly -and -not $PSBoundParameters.ContainsKey('VersionCode')) {
     $VersionCode = [int](Get-ReleaseGit @('rev-list', '--count', 'HEAD')) * 10
 }
-$tag = "android-v$Version"
 $prerelease = $Version.Contains('-')
 if ($NotesFile) { $NotesFile = (Resolve-Path -LiteralPath $NotesFile).Path }
 
 if (-not $BuildOnly) {
-    Assert-ReleaseSource
+    if (-not $UploadOnly) { Assert-ReleaseSource }
     if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
         throw 'Install GitHub CLI and run gh auth login before publishing, or use -BuildOnly'
     }
@@ -107,8 +171,7 @@ if (-not $BuildOnly) {
         $Repository = $Matches[1]
     }
     # Fail before building if the exact source commit has not reached this repository
-    $remoteCommit = Invoke-ReleaseTool gh @('api', '--hostname', 'github.com', "repos/$Repository/commits/$commit", '--jq', '.sha')
-    if ($remoteCommit -ne $commit) { throw 'Push the source commit to the release repository first' }
+    Assert-RemoteCommit
     $existingRelease = Get-ExistingRelease
 }
 
@@ -118,7 +181,7 @@ if (-not $BuildOnly) {
 # keyAlias=YOUR_KEY_ALIAS
 # keyPassword=YOUR_KEY_PASSWORD
 # Keep the file/key private, back up the key and use the same key for every GitHub update
-if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'keystore.properties'))) {
+if (-not $UploadOnly -and -not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'keystore.properties'))) {
     throw 'Missing android/keystore.properties; see the signing setup comments in this script'
 }
 Initialize-RegressionJavaEnvironment -RepoRoot $repoRoot
@@ -133,11 +196,11 @@ foreach ($tool in @($signer, $aapt)) {
     if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) { throw "Missing Android build tool: $tool" }
 }
 
-$outDir = Join-Path $PSScriptRoot "build-outputs/github/$tag"
-& (Join-Path $PSScriptRoot 'helpers/retain-recent-artifacts.ps1') -Artifacts $outDir
-New-Item -ItemType Directory -Path $outDir -Force | Out-Null
-$builtAt = [DateTime]::UtcNow
-$buildInfo = @"
+if (-not $UploadOnly) {
+    & (Join-Path $PSScriptRoot 'helpers/retain-recent-artifacts.ps1') -Artifacts $outDir
+    New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+    $builtAt = [DateTime]::UtcNow
+    $buildInfo = @"
 package com.dxxredux.app
 
 // Generated by release-github.ps1
@@ -149,19 +212,20 @@ object BuildInfo {
     const val BUILD_TYPE = "release"
 }
 "@
-$buildInfoPath = Join-Path $PSScriptRoot 'app/src/main/java/com/dxxredux/app/BuildInfo.kt'
-[IO.File]::WriteAllText($buildInfoPath, $buildInfo + "`n")
-$gradle = Resolve-RegressionGradleWrapper -AndroidDir $PSScriptRoot
-Write-Host "Building $tag ($VersionCode) from $commit"
-# Separate GitHub app: Play sign-in/updates disabled; single-player/LAN still require game data
-$gradleArgs = @('-p', $PSScriptRoot, '--no-build-cache', '-PgithubRelease=true',
-    "-PversionNameOverride=$Version", "-PversionCodeOverride=$VersionCode", '-PskipBuildInfo', '--console=plain')
-# Separate task graphs avoid clean/assemble scheduling conflicts with generated assets
-Invoke-ReleaseTool $gradle (@(':app:clean') + $gradleArgs)
-Invoke-ReleaseTool $gradle (@(':app:assembleRelease') + $gradleArgs)
+    $buildInfoPath = Join-Path $PSScriptRoot 'app/src/main/java/com/dxxredux/app/BuildInfo.kt'
+    [IO.File]::WriteAllText($buildInfoPath, $buildInfo + "`n")
+    $gradle = Resolve-RegressionGradleWrapper -AndroidDir $PSScriptRoot
+    Write-Host "Building $tag ($VersionCode) from $commit"
+    # Separate GitHub app: Play sign-in/updates disabled; single-player/LAN still require game data
+    $gradleArgs = @('-p', $PSScriptRoot, '--no-build-cache', '-PgithubRelease=true',
+        "-PversionNameOverride=$Version", "-PversionCodeOverride=$VersionCode", '-PskipBuildInfo', '--console=plain')
+    # Separate task graphs avoid clean/assemble scheduling conflicts with generated assets
+    Invoke-ReleaseTool $gradle (@(':app:clean') + $gradleArgs)
+    Invoke-ReleaseTool $gradle (@(':app:assembleRelease') + $gradleArgs)
+}
 
 # Inspect the APK itself, not just Gradle's output metadata
-$sourceApk = Join-Path $PSScriptRoot 'app/build/outputs/apk/release/app-release.apk'
+$sourceApk = if ($UploadOnly) { $apk } else { Join-Path $PSScriptRoot 'app/build/outputs/apk/release/app-release.apk' }
 if (-not (Test-Path -LiteralPath $sourceApk)) { throw "Signed APK missing: $sourceApk" }
 $signature = (Invoke-ReleaseTool $signer @('verify', '--verbose', '--print-certs', $sourceApk)) -join "`n"
 # SDK versions label this as either "Signer #1" or "V2 Signer"
@@ -177,23 +241,28 @@ foreach ($abi in @('armeabi-v7a', 'arm64-v8a', 'x86_64')) {
     if (-not $abiLine.Contains("'$abi'")) { throw "Universal APK is missing $abi" }
 }
 
-$apkName = "dxx-redux-$Version-android-universal.apk"
-$apk = Join-Path $outDir $apkName
-Copy-Item -LiteralPath $sourceApk -Destination $apk -Force
-$hash = (Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash.ToLowerInvariant()
-$checksumPath = Join-Path $outDir 'SHA256SUMS.txt'
-[IO.File]::WriteAllText($checksumPath, "$hash  $apkName`n")
-$metadataPath = Join-Path $outDir 'build-info.json'
-$metadata = [ordered]@{
-    version = $Version; versionCode = $VersionCode; commit = $commit
-    builtAtUtc = $builtAt.ToString('o'); applicationId = 'com.dxxredux.app.github'
-    certificateSha256 = $certificate; apkSha256 = $hash
-    abis = @('armeabi-v7a', 'arm64-v8a', 'x86_64')
-    sourceClean = -not [bool](Get-ReleaseGit @('status', '--porcelain', '--untracked-files=normal'))
-}
-[IO.File]::WriteAllText($metadataPath, ($metadata | ConvertTo-Json) + "`n")
-$notesPath = Join-Path $outDir 'release-notes.md'
-$notes = @"
+if ($UploadOnly) {
+    $hash = (Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($hash -ne $savedMetadata.apkSha256 -or $certificate -ne $savedMetadata.certificateSha256 -or
+        $savedMetadata.applicationId -ne 'com.dxxredux.app.github' -or
+        (Get-Content -LiteralPath $checksumPath -Raw -Encoding UTF8).Trim() -ne "$hash  $apkName") {
+        throw 'Saved APK/hash/signing metadata does not match; rebuild without -UploadOnly'
+    }
+    Write-Host "Verified saved APK for $tag ($VersionCode) from $commit; skipping build"
+} else {
+    Copy-Item -LiteralPath $sourceApk -Destination $apk -Force
+    $hash = (Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash.ToLowerInvariant()
+    [IO.File]::WriteAllText($checksumPath, "$hash  $apkName`n")
+    $metadata = [ordered]@{
+        version = $Version; versionCode = $VersionCode; commit = $commit
+        builtAtUtc = $builtAt.ToString('o'); applicationId = 'com.dxxredux.app.github'
+        certificateSha256 = $certificate; apkSha256 = $hash
+        abis = @('armeabi-v7a', 'arm64-v8a', 'x86_64')
+        sourceClean = -not [bool](Get-ReleaseSourceStatus)
+        sourceVerified = $false
+    }
+    [IO.File]::WriteAllText($metadataPath, ($metadata | ConvertTo-Json) + "`n")
+    $notes = @"
 DXX-Redux $Version for Android (Android 7.0 or newer).
 
 - universal APK: includes ARM32, ARM64 and x86_64
@@ -202,13 +271,16 @@ Source commit: $commit
 Android versionCode: $VersionCode
 Signing certificate SHA-256: $certificate
 "@
-# UTF-8 -NotesFile appends to local generated notes; existing GitHub notes are preserved
-if ($NotesFile) { $notes += "`n`n" + (Get-Content -LiteralPath $NotesFile -Raw -Encoding UTF8) }
-[IO.File]::WriteAllText($notesPath, $notes + "`n")
-Write-Host "Verified APK and release files: $outDir"
-if ($BuildOnly) { return }
-
-Assert-ReleaseSource
+    # UTF-8 -NotesFile appends to local generated notes; existing GitHub notes are preserved
+    if ($NotesFile) { $notes += "`n`n" + (Get-Content -LiteralPath $NotesFile -Raw -Encoding UTF8) }
+    [IO.File]::WriteAllText($notesPath, $notes + "`n")
+    Write-Host "Verified APK and release files: $outDir"
+    # Keep this check: Gradle reads live app files, so source edits could produce a mixed-commit APK
+    if (-not $BuildOnly) { Assert-ReleaseSource }
+    $metadata.sourceVerified = $sourceCleanAtStart -and $metadata.sourceClean -and (Get-ReleaseGit @('rev-parse', 'HEAD')) -eq $commit
+    [IO.File]::WriteAllText($metadataPath, ($metadata | ConvertTo-Json) + "`n")
+    if ($BuildOnly) { return }
+}
 $existingRelease = Get-ExistingRelease
 $ghRepository = "github.com/$Repository"
 $createArgs = @('release', 'create', $tag, $apk, $checksumPath, $metadataPath,
@@ -231,6 +303,6 @@ try {
         }
     }
 } catch {
-    throw "Release tag/upload/publish failed; inspect $tag on GitHub for its commit and missing or incomplete assets. The tag may already have moved. Local assets remain in $outDir; rerun to retry. Existing drafts remain drafts. $_"
+    throw "Release tag/upload/publish failed; inspect $tag on GitHub for its commit and missing or incomplete assets. The tag may already have moved. Local assets remain in $outDir; retry without rebuilding: ./android/release-github.ps1 -Version $Version -Repository $Repository -UploadOnly. Existing drafts remain drafts. $_"
 }
 Invoke-ReleaseTool gh @('release', 'view', $tag, '--repo', $ghRepository, '--json', 'url', '--jq', '.url')
