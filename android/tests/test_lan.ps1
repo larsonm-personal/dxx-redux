@@ -59,6 +59,11 @@
 #   .\test_lan.ps1 -Game d1 -BriefingCase observer_host
 #   .\test_lan.ps1 -Game d1 -BriefingCase rejoin
 #   .\test_lan.ps1 -Game d1 -BriefingCase first_join
+#   .\test_lan.ps1 -Game d2 -BriefingCase first_join -BriefingJoinDelaySeconds 85 -BriefingJoinAction skip
+#   .\test_lan.ps1 -Game d1 -BriefingCase first_join -BriefingJoinAction cancel
+#   .\test_lan.ps1 -Game d2 -BriefingCase first_join -BriefingJoinAction host_loss
+#   .\test_lan.ps1 -Game d1 -JoinTransitionCase transfer
+#   .\test_lan.ps1 -Game d2 -JoinTransitionCase scores
 #   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretDeath -AllowSecretWarps -NoCoopQol
 #   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretDying -AllowSecretWarps -NoCoopQol
 #   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretReactorDeath -AllowSecretWarps -NoCoopQol
@@ -123,6 +128,12 @@ param(
     [switch]$EmptyBriefing,
     [ValidateSet("force", "host_deadline", "overall_deadline", "release_delay", "overlay_touch", "paused_force", "paused_deadline", "paused_overall", "reading", "partial_skip", "missing_movie", "observer_host", "rejoin", "first_join")]
     [string]$BriefingCase = "force",
+    [ValidateSet("escape", "scores", "transfer")]
+    [string]$JoinTransitionCase,
+    [ValidateRange(0, 115)]
+    [int]$BriefingJoinDelaySeconds = 0,
+    [ValidateSet("skip", "cancel", "host_loss")]
+    [string]$BriefingJoinAction,
     [switch]$BriefingRestore,
     [ValidateSet("host", "client")]
     [string]$BriefingFailure,
@@ -256,8 +267,8 @@ if ($BriefingCase -eq "observer_host") {
     if ($InitialLevel -ne 1 -or $MissionFile -or $BriefingRestore) { throw "Observer-host coverage requires a fresh base-mission level 1 briefing" }
     $Briefings = $true
 }
-if ($BriefingCase -in @("rejoin", "first_join")) {
-    if ($InitialLevel -ne 1 -or $MissionFile -or $BriefingRestore) { throw "Briefing rejoin requires a fresh base-mission level 1" }
+if ($BriefingCase -in @("rejoin", "first_join") -or $JoinTransitionCase) {
+    if ($InitialLevel -ne 1 -or $BriefingRestore) { throw "Briefing rejoin requires a fresh base-mission level 1" }
     $Briefings = $true
 }
 if ($SecretRevisit) { $SecretWorld = $true }
@@ -497,7 +508,7 @@ function Get-IntroPdataSequence {
 }
 
 function Start-DeviceGameAutomation {
-    param([string]$Serial, [string]$ScriptName)
+    param([string]$Serial, [string]$ScriptName, [hashtable]$Params = @{})
 
     $scriptPath = Join-Path $REPO_ROOT "android\game_scripts\$ScriptName"
     if (-not (Test-Path $scriptPath)) {
@@ -506,7 +517,7 @@ function Start-DeviceGameAutomation {
     }
 
     # The shared resolver reads optional JSON properties under normal PowerShell semantics
-    $scriptPath = & { Set-StrictMode -Off; Resolve-TestScript -ScriptPath $scriptPath -GameId $Game }
+    $scriptPath = & { Set-StrictMode -Off; Resolve-TestScript -ScriptPath $scriptPath -GameId $Game -Params $Params }
 
     Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
         "push", $scriptPath, "/data/local/tmp/$ScriptName"
@@ -660,21 +671,68 @@ function Invoke-BriefingRejoinScenario {
                     $state.coop_briefing.participants -eq 1 -and $state.coop_briefing.presenting -and $state.time_paused
                 })) { throw 'Host did not remain in its briefing after reader loss' }
     }
-    $before = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('logcat', '-d', '-s', 'DXX-DLOG:D') -Seconds 10
-    $deferredBefore = @($before -split '\r?\n' | Where-Object { $_ -match 'network join deferred for coop transition' }).Count
     if (-not $FirstJoin -and -not (Start-SetupActivity -Serial $EMU2)) { throw 'Could not restart the returning player' }
+    if ($BriefingJoinDelaySeconds) {
+        if (-not (Wait-ForCondition -Description 'Original briefing countdown reaches requested late arrival' -TimeoutSec 125 -PollMs 1000 -Condition {
+                    $state = Get-GameIntrospection -Serial $EMU1
+                    return $state.coop_briefing.seconds_remaining -le 120 - $BriefingJoinDelaySeconds
+                })) { throw 'Host countdown did not reach the late-arrival point' }
+    }
     Send-MpCommand -Serial $EMU2 -Command 'lan_launch' -Extras $joinExtras
-    if (-not (Wait-ForCondition -Description 'Returning player is deferred while the original briefing timer continues' -TimeoutSec 50 -PollMs 1000 -Condition {
+    if (-not (Wait-ForCondition -Description 'Joining player reads the briefing with the original remaining time' -TimeoutSec 50 -PollMs 1000 -Condition {
                 $state = Get-GameIntrospection -Serial $EMU1
                 if (-not $state) { return $false }
                 if ($state.coop_briefing.generation -ne $generation -or $state.coop_briefing.phase -ne 6 -or
                     $state.coop_briefing.participants -ne 1 -or -not $state.time_paused) {
                     throw 'A reconnect changed the active briefing generation, roster or phase'
                 }
-                $output = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('logcat', '-d', '-s', 'DXX-DLOG:D') -Seconds 10
-                $count = @($output -split '\r?\n' | Where-Object { $_ -match 'network join deferred for coop transition' }).Count
-                return $count -gt $deferredBefore -and $state.coop_briefing.seconds_remaining -lt $seconds
-            })) { throw 'The returning player did not reach the briefing join guard' }
+                if ($BriefingJoinDelaySeconds -and $state.coop_briefing.seconds_remaining -gt 120 - $BriefingJoinDelaySeconds) {
+                    throw 'Late arrival restarted or extended the host countdown'
+                }
+                $client = Get-GameIntrospection -Serial $EMU2
+                return $client -and $client.join_wait.active -and $client.join_wait.phase -eq 3 -and
+                $client.join_wait.briefing_generation -eq $generation -and $client.coop_briefing.presenting -and
+                $client.join_wait.presentations_started -eq 1 -and
+                $client.join_wait.remaining_ms -le ($state.coop_briefing.seconds_remaining + 1) * 1000 -and
+                $state.coop_briefing.seconds_remaining -lt $seconds
+            })) { throw 'The joining player did not show the live briefing' }
+    $readerBefore = (Get-GameIntrospection -Serial $EMU2).join_wait.remaining_ms
+    Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'screencap', '-p', '/sdcard/join-briefing.png') -Seconds 10 | Out-Null
+    Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('pull', '/sdcard/join-briefing.png', (Join-Path $REPO_ROOT "temp/join-briefing-$Game.png")) -Seconds 10 | Out-Null
+    if (-not (Wait-ForCondition -Description 'Joining reader countdown decreases without changing host membership' -TimeoutSec 20 -PollMs 1000 -Condition {
+                $client = Get-GameIntrospection -Serial $EMU2
+                $hostState = Get-GameIntrospection -Serial $EMU1
+                if (-not $client -or -not $hostState) { return $false }
+                if ($hostState.coop_briefing.participants -ne 1 -or $hostState.coop_briefing.generation -ne $generation) {
+                    throw 'Joining reader changed the host briefing barrier'
+                }
+                return $client.coop_briefing.presenting -and $client.join_wait.remaining_ms -lt $readerBefore - 2000
+            })) { throw 'Joining reader timer did not advance' }
+    if ($BriefingJoinAction -eq 'cancel') {
+        Start-JoinPhaseAutomation -Serial $EMU2 -Phase 'cancel' | Out-Null
+        if (-not (Wait-ForCondition -Description 'Cancel leaves the join without changing host briefing' -TimeoutSec 15 -PollMs 500 -Condition {
+                    $client = Get-GameIntrospection -Serial $EMU2
+                    return $client -and -not $client.join_wait.active
+                })) { throw 'Cancel did not end the join' }
+        $hostState = Get-GameIntrospection -Serial $EMU1
+        if ($hostState.coop_briefing.generation -ne $generation -or $hostState.coop_briefing.participants -ne 1) { throw 'Cancel changed host membership' }
+        return $true
+    }
+    if ($BriefingJoinAction -eq 'host_loss') {
+        Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+        if (-not (Wait-ForCondition -Description 'Host loss closes the pending briefing and reports failure' -TimeoutSec 45 -PollMs 1000 -Condition {
+                    $client = Get-GameIntrospection -Serial $EMU2
+                    return $client -and -not $client.join_wait.active -and -not $client.coop_briefing.presenting
+                })) { throw 'Lost host left the joining client waiting indefinitely' }
+        return $true
+    }
+    if ($BriefingJoinAction -eq 'skip') {
+        Start-JoinPhaseAutomation -Serial $EMU2 -Phase 'skip' | Out-Null
+        if (-not (Wait-ForCondition -Description 'Skip returns to the status wait without cancelling join' -TimeoutSec 15 -PollMs 500 -Condition {
+                    $client = Get-GameIntrospection -Serial $EMU2
+                    return $client.join_wait.active -and -not $client.coop_briefing.presenting
+                })) { throw 'Skip did not return to pending join' }
+    }
     if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName 'test_coop_briefing_rejoin_client.jsonc') -or
         -not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_briefing_rejoin_host.jsonc')) {
         throw 'Could not arm briefing rejoin verification'
@@ -688,7 +746,7 @@ function Invoke-BriefingRejoinScenario {
                 $result = Get-DeviceAutomationResult -Serial $EMU2
                 if ($result -and $result.result -eq 'FAIL') {
                     Write-DeviceAutomationDiagnostics -Serial $EMU2
-                    throw 'Returning player replayed or stalled in briefings'
+                    throw 'Returning player failed to close its joining briefing and enter the mine'
                 }
                 if ($result -and $result.result -eq 'PASS') { return $true }
                 Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_accept.jsonc' | Out-Null
@@ -699,6 +757,95 @@ function Invoke-BriefingRejoinScenario {
         $hostState.coop_briefing.active -or $hostState.time_paused -or (Get-IntroNumConnected -Intro $hostState) -ne 2) {
         throw 'Rejoin changed the settled host briefing or failed to restore the team'
     }
+    return $true
+}
+
+# All join fixture actions run in the existing session; no app setup/teardown
+function Start-JoinPhaseAutomation {
+    param(
+        [string]$Serial,
+        [ValidateSet('cancel', 'skip', 'transfer_hold', 'escape', 'flyout', 'scores', 'enter_scores', 'next_level', 'launch_next')]
+        [string]$Phase
+    )
+
+    $selection = @{}
+    foreach ($name in @('cancel', 'skip', 'transfer_hold', 'escape', 'flyout', 'scores', 'enter_scores', 'next_level', 'launch_next')) {
+        $selection[$name] = if ($name -eq $Phase) { $Game } else { 'disabled' }
+    }
+    Start-DeviceGameAutomation -Serial $Serial -ScriptName 'test_join_phase.jsonc' -Params $selection
+}
+
+function Invoke-JoinTransitionScenario {
+    if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_briefing_solo_start.jsonc')) { throw 'Could not start solo briefing' }
+    if (-not (Wait-ForCondition -Description 'Solo host reading briefing' -TimeoutSec 60 -PollMs 500 -Condition {
+                $state = Get-GameIntrospection -Serial $EMU1
+                return $state -and $state.coop_briefing.presenting
+            })) { throw 'Solo briefing did not start' }
+    Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_briefing_rejoin_host.jsonc' | Out-Null
+    if (-not (Wait-ForCondition -Description 'Solo host playing before transition' -TimeoutSec 20 -PollMs 500 -Condition {
+                $state = Get-GameIntrospection -Serial $EMU1
+                return $state -and $state.in_game -and -not $state.coop_briefing.active
+            })) { throw 'Host did not begin play' }
+    if ($JoinTransitionCase -eq 'transfer') {
+        Start-JoinPhaseAutomation -Serial $EMU1 -Phase 'transfer_hold' | Out-Null
+    } else {
+        Start-JoinPhaseAutomation -Serial $EMU1 -Phase 'escape' | Out-Null
+        if ($JoinTransitionCase -eq 'scores') {
+            Start-JoinPhaseAutomation -Serial $EMU1 -Phase 'enter_scores' | Out-Null
+        }
+    }
+    Send-MpCommand -Serial $EMU2 -Command 'lan_launch' -Extras $joinExtras
+    if ($JoinTransitionCase -eq 'transfer') {
+        if (-not (Wait-ForCondition -Description 'Client receives a partial old-level transfer' -TimeoutSec 60 -PollMs 1000 -Condition {
+                    $state = Get-GameIntrospection -Serial $EMU2
+                    if ($state -and $state.join_wait.active -and $state.join_wait.object_packets -gt 0) { return $true }
+                    Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_accept.jsonc' | Out-Null
+                    return $false
+                })) { throw 'Transfer interruption fixture did not receive objects' }
+        Start-JoinPhaseAutomation -Serial $EMU1 -Phase 'escape' | Out-Null
+    }
+    $expectedPhase = if ($JoinTransitionCase -eq 'scores') { 6 } else { 4 }
+    if (-not (Wait-ForCondition -Description 'Pending client displays the authoritative transition phase' -TimeoutSec 40 -PollMs 1000 -Condition {
+                $state = Get-GameIntrospection -Serial $EMU2
+                $hostState = Get-GameIntrospection -Serial $EMU1
+                if (-not $hostState) { return $false }
+                $result = Get-DeviceAutomationResult -Serial $EMU1
+                if ($result -and $result.result -eq 'FAIL') { throw 'Host transition fixture failed' }
+                if ((Get-IntroNumConnected -Intro $hostState) -ne 1) { throw 'Pending join entered the completed-level roster' }
+                return $state -and $state.join_wait.active -and $state.join_wait.phase -eq $expectedPhase -and
+                ($JoinTransitionCase -ne 'transfer' -or $state.join_wait.retries -gt 0)
+            })) { throw 'Join did not follow the host transition' }
+    if ($JoinTransitionCase -ne 'scores') {
+        Start-JoinPhaseAutomation -Serial $EMU1 -Phase 'flyout' | Out-Null
+        if (-not (Wait-ForCondition -Description 'Client follows the mine flyout' -TimeoutSec 20 -PollMs 500 -Condition {
+                    $state = Get-GameIntrospection -Serial $EMU2
+                    return $state -and $state.join_wait.phase -eq 5
+                })) { throw 'Flyout phase was not shown' }
+        Start-JoinPhaseAutomation -Serial $EMU1 -Phase 'scores' | Out-Null
+        if (-not (Wait-ForCondition -Description 'Client follows score review' -TimeoutSec 30 -PollMs 500 -Condition {
+                    $state = Get-GameIntrospection -Serial $EMU2
+                    return $state -and $state.join_wait.phase -eq 6
+                })) { throw 'Score phase was not shown' }
+    }
+    Start-JoinPhaseAutomation -Serial $EMU1 -Phase 'next_level' | Out-Null
+    if (-not (Wait-ForCondition -Description 'Client follows the next briefing or its already completed deadline' -TimeoutSec 60 -PollMs 500 -Condition {
+                $state = Get-GameIntrospection -Serial $EMU2
+                $hostState = Get-GameIntrospection -Serial $EMU1
+                if (-not $state -or -not $hostState -or $state.join_wait.level -ne 2) { return $false }
+                return ($state.join_wait.phase -eq 3 -and $state.coop_briefing.presenting) -or
+                ($state.join_wait.phase -eq 1 -and $hostState.current_level_num -eq 2 -and -not $hostState.coop_briefing.active)
+            })) { throw 'Client did not follow the destination briefing phase' }
+    $hostState = Get-GameIntrospection -Serial $EMU1
+    if ($hostState -and $hostState.coop_briefing.presenting) {
+        Start-JoinPhaseAutomation -Serial $EMU1 -Phase 'launch_next' | Out-Null
+    }
+    if (-not (Wait-ForCondition -Description 'Same join attempt reaches fresh destination gameplay' -TimeoutSec 80 -PollMs 1000 -Condition {
+                $state = Get-GameIntrospection -Serial $EMU2
+                if ($state -and $state.in_game -and $state.current_level_num -eq 2 -and -not $state.join_wait.active -and
+                    (Get-IntroNumConnected -Intro $state) -eq 2) { return $true }
+                Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_accept.jsonc' | Out-Null
+                return $false
+            })) { throw 'Client did not complete destination synchronization' }
     return $true
 }
 
@@ -2448,6 +2595,11 @@ try {
         # Direct LAN: use host's wlan0 IP on the engine port
         $joinExtras += @("--es", "host_addr", $script:DirectHostIp, "--ei", "host_port", "42424")
         Write-Status "  Joiner target: $($script:DirectHostIp):42424 (direct LAN)"
+    }
+    if ($JoinTransitionCase) {
+        $testPassed = Invoke-JoinTransitionScenario
+        Write-Status '=== JOIN TRANSITION TEST PASSED ===' 'Green'
+        exit 0
     }
     if ($BriefingCase -eq 'first_join') {
         $testPassed = Invoke-BriefingRejoinScenario -FirstJoin

@@ -85,7 +85,7 @@ static size_t android_net_udp_auth_build_request_message(
     const UDP_sequence_packet *request, unsigned int game_token,
     ubyte *message, size_t message_size)
 {
-	ubyte payload[CALLSIGN_LEN + 1 + 5];
+	ubyte payload[CALLSIGN_LEN + 1 + 5 + 12];
 	size_t offset = 0;
 
 	if (!request)
@@ -97,6 +97,9 @@ static size_t android_net_udp_auth_build_request_message(
 	payload[offset++] = request->player.color;
 	payload[offset++] = request->player.missilecolor;
 	payload[offset++] = request->player.observer;
+	PUT_INTEL_INT(payload + offset, request->join_attempt);
+	offset += 4;
+	for (unsigned i = 0; i < 8; ++i) payload[offset++] = (ubyte) (request->join_visit >> (8 * i));
 	return android_net_udp_reconnect_build_request_message(
 	    game_token, &request->reconnect_identity, payload, offset,
 	    message, message_size);
@@ -791,7 +794,8 @@ void android_net_udp_begin_welcome_sync(UDP_sequence_packet *sync_player,
 	if (sync_player)
 		sync_player->player.connected = player_num;
 #ifdef __ANDROID__
-	if (sync_player)
+	/* Pending transfers publish their identity with the successful SYNC */
+	if (sync_player && !sync_player->join_attempt)
 		android_net_udp_auth_store_player(player_num, sync_player);
 #endif
 	if (player_tokens)

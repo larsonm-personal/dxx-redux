@@ -112,6 +112,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "coop/coop_level_restart.h"
 #include "coop/coop_briefing.h"
+#include "net/net_udp_join_wait.h"
 #include "coop/coop_endgame.h"
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_recovery.h"
@@ -2339,6 +2340,7 @@ void StartNewLevel(int level_num)
 	#endif
 	StartNewLevelSub(level_num, 1, 0 );
 #ifdef __ANDROID__
+	if (net_join_wait_restart()) return;
 	coop_briefing_run(ShowLevelIntro, level_num);
 	coop_level_restart_note_natural_level(level_num);
 #endif

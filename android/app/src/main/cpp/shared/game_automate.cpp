@@ -95,6 +95,7 @@ void net_udp_show_game_rules(netgame_info *netgame);
 #include "coop/coop_level_restart.h"
 #include "coop/coop_world_visit.h"
 #include "coop/coop_briefing.h"
+#include "net/net_udp_join_wait.h"
 #include "coop/coop_travel.h"
 #include "coop_start_positions.h"
 #include "coop/coop_recovery.h"
@@ -5625,6 +5626,15 @@ extern "C" void game_automate_tick(void)
 					coop_restore_status_failed();
 					stop_script_fail("coop_retained_restore: retained checkpoint unavailable");
 				}
+			} else if (s.field == "join_wait_test") {
+				if (s.value == "hold_transfer") {
+					if (!net_udp_join_wait_test_hold()) stop_script_fail("Join hold requires a cooperative host");
+				} else if (s.value == "cancel") {
+					net_join_status status;
+					unsigned started;
+					net_join_wait_get_state(&status, &started);
+					if (!net_join_wait_cancel(status.briefing ? status.briefing : 1)) stop_script_fail("No join to cancel");
+				} else stop_script_fail("Unknown join wait test action");
 			} else if (s.field == "coop_briefing_action") {
 				coop_transition_policy state;
 				coop_presentation_progress local;

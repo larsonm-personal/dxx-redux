@@ -49,6 +49,16 @@ internal class LanQrChecks(private val instrumentation: Instrumentation) {
             check(square.revealState.revealed)
             check(decode(render()) == "descent://192.168.1.42") { "Revealed square cannot be decoded" }
             check(square.width == 264 && square.height == 264)
+            square.performClick()
+            check(decode(render()) == null) { "Second tap did not hide QR" }
+            square.performClick()
+            check(decode(render()) == "descent://192.168.1.42")
+            check(square.performLongClick())
+            val expanded = LanJoinQrView::class.java.getDeclaredField("expanded").apply { isAccessible = true }
+                .get(square) as android.app.AlertDialog
+            check(expanded.isShowing) { "Long press did not enlarge QR" }
+            expanded.dismiss()
+            check(decode(render()) == "descent://192.168.1.42") { "Long press hid the inline QR" }
             square.setAddress("192.168.1.43")
             check(decode(render()) == null) { "Address change exposed QR" }
             square.performClick()

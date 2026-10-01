@@ -31,20 +31,23 @@
 
 # LAN play quality-of-life
 
+- launcher lobby: games can be set up and joined before the game engine starts. UDP broadcast/mdns helps find games. QR codes to share LAN IPs quickly. the launcher's coordination layer keeps running in the background to facilitate late joins
+- The game tries to automatically save cooperative game progress and show available saves to resume from the launcher. Resuming directly from the launcher (starting a game with a save game selected) is possible, it starts the level then loads the save when all players have joined
+- Allow more coop starts than maps have configured by generating offsets for existing start points
+- While in lobby, check mission zip size and hash vs. host (a warning only, it doesn’t prevent playing, but the intent is to flag incompatible versions)
+- Allow downloading missions from the host if the client needs them to play (excluding licensed base game data)
 - Optional guidebot for coop games. The player to release the guidebot becomes the owner. If they leave the game the guidebot attaches to another player. Ownership can be abdicated, giving the guidebot to another random player
 - Coop: allow briefings (optional setting. Base game behavior is to omit them). The host can force a mine start instead of waiting for players to finish watching them
 - Coop: allow mine exit sequences. in d1's in-engine exits, show other players exiting (as they exit)
+- Coop: allow joining an in-progress server during more phases (in briefings, flyouts, score review) with feedback about what's happening
 - Coop: allow traveling to secret areas (optional setting. The base game behavior is to disable them). If a player enters a secret warp door, the remaining players are brought to the secret area after a short countdown. Secret doors are blocked if a normal exit door is used by another player (all players then remain in the “beat the reactor countdown to the exit” race). Secret doors taken during reactor countdown work normally: they bring the whole party to the secret area, then to the next level after the secret area is completed
 - Coop: track a player’s loot so if they leave and rejoin they get it back (they still generate spew on exit, and any uncollected spew is given to them on return)
+- Coop: allow duplicate pickups of shields+energy (optional). allow picking up weapons-as-energy if all players have that weapon
 - Coop: remove absorption time from player spew (optional)
 - if the host leaves, a client can take over as host (allowing the host to rejoin what is now the server)
 - Warp to other player button is shown when a player is some distance away (optional). Helps prevent softlocks and makes the game more cooperative
 - breadcrumb-like path to nearest other player, and to guidebot (optional)
 - QoL changes can be enabled/disabled when launching a game
-- The game tries to automatically save cooperative game progress and show available saves to resume from the launcher. Resuming from the launcher (starting a game with a save game selected) is possible, it starts the level then loads the save when all players have joined
-- Allow more coop starts than maps have configured by generating offsets for existing start points
-- While in lobby, check mission zip size and hash vs. host (a warning only, it doesn’t prevent playing, but the intent is to flag incompatible versions)
-- Allow downloading missions from the host if the client needs them to play (excluding licensed base game data)
 
 # Mod/level management
 

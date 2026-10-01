@@ -47,10 +47,14 @@ internal class LanJoinQrView(
         isFocusable = true
         setOnClickListener {
             if (revealState.revealed) {
-                enlarge()
+                conceal()
             } else if (revealState.reveal()) {
                 render()
             }
+        }
+        setOnLongClickListener {
+            if (revealState.revealed) enlarge()
+            true
         }
         render()
     }
@@ -77,7 +81,7 @@ internal class LanJoinQrView(
             val code = bitmap ?: lanQrBitmap(address, width).also { bitmap = it }
             background = BitmapDrawable(resources, code).apply { isFilterBitmap = false }
             text = ""
-            contentDescription = "Scan to join $address. Activate to enlarge QR code"
+            contentDescription = "Scan to join $address. Activate to hide QR code"
         } else {
             setBackgroundColor(0xFF30343A.toInt())
             text = if (address == null) "QR unavailable\nNo LAN address" else "Tap to show\nQR code"

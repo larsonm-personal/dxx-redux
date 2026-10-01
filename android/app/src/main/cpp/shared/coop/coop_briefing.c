@@ -54,6 +54,9 @@ static int destination, host, have_state, presentation_closed, pumping;
 static int suppress_for_restore;
 static const char *failure_reason;
 static unsigned presentations_started;
+static void (*level_present)(int);
+static void (*join_pump)(void);
+static int (*join_cancelled)(void);
 static uint32_t gameplay_palette_hash;
 static int palette_changed, palette_restored;
 static unsigned release_acknowledged;
@@ -411,6 +414,7 @@ int coop_briefing_planning(void)
 }
 int coop_briefing_cancelled(void)
 {
+	if (join_cancelled) return skipped || multi_quit_game || join_cancelled();
 	return running && (skipped || multi_quit_game ||
 	                   (have_state && policy.phase != COOP_PHASE_BRIEFING &&
 	                    !(flyout && policy.phase == COOP_PHASE_BRIEFING_PREPARE)));
@@ -500,6 +504,7 @@ void coop_briefing_apply_sync_flags(unsigned flags, int level)
 
 void coop_briefing_arm(void (*present)(int), int level)
 {
+	level_present = present;
 	failure_reason = NULL;
 	flyout = 0;
 	flyout_finished_level = 0;
@@ -537,6 +542,27 @@ void coop_briefing_disarm_for_rejoin(void)
 	/* The host admitted this player to an existing mine after its presentation
 	 * barrier settled; it will not send a new briefing PREPARE */
 	armed = 0;
+}
+
+void coop_briefing_join_run(void (*pump)(void), int (*cancelled)(void))
+{
+	if (!level_present || !plan_ready || !local_progress.total || running || cancelled()) return;
+	join_pump = pump;
+	join_cancelled = cancelled;
+	running = presenting = 1;
+	skipped = unavailable = 0;
+	++presentations_started;
+	gameplay_palette_hash = palette_hash();
+	stop_time();
+	set_screen_mode(SCREEN_MENU);
+	level_present(destination);
+	presenting = running = 0;
+	join_pump = NULL;
+	join_cancelled = NULL;
+	skipped = 0;
+	restore_game_palette();
+	game_flush_inputs();
+	start_time();
 }
 
 static void acknowledge_local(void)
@@ -597,6 +623,10 @@ int coop_briefing_host_disconnected(int player)
 void coop_briefing_pump(void)
 {
 	uint64_t now, requested;
+	if (join_pump) {
+		join_pump();
+		return;
+	}
 	if (!running || pumping) return;
 	pumping = 1;
 	multi_do_protocol_frame(0, 1);

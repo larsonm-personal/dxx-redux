@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
+import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
 import kotlin.math.min
@@ -17,6 +18,8 @@ class CoopBriefingOverlayView(
     private var canLaunch = false
     private var launchLabel = "Launch now"
     private var status = ""
+    private var remainingMs = -1
+    private var durationMs = 0
     private var pressedGeneration = 0L
     private var pointerId = -1
     private val launchBounds = RectF()
@@ -25,14 +28,21 @@ class CoopBriefingOverlayView(
 
     fun update(nativeState: String) {
         // Mirrored by nativeGetCoopBriefingState in android_input.c
-        val fields = nativeState.split('\n', limit = 3)
+        val fields = nativeState.split('\n', limit = 5)
         val nextGeneration = fields.getOrNull(0)?.toLongOrNull() ?: 0L
-        val nextLaunch = fields.getOrNull(1) in listOf("1", "2")
-        launchLabel = if (fields.getOrNull(1) == "2") "Continue now" else "Launch now"
+        val nextLaunch = fields.getOrNull(1) in listOf("-1", "1", "2")
+        launchLabel =
+            when (fields.getOrNull(1)) {
+                "-1" -> "Cancel join"
+                "2" -> "Continue now"
+                else -> "Launch now"
+            }
         if (nextGeneration != generation || !nextLaunch) cancelPress()
         generation = nextGeneration
         canLaunch = nextLaunch
-        status = fields.getOrNull(2).orEmpty()
+        remainingMs = fields.getOrNull(2)?.toIntOrNull() ?: -1
+        durationMs = fields.getOrNull(3)?.toIntOrNull() ?: 0
+        status = fields.getOrNull(4).orEmpty()
         visibility = if (status.isEmpty()) GONE else VISIBLE
         contentDescription = if (canLaunch) "$status. $launchLabel" else status
         invalidate()
@@ -57,17 +67,43 @@ class CoopBriefingOverlayView(
         val lineHeight = text.textSize * 1.35f
         val maxWidth = lines.maxOfOrNull { text.measureText(it) } ?: 0f
         val left = (width - maxWidth) / 2f - padding
+        val barHeight = if (durationMs != 0) padding else 0f
+        val panelBottom = padding * 2 + lines.size * lineHeight
         canvas.drawRoundRect(
             left,
             padding,
             left + maxWidth + 2 * padding,
-            padding * 2 + lines.size * lineHeight,
+            panelBottom + barHeight * 2,
             padding,
             padding,
             background,
         )
         lines.forEachIndexed { index, line ->
             canvas.drawText(line, left + padding, padding * 2 + (index + 0.8f) * lineHeight, text)
+        }
+        if (durationMs != 0) {
+            val fraction =
+                if (remainingMs >= 0 && durationMs > 0) {
+                    (remainingMs.toFloat() / durationMs).coerceIn(0f, 1f)
+                } else {
+                    0.2f
+                }
+            val offset =
+                if (remainingMs >= 0 && durationMs > 0) {
+                    0f
+                } else {
+                    (SystemClock.uptimeMillis() % 1600L) / 1600f * (1f - fraction)
+                }
+            canvas.drawRoundRect(
+                left + padding + maxWidth * offset,
+                panelBottom,
+                left + padding + maxWidth * (offset + fraction),
+                panelBottom + barHeight,
+                barHeight / 2,
+                barHeight / 2,
+                text,
+            )
+            if (remainingMs < 0) postInvalidateOnAnimation()
         }
         if (canLaunch) {
             canvas.drawRoundRect(launchBounds, padding, padding, background)

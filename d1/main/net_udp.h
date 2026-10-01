@@ -10,6 +10,7 @@
 #include "multi.h"
 #ifdef __ANDROID__
 #include "net/net_udp_reconnect_auth.h"
+#include "net/net_udp_join_wait.h"
 #include "coop/coop_gameplay_fence.h"
 #endif
 
@@ -90,7 +91,7 @@ void net_udp_request_resync_from_host(const char *reason);
 #define UPID_REQUEST				  8 // New player says: "I want to be inside of you!" (haha, sorry I could not resist) / Packet containing request to join the game actually.
 #define UPID_QUIT_JOINING			  9 // Packet from a player who suddenly quits joining.
 #ifdef __ANDROID__
-#define UPID_SEQUENCE_SIZE			 (3 + 4 + (CALLSIGN_LEN+1) + sizeof(struct _sockaddr) + 2 + 1 + ANDROID_NET_UDP_RECONNECT_SEQUENCE_AUTH_SIZE)
+#define UPID_SEQUENCE_SIZE			 (3 + 4 + (CALLSIGN_LEN+1) + sizeof(struct _sockaddr) + 2 + 1 + ANDROID_NET_UDP_RECONNECT_SEQUENCE_AUTH_SIZE + 12)
 #else
 #define UPID_SEQUENCE_SIZE			 (3 + 4 + (CALLSIGN_LEN+1) + sizeof(struct _sockaddr) + 2 + 1)
 #endif
@@ -183,6 +184,8 @@ typedef struct UDP_sequence_packet
 	netplayer_info  		player;
 #ifdef __ANDROID__
 	android_net_udp_reconnect_identity reconnect_identity;
+	uint32_t join_attempt;
+	uint64_t join_visit;
 #endif
 } __pack__ UDP_sequence_packet;
 

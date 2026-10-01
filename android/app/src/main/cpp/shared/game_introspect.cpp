@@ -54,6 +54,7 @@ extern "C" {
 #endif
 #include "coop/coop_level_restart.h"
 #include "coop/coop_briefing.h"
+#include "net/net_udp_join_wait.h"
 #include "coop/coop_endgame.h"
 #include "coop/coop_travel.h"
 #include "coop/coop_world_visit.h"
@@ -1735,6 +1736,12 @@ extern "C" char *game_introspect_get_state(void)
 		j["rewind_history"] = { { "count", count }, { "level", level }, { "campaign_generation", generation } };
 	}
 	{
+		net_join_status join;
+		unsigned join_presentations;
+		net_join_wait_get_state(&join, &join_presentations);
+		j["join_wait"] = {
+			{ "active", (bool) net_join_wait_active() }, { "phase", join.phase }, { "object_packets", net_join_wait_object_packets() }, { "retries", net_join_wait_retries() }, { "level", join.level }, { "visit", join.visit }, { "briefing_generation", join.briefing }, { "remaining_ms", join.remaining_ms }, { "duration_ms", join.duration_ms }, { "presentations_started", join_presentations }
+		};
 		coop_transition_policy state;
 		coop_presentation_progress local;
 		char status[1024];

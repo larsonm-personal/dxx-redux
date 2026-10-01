@@ -60,7 +60,8 @@ extern "C" JNIEXPORT jstring JNICALL QUERY_JNI(decode)(JNIEnv *env, jobject, jby
 	const int maximum = data[level + 9];
 	if (mode > NETGAME_BOUNTY || difficulty > 4 || maximum < 1 || maximum > MAX_PLAYERS ||
 	    data[level + 8] > MAX_PLAYERS || data[level + 10] > MAX_PLAYERS) return nullptr;
-	if (status != NETSTAT_STARTING && status != NETSTAT_PLAYING)
+	if (status != NETSTAT_STARTING && status != NETSTAT_PLAYING &&
+	    !(mode == NETGAME_COOPERATIVE && (status == NETSTAT_ENDLEVEL || status == NETSTAT_WAITING)))
 		return env->NewStringUTF("{\"error\":\"unavailable\"}");
 	const char *modes[] = { "anarchy", "team_anarchy", "robot_anarchy", "coop", "ctf", "hoard", "team_hoard", "bounty" };
 	const auto result = nlohmann::json{

@@ -1395,17 +1395,19 @@ Java_com_dxxredux_app_MainActivity_nativeRequestScreenAdvance(JNIEnv *env, jobje
 }
 
 #include "coop/coop_briefing.h"
+#include "net/net_udp_join_wait.h"
 
 JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetCoopBriefingState(JNIEnv *env, jobject thiz)
 {
 	char text[1024], result[1088];
 	uint64_t generation;
-	int launch;
+	int launch, remaining = -1, duration = 0;
 	(void) thiz;
 	coop_briefing_ui(text, sizeof(text), &generation, &launch);
-	/* Three fields shared with CoopBriefingOverlayView: generation, button, text */
-	snprintf(result, sizeof(result), "%llu\n%d\n%s", (unsigned long long) generation, launch, text);
+	if (net_join_wait_ui(text, sizeof(text), &generation, &remaining, &duration)) launch = -1;
+	/* Five fields shared with CoopBriefingOverlayView: generation, button, remaining, duration, text */
+	snprintf(result, sizeof(result), "%llu\n%d\n%d\n%d\n%s", (unsigned long long) generation, launch, remaining, duration, text);
 	return (*env)->NewStringUTF(env, result);
 }
 
@@ -1414,6 +1416,7 @@ Java_com_dxxredux_app_MainActivity_nativeLaunchCoopBriefing(JNIEnv *env, jobject
 {
 	(void) env;
 	(void) thiz;
+	if (net_join_wait_cancel((uint64_t) generation)) return JNI_TRUE;
 	return coop_briefing_request_launch((uint64_t) generation) ? JNI_TRUE : JNI_FALSE;
 }
 

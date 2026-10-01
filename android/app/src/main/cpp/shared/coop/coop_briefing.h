@@ -23,6 +23,8 @@ unsigned coop_briefing_count_intro(void (*present)(int), int level);
 unsigned coop_briefing_sync_flags(int level);
 void coop_briefing_apply_sync_flags(unsigned flags, int level);
 void coop_briefing_disarm_for_rejoin(void);
+/* Local joining reader: no participant slot or readiness messages */
+void coop_briefing_join_run(void (*pump)(void), int (*cancelled)(void));
 void coop_briefing_run(void (*present)(int), int level);
 int coop_briefing_active(void);
 int coop_briefing_suppressed_for_restore(void);
