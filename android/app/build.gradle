@@ -340,6 +340,7 @@ android {
     defaultConfig {
         testInstrumentationRunner "com.dxxredux.app.RecoveryInstrumentation"
         applicationId "com.dxxredux.app"
+        manifestPlaceholders = [launcherLabel: 'DXX-Redux']
         minSdk toolVersions['MIN_SDK'].toInteger()
         targetSdk toolVersions['TARGET_SDK'].toInteger()
         versionCode gitVersionCode
@@ -372,6 +373,11 @@ android {
     buildTypes {
         debug {
             buildConfigField "boolean", "NATIVE_DEBUG_BUILD", "true"
+            // Keep the Play-signed installation and its saves intact during device experiments
+            if ((project.findProperty('nsdDiagnosticApp') ?: 'false').toBoolean()) {
+                applicationIdSuffix '.nsdtest'
+                manifestPlaceholders = [launcherLabel: 'DXX-Redux NSD Test']
+            }
         }
         release {
             minifyEnabled false

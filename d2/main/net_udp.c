@@ -1428,6 +1428,10 @@ int valid_token(ubyte *data, int data_len, struct _sockaddr sender_addr) {
 	return 1;
 }
 
+#ifdef __ANDROID__
+#include "net_udp_score_catchup.h"
+#endif
+
 int valid_netgame_status(ubyte *data, int data_len, struct _sockaddr sender_addr) {
 	ubyte pid = data[0];
 
@@ -1451,7 +1455,11 @@ int valid_netgame_status(ubyte *data, int data_len, struct _sockaddr sender_addr
 
 		case UPID_ENDLEVEL_H:
 		case UPID_ENDLEVEL_C: 
-			if((Network_status == NETSTAT_ENDLEVEL) || (Network_status == NETSTAT_PLAYING)) {
+			if((Network_status == NETSTAT_ENDLEVEL) || (Network_status == NETSTAT_PLAYING)
+#ifdef __ANDROID__
+			   || ((Game_mode & GM_MULTI_COOP) && Network_status == NETSTAT_WAITING)
+#endif
+			   ) {
 				rv = 1;
 			} else {
 				rv = 0; 
@@ -2154,6 +2162,7 @@ void net_udp_init()
 	android_net_udp_auth_reset(
 	    Player_num, ANDROID_NET_UDP_RECONNECT_GAME_D2);
 	android_net_udp_initial_sync_retry_reset(&android_initial_sync_retry);
+	net_udp_score_catchup_reset();
 #endif
 	net_udp_flush();
 	
@@ -3521,6 +3530,7 @@ void net_udp_send_endlevel_packet(void)
 		}
 		if (!coop_gameplay_stamp_write(buf + len, sizeof(buf) - len, &stamp)) return;
 		len += COOP_GAMEPLAY_STAMP_BYTES;
+		if (net_udp_score_catchup_remember(buf, len)) return;
 #ifdef INTROSPECT_ON
 		net_udp_test_send_endlevel_probes(buf, len);
 #endif
@@ -3556,6 +3566,7 @@ void net_udp_send_endlevel_packet(void)
 		len += 4;
 		if (!coop_gameplay_stamp_write(buf + len, sizeof(buf) - len, &stamp)) return;
 		len += COOP_GAMEPLAY_STAMP_BYTES;
+		if (net_udp_score_catchup_remember(buf, len)) return;
 #ifdef INTROSPECT_ON
 		net_udp_test_send_endlevel_probes(buf, len);
 #endif
@@ -4757,6 +4768,10 @@ void net_udp_read_endlevel_packet( ubyte *data, int data_len, struct _sockaddr s
 	if (host) {
 		if (data[5] >= MAX_PLAYERS || data[5] == Player_num || !is_player_ip(sender_addr, data[5])) return;
 	} else if (!is_master_ip(sender_addr)) return;
+	if (Network_status == NETSTAT_WAITING) {
+		net_udp_score_catchup_reply(data, data_len, host ? data[5] : multi_who_is_master());
+		return;
+	}
 	int allowed = coop_gameplay_endlevel_packet_allowed(data, data_len, expected);
 #ifdef INTROSPECT_ON
 	net_udp_endlevel_probe_receive(&android_endlevel_probe, data, data_len, allowed);

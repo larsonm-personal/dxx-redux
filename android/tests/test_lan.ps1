@@ -22,6 +22,8 @@
 #   .\test_lan.ps1 -Game d2 -D1FlyoutPlayers -D1FlyoutCase near
 #   .\test_lan.ps1 -Game d2 -D1LevelTransition  # First Strike in the D2 engine
 #   .\test_lan.ps1 -Game d1 -D1LevelTransition  # Native control
+#   .\test_lan.ps1 -Game d2 -ScoreCatchup host  # Lost completion updates, host advances first
+#   .\test_lan.ps1 -Game d1 -ScoreCatchup client  # Client advances first
 #   .\test_lan.ps1 -Game d2 -EndgameBoss
 #   .\test_lan.ps1 -Game d1 -Endgame -EndgameClientFirst
 #   .\test_lan.ps1 -Game d2 -EndgameObserverHost
@@ -108,6 +110,8 @@ param(
     [switch]$Briefings,
     [switch]$BriefingAspect,
     [switch]$D1LevelTransition,
+    [ValidateSet("host", "client")]
+    [string]$ScoreCatchup,
     [switch]$D1FlyoutPlayers,
     [ValidateSet("late", "near")]
     [string]$D1FlyoutCase = "late",
@@ -185,7 +189,7 @@ if ($GuidebotTravel) {
     }
     $SecretWorld = $SecretRevisit = $true
 }
-if ($D1FlyoutPlayers) { $D1LevelTransition = $true }
+if ($D1FlyoutPlayers -or $ScoreCatchup) { $D1LevelTransition = $true }
 if ($D1LevelTransition) {
     if ($Game -notin @('d1', 'd2') -or $InitialLevel -ne 1 -or $RestoreSavePath -or
         ($MissionFile -and $MissionFile -ne 'descent')) {
@@ -3471,6 +3475,12 @@ try {
         $flyoutPrefix = if ($D1FlyoutCase -eq 'near') { 'test_coop_d1_flyout_near' } else { 'test_coop_d1_flyout_players' }
         $hostScript = if ($D1FlyoutPlayers) { "${flyoutPrefix}_host.jsonc" } else { 'test_coop_d1_transition_host.jsonc' }
         $clientScript = if ($D1FlyoutPlayers) { "${flyoutPrefix}_client.jsonc" } else { 'test_coop_d1_transition_client.jsonc' }
+        if ($ScoreCatchup) {
+            $hostPace = if ($ScoreCatchup -eq 'host') { 'fast' } else { 'slow' }
+            $clientPace = if ($ScoreCatchup -eq 'client') { 'fast' } else { 'slow' }
+            $hostScript = "test_coop_score_catchup_${hostPace}_host.jsonc"
+            $clientScript = "test_coop_score_catchup_${clientPace}_client.jsonc"
+        }
         $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
             -SecondarySerial $EMU2 -SecondaryScript $clientScript `
             -Description 'First Strike flyout, score, briefing and playable level 2' -TimeoutSec 180

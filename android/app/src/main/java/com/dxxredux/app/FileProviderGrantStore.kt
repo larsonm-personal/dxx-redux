@@ -9,7 +9,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 
 internal object FileProviderGrantStore {
-    const val AUTHORITY = "com.dxxredux.app.fileprovider"
+    const val AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider"
 
     // Keep these roots in sync with res/xml/file_paths.xml
     const val CONFIG_EXPORTS = "config_exports"

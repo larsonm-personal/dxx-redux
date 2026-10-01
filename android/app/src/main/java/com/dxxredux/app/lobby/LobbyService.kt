@@ -66,12 +66,80 @@ object LobbyService {
 
     @Volatile private var failNextSocketOpenForTest = false
     private const val DISCOVERY_QUERY_INTERVAL_MS = 6000L
-    private var lastDiscoveryQueryMs = 0L
+    private const val DISCOVERY_FAST_QUERY_INTERVAL_MS = 500L
+    private const val DISCOVERY_FAST_WINDOW_MS = 5000L
+    private const val DISCOVERY_SEARCH_QUERY_INTERVAL_MS = 2000L
+
+    @Volatile private var lastDiscoveryQueryMs = 0L
+
+    @Volatile private var discoveryFastUntilMs = 0L
     private var loggedDiscoveryTargets: List<String>? = null
     private val socketGeneration = AtomicLong(0)
     private const val DISCOVERY_PEER_EXPIRY_MS = 30_000L
     private const val MAX_DISCOVERY_PEERS = 64
     private val discoveryPeers = ConcurrentHashMap<String, Long>()
+
+    private data class NsdCandidate(
+        val lobbyId: String,
+        val addresses: List<String>,
+    )
+
+    private val nsdCandidates = ConcurrentHashMap<String, NsdCandidate>()
+    private val nsdConfirmed = ConcurrentHashMap.newKeySet<String>()
+
+    @Volatile private var nsdOnlyForTest = false
+
+    @Volatile private var nsdLegacyForTest = false
+
+    @Volatile private var nsdSuspendedForTest = false
+    private val nsdDiscovery by lazy {
+        LanNsdDiscovery(
+            endpointsChanged = { key, lobbyId, addresses ->
+                if (addresses.isEmpty()) {
+                    nsdCandidates.remove(key)
+                } else {
+                    val candidate = NsdCandidate(lobbyId, addresses.sorted())
+                    if (nsdCandidates.put(key, candidate) != candidate) {
+                        // Probe new endpoints promptly without retriggering on identical updates
+                        lastDiscoveryQueryMs = 0L
+                    }
+                }
+            },
+            endpointsCleared = {
+                nsdCandidates.clear()
+                nsdConfirmed.clear()
+            },
+            legacyResolution = { nsdLegacyForTest },
+        )
+    }
+
+    internal fun setNsdOnlyForTest(
+        enabled: Boolean,
+        legacyResolution: Boolean = false,
+    ) {
+        check(com.dxxredux.app.BuildConfig.DEBUG)
+        check(!_isDiscovering.value) { "Stop discovery before changing the test mode" }
+        nsdOnlyForTest = enabled
+        nsdLegacyForTest = legacyResolution
+        Log.i(TAG, "NSD-only test mode=$enabled legacy=$legacyResolution")
+    }
+
+    internal fun suspendNsdForTest(suspended: Boolean) {
+        check(com.dxxredux.app.BuildConfig.DEBUG)
+        nsdSuspendedForTest = suspended
+        updateNsdDiscovery()
+        Log.i(TAG, "NSD suspended for test=$suspended")
+    }
+
+    private fun updateNsdDiscovery() {
+        val context = appContext ?: return
+        if (_isDiscovering.value && !nsdSuspendedForTest && (!appBackgrounded || _isHosting.value)) {
+            nsdDiscovery.start(context, hostedLobbyId.takeIf { _isHosting.value }, hostCallsign)
+        } else {
+            nsdDiscovery.stop()
+        }
+    }
+
     private const val LOBBY_EXPIRY_MS = 10_000L
     private const val JOIN_RETRY_COUNT = 3
     private const val JOIN_RETRY_DELAY_MS = 1000L
@@ -205,6 +273,7 @@ object LobbyService {
         if (!_isDiscovering.value) return
         appBackgrounded = true
         socketRefreshNeededOnResume = true
+        updateNsdDiscovery()
         NetLog.log("LAN", "App backgrounded with LAN discovery active")
     }
 
@@ -230,6 +299,7 @@ object LobbyService {
                 "(wasBackgrounded=$wasBackgrounded, socketUnavailable=$socketUnavailable)",
         )
         appContext = context.applicationContext
+        updateNsdDiscovery()
         startTransportWatchdog()
         recoverTransport("app resumed")
     }
@@ -356,12 +426,15 @@ object LobbyService {
         appContext = context.applicationContext
         localClientId = ClientIdentity.getInstallationId(context)
         appBackgrounded = false
+        discoveryFastUntilMs = android.os.SystemClock.elapsedRealtime() + DISCOVERY_FAST_WINDOW_MS
+        lastDiscoveryQueryMs = 0L
         _isDiscovering.value = true
         startTransportWatchdog()
         if (isSocketUnavailable() || receiveJob?.isActive != true) {
             recoverTransport("discovery requested")
         }
         NetLog.log("LAN", "Discovery started on port ${NetworkConstants.LAN_LOBBY_PORT}, callsign=$callsign")
+        updateNsdDiscovery()
         Log.i(TAG, "LAN discovery started on port ${NetworkConstants.LAN_LOBBY_PORT}")
     }
 
@@ -377,6 +450,10 @@ object LobbyService {
             "Discovery stopping (wasHosting=${_isHosting.value}, wasJoined=${_joinedLobby.value != null})",
         )
         _isDiscovering.value = false
+        nsdSuspendedForTest = false
+        nsdDiscovery.stop()
+        nsdCandidates.clear()
+        nsdConfirmed.clear()
         transportWatchdogJob?.cancel()
         transportWatchdogJob = null
         _isHosting.value = false
@@ -516,6 +593,7 @@ object LobbyService {
         updateLanForegroundSession()
 
         restartAnnounceLoop()
+        updateNsdDiscovery()
         NetLog.log("LAN", "Hosting lobby $hostedLobbyId ($game, $mission, $mode, max=$maxPlayers)")
         Log.i(TAG, "Hosting LAN lobby $hostedLobbyId ($game, $mission, $mode)")
     }
@@ -561,6 +639,7 @@ object LobbyService {
         announceJob = null
         hostedLobbyId = null
         hostedMissionRequirement = null
+        updateNsdDiscovery()
         MissionTransferService.stopHost()
         hostedRestrictNonCoopFovToBase = false
         hostedStockVisualsEnforced = false
@@ -985,6 +1064,7 @@ object LobbyService {
         Log.i(TAG, "Multicast lock acquired: ${multicastLock?.isHeld}")
         logLocalAddresses()
         lastDiscoveryQueryMs = 0L
+        discoveryFastUntilMs = android.os.SystemClock.elapsedRealtime() + DISCOVERY_FAST_WINDOW_MS
         loggedDiscoveryTargets = null
 
         // Receive loop
@@ -1054,11 +1134,24 @@ object LobbyService {
         pruneJob?.cancel()
         pruneJob =
             scope?.launch(Dispatchers.IO) {
+                var nextMaintenanceMs = 0L
                 while (isActive) {
-                    delay(2000)
                     queryDiscoveryHosts()
-                    refreshChangedHostedSave()
-                    pruneStaleLobbies()
+                    val now = android.os.SystemClock.elapsedRealtime()
+                    if (now >= nextMaintenanceMs) {
+                        refreshChangedHostedSave()
+                        pruneStaleLobbies()
+                        nextMaintenanceMs = now + 2000L
+                    }
+                    delay(
+                        if (!_isHosting.value && _joinedLobby.value == null &&
+                            !appBackgrounded && lobbies.isEmpty() && now < discoveryFastUntilMs
+                        ) {
+                            DISCOVERY_FAST_QUERY_INTERVAL_MS
+                        } else {
+                            2000L
+                        },
+                    )
                 }
             }
         trackTransportJob("prune", pruneJob) { _isDiscovering.value }
@@ -1067,9 +1160,24 @@ object LobbyService {
     private fun queryDiscoveryHosts() {
         if (!_isDiscovering.value || _isHosting.value || _joinedLobby.value != null || appBackgrounded) return
         val now = android.os.SystemClock.elapsedRealtime()
-        if (now - lastDiscoveryQueryMs < DISCOVERY_QUERY_INTERVAL_MS) return
+        val interval =
+            when {
+                lobbies.isNotEmpty() -> DISCOVERY_QUERY_INTERVAL_MS
+                now < discoveryFastUntilMs -> DISCOVERY_FAST_QUERY_INTERVAL_MS
+                else -> DISCOVERY_SEARCH_QUERY_INTERVAL_MS
+            }
+        if (lastDiscoveryQueryMs != 0L && now - lastDiscoveryQueryMs < interval) return
         lastDiscoveryQueryMs = now
         val context = appContext ?: return
+        val nsdAddresses = nsdCandidates.values.flatMap { it.addresses }.distinct()
+        nsdAddresses.forEach { sendTo(buildQuery(), it, "nsd") }
+        // Keep confirmed lobbies alive even if their mDNS advertisement disappears
+        lobbies.values
+            .map { it.announce.hostAddress }
+            .distinct()
+            .filter { it !in nsdAddresses }
+            .forEach { sendTo(buildQuery(), it, "discovered-host") }
+        if (nsdOnlyForTest) return
         val lastHost =
             MultiplayerResumePrefs
                 .load(context)
@@ -1310,6 +1418,20 @@ object LobbyService {
             Log.d(TAG, "handleAnnounce: own lobby from $senderAddr, ignoring")
             return
         }
+        val nsdReply = json.optBoolean("query_reply") && json.optString("reply_trace_strategy") == "nsd"
+        if (nsdReply) {
+            if (json.optInt("protocol_version") != LAN_LOBBY_PROTOCOL_VERSION ||
+                nsdCandidates.values.none { it.lobbyId == lobbyId && senderAddr in it.addresses }
+            ) {
+                Log.i(TAG, "NSD reply ignored: stale or mismatched lobby=$lobbyId from=$senderAddr")
+                return
+            }
+            if (nsdConfirmed.add(lobbyId)) {
+                NetLog.log("LAN", "Discovery confirmed source=nsd lobby=$lobbyId from=$senderAddr")
+                Log.i(TAG, "Discovery confirmed source=nsd lobby=$lobbyId from=$senderAddr")
+            }
+        }
+        if (nsdOnlyForTest && !nsdReply && lobbyId !in nsdConfirmed) return
         val isNew = !lobbies.containsKey(lobbyId)
         if (isNew) {
             NetLog.log(
@@ -1318,7 +1440,14 @@ object LobbyService {
                     "callsign",
                     "?",
                 )} ${json.optString("game", "?")}/${json.optString("mission", "?")}) " +
-                    "source=${if (json.optBoolean("query_reply")) "query-reply" else "broadcast"} " +
+                    "source=${if (json.optBoolean(
+                            "query_reply",
+                        )
+                    ) {
+                        "query-reply"
+                    } else {
+                        json.optString("trace_strategy", "unspecified")
+                    }} " +
                     "status=${json.optString(
                         "status",
                         "lobby",
@@ -2622,6 +2751,7 @@ object LobbyService {
     @Volatile private var consecutiveBroadcastFailures: Int = 0
 
     private fun sendBroadcast(data: ByteArray) {
+        if (nsdOnlyForTest) return
         val activeSocket = socket
         if (activeSocket == null || activeSocket.isClosed) {
             NetLog.log("LAN", "Broadcast send deferred: socket unavailable")
@@ -2739,7 +2869,10 @@ object LobbyService {
         if (appBackgrounded) return
         val now = System.currentTimeMillis()
         val removed = lobbies.entries.removeAll { (now - it.value.lastSeenMs) > LOBBY_EXPIRY_MS }
-        if (removed) publishLobbies()
+        if (removed) {
+            nsdConfirmed.retainAll(lobbies.keys)
+            publishLobbies()
+        }
 
         // Mark lost peers promptly, but reserve their identity and slot for seamless reconnect
         if (_isHosting.value) {

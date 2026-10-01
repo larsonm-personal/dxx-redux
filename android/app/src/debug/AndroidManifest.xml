@@ -2,7 +2,7 @@
     <application>
         <provider
             android:name="com.dxxredux.app.SafTestProvider"
-            android:authorities="com.dxxredux.app.saf-test"
+            android:authorities="${applicationId}.saf-test"
             android:enabled="true"
             android:exported="false" />
     </application>

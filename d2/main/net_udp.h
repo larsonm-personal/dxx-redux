@@ -268,6 +268,7 @@ int net_udp_test_reliable_boundary(int verify);
 int net_udp_test_full_mdata(int verify);
 int net_udp_test_mdata_fence(int phase);
 int net_udp_test_pdata_fence(int phase);
+int net_udp_test_score_catchup(int verify);
 int net_udp_test_level_sequence(int verify);
 #endif
 #endif

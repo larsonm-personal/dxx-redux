@@ -1894,6 +1894,19 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-MP", "lan_stop_lobby: stopped")
                     }
 
+                    "lan_nsd_only" -> {
+                        com.dxxredux.app.lobby.LobbyService
+                            .setNsdOnlyForTest(
+                                intent.getBooleanExtra("enabled", true),
+                                intent.getBooleanExtra("legacy", false),
+                            )
+                    }
+
+                    "lan_nsd_suspend" -> {
+                        com.dxxredux.app.lobby.LobbyService
+                            .suspendNsdForTest(intent.getBooleanExtra("enabled", true))
+                    }
+
                     "lan_discover" -> {
                         val callsign = intent.getStringExtra("callsign") ?: "TestJoin"
                         mpCallsign = callsign

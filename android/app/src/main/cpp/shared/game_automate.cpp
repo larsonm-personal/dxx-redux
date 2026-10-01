@@ -4065,6 +4065,9 @@ extern "C" void game_automate_tick(void)
 				}
 			} else if (s.field == "recovery_test_trace") {
 				debug_log_enabled[DLOG_COOP_DESYNC] = 1;
+			} else if (s.field == "score_catchup_test") {
+				if (!net_udp_test_score_catchup(s.value == "verify"))
+					stop_script_fail("Score catch-up did not recover lost completion packets");
 			} else if (s.field == "pdata_packet_test") {
 				const int phase = s.value == "arm" ? 0 : s.value == "send" ? 1
 				                                     : s.value == "verify" ? 2
