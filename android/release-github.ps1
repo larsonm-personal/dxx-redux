@@ -85,6 +85,7 @@ $commit = Get-ReleaseGit @('rev-parse', 'HEAD')
 if ((Get-ReleaseGit @('rev-parse', '--is-shallow-repository')) -eq 'true') {
     throw 'Use a full clone (git fetch --unshallow) for the commit-count versionCode'
 }
+# Version labels/codes do not set the engine multiplayer protocol; GitHub and Play use separate app IDs
 # Increase versionCode for app upgrades; use -VersionCode when the commit-count default is insufficient
 if (-not $PSBoundParameters.ContainsKey('VersionCode')) {
     $VersionCode = [int](Get-ReleaseGit @('rev-list', '--count', 'HEAD')) * 10
