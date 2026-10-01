@@ -839,6 +839,9 @@ class MainActivity :
     private var gyroRuntimeState = gyroRuntimeStateFromConfig(GyroConfig())
     private var activeTouchLayout = TouchLayoutRepository.defaultLayout()
     private var isActivityResumed = false
+    private var lanJoinQr: com.dxxredux.app.multiplayer.LanJoinQrOverlay? = null
+    private var isLanQrHost = false
+    private var qrActivityResumed = false
     private var gameVariantId = "d2" // "d1" or "d2", set in onCreate
     private var lastAppliedGraphicsSettingsGeneration = -1L
     private var touchDiagLogCount = 0
@@ -1003,6 +1006,7 @@ class MainActivity :
             }
         // Check for multiplayer auto-join/host from the matchmaking lobby
         val mpMode = intent.getStringExtra("mp_mode")
+        isLanQrHost = mpMode == "host" && intent.getBooleanExtra("mp_is_lan", false)
         isMultiplayerGame = mpMode != null
         resetSinglePlayerNetEventsIfNeeded()
         // Seed game-process MatchmakingStateHolder so overlay shows "CONNECTED" not "DISCONNECTED"
@@ -1833,6 +1837,14 @@ class MainActivity :
             ),
         )
         frame.addView(overlayContainer, overlayLp)
+        if (isLanQrHost) {
+            lanJoinQr =
+                com.dxxredux.app.multiplayer.LanJoinQrOverlay(
+                    this,
+                    frame,
+                    intent.getStringExtra(com.dxxredux.app.multiplayer.LanHostAddresses.EXTRA_ADDRESS),
+                )
+        }
         frame.addView(
             coopBriefingOverlay,
             FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT),
@@ -2083,6 +2095,13 @@ class MainActivity :
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (intent.getBooleanExtra("leave_for_lan_join", false)) {
+            // Confirmation uses the same shutdown/autosave path as Exit to Launcher
+            window.decorView.post {
+                NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
+            }
+            return
+        }
         setIntent(intent)
         refreshTransientLaunchState(intent)
         if (gameStarted && hasPendingTransientLaunchRequest()) {
@@ -2225,6 +2244,8 @@ class MainActivity :
     }
 
     override fun onPause() {
+        qrActivityResumed = false
+        lanJoinQr?.show(false)
         tapFeedbackOverlay?.dispose()
         tapFeedbackOverlay = null
         DebugLog.log(
@@ -2275,6 +2296,7 @@ class MainActivity :
 
     override fun onResume() {
         super.onResume()
+        qrActivityResumed = true
         writeGameActivityState(this, gameVariantId)
         backgroundPauseApplied = false
         isActivityResumed = true
@@ -2901,6 +2923,7 @@ class MainActivity :
                                 }
                             startGameButton.visibility =
                                 if (hostSelecting) View.VISIBLE else View.GONE
+                            lanJoinQr?.show(hostSelecting && isLanQrHost && qrActivityResumed)
                             // Show "ACCEPT" button when a player requests to join mid-game
                             val joinCallsign =
                                 try {
@@ -2928,6 +2951,7 @@ class MainActivity :
                             menuInteractionOverlay.resetViewport()
                             lastMenuInteractionGeneration = 0L
                             startGameButton.visibility = View.GONE
+                            lanJoinQr?.show(false)
                             coopBriefingOverlay.update("")
                             acceptJoinButton.visibility = View.GONE
                             // Native polling failures must not override the session toggle
@@ -2947,6 +2971,7 @@ class MainActivity :
                         touchOverlay.updateDemoRecordingState(false)
                         skipButton.visibility = View.GONE
                         startGameButton.visibility = View.GONE
+                        lanJoinQr?.show(false)
                         coopBriefingOverlay.update("")
                         acceptJoinButton.visibility = View.GONE
                         netStatsOverlay?.hide()
@@ -3107,6 +3132,7 @@ class MainActivity :
     }
 
     override fun onDestroy() {
+        lanJoinQr?.show(false)
         if (BuildConfig.DEBUG) {
             Log.i(
                 "DXX-Lifecycle",

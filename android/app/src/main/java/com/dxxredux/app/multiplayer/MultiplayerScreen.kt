@@ -61,6 +61,9 @@ fun MultiplayerScreen(
     onBack: () -> Unit,
     onLaunchGame: (GameLaunchInfo) -> Unit,
     onLaunchRequested: (String) -> Unit,
+    lanJoinRequest: LanJoinRequest? = null,
+    onLanJoinConsumed: () -> Unit = {},
+    onInvitationScanned: ((String) -> Unit)? = null,
 ) {
     val state by MatchmakingStateHolder.state.collectAsState()
 
@@ -72,7 +75,15 @@ fun MultiplayerScreen(
                 onBack()
             }
         }
-        LanContent(state, onBack, onLaunchGame, onLaunchRequested)
+        LanContent(
+            state,
+            onBack,
+            onLaunchGame,
+            onLaunchRequested,
+            lanJoinRequest,
+            onLanJoinConsumed,
+            onInvitationScanned,
+        )
         return
     }
 
@@ -106,7 +117,15 @@ fun MultiplayerScreen(
                     onBack()
                 }
             }
-            LanContent(state, onBack, onLaunchGame, onLaunchRequested)
+            LanContent(
+                state,
+                onBack,
+                onLaunchGame,
+                onLaunchRequested,
+                lanJoinRequest,
+                onLanJoinConsumed,
+                onInvitationScanned,
+            )
         }
 
         MultiplayerNav.BROWSER -> {
@@ -1370,6 +1389,9 @@ private fun LanContent(
     onBack: () -> Unit,
     onLaunchGame: (GameLaunchInfo) -> Unit,
     onLaunchRequested: (String) -> Unit,
+    lanJoinRequest: LanJoinRequest?,
+    onLanJoinConsumed: () -> Unit,
+    onInvitationScanned: ((String) -> Unit)?,
 ) {
     val context = LocalContext.current
     val isLandscape =
@@ -1461,6 +1483,9 @@ private fun LanContent(
             callsign = lanCallsign,
             onLaunchGame = onLaunchGame,
             onLaunchRequested = onLaunchRequested,
+            lanJoinRequest = lanJoinRequest,
+            onLanJoinConsumed = onLanJoinConsumed,
+            onInvitationScanned = onInvitationScanned,
         )
     }
 }

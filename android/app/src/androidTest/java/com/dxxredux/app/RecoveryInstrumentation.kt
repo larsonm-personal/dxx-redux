@@ -47,6 +47,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var missionLoadingOnly = false
     private var coopSessionOnly = false
     private var lobbyLatencyOnly = false
+    private var lanQrOnly = false
 
     override fun onCreate(arguments: Bundle?) {
         if (arguments?.getString("suite") == "engine_query") {
@@ -54,6 +55,7 @@ class RecoveryInstrumentation : Instrumentation() {
             engineProbeGame = arguments.getString("game") ?: "d2"
         }
         lobbyLatencyOnly = arguments?.getString("suite") == "lobby_latency"
+        lanQrOnly = arguments?.getString("suite") == "lan_qr"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         coopSessionOnly = arguments?.getString("suite") == "coop_session"
         super.onCreate(arguments)
@@ -63,6 +65,12 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (lanQrOnly) {
+                LanQrChecks(this).run()
+                result.putString("stream", "PASS: QR reveal, rendered decoding, reset and link routing\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             engineProbeHost?.let { host ->
                 EngineQueryChecks(this).run(host, engineProbeGame)
                 result.putString("stream", "PASS: engine query, loss, malformed replies, sender checks, lobby preference, engine fallback, mismatch and cancellation\n")

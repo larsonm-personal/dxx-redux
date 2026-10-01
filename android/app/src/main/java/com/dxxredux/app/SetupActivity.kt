@@ -63,6 +63,8 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.dxxredux.app.multiplayer.CoopDesyncLog
 import com.dxxredux.app.multiplayer.GameLaunchInfo
+import com.dxxredux.app.multiplayer.LanHostAddresses
+import com.dxxredux.app.multiplayer.LanJoinRequest
 import com.dxxredux.app.multiplayer.MatchmakingService
 import com.dxxredux.app.multiplayer.MatchmakingStateHolder
 import com.dxxredux.app.multiplayer.MultiplayerResumePrefs
@@ -179,6 +181,34 @@ class SetupActivity : ComponentActivity() {
     private val launchFailureMessage = mutableStateOf<String?>(null)
     private val launchPreparation = mutableStateOf<LauncherPreparationState?>(null)
     private val pendingPickedImportUris = mutableStateOf<List<Uri>>(emptyList())
+    private val pendingLanJoin = mutableStateOf<LanJoinRequest?>(null)
+    private var consumedLanJoinId: String? = null
+
+    private fun receiveLanJoin(source: Intent) {
+        LanJoinRequest.fromIntent(source)?.takeUnless { it.id == consumedLanJoinId }?.let {
+            pendingLanJoin.value = it
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        receiveLanJoin(intent)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        pendingLanJoin.value?.let {
+            outState.putString(LanJoinRequest.EXTRA_ADDRESS, it.address)
+            outState.putString(LanJoinRequest.EXTRA_ID, it.id)
+        }
+        outState.putString("consumed_lan_join", consumedLanJoinId)
+        super.onSaveInstanceState(outState)
+    }
+
+    private fun consumeLanJoin() {
+        consumedLanJoinId = pendingLanJoin.value?.id
+        pendingLanJoin.value = null
+    }
+
     private val resumeOfferRefreshHandler = Handler(Looper.getMainLooper())
     private val resumeOfferRefreshRunnable =
         Runnable {
@@ -2674,7 +2704,10 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
         }
         mpIntent.putExtra("mp_restrict_noncoop_fov_to_base", info.restrictNonCoopFovToBase && info.mode != "coop")
-        if (info.isLan) mpIntent.putExtra("mp_is_lan", true)
+        if (info.isLan) {
+            mpIntent.putExtra("mp_is_lan", true)
+            mpIntent.putExtra(LanHostAddresses.EXTRA_ADDRESS, LanHostAddresses.preferred(this))
+        }
         MultiplayerResumePrefs.saveLaunch(this, info, launchCallsign, MatchmakingStateHolder.state.value)
         val coopRestoreSlot =
             if (info.isHost && info.mode == "coop") {
@@ -2697,6 +2730,13 @@ class SetupActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        consumedLanJoinId = savedInstanceState?.getString("consumed_lan_join")
+        savedInstanceState?.getString(LanJoinRequest.EXTRA_ADDRESS)?.let { address ->
+            savedInstanceState.getString(LanJoinRequest.EXTRA_ID)?.let { id ->
+                pendingLanJoin.value = LanJoinRequest(id, address)
+            }
+        }
+        receiveLanJoin(intent)
 
         // The launcher uses dxx-redux-d2 JNI helpers (MIDI/CD preview,
         // enumeration, import helpers). Load it here so native breadcrumb
@@ -2792,6 +2832,27 @@ class SetupActivity : ComponentActivity() {
                 axisGeneration = axisGeneration.intValue,
                 pressedButtons = pressedButtons,
                 pickedImportUris = pendingPickedImportUris.value,
+                lanJoinRequest = pendingLanJoin.value,
+                onLanJoinConsumed = ::consumeLanJoin,
+                onInvitationScanned = { address ->
+                    pendingLanJoin.value =
+                        LanJoinRequest(
+                            java.util.UUID
+                                .randomUUID()
+                                .toString(),
+                            address,
+                        )
+                },
+                onLeaveGameForLanJoin = {
+                    if (hasReturnableGameActivity()) {
+                        startActivity(
+                            Intent(this, MainActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                                putExtra("leave_for_lan_join", true)
+                            },
+                        )
+                    }
+                },
                 onPickedImportConsumed = { pendingPickedImportUris.value = emptyList() },
                 onLaunchGame = onLaunch@{ game, resumeCandidate ->
                     val pending = launcherExecutor?.consumePendingLaunch()
@@ -3256,6 +3317,10 @@ private fun SetupScreen(
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
     pickedImportUris: List<Uri>,
+    lanJoinRequest: LanJoinRequest?,
+    onLanJoinConsumed: () -> Unit,
+    onInvitationScanned: (String) -> Unit,
+    onLeaveGameForLanJoin: () -> Unit,
     onPickedImportConsumed: () -> Unit,
     onLaunchGame: (String, ResumeSaveBridge.ResumeSaveCandidate?) -> Unit,
     onPlayInputDemo: (StagedInputDemo) -> Unit,
@@ -4077,6 +4142,25 @@ private fun SetupScreen(
     var showMultiplayerPage by remember { mutableStateOf(false) }
     var showAutoselectPage by remember { mutableStateOf(false) }
     var showMusicPage by remember { mutableStateOf(false) }
+    val lanHosting by com.dxxredux.app.lobby.LobbyService.isHosting
+        .collectAsState()
+    val lanJoined by com.dxxredux.app.lobby.LobbyService.joinedLobby
+        .collectAsState()
+    val joinMatchmaking by MatchmakingStateHolder.state.collectAsState()
+    val joinConflict = gameRunning || lanHosting || lanJoined != null || joinMatchmaking.currentLobby != null
+    LaunchedEffect(lanJoinRequest?.id, joinConflict) {
+        if (lanJoinRequest != null && !joinConflict) {
+            showControllerPage = false
+            showTouchEditorPage = false
+            showAdvancedPage = false
+            showGraphicsPage = false
+            showEnginePrefsPage = false
+            showAutoselectPage = false
+            showMusicPage = false
+            MatchmakingStateHolder.update { it.copy(nav = com.dxxredux.app.multiplayer.MultiplayerNav.LAN) }
+            showMultiplayerPage = true
+        }
+    }
 
     // Re-establish focus when returning from any sub-page
     val anySubPageOpen =
@@ -4111,6 +4195,27 @@ private fun SetupScreen(
     }
 
     LauncherTheme {
+        if (lanJoinRequest != null && joinConflict) {
+            AlertDialog(
+                onDismissRequest = onLanJoinConsumed,
+                title = { Text("Join LAN game?") },
+                text = { Text("Leave the current game or lobby to join ${lanJoinRequest.address}?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        if (gameRunning) {
+                            onLeaveGameForLanJoin()
+                        } else {
+                            com.dxxredux.app.lobby.LobbyService
+                                .leaveLanLobby(joinMatchmaking.callsign)
+                            com.dxxredux.app.lobby.LobbyService
+                                .stopHosting()
+                            if (joinMatchmaking.currentLobby != null) MatchmakingService.leaveLobby()
+                        }
+                    }) { Text("Leave and join") }
+                },
+                dismissButton = { TextButton(onClick = onLanJoinConsumed) { Text("Cancel") } },
+            )
+        }
         if (showControllerPage) {
             val activity = LocalContext.current as SetupActivity
             DisposableEffect(Unit) {
@@ -4181,6 +4286,9 @@ private fun SetupScreen(
                 onBack = { showMultiplayerPage = false },
                 onLaunchGame = onMultiplayerLaunch,
                 onLaunchRequested = onMultiplayerLaunchRequested,
+                lanJoinRequest = lanJoinRequest.takeUnless { joinConflict },
+                onLanJoinConsumed = onLanJoinConsumed,
+                onInvitationScanned = onInvitationScanned,
             )
             return@LauncherTheme
         }

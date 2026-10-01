@@ -39,6 +39,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +63,8 @@ import com.dxxredux.app.VisualReplacementPolicy
 import com.dxxredux.app.formatBinarySize
 import com.dxxredux.app.lobby.LobbyService
 import com.dxxredux.app.tvFocusBorder
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
@@ -103,6 +106,9 @@ fun LanDiscoveryTab(
     callsign: String,
     onLaunchGame: (GameLaunchInfo) -> Unit,
     onLaunchRequested: (String) -> Unit,
+    lanJoinRequest: LanJoinRequest? = null,
+    onLanJoinConsumed: () -> Unit = {},
+    onInvitationScanned: ((String) -> Unit)? = null,
 ) {
     val joinedLobby by LobbyService.joinedLobby.collectAsState()
     val context = LocalContext.current
@@ -126,7 +132,14 @@ fun LanDiscoveryTab(
     if (joinedLobby != null) {
         LanJoinedLobbyView(callsign, onLaunchGame)
     } else {
-        LanDiscoveryView(callsign, onLaunchGame, onLaunchRequested)
+        LanDiscoveryView(
+            callsign,
+            onLaunchGame,
+            onLaunchRequested,
+            lanJoinRequest,
+            onLanJoinConsumed,
+            onInvitationScanned,
+        )
     }
 }
 
@@ -362,6 +375,9 @@ private fun LanDiscoveryView(
     callsign: String,
     onLaunchGame: (GameLaunchInfo) -> Unit,
     onLaunchRequested: (String) -> Unit,
+    lanJoinRequest: LanJoinRequest?,
+    onLanJoinConsumed: () -> Unit,
+    onInvitationScanned: ((String) -> Unit)?,
 ) {
     val context = LocalContext.current
     val isLandscape =
@@ -383,6 +399,10 @@ private fun LanDiscoveryView(
     var showJoinByIpDialog by remember { mutableStateOf(false) }
     var manualJoinStatus by remember { mutableStateOf("") }
     var manualJoinJob by remember { mutableStateOf<Job?>(null) }
+    var pendingQrAddress by rememberSaveable { mutableStateOf<String?>(null) }
+    var lastJoinAddress by rememberSaveable { mutableStateOf<String?>(null) }
+    var scanError by remember { mutableStateOf<String?>(null) }
+    var resumed by remember { mutableStateOf(false) }
     val hostDefaults = remember { HostGameDefaults.load(context) }
     var hostedGame by remember { mutableStateOf(hostDefaults.game) }
     var hostedMode by remember { mutableStateOf(hostDefaults.mode) }
@@ -444,6 +464,109 @@ private fun LanDiscoveryView(
                 }
             }
         }
+
+    fun joinAddress(hostAddr: String) {
+        showJoinByIpDialog = false
+        lastJoinAddress = hostAddr
+        LanIpsPrefs.add(context, hostAddr)
+        recentIps.value = LanIpsPrefs.load(context)
+        manualJoinStatus = "Looking for a lobby or running game at $hostAddr..."
+        manualJoinJob?.cancel()
+        manualJoinJob =
+            coroutineScope.launch {
+                try {
+                    val found =
+                        withContext(Dispatchers.IO) {
+                            LobbyService.tryJoinLobbyByIp(hostAddr, callsign, probeEngine = true)
+                        }
+                    manualJoinStatus = if (found) "" else LobbyService.diagnostics.value
+                } finally {
+                    if (manualJoinJob == currentCoroutineContext()[Job]) manualJoinJob = null
+                }
+            }
+    }
+
+    val scanner =
+        rememberLauncherForActivityResult(ScanContract()) { result ->
+            if (result.originalIntent?.getBooleanExtra(
+                    com.google.zxing.client.android.Intents.Scan.MISSING_CAMERA_PERMISSION,
+                    false,
+                ) ==
+                true
+            ) {
+                scanError = "Camera permission is needed to scan. You can also use Join by IP."
+            }
+            result.contents?.let { contents ->
+                val address = LanInvitation.parse(contents, LanHostAddresses.broadcastAddresses())
+                if (address == null) {
+                    scanError = "This is not a Descent LAN invitation"
+                } else if (onInvitationScanned != null) {
+                    onInvitationScanned(address)
+                } else {
+                    pendingQrAddress = address
+                }
+            }
+        }
+
+    fun scanQr() {
+        if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+            scanError = "No camera is available. Use Join by IP instead."
+            return
+        }
+        scanner.launch(
+            ScanOptions().apply {
+                setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                setPrompt("Scan a Descent LAN invitation")
+                setBeepEnabled(false)
+                setOrientationLocked(false)
+                setBarcodeImageEnabled(false)
+                addExtra(com.google.zxing.client.android.Intents.Scan.SHOW_MISSING_CAMERA_PERMISSION_DIALOG, false)
+            },
+        )
+    }
+
+    DisposableEffect(context) {
+        val lifecycle = context.findLifecycleOwner()?.lifecycle
+        resumed = lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED) == true
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) resumed = true
+                if (event == Lifecycle.Event.ON_PAUSE) resumed = false
+            }
+        lifecycle?.addObserver(observer)
+        onDispose {
+            lifecycle?.removeObserver(observer)
+            manualJoinJob?.cancel()
+        }
+    }
+    LaunchedEffect(lanJoinRequest?.id, pendingQrAddress, resumed, permissionGranted, isDiscovering, callsign) {
+        val address = lanJoinRequest?.address ?: pendingQrAddress ?: return@LaunchedEffect
+        if (!resumed || callsign.isBlank() || isHosting) return@LaunchedEffect
+        if (!permissionGranted) return@LaunchedEffect
+        if (!isDiscovering) {
+            LobbyService.startDiscovery(context, callsign)
+            return@LaunchedEffect
+        }
+        LobbyService.notifyAppResumed(context, callsign)
+        pendingQrAddress = null
+        if (lanJoinRequest != null) onLanJoinConsumed()
+        joinAddress(address)
+    }
+
+    if (scanError != null) {
+        AlertDialog(
+            onDismissRequest = { scanError = null },
+            title = { Text("Read QR code") },
+            text = { Text(scanError.orEmpty()) },
+            confirmButton = {
+                TextButton(onClick = {
+                    scanError = null
+                    scanQr()
+                }) { Text("Scan again") }
+            },
+            dismissButton = { TextButton(onClick = { scanError = null }) { Text("Cancel") } },
+        )
+    }
 
     fun hostResume(record: MultiplayerResumeRecord) {
         coroutineScope.launch {
@@ -556,6 +679,17 @@ private fun LanDiscoveryView(
                 .showControllerFocusOnDpad(actionFocus, focusTarget),
     ) {
         // -- Discovered lobbies --
+        if (!isHosting) {
+            item {
+                OutlinedButton(onClick = ::scanQr, modifier = Modifier.fillMaxWidth()) {
+                    Text("Read QR code")
+                }
+                if ((lanJoinRequest != null || pendingQrAddress != null) && !permissionGranted) {
+                    Text("Invitation ready. Grant Nearby Wi-Fi permission below to join.")
+                }
+                Spacer(Modifier.height(4.dp))
+            }
+        }
         // Keep results first so the common single-game LAN path is immediately joinable
         if (isDiscovering) {
             item {
@@ -825,40 +959,43 @@ private fun LanDiscoveryView(
                 }
                 Spacer(Modifier.height(4.dp))
                 Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            "Players (${hostedPlayers.size}):",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        for (p in hostedPlayers) {
-                            val displayName =
-                                if (p.callsign == callsign) "${p.callsign} (self)" else p.callsign
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(vertical = 2.dp),
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(displayName, style = MaterialTheme.typography.bodyMedium)
-                                    MissionStatusIndicator(p.missionStatus)
-                                }
-                                Text(
-                                    if (!p.connected) {
-                                        "Reconnecting"
-                                    } else if (p.ready) {
-                                        "Ready"
-                                    } else {
-                                        "Not Ready"
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color =
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        LanHostQr()
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                "Players (${hostedPlayers.size}):",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            for (p in hostedPlayers) {
+                                val displayName =
+                                    if (p.callsign == callsign) "${p.callsign} (self)" else p.callsign
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(vertical = 2.dp),
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(displayName, style = MaterialTheme.typography.bodyMedium)
+                                        MissionStatusIndicator(p.missionStatus)
+                                    }
+                                    Text(
                                         if (!p.connected) {
-                                            MaterialTheme.colorScheme.error
+                                            "Reconnecting"
                                         } else if (p.ready) {
-                                            MaterialTheme.colorScheme.primary
+                                            "Ready"
                                         } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                            "Not Ready"
                                         },
-                                )
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color =
+                                            if (!p.connected) {
+                                                MaterialTheme.colorScheme.error
+                                            } else if (p.ready) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            },
+                                    )
+                                }
                             }
                         }
                     }
@@ -935,6 +1072,11 @@ private fun LanDiscoveryView(
                         manualJoinJob = null
                         manualJoinStatus = ""
                     }) { Text("Cancel") }
+                } else if (lastJoinAddress != null) {
+                    Row {
+                        TextButton(onClick = { pendingQrAddress = lastJoinAddress }) { Text("Retry") }
+                        TextButton(onClick = { showJoinByIpDialog = true }) { Text("Edit address") }
+                    }
                 }
             }
         }
@@ -1030,31 +1172,9 @@ private fun LanDiscoveryView(
     if (showJoinByIpDialog) {
         JoinByIpDialog(
             recentIps = recentIps.value,
-            onJoin = { hostAddr ->
+            onJoin = {
+                pendingQrAddress = it
                 showJoinByIpDialog = false
-                LanIpsPrefs.add(context, hostAddr)
-                recentIps.value = LanIpsPrefs.load(context)
-                manualJoinStatus = "Looking for a lobby or running game at $hostAddr..."
-                manualJoinJob?.cancel()
-                manualJoinJob =
-                    coroutineScope.launch {
-                        try {
-                            val foundLobby =
-                                withContext(Dispatchers.IO) {
-                                    LobbyService.tryJoinLobbyByIp(hostAddr, callsign, probeEngine = true)
-                                }
-                            manualJoinStatus =
-                                if (foundLobby) {
-                                    ""
-                                } else {
-                                    LobbyService.diagnostics.value
-                                }
-                        } finally {
-                            if (manualJoinJob == currentCoroutineContext()[Job]) {
-                                manualJoinJob = null
-                            }
-                        }
-                    }
             },
             onDismiss = { showJoinByIpDialog = false },
         )
