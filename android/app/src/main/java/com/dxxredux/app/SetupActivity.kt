@@ -4352,8 +4352,10 @@ private fun SetupScreen(
                             TextButton(onClick = { showAbout = false }) { Text("OK") }
                         },
                         dismissButton = {
-                            TextButton(onClick = { openPlayStorePage(context) }) {
-                                Text("Store page")
+                            if (!BuildConfig.GITHUB_RELEASE) {
+                                TextButton(onClick = { openPlayStorePage(context) }) {
+                                    Text("Store page")
+                                }
                             }
                         },
                         title = { Text("DXX-Redux") },

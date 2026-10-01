@@ -44,6 +44,13 @@
             android:name="com.google.android.gms.games.APP_ID"
             android:value="@string/games_app_id" />
 
+        <!-- The SDK also initializes itself before SetupActivity through this provider -->
+        <provider
+            android:name="com.google.android.gms.games.provider.PlayGamesInitProvider"
+            android:authorities="${applicationId}.playgamesinitprovider"
+            android:enabled="${playGamesEnabled}"
+            android:exported="false" />
+
         <!-- Pre-game setup / file-check screen (Jetpack Compose) -->
         <activity android:name="com.journeyapps.barcodescanner.CaptureActivity"
             android:exported="false" android:screenOrientation="fullSensor"

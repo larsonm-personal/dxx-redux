@@ -29,7 +29,7 @@ object PlayGamesAuth {
 
     /** True if a real client ID is configured (not empty/placeholder). */
     val isConfigured: Boolean
-        get() = serverClientId.isNotEmpty() && !serverClientId.startsWith("YOUR_")
+        get() = !BuildConfig.GITHUB_RELEASE && serverClientId.isNotEmpty() && !serverClientId.startsWith("YOUR_")
 
     /** Call once in SetupActivity.onCreate(). Safe to call multiple times. */
     fun initialize(activity: Activity) {

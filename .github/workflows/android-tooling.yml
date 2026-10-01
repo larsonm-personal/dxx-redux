@@ -42,6 +42,10 @@ jobs:
       - name: Tooling smoke tests
         shell: pwsh
         run: ./android/tests/run_tooling_smoke.ps1 -IncludeBoundedRuntime
+      - name: GitHub release tests on Windows PowerShell 5.1
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: ./android/tests/test_github_release.ps1
       - name: Keep bounded diagnostic reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

@@ -11,6 +11,8 @@
 * extension pack for java (ms)
 
 # google play console setup
+For direct APK downloads without Play Store installation, see the usage and setup comments in [release-github.ps1](release-github.ps1).
+
 ## basic, and programmatic access
 * https://support.google.com/googleplay/android-developer/answer/6112435
 * note on programmatic auth https://stackoverflow.com/questions/76541480/how-does-fully-create-an-internal-release-on-google-play-console-via-api

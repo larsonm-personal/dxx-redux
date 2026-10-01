@@ -79,6 +79,8 @@ fun openPlayStorePage(context: Context) {
  */
 @Composable
 fun UpdateBanner() {
+    if (BuildConfig.GITHUB_RELEASE) return
+
     val context = LocalContext.current
     var availableVersion by remember { mutableIntStateOf(0) }
     var dismissed by remember { mutableStateOf(false) }

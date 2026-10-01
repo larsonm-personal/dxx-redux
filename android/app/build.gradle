@@ -4,6 +4,9 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
+// Direct-install distribution, selected by release-github.ps1
+def githubRelease = (project.findProperty('githubRelease') ?: 'false').toBoolean()
+
 // Load tool versions from central config
 def toolVersions = new Properties()
 toolVersions.load(new FileInputStream(rootProject.file("get_deps/tool_versions.conf")))
@@ -13,6 +16,9 @@ def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+if (githubRelease && !keystorePropertiesFile.exists()) {
+    throw new GradleException('GitHub APKs require android/keystore.properties for release signing')
 }
 
 // Load auth_config.jsonc if it exists (for GPGS sign-in)
@@ -339,12 +345,16 @@ android {
 
     defaultConfig {
         testInstrumentationRunner "com.dxxredux.app.RecoveryInstrumentation"
-        applicationId "com.dxxredux.app"
-        manifestPlaceholders = [launcherLabel: 'DXX-Redux']
+        applicationId githubRelease ? "com.dxxredux.app.github" : "com.dxxredux.app"
+        manifestPlaceholders = [
+            launcherLabel: githubRelease ? 'DXX-Redux (GitHub)' : 'DXX-Redux',
+            playGamesEnabled: (!githubRelease).toString()
+        ]
         minSdk toolVersions['MIN_SDK'].toInteger()
         targetSdk toolVersions['TARGET_SDK'].toInteger()
         versionCode gitVersionCode
-        versionName "1.1"
+        versionName project.findProperty('versionNameOverride') ?: "1.1"
+        buildConfigField "boolean", "GITHUB_RELEASE", githubRelease.toString()
 
         def opengl = (project.findProperty('useOpenGL') ?: 'true') == 'true'
         buildConfigField "String", "RENDERER", "\"${opengl ? 'OpenGL ES' : 'Software'}\""
