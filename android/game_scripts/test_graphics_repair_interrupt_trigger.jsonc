@@ -1,6 +1,13 @@
 // TEST: Pause a real rollback after first config publication for a host process kill
 [
     {
+        "_info": {
+            "games": ["d1", "d2"],
+            "_standalone": false,
+            "_owner": "test_graphics_recovery"
+        }
+    },
+    {
         "action": "set_debug",
         "field": "graphics_restore_pause_once",
         "value": "10000"

@@ -1,6 +1,13 @@
 // TEST: Choose OK through real controller dispatch during blocked record publication
 [
     {
+        "_info": {
+            "games": ["d1", "d2"],
+            "_standalone": false,
+            "_owner": "test_graphics_recovery"
+        }
+    },
+    {
         "action": "controller_input",
         "key": "DLEFT",
         "pressed": true,

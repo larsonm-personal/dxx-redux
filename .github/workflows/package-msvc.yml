@@ -5,50 +5,58 @@ on:
 
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   msvc:
     name: MSVC
-    runs-on: windows-latest
+    runs-on: windows-2022
     env:
-      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
       VCPKG_BUILD_TYPE: "release"
 
     strategy:
+      fail-fast: false
       matrix:
         arch:
           - x64
           - x86
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: ilammy/msvc-dev-cmd@v1
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      with:
+        persist-credentials: false
+    - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
       with:
         arch: ${{ matrix.arch }}
 
-    - name: Export GitHub Actions cache environment variables
-      uses: actions/github-script@v7
+    - name: Prepare vcpkg binary cache
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP/vcpkg-binary-cache" | Out-Null
+        Add-Content "$env:GITHUB_ENV" "VCPKG_BINARY_SOURCES=clear;files,$env:RUNNER_TEMP/vcpkg-binary-cache,readwrite"
+
+    - name: Cache vcpkg packages
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
-        script: |
-          core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-          core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+        path: ${{ runner.temp }}/vcpkg-binary-cache
+        key: vcpkg-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('d1/vcpkg.json', 'd2/vcpkg.json') }}
+        restore-keys: vcpkg-${{ runner.os }}-${{ matrix.arch }}-
 
     - name: Use GitHub Actions provided vcpkg
       shell: pwsh
       run: Add-Content "$env:GITHUB_ENV" "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT"
 
-    - name: Install Ninja
-      run: choco install ninja
-
     - name: Configure CMake D1
       shell: pwsh
-      run: cmake --preset=x86-release -D CMAKE_BUILD_TYPE=RelWithDebInfo -S d1 -B buildd1
+      run: cmake --preset=x86-release -D CMAKE_BUILD_TYPE=RelWithDebInfo -D VCPKG_TARGET_TRIPLET=${{ matrix.arch }}-windows -S d1 -B buildd1
 
     - name: Build D1
       run: cmake --build buildd1
 
     - name: Configure CMake D2
       shell: pwsh
-      run: cmake --preset=x86-release -D CMAKE_BUILD_TYPE=RelWithDebInfo -S d2 -B buildd2
+      run: cmake --preset=x86-release -D CMAKE_BUILD_TYPE=RelWithDebInfo -D VCPKG_TARGET_TRIPLET=${{ matrix.arch }}-windows -S d2 -B buildd2
 
     - name: Build D2
       run: cmake --build buildd2
@@ -58,13 +66,13 @@ jobs:
       run: Get-ChildItem -Path buildd1,buildd2 -Recurse -Filter *.pdb | ForEach-Object { $_.FullName }
 
     - name: Upload binary artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
         name: msvc-${{ matrix.arch }}-${{ github.sha }}
         path: 'buildd?/main/*.*'
 
     - name: Upload symbol artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
         name: msvc-symbols-${{ matrix.arch }}-${{ github.sha }}
         path: |

@@ -1,6 +1,13 @@
 // TEST: Fail candidate EGL setup and repeated accepted-mode rebuilds until bounded process recovery
 [
     {
+        "_info": {
+            "games": ["d1", "d2"],
+            "_standalone": false,
+            "_owner": "test_graphics_recovery"
+        }
+    },
+    {
         "action": "key",
         "key": "f2",
         "post_delay_ms": 100

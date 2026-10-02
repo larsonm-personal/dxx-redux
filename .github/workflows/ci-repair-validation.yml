@@ -1,0 +1,9 @@
+name: CI repair validation
+on:
+  push:
+    branches: [ci/github-actions-repair-20261001]
+permissions:
+  contents: read
+jobs:
+  packages:
+    uses: ./.github/workflows/package-all.yml

@@ -48,6 +48,10 @@ try {
         $status = if ($result.TimedOut) { 'TIMEOUT' } elseif ($result.ExitCode -eq 0) { 'PASS' } else { 'FAIL' }
         $results.Add([pscustomobject]@{ name = $task.Name; status = $status; exit_code = $result.ExitCode; log = $log })
         Write-Host "$status $($task.Name)"
+        if ($status -ne 'PASS') {
+            Write-Host "Failure diagnostics: $log"
+            Write-Host ($result.StandardOutput + "`n" + $result.StandardError)
+        }
         $summary = [ordered]@{
             host = [Runtime.InteropServices.RuntimeInformation]::OSDescription
             linux_installer_fixtures = $linuxInstallerFixtures
