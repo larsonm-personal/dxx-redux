@@ -36,6 +36,10 @@ try {
         foreach ($support in $catalog.support) {
             if ($support.owner -notin @($catalog.tests.base_name)) { throw "Support owner absent from catalog: $($support.name)" }
         }
+        $recoverySupport = @($catalog.support | Where-Object owner -eq 'test_graphics_recovery')
+        if ($recoverySupport.Count -ne 10 -or @($catalog.tests | Where-Object name -like 'test_graphics_*_trigger').Count) {
+            throw 'Graphics fault scripts must run through their recovery owner'
+        }
         foreach ($kind in @('ps1', 'jsonc')) {
             $directory = if ($kind -eq 'ps1') { $PSScriptRoot } else { Join-Path $repoRoot 'android/game_scripts' }
             foreach ($file in Get-ChildItem -LiteralPath $directory -Filter "test_*.$kind" -File) {

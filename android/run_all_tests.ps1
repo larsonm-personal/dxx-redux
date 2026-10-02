@@ -370,6 +370,7 @@ $tierServerManagedDualEmuTests = @()
 
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
+    "test_graphics_recovery" = 7200
     "test_acoustid_config_packaging"      = 600
     "test_autoselect_crash_unified"       = 240
     "test_keyboard_defaults"              = 240
@@ -455,6 +456,7 @@ $extractTests = @(
     "test_gog_installer_redbook_unified"
 )  # single emulator + game data, run before the dual-emulator tier
 $noInfraTests = @(
+    "test_github_release",
     "test_download_verification",
     "test_d2xxl_sound_format",
     "test_d2xxl_tga_layout",

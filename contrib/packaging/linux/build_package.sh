@@ -1,32 +1,31 @@
 #!/bin/bash
-set -x
+set -euxo pipefail
 
 version=$(git tag --points-at HEAD)
 if [ -n "$version" ]; then
-	if [ "${version:0:1}" = "v" ]; then
-		version=${version:1}
-	fi
+    if [ "${version:0:1}" = "v" ]; then
+        version=${version:1}
+    fi
 else
     version=$(git rev-parse --short HEAD)
 fi
 
 #ARCH=x86_64
 
-
 # Grab latest AppImage package
-curl -s -L -O https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage || exit 3
+curl --fail --show-error --location --retry 3 --remote-name https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage || exit 3
 chmod a+x appimagetool-x86_64.AppImage
 
 # And the AppRun
-curl -s -L -O https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64 || exit 3
+curl --fail --show-error --location --retry 3 --remote-name https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64 || exit 3
 chmod a+x AppRun-x86_64
 
 # And linuxdeploy
-curl -s -L -O https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage || exit 3
+curl --fail --show-error --location --retry 3 --remote-name https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage || exit 3
 chmod a+x linuxdeploy-x86_64.AppImage
 
 # And the soundfont
-curl -s -L -O https://github.com/arbruijn/TimGM6mb/releases/download/v20100822/TimGM6mb.sf2 || exit 3
+curl --fail --show-error --location --retry 3 --remote-name https://github.com/arbruijn/TimGM6mb/releases/download/v20100822/TimGM6mb.sf2 || exit 3
 
 build_appimage() {
     name="$1"
@@ -44,30 +43,30 @@ build_appimage() {
     mkdir "${appdir}"
 
     # Executable
-    mkdir -p ${appdir}/usr/bin
-    cp build${dir}/main/${name} ${appdir}/usr/bin
+    mkdir -p "${appdir}"/usr/bin
+    cp build"${dir}"/main/"${name}" "${appdir}"/usr/bin
 
     # Icons
-    mkdir -p ${appdir}/usr/share/pixmaps
-    cp ${dir}/${name}.xpm ${appdir}/usr/share/pixmaps
-    cp ${dir}/${name}.xpm ${appdir}/
+    mkdir -p "${appdir}"/usr/share/pixmaps
+    cp "${dir}"/"${name}".xpm "${appdir}"/usr/share/pixmaps
+    cp "${dir}"/"${name}".xpm "${appdir}"/
 
-    mkdir -p ${appdir}/usr/share/icons/hicolor/128x128/apps/
-    cp ${dir}/${name}.png ${appdir}/usr/share/icons/hicolor/128x128/apps/
-    cp ${dir}/${name}.png ${appdir}/
+    mkdir -p "${appdir}"/usr/share/icons/hicolor/128x128/apps/
+    cp "${dir}"/"${name}".png "${appdir}"/usr/share/icons/hicolor/128x128/apps/
+    cp "${dir}"/"${name}".png "${appdir}"/
 
     # Menu item
-    mkdir -p ${appdir}/usr/share/applications
-    cp ${dir}/${name}.desktop ${appdir}/usr/share/applications
-    cp ${dir}/${name}.desktop ${appdir}/
+    mkdir -p "${appdir}"/usr/share/applications
+    cp "${dir}"/"${name}".desktop "${appdir}"/usr/share/applications
+    cp "${dir}"/"${name}".desktop "${appdir}"/
 
     # Soundfont
 
-    mkdir -p ${appdir}/usr/share/sounds/sf3
-    cp -p TimGM6mb.sf2 ${appdir}/usr/share/sounds/sf3/default-GM.sf3
+    mkdir -p "${appdir}"/usr/share/sounds/sf3
+    cp -p TimGM6mb.sf2 "${appdir}"/usr/share/sounds/sf3/default-GM.sf3
 
     ## Package
-    cp AppRun-x86_64 ${appdir}/AppRun
+    cp AppRun-x86_64 "${appdir}"/AppRun
 
     # Dependencies
     ./linuxdeploy-x86_64.AppImage --appdir "${appdir}"
@@ -81,7 +80,10 @@ build_appimage() {
     cp -p COPYING.txt "${tmpdir}/"
     cp -p ChangeLog.txt "${tmpdir}/"
     cp -p "${inipath}" "${tmpdir}/"
-    (cd "${tmpdir}"; tar czf "../${archivefilename}" *)
+    (
+        cd "${tmpdir}"
+        tar czf "../${archivefilename}" ./*
+    )
     rm -rf "${tmpdir}"
 
     #rm -rf ${appdir}
