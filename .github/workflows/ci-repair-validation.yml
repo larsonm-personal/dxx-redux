@@ -5,5 +5,5 @@ on:
 permissions:
   contents: read
 jobs:
-  packages:
-    uses: ./.github/workflows/package-all.yml
+  windows:
+    uses: ./.github/workflows/package-windows.yml

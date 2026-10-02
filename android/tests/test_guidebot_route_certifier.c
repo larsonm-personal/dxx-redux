@@ -6,6 +6,10 @@
 #include <string.h>
 #include <time.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #ifdef NDEBUG
 #undef assert
 #define assert(condition)                                                 \
@@ -2132,11 +2136,20 @@ typedef struct certifier_benchmark_result {
 
 static double benchmark_wall_us(void)
 {
+#ifdef _WIN32
+	LARGE_INTEGER now;
+	LARGE_INTEGER frequency;
+
+	assert(QueryPerformanceFrequency(&frequency));
+	assert(QueryPerformanceCounter(&now));
+	return (double) now.QuadPart * 1000000.0 / (double) frequency.QuadPart;
+#else
 	struct timespec now;
 
 	timespec_get(&now, TIME_UTC);
 	return (double) now.tv_sec * 1000000.0 +
 	       (double) now.tv_nsec / 1000.0;
+#endif
 }
 
 static void initialize_benchmark_fixture(certifier_fixture *fixture)

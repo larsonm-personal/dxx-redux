@@ -8,14 +8,20 @@ on:
       - 'run-linux-build.sh'
       - 'run-windows-build.ps1'
       - 'cmake/**'
-      - '.github/workflows/android-tooling.yml'
+      - 'game_data/mods/d2x-xl/**'
+      - 'd1/main/bmread.c'
+      - 'd2/main/bmread.c'
+      - '.github/workflows/**'
   push:
     paths:
       - 'android/**'
       - 'run-linux-build.sh'
       - 'run-windows-build.ps1'
       - 'cmake/**'
-      - '.github/workflows/android-tooling.yml'
+      - 'game_data/mods/d2x-xl/**'
+      - 'd1/main/bmread.c'
+      - 'd2/main/bmread.c'
+      - '.github/workflows/**'
 
 permissions:
   contents: read
@@ -36,6 +42,18 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
+      - name: Validate all GitHub workflows
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          lint_root="$RUNNER_TEMP/actionlint-1.7.12"
+          mkdir -p "$lint_root"
+          curl --fail --show-error --location --retry 3 \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+            -o "$lint_root/actionlint.tar.gz"
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $lint_root/actionlint.tar.gz" | sha256sum --check
+          tar -xzf "$lint_root/actionlint.tar.gz" -C "$lint_root" actionlint
+          "$lint_root/actionlint"
       - name: Install verified bounded Python
         shell: bash
         run: bash ./android/get_deps/helpers/get_bounded_python.sh
