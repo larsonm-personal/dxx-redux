@@ -10,6 +10,8 @@
 #include "physfs.h"
 
 #include "android_graphics_options.h"
+#include "android_graphics_safety.h"
+#include "graphics_safety_store.h"
 #include "android_log.h"
 #include "config.h"
 #include "graphics_config_transaction.h"
@@ -183,7 +185,10 @@ static int persist_config_if_needed(int persist, const char *key, int value,
 	if (!persist)
 		return ANDROID_GRAPHICS_OPTION_OK;
 	pthread_mutex_lock(&g_config_transaction_mutex);
+	char root[1024];
+	void *safety_lock = android_files_root(root, sizeof(root)) ? graphics_safety_lock(root) : NULL;
 	result = mirror_config_key(key, value, mirror_d1, mirror_d2);
+	graphics_safety_unlock(safety_lock);
 	pthread_mutex_unlock(&g_config_transaction_mutex);
 	if (result != GRAPHICS_CONFIG_TRANSACTION_OK) {
 		debug_log(DLOG_GRAPHICS, "graphics config transaction failed: key=%s result=%s",
@@ -208,6 +213,8 @@ int android_graphics_set_aniso_level(int value, int persist)
 
 	if (value < 0)
 		value = 0;
+	if (!android_graphics_safety_note_option("aniso_level", value))
+		return ANDROID_GRAPHICS_OPTION_PERSIST_FAILED;
 	debug_log(DLOG_GRAPHICS,
 	          "graphics option request: aniso_level=%d persist=%d",
 	          value, persist);
@@ -225,6 +232,8 @@ int android_graphics_set_msaa_level(int value, int persist)
 
 	if (value < 0)
 		value = 0;
+	if (!android_graphics_safety_note_option("msaa_level", value))
+		return ANDROID_GRAPHICS_OPTION_PERSIST_FAILED;
 	debug_log(DLOG_GRAPHICS,
 	          "graphics option request: msaa_level=%d persist=%d",
 	          value, persist);
@@ -241,6 +250,8 @@ int android_graphics_set_texfilt(int value, int persist)
 	extern volatile int g_texfilt_pending_apply;
 
 	value = clamp_texfilt(value);
+	if (!android_graphics_safety_note_option("tex_filt", value))
+		return ANDROID_GRAPHICS_OPTION_PERSIST_FAILED;
 	debug_log(DLOG_GRAPHICS,
 	          "graphics option request: tex_filt=%d persist=%d",
 	          value, persist);
@@ -260,12 +271,16 @@ int android_graphics_set_gamma_level(int value, int persist)
 
 int android_graphics_set_menu_texfilt(int value, int persist)
 {
+	if (!android_graphics_safety_note_option("menu_tex_filt", clamp_bool(value)))
+		return ANDROID_GRAPHICS_OPTION_PERSIST_FAILED;
 	GameCfg.MenuTexFilt = clamp_bool(value);
 	return persist_config_if_needed(persist, "MenuTexFilt", GameCfg.MenuTexFilt, 1, 1);
 }
 
 int android_graphics_set_hud_texfilt(int value, int persist)
 {
+	if (!android_graphics_safety_note_option("hud_tex_filt", clamp_bool(value)))
+		return ANDROID_GRAPHICS_OPTION_PERSIST_FAILED;
 	GameCfg.HudTexFilt = clamp_bool(value);
 	return persist_config_if_needed(persist, "HudTexFilt", GameCfg.HudTexFilt, 1, 1);
 }

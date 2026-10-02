@@ -1,0 +1,17 @@
+// TEST: Pause a real rollback after first config publication for a host process kill
+[
+    {
+        "action": "set_debug",
+        "field": "graphics_restore_pause_once",
+        "value": "10000"
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_queue_option",
+        "value": "tex_filt:2"
+    },
+    {
+        "action": "wait_ms",
+        "ms": 20000
+    }
+]

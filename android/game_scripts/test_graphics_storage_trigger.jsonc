@@ -1,0 +1,12 @@
+// TEST: Keep an unvalidated graphics edit active for external storage-fault injection
+[
+    {
+        "action": "set_debug",
+        "field": "graphics_queue_option",
+        "value": "tex_filt:2"
+    },
+    {
+        "action": "wait_ms",
+        "ms": 15000
+    }
+]

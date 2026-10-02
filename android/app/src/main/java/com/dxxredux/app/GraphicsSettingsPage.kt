@@ -1,6 +1,8 @@
 package com.dxxredux.app
 
+import android.content.Context
 import android.content.SharedPreferences
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.*
@@ -23,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.io.File
+import java.io.IOException
 import kotlin.math.roundToInt
 
 internal const val PREF_GRAPHICS_SETTINGS_GENERATION = "graphics_settings_generation"
@@ -31,6 +34,19 @@ internal const val PREF_GRAPHICS_DYNLIGHT_COLOR = "graphics_dynlight_color"
 private const val CORNER_TEXT_INSET_OFF = 0
 private const val CORNER_TEXT_INSET_HALF = 1
 private const val CORNER_TEXT_INSET_FULL = 2
+
+private fun saveProtectedGraphicsSettings(
+    context: Context,
+    filesDir: File,
+    settings: List<Pair<String, String>>,
+): Boolean =
+    try {
+        updateAllConfigFiles(filesDir, settings)
+        true
+    } catch (_: IOException) {
+        Toast.makeText(context, "Could not save graphics settings", Toast.LENGTH_LONG).show()
+        false
+    }
 
 @Composable
 fun GraphicsSettingsPage(
@@ -193,7 +209,7 @@ fun GraphicsSettingsPage(
     }
 }
 
-private fun bumpGraphicsSettingsGeneration(prefs: SharedPreferences) {
+internal fun bumpGraphicsSettingsGeneration(prefs: SharedPreferences) {
     val next = prefs.getLong(PREF_GRAPHICS_SETTINGS_GENERATION, 0L) + 1L
     prefs.edit().putLong(PREF_GRAPHICS_SETTINGS_GENERATION, next).apply()
 }
@@ -272,7 +288,16 @@ private fun ResolutionSection(
     val validValues = remember(options) { options.map { it.first }.toSet() }
     val defaultValue = remember(options) { options.firstOrNull()?.first ?: "640x480" }
     var selected by remember {
-        val stored = prefs.getString("render_resolution", null) ?: ""
+        val width = readConfigValue(filesDir, "ResolutionX")
+        val height = readConfigValue(filesDir, "ResolutionY")
+        val stored =
+            if (width != null &&
+                height != null
+            ) {
+                "${width}x$height"
+            } else {
+                prefs.getString("render_resolution", null) ?: ""
+            }
         mutableStateOf(if (stored in validValues) stored else defaultValue)
     }
     options.forEachIndexed { index, (value, label) ->
@@ -283,10 +308,21 @@ private fun ResolutionSection(
             RadioButton(
                 selected = selected == value,
                 onClick = {
-                    selected = value
-                    prefs.edit().putString("render_resolution", value).apply()
-                    updateDescentCfgResolution(filesDir, value)
-                    bumpGraphicsSettingsGeneration(prefs)
+                    val dimensions = parseSupportedAndroidRenderResolution(value)
+                    if (dimensions != null &&
+                        saveProtectedGraphicsSettings(
+                            ctx,
+                            filesDir,
+                            listOf(
+                                "ResolutionX" to dimensions.first.toString(),
+                                "ResolutionY" to dimensions.second.toString(),
+                            ),
+                        )
+                    ) {
+                        selected = value
+                        prefs.edit().putString("render_resolution", value).apply()
+                        bumpGraphicsSettingsGeneration(prefs)
+                    }
                 },
                 modifier = (if (index == options.lastIndex) lastOptionModifier else Modifier).tvFocusBorder(),
             )
@@ -306,9 +342,10 @@ private fun TexFilterSection(
         mutableIntStateOf((readConfigValue(filesDir, "TexFilt") ?: "0").toIntOrNull() ?: 0)
     }
     TextureFilterControl(value = texFilter, firstOptionModifier = firstOptionModifier, onValueChange = {
-        updateAllConfigFiles(filesDir, listOf("TexFilt" to it.toString()))
-        texFilter = it
-        bumpGraphicsSettingsGeneration(prefs)
+        if (saveProtectedGraphicsSettings(ctx, filesDir, listOf("TexFilt" to it.toString()))) {
+            texFilter = it
+            bumpGraphicsSettingsGeneration(prefs)
+        }
     })
 }
 
@@ -356,9 +393,10 @@ private fun ColorDepthSection(filesDir: File) {
             RadioButton(
                 selected = colorDepth == value,
                 onClick = {
-                    colorDepth = value
-                    updateAllConfigFiles(filesDir, listOf("ColorDepth" to value))
-                    bumpGraphicsSettingsGeneration(prefs)
+                    if (saveProtectedGraphicsSettings(ctx, filesDir, listOf("ColorDepth" to value))) {
+                        colorDepth = value
+                        bumpGraphicsSettingsGeneration(prefs)
+                    }
                 },
                 modifier = Modifier.tvFocusBorder(),
             )
@@ -393,9 +431,10 @@ private fun MsaaSection(filesDir: File) {
             RadioButton(
                 selected = msaaLevel == value,
                 onClick = {
-                    msaaLevel = value
-                    updateAllConfigFiles(filesDir, listOf("MsaaLevel" to value.toString()))
-                    bumpGraphicsSettingsGeneration(prefs)
+                    if (saveProtectedGraphicsSettings(ctx, filesDir, listOf("MsaaLevel" to value.toString()))) {
+                        msaaLevel = value
+                        bumpGraphicsSettingsGeneration(prefs)
+                    }
                 },
                 modifier = Modifier.tvFocusBorder(),
             )
@@ -422,9 +461,10 @@ private fun AnisoSection(filesDir: File) {
             RadioButton(
                 selected = anisoLevel == value,
                 onClick = {
-                    anisoLevel = value
-                    updateAllConfigFiles(filesDir, listOf("AnisoLevel" to value.toString()))
-                    bumpGraphicsSettingsGeneration(prefs)
+                    if (saveProtectedGraphicsSettings(ctx, filesDir, listOf("AnisoLevel" to value.toString()))) {
+                        anisoLevel = value
+                        bumpGraphicsSettingsGeneration(prefs)
+                    }
                 },
                 modifier = Modifier.tvFocusBorder(),
             )
@@ -455,9 +495,10 @@ private fun SelectiveFilterSection(filesDir: File) {
         Switch(
             checked = menuFilt,
             onCheckedChange = {
-                menuFilt = it
-                updateAllConfigFiles(filesDir, listOf("MenuTexFilt" to if (it) "1" else "0"))
-                bumpGraphicsSettingsGeneration(prefs)
+                if (saveProtectedGraphicsSettings(ctx, filesDir, listOf("MenuTexFilt" to if (it) "1" else "0"))) {
+                    menuFilt = it
+                    bumpGraphicsSettingsGeneration(prefs)
+                }
             },
             modifier = Modifier.height(24.dp).tvFocusBorder(),
         )
@@ -475,9 +516,10 @@ private fun SelectiveFilterSection(filesDir: File) {
         Switch(
             checked = hudFilt,
             onCheckedChange = {
-                hudFilt = it
-                updateAllConfigFiles(filesDir, listOf("HudTexFilt" to if (it) "1" else "0"))
-                bumpGraphicsSettingsGeneration(prefs)
+                if (saveProtectedGraphicsSettings(ctx, filesDir, listOf("HudTexFilt" to if (it) "1" else "0"))) {
+                    hudFilt = it
+                    bumpGraphicsSettingsGeneration(prefs)
+                }
             },
             modifier = Modifier.height(24.dp).tvFocusBorder(),
         )

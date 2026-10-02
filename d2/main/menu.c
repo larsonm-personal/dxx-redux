@@ -1104,7 +1104,12 @@ void change_res()
 	set_screen_mode(SCREEN_MENU);
 	if (new_mode != Game_screen_mode || cur_borderless != new_borderless)
 	{
+#ifdef ANDROID
+		/* Failed EGL/mode setup is repaired by graphics safety before further rendering */
+		if (gr_set_mode(new_mode)) return;
+#else
 		gr_set_mode(new_mode);
+#endif
 		Game_screen_mode = new_mode;
 		if (Game_wind) // shortly activate Game_wind so it's canvas will align to new resolution. really minor glitch but whatever
 		{

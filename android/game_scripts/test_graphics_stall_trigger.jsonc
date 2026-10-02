@@ -1,0 +1,17 @@
+// TEST: Inject an armed render-thread stall outside both graphics locks
+[
+    {
+        "action": "set_debug",
+        "field": "graphics_stall_once",
+        "value": "12000"
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_queue_option",
+        "value": "tex_filt:2"
+    },
+    {
+        "action": "wait_ms",
+        "ms": 15000
+    }
+]

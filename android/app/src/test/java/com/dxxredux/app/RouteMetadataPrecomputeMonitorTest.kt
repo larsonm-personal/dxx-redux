@@ -5,9 +5,23 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.IOException
 
 class RouteMetadataPrecomputeMonitorTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
+
+    @Test
+    fun unavailableDiagnosticStorageDoesNotAbortLauncherRecovery() {
+        val unavailableDirectory = temporaryFolder.newFile("unavailable-directory")
+        val monitor = RouteMetadataPrecomputeMonitor(unavailableDirectory)
+
+        monitor.discoveryStarted()
+        monitor.discoveryFailed(IOException("Storage unavailable"))
+        monitor.launchHandoff("started")
+
+        assertTrue(unavailableDirectory.isFile)
+        assertTrue(monitor.readRecentLines().isEmpty())
+    }
 
     @Test
     fun persistsOverallProgressAndOneMissionCompletionLine() {

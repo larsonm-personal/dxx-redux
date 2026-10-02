@@ -13,6 +13,7 @@ struct android_ogl_viewport_state {
 	int last_physical_height;
 };
 
+void android_ogl_viewport_invalidate(struct android_ogl_viewport_state *state);
 void android_ogl_viewport_apply(struct android_ogl_viewport_state *state,
                                 int x, int y, int width, int height, int logical_screen_width,
                                 int logical_screen_height, int canvas_height, int keyboard_offset);

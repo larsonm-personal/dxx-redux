@@ -30,6 +30,7 @@ extern "C" {
 #include "android_axis_mailbox.h"
 #include "android_mission_assets.h"
 #include "android_log.h"
+#include "android_graphics_safety.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_level_preview.h"
 #include "android_route_metadata.h"
@@ -79,6 +80,7 @@ extern "C" {
 #ifdef OGL
 #include "ogl_init.h"
 #include "ogl_msaa_android.h"
+#include "ogl_msaa_probe_android.h"
 #endif
 #include "piggy.h"
 #include "textures.h"
@@ -1670,6 +1672,11 @@ static json serialize_merged_wall_last_draw_state()
 extern "C" char *game_introspect_get_state(void)
 {
 	json j;
+	{
+		char safety[2048];
+		android_graphics_safety_state_json(safety, sizeof(safety));
+		j["graphics_safety"] = json::parse(safety);
+	}
 
 	/* -- General state -------------------------------------------- */
 	j["screen_mode"] = screen_mode_name(Screen_mode);
@@ -2846,10 +2853,16 @@ extern "C" char *game_introspect_get_state(void)
 			diagnostics["last_frame_resolved"] = (bool) msaa.last_frame_resolved;
 			diagnostics["last_create_status"] = msaa.last_create_status;
 			diagnostics["last_gl_error"] = msaa.last_gl_error;
+			diagnostics["last_scene_gl_error"] = msaa.last_scene_gl_error;
+			diagnostics["scene_error_count"] = msaa.scene_error_count;
 			diagnostics["generation"] = msaa.generation;
 			diagnostics["bound_frame_count"] = msaa.bound_frame_count;
 			diagnostics["resolve_count"] = msaa.resolve_count;
 			j["msaa"] = std::move(diagnostics);
+			j["msaa"]["failure_latched"] = (bool) msaa.failure_latched;
+			j["msaa"]["resolve_failures"] = msaa.resolve_failures;
+			j["msaa"]["flip_serial"] = msaa.flip_serial;
+			j["msaa_probe"] = json::parse(android_ogl_msaa_probe_result_json());
 		}
 #else
 		j["msaa_samples"] = 0;

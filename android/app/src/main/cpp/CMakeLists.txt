@@ -406,6 +406,21 @@ target_include_directories(dxx_fingerprint PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/sh
 target_compile_options(dxx_fingerprint PRIVATE -w) # suppress warnings in vendored decoder code
 target_link_libraries(dxx_fingerprint PRIVATE chromaprint log nlohmann_json::nlohmann_json)
 
+# File-only graphics acceptance service, shared by both engines and the launcher
+add_library(
+    dxx_graphics_safety SHARED
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/graphics_safety_store.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/graphics_config_transaction.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/jni_graphics_safety.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/jni_string.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/utf8_codec.c)
+set_target_properties(dxx_graphics_safety PROPERTIES OUTPUT_NAME "dxx-graphics-safety")
+target_include_directories(dxx_graphics_safety PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
+target_link_libraries(dxx_graphics_safety PRIVATE nlohmann_json::nlohmann_json log)
+# Match the engines' opt-in automation support for interrupted config publication
+target_compile_definitions(dxx_graphics_safety PRIVATE INTROSPECT_ON)
+target_compile_features(dxx_graphics_safety PRIVATE cxx_std_11)
+
 # ──────────────────────────────────────────────────────────────
 # 1. Pre-set variables so find_package(SDL) / find_package(PhysFS) in the D2 cmake files succeed
 #   without a system search.
@@ -575,7 +590,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_file_pair_transaction.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/graphics_config_transaction.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_safety.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/coop_indicator_lines.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_name_table.cpp
@@ -589,6 +604,7 @@ if(OPENGL)
         dxx-redux-d1
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/merged_wall_debug.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_android.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_probe_android.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_gpu_timer_android.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_texture_android.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_texture_filename.c
@@ -641,6 +657,7 @@ if(OPENGL)
 endif() # OPENGL
 
 target_link_libraries(dxx-redux-d1 PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(dxx-redux-d1 PRIVATE dxx_graphics_safety)
 target_link_libraries(dxx-redux-d1 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint ktx)
 dxx_audio_tag_apply(dxx-redux-d1)
 dxx_input_demo_apply_codec_deps(dxx-redux-d1)
@@ -757,7 +774,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_file_pair_transaction.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/graphics_config_transaction.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_safety.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/coop_indicator_lines.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_name_table.cpp
@@ -777,6 +794,7 @@ if(OPENGL)
         dxx-redux-d2
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/merged_wall_debug.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_android.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_probe_android.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_gpu_timer_android.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_texture_android.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_texture_filename.c
@@ -843,6 +861,7 @@ endif()
 
 # nlohmann/json — used by the introspection/automation C++ files
 target_link_libraries(dxx-redux-d2 PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(dxx-redux-d2 PRIVATE dxx_graphics_safety)
 target_link_libraries(dxx-redux-d2 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint ktx)
 dxx_audio_tag_apply(dxx-redux-d2)
 dxx_input_demo_apply_codec_deps(dxx-redux-d2)

@@ -95,6 +95,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_crash_handler.h"
 #include "android_music_control.h"
 #include "android_profile.h"
+#include "android_graphics_safety.h"
 #include "android_rewind.h"
 #include "coop_save.h"
 #include "coop/coop_briefing.h"
@@ -1458,7 +1459,11 @@ int game_handler(window *wind, d_event *event, void *data)
 				}
 			}
 
-			if (!Automap_active)		// efficiency hack
+			if (!Automap_active
+			#ifdef __ANDROID__
+			    && android_graphics_safety_before_main_view()
+			#endif
+			   )		// efficiency hack
 			{
 				#ifdef __ANDROID__
 				android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_RENDER);

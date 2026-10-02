@@ -1626,6 +1626,7 @@ function Watch-AutomationResult {
     $launcherChecked = $false
     $lastLauncherResumeStep = -1
     $cacheActive = $false
+    $seenCacheLines = [System.Collections.Generic.HashSet[string]]::new()
     $cacheStartSeconds = -1
     $cacheLastIndex = -1
     $cacheTotal = 0
@@ -1696,8 +1697,10 @@ function Watch-AutomationResult {
             $cacheLog = Adb-Timeout -AdbArgs @("logcat", "-d", "-t", "400", "-s", "DXX:*") -Seconds 10
             if ($cacheLog) {
                 foreach ($line in ($cacheLog -split "`n")) {
+                    if ($line -notmatch 'ogl_cache:' -or -not $seenCacheLines.Add($line)) { continue }
                     if ($line -match 'ogl_cache: starting,\s+(\d+)\s+bitmaps') {
                         $cacheTotal = [int]$matches[1]
+                        $cacheLastIndex = -1
                         $cacheActive = $true
                         if ($cacheStartSeconds -lt 0) {
                             $cacheStartSeconds = $elapsed
@@ -1889,6 +1892,15 @@ function Watch-AutomationResult {
                     }
                     Write-Status "Background marker $backgroundMarker detected -- cycling app to background" "Yellow"
                     Start-Sleep -Seconds 1
+                    $graphicsBefore = $null
+                    if ($line -match 'require_graphics_challenge=(true|1)') {
+                        $graphicsBefore = (Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', 'files/graphics_safety.json')) -join "`n" | ConvertFrom-Json
+                        if ($graphicsBefore.attempt.phase -ne 3) {
+                            Write-Status 'FAIL: Background marker did not reach a live graphics challenge' 'Red'
+                            return $false
+                        }
+                        Write-Status "Graphics challenge active at background entry: $($graphicsBefore.attempt.trial_id)"
+                    }
                     # Press HOME to send app to background
                     Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_HOME") | Out-Null
                     if ($lockScreen) {
@@ -1897,11 +1909,32 @@ function Watch-AutomationResult {
                     } else {
                         Write-Status "HOME pressed -- waiting ${backgroundSeconds}s in background..."
                     }
-                    Start-Sleep -Seconds $backgroundSeconds
+                    if ($graphicsBefore) {
+                        Start-Sleep -Seconds 1
+                        $graphicsAfter = (Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', 'files/graphics_safety.json')) -join "`n" | ConvertFrom-Json
+                        if ($graphicsAfter.attempt.phase -in @(1, 2, 3)) {
+                            Write-Status 'FAIL: Backgrounding did not reject the graphics challenge' 'Red'
+                            return $false
+                        }
+                        foreach ($field in $graphicsBefore.accepted.PSObject.Properties) {
+                            if ($graphicsAfter.accepted.($field.Name) -ne $field.Value) {
+                                Write-Status "FAIL: Accepted $($field.Name) changed while backgrounded" 'Red'
+                                return $false
+                            }
+                        }
+                        Write-Status 'Graphics challenge rejected in the background; accepted tuple preserved'
+                        if ($backgroundSeconds -gt 1) { Start-Sleep -Seconds ($backgroundSeconds - 1) }
+                    } else {
+                        Start-Sleep -Seconds $backgroundSeconds
+                    }
                     if ($lockScreen) {
                         Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_WAKEUP") | Out-Null
                         Adb -AdbArgs @("shell", "wm", "dismiss-keyguard") | Out-Null
                         Start-Sleep -Seconds 1
+                    }
+                    if ($graphicsBefore -and (Get-AppProcessId "$($script:PACKAGE):game") -ne "$($graphicsBefore.attempt.owner_pid)") {
+                        Write-Status 'FAIL: Responsive graphics lifecycle transition unexpectedly closed the game' 'Red'
+                        return $false
                     }
                     # Bring app back to foreground via launcher intent (re-opens
                     # existing task with SetupActivity on top), then press BACK

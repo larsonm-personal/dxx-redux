@@ -1623,3 +1623,1120 @@ Integrity validation through 0469: temp/gq_integrity.py exited 0 (session 20959)
 - Imported and normalized 1 additional complete scope reports; original queue is 488 DONE and 331 TODO, next unit 0486
 - Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
 - Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0486
+
+- Imported and normalized 1 additional complete scope reports; original queue is 489 DONE and 330 TODO, next unit 0487
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0487
+
+- Imported and normalized 1 additional complete scope reports; original queue is 490 DONE and 329 TODO, next unit 0488
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0488
+
+- Imported and normalized 1 additional complete scope reports; original queue is 491 DONE and 328 TODO, next unit 0489
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0489
+
+- Imported and normalized 1 additional complete scope reports; original queue is 492 DONE and 327 TODO, next unit 0490
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0490
+
+- Imported and normalized 1 additional complete scope reports; original queue is 493 DONE and 326 TODO, next unit 0491
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0491
+
+- Imported and normalized 1 additional complete scope reports; original queue is 494 DONE and 325 TODO, next unit 0492
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0492
+
+- Imported and normalized 1 additional complete scope reports; original queue is 495 DONE and 324 TODO, next unit 0493
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0493
+
+- Imported and normalized 1 additional complete scope reports; original queue is 496 DONE and 323 TODO, next unit 0494
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0494
+
+- Imported and normalized 1 additional complete scope reports; original queue is 497 DONE and 322 TODO, next unit 0495
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0495
+
+- Imported and normalized 1 additional complete scope reports; original queue is 498 DONE and 321 TODO, next unit 0496
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0496
+
+- Imported and normalized 1 additional complete scope reports; original queue is 499 DONE and 320 TODO, next unit 0497
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0497
+
+- Imported and normalized 1 additional complete scope reports; original queue is 500 DONE and 319 TODO, next unit 0498
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0498
+
+- Imported and normalized 1 additional complete scope reports; original queue is 501 DONE and 318 TODO, next unit 0499
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0499
+
+- Imported and normalized 1 additional complete scope reports; original queue is 502 DONE and 317 TODO, next unit 0500
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0500
+
+- Imported and normalized 1 additional complete scope reports; original queue is 503 DONE and 316 TODO, next unit 0501
+- Admitted GQF-0232/GQR-0217 for malformed leading secret origins, confirmed through the actual shared policy; existing owners and completed repairs were reconciled
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0501
+
+- Imported and normalized 1 additional complete scope reports; original queue is 504 DONE and 315 TODO, next unit 0502
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0502
+
+- Imported and normalized 1 additional complete scope reports; original queue is 505 DONE and 314 TODO, next unit 0503
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0503
+
+- Imported and normalized 1 additional complete scope reports; original queue is 506 DONE and 313 TODO, next unit 0504
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0504
+
+- Imported and normalized 1 additional complete scope reports; original queue is 507 DONE and 312 TODO, next unit 0505
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0505
+
+- Imported and normalized 1 additional complete scope reports; original queue is 508 DONE and 311 TODO, next unit 0506
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0506
+
+- Imported and normalized 1 additional complete scope reports; original queue is 509 DONE and 310 TODO, next unit 0507
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0507
+
+- Imported and normalized 1 additional complete scope reports; original queue is 510 DONE and 309 TODO, next unit 0508
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0508
+
+- Imported and normalized 1 additional complete scope reports; original queue is 511 DONE and 308 TODO, next unit 0509
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0509
+
+- Imported and normalized 1 additional complete scope reports; original queue is 512 DONE and 307 TODO, next unit 0510
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0510
+
+- Imported and normalized 1 additional complete scope reports; original queue is 513 DONE and 306 TODO, next unit 0511
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0511
+
+- Imported and normalized 1 additional complete scope reports; original queue is 514 DONE and 305 TODO, next unit 0512
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0512
+
+- Imported and normalized 1 additional complete scope reports; original queue is 515 DONE and 304 TODO, next unit 0513
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0513
+
+- Imported and normalized 1 additional complete scope reports; original queue is 516 DONE and 303 TODO, next unit 0514
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0514
+
+- Imported and normalized 1 additional complete scope reports; original queue is 517 DONE and 302 TODO, next unit 0515
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0515
+
+- Imported and normalized 1 additional complete scope reports; original queue is 518 DONE and 301 TODO, next unit 0516
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0516
+
+- Imported and normalized 1 additional complete scope reports; original queue is 519 DONE and 300 TODO, next unit 0517
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0517
+
+- Imported and normalized 1 additional complete scope reports; original queue is 520 DONE and 299 TODO, next unit 0518
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0518
+
+- Imported and normalized 1 additional complete scope reports; original queue is 521 DONE and 298 TODO, next unit 0519
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0519
+
+- Imported and normalized 1 additional complete scope reports; original queue is 522 DONE and 297 TODO, next unit 0520
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0520
+
+- Imported and normalized 1 additional complete scope reports; original queue is 523 DONE and 296 TODO, next unit 0521
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0521
+
+- Imported and normalized 1 additional complete scope reports; original queue is 524 DONE and 295 TODO, next unit 0522
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0522
+
+- Imported and normalized 1 additional complete scope reports; original queue is 525 DONE and 294 TODO, next unit 0523
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0523
+
+- Imported and normalized 1 additional complete scope reports; original queue is 526 DONE and 293 TODO, next unit 0524
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0524
+
+- Imported and normalized 1 additional complete scope reports; original queue is 527 DONE and 292 TODO, next unit 0525
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0525
+
+- Imported and normalized 1 additional complete scope reports; original queue is 528 DONE and 291 TODO, next unit 0526
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0526
+
+- Imported and normalized 1 additional complete scope reports; original queue is 529 DONE and 290 TODO, next unit 0527
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0527
+
+- Imported and normalized 1 additional complete scope reports; original queue is 530 DONE and 289 TODO, next unit 0528
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0528
+
+- Imported and normalized 1 additional complete scope reports; original queue is 531 DONE and 288 TODO, next unit 0529
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0529
+
+- Imported and normalized 1 additional complete scope reports; original queue is 532 DONE and 287 TODO, next unit 0530
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0530
+
+- Imported and normalized 1 additional complete scope reports; original queue is 533 DONE and 286 TODO, next unit 0531
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0531
+
+- Imported and normalized 1 additional complete scope reports; original queue is 534 DONE and 285 TODO, next unit 0532
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0532
+
+- Imported and normalized 1 additional complete scope reports; original queue is 535 DONE and 284 TODO, next unit 0533
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0533
+
+- Imported and normalized 1 additional complete scope reports; original queue is 536 DONE and 283 TODO, next unit 0534
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0534
+
+- Imported and normalized 1 additional complete scope reports; original queue is 537 DONE and 282 TODO, next unit 0535
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0535
+
+- Imported and normalized 1 additional complete scope reports; original queue is 538 DONE and 281 TODO, next unit 0536
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0536
+
+- Imported and normalized 1 additional complete scope reports; original queue is 539 DONE and 280 TODO, next unit 0537
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0537
+
+- Imported and normalized 1 additional complete scope reports; original queue is 540 DONE and 279 TODO, next unit 0538
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0538
+
+- Imported and normalized 1 additional complete scope reports; original queue is 541 DONE and 278 TODO, next unit 0539
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0539
+
+- Imported and normalized 1 additional complete scope reports; original queue is 542 DONE and 277 TODO, next unit 0540
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0540
+
+- Imported and normalized 1 additional complete scope reports; original queue is 543 DONE and 276 TODO, next unit 0541
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0541
+
+- Imported and normalized 1 additional complete scope reports; original queue is 544 DONE and 275 TODO, next unit 0542
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0542
+
+- Imported and normalized 1 additional complete scope reports; original queue is 545 DONE and 274 TODO, next unit 0543
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0543
+
+- Imported and normalized 1 additional complete scope reports; original queue is 546 DONE and 273 TODO, next unit 0544
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0544
+
+- Imported and normalized 1 additional complete scope reports; original queue is 547 DONE and 272 TODO, next unit 0545
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0545
+
+- Imported and normalized 1 additional complete scope reports; original queue is 548 DONE and 271 TODO, next unit 0546
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0546
+
+- Imported and normalized 1 additional complete scope reports; original queue is 549 DONE and 270 TODO, next unit 0547
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0547
+
+- Imported and normalized 1 additional complete scope reports; original queue is 550 DONE and 269 TODO, next unit 0548
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0548
+
+- Imported and normalized 1 additional complete scope reports; original queue is 551 DONE and 268 TODO, next unit 0549
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0549
+
+- Imported and normalized 1 additional complete scope reports; original queue is 552 DONE and 267 TODO, next unit 0550
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0550
+
+- Imported and normalized 1 additional complete scope reports; original queue is 553 DONE and 266 TODO, next unit 0551
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0551
+
+- Imported and normalized 1 additional complete scope reports; original queue is 554 DONE and 265 TODO, next unit 0552
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0552
+
+- Imported and normalized 1 additional complete scope reports; original queue is 555 DONE and 264 TODO, next unit 0553
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0553
+
+- Imported and normalized 1 additional complete scope reports; original queue is 556 DONE and 263 TODO, next unit 0554
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0554
+
+- Imported and normalized 1 additional complete scope reports; original queue is 557 DONE and 262 TODO, next unit 0555
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0555
+
+- Imported and normalized 1 additional complete scope reports; original queue is 558 DONE and 261 TODO, next unit 0556
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0556
+
+- Imported and normalized 1 additional complete scope reports; original queue is 559 DONE and 260 TODO, next unit 0557
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0557
+
+- Imported and normalized 1 additional complete scope reports; original queue is 560 DONE and 259 TODO, next unit 0558
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0558
+
+- Imported and normalized 1 additional complete scope reports; original queue is 561 DONE and 258 TODO, next unit 0559
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0559
+
+- Imported and normalized 1 additional complete scope reports; original queue is 562 DONE and 257 TODO, next unit 0560
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0560
+
+- Imported and normalized 1 additional complete scope reports; original queue is 563 DONE and 256 TODO, next unit 0561
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0561
+
+- Imported and normalized 1 additional complete scope reports; original queue is 564 DONE and 255 TODO, next unit 0562
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0562
+
+- Imported and normalized 1 additional complete scope reports; original queue is 565 DONE and 254 TODO, next unit 0563
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0563
+
+- Imported and normalized 1 additional complete scope reports; original queue is 566 DONE and 253 TODO, next unit 0564
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0564
+
+- Imported and normalized 1 additional complete scope reports; original queue is 567 DONE and 252 TODO, next unit 0565
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Frozen inventory tail audit dependency
+
+- The original TouchEditorPage inventory ends at frozen L3750, but frozen HEAD 7877ad30d05887b8e19869ed4c50075e41e2f88e has 4042 lines. Read the uncovered L3751-L4042 completely as supplemental context before 0565; the original 819-call count remains unchanged
+- Closure must compare assigned source ranges to actual frozen file lengths, cover every missing tail/range with explicit supplemental evidence, then complete the planned full current source and untracked-file reconciliation. Queue contiguity and imported report hashes alone do not establish complete file coverage
+- Supplemental gyro dialog tracing found an apparent producer/validator mismatch: GyroAxisPicker offers Disabled (-1) for yaw and roll, current native-facing manager skips negative axes, but validateTouchLayoutDomains permits -1 only for pitch. Finish store/reload and existing-owner checks before admitting or repairing this root; evidence belongs with the next complete report
+
+### Supplemental frozen-tail audit register
+
+Read-only range audit at frozen HEAD `7877ad30d05887b8e19869ed4c50075e41e2f88e` checked 207 simple whole-file queue paths and identified 58 candidate uncovered trailing ranges. This audit does not cover multipath/hunk assignments and does not assert all candidates were unread: prior supplemental evidence must be reconciled explicitly. The original 819 calls and historical fingerprints remain unchanged. Every PENDING row below requires an exact evidence link and frozen blob/range fingerprint before closure, together with full current source reconciliation
+
+| Supplemental ID | Frozen path | Unassigned tail | Existing assignments | Disposition |
+|---|---|---|---|---|
+| GQ1-TAIL-001 | `android/app/src/main/cpp/extract/extract_cd.c` | L601-L704 | GQ1-CHUNK-0024 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-002 | `android/app/src/main/cpp/extract/hfs_reader.c` | L1201-L1408 | GQ1-CHUNK-0027, GQ1-CHUNK-0028 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-003 | `android/app/src/main/cpp/extract/iso9660_reader.c` | L601-L996 | GQ1-CHUNK-0036 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-004 | `android/app/src/main/cpp/extract/pkg_reader.c` | L601-L999 | GQ1-CHUNK-0038 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-005 | `android/app/src/main/cpp/extract/sow_extract.c` | L601-L1051 | GQ1-CHUNK-0039 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-006 | `android/app/src/main/cpp/extract/sti2_extract.c` | L2401-L2404 | GQ1-CHUNK-0040, GQ1-CHUNK-0041, GQ1-CHUNK-0042, GQ1-CHUNK-0043 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-007 | `android/app/src/main/cpp/extract/test_cue_iso.c` | L3001-L3426 | GQ1-CHUNK-0099, GQ1-CHUNK-0100, GQ1-CHUNK-0101, GQ1-CHUNK-0102, GQ1-CHUNK-0103 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-008 | `android/app/src/main/cpp/extract/test_gog_fd.c` | L1201-L1467 | GQ1-CHUNK-0106, GQ1-CHUNK-0107 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-009 | `android/app/src/main/cpp/extract/test_pkg_toc_bounds.c` | L601-L665 | GQ1-CHUNK-0110 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-010 | `android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp` | L751-L1057 | GQ1-CHUNK-0209 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-011 | `android/app/src/main/cpp/jni_main.c` | L1201-L1496 | GQ1-CHUNK-0048, GQ1-CHUNK-0049 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-012 | `android/app/src/main/cpp/shared/automap_metadata_overlay.c` | L751-L797 | GQ1-CHUNK-0213 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-013 | `android/app/src/main/cpp/shared/cd_preview.c` | L751-L884 | GQ1-CHUNK-0214 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-014 | `android/app/src/main/cpp/shared/digi_tsf_music.c` | L751-L1288 | GQ1-CHUNK-0218 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-015 | `android/app/src/main/cpp/shared/game_automate.cpp` | L3751-L3844 | GQ1-CHUNK-0219, GQ1-CHUNK-0220, GQ1-CHUNK-0221, GQ1-CHUNK-0222, GQ1-CHUNK-0223 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-016 | `android/app/src/main/cpp/shared/game_introspect.cpp` | L2251-L2435 | GQ1-CHUNK-0224, GQ1-CHUNK-0225, GQ1-CHUNK-0226 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-017 | `android/app/src/main/cpp/shared/gles3_shim.c` | L751-L1025 | GQ1-CHUNK-0227 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-018 | `android/app/src/main/cpp/shared/input_demo_controls.cpp` | L751-L764 | GQ1-CHUNK-0228 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-019 | `android/app/src/main/cpp/shared/input_demo_recorder.cpp` | L751-L775 | GQ1-CHUNK-0237 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-020 | `android/app/src/main/cpp/shared/input_demo_replay.cpp` | L751-L817 | GQ1-CHUNK-0238 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-021 | `android/app/src/main/cpp/shared/input_demo_start_shared.c` | L751-L774 | GQ1-CHUNK-0241 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-022 | `android/app/src/main/cpp/shared/input_demo_state_trace.cpp` | L751-L791 | GQ1-CHUNK-0242 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-023 | `android/app/src/main/cpp/shared/multi_save_transfer.c` | L751-L981 | GQ1-CHUNK-0258 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-024 | `android/app/src/main/cpp/shared/rbaudio_bin.c` | L1501-L1960 | GQ1-CHUNK-0261, GQ1-CHUNK-0262 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-025 | `android/app/src/main/cpp/shared/route_planner.cpp` | L3001-L3201 | GQ1-CHUNK-0263, GQ1-CHUNK-0264, GQ1-CHUNK-0265, GQ1-CHUNK-0266 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-026 | `android/app/src/main/cpp/shared/secret_area_game_adapter.c` | L2251-L2563 | GQ1-CHUNK-0268, GQ1-CHUNK-0269, GQ1-CHUNK-0270 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-027 | `android/app/src/main/cpp/shared/secret_area_scan.c` | L751-L1190 | GQ1-CHUNK-0271 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-028 | `android/app/src/main/cpp/shared/state_android_shared.c` | L751-L1057 | GQ1-CHUNK-0272 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-029 | `android/app/src/main/java/com/dxxredux/app/AdvancedSettingsPage.kt` | L2251-L2679 | GQ1-CHUNK-0486, GQ1-CHUNK-0487, GQ1-CHUNK-0488 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-030 | `android/app/src/main/java/com/dxxredux/app/AutoselectEditorPage.kt` | L751-L924 | GQ1-CHUNK-0491 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-031 | `android/app/src/main/java/com/dxxredux/app/HumanReadableConfig.kt` | L751-L763 | GQ1-CHUNK-0504 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-032 | `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` | L3751-L3982 | GQ1-CHUNK-0513, GQ1-CHUNK-0514, GQ1-CHUNK-0515, GQ1-CHUNK-0516, GQ1-CHUNK-0517 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-033 | `android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt` | L601-L698 | GQ1-CHUNK-0061 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-034 | `android/app/src/main/java/com/dxxredux/app/ModManager.kt` | L1501-L1920 | GQ1-CHUNK-0519, GQ1-CHUNK-0520 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-035 | `android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt` | L751-L918 | GQ1-CHUNK-0531 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-036 | `android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt` | L1501-L1966 | GQ1-CHUNK-0532, GQ1-CHUNK-0533 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-037 | `android/app/src/main/java/com/dxxredux/app/SetupAutomationApi.kt` | L751-L1086 | GQ1-CHUNK-0542 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-038 | `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt` | L751-L760 | GQ1-CHUNK-0548 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-039 | `android/app/src/main/java/com/dxxredux/app/TouchEditorPage.kt` | L3751-L4042 | GQ1-CHUNK-0560, GQ1-CHUNK-0561, GQ1-CHUNK-0562, GQ1-CHUNK-0563, GQ1-CHUNK-0564 | COVERED by 0565 supplemental evidence |
+| GQ1-TAIL-040 | `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt` | L5251-L5405 | GQ1-CHUNK-0565, GQ1-CHUNK-0566, GQ1-CHUNK-0567, GQ1-CHUNK-0568, GQ1-CHUNK-0569, GQ1-CHUNK-0570, GQ1-CHUNK-0571 | COVERED by 0571 supplemental evidence; frozen blob 409c0d03ee55c5a51a7b364d04119b5ebfab6440 |
+| GQ1-TAIL-041 | `android/app/src/main/java/com/dxxredux/app/VideoInfoOverlay.kt` | L751-L1004 | GQ1-CHUNK-0572 | COVERED by 0572 supplemental evidence; frozen blob cc91012c6d671ec7e051f4f1113bdfd6b789329b |
+| GQ1-TAIL-042 | `android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt` | L751-L1101 | GQ1-CHUNK-0522 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-043 | `android/get_deps/check-updates.ps1` | L1501-L1867 | GQ1-CHUNK-0592, GQ1-CHUNK-0593 | COVERED complete frozen tail read in imported GQ1-CHUNK-0587; full 1867-line updater reconciled through imported GQ1-CHUNK-0593 |
+| GQ1-TAIL-044 | `android/helpers/regenerate_all_mission_metadata_host.ps1` | L751-L868 | GQ1-CHUNK-0604 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-045 | `android/helpers/run_mission_zip_batch.ps1` | L601-L916 | GQ1-CHUNK-0085 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-046 | `android/tests/test_extract.ps1` | L1201-L1620 | GQ1-CHUNK-0135, GQ1-CHUNK-0136 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-047 | `android/tests/test_input_demo_recorder.cpp` | L901-L991 | GQ1-CHUNK-0700 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-048 | `android/tests/test_input_demo_replay.cpp` | L901-L1059 | GQ1-CHUNK-0701 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-049 | `android/tests/test_lan.ps1` | L901-L1397 | GQ1-CHUNK-0702 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-050 | `android/tests/test_route_snapshot.cpp` | L901-L1385 | GQ1-CHUNK-0707 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-051 | `android/tests/test_saf_archiver.ps1` | L601-L731 | GQ1-CHUNK-0137 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-052 | `d1/main/input_demo_hooks.c` | L751-L1326 | GQ1-CHUNK-0300 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-053 | `d1_d2_ogl_diff.txt` | L901-L922 | GQ1-CHUNK-0630 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-054 | `d2/main/d1_custom.c` | L751-L894 | GQ1-CHUNK-0347 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-055 | `d2/main/d1_save_translate.c` | L1501-L1882 | GQ1-CHUNK-0351, GQ1-CHUNK-0352 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-056 | `d2/main/dxa_metadata_patch.cpp` | L751-L1060 | GQ1-CHUNK-0353 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-057 | `d2/main/input_demo_hooks.c` | L6751-L7138 | GQ1-CHUNK-0358, GQ1-CHUNK-0359, GQ1-CHUNK-0360, GQ1-CHUNK-0361, GQ1-CHUNK-0362, GQ1-CHUNK-0363, GQ1-CHUNK-0364, GQ1-CHUNK-0365, GQ1-CHUNK-0366 | PENDING prior-evidence reconciliation or full supplemental review |
+| GQ1-TAIL-058 | `game_data/mods/d2x-xl/convert_d2xxl_textures.ps1` | L751-L1004 | GQ1-CHUNK-0620 | PENDING prior-evidence reconciliation or full supplemental review |
+
+### Progress through GQ1-CHUNK-0565
+
+- Imported and normalized 1 additional complete scope reports; original queue is 568 DONE and 251 TODO, next unit 0566
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0566
+
+- Imported and normalized 1 additional complete scope reports; original queue is 569 DONE and 250 TODO, next unit 0567
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0567
+
+- Imported and normalized 1 additional complete scope reports; original queue is 570 DONE and 249 TODO, next unit 0568
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0568
+
+- Imported and normalized 1 additional complete scope reports; original queue is 571 DONE and 248 TODO, next unit 0569
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0569
+
+- Imported and normalized 1 additional complete scope reports; original queue is 572 DONE and 247 TODO, next unit 0570
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0570
+
+- Imported and normalized 1 additional complete scope reports; original queue is 573 DONE and 246 TODO, next unit 0571
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0571
+
+- Imported and normalized 1 additional complete scope reports; original queue is 574 DONE and 245 TODO, next unit 0572
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0572
+
+- Imported and normalized 1 additional complete scope reports; original queue is 575 DONE and 244 TODO, next unit 0573
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0573
+
+- Imported and normalized 1 additional complete scope reports; original queue is 576 DONE and 243 TODO, next unit 0574
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0574
+
+- Imported and normalized 1 additional complete scope reports; original queue is 577 DONE and 242 TODO, next unit 0575
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0575
+
+- Imported and normalized 1 additional complete scope reports; original queue is 578 DONE and 241 TODO, next unit 0576
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0576
+
+- Imported and normalized 1 additional complete scope reports; original queue is 579 DONE and 240 TODO, next unit 0577
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0577
+
+- Imported and normalized 1 additional complete scope reports; original queue is 580 DONE and 239 TODO, next unit 0578
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0578
+
+- Imported and normalized 1 additional complete scope reports; original queue is 581 DONE and 238 TODO, next unit 0579
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0579
+
+- Imported and normalized 1 additional complete scope reports; original queue is 582 DONE and 237 TODO, next unit 0580
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0580
+
+- Imported and normalized 1 additional complete scope reports; original queue is 583 DONE and 236 TODO, next unit 0581
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0581
+
+- Imported and normalized 1 additional complete scope reports; original queue is 584 DONE and 235 TODO, next unit 0582
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0582
+
+- Imported and normalized 1 additional complete scope reports; original queue is 585 DONE and 234 TODO, next unit 0583
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0583
+
+- Imported and normalized 1 additional complete scope reports; original queue is 586 DONE and 233 TODO, next unit 0584
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0584
+
+- Imported and normalized 1 additional complete scope reports; original queue is 587 DONE and 232 TODO, next unit 0585
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0585
+
+- Imported and normalized 1 additional complete scope reports; original queue is 588 DONE and 231 TODO, next unit 0586
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0586
+
+- Imported and normalized 1 additional complete scope reports; original queue is 589 DONE and 230 TODO, next unit 0587
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0587
+
+- Imported and normalized 1 additional complete scope reports; original queue is 590 DONE and 229 TODO, next unit 0588
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0588
+
+- Imported and normalized 1 additional complete scope reports; original queue is 591 DONE and 228 TODO, next unit 0589
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0589
+
+- Imported and normalized 1 additional complete scope reports; original queue is 592 DONE and 227 TODO, next unit 0590
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0590
+
+- Imported and normalized 1 additional complete scope reports; original queue is 593 DONE and 226 TODO, next unit 0591
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0591
+
+- Imported and normalized 1 additional complete scope reports; original queue is 594 DONE and 225 TODO, next unit 0592
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0592
+
+- Imported and normalized 1 additional complete scope reports; original queue is 595 DONE and 224 TODO, next unit 0593
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0593
+
+- Imported and normalized 1 additional complete scope reports; original queue is 596 DONE and 223 TODO, next unit 0594
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0594
+
+- Imported and normalized 1 additional complete scope reports; original queue is 597 DONE and 222 TODO, next unit 0595
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0595
+
+- Imported and normalized 1 additional complete scope reports; original queue is 598 DONE and 221 TODO, next unit 0596
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0596
+
+- Imported and normalized 1 additional complete scope reports; original queue is 599 DONE and 220 TODO, next unit 0597
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0597
+
+- Imported and normalized 1 additional complete scope reports; original queue is 600 DONE and 219 TODO, next unit 0598
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Writer impact correction for GQ1-CHUNK-0596
+
+- Final canonical scope rating is 47 (23/0/7/10/7), owned by BR-0584. Direct current-source confirmation warrants high confidence (10), correcting the raw report provisional confidence6 and total43. The imported original report and SHA remain unchanged; the final annotation supersedes its provisional score
+
+### Progress through GQ1-CHUNK-0598
+
+- Imported and normalized 1 additional complete scope reports; original queue is 601 DONE and 218 TODO, next unit 0599
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+- GQ1-CHUNK-0599 extends GQR-0222 to fingerprint_config.ps1: actual split-fraction threshold probe accepted0.65. Consolidate it onto the shared lexical parser and extend maintained threshold rejection coverage; no duplicate admission
+
+### Progress through GQ1-CHUNK-0599
+
+- Imported and normalized 1 additional complete scope reports; original queue is 602 DONE and 217 TODO, next unit 0600
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0600
+
+- Imported and normalized 1 additional complete scope reports; original queue is 603 DONE and 216 TODO, next unit 0601
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0601
+
+- Imported and normalized 1 additional complete scope reports; original queue is 604 DONE and 215 TODO, next unit 0602
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0602
+
+- Imported and normalized 1 additional complete scope reports; original queue is 605 DONE and 214 TODO, next unit 0603
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0603
+
+- Imported and normalized 1 additional complete scope reports; original queue is 606 DONE and 213 TODO, next unit 0604
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0604
+
+- Imported and normalized 1 additional complete scope reports; original queue is 607 DONE and 212 TODO, next unit 0605
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Writer clarification for fixture evidence through GQ1-CHUNK-0604
+
+The generic Clean dimensions paragraph in imports0600-0604 retained a stale sentence saying context checks are static only. Their Context and observations sections explicitly record the actual executed maintained fixture tests and isolated probes, with logs and exits; those specific execution records are authoritative. No APK build, manifest merge, Android instrumentation or hostile-peer integration ran in these scopes. Import bodies and report SHA-256 remain immutable; future reports use an accurate generic fixture/static distinction
+
+### Progress through GQ1-CHUNK-0605
+
+- Imported and normalized 1 additional complete scope reports; original queue is 608 DONE and 211 TODO, next unit 0606
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Writer coverage correction for GQ1-CHUNK-0605
+
+The initial narrow ignore-rule report missed active BR-0607 corpus provenance ownership. Final canonical outcome is ISSUES with rating47(23/0/7/10/7), owner BR-0607. Full BR-0607 has now been read. Current quick runner still resolves/copies the D2 graphics canary before building its suite, and current aggregate corpus helpers rely on local filename counts and remove missing replay/canary cases as fixtureSkipped. Complete current determinism/canary manifests and canary path/hash helper read; determinism level10 fixture is absent locally, both graphics canaries exist locally but are untracked. No pinned clean-checkout acquisition contract was established. Repository artifact-policy PASS and4 ignore probes remain valid, but do not close required corpus coverage. Current README documents user-directed removal of9 divergent D2 demos; preserve that instruction and select/qualify valid current replacements rather than restore removed recordings merely to satisfy old manifests. Import body and SHA remain immutable. Final live corpus/replay acceptance is required under existing BR-0607, with no new finding or code mutation
+
+### Progress through GQ1-CHUNK-0606
+
+- Imported and normalized 1 additional complete scope reports; original queue is 609 DONE and 210 TODO, next unit 0607
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0607
+
+- Imported and normalized 1 additional complete scope reports; original queue is 610 DONE and 209 TODO, next unit 0608
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0608
+
+- Imported and normalized 1 additional complete scope reports; original queue is 611 DONE and 208 TODO, next unit 0609
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0609
+
+- Imported and normalized 1 additional complete scope reports; original queue is 612 DONE and 207 TODO, next unit 0610
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0610
+
+- Imported and normalized 1 additional complete scope reports; original queue is 613 DONE and 206 TODO, next unit 0611
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0611
+
+- Imported and normalized 1 additional complete scope reports; original queue is 614 DONE and 205 TODO, next unit 0612
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0612
+
+- Imported and normalized 1 additional complete scope reports; original queue is 615 DONE and 204 TODO, next unit 0613
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0613
+
+- Imported and normalized 1 additional complete scope reports; original queue is 616 DONE and 203 TODO, next unit 0614
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0614
+
+- Imported and normalized 1 additional complete scope reports; original queue is 617 DONE and 202 TODO, next unit 0615
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0615
+
+- Imported and normalized 1 additional complete scope reports; original queue is 618 DONE and 201 TODO, next unit 0616
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0616
+
+- Imported and normalized 1 additional complete scope reports; original queue is 619 DONE and 200 TODO, next unit 0617
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0617
+
+- Imported and normalized 1 additional complete scope reports; original queue is 620 DONE and 199 TODO, next unit 0618
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0618
+
+- Imported and normalized 1 additional complete scope reports; original queue is 621 DONE and 198 TODO, next unit 0619
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0619
+
+- Imported and normalized 1 additional complete scope reports; original queue is 622 DONE and 197 TODO, next unit 0620
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0620
+
+- Imported and normalized 1 additional complete scope reports; original queue is 623 DONE and 196 TODO, next unit 0621
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0621
+
+- Imported and normalized 1 additional complete scope reports; original queue is 624 DONE and 195 TODO, next unit 0622
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0622
+
+- Imported and normalized 1 additional complete scope reports; original queue is 625 DONE and 194 TODO, next unit 0623
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0623
+
+- Imported and normalized 1 additional complete scope reports; original queue is 626 DONE and 193 TODO, next unit 0624
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0624
+
+- Imported and normalized 1 additional complete scope reports; original queue is 627 DONE and 192 TODO, next unit 0625
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0625
+
+- Imported and normalized 1 additional complete scope reports; original queue is 628 DONE and 191 TODO, next unit 0626
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0626
+
+- Imported and normalized 1 additional complete scope reports; original queue is 629 DONE and 190 TODO, next unit 0627
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0627
+
+- Imported and normalized 1 additional complete scope reports; original queue is 630 DONE and 189 TODO, next unit 0628
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0628
+
+- Imported and normalized 1 additional complete scope reports; original queue is 631 DONE and 188 TODO, next unit 0629
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0629
+
+- Imported and normalized 1 additional complete scope reports; original queue is 632 DONE and 187 TODO, next unit 0630
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0630
+
+- Imported and normalized 1 additional complete scope reports; original queue is 633 DONE and 186 TODO, next unit 0631
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0631
+
+- Imported and normalized 1 additional complete scope reports; original queue is 634 DONE and 185 TODO, next unit 0632
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0632
+
+- Imported and normalized 1 additional complete scope reports; original queue is 635 DONE and 184 TODO, next unit 0633
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0633
+
+- Imported and normalized 1 additional complete scope reports; original queue is 636 DONE and 183 TODO, next unit 0634
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0634
+
+- Imported and normalized 1 additional complete scope reports; original queue is 637 DONE and 182 TODO, next unit 0635
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0635
+
+- Imported and normalized 1 additional complete scope reports; original queue is 638 DONE and 181 TODO, next unit 0636
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0636
+
+- Imported and normalized 1 additional complete scope reports; original queue is 639 DONE and 180 TODO, next unit 0637
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0637
+
+- Imported and normalized 1 additional complete scope reports; original queue is 640 DONE and 179 TODO, next unit 0638
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0638
+
+- Imported and normalized 1 additional complete scope reports; original queue is 641 DONE and 178 TODO, next unit 0639
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0639
+
+- Imported and normalized 1 additional complete scope reports; original queue is 642 DONE and 177 TODO, next unit 0640
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0640
+
+- Imported and normalized 1 additional complete scope reports; original queue is 643 DONE and 176 TODO, next unit 0641
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0641
+
+- Imported and normalized 1 additional complete scope reports; original queue is 644 DONE and 175 TODO, next unit 0642
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0642
+
+- Imported and normalized 1 additional complete scope reports; original queue is 645 DONE and 174 TODO, next unit 0643
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0643
+
+- Imported and normalized 1 additional complete scope reports; original queue is 646 DONE and 173 TODO, next unit 0644
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0644
+
+- Imported and normalized 1 additional complete scope reports; original queue is 647 DONE and 172 TODO, next unit 0645
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0645
+
+- Imported and normalized 1 additional complete scope reports; original queue is 648 DONE and 171 TODO, next unit 0646
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0646
+
+- Imported and normalized 1 additional complete scope reports; original queue is 649 DONE and 170 TODO, next unit 0647
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0647
+
+- Imported and normalized 1 additional complete scope reports; original queue is 650 DONE and 169 TODO, next unit 0648
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0648
+
+- Imported and normalized 1 additional complete scope reports; original queue is 651 DONE and 168 TODO, next unit 0649
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0649
+
+- Imported and normalized 1 additional complete scope reports; original queue is 652 DONE and 167 TODO, next unit 0650
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0650
+
+- Imported and normalized 1 additional complete scope reports; original queue is 653 DONE and 166 TODO, next unit 0651
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0651
+
+- Imported and normalized 1 additional complete scope reports; original queue is 654 DONE and 165 TODO, next unit 0652
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0652
+
+- Imported and normalized 1 additional complete scope reports; original queue is 655 DONE and 164 TODO, next unit 0653
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0653
+
+- Imported and normalized 1 additional complete scope reports; original queue is 656 DONE and 163 TODO, next unit 0654
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0654
+
+- Imported and normalized 1 additional complete scope reports; original queue is 657 DONE and 162 TODO, next unit 0655
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0655
+
+- Imported and normalized 1 additional complete scope reports; original queue is 658 DONE and 161 TODO, next unit 0656
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0656
+
+- Imported and normalized 1 additional complete scope reports; original queue is 659 DONE and 160 TODO, next unit 0657
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0657
+
+- Imported and normalized 1 additional complete scope reports; original queue is 660 DONE and 159 TODO, next unit 0658
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch

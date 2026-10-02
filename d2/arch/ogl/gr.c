@@ -59,6 +59,7 @@
 #ifdef ANDROID
 #include "android_egl_surface.h"
 #include "android_render_resolution.h"
+#include "android_graphics_safety.h"
 #endif
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -119,13 +120,15 @@ bool TestEGLError(char* pszLocation)
 
 #if defined(OGLES) && defined(ANDROID)
 
+static void ogl_android_rebuild_context_resources(void);
+
 static struct android_egl_surface_state ogl_android_egl_state = {
 	&eglDisplay,
 	&eglConfig,
 	&eglSurface,
 	&eglContext,
 	ogl_smash_texture_list_internal,
-	ogl_cache_level_textures,
+	ogl_android_rebuild_context_resources,
 	0,
 	0,
 	0,
@@ -396,8 +399,11 @@ int ogl_init_window(int x, int y)
 
 #ifdef ANDROID
 	ogles_destroy();
-	android_egl_surface_initialize(&ogl_android_egl_state, x, y,
-		GameCfg.ColorDepth == 1, &ogl_color_depth);
+	if (!android_egl_surface_initialize(&ogl_android_egl_state, x, y,
+		GameCfg.ColorDepth == 1, &ogl_color_depth)) {
+		android_graphics_safety_renderer_failed("egl_initialize_failed");
+		return 1;
+	}
 
 #else /* !ANDROID OGLES path (RPI / X11) */
 
@@ -485,7 +491,11 @@ int ogl_init_window(int x, int y)
 #ifdef OGL_MERGE
 	ogl_init_prog();
 #endif
-	if (Game_wind)
+	if (Game_wind
+	#ifdef ANDROID
+	    && !android_graphics_safety_restoring_mode()
+	#endif
+	    )
 		ogl_cache_level_textures();
 
 	linedotscale = ((x/640<y/480?x/640:y/480)<1?1:(x/640<y/480?x/640:y/480));
@@ -575,6 +585,17 @@ static void ogl_init_state(void)
 
 	ogl_init_pixel_buffers(grd_curscreen->sc_w, grd_curscreen->sc_h);
 }
+
+#if defined(OGLES) && defined(ANDROID)
+static void ogl_android_rebuild_context_resources(void)
+{
+	ogl_init_state();
+#ifdef OGL_MERGE
+	ogl_init_prog();
+#endif
+	ogl_cache_level_textures();
+}
+#endif
 
 // Set the buffer to draw to. 0 is front, 1 is back
 void gr_set_draw_buffer(int buf)
@@ -734,6 +755,10 @@ int gr_set_mode(u_int32_t mode)
 		Game_screen_mode=mode=SM(w,h);
 	}
 
+	#ifdef ANDROID
+	if (!android_graphics_safety_before_mode(w, h))
+		return 1;
+	#endif
 	gr_bm_data=grd_curscreen->sc_canvas.cv_bitmap.bm_data;//since we use realloc, we want to keep this pointer around.
 	new_bm_data = d_realloc(gr_bm_data, (size_t)w * (size_t)h);
 	if (!new_bm_data) {
@@ -750,7 +775,12 @@ int gr_set_mode(u_int32_t mode)
 
 	sdl_video_flags = (sdl_video_flags & ~SDL_NOFRAME) | (GameCfg.BorderlessWindow ? SDL_NOFRAME : 0);
 
+	#ifdef ANDROID
+	if (ogl_init_window(w, h))
+		return 1;
+	#else
 	ogl_init_window(w,h);//platform specific code
+	#endif
 	ogl_get_verinfo();
 	OGL_VIEWPORT(0,0,w,h);
 	ogl_init_state();

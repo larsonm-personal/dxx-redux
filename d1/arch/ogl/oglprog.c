@@ -184,11 +184,11 @@ void ogl_prog_set_tex2_debug_mode(GLint mode) {
 
 void ogl_done_prog() {
 	if (ogl_prog_tex2m) {
-		glDeleteProgram(ogl_prog_tex2m);
+		ogl_shader_delete_program(ogl_prog_tex2m);
 		ogl_prog_tex2m = 0;
 	}
 	if (ogl_prog_tex2) {
-		glDeleteProgram(ogl_prog_tex2);
+		ogl_shader_delete_program(ogl_prog_tex2);
 		ogl_prog_tex2 = 0;
 	}
 }

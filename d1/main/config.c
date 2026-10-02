@@ -36,6 +36,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "physfsx.h"
 #ifdef ANDROID
 #include "android_render_resolution.h"
+#include "android_graphics_safety.h"
+#define GRAPHICS_CONFIG_VALUE(key, value) android_graphics_safety_config_write_value(key, value)
 #include "playsave.h"
 #include "coop_save.h"
 #include "render.h"
@@ -45,6 +47,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 struct Cfg GameCfg;
+
+#ifndef ANDROID
+#define GRAPHICS_CONFIG_VALUE(key, value) (value)
+#endif
 
 static const char DigiVolumeStr[] = "DigiVolume";
 static const char MusicVolumeStr[] = "MusicVolume";
@@ -369,9 +375,17 @@ int WriteConfigFile()
 		last_player = android_saved_last_player();
 #endif
 
+	#ifdef ANDROID
+	int graphics_ready;
+	void *graphics_lock = android_graphics_safety_config_write_begin(&graphics_ready);
+	if (!graphics_ready) return 1;
+	#endif
 	infile = PHYSFSX_openWriteBuffered("descent.cfg");
 
 	if (infile == NULL) {
+		#ifdef ANDROID
+		android_graphics_safety_config_write_end(graphics_lock);
+		#endif
 		return 1;
 	}
 
@@ -392,27 +406,30 @@ int WriteConfigFile()
 	PHYSFSX_printf(infile, "%s=%d\n", GammaLevelStr, GameCfg.GammaLevel);
 	PHYSFSX_printf(infile, "%s=%s\n", LastPlayerStr, last_player);
 	PHYSFSX_printf(infile, "%s=%s\n", LastMissionStr, GameCfg.LastMission);
-	PHYSFSX_printf(infile, "%s=%i\n", ResolutionXStr, SM_W(Game_screen_mode));
-	PHYSFSX_printf(infile, "%s=%i\n", ResolutionYStr, SM_H(Game_screen_mode));
-	PHYSFSX_printf(infile, "%s=%i\n", AspectXStr, GameCfg.AspectX);
-	PHYSFSX_printf(infile, "%s=%i\n", AspectYStr, GameCfg.AspectY);
+	PHYSFSX_printf(infile, "%s=%i\n", ResolutionXStr, GRAPHICS_CONFIG_VALUE(ResolutionXStr, SM_W(Game_screen_mode)));
+	PHYSFSX_printf(infile, "%s=%i\n", ResolutionYStr, GRAPHICS_CONFIG_VALUE(ResolutionYStr, SM_H(Game_screen_mode)));
+	PHYSFSX_printf(infile, "%s=%i\n", AspectXStr, GRAPHICS_CONFIG_VALUE(AspectXStr, GameCfg.AspectX));
+	PHYSFSX_printf(infile, "%s=%i\n", AspectYStr, GRAPHICS_CONFIG_VALUE(AspectYStr, GameCfg.AspectY));
 	PHYSFSX_printf(infile, "%s=%i\n", WindowModeStr, GameCfg.WindowMode);
-	PHYSFSX_printf(infile, "%s=%i\n", TexFiltStr, GameCfg.TexFilt);
-	PHYSFSX_printf(infile, "%s=%i\n", MenuTexFiltStr, GameCfg.MenuTexFilt);
-	PHYSFSX_printf(infile, "%s=%i\n", HudTexFiltStr, GameCfg.HudTexFilt);
+	PHYSFSX_printf(infile, "%s=%i\n", TexFiltStr, GRAPHICS_CONFIG_VALUE(TexFiltStr, GameCfg.TexFilt));
+	PHYSFSX_printf(infile, "%s=%i\n", MenuTexFiltStr, GRAPHICS_CONFIG_VALUE(MenuTexFiltStr, GameCfg.MenuTexFilt));
+	PHYSFSX_printf(infile, "%s=%i\n", HudTexFiltStr, GRAPHICS_CONFIG_VALUE(HudTexFiltStr, GameCfg.HudTexFilt));
 	PHYSFSX_printf(infile, "%s=%i\n", MainViewFovStr, GameCfg.MainViewFov);
 	PHYSFSX_printf(infile, "%s=%i\n", CornerTextInsetStr, GameCfg.CornerTextInset);
 	PHYSFSX_printf(infile, "%s=%i\n", VSyncStr, GameCfg.VSync);
 	PHYSFSX_printf(infile, "%s=%i\n", MultisampleStr, GameCfg.Multisample);
-	PHYSFSX_printf(infile, "%s=%i\n", AnisoLevelStr, GameCfg.AnisoLevel);
-	PHYSFSX_printf(infile, "%s=%i\n", MsaaLevelStr, GameCfg.MsaaLevel);
+	PHYSFSX_printf(infile, "%s=%i\n", AnisoLevelStr, GRAPHICS_CONFIG_VALUE(AnisoLevelStr, GameCfg.AnisoLevel));
+	PHYSFSX_printf(infile, "%s=%i\n", MsaaLevelStr, GRAPHICS_CONFIG_VALUE(MsaaLevelStr, GameCfg.MsaaLevel));
 	PHYSFSX_printf(infile, "%s=%i\n", ClassicDepthStr, GameCfg.ClassicDepth);
 	PHYSFSX_printf(infile, "%s=%i\n", FPSIndicatorStr, GameCfg.FPSIndicator);
 	PHYSFSX_printf(infile, "%s=%i\n", GrabinputStr, GameCfg.Grabinput);
 	PHYSFSX_printf(infile, "%s=%i\n", BorderlessWindowStr, GameCfg.BorderlessWindow);
-	PHYSFSX_printf(infile, "%s=%i\n", ColorDepthStr, GameCfg.ColorDepth);
+	PHYSFSX_printf(infile, "%s=%i\n", ColorDepthStr, GRAPHICS_CONFIG_VALUE(ColorDepthStr, GameCfg.ColorDepth));
 
 	PHYSFS_close(infile);
+	#ifdef ANDROID
+	android_graphics_safety_config_write_end(graphics_lock);
+	#endif
 
 	return 0;
 }

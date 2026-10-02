@@ -1290,6 +1290,8 @@ class TouchOverlayView
                 "admin_tray_open" to adminTrayOpen,
                 "remaining_index" to remainingActionSelectedIndex,
                 "admin_index" to adminTraySelectedIndex,
+                "admin_label" to
+                    currentAdminTrayActions().getOrNull(adminTraySelectedIndex)?.let(::adminTrayLabel).orEmpty(),
                 "difficulty_open" to adminTrayDifficultyMenuOpen,
                 "difficulty_index" to adminTrayDifficultySelectedIndex,
                 "cheats_open" to adminTrayCheatsMenuOpen,

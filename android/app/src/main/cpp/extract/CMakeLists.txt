@@ -177,6 +177,22 @@ target_include_directories(test_graphics_config_transaction
 target_compile_definitions(test_graphics_config_transaction
                            PRIVATE GRAPHICS_CONFIG_TRANSACTION_TESTING)
 add_test(NAME graphics_config_transaction_tests COMMAND test_graphics_config_transaction)
+add_executable(
+    test_graphics_safety_store
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_graphics_safety_store.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/graphics_safety_store.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/graphics_config_transaction.c)
+target_include_directories(test_graphics_safety_store PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+target_compile_definitions(test_graphics_safety_store PRIVATE GRAPHICS_CONFIG_TRANSACTION_TESTING)
+target_compile_features(test_graphics_safety_store PRIVATE cxx_std_11)
+target_link_libraries(test_graphics_safety_store PRIVATE nlohmann_json::nlohmann_json)
+if(MSVC)
+    target_compile_definitions(test_graphics_safety_store PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_compile_options(test_graphics_safety_store PRIVATE /W4)
+else()
+    target_compile_options(test_graphics_safety_store PRIVATE -Wall -Wextra -Werror)
+endif()
+add_test(NAME graphics_safety_store_tests COMMAND test_graphics_safety_store)
 add_test(NAME sow_huffman_tests COMMAND test_sow_huffman)
 add_test(NAME sow_integrity_tests COMMAND test_sow_integrity)
 set(SOW_RETAIL_FIXTURE "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/DESCENT2.SOW")

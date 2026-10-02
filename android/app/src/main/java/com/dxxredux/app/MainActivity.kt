@@ -285,6 +285,21 @@ class MainActivity :
 
     external fun nativeGetGameState(): String
 
+    external fun nativeGraphicsSafetyState(): String
+
+    external fun nativeGraphicsSafetyArm(id: Long): Boolean
+
+    external fun nativeGraphicsSafetyDecide(
+        id: Long,
+        accept: Boolean,
+        reason: String,
+    ): Int
+
+    external fun nativeGraphicsSafetyUiState(
+        foreground: Boolean,
+        blocked: Boolean,
+    )
+
     external fun nativeRequestIntrospect()
 
     external fun nativeUpdateDormancyUiPollCounters(
@@ -344,9 +359,57 @@ class MainActivity :
                     }
                 }
                 dispatchControllerAutomationInput(step, ::dispatchKeyEvent, ::dispatchGenericMotionEvent)
+                step.optJSONArray("controller_keys")?.let { keys ->
+                    for (index in 0 until keys.length()) {
+                        dispatchControllerAutomationInput(
+                            JSONObject().put("key", keys.getString(index)),
+                            ::dispatchKeyEvent,
+                            ::dispatchGenericMotionEvent,
+                        )
+                    }
+                }
+                if (step.optBoolean("open_admin")) {
+                    repeat(3) {
+                        if (!touchOverlay.isAdminTrayOpen()) {
+                            dispatchControllerAutomationInput(
+                                JSONObject().put("key", "START"),
+                                ::dispatchKeyEvent,
+                                ::dispatchGenericMotionEvent,
+                            )
+                        }
+                    }
+                    check(touchOverlay.isAdminTrayOpen()) { "Controller menu cycle did not open the admin tray" }
+                }
+                step.optJSONArray("graphics_touch")?.let { gesture ->
+                    val downTime = android.os.SystemClock.uptimeMillis()
+                    for (index in 0 until gesture.length()) {
+                        val point = gesture.getJSONObject(index)
+                        val action =
+                            when (point.getString("action")) {
+                                "down" -> MotionEvent.ACTION_DOWN
+                                "move" -> MotionEvent.ACTION_MOVE
+                                "up" -> MotionEvent.ACTION_UP
+                                "cancel" -> MotionEvent.ACTION_CANCEL
+                                else -> error("Unknown graphics touch action")
+                            }
+                        val (x, y) =
+                            checkNotNull(
+                                graphicsConfirmationOverlay,
+                            ).automationTouchPoint(point.getString("target"))
+                        val event = MotionEvent.obtain(downTime, downTime + index * 10L, action, x, y, 0)
+                        event.source = android.view.InputDevice.SOURCE_TOUCHSCREEN
+                        try {
+                            dispatchTouchEvent(event)
+                        } finally {
+                            event.recycle()
+                        }
+                    }
+                }
                 step.optJSONObject("expect_ui")?.let { expected ->
                     val actual =
                         touchOverlay.controllerNavigationState() +
+                            graphicsConfirmationOverlay?.controllerNavigationState().orEmpty() +
+                            videoInfoOverlay?.controllerNavigationState().orEmpty() +
                             mapOf(
                                 "music_open" to (musicPanel != null),
                                 "video_open" to (videoInfoOverlay?.visibility == View.VISIBLE),
@@ -805,6 +868,8 @@ class MainActivity :
     external fun nativeSetGuidebotInfoVisible(visible: Boolean)
 
     private var videoInfoOverlay: VideoInfoOverlay? = null
+    private var graphicsConfirmationOverlay: GraphicsConfirmationOverlay? = null
+    private val graphicsSuppressedKeys = mutableSetOf<Int>()
     private var tapFeedbackOverlay: TapFeedbackOverlay? = null
     private var loadingProgressOverlay: LoadingProgressOverlayView? = null
     private var warpButtonOverlay: WarpButtonOverlay? = null
@@ -843,7 +908,7 @@ class MainActivity :
     private var isLanQrHost = false
     private var qrActivityResumed = false
     private var gameVariantId = "d2" // "d1" or "d2", set in onCreate
-    private var lastAppliedGraphicsSettingsGeneration = -1L
+    private var lastGraphicsStagedGeneration = 0L
     private var touchDiagLogCount = 0
 
     // True when no touchscreen is available (Android TV / gamepad-only)
@@ -1944,10 +2009,23 @@ class MainActivity :
                 }
                 graphicsOptionSetter = { name, value ->
                     try {
-                        nativeSetGraphicsOption(name, value)
+                        // Result value 1 is ANDROID_GRAPHICS_OPTION_OK in android_graphics_options.h
+                        nativeSetGraphicsOption(name, value) == 1
                     } catch (_: Exception) {
-                        // JNI not ready yet
+                        false
                     }
+                }
+                queuedGraphicsProvider = {
+                    val state = JSONObject(nativeGraphicsSafetyState())
+                    val values =
+                        state.optJSONObject(
+                            if (state.optString("phase") in setOf("preparing", "challenge")) "candidate" else "queued",
+                        )
+                    values
+                        ?.keys()
+                        ?.asSequence()
+                        ?.associateWith { values.getInt(it) }
+                        .orEmpty()
                 }
             }
         videoInfoOverlay = vidOverlay
@@ -2011,6 +2089,39 @@ class MainActivity :
             ),
         )
 
+        graphicsConfirmationOverlay =
+            GraphicsConfirmationOverlay(
+                this,
+                arm = ::nativeGraphicsSafetyArm,
+                decide = ::nativeGraphicsSafetyDecide,
+                readState = ::nativeGraphicsSafetyState,
+                acquireInput = {
+                    graphicsSuppressedKeys.addAll(controllerKeys.heldKeyCodes())
+                    controllerKeys.releaseAll()
+                    controllerAxisMetaKeys.releaseAll()
+                    controllerMenuAxes.reset { _, _ -> }
+                    if (::inputMixer.isInitialized) inputMixer.releaseAll()
+                    val cancelEvent = MotionEvent.obtain(0L, 0L, MotionEvent.ACTION_CANCEL, 0f, 0f, 0)
+                    touchOverlay.dispatchTouchEvent(cancelEvent)
+                    gameSurfaceView.dispatchTouchEvent(cancelEvent)
+                    cancelEvent.recycle()
+                    videoInfoOverlay?.suspendPolling()
+                },
+                releaseInput = { videoInfoOverlay?.resumePolling() },
+                recoverProcess = { message ->
+                    reportNativeFatalError(message)
+                    startActivity(
+                        Intent(
+                            this,
+                            SetupActivity::class.java,
+                        ).addFlags(
+                            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                Intent.FLAG_ACTIVITY_SINGLE_TOP,
+                        ).putExtra("graphics_recovery_message", message),
+                    )
+                    android.os.Process.killProcess(android.os.Process.myPid())
+                },
+            ).also { frame.addView(it, FrameLayout.LayoutParams(-1, -1)) }
         setContentView(frame)
         frame.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updateRoundedCornerTextInsets()
@@ -2244,6 +2355,8 @@ class MainActivity :
     }
 
     override fun onPause() {
+        graphicsConfirmationOverlay?.cancelForLifecycle()
+        nativeGraphicsSafetyUiState(false, false)
         qrActivityResumed = false
         lanJoinQr?.show(false)
         tapFeedbackOverlay?.dispose()
@@ -2297,6 +2410,7 @@ class MainActivity :
 
     override fun onResume() {
         super.onResume()
+        nativeGraphicsSafetyUiState(true, false)
         qrActivityResumed = true
         writeGameActivityState(this, gameVariantId)
         backgroundPauseApplied = false
@@ -2365,8 +2479,6 @@ class MainActivity :
     }
 
     private fun applyGraphicsSettingsPrefs(prefs: android.content.SharedPreferences) {
-        val generation = prefs.getLong(PREF_GRAPHICS_SETTINGS_GENERATION, 0L)
-        if (generation == lastAppliedGraphicsSettingsGeneration) return
         if (!gameStarted) return
 
         try {
@@ -2381,9 +2493,7 @@ class MainActivity :
                     "dynlight_color" to if (prefs.getBoolean(PREF_GRAPHICS_DYNLIGHT_COLOR, false)) 1 else 0,
                 )
             }
-            if (applyGraphicsOptionSnapshot(options, ::nativeApplyLauncherGraphicsOption)) {
-                lastAppliedGraphicsSettingsGeneration = generation
-            }
+            applyGraphicsOptionSnapshot(options, ::nativeApplyLauncherGraphicsOption)
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }
@@ -2781,6 +2891,12 @@ class MainActivity :
                     var profileHadError = false
                     if (gameStarted) {
                         try {
+                            nativeGraphicsSafetyUiState(
+                                isActivityResumed,
+                                (touchOverlay.isControllerMenuOpen() && videoInfoOverlay?.visibility != View.VISIBLE) ||
+                                    musicPanel != null ||
+                                    gameSurfaceView.keyboardActive,
+                            )
                             val inGame = nativeIsInGame()
                             profileInGame = inGame
                             val automap =
@@ -3017,6 +3133,8 @@ class MainActivity :
                         .put("touch_overlay_attached", touchOverlay.isAttachedToWindow)
                         .put("controller_menu_open", touchOverlay.isControllerMenuOpen())
                         .put("admin_tray_open", touchOverlay.isAdminTrayOpen())
+                        .put("graphics_confirmation_shown", graphicsConfirmationOverlay?.isShown == true)
+                        .put("graphics_confirmation_attached", graphicsConfirmationOverlay?.isAttachedToWindow == true)
                         .put("guidebot_enhanced_routing", touchOverlay.enhancedGuidebotRouting)
                         .put("guidebot_goal_bindings", org.json.JSONArray(touchOverlay.visibleRadialBindings("Guide")))
                 runCatching {
@@ -3418,6 +3536,33 @@ class MainActivity :
         touchOverlay.automapActive = false
     }
 
+    @Suppress("unused")
+    fun getGraphicsFilesRoot(): String = filesDir.absolutePath
+
+    @Suppress("unused")
+    fun onGraphicsSafetyState(state: String) {
+        runOnUiThread {
+            val latest = nativeGraphicsSafetyState()
+            graphicsConfirmationOverlay?.update(latest)
+            val value = JSONObject(latest)
+            val generation = value.optLong("staged_generation")
+            if (value.optString("phase") == "idle" && generation != lastGraphicsStagedGeneration) {
+                lastGraphicsStagedGeneration = generation
+                applyGraphicsSettingsPrefs(getSharedPreferences("dxx_prefs", MODE_PRIVATE))
+            }
+        }
+    }
+
+    @androidx.annotation.Keep
+    fun stageLauncherGraphicsForAutomation(settings: String) {
+        sendBroadcast(
+            Intent("com.dxxredux.SETUP_COMMAND")
+                .setPackage(packageName)
+                .putExtra("command", "write_graphics_settings")
+                .putExtra("settings", settings),
+        )
+    }
+
     /** Toggle the automap by injecting a TAB key press/release. */
     private fun toggleAutomap() {
         // Immediately flip the overlay to avoid polling lag
@@ -3816,7 +3961,19 @@ class MainActivity :
     ): Float = applyControllerAxisExponent(value, controllerAxisExponents[axisKey] ?: DEFAULT_CONTROLLER_AXIS_EXPONENT)
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (graphicsSuppressedKeys.contains(event.keyCode)) {
+            if (event.action == KeyEvent.ACTION_UP) graphicsSuppressedKeys.remove(event.keyCode)
+            return true
+        }
         if (event.action == KeyEvent.ACTION_UP && controllerKeys.release(event.keyCode)) return true
+        graphicsConfirmationOverlay?.takeIf { it.active }?.let { overlay ->
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                controllerKeys.press(event.keyCode, event.repeatCount, false) {
+                    { pressed -> if (pressed) overlay.handleKey(event) }
+                }
+            }
+            return true
+        }
         if (gameSurfaceView.keyboardActive) {
             when (event.keyCode) {
                 KeyEvent.KEYCODE_BUTTON_A -> {
@@ -3968,6 +4125,7 @@ class MainActivity :
     private var hatYState = 0
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if (graphicsConfirmationOverlay?.handleMotion(event) == true) return true
         if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
             event.action == MotionEvent.ACTION_MOVE
         ) {

@@ -48,6 +48,14 @@ extern "C" {
 #include "android_axis_mailbox.h"
 #include "android_screen_advance.h"
 #include "android_graphics_options.h"
+#include "graphics_config_transaction.h"
+#ifdef ANDROID
+#include "android_graphics_safety.h"
+#include "android_egl_surface.h"
+#include "android_jni_overlay.h"
+#include "ogl_msaa_android.h"
+#include "ogl_msaa_probe_android.h"
+#endif
 #include "android_log.h"
 #include "android_crash_handler.h"
 #include "android_menu_scale.h"
@@ -57,6 +65,7 @@ extern "C" {
 #include "debug_tex_overlay.h"
 #include "merged_wall_debug.h"
 #include "game.h"
+#include "gr.h"
 #include "player.h"
 #include "screens.h"
 #include "inferno.h"
@@ -3961,7 +3970,72 @@ extern "C" void game_automate_tick(void)
 			else if (s.field == "merged_wall_force_two_pass")
 				g_merged_wall_force_two_pass =
 				    (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) ? 1 : 0;
-			else if (s.field == "graphics_option") {
+			else if (s.field == "graphics_launcher_edit") {
+#ifdef ANDROID
+				android_stage_launcher_graphics_for_automation(s.value.c_str());
+#else
+				stop_script_fail("graphics_launcher_edit: Android-only action");
+#endif
+			} else if (s.field == "graphics_stall_once") {
+#ifdef ANDROID
+				android_graphics_safety_debug_stall_once((int) strtol(s.value.c_str(), NULL, 10));
+#else
+				stop_script_fail("graphics_stall_once: Android-only action");
+#endif
+			} else if (s.field == "graphics_restore_pause_once") {
+#ifdef ANDROID
+				const int milliseconds = (int) strtol(s.value.c_str(), NULL, 10);
+				if (milliseconds < 1 || milliseconds > 15000) stop_script_fail("graphics_restore_pause_once: expected 1..15000 ms");
+				else graphics_config_transaction_debug_pause_once(GameCfg.TexFilt, milliseconds);
+#else
+				stop_script_fail("graphics_restore_pause_once: Android-only action");
+#endif
+			} else if (s.field == "graphics_egl_fail_once") {
+#ifdef ANDROID
+				android_egl_surface_debug_fail_initialize_once();
+#else
+				stop_script_fail("graphics_egl_fail_once: Android-only action");
+#endif
+			} else if (s.field == "graphics_egl_fail_count") {
+#ifdef ANDROID
+				const int count = (int) strtol(s.value.c_str(), NULL, 10);
+				if (count < 1 || count > 4096) stop_script_fail("graphics_egl_fail_count: expected 1..4096");
+				else android_egl_surface_debug_fail_initialize_count(count);
+#else
+				stop_script_fail("graphics_egl_fail_count: Android-only action");
+#endif
+			} else if (s.field == "graphics_context_loss_once") {
+#ifdef ANDROID
+				android_egl_surface_debug_lose_context_on_resume_once();
+#else
+				stop_script_fail("graphics_context_loss_once: Android-only action");
+#endif
+			} else if (s.field == "msaa_color_alloc_fail_once") {
+#if defined(ANDROID) && defined(OGL)
+				android_ogl_msaa_debug_fail_color_allocation_once();
+#else
+				stop_script_fail("msaa_color_alloc_fail_once: Android OpenGL-only action");
+#endif
+			} else if (s.field == "graphics_renderer_fail") {
+#ifdef ANDROID
+				android_graphics_safety_renderer_failed("automation_renderer_failure");
+#else
+				stop_script_fail("graphics_renderer_fail: Android-only action");
+#endif
+			} else if (s.field == "graphics_black_once") {
+#ifdef ANDROID
+				android_graphics_safety_debug_black_once();
+#else
+				stop_script_fail("graphics_black_once: Android-only action");
+#endif
+			} else if (s.field == "msaa_color_probe") {
+#if defined(ANDROID) && defined(OGL)
+				android_ogl_msaa_probe((int) strtol(s.value.c_str(), NULL, 10),
+				                       grd_curscreen->sc_w, grd_curscreen->sc_h);
+#else
+				stop_script_fail("msaa_color_probe: Android OpenGL-only action");
+#endif
+			} else if (s.field == "graphics_option" || s.field == "graphics_queue_option") {
 				size_t separator = s.value.find(':');
 				if (separator == std::string::npos || separator == 0 ||
 				    separator + 1 >= s.value.size()) {
@@ -3970,7 +4044,14 @@ extern "C" void game_automate_tick(void)
 				}
 				std::string name = s.value.substr(0, separator);
 				int value = (int) strtol(s.value.c_str() + separator + 1, NULL, 10);
-				if (!android_graphics_set_option(name.c_str(), value, 0)) {
+				int result;
+#ifdef ANDROID
+				if (s.field == "graphics_queue_option")
+					result = android_graphics_safety_queue_option(name.c_str(), value, 1, 1);
+				else
+#endif
+					result = android_graphics_set_option(name.c_str(), value, 0);
+				if (result != ANDROID_GRAPHICS_OPTION_OK) {
 					stop_script_fail("graphics_option: unknown option");
 					break;
 				}

@@ -9,6 +9,8 @@ internal class ControllerKeyDispatch {
 
     private val held = mutableMapOf<Int, HeldKey>()
 
+    fun heldKeyCodes(): Set<Int> = held.keys.toSet()
+
     fun press(
         keyCode: Int,
         repeatCount: Int,

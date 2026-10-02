@@ -756,6 +756,7 @@ internal fun SetupActivity.writeMpIntrospectJson() {
 
         root.put("game_launch_pending", s.gameLaunchInfo != null)
         root.put("launch_error", launchPreflightFailure ?: JSONObject.NULL)
+        root.put("displayed_launch_error", displayedLaunchFailure ?: JSONObject.NULL)
         root.put("launch_phase", launchPreparationSnapshot()?.phase?.wireName ?: "")
 
         val logArr = JSONArray()
@@ -850,6 +851,7 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         )
         AtomicFilePublication.writeUtf8(File(dir, "controller_raw_inputs.json"), rawControllerInputs.toString(2) + "\n")
         root.put("launch_error", launchPreflightFailure ?: JSONObject.NULL)
+        root.put("displayed_launch_error", displayedLaunchFailure ?: JSONObject.NULL)
         root.put("active_set", activeSet)
         val runningGamePid = automationRunningGameProcessPid()
         val hasReturnableGameActivity = automationHasReturnableGameActivity()

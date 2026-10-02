@@ -46,6 +46,14 @@ void android_send_track_name(const char *name)
 {
 	call_java_string_method("showTrackName", name);
 }
+void android_send_graphics_safety_state(const char *text)
+{
+	call_java_string_method("onGraphicsSafetyState", text);
+}
+void android_stage_launcher_graphics_for_automation(const char *text)
+{
+	call_java_string_method("stageLauncherGraphicsForAutomation", text);
+}
 void android_send_level_name(const char *name)
 {
 	call_java_string_method("showLevelName", name);
@@ -58,6 +66,14 @@ void android_send_overlay_line(const char *text)
 }
 
 #else
+void android_stage_launcher_graphics_for_automation(const char *text)
+{
+	(void) text;
+}
+void android_send_graphics_safety_state(const char *text)
+{
+	(void) text;
+}
 void android_send_track_name(const char *name)
 {
 	(void) name;

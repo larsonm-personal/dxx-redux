@@ -12,11 +12,18 @@ struct android_ogl_msaa_state {
 	int effective_samples;
 	unsigned int last_create_status;
 	unsigned int last_gl_error;
+	unsigned int last_scene_gl_error;
+	unsigned long long scene_error_count;
 	unsigned long long generation;
 	unsigned long long bound_frame_count;
 	unsigned long long resolve_count;
 	unsigned long long active_frame_serial;
 	unsigned long long last_resolved_frame_serial;
+	int failure_latched;
+	int trace_remaining;
+	unsigned long long resolve_failures;
+	unsigned long long flip_serial;
+	unsigned int flip_event;
 };
 
 struct android_ogl_msaa_diagnostics {
@@ -27,14 +34,31 @@ struct android_ogl_msaa_diagnostics {
 	int last_frame_resolved;
 	unsigned int last_create_status;
 	unsigned int last_gl_error;
+	unsigned int last_scene_gl_error;
+	unsigned long long scene_error_count;
 	unsigned long long generation;
 	unsigned long long bound_frame_count;
 	unsigned long long resolve_count;
+	int failure_latched;
+	unsigned long long resolve_failures;
+	unsigned long long flip_serial;
+	int trace_remaining;
 };
 
 typedef void (*android_ogl_msaa_log_message_fn)(const char *message, void *user_data);
 
+unsigned int android_ogl_msaa_capture_errors(const char *stage);
+void android_ogl_msaa_capture_scene_errors(struct android_ogl_msaa_state *state);
+#ifdef INTROSPECT_ON
+/* Game-thread-only fault in the next actual color renderbuffer allocation */
+void android_ogl_msaa_debug_fail_color_allocation_once(void);
+#endif
+void android_ogl_msaa_trace_stage(struct android_ogl_msaa_state *state, const char *stage, int bound, int depth);
+void android_ogl_msaa_presented(struct android_ogl_msaa_state *state);
+
 void android_ogl_msaa_destroy_fbo(struct android_ogl_msaa_state *state, int *bound);
+/* Forget retired-context object names without deleting objects in the new context */
+void android_ogl_msaa_forget_context(struct android_ogl_msaa_state *state, int *bound, int *frame_depth);
 int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
                                 int *bound,
                                 int max_samples,

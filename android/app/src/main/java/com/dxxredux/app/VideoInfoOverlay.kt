@@ -158,7 +158,10 @@ class VideoInfoOverlay(
 
     /** Setter for C-side graphics options: (name, value) -> nativeSetGraphicsOption.
      *  Works in all builds (not gated by INTROSPECT_ON). */
-    var graphicsOptionSetter: ((String, Int) -> Unit)? = null
+    var graphicsOptionSetter: ((String, Int) -> Boolean)? = null
+
+    /** Queued or trial values, so polling cannot undo edits before the candidate is applied */
+    var queuedGraphicsProvider: (() -> Map<String, Int>)? = null
 
     private val handler = Handler(Looper.getMainLooper())
     private var polling = false
@@ -284,6 +287,11 @@ class VideoInfoOverlay(
                         cacheUploadMs = stats[37]
                         cacheMaskMs = stats[38]
                     }
+                    queuedGraphicsProvider?.invoke()?.let { queued ->
+                        queued["TexFilt"]?.let { texFiltLevel = it }
+                        queued["AnisoLevel"]?.let { anisoLevel = it }
+                        queued["MsaaLevel"]?.let { msaaLevel = it }
+                    }
                 } catch (_: Exception) {
                     // JNI not ready yet
                 }
@@ -291,6 +299,15 @@ class VideoInfoOverlay(
                 handler.postDelayed(this, POLL_INTERVAL_MS)
             }
         }
+
+    internal fun controllerNavigationState(): Map<String, Any> =
+        mapOf(
+            "video_selected" to (selectedControllerAction?.name ?: ""),
+            "video_polling" to polling,
+            "video_tex_filt" to texFiltLevel,
+            "video_aniso" to anisoLevel,
+            "video_msaa" to msaaLevel,
+        )
 
     fun show() {
         visibility = VISIBLE
@@ -959,8 +976,7 @@ class VideoInfoOverlay(
         val levels = intArrayOf(0, 2, 4, 8, 16).filter { it <= anisoMax || it == 0 }
         val idx = levels.indexOf(anisoLevel)
         val next = levels[(idx + 1) % levels.size]
-        anisoLevel = next
-        graphicsOptionSetter?.invoke("aniso_level", next)
+        if (graphicsOptionSetter?.invoke("aniso_level", next) == true) anisoLevel = next
     }
 
     private fun cycleMsaa() {
@@ -968,15 +984,13 @@ class VideoInfoOverlay(
         val levels = intArrayOf(0, 2, 4).filter { it <= msaaMax || it == 0 }
         val idx = levels.indexOf(msaaLevel)
         val next = levels[(idx + 1) % levels.size]
-        msaaLevel = next
-        graphicsOptionSetter?.invoke("msaa_level", next)
+        if (graphicsOptionSetter?.invoke("msaa_level", next) == true) msaaLevel = next
     }
 
     private fun cycleTexFilt() {
         // Cycle: 0 (nearest) -> 1 (bilinear) -> 2 (trilinear) -> 0
         val next = (texFiltLevel + 1) % 3
-        texFiltLevel = next
-        graphicsOptionSetter?.invoke("tex_filt", next)
+        if (graphicsOptionSetter?.invoke("tex_filt", next) == true) texFiltLevel = next
     }
 
     private fun cycleMergedWallMode() {

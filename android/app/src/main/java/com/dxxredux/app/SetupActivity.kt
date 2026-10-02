@@ -180,6 +180,7 @@ class SetupActivity : ComponentActivity() {
     private val focusResumeTrigger = mutableIntStateOf(0)
     private val launcherControllerNavigationActive = mutableStateOf(false)
     private val launchFailureMessage = mutableStateOf<String?>(null)
+    internal val displayedLaunchFailure: String? get() = launchFailureMessage.value
     private val launchPreparation = mutableStateOf<LauncherPreparationState?>(null)
     private val pendingPickedImportUris = mutableStateOf<List<Uri>>(emptyList())
     private val pendingLanJoin = mutableStateOf<LanJoinRequest?>(null)
@@ -193,6 +194,7 @@ class SetupActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        intent.getStringExtra("graphics_recovery_message")?.let { launchFailureMessage.value = it }
         receiveLanJoin(intent)
     }
 
@@ -801,6 +803,19 @@ class SetupActivity : ComponentActivity() {
             recordStep("content_projection")
             modManager.writeEnabledModPaths(game, includeD1MissionZipsForD2, contentPaths)
             recordStep("mod_paths")
+            val graphicsRepair = NativeGraphicsSafety.recover(filesDir)
+            if (graphicsRepair == 0) return complete("Could not recover the last accepted graphics settings")
+            if (graphicsRepair == 2) {
+                val acceptedMode = NativeGraphicsSafety.read(filesDir)
+                val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+                prefs
+                    .edit()
+                    .putString(
+                        "render_resolution",
+                        "${acceptedMode.getValue("ResolutionX")}x${acceptedMode.getValue("ResolutionY")}",
+                    ).apply()
+                bumpGraphicsSettingsGeneration(prefs)
+            }
             writeInitialGameConfig()
             migrateLegacyHalfRenderResolution()
             recordStep("game_config")
@@ -1063,6 +1078,24 @@ class SetupActivity : ComponentActivity() {
                                     "(source=$source prefer_mission=$preferMissionSoundtrack " +
                                     "play_order=$playOrder volume=$volume)",
                             )
+                        }
+                    }
+
+                    "write_graphics_settings" -> {
+                        val settings = intent.getStringExtra("settings") ?: return
+                        runIo {
+                            val values = org.json.JSONObject(settings)
+                            val updates =
+                                values
+                                    .keys()
+                                    .asSequence()
+                                    .map { key ->
+                                        require(key in GraphicsConfigSerialization.protectedKeys)
+                                        key to values.getInt(key).toString()
+                                    }.toList()
+                            updateAllConfigFiles(filesDir, updates)
+                            bumpGraphicsSettingsGeneration(getSharedPreferences("dxx_prefs", MODE_PRIVATE))
+                            Log.i("DXX-Setup", "write_graphics_settings: published or deferred ${updates.size} fields")
                         }
                     }
 
@@ -3088,6 +3121,10 @@ class SetupActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        intent.getStringExtra("graphics_recovery_message")?.let {
+            launchFailureMessage.value = it
+            intent.removeExtra("graphics_recovery_message")
+        }
         getSystemService(InputManager::class.java).registerInputDeviceListener(controllerInputDiagnostics, null)
         controllerInputDiagnostics.refresh()
         try {

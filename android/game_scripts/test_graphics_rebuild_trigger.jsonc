@@ -1,0 +1,80 @@
+// TEST: Fail candidate EGL setup and repeated accepted-mode rebuilds until bounded process recovery
+[
+    {
+        "action": "key",
+        "key": "f2",
+        "post_delay_ms": 100
+    },
+    {
+        "action": "select",
+        "text": "Screen resolution...",
+        "timeout_ms": 5000,
+        "post_delay_ms": 150
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "menu.subtitle": "Screen Resolution",
+            "graphics_safety.phase": "idle"
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_option",
+        "value": "tex_filt:2"
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_egl_fail_count",
+        "value": "512"
+    },
+    {
+        "action": "key",
+        "key": "down",
+        "post_delay_ms": 80
+    },
+    {
+        "action": "key",
+        "key": "8",
+        "post_delay_ms": 80
+    },
+    {
+        "action": "key",
+        "key": "0",
+        "post_delay_ms": 80
+    },
+    {
+        "action": "key",
+        "key": "0",
+        "post_delay_ms": 80
+    },
+    {
+        "action": "key",
+        "key": "x",
+        "post_delay_ms": 80
+    },
+    {
+        "action": "key",
+        "key": "6",
+        "post_delay_ms": 80
+    },
+    {
+        "action": "key",
+        "key": "0",
+        "post_delay_ms": 80
+    },
+    {
+        "action": "key",
+        "key": "0",
+        "post_delay_ms": 80
+    },
+    {
+        "action": "key",
+        "key": "enter",
+        "post_delay_ms": 80
+    },
+    {
+        "action": "wait_ms",
+        "ms": 15000
+    }
+]

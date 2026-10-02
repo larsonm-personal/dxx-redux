@@ -15,4 +15,9 @@ void android_send_level_name(const char *name);
 /* Send a generic overlay line through the Android popup overlay. No-op on non-Android. */
 void android_send_overlay_line(const char *text);
 
+/* Publish graphics confirmation state independently of the game renderer */
+void android_send_graphics_safety_state(const char *text);
+/* Automation uses the launcher's real cross-process staging path */
+void android_stage_launcher_graphics_for_automation(const char *text);
+
 #endif

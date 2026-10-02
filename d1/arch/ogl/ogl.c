@@ -33,6 +33,7 @@
 #include <stdio.h>
 
 #ifdef ANDROID
+#include "android_egl_surface.h"
 #include "android_texture_debug.h"
 #include "android_visual_policy.h"
 #include <android/log.h>
@@ -434,6 +435,15 @@ void ogl_init_texture_list_internal(void){
 void ogl_smash_texture_list_internal(void){
 	int i;
 #ifdef ANDROID
+	if (android_egl_discarding_lost_context_resources()) {
+		android_ogl_msaa_forget_context(&ogl_msaa_state, &g_msaa_fbo_bound, &g_msaa_frame_depth);
+		android_ogl_viewport_invalidate(&ogl_android_viewport_state);
+		memset(ogl_gpu_queries, 0, sizeof(ogl_gpu_queries));
+		ogl_gpu_query_write = ogl_gpu_query_count = ogl_gpu_query_in_flight = 0;
+		g_gpu_time_us = 0;
+		GL_TEXTURE_2D_enabled = GL_texclamp_enabled = -1;
+		android_ogl_reset_texture_bindings(&ogl_bind_texture_state);
+	}
 	android_ogl_reset_transient_blit_texture(&ogl_bind_texture_state, 1);
 #endif
 	if (sphere_va != NULL)
@@ -2281,6 +2291,8 @@ void ogl_start_frame(void){
 	 * first MSAA-backed pass of the frame so cockpit missile / rear-view
 	 * subrenders do not wipe the already-rendered main scene in the shared FBO. */
 #ifdef ANDROID
+	android_ogl_msaa_trace_stage(&ogl_msaa_state, msaa_color_clear ? "first_color_clear" : "pass_depth_clear",
+	                             g_msaa_fbo_bound, g_msaa_frame_depth);
 	glClear(GL_DEPTH_BUFFER_BIT |
 	        (msaa_color_clear ? GL_COLOR_BUFFER_BIT : 0));
 #else
@@ -2339,6 +2351,7 @@ void ogl_start_frame(void){
 void ogl_end_frame(void){
 	OGL_VIEWPORT(0,0,grd_curscreen->sc_w,grd_curscreen->sc_h);
 #ifdef ANDROID
+	android_ogl_msaa_trace_stage(&ogl_msaa_state, "scene_pass_complete", g_msaa_fbo_bound, g_msaa_frame_depth);
 	android_ogl_msaa_end_frame(&g_msaa_frame_depth);
 	{
 		extern volatile int g_blit_y_offset;
@@ -2365,7 +2378,7 @@ void ogl_end_frame(void){
 	{
 		struct timespec err_start, err_end;
 		android_perf_clock_now(&err_start);
-		while (glGetError() != GL_NO_ERROR) {}
+		android_ogl_msaa_capture_scene_errors(&ogl_msaa_state);
 		android_perf_clock_now(&err_end);
 		g_gl_error_time_us = android_perf_elapsed_us(&err_start, &err_end);
 	}
@@ -2409,6 +2422,7 @@ void ogl_android_prepare_overlay_blit(void)
 	int h = grd_curscreen ? grd_curscreen->sc_h : 0;
 	int koff = 0;
 
+	android_ogl_msaa_trace_stage(&ogl_msaa_state, "menu_blit_prepare", before_bound, before_depth);
 	if (before_bound && before_depth == 0)
 		ogl_prepare_framebuffer_readback();
 	else
@@ -2531,10 +2545,12 @@ void gr_flip(void)
 #ifdef ANDROID
 	{
 		struct timespec swap_start, swap_end;
+		android_ogl_msaa_trace_stage(&ogl_msaa_state, "composed_before_swap", g_msaa_fbo_bound, g_msaa_frame_depth);
 		android_perf_clock_now(&swap_start);
 		ogl_swap_buffers_internal();
 		android_perf_clock_now(&swap_end);
 		g_swap_time_us = android_perf_elapsed_us(&swap_start, &swap_end);
+		android_ogl_msaa_presented(&ogl_msaa_state);
 	}
 #else
 	ogl_swap_buffers_internal();

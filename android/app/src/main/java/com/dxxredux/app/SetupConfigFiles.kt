@@ -33,6 +33,9 @@ internal fun readConfigValue(
     filesDir: File,
     key: String,
 ): String? {
+    if (key in GraphicsConfigSerialization.protectedKeys) {
+        GraphicsConfigSerialization.nativeRead?.let { return it(filesDir)[key]?.toString() }
+    }
     for (subdir in listOf("d2x-redux", "d1x-redux", "")) {
         val cfgFile =
             if (subdir.isEmpty()) {
@@ -116,24 +119,46 @@ internal fun applyGraphicsOptionSnapshot(
 ): Boolean = options.all { (name, value) -> apply(name, value) }
 
 private fun updateConfigPaths(
+    filesDir: File,
     cfgPaths: List<File>,
     settings: List<Pair<String, String>>,
 ) {
-    val updates =
-        cfgPaths.distinctBy { it.absolutePath }.map { cfgFile ->
-            var text = if (cfgFile.exists()) cfgFile.readText() else ""
-            for ((key, value) in settings) {
-                val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
-                text =
-                    if (regex.containsMatchIn(text)) {
-                        regex.replace(text) { "$key=$value" }
-                    } else {
-                        text.trimEnd() + "\n$key=$value\n"
-                    }
+    GraphicsConfigSerialization.transaction(filesDir) {
+        val nativeStage = GraphicsConfigSerialization.nativeStage
+        val protected =
+            if (nativeStage !=
+                null
+            ) {
+                settings.filter { it.first in GraphicsConfigSerialization.protectedKeys }
+            } else {
+                emptyList()
             }
-            cfgFile to text
-        }
-    AtomicFilePublication.writeUtf8Batch(updates)
+        if (protected.isNotEmpty()) nativeStage?.invoke(filesDir, protected)
+        val directSettings =
+            if (nativeStage !=
+                null
+            ) {
+                settings.filter { it.first !in GraphicsConfigSerialization.protectedKeys }
+            } else {
+                settings
+            }
+        if (directSettings.isEmpty()) return@transaction
+        val updates =
+            cfgPaths.distinctBy { it.absolutePath }.map { cfgFile ->
+                var text = if (cfgFile.exists()) cfgFile.readText() else ""
+                for ((key, value) in directSettings) {
+                    val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
+                    text =
+                        if (regex.containsMatchIn(text)) {
+                            regex.replace(text) { "$key=$value" }
+                        } else {
+                            text.trimEnd() + "\n$key=$value\n"
+                        }
+                }
+                cfgFile to text
+            }
+        AtomicFilePublication.writeUtf8Batch(updates)
+    }
 }
 
 private fun setupLogInfo(message: String) {
@@ -153,7 +178,7 @@ internal fun updateAllConfigFiles(
         val dir = File(filesDir, subdir)
         if (dir.isDirectory) cfgPaths.add(File(dir, "descent.cfg"))
     }
-    updateConfigPaths(cfgPaths, settings)
+    updateConfigPaths(filesDir, cfgPaths, settings)
     setupLogInfo(
         "Updated ${cfgPaths.size} descent.cfg files: ${settings.joinToString { "${it.first}=${it.second}" }}",
     )
@@ -168,7 +193,7 @@ internal fun updateConfigFilesForGame(
     val cfgPaths = mutableListOf(File(filesDir, "descent.cfg"))
     val dir = File(filesDir, subdir)
     if (dir.isDirectory) cfgPaths.add(File(dir, "descent.cfg"))
-    updateConfigPaths(cfgPaths, settings)
+    updateConfigPaths(filesDir, cfgPaths, settings)
     setupLogInfo(
         "Updated ${cfgPaths.size} $game descent.cfg file(s): ${settings.joinToString { "${it.first}=${it.second}" }}",
     )

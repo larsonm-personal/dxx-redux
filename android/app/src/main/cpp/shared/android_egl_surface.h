@@ -8,6 +8,9 @@
 
 typedef void (*android_egl_resource_callback)(void);
 
+/* Game-thread cleanup must forget names from the retired context, not delete new objects */
+int android_egl_discarding_lost_context_resources(void);
+
 struct android_egl_surface_state {
 	EGLDisplay *display;
 	EGLConfig *config;
@@ -22,8 +25,17 @@ struct android_egl_surface_state {
 	uint64_t window_generation;
 };
 
-void android_egl_surface_initialize(struct android_egl_surface_state *state,
-                                    int width, int height, int use_rgba8888, int *out_color_depth);
+/* Returns zero without issuing GL calls when EGL setup fails */
+int android_egl_surface_initialize(struct android_egl_surface_state *state,
+                                   int width, int height, int use_rgba8888, int *out_color_depth);
+#ifdef INTROSPECT_ON
+/* Game-thread-only one-shot failure after the caller has destroyed its old context */
+void android_egl_surface_debug_fail_initialize_once(void);
+/* Bounded game-thread-only failures, including accepted-mode reconstruction */
+void android_egl_surface_debug_fail_initialize_count(int count);
+/* Retire the real current context on the next game-thread surface recreation */
+void android_egl_surface_debug_lose_context_on_resume_once(void);
+#endif
 void android_egl_surface_swap(struct android_egl_surface_state *state);
 int android_egl_surface_get_recreate_count(const struct android_egl_surface_state *state);
 uint64_t android_egl_surface_get_window_generation(const struct android_egl_surface_state *state);

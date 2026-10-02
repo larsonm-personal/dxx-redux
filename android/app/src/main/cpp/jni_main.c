@@ -32,6 +32,7 @@
 #include "android_level_preview.h"
 #include "android_lifecycle_actions.h"
 #include "jni_string.h"
+#include "android_graphics_safety.h"
 
 #ifdef DXX_BUILD_DESCENT_II
 #include "d1_in_d2/d1_in_d2.h"
@@ -377,10 +378,21 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	/* Publish callback ownership only after required setup succeeds */
 	g_activity = (*env)->NewGlobalRef(env, thiz);
 	if (!g_activity || (*env)->ExceptionCheck(env)) goto startup_failed;
+	{
+		char *root = android_consume_activity_string(env, thiz, "getGraphicsFilesRoot");
+		int ready = root && android_graphics_safety_initialize(root);
+		free(root);
+		if (!ready || (*env)->ExceptionCheck(env)) {
+			LOGE("Graphics safety storage initialization failed");
+			android_finish_activity(env, thiz);
+			goto startup_failed;
+		}
+	}
 	android_log_startup_argv("before-main", argc, argv_startup,
 	                         input_demo_replay_path, resume_save_path, resume_callsign);
 	android_engine_session_begin();
 	main(argc, argv_startup);
+	android_graphics_safety_shutdown();
 	debug_log(DLOG_GAME, "jni startup main returned");
 	android_engine_session_returned();
 	free(input_demo_replay_path);
@@ -1000,6 +1012,44 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 #endif /* INTROSPECT_ON */
 
 /* ── Graphics options: set MSAA/AF from Kotlin (all builds) ────── */
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGraphicsSafetyState(JNIEnv *env, jobject thiz)
+{
+	(void) thiz;
+	char state[2048];
+	android_graphics_safety_state_json(state, sizeof(state));
+	return (*env)->NewStringUTF(env, state);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGraphicsSafetyArm(JNIEnv *env, jobject thiz, jlong id)
+{
+	(void) env;
+	(void) thiz;
+	return android_graphics_safety_arm((uint64_t) id) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGraphicsSafetyDecide(JNIEnv *env, jobject thiz,
+                                                              jlong id, jboolean accept, jstring jreason)
+{
+	(void) thiz;
+	char *reason;
+	if (!dxx_jni_string_to_utf8(env, jreason, &reason)) return -1;
+	int result = android_graphics_safety_decide((uint64_t) id, accept, reason);
+	free(reason);
+	return result;
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGraphicsSafetyUiState(JNIEnv *env, jobject thiz,
+                                                               jboolean foreground, jboolean blocked)
+{
+	(void) env;
+	(void) thiz;
+	android_graphics_safety_ui_state(foreground, blocked);
+}
+
 #include "config.h"
 #include "palette.h"
 #include "shared/android_graphics_options.h"
@@ -1016,7 +1066,9 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 	              strcmp(name, "dynlight_color") &&
 	              strcmp(name, "main_view_fov_locked");
 	LOGI("graphics option: %s=%d", name, (int) value);
-	result = android_graphics_set_option(name, (int) value, persist);
+	result = android_graphics_safety_queue_option(name, (int) value, persist, 1);
+	if (result == ANDROID_GRAPHICS_OPTION_UNKNOWN)
+		result = android_graphics_set_option(name, (int) value, persist);
 	if (result == ANDROID_GRAPHICS_OPTION_UNKNOWN)
 		LOGE("nativeSetGraphicsOption: unknown option '%s'", name);
 	else if (result != ANDROID_GRAPHICS_OPTION_OK)
@@ -1035,7 +1087,9 @@ Java_com_dxxredux_app_MainActivity_nativeApplyLauncherGraphicsOption(JNIEnv *env
 	if (!dxx_jni_string_to_utf8(env, jname, &name))
 		return JNI_FALSE;
 	LOGI("launcher graphics option: %s=%d", name, (int) value);
-	applied = android_graphics_set_option(name, (int) value, 0);
+	applied = android_graphics_safety_queue_option(name, (int) value, 0, 0);
+	if (applied == ANDROID_GRAPHICS_OPTION_UNKNOWN)
+		applied = android_graphics_set_option(name, (int) value, 0);
 	if (!applied)
 		LOGE("nativeApplyLauncherGraphicsOption: unknown option '%s'", name);
 	free(name);

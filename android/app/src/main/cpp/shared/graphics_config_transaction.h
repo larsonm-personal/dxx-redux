@@ -27,6 +27,15 @@ enum graphics_config_transaction_result {
 enum graphics_config_transaction_result
 graphics_config_patch_files(const char *const *paths, size_t path_count,
                             const char *key, int value);
+struct graphics_config_update {
+	const char *key;
+	int value;
+};
+enum graphics_config_transaction_result
+graphics_config_patch_batch(const char *const *paths, size_t path_count,
+                            const struct graphics_config_update *updates, size_t update_count);
+enum graphics_config_transaction_result
+graphics_config_atomic_replace(const char *path, const void *bytes, size_t size);
 const char *graphics_config_transaction_result_name(
     enum graphics_config_transaction_result result);
 
@@ -42,6 +51,10 @@ enum graphics_config_transaction_test_failure {
 };
 #ifdef GRAPHICS_CONFIG_TRANSACTION_TESTING
 void graphics_config_transaction_set_test_failure(int failure, size_t target_index);
+#endif
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+/* Explicit one-shot publication pause for process-interruption integration tests */
+void graphics_config_transaction_debug_pause_once(int tex_filt, int milliseconds);
 #endif
 
 #ifdef __cplusplus

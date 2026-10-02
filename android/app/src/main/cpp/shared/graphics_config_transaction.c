@@ -5,6 +5,33 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+#include <android/log.h>
+#include <time.h>
+
+static int debug_pause_ms;
+static int debug_pause_tex_filt;
+
+void graphics_config_transaction_debug_pause_once(int tex_filt, int milliseconds)
+{
+	__atomic_store_n(&debug_pause_tex_filt, tex_filt, __ATOMIC_RELAXED);
+	__atomic_store_n(&debug_pause_ms, milliseconds > 0 && milliseconds <= 15000 ? milliseconds : 0, __ATOMIC_RELEASE);
+}
+
+static void debug_pause_after_first_publication(const struct graphics_config_update *updates, size_t count)
+{
+	if (!__atomic_load_n(&debug_pause_ms, __ATOMIC_ACQUIRE)) return;
+	for (size_t i = 0; i < count; ++i) {
+		if (strcmp(updates[i].key, "TexFilt") || updates[i].value != __atomic_load_n(&debug_pause_tex_filt, __ATOMIC_RELAXED)) continue;
+		const int milliseconds = __atomic_exchange_n(&debug_pause_ms, 0, __ATOMIC_ACQ_REL);
+		if (!milliseconds) return;
+		__android_log_print(ANDROID_LOG_INFO, "DXX-GraphicsRepair", "Graphics repair fault: paused after first publication tex_filt=%d duration_ms=%d", updates[i].value, milliseconds);
+		struct timespec remaining = { milliseconds / 1000, (milliseconds % 1000) * 1000000L };
+		while (nanosleep(&remaining, &remaining) && errno == EINTR) {}
+		return;
+	}
+}
+#endif
 
 #ifdef _WIN32
 #include <fcntl.h>
@@ -345,8 +372,8 @@ static int rollback_published(struct staged_config *staged, size_t published_cou
 }
 
 enum graphics_config_transaction_result
-graphics_config_patch_files(const char *const *paths, size_t path_count,
-                            const char *key, int value)
+graphics_config_patch_batch(const char *const *paths, size_t path_count,
+                            const struct graphics_config_update *updates, size_t update_count)
 {
 	struct staged_config staged[GRAPHICS_CONFIG_MAX_TARGETS];
 	enum graphics_config_transaction_result result = GRAPHICS_CONFIG_TRANSACTION_OK;
@@ -354,8 +381,17 @@ graphics_config_patch_files(const char *const *paths, size_t path_count,
 
 	memset(staged, 0, sizeof(staged));
 	if (!paths || !path_count || path_count > GRAPHICS_CONFIG_MAX_TARGETS ||
-	    !key || !*key || strchr(key, '=') || strchr(key, '\n') || strchr(key, '\r'))
+	    !updates || !update_count || update_count > 64)
 		return GRAPHICS_CONFIG_TRANSACTION_INVALID;
+	for (i = 0; i < update_count; ++i) {
+		const char *key = updates[i].key;
+		size_t j;
+		if (!key || !*key || strchr(key, '=') || strchr(key, '\n') || strchr(key, '\r'))
+			return GRAPHICS_CONFIG_TRANSACTION_INVALID;
+		for (j = 0; j < i; ++j)
+			if (!strcmp(key, updates[j].key))
+				return GRAPHICS_CONFIG_TRANSACTION_INVALID;
+	}
 	for (i = 0; i < path_count; i++) {
 		if (!paths[i] || !*paths[i]) {
 			result = GRAPHICS_CONFIG_TRANSACTION_INVALID;
@@ -365,9 +401,26 @@ graphics_config_patch_files(const char *const *paths, size_t path_count,
 		result = read_complete_file(&staged[i], i);
 		if (result != GRAPHICS_CONFIG_TRANSACTION_OK)
 			goto done;
-		result = build_updated_file(&staged[i], key, value, i);
-		if (result != GRAPHICS_CONFIG_TRANSACTION_OK)
-			goto done;
+		{
+			size_t j;
+			struct staged_config updated = { 0 };
+			updated.original = staged[i].original;
+			updated.original_size = staged[i].original_size;
+			for (j = 0; j < update_count; ++j) {
+				result = build_updated_file(&updated, updates[j].key, updates[j].value, i);
+				if (updated.original != staged[i].original)
+					free(updated.original);
+				if (result != GRAPHICS_CONFIG_TRANSACTION_OK) {
+					free(updated.updated);
+					goto done;
+				}
+				updated.original = updated.updated;
+				updated.original_size = updated.updated_size;
+				updated.updated = NULL;
+			}
+			staged[i].updated = updated.original;
+			staged[i].updated_size = updated.original_size;
+		}
 		result = write_private_file(staged[i].path, "tmp", staged[i].updated,
 		                            staged[i].updated_size, i, staged[i].temporary_path,
 		                            sizeof(staged[i].temporary_path));
@@ -390,6 +443,9 @@ graphics_config_patch_files(const char *const *paths, size_t path_count,
 		}
 		staged[i].temporary_path[0] = 0;
 		staged[i].published = 1;
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+		if (i == 0) debug_pause_after_first_publication(updates, update_count);
+#endif
 	}
 	for (i = 0; i < path_count; i++) {
 		if (!sync_parent_directory(staged[i].path)) {
@@ -402,6 +458,49 @@ graphics_config_patch_files(const char *const *paths, size_t path_count,
 
 done:
 	cleanup_staged(staged, path_count);
+	return result;
+}
+
+enum graphics_config_transaction_result
+graphics_config_patch_files(const char *const *paths, size_t path_count,
+                            const char *key, int value)
+{
+	const struct graphics_config_update update = { key, value };
+	return graphics_config_patch_batch(paths, path_count, &update, 1);
+}
+
+enum graphics_config_transaction_result
+graphics_config_atomic_replace(const char *path, const void *bytes, size_t size)
+{
+	struct staged_config staged = { 0 };
+	enum graphics_config_transaction_result result;
+	if (!path || !*path || (!bytes && size) || size > GRAPHICS_CONFIG_MAX_FILE_SIZE)
+		return GRAPHICS_CONFIG_TRANSACTION_INVALID;
+	staged.path = path;
+	result = read_complete_file(&staged, 0);
+	if (result != GRAPHICS_CONFIG_TRANSACTION_OK)
+		goto done;
+	result = write_private_file(path, "tmp", (const unsigned char *) bytes, size, 0,
+	                            staged.temporary_path, sizeof(staged.temporary_path));
+	if (result != GRAPHICS_CONFIG_TRANSACTION_OK)
+		goto done;
+	if (staged.existed) {
+		result = write_private_file(path, "bak", staged.original, staged.original_size, 0,
+		                            staged.backup_path, sizeof(staged.backup_path));
+		if (result != GRAPHICS_CONFIG_TRANSACTION_OK)
+			goto done;
+	}
+	if (!replace_path(staged.temporary_path, path, 0, 1)) {
+		result = GRAPHICS_CONFIG_TRANSACTION_REPLACE_FAILED;
+		goto done;
+	}
+	staged.temporary_path[0] = 0;
+	staged.published = 1;
+	if (!sync_parent_directory(path))
+		result = rollback_published(&staged, 1) ? GRAPHICS_CONFIG_TRANSACTION_SYNC_FAILED
+		                                        : GRAPHICS_CONFIG_TRANSACTION_ROLLBACK_FAILED;
+done:
+	cleanup_staged(&staged, 1);
 	return result;
 }
 

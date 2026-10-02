@@ -1,8 +1,10 @@
 package com.dxxredux.app
 
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -398,9 +400,13 @@ internal class RouteMetadataPrecomputeMonitor(
         }
 
     private fun append(message: String) {
-        logFile.parentFile?.mkdirs()
-        val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
-        logFile.appendText("$timestamp $message\n", Charsets.UTF_8)
+        try {
+            logFile.parentFile?.mkdirs()
+            val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
+            logFile.appendText("$timestamp $message\n", Charsets.UTF_8)
+        } catch (error: IOException) {
+            runCatching { Log.w("RouteMetadataMonitor", "Could not append metadata diagnostic log", error) }
+        }
     }
 
     private fun readState(): Pair<RouteMetadataPrecomputeSnapshot, Set<String>> =
@@ -447,38 +453,43 @@ internal class RouteMetadataPrecomputeMonitor(
         snapshot: RouteMetadataPrecomputeSnapshot,
         loggedMissions: Set<String>,
     ) {
-        AtomicFilePublication.writeUtf8(
-            stateFile,
-            JSONObject()
-                .put("schema", "dxx-route-precompute-status-v1")
-                .put("cache_generation", snapshot.cacheGeneration)
-                .put("total_levels", snapshot.totalLevels)
-                .put("finished_levels", snapshot.finishedLevels)
-                .put("failed_levels", snapshot.failedLevels)
-                .put("current_mission", snapshot.currentMission)
-                .put("current_level", snapshot.currentLevel)
-                .put("current_priority", snapshot.currentPriority)
-                .put("current_detail", snapshot.currentDetail)
-                .put("current_progress_completed", snapshot.currentProgressCompleted)
-                .put("current_progress_total", snapshot.currentProgressTotal)
-                .put("current_mission_finished_levels", snapshot.currentMissionFinishedLevels)
-                .put("current_mission_total_levels", snapshot.currentMissionTotalLevels)
-                .put("last_finished_mission", snapshot.lastFinishedMission)
-                .put("last_finished_level", snapshot.lastFinishedLevel)
-                .put("phase", snapshot.phase)
-                .put("status_message", snapshot.statusMessage)
-                .put("updated_at_ms", snapshot.updatedAtMs)
-                .put("music_total_tracks", snapshot.musicTotalTracks)
-                .put("music_finished_tracks", snapshot.musicFinishedTracks)
-                .put("music_failed_tracks", snapshot.musicFailedTracks)
-                .put("music_waiting_tracks", snapshot.musicWaitingTracks)
-                .put("music_current_mission", snapshot.musicCurrentMission)
-                .put("music_current_track", snapshot.musicCurrentTrack)
-                .put("music_phase", snapshot.musicPhase)
-                .put("music_updated_at_ms", snapshot.musicUpdatedAtMs)
-                .put("logged_missions", JSONArray(loggedMissions.sorted()))
-                .toString(2) + "\n",
-        )
+        try {
+            AtomicFilePublication.writeUtf8(
+                stateFile,
+                JSONObject()
+                    .put("schema", "dxx-route-precompute-status-v1")
+                    .put("cache_generation", snapshot.cacheGeneration)
+                    .put("total_levels", snapshot.totalLevels)
+                    .put("finished_levels", snapshot.finishedLevels)
+                    .put("failed_levels", snapshot.failedLevels)
+                    .put("current_mission", snapshot.currentMission)
+                    .put("current_level", snapshot.currentLevel)
+                    .put("current_priority", snapshot.currentPriority)
+                    .put("current_detail", snapshot.currentDetail)
+                    .put("current_progress_completed", snapshot.currentProgressCompleted)
+                    .put("current_progress_total", snapshot.currentProgressTotal)
+                    .put("current_mission_finished_levels", snapshot.currentMissionFinishedLevels)
+                    .put("current_mission_total_levels", snapshot.currentMissionTotalLevels)
+                    .put("last_finished_mission", snapshot.lastFinishedMission)
+                    .put("last_finished_level", snapshot.lastFinishedLevel)
+                    .put("phase", snapshot.phase)
+                    .put("status_message", snapshot.statusMessage)
+                    .put("updated_at_ms", snapshot.updatedAtMs)
+                    .put("music_total_tracks", snapshot.musicTotalTracks)
+                    .put("music_finished_tracks", snapshot.musicFinishedTracks)
+                    .put("music_failed_tracks", snapshot.musicFailedTracks)
+                    .put("music_waiting_tracks", snapshot.musicWaitingTracks)
+                    .put("music_current_mission", snapshot.musicCurrentMission)
+                    .put("music_current_track", snapshot.musicCurrentTrack)
+                    .put("music_phase", snapshot.musicPhase)
+                    .put("music_updated_at_ms", snapshot.musicUpdatedAtMs)
+                    .put("logged_missions", JSONArray(loggedMissions.sorted()))
+                    .toString(2) + "\n",
+            )
+        } catch (error: IOException) {
+            // Diagnostic publication must not prevent returning to the launcher after a storage failure
+            runCatching { Log.w("RouteMetadataMonitor", "Could not publish metadata diagnostic status", error) }
+        }
     }
 
     private fun levelLabel(job: RouteMetadataPrecomputeJob): String =

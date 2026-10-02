@@ -8,6 +8,11 @@ import xcrash.ICrashCallback
 import xcrash.XCrash
 
 class DxxReduxApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        NativeGraphicsSafety.install()
+    }
+
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
 

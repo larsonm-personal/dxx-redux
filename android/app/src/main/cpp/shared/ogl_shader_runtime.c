@@ -1,5 +1,6 @@
 #include "ogl_shader_runtime.h"
 #ifdef ANDROID
+#include "android_egl_surface.h"
 #include "android_log.h"
 #endif
 
@@ -25,6 +26,15 @@ void ogl_shader_use_program(GLuint program)
 #else
 	glUseProgram(program);
 #endif
+}
+
+void ogl_shader_delete_program(GLuint program)
+{
+#ifdef ANDROID
+	if (android_egl_discarding_lost_context_resources())
+		return;
+#endif
+	glDeleteProgram(program);
 }
 
 void ogl_shader_read_info_log(GLuint shader, const char *program_name,

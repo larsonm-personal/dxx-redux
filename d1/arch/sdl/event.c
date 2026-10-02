@@ -22,6 +22,7 @@
 #include "coop/coop_briefing.h"
 #include "android_lifecycle_actions.h"
 #include "android_lifecycle_diagnostics.h"
+#include "android_graphics_safety.h"
 #include "digi_mixer_music.h"
 #endif
 #if defined(ANDROID) && defined(OGL)
@@ -233,6 +234,7 @@ void event_process(void)
 	                                    wind == Game_wind,
 	                                    (Game_mode & GM_MULTI) != 0);
 	android_overlay_game_tick();
+	android_graphics_safety_event_tick();
 #endif
 	timer_update();
 #ifdef __ANDROID__

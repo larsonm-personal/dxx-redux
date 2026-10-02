@@ -4,6 +4,17 @@
 
 #include "ogl_viewport_android.h"
 
+void android_ogl_viewport_invalidate(struct android_ogl_viewport_state *state)
+{
+	if (!state) return;
+	if (state->last_width) *state->last_width = -1;
+	if (state->last_height) *state->last_height = -1;
+	if (state->last_keyboard_offset) *state->last_keyboard_offset = -1;
+	state->last_x = state->last_y = -1;
+	state->last_physical_x = state->last_physical_y = -1;
+	state->last_physical_width = state->last_physical_height = -1;
+}
+
 static int android_ogl_scale_axis(int value, int logical_extent,
                                   int physical_extent)
 {
