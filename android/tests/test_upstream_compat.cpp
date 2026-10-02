@@ -2404,7 +2404,13 @@ static void test_robot_path_creation()
 		            d_rand_get_call_count() == untouched_rng,
 		        "inactive path operations leave robot, path output and RNG untouched");
 		create_path_to_player(&robot, 10, 0);
-		require(local.goal_segment == 0 && ai.flags[4] == 17, "companion keeps D2 destination and flags in either profile");
+		require(local.goal_segment == (profile == 1 ? ConsoleObject->segnum : Believed_player_seg) && ai.flags[4] == 17,
+		        "uncloaked D1 companion rejoins the player while D2 keeps its believed destination");
+		Players[Player_num].flags |= PLAYER_FLAGS_CLOAKED;
+		create_path_to_player(&robot, 10, 0);
+		require(local.goal_segment == Believed_player_seg && ai.flags[4] == 17,
+		        "companion respects the believed destination while the player is cloaked");
+		Players[Player_num].flags &= ~PLAYER_FLAGS_CLOAKED;
 		d_srand(17);
 		const unsigned companion_before = d_rand_get_call_count();
 		require(create_path_points(&robot, 0, 1, Point_segs, &count, 10, 1, 1, -1) == 0 && count == 2,
