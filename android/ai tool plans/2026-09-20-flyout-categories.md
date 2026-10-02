@@ -20,7 +20,6 @@ Top-level `tunnel_present_exterior_missing` distinguishes a calculable tunnel wi
 
 The top-level timing continues to describe the selected movie or candidate rendered sequence. Component timings are separate, and these labels do not change runtime playback or multiplayer timeout policy
 
-
 ## Validation and results
 
 Both Windows engines and Android x86_64 native engines built successfully. All seven native integration cases, scoped formatting, JSON normalization, and the complete field/timing audit passed.

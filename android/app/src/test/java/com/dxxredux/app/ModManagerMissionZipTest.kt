@@ -21,7 +21,10 @@ import java.util.zip.ZipOutputStream
 class ModManagerMissionZipTest {
     @Test
     fun localEnemyWithinAndMaximumKeepRealReplacementBankOwned() {
-        val repository = generateSequence(File(".").canonicalFile) { it.parentFile }.first { File(it, "game_data").isDirectory }
+        val repository =
+            generateSequence(
+                File(".").canonicalFile,
+            ) { it.parentFile }.first { File(it, "game_data").isDirectory }
         val enemyArchive = File(repository, "game_data/mission_files/ewithin-versions.zip")
         val maximumArchive = File(repository, "game_data/mission_files/descent_maximum_fixed.zip")
         assumeTrue("Local campaign fixtures are available", enemyArchive.isFile && maximumArchive.isFile)
@@ -35,9 +38,18 @@ class ModManagerMissionZipTest {
         val maximumMissions = catalog.missions.filter { it.key.owner == "mod/${maximum.filename}" }
         assertTrue(enemyMissions.isNotEmpty())
         assertTrue(maximumMissions.isNotEmpty())
-        val nestedDxa = catalog.resourcesFor(enemyMissions.first().key).single { it.virtualPath.equals("ewithin.dxa", true) }
+        val nestedDxa =
+            catalog
+                .resourcesFor(
+                    enemyMissions.first().key,
+                ).single { it.virtualPath.equals("ewithin.dxa", true) }
         java.util.zip.ZipFile(nestedDxa.source).use { archive ->
-            val names = archive.entries().asSequence().map { it.name.lowercase() }.toSet()
+            val names =
+                archive
+                    .entries()
+                    .asSequence()
+                    .map { it.name.lowercase() }
+                    .toSet()
             assertTrue("descent2.ham" in names)
             assertTrue("descent2.s22" in names)
         }
@@ -52,7 +64,8 @@ class ModManagerMissionZipTest {
         val filesDir = File("build/test-mission-launch-catalog").absoluteFile
         filesDir.deleteRecursively()
         val manager = ModManager(filesDir)
-        val enemy = requireNotNull(manager.importMissionZipFile(createEnemyWithinStyleMissionZip(), "ewithin-rebirth.zip"))
+        val enemy =
+            requireNotNull(manager.importMissionZipFile(createEnemyWithinStyleMissionZip(), "ewithin-rebirth.zip"))
         val other = requireNotNull(manager.importMissionZipFile(createMissionZip(), "other.zip"))
         val catalog = manager.buildMissionLaunchCatalog("d2")
         assertEquals(2, catalog.missions.size)
@@ -89,7 +102,13 @@ class ModManagerMissionZipTest {
         requireNotNull(manager.importMissionZipFile(createMissionZip(), "second.zip"))
         val catalog = manager.buildMissionLaunchCatalog("d2")
         assertEquals(2, catalog.missions.size)
-        assertEquals(2, catalog.missions.map { it.key }.distinct().size)
+        assertEquals(
+            2,
+            catalog.missions
+                .map { it.key }
+                .distinct()
+                .size,
+        )
         assertThrows(IllegalArgumentException::class.java) { catalog.resolveLegacy("Uneasy4", "d2") }
         val first = catalog.resourcesFor(catalog.missions[0].key).map { it.source }.toSet()
         val second = catalog.resourcesFor(catalog.missions[1].key).map { it.source }.toSet()
@@ -118,9 +137,16 @@ class ModManagerMissionZipTest {
         assertEquals(timestamps, record.files.map { File(record.rootDir, it.relativePath).lastModified() })
         assertEquals("background metadata", marker.readText())
         val linked = store.linkedFilesByAbsolutePath()
-        assertTrue(record.files.all { linked[File(record.rootDir, it.relativePath).absolutePath]?.ownerFilename == imported.filename })
+        assertTrue(
+            record.files.all {
+                linked[File(record.rootDir, it.relativePath).absolutePath]?.ownerFilename ==
+                    imported.filename
+            },
+        )
         val scan = requireNotNull(MissionZip.inspect(archive))
-        assertNotNull(store.extractedTarget(archive.absolutePath, File(filesDir, "set"), scan, scan.missionSets.single()))
+        assertNotNull(
+            store.extractedTarget(archive.absolutePath, File(filesDir, "set"), scan, scan.missionSets.single()),
+        )
 
         reloaded.setEnabled(imported.filename, false)
         reloaded.writeEnabledModPaths("d2")
@@ -495,8 +521,12 @@ class ModManagerMissionZipTest {
         assertEquals(originalSize, archive.length())
 
         val reloadedStore = ModManager(filesDir).extractionStore()
-        val record = requireNotNull(reloadedStore.reusableRecord(imported!!.filename, manager.modFile(imported.filename)))
-        assertEquals("mods/pluton2/descent.sng", record.files.single { it.relativePath == "descent.sng" }.sourceEntryPath)
+        val record =
+            requireNotNull(reloadedStore.reusableRecord(imported!!.filename, manager.modFile(imported.filename)))
+        assertEquals(
+            "mods/pluton2/descent.sng",
+            record.files.single { it.relativePath == "descent.sng" }.sourceEntryPath,
+        )
         val catalog = manager.buildMissionLaunchCatalog("d2")
         val mission = catalog.missions.single().key
         val songList = catalog.resourcesFor(mission).single { it.virtualPath == "descent.sng" }
@@ -811,9 +841,16 @@ class ModManagerMissionZipTest {
         assertTrue(files.all { GameFileFormats.isMissionDescriptor(it.name) })
     }
 
-    private fun contextMounts(filesDir: File, game: String): List<String> {
+    private fun contextMounts(
+        filesDir: File,
+        game: String,
+    ): List<String> {
         val gameDir = if (game == "d1") "d1x-redux" else "d2x-redux"
-        val entries = org.json.JSONObject(File(filesDir, "$gameDir/.mission_assets.json").readText()).getJSONArray("entries")
+        val entries =
+            org.json
+                .JSONObject(
+                    File(filesDir, "$gameDir/.mission_assets.json").readText(),
+                ).getJSONArray("entries")
         return (0 until entries.length()).flatMap { index ->
             val paths = entries.getJSONObject(index).getJSONArray("mounts")
             (0 until paths.length()).map { paths.getString(it).replace('\\', '/') }

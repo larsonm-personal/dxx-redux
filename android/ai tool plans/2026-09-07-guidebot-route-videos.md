@@ -41,22 +41,22 @@ speedruns, complete secret guides, or proof of escape within the normal timer.
 
 ## Recommended design decisions
 
-| Topic | Initial decision | Reason |
-| --- | --- | --- |
-| Route authority | Existing route-confirmation controller | Keep all movement, collision, actions, and success rules in one place |
-| Video source | Fresh instrumented run matching the selected regression input | Compact checked-in results do not contain motion or full interaction history |
-| Capture architecture | Trace pass, then checked render pass with lookahead | Future motion improves camera framing without steering the actor |
-| Simulation versus video time | Separate clocks with an explicit edit schedule | Pauses, slowdowns, labels, and timestamps must agree without changing the proof |
-| Default viewpoint | First person at the actor center; smooth orientation | Position smoothing can cut corners through walls |
-| Output | 1920x1080, progressive 60 fps, H.264 MP4 | Matches the verifier's 60 Hz cadence and is practical for distribution |
-| Audio | Silent first version; engine effects as a follow-up | Existing desktop route runner already disables sound and music |
-| Teaching pace | Start with 0.75x recorded motion, configurable | Canonical verifier speed is 160 percent; do not change that setting to slow a video |
-| Objective colors | Orange active, red actionable context, key-colored carriers | Accommodates both requested highlight schemes with explicit state meaning |
-| Rear view | Enabled in the first complete version | Helps viewers understand the passage they just crossed |
-| Map | Optional phase after the first-person version | Useful, but a Descent mine needs a stable 3D representation |
-| Third person | Experimental later phase | Collision-safe camera movement is the main additional challenge |
-| Robot population | Clean by default; optional derived Robot showcase track | Show actual ordinary enemies and harmless attacks without changing the route proof |
-| Uploading | Separate resumable publisher consuming validated artifacts | Video rendering and channel operations have different lifecycles |
+| Topic                        | Initial decision                                              | Reason                                                                              |
+| ---------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Route authority              | Existing route-confirmation controller                        | Keep all movement, collision, actions, and success rules in one place               |
+| Video source                 | Fresh instrumented run matching the selected regression input | Compact checked-in results do not contain motion or full interaction history        |
+| Capture architecture         | Trace pass, then checked render pass with lookahead           | Future motion improves camera framing without steering the actor                    |
+| Simulation versus video time | Separate clocks with an explicit edit schedule                | Pauses, slowdowns, labels, and timestamps must agree without changing the proof     |
+| Default viewpoint            | First person at the actor center; smooth orientation          | Position smoothing can cut corners through walls                                    |
+| Output                       | 1920x1080, progressive 60 fps, H.264 MP4                      | Matches the verifier's 60 Hz cadence and is practical for distribution              |
+| Audio                        | Silent first version; engine effects as a follow-up           | Existing desktop route runner already disables sound and music                      |
+| Teaching pace                | Start with 0.75x recorded motion, configurable                | Canonical verifier speed is 160 percent; do not change that setting to slow a video |
+| Objective colors             | Orange active, red actionable context, key-colored carriers   | Accommodates both requested highlight schemes with explicit state meaning           |
+| Rear view                    | Enabled in the first complete version                         | Helps viewers understand the passage they just crossed                              |
+| Map                          | Optional phase after the first-person version                 | Useful, but a Descent mine needs a stable 3D representation                         |
+| Third person                 | Experimental later phase                                      | Collision-safe camera movement is the main additional challenge                     |
+| Robot population             | Clean by default; optional derived Robot showcase track       | Show actual ordinary enemies and harmless attacks without changing the route proof  |
+| Uploading                    | Separate resumable publisher consuming validated artifacts    | Video rendering and channel operations have different lifecycles                    |
 
 All timings, colors, and camera limits below are proposed starting values for
 visual tuning, not measured final settings.
@@ -68,23 +68,23 @@ a claim that every branch has been exercised at runtime.
 Another task is changing route code concurrently; recheck these integration
 points against the implementation revision before starting Phase 0.
 
-| Existing code | What it provides | Planned use or gap |
-| --- | --- | --- |
-| android/helpers/regenerate_all_guidebot_simulations.ps1 | Corpus discovery, mission staging, level selection, Headless/Headed/Desktop modes, D1-in-D2 data selection, result normalization | Reuse selection and staging; add a distinct video runner without rewriting regression files |
-| android/helpers/guidebot_simulation_regression.ps1 | Route input hash, expected objective projection, canonical seed 1 and 60 Hz, generation 4 | Reuse identity and eligibility checks; its compact objectives contain names and rounded seconds only |
-| android/helpers/watch_guidebot_simulation.ps1 | Existing Windows mission/level browser | Later add an export action using the same selected identity |
-| android/app/src/main/cpp/shared/route_confirmation.h | Completion frames and fixed-point ticks, route indices, activation kinds, RNG boundaries, radius measurements | Preserve the compact result contract; add an optional recorder interface beside it |
-| android/app/src/main/cpp/shared/route_confirmation.cpp | Real actor movement, action dispatch, implicit completion, replans, sandbox rules | Observe goal changes, action boundaries, physical crossings, and completion before transient state disappears |
-| android/app/src/main/cpp/shared/route_confirmation_result.cpp | Detailed engine JSON with exact completion frame and microsecond-rounded seconds | Include this result unchanged alongside a richer video trace |
-| android/app/src/main/cpp/shared/route_confirmation_desktop.cpp | Native launch arguments, fixed cadence, progress output, terminal result handling | Add trace/render modes and a drain/finalization stage before process exit |
-| d2/main/game.c | Fixed-time preparation before GameProcessFrame; confirmation callbacks around simulation | Define an unambiguous post-simulation sampling boundary and separate render scheduling |
-| d2/main/render.c | Viewer, view matrix, portal traversal, object rendering | Add an explicit presentation camera override and a view-only pass contract |
-| d2/main/gamerend.c and d2/main/gauges.c | Main rendering and do_cockpit_window_view | Reuse subview conventions and compose a dedicated video HUD |
-| d2/arch/ogl/ogl.c and d2/arch/ogl/gr.c | gr_flip, framebuffer readback, screenshot primitives | Capture the resolved composed framebuffer before swap; screenshots themselves are not the batch transport |
-| d2/main/automap.c | Mine edges and visited segments | Reuse geometry for an isolated miniature renderer without opening the automap window |
-| android/app/src/main/cpp/shared/automap_metadata_overlay.c | Labels, objective connectors, key-carrier markers | Reuse semantics and geometry helpers without calling route-refresh/adoption paths |
-| android/app/src/main/cpp/shared/level_metadata_scan.h | Route activation and aim positions | Distinguish where the actor should stand from the surface/object viewers should see |
-| d2/main/CMakeLists.txt | Desktop route gate and headless-route executable | Gate the optional exporter and keep encoders out of ordinary game builds |
+| Existing code                                                  | What it provides                                                                                                                 | Planned use or gap                                                                                            |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| android/helpers/regenerate_all_guidebot_simulations.ps1        | Corpus discovery, mission staging, level selection, Headless/Headed/Desktop modes, D1-in-D2 data selection, result normalization | Reuse selection and staging; add a distinct video runner without rewriting regression files                   |
+| android/helpers/guidebot_simulation_regression.ps1             | Route input hash, expected objective projection, canonical seed 1 and 60 Hz, generation 4                                        | Reuse identity and eligibility checks; its compact objectives contain names and rounded seconds only          |
+| android/helpers/watch_guidebot_simulation.ps1                  | Existing Windows mission/level browser                                                                                           | Later add an export action using the same selected identity                                                   |
+| android/app/src/main/cpp/shared/route_confirmation.h           | Completion frames and fixed-point ticks, route indices, activation kinds, RNG boundaries, radius measurements                    | Preserve the compact result contract; add an optional recorder interface beside it                            |
+| android/app/src/main/cpp/shared/route_confirmation.cpp         | Real actor movement, action dispatch, implicit completion, replans, sandbox rules                                                | Observe goal changes, action boundaries, physical crossings, and completion before transient state disappears |
+| android/app/src/main/cpp/shared/route_confirmation_result.cpp  | Detailed engine JSON with exact completion frame and microsecond-rounded seconds                                                 | Include this result unchanged alongside a richer video trace                                                  |
+| android/app/src/main/cpp/shared/route_confirmation_desktop.cpp | Native launch arguments, fixed cadence, progress output, terminal result handling                                                | Add trace/render modes and a drain/finalization stage before process exit                                     |
+| d2/main/game.c                                                 | Fixed-time preparation before GameProcessFrame; confirmation callbacks around simulation                                         | Define an unambiguous post-simulation sampling boundary and separate render scheduling                        |
+| d2/main/render.c                                               | Viewer, view matrix, portal traversal, object rendering                                                                          | Add an explicit presentation camera override and a view-only pass contract                                    |
+| d2/main/gamerend.c and d2/main/gauges.c                        | Main rendering and do_cockpit_window_view                                                                                        | Reuse subview conventions and compose a dedicated video HUD                                                   |
+| d2/arch/ogl/ogl.c and d2/arch/ogl/gr.c                         | gr_flip, framebuffer readback, screenshot primitives                                                                             | Capture the resolved composed framebuffer before swap; screenshots themselves are not the batch transport     |
+| d2/main/automap.c                                              | Mine edges and visited segments                                                                                                  | Reuse geometry for an isolated miniature renderer without opening the automap window                          |
+| android/app/src/main/cpp/shared/automap_metadata_overlay.c     | Labels, objective connectors, key-carrier markers                                                                                | Reuse semantics and geometry helpers without calling route-refresh/adoption paths                             |
+| android/app/src/main/cpp/shared/level_metadata_scan.h          | Route activation and aim positions                                                                                               | Distinguish where the actor should stand from the surface/object viewers should see                           |
+| d2/main/CMakeLists.txt                                         | Desktop route gate and headless-route executable                                                                                 | Gate the optional exporter and keep encoders out of ordinary game builds                                      |
 
 Important source findings:
 
@@ -118,13 +118,13 @@ Important source findings:
 
 ## Pipeline and determinism contract
 
-| Approach | Tradeoff | Decision |
-| --- | --- | --- |
-| Record the current live window | Quick preview, but limited future awareness and weak control of timing/frame loss | Useful only as an early visual probe |
-| Trace then rerun with isolated presentation | Full future/past smoothing and normal engine scene fidelity; requires exact same-build repeat checks | Recommended first implementation |
+| Approach                                       | Tradeoff                                                                                                          | Decision                                    |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Record the current live window                 | Quick preview, but limited future awareness and weak control of timing/frame loss                                 | Useful only as an early visual probe        |
+| Trace then rerun with isolated presentation    | Full future/past smoothing and normal engine scene fidelity; requires exact same-build repeat checks              | Recommended first implementation            |
 | Record complete render state then play it back | No second simulation; supports arbitrary camera edits and seeking, but requires a complete scene recording format | Explicit fallback if render isolation fails |
 
-~~~mermaid
+```mermaid
 flowchart LR
     A[Mission assets and regression identity] --> B[Verify and trace]
     B --> C[Camera and presentation schedule]
@@ -135,7 +135,7 @@ flowchart LR
     F --> H[Validated video package]
     G --> H
     H --> I[Upload queue]
-~~~
+```
 
 ### Pass A: verify and trace
 
@@ -212,15 +212,15 @@ JSON. Keep metadata normalized and human-readable; use a compact binary frame
 stream if measurement warrants it. Reuse an existing compression dependency if
 available. Specify endianness, units, schema version, counts, and bounds.
 
-| Record | Required contents |
-| --- | --- |
-| Manifest | Engine executable/content hashes, source revision and dirty-source identity, platform, mission identity, effective asset/mod hashes and mount order, route input hash, regression generation/result hash, seed, difficulty, speed, radii, fixed Hz |
-| Pose sample | Integer simulation frame, accumulated fixed-point ticks, actor index/signature, segment, position, orientation, velocity, route generation/current objective identity |
-| Target sample/change | Stable semantic source, activation kind, resolved segment/side/wall/trigger, aim position, activation position, live object index/signature/type/radius, key color, linked affected doors |
-| Geometry snapshot | Side vertices and triangulation, surface normal/UV basis, portal child and paired side, relevant object bounds; captured before mutation/removal |
-| Event | Monotonic event sequence, source frame/ticks, pre_action/post_action/observed phase, semantic step key, occurrence number, event kind, source/affected targets, completion evidence |
-| Repeat check | Fixed-field digest of relevant simulation state plus selected explicit fields for useful mismatch reporting |
-| Terminal record | Confirmation result, frame/sample/event counts, stream checksum, first problem if any |
+| Record               | Required contents                                                                                                                                                                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Manifest             | Engine executable/content hashes, source revision and dirty-source identity, platform, mission identity, effective asset/mod hashes and mount order, route input hash, regression generation/result hash, seed, difficulty, speed, radii, fixed Hz |
+| Pose sample          | Integer simulation frame, accumulated fixed-point ticks, actor index/signature, segment, position, orientation, velocity, route generation/current objective identity                                                                              |
+| Target sample/change | Stable semantic source, activation kind, resolved segment/side/wall/trigger, aim position, activation position, live object index/signature/type/radius, key color, linked affected doors                                                          |
+| Geometry snapshot    | Side vertices and triangulation, surface normal/UV basis, portal child and paired side, relevant object bounds; captured before mutation/removal                                                                                                   |
+| Event                | Monotonic event sequence, source frame/ticks, pre_action/post_action/observed phase, semantic step key, occurrence number, event kind, source/affected targets, completion evidence                                                                |
+| Repeat check         | Fixed-field digest of relevant simulation state plus selected explicit fields for useful mismatch reporting                                                                                                                                        |
+| Terminal record      | Confirmation result, frame/sample/event counts, stream checksum, first problem if any                                                                                                                                                              |
 
 Generate one run-local objective ID when the controller selects a semantic goal;
 include route generation and semantic geometry/object identifiers, and separately
@@ -366,16 +366,16 @@ robot readable. Use a dark outer stroke and a narrower color stroke, starting
 around 6-8 output pixels at 1080p, scaled with output resolution. Prefer triangle
 ribbons/rings with controlled pixel thickness over driver-dependent wide lines.
 
-| Target | Geometry and behavior |
-| --- | --- |
-| Shootable switch | Thick ring lying on the actual switch face around aim_pos or the verified switch patch; clip to the face and offset slightly to prevent z-fighting |
-| Hidden/key/important door | Outline the opening perimeter from live segment/side vertices, including paired-side resolution; keep a subtle frame outline as the panel opens |
-| Blastable wall | Face perimeter plus light hatching and "Blast this wall" label; preserve pre-destruction geometry for the completion fade |
+| Target                          | Geometry and behavior                                                                                                                                          |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shootable switch                | Thick ring lying on the actual switch face around aim_pos or the verified switch patch; clip to the face and offset slightly to prevent z-fighting             |
+| Hidden/key/important door       | Outline the opening perimeter from live segment/side vertices, including paired-side resolution; keep a subtle frame outline as the panel opens                |
+| Blastable wall                  | Face perimeter plus light hatching and "Blast this wall" label; preserve pre-destruction geometry for the completion fade                                      |
 | Fly-through/pass-through region | Border on the actual crossing polygon, light translucent fill, and directional arrow; do not shade an entire segment and imply any entry satisfies the trigger |
-| Boss/reactor | Outer sphere/silhouette rings and low-opacity shading, sized from the live object; label the required action |
-| Key carrier | Key-colored sphere/rings and key icon; link the carrier to the dropped key event |
-| Loose key | Smaller key-colored halo; completion only on actual collection |
-| Affected distant door | Mark only when seen in the current view or map; explain the relationship in text without drawing a solid marker through intervening walls |
+| Boss/reactor                    | Outer sphere/silhouette rings and low-opacity shading, sized from the live object; label the required action                                                   |
+| Key carrier                     | Key-colored sphere/rings and key icon; link the carrier to the dropped key event                                                                               |
+| Loose key                       | Smaller key-colored halo; completion only on actual collection                                                                                                 |
+| Affected distant door           | Mark only when seen in the current view or map; explain the relationship in text without drawing a solid marker through intervening walls                      |
 
 Use orange for the current instruction, red for other nearby actionable targets,
 and blue/yellow/red with a key icon for key-bearing objects. Completion gets a
@@ -538,19 +538,19 @@ scratch retention so cleanup cannot erase the upload/resume ledger.
 
 Each level package contains:
 
-| Artifact | Purpose |
-| --- | --- |
-| manifest.json | Provenance, settings, source/result hashes, status, counts, checksums |
-| confirmation.json | Exact detailed result from the captured engine run |
-| trace/ | Poses, target records, events, geometry, repeat checks |
-| presentation.json | Camera/profile identity and source-to-video schedule |
-| route.mp4 | Final compressed composed video |
-| steps.json | Every event/step with source time, video action/completion time, and seek time |
-| steps.vtt | Optional readable objective cues on the final video timeline |
-| chapters.txt | Platform-compatible grouped chapters |
+| Artifact                        | Purpose                                                                         |
+| ------------------------------- | ------------------------------------------------------------------------------- |
+| manifest.json                   | Provenance, settings, source/result hashes, status, counts, checksums           |
+| confirmation.json               | Exact detailed result from the captured engine run                              |
+| trace/                          | Poses, target records, events, geometry, repeat checks                          |
+| presentation.json               | Camera/profile identity and source-to-video schedule                            |
+| route.mp4                       | Final compressed composed video                                                 |
+| steps.json                      | Every event/step with source time, video action/completion time, and seek time  |
+| steps.vtt                       | Optional readable objective cues on the final video timeline                    |
+| chapters.txt                    | Platform-compatible grouped chapters                                            |
 | description.txt and upload.json | Reviewable title, description, tags, mission identity, and publication settings |
-| thumbnail.png | Representative in-engine frame with mission/level title |
-| validation.json and logs/ | Repeat check, encoding, chapter, and visual coverage results |
+| thumbnail.png                   | Representative in-engine frame with mission/level title                         |
+| validation.json and logs/       | Repeat check, encoding, chapter, and visual coverage results                    |
 
 Identify a simulation capture by effective asset content, engine binary/build,
 simulation configuration, and route-input hash. Identify a presentation by that
@@ -684,11 +684,11 @@ and avoid adding a codec library dependency to the shipped game.
 ### Phase 0: prove capture boundaries and isolation
 
 - [ ] Pin frame numbering, before/after-action event phase, and terminal capture
-  behavior; capture frame 0 and the final state before window exit
+      behavior; capture frame 0 and the final state before window exit
 - [ ] Add the opt-in trace observer and goal/target snapshot with no presentation
 - [ ] Demonstrate two same-build trace runs with identical required samples/events
 - [ ] Render raw first-person and explicit rear cameras without altering required
-  simulation fields; audit RNG, visibility lists, lighting, and async route work
+      simulation fields; audit RNG, visibility lists, lighting, and async route work
 - [ ] Decide checked-repeat versus render-state recording using those results
 
 Acceptance: exact same-build repeat checks and semantic agreement with the chosen
@@ -698,9 +698,9 @@ finding to resolve, not a reason to weaken verification.
 ### Phase 1: smallest useful video exporter
 
 - [ ] Isolated desktop job, fixed framebuffer, timestamped frame stream, FFmpeg
-  transport, cancellation, and reliable final-frame drain
+      transport, cancellation, and reliable final-frame drain
 - [ ] First-person camera, static rear inset, elapsed time/current step, exact
-  steps.json, and final MP4 validation
+      steps.json, and final MP4 validation
 - [ ] Single-level and selected-level batch commands with NoBuild and DryRun
 - [ ] Distinct failed-route, replay-mismatch, graphics, disk, and encoder errors
 
@@ -712,10 +712,10 @@ no shared settings/baseline changes.
 
 - [ ] Future/past quaternion camera smoothing and collision-safe focus behavior
 - [ ] Separate presentation clock, important-step holds, 3-second completion
-  emphasis, clustered events, and scrolling step panel
+      emphasis, clustered events, and scrolling step panel
 - [ ] Switch rings, door/wall outlines, portal shading, boss/carrier/key markers
 - [ ] Pre-action target preservation, implicit/repeated-step wording, and linked
-  action/effect labels
+      action/effect labels
 - [ ] Representative event contact sheets and important-target visibility checks
 
 Acceptance: viewers can identify the passage/target before each required action,
@@ -725,11 +725,11 @@ important targets get explicit review findings, not fabricated shots.
 ### Phase 3: corpus packaging and publication-ready metadata
 
 - [ ] Hash-based caching, level resume, render-resource limits, stage progress,
-  durable publication catalog, and retention integration
+      durable publication catalog, and retention integration
 - [ ] Chapter grouping, exact time-offset index, captions, thumbnails, title and
-  description validation, and mission/variant ordering
+      description validation, and mission/variant ordering
 - [ ] Representative local review set followed by a larger successful-level
-  packaging batch; private pilot uploads belong to Phase 4
+      packaging batch; private pilot uploads belong to Phase 4
 
 Acceptance: interrupted batches resume without replacing baselines, stale assets
 cannot reuse videos, and every published package has a traceable confirmed source.
@@ -737,7 +737,7 @@ cannot reuse videos, and every published package has a traceable confirmed sourc
 ### Phase 4: publisher
 
 - [ ] OAuth setup, resumable uploads, duplicate reconciliation, processing polls,
-  quota-aware scheduling, playlist/caption/thumbnail operations
+      quota-aware scheduling, playlist/caption/thumbnail operations
 - [ ] Channel privacy and schedule policy, retry/resume, and supersession records
 
 Acceptance: an interrupted pilot upload resumes or reconciles to one video ID;
@@ -759,19 +759,19 @@ No checks below have been executed for this planning task.
 Prefer a high-level export integration runner over tests that mirror individual
 drawing functions. Reuse existing mission fixtures where possible:
 
-| Fixture/selection | Coverage |
-| --- | --- |
-| Counterstrike level 1 | Key, reactor, exit, fast terminal sequence, complete package |
-| Counterstrike level 2 | Several switches, hidden door, close completions, fly-through, repeated/restorer behavior |
-| Counterstrike level 10 | Key carrier, object removal, key spawn and pickup relationship |
-| Counterstrike levels 20 and 24 | Boss death, exit unlock, final-level lifecycle |
-| FirstStrike selected passing level through D2 | Original D1 assets and identity, distinct from fan conversion |
-| FirstStrike long-path fixture | Long traversal and camera comfort; select a currently passing instance |
-| Castaway restored-switch route fixtures | Revisited interactions and source/affected-door relations |
-| Obsidian switch/grate and blastable-wall fixtures | Occlusion, difficult surface visibility, wall destruction |
-| Vertigo selected passing door route | Mission data variation and keyed-door framing |
-| TEW selected passing level | Larger custom assets/geometry and label readability |
-| A secret level and a deliberate failed/timeout run | Identity and partial-diagnostic behavior |
+| Fixture/selection                                  | Coverage                                                                                  |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Counterstrike level 1                              | Key, reactor, exit, fast terminal sequence, complete package                              |
+| Counterstrike level 2                              | Several switches, hidden door, close completions, fly-through, repeated/restorer behavior |
+| Counterstrike level 10                             | Key carrier, object removal, key spawn and pickup relationship                            |
+| Counterstrike levels 20 and 24                     | Boss death, exit unlock, final-level lifecycle                                            |
+| FirstStrike selected passing level through D2      | Original D1 assets and identity, distinct from fan conversion                             |
+| FirstStrike long-path fixture                      | Long traversal and camera comfort; select a currently passing instance                    |
+| Castaway restored-switch route fixtures            | Revisited interactions and source/affected-door relations                                 |
+| Obsidian switch/grate and blastable-wall fixtures  | Occlusion, difficult surface visibility, wall destruction                                 |
+| Vertigo selected passing door route                | Mission data variation and keyed-door framing                                             |
+| TEW selected passing level                         | Larger custom assets/geometry and label readability                                       |
+| A secret level and a deliberate failed/timeout run | Identity and partial-diagnostic behavior                                                  |
 
 Fixture names indicate intended coverage, not a claim of current success. Resolve
 the active corpus result and fail/skip with a reason if the selected fixture is

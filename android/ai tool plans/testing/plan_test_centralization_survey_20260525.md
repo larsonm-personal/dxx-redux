@@ -1,16 +1,19 @@
 # Test Centralization Survey
 
 ## Goal
+
 - Survey current test files and runners to find tests not covered by `android/run_all_tests.ps1`
 - Identify what would be needed to centralize runners by domain while keeping domains separate
 
 ## Steps
+
 - [x] Read repository instructions
 - [x] Inventory test scripts, source tests, Gradle tests, CMake tests, Rust tests, and automation scripts
 - [x] Compare inventory against `android/run_all_tests.ps1`
 - [x] Summarize uncovered tests and recommend centralization changes
 
 ## Notes
+
 - `android/run_all_tests.ps1` discovers top-level `android/game_scripts/test_*.json5` scripts except `_standalone: false`, plus `android/tests/test_*.ps1`.
 - Kotlin JVM unit tests are covered indirectly through `android/tests/test_gradle_unit_tests.ps1`.
 - Native extract CTest tests are covered indirectly through `android/tests/test_cue_iso.ps1`.
@@ -19,6 +22,7 @@
 - `validate_extract_regression_specs.ps1` and root-level `android/test_door45_pose_repro*.json5` are not discovered.
 
 ## Implementation Started
+
 - [x] Registered D1/D2 native maths/input-demo executables with CTest.
 - [x] Added `android/tests/test_native_host_unit_tests.ps1` as the native host domain runner.
 - [x] Changed the server runner to use `cargo test` so Rust integration, NAT simulator, and unit tests are covered together.
@@ -28,6 +32,7 @@
 - [x] Made `_standalone: false` JSON scripts show as skipped in the run-all report instead of being silently ignored.
 
 ## Validation
+
 - [x] PowerShell parser check passed for changed scripts.
 - [x] Scoped `android/run-code-quality.ps1 -Fix` passed for changed test infrastructure files.
 - [x] `android/tests/test_validate_extract_regression_specs.ps1` passed.

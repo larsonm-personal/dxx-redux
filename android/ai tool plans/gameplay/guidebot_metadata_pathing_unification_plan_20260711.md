@@ -212,24 +212,24 @@ Items 1 and 3 cross the newly fixed architecture boundary and must be rolled bac
 
 ## Parity Matrix
 
-| Decision | Metadata today | Guide-Bot today | Unified target |
-| --- | --- | --- | --- |
-| End-of-level dependencies | Native analyzer | Same emitted steps | One `RoutePlan` |
-| Unexplored dependencies | Same analyzer with another endpoint | Same emitted steps plus local target copy | Same planner, endpoint policy only |
-| Dynamic start | Player start for canonical metadata | Guide-Bot object for live route | Explicit query start |
-| Actor restrictions | Usually player-like | Companion buddy-proof restriction | Explicit progression and navigator profiles |
-| Edge semantics | Rich internal blocker, coarse public cost | Coarse public cost only | Shared rich `EdgeDecision` |
-| Path ranking | Weighted Dijkstra | BFS by segment count | Shared deterministic ranking |
-| Segment chain | Computed then discarded | Recomputed by classic randomized pathfinder | Preserved only as planner evidence and diagnostics; never consumed by movement |
-| Firing position | Exact sampled position computed then discarded | Visible segment recomputed; position discarded | Exact player pose and aim target exposed as guidance; Guide-Bot receives only the goal segment |
-| Trigger traversal | Source side known internally | Routes to source segment only | Tell the player which side to cross; observe completion without directing Guide-Bot traversal |
-| Hidden door | Semantic step emitted | Routes near wall; generic classic flare behavior remains incidental | Tell the player where to stand and what to open; never aim or fire Guide-Bot |
-| Blastable wall | Treated immediately passable | Treated passable although buddy flare cannot damage it | Explicit player-required obstruction action |
-| Step completion | Analyzer simulation | Reimplemented from live globals | Shared completion evaluator |
-| Nearest fallback | Partial semantic result | Separate optimistic BFS heuristic | Frontier from the same failed plan proof |
-| State invalidation | Fresh headless scan | Mostly keys, commands, restore, handoff, target visited | Generation-keyed snapshots and coalesced invalidation |
-| Multiplayer | Not applicable | Owner-local plan, mode synchronized | Preserve owner-local planning |
-| Determinism | No RNG, but double ties | Classic physical BFS consumes simulation RNG | RNG-free shared planning plus byte-for-byte classic movement RNG behavior for the same goal segment |
+| Decision                  | Metadata today                                 | Guide-Bot today                                                     | Unified target                                                                                      |
+| ------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| End-of-level dependencies | Native analyzer                                | Same emitted steps                                                  | One `RoutePlan`                                                                                     |
+| Unexplored dependencies   | Same analyzer with another endpoint            | Same emitted steps plus local target copy                           | Same planner, endpoint policy only                                                                  |
+| Dynamic start             | Player start for canonical metadata            | Guide-Bot object for live route                                     | Explicit query start                                                                                |
+| Actor restrictions        | Usually player-like                            | Companion buddy-proof restriction                                   | Explicit progression and navigator profiles                                                         |
+| Edge semantics            | Rich internal blocker, coarse public cost      | Coarse public cost only                                             | Shared rich `EdgeDecision`                                                                          |
+| Path ranking              | Weighted Dijkstra                              | BFS by segment count                                                | Shared deterministic ranking                                                                        |
+| Segment chain             | Computed then discarded                        | Recomputed by classic randomized pathfinder                         | Preserved only as planner evidence and diagnostics; never consumed by movement                      |
+| Firing position           | Exact sampled position computed then discarded | Visible segment recomputed; position discarded                      | Exact player pose and aim target exposed as guidance; Guide-Bot receives only the goal segment      |
+| Trigger traversal         | Source side known internally                   | Routes to source segment only                                       | Tell the player which side to cross; observe completion without directing Guide-Bot traversal       |
+| Hidden door               | Semantic step emitted                          | Routes near wall; generic classic flare behavior remains incidental | Tell the player where to stand and what to open; never aim or fire Guide-Bot                        |
+| Blastable wall            | Treated immediately passable                   | Treated passable although buddy flare cannot damage it              | Explicit player-required obstruction action                                                         |
+| Step completion           | Analyzer simulation                            | Reimplemented from live globals                                     | Shared completion evaluator                                                                         |
+| Nearest fallback          | Partial semantic result                        | Separate optimistic BFS heuristic                                   | Frontier from the same failed plan proof                                                            |
+| State invalidation        | Fresh headless scan                            | Mostly keys, commands, restore, handoff, target visited             | Generation-keyed snapshots and coalesced invalidation                                               |
+| Multiplayer               | Not applicable                                 | Owner-local plan, mode synchronized                                 | Preserve owner-local planning                                                                       |
+| Determinism               | No RNG, but double ties                        | Classic physical BFS consumes simulation RNG                        | RNG-free shared planning plus byte-for-byte classic movement RNG behavior for the same goal segment |
 
 ## Audit Findings
 
@@ -445,16 +445,16 @@ The planner library exposes `evaluate_waypoint(waypoint, state)`. It returns:
 
 The action policy is:
 
-| Action | Responsibility |
-| --- | --- |
-| Pick up key | Owning player |
+| Action                   | Responsibility                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------- |
+| Pick up key              | Owning player                                                                                     |
 | Open keyed/ordinary door | Owning player; Guide-Bot's unchanged generic forward flare may incidentally open an ordinary door |
-| Shoot switch | Owning player |
-| Open hidden door | Owning player |
-| Cross trigger | Owning player |
-| Destroy blastable wall | Owning player |
-| Destroy reactor or boss | Owning player |
-| Enter exit | Owning player |
+| Shoot switch             | Owning player                                                                                     |
+| Open hidden door         | Owning player                                                                                     |
+| Cross trigger            | Owning player                                                                                     |
+| Destroy blastable wall   | Owning player                                                                                     |
+| Destroy reactor or boss  | Owning player                                                                                     |
+| Enter exit               | Owning player                                                                                     |
 
 Guide-Bot never performs a route action, aims at a route target, or fires a route-specific flare. Its existing generic forward-flare behavior remains byte-for-byte classic and may incidentally affect the world exactly as before.
 
@@ -666,22 +666,22 @@ Progress (2026-07-14):
 
 ## Verification Matrix
 
-| Layer | Required coverage | Acceptance |
-| --- | --- | --- |
-| Build | D1, D2, host unit targets, headless metadata, Android | All compile and link with C ABI intact |
-| Edge unit tests | Every wall, key, trigger, control-center, hidden, buddy-proof, and blastable state | Exact rich decision and C projection |
-| Planner unit tests | Keys, trigger chains, loops, multiple openers, hidden doors, boss/reactor, exits, unexplored | Exact deterministic plan signature |
-| Completion tests | Required link subset, disabled trigger, missing target, reclosed door | Correct four-state evaluation |
-| Differential tests | Legacy planner versus shared C++ planner | No unexplained difference |
-| Corpus | All 1,281 checked-in records plus archive regeneration where available | No unreviewed status or step regression |
-| Base campaigns | Descent and Counterstrike | Existing strict policy remains green |
-| Live planner scripts | KCXF2, Obsidian, unexplored | Correct first pending shared waypoint |
-| Live guidance scripts | Switch, hidden door, trigger crossing, blastable wait, fallback | Correct player instruction and marker; progress only after player action |
-| Classic movement parity | Same state, goal segment, and RNG state through ordinary and route-goal bridges | Exact `Point_segs`, AI mode, path timing, and RNG delta match |
-| Save/restore | Mid-path and while awaiting a player action for both endpoint modes | Intent preserved, transient plan rebuilt, classic movement resumed |
-| Multiplayer | Owner, observer host, handoff, abdication, disconnect, slot remap | One owner plans guidance and simulates classic movement; intent persists |
-| Determinism | Input-demo state/RNG matrices with newly recorded route fixtures | Stable record and replay with no route-specific replay patch |
-| Performance | Planner count, snapshot build, rays, classic path request count, frame time | No periodic spikes, no per-frame full search, and no extra physical path request |
+| Layer                   | Required coverage                                                                            | Acceptance                                                                       |
+| ----------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Build                   | D1, D2, host unit targets, headless metadata, Android                                        | All compile and link with C ABI intact                                           |
+| Edge unit tests         | Every wall, key, trigger, control-center, hidden, buddy-proof, and blastable state           | Exact rich decision and C projection                                             |
+| Planner unit tests      | Keys, trigger chains, loops, multiple openers, hidden doors, boss/reactor, exits, unexplored | Exact deterministic plan signature                                               |
+| Completion tests        | Required link subset, disabled trigger, missing target, reclosed door                        | Correct four-state evaluation                                                    |
+| Differential tests      | Legacy planner versus shared C++ planner                                                     | No unexplained difference                                                        |
+| Corpus                  | All 1,281 checked-in records plus archive regeneration where available                       | No unreviewed status or step regression                                          |
+| Base campaigns          | Descent and Counterstrike                                                                    | Existing strict policy remains green                                             |
+| Live planner scripts    | KCXF2, Obsidian, unexplored                                                                  | Correct first pending shared waypoint                                            |
+| Live guidance scripts   | Switch, hidden door, trigger crossing, blastable wait, fallback                              | Correct player instruction and marker; progress only after player action         |
+| Classic movement parity | Same state, goal segment, and RNG state through ordinary and route-goal bridges              | Exact `Point_segs`, AI mode, path timing, and RNG delta match                    |
+| Save/restore            | Mid-path and while awaiting a player action for both endpoint modes                          | Intent preserved, transient plan rebuilt, classic movement resumed               |
+| Multiplayer             | Owner, observer host, handoff, abdication, disconnect, slot remap                            | One owner plans guidance and simulates classic movement; intent persists         |
+| Determinism             | Input-demo state/RNG matrices with newly recorded route fixtures                             | Stable record and replay with no route-specific replay patch                     |
+| Performance             | Planner count, snapshot build, rays, classic path request count, frame time                  | No periodic spikes, no per-frame full search, and no extra physical path request |
 
 ## Required New Regression Scenarios
 
@@ -720,18 +720,18 @@ Progress (2026-07-14):
 
 ## Risk Register
 
-| Risk | Mitigation |
-| --- | --- |
-| Large rewrite obscures regressions | Small phases, shadow mode, old implementation retained |
-| Canonical metadata changes unintentionally | Frozen plan signatures and strict base campaigns |
-| High-level goal changes perturb classic path RNG | Shared planning consumes no RNG; preserve classic path call timing and RNG behavior exactly for the same goal segment, and treat only a changed goal segment as intentional divergence |
-| Shared C++ cannot be called cleanly from C-in-C++ engine files | Stable C-linkage facade and C-compatible result projection |
-| Player and companion rules are conflated | Separate progression and navigator profiles |
-| Dynamic state causes replan storms | Generation keys, relevance filtering, and coalescing |
-| Multiplayer peers choose different unexplored targets | Only active owner plans; mode, not plan, is synchronized |
-| Exact player-guidance pose is invalid | Validate player occupancy and visibility in the planner; do not move Guide-Bot to the exact pose |
-| Corpus green but Guide-Bot still stalls | Player-assisted guidance tests plus classic movement parity and path-request diagnostics |
-| Internal dynamic results exceed legacy ABI | Explicit projection overflow, no silent truncation |
+| Risk                                                           | Mitigation                                                                                                                                                                             |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Large rewrite obscures regressions                             | Small phases, shadow mode, old implementation retained                                                                                                                                 |
+| Canonical metadata changes unintentionally                     | Frozen plan signatures and strict base campaigns                                                                                                                                       |
+| High-level goal changes perturb classic path RNG               | Shared planning consumes no RNG; preserve classic path call timing and RNG behavior exactly for the same goal segment, and treat only a changed goal segment as intentional divergence |
+| Shared C++ cannot be called cleanly from C-in-C++ engine files | Stable C-linkage facade and C-compatible result projection                                                                                                                             |
+| Player and companion rules are conflated                       | Separate progression and navigator profiles                                                                                                                                            |
+| Dynamic state causes replan storms                             | Generation keys, relevance filtering, and coalescing                                                                                                                                   |
+| Multiplayer peers choose different unexplored targets          | Only active owner plans; mode, not plan, is synchronized                                                                                                                               |
+| Exact player-guidance pose is invalid                          | Validate player occupancy and visibility in the planner; do not move Guide-Bot to the exact pose                                                                                       |
+| Corpus green but Guide-Bot still stalls                        | Player-assisted guidance tests plus classic movement parity and path-request diagnostics                                                                                               |
+| Internal dynamic results exceed legacy ABI                     | Explicit projection overflow, no silent truncation                                                                                                                                     |
 
 ## Proposed File Boundaries
 

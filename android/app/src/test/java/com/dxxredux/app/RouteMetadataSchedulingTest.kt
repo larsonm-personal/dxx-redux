@@ -190,22 +190,23 @@ class RouteMetadataSchedulingTest {
         val pool = Executors.newFixedThreadPool(4)
         val start = CountDownLatch(1)
         try {
-            val workers = (1..4).map {
-                pool.submit {
-                    val ledger = RouteMetadataLedger(root)
-                    start.await()
-                    repeat(8) {
-                        ledger.read("job")
-                        ledger.update("job") { previous ->
-                            RouteMetadataLedgerEntry(
-                                status = RouteMetadataLedgerStatus.PARTIAL,
-                                failureCount = (previous?.failureCount ?: 0) + 1,
-                            )
+            val workers =
+                (1..4).map {
+                    pool.submit {
+                        val ledger = RouteMetadataLedger(root)
+                        start.await()
+                        repeat(8) {
+                            ledger.read("job")
+                            ledger.update("job") { previous ->
+                                RouteMetadataLedgerEntry(
+                                    status = RouteMetadataLedgerStatus.PARTIAL,
+                                    failureCount = (previous?.failureCount ?: 0) + 1,
+                                )
+                            }
+                            ledger.entries()
                         }
-                        ledger.entries()
                     }
                 }
-            }
             start.countDown()
             workers.forEach { it.get(15, TimeUnit.SECONDS) }
             assertEquals(32, RouteMetadataLedger(root).read("job")?.failureCount)

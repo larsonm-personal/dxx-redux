@@ -30,16 +30,16 @@ slice thin by finishing the file-format writer work under `android/` first.
 ## Completed Notes
 
 - Added a shared `input_demo_fixture` helper under `android/app/src/main/cpp/shared`
-	that owns sparse RNG record structs, single-file parse/write helpers,
-	RNG-frame validation, and ordered `.dximdemo` emission.
+  that owns sparse RNG record structs, single-file parse/write helpers,
+  RNG-frame validation, and ordered `.dximdemo` emission.
 - The RNG coalescer now compresses contiguous frame-start states into `n` runs
-	and only keeps `c` diagnostics when a frame actually provides a call count,
-	which keeps control diffs and RNG diffs readable independently.
+  and only keeps `c` diagnostics when a frame actually provides a call count,
+  which keeps control diffs and RNG diffs readable independently.
 - Added `android/tests/test_input_demo_fixture.cpp` with exact-output checks for
-	RNG coalescing, file round-trip, and stable metadata text ordering.
+  RNG coalescing, file round-trip, and stable metadata text ordering.
 - Wired the new helper into the D1/D2 host-probe build path and the Android
-	native D1/D2 source lists so later recorder hooks can call it without adding
-	another format-only tranche.
+  native D1/D2 source lists so later recorder hooks can call it without adding
+  another format-only tranche.
 
 ## Validation
 
@@ -51,7 +51,7 @@ slice thin by finishing the file-format writer work under `android/` first.
 - `android\stop-stale-formatters.ps1` reported no stale formatter tasks.
 - `android\run-code-quality.ps1 -Fix` passed.
 - Rebuilt and reran the D1/D2 fixture probes plus the Android native build
-	after formatting and after the packed-member warning fix.
+  after formatting and after the packed-member warning fix.
 
 ## Exit Criteria
 

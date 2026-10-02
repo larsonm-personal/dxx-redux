@@ -33,7 +33,7 @@ static void test_embedded_font_controls_are_not_visible(void)
 	assert(font_draw_control_sequence_length(guidebot_text + 13) == 1);
 	assert(font_draw_control_sequence_length(guidebot_text + 19) == 1);
 	assert(visible_character_count(guidebot_text) ==
-		(int)strlen("Guide-Bot: Going"));
+	       (int) strlen("Guide-Bot: Going"));
 }
 
 static void test_overlap(void)

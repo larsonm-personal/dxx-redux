@@ -1,29 +1,26 @@
 [
     {
         "_info": {
-            "games": [
-                "d1",
-                "d2"
-            ],
+            "games": ["d1", "d2"],
             "_standalone": false,
-            "_owner": "test_lan"
-        }
+            "_owner": "test_lan",
+        },
     },
     {
         "action": "wait_ms",
-        "ms": 2000
+        "ms": 2000,
     },
     {
         "action": "set_debug",
         "field": "coop_rewind_test",
-        "value": "client_request"
+        "value": "client_request",
     },
     {
         "action": "wait_for",
         "timeout_ms": 15000,
         "expect": {
-            "coop_restore.transfer_busy": true
-        }
+            "coop_restore.transfer_busy": true,
+        },
     },
     {
         "action": "wait_for",
@@ -31,29 +28,29 @@
         "expect": {
             "coop_restore.transfer_busy": false,
             "in_game": true,
-            "time_paused": false
-        }
+            "time_paused": false,
+        },
     },
     {
         "action": "wait_ms",
-        "ms": 1500
+        "ms": 1500,
     },
     {
         "action": "set_debug",
         "field": "coop_rewind_test",
-        "value": "client_verify"
+        "value": "client_verify",
     },
     {
         "action": "set_debug",
         "field": "coop_rewind_test",
-        "value": "client_request"
+        "value": "client_request",
     },
     {
         "action": "wait_for",
         "timeout_ms": 15000,
         "expect": {
-            "coop_restore.transfer_busy": true
-        }
+            "coop_restore.transfer_busy": true,
+        },
     },
     {
         "action": "wait_for",
@@ -61,25 +58,25 @@
         "expect": {
             "coop_restore.transfer_busy": false,
             "in_game": true,
-            "time_paused": false
-        }
+            "time_paused": false,
+        },
     },
     {
         "action": "wait_ms",
-        "ms": 1500
+        "ms": 1500,
     },
     {
         "action": "set_debug",
         "field": "coop_rewind_test",
-        "value": "client_verify"
+        "value": "client_verify",
     },
     {
         "action": "wait_ms",
-        "ms": 3000
+        "ms": 3000,
     },
     {
         "action": "set_debug",
         "field": "coop_rewind_test",
-        "value": "clock"
-    }
+        "value": "clock",
+    },
 ]

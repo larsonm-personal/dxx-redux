@@ -10,11 +10,11 @@ semantics.
 ## Phase 1: Audit existing coverage
 
 - [x] Identify the existing benchmark entry points, corpus, retained baselines,
-  and regression policy.
+      and regression policy.
 - [x] Map the current live certifier phases and rerun scheduling work against
-  existing benchmark coverage.
+      existing benchmark coverage.
 - [x] Define deterministic work-unit and wall-time measurements for uncovered
-  calculations.
+      calculations.
 
 ## Phase 2: Add coverage
 
@@ -22,15 +22,15 @@ semantics.
 - [x] Cover canonical and detailed switch firing-position searches.
 - [x] Cover reachable angle-aware frontier selection after firing search fails.
 - [x] Cover sliced execution through completion and invalidation/coalescing
-  behavior where it performs calculation work.
+      behavior where it performs calculation work.
 
 ## Phase 3: Measure and optimize
 
 - [x] Record current costs for each calculation class and the existing mission
-  corpus benchmark.
+      corpus benchmark.
 - [x] Profile or instrument any unexpectedly expensive phase.
 - [x] Optimize material hotspots while preserving deterministic selections and
-  per-frame work limits.
+      per-frame work limits.
 - [x] Compare final costs with the initial measurements.
 
 ## Phase 4: Validate

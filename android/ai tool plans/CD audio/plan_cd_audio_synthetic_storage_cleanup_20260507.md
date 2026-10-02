@@ -1,10 +1,12 @@
 # CD audio synthetic storage cleanup 2026-05-07
 
 ## Goal
+
 - Hide launcher-managed synthetic CD source artifact files from the App Storage Files dialog
 - Clean up merged-local synthetic BIN/CUE artifacts whenever the owning CD source is removed
 
 ## Plan
+
 - [completed] Confirm which CD source files are synthetic launcher-managed artifacts and where removal currently leaks them
 - [completed] Centralize CD source artifact cleanup in AudioSourceManager so all remove paths delete the same local files and release permissions when applicable
 - [completed] Filter internal CD source artifact files out of the storage browser using the same source-owned artifact set
@@ -12,6 +14,7 @@
 - [completed] Run focused Kotlin compile/tests and the Android code-quality pass, then rerun validation
 
 ## Notes
+
 - Current hypothesis: merged-local SAF imports create local `.bin` and `.cue` files in `filesDir`, but source removal only deletes the cue in one UI path and never hides those internal artifacts from the storage browser
 - Cheap check: compare the storage browser file listing with current CD source removal logic. Readout confirmed the browser walks all files under `filesDir` unfiltered, while source removal is split across UI call sites and leaks merged-local `.bin` files
 - Implemented: storage browser now hides launcher-managed internal CD artifacts and generated merged-local orphan artifacts, while CD source removal now deletes owned local artifacts and prunes unreferenced generated merged `.bin`/`.cue` pairs

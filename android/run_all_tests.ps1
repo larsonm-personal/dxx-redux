@@ -61,6 +61,7 @@
 
 .PARAMETER FullSuite
     Run every retained unattended scenario and every physical route case.
+    Explicit investigations and probes requiring caller configuration remain direct runs.
     FullExtracts, ExtendedGraphics and ExtendedMultiplayer remain separate options.
 
 .PARAMETER ExtractSampleCount
@@ -371,6 +372,7 @@ $tierServerManagedDualEmuTests = @()
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
     "test_graphics_recovery" = 7200
+    "test_graphics_preview" = 600
     "test_acoustid_config_packaging"      = 600
     "test_autoselect_crash_unified"       = 240
     "test_keyboard_defaults"              = 240
@@ -379,6 +381,8 @@ $testTimeouts = @{
     "test_gog_installer_redbook_unified"  = 420
     "test_disc_content_import"           = 420
     "test_gradle_unit_tests"              = 600
+    # Builds and inspects three complete APKs across every supported ABI
+    "test_android_distributions"          = 1800
     # Includes 360s in-game metadata, 300s preview, staging, and cleanup
     "test_guidebot_mission_metadata"      = 900
     "test_guidebot_simulation_headed_headless_parity" = 1800
@@ -388,7 +392,8 @@ $testTimeouts = @{
     "test_robot_preview"                 = 600
     "test_route_regeneration_audit"       = 600
     "test_vertigo_metadata_checkpoints"   = 600
-    "test_input_demo_determinism_matrix"  = 600
+    # Three native captures plus strict comparison of expanded compressed traces
+    "test_input_demo_determinism_matrix"  = 1800
     "test_input_demo_regressions"         = 1200
     "test_d1_replay_parity"               = 1800
     "test_d1_in_d2_standalone"            = 300
@@ -863,7 +868,7 @@ if ($Filter) {
         })
 }
 
-$extendedGraphicsTests = @("test_merged_wall_two_pass_probe")
+$extendedGraphicsTests = @("test_graphics_recovery", "test_merged_wall_two_pass_probe")
 $profileSkipped = @()
 if ($HostOnly) {
     $allTests = @($allTests | Where-Object {
@@ -925,9 +930,16 @@ $runnableTests = @($runnableTests | Where-Object {
 $suiteCoverageProfile = 'all requested scenarios'
 if (-not $Filter -and -not $Target45Minutes -and -not $IncludeManual) {
     $coverageSelection = @(Select-TestSuiteCoverage -Tests $runnableTests -Seed $routeSampleSeed -AllScenarios:$FullSuite)
+    $explicitTests = (Get-TestSuiteCoveragePolicy).explicit
     foreach ($test in $runnableTests) {
         if ($test.Name -notin $coverageSelection.Name) {
-            $profileSkipped += @{ Name = $test.Name; Reason = "scenario rotation seed $routeSampleSeed; use -Filter or -FullSuite"; Type = $test.Type }
+            $baseName = if ($test.BaseName) { $test.BaseName } else { $test.Name }
+            $reason = if ($baseName -in $explicitTests) {
+                "explicit investigation/caller configuration; run directly"
+            } else {
+                "scenario rotation seed $routeSampleSeed; use -Filter or -FullSuite"
+            }
+            $profileSkipped += @{ Name = $test.Name; Reason = $reason; Type = $test.Type }
         }
     }
     $runnableTests = $coverageSelection
@@ -1991,8 +2003,8 @@ if ($tierExtract.Count -gt 0 -and -not $stopEarly) {
 
         if ($emu1Ok) {
             $emu1Serial = $script:PRIMARY_EMULATOR_SERIAL
-            Install-ApkOnDevice | Out-Null
-            Push-GameDataToDevice
+            # Extraction tests stage their own sources; provision only standard game data
+            Install-AppAndData -Serial $emu1Serial | Out-Null
             foreach ($test in $tierExtract) {
                 if ($stopEarly) { break }
                 $result = Invoke-SingleTest -Test $test

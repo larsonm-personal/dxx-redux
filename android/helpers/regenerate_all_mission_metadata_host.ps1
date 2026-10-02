@@ -24,6 +24,7 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
+. (Join-Path $PSScriptRoot 'powershell_compat.ps1')
 . (Join-Path $scriptDir "standard_game_data.ps1")
 . (Join-Path $scriptDir "cd_level_metadata_sources.ps1")
 . (Join-Path $scriptDir "normalized_json_text.ps1")
@@ -1125,7 +1126,7 @@ try {
                     Write-HostMetadataWorkerLog -Path $workerLogPath -Text ($workerLog + $(if ($workerLog) { "`n" } else { '' }))
                     $workerResults = if (-not $processResult.StartError -and -not $processResult.TimedOut -and
                         (Test-Path -LiteralPath $summaryPath -PathType Leaf)) {
-                        @(Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json -NoEnumerate)
+                        @(Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-CompatibleJsonValue)
                     } else { @() }
                     $workerResults = @($workerResults)
                     if ($workerResults.Count -eq 0) {

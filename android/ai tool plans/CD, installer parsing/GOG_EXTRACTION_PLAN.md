@@ -1,11 +1,14 @@
 # GOG Installer Extraction + CD Re-extraction Plan
 
 ## Overview
+
 Two-part plan:
+
 1. Re-extract all 31 CD images with O_BINARY fix + SOW extraction, rehash everything
 2. Add GOG installer extraction (.exe via InnoSetup reader, .pkg via XAR+cpio reader)
 
 ## GOG Installers (4 files in game_data/gog installers/)
+
 - `setup_descent_1.4a_(16596).exe` — D1 Windows (InnoSetup)
 - `setup_descent_2_1.1_(16596).exe` — D2 Windows (InnoSetup)
 - `descent_enUS_1_0_35122.pkg` — D1 Mac (XAR+cpio)
@@ -16,6 +19,7 @@ Two-part plan:
 ## Phase 1: CD Re-extraction and Re-hashing — DONE ✓
 
 ### Steps
+
 1. ✅ Rebuild extract_cd.exe (O_BINARY fix already applied)
 2. ✅ Update extract_all_cds.ps1: delete data_tracks/ on -Force
 3. ✅ Run extract_all_cds.ps1 -Force — re-extracted all 29 CDs with SOW decompression (2 CDs have no CUE)
@@ -24,6 +28,7 @@ Two-part plan:
 6. ✅ Version rationalization — D2 v1.0/v1.1/v1.2 distinguished (v1.1 has different descent2.ham/hog from v1.0; v1.2 GOG matches v1.1); D1 v1.4a/v1.5 aliased (same game data); Added version comments to known_discs.json5
 
 ### Key findings from rationalization
+
 - D2 v1.0 CDs have unique descent2.ham (7A288B) and descent2.hog (AE0872, 7107354 bytes)
 - D2 v1.1 CDs (including Rerelease and Definitive Collection) have descent2.hog (F1ABF5, 7595079 bytes) matching GOG v1.2
 - D2 v1.1 CDs mapped correctly: "Descent II (v1.1)", "Rerelease", and Definitive Collection Disc 2
@@ -35,11 +40,13 @@ Two-part plan:
 ## Phase 2: GOG Installer Extraction — C Library
 
 ### Architecture
+
 All readers are general-purpose with full enums and clean error messages for
 unsupported cases. Only the formats used by GOG's Descent installers are fully
 implemented; other branches return descriptive "unimplemented" errors.
 
 ### 2A: InnoSetup Reader (extract/inno_reader.c) — DONE ✓
+
 - Parse InnoSetup header (magic detection, version identification)
 - Read file listing from compressed metadata
 - LZMA1 + LZMA2 decompression via cmake FetchContent of lzma-sdk
@@ -52,6 +59,7 @@ implemented; other branches return descriptive "unimplemented" errors.
 - Verified: all 7 D1 + 21 D2 game files byte-for-byte identical to reference
 
 ### 2B-D: Mac .pkg Reader (extract/pkg_reader.c) — DONE ✓
+
 - Consolidated XAR + cpio into single pkg_reader.h/c (no separate xar_reader/cpio_reader)
 - XAR: parse 28-byte BE header, decompress TOC XML with zlib uncompress()
 - TOC: minimal strstr-based XML parser finds package.pkg/Scripts entry
@@ -62,17 +70,20 @@ implemented; other branches return descriptive "unimplemented" errors.
 - Verified: D1 7 files + D2 15 files byte-for-byte identical to .exe extraction
 
 ### 2E: Standalone Test Tool (extract/extract_gog.c) — DONE ✓
+
 - Detects format from extension (.exe → InnoSetup, .pkg → Mac pkg)
 - Extracts game assets to output directory
 - Prints JSON output with extracted file list
 
 ### 2F: CMake Integration — DONE ✓
+
 - LZMA SDK via FetchContent (not vendored)
 - zlib via FetchContent (not vendored)
 - New test executables: extract_gog
 - All new sources added to both test CMakeLists.txt and Android CMakeLists.txt
 
 ### 2G: Test Script (game_data/extract_all_gog.ps1) — DONE ✓
+
 - Builds extract_gog.exe via cmake
 - Runs on all 4 GOG installers (.exe and .pkg)
 - Extracts to game_data/gog installers/<name>/extracted/
@@ -85,6 +96,7 @@ implemented; other branches return descriptive "unimplemented" errors.
 - D2 .pkg has 15 files; D2 .exe has 21 (extra missions + demo + .inst)
 
 ### New files
+
 ```
 android/app/src/main/cpp/extract/
   inno_reader.h      — InnoSetup extraction API
@@ -99,6 +111,7 @@ game_data/
 ```
 
 ### Modified files
+
 ```
 android/app/src/main/cpp/extract/CMakeLists.txt — new targets + LZMA SDK
 android/app/src/main/cpp/CMakeLists.txt         — new sources for Android
@@ -128,21 +141,25 @@ game_data/extract_all_cds.ps1                    — clean re-extract on -Force
    - Fix: add `set_files` field listing `setDir` contents
 
 ### 3.1: Fix DiscImportDialog extraction target — DONE ✓
+
 - Change `filesDir.absolutePath` to `setDir.absolutePath` at L2880
 - Thread `setDir` into DiscImportDialog (it currently receives `filesDir`)
 - After extraction, trigger manifest rehash for newly extracted files
 
 ### 3.2: Fix `.gog`/`.inst` legacy check — DONE ✓
+
 - Update `hasLegacyGog()` to accept optional setDir parameter
 - Check both filesDir (legacy) and setDir (new) for the .gog/.inst pair
 - This ensures both old installs and new imports work
 
 ### 3.3: Fix setup introspection `files_on_disk` — DONE ✓
+
 - Add `set_files` field to setup introspection JSON that lists active set directory contents
 - Keep existing `files_on_disk` for backwards compatibility
 - Add `active_set_path` field showing the current set directory path
 
 ### 3.4: GOG JNI bridge (jni_gog_import.c) — DONE ✓
+
 - New file `extract/jni_gog_import.c` wrapping `inno_reader.h` and `pkg_reader.h`
 - Three JNI functions (naming: `Java_com_dxxredux_app_GogImportBridge_native*`):
   - `nativeDetectFormat(path)` → "innosetup" | "pkg" | "unknown" (extension-based)
@@ -154,6 +171,7 @@ game_data/extract_all_cds.ps1                    — clean re-extract on -Force
 - Android NDK zlib linked as system library `-lz` (no FetchContent needed)
 
 ### 3.5: GogImportBridge.kt — DONE ✓
+
 - Kotlin JNI wrapper object (pattern: DiscImportBridge.kt)
 - `GogFile(name: String, size: Long)` data class
 - `detectFormat(path)`, `listFiles(path)` → List<GogFile>?, `extractFiles(path, outputDir, progress)`
@@ -161,6 +179,7 @@ game_data/extract_all_cds.ps1                    — clean re-extract on -Force
 - Parses native "name|size" strings into GogFile objects
 
 ### 3.6: GOG import dialog in SetupActivity — DONE ✓
+
 - File picker now detects `.exe`/`.pkg` extensions → sets `gogImportUri`/`gogImportName`
 - `GogImportDialog` composable (~160 lines):
   - LaunchedEffect copies installer to tmp via content resolver
@@ -174,12 +193,14 @@ game_data/extract_all_cds.ps1                    — clean re-extract on -Force
 - Help text updated: "Select .hog, .ham, .pig files, a .zip archive, .cue/.bin disc images, or GOG installer"
 
 ### 3.7: Enhanced BIN/CUE import dialog — DONE ✓
+
 - After ISO extraction succeeds, scans setDir for .sow files via `DiscImportBridge.scanSowFiles()`
 - Decompresses any found .sow archives via `DiscImportBridge.extractSowFiles()`
 - Status message shows combined counts: "Extracted N file(s) + M from .sow archives"
 - No set choice prompt added (extracts to current active set, matching GOG dialog)
 
 ### 3.8: Broadcast commands for headless testing — DONE ✓
+
 - Added 5 new SETUP_COMMAND handlers to `commandReceiver`:
   - `create_set --es name "..."` — creates named file set via FileSetManager
   - `switch_set --es name "..."` — switches active set + writes .active_set_path
@@ -190,6 +211,7 @@ game_data/extract_all_cds.ps1                    — clean re-extract on -Force
 - Note: `import_disc` not implemented yet (would need fd-based BIN/CUE import from filesystem path)
 
 ### 3.9: Enhanced setup introspection — DONE ✓
+
 - Added to `writeIntrospectJson()`:
   - `sets` — JSONArray of {name, file_count, active} for all file sets
   - `audio_sources` — JSONArray of {id, label, cue_path, track_count, audio_track_count}
@@ -197,12 +219,14 @@ game_data/extract_all_cds.ps1                    — clean re-extract on -Force
 - Previously added (3.3): `set_files`, `active_set_path`
 
 ### New files (Phase 3)
+
 ```
 android/app/src/main/cpp/extract/jni_gog_import.c  — GOG JNI bridge
 android/app/src/main/java/com/dxxredux/app/GogImportBridge.kt — Kotlin wrapper
 ```
 
 ### Modified files (Phase 3)
+
 ```
 android/app/src/main/cpp/CMakeLists.txt       — added GOG sources + LZMA SDK FetchContent + zlib link
 android/app/src/main/java/com/dxxredux/app/SetupActivity.kt — GOG dialog, SOW post-extract, broadcast cmds, introspection
@@ -214,23 +238,26 @@ android/app/src/main/java/com/dxxredux/app/AudioSourceManager.kt — hasLegacyGo
 ## Phase 3a: Verification & Regression Testing
 
 ### 3a.0: Manual end-to-end verification — DONE
+
 Verified GOG import pipeline on Android emulator (Pixel_6_API_34, x86_64).
 
 **Test results:**
-| Test | Result | Details |
-|------|--------|---------|
-| D1 GOG import (.exe) | PASS | `setup_descent_1.4a_(16596).exe` → 7 files (InnoSetup 5.6.2 unicode) |
-| D1 GOG import (.pkg) | PASS | `descent_enUS_1_0_35122.pkg` → 7 files (XAR + gzip + cpio odc) |
-| D2 GOG import (.exe) | PASS | `setup_descent_2_1.1_(16596).exe` → 21 files (InnoSetup 5.5.7 unicode) |
-| D2 GOG import (.pkg) | PASS | `descent_2_enUS_1_0_51877.pkg` → 15 files (XAR + gzip + cpio odc) |
-| Set management | PASS | create_set, switch_set, clear_set all work via broadcast |
-| Setup introspection | PASS | sets array, set_files, has_legacy_gog_audio, audio_sources all correct |
-| D2 game launch (GOG set) | PASS | HOG files found, level "Ahayweh Gate" loaded, player shields=100 |
-| Combined D1+D2 GOG set | PASS | Both missions visible in mission select |
-| D1-only set launch | **FAIL** | D2 binary requires descent2.hog — crashes with SIGABRT |
-| UPPERCASE filenames | PASS | GOG extraction produces UPPERCASE; game handles case-insensitively |
+
+| Test                     | Result   | Details                                                                |
+| ------------------------ | -------- | ---------------------------------------------------------------------- |
+| D1 GOG import (.exe)     | PASS     | `setup_descent_1.4a_(16596).exe` → 7 files (InnoSetup 5.6.2 unicode)   |
+| D1 GOG import (.pkg)     | PASS     | `descent_enUS_1_0_35122.pkg` → 7 files (XAR + gzip + cpio odc)         |
+| D2 GOG import (.exe)     | PASS     | `setup_descent_2_1.1_(16596).exe` → 21 files (InnoSetup 5.5.7 unicode) |
+| D2 GOG import (.pkg)     | PASS     | `descent_2_enUS_1_0_51877.pkg` → 15 files (XAR + gzip + cpio odc)      |
+| Set management           | PASS     | create_set, switch_set, clear_set all work via broadcast               |
+| Setup introspection      | PASS     | sets array, set_files, has_legacy_gog_audio, audio_sources all correct |
+| D2 game launch (GOG set) | PASS     | HOG files found, level "Ahayweh Gate" loaded, player shields=100       |
+| Combined D1+D2 GOG set   | PASS     | Both missions visible in mission select                                |
+| D1-only set launch       | **FAIL** | D2 binary requires descent2.hog — crashes with SIGABRT                 |
+| UPPERCASE filenames      | PASS     | GOG extraction produces UPPERCASE; game handles case-insensitively     |
 
 **Extracted file inventories:**
+
 - D1 GOG (7 files): CHAOS.HOG, CHAOS.MSN, DESCENT.DEM, DESCENT.HOG, DESCENT.PIG, LEVEL18.DEM, MINIBOSS.DEM
 - D2 GOG (21 files): ALIEN1/2.PIG, DESCENT2.HAM/HOG/S11/S22, DESCENT_II.gog/inst, FIRE/GROUPA/ICE/WATER.PIG, INTRO-H/OTHER-H/ROBOTS-H/ROBOTS-L.MVL, d2-2plyr.hog/mn2, d2chaos.hog/mn2, descent2.dem
 
@@ -242,6 +269,7 @@ gracefully handle D1-only mode. For now, the launcher should prevent launching w
 unless a D2 HOG is also present.
 
 **Broadcast command syntax (verified):**
+
 ```bash
 # Separate --es for each parameter:
 adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command switch_set --es name default"
@@ -249,6 +277,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 ```
 
 ### 3a.1: Regression spec format (`extract_regression.json5`) — DONE
+
 - One file per CD image folder and per GOG installer
 - Located next to the source files (in CD image dirs) or alongside installers (for GOG)
 - Fields:
@@ -269,6 +298,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Classifications with null mission (d1_levels) indicate add-on-only discs that can't launch standalone
 
 ### 3a.2: Generate regression specs — DONE
+
 - Script: `game_data/generate_regression_specs.ps1` (supports `-Force` to regenerate)
 - Walks `game_data/CD images/` and `game_data/gog installers/`
 - CD identification: reads `track_hashes.json`, matches data track SHA1 → `known_discs.json5`
@@ -280,6 +310,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
   - Some disc_id overlap is expected (e.g. USA and Alt match same data track SHA1)
 
 ### 3a.3: Single-source test script -- DONE
+
 - Implemented: `android/run_extract_test.ps1`
 - Takes a path to an `extract_regression.json5` spec file
 - Steps performed:
@@ -298,6 +329,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Verified: Full PASS on Descent II (USA) CD -- `Ahayweh Gate` level loaded
 
 ### 3a.4: Orchestration script ✅ DONE
+
 - `android/run_all_extract_tests.ps1`
 - Recursively finds all `*_regression.json5` specs in `game_data/`
 - Runs each through `run_extract_test.ps1` (3a.3)
@@ -309,6 +341,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Verified: 2/2 PASS on Descent II (Europe) CDs with full launch in 2:28
 
 ### 3a.5: Automation script template ✅ DONE
+
 - `android/game_scripts/test_extract_regression_template.json5`
 - Parameterized JSON5 automation script for in-game verification
 - Template parameters: `MISSION_NAME`, `LEVEL_NAME` (substituted by test runner)
@@ -316,6 +349,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Note: Currently exists as a future enhancement path — `run_extract_test.ps1` uses direct adb keyevent presses for menu navigation, which is already working reliably
 
 ### 3a.6: Full coverage run ✅ DONE
+
 - Run 3a.4 against all 29 CDs + 4 GOG installers (33 total)
 - Results: **21/33 PASS, 12 FAIL** (35:47 total time)
 - Script improvements this phase:
@@ -329,42 +363,52 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 #### Results by category
 
 **D2 full — 10 PASS** (all reach level "Ahayweh Gate"):
+
 - Descent II (USA), Descent II (USA) (Alt), Descent II (USA) (v1.1), Descent II (USA) (Rerelease)
 - Descent II (Europe), Descent II (Europe) (v1.1)
 - Definitive Collection (Europe) Disc 2, Definitive Collection (USA) Disc 2
 
 **D2 GOG — 2 PASS** (both reach level "Ahayweh Gate"):
+
 - descent_2_enUS_1_0_51877, setup_descent_2_1.1_(16596)
 
 **D2 OEM/Quartzon — 6 SKIP** (can_launch=false, expansion-only):
+
 - Descent II - Destination Quartzon (Europe), (USA), (USA Diamond OEM), (USA Logitech OEM)
 - Descent II - Destination Quartzon 3D (Europe)
 - Descent-II-Destination-Quartzon_Win_EN_ISO-Version
 
 **D2 Vertigo — 3 SKIP** (can_launch=false, expansion-only):
+
 - Descent II - The Vertigo Series (USA)
 - (2 Vertigo entries from Definitive Collection discs)
 
 **D2 Demo — 1 FAIL** (game process alive but never reaches menu):
+
 - Descent II (USA) (3-Level Interactive Preview) — uses d2demo.* files, may need special engine support
 
 **D1 full — 9 FAIL** (crash on startup — no D1 engine on Android):
+
 - Descent (USA), Descent (Europe), Descent (Europe) (Alt)
 - Descent - Anniversary Edition (USA), (Brazil)
 - Definitive Collection (Europe) Disc 1, Definitive Collection (USA) Disc 1
 - descent_enUS_1_0_35122 (GOG D1), setup_descent_1.4a_(16596) (GOG D1)
 
 **D1 expansion — 1 FAIL** (crash — no D1 engine):
+
 - Descent - Destination Saturn (USA)
 
 **D1 demo — 1 FAIL** (crash — no D1 engine):
+
 - Descent - Test Flight (USA)
 
 **D1 levels — 2 PASS** (file-only, no launch needed):
+
 - Descent - Levels of the World (USA) — 191 files verified
 - Dimensions for Descent (USA) — 88 files verified
 
 #### Known limitations
+
 - D1-only sources require a D1 engine build (not yet available on Android)
 - D2 OEM/Quartzon and Vertigo sets are expansion-only — need base game files to launch
 - D2 demo (3-Level Preview) may use incompatible demo-specific data format
@@ -377,18 +421,21 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 
 **Result:** All 3 sub-steps complete. `import_sow` broadcast extracts 16 files from descent2.sow into a file set. Setup introspection confirms `d2.ready: true` with all 9 required files found. Also fixed `create_set` handler to not crash on duplicate set names.
 
-### 4.1: Add `import_sow` broadcast handler — *parallel with 4.2*
+### 4.1: Add `import_sow` broadcast handler — _parallel with 4.2_
+
 - In `SetupActivity.kt` (~line 133), add handler following the `import_gog` pattern
 - Background thread, calls `DiscImportBridge.extractSowFiles(path, setDir.absolutePath, null)`
 - All JNI/C plumbing already exists: `nativeExtractSowFiles()` in `jni_disc_import.c` (line 363), `sow_extract()` in `sow_extract.h`
 - Extension filter already includes hog, ham, pig, s11, s22, mn2, mvl, dxa, cfg, txt, 256
 
-### 4.2: Update file picker for .sow recognition — *parallel with 4.1*
+### 4.2: Update file picker for .sow recognition — _parallel with 4.1_
+
 - When user picks a `.sow` file in the SetupActivity UI, detect extension and route to SOW extraction dialog
 - Similar to how `.exe`/`.pkg` detection was added for GOG import in phase 3.6
 - Show extraction progress + result count, then trigger readiness refresh
 
-### 4.3: End-to-end verification — *depends on 4.1*
+### 4.3: End-to-end verification — _depends on 4.1_
+
 - Extract `descent2.sow` from one of the D2 CD data_tracks (e.g., Descent II (USA) has `d2data/descent2.sow`)
 - `adb push descent2.sow /data/local/tmp/`
 - `adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_sow --es path /data/local/tmp/descent2.sow`
@@ -396,12 +443,14 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Launch game → verify it reaches "Ahayweh Gate" (level 1)
 
 #### Relevant files
+
 - `SetupActivity.kt` — add `import_sow` handler at ~line 133
 - `DiscImportBridge.kt` — already has `extractSowFiles()`, `scanSowFiles()`
 - `jni_disc_import.c` — already has `nativeExtractSowFiles()` at line 363
 - `sow_extract.h` — `sow_extract()` signature
 
 #### Verification
+
 - Build APK, deploy to emulator
 - Broadcast `import_sow` with a standalone .sow path → introspect → confirm files appear
 - Launch game → introspect → confirm `current_level_name == "Ahayweh Gate"`
@@ -413,6 +462,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 **Goal:** Verify the most common installer (D2 GOG .exe) beyond "can it boot" — confirm audio tracks play and intro movies aren't silently skipped. Requires adding new introspection fields.
 
 ### Results
+
 - **5.1 + 5.2**: Redbook audio + movie introspection fields added to `game_introspect.cpp` and `movie.c`
 - **5.3**: Build succeeded. Initial SIGSEGV crash due to `nullptr` assignment in nlohmann json — fixed by using conditional `std::string()` instead
 - **5.4**: Verified in-game at level 1 ("Ahayweh Gate") with GOG audio files extracted:
@@ -425,27 +475,32 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - **Config timing fix**: `enableRedbookInConfig()` added to Kotlin — sets `MusicType=2` and `OrigTrackOrder=1` in `descent.cfg` after GOG import with audio. The C engine's `android_apply_initial_defaults()` only runs when `descent.cfg` doesn't exist, which is too late since Kotlin creates it on first launch.
 
 ### 5.1: Add Redbook audio fields to game introspection — DONE
+
 - In `game_introspect.cpp`, added `extern "C"` declarations for `RBAEnabled()`, `RBAGetTrackNum()`, `RBAGetNumberOfTracks()`, `RBAPeekPlayStatus()`
 - Serialized as `"redbook": { "enabled": bool, "current_track": int, "num_tracks": int, "play_status": "playing"|"paused"|"stopped" }`
 - Verified: `redbook.enabled: true`, `num_tracks: 9`, `current_track: 4`, `play_status: "playing"`
 
 ### 5.2: Add movie playback fields to game introspection — DONE
+
 - In `movie.c`, added globals `g_current_movie_name`, `g_last_movie_name`, `g_last_movie_result`
 - In `game_introspect.cpp`, serialized as `"movie": { "current": str, "last_name": str, "last_result": "played"|"aborted"|"not_played"|"none" }`
 - Verified: `movie.last_name: "pla.mve"`, `movie.last_result: "not_played"` (MVE inside MVL container not individually accessible)
 
 ### 5.3: Audio verification in test script — DONE
+
 - Added redbook introspection checks to `run_extract_test.ps1` after in-game verification
 - When `.gog`/`.inst` files are in the set: verifies `redbook.enabled`, `num_tracks > 0`, `play_status == "playing"`
 - When no audio files: logs "no audio files in set, skipping redbook check"
 - Non-blocking: logs result as info, doesn't fail the test (audio is optional)
 
 ### 5.4: Movie verification in test script — DONE
+
 - Added movie introspection check to `run_extract_test.ps1` after in-game verification
 - Logs `movie.last_name` and `movie.last_result` for diagnostics
 - Non-blocking: movies in MVL containers aren't individually loadable, so `not_played` is expected for GOG
 
 ### 5.5: Full deep regression run — DONE (manual)
+
 - Test subject: `setup_descent2.exe` (D2 GOG .exe)
 - Import via `import_gog` broadcast with `include_audio=true`
 - Verified: 21 files extracted, game boots, level 1 = "Ahayweh Gate"
@@ -454,6 +509,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Config: `MusicType=2`, `OrigTrackOrder=1` auto-set by `enableRedbookInConfig()`
 
 ### 5.6: Optional audio extraction during GOG import — DONE
+
 - See `GOG_AUDIO_OPTIONAL_EXTRACT.md` for full plan
 - `.gog`/`.inst` extraction is optional via checkbox in GogImportDialog
 - `enableRedbookInConfig()` sets `MusicType=2` + `OrigTrackOrder=1` after import with audio
@@ -461,6 +517,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Verified both paths: with audio (21 files, redbook works) and without (19 files, no audio)
 
 #### Relevant files (all modified/verified)
+
 - `game_introspect.cpp` — `redbook` + `movie` sections added
 - `rbaudio_bin.c` — public getters used via extern C declarations
 - `movie.c` — `g_current_movie_name`, `g_last_movie_name`, `g_last_movie_result` globals added
@@ -472,6 +529,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - `AudioSourceManager.kt` — case-insensitive `hasLegacyGog()`
 
 #### Verification — DONE
+
 - Built with introspection changes, deployed to emulator
 - Introspect in-game: `redbook.enabled == true`, `num_tracks == 9`, `play_status == "playing"`, `current_track == 4`
 - Movie: `last_name == "pla.mve"`, `last_result == "not_played"` (MVE inside MVL)
@@ -485,10 +543,12 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 **Goal:** Persist test pass/fail results directly in the json5 spec files so results are git-trackable, diffs show regressions/fixes, and no timestamps or other noisy fields cause spurious diffs.
 
 ### 6.1: Git-track the spec files — DONE
+
 - `.gitignore` updated: `game_data/**` ignores binaries, `!game_data/**/` un-ignores dirs, `!game_data/**/*_regression.json5` un-ignores specs
 - All 33 spec files were already tracked from initial generation; the `.gitignore` exception ensures new specs added later are also visible to git
 
 ### 6.2: Define `last_test_result` schema — DONE (implemented in 6.3)
+
 - Fields (all deterministic, no timestamps):
   - `status`: `"pass"` | `"fail"` | `"skip"`
   - `failure_step`: `null` on pass, one of a defined vocabulary on fail/skip
@@ -499,6 +559,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Failure step vocabulary: `source_missing`, `file_push_failed`, `emulator_offline`, `canary_failed`, `files_missing`, `not_ready`, `launch_timeout`, `menu_timeout`, `crash`
 
 ### 6.3: Add `Write-TestResult` + `Exit-Test` to `run_extract_test.ps1` — DONE
+
 - `Write-TestResult`: reads spec file, strips existing `last_test_result` block via regex, appends new block before final `}`
 - `Exit-Test`: sets result variables, calls `Write-TestResult`, then exits with code
 - All 19 post-spec exit points replaced with `Exit-Test` calls, each categorized by failure step
@@ -507,6 +568,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Idempotency verified: re-running produces identical spec file content
 
 ### 6.4: Update orchestrator `run_all_extract_tests.ps1` — DONE
+
 - Added `Read-Json5` helper to orchestrator
 - Before each test: reads prior `last_test_result.status` from spec
 - After each test: reads new status, compares for changes
@@ -514,11 +576,13 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Change count printed in summary header
 
 ### 6.5: Initial population run — READY
+
 - Single-test verification completed: Descent II (USA) → pass, `last_test_result` written correctly
 - Full population run (all 33 specs) available via `.\run_all_extract_tests.ps1`
 - Expected initial results: ~21 pass, ~6 skip (expansion-only), ~5 fail (D1 no engine), 1 TBD (D2 demo)
 
 #### Verification results
+
 - Single test (Descent II USA): PASS — `last_test_result` written with status=pass, level_reached="Ahayweh Gate", files_verified=5
 - Idempotent re-run: PASS — no duplicate blocks, identical content on re-run
 - Spec file remains valid JSON5 after result insertion
@@ -528,6 +592,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 ## Identified Gaps / Unfinished Work
 
 ### D2 Demo (3-Level Preview) — needs investigation, not a full phase
+
 - Status: FAIL in 3a.6 — game process alive but never reaches menu
 - Engine supports `d2demo.hog` via fallback (`inferno.c:359`: tries `descent2.hog` then `d2demo.hog`)
 - Demo detected by HOG size (2292566), uses `d2demo.ham`, `d2demo.pig`, levels `d2leva-1.sl2`
@@ -535,12 +600,15 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Fix: update `d2.files[]` readiness check to accept `d2demo.hog` as alternative, then re-test
 
 ### D1 Engine on Android — out of scope
+
 - All D1-only tests fail (no d1x-redux binary on Android). Separate project effort.
 
 ### import_disc broadcast command — not planned
+
 - Noted as unimplemented in 3.8. Not needed for current test pipeline.
 
 ### Expansion-only sets (Quartzon, Vertigo) — future work
+
 - 6 D2 OEM + 3 D2 Vertigo sets skip because they need base game files merged. Could be tested later by combining sets.
 
 ---

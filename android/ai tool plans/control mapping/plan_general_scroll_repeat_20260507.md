@@ -21,12 +21,12 @@ Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 - Added shared vertical repeat navigation in `android/app/src/main/java/com/dxxredux/app/DpadFocusUtils.kt`
 - Moved controller picker repeat handling from the dialog body boxes to the full `AlertDialog` modifiers so footer buttons stay in the same key-up/key-down stream
 - Applied the shared repeat modifier to:
-	- `ControllerConfigPage.kt` picker dialogs
-	- `MusicPickerPage.kt` main page container
-	- `MusicPickerPage.kt` track preview dialog
-	- `AdvancedSettingsPage.kt`
-	- `GraphicsSettingsPage.kt`
-	- `EnginePreferencesPage.kt`
+  - `ControllerConfigPage.kt` picker dialogs
+  - `MusicPickerPage.kt` main page container
+  - `MusicPickerPage.kt` track preview dialog
+  - `AdvancedSettingsPage.kt`
+  - `GraphicsSettingsPage.kt`
+  - `EnginePreferencesPage.kt`
 - Kept the music slider helper name as a thin wrapper over the shared modifier so the remaining slider call sites use the centralized repeat behavior without another local implementation
 
 ## Validation

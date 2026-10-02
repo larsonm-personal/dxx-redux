@@ -238,16 +238,16 @@ periodic sampler does not contaminate the result.
 ## Implementation sequence
 
 1. [x] Add and test the pure trigger/ring state machine, including cap-aware
-   wait handling and all hard limits
+       wait handling and all hard limits
 2. [x] Integrate cheap armed collection into the shared profiler and fix the
-   fully disabled fast path
+       fully disabled fast path
 3. [x] Add D1 phase/GL parity and the small pacing-context hook in both games
 4. [x] Add the Advanced setting and bounded asynchronous forced-batch logging
-   that is independent of the manual Profiling category
+       that is independent of the manual Profiling category
 5. [x] Add aggregation/detail output, detector tests, and file-size limits
 6. [x] Build and run automated regressions, then prepare the three-way phone A/B
 7. [ ] Decide whether the switch should default on based on measured armed
-   overhead
+       overhead
 
 ## Implementation result
 

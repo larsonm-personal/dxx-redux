@@ -1,9 +1,11 @@
 # input-based demo file regression tests
-* these are demo files which consist of player inputs rather than game element positions (which is what the classic .dem files encode)
-* these are meant to form a set of regression tests so we can replay them and check the final state produced. with a large enough body of demo files we should be able to lock down game engine behavior and enable larger refactoring passes, such as to de-duplicate d1/ and d2/
+
+- these are demo files which consist of player inputs rather than game element positions (which is what the classic .dem files encode)
+- these are meant to form a set of regression tests so we can replay them and check the final state produced. with a large enough body of demo files we should be able to lock down game engine behavior and enable larger refactoring passes, such as to de-duplicate d1/ and d2/
 
 # todo
-* remove debug state tracing from the early demos
+
+- remove debug state tracing from the early demos
 
 # Guide-Bot routing for new regression recordings
 
@@ -102,7 +104,7 @@ and once in D1-in-D2, sequentially, against an isolated copy of those D1 assets:
 
 It is also available through `run_all_tests.ps1 -Filter test_d1_replay_parity`.
 It is an explicit investigation while its coverage gate remains incomplete, so
-the routine unattended suite does not run a knowingly incomplete qualification.
+the routine and full unattended suites do not run a knowingly incomplete qualification.
 The timestamped output under `temp/d1_replay_parity_*` contains a manifest of recording/checkpoint,
 asset and executable hashes, recorded player settings, launch commands, raw results,
 compressed state/RNG traces and a report with three independent relationships:

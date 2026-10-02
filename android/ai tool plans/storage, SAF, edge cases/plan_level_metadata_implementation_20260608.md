@@ -1,11 +1,13 @@
 # Level metadata implementation
 
 ## Goal
+
 - Add the Android launcher foundation for level metadata viewing
 - Keep risky native level analysis out of the launcher process
 - Start with safe request/result plumbing and UI, then attach the native analyzer
 
 ## Plan
+
 - [x] Add launcher data model and safe result parsing for level metadata
 - [x] Add isolated worker service and manifest entry
 - [x] Add native bridge entry point with structured JSON result and debug crash/hang hooks
@@ -16,6 +18,7 @@
 - [x] Re-run scoped formatting/build validation after fallback work
 
 ## Completed
+
 - Added `LevelMetadata.kt` with:
   - request/target/result models
   - ZIP staging with file count and size caps
@@ -44,6 +47,7 @@
 - Added a generic top-level ZIP probe so descriptorless ZIP packages with level files or HOGs still get the metadata button.
 
 ## Validation
+
 - `.\android\run-code-quality.ps1 -Fix -Paths <changed files>`
 - `.\gradlew.bat :app:compileDebugKotlin`
 - `.\gradlew.bat :app:externalNativeBuildDebug`
@@ -51,5 +55,6 @@
 - Re-ran `.\gradlew.bat :app:compileDebugKotlin` and `.\gradlew.bat :app:externalNativeBuildDebug` from `android\`.
 
 ## Follow-Up
+
 - Add an emulator integration test for opening the dialog on base HOGs.
 - Add debug-only crash and hang containment tests against `:levelmeta`.

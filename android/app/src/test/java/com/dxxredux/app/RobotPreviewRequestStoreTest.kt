@@ -87,14 +87,20 @@ class RobotPreviewRequestStoreTest {
         val later = levelRow("later.rl2", laterRobot)
         val variantLevel = levelRow("variant.rl2", variant)
         val levels = listOf(early, later, early.copy(levelFile = "duplicate.rl2"), variantLevel)
-        val target = LevelMetadataTarget(
-            displayName = level.name, game = "d2", sourceType = "level",
-            sourcePath = level.path, dataDir = dataDir.path, levelFile = level.name,
-        )
-        val requests = listOf(early to earlyRobot, later to laterRobot, variantLevel to variant).map { (row, item) ->
-            val launch = RobotPreviewRequestStore.create(cacheDir, target, row, item, item.label, levels)
-            JSONObject(launch.requestFile.readText())
-        }
+        val target =
+            LevelMetadataTarget(
+                displayName = level.name,
+                game = "d2",
+                sourceType = "level",
+                sourcePath = level.path,
+                dataDir = dataDir.path,
+                levelFile = level.name,
+            )
+        val requests =
+            listOf(early to earlyRobot, later to laterRobot, variantLevel to variant).map { (row, item) ->
+                val launch = RobotPreviewRequestStore.create(cacheDir, target, row, item, item.label, levels)
+                JSONObject(launch.requestFile.readText())
+            }
         val entries = requests.first().getJSONArray("robot_navigation")
         assertEquals(3, entries.length())
         assertEquals("early.rl2", entries.getJSONObject(0).getString("level_file"))
@@ -126,45 +132,44 @@ class RobotPreviewRequestStoreTest {
     private fun levelRow(
         levelFile: String,
         item: LevelMetadataReplacementItem,
-    ) =
-        LevelMetadataLevelRow(
-            levelNum = 1,
-            secret = false,
-            levelName = "Preview",
-            levelFile = levelFile,
-            robots = 0,
-            hostages = 0,
-            secrets = 0,
-            matcens = 0,
-            energyCenters = 0,
-            mineVolume = 0.0,
-            mineVolumeNormalized = 0.0,
-            mineVolumeText = "",
-            travelDistance = 0.0,
-            travelTimeSeconds = 0,
-            travelTimeText = "",
-            guidebotCount = 0,
-            guidebotPlaced = false,
-            guidebotAccessible = false,
-            guidebotPlacementNote = "",
-            guidebotNote = "",
-            routeStatus = "ok",
-            routeProblem = "",
-            routeNote = "",
-            routeSteps = emptyList(),
-            status = "ok",
-            problems = emptyList(),
-            notes = emptyList(),
-            replacementGroups =
-                listOf(
-                    LevelMetadataReplacementGroup(
-                        kind = "robot_changes",
-                        label = "Robot changes",
-                        summary = "1 change",
-                        items = listOf(item),
-                    ),
+    ) = LevelMetadataLevelRow(
+        levelNum = 1,
+        secret = false,
+        levelName = "Preview",
+        levelFile = levelFile,
+        robots = 0,
+        hostages = 0,
+        secrets = 0,
+        matcens = 0,
+        energyCenters = 0,
+        mineVolume = 0.0,
+        mineVolumeNormalized = 0.0,
+        mineVolumeText = "",
+        travelDistance = 0.0,
+        travelTimeSeconds = 0,
+        travelTimeText = "",
+        guidebotCount = 0,
+        guidebotPlaced = false,
+        guidebotAccessible = false,
+        guidebotPlacementNote = "",
+        guidebotNote = "",
+        routeStatus = "ok",
+        routeProblem = "",
+        routeNote = "",
+        routeSteps = emptyList(),
+        status = "ok",
+        problems = emptyList(),
+        notes = emptyList(),
+        replacementGroups =
+            listOf(
+                LevelMetadataReplacementGroup(
+                    kind = "robot_changes",
+                    label = "Robot changes",
+                    summary = "1 change",
+                    items = listOf(item),
                 ),
-        )
+            ),
+    )
 
     private fun testRoot(name: String): File =
         File("build/test-robot-preview-request/$name").absoluteFile.apply {

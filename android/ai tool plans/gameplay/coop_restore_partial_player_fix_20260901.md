@@ -45,15 +45,15 @@ shows otherwise.
 
 ## Field ownership decision
 
-| State | D1 | D2 | Restore policy |
-| --- | --- | --- | --- |
-| Legacy inventory, ammo, energy, shields, score, flags, statistics | In `player_rw` | In `player_rw` | Restore from the base save |
-| Selected primary and secondary weapon | Omitted | Omitted | Save per player in Android co-op metadata, validate, then restore |
-| Afterburner charge | Not applicable | Omitted | Save per player in Android co-op metadata, clamp or reject invalid values, then restore |
-| `KillGoalCount` | Omitted | Present | Add to shared co-op metadata for D1 parity, or explicitly reset if product semantics do not require exact rewind |
-| Callsign, address, connection, object slot, packet counters | Live session | Live session | Preserve from the current network session |
-| Shield delta, timestamp, hour rollover, certainty | Omitted transient display state | Omitted transient display state | Initialize to neutral values, do not serialize |
-| Object transform and physics | Saved object array | Saved object array | Copy only from a validated player object |
+| State                                                             | D1                              | D2                              | Restore policy                                                                                                   |
+| ----------------------------------------------------------------- | ------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Legacy inventory, ammo, energy, shields, score, flags, statistics | In `player_rw`                  | In `player_rw`                  | Restore from the base save                                                                                       |
+| Selected primary and secondary weapon                             | Omitted                         | Omitted                         | Save per player in Android co-op metadata, validate, then restore                                                |
+| Afterburner charge                                                | Not applicable                  | Omitted                         | Save per player in Android co-op metadata, clamp or reject invalid values, then restore                          |
+| `KillGoalCount`                                                   | Omitted                         | Present                         | Add to shared co-op metadata for D1 parity, or explicitly reset if product semantics do not require exact rewind |
+| Callsign, address, connection, object slot, packet counters       | Live session                    | Live session                    | Preserve from the current network session                                                                        |
+| Shield delta, timestamp, hour rollover, certainty                 | Omitted transient display state | Omitted transient display state | Initialize to neutral values, do not serialize                                                                   |
+| Object transform and physics                                      | Saved object array              | Saved object array              | Copy only from a validated player object                                                                         |
 
 The Android metadata already snapshots every active player's inventory from the
 host's cached `Players[]`. Ship-status updates include selected weapons in both

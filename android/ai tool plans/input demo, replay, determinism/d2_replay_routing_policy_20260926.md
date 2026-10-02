@@ -64,11 +64,11 @@ changed by this investigation
 
 ## Reproduction evidence
 
-| Comparison | Exact matches |
-| --- | --- |
-| Current Enhanced versus historical recorded terminal state | 2/11 |
-| Diagnostic Original versus historical recorded terminal state | 1/11 |
-| Current Enhanced versus previous current-engine run | 11/11 |
+| Comparison                                                    | Exact matches |
+| ------------------------------------------------------------- | ------------- |
+| Current Enhanced versus historical recorded terminal state    | 2/11          |
+| Diagnostic Original versus historical recorded terminal state | 1/11          |
+| Current Enhanced versus previous current-engine run           | 11/11         |
 
 The complete Enhanced repeat batch exits 0, and an independent parsed-JSON
 comparison confirms equality of every terminal field for all 11 results. This

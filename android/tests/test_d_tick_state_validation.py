@@ -27,9 +27,7 @@ class DTickStateValidationTest(unittest.TestCase):
             self.assertLess(validation, publication)
 
     def test_translation_validates_before_runtime_publication(self) -> None:
-        source = (REPO_ROOT / "d2/main/d1_in_d2/d1_save_translate.c").read_text(
-            encoding="utf-8"
-        )
+        source = (REPO_ROOT / "d2/main/d1_in_d2/d1_save_translate.c").read_text(encoding="utf-8")
         validation = source.index("game_d_tick_state_is_valid")
         publication = source.index("game_set_d_tick_state", validation)
 
@@ -38,9 +36,7 @@ class DTickStateValidationTest(unittest.TestCase):
     def test_paired_cleanup_indices_are_unsigned_and_bounded(self) -> None:
         for game in ("d1", "d2"):
             source = (REPO_ROOT / game / "main/wall.c").read_text(encoding="utf-8")
-            self.assertIn(
-                "(unsigned int)d_tick_count % MAX_STUCK_OBJECTS", source
-            )
+            self.assertIn("(unsigned int)d_tick_count % MAX_STUCK_OBJECTS", source)
 
 
 if __name__ == "__main__":

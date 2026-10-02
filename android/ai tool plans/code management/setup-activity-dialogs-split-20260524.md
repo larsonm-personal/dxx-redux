@@ -1,9 +1,11 @@
 # SetupActivity dialogs split - 2026-05-24
 
 ## Goal
+
 Continue reducing `SetupActivity.kt` by moving set management and import dialog composables into `SetupDialogs.kt` while keeping total line count roughly stable.
 
 ## Plan
+
 - [x] Confirm dialog block boundaries, call sites, and helper dependencies.
 - [x] Move `SetManagementDialog`, GOG/SOW/CUE/ISO import dialogs, and the shared setup download helper to `SetupDialogs.kt` mostly verbatim.
 - [x] Rename any package-visible generic helpers only if needed to avoid same-package collisions.
@@ -12,10 +14,12 @@ Continue reducing `SetupActivity.kt` by moving set management and import dialog 
 - [x] Update this plan and the survey plan with results.
 
 ## Notes
+
 - Prefer an exact block move over manual rewriting to avoid line-count drift.
 - Keep launcher state and ActivityResult wiring in `SetupActivity.kt`.
 
 ## Results
+
 - Added `SetupDialogs.kt` with `SetManagementDialog`, GOG installer import, SOW archive import, CUE/BIN disc import, ISO import, the private dialog size formatter, and the shared setup download helper.
 - Renamed the package-visible download helper to `setupDownloadFile` to avoid adding a generic same-package top-level helper name.
 - Kept ActivityResult launchers, import selection state, and launcher orchestration in `SetupActivity.kt`.

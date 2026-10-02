@@ -1,16 +1,19 @@
 # Guidebot Nearest-Point Navigation Plan
 
 ## Goal
+
 - Add an Android advanced gameplay option: "Guidebot navigate to nearest point"
 - When enabled, a guidebot goal with no normal escort path should route the guidebot toward the nearest reachable point along the intended progress path instead of refusing to move
 - Study Castaway level 1 (`skorrpyo.rl2`) to confirm whether an exit-adjacent disappearing wall blocks normal guidebot routing
 
 ## Phase 1: Study
+
 - [done] Locate launcher advanced gameplay preference plumbing
 - [done] Locate D2 escort path creation and failure behavior
 - [done] Inspect Castaway level 1 data for exit-side wall, trigger, and route metadata behavior
 
 ## Study Notes
+
 - `EnginePreferencesPage.kt` already has a `Gameplay` section with persisted `SharedPreferences` toggles
 - Metadata travel routing treats trigger-opened walls as passable through `triggered_side_opener_count`
 - Guidebot pathing uses `create_path_points`, which only traverses currently flyable/openable sides from `WALL_IS_DOORWAY` or `ai_door_is_openable`
@@ -42,12 +45,14 @@
 - Working conclusion: Castaway L1 still supports the "navigate to nearest point" feature, but the static analysis needs paired wall-trigger modeling to match the mine. The reactor-to-exit path is possible with all keys and trigger-opened wall pairs, while normal guidebot pathing can still refuse when its live `WALL_IS_DOORWAY` / `ai_door_is_openable` view cannot reach the final goal segment. The nearest-point fallback should therefore be goal/path based rather than special-casing one specific wall
 
 ## Phase 2: Implementation Design
+
 - [done] Add a persisted launcher preference under Game Preferences > Gameplay
 - [done] Bridge the preference into native runtime alongside existing Android helper options
 - [done] Add D2 escort fallback logic that preserves default behavior when disabled
 - [done] Avoid changing D1 except for shared Android preference plumbing where needed
 
 ## Refined Generic Best-Effort Design
+
 - The initial implementation preserves a partial path returned by `create_path_to_segment`, but that path is whatever frontier the existing BFS happened to discover
 - [done] Improve this by choosing a deliberate reachable fallback segment when the requested goal segment cannot be reached normally
 - [done] Keep default behavior unchanged when the Android preference is disabled
@@ -72,12 +77,14 @@
   - [done] fallback path creation failed
 
 ## Phase 3: Verification
+
 - [not-run] Add or extend an automated script that launches Castaway level 1, releases/spawns guidebot if needed, asks for exit navigation, and introspects guidebot route state
 - [done] Run scoped code quality on changed files with `android/run-code-quality.ps1 -Fix -Paths ...` after the refined fallback implementation
 - [done] Build Android debug APK with `JAVA_HOME=C:\local\jdk-21` and `./gradlew.bat :app:assembleDebug` after the refined fallback implementation
 - [done] Run `git diff --check` on changed implementation files
 
 ## D1-In-D2 Spawn Compatibility
+
 - [done] Preserve the D2 Guide-Bot robot definition, compact animation joint list, polygon model, and object bitmap references before D1-in-D2 replaces robot assets with D1 data
 - [done] Keep normal D1-in-D2 level startup faithful: no companion robot type is exposed unless the player explicitly asks to spawn/deploy the Guide-Bot
 - [done] When `create_buddy_bot()` runs in D1-in-D2 and no companion type exists, append the preserved D2 Guide-Bot assets as a new runtime-only robot type so the Android deploy control can spawn it at the player

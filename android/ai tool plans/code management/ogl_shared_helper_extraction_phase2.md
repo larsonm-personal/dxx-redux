@@ -39,7 +39,7 @@ Out of scope:
 - Keep the existing metl154 log strings unchanged in this phase
 - Moved the upload sequence counter into shared code because `upload_id` was only consumed by the upload logger and submit context
 - Validation passed:
-	1. `./android/run-code-quality.ps1 -Fix`
-	2. `./android/gradlew.bat :app:assembleDebug :app:testDebugUnitTest`
-	3. `./android/diff_vs_upstream.ps1 -Top 20`
+  1.  `./android/run-code-quality.ps1 -Fix`
+  2.  `./android/gradlew.bat :app:assembleDebug :app:testDebugUnitTest`
+  3.  `./android/diff_vs_upstream.ps1 -Top 20`
 - The Android unit-test build still reports the pre-existing `game_introspect.cpp` unused-function warnings during native compilation

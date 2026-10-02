@@ -8,13 +8,13 @@ This plan adds **SAF leave-in-place file access** (the engine reads game files d
 
 ### Core Concepts
 
-| Concept | Description |
-|---------|-------------|
+| Concept                | Description                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------ |
 | **SAF leave-in-place** | Game files stay where the user chose them; the engine reads via fd acquired from SAF |
-| **File set** | A named collection of game data files, tracked by the SAF manifest |
-| **"default" set** | The initial set — always exists — cannot be deleted |
-| **Active set** | The one the engine uses when launched; persisted across restarts |
-| **Mod** (future) | An add-on layered *on top of* the active set at higher priority |
+| **File set**           | A named collection of game data files, tracked by the SAF manifest                   |
+| **"default" set**      | The initial set — always exists — cannot be deleted                                  |
+| **Active set**         | The one the engine uses when launched; persisted across restarts                     |
+| **Mod** (future)       | An add-on layered _on top of_ the active set at higher priority                      |
 
 ### Architecture
 
@@ -50,13 +50,13 @@ All sets (including "default") live under `files/sets/<name>/`. The root `files/
 
 ### File Categories
 
-| Category | Scope | Examples |
-|----------|-------|---------|
-| **D2 Full — Required** | Per-set | `descent2.hog`, `groupa.pig`, 5 level PIGs, etc. |
-| **D2 Full — Optional** | Per-set | `intro-h.mvl`, `d2x.hog`, `hoard.ham` |
-| **D2 Demo — Required** | Per-set | `d2demo.hog`, `d2demo.ham`, `d2demo.pig` |
-| **Music** | Shared (root `files/`) | `.gog`/`.inst` CD images — handled separately, not per-set |
-| **Extras** | Shared (root `files/`) | `.dxa` hi-res packs — not per-set |
+| Category               | Scope                  | Examples                                                   |
+| ---------------------- | ---------------------- | ---------------------------------------------------------- |
+| **D2 Full — Required** | Per-set                | `descent2.hog`, `groupa.pig`, 5 level PIGs, etc.           |
+| **D2 Full — Optional** | Per-set                | `intro-h.mvl`, `d2x.hog`, `hoard.ham`                      |
+| **D2 Demo — Required** | Per-set                | `d2demo.hog`, `d2demo.ham`, `d2demo.pig`                   |
+| **Music**              | Shared (root `files/`) | `.gog`/`.inst` CD images — handled separately, not per-set |
+| **Extras**             | Shared (root `files/`) | `.dxa` hi-res packs — not per-set                          |
 
 ---
 
@@ -66,13 +66,13 @@ All sets (including "default") live under `files/sets/<name>/`. The root `files/
 
 PhysFS is path-based (`open(path)`, `opendir()`, `stat()`). SAF is URI/fd-based (`content://` URIs, `ParcelFileDescriptor`). Evaluated bridging approaches:
 
-| # | Approach | Verdict |
-|---|----------|---------|
-| A | `/proc/self/fd/N` paths | Only per-file, can't `opendir()` an fd |
-| B | `MANAGE_EXTERNAL_STORAGE` | Invasive permission, Play Store policy issues |
-| C | `PHYSFS_mountIo` per archive | Only for HOG/MVL, not PIG/HAM/S22 |
+| #     | Approach                             | Verdict                                        |
+| ----- | ------------------------------------ | ---------------------------------------------- |
+| A     | `/proc/self/fd/N` paths              | Only per-file, can't `opendir()` an fd         |
+| B     | `MANAGE_EXTERNAL_STORAGE`            | Invasive permission, Play Store policy issues  |
+| C     | `PHYSFS_mountIo` per archive         | Only for HOG/MVL, not PIG/HAM/S22              |
 | **D** | **Custom `PHYSFS_registerArchiver`** | **Adopted.** Full integration, all file types. |
-| E | Persistent URI + delta-copy | Still duplicates storage |
+| E     | Persistent URI + delta-copy          | Still duplicates storage                       |
 
 Approach D registers a custom archiver via `PHYSFS_registerArchiver()`. The archiver presents `.saf_manifest.json` as a virtual directory. When PhysFS opens a file by name, the archiver calls back to Java to get a native fd, then returns a `pread`-based `PHYSFS_Io`. All file types work — archives (HOG, MVL) and non-archives (PIG, HAM, S22) alike.
 
@@ -182,6 +182,7 @@ Custom `PHYSFS_Archiver` that presents `.saf_manifest.json` as a virtual directo
 **File:** `d2/misc/physfsx.c` (in `#ifdef ANDROID` block, ~30 lines)
 
 Search path order at engine init:
+
 1. `filesDir` (pref dir) -- write dir + configs/saves
 2. SAF manifest (appended via `PHYSFS_mount`) -- leave-in-place files
 3. APK base dir
@@ -204,9 +205,11 @@ Both `jni_saf.c` and `physfs_archiver_saf.c` added to the `d2x-redux` shared lib
 #### M1.7 -- Automated testing
 
 **Test automation script:** `android/game_scripts/test_saf_basic.json` (37 steps)
+
 - Wait for init -> pilot select -> assert main menu -> new game -> accept difficulty -> skip briefings (15x enter) -> wait for `in_game=true` -> assert level 1 + game mode -> introspect
 
 **Test orchestration:** `android/test_saf_archiver.ps1` (~360 lines, PowerShell)
+
 - Params: `-NoBuild` (skip Gradle), `-NoCleanup` (leave artifacts for debugging)
 - Flow: Build APK -> stop game -> install -> push `descent2.ham` to `/data/local/tmp/test_saf/` -> remove from app files -> create `.saf_manifest.json` -> launch SetupActivity -> verify `can_launch=true` -> broadcast launch -> run automation script -> monitor logcat for `SCRIPT_RESULT` -> report PASS/FAIL/CRASH/TIMEOUT -> cleanup (restore file, remove manifest)
 
@@ -267,6 +270,7 @@ Extended the existing M1 block with file-set support:
 3. Uses `char[512]` buffers (sufficient for Android internal paths)
 
 Search path order after init:
+
 ```
 0. sets/<active>/   ← always present (game data for active set)
 1. filesDir/        ← write dir + configs/saves + music (no game data after M6 migration)
@@ -300,6 +304,7 @@ Added `D2_DEMO_FILES` list alongside existing `D2_FILES`. Added `detectFileList(
 **File:** `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt` (two call sites)
 
 `FileSetManager(filesDir).writeActiveSetPath()` is called before engine launch at both launch paths:
+
 1. Broadcast receiver (for `com.dxxredux.SETUP_COMMAND --es command launch`)
 2. Compose UI `onLaunchGame` callback
 
@@ -308,6 +313,7 @@ This ensures the C engine always reads the current active set path at init.
 #### M2.7 — Testing
 
 Verified with existing test suite:
+
 - SAF archiver test: PASS (37 steps) — validates default-set behavior
 - Regression test (test_launch_to_automap): PASS (41 steps) — validates no regressions
 - Build: `BUILD SUCCESSFUL`
@@ -412,6 +418,7 @@ The delete handler uses `detailIsD2` state to select the correct directory (`set
 #### M3.7 — Testing
 
 Verified with existing test suite:
+
 - SAF archiver test: PASS (37 steps)
 - Regression test (test_launch_to_automap): PASS (41 steps)
 - Build: `BUILD SUCCESSFUL`
@@ -433,6 +440,7 @@ File picker now accepts `application/zip` MIME type alongside `application/octet
 #### M4.2 — Streaming ZIP extraction & hashing ✅
 
 `extractZipContents()` suspend function streams `ZipInputStream` one entry at a time:
+
 1. Filters entries by `ALL_GAME_FILENAMES` (case-insensitive, handles nested paths via `substringAfterLast('/')`)
 2. Extracts matching entries to `filesDir/tmp/`
 3. Computes SHA-256 during extraction (single pass, no re-read)
@@ -443,6 +451,7 @@ File picker now accepts `application/zip` MIME type alongside `application/octet
 #### M4.3 — ZIP recognition card ✅
 
 ZIP results shown in a Card composable:
+
 - **Empty:** "No game files found in ZIP archive" with Dismiss button.
 - **Recognized:** "✅ Recognized: {packageName}" header, file list with sizes, "Import to Current Set" and "Dismiss" buttons.
 - **Unrecognized:** "Found N game file(s)" header, same buttons.
@@ -458,6 +467,7 @@ Extraction progress shown in a separate card with indeterminate LinearProgressIn
 #### M4.5 — Cleanup ✅
 
 `cleanupTmpDir(filesDir)` deletes `filesDir/tmp/` recursively. Called on:
+
 - Successful import completion
 - Dismiss button click
 - Empty extraction result dismissal
@@ -479,6 +489,7 @@ Fixed Import All handler that still referenced `filesDir` instead of `setDir` fo
 `DemoPackage` data class and `DEMO_DOWNLOADS` list defined in SetupActivity.kt. Uses `https://dxx-redux.com/dl/` base URL (same domain as existing D1 optional file downloads).
 
 **As-built:**
+
 ```kotlin
 data class DemoPackage(
     val name: String,
@@ -494,6 +505,7 @@ Currently configured: D2 Demo (d2demo.zip, ~5.5 MB). KnownVersions demo hashes a
 #### M5.2 — Demo section in UI ✅
 
 Demo download cards appear when `!canLaunch && !gameRunning` (no required files found for either D1 or D2), below the existing `MissingFilesHelp` card. Each demo shows:
+
 - Package name with game controller emoji
 - Description and download size
 - "Download & Install" button (disabled during active download)
@@ -503,6 +515,7 @@ Demo download cards appear when `!canLaunch && !gameRunning` (no required files 
 #### M5.3 — Download → extract → import ✅
 
 Flow:
+
 1. Create `filesDir/tmp/`, download ZIP via existing `downloadFile()` with progress callback
 2. Extract ZIP using M4's `extractZipContents()` (streams entries, hashes during extraction)
 3. Copy extracted files to active `setDir`, register in `AssetManifest` via `manifest.upsert()`
@@ -518,6 +531,7 @@ Demo ZIP files need to be hosted at `https://dxx-redux.com/dl/d2demo.zip`. Not y
 #### M5.5 — Label bug fix (bonus) ✅
 
 Fixed `GameSectionHeader` to use context-appropriate "not ready" labels:
+
 - **D1/D2 sections:** "✗ Missing" (was incorrectly showing "✗ Missing, will use MIDI")
 - **Music section:** "✗ Missing, will use MIDI" only when D1 or D2 is ready (MIDI comes from game files); "✗ Missing" when neither game is installed
 
@@ -546,6 +560,7 @@ Fixed `GameSectionHeader` to use context-appropriate "not ready" labels:
 **File:** `FileSetManager.kt` — `migrateDefaultSetIfNeeded()`
 
 Idempotent migration on first launch after upgrade:
+
 1. Creates `sets/default/`
 2. Scans `filesDir` for files with game data extensions (case-insensitive): `.pig`, `.hog`, `.ham`, `.mvl`, `.s11`, `.s22`, `.mn2`, `.msn`, `.dxa`, `.pog`, `.rl2`, `.dtx`
 3. Scans for known game data subdirectories: `missions/`
@@ -568,18 +583,19 @@ Extension-based scanning handles arbitrary mod filenames (e.g., `panic.hog`, `ve
 
 #### M6.5 — What stays in `filesDir` (shared)
 
-| Pattern | Purpose |
-|---------|---------|
-| `*.ini`, `*.plr`, `*.sg*`, `*.cfg` | Configs & saves |
-| `*.gog`, `*.inst` | Music (Redbook CD images) |
-| `file_sets.json`, `.active_set_path` | Set metadata |
-| `introspect.json`, `setup_introspect.json` | Debug |
-| `sets/` | All game data (per-set) |
-| `tmp/` | Temporary extraction |
+| Pattern                                    | Purpose                   |
+| ------------------------------------------ | ------------------------- |
+| `*.ini`, `*.plr`, `*.sg*`, `*.cfg`         | Configs & saves           |
+| `*.gog`, `*.inst`                          | Music (Redbook CD images) |
+| `file_sets.json`, `.active_set_path`       | Set metadata              |
+| `introspect.json`, `setup_introspect.json` | Debug                     |
+| `sets/`                                    | All game data (per-set)   |
+| `tmp/`                                     | Temporary extraction      |
 
 #### M6.6 — Testing ✅
 
 Verified on emulator:
+
 - Blank set "ff": D1 not ready, D2 not ready, `can_launch: false`
 - Default set: D1 ready, D2 ready, `can_launch: true`
 - Game launches and runs with files in `sets/default/`
@@ -640,19 +656,19 @@ Each phase depends on the one above it. M1 can be built and tested independently
 
 ## 5. Risk Assessment
 
-| Risk | Mitigation |
-|------|-----------|
-| `pread`/`dup` behavior varies across devices | `pread` is POSIX standard, supported on all Android versions since API 1. Test on emulator + physical device. |
-| JNI callback from PhysFS worker thread | Use `AttachCurrentThread()`/`DetachCurrentThread()`. Cache `JavaVM*` (already done in `jni_main.c`). |
-| SAF permission revocation breaks leave-in-place | Detect stale URIs on launch, show warning, offer to re-link or import (copy) as fallback. |
-| SAF ContentResolver slow for frequent opens | Files are opened once and held open (PIG paging). Not a hot path — JNI call happens at file-open time, not per-read. |
-| JSON parsing in C is fragile | Minimal parser for a known flat format. Alternatively, use `cJSON` (single-file library, MIT, ~30KB). |
-| PhysFS archiver registration order matters | Register SAF archiver before any game code runs. The archiver's `.json` extension won't conflict with game files (none are `.json`). |
-| PhysFS search-path priority breaks engine assumptions | Test D2 full and D2 demo. Priority only matters when same filename exists in multiple paths. |
-| Set directory names collide with engine expectations | Use `files/sets/` — engine never looks there. Configs/saves in `files/` root. |
-| Demo zips have unknown contents | Pre-package from known-good sources. Hash everything. |
-| Large sets consume storage | Show per-set disk usage. Leave-in-place eliminates duplication for most users. |
-| Concurrent set switch while engine running | Only allow switching from SetupActivity. `.active_set_path` read once at init. |
+| Risk                                                  | Mitigation                                                                                                                           |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `pread`/`dup` behavior varies across devices          | `pread` is POSIX standard, supported on all Android versions since API 1. Test on emulator + physical device.                        |
+| JNI callback from PhysFS worker thread                | Use `AttachCurrentThread()`/`DetachCurrentThread()`. Cache `JavaVM*` (already done in `jni_main.c`).                                 |
+| SAF permission revocation breaks leave-in-place       | Detect stale URIs on launch, show warning, offer to re-link or import (copy) as fallback.                                            |
+| SAF ContentResolver slow for frequent opens           | Files are opened once and held open (PIG paging). Not a hot path — JNI call happens at file-open time, not per-read.                 |
+| JSON parsing in C is fragile                          | Minimal parser for a known flat format. Alternatively, use `cJSON` (single-file library, MIT, ~30KB).                                |
+| PhysFS archiver registration order matters            | Register SAF archiver before any game code runs. The archiver's `.json` extension won't conflict with game files (none are `.json`). |
+| PhysFS search-path priority breaks engine assumptions | Test D2 full and D2 demo. Priority only matters when same filename exists in multiple paths.                                         |
+| Set directory names collide with engine expectations  | Use `files/sets/` — engine never looks there. Configs/saves in `files/` root.                                                        |
+| Demo zips have unknown contents                       | Pre-package from known-good sources. Hash everything.                                                                                |
+| Large sets consume storage                            | Show per-set disk usage. Leave-in-place eliminates duplication for most users.                                                       |
+| Concurrent set switch while engine running            | Only allow switching from SetupActivity. `.active_set_path` read once at init.                                                       |
 
 ---
 

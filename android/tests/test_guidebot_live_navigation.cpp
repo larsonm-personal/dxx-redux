@@ -81,8 +81,8 @@ static void endpoint_isolation(object *bot)
 				baseline = *bot;
 				baseline_local = local;
 			} else {
-				check(companion == 2 ? "objective_endpoint_resumes_legacy_patrol" :
-				      companion ? "return_endpoint_matches_legacy" : "other_robot_endpoint_matches_legacy",
+				check(companion == 2 ? "objective_endpoint_resumes_legacy_patrol" : companion ? "return_endpoint_matches_legacy"
+				                                                                              : "other_robot_endpoint_matches_legacy",
 				      !std::memcmp(&baseline.ctype.ai_info, &ai, sizeof(ai)) &&
 				          (companion == 2 || !std::memcmp(&baseline.mtype.phys_info, &bot->mtype.phys_info, sizeof(bot->mtype.phys_info))) &&
 				          baseline_local.mode == local.mode);
@@ -129,7 +129,7 @@ static void switch_arrival(object *bot)
 	check("switch_arrival_starts_local_patrol", bot->ctype.ai_info.path_length >= 3);
 	check("switch_arrival_keeps_moving", moves_after_arrival(bot));
 	check("switch_arrival_keeps_unfinished_objective", Escort_route_goal.active &&
-	    Escort_route_goal.objective_trigger == trigger && Escort_special_goal == ESCORT_GOAL_HOSTAGE);
+	                                                       Escort_route_goal.objective_trigger == trigger && Escort_special_goal == ESCORT_GOAL_HOSTAGE);
 	place(bot, saved_bot.segnum);
 	bot->pos = saved_bot.pos;
 	place(ConsoleObject, saved_player.segnum);
@@ -163,8 +163,8 @@ static void hostage_request(object *bot)
 	escort_route_note_replan("test_blocked_hostage_access");
 	escort_create_path_to_goal(bot);
 	check("hostages_without_prerequisite_keeps_frontier", Escort_special_goal == ESCORT_GOAL_HOSTAGE &&
-	    Escort_route_goal.active && Escort_route_goal.guidance_mode == ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT &&
-	    bot->ctype.ai_info.path_length > 0);
+	                                                          Escort_route_goal.active && Escort_route_goal.guidance_mode == ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT &&
+	                                                          bot->ctype.ai_info.path_length > 0);
 	for (int i = 0; i < Num_triggers; ++i)
 		Triggers[i].flags = saved_trigger_flags[i];
 	escort_route_note_replan("test_restore_hostage_access");
@@ -194,8 +194,8 @@ static void hostage_request(object *bot)
 		escort_create_path_to_goal(bot);
 	}
 	check("hostages_resume_ordinary_guidance_after_access", !Escort_route_goal.active &&
-	    Escort_special_goal == ESCORT_GOAL_HOSTAGE && Escort_goal_index >= 0 &&
-	    Objects[Escort_goal_index].type == OBJ_HOSTAGE);
+	                                                            Escort_special_goal == ESCORT_GOAL_HOSTAGE && Escort_goal_index >= 0 &&
+	                                                            Objects[Escort_goal_index].type == OBJ_HOSTAGE);
 	const int target = Escort_goal_index;
 	if (target >= 0 && target <= Highest_object_index && Objects[target].type == OBJ_HOSTAGE) {
 		detect_escort_goal_accomplished(target);
@@ -317,7 +317,10 @@ static void reactor_arrival(object *bot)
 {
 	int reactor = -1;
 	for (int i = 0; i <= Highest_object_index; ++i)
-		if (Objects[i].type == OBJ_CNTRLCEN) { reactor = i; break; }
+		if (Objects[i].type == OBJ_CNTRLCEN) {
+			reactor = i;
+			break;
+		}
 	check("reactor_fixture_exists", reactor >= 0);
 	if (reactor < 0) return;
 	place(bot, Objects[reactor].segnum);
@@ -331,11 +334,11 @@ static void reactor_arrival(object *bot)
 	Ai_local_info[bot - Objects].mode = AIM_GOTO_OBJECT;
 	do_escort_frame(bot, 0, 2);
 	check("reactor_arrival_keeps_reactor_objective", Escort_route_goal.active &&
-	    Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR);
+	                                                     Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR);
 	check("reactor_arrival_starts_local_patrol", bot->ctype.ai_info.path_length >= 3);
 	check("reactor_arrival_keeps_moving", moves_after_arrival(bot));
 	check("reactor_still_requires_player_action", Objects[reactor].type == OBJ_CNTRLCEN &&
-	    Escort_route_goal.active && Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR);
+	                                                  Escort_route_goal.active && Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR);
 }
 
 int test_guidebot_live_navigation(const char *output, const char *return_target)

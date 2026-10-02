@@ -2,7 +2,7 @@
 # run-ktlint.ps1 -- Run ktlint on Kotlin source files.
 # Usage:
 #   .\run-ktlint.ps1          # auto-fix formatting (default)
-#   .\run-ktlint.ps1 --check  # report issues, exit 1 if any
+#   .\run-ktlint.ps1 -Check  # report issues, exit 1 if any
 #   .\run-ktlint.ps1 -Paths path\to\file path\to\dir
 
 param(
@@ -17,6 +17,17 @@ $platformHelper = Join-Path $androidRoot "get_deps/helpers/Get-DepPlatform.ps1"
 . $platformHelper
 
 . (Join-Path $PSScriptRoot "code-quality-files.ps1")
+$Paths = @(Get-CodeQualityScriptPaths -InputPaths $Paths -RemainingPaths @($args) -ExplicitScope ($PSBoundParameters.ContainsKey('Paths')))
+
+# --- Gather Kotlin files ---
+# Include the production source selection for each distribution
+$files = @(Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $repoRoot -InputPaths $Paths -ValidExtensions @('.kt', '.kts'))
+
+if ($files.Count -eq 0) {
+    Write-Host "No Kotlin files found"
+    exit 0
+}
+
 
 # --- Locate dependencies ---
 $DEP_BASE = Get-DependencyBase -RepoRoot $repoRoot
@@ -60,36 +71,18 @@ if (-not $java) {
 Write-Host "Using java: $java"
 Write-Host "Using ktlint: $ktlintJar"
 
-# --- Gather Kotlin files ---
-# Include the production source selection for each distribution
-$files = @(
-    foreach ($source in @('main', 'playServices', 'directInstall')) {
-        $ktDir = Join-Path $androidRoot "app/src/$source/java"
-        Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $ktDir -InputPaths $Paths -ValidExtensions @('.kt')
-    }
-)
-
-if ($files.Count -eq 0) {
-    Write-Host "No Kotlin files found"
-    exit 0
-}
 
 Write-Host "Found $($files.Count) Kotlin files"
 
-# --- Run ---
-$patterns = ($files | ForEach-Object { $_.FullName }) -join " "
-
-if ($Check) {
-    Write-Host "Checking..."
-    & $java -jar $ktlintJar $files.FullName
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host ""
-        Write-Host "ktlint found issues. Run without --check to auto-fix"
-        exit 1
-    }
-    Write-Host "All Kotlin files pass ktlint checks"
-} else {
-    Write-Host "Formatting..."
-    & $java -jar $ktlintJar --format $files.FullName
-    Write-Host "Done"
+# Bound native argument lengths on Windows; include JVM test and CLI sources
+$failed = $false
+for ($index = 0; $index -lt $files.Count; $index += 30) {
+    $batch = @($files[$index..([Math]::Min($index + 29, $files.Count - 1))] | ForEach-Object { $_.FullName })
+    $toolArguments = @('-jar', $ktlintJar)
+    if (-not $Check) { $toolArguments += '--format' }
+    & $java @toolArguments @batch
+    if ($LASTEXITCODE -ne 0) { $failed = $true }
 }
+if ($failed) { exit 1 }
+Write-Host 'Kotlin formatting checks passed'
+exit 0

@@ -20,7 +20,13 @@ class MissionMusicCatalogBudgetTest {
                 writeEntry("music.dxa", createZipBytes { writeEntry("track.mid", payload) })
             }
 
-        val track = MissionZipMusic.inspect(archive)!!.sources.single().tracks.single()
+        val track =
+            MissionZipMusic
+                .inspect(archive)!!
+                .sources
+                .single()
+                .tracks
+                .single()
 
         assertEquals(payload.size.toLong(), track.sizeBytes)
     }
@@ -93,7 +99,13 @@ class MissionMusicCatalogBudgetTest {
                 writeEntry(
                     "music.dxa",
                     createZipBytes {
-                        writeEntry("music.hog", createHogBytes("first.ogg" to byteArrayOf(1), "second.ogg" to byteArrayOf(2)))
+                        writeEntry(
+                            "music.hog",
+                            createHogBytes(
+                                "first.ogg" to byteArrayOf(1),
+                                "second.ogg" to byteArrayOf(2),
+                            ),
+                        )
                     },
                 )
             }

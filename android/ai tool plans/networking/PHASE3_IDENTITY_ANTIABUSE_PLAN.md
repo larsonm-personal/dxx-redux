@@ -3,11 +3,13 @@
 ## Goal
 
 Complete the remaining Phase 3 items from NETWORKING_PLAN.md:
+
 1. Google Play Games identity verification (identity.rs)
 2. Kicked-player rejoin prevention
 3. Lobby codes for invite-only sessions
 
 Deferred to later:
+
 - Proof-of-work fallback (complex client-side, not needed for initial release)
 - "Verified only" lobby setting (needs identity.rs deployed + real GPGS creds first)
 
@@ -32,6 +34,7 @@ pub async fn verify_gpgs_token(
 ```
 
 Flow:
+
 1. POST https://oauth2.googleapis.com/token with authorization_code grant
 2. Parse response for access_token
 3. GET https://www.googleapis.com/games/v1/players/me with Bearer access_token
@@ -49,6 +52,7 @@ On any error: return VerifyResult::Failed with descriptive reason.
 ### 3. ws_handler.rs -- Wire identity verification
 
 In AUTHENTICATE handler:
+
 - If skip_gpgs_verify: use play_games_token as identity key (current behavior)
 - If not skip: call identity::verify_gpgs_token()
 - On failure: send AuthFail and disconnect
@@ -94,12 +98,12 @@ Add `pub mod identity;`
 
 ## Files Modified
 
-| File | Changes |
-|------|---------|
-| server/src/identity.rs | New: GPGS token verification |
-| server/src/config.rs | Add skip_gpgs_verify field |
-| server/src/lib.rs | Add pub mod identity |
-| server/src/ws_handler.rs | Wire identity, kicked rejoin, lobby codes |
-| server/src/lobby.rs | Add kicked_players, code fields |
-| server/src/protocol.rs | Add lobby_code fields, has_code |
-| server/tests/integration.rs | New tests, update TestServer config |
+| File                        | Changes                                   |
+| --------------------------- | ----------------------------------------- |
+| server/src/identity.rs      | New: GPGS token verification              |
+| server/src/config.rs        | Add skip_gpgs_verify field                |
+| server/src/lib.rs           | Add pub mod identity                      |
+| server/src/ws_handler.rs    | Wire identity, kicked rejoin, lobby codes |
+| server/src/lobby.rs         | Add kicked_players, code fields           |
+| server/src/protocol.rs      | Add lobby_code fields, has_code           |
+| server/tests/integration.rs | New tests, update TestServer config       |

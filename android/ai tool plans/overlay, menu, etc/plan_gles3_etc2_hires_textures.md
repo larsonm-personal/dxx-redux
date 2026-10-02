@@ -1,12 +1,15 @@
 # Plan: Compressed Hires Textures via GLES 3.0 Shim
 
 ## Problem
+
 Hires texture replacement loads only 7% on Android emulator. Root causes:
+
 1. Game uses GLES 1.1 -- ETC2 compressed textures require GLES 3.0
 2. `ogl_cache_level_textures()` skips BM_FLAG_PAGED_OUT bitmaps
 3. Metric reports hires/total instead of hires/available
 
 ## Approach
+
 - GLES 3.0 upgrade with compartmentalized fixed-function shim (new files only)
 - ETC2 compressed texture uploads (8x GPU memory savings, full RGBA)
 - Eager PNG loading for paged-out bitmaps

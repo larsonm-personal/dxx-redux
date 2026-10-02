@@ -68,8 +68,8 @@ int main()
 	automation_raw[6] = -2000;
 	automation_touch[6] = 1;
 	const android_axis_generation automation_generation =
-		android_axis_mailbox_publish_automation(automation_raw, automation_touch,
-		                                        6, automation_raw[6], 1);
+	    android_axis_mailbox_publish_automation(automation_raw, automation_touch,
+	                                            6, automation_raw[6], 1);
 	android_axis_mailbox_publish(1, 9999, 0);
 	assert(android_axis_mailbox_take_snapshot(&snapshot));
 	assert(snapshot.automation_active);
@@ -83,7 +83,7 @@ int main()
 	android_axis_mailbox_mark_applied(&snapshot, dispatch_count(snapshot));
 
 	const android_axis_generation release_generation =
-		android_axis_mailbox_release_automation();
+	    android_axis_mailbox_release_automation();
 	assert(release_generation > automation_generation);
 	assert(android_axis_mailbox_take_snapshot(&snapshot));
 	assert(!snapshot.automation_active);

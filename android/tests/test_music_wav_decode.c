@@ -29,12 +29,18 @@ int main(void)
 		for (bits = 8; bits <= 16; bits += 8) {
 			unsigned bytes = (unsigned) (2 * channels * bits / 8);
 			memset(wav, 0, sizeof(wav));
-			memcpy(wav, "RIFF", 4); put32(wav + 4, 36 + bytes);
-			memcpy(wav + 8, "WAVEfmt ", 8); put32(wav + 16, 16);
-			put16(wav + 20, 1); put16(wav + 22, (unsigned) channels);
-			put32(wav + 24, 22050); put32(wav + 28, (unsigned) (22050 * channels * bits / 8));
-			put16(wav + 32, (unsigned) (channels * bits / 8)); put16(wav + 34, (unsigned) bits);
-			memcpy(wav + 36, "data", 4); put32(wav + 40, bytes);
+			memcpy(wav, "RIFF", 4);
+			put32(wav + 4, 36 + bytes);
+			memcpy(wav + 8, "WAVEfmt ", 8);
+			put32(wav + 16, 16);
+			put16(wav + 20, 1);
+			put16(wav + 22, (unsigned) channels);
+			put32(wav + 24, 22050);
+			put32(wav + 28, (unsigned) (22050 * channels * bits / 8));
+			put16(wav + 32, (unsigned) (channels * bits / 8));
+			put16(wav + 34, (unsigned) bits);
+			memcpy(wav + 36, "data", 4);
+			put32(wav + 40, bytes);
 			memset(wav + 44, bits == 8 ? 128 : 0, bytes);
 			if (bits == 8) {
 				wav[44] = 0;

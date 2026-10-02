@@ -8,14 +8,14 @@ Android Redbook track changes while playing Obsidian from a Macplay image.
 ## Plan
 
 - [x] Add phase timing around every synchronous track-switch operation and
-  reproduce repeated transitions with maintained automation
+      reproduce repeated transitions with maintained automation
 - [x] Identify the blocking ownership boundary using device diagnostics and
-  code inspection
+      code inspection
 - [x] Implement a race-safe nonblocking transition without changing desktop
-  playback behavior
+      playback behavior
 - [x] Extend integration coverage for rapid live track replacement and timing
 - [x] Run scoped quality, Android builds and tests, Windows parity builds, and
-  record the results
+      record the results
 
 ## Constraints
 

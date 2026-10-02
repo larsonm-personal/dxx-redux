@@ -217,7 +217,6 @@ strong hypothesis
 Do not combine these into one broad steering rewrite. Each behavior change
 should have its own before/after live evidence
 
-
 ## Implementation results
 
 The user requested automated reproduction and comparison rather than manual

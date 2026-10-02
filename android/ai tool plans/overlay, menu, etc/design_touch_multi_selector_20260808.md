@@ -10,20 +10,20 @@ runtime implementation is part of this tranche.
 ## Plan
 
 - [x] Inspect the touch control schema, layout persistence, radial-menu runtime,
-  and editor placement/configuration flows
+      and editor placement/configuration flows
 - [x] Propose the multi-selector geometry, live magnification, gesture state
-  machine, commit/cancel behavior, and D2 alternate-row behavior
+      machine, commit/cancel behavior, and D2 alternate-row behavior
 - [x] Recommend editor controls, defaults, placement constraints, migration, and
-  test seams
+      test seams
 - [x] List open product decisions with recommended initial answers
 - [x] Mark this design tranche complete
 
 ## Feedback refinement plan
 
 - [x] Confirm how existing Android direct actions cross onto the game thread and
-  whether an exact weapon-selection hook already exists
+      whether an exact weapon-selection hook already exists
 - [x] Revise magnification, bounded scrolling, D2 fixed-tier rows, and inventory
-  filtering based on product feedback
+      filtering based on product feedback
 - [x] Replace resolved open questions and update implementation/test phases
 - [x] Mark the feedback refinement complete
 

@@ -40,11 +40,17 @@ class FileSetContentManagerTest {
         assertEquals("", playable.activationError)
         assertTrue(manager.buildLaunchPaths("d2").isEmpty())
         assertTrue(catalog.resourcesFor(null).isEmpty())
-        val publication = catalog.publish(temporaryFolder.newFolder("incomplete-game"), "global",
-            mapOf(vertigo.key to ""))
+        val publication =
+            catalog.publish(
+                temporaryFolder.newFolder("incomplete-game"),
+                "global",
+                mapOf(vertigo.key to ""),
+            )
         val entries = org.json.JSONObject(publication.manifest).getJSONArray("entries")
-        val error = (0 until entries.length()).map { entries.getJSONObject(it) }
-            .single { it.getString("descriptor").endsWith("d2x.mn2") }
+        val error =
+            (0 until entries.length())
+                .map { entries.getJSONObject(it) }
+                .single { it.getString("descriptor").endsWith("d2x.mn2") }
         assertEquals(vertigo.activationError, error.getString("activation_error"))
         assertTrue(File(publication.discoveryDir, error.getString("alias")).isFile)
     }
@@ -56,7 +62,14 @@ class FileSetContentManagerTest {
         File(setDir, "D2X.HOG").writeText("unreadable archive")
         val manager = FileSetContentManager(setDir)
         manager.reconcile()
-        assertTrue(manager.buildMissionLaunchCatalog("d2").missions.single().activationError.isNotEmpty())
+        assertTrue(
+            manager
+                .buildMissionLaunchCatalog("d2")
+                .missions
+                .single()
+                .activationError
+                .isNotEmpty(),
+        )
         assertTrue(manager.buildLaunchPaths("d2").isEmpty())
     }
 
@@ -117,7 +130,14 @@ class FileSetContentManagerTest {
         assertTrue(File(projection, "missions/d2x.mn2").isFile)
         assertTrue(File(setDir, "descent2.hog").isFile)
         assertFalse(File(setDir, "D2X.HOG").exists())
-        assertEquals(entry.id, manager.reconcile().entries.single().id)
+        assertEquals(
+            entry.id,
+            manager
+                .reconcile()
+                .entries
+                .single()
+                .id,
+        )
         manager.setEnabled(entry.id, false)
         val disabled = manager.buildProjection("d2")
         assertFalse(File(disabled, "missions/D2X.HOG").exists())
@@ -214,7 +234,12 @@ class FileSetContentManagerTest {
         val setDir = temporaryFolder.newFolder("toggle")
         File(setDir, "extra.hog").writeText("extra")
         val manager = FileSetContentManager(setDir)
-        val id = manager.reconcile().entries.single().id
+        val id =
+            manager
+                .reconcile()
+                .entries
+                .single()
+                .id
 
         manager.setEnabled(id, false)
         assertFalse(manager.listEntries().single().enabled)
@@ -276,7 +301,12 @@ class FileSetContentManagerTest {
         val setDir = temporaryFolder.newFolder("delete")
         File(setDir, "extra.hog").writeText("extra")
         val manager = FileSetContentManager(setDir)
-        val id = manager.reconcile().entries.single().id
+        val id =
+            manager
+                .reconcile()
+                .entries
+                .single()
+                .id
         assertTrue(File(manager.buildProjection("d2"), "extra.hog").isFile)
 
         assertTrue(manager.deleteEntry(id))

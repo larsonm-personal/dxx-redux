@@ -72,15 +72,27 @@ for distro in ubuntu fedora; do
     export FIXTURE_DISTRO="$distro"
     rm -f "$TEST_ROOT/package-installed"
     for failure in FIXTURE_DOWNLOAD_FAIL FIXTURE_PACKAGE_FAIL; do
-        if (export "$failure=1"; run); then echo "Accepted $failure" >&2; exit 1; fi
+        if (
+            export "$failure=1"
+            run
+        ); then
+            echo "Accepted $failure" >&2
+            exit 1
+        fi
         assert_clean
         [ ! -e "$TEST_ROOT/package-installed" ]
     done
-    if FIXTURE_PACKAGE_VERSION=8.0.0 run; then echo 'Accepted wrong installed version' >&2; exit 1; fi
+    if FIXTURE_PACKAGE_VERSION=8.0.0 run; then
+        echo 'Accepted wrong installed version' >&2
+        exit 1
+    fi
     assert_clean
     rm "$TEST_ROOT/package-installed"
     for point in download package; do
-        if FIXTURE_CRASH="$point" run; then echo "Did not crash at $point" >&2; exit 1; fi
+        if FIXTURE_CRASH="$point" run; then
+            echo "Did not crash at $point" >&2
+            exit 1
+        fi
         [ -d "$STATE/work" ]
         if [ "$point" = package ]; then
             FIXTURE_DOWNLOAD_FAIL=1 run
@@ -101,15 +113,24 @@ export FIXTURE_DISTRO=other
 mkdir "$DEST"
 printf preserve >"$DEST/sentinel"
 make_archive 8.0.0
-if run; then echo 'Accepted wrong tarball version' >&2; exit 1; fi
+if run; then
+    echo 'Accepted wrong tarball version' >&2
+    exit 1
+fi
 [ "$(cat "$DEST/sentinel")" = preserve ]
 assert_clean
 make_archive 9.0.0
-if FIXTURE_PUBLISH_FAIL=1 run; then echo 'Accepted failed publication' >&2; exit 1; fi
+if FIXTURE_PUBLISH_FAIL=1 run; then
+    echo 'Accepted failed publication' >&2
+    exit 1
+fi
 [ "$(cat "$DEST/sentinel")" = preserve ]
 assert_clean
 for point in download backup publish; do
-    if FIXTURE_CRASH="$point" run; then echo "Did not crash at $point" >&2; exit 1; fi
+    if FIXTURE_CRASH="$point" run; then
+        echo "Did not crash at $point" >&2
+        exit 1
+    fi
     [ -d "$STATE/work" ]
     # Admit an existing system package to verify recovery happens before cached return
     echo 9.0.0 >"$TEST_ROOT/package-installed"
@@ -125,6 +146,9 @@ FIXTURE_DOWNLOAD_FAIL=1 run
 FIXTURE_DOWNLOAD_FAIL=1 run
 assert_clean
 rm "$TEST_ROOT/pwsh"
-if FIXTURE_ARCH=aarch64 run; then echo 'Accepted unsupported bootstrap architecture' >&2; exit 1; fi
+if FIXTURE_ARCH=aarch64 run; then
+    echo 'Accepted unsupported bootstrap architecture' >&2
+    exit 1
+fi
 assert_clean
 echo 'PASS: tarball staged validation, rollback, SIGKILL publication recovery, cached reuse and architecture policy'

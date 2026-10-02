@@ -2,21 +2,27 @@
 // Owned by the host driver, which selects and stages the pack before resolving
 // these placeholders.
 [
-    {"_info": {
-        "description": "Launch a seeded random preview level from a staged mission pack",
-        "games": ["d1", "d2"],
-        "_standalone": false,
-        "_owner": "test_random_level_preview"
-    }},
-    {"action": "enter_launcher"},
-    {"action": "setup_command", "command": "switch_set", "args": {"name": "default"}},
-    {"action": "import_mission_zip", "file": "${MISSION_ZIP}",
-     "label": "random_level_preview", "display_name": "${MISSION_ZIP}"},
+    {
+        "_info": {
+            "description": "Launch a seeded random preview level from a staged mission pack",
+            "games": ["d1", "d2"],
+            "_standalone": false,
+            "_owner": "test_random_level_preview",
+        },
+    },
+    { "action": "enter_launcher" },
+    { "action": "setup_command", "command": "switch_set", "args": { "name": "default" } },
+    {
+        "action": "import_mission_zip",
+        "file": "${MISSION_ZIP}",
+        "label": "random_level_preview",
+        "display_name": "${MISSION_ZIP}",
+    },
     {
         "action": "launch_random_level_preview",
         "label": "host-selected mission pack",
         "mod_file": "${MISSION_ZIP}",
         "game": "${GAME}",
-        "seed": "${SEED}"
-    }
+        "seed": "${SEED}",
+    },
 ]

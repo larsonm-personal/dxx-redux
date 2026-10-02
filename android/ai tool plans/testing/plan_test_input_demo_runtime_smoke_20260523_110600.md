@@ -18,7 +18,7 @@
 - Root cause: `d1/main/game.c:init_cockpit()` was corrupted by an accidental splice of input-demo replay/profiling code. That left Android-only profiling calls and replay-step logic inside cockpit initialization, which broke the Windows host build used by the runtime smoke runner.
 - Fix: restore `init_cockpit()` to the normal D1 cockpit/render-buffer setup path and remove the stray replay/profiling block from that function.
 - Focused validation:
-	- `android/tests/test_input_demo_runtime_smoke.ps1 -Game d1`
-	- `android/tests/test_input_demo_runtime_smoke.ps1`
+  - `android/tests/test_input_demo_runtime_smoke.ps1 -Game d1`
+  - `android/tests/test_input_demo_runtime_smoke.ps1`
 - Outcome: both D1 and D2 runtime smoke paths pass. D1 now rebuilds cleanly and reaches replay; the full smoke run reports `PASS d1` and `PASS d2`.
 - Residual note: the D2 smoke run still prints RNG mismatch lines while reporting `PASS d2` because the smoke test keys off the replay result trailer, not RNG-trace parity.

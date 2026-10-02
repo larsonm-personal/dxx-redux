@@ -19,7 +19,9 @@ class StatePersistenceContractsTest(unittest.TestCase):
         handler_start = self.meta_actions.index("int android_handle_ingame_saveload_request(void)", load_start)
         save_body = self.meta_actions[save_start:load_start]
         load_body = self.meta_actions[load_start:handler_start]
-        handler_body = self.meta_actions[handler_start:self.meta_actions.index("if (g_android_autosave_request_kind)", handler_start)]
+        handler_body = self.meta_actions[
+            handler_start : self.meta_actions.index("if (g_android_autosave_request_kind)", handler_start)
+        ]
 
         self.assertLess(save_body.index("memset(desc"), save_body.index("multi_send_save_game"))
         self.assertLess(save_body.index("multi_send_save_game"), save_body.index("multi_save_game"))
@@ -69,7 +71,12 @@ class StatePersistenceContractsTest(unittest.TestCase):
         writer = self.coop.index("static void coop_write_progress_inventory_file")
         loader = self.coop.index("int coop_load_progress_inventory", writer)
         writer_body = self.coop[writer:loader]
-        for token in ('"%s.tmp"', "PHYSFS_flush(fp)", "PHYSFS_close(fp) && write_ok", "coop_progress_inventory_publish"):
+        for token in (
+            '"%s.tmp"',
+            "PHYSFS_flush(fp)",
+            "PHYSFS_close(fp) && write_ok",
+            "coop_progress_inventory_publish",
+        ):
             self.assertIn(token, writer_body)
         body = self.coop[loader : self.coop.index("void coop_write_progress_json", loader)]
         apply = body.index("coop_apply_record_to_player")
@@ -140,7 +147,10 @@ class StatePersistenceContractsTest(unittest.TestCase):
     def test_resume_metadata_identity_precedes_publication(self) -> None:
         source = (ROOT / "android/app/src/main/cpp/jni_resume_save.cpp").read_text(encoding="utf-8")
         start = source.index("static bool read_resume_candidate")
-        self.assertLess(source.index("save_metadata_path_identity_error(path, meta)", start), source.index("out->meta = meta", start))
+        self.assertLess(
+            source.index("save_metadata_path_identity_error(path, meta)", start),
+            source.index("out->meta = meta", start),
+        )
         self.assertLess(source.index("save_path_is_coop(path.c_str())", start), source.index("out->meta = meta", start))
         for reason in (
             "metadata_game_path_mismatch",
@@ -151,7 +161,10 @@ class StatePersistenceContractsTest(unittest.TestCase):
         ):
             self.assertIn(reason, source)
         explorer = source.index("static json save_explorer_slot_json")
-        self.assertLess(source.index("const char *identity_error", explorer), source.index("identity_error ? identity_error", explorer))
+        self.assertLess(
+            source.index("const char *identity_error", explorer),
+            source.index("identity_error ? identity_error", explorer),
+        )
 
     def test_single_player_restore_rejects_coop_save_before_header_parse(self) -> None:
         for game in ("d1", "d2"):

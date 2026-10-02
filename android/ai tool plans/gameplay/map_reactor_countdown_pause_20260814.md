@@ -17,7 +17,7 @@ Status: implementation complete, focused validation complete
 ## Request
 
 Add a third Android automap Settings-tray action beside the existing secrets
-and objectives actions.  The new action pauses or resumes an active reactor
+and objectives actions. The new action pauses or resumes an active reactor
 countdown without setting the classic `cheats.enabled` / `CHEATER!` state.
 Gate all three gameplay actions behind one pilot-backed launcher preference,
 shown below Boss health bar as:

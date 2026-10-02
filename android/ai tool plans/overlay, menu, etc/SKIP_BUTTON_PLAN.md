@@ -1,10 +1,12 @@
 # Skip Button Overlay for Cutscenes/Briefings/Movies
 
 ## Problem
+
 There is no touch interface to skip movies, briefings, or cutscenes on Android.
 On PC, ESC skips these screens, but there is no on-screen button to tap.
 
 ## Solution
+
 Add a circular "Skip" button in the upper-right corner that appears only during
 skippable screens (movies, briefings). Tapping it injects an ESC keypress.
 

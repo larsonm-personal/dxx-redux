@@ -18,9 +18,7 @@ class StrictJniUtf8Contracts(unittest.TestCase):
         self.assertNotIn("NewStringUTF", source)
 
     def test_saf_uri_conversion_is_strict_and_precedes_callback(self) -> None:
-        source = (ROOT / "android/app/src/main/cpp/jni_saf.c").read_text(
-            encoding="utf-8"
-        )
+        source = (ROOT / "android/app/src/main/cpp/jni_saf.c").read_text(encoding="utf-8")
         conversion = source.index("dxx_jni_string_from_utf8(env, content_uri)")
         callback = source.index("CallIntMethod", conversion)
         self.assertLess(conversion, callback)
@@ -29,14 +27,20 @@ class StrictJniUtf8Contracts(unittest.TestCase):
         self.assertNotIn("NewStringUTF", source)
 
     def test_midi_paths_and_json_use_strict_shared_conversion(self) -> None:
-        source = (ROOT / "android/app/src/main/cpp/jni_midi_preview.c").read_text(
-            encoding="utf-8"
-        )
+        source = (ROOT / "android/app/src/main/cpp/jni_midi_preview.c").read_text(encoding="utf-8")
         self.assertNotIn("GetStringUTFChars", source)
         self.assertNotIn("ReleaseStringUTFChars", source)
         self.assertNotIn("NewStringUTF", source)
-        for argument in ("jpath", "jhog", "jsong", "jfilesDir", "jsourceFilename",
-                         "jextension", "jhogPath", "jentryName"):
+        for argument in (
+            "jpath",
+            "jhog",
+            "jsong",
+            "jfilesDir",
+            "jsourceFilename",
+            "jextension",
+            "jhogPath",
+            "jentryName",
+        ):
             with self.subTest(argument=argument):
                 self.assertIn(f"dxx_jni_string_to_utf8(env, {argument},", source)
         self.assertGreaterEqual(source.count("dxx_jni_string_from_utf8"), 2)

@@ -1,10 +1,12 @@
 # Level 6 replay analysis 2026-05-08 193201
 
 ## Goal
+
 - determine why the new D2 level 6 demo fails to replay
 - decide whether the earliest hidden drift matches the recent level 6 AI awareness and visibility RNG failure pattern or a different replay bug class
 
 ## Steps
+
 - [completed] generate replay artifacts for the failing demo with replay probe logging enabled
 - [completed] identify the earliest meaningful replay mismatch from result, state trace, and RNG trace outputs
 - [completed] inspect `ai_schedule_probe.log` around the earliest mismatch to see whether `probe_ai_awareness_roll`, `probe_ai_visibility`, or `probe_ai_schedule` explain the first extra RNG consumer
@@ -12,6 +14,7 @@
 - [completed] add generic record-side AI schedule and RNG-branch captures so future recordings carry enough data to compare against replay without frame- or obj-specific probes
 
 ## Notes
+
 - initial hypothesis: because this is another D2 level 6 failure immediately after the previous awareness-roll issue, the new demo may diverge from the same class of hidden AI state drift, likely a replay-only awareness roll or visibility transition that consumes default RNG before the later visible failure
 - cheap check: run the failing demo through the headless D2 replay path with `-inputdemo-debug-log` and `-inputdemo-rng-trace`, then compare the first RNG mismatch frame against the new generalized `probe_ai_awareness_roll` and `probe_ai_visibility` entries in `ai_schedule_probe.log`
 - replay output first reports the RNG mismatch at frame 296, but the mismatch line uses gt 12695304, which is the frame 295 checkpoint boundary, so the first hidden drift happens during frame 295 rather than after frame 296 starts

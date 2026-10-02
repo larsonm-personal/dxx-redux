@@ -40,19 +40,19 @@ Out of scope:
 ## Result
 
 - moved cached texmerge logging into shared helper:
-	- `android_merged_wall_log_cached_texmerge(...)` added to
-		`merged_wall_debug.h` and `merged_wall_debug.c`
+  - `android_merged_wall_log_cached_texmerge(...)` added to
+    `merged_wall_debug.h` and `merged_wall_debug.c`
 - removed duplicated `ogl_android_texmerge_log(...)` from both `ogl.c` files
 - D1 and D2 cached-texmerge reuse/create log sites now call the shared helper
 - validation passed:
-	- `run-code-quality.ps1 -Fix`
-	- Android `:app:assembleDebug :app:testDebugUnitTest`
-	- `run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
-	- `diff_vs_upstream.ps1 -Top 20`
+  - `run-code-quality.ps1 -Fix`
+  - Android `:app:assembleDebug :app:testDebugUnitTest`
+  - `run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
+  - `diff_vs_upstream.ps1 -Top 20`
 - `diff_vs_upstream.ps1 -Top 20` churn lines:
-	- `d1/arch/ogl/ogl.c`: `+2173 -50 total 2223`
-	- `d2/arch/ogl/ogl.c`: `+2200 -49 total 2249`
+  - `d1/arch/ogl/ogl.c`: `+2173 -50 total 2223`
+  - `d2/arch/ogl/ogl.c`: `+2200 -49 total 2249`
 - warnings remained non-blocking:
-	- existing `loadgl.h` macro redefinition warnings
-	- existing `ogl_get_free_texture` not-all-control-paths-return warning
-	- Android build also reports `unused function` warnings in `game_introspect.cpp`
+  - existing `loadgl.h` macro redefinition warnings
+  - existing `ogl_get_free_texture` not-all-control-paths-return warning
+  - Android build also reports `unused function` warnings in `game_introspect.cpp`

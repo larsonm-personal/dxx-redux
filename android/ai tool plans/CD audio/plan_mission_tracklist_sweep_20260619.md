@@ -1,9 +1,11 @@
 # Mission tracklist sweep
 
 ## Goal
+
 - Find mission archives with custom audio that still need committed tracklist sidecars
 
 ## Plan
+
 - [x] Inventory existing mission chromaprint sidecars for unnamed tracks
 - [x] Scan mission archives and embedded HOG files for audio files
 - [x] Extract/read candidate readme files for tracklist text
@@ -12,6 +14,7 @@
 - [x] Run scoped validation and update results
 
 ## Results
+
 - Scanned 112 mission archives for direct audio, nested archive audio, and HOG-contained audio
 - Created sidecars for `castaway_redux`, `cererian_1.3`, `nefarious`, `Trine1`, `trine2`, and `ulterior_v1.0.6b`
 - Regenerated chromaprint sidecars for those missions with `-Force -SkipAcoustId`

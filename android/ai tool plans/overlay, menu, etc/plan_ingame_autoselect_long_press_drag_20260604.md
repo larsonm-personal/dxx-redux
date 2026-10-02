@@ -1,6 +1,7 @@
 # In-game Autoselect Long-press/Drag Plan - 2026-06-04
 
 ## Goal
+
 Make the in-game weapon autoselect ordering menus usable without Shift+Up/Down:
 
 - Touch: long-press an item to grab it, drag vertically to reorder, release to drop in place.
@@ -129,11 +130,11 @@ This applies to both D1 and D2, with minimal, matching edits in `d1/` and `d2/`.
 ## Open Design Questions
 
 - Should a quick A tap in a reorder menu do nothing, close the menu, or drop only if already grabbed? The bug text only specifies long-hold A to select and A/B to deselect/drop, so safest behavior is: quick A keeps existing close behavior when not grabbed, A drops when grabbed.
-answer: quick tap within the menu area should do nothing. outside the menu area should close
+  answer: quick tap within the menu area should do nothing. outside the menu area should close
 - Hold threshold: reuse an existing Android menu long-hold value if one exists near pilot delete behavior; otherwise use about 500-700 ms for touch and controller. Avoid the 2 second controller-config long-press threshold unless consistency with pilot delete is desired.
-answer: 300-500ms should be the default if no android value can be loaded
+  answer: 300-500ms should be the default if no android value can be loaded
 - Visual feedback: the existing menu draws only the current row. If grabbed-state feedback is needed, simplest option is to keep selection on the grabbed row and alter prefix/text only under `menu->reorderitems`; anything more elaborate risks larger D1/D2 diffs.
-answer: I want to see drag feedback during drags, and selection feedback. however you want to do that is ok
+  answer: I want to see drag feedback during drags, and selection feedback. however you want to do that is ok
 
 ## Status
 

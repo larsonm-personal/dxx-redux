@@ -46,7 +46,7 @@
     "max_relay_sessions": 100,
 
     // Maximum concurrent WebSocket connections (0 = unlimited)
-    "max_connections": 500
+    "max_connections": 500,
 
     // Dev/test mode -- NEVER enable in production
     // skip_gpgs_verify: false

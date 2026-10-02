@@ -1,9 +1,11 @@
 # Metadata Resume Invalid Station Type Plan
 
 ## Goal
+
 Find and fix the launcher metadata-browser crash: `Error: Invalid station type 48 in fuelcen.c` after analyzing `descent2.hog`, minimizing, and resuming.
 
 ## Tasks
+
 - [x] Read project instructions and inspect the fuel center error path.
 - [x] Trace metadata analysis lifecycle and resume/re-entry behavior.
 - [x] Identify whether fuel-center state, level globals, or PhysFS/runtime init are reused incorrectly.
@@ -12,6 +14,7 @@ Find and fix the launcher metadata-browser crash: `Error: Invalid station type 4
 - [x] Update this plan with findings and validation.
 
 ## Notes
+
 - User saw the first analysis succeed, then resume produced the crash.
 - Suspect stale global level/fuel-center state across repeated metadata analysis or app lifecycle re-entry.
 - `LevelMetadataDialog` was keyed on `refreshTrigger`, so SetupActivity resume could relaunch the same metadata scan just because the launcher refreshed.

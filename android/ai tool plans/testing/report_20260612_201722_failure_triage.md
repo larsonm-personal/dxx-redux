@@ -1,11 +1,13 @@
 # Test report 20260612 201722 failure triage
 
 ## Goal
+
 Investigate the three failures and one timeout from
 `temp/test_reports/report_20260612_201722.md`, preferring root-cause fixes over
 longer timeouts.
 
 ## Plan
+
 - [x] Read project instructions and report failure snippets
 - [x] Inspect full logs and touched test scripts
 - [x] Identify the most actionable failure cluster
@@ -14,6 +16,7 @@ longer timeouts.
 - [x] Run scoped code quality and record outcomes
 
 ## Initial failures
+
 - `test_abort_game_to_main_menu_d2`: harness killed after 120 seconds while the
   runner said the script timeout should be 600 seconds.
 - `test_door45_cover_gpu_regression`: missing
@@ -22,10 +25,10 @@ longer timeouts.
   `Descent [Mac].BIN` for `d1_mac_2nd_bin_cue`.
 
 ## Findings
+
 - `test_abort_game_to_main_menu_d2` was killed by `run_all_tests.ps1` at its
   global 120 second process timeout even though `run_test.ps1` had computed a
-  600 second launcher-script timeout and automation had just advanced to step
-  19. The wrapper now derives JSON5 process timeouts from the script metadata
+  600 second launcher-script timeout and automation had just advanced to step 19. The wrapper now derives JSON5 process timeouts from the script metadata
   and existing launcher minimum so it does not kill the child runner early.
 - `test_door45_cover_gpu_regression` failed because the installed test run
   reported missing `target_cover_gpu.center_a`. The current source already
@@ -37,6 +40,7 @@ longer timeouts.
   attempts fail.
 
 ## Validation
+
 - `test_door45_cover_gpu_regression.json5` passed on the current installed APK.
   Final introspection included `target_cover_gpu.center_a=255`.
 - `run_all_tests.ps1 -Filter test_abort_game_to_main_menu_d2` passed. The

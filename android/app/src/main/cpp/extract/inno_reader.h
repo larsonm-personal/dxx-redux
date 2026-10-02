@@ -170,7 +170,7 @@ int inno_output_names_unique(const inno_archive_t *arc,
  * progress    : optional callback (may be NULL).
  * user_data   : passed to callback.
  *
- * Returns 0 on success, -1 on error.
+ * Returns 0 on success or a negative extraction status on error or cancellation
  */
 int inno_extract_file(inno_archive_t *arc, int file_index,
                       const char *output_path,

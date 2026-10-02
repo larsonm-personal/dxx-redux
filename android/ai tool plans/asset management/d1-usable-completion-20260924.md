@@ -26,7 +26,6 @@ admission and death-camera FX fixes, all 114 host tests and all Android ABIs
 build. Last goal-preceding turn was concrete progress (reproduced/fixed camera
 SIM leak). User's outstanding_bugs.md edits remain untouched
 
-
 ## Active evidence, first continuation
 
 - Full eight-recording paired run: temp/d1-usable-corpus, outer execution
@@ -53,7 +52,6 @@ SIM leak). User's outstanding_bugs.md edits remain untouched
   process; defer Android build/device checks until corpus releases the guard
 
 Do not modify concurrent music-editor work or user outstanding_bugs.md changes
-
 
 ## Multiplayer cadence and presentation follow-up
 
@@ -449,7 +447,7 @@ level palette coincide, so only the D2 image exposed it. check_profile_cockpit
 now calls the ordinary load_palette(Current_level_palette, 0, 1) before drawing,
 matching the engine's return-to-level path. No production palette code changed.
 Scoped quality passes; rebuilt fixture session 21308 is pending, with log
- temp/d1-asset-retirement-palette-build.log. Rerun all integration checks and
+temp/d1-asset-retirement-palette-build.log. Rerun all integration checks and
 inspect fresh D2 PNGs before claiming visual qualification.
 
 The current Android APK was packaged by concurrent controller work at 22:05.
@@ -486,7 +484,7 @@ success cases. No changes to engine simulation or diagnostic trace content.
 
 Session 65582 completed exit 0. Corrected D2 cockpit PNG now has the level's
 colors; D1 original key/camera pixel assertions also pass. Its output is
- temp/d1-asset-retirement-palette-check; binary SHA256 starts 81D17EFD41CB.
+temp/d1-asset-retirement-palette-check; binary SHA256 starts 81D17EFD41CB.
 The D2 gauge foregrounds in this low-level fixture look dark/absent; its D2
 checks currently assert GL validity and camera bounds, not foreground pixels.
 Do not claim full D2 HUD pixel fidelity from it. Investigate fixture state versus
@@ -494,7 +492,7 @@ normal renderer entry before inferring a production regression.
 
 Android session 26526 completed exit 0: all 45 Guide-Bot lifecycle steps pass,
 original app data restoration finished. Evidence is copied under
- temp/d1-asset-retirement-android/device to survive the helper's next retention
+temp/d1-asset-retirement-android/device to survive the helper's next retention
 cycle. Manifest records the APK hash D6DB77965D51..., asset source hashes and
 newer compiled objects for all three ABIs. Device ABI verified x86_64.
 Controller testing resumed on 5554 after our helper finished; 5556 and 5580 also

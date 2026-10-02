@@ -10,11 +10,11 @@ replace it.
 ## Investigation
 
 - [x] Inventory the native headless, JNI/emulator, host normalization, and
-  checked-regression writers.
+      checked-regression writers.
 - [x] Identify the exact path that drops or flattens `mission_intent` and
-  explain why alternating regeneration commands produce different output.
+      explain why alternating regeneration commands produce different output.
 - [x] Check history and existing tests for any deliberate request to disable
-  mission intent output.
+      mission intent output.
 
 ## Implementation
 
@@ -22,7 +22,7 @@ replace it.
 - [x] Preserve deterministic field order and normalization for checked JSON.
 - [x] Remove obsolete reduced mission-intent projection code where safe.
 - [x] Add regression coverage that rejects scalar, missing, or level-only
-  mission classification output.
+      mission classification output.
 
 ## Validation
 

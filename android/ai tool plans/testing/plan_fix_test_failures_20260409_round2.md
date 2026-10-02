@@ -3,12 +3,14 @@
 ## Status: COMPLETE
 
 ## Failures analyzed
+
 1. test_launcher_dpad (FAIL) -- "Main page missing Multiplayer button" at line 52
 2. test_all_extracts (FAIL) -- 2-byte log, no output captured
 
 ## Root causes and fixes
 
 ### 1. test_launcher_dpad
+
 Multiple issues, each fixed:
 
 **a. No state cleanup between tests**
@@ -43,6 +45,7 @@ Fix: Press DPAD_UP 3 times (skip past chips to reach settings buttons like
 Define Controls), then DPAD_CENTER.
 
 ### 2. test_all_extracts (2-byte log)
+
 Pre-existing output capture issue across ALL runs (pass and fail).
 
 Root cause: test_all_extracts calls `& $TEST_SCRIPT @testParams` (test_extract.ps1).
@@ -56,6 +59,7 @@ Fix: Changed test_all_extracts to run test_extract.ps1 as a child process
 of using `&`. This way `exit` in test_extract only kills the child process.
 
 ## Files modified
+
 - android/tests/test_launcher_dpad.ps1
   - Added file_sets.json and setup_introspect.json deletion before launch
   - Replaced raw 5s sleep with Wait-SetupActivityReady (30s timeout)
@@ -67,5 +71,6 @@ of using `&`. This way `exit` in test_extract only kills the child process.
   - Changed `& $TEST_SCRIPT @testParams` to `pwsh @testArgs` (child process)
 
 ## Verification
+
 - test_launcher_dpad: All 5 tests pass (verified on emulator-5554)
 - Code quality: `run-code-quality.ps1 --fix` passes all checks

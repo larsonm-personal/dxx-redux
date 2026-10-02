@@ -21,11 +21,11 @@ hit-testing behavior exactly.
 ## Work
 
 - [x] Record live upstream diff metrics and compare D1/D2 newmenu/listbox
-  residuals after the Kconfig scaled-render extraction
+      residuals after the Kconfig scaled-render extraction
 - [x] Identify the smallest private-state snapshot or draw callback boundary
 - [x] Add focused coverage for centralized behavior. No separate host fixture is
-  needed because no pure state or geometry policy moved; the new unified
-  runtime test exercises the actual canvas transaction
+      needed because no pure state or geometry policy moved; the new unified
+      runtime test exercises the actual canvas transaction
 - [x] Implement the shared rendering-state seam and compact mirrored adapters
 - [x] Re-audit residuals and leave high-coupling input/hit-testing code local
 - [x] Run scoped code quality and `git diff --check`

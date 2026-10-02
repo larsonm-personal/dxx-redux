@@ -1,6 +1,7 @@
 # Launcher Autoselect Save Only Mismatch Plan - 2026-06-04
 
 ## Goal
+
 Keep the launcher autoselect Save button inactive unless the native scan reports at least one pilot file ordering mismatch for the active game.
 
 Switching between Descent 1 and Descent 2, resetting visible list state, or other page-local twiddling should not activate Save by itself.

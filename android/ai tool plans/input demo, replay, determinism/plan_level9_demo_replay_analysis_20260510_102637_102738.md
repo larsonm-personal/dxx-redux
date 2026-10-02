@@ -1,11 +1,13 @@
 # Level 9 replay analysis 2026-05-10 102637 102738
 
 ## Goal
+
 - determine whether the two new D2 level 9 save-checkpoint failures share the same upstream control-flow split
 - use the bundled rng traces, recorded frame diagnostics, and replay owner logs before adding more instrumentation
 - decide whether the new v26 checkpoint recordings validate the recent object-signature restore fix or expose a different engine nondeterminism
 
 ## Steps
+
 - [completed] rerun `102637` with state trace, rng trace, and durable replay probes enabled
 - [completed] compare `102637` recorded vs replay traces far enough to replace the later `sig=21240` symptom with the first player-owned slot mismatch at `sig=21231`
 - [completed] inspect the owning weapon-vs-robot collision path and add durable probes for accept/skip plus the unconditional badass-explosion path
@@ -16,6 +18,7 @@
 - [in_progress] summarize whether the two failures collapse to one root cause and whether another instrumentation hop or engine fix is warranted
 
 ## Notes
+
 - target demos:
   - `android/regression_demos/d2_descent2_level9_20260510_102637.dximdemo`
   - `android/regression_demos/d2_descent2_level9_20260510_102738.dximdemo`

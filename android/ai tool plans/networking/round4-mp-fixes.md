@@ -1,6 +1,7 @@
 # Round 4 MP Fixes
 
 ## Items
+
 1. Host game defaults persistence + scrollable dialog + game-specific presets
 2. Swap net events/stats overlay positions (admin tray + overlay panels)
 3. Net events status: "connected (direct/relay)" + holepunch method + host/client
@@ -9,6 +10,7 @@
 6. MPDIAG extra newlines (strip trailing whitespace in NetLog.log)
 
 ## Implementation Order
+
 - [x] 6. MPDIAG extra newlines - NetLog.kt strip
 - [x] 2. Swap overlay positions
 - [x] 3. Net events status detail

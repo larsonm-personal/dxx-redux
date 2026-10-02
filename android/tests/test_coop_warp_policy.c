@@ -15,11 +15,11 @@ int main(void)
 	int failures = 0;
 
 	failures += expect_int("below minimum distance blocked", 0,
-		coop_warp_distance_allows(COOP_WARP_DISTANCE_THRESHOLD - 1));
+	                       coop_warp_distance_allows(COOP_WARP_DISTANCE_THRESHOLD - 1));
 	failures += expect_int("minimum distance allowed", 1,
-		coop_warp_distance_allows(COOP_WARP_DISTANCE_THRESHOLD));
+	                       coop_warp_distance_allows(COOP_WARP_DISTANCE_THRESHOLD));
 	failures += expect_int("above minimum distance allowed", 1,
-		coop_warp_distance_allows(COOP_WARP_DISTANCE_THRESHOLD + F1_0));
+	                       coop_warp_distance_allows(COOP_WARP_DISTANCE_THRESHOLD + F1_0));
 
 	if (failures)
 		return 1;

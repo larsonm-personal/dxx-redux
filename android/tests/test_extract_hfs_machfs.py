@@ -52,9 +52,7 @@ class ExtractHfsMachfsTests(unittest.TestCase):
                 with self.subTest(name=name):
                     volume = FakeFolder({name: FakeFile(b"bad")})
                     with self.assertRaises(ValueError):
-                        MODULE.extract_folder(
-                            volume, root, root, FakeFolder, FakeFile, self.budget(root)
-                        )
+                        MODULE.extract_folder(volume, root, root, FakeFolder, FakeFile, self.budget(root))
                     self.assertEqual(sentinel.read_bytes(), b"safe")
 
     def test_enforces_entry_file_and_total_limits(self):
@@ -70,9 +68,7 @@ class ExtractHfsMachfsTests(unittest.TestCase):
             with self.subTest(limits=limits), tempfile.TemporaryDirectory() as temp:
                 root = pathlib.Path(temp) / "root"
                 with self.assertRaises(ValueError):
-                    MODULE.extract_folder(
-                        volume, root, root, FakeFolder, FakeFile, self.budget(root, **limits)
-                    )
+                    MODULE.extract_folder(volume, root, root, FakeFolder, FakeFile, self.budget(root, **limits))
 
 
 if __name__ == "__main__":

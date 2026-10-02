@@ -8,14 +8,14 @@ Status: implemented, with emulator integration coverage. Physical-camera and net
 
 Paths below are relative to `android/app/src/main/` unless otherwise stated.
 
-| Area | Existing behavior and proposed use |
-| --- | --- |
-| `java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt` | Contains the scanning view, **Your Hosted Lobby**, manual-IP dialog, and its cancellable join job. Add QR controls here; `LobbyScreen.kt` is the separate matchmaking lobby |
-| `java/com/dxxredux/app/lobby/LobbyService.kt` | `tryJoinLobbyByIp(..., probeEngine = true)` queries a launcher lobby and can probe a native game. Reuse this path for scans and links |
-| `java/com/dxxredux/app/multiplayer/NetworkConstants.kt` | LAN lobby UDP port is 42400; engine default is 42424 for both D1 and D2. Lobby announcements carry the actual engine port and game variant |
-| `java/com/dxxredux/app/MainActivity.kt` | Already polls `nativeIsHostSelectingPlayers()` to show the Start Game overlay. Reuse that exact state for QR visibility |
-| Repository `d1/main/net_udp.c` and `d2/main/net_udp.c` | Both set and clear `g_host_selecting_players` around the host player-selection menu. No new native lobby hook is needed |
-| `AndroidManifest.xml` | `SetupActivity` is the exported launcher; `MainActivity` runs in `:game`. There is currently no URI handler or camera permission |
+| Area                                                    | Existing behavior and proposed use                                                                                                                                          |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt`  | Contains the scanning view, **Your Hosted Lobby**, manual-IP dialog, and its cancellable join job. Add QR controls here; `LobbyScreen.kt` is the separate matchmaking lobby |
+| `java/com/dxxredux/app/lobby/LobbyService.kt`           | `tryJoinLobbyByIp(..., probeEngine = true)` queries a launcher lobby and can probe a native game. Reuse this path for scans and links                                       |
+| `java/com/dxxredux/app/multiplayer/NetworkConstants.kt` | LAN lobby UDP port is 42400; engine default is 42424 for both D1 and D2. Lobby announcements carry the actual engine port and game variant                                  |
+| `java/com/dxxredux/app/MainActivity.kt`                 | Already polls `nativeIsHostSelectingPlayers()` to show the Start Game overlay. Reuse that exact state for QR visibility                                                     |
+| Repository `d1/main/net_udp.c` and `d2/main/net_udp.c`  | Both set and clear `g_host_selecting_players` around the host player-selection menu. No new native lobby hook is needed                                                     |
+| `AndroidManifest.xml`                                   | `SetupActivity` is the exported launcher; `MainActivity` runs in `:game`. There is currently no URI handler or camera permission                                            |
 
 ## Invitation format
 

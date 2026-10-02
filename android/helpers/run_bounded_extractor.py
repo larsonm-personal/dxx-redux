@@ -21,8 +21,7 @@ def _add_file(files, total, logical, allocated, limits):
     if files > max_files:
         raise RuntimeError(f"extractor exceeded {max_files} output files")
     if logical > max_file_bytes:
-        raise RuntimeError(
-            f"extractor output file exceeded {max_file_bytes} logical bytes")
+        raise RuntimeError(f"extractor output file exceeded {max_file_bytes} logical bytes")
     if total > max_total_bytes:
         raise RuntimeError(f"extractor output exceeded {max_total_bytes} accounted bytes")
     return files, total
@@ -77,20 +76,22 @@ def _measure_posix_tree(root, limits, strict):
                 if before.st_nlink != 1:
                     raise RuntimeError("extractor produced a multiply-linked file")
                 file_fd = os.open(
-                    entry.name, os.O_RDONLY | no_follow | getattr(os, "O_NONBLOCK", 0),
-                    dir_fd=directory_fd)
+                    entry.name, os.O_RDONLY | no_follow | getattr(os, "O_NONBLOCK", 0), dir_fd=directory_fd
+                )
                 try:
                     after = os.fstat(file_fd)
-                    if ((before.st_dev, before.st_ino) != (after.st_dev, after.st_ino)
-                            or not stat.S_ISREG(after.st_mode) or after.st_nlink != 1):
+                    if (
+                        (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino)
+                        or not stat.S_ISREG(after.st_mode)
+                        or after.st_nlink != 1
+                    ):
                         raise RuntimeError("extractor output changed during validation")
                     if after.st_dev != root_device:
                         raise RuntimeError("extractor output crosses a filesystem boundary")
                     allocated = after.st_blocks * 512
                     if strict and after.st_size and allocated < after.st_size:
                         raise RuntimeError("extractor produced a sparse output file")
-                    files, total = _add_file(
-                        files, total, after.st_size, allocated, limits)
+                    files, total = _add_file(files, total, after.st_size, allocated, limits)
                 finally:
                     os.close(file_fd)
             except FileNotFoundError:
@@ -162,10 +163,17 @@ if os.name == "nt":
         ]
 
     class IoCounters(ctypes.Structure):
-        _fields_ = [(name, ctypes.c_ulonglong) for name in (
-            "read_operation_count", "write_operation_count", "other_operation_count",
-            "read_transfer_count", "write_transfer_count", "other_transfer_count",
-        )]
+        _fields_ = [
+            (name, ctypes.c_ulonglong)
+            for name in (
+                "read_operation_count",
+                "write_operation_count",
+                "other_operation_count",
+                "read_transfer_count",
+                "write_transfer_count",
+                "other_transfer_count",
+            )
+        ]
 
     class JobExtendedLimitInformation(ctypes.Structure):
         _fields_ = [
@@ -192,45 +200,56 @@ if os.name == "nt":
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel32.CreateJobObjectW.argtypes = (ctypes.c_void_p, wintypes.LPCWSTR)
     kernel32.CreateJobObjectW.restype = wintypes.HANDLE
-    kernel32.SetInformationJobObject.argtypes = (
-        wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD)
+    kernel32.SetInformationJobObject.argtypes = (wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD)
     kernel32.SetInformationJobObject.restype = wintypes.BOOL
     kernel32.AssignProcessToJobObject.argtypes = (wintypes.HANDLE, wintypes.HANDLE)
     kernel32.AssignProcessToJobObject.restype = wintypes.BOOL
     kernel32.TerminateJobObject.argtypes = (wintypes.HANDLE, wintypes.UINT)
     kernel32.TerminateJobObject.restype = wintypes.BOOL
     kernel32.QueryInformationJobObject.argtypes = (
-        wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD,
-        ctypes.POINTER(wintypes.DWORD))
+        wintypes.HANDLE,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+        ctypes.POINTER(wintypes.DWORD),
+    )
     kernel32.QueryInformationJobObject.restype = wintypes.BOOL
     kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
     kernel32.CloseHandle.restype = wintypes.BOOL
     kernel32.CreateFileW.argtypes = (
-        wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
-        wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE)
+        wintypes.LPCWSTR,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.HANDLE,
+    )
     kernel32.CreateFileW.restype = wintypes.HANDLE
-    kernel32.GetFileInformationByHandle.argtypes = (
-        wintypes.HANDLE, ctypes.c_void_p)
+    kernel32.GetFileInformationByHandle.argtypes = (wintypes.HANDLE, ctypes.c_void_p)
     kernel32.GetFileInformationByHandle.restype = wintypes.BOOL
-    kernel32.GetFinalPathNameByHandleW.argtypes = (
-        wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD)
+    kernel32.GetFinalPathNameByHandleW.argtypes = (wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD)
     kernel32.GetFinalPathNameByHandleW.restype = wintypes.DWORD
     kernel32.GetFileType.argtypes = (wintypes.HANDLE,)
     kernel32.GetFileType.restype = wintypes.DWORD
-    kernel32.GetCompressedFileSizeW.argtypes = (
-        wintypes.LPCWSTR, ctypes.POINTER(wintypes.DWORD))
+    kernel32.GetCompressedFileSizeW.argtypes = (wintypes.LPCWSTR, ctypes.POINTER(wintypes.DWORD))
     kernel32.GetCompressedFileSizeW.restype = wintypes.DWORD
-    kernel32.FindFirstStreamW.argtypes = (
-        wintypes.LPCWSTR, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD)
+    kernel32.FindFirstStreamW.argtypes = (wintypes.LPCWSTR, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD)
     kernel32.FindFirstStreamW.restype = wintypes.HANDLE
     kernel32.FindNextStreamW.argtypes = (wintypes.HANDLE, ctypes.c_void_p)
     kernel32.FindNextStreamW.restype = wintypes.BOOL
     kernel32.FindClose.argtypes = (wintypes.HANDLE,)
     kernel32.FindClose.restype = wintypes.BOOL
     kernel32.DeviceIoControl.argtypes = (
-        wintypes.HANDLE, wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD,
-        ctypes.c_void_p, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD),
-        ctypes.c_void_p)
+        wintypes.HANDLE,
+        wintypes.DWORD,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+        ctypes.POINTER(wintypes.DWORD),
+        ctypes.c_void_p,
+    )
     kernel32.DeviceIoControl.restype = wintypes.BOOL
 
     class ByHandleFileInformation(ctypes.Structure):
@@ -331,8 +350,7 @@ def _measure_windows_tree(root, limits, strict):
         directory_attribute = 0x00000010
         reparse_attribute = 0x00000400
         sparse_attribute = 0x00000200
-        if (not root_info.file_attributes & directory_attribute
-                or root_info.file_attributes & reparse_attribute):
+        if not root_info.file_attributes & directory_attribute or root_info.file_attributes & reparse_attribute:
             raise RuntimeError("extractor output root is not a regular directory")
         root_final = _windows_final_path(root_handle)
         root_prefix = root_final + "\\"
@@ -376,8 +394,7 @@ def _measure_windows_tree(root, limits, strict):
                         _assert_no_windows_streams(entry.path)
                     except FileNotFoundError:
                         if strict:
-                            raise RuntimeError(
-                                "extractor output changed during validation") from None
+                            raise RuntimeError("extractor output changed during validation") from None
                         continue
                     if info.file_attributes & directory_attribute:
                         walk(entry.path)
@@ -393,12 +410,12 @@ def _measure_windows_tree(root, limits, strict):
                         allocated = _windows_allocated_size(entry.path)
                     except FileNotFoundError:
                         if strict:
-                            raise RuntimeError(
-                                "extractor output changed during validation") from None
+                            raise RuntimeError("extractor output changed during validation") from None
                         continue
                     files, total = _add_file(files, total, logical, allocated, limits)
                 finally:
                     kernel32.CloseHandle(handle)
+
         walk(root)
         if shutil.disk_usage(root).free < 50 * 1024 * 1024:
             raise RuntimeError("extractor exhausted the 50 MiB free-space headroom")
@@ -424,12 +441,11 @@ class WindowsJob:
         limits = JobExtendedLimitInformation()
         limits.basic_limit_information.limit_flags = self.KILL_ON_JOB_CLOSE
         if not kernel32.SetInformationJobObject(
-                handle, self.EXTENDED_LIMIT_INFORMATION,
-                ctypes.byref(limits), ctypes.sizeof(limits)):
+            handle, self.EXTENDED_LIMIT_INFORMATION, ctypes.byref(limits), ctypes.sizeof(limits)
+        ):
             self.close()
             raise ctypes.WinError(ctypes.get_last_error())
-        gate_command = [
-            sys.executable, "-I", os.path.realpath(__file__), "--child-gate", "--", *command]
+        gate_command = [sys.executable, "-I", os.path.realpath(__file__), "--child-gate", "--", *command]
         try:
             self.process = subprocess.Popen(
                 gate_command,
@@ -463,16 +479,18 @@ class WindowsJob:
         deadline = time.monotonic() + 5
         while True:
             if not kernel32.QueryInformationJobObject(
-                    self.handle, self.BASIC_ACCOUNTING_INFORMATION,
-                    ctypes.byref(accounting), ctypes.sizeof(accounting), None):
-                cleanup_error = cleanup_error or ctypes.WinError(
-                    ctypes.get_last_error())
+                self.handle,
+                self.BASIC_ACCOUNTING_INFORMATION,
+                ctypes.byref(accounting),
+                ctypes.sizeof(accounting),
+                None,
+            ):
+                cleanup_error = cleanup_error or ctypes.WinError(ctypes.get_last_error())
                 break
             if accounting.active_processes == 0:
                 break
             if time.monotonic() >= deadline:
-                cleanup_error = cleanup_error or RuntimeError(
-                    "extractor process tree did not terminate")
+                cleanup_error = cleanup_error or RuntimeError("extractor process tree did not terminate")
                 break
             time.sleep(0.01)
         if self.process is not None:
@@ -504,8 +522,7 @@ class ProcessCancelled(Exception):
     pass
 
 
-def run_bounded(command, output_dir, timeout_seconds, max_files, max_file_bytes,
-                max_total_bytes, max_diagnostic_bytes):
+def run_bounded(command, output_dir, timeout_seconds, max_files, max_file_bytes, max_total_bytes, max_diagnostic_bytes):
     diagnostics = bytearray()
     diagnostic_exceeded = threading.Event()
     owner = start_owned_process(command)
@@ -559,8 +576,7 @@ def run_bounded(command, output_dir, timeout_seconds, max_files, max_file_bytes,
         print(f"extractor diagnostics exceeded {max_diagnostic_bytes} bytes", file=sys.stderr)
         return 1
     try:
-        measure_tree(
-            output_dir, max_files, max_file_bytes, max_total_bytes, strict=True)
+        measure_tree(output_dir, max_files, max_file_bytes, max_total_bytes, strict=True)
     except RuntimeError as error:
         print(error, file=sys.stderr)
         return 1
@@ -583,8 +599,10 @@ def main(argv):
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
     if not command:
         parser.error("an extractor command is required after --")
-    if min(args.timeout_seconds, args.max_files, args.max_file_bytes,
-           args.max_total_bytes, args.max_diagnostic_bytes) <= 0:
+    if (
+        min(args.timeout_seconds, args.max_files, args.max_file_bytes, args.max_total_bytes, args.max_diagnostic_bytes)
+        <= 0
+    ):
         parser.error("all limits must be positive")
     previous_term_handler = None
     if os.name != "nt" and threading.current_thread() is threading.main_thread():

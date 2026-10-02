@@ -13,13 +13,13 @@ payload files and stale metadata under every mutation and recovery path.
 ## Work plan
 
 - [x] Trace the current file-set mission inventory, Mods UI, import routing,
-  metadata browser, launch mounting, manifests, and deletion paths.
+      metadata browser, launch mounting, manifests, and deletion paths.
 - [x] Define a unified content-entry model that can represent global mod-store
-  entries and active-file-set-owned entries without moving ownership.
+      entries and active-file-set-owned entries without moving ownership.
 - [x] Define enable/disable, ordering, launch, switching, deletion, import, and
-  metadata behavior for every non-base-list file.
+      metadata behavior for every non-base-list file.
 - [x] Specify orphan prevention, reconciliation, transaction boundaries, and
-  focused automated coverage.
+      focused automated coverage.
 - [x] Record recommended implementation phases and open policy choices.
 
 ## Status
@@ -34,52 +34,52 @@ bundles are safely adopted into Mods/Levels.
 ## Implementation progress
 
 - [x] Add `FileSetContentCatalog` with exact base, launcher, player, and managed
-  content classification.
+      content classification.
 - [x] Group same-stem and descriptor-referenced loose mission files into one
-  stable logical owner, including connected shared dependencies.
+      stable logical owner, including connected shared dependencies.
 - [x] Keep malformed descriptors and arbitrary unknown files visible instead
-  of silently dropping them.
+      of silently dropping them.
 - [x] Route the existing included-mission inventory through the catalog so its
-  delete operation removes every owned constituent.
+      delete operation removes every owned constituent.
 - [x] Add focused JVM tests for Panic-style grouping, base exclusion, unknown
-  content, shared ownership, stable IDs, malformed descriptors, and deletion.
+      content, shared ownership, stable IDs, malformed descriptors, and deletion.
 - [x] Persist each owner under `.content`, reconcile loose and staged payloads,
-  and add enabled/order state.
+      and add enabled/order state.
 - [x] Publish the enabled loose-content projection and integrate it with the
-  launch path writer.
+      launch path writer.
 - [x] Move rows and metadata details into Mods/Levels, then remove the old
-  included-missions presentation.
+      included-missions presentation.
 - [x] Serialize all content operations across manager instances and cover
-  concurrent reconciliation from UI, launch, metadata, and automation users.
+      concurrent reconciliation from UI, launch, metadata, and automation users.
 - [x] Recover payloads with damaged owner manifests as visible, deletable
-  `Other content` entries instead of leaving unreachable files.
+      `Other content` entries instead of leaving unreachable files.
 - [x] Run scoped code quality and the focused 63-test catalog, manager,
-  inventory, launch-path, and mod-details suite with zero failures.
+      inventory, launch-path, and mod-details suite with zero failures.
 - [x] Scope existing global mods and audio-source state to each file set, then
-  adopt music payloads without invalidating registered CUE/BIN paths.
+      adopt music payloads without invalidating registered CUE/BIN paths.
 - [x] Scope custom music settings and copied payloads to each file set and
-  expose custom music sets in Mods/Levels with toggle, order, details, and
-  delete actions.
+      expose custom music sets in Mods/Levels with toggle, order, details, and
+      delete actions.
 - [x] Add focused two-set isolation coverage for mission archives, generated
-  launch paths, CD sources, custom music state, and copied music payloads.
+      launch paths, CD sources, custom music state, and copied music payloads.
 - [x] Reconcile content from the setup screen lifecycle on startup, refresh,
-  and set switch instead of depending on Mods/Levels UI composition.
+      and set switch instead of depending on Mods/Levels UI composition.
 - [x] Audit SAF ownership across base links, CD sources, and custom music in
-  every set; revoke only permissions with no remaining cross-set owner.
+      every set; revoke only permissions with no remaining cross-set owner.
 - [x] Run an introspection-driven emulator flow covering loose Panic import,
-  durable adoption, disable, switch isolation, restored state, content delete,
-  set delete, and physical storage cleanup.
+      durable adoption, disable, switch isolation, restored state, content delete,
+      set delete, and physical storage cleanup.
 - [x] Check in `test_unified_file_set_content.jsonc` and run its 18-step
-  launcher automation flow to a file-based PASS on the emulator.
+      launcher automation flow to a file-based PASS on the emulator.
 - [x] Synchronize Compose with the persisted active set and prevent stale
-  content or mod managers from recreating storage after their set is deleted.
+      content or mod managers from recreating storage after their set is deleted.
 - [x] Run a checked-in emulator flow proving a managed loose mission appears
-  in the in-game mission picker when enabled and disappears when disabled.
+      in the in-game mission picker when enabled and disappears when disabled.
 - [x] Exercise shared persisted URI ownership through a real Android document
-  provider, including retention after the first set is deleted and revocation
-  after the final owner is deleted.
+      provider, including retention after the first set is deleted and revocation
+      after the final owner is deleted.
 - [x] Project root-level loose missions under the engine's `missions/` search
-  directory and consume their verified source files after durable adoption.
+      directory and consume their verified source files after durable adoption.
 
 ## Current behavior and gaps
 
@@ -302,5 +302,5 @@ manifest with reconciliation.
 - Show one row per logical owner, not one row per constituent file. The details
   view guarantees every physical file is visible and delete scope is clear.
 - Make file-set identity explicit but quiet: the section can say `From set:
-  <name>` in its summary, while the file-set dialog focuses only on set CRUD,
+<name>` in its summary, while the file-set dialog focuses only on set CRUD,
   size, and switching.

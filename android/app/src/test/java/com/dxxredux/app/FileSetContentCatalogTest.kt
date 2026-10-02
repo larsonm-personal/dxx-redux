@@ -130,7 +130,10 @@ class FileSetContentCatalogTest {
         val entry = FileSetContentCatalog.scan(setDir).single()
 
         assertEquals(FileSetContentCatalog.KIND_DEMO, entry.kind)
-        assertEquals(setOf("run.dximdemo", "run.dximdemo.rngtrace.jsonl", "run.dem"), entry.files.map { it.name }.toSet())
+        assertEquals(
+            setOf("run.dximdemo", "run.dximdemo.rngtrace.jsonl", "run.dem"),
+            entry.files.map { it.name }.toSet(),
+        )
     }
 
     @Test

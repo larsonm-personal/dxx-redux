@@ -19,25 +19,25 @@ The next useful signal is not another frame-targeted probe. It is a symmetric co
 ## Findings
 
 - Added a shared collision-pose helper in `d2/main/collide.c` that emits one event-local snapshot line containing:
-	- player object identity, segment, position, and velocity
-	- weapon object identity, parent identity, segment, position, and velocity
-	- robot identity, segment, shields before and after, dead flag, position, and velocity
-	- collision point
+  - player object identity, segment, position, and velocity
+  - weapon object identity, parent identity, segment, position, and velocity
+  - robot identity, segment, shields before and after, dead flag, position, and velocity
+  - collision point
 - The helper is active for both recorder and replay runs, not replay only
 - The logs are keyed by `step` plus object ids and signatures, so they can be matched even when a new hand-recorded demo lands the same sequence on different frame numbers
 - The local player weapon-vs-robot collision path now emits:
-	- `step=weapon_robot pre_damage`
-	- `step=weapon_robot post_damage`
+  - `step=weapon_robot pre_damage`
+  - `step=weapon_robot post_damage`
 
 ## Validation
 
 - `run-windows-build.ps1 -Target d2`
 - `android/run-code-quality.ps1 -Fix -Paths @('.\d2\main\collide.c')`
-	- completed successfully but reported `No files found to format` for the scoped C path
+  - completed successfully but reported `No files found to format` for the scoped C path
 - Reran replay for `android/temp_game_logs/d2_descent2_level2_20260501_133242.dximdemo`
 - Confirmed the new logs appear in the replay sandbox at the first divergent kill window, including robot `68`, sig `3779`:
-	- frame `783` pre and post damage for the non-lethal hit
-	- frame `784` pre and post damage for the lethal hit that advances the `+400` score event
+  - frame `783` pre and post damage for the non-lethal hit
+  - frame `784` pre and post damage for the lethal hit that advances the `+400` score event
 
 ## Intended Use
 

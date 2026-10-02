@@ -35,6 +35,7 @@ if ($TestSpeedPercent -ne 160 -and ($WriteRegression -or $Mode -eq 'Headed')) {
 $scriptDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
+. (Join-Path $PSScriptRoot 'powershell_compat.ps1')
 . (Join-Path $scriptDir 'test_host_platform.ps1')
 . (Join-Path $scriptDir 'standard_game_data.ps1')
 $missionRoot = if ($MissionMetadataRoot) {
@@ -81,7 +82,7 @@ function Get-GuidebotMissionEntries {
     param([Parameter(Mandatory)][string]$Path)
 
     $text = [IO.File]::ReadAllText($Path, [Text.Encoding]::UTF8)
-    $value = $text | ConvertFrom-Json -NoEnumerate
+    $value = $text | ConvertFrom-CompatibleJsonValue
     $entries = @($value)
     if ($entries.Count -eq 0 -or @($entries | Where-Object {
                 $null -eq $_.PSObject.Properties['levels'] -or
@@ -383,6 +384,7 @@ function Invoke-GuidebotDesktopLevel {
 }
 
 function Get-GuidebotAdb {
+    if (-not $env:ANDROID_SERIAL) { $env:ANDROID_SERIAL = 'emulator-5554' }
     return Resolve-RegressionAndroidSdkTool -DepBase (Get-RegressionDependencyBase -RepoRoot $repoRoot) `
         -Subdir 'platform-tools' -ToolName 'adb' -EnvironmentVariable 'ADB'
 }
@@ -587,7 +589,7 @@ function Write-GuidebotSimulationFile {
     # Take one fresh snapshot per publication instead of reparsing it for every mission
     $existingRecords = @()
     if (Test-Path -LiteralPath $simulationPath -PathType Leaf) {
-        $existingValue = [IO.File]::ReadAllText($simulationPath) | ConvertFrom-Json -NoEnumerate
+        $existingValue = [IO.File]::ReadAllText($simulationPath) | ConvertFrom-CompatibleJsonValue
         $existingRecords = @($existingValue)
     }
     $simulationEntries = foreach ($mission in $entries) {

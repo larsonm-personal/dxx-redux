@@ -1,9 +1,11 @@
 # Trine2 Embedded Soundtrack Investigation - 2026-06-09
 
 ## Goal
+
 Inspect `game_data/mission_files/trine2.zip` for the claimed custom OGG soundtrack, determine where the audio is stored, and update the ZIP music metadata/browser plan so preview, chromaprint, and in-game playback cover this layout.
 
 ## Plan
+
 - [x] Inspect outer ZIP entries, file sizes, descriptors, and song lists.
 - [x] Inspect nested HOG/DXA archives for OGG/MP3/FLAC/WAV/HMP/MID content.
 - [x] Determine how the current launcher/game staging path would expose those tracks to the engine.
@@ -11,6 +13,7 @@ Inspect `game_data/mission_files/trine2.zip` for the claimed custom OGG soundtra
 - [x] Summarize findings and recommended implementation changes.
 
 ## Findings
+
 - `trine2.zip` is about 51.9 MB and has only three outer entries:
   - `trine2.hog`: 53,248,255 bytes uncompressed, 51,912,675 bytes compressed.
   - `trine2.msn`: mission descriptor.
@@ -32,7 +35,9 @@ Inspect `game_data/mission_files/trine2.zip` for the claimed custom OGG soundtra
 - Audio-like payload is 51,260,967 bytes, about 96.3 percent of the HOG payload.
 
 ## Trine 2 Song List
+
 `descent.sng` inside `trine2.hog` lists:
+
 - `descent.ogg`
 - `briefing.ogg`
 - `endlevel.ogg`
@@ -49,6 +54,7 @@ Inspect `game_data/mission_files/trine2.zip` for the claimed custom OGG soundtra
 - `game09.ogg`
 
 `Trine2 music.txt` maps those tracks to credits:
+
 - Title: Verran, `Descent 1 Menu Remix`
 - Exit: Vertigo Fox, `Gettin' Out`
 - Endgame: Vertigo Fox, `Descent 1 End Game remix`
@@ -63,6 +69,7 @@ Inspect `game_data/mission_files/trine2.zip` for the claimed custom OGG soundtra
 - Level 9: Vertigo Fox, `Hunting Shadows`
 
 ## Current In-Game Path
+
 - `ModManager.extractMissionZipForLaunch` stages the whole mission ZIP under `.generated_mission_zips/<zip>/missions`, so `trine2.hog` should be available to the game as a mission HOG.
 - `ModManager.hasEnabledMissionZipBuiltinMusic` already detects music inside a HOG by checking HOG entry extensions against `flac`, `hmp`, `mid`, `mp3`, and `ogg`.
 - `SetupConfigFiles.writeMusicConfigForLaunch` auto-selects built-in/addon music when:
@@ -74,6 +81,7 @@ Inspect `game_data/mission_files/trine2.zip` for the claimed custom OGG soundtra
 - Android's `digi_tsf_music.c` implementation of `mix_play_file` reads `.ogg/.mp3/.flac` through PhysFS first, which is the right path for HOG-contained music.
 
 ## Consequences For The ZIP Music Browser Plan
+
 - HOG-contained compressed audio must be first-class support.
 - Top-level ZIP scanning is insufficient. The scanner must parse HOG directories inside mission ZIPs and detect both:
   - `descent.sng` / `dxx-r.sng`
@@ -88,7 +96,9 @@ Inspect `game_data/mission_files/trine2.zip` for the claimed custom OGG soundtra
 - The broader ZIP music plan now defines that policy as a Game Preferences toggle: `Use mission soundtrack when available`, backed by `use_mission_soundtrack_when_available`, defaulting to true.
 
 ## Other Large ZIPs With HOG-Embedded Audio
+
 A quick scan of the largest mission ZIPs found more examples:
+
 - `cererian_1.3.zip` -> `cererian.hog`: about 61.7 MB audio-like payload.
 - `Trine1.zip` -> `trine1.hog`: about 58.8 MB audio-like payload.
 - `U3AAH.zip` -> `U3AAH.hog`: about 47.8 MB audio-like payload.

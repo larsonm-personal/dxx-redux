@@ -3,6 +3,7 @@
 7 user-reported bugs, 3 additional requirements, 8 implementation phases.
 
 Root causes:
+
 - dual D-pad dispatch (keyboard arrows + joystick buttons simultaneously)
 - kconfig_fill_kb_settings zeroing all keyboard bindings via memset(0xFF)
 - new-player vs reset-all using different default sources
@@ -49,6 +50,7 @@ But it doesn't delete controller_config.json, so the next `android_apply_gamepad
 stale JSON overrides. New player reads the same JSON but through a different code path.
 
 **Fix**:
+
 1. In `nativeResetToDefaults` (android_gamepad_config.cpp ~L172): add `remove(CONFIG_PATH)`.
    SetupActivity already re-creates it from bundled defaults.
 2. Update reset dialog text in SetupActivity.kt: change "In-game joystick settings for every pilot"
@@ -76,11 +78,13 @@ Update claw.json gyro section to match.
 **5b. Register virtual axes 6/7**: joy.c Android init registers 6 axes. Add 2 more:
 axis 6 (Bank L/R) and axis 7 (Slide U/D). These are virtual -- only the gyro "Roll" mode
 uses them, no physical controller sends them.
+
 - joy.c (D1+D2): expand axis_names[] to 8 entries, update loop counts
 - kconfig_get_default_settings (D1+D2): add joy_out[21]=6 (Bank=axis6), joy_out[19]=7 (SlideUD=axis7)
 - android_apply_gamepad_defaults: add matching defaults
 
 **5c. Gyro UI**: Replace binary isAim toggle with tri-state axis mode selector.
+
 - TouchBindings.kt: add AXIS_BANK=6, AXIS_SLIDE_UD=7 + labels + names
 - GyroSettingsDialog: detect 3 modes (AIM: axes 2,3; SLIDE: axes 0,1; ROLL: axes 6,7).
   Add third radio button "Roll + slide up/down".
@@ -104,6 +108,7 @@ individual commands.
 key. The digit key lands on the escort menu window, but the timing/dispatch doesn't work.
 
 **Fix**:
+
 1. In advanced.json and claw.json: replace guide radial KEYCODE_* with META_GUIDE_* names
    (e.g. "Meta: GB: Find Energy"). Center binding: "Meta: GB: Clear Goal".
 2. Remove the `rm.control.id == "Guide"` special case from fireRadialSelection in

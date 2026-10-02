@@ -5,7 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CHECK(c) do { if (!(c)) { fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, #c); exit(1); } } while (0)
+#define CHECK(c)                                                    \
+	do {                                                            \
+		if (!(c)) {                                                 \
+			fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, #c); \
+			exit(1);                                                \
+		}                                                           \
+	} while (0)
 
 #define COMMAND_LENGTH(name, size) size,
 static const int lengths[] = { for_each_multiplayer_command(, COMMAND_LENGTH, ) };
@@ -13,8 +19,8 @@ static const int lengths[] = { for_each_multiplayer_command(, COMMAND_LENGTH, ) 
 static void test_delayed_world_mutations(void)
 {
 	const unsigned mutations[] = { MULTI_SCORE, MULTI_SHIP_STATUS, MULTI_DAMAGE, MULTI_REPAIR, MULTI_COOP_PEER_STATUS,
-		MULTI_ROBOT_POSITION, MULTI_REMOVE_OBJECT, MULTI_DOOR_OPEN, MULTI_TRIGGER,
-		MULTI_PLAYER_EXPLODE, MULTI_SAVE_GAME, MULTI_RESTORE_GAME, MULTI_REWIND_REQUEST };
+		                           MULTI_ROBOT_POSITION, MULTI_REMOVE_OBJECT, MULTI_DOOR_OPEN, MULTI_TRIGGER,
+		                           MULTI_PLAYER_EXPLODE, MULTI_SAVE_GAME, MULTI_RESTORE_GAME, MULTI_REWIND_REQUEST };
 	coop_gameplay_stamp base = { 17, 8, 0 }, secret = { 18, -2, 0 }, returned = { 19, 8, 0 };
 	coop_gameplay_stamp rollback = { 20, 8, 0 }, temporary = { 20, 8, 1 };
 	for (size_t i = 0; i < sizeof(mutations) / sizeof(*mutations); ++i) {
@@ -41,7 +47,7 @@ static void test_mixed_retry_keeps_control_and_original_visit(void)
 	/* A reliable datagram combines a score and a load ACK. The host relays
 	 * the same stored body/stamp after returning to the same numeric mine */
 	unsigned char queued[64] = { MULTI_SCORE, 1, 0, 0, 0, 0,
-		MULTI_REWIND_SAVE_READY, 9, 1, 2, 3, 0, 0, 0, 1, 0, 0, 0 };
+		                         MULTI_REWIND_SAVE_READY, 9, 1, 2, 3, 0, 0, 0, 1, 0, 0, 0 };
 	size_t body_size = (size_t) lengths[MULTI_SCORE] + lengths[MULTI_REWIND_SAVE_READY];
 	CHECK(body_size == 18);
 	coop_gameplay_stamp source = { UINT64_C(0x100000003), -2, 0 }, received;
@@ -59,7 +65,10 @@ static void test_mixed_retry_keeps_control_and_original_visit(void)
 		if (coop_gameplay_message_allowed(type, &received, &destination, 1)) {
 			CHECK(type == MULTI_REWIND_SAVE_READY);
 			++applied;
-		} else { CHECK(type == MULTI_SCORE); ++skipped; }
+		} else {
+			CHECK(type == MULTI_SCORE);
+			++skipped;
+		}
 		offset += lengths[type];
 	}
 	CHECK(applied == 1 && skipped == 1 && !memcmp(queued, retry, sizeof(queued)));
@@ -153,7 +162,7 @@ static void test_malformed_stamp_is_atomic(void)
 		memcpy(bad, bytes, sizeof(bad));
 		if (index == 0) bad[0] ^= 1;
 		if (index == 1) bad[1] |= 2;
-		if (index == 2) bad[2] = 0x80; /* -128 is not an authored level */
+		if (index == 2) bad[2] = 0x80;       /* -128 is not an authored level */
 		if (index == 3) bad[2] = bad[3] = 0; /* Neutral stamp cannot carry a visit */
 		CHECK(!coop_gameplay_stamp_read(&decoded, bad, sizeof(bad)));
 		CHECK(decoded.visit == 42 && decoded.level == 8 && !decoded.frozen);

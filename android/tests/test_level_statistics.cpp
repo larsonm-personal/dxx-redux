@@ -2,15 +2,13 @@
 
 #include "level_statistics.hpp"
 
-struct test_side
-{
+struct test_side {
 	short wall_num;
 	short tmap_num;
 	short tmap_num2;
 };
 
-struct test_segment
-{
+struct test_segment {
 	short children[6];
 	test_side sides[6];
 };
@@ -50,7 +48,7 @@ int main(void)
 	segments[1].sides[0].tmap_num2 = 100;
 
 	const level_statistics statistics =
-		collect_level_statistics(segments, 2, 3, 5, 12, 100);
+	    collect_level_statistics(segments, 2, 3, 5, 12, 100);
 	if (!check_equal(statistics.segment_count, 2, "segments") ||
 	    !check_equal(statistics.wall_count, 3, "walls") ||
 	    !check_equal(statistics.trigger_count, 5, "triggers") ||
@@ -59,7 +57,7 @@ int main(void)
 		return 1;
 
 	const level_statistics empty =
-		collect_level_statistics<test_segment>(NULL, -1, -2, -3, -4, 0);
+	    collect_level_statistics<test_segment>(NULL, -1, -2, -3, -4, 0);
 	if (!check_equal(empty.segment_count, 0, "empty segments") ||
 	    !check_equal(empty.wall_count, 0, "empty walls") ||
 	    !check_equal(empty.trigger_count, 0, "empty triggers") ||

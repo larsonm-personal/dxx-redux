@@ -1,0 +1,39 @@
+// TEST: Unvalidated graphics remain unvalidated during isolated level/robot previews
+[
+    {
+        "_info": {
+            "games": ["d1", "d2"],
+            "_standalone": false,
+            "_owner": "test_graphics_preview",
+        },
+    },
+    { "action": "enter_launcher" },
+    {
+        "action": "write_config",
+        "file": "graphics_safety.json",
+        "content": "{\"accepted\":{\"TexFilt\":1,\"AnisoLevel\":0,\"MsaaLevel\":0,\"MenuTexFilt\":0,\"HudTexFilt\":0,\"ResolutionX\":640,\"ResolutionY\":480,\"AspectX\":3,\"AspectY\":4,\"ColorDepth\":0},\"attempt\":null,\"pending\":{}}\n",
+    },
+    {
+        "action": "write_config",
+        "file": "descent.cfg",
+        "content": "TexFilt=2\nAnisoLevel=1\nMsaaLevel=2\nMenuTexFilt=1\nHudTexFilt=1\nResolutionX=640\nResolutionY=480\nAspectX=3\nAspectY=4\nColorDepth=1\n",
+    },
+    {
+        "action": "write_config",
+        "file": "d1x-redux/descent.cfg",
+        "content": "TexFilt=2\nAnisoLevel=1\nMsaaLevel=2\nMenuTexFilt=1\nHudTexFilt=1\nResolutionX=640\nResolutionY=480\nAspectX=3\nAspectY=4\nColorDepth=1\n",
+    },
+    {
+        "action": "write_config",
+        "file": "d2x-redux/descent.cfg",
+        "content": "TexFilt=2\nAnisoLevel=1\nMsaaLevel=2\nMenuTexFilt=1\nHudTexFilt=1\nResolutionX=640\nResolutionY=480\nAspectX=3\nAspectY=4\nColorDepth=1\n",
+    },
+    {
+        "action": "${PREVIEW_ACTION}",
+        "game": "${GAME}",
+        "file": "${BASE_HOG}",
+        "level_num": 1,
+        "robot_number": 0,
+        "seed": 1,
+    },
+]

@@ -2122,6 +2122,14 @@ int newmenu_draw(window *wind, newmenu *menu)
 		gr_set_current_canvas(save_canvas);
 #ifdef ANDROID
 		android_menu_scale_clear();
+#if defined(OGL) && defined(INTROSPECT_ON)
+		{
+			newmenu probe_menu = *menu;
+			probe_menu.subfunction = NULL;
+			android_menu_scale_probe_unscaled(SWIDTH, SHEIGHT,
+				android_newmenu_draw_scaled_contents, &probe_menu);
+		}
+#endif
 #endif
 	}
 

@@ -51,4 +51,3 @@ Out of scope for this tranche:
 
 - [x] In progress
 - [x] Validation complete
-

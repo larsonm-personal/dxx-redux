@@ -65,8 +65,18 @@ class DxaAnimationValidationTest(unittest.TestCase):
 
     def test_field_updates_validate_the_complete_staged_record(self) -> None:
         cases = (
-            ("void apply_eclip_field", "eclip effect = Effects[index]", "validate_eclip_record(effect)", "Effects[index] = effect"),
-            ("void apply_wclip_field", "wclip wall = WallAnims[index]", "validate_wclip_record(wall)", "WallAnims[index] = wall"),
+            (
+                "void apply_eclip_field",
+                "eclip effect = Effects[index]",
+                "validate_eclip_record(effect)",
+                "Effects[index] = effect",
+            ),
+            (
+                "void apply_wclip_field",
+                "wclip wall = WallAnims[index]",
+                "validate_wclip_record(wall)",
+                "WallAnims[index] = wall",
+            ),
         )
         for marker, staging, validation, commit in cases:
             with self.subTest(marker=marker):
@@ -75,9 +85,9 @@ class DxaAnimationValidationTest(unittest.TestCase):
                 self.assertLess(body.index(validation), body.index(commit))
 
         eclip = block_after("void apply_eclip_field")
-        self.assertIn('required_int_value(value, field.c_str(), 1, 0x40000000)', eclip)
+        self.assertIn("required_int_value(value, field.c_str(), 1, 0x40000000)", eclip)
         wall = block_after("void apply_wclip_field")
-        self.assertIn('required_int_value(value, field.c_str(), 1, 0x40000000)', wall)
+        self.assertIn("required_int_value(value, field.c_str(), 1, 0x40000000)", wall)
 
 
 if __name__ == "__main__":

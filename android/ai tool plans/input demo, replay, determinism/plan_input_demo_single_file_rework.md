@@ -34,7 +34,7 @@ Record order is strict:
 
 1. First non-empty line: `{"type":"header",...}`
 2. One `{"type":"frame",...}` line for every frame from `0` to
-     `frame_count - 1`
+   `frame_count - 1`
 3. Last non-empty line: `{"type":"result",...}`
 
 Frame records carry input and RNG together so correlation never depends on
@@ -55,26 +55,26 @@ Example:
 ## Inventory Notes
 
 - Shared metadata, recorder, and replay code still had separate metadata,
-    input, RNG, and result file assumptions at the start of this tranche
+  input, RNG, and result file assumptions at the start of this tranche
 - Unit tests and the Windows smoke runner create the four-file fixture shape
 - D1 and D2 CLI help and local variable names referred to the old metadata path
 - Device-recording plans describe `.dximdemo` as a zip or directory, which is
-    now superseded by this native single-file format
+  now superseded by this native single-file format
 
 ## Completed Notes
 
 - Shared fixture code now reads and writes one strict newline-delimited JSON
-    `.dximdemo` file with header, frame, and result records
+  `.dximdemo` file with header, frame, and result records
 - The recorder flush path now writes one demo file instead of separate metadata,
-    input, RNG, and result files
+  input, RNG, and result files
 - Replay now loads the same demo file, keeps the embedded result trailer as the
-    expected baseline, and writes `<demo-file>.actual.json` for diagnostics
+  expected baseline, and writes `<demo-file>.actual.json` for diagnostics
 - D1 and D2 command-line help, replay startup, replay result comparison, and
-    recording flush paths use demo-file terminology
+  recording flush paths use demo-file terminology
 - Host probes and the Windows smoke runner now create and replay `.dximdemo`
-    files directly
+  files directly
 - Plan docs now treat `.dximdemo` as the artifact itself, not a zip or directory
-    wrapper
+  wrapper
 
 ## Final Validation Results
 
@@ -87,6 +87,6 @@ Example:
 - `run-windows-build.ps1 -Target d1`: passed after the final formatting pass
 - `run-windows-build.ps1 -Target d2`: passed after the final formatting pass
 - From `android`, `gradlew.bat :app:externalNativeBuildDebug --no-daemon`
-    with `JAVA_HOME=c:\local\jdk-21`: passed
+  with `JAVA_HOME=c:\local\jdk-21`: passed
 - `android\tests\test_input_demo_runtime_smoke.ps1 -Game both`: D1 and D2
-    passed after the final formatting pass and matched the embedded trailer
+  passed after the final formatting pass and matched the embedded trailer

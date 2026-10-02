@@ -3,6 +3,7 @@
 ## Scope
 
 Implement the first batch of NAT traversal features, covering:
+
 1. Server: relay session cleanup (bug fix)
 2. Server: additional integration tests for multi-player NAT flows
 3. Client: protocol message types for STUN/connectivity/relay
@@ -19,6 +20,7 @@ MAX_RELAY_SESSION_AGE (2 hours). Also remove sessions when all players
 disconnect from the WebSocket.
 
 Files:
+
 - server/src/relay.rs: add cleanup_stale_sessions()
 - server/src/lib.rs or main.rs: spawn cleanup task on startup
 - server/tests/integration.rs: test that stale sessions are reaped
@@ -26,6 +28,7 @@ Files:
 ## Phase 2: Server Integration Tests
 
 Add tests for:
+
 - CONNECTIVITY_OK updates lobby player connection_type
 - Multi-player (3+) lobby STUN/connectivity flow
 - CONNECTIVITY_UPDATE mid-session migration
@@ -34,6 +37,7 @@ Add tests for:
 ## Phase 3: Client Protocol Messages
 
 Add to NetworkProtocol.kt:
+
 - StunResultMsg (client -> server)
 - ConnectivityOkMsg (client -> server)
 - ConnectivityUpdateMsg (client -> server)
@@ -48,6 +52,7 @@ Wire into ServerMessage.parse() and MatchmakingService dispatch.
 ## Phase 4: StunClient.kt
 
 Hand-rolled STUN Binding Request/Response:
+
 - 20-byte request (type=0x0001, length=0, magic=0x2112A442, txn_id)
 - Parse XOR-MAPPED-ADDRESS from response
 - Query self-hosted STUN server (two ports on matchmaking server)
@@ -59,6 +64,7 @@ Hand-rolled STUN Binding Request/Response:
 ## Phase 5: ConnectivityChecker.kt
 
 Probe-based connectivity test:
+
 - Receive CandidatePair list from server
 - For each peer, try pairs in priority order
 - 12-byte probe: [magic:4][timestamp:8]
@@ -87,6 +93,7 @@ Use Docker containers as isolated network hosts, with iptables rules
 simulating different NAT behaviors. This is the most realistic approach.
 
 Setup:
+
 ```
                           Host machine
                               |
@@ -107,12 +114,14 @@ Each "nat" container runs iptables NAT rules. Different rule sets
 simulate different NAT types:
 
 **Full cone NAT:**
+
 ```bash
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 # Any external host can send to the mapped port
 ```
 
 **Port-restricted cone NAT:**
+
 ```bash
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 # Default Linux conntrack behavior: only responds to addr:port pairs
@@ -120,6 +129,7 @@ iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 ```
 
 **Symmetric NAT:**
+
 ```bash
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE --random
 # --random uses random port allocation per destination
@@ -168,6 +178,7 @@ test_client_a  ->  nat_sim_a (port mapping rules)  ->  network  ->  nat_sim_b  -
 ```
 
 The NAT simulator:
+
 - Receives outbound UDP from the test client
 - Applies port mapping (static for cone, random for symmetric)
 - Forwards to destination with mapped source port
@@ -247,6 +258,7 @@ enum NatType {
 ```
 
 Run two instances:
+
 - nat_sim_a: listens on 127.0.0.1:30000 (internal) and 127.0.0.1:40000 (external)
 - nat_sim_b: listens on 127.0.0.1:30001 (internal) and 127.0.0.1:40001 (external)
 
@@ -261,12 +273,12 @@ when queried through the NAT simulator, it returns the mapped address.
 
 ### Test Scenarios
 
-| Scenario                    | NAT A          | NAT B          | Expected Result    |
-|-----------------------------|----------------|----------------|-------------------|
-| Both full cone              | FullCone       | FullCone       | Direct (srflx)    |
-| Cone + restricted           | FullCone       | PortRestricted | Direct (srflx)    |
-| Both restricted             | PortRestricted | PortRestricted | Direct (srflx)    |
-| One symmetric               | PortRestricted | Symmetric      | Direct (srflx, one side) |
-| Both symmetric sequential   | SymSeq         | SymSeq         | Predicted port    |
-| Both symmetric random       | Symmetric      | Symmetric      | Relay fallback    |
-| STUN server unreachable     | (blocked)      | FullCone       | Relay fallback    |
+| Scenario                  | NAT A          | NAT B          | Expected Result          |
+| ------------------------- | -------------- | -------------- | ------------------------ |
+| Both full cone            | FullCone       | FullCone       | Direct (srflx)           |
+| Cone + restricted         | FullCone       | PortRestricted | Direct (srflx)           |
+| Both restricted           | PortRestricted | PortRestricted | Direct (srflx)           |
+| One symmetric             | PortRestricted | Symmetric      | Direct (srflx, one side) |
+| Both symmetric sequential | SymSeq         | SymSeq         | Predicted port           |
+| Both symmetric random     | Symmetric      | Symmetric      | Relay fallback           |
+| STUN server unreachable   | (blocked)      | FullCone       | Relay fallback           |

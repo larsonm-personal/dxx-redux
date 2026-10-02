@@ -96,6 +96,7 @@ Decide whether input-demo checkpoint replay should move transient gameplay state
 - Decide whether morph state is included now or left as a documented phase 2 save-fidelity improvement. If included, serialize `morph_objects[]` by object number and signature, not raw pointers.
 
 Phase 3 status:
+
 - Done for D1 and D2. The additive fidelity block now covers weapon hit history and framecount, morph runtime state, wall stuck objects, and control-center transient timers. D2 also covers afterburner blob timing.
 
 ### Phase 4: Remove Checkpoint Metadata Duplication
@@ -105,6 +106,7 @@ Phase 3 status:
 - Keep `.dximdemo` metadata focused on demo schema, checkpoint bytes, and validation expectations, not duplicated gameplay state.
 
 Phase 4 status:
+
 - Done. Legacy checkpoint timing metadata has been removed from the shared schema and replay APIs, and old demos that still carry those fields are now rejected.
 
 ### Phase 5: Validate
@@ -113,4 +115,3 @@ Phase 4 status:
 - Re-run the known failing D2 input demo in realtime and accelerated modes through `android/tests/run_input_demo_replay.ps1`.
 - Run `run-windows-build.ps1 -Target d1` and `run-windows-build.ps1 -Target d2`.
 - Run `android\run-code-quality.ps1 -Fix` after implementation and wait for it to exit fully.
-

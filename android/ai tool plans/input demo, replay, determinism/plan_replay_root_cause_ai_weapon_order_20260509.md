@@ -1,11 +1,13 @@
 # Replay root cause ai weapon order 2026-05-09
 
 ## Goal
+
 - identify a shared engine-side nondeterminism path behind the recent replay desync demos
 - prefer a fix or source-level owner instrumentation over per-demo classification
 - focus on same-frame ordering between AI rng consumers and player-weapon collision/physics work
 
 ## Steps
+
 - [completed] inspect the frame/object processing path that orders AI, weapon sequence, collision, and rotation rng consumers
 - [completed] state one falsifiable root-cause hypothesis with one cheap discriminating check
 - [completed] make the smallest source change that exposes the deciding unstable order at the owner path
@@ -15,6 +17,7 @@
 - [completed] validate with scoped code quality, D2 headless build, D1 build, native recorder/replay tests, and a replay state-trace rerun on level 8 `224859`
 
 ## Notes
+
 - current demos suggest owner-order swaps, not just extra rng draws:
   - level 9 `225113`: recorded `create_awareness_event` from player-shot wall impact arrives one frame earlier than replay
   - level 8 `224859`: recorded frame 202 orders `phys_apply_rot`, `phys_apply_rot`, then obj 84 `do_ai_frame`; replay orders obj 84 `do_ai_frame` first

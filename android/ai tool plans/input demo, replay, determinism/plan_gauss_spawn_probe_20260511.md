@@ -1,11 +1,13 @@
 # Gauss spawn probe 2026-05-11
 
 ## Goal
+
 - capture the first divergent D2 level 9 Gauss shot with replay probe logs at creation and first lifetime steps
 - keep the change limited to replay debug instrumentation so normal builds and older findings stay intact
 - use the rerun to decide whether divergence starts at spawn inputs or in the first movement and collision step
 
 ## Steps
+
 - [completed] inspect the existing replay probe gates and current frame-362 to frame-367 evidence
 - [completed] widen the replay probe window that gates player shot creation and early weapon lifetime logging for the first divergent Gauss shot
 - [completed] rerun the failing replay with replay debug logging and verify the new spawn and early lifetime lines appear
@@ -16,6 +18,7 @@
 - [completed] audit Gauss collision side effects for blast-specific desync risk
 
 ## Notes
+
 - the durable replay shot probe now shows the decisive mismatch point directly: before the fix, replay frame 361 logged `spreadr=317 spreadu=288` while the recorded demo logged `spreadr=288 spreadu=317`, even though both sides reached the same post-shot RNG state
 - that combination identified unspecified C function-argument evaluation order as the root cause, because the inline `d_rand()` arguments in the Gauss and Vulcan `Laser_player_fire_spread` calls could be evaluated in opposite orders while still consuming the same two RNG values
 - `Laser_create_new` keeps `parent_speed = 0` for Gauss and writes velocity as `direction * weapon_speed`, so the old create-time drift was upstream of create and is now resolved by the spread-order fix

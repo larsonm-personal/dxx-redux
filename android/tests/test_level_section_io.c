@@ -1,22 +1,28 @@
 #include <stdio.h>
 #include "level_section_io.h"
 
-#define CHECK(condition) do { if (!(condition)) { fprintf(stderr, "CHECK failed: %s line %d\n", #condition, __LINE__); return 1; } } while (0)
+#define CHECK(condition)                                                         \
+	do {                                                                         \
+		if (!(condition)) {                                                      \
+			fprintf(stderr, "CHECK failed: %s line %d\n", #condition, __LINE__); \
+			return 1;                                                            \
+		}                                                                        \
+	} while (0)
 
 static int warnings;
 void Warning(char *format, ...)
 {
-	(void)format;
+	(void) format;
 	++warnings;
 }
 
 int main(int argc, char **argv)
 {
-	const unsigned char bytes[12] = {0, 0, 0x17, 0, 0, 0, 0, 0, 0x42, 0, 0, 0};
+	const unsigned char bytes[12] = { 0, 0, 0x17, 0, 0, 0, 0, 0, 0x42, 0, 0, 0 };
 	const char *name = "test_level_section_io.bin";
 	unsigned char value;
 	PHYSFS_file *file;
-	(void)argc;
+	(void) argc;
 	CHECK(PHYSFS_init(argv[0]));
 	CHECK(PHYSFS_setWriteDir("."));
 	CHECK(PHYSFS_addToSearchPath(".", 0));

@@ -38,9 +38,13 @@ class SecretAreaSerializationContracts(unittest.TestCase):
         self.assertIn("secret_area_restore_saved_state(&saved)", reader)
         restore = function_body(source, "secret_area_restore_saved_state")
         self.assertIn("saved->level_identity == Secret_area_level_identity ? saved->count : 0", restore)
-        self.assertIn("secret_area_restore_identities(&Secret_area_state, count, saved->identities, saved->found)", restore)
+        self.assertIn(
+            "secret_area_restore_identities(&Secret_area_state, count, saved->identities, saved->found)", restore
+        )
         self.assertIn("secret_area_runtime_read_sxe32(fp, swap)", reader)
-        self.assertRegex(reader, r"secret_area_runtime_read\(fp, found, sizeof\(found\[0\]\),\s*SECRET_AREA_MAX_GENERATED\)")
+        self.assertRegex(
+            reader, r"secret_area_runtime_read\(fp, found, sizeof\(found\[0\]\),\s*SECRET_AREA_MAX_GENERATED\)"
+        )
         self.assertIn("secret_area_restore_saved_found", reader)
         legacy = function_body(source, "secret_area_restore_saved_found")
         self.assertIn("secret_area_restore_found_from_visited", legacy)
@@ -53,16 +57,18 @@ class SecretAreaSerializationContracts(unittest.TestCase):
         self.assertIn("save_unsigned(data + 4, level_identity, 8)", writer)
         self.assertIn("data + 12 + 9 * i", writer)
         reader = function_body(source, "secret_area_decode_saved_state")
-        for token in ("size != SECRET_AREA_IDENTITY_SAVE_SIZE", "count > SECRET_AREA_MAX_GENERATED",
-                      "result.identities[i] == result.identities[j]", "result.found[i] > 1"):
+        for token in (
+            "size != SECRET_AREA_IDENTITY_SAVE_SIZE",
+            "count > SECRET_AREA_MAX_GENERATED",
+            "result.identities[i] == result.identities[j]",
+            "result.found[i] > 1",
+        ):
             self.assertIn(token, reader)
         self.assertLess(reader.index("result.found[i] > 1"), reader.index("*saved = result"))
 
     def test_shared_header_and_paired_state_call_sites_match(self):
         header_text = HEADER.read_text(encoding="utf-8")
-        self.assertIn(
-            "void secret_area_write_runtime_state(rewind_file *fp);", header_text
-        )
+        self.assertIn("void secret_area_write_runtime_state(rewind_file *fp);", header_text)
         self.assertIn(
             "void secret_area_read_runtime_state(rewind_file *fp, int swap, int has_identities);",
             header_text,

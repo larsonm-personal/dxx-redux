@@ -47,6 +47,8 @@ struct android_ogl_msaa_diagnostics {
 
 typedef void (*android_ogl_msaa_log_message_fn)(const char *message, void *user_data);
 
+/* Production and diagnostic resolves must use the actual window channel sizes */
+unsigned int android_ogl_msaa_color_format(int red, int green, int blue, int alpha);
 unsigned int android_ogl_msaa_capture_errors(const char *stage);
 void android_ogl_msaa_capture_scene_errors(struct android_ogl_msaa_state *state);
 #ifdef INTROSPECT_ON

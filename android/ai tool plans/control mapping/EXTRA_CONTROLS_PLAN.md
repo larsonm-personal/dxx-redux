@@ -1,11 +1,13 @@
 # Plan: Extra Controller/Touch Button Options
 
 ## TL;DR
+
 Add "extra" (meta) game actions to both the controller config and touch editor in the launcher. These are actions like quicksave, ESC, guide bot commands, etc. that aren't in the standard kc_joystick[] array. Uses a C-side dispatch table with JNI entry point. Also add "axis as two buttons" mode for both controller and touch sticks. UI gets an "Extra" toggle to switch between standard and extra action lists.
 
 ## Architecture
 
 ### Meta Actions System
+
 - C dispatch table maps action IDs to SDL key sequences (C = source of truth)
 - JNI function `nativeMetaAction(actionId, pressed)` injects appropriate key events
 - Kotlin defines action IDs (shared constants) and labels
@@ -14,6 +16,7 @@ Add "extra" (meta) game actions to both the controller config and touch editor i
 - D1/D2 filtering via a D2_ONLY set (same pattern as existing D2_ONLY_BUTTONS)
 
 ### Axis-as-Buttons
+
 - Controller: stick picker dialog gets "Use as two buttons" toggle per axis
 - Touch: AnalogStickControl gets buttonMode with negative/positive action bindings
 - Uses existing joy_axisbutton_handler C code (axes already generate button events)
@@ -133,6 +136,7 @@ Add "extra" (meta) game actions to both the controller config and touch editor i
 ## Relevant Files
 
 ### Kotlin (modify)
+
 - `android/app/src/main/java/com/dxxredux/app/TouchBindings.kt` -- meta action constants, labels, D2-only set
 - `android/app/src/main/java/com/dxxredux/app/ControllerConfigPage.kt` -- Extra toggle, axis-as-buttons, persistence
 - `android/app/src/main/java/com/dxxredux/app/TouchEditorPage.kt` -- Extra toggle, button mode panel
@@ -142,16 +146,20 @@ Add "extra" (meta) game actions to both the controller config and touch editor i
 - `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` -- callback wiring, controller interception
 
 ### Kotlin (create)
+
 - `android/app/src/main/java/com/dxxredux/app/NativeMetaActions.kt` -- JNI bridge
 
 ### C (create)
+
 - `android/app/src/main/cpp/shared/android_meta_actions.c` -- dispatch table + JNI
 - `android/app/src/main/cpp/shared/android_meta_actions.h` -- shared action ID constants
 
 ### C (modify)
+
 - `android/app/src/main/cpp/CMakeLists.txt` or equivalent -- add to build
 
 ### C (reference only)
+
 - `d2/main/kconfig.c` -- kc_joystick[] layout, kconfig_fill_joy_settings()
 - `d1/main/kconfig.c` -- D1 kc_joystick[] layout (48 entries vs 56)
 - `d2/main/gamecntl.c` -- key handlers for ESC, F7, ALT+F2, ALT+F3, etc.
@@ -161,27 +169,27 @@ Add "extra" (meta) game actions to both the controller config and touch editor i
 
 ## Meta Action Table
 
-| ID | Name | Key Sequence | D1 | D2 |
-|---|---|---|---|---|
-| 1000 | Quick Save | ALT+F2 | Y | Y |
-| 1001 | Quick Load | ALT+F3 | Y | Y |
-| 1002 | Game Menu | ESC | Y | Y |
-| 1003 | Guide Bot Menu | SHIFT+F4 | - | Y |
-| 1004 | GB: Find Energy | SHIFT+1 | - | Y |
-| 1005 | GB: Find Reactor | SHIFT+2 | - | Y |
-| 1006 | GB: Find Shield | SHIFT+3 | - | Y |
-| 1007 | GB: Find Powerup | SHIFT+4 | - | Y |
-| 1008 | GB: Find Robot | SHIFT+5 | - | Y |
-| 1009 | GB: Find Hostage | SHIFT+6 | - | Y |
-| 1010 | GB: Scram | SHIFT+7 | - | Y |
-| 1011 | GB: Find Items | SHIFT+8 | - | Y |
-| 1012 | GB: Find Exit | SHIFT+9 | - | Y |
-| 1013 | GB: Clear Goal | SHIFT+0 | - | Y |
-| 1014 | Multiplayer HUD | F7 | Y | Y |
-| 1015 | Drop Flag | ALT+0 | - | Y |
-| 1016 | Drop Marker | F4 | - | Y |
-| 1020-1029 | Weapon 1-10 | 1-0 keys | Y | Y |
-| 1030 | Pause | PAUSE | Y | Y |
+| ID        | Name             | Key Sequence | D1  | D2  |
+| --------- | ---------------- | ------------ | --- | --- |
+| 1000      | Quick Save       | ALT+F2       | Y   | Y   |
+| 1001      | Quick Load       | ALT+F3       | Y   | Y   |
+| 1002      | Game Menu        | ESC          | Y   | Y   |
+| 1003      | Guide Bot Menu   | SHIFT+F4     | -   | Y   |
+| 1004      | GB: Find Energy  | SHIFT+1      | -   | Y   |
+| 1005      | GB: Find Reactor | SHIFT+2      | -   | Y   |
+| 1006      | GB: Find Shield  | SHIFT+3      | -   | Y   |
+| 1007      | GB: Find Powerup | SHIFT+4      | -   | Y   |
+| 1008      | GB: Find Robot   | SHIFT+5      | -   | Y   |
+| 1009      | GB: Find Hostage | SHIFT+6      | -   | Y   |
+| 1010      | GB: Scram        | SHIFT+7      | -   | Y   |
+| 1011      | GB: Find Items   | SHIFT+8      | -   | Y   |
+| 1012      | GB: Find Exit    | SHIFT+9      | -   | Y   |
+| 1013      | GB: Clear Goal   | SHIFT+0      | -   | Y   |
+| 1014      | Multiplayer HUD  | F7           | Y   | Y   |
+| 1015      | Drop Flag        | ALT+0        | -   | Y   |
+| 1016      | Drop Marker      | F4           | -   | Y   |
+| 1020-1029 | Weapon 1-10      | 1-0 keys     | Y   | Y   |
+| 1030      | Pause            | PAUSE        | Y   | Y   |
 
 ## Verification
 

@@ -15,14 +15,20 @@ class CueDataTrackExtractionTest {
         type: Int,
         fileIndex: Int,
         sectors: Int,
-		sectorMode: Int = if (type == 1) DiscImportBridge.CUE_SECTOR_AUDIO else DiscImportBridge.CUE_SECTOR_MODE1_2352,
-		sectorSize: Int = 2352,
-		userDataOffset: Int = if (type == 1) 0 else 16,
-	) =
-		DiscImportBridge.CueTrack(
-			number, type, fileIndex, 0, sectors, "Track $number",
-			sectorMode, sectorSize, userDataOffset,
-		)
+        sectorMode: Int = if (type == 1) DiscImportBridge.CUE_SECTOR_AUDIO else DiscImportBridge.CUE_SECTOR_MODE1_2352,
+        sectorSize: Int = 2352,
+        userDataOffset: Int = if (type == 1) 0 else 16,
+    ) = DiscImportBridge.CueTrack(
+        number,
+        type,
+        fileIndex,
+        0,
+        sectors,
+        "Track $number",
+        sectorMode,
+        sectorSize,
+        userDataOffset,
+    )
 
     @Test
     fun extractsEveryDataTrackInCueOrderAndLaterBytesWin() {
@@ -278,45 +284,55 @@ class CueDataTrackExtractionTest {
         }
     }
 
-	@Test
-	fun storageAndProgressHonorPerTrackSectorSize() {
-		val tracks =
-			listOf(
-				track(
-					1, 0, 0, 10,
-					DiscImportBridge.CUE_SECTOR_MODE1_2048, 2048, 0,
-				),
-				track(2, 0, 1, 20),
-			)
+    @Test
+    fun storageAndProgressHonorPerTrackSectorSize() {
+        val tracks =
+            listOf(
+                track(
+                    1,
+                    0,
+                    0,
+                    10,
+                    DiscImportBridge.CUE_SECTOR_MODE1_2048,
+                    2048,
+                    0,
+                ),
+                track(2, 0, 1, 20),
+            )
 
-		assertEquals(67_520L, cueDataTrackStorageBytes(tracks))
-	}
+        assertEquals(67_520L, cueDataTrackStorageBytes(tracks))
+    }
 
-	@Test
-	fun rejectsInconsistentDataSectorGeometryBeforeExtraction() {
-		val root = createTempDirectory("cue-data-geometry").toFile()
-		try {
-			val invalid =
-				track(
-					1, 0, 0, 10,
-					DiscImportBridge.CUE_SECTOR_MODE1_2048, 2352, 0,
-				)
-			var calls = 0
-			val result =
-				extractCueDataTracks(
-					setDir = File(root, "set"),
-					tracks = listOf(invalid),
-					imageCount = 1,
-					extractTrack = { _, _, _, _ ->
-						calls++
-						CueDataTrackAttempt(1, 0)
-					},
-				)
+    @Test
+    fun rejectsInconsistentDataSectorGeometryBeforeExtraction() {
+        val root = createTempDirectory("cue-data-geometry").toFile()
+        try {
+            val invalid =
+                track(
+                    1,
+                    0,
+                    0,
+                    10,
+                    DiscImportBridge.CUE_SECTOR_MODE1_2048,
+                    2352,
+                    0,
+                )
+            var calls = 0
+            val result =
+                extractCueDataTracks(
+                    setDir = File(root, "set"),
+                    tracks = listOf(invalid),
+                    imageCount = 1,
+                    extractTrack = { _, _, _, _ ->
+                        calls++
+                        CueDataTrackAttempt(1, 0)
+                    },
+                )
 
-			assertFalse(result.succeeded)
-			assertEquals(0, calls)
-		} finally {
-			root.deleteRecursively()
-		}
-	}
+            assertFalse(result.succeeded)
+            assertEquals(0, calls)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
 }

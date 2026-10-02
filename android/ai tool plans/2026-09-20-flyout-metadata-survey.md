@@ -41,7 +41,7 @@ route evidence rather than replacing it with a policy timeout
   D2 stock video, missing video after unmount, 90-second synthetic video, and
   malformed video. Kotlin projection tests passed, including uncapped timing
 - Full run: `regenerate_all_mission_metadata.ps1 -IncludeBuiltInCounterstrike
-  -IncludeBuiltInFirstStrike -NoBuild -MaxParallel 8`, using freshly built native
+-IncludeBuiltInFirstStrike -NoBuild -MaxParallel 8`, using freshly built native
   workers and Kotlin CLI. Output: `android/temp/mission_zip_host_metadata/20260919_231629`
 
 ## Survey results
@@ -54,11 +54,11 @@ duplicate missions/versions present in different archives; they are not counts
 of unique physical levels. Route-simulation companion files belong to their
 separate simulation runner and are not mission-metadata inputs to this survey
 
-| Timing group | Entries | Minimum | Maximum | Over 20 s | Over 60 s |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Rendered, presentation assets present | 577 | 8.000 s | 46.618 s | 43 | 0 |
-| All calculable rendered geometry, including missing presentations | 1,788 | 5.100 s | 46.618 s | 50 | 0 |
-| Actual stock D2 movie timings | 23 | 16.933 s | 17.349 s | 0 | 0 |
+| Timing group                                                      | Entries |  Minimum |  Maximum | Over 20 s | Over 60 s |
+| ----------------------------------------------------------------- | ------: | -------: | -------: | --------: | --------: |
+| Rendered, presentation assets present                             |     577 |  8.000 s | 46.618 s |        43 |         0 |
+| All calculable rendered geometry, including missing presentations |   1,788 |  5.100 s | 46.618 s |        50 |         0 |
+| Actual stock D2 movie timings                                     |      23 | 16.933 s | 17.349 s |         0 |         0 |
 
 Notable rendered estimates with presentation assets:
 

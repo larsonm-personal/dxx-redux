@@ -6,6 +6,7 @@
 Up to 500ms latency before overlay switches to automap mode or back.
 
 **Fix:**
+
 1. Reduce polling interval from 500ms to ~100ms in `startOverlayPolling()`
 2. When MAP button is pressed (toggleAutomap): immediately set `automapActive`
    on the Kotlin side rather than waiting for the poll. Reverse on exit.
@@ -23,6 +24,7 @@ D1 runs, `nativeGetMarkerCount()` resolves from the D2 library. D2's
 "placed"
 
 **Fix:**
+
 1. In MainActivity where `markerCountProvider` is set: if `game == "d1"`,
    hardcode provider to return 0 (D1 has no markers)
 2. Refresh marker count when `automapActive` becomes true (call
@@ -90,6 +92,7 @@ around InputDevice method calls.
 confirming Android -> Kotlin axis path works. Problem is downstream.
 
 **Investigation focus (C side only):**
+
 1. Add logging in joy_axisbutton_handler for axes 4,5 to confirm button
    events fire with correct button indices
 2. Add logging in kconfig_read_controls for button events matching slide
@@ -109,16 +112,17 @@ down to dismiss.
 
 **Items (6 total -- no "Abort level" since "Open game menu" covers it):**
 
-| Item | Implementation |
-|------|---------------|
-| Increase view | nativeCycleCockpit(+1) -- forward through cockpit modes |
-| Decrease view | nativeCycleCockpit(-1) -- backward through cockpit modes |
-| Toggle auto-leveling | nativeToggleAutoLeveling() -- flip PlayerCfg |
-| Quick save | Inject Alt+F2 key combo |
-| Quick load | Inject Alt+F3 key combo |
-| Open game menu | Inject ESC |
+| Item                 | Implementation                                           |
+| -------------------- | -------------------------------------------------------- |
+| Increase view        | nativeCycleCockpit(+1) -- forward through cockpit modes  |
+| Decrease view        | nativeCycleCockpit(-1) -- backward through cockpit modes |
+| Toggle auto-leveling | nativeToggleAutoLeveling() -- flip PlayerCfg             |
+| Quick save           | Inject Alt+F2 key combo                                  |
+| Quick load           | Inject Alt+F3 key combo                                  |
+| Open game menu       | Inject ESC                                               |
 
 **New C functions needed:**
+
 - `nativeCycleCockpit(int direction)` -- calls toggle_cockpit or reverse variant
 - `nativeToggleAutoLeveling()` -- flips PlayerCfg.AutoLeveling + PF_LEVELLING
 - `nativeGetAutoLeveling()` -- query for UI display
@@ -136,6 +140,7 @@ d1/main/gamerend.c, d2/main/gamerend.c, d1/main/object.c, d2/main/object.c
 is the single source of truth. Embedded in the APK, always loadable.
 
 **Approach:**
+
 1. Update default.json to match the user's controller_config.json
 2. Remove FALLBACK_BINDINGS map from ControllerConfigPage.kt
 3. Change loadDefaultBindings() error path: if asset loading fails, return

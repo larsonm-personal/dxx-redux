@@ -9,6 +9,7 @@ button at kc_joystick index N fires SDL button (N + 128), which matches entry N 
 the same STATE_BIT3 or STATE_BIT4 as a physical button on that entry.
 
 This means:
+
 - If both a touch button and a physical button are bound to the same action (same kc entry),
   they share a state bit. Releasing one clears the bit even if the other is still held.
 - Two touch buttons with the same binding fire the same SDL button number. Releasing one
@@ -20,7 +21,7 @@ This means:
 ### State Bit Layout (ubyte, 8 bits)
 
 | Bit | Value | Source                |
-|-----|-------|-----------------------|
+| --- | ----- | --------------------- |
 | 1   | 1     | Keyboard primary      |
 | 2   | 2     | Keyboard secondary    |
 | 3   | 4     | Gamepad primary       |
@@ -40,9 +41,10 @@ Two touch button offsets to distinguish primary vs secondary touch sources:
 - `TOUCH_BTN_OFFSET_2 = 256` (new) -- second touch button per action
 
 SDL button IDs: standard button at kc index N fires:
-- Touch primary:   N + 128 (range 128-183)
+
+- Touch primary: N + 128 (range 128-183)
 - Touch secondary: N + 256 (range 256-311)
-- Physical:        whatever SDL button ID the gamepad reports (range 0-25 typically)
+- Physical: whatever SDL button ID the gamepad reports (range 0-25 typically)
 
 All well within the 1024-element button_state[] array.
 
@@ -60,10 +62,12 @@ All well within the 1024-element button_state[] array.
 ### Kotlin-side Changes
 
 **TouchBindings.kt:**
+
 - Add `TOUCH_BTN_OFFSET_2 = 256`
 - Add `MAX_TOUCH_BINDINGS_PER_ACTION = 2`
 
 **TouchOverlayView.kt:**
+
 - Add runtime primary/secondary tracking via a ref-count map:
   ```
   touchPrimaryRefs: MutableMap<Int, Int>  // binding -> count of primary-offset holds
@@ -77,6 +81,7 @@ All well within the 1024-element button_state[] array.
   with `dispatchTouchButton(binding, pressed)`
 
 **MainActivity.kt:**
+
 - Update buttonCallback: don't add TOUCH_BTN_OFFSET (it's already included in the button ID)
   ```kotlin
   touchOverlay.buttonCallback = { button, pressed ->
@@ -89,6 +94,7 @@ All well within the 1024-element button_state[] array.
   ```
 
 **TouchEditorPage.kt:**
+
 - In the binding picker, count how many controls in the layout use each binding value
   (across buttons, stick button-mode directions, stick double-tap, radial segments)
 - Exclude the currently-edited control from the count
@@ -97,17 +103,18 @@ All well within the 1024-element button_state[] array.
 
 ### Limits Summary
 
-| Source         | Max per action | Enforced by            |
-|----------------|---------------|------------------------|
-| Keyboard       | 2             | kc_keyboard[] structure (2 entries per action) |
-| Gamepad buttons | 2            | kc_joystick[] structure (2 entries per action) |
-| Mouse          | 1             | kc_mouse[] structure (1 entry per action) |
-| Touch buttons  | 2             | Editor enforcement + TOUCH_BTN_OFFSET/OFFSET_2 |
-| Total          | 7             | All independent state bits in ubyte |
+| Source          | Max per action | Enforced by                                    |
+| --------------- | -------------- | ---------------------------------------------- |
+| Keyboard        | 2              | kc_keyboard[] structure (2 entries per action) |
+| Gamepad buttons | 2              | kc_joystick[] structure (2 entries per action) |
+| Mouse           | 1              | kc_mouse[] structure (1 entry per action)      |
+| Touch buttons   | 2              | Editor enforcement + TOUCH_BTN_OFFSET/OFFSET_2 |
+| Total           | 7              | All independent state bits in ubyte            |
 
 ### Correctness
 
 When two touch buttons for the same action are BOTH held:
+
 - First press sets BIT6 (primary), second press sets BIT7 (secondary)
 - Releasing either clears only its own bit; the action stays active via the other
 - When both are released, both bits are cleared; action stops

@@ -1,12 +1,14 @@
 # Test suite cleanup 2026-06-20
 
 ## Goal
+
 - Implement the accepted cleanup items from the runtime survey.
 - Collapse the duplicate autosave resume coverage.
 - Remove or merge debug-era graphics probe coverage.
 - Resolve the stage-script standalone metadata issue without dropping useful coverage by accident.
 
 ## Plan
+
 - [x] Re-read project instructions and inspect the autosave scripts.
 - [x] Update autosave coverage so one script covers ordinary resume and missing-pilot resume.
 - [x] Remove redundant/debug-only top-level scripts.
@@ -14,6 +16,7 @@
 - [x] Run targeted validation or static checks and record results.
 
 ## Result
+
 - Folded `test_autosave_resume_unified.json5` into `test_autosave_resume_missing_pilot_unified.json5`.
 - Removed debug-only or superseded scripts:
   - `test_autosave_resume_unified.json5`
@@ -24,6 +27,7 @@
 - Removed the stale timeout override for the deleted autosave test.
 
 ## Validation
+
 - `test_controls_readability_d2.json5` passed on emulator with D2.
 - `test_autosave_resume_missing_pilot_unified.json5` passed on emulator with D2.
 - `test_autosave_resume_missing_pilot_unified.json5` passed on emulator with D1.

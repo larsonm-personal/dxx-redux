@@ -28,10 +28,18 @@ def main():
         "$S2\n$D 1 end01.pcx 2 0 10 10 300 180\n$U 1\n$C1\n"
         "Mission complete\n$P\nEach pilot finishes independently\n$S\n"
     ).encode("ascii")
-    credits = b"\n".join(
-        encode_line(line)
-        for line in [b"$Co-op ending fixture", b"*Mission complete", b"Independent credits", b"Thank you for playing"]
-    ) + b"\n"
+    credits = (
+        b"\n".join(
+            encode_line(line)
+            for line in [
+                b"$Co-op ending fixture",
+                b"*Mission complete",
+                b"Independent credits",
+                b"Thank you for playing",
+            ]
+        )
+        + b"\n"
+    )
     with (args.output / "coopend.hog").open("wb") as stream:
         stream.write(b"DHF")
         for name, data in [(b"coopend.tex", text), (b"coopend.ctb", credits)]:
@@ -43,8 +51,7 @@ def main():
                 raise ValueError("Expected a Descent movie library")
             count = struct.unpack("<I", stream.read(4))[0]
             entries = [
-                (stream.read(13).split(b"\0")[0].lower(), struct.unpack("<I", stream.read(4))[0])
-                for _ in range(count)
+                (stream.read(13).split(b"\0")[0].lower(), struct.unpack("<I", stream.read(4))[0]) for _ in range(count)
             ]
             for name, size in entries:
                 if name == args.movie_name.encode("ascii"):

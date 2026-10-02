@@ -38,106 +38,106 @@ Current validation for the later slices: scoped code quality passed, focused JVM
 ### Launcher Entry And Multiplayer UI
 
 - `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`
-	- `SetupScreen` owns `showMultiplayerPage`
-	- The main launcher `Multiplayer` button sets `showMultiplayerPage = true`
-	- `MultiplayerScreen(onBack, onLaunchGame)` is shown as a full subpage
-	- `launchMultiplayerGame(info)` creates the game-process intent and passes multiplayer extras
+  - `SetupScreen` owns `showMultiplayerPage`
+  - The main launcher `Multiplayer` button sets `showMultiplayerPage = true`
+  - `MultiplayerScreen(onBack, onLaunchGame)` is shown as a full subpage
+  - `launchMultiplayerGame(info)` creates the game-process intent and passes multiplayer extras
 - `android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerScreen.kt`
-	- Top-level nav is `BROWSER`, `LOBBY`, `FRIENDS`, `LAN`
-	- Browser page has server URL, callsign, connect, create lobby, LAN entry, lobby list, active games
-	- Connected browser page already shows `RecentCoopGames`, but only after connecting to the matchmaking server
-	- LAN page wraps `LanDiscoveryTab`
+  - Top-level nav is `BROWSER`, `LOBBY`, `FRIENDS`, `LAN`
+  - Browser page has server URL, callsign, connect, create lobby, LAN entry, lobby list, active games
+  - Connected browser page already shows `RecentCoopGames`, but only after connecting to the matchmaking server
+  - LAN page wraps `LanDiscoveryTab`
 - `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingState.kt`
-	- `GameLaunchInfo` is the central launch DTO for online and LAN paths
-	- `HostGameDefaults` persists host defaults in `dxx_prefs`
-	- `CallsignPrefs` persists the launcher multiplayer callsign
+  - `GameLaunchInfo` is the central launch DTO for online and LAN paths
+  - `HostGameDefaults` persists host defaults in `dxx_prefs`
+  - `CallsignPrefs` persists the launcher multiplayer callsign
 
 ### LAN Discovery And Direct IP
 
 - `android/app/src/main/java/com/dxxredux/app/lobby/LobbyService.kt`
-	- UDP JSON lobby discovery on `NetworkConstants.LAN_LOBBY_PORT` 42400
-	- Game engine UDP port is `NetworkConstants.ENGINE_PORT` 42424
-	- `startDiscovery()` opens socket and receives LAN lobby packets
-	- `hostLobby()` starts a hosted lobby and announce loop
-	- `joinLobby()` sends JOIN with retries
-	- `joinLobbyByIp()` and `tryJoinLobbyByIp()` send `QUERY` to a known IP, wait for `ANNOUNCE`, then join
-	- `startGame()` sends START to joiners, keeps in-game announces alive, and emits host `GameLaunchInfo`
-	- `handleStart()` emits joiner `GameLaunchInfo`
+  - UDP JSON lobby discovery on `NetworkConstants.LAN_LOBBY_PORT` 42400
+  - Game engine UDP port is `NetworkConstants.ENGINE_PORT` 42424
+  - `startDiscovery()` opens socket and receives LAN lobby packets
+  - `hostLobby()` starts a hosted lobby and announce loop
+  - `joinLobby()` sends JOIN with retries
+  - `joinLobbyByIp()` and `tryJoinLobbyByIp()` send `QUERY` to a known IP, wait for `ANNOUNCE`, then join
+  - `startGame()` sends START to joiners, keeps in-game announces alive, and emits host `GameLaunchInfo`
+  - `handleStart()` emits joiner `GameLaunchInfo`
 - `android/app/src/main/java/com/dxxredux/app/lobby/LobbyProtocol.kt`
-	- ANNOUNCE includes lobby id, callsign, game, mission, mode, player count, max players, build, status, difficulty, level, host port
-	- QUERY exists, so the requested "ping previous server IP" can reuse existing protocol behavior
-	- ANNOUNCE now includes `host_client_id` when available, so clients can distinguish the previous host from another device on the same address
-	- JOIN carries the joiner's `client_id`, JOIN_ACK carries `host_callsign` and `host_client_id`, and PLAYER_LIST includes player `client_id` values
-	- Still missing: session fingerprint and selected restore slot are not in LAN protocol
+  - ANNOUNCE includes lobby id, callsign, game, mission, mode, player count, max players, build, status, difficulty, level, host port
+  - QUERY exists, so the requested "ping previous server IP" can reuse existing protocol behavior
+  - ANNOUNCE now includes `host_client_id` when available, so clients can distinguish the previous host from another device on the same address
+  - JOIN carries the joiner's `client_id`, JOIN_ACK carries `host_callsign` and `host_client_id`, and PLAYER_LIST includes player `client_id` values
+  - Still missing: session fingerprint and selected restore slot are not in LAN protocol
 - `android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt`
-	- `LanDiscoveryView` shows Host LAN Game, Start/Stop Scanning, Join by IP, discovered lobbies
-	- Direct IP join first probes for a lobby, then falls back to direct engine join with generic launch info
-	- Direct fallback defaults to coop, level 1, difficulty 1, empty mission, and no save restore context
-	- `LanLobbyCard` supports Join In-Game for lobbies announcing `status = in_game`
-	- `LanCoopSaveOffer` can auto-select a matching coop save while hosting
-	- The LAN resume offer can rehost the last LAN coop session or query the last host IP as a client
-	- Client LAN quick resume does not use the generic direct-engine fallback; it joins only a matching announced host, or launches through a matching in-game announce
+  - `LanDiscoveryView` shows Host LAN Game, Start/Stop Scanning, Join by IP, discovered lobbies
+  - Direct IP join first probes for a lobby, then falls back to direct engine join with generic launch info
+  - Direct fallback defaults to coop, level 1, difficulty 1, empty mission, and no save restore context
+  - `LanLobbyCard` supports Join In-Game for lobbies announcing `status = in_game`
+  - `LanCoopSaveOffer` can auto-select a matching coop save while hosting
+  - The LAN resume offer can rehost the last LAN coop session or query the last host IP as a client
+  - Client LAN quick resume does not use the generic direct-engine fallback; it joins only a matching announced host, or launches through a matching in-game announce
 - `android/app/src/main/java/com/dxxredux/app/multiplayer/RecentAddressPrefs.kt`
-	- Persists recent LAN IPs and matchmaking server URLs, max 5 each
-	- This is only address history, not resumable session history
+  - Persists recent LAN IPs and matchmaking server URLs, max 5 each
+  - This is only address history, not resumable session history
 
 ### Online Matchmaking
 
 - `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingService.kt`
-	- `connect()` stores current server URL and callsign in `MatchmakingState`
-	- `createLobby()` sends game info to the server
-	- `joinLobby()` joins by server lobby id
-	- `startGame()` requests game start
-	- `GameStarting` creates `GameLaunchInfo` and stores it in state for `LobbyScreen`
-	- `lastLobbyId` exists only for in-memory websocket reconnect after a transient disconnect
-	- Online quick resume now reuses the durable resume record: hosts reconnect and recreate the lobby with saved game info, clients reconnect, refresh lobbies, and join a matching previous lobby or host/session
-	- Still missing: server-side stable host identity beyond the current lobby/player ids and any deeper server-supported resume semantics
+  - `connect()` stores current server URL and callsign in `MatchmakingState`
+  - `createLobby()` sends game info to the server
+  - `joinLobby()` joins by server lobby id
+  - `startGame()` requests game start
+  - `GameStarting` creates `GameLaunchInfo` and stores it in state for `LobbyScreen`
+  - `lastLobbyId` exists only for in-memory websocket reconnect after a transient disconnect
+  - Online quick resume now reuses the durable resume record: hosts reconnect and recreate the lobby with saved game info, clients reconnect, refresh lobbies, and join a matching previous lobby or host/session
+  - Still missing: server-side stable host identity beyond the current lobby/player ids and any deeper server-supported resume semantics
 - `android/app/src/main/java/com/dxxredux/app/multiplayer/LobbyScreen.kt`
-	- Consumes `gameLaunchInfo` and calls `onLaunchGame`
-	- Host-only `CoopSaveOffer` picks the best matching save by lobby callsigns and writes `coop_restore_slot.txt`
+  - Consumes `gameLaunchInfo` and calls `onLaunchGame`
+  - Host-only `CoopSaveOffer` picks the best matching save by lobby callsigns and writes `coop_restore_slot.txt`
 
 ### Game Launch Bridge
 
 - `SetupActivity.launchMultiplayerGame(info)`
-	- Host intent extras: callsign, host mode, port, mission, game mode int, max players, level, difficulty, coop QoL, full death spew
-	- Join intent extras: host address and port, through localhost proxy for LAN joiners
-	- Clears `MatchmakingStateHolder.gameLaunchInfo` after consumption
-	- Stops LAN discovery for non-LAN-host launches, but LAN hosts keep announcing while in game
+  - Host intent extras: callsign, host mode, port, mission, game mode int, max players, level, difficulty, coop QoL, full death spew
+  - Join intent extras: host address and port, through localhost proxy for LAN joiners
+  - Clears `MatchmakingStateHolder.gameLaunchInfo` after consumption
+  - Stops LAN discovery for non-LAN-host launches, but LAN hosts keep announcing while in game
 - `android/app/src/main/java/com/dxxredux/app/MainActivity.kt`
-	- Reads multiplayer extras in the game process
-	- Sets native callsign and client id
-	- Calls `nativeSetAutoJoin()` or `nativeSetAutoHost()`
+  - Reads multiplayer extras in the game process
+  - Sets native callsign and client id
+  - Calls `nativeSetAutoJoin()` or `nativeSetAutoHost()`
 - `android/app/src/main/cpp/shared/net/auto_net.c` and `.h`
-	- Stores auto-host/auto-join globals
-	- `check_auto_net()` triggers engine network actions from the main menu
+  - Stores auto-host/auto-join globals
+  - `check_auto_net()` triggers engine network actions from the main menu
 - `d1/main/net_udp.c` and `d2/main/net_udp.c`
-	- Propagate Android client id into `Netgame.players[].client_id`
+  - Propagate Android client id into `Netgame.players[].client_id`
 
 ### Coop Saves, Progress, And Restore
 
 - `android/app/src/main/cpp/shared/coop/coop_save.c` and `.h`
-	- Shared D1/D2 coop save metadata and autosave implementation
-	- Coop autosaves use `COOP_AUTOSAVE_CALLSIGN` = `coopsave`
-	- Rotating autosave slots are `COOP_AUTOSAVE_SLOT_FIRST` 5 through 9
-	- Save files are `Players/coopsave.mg5` through `Players/coopsave.mg9`
-	- Metadata trailer records active and absent players with callsign, client id, inventory, stats, level, mission, difficulty
-	- `coop_autosave()` writes a save and updates `coop_autosave_history.json`
-	- `coop_write_progress_json()` writes checkpoint/progress data after level completion plus `coop_progress_inventory.bin`
-	- `coop_arm_auto_restore()` reads `coop_restore_slot.txt`, validates a slot, and triggers host-side restore after all players connect
+  - Shared D1/D2 coop save metadata and autosave implementation
+  - Coop autosaves use `COOP_AUTOSAVE_CALLSIGN` = `coopsave`
+  - Rotating autosave slots are `COOP_AUTOSAVE_SLOT_FIRST` 5 through 9
+  - Save files are `Players/coopsave.mg5` through `Players/coopsave.mg9`
+  - Metadata trailer records active and absent players with callsign, client id, inventory, stats, level, mission, difficulty
+  - `coop_autosave()` writes a save and updates `coop_autosave_history.json`
+  - `coop_write_progress_json()` writes checkpoint/progress data after level completion plus `coop_progress_inventory.bin`
+  - `coop_arm_auto_restore()` reads `coop_restore_slot.txt`, validates a slot, and triggers host-side restore after all players connect
 - `android/app/src/main/java/com/dxxredux/app/multiplayer/CreateGameDialog.kt`
-	- Reads matching coop autosaves and progress entries
-	- Writes `coop_restore_slot.txt` when a save is selected
-	- Saves `HostGameDefaults`
+  - Reads matching coop autosaves and progress entries
+  - Writes `coop_restore_slot.txt` when a save is selected
+  - Saves `HostGameDefaults`
 - `android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerScreen.kt`
-	- `readCoopAutosaveHistory()` filters history by mission and local `ClientIdentity`
-	- `readCoopProgressAsEntry()` accepts old progress without client ids, otherwise filters by local id
-	- `writeCoopRestoreSlot()` writes the slot consumed by native auto-restore
+  - `readCoopAutosaveHistory()` filters history by mission and local `ClientIdentity`
+  - `readCoopProgressAsEntry()` accepts old progress without client ids, otherwise filters by local id
+  - `writeCoopRestoreSlot()` writes the slot consumed by native auto-restore
 - `android/app/src/main/cpp/shared/state_android_shared.c`
-	- Single-player Android autosave slots skip entirely if `Game_mode & GM_MULTI`
-	- This prevents single-player auto-exit and auto-minimize saves from overwriting multiplayer-specific coop saves
+  - Single-player Android autosave slots skip entirely if `Game_mode & GM_MULTI`
+  - This prevents single-player auto-exit and auto-minimize saves from overwriting multiplayer-specific coop saves
 - `android/app/src/main/cpp/android_input.c` and `android_meta_actions.c`
-	- Minimize and return-to-launcher autosave gates explicitly skip multiplayer
-	- Current multiplayer durability comes from coop periodic/disconnect/progress saves, not lifecycle saves
+  - Minimize and return-to-launcher autosave gates explicitly skip multiplayer
+  - Current multiplayer durability comes from coop periodic/disconnect/progress saves, not lifecycle saves
 
 ### Current Multiplayer Save Triggers
 
@@ -150,27 +150,27 @@ Current validation for the later slices: scoped code quality passed, focused JVM
 ### Host Migration And Rewind Context
 
 - `d1/main/multi.c` and `d2/main/multi.c`
-	- `Multi_master_playernum` is dynamic on Android
-	- Coop host departure elects a new master instead of always ending the session
-	- New master writes `host_migration.json`
+  - `Multi_master_playernum` is dynamic on Android
+  - Coop host departure elects a new master instead of always ending the session
+  - New master writes `host_migration.json`
 - `SetupActivity.hostMigrationReceiver`
-	- Reads `host_migration.json`
-	- Starts host-mode proxy on `NetworkConstants.HOST_PROXY_PORT` 42425
-	- Restarts LAN discovery and in-game announcing for the migrated host
+  - Reads `host_migration.json`
+  - Starts host-mode proxy on `NetworkConstants.HOST_PROXY_PORT` 42425
+  - Restarts LAN discovery and in-game announcing for the migrated host
 - `android/app/src/main/cpp/shared/android_rewind.c` and `android_rewind_policy.c`
-	- Rewind captures in single-player or coop-host-only contexts
-	- Non-host coop controls are routed to the current host via mirrored D1/D2 `MULTI_REWIND_REQUEST` packets
-	- Hosts validate requester state, current coop host state, the per-session permission, and a basic rate limit before calling `android_rewind_request()`
-	- Requesters receive `MULTI_REWIND_RESULT` HUD feedback for restored, disabled, no-point, denied, and failed results
-	- Non-coop multiplayer is blocked
-	- Coop restore uses `multi_prepare_restore_sync()` before memory restore and resends score after host restore
+  - Rewind captures in single-player or coop-host-only contexts
+  - Non-host coop controls are routed to the current host via mirrored D1/D2 `MULTI_REWIND_REQUEST` packets
+  - Hosts validate requester state, current coop host state, the per-session permission, and a basic rate limit before calling `android_rewind_request()`
+  - Requesters receive `MULTI_REWIND_RESULT` HUD feedback for restored, disabled, no-point, denied, and failed results
+  - Non-coop multiplayer is blocked
+  - Coop restore uses `multi_prepare_restore_sync()` before memory restore and resends score after host restore
 - `android/app/src/main/cpp/shared/android_meta_actions.c`
-	- `META_REWIND` already maps touch/controller rewind controls to `android_rewind_pending`
-	- This can remain the single control entry point for host and client devices
-	- The missing piece is client-side routing: a non-host coop press should send a rewind request to the current host instead of trying to use a local buffer
+  - `META_REWIND` already maps touch/controller rewind controls to `android_rewind_pending`
+  - This can remain the single control entry point for host and client devices
+  - The missing piece is client-side routing: a non-host coop press should send a rewind request to the current host instead of trying to use a local buffer
 - `android/app/src/main/java/com/dxxredux/app/EnginePreferencesPage.kt`
-	- Existing rewind preferences include enabled/disabled state and a target amount of 5, 10, or 20 seconds
-	- Multiplayer rewind should reuse the current host's existing rewind setting and buffer instead of introducing separate multiplayer rewind settings or save rings
+  - Existing rewind preferences include enabled/disabled state and a target amount of 5, 10, or 20 seconds
+  - Multiplayer rewind should reuse the current host's existing rewind setting and buffer instead of introducing separate multiplayer rewind settings or save rings
 
 ## Missing Or Wrong Concepts
 
@@ -331,17 +331,17 @@ Keep only the newest good record at first. A history list can be added later if 
 Add/update the resume record at these points:
 
 - `SetupActivity.launchMultiplayerGame(info)` after mod checks pass and before `startActivity()`
-	- This sees all launches, online and LAN, host and joiner
-	- It can combine `GameLaunchInfo`, current `MatchmakingStateHolder.state`, `LobbyService` state, and local client id
+  - This sees all launches, online and LAN, host and joiner
+  - It can combine `GameLaunchInfo`, current `MatchmakingStateHolder.state`, `LobbyService` state, and local client id
 - `LobbyService.handleJoinAck()` or the current JOIN_ACK handler
-	- Record last successful LAN host address and host identity once protocol includes it
+  - Record last successful LAN host address and host identity once protocol includes it
 - `LobbyService.hostLobby()`
-	- Record hosted lobby setup early enough for "rehost last" even if the game was not launched
+  - Record hosted lobby setup early enough for "rehost last" even if the game was not launched
 - `SetupActivity.hostMigrationReceiver`
-	- Mark the local device as migrated host and update host-side LAN details
+  - Mark the local device as migrated host and update host-side LAN details
 - `CreateGameDialog` and `CoopSaveOffer` / `LanCoopSaveOffer`
-	- Persist the selected coop restore slot because `coop_restore_slot.txt` is one-shot and native deletes it after reading
-	- Persist the host's client-rewind permission along with other hosted-game defaults
+  - Persist the selected coop restore slot because `coop_restore_slot.txt` is one-shot and native deletes it after reading
+  - Persist the host's client-rewind permission along with other hosted-game defaults
 
 ### Quick Resume Candidate Builder
 

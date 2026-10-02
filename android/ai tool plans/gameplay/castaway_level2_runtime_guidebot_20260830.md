@@ -10,15 +10,15 @@ guidance is reportedly inconsistent or unhelpful.
 ## Plan
 
 - [x] Reconstruct every Guide-Bot objective, route decision, and failure from
-  the exported log
+      the exported log
 - [x] Compare runtime objective selection with the generation-21 compiled
-  route and automap-visible objectives
+      route and automap-visible objectives
 - [x] Identify whether the mismatch comes from stale cache data, legacy
-  `Next` goal policy, progress matching, or physical frontier selection
+      `Next` goal policy, progress matching, or physical frontier selection
 - [x] Determine the smallest general correction and the diagnostics or
-  regression coverage needed before implementation
+      regression coverage needed before implementation
 - [x] Add regression coverage for temporary switch restoration and sticky
-  one-shot completion
+      one-shot completion
 - [x] Run scoped formatting, host tests, D1/D2 builds, and Android validation
 - [x] Record final validation results here
 

@@ -78,14 +78,14 @@ class TsfRenderThreadTuningTest(unittest.TestCase):
             body = function_body(self.source, name)
             android_body = body.split("#else", 1)[0]
             self.assertIn("tsf_submit_tuning_command(command)", android_body)
-            self.assertNotIn("tsf_set_output(", body)
-            self.assertNotIn("tsf_set_max_voices(", body)
+            self.assertNotIn("music_synth_set_output(", body)
+            self.assertNotIn("music_synth_set_max_voices(", body)
 
     def test_synth_mutation_is_confined_to_command_application(self) -> None:
         body = function_body(self.source, "tsf_apply_tuning_command")
         self.assertIn("if (mutate_synth && g_tsf)", body)
-        self.assertIn("tsf_set_output(", body)
-        self.assertIn("tsf_set_max_voices(", body)
+        self.assertIn("music_synth_set_output(", body)
+        self.assertIn("music_synth_set_max_voices(", body)
 
         submit = function_body(self.source, "tsf_submit_tuning_command")
         require_order(

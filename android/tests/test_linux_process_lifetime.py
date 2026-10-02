@@ -29,7 +29,7 @@ class ProcessLifetimeTests(unittest.TestCase):
             root = Path(temporary)
             state = root / "children.json"
             worker = root / "worker.py"
-            worker.write_text('''import json, os, subprocess, sys, time
+            worker.write_text("""import json, os, subprocess, sys, time
 from pathlib import Path
 state = Path(sys.argv[1])
 if sys.argv[2] == 'grandchild':
@@ -45,12 +45,15 @@ else:
     print('supervised stderr', file=sys.stderr, flush=True)
     if sys.argv[2] == 'normal': sys.exit(7)
     time.sleep(60)
-''')
+""")
             launcher = root / "owner.ps1"
             helper = str(REPO / "android/helpers/headless_process_pool.ps1").replace("'", "''")
-            launcher.write_text('''param($PythonPath, $WorkerPath, $StatePath, $Mode)
+            launcher.write_text(
+                """param($PythonPath, $WorkerPath, $StatePath, $Mode)
 $ErrorActionPreference = 'Stop'
-''' + f". '{helper}'\n" + '''$fixtureResult = @{ Exit = -1 }
+"""
+                + f". '{helper}'\n"
+                + """$fixtureResult = @{ Exit = -1 }
 $task = [pscustomobject]@{ FilePath = $PythonPath; Arguments = @($WorkerPath, $StatePath, $Mode); WorkingDirectory = $PSScriptRoot; TimeoutSeconds = 60 }
 Invoke-HeadlessProcessPool -Tasks @($task) -MaxParallel 1 -OnCompleted {
     param($task, $result)
@@ -59,12 +62,23 @@ Invoke-HeadlessProcessPool -Tasks @($task) -MaxParallel 1 -OnCompleted {
     [Console]::Error.Write($result.StandardError)
 }
 exit $fixtureResult.Exit
-''')
+"""
+            )
             try:
                 owner = subprocess.Popen(
-                    [shutil.which("pwsh"), "-NoProfile", "-File", str(launcher), sys.executable,
-                     str(worker), str(state), "hold" if kill_owner else "normal"],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                    [
+                        shutil.which("pwsh"),
+                        "-NoProfile",
+                        "-File",
+                        str(launcher),
+                        sys.executable,
+                        str(worker),
+                        str(state),
+                        "hold" if kill_owner else "normal",
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
                 )
                 deadline = time.monotonic() + 15
                 while not state.exists():

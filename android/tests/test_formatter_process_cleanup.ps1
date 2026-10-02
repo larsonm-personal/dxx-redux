@@ -24,6 +24,18 @@ try {
     $identity = [pscustomobject]@{ pid = 123; process_start_ticks = '456'; repository_root = $mine }
     if (Test-DxxFormatterProcess -Record $record -RepositoryRoot $mine -Lock $identity -StartTicks '457') { throw 'Stale formatter identity matched' }
     if (-not (Test-DxxFormatterProcess -Record $record -RepositoryRoot $mine -Lock $identity -StartTicks '456')) { throw 'Valid lock identity did not match without cwd' }
+    foreach ($invocation in @(
+            @('python', '-m', 'ruff', 'format', 'source.py'),
+            @('rustup', 'run', '1.96.1', 'rustfmt', 'source.rs'),
+            @('node', 'android/tools/code-quality/format-text.mjs', 'files.json', 'fix')
+        )) {
+        $record.Name = $invocation[0]
+        $record.Arguments = $invocation
+        $record.WorkingDirectory = $mine
+        if (-not (Test-DxxFormatterProcess -Record $record -RepositoryRoot $mine)) { throw 'New formatter process was not recognized' }
+        $record.WorkingDirectory = $other
+        if (Test-DxxFormatterProcess -Record $record -RepositoryRoot $mine) { throw 'New formatter crossed checkout boundary' }
+    }
     $worker = @'
 $root = Split-Path $PSScriptRoot
 $start = [Diagnostics.ProcessStartInfo]::new((Get-Process -Id $PID).Path)

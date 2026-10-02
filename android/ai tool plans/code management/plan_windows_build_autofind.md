@@ -30,13 +30,13 @@
 ## Validation
 
 1. `./android/run-code-quality.ps1 -Fix`
-	- passed
+   - passed
 2. `pwsh -File .\run-windows-build.ps1 -ListCompilers`
-	- passed
-	- discovered `vs2022-community`, toolset `14.44.35207`, and Windows SDK `10.0.26100.0`
+   - passed
+   - discovered `vs2022-community`, toolset `14.44.35207`, and Windows SDK `10.0.26100.0`
 3. `pwsh -File .\run-windows-build.ps1 -Compiler auto -Target both`
-	- passed
-	- configured and built both `d1` and `d2` from a normal PowerShell session without a preloaded VS environment
+   - passed
+   - configured and built both `d1` and `d2` from a normal PowerShell session without a preloaded VS environment
 
 ## Residual notes
 

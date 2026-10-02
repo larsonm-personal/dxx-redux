@@ -93,66 +93,69 @@ show_linux_hint() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --target)
-            TARGET="$2"
-            shift 2
-            ;;
-        --build-type)
-            BUILD_TYPE="$2"
-            shift 2
-            ;;
-        --sanitizer)
-            SANITIZER="$2"
-            shift 2
-            ;;
-        --clean)
-            CLEAN=1
-            shift
-            ;;
-        --jobs)
-            JOBS="$2"
-            shift 2
-            ;;
-        --generator)
-            GENERATOR="$2"
-            shift 2
-            ;;
-        --cmake)
-            CMAKE_PATH="$2"
-            shift 2
-            ;;
-        --ninja)
-            NINJA_PATH="$2"
-            shift 2
-            ;;
-        --list-tools)
-            LIST_TOOLS=1
-            shift
-            ;;
-        -h|--help)
-            usage
-            exit 0
-            ;;
-        *)
-            echo "Unknown argument: $1" >&2
-            usage >&2
-            exit 1
-            ;;
+    --target)
+        TARGET="$2"
+        shift 2
+        ;;
+    --build-type)
+        BUILD_TYPE="$2"
+        shift 2
+        ;;
+    --sanitizer)
+        SANITIZER="$2"
+        shift 2
+        ;;
+    --clean)
+        CLEAN=1
+        shift
+        ;;
+    --jobs)
+        JOBS="$2"
+        shift 2
+        ;;
+    --generator)
+        GENERATOR="$2"
+        shift 2
+        ;;
+    --cmake)
+        CMAKE_PATH="$2"
+        shift 2
+        ;;
+    --ninja)
+        NINJA_PATH="$2"
+        shift 2
+        ;;
+    --list-tools)
+        LIST_TOOLS=1
+        shift
+        ;;
+    -h | --help)
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Unknown argument: $1" >&2
+        usage >&2
+        exit 1
+        ;;
     esac
 done
 
 case "$TARGET" in
-    both|d1|d2)
-        ;;
-    *)
-        echo "Unsupported target '$TARGET'. Expected both, d1, or d2" >&2
-        exit 1
-        ;;
+both | d1 | d2)
+    ;;
+*)
+    echo "Unsupported target '$TARGET'. Expected both, d1, or d2" >&2
+    exit 1
+    ;;
 esac
 
 case "$SANITIZER" in
-    none|address) ;;
-    *) echo "Unsupported sanitizer '$SANITIZER'. Expected none or address" >&2; exit 1 ;;
+none | address) ;;
+*)
+    echo "Unsupported sanitizer '$SANITIZER'. Expected none or address" >&2
+    exit 1
+    ;;
 esac
 
 DEP_BASE=""

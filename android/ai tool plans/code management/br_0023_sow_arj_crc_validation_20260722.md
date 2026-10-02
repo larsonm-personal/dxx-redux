@@ -10,12 +10,12 @@ exhaustion before publishing output
 
 - [x] Read repository instructions and the complete BR-0023 finding
 - [x] Trace ARJ header layout, decoder input handling, extraction publication,
-  and existing native test registration
+      and existing native test registration
 - [x] Implement checked header and payload CRC validation plus hard compressed
-  input exhaustion
+      input exhaustion
 - [x] Add focused valid, corrupted, and truncated ARJ regression fixtures
 - [x] Run scoped code quality, the native extraction suite, and relevant build
-  verification
+      verification
 - [x] Update the finding disposition and validation record
 
 ## Validation record

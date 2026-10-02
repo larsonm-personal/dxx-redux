@@ -73,9 +73,7 @@ def main(argv):
     import machfs
 
     img_path, out_dir = argv[1:3]
-    max_image_bytes, max_entries, max_file_bytes, max_total_bytes, free_headroom = (
-        int(value) for value in argv[3:]
-    )
+    max_image_bytes, max_entries, max_file_bytes, max_total_bytes, free_headroom = (int(value) for value in argv[3:])
     if min(max_image_bytes, max_entries, max_file_bytes, max_total_bytes) <= 0 or free_headroom < 0:
         raise ValueError("invalid HFS extraction budget")
     if os.path.getsize(img_path) > max_image_bytes:

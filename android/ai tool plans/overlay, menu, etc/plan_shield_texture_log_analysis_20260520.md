@@ -19,10 +19,10 @@ Analyze the Shield texture debug log for D2 level 1 startup plus brief in-level 
 - The log has 54701 lines total
 - `Stock mask check` accounts for 2804 lines
 - merged-wall debug lines account for 51892 lines, broken down as:
-	- `mwall_track`: 20014
-	- `mwall_cover`: 19902
-	- `mwall_coverbox`: 7569
-	- `mwall_portal`: 4406
+  - `mwall_track`: 20014
+  - `mwall_cover`: 19902
+  - `mwall_coverbox`: 7569
+  - `mwall_portal`: 4406
 - The merged-wall phase spans about 49.4 seconds and covers 1069 logged frames, which implies about 21.6 logged frames per second and about 48.5 merged-wall debug lines per frame while that diagnostics path is active
 - The expected Android cache summary line `cache profile: ...` does not appear in the capture even though the current source has it, so this log cannot answer whether KTX2 read, PNG read, upload, or mask work is the main startup cost
 

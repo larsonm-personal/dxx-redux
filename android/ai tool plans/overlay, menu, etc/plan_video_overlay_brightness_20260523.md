@@ -1,11 +1,13 @@
 # Admin Tray Brightness Control + Video Overlay Focus - 2026-05-23
 
 ## Status
+
 - [x] Inspect the existing video overlay controls, admin tray controls, controller focus route, and engine brightness storage
 - [x] Implement the brightness control
 - [ ] Validate on JVM, native build, and device or emulator
 
 ## Goals
+
 - Add a brightness control to the in-game admin tray, not the video info overlay
 - Edit the existing engine brightness value, `GammaLevel`, through `gr_palette_set_gamma()` and `gr_palette_get_gamma()`
 - Reflect brightness changes live while the game is rendering the 3D environment
@@ -16,6 +18,7 @@
 - Keep adding the shared green controller navigation outline to the existing video overlay Texture Filtering, AF, and MSAA buttons
 
 ## Current Anchors
+
 - `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt` draws the admin tray, routes touch events, tracks `adminTraySelectedIndex`, and handles tray controller navigation in `handleAdminTrayGamepadKey()`
 - `android/app/src/main/java/com/dxxredux/app/VideoInfoOverlay.kt` draws the custom Canvas video overlay and owns Texture Filtering, AF, and MSAA touch/controller handling
 - `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` wires admin tray callbacks, `VideoInfoOverlay.graphicsOptionSetter`, `nativeSetGraphicsOption()`, and D-pad routing through `dispatchDpad()` / `handleControllerMenuKey()`
@@ -29,18 +32,21 @@
 ## Implementation Plan
 
 ### Phase 1: Native brightness bridge
+
 - [x] Add `android_graphics_set_gamma_level(int value, int persist)` to `android_graphics_options.c/.h`
 - [x] Clamp to `0..16`, call `gr_palette_set_gamma(value)`, then assign `GameCfg.GammaLevel = gr_palette_get_gamma()`
 - [x] Persist with `persist_config_if_needed(persist, "GammaLevel", GameCfg.GammaLevel, 1, 1)` so root, D1, and D2 config mirrors stay aligned like the other shared graphics settings
 - [x] Add a `"gamma_level"` option name to `android_graphics_set_option()` and keep Kotlin callers using that Android bridge name rather than editing config directly
 
 ### Phase 2: Live value plumbing for Kotlin
+
 - [x] Add a way for Kotlin to read the current live brightness, preferably through a small native getter or by extending `nativeGetVideoStats()` if that keeps code smaller
 - [x] Return `gr_palette_get_gamma()` instead of only `GameCfg.GammaLevel`, so the tray follows the same live value if the native Graphics Options menu changes it
 - [x] Expose `TouchOverlayView` providers/callbacks for admin-tray brightness: current value provider and setter callback
 - [x] Wire those providers in `MainActivity.kt` to `nativeSetGraphicsOption("gamma_level", value)` and the native getter/stats value
 
 ### Phase 3: Admin tray brightness slider
+
 - [x] Add `ADMIN_BRIGHTNESS` to `TouchOverlayView` action constants and include it in `adminTrayVisibleActions()` near `ADMIN_VIDEO_INFO`
 - [x] Treat brightness as a custom slider cell, not a checkbox or one-shot action
 - [x] Update admin tray layout helpers so a brightness slider can draw inside its whole grid rectangle without breaking current panel sizing
@@ -49,6 +55,7 @@
 - [x] Keep the existing green navigation stroke for ordinary tray focus around the current cell
 
 ### Phase 4: Admin tray touch interaction
+
 - [x] In `handleAdminTrayTouch()`, detect touches inside the brightness rectangle before normal button activation
 - [x] Map touch x-position to integer brightness `0..16`, clamp, apply live, and save immediately
 - [x] Support `ACTION_DOWN` as a direct set and `ACTION_MOVE` as drag updates
@@ -56,6 +63,7 @@
 - [x] Clear touch tracking on `ACTION_UP`, `ACTION_POINTER_UP`, and `ACTION_CANCEL` without invoking a separate action callback
 
 ### Phase 5: Admin tray controller interaction
+
 - [x] Add `adminTrayBrightnessActive` state, cleared when the tray closes or when focus leaves the brightness action
 - [x] When the brightness cell is focused and `A` / D-pad center is pressed, toggle `adminTrayBrightnessActive`
 - [x] While active, D-pad left/right decrement/increment brightness and save immediately; D-pad left/right must not move tray focus
@@ -64,6 +72,7 @@
 - [x] Perform haptic feedback when entering/exiting edit mode and when brightness changes through the controller
 
 ### Phase 6: Video overlay controller focus polish
+
 - [x] Add a Canvas focus-stroke paint that matches the shared `tvFocusBorderColor` green (`0xFF00E676`)
 - [ ] Prefer centralizing the ARGB constant in `DpadFocusUtils.kt` and using that from both Compose and `VideoInfoOverlay.kt`
 - [x] Draw the green outline around selected Texture Filtering, AF, and MSAA controls while preserving pressed fill feedback
@@ -71,11 +80,13 @@
 - [x] Keep existing video overlay button activation behavior unchanged
 
 ### Phase 7: Startup and cross-page consistency
+
 - [x] Add `GammaLevel` to `MainActivity.applyGraphicsSettingsPrefs()` so any config-side brightness edit can be applied to a running game through the same native bridge
 - [ ] Do not add a launcher brightness UI in this tranche unless requested; this plan is scoped to the in-game admin tray plus video overlay focus polish
 - [x] Do not create a separate SharedPreferences brightness value; the source of truth stays in the engine config and palette state
 
 ### Phase 8: Tests and validation
+
 - [x] Update `AdminTrayUiTest` expectations for the new `ADMIN_BRIGHTNESS` action and its visible ordering
 - [x] Add focused JVM coverage for brightness action classification: not checkbox, does not close tray after controller activation, and uses slider/edit-mode semantics
 - [x] Add focused JVM coverage for brightness clamp/step helpers if helper functions are extracted from `TouchOverlayView.kt`
@@ -90,6 +101,7 @@
 - [ ] Open the video overlay and confirm Texture Filtering, AF, and MSAA show the green navigation outline when focused with controller navigation
 
 ## Notes
+
 - The earlier version of this plan put brightness in `VideoInfoOverlay.kt`; that is superseded. Brightness belongs in `TouchOverlayView.kt` admin tray now
 - `nativeSetGraphicsOption()` currently persists graphics options on every call. Since brightness is discrete `0..16`, touch dragging should only call native code when the integer level changes
 - Controller brightness edit mode is necessary because D-pad left/right already navigate the admin tray grid

@@ -1,46 +1,46 @@
 {
-  "type": "touch_layout",
-  "version": 11,
-  "name": "Controller Menus",
-  "globalOpacity": 0.7,
-  "sticks": [],
-  "buttons": [],
-  "sliders": [],
-  "radialMenus": [],
-  "dpads": [],
-  "diagnostics": [
-    {
-      "type": "diagnostic",
-      "id": "settings",
-      "x": 92.0,
-      "y": 10.0,
-      "size": 1.2,
-      "opacity": 0.7,
-      "diagType": "SETTINGS"
+    "type": "touch_layout",
+    "version": 11,
+    "name": "Controller Menus",
+    "globalOpacity": 0.7,
+    "sticks": [],
+    "buttons": [],
+    "sliders": [],
+    "radialMenus": [],
+    "dpads": [],
+    "diagnostics": [
+        {
+            "type": "diagnostic",
+            "id": "settings",
+            "x": 92.0,
+            "y": 10.0,
+            "size": 1.2,
+            "opacity": 0.7,
+            "diagType": "SETTINGS"
+        }
+    ],
+    "moreActions": {
+        "type": "more_actions",
+        "x": 11.0,
+        "y": 94.5,
+        "size": 1.0,
+        "opacity": 0.7
+    },
+    "axisRegions": [],
+    "gyro": {
+        "enabled": false,
+        "activation": "ALWAYS",
+        "mode": "ABSOLUTE",
+        "invertX": false,
+        "invertY": true,
+        "invertZ": true,
+        "axisX": "Right Stick X",
+        "axisY": "Right Stick Y",
+        "deadzoneX": 0.22935780882835388,
+        "deadzoneY": 0.22935780882835388,
+        "deadzoneZ": 0.6000000238418579,
+        "maxAngleX": 0.436,
+        "maxAngleY": 0.436,
+        "maxAngleZ": 0.436
     }
-  ],
-  "moreActions": {
-    "type": "more_actions",
-    "x": 11.0,
-    "y": 94.5,
-    "size": 1.0,
-    "opacity": 0.7
-  },
-  "axisRegions": [],
-  "gyro": {
-    "enabled": false,
-    "activation": "ALWAYS",
-    "mode": "ABSOLUTE",
-    "invertX": false,
-    "invertY": true,
-    "invertZ": true,
-    "axisX": "Right Stick X",
-    "axisY": "Right Stick Y",
-    "deadzoneX": 0.22935780882835388,
-    "deadzoneY": 0.22935780882835388,
-    "deadzoneZ": 0.6000000238418579,
-    "maxAngleX": 0.436,
-    "maxAngleY": 0.436,
-    "maxAngleZ": 0.436
-  }
 }

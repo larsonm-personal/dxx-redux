@@ -1,17 +1,20 @@
 # Run all tests on fresh Linux VM
 
 ## Plan
+
 - [x] Inspect `run_all_tests.ps1` and its infrastructure helpers for Linux assumptions
 - [x] Run the test suite and capture the first blocking failure
 - [x] Patch Linux/emulator/test-runner compatibility issues as they appear
 - [ ] Re-run until the suite runs to completion and report failures separately from infrastructure issues
 
 ## Current pass
+
 - [x] Run focused no-infrastructure tests on Linux to expose the next script/runtime blocker
 - [x] Patch the narrowest Linux compatibility issue found
 - [ ] Re-run the focused test and update this plan with the result
 
 ## Notes
+
 - `emu_health.ps1` still had Windows-only `adb.exe` and `emulator.exe` paths; patched to use `test_host_platform.ps1`
 - `Start-Process -WindowStyle` is Windows-only; patched emulator launch to set it only on Windows
 - User enabled `/dev/kvm`; unwound the no-KVM API 23/software-emulation workaround and returned AVDs to API 34 x86_64

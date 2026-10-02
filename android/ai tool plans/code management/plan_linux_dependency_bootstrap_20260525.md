@@ -1,12 +1,14 @@
 # Linux dependency bootstrap cleanup
 
 ## Plan
+
 - [x] Survey android/get_deps scripts and current dependency flow
 - [x] Make fresh Linux bootstrap easier without locking scripts to Ubuntu only
 - [x] Add a very short Ubuntu install readme
 - [x] Run syntax or smoke checks that do not require downloading every tool
 
 ## Notes
+
 - `get_all.sh` now includes host prerequisite, PowerShell, shellcheck, and shfmt steps
 - `resolve_dep_base.sh` now creates `dependency_base.txt` with the platform default if it is missing
 - `get_powershell.sh` is the new Linux-aware entry point, while `get_powershell_ubuntu.sh` remains as a wrapper

@@ -258,10 +258,10 @@ Acceptance:
 - [x] `game_data/extract_all_cds.ps1` now detects standalone `.iso` folders when no `.cue` is present
 - [x] `test_cue_iso.c` now covers direct ISO listing and extraction in addition to the existing BIN/CUE path
 - [x] Validation completed:
-   - desktop CMake build of `test_cue_iso` and `extract_cd`
-   - `ctest -C Release -R cue_iso_tests`
-   - real `extract_cd.exe` smoke run against `Descent Anniversary (ISO)` with 507 extracted files and ISO SHA1 `cc63e0eeb180678eb154b2d5f10ee6b8e25b9e4b`
-   - `android\\gradlew.bat :app:assembleDebug --console=plain` with `JAVA_HOME=c:\\local\\jdk-21`
+  - desktop CMake build of `test_cue_iso` and `extract_cd`
+  - `ctest -C Release -R cue_iso_tests`
+  - real `extract_cd.exe` smoke run against `Descent Anniversary (ISO)` with 507 extracted files and ISO SHA1 `cc63e0eeb180678eb154b2d5f10ee6b8e25b9e4b`
+  - `android\\gradlew.bat :app:assembleDebug --console=plain` with `JAVA_HOME=c:\\local\\jdk-21`
 
 ## Phase 3-5 Progress
 
@@ -274,8 +274,8 @@ Acceptance:
 - [x] `SetupActivity.kt` now recognizes `.iso` picks, exposes `SETUP_COMMAND import_iso`, and routes standalone ISO imports through a dedicated data-only dialog and shared path helper
 - [x] `android/tests/test_extract.ps1` now stages standalone ISO sources and drives the launcher with `import_mode: "setup_iso"`
 - [x] Desktop/native validation completed:
-   - `android\\tests\\build\\Release\\test_cue_iso.exe` passed 48/48 tests when launched from `android\\`
-   - `android\\run-code-quality.ps1 --fix` completed through formatting/lint passes and the embedded `:app:assembleDebug` build succeeded
+  - `android\\tests\\build\\Release\\test_cue_iso.exe` passed 48/48 tests when launched from `android\\`
+  - `android\\run-code-quality.ps1 --fix` completed through formatting/lint passes and the embedded `:app:assembleDebug` build succeeded
 - [ ] Android device regression is still pending because `adb devices` returned no attached emulator or device in this session
 
 ## Status

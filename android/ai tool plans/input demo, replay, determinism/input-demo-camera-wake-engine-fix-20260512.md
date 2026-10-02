@@ -1,12 +1,14 @@
 # Input demo camera wake engine fix
 
 ## Goal
+
 - Re-evaluate the D2 guided-missile camera wake desync as a game-engine nondeterminism issue
 - Remove input-demo special event handling if a deterministic engine path can replace it
 - Preserve the held secondary fire replay timing fix, which matches live engine behavior
 - Validate with focused builds, tests, and the affected level 9 demos
 
 ## Steps
+
 1. Check current diffs and changed files before editing
 2. Inspect D2 camera wake/render paths and replay/headless execution paths
 3. Replace special demo event handling with a deterministic engine-side fix if practical
@@ -14,6 +16,7 @@
 5. Run scoped quality checks, host build, shared tests, and affected demo replays
 
 ## Status
+
 - [x] Plan created
 - [x] Current diffs checked
 - [x] Engine path reviewed
@@ -21,6 +24,7 @@
 - [x] Validation run
 
 ## Notes
+
 - User guidance: demos are tools to expose engine nondeterminism, not artifacts to preserve; avoid special demo codec handling when a game-engine fix is available
 - The post-frame held secondary fire fix remains in scope as a legitimate engine timing alignment
 - Removed the replay/recording `ai_camera_wake` event path and render-time calls to mutate AI from `wake_up_rendered_objects()`

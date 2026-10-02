@@ -1,11 +1,13 @@
 # Test suite runtime survey 2026-06-20
 
 ## Goal
+
 - Load `temp/test_reports/report_20260620_192211.md`.
 - Survey passing tests for speedups, sensible combinations, obsolete/debug tests, and cleanup tasks.
 - Avoid changing tests in this survey pass unless an obviously mechanical metadata note is needed.
 
 ## Plan
+
 - [x] Read repo instructions and load the passing report.
 - [x] Rank tests by elapsed time and setup/log footprint.
 - [x] Inspect high-cost clusters and nearby scripts.
@@ -13,12 +15,14 @@
 - [x] Record recommendations with expected impact and risk.
 
 ## Report Summary
+
 - Source report: `temp/test_reports/report_20260620_192211.md`
 - Result: 80 passed, 0 failed, 0 timeouts, 6 manual skips.
 - Total wall time: 00:55:35.
 - The biggest cost is not random per-test timeout padding. It is repeated emulator launch/game setup and a few intentionally long host/network loops.
 
 ## Highest Runtime Tests
+
 - `test_axis_mapping`: 03:42
 - `test_autosave_resume_missing_pilot_unified`: 03:31
 - `test_autosave_resume_unified`: 03:29
@@ -31,6 +35,7 @@
 - `test_saf_archiver`: 01:27
 
 ## Recommendations
+
 1. Combine or collapse the two autosave resume tests.
    - `test_autosave_resume_unified` and `test_autosave_resume_missing_pilot_unified` share almost the entire first launch/autosave/resume-offer setup.
    - The missing-pilot variant is close to a superset, but it currently clears pilots before pressing `Load Last Save`. Add the ordinary direct resume assertion to that script before `clear_pilot_files`, then either delete the basic test or keep only a minimal smoke.

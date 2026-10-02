@@ -1,10 +1,12 @@
 # Fault tolerance report 2026-06-21 14:07
 
 ## Goal
+
 - Analyze the five failures in `report_20260621_140747.md`.
 - Plan durable fixes that make tests more fault tolerant without extending timeouts as the primary move.
 
 ## Plan
+
 - [x] Read project instructions and load the report summary.
 - [x] Read full logs and owning scripts for all five failures.
 - [x] Group failures by likely root cause and identify brittle assumptions.

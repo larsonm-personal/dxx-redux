@@ -11,17 +11,17 @@ header-only policy or type owners, compatibility shims, and aggregate stubs.
 ## Work plan
 
 - [x] Freeze the merge base and enumerate all branch-added `.c`, `.cpp`, and `.h`
-  paths
+      paths
 - [x] Rename `rbaudio_android.h` to `rbaudio_bin.h`, including its guard, paired
-  inherited includes, focused test ownership, and current campaign records
+      inherited includes, focused test ownership, and current campaign records
 - [x] Review every mechanically unmatched source and header using declarations,
-  consumers, and build ownership rather than filename similarity alone
+      consumers, and build ownership rather than filename similarity alone
 - [x] Correct any additional unambiguous mismatches and update include sites,
-  build files, tests, and current documentation
+      build files, tests, and current documentation
 - [x] Publish the inventory, exception rubric, decisions, and exact metrics in a
-  tracked survey report
+      tracked survey report
 - [x] Run focused contracts, scoped quality, D1/D2 host builds, Android ABI
-  builds, and final path/guard/reference audits
+      builds, and final path/guard/reference audits
 
 ## Naming rule
 
@@ -51,16 +51,16 @@ exported declaration ownership as primary and requires evidence for every
 cross-stem exception.
 
 - [x] Extract declarations from every branch-added unmatched header and map each
-  to its defining translation unit
+      to its defining translation unit
 - [x] Identify headers whose externally defined interface is owned wholly or
-  overwhelmingly by one differently named source
+      overwhelmingly by one differently named source
 - [x] Rename every clear 1:1 source/header pair, including guards, includes,
-  build registrations, tests, and current documentation
+      build registrations, tests, and current documentation
 - [x] Replace the initial survey conclusions with the declaration-level mapping
-  and retain only demonstrated split, inherited, header-only, or entry-point
-  exceptions
+      and retain only demonstrated split, inherited, header-only, or entry-point
+      exceptions
 - [x] Rerun focused contracts, scoped quality, D1/D2 host builds, Android ABI
-  builds, and final stale-name/path audits
+      builds, and final stale-name/path audits
 
 Completion: the declaration-level pass corrected four additional 1:1 source
 names: `android_music_control.c`, `net_udp_reconnect_jni.c`, `secretarea.c`, and

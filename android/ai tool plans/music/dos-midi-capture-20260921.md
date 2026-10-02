@@ -23,14 +23,14 @@ Channel numbers below are human-readable (channel 5 is MIDI index 4). Capture
 times are milliseconds from the first recorded MIDI message, including title
 and briefing music.
 
-| Capture time | Channel 5 event | Meaning |
-| --- | --- | --- |
-| 59916 | CC123=0, CC121=0, bend bytes 64/64, CC7=0 | Reset at the briefing-to-Level-2 transition |
-| 69065 | CC91=35, CC93=77 | Reverb/chorus sends from HMP tick 1096 |
-| 74024 | Program 39 | Synth Bass 2, zero-based program numbering |
-| 74474 | Note 41, velocity 127 | First disputed bass note, HMP tick 1745 |
-| 81698 | CC7=125 | First nonzero song volume, HMP tick 2612 contains CC7=127 |
-| 81699 | Program 39 | Repeated program selection at the same HMP tick |
+| Capture time | Channel 5 event                           | Meaning                                                   |
+| ------------ | ----------------------------------------- | --------------------------------------------------------- |
+| 59916        | CC123=0, CC121=0, bend bytes 64/64, CC7=0 | Reset at the briefing-to-Level-2 transition               |
+| 69065        | CC91=35, CC93=77                          | Reverb/chorus sends from HMP tick 1096                    |
+| 74024        | Program 39                                | Synth Bass 2, zero-based program numbering                |
+| 74474        | Note 41, velocity 127                     | First disputed bass note, HMP tick 1745                   |
+| 81698        | CC7=125                                   | First nonzero song volume, HMP tick 2612 contains CC7=127 |
+| 81699        | Program 39                                | Repeated program selection at the same HMP tick           |
 
 All 20 positive-velocity bass notes before tick 2612 appear in the capture while
 CC7 remains zero. No CC11 expression messages were observed on this channel.

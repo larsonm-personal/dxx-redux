@@ -18,6 +18,6 @@ Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 - `newmenu_key_command()` in both `d1` and `d2` now treats `KEY_ENTER` / `KEY_PADENTER` like a toggle when the selected item is `NM_TYPE_CHECK` or `NM_TYPE_RADIO`.
 - Normal `Enter` behavior for regular menu items and input-menu activation is unchanged.
 - Validation passed:
-	- `run-windows-build.ps1 -Target both -Compiler vs2022-community`
-	- `android\gradlew.bat :app:externalNativeBuildDebug :app:testDebugUnitTest`
-	- `android\run-code-quality.ps1 -Fix`
+  - `run-windows-build.ps1 -Target both -Compiler vs2022-community`
+  - `android\gradlew.bat :app:externalNativeBuildDebug :app:testDebugUnitTest`
+  - `android\run-code-quality.ps1 -Fix`

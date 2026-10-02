@@ -1,14 +1,17 @@
 # Sectorgame Zip Mission Import Plan
 
 ## Goal
+
 - [x] Sketch support for importing sectorgame mission zip files without mandatory extraction, using `game_data/levels/Uneasy4.zip` as the prototype input.
 
 ## Steps
+
 - [x] Inspect existing launcher import, mod listing, metadata popup, storage/link inspector, and game launch packaging paths.
 - [x] Inspect the prototype zip structure and mission metadata enough to answer game detection feasibility.
 - [x] Draft an implementation plan that fits existing Android launcher and game handoff patterns.
 
 ## Prototype Findings
+
 - `game_data/levels/Uneasy4.zip` is 32,030,975 bytes, so it fits the proposed under-100 MB in-memory path.
 - It contains:
   - `Uneasy4.dxa`, 30,794,814 bytes
@@ -24,6 +27,7 @@
 - Game detection is feasible for this file. `.mn2` is a D2 mission descriptor, and its `.rl2` level entry is also D2-specific. D1 mission descriptors use `.msn`, and D1 levels are normally `.rdl`.
 
 ## Existing Integration Points
+
 - `SetupActivity.processPickedUris()` currently routes `.zip` files into the generic temp extraction flow. Sectorgame mission zips should be detected before that generic branch.
 - `ModManager` owns the mod list, manifest, delete, details, compatibility preflight, and `.active_mod_paths` generation.
 - The native launcher handoff writes:
@@ -33,6 +37,7 @@
 - The current game mission loader expects the mission descriptor and sibling HOG to be visible as mountable real files. For a mission `Uneasy4.mn2`, it opens `Uneasy4.mn2`, then swaps the extension to `Uneasy4.hog` and calls `PHYSFSX_contfile_init()` on that HOG.
 
 ## Proposed Data Model
+
 - Extend `ModManager.ModInfo` with a type/kind field, defaulting existing entries to `dxa`.
   - `dxa`: current single archive behavior
   - `mission_zip`: sectorgame-style container
@@ -48,6 +53,7 @@
 - Keep compatibility with existing mod manifest loading by treating missing kind as `dxa`.
 
 ## Import Flow
+
 - Add a lightweight scanner, likely `SectorgameMissionZip.kt`.
 - During file picker processing:
   - For `.zip`, inspect the central directory or stream entries enough to decide whether it is a mission container.
@@ -57,6 +63,7 @@
 - Category rule: any mission zip with `.mn2` or `.msn` is categorized as `levels` in the mod list/details.
 
 ## Game Detection
+
 - Prefer mission descriptor extension:
   - `.mn2` means D2
   - `.msn` means D1 unless contents prove otherwise
@@ -67,6 +74,7 @@
 - For `Uneasy4.zip`, detected game should be `d2`.
 
 ## Base Asset Readiness
+
 - Reuse `launchDataReadyForGame(game, setDir, manifest, safManifest)` for a simple top-level readiness flag.
 - In the mod row/details:
   - show target game from descriptor detection
@@ -74,6 +82,7 @@
   - if the zip is enabled but base game assets are missing, include a problem line similar to existing mod compatibility problems
 
 ## Details UI
+
 - Extend `ModDetails` with constituent files for mission zips.
 - The top-level details dialog should show:
   - archive path
@@ -90,6 +99,7 @@
   - for `.hog`, show the same file detail fields used by `FileDetailDialog`, plus HOG contents if an existing or small new HOG lister is available
 
 ## Launch Handoff
+
 - Tranche 1 mounts the outer zip directly at the PhysFS `missions` mount point. This makes root archive entries such as `Uneasy4.mn2`, `Uneasy4.hog`, and `Uneasy4.dxa` visible to the existing mission enumeration as `missions/<name>`.
 - Android `.active_mod_paths` now accepts an optional tab-separated mount point. Existing one-column lines keep their original behavior.
 - Enabled `mission_zip` entries are written as `<absolute zip path>\tmissions`.
@@ -106,6 +116,7 @@
   - Delete of the top-level entry deletes the entire bundle root.
 
 ## Storage And Link Inspector
+
 - Add bundle ownership metadata so the advanced storage inspector can group files:
   - top-level mod id
   - child relative paths
@@ -118,6 +129,7 @@
   - child entries are not independently deleted from the mod details UI unless a later feature deliberately supports repair/edit
 
 ## Tests
+
 - JVM unit test for `SectorgameMissionZip` detection using an in-memory zip with `.mn2`, `.hog`, `.dxa`.
 - JVM unit test using `Uneasy4.mn2` contents to assert `d2`, title `Uneasy 4`, category `levels`, and level `Uneasy4.rl2`.
 - ModManager manifest round-trip test for `mission_zip` and `extracted_bundle`.
@@ -125,6 +137,7 @@
 - Native or integration smoke test that a small mission zip can be imported, enabled, and appears in D2 mission selection.
 
 ## Implementation Tranche 1
+
 - [x] Add Kotlin scanner/parser for sectorgame-style mission zips.
 - [x] Extend `ModManager` metadata and import/details support for `mission_zip` entries.
 - [x] Route matching `.zip` imports into the mods list before generic archive extraction.
@@ -134,6 +147,7 @@
 - [x] Run focused Gradle tests and update this plan with results.
 
 ## Tranche 1 Verification
+
 - `android/run-code-quality.ps1 -Fix` passed for the touched Kotlin and native files.
 - `./gradlew :app:testDebugUnitTest --tests com.dxxredux.app.SectorgameMissionZipTest --tests com.dxxredux.app.ModManagerMissionZipTest` passed.
 - `./gradlew :app:assembleDebug` passed.

@@ -28,21 +28,21 @@ D1 and D2 `arch/ogl/ogl.c` into shared Android helper code.
 ## Result
 
 - added shared helper:
-	- `android_merged_wall_cached_texmerge_setup_output_texture(...)`
+  - `android_merged_wall_cached_texmerge_setup_output_texture(...)`
 - replaced duplicated D1/D2 output-texture setup block with a shared helper call
-	while keeping these local in `ogl.c`:
-	- `ogl_get_free_texture()`
-	- `ogl_init_texture(...)`
-	- `tex_set_size(...)`
-	- `r_texcount++`
+  while keeping these local in `ogl.c`:
+  - `ogl_get_free_texture()`
+  - `ogl_init_texture(...)`
+  - `tex_set_size(...)`
+  - `r_texcount++`
 - removed now-unused local render-pass constant arrays from both `ogl.c` files
-	after phase 23 moved the draw path to shared code
+  after phase 23 moved the draw path to shared code
 - validation passed:
-	- `run-code-quality.ps1 -Fix`
-	- Android `:app:assembleDebug :app:testDebugUnitTest`
-	- `run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
-	- `diff_vs_upstream.ps1 -Top 20`
+  - `run-code-quality.ps1 -Fix`
+  - Android `:app:assembleDebug :app:testDebugUnitTest`
+  - `run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
+  - `diff_vs_upstream.ps1 -Top 20`
 - latest churn lines:
-	- `d1/arch/ogl/ogl.c`: `+1901 -50 total 1951`
-	- `d2/arch/ogl/ogl.c`: `+1928 -49 total 1977`
-	- overall totals: `+17823 -801` across `199` files
+  - `d1/arch/ogl/ogl.c`: `+1901 -50 total 1951`
+  - `d2/arch/ogl/ogl.c`: `+1928 -49 total 1977`
+  - overall totals: `+17823 -801` across `199` files

@@ -26,9 +26,7 @@ def main() -> None:
         assert "PHYSFS_read(fp, &value, sizeof(value), 1) != 1" in reader
         assert "PHYSFS_eof(fp)" not in reader
         assert "return 0" in reader
-        assert "control_center_triggers_are_valid(&ControlCenterTriggers" in read(
-            f"{game}/main/newdemo.c"
-        )
+        assert "control_center_triggers_are_valid(&ControlCenterTriggers" in read(f"{game}/main/newdemo.c")
         assert "if (!control_center_triggers_read_n" in read(f"{game}/main/gamesave.c")
         assert "if (!control_center_triggers_read_n_swap" in read(f"{game}/main/state.c")
 

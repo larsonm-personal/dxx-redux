@@ -11,7 +11,7 @@ in the touch editor and use the same anchor in the in-game overlay.
 - [x] Centralize the anchor calculation and apply it to editor and runtime
 - [x] Add or update focused geometry tests for the shared anchor behavior
 - [x] Run scoped formatting, unit tests, Android native build, and emulator
-  installation/smoke verification
+      installation/smoke verification
 - [x] Mark the work complete and record any remaining visual tuning
 
 ## Result

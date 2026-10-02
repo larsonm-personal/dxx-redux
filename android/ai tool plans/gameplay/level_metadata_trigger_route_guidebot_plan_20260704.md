@@ -1,9 +1,11 @@
 # Trigger-Aware Level Pathing and Guidebot Planning
 
 ## Goal
+
 Plan support for trigger-aware mission path analysis, metadata UI documentation, and guidebot routing through objective chains such as keys, reactors, bosses, exit triggers, hidden doors, and switch-opened passages.
 
 ## Planning Checklist
+
 - [x] Create this plan before further work.
 - [x] Inspect current level metadata scan data flow and JSON/UI consumers.
 - [x] Inspect guidebot path target selection and passability decisions.
@@ -13,6 +15,7 @@ Plan support for trigger-aware mission path analysis, metadata UI documentation,
 - [x] Split implementation into safe phases with tests.
 
 ## Implementation Checklist
+
 - [x] Begin Phase 1 and route-step JSON implementation.
 - [x] Add route step data structures and callback surface to `level_metadata_scan.h`.
 - [x] Teach `level_metadata_scan.c` to produce a trigger-aware route chain without regressing current travel distance/status fields.
@@ -28,6 +31,7 @@ Plan support for trigger-aware mission path analysis, metadata UI documentation,
 - [x] Run focused Android metadata and guidebot automation after the KCXF2 baseline is regenerated.
 
 ## Implementation Notes 2026-07-04
+
 - Phase 1 and the metadata/UI slice are implemented.
 - The route planner now emits structured steps for start, keys, triggers, reactor/boss, and exit.
 - `route_status`, `route_problem`, and `route_steps` are serialized by JNI and headless metadata paths.
@@ -37,6 +41,7 @@ Plan support for trigger-aware mission path analysis, metadata UI documentation,
 - MSVC packing from legacy engine headers can leave callers at 1-byte packing. `level_metadata_scan.h` now brackets its shared ABI structs with MSVC pack push/pop to keep C and C++ route-step layout consistent.
 
 Validation completed:
+
 - `.\android\helpers\stop-stale-formatters.ps1`
 - `.\android\run-code-quality.ps1 -Fix -Paths ...`
 - `.\run-windows-build.ps1 -Target both`
@@ -46,6 +51,7 @@ Validation completed:
 - KCXF2 headless smoke: level 2 route status `ok`; route kinds `start -> key -> trigger -> trigger -> trigger -> trigger -> trigger -> trigger -> trigger -> exit`; trigger chain `4, 7, 8, 13, 19, 18, 17`; exit trigger `16`.
 
 ## Implementation Notes 2026-07-04 Guidebot Slice
+
 - Focused mission ZIP automation regenerated `game_data/mission_files/KCXF2RMv11.json` with route arrays. KCXF2 level 2 now records `start -> key -> trigger -> trigger -> trigger -> trigger -> trigger -> trigger -> trigger -> exit`, with trigger chain `4, 7, 8, 13, 19, 18, 17` and exit trigger `16`.
 - Android D2 guidebot default "next" now checks `level_metadata_get_state()->route_steps` before falling back to classic key, boss, reactor, and exit selection.
 - Trigger route objectives store their own target segment, side, wall, trigger id, and label. The guidebot menu and "Finding NEXT" text use that route label.
@@ -56,6 +62,7 @@ Validation completed:
 - Added `.7z` to `game_data/generate_game_data_index.ps1` and regenerated `game_data/game_data_index.txt` so mission ZIP dependencies can be declared directly.
 
 Additional validation completed:
+
 - `.\android\run-code-quality.ps1 -Fix -Paths @('d2/main/escort.c','d2/main/escort.h','android/app/src/main/cpp/shared/game_introspect.cpp','android/app/src/main/cpp/shared/game_automate.cpp','android/game_scripts/test_kcxf2_guidebot_route_next.json5','game_data/generate_game_data_index.ps1','game_data/game_data_index.txt','game_data/mission_files/KCXF2RMv11.json','android/ai tool plans/gameplay/level_metadata_trigger_route_guidebot_plan_20260704.md')`
 - `.\run-windows-build.ps1 -Target d2`
 - `.\buildd1\maths\test_level_metadata_scan.exe`
@@ -65,6 +72,7 @@ Additional validation completed:
 - `.\android\helpers\run_test.ps1 test_kcxf2_guidebot_route_next.json5 -TimeoutSeconds 900`
 
 ## Implementation Notes 2026-07-04 Broader Baseline Slice
+
 - `android/helpers/run_mission_zip_batch.ps1` now accepts multiple patterns and defaults to both `*.zip` and `*.7z`, so committed 7z mission archives can use the same metadata generation path.
 - Mission-list automation now separates command entries from stock base missions. D2 skips prefixed stock entries such as `D1:` and `D2:`, plus `Counterstrike`, while custom missions with descriptive names such as `Descent 2: Enemy Vignettes` remain selectable.
 - Added a sole-base fallback for mission-list automation. This keeps focused single-mission imports usable when the list legitimately contains only one selectable mission.
@@ -74,6 +82,7 @@ Additional validation completed:
 - `game_data/generate_game_data_index.ps1` now includes `.7z`; `game_data/game_data_index.txt` now includes `game_data/mission_files/KCXF2RMv11.7z`.
 
 Additional validation completed:
+
 - `.\android\helpers\run_mission_zip_batch.ps1 -Pattern 'diehard.7z' -Install -TimeoutSeconds 900`
 - `.\android\helpers\run_mission_zip_batch.ps1 -Pattern 'Descent.zip' -Install -TimeoutSeconds 900`
 - Four bounded runs of `.\android\helpers\run_mission_zip_batch.ps1 -Pattern '*.zip' -MaxZips 12 -LargeZipIncludePatterns @() -TimeoutSeconds 900`
@@ -81,6 +90,7 @@ Additional validation completed:
 - `.\game_data\generate_game_data_index.ps1`
 
 ## Implementation Notes 2026-07-04 Baseline Continuation
+
 - Continued broad mission ZIP generation from 46 of 106 existing non-tracklist JSON files with route arrays to 105 of 106.
 - Focused `tu.zip` rerun passed after the previous batch failure. Logcat showed the failed batch was an Android `levelmeta_d2` service process attach/start timeout, not a scanner timeout.
 - One bounded batch hit the outer tool timeout after updating `Tyrsis`, `Vela1`, `Vertigo Missions`, `Vesta`, and `Vignettes`; `U3AAH` timed out during launch sanity and `vignett2` exposed a mission selector bug.
@@ -93,6 +103,7 @@ Additional validation completed:
 - `ulterior_v1.0.6b.7z` remains open. The archive import step did not complete within 900 seconds, so no normal metadata JSON was created. `ewithin-versions.zip` remains intentionally skipped as the 892.7 MB oversized archive.
 
 Additional validation completed:
+
 - `.\android\gradlew.bat -p android :app:assembleDebug` with JDK 21
 - Focused rerun: `.\android\helpers\run_mission_zip_batch.ps1 -Pattern 'vignett2.zip' -Install -TimeoutSeconds 900`
 - Focused rerun: `.\android\helpers\run_mission_zip_batch.ps1 -Pattern 'U3AAH.zip' -Install -TimeoutSeconds 240` failed during launch sanity after metadata generation
@@ -101,6 +112,7 @@ Additional validation completed:
 - Focused `ulterior_v1.0.6b.7z` attempt failed by import timeout
 
 ## Investigation Notes 2026-07-04 Obsidian Advanced Pathing
+
 - Obsidian is now the focused regression target for advanced route semantics beyond basic keys, reactor, and exit. Its levels are completable, but the current route-chain solver marks some rows partial or failed.
 - Git history for `game_data/mission_files/Obsidian.json` currently has `697d5f7d initial level zip intake` and `7c4231a9 rework guideboth pathing and metadata`. Compare those versions before changing scanner behavior, because the older flat metadata may show what was considered reachable before ordered route chains were introduced.
 - The investigation should separate two signals:
@@ -110,6 +122,7 @@ Additional validation completed:
 - First implementation target: identify why levels with complete `travel_targets_reached` still report `trigger route dependency loop`, then add the smallest scanner semantics or test fixture needed to model that pattern.
 
 Implementation update:
+
 - The scanner now treats reachable line-of-fire to a trigger source wall as a valid trigger objective. This fixes shootable switches whose source wall segment is not physically reachable.
 - Route generation now records visible reactor/boss objectives when the control center or boss can be attacked from a reachable firing segment.
 - Trigger dependency failures can make the optimistic search temporarily avoid the failing trigger and retry alternate paths to the same target.
@@ -117,6 +130,7 @@ Implementation update:
 - Trigger-linked doors are considered trigger dependencies before ordinary door passability. Generic keyless doors keep the previous passability behavior; using `WALL_DOOR_LOCKED` as a universal hard blocker produced false Obsidian failures.
 
 Obsidian result after focused regeneration:
+
 - `game_data/mission_files/Obsidian.json` now contains trigger-heavy and hidden-door route arrays. Examples include hidden-door steps in levels 1, 4, and 8, and trigger chains in levels 3, 5, 7, 9, and 14.
 - The focused batch now leaves only two non-ok route rows:
   - Level 10, `Aquarius Falls`: `partial`, `route target unreachable`, chain `start -> key`.
@@ -124,6 +138,7 @@ Obsidian result after focused regeneration:
 - This is a major improvement over the initial Obsidian ordered-route pass, where levels 1, 3, 9, 10, 12, 13, 14, and secret -1 were failed or partial. It also avoids the over-strict locked-door experiment that made levels 3, 5, 6, and 14 look worse despite known completability.
 
 Validation completed for this Obsidian slice:
+
 - `.\android\gradlew.bat -p android :app:assembleDebug` with JDK 21.
 - `.\run-windows-build.ps1 -Target both`.
 - `.\buildd1\maths\test_level_metadata_scan.exe`.
@@ -133,6 +148,7 @@ Validation completed for this Obsidian slice:
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android/app/src/main/cpp/shared/level_metadata_scan.c','android/app/src/main/cpp/shared/level_metadata_scan.h','android/app/src/main/cpp/shared/secret_area_game_adapter.c','android/tests/test_level_metadata_scan.c','game_data/mission_files/Obsidian.json','android/ai tool plans/gameplay/level_metadata_trigger_route_guidebot_plan_20260704.md')`.
 
 ## Current Code Map
+
 - Shared metadata scanner:
   - `android/app/src/main/cpp/shared/level_metadata_scan.h`
   - `android/app/src/main/cpp/shared/level_metadata_scan.c`
@@ -166,6 +182,7 @@ Validation completed for this Obsidian slice:
   - Android has a nearest-reachable-point fallback, but that fallback is geometric. It does not know that an exit route may require firing trigger walls first.
 
 ## KCXF2 Level 2 Target Behavior
+
 For `KCXF2RMv11.7z`, level 2 `kcxf2_n2.rl2`, "Aquabed Borehole":
 
 - There is no reactor object and no external `child == -2` exit side.
@@ -191,6 +208,7 @@ Exit Trigger 16, segment 896 side 4
 The exact chain should come from the planner, not a hard-coded mission special case.
 
 ## Route Step Model
+
 Add a structured route chain to `level_metadata_state` or to a nested struct reachable from it.
 
 Suggested constants:
@@ -234,6 +252,7 @@ typedef struct level_metadata_route_step {
 Keep labels as display helpers only. The JSON should still carry kind, seg, side, wall, trigger, and key fields so later UI and guidebot code do not parse strings.
 
 ## Scanner Callback Additions
+
 Extend `level_metadata_scan_view` instead of reaching into D2 globals from `level_metadata_scan.c`.
 
 Recommended callback additions:
@@ -257,6 +276,7 @@ int (*object_is_boss)(void *user, int objnum);
 The adapter can implement these with `Walls`, `Triggers`, and `Robot_info`. In D1 or other contexts, callbacks can be null and the scanner should degrade to the current simple route behavior.
 
 ## Planner Design
+
 The scanner needs two related modes:
 
 - Static metadata mode: compute the intended route from level start with no triggers fired and no keys owned.
@@ -265,6 +285,7 @@ The scanner needs two related modes:
 The first implementation should do static metadata mode inside `level_metadata_scan.c`. The guidebot can reuse the model later, either by calling a live variant or by sharing a small new route planner module.
 
 ### Passability States
+
 Keep the existing route pathfinder, but add a richer edge classification:
 
 - `open`: normal passable edge.
@@ -277,6 +298,7 @@ Keep the existing route pathfinder, but add a richer edge classification:
 Do not let `edge_has_trigger_opener` silently return passable for metadata route chain generation. It can remain available for legacy travel status until the new planner is stable.
 
 ### Greedy Dependency Resolution
+
 Use a deterministic greedy dependency solver rather than full state-space Dijkstra over all triggers. D2 levels can have up to 100 triggers, and most route chains are linear or nearly linear.
 
 Algorithm sketch:
@@ -301,6 +323,7 @@ Algorithm sketch:
 The route planner should cap iterations at something like 128 and mark partial results rather than looping.
 
 ### Trigger Effect Simulation
+
 For static analysis, firing a trigger should update planner-local state:
 
 - `TT_OPEN_DOOR`: linked door sides become open/passable.
@@ -316,6 +339,7 @@ At first, ignore or mark as non-progress triggers:
 For one-shot triggers, metadata can treat firing as complete. Live mode should use `TF_DISABLED` plus current wall state to decide whether the effect is already satisfied or no longer available.
 
 ## Metadata JSON
+
 Add route fields to both JNI and headless serializers:
 
 ```json
@@ -356,6 +380,7 @@ Add route fields to both JNI and headless serializers:
 Keep `travel_*` fields exactly as they are for compatibility with current tables and automation summaries.
 
 ## Mission JSON Baselines
+
 The generated mission metadata files under `game_data/mission_files/*.json` should carry the same route fields as the live launcher metadata result. This is the durable regression artifact the tests generate and commit.
 
 Current shape, using `game_data/mission_files/KCXF2RMv11.json` as the example:
@@ -412,6 +437,7 @@ Implementation notes:
 - If a route cannot be solved, keep `route_steps` as the partial chain and use `route_status: "partial"` plus `route_problem`. Do not omit the array unless the scanner cannot run at all.
 
 ## Kotlin UI
+
 Extend `LevelMetadata.kt`:
 
 - Add `LevelMetadataRouteStep`.
@@ -442,9 +468,11 @@ Path
 Avoid putting the full chain in the main table. Long trigger chains will wrap badly there.
 
 ## Guidebot Integration
+
 Do this only after metadata route chains are stable.
 
 ### New Live Route Objective
+
 Add an Android-specific live route objective layer in `d2/main/escort.c`, guarded with `#ifdef __ANDROID__` where practical.
 
 Recommended approach:
@@ -469,6 +497,7 @@ Potential additions:
 But this touches shared goal arrays and save/checkpoint assumptions. A lower-risk alternative is to keep `ESCORT_GOAL_EXIT` for classic behavior and use a private `Escort_route_goal_kind` when Android asks for the default next goal. That needs fewer changes in `ai.h`.
 
 ### Next Target Selection
+
 Before `escort_set_goal_object()` returns the classic default, ask the live route planner for the first unmet route step:
 
 - If blue/yellow/red key is not owned and exists, return the existing key goal.
@@ -479,6 +508,7 @@ Before `escort_set_goal_object()` returns the classic default, ask the live rout
 For a trigger source wall, path to a reachable segment from which the player/guidebot can hit or fly through the trigger side. If the source wall's own segment is blocked, try the linked side or nearest visible segment.
 
 ### Completion and Messaging
+
 The guidebot should say the semantic next step, not just "Finding EXIT".
 
 Examples:
@@ -504,7 +534,9 @@ Route objective satisfaction rules:
 - Exit step: exit reached or still the terminal target.
 
 ## Tests and Verification
+
 ### C Unit Tests
+
 Extend `android/tests/test_level_metadata_scan.c` with small synthetic mines:
 
 - Reactorless exit still reports ok and a route chain of start -> exit.
@@ -517,6 +549,7 @@ Extend `android/tests/test_level_metadata_scan.c` with small synthetic mines:
 Run through the existing CMake targets in both D1 and D2 maths builds, because the shared scanner is compiled in both.
 
 ### Headless Metadata
+
 Add route serialization checks for:
 
 - Built-in D2 simple level, expecting a basic key/reactor/exit route shape.
@@ -525,6 +558,7 @@ Add route serialization checks for:
 The KCXF2 check can start as a local automation script under `android/game_scripts/` or a temp verification helper if the archive is not committed.
 
 ### Mission ZIP Baseline JSON
+
 Add or extend a mission ZIP regression check so the generated files under `game_data/mission_files/*.json` contain path arrays:
 
 - Run `android/helpers/run_mission_zip_batch.ps1` for a focused KCXF2 pattern after route serialization lands.
@@ -534,6 +568,7 @@ Add or extend a mission ZIP regression check so the generated files under `game_
 - Keep JSON output pretty-printed and normalized at the producer/write site, matching the existing test JSON normalization rule.
 
 ### Android UI
+
 Run metadata analysis from the launcher and verify:
 
 - Old rows still show robots, secrets, travel, and notes.
@@ -541,6 +576,7 @@ Run metadata analysis from the launcher and verify:
 - Long trigger-heavy route chains remain readable on a phone-size viewport.
 
 ### Guidebot
+
 Add introspection fields before doing final behavior tests:
 
 - current escort goal
@@ -559,7 +595,9 @@ Then automate KCXF2 level 2 checks:
 Use introspection and automation scripts, not screenshots.
 
 ## Phased Implementation Plan
+
 ### Phase 1: Scanner Route Chain
+
 Scope:
 
 - Add structured route steps and scanner callbacks.
@@ -574,6 +612,7 @@ Exit criteria:
 - Existing flat travel fields do not regress on simple fixtures.
 
 ### Phase 2: Metadata Serialization and UI
+
 Scope:
 
 - Serialize route steps from JNI and headless paths.
@@ -590,6 +629,7 @@ Exit criteria:
 - Focused mission ZIP baseline generation produces `game_data/mission_files/KCXF2RMv11.json` with `levels[].route_steps`, including KCXF2 level 2 trigger steps.
 
 ### Phase 3: Live Guidebot Next Objective
+
 Scope:
 
 - Add live route objective selection for Android guidebot default "next".
@@ -604,6 +644,7 @@ Exit criteria:
 - If a trigger has already opened its path, the guidebot advances to the next objective.
 
 ### Phase 4: Broaden Semantics and Regression Coverage
+
 Scope:
 
 - Improve boss-only and reactorless levels.
@@ -616,6 +657,7 @@ Exit criteria:
 - The remaining guidebot behavior changes are backed by automation or input-demo coverage.
 
 ## Risks and Guardrails
+
 - Do not hard-code KCXF2 level names or segments in production code. Use it as a regression case only.
 - Do not move trigger semantics into Kotlin. Keep mine semantics in C/C++ and serialize structured results.
 - Do not replace guidebot behavior in one large change. Metadata route generation should prove the model first.
@@ -624,6 +666,7 @@ Exit criteria:
 - Keep maximum route steps and trigger iterations bounded. Partial output is better than an infinite or exponential search.
 
 ## Recommended First Code Tranche
+
 Start with Phase 1 only:
 
 1. Extend `level_metadata_scan_view` with trigger source/link callbacks.
@@ -636,6 +679,7 @@ Start with Phase 1 only:
 That gives a narrow, testable base before the guidebot starts making live decisions from the new model.
 
 ## Guidebot Vantage Pathing Addendum
+
 Current code already has an Android route-goal bridge in `d2/main/escort.c`, and it is doing useful work:
 
 - `escort_route_next_goal()` reads `level_metadata_get_state()->route_steps`.
@@ -651,6 +695,7 @@ The remaining design gap is that a route step has one segment field, but shootab
 For ordinary keys and reachable doors these are often the same. For shootable switches, visible reactors, bosses, and some hidden doors, they are often different.
 
 ### Recommended Live Guidebot Model
+
 Extend the Android route-goal state so it can distinguish objective identity from movement guidance:
 
 - `objective_kind`: route step kind such as trigger, hidden door, reactor, boss, exit.
@@ -662,6 +707,7 @@ Extend the Android route-goal state so it can distinguish objective identity fro
 The guidebot should continue to create ordinary paths only through live passable edges. The broader route model should select a better live destination, not make the guidebot fly through closed walls.
 
 ### Shootable Switch Behavior
+
 For trigger route steps:
 
 1. Check whether the trigger step is already satisfied using current trigger flags and linked wall passability.
@@ -673,6 +719,7 @@ For trigger route steps:
 This is the same idea as the scanner's `metadata_route_find_visible_path()`, but evaluated against live wall state. The current `escort_find_nearest_reachable_goal_segment()` is a good fallback building block, but shootables need "nearest reachable segment that can see the target", not just "nearest reachable segment on an optimistic path to the target segment".
 
 ### Hidden Door Behavior
+
 Hidden door route steps should become guidebot route goals instead of falling back to classic behavior:
 
 1. Skip the step if the side is already passable.
@@ -681,6 +728,7 @@ Hidden door route steps should become guidebot route goals instead of falling ba
 4. After the wall becomes passable, advance to the next route step.
 
 ### Reactor and Boss Visibility
+
 If a reactor or boss objective is not directly reachable but the scanner found a valid visible attack position, guidebot "next" should path to that firing position and retain the semantic label:
 
 - `next: Reactor`
@@ -689,6 +737,7 @@ If a reactor or boss objective is not directly reachable but the scanner found a
 This avoids saying "can't reach reactor" when the real success path is to shoot it from a window, shaft, or neighboring chamber.
 
 ### Implementation Slices
+
 - [done] Add guidance fields to `level_metadata_route_step` or derive them live into `escort_route_goal`.
 - [pending] Preserve scanner terminal firing positions for trigger, reactor, boss, and exit-visible paths if the live guidebot should reuse static metadata.
 - [done] Add a live line-of-fire helper in D2 escort code, preferably matching the adapter's `FQ_TRANSWALL` `find_vector_intersection()` behavior.
@@ -698,4 +747,5 @@ This avoids saying "can't reach reactor" when the real success path is to shoot 
 - [pending] Add an Obsidian-focused automation or headless check for shootable switch route steps so this does not only fit KCXF2.
 
 ### Implementation Notes
+
 The first guidebot tranche derives guidance live in `escort_route_goal` rather than changing the route-step ABI. For KCXF2 level 2, current generated metadata is `Start -> Open wall trigger 13 -> Open wall trigger 19 -> Open wall trigger 18 -> Open wall trigger 17 -> Exit`; the focused automation now asserts the first `next` target as trigger 13 with `reach_firing_position` guidance and a reachable path endpoint.

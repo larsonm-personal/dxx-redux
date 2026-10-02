@@ -36,6 +36,6 @@
 - `get_errors` reported no PowerShell errors in `android/test_helpers.ps1`, `android/run_test.ps1`, or `android/run_all_tests.ps1`
 - `android/run_all_tests.ps1 -Filter "test_au*"` could not complete because the suite build step is currently blocked by an unrelated native compile error in `android/app/src/main/cpp/android_input.c` (`android_cutscene_tap_suppressed` undeclared / duplicate declaration)
 - Direct launcher validation still ran through `android/run_test.ps1` using the existing installed debug app:
-	- `test_autosave_resume_missing_pilot_unified.json5 -Game d2` launched `SetupActivity` successfully, then failed later at step 8 waiting for `screen_mode = menu`
-	- `test_autosave_resume_unified.json5 -Game d2` launched `SetupActivity` successfully immediately after the first failure, then failed later at step 8 waiting for `screen_mode = menu`
+  - `test_autosave_resume_missing_pilot_unified.json5 -Game d2` launched `SetupActivity` successfully, then failed later at step 8 waiting for `screen_mode = menu`
+  - `test_autosave_resume_unified.json5 -Game d2` launched `SetupActivity` successfully immediately after the first failure, then failed later at step 8 waiting for `screen_mode = menu`
 - In that back-to-back validation pair there was no repeat of the report's `SetupActivity not responding` cascade

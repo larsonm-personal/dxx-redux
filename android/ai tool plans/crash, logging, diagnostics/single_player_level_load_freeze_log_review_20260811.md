@@ -30,9 +30,9 @@
 ## Diagnostic implementation
 
 - [x] Add paired D1/D2 structured level-load and level-initialization timings
-  under the existing Profiling category
+      under the existing Profiling category
 - [x] Add paired successful save-restore phase timings, including startup restore
-  before the first game frame
+      before the first game frame
 - [x] Run scoped formatting, host builds, and relevant tests
 
 ## Validation

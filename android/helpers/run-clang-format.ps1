@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
-# run-clang-format.ps1 -- Run clang-format on android/ C/C++ code only.
+# run-clang-format.ps1 -- Run clang-format on eligible C/C++/Java/C# source files.
 # Usage:
 #   .\run-clang-format.ps1          # format in-place
-#   .\run-clang-format.ps1 --check  # dry-run, exit 1 if changes needed
+#   .\run-clang-format.ps1 -Check  # dry-run, exit 1 if changes needed
 #   .\run-clang-format.ps1 -Paths path\to\file path\to\dir
 
 param(
@@ -17,6 +17,24 @@ $platformHelper = Join-Path $androidRoot "get_deps/helpers/Get-DepPlatform.ps1"
 . $platformHelper
 
 . (Join-Path $PSScriptRoot "code-quality-files.ps1")
+$Paths = @(Get-CodeQualityScriptPaths -InputPaths $Paths -RemainingPaths @($args) -ExplicitScope ($PSBoundParameters.ContainsKey('Paths')))
+
+# --- Gather files ---
+# SDL patch files to exclude (these track upstream SDL)
+$excludes = @(
+    "SDL_androidaudio.c",
+    "SDL_androidaudio.h",
+    "SDL_config_android.h"
+)
+
+$files = Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $repoRoot -InputPaths $Paths -ValidExtensions @('.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hh', '.java', '.cs', '.csrc') |
+    Where-Object { $excludes -notcontains $_.Name }
+
+if ($files.Count -eq 0) {
+    Write-Host "No files found to format"
+    exit 0
+}
+
 
 # --- Locate clang-format ---
 $DEP_BASE = Get-DependencyBase -RepoRoot $repoRoot
@@ -52,23 +70,6 @@ if (-not $clangFormat) {
 Write-Host "Using: $clangFormat"
 & $clangFormat --version
 
-# --- Gather files ---
-$cppDir = Join-Path $androidRoot "app\src\main\cpp"
-
-# SDL patch files to exclude (these track upstream SDL)
-$excludes = @(
-    "SDL_androidaudio.c",
-    "SDL_androidaudio.h",
-    "SDL_config_android.h"
-)
-
-$files = Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $cppDir -InputPaths $Paths -ValidExtensions @('.c', '.cpp', '.h') |
-    Where-Object { $excludes -notcontains $_.Name }
-
-if ($files.Count -eq 0) {
-    Write-Host "No files found to format"
-    exit 0
-}
 
 Write-Host "Found $($files.Count) files to check"
 
@@ -97,6 +98,9 @@ if ($Check) {
 } else {
     foreach ($f in $files) {
         & $clangFormat -i --style=file "$($f.FullName)"
+        if ($LASTEXITCODE -ne 0) { exit 1 }
     }
     Write-Host "Formatted $($files.Count) files"
 }
+
+exit 0

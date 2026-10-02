@@ -272,8 +272,7 @@ Problem:
 
 D1 powerup records are still skipped in `d2/main/d1_in_d2.c`, and D1 and D2
 powerup IDs diverge. D1 has full map at ID 9 and headlight at ID 26. D2 uses
-ID 33 for full map and ID 37 for headlight, with many D2-only pickups above
-27.
+ID 33 for full map and ID 37 for headlight, with many D2-only pickups above 27.
 
 Work items:
 

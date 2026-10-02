@@ -5,10 +5,10 @@
 
 static void set_size(unsigned char *data, size_t size)
 {
-	data[0] = (unsigned char)size;
-	data[1] = (unsigned char)(size >> 8);
-	data[2] = (unsigned char)(size >> 16);
-	data[3] = (unsigned char)(size >> 24);
+	data[0] = (unsigned char) size;
+	data[1] = (unsigned char) (size >> 8);
+	data[2] = (unsigned char) (size >> 16);
+	data[3] = (unsigned char) (size >> 24);
 }
 
 static int expect(const char *name, int actual, int expected)
@@ -21,7 +21,7 @@ static int expect(const char *name, int actual, int expected)
 
 int main(void)
 {
-	unsigned char valid[] = {0, 0, 0, 0, 4, 4, 1, 2, 3, 0xe0, 0xe2, 9, 8, 0xe0};
+	unsigned char valid[] = { 0, 0, 0, 0, 4, 4, 1, 2, 3, 0xe0, 0xe2, 9, 8, 0xe0 };
 	unsigned char work[sizeof(valid)];
 	int ok = 1;
 

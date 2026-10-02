@@ -51,12 +51,8 @@ class IntrospectionAccessorContractsTest(unittest.TestCase):
     def test_shared_owners_preserve_api_and_field_behavior(self) -> None:
         menu_header = (SHARED / "game_menu_introspect_accessors.h").read_text(encoding="utf-8")
         menu_body = (SHARED / "game_menu_introspect_accessors.c").read_text(encoding="utf-8")
-        window_header = (SHARED / "game_window_introspect_accessors.h").read_text(
-            encoding="utf-8"
-        )
-        window_body = (SHARED / "game_window_introspect_accessors.c").read_text(
-            encoding="utf-8"
-        )
+        window_header = (SHARED / "game_window_introspect_accessors.h").read_text(encoding="utf-8")
+        window_body = (SHARED / "game_window_introspect_accessors.c").read_text(encoding="utf-8")
 
         for text in (menu_header, menu_body, window_header, window_body):
             self.assertIn("#ifdef INTROSPECT_ON", text)

@@ -6,14 +6,14 @@ Goal: make input demo regression checks run from `android/regression_demos`, tol
 
 ## Phases
 
-| phase | task | status |
-|---|---|---|
-| 1 | Locate input-demo parser, host replay wrapper, dormant regression scripts, and previous headless planning. | completed |
-| 2 | Update parser so `.dximdemo` files can contain `//` comment lines where JSON records are read. | completed |
-| 3 | Revive or add the regression demo script to run every `.dximdemo` under `android/regression_demos`. | completed |
-| 4 | Run the regression script against the moved demo and fix issues until it passes. | completed |
-| 5 | Survey engine paths needed for headless demo regression checks and record findings. | completed |
-| 6 | Begin headless work with a small, low-risk code or script change. | completed |
+| phase | task                                                                                                       | status    |
+| ----- | ---------------------------------------------------------------------------------------------------------- | --------- |
+| 1     | Locate input-demo parser, host replay wrapper, dormant regression scripts, and previous headless planning. | completed |
+| 2     | Update parser so `.dximdemo` files can contain `//` comment lines where JSON records are read.             | completed |
+| 3     | Revive or add the regression demo script to run every `.dximdemo` under `android/regression_demos`.        | completed |
+| 4     | Run the regression script against the moved demo and fix issues until it passes.                           | completed |
+| 5     | Survey engine paths needed for headless demo regression checks and record findings.                        | completed |
+| 6     | Begin headless work with a small, low-risk code or script change.                                          | completed |
 
 ## Notes
 

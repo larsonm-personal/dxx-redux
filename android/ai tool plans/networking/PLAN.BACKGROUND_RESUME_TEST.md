@@ -1,18 +1,21 @@
 # Plan: Black Screen Fix Integration Test
 
 ## Goal
+
 Add integration test steps to verify the EGL surface recreation fix works after
 minimize/resume. Uses the existing automation and introspection infrastructure.
 
 ## Design
 
 ### New introspection field: `egl_recreate_count`
+
 - Counter in gr.c incremented each time `ogl_android_recreate_egl_surface()` runs
 - Exposed via `ogl_get_egl_recreate_count()` accessor
 - Serialized in `game_introspect.cpp` as top-level `egl_recreate_count` field
 - Value starts at 0; becomes 1 after one background/resume cycle
 
 ### Test flow
+
 1. Existing test_launch_to_automap.json5 gets the game into a level
 2. After automap verification, assert `egl_recreate_count` is 0 (no resume yet)
 3. Log `SCRIPT_BACKGROUND: ready` marker
@@ -25,7 +28,9 @@ minimize/resume. Uses the existing automation and introspection infrastructure.
 9. PASS
 
 ### Test runner changes (Watch-AutomationResult)
+
 When the logcat monitor detects `SCRIPT_BACKGROUND:`, it:
+
 1. Waits 2 seconds (let game settle)
 2. Sends `adb shell input keyevent KEYCODE_HOME`
 3. Waits 5 seconds (app is in background)
@@ -34,6 +39,7 @@ When the logcat monitor detects `SCRIPT_BACKGROUND:`, it:
 6. Continues monitoring for PASS/FAIL
 
 ### Files modified
+
 - d1/arch/ogl/gr.c -- add g_egl_recreate_count + accessor
 - d2/arch/ogl/gr.c -- same
 - android/app/src/main/cpp/shared/game_introspect.cpp -- add field

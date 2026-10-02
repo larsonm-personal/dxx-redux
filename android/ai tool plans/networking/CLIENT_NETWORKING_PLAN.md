@@ -192,6 +192,7 @@ Shows lobbies with state == Waiting that are joinable.
 ```
 
 Each lobby row shows:
+
 - Game mode icon/label (Coop, Anarchy, CTF, etc.)
 - Mission name
 - Host callsign
@@ -257,6 +258,7 @@ Friend status comes from `FRIEND_LIST_RESP` (pushed in welcome bundle,
 updated via `FRIEND_PRESENCE_UPDATE` pushes).
 
 Actions:
+
 - **Join Game/Lobby**: sends `JOIN_FRIEND_GAME { friend_player_id }`.
   On success, navigates to LobbyScreen.
 - **Message**: opens a minimal chat dialog. Sends `SEND_MESSAGE`.
@@ -291,6 +293,7 @@ IP addresses.
 ### Connection Status Bar
 
 Persistent bar at the top of MultiplayerScreen showing:
+
 - Own ping to matchmaking server (updated every 30s via WS ping/pong)
 - Total online player count
 - Connection status indicator (green dot = connected, yellow = reconnecting, red = disconnected)
@@ -319,6 +322,7 @@ After joining a lobby (from any tab), navigate to the lobby detail screen.
 ```
 
 Elements:
+
 - Leave button: sends LEAVE_LOBBY, returns to MultiplayerScreen
 - Player list with ready states, ping, connection type
 - Ready toggle
@@ -380,6 +384,7 @@ App start
 ### Reconnection
 
 If the WebSocket drops:
+
 1. Set status to Reconnecting
 2. Exponential backoff: 1s, 2s, 4s, 8s, max 30s
 3. On reconnect: re-authenticate (server assigns new session but stable player_id)
@@ -460,7 +465,7 @@ The `authCode` is sent as the `play_games_token` in the AUTHENTICATE
 message. The server exchanges it with Google's OAuth2 endpoint to get
 the stable GPGS player ID.
 
-Important: SERVER_CLIENT_ID is the *web* client ID from the Google API
+Important: SERVER_CLIENT_ID is the _web_ client ID from the Google API
 console (type "Web application"), NOT the Android client ID. The Android
 client ID is auto-linked by the SDK via the app's signing key SHA-1.
 
@@ -472,6 +477,7 @@ forceRefresh=true.
 ### Fallback for Non-GPGS Devices
 
 If PlayGamesSdk is unavailable (no Google Play Services):
+
 - Generate a device-local keypair (Ed25519)
 - Store in SharedPreferences (encrypted)
 - Send the public key as the `play_games_token` with a special prefix
@@ -487,6 +493,7 @@ If PlayGamesSdk is unavailable (no Google Play Services):
 ### Own Ping
 
 Measured via WebSocket ping/pong frames:
+
 - OkHttp's `WebSocketListener.onPong()` callback with timestamp
 - Client sends a WS ping frame with a timestamp payload every 30 seconds
 - On pong, compute RTT = now - timestamp
@@ -495,6 +502,7 @@ Measured via WebSocket ping/pong frames:
 ### Lobby Ping Estimate
 
 For each lobby in the server browser:
+
 - Server includes `host_ping_ms` in LobbyInfo (host's ping to server)
 - Client knows its own ping from the status bar
 - Display: "~{host_ping + own_ping}ms" as estimated worst-case latency
@@ -506,6 +514,7 @@ But it gives players useful relative comparison between lobbies.
 ### In-Lobby Ping
 
 Once in a lobby, real peer-to-peer ping measurement happens:
+
 - If STUN/holepunch is complete, actual direct-path RTT is known
 - Shown per-player in the lobby player list
 - Updated via LOBBY_UPDATE messages (ping_ms field on LobbyPlayerInfo)
@@ -549,6 +558,7 @@ SetupActivity
 ```
 
 When returning from a game or lobby, the client either:
+
 - If WebSocket is still connected: sends LIST_LOBBIES + FRIEND_LIST to refresh
 - If disconnected: reconnects and gets a fresh welcome bundle
 
@@ -786,24 +796,24 @@ each step, and what happens on success/failure at every point.
 
 ### Software / Libraries Needed (Client Side)
 
-| Component            | Implementation              | Notes                                  |
-|----------------------|-----------------------------|----------------------------------------|
-| STUN client          | Hand-rolled Kotlin (~60 lines) | RFC 5389 Binding Request is 20 bytes fixed format. Parse XOR-MAPPED-ADDRESS from response. No library needed. |
-| UPnP port mapping    | Hand-rolled SSDP+SOAP (~200 lines) or skip for v1 | Android has no built-in UPnP. `cling`/`jupnp` are heavy. Minimal SSDP discovery + single SOAP AddPortMapping call. |
-| UDP sockets          | `java.net.DatagramSocket`   | Standard Android. One per peer for localhost proxy. |
-| Localhost proxy      | Kotlin coroutines           | One coroutine per peer, forwarding between loopback and real socket. |
-| NAT keepalive        | Kotlin coroutine timer      | 1-byte UDP ping every 15s per active NAT mapping. |
+| Component         | Implementation                                    | Notes                                                                                                              |
+| ----------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| STUN client       | Hand-rolled Kotlin (~60 lines)                    | RFC 5389 Binding Request is 20 bytes fixed format. Parse XOR-MAPPED-ADDRESS from response. No library needed.      |
+| UPnP port mapping | Hand-rolled SSDP+SOAP (~200 lines) or skip for v1 | Android has no built-in UPnP. `cling`/`jupnp` are heavy. Minimal SSDP discovery + single SOAP AddPortMapping call. |
+| UDP sockets       | `java.net.DatagramSocket`                         | Standard Android. One per peer for localhost proxy.                                                                |
+| Localhost proxy   | Kotlin coroutines                                 | One coroutine per peer, forwarding between loopback and real socket.                                               |
+| NAT keepalive     | Kotlin coroutine timer                            | 1-byte UDP ping every 15s per active NAT mapping.                                                                  |
 
 ### Software / Libraries Needed (Server Side) -- Already Implemented
 
-| Component            | Implementation              | Status    |
-|----------------------|-----------------------------|-----------|
-| STUN result storage  | ws_handler.rs StunResult    | Done      |
-| Predicted port calc  | generate_predicted_candidates() | Done  |
-| Candidate distribution | PEER_CANDIDATES broadcast | Done      |
-| Connectivity orchestration | build_connectivity_check_messages() | Done |
-| Relay session allocation | relay.rs RelaySession    | Done      |
-| Connection tracking  | lobby.rs LobbyPlayer fields | Done      |
+| Component                  | Implementation                      | Status |
+| -------------------------- | ----------------------------------- | ------ |
+| STUN result storage        | ws_handler.rs StunResult            | Done   |
+| Predicted port calc        | generate_predicted_candidates()     | Done   |
+| Candidate distribution     | PEER_CANDIDATES broadcast           | Done   |
+| Connectivity orchestration | build_connectivity_check_messages() | Done   |
+| Relay session allocation   | relay.rs RelaySession               | Done   |
+| Connection tracking        | lobby.rs LobbyPlayer fields         | Done   |
 
 ### Client-Side STUN Query Implementation
 
@@ -1230,6 +1240,7 @@ private suspend fun probeAddr(
 ```
 
 Both sides must be listening and sending simultaneously. Each side:
+
 1. Receives CONNECTIVITY_CHECK_GO from server
 2. Starts a listener coroutine on its STUN socket
 3. Sends probe packets to each candidate address
@@ -1237,6 +1248,7 @@ Both sides must be listening and sending simultaneously. Each side:
 5. When an echo of our probe arrives, that pair is confirmed working
 
 The test packet format:
+
 - Bytes 0-3: magic `0xD2CC0100` (identifies our connectivity check)
 - Bytes 4-11: sender timestamp (for RTT calculation)
 
@@ -1396,6 +1408,7 @@ that as the peer address. All subsequent traffic goes through the proxy
 automatically.
 
 This requires:
+
 - The joiner's auto-join resolves the host address to 127.0.0.1:42430
   (the localhost proxy port for peer 0 = the host)
 - The host's proxy listens for incoming packets from joiners on the
@@ -1415,6 +1428,7 @@ for v1.
 The engine binds UDP_Socket[0] to UDP_MyPort (default 42424). The
 localhost proxy also needs ports for each peer (42430+N). These don't
 conflict because:
+
 - The engine binds to 0.0.0.0:42424 (all interfaces, or just loopback
   if we modify it)
 - The proxy binds to 127.0.0.1:42430, 127.0.0.1:42431, etc.
@@ -1480,15 +1494,15 @@ Receive GAME_STARTING -> set up localhost proxy -> launch game
 
 ### Error Handling Summary
 
-| Error                        | Consequence                           | Recovery                          |
-|------------------------------|---------------------------------------|-----------------------------------|
-| STUN timeout (both servers)  | No srflx candidate                    | Proceed with host-only, server assigns relay |
-| STUN timeout (one server)   | Can't detect NAT type precisely       | Assume "unknown", proceed         |
-| All connectivity checks fail | No direct path found                  | Fall back to relay (always works) |
-| Relay token not received     | Can't use relay                       | Bug; show error, leave lobby      |
-| WebSocket drops during check | Lost signaling channel                | Reconnect, re-join lobby, restart STUN |
-| Proxy socket bind fails     | Can't bridge engine to network        | Fatal error, show toast, return to lobby |
-| Peer disappears mid-check   | Connectivity check hangs for that peer| 3s timeout, relay fallback        |
+| Error                        | Consequence                            | Recovery                                     |
+| ---------------------------- | -------------------------------------- | -------------------------------------------- |
+| STUN timeout (both servers)  | No srflx candidate                     | Proceed with host-only, server assigns relay |
+| STUN timeout (one server)    | Can't detect NAT type precisely        | Assume "unknown", proceed                    |
+| All connectivity checks fail | No direct path found                   | Fall back to relay (always works)            |
+| Relay token not received     | Can't use relay                        | Bug; show error, leave lobby                 |
+| WebSocket drops during check | Lost signaling channel                 | Reconnect, re-join lobby, restart STUN       |
+| Proxy socket bind fails      | Can't bridge engine to network         | Fatal error, show toast, return to lobby     |
+| Peer disappears mid-check    | Connectivity check hangs for that peer | 3s timeout, relay fallback                   |
 
 ### Files to Create (Phase C4a)
 
@@ -1523,6 +1537,7 @@ menus, presenting a Kotlin multiplayer status overlay, and starting gameplay.
 ### Overview
 
 When the server sends GAME_STARTING, the client:
+
 1. Sets up the localhost proxy (Phase C4a) with peer addresses from
    the connectivity check results
 2. Launches MainActivity with special intent extras for auto-join or
@@ -1748,6 +1763,7 @@ overlayContainer (existing)
 ```
 
 The overlay shows:
+
 - Current state: "Connecting to host...", "Waiting for game sync...",
   "Loading level...", "Starting game..."
 - Connection quality per peer (from pre-game holepunch results)
@@ -1794,6 +1810,7 @@ class MultiplayerStatusOverlay(context: Context) : View(context) {
 ```
 
 The overlay is:
+
 - VISIBLE from the moment GAME_STARTING is received until the engine
   enters gameplay (in_game = true via introspection or JNI callback)
 - Updated via JNI callbacks as the engine progresses through its
@@ -1882,6 +1899,7 @@ If a joiner sends UPID_REQUEST before the host's socket is open, it
 gets no response.
 
 This is handled by the existing engine retry logic:
+
 - net_udp_game_connect() retries UPID_REQUEST every 1 second
 - Timeout is 10 seconds
 - The host typically starts within 1-2 seconds

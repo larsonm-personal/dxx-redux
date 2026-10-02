@@ -44,10 +44,10 @@ final captures do not. Elapsed time includes engine startup but excludes wrapper
 setup. Concurrent workspace activity means these are individual measurements,
 not guaranteed throughput or a console-runner comparison.
 
-| Capture | Baseline | Optimized | Improvement |
-| --- | ---: | ---: | ---: |
-| Native D1, full traces | 137.427 s / 14.60 fps | 62.179 s / 32.26 fps | 2.21x |
-| D1-in-D2, full traces | 172.129 s / 11.65 fps | 80.577 s / 24.90 fps | 2.14x |
+| Capture                |              Baseline |            Optimized | Improvement |
+| ---------------------- | --------------------: | -------------------: | ----------: |
+| Native D1, full traces | 137.427 s / 14.60 fps | 62.179 s / 32.26 fps |       2.21x |
+| D1-in-D2, full traces  | 172.129 s / 11.65 fps | 80.577 s / 24.90 fps |       2.14x |
 
 Untraced controls completed in 5.097 seconds (393.60 fps) for native D1 and
 24.190 seconds (82.93 fps) for imported D1, including their different startup

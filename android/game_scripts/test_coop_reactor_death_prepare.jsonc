@@ -1,21 +1,19 @@
 [
     {
         "_info": {
-            "games": [
-                "d2"
-            ],
+            "games": ["d2"],
             "_standalone": false,
-            "_owner": "test_lan"
-        }
+            "_owner": "test_lan",
+        },
     },
     {
         "action": "set_debug",
         "field": "coop_world_test",
-        "value": "expect_dying_client"
+        "value": "expect_dying_client",
     },
     {
         "action": "set_debug",
         "field": "coop_travel_test",
-        "value": "reactor"
-    }
+        "value": "reactor",
+    },
 ]

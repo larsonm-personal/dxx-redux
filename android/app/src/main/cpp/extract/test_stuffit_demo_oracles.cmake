@@ -1,3 +1,7 @@
+# cmakelang 0.6.13 misparses string(JSON GET ... archive/file) path components
+
+# cmake-lint: disable=E1120
+
 if(NOT DEFINED TEST_STUFFIT_DIRECT)
     message(FATAL_ERROR "TEST_STUFFIT_DIRECT is required")
 endif()
@@ -30,7 +34,14 @@ else()
     set(last_archive -1)
 endif()
 foreach(archive_index RANGE 0 ${last_archive})
-    string(JSON archive_name GET "${oracle_json}" archives ${archive_index} archive)
+    string(
+        JSON
+        archive_name
+        GET
+        "${oracle_json}"
+        archives
+        ${archive_index}
+        archive)
     string(JSON file_count LENGTH "${oracle_json}" archives ${archive_index} files)
     if(file_count GREATER 0)
         math(EXPR last_file "${file_count} - 1")
@@ -38,9 +49,36 @@ foreach(archive_index RANGE 0 ${last_archive})
         set(last_file -1)
     endif()
     foreach(file_index RANGE 0 ${last_file})
-        string(JSON expected_file GET "${oracle_json}" archives ${archive_index} files ${file_index} file)
-        string(JSON expected_sha GET "${oracle_json}" archives ${archive_index} files ${file_index} sha256)
-        string(JSON expected_size GET "${oracle_json}" archives ${archive_index} files ${file_index} size)
+        string(
+            JSON
+            expected_file
+            GET
+            "${oracle_json}"
+            archives
+            ${archive_index}
+            files
+            ${file_index}
+            file)
+        string(
+            JSON
+            expected_sha
+            GET
+            "${oracle_json}"
+            archives
+            ${archive_index}
+            files
+            ${file_index}
+            sha256)
+        string(
+            JSON
+            expected_size
+            GET
+            "${oracle_json}"
+            archives
+            ${archive_index}
+            files
+            ${file_index}
+            size)
         list(APPEND records "${archive_name}|${expected_file}|${expected_sha}|${expected_size}")
     endforeach()
 endforeach()
@@ -74,11 +112,13 @@ foreach(record IN LISTS records)
         file(MAKE_DIRECTORY "${output_dir}")
         execute_process(
             COMMAND "${TEST_STUFFIT_DIRECT}" "${archive_path}" "${output_dir}"
-            RESULT_VARIABLE extract_result
-            OUTPUT_VARIABLE extract_stdout
+            RESULT_VARIABLE extract_result OUTPUT_VARIABLE extract_stdout
             ERROR_VARIABLE extract_stderr)
         if(NOT extract_result EQUAL 0)
-            message(FATAL_ERROR "In-tree StuffIt extraction failed for ${archive_name}\n${extract_stdout}\n${extract_stderr}")
+            message(
+                FATAL_ERROR
+                    "In-tree StuffIt extraction failed for ${archive_name}\n${extract_stdout}\n${extract_stderr}"
+            )
         endif()
         list(APPEND extracted_archives "${archive_name}")
     endif()
@@ -89,13 +129,19 @@ foreach(record IN LISTS records)
     endif()
     file(SIZE "${actual_path}" actual_size)
     if(NOT actual_size STREQUAL expected_size)
-        message(FATAL_ERROR "Size mismatch for ${archive_name} -> ${expected_file}: expected ${expected_size}, got ${actual_size}")
+        message(
+            FATAL_ERROR
+                "Size mismatch for ${archive_name} -> ${expected_file}: expected ${expected_size}, got ${actual_size}"
+        )
     endif()
     file(SHA256 "${actual_path}" actual_sha)
     string(TOLOWER "${actual_sha}" actual_sha)
     string(TOLOWER "${expected_sha}" expected_sha_lower)
     if(NOT actual_sha STREQUAL expected_sha_lower)
-        message(FATAL_ERROR "SHA-256 mismatch for ${archive_name} -> ${expected_file}: expected ${expected_sha_lower}, got ${actual_sha}")
+        message(
+            FATAL_ERROR
+                "SHA-256 mismatch for ${archive_name} -> ${expected_file}: expected ${expected_sha_lower}, got ${actual_sha}"
+        )
     endif()
     math(EXPR checked_count "${checked_count} + 1")
 endforeach()

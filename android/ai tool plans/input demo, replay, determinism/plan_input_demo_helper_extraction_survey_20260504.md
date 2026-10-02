@@ -1,22 +1,26 @@
 # Plan: Input Demo Helper Extraction Survey (2026-05-04)
 
 ## Goal
+
 - Survey D1/D2 original game files for input-demo-only helper functions that should move into dedicated input-demo files
 - Produce a work list that keeps original 1996 game files limited to small call sites and declarations where possible
 - Classify candidates as D1-only, D2-only, duplicated D1/D2, shared android input-demo code, or truly engine-local glue
 
 ## Scope
+
 - Read-only survey plus work list creation
 - Do not move code in this phase
 - Prefer fresh files in `d1/` and `d2/` for game-specific input-demo helpers, and `android/` shared files for cross-game or android-specific input-demo helpers
 
 ## Execution Plan
+
 - Find `input_demo_*` functions and nearby helper blocks inside existing D1/D2 game files
 - Identify which helpers are already in dedicated input-demo files and which are embedded in original files
 - Map each embedded helper to a proposed destination and note required call-site changes
 - Write the extraction work list into this plan file
 
 ## Status
+
 - Phase 1 complete
   - surveyed static and public `input_demo_*` functions in original D1/D2 `main/*.c` files
 - Phase 2 complete
@@ -131,11 +135,13 @@
   - validated with `run-windows-build.ps1 -Target both`, the focused D2 headless replay smoke test, and Android arm64 Gradle tasks `:app:buildCMakeDebug[arm64-v8a]` and `:app:buildCMakeDebug[arm64-v8a]-2`
 
 ## Existing Dedicated Input Demo Files
+
 - Keep using `d2/main/input_demo_start.c` and `d2/main/input_demo_start.h` for D2 replay startup logic
 - Keep using `d1/main/input_demo_control_info.h`, `d2/main/input_demo_control_info.h`, and `d2/main/input_demo_energy_trace.h` as existing dedicated input-demo files
 - Keep generic codec, replay, recorder, state trace, RNG trace, controls, result, fixture, FP, and debug logging code under `android/app/src/main/cpp/shared/input_demo_*`
 
 ## Preferred Destination Shape
+
 - Add one umbrella file per game for game-specific input-demo hooks first:
   - `d1/main/input_demo_hooks.c` and `d1/main/input_demo_hooks.h`
   - `d2/main/input_demo_hooks.c` and `d2/main/input_demo_hooks.h`
@@ -145,6 +151,7 @@
 - Add `android/app/src/main/cpp/shared/input_demo_probe_utils.c` and `.h` only for truly generic helpers shared by D1/D2 or by multiple D2 hook sections
 
 ## Android Shared Utility Candidates
+
 - `input_demo_path_probe_hash_add`, `input_demo_path_probe_hash_text`, `input_demo_trace_hash_label`, and similar state-key hashing helpers
   - Move as generic `input_demo_probe_hash_*` helpers if more than one extraction cluster uses them
   - Otherwise keep them in the D2 umbrella file to avoid a fake abstraction
@@ -157,6 +164,7 @@
 ## D1 Work List
 
 ### D1 replay and result frame helpers
+
 - Current file: `d1/main/game.c`
 - Move to: `d1/main/input_demo_hooks.c`, frame/replay section
 - Status: mostly completed across the second through fourth implementation tranches
@@ -202,6 +210,7 @@
   - `game_is_time_paused`
 
 ### D1 replay startup and metadata helpers
+
 - Current file: `d1/main/inferno.c`
 - Move to: `d1/main/input_demo_hooks.c`, startup section, or a new `d1/main/input_demo_start.c` if matching D2 is preferred
 - Status: completed in the first implementation tranche using new `d1/main/input_demo_start.c` and `d1/main/input_demo_start.h`
@@ -214,6 +223,7 @@
 - The hash helper is a candidate for `android/app/src/main/cpp/shared/input_demo_probe_utils.*` if shared with D2 start logic
 
 ### D1 quick recording and recorder setup
+
 - Current file: `d1/main/newdemo.c`
 - Move to: `d1/main/input_demo_hooks.c`, recorder section
 - Functions:
@@ -236,6 +246,7 @@
 - Original `newdemo.c` should keep only calls at record start/stop points
 
 ### D1 collision, physics, fireball, and FVI probes
+
 - Current files: `d1/main/collide.c`, `d1/main/physics.c`, `d1/main/fireball.c`, `d1/main/fvi.c`
 - Move to: `d1/main/input_demo_hooks.c`, probe section
 - Candidate helpers:
@@ -248,6 +259,7 @@
 - Original files should keep only calls like `input_demo_log_*` near the instrumented engine operation
 
 ### D1 level intro control
+
 - Current file: `d1/main/gameseq.c`
 - Move to: `d1/main/input_demo_hooks.c`, startup/control section
 - Status: startup skip-intro state and setter completed in the first implementation tranche via `d1/main/input_demo_start.c`
@@ -258,6 +270,7 @@
 ## D2 Work List
 
 ### D2 replay startup and command-line glue
+
 - Current file: `d2/main/inferno.c`
 - Move to: existing `d2/main/input_demo_start.c` and `d2/main/input_demo_start.h`
 - Status: completed in the first implementation tranche
@@ -268,6 +281,7 @@
 - Keep existing `input_demo_load_replay_from_path` and `input_demo_start_loaded_replay` in `input_demo_start.c`
 
 ### D2 replay and result frame helpers
+
 - Current file: `d2/main/game.c`
 - Move to: `d2/main/input_demo_hooks.c`, frame/replay section
 - Status: mostly completed across the second through fourth implementation tranches
@@ -322,6 +336,7 @@
   - `game_is_time_paused`
 
 ### D2 path and guidebot path probes
+
 - Current file: `d2/main/aipath.c`
 - Move to: `d2/main/input_demo_hooks.c`, path section
 - Status: completed in the current tranche
@@ -346,6 +361,7 @@
 - Exact examples from the user belong in this cluster
 
 ### D2 robot lifecycle and object probes
+
 - Current file: `d2/main/object.c`
 - Move to: `d2/main/input_demo_hooks.c`, robot/object section
 - Status: completed for the current lifecycle helper set and visual/render logging printers
@@ -359,6 +375,7 @@
   - `input_demo_log_robot_lifecycle_delete(objnum, obj)` now owns the lifecycle delete target-selection detail and log body
 
 ### D2 AI and awareness probes
+
 - Current files: `d2/main/ai.c`, `d2/main/ai2.c`
 - Move to: `d2/main/input_demo_hooks.c`, AI section
 - Status: largely completed for awareness-source ownership, the `ai2.c` robot-fire probe helpers, the `ai.c` robot pose/view probe block, the `ai.c` AI robot trace/log helper pair, the awareness log printers, the frame-level AI log printers, and the awareness/activity gate wrappers
@@ -392,6 +409,7 @@
   - any remaining direct awareness probe/log call sites that still sit beside the AI transitions
 
 ### D2 weapon, collision, score, and frame-event recording
+
 - Current files: `d2/main/laser.c`, `d2/main/collide.c`, `d2/main/gauges.c`, `d2/main/fireball.c`, `d2/main/fvi.c`
 - Move to: `d2/main/input_demo_hooks.c`, combat/event section, plus `android` utility if shared event append is extracted
 - Functions:
@@ -413,6 +431,7 @@
 - Consolidate repeated `input_demo_record_frame_event_json` bodies during this move
 
 ### D2 movement, controls, render, UI RNG, and escort probes
+
 - Current files: `d2/main/physics.c`, `d2/main/controls.c`, `d2/main/render.c`, `d2/main/gamerend.c`, `d2/main/escort.c`
 - Move to: `d2/main/input_demo_hooks.c`, movement/render/escort sections
 - Functions:
@@ -424,6 +443,7 @@
 - Original files should retain the actual engine branch plus one or two `input_demo_*` calls where the observation happens
 
 ### D2 direct commands and replayed actions
+
 - Current files: `d2/main/gamecntl.c`, `d2/main/automap.c`, `d2/main/escort.c`, `d2/main/gameseq.c`, `d2/main/newdemo.c`
 - Move to: `d2/main/input_demo_hooks.c`, commands/recorder section
 - Status: the `gameseq.c` skip-level-intro piece is already completed in the first implementation tranche via `d2/main/input_demo_start.c`
@@ -436,6 +456,7 @@
 - Original files should keep domain actions like `DropMarker`, `set_escort_special_goal`, and record start/stop hooks, but not input-demo parsing or staging details
 
 ## Suggested Move Order
+
 - First: add D1/D2 umbrella files, headers, and CMake entries with no behavior change
 - Second: move low-risk duplicated utility helpers, especially event append and hash/state-key helpers
 - Third: move replay startup from D1/D2 `inferno.c`, using existing D2 `input_demo_start.c` and a new D1 equivalent or the D1 umbrella file
@@ -445,6 +466,7 @@
 - Seventh: move D1 probe clusters in this order: collision/physics/fireball/FVI
 
 ## Validation Plan For Implementation Phase
+
 - Run `android/run-code-quality.ps1 --fix` after code movement
 - Run `run-windows-build.ps1 -Target d1` and `run-windows-build.ps1 -Target d2`
 - Run one focused input-demo replay wrapper for D2 after each high-risk cluster move

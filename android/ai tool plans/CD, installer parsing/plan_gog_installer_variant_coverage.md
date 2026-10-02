@@ -12,15 +12,15 @@ all four installer variants are represented wherever the D2 exe is referenced.
 ## This tranche
 
 - [x] parameterize the D2 unified JSON5 test so it can import either D2 GOG
-  installer format without duplicating the test logic
+      installer format without duplicating the test logic
 - [x] update the D2 unified PowerShell wrapper so it can auto-discover or
-  accept either D2 installer variant and push the correct device-side path
+      accept either D2 installer variant and push the correct device-side path
 - [x] add the cross-platform data-equivalence note to the D2 test and the
-  future D1 test file comment block
+      future D1 test file comment block
 - [x] add a placeholder D1 installer test file comment block for the later
-  D1-specific regression phase
+      D1-specific regression phase
 - [x] survey every current D2-exe-only path and add the matching D1 exe, D2
-  pkg, and D1 pkg paths so all four variants are listed together
+      pkg, and D1 pkg paths so all four variants are listed together
 
 ## Validation target
 

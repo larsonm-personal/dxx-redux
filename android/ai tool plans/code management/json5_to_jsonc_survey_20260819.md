@@ -23,18 +23,18 @@ Inventory every maintained `.json5` file and every active reader, writer, discov
 
 There are 149 tracked files ending in `.json5` and five additional tracked template or default files whose names contain `.json5`.
 
-| Family | Count | Notes |
-| --- | ---: | --- |
-| `android/game_scripts` | 70 | Automation scripts, including host-resolved templates |
-| `game_data/CD images` | 34 | `extract_regression.json5` files |
-| `game_data/combined launches` | 2 | One combined-launch descriptor and one extraction regression spec |
-| `game_data/gog installers` | 4 | Installer regression specs |
-| `game_data/music` | 33 | Per-album `chromaprint_info.json5` sidecars |
-| `game_data/mission_files` | 1 | CD mission metadata source manifest |
-| `android/app/src/main/assets` | 4 | Known versions, discs, albums, and fingerprint configuration |
-| `android/benchmarks` | 1 | Level metadata benchmark manifest |
-| `android` | 1 | Ignored local AcoustID configuration present in this checkout |
-| Tracked suffix files | 5 | Android auth/AcoustID examples and three server defaults/templates |
+| Family                        | Count | Notes                                                              |
+| ----------------------------- | ----: | ------------------------------------------------------------------ |
+| `android/game_scripts`        |    70 | Automation scripts, including host-resolved templates              |
+| `game_data/CD images`         |    34 | `extract_regression.json5` files                                   |
+| `game_data/combined launches` |     2 | One combined-launch descriptor and one extraction regression spec  |
+| `game_data/gog installers`    |     4 | Installer regression specs                                         |
+| `game_data/music`             |    33 | Per-album `chromaprint_info.json5` sidecars                        |
+| `game_data/mission_files`     |     1 | CD mission metadata source manifest                                |
+| `android/app/src/main/assets` |     4 | Known versions, discs, albums, and fingerprint configuration       |
+| `android/benchmarks`          |     1 | Level metadata benchmark manifest                                  |
+| `android`                     |     1 | Ignored local AcoustID configuration present in this checkout      |
+| Tracked suffix files          |     5 | Android auth/AcoustID examples and three server defaults/templates |
 
 The ignored local `android/acoustid_config.json5` must be preserved and renamed without displaying or rewriting its secret value. No ignored live auth or server configuration was present during the survey. Generated `.resolved`, build-intermediate, and root `temp` copies also exist. They should be regenerated or narrowly cleaned after their producers use `.jsonc`; they are not source data to edit individually.
 

@@ -14,11 +14,17 @@ echo "  1) LAN  -- self-signed TLS, no nginx, direct connections on port 9000"
 echo "  2) Web  -- nginx reverse proxy with Let's Encrypt TLS on port 443"
 echo ""
 while true; do
-    read -p "Enter 1 or 2: " MODE_CHOICE
+    read -r -p "Enter 1 or 2: " MODE_CHOICE
     case "$MODE_CHOICE" in
-        1) DEPLOY_MODE="lan"; break ;;
-        2) DEPLOY_MODE="web"; break ;;
-        *) echo "Invalid choice" ;;
+    1)
+        DEPLOY_MODE="lan"
+        break
+        ;;
+    2)
+        DEPLOY_MODE="web"
+        break
+        ;;
+    *) echo "Invalid choice" ;;
     esac
 done
 echo "Mode: $DEPLOY_MODE"
@@ -71,7 +77,7 @@ fi
 
 if [ -f "$CONFIG_FILE" ]; then
     echo "Config file already exists: $CONFIG_FILE"
-    read -p "Overwrite with $DEPLOY_MODE template? (y/N): " answer
+    read -r -p "Overwrite with $DEPLOY_MODE template? (y/N): " answer
     if [[ "$answer" == [Yy] ]]; then
         cp "$TEMPLATE_CONFIG" "$CONFIG_FILE"
         echo "Config overwritten from $DEPLOY_MODE template"
@@ -96,7 +102,7 @@ if [ "$DEPLOY_MODE" = "lan" ]; then
     fi
     if [ -f "$SCRIPT_DIR/lan_certs/cert.pem" ]; then
         echo "Existing LAN cert found"
-        read -p "Regenerate? (y/N): " answer
+        read -r -p "Regenerate? (y/N): " answer
         if [[ "$answer" == [Yy] ]]; then
             bash "$CERT_SCRIPT"
         else
@@ -127,25 +133,25 @@ else
 
     if [ -f "$NGINX_CONF" ]; then
         echo "nginx config already exists: $NGINX_CONF"
-        read -p "Overwrite? (y/N): " answer
+        read -r -p "Overwrite? (y/N): " answer
         if [[ "$answer" != [Yy] ]]; then
             echo "Keeping existing nginx config"
         else
-            read -p "Enter your domain name (e.g. match.example.com): " DOMAIN
+            read -r -p "Enter your domain name (e.g. match.example.com): " DOMAIN
             if [ -z "$DOMAIN" ]; then
                 echo "ERROR: domain name required for TLS"
                 exit 1
             fi
-            sed "s/DOMAIN/$DOMAIN/g" "$NGINX_TEMPLATE" | sudo tee "$NGINX_CONF" > /dev/null
+            sed "s/DOMAIN/$DOMAIN/g" "$NGINX_TEMPLATE" | sudo tee "$NGINX_CONF" >/dev/null
             echo "nginx config written"
         fi
     else
-        read -p "Enter your domain name (e.g. match.example.com): " DOMAIN
+        read -r -p "Enter your domain name (e.g. match.example.com): " DOMAIN
         if [ -z "$DOMAIN" ]; then
             echo "ERROR: domain name required for TLS"
             exit 1
         fi
-        sed "s/DOMAIN/$DOMAIN/g" "$NGINX_TEMPLATE" | sudo tee "$NGINX_CONF" > /dev/null
+        sed "s/DOMAIN/$DOMAIN/g" "$NGINX_TEMPLATE" | sudo tee "$NGINX_CONF" >/dev/null
         sudo ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/dxx-matchmaking
         echo "nginx config installed and enabled"
     fi
@@ -209,10 +215,10 @@ if [ "$DEPLOY_MODE" = "web" ]; then
     echo ""
 
     if [ -n "$SUGGESTED" ]; then
-        read -p "Public host [$SUGGESTED]: " USER_HOST
+        read -r -p "Public host [$SUGGESTED]: " USER_HOST
         PUBLIC_HOST="${USER_HOST:-$SUGGESTED}"
     else
-        read -p "Public host (domain or IP): " PUBLIC_HOST
+        read -r -p "Public host (domain or IP): " PUBLIC_HOST
     fi
 
     if [ -z "$PUBLIC_HOST" ]; then
@@ -227,7 +233,7 @@ if [ "$DEPLOY_MODE" = "web" ]; then
             echo "Will set:"
             echo "  relay_public_addr: \"$WANT_RELAY\""
             echo "  stun_public_addrs: \"$WANT_STUN\""
-            read -p "Write to $CONFIG_FILE? (Y/n): " WRITE_ANSWER
+            read -r -p "Write to $CONFIG_FILE? (Y/n): " WRITE_ANSWER
             if [[ "$WRITE_ANSWER" != [Nn] ]]; then
                 # Patch relay_public_addr (handles both commented-out and active lines)
                 if grep -qE '^\s*(//\s*)?relay_public_addr:' "$CONFIG_FILE"; then

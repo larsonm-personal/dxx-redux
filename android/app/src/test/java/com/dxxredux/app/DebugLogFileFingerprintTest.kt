@@ -1,8 +1,8 @@
 package com.dxxredux.app
 
-import java.nio.file.Files
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
+import java.nio.file.Files
 
 class DebugLogFileFingerprintTest {
     @Test

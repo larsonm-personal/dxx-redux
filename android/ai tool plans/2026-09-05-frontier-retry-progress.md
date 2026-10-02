@@ -16,12 +16,12 @@
 
 Fresh before/after simulation comparison, including secret levels:
 
-| Mission | Before ok | After ok | Total |
-| --- | ---: | ---: | ---: |
-| Counterstrike | 28 | 28 | 30 |
-| FirstStrike, D1-in-D2 | 19 | 22 | 30 |
-| Castaway Redux | 2 | 2 | 10 |
-| Obsidian | 11 | 11 | 18 |
+| Mission               | Before ok | After ok | Total |
+| --------------------- | --------: | -------: | ----: |
+| Counterstrike         |        28 |       28 |    30 |
+| FirstStrike, D1-in-D2 |        19 |       22 |    30 |
+| Castaway Redux        |         2 |        2 |    10 |
+| Obsidian              |        11 |       11 |    18 |
 
 - No ok-to-non-ok regressions
 - FirstStrike 24 changes from an access violation to ok; 25 and secret 1 change from timeout to ok

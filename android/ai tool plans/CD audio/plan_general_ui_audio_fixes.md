@@ -16,6 +16,7 @@ pressed). This means the keyboard only evaluates after touch-up. No new state
 needed -- `mouse_state` is already tracked.
 
 **Files**:
+
 - `d2/main/newmenu.c` ~line 1562 -- `newmenu_draw()` keyboard auto-show block
 - `d1/main/newmenu.c` -- same block, mirrored change
 
@@ -28,12 +29,14 @@ open instantly. User wants more transparency on the tab (matching the touch
 overlay's default opacity) and a slide-up/down animation for the panel.
 
 **Fix**:
+
 - Reduce tab alpha values (bg 0x88->0x33, ring 0x66->0x44, text 0xBB->0x66)
 - Bottom-anchor the panel instead of centering it
 - Add slide-up animation on open, slide-down-to-close (replaces Close button)
 - Track drag-to-dismiss gesture (downward drag past 30% threshold)
 
 **Files**:
+
 - `TouchOverlayView.kt` -- `drawAdminTrayTab()`, `drawAdminTrayPanel()`,
   `handleAdminTrayTouch()`
 
@@ -57,6 +60,7 @@ dialog. (b) In D2, triggers don't move the ship because they can't be
 bound to axis functions.
 
 **Root causes**:
+
 - (a) `ButtonFunctionPickerDialog` receives `lt`/`rt` as captured values at
   dialog open time; the dialog doesn't recompose on `axisGeneration` changes.
 - (b) `AXIS_CONTROLS` map only has 4 axes (LS_X/Y, RS_X/Y). LT (axis 4) and
@@ -64,6 +68,7 @@ bound to axis functions.
   Throttle binding into the game config.
 
 **Fix**:
+
 - Add `"LT" to 4, "RT" to 5` to `AXIS_CONTROLS`
 - Update `buildJoyPairs()` for single-axis (trigger) bindings
 - Enable trigger controls to offer axis functions (Pitch, Turn, Slide, Bank,
@@ -71,6 +76,7 @@ bound to axis functions.
 - Fix Compose recomposition by observing `axisGeneration` in the dialog
 
 **Files**:
+
 - `ControllerConfigPage.kt` -- `AXIS_CONTROLS`, `buildJoyPairs()`,
   `ButtonFunctionPickerDialog`, trigger control tap handlers
 
@@ -89,6 +95,7 @@ D2's 48000 Hz forces proper resampling with linear interpolation.
 fallback, matching D2 exactly.
 
 **Files**:
+
 - `d1/main/digi.h` -- add `#define SAMPLE_RATE_48K 48000`
 - `d1/arch/sdl/digi_mixer.c` -- change Android fallback to `SAMPLE_RATE_48K`
 
@@ -96,21 +103,23 @@ fallback, matching D2 exactly.
 
 ## Phase Ordering
 
-| Phase | Items | Status |
-|-------|-------|--------|
-| A | 1, 5 | DONE -- keyboard drag delay + D1 Redbook 48K |
-| B | 4 | DONE -- trigger axis controls + picker UI |
-| C | 2 + 3 | DONE -- admin tray slide-up + edge-to-edge grid |
-| D | all | DONE -- Phase 6 added to test_axis_mapping.json5 (trigger analog tests) |
+| Phase | Items | Status                                                                  |
+| ----- | ----- | ----------------------------------------------------------------------- |
+| A     | 1, 5  | DONE -- keyboard drag delay + D1 Redbook 48K                            |
+| B     | 4     | DONE -- trigger axis controls + picker UI                               |
+| C     | 2 + 3 | DONE -- admin tray slide-up + edge-to-edge grid                         |
+| D     | all   | DONE -- Phase 6 added to test_axis_mapping.json5 (trigger analog tests) |
 
 ## Testing
 
 Extended `test_axis_mapping.json5` with Phase 6 (trigger analog axis tests):
+
 - 6a: RT (axis 5) at 0.8 drives only throttle, not pitch/heading/slide/bank
 - 6b: LT (axis 4) at 0.8 drives only throttle, not pitch/heading/slide/bank
 - 6c: RT at sub-threshold (0.1) fires nothing
 
 Emulator was not running at implementation time; test script is ready to run:
+
 ```powershell
 adb logcat -c; .\android\run_test.ps1 -ScriptName test_axis_mapping.json5 -Game d2 2>&1 | Out-File temp\test_output.txt -Encoding utf8; Write-Output "EXIT: $LASTEXITCODE"
 ```

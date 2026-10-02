@@ -87,11 +87,12 @@ class MultiplayerResumePrefsTest {
 
     @Test
     fun resumeRecordRoundTripsRetainedCheckpointChoice() {
-        val record = hostResumeRecord(level = 6).copy(
-            coopRestoreCheckpointId = "d2",
-            coopRestoreLevel = 6,
-            restoreWasSelected = true,
-        )
+        val record =
+            hostResumeRecord(level = 6).copy(
+                coopRestoreCheckpointId = "d2",
+                coopRestoreLevel = 6,
+                restoreWasSelected = true,
+            )
 
         val decoded = decodeMultiplayerResumeRecord(encodeMultiplayerResumeRecord(record))
 
@@ -102,11 +103,12 @@ class MultiplayerResumePrefsTest {
 
     @Test
     fun legacyFreshResumeSelectsNewestValidSave() {
-        val retained = coopSave(level = 6, timestamp = 100L).copy(
-            slot = -1,
-            type = "level_start_highest",
-            checkpointId = "d2",
-        )
+        val retained =
+            coopSave(level = 6, timestamp = 100L).copy(
+                slot = -1,
+                type = "level_start_highest",
+                checkpointId = "d2",
+            )
         val level7 = coopSave(level = 7, timestamp = 200L)
         val record = hostResumeRecord(level = 6)
 
@@ -121,12 +123,13 @@ class MultiplayerResumePrefsTest {
     @Test
     fun staleRecordedSlotFallsBackToNewestValidSave() {
         val level7 = coopSave(level = 7, timestamp = 200L)
-        val stale = hostResumeRecord(level = 6).copy(
-            coopRestoreSlot = 5,
-            coopRestoreSaveTime = 100L,
-            coopRestoreLevel = 6,
-            restoreWasSelected = true,
-        )
+        val stale =
+            hostResumeRecord(level = 6).copy(
+                coopRestoreSlot = 5,
+                coopRestoreSaveTime = 100L,
+                coopRestoreLevel = 6,
+                restoreWasSelected = true,
+            )
 
         val resolved = resolveCoopHostResumeRecord(stale, listOf(level7))
 
@@ -136,16 +139,18 @@ class MultiplayerResumePrefsTest {
 
     @Test
     fun previousCheckpointAndExplicitFreshYieldToNewestProgress() {
-        val retained = coopSave(level = 6, timestamp = 100L).copy(
-            slot = -1,
-            type = "level_start_highest",
-            checkpointId = "d2",
-        )
+        val retained =
+            coopSave(level = 6, timestamp = 100L).copy(
+                slot = -1,
+                type = "level_start_highest",
+                checkpointId = "d2",
+            )
         val level7 = coopSave(level = 7, timestamp = 200L)
-        val typed = hostResumeRecord(level = 6).copy(
-            coopRestoreCheckpointId = "d2",
-            restoreWasSelected = true,
-        )
+        val typed =
+            hostResumeRecord(level = 6).copy(
+                coopRestoreCheckpointId = "d2",
+                restoreWasSelected = true,
+            )
         val fresh = hostResumeRecord(level = 6).copy(restoreWasSelected = true)
 
         assertEquals(level7.slot, resolveCoopHostResumeRecord(typed, listOf(level7, retained)).coopRestoreSlot)
@@ -156,12 +161,13 @@ class MultiplayerResumePrefsTest {
     fun newestProgressCanBeOnALowerOrSecretLevel() {
         val oldSave = coopSave(level = 7, timestamp = 100L)
         val latest = coopSave(level = -1, timestamp = 300L).copy(slot = 8)
-        val record = hostResumeRecord(level = 7).copy(
-            coopRestoreSlot = oldSave.slot,
-            coopRestoreSaveTime = oldSave.timestamp,
-            coopRestoreLevel = oldSave.level,
-            restoreWasSelected = true,
-        )
+        val record =
+            hostResumeRecord(level = 7).copy(
+                coopRestoreSlot = oldSave.slot,
+                coopRestoreSaveTime = oldSave.timestamp,
+                coopRestoreLevel = oldSave.level,
+                restoreWasSelected = true,
+            )
 
         val resolved = resolveCoopHostResumeRecord(record, listOf(oldSave, latest))
 
@@ -186,7 +192,8 @@ class MultiplayerResumePrefsTest {
         save.parentFile?.mkdirs()
         save.writeBytes(bytes)
         gameDir.resolve("coop_level_start_d2.json").writeText(
-            """{
+            """
+            {
                 "type":"level_start_highest",
                 "checkpoint_id":"d2",
                 "mission":"d2",
@@ -198,7 +205,8 @@ class MultiplayerResumePrefsTest {
                 "save_path":"$savePath",
                 "size":${bytes.size},
                 "checksum":${coopLevelStartChecksum(bytes)}
-            }""".trimIndent(),
+            }
+            """.trimIndent(),
         )
 
         val offers = readCoopLevelStartCheckpointsForClient(filesDir, "d2", "d2", "local-id")
@@ -284,10 +292,16 @@ class MultiplayerResumePrefsTest {
 
     @Test
     fun secretSaveSelectionRetainsDestinationThroughNormalMineStartup() {
-        val save = CoopSaveEntry(
-            slot = 5, level = -2, timestamp = 100L, numPlayers = 2,
-            callsigns = listOf("Miner", "Wing"), game = "d2", mission = "d2",
-        )
+        val save =
+            CoopSaveEntry(
+                slot = 5,
+                level = -2,
+                timestamp = 100L,
+                numPlayers = 2,
+                callsigns = listOf("Miner", "Wing"),
+                game = "d2",
+                mission = "d2",
+            )
         assertEquals(2, save.secretAreaNumber)
         assertEquals("1", coopLevelTextAfterSaveSelection("8", save))
         assertEquals(save, restoreSaveForHostedLevel(save, 1))
@@ -304,11 +318,21 @@ class MultiplayerResumePrefsTest {
 
     @Test
     fun secretStartupMappingRequiresAnActualD2FullSave() {
-        val save = CoopSaveEntry(
-            slot = 5, level = -2, timestamp = 100L, numPlayers = 2,
-            callsigns = listOf("Miner", "Wing"), game = "d2",
-        )
-        for (invalid in listOf(save.copy(game = "d1"), save.copy(type = "checkpoint"), save.copy(slot = -1), save.copy(level = -128))) {
+        val save =
+            CoopSaveEntry(
+                slot = 5,
+                level = -2,
+                timestamp = 100L,
+                numPlayers = 2,
+                callsigns = listOf("Miner", "Wing"),
+                game = "d2",
+            )
+        for (invalid in listOf(
+            save.copy(game = "d1"),
+            save.copy(type = "checkpoint"),
+            save.copy(slot = -1),
+            save.copy(level = -128),
+        )) {
             assertNull(invalid.secretAreaNumber)
             assertNull(restoreSaveForHostedLevel(invalid, 1))
         }

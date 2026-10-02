@@ -12,7 +12,7 @@ then the exit after the red key opens access to it.
 ## Plan
 
 - [x] Trace live route-plan construction and identify why the key-gated exit is
-  selected before the red key
+      selected before the red key
 - [x] Add a general key-gated-exit dependency rule without map-specific data
 - [x] Add or extend focused route-planner regression coverage for the progression
 - [x] Run scoped formatting, focused tests, and the Windows D1/D2 build

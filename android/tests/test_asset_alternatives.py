@@ -22,25 +22,37 @@ class AssetAlternativesTest(unittest.TestCase):
         movie = (ROOT / "d2/main/movie.c").read_text()
         piggy = (ROOT / "d2/main/piggy.c").read_text()
         titles = (ROOT / "d2/main/titles.c").read_text()
-        functions = "\n".join([
-            function(movie, "static int init_movie("),
-            "static char extra_robot_movie_file[FILENAME_LEN+2];",
-            function(movie, "void close_extra_robot_movie("),
-            function(movie, "void init_extra_robot_movie("),
-            function(piggy, "int read_sndfile("),
-            function(titles, "static char *select_screen_resolution("),
-        ])
+        functions = "\n".join(
+            [
+                function(movie, "static int init_movie("),
+                "static char extra_robot_movie_file[FILENAME_LEN+2];",
+                function(movie, "void close_extra_robot_movie("),
+                function(movie, "void init_extra_robot_movie("),
+                function(piggy, "int read_sndfile("),
+                function(titles, "static char *select_screen_resolution("),
+            ]
+        )
         song_extensions = "\n".join(re.findall(r"^#define SONG_EXT_.*$", (ROOT / "d2/main/songs.h").read_text(), re.M))
         for game in ("d1", "d2"):
             songs = (ROOT / game / "main/songs.c").read_text()
-            functions += "\n" + function(songs, "int songs_play_file(").replace("songs_play_file(", f"songs_play_file_{game}(")
+            functions += "\n" + function(songs, "int songs_play_file(").replace(
+                "songs_play_file(", f"songs_play_file_{game}("
+            )
         (ROOT / "temp").mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="asset-alternatives-", dir=ROOT / "temp") as directory:
             folder = Path(directory)
             (folder / "test.cpp").write_text(PREAMBLE + song_extensions + "\n" + functions + MAIN)
             for mixer in (False, True):
                 if Path(compiler).stem.lower() == "cl":
-                    command = [compiler, "/nologo", "/EHsc", "/W3", "/D_CRT_SECURE_NO_WARNINGS", "test.cpp", "/Fe:test.exe"]
+                    command = [
+                        compiler,
+                        "/nologo",
+                        "/EHsc",
+                        "/W3",
+                        "/D_CRT_SECURE_NO_WARNINGS",
+                        "test.cpp",
+                        "/Fe:test.exe",
+                    ]
                     if mixer:
                         command.append("/DUSE_SDLMIXER")
                 else:
@@ -51,7 +63,7 @@ class AssetAlternativesTest(unittest.TestCase):
                 subprocess.run([str(folder / "test.exe")], cwd=folder, check=True)
 
 
-PREAMBLE = r'''
+PREAMBLE = r"""
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
@@ -97,7 +109,7 @@ int SoundOffset[1];
 void *SoundBits;
 char LastSndfileDir[PATH_MAX];
 struct DiskSoundHeader { char name[8]; int length, offset; };
-struct digi_sound { int length; ubyte *data; };
+struct digi_sound { int length, bits, freq; ubyte *data; };
 PHYSFS_file *PHYSFSX_openReadBuffered(const char *name) { return fopen(name, "rb"); }
 int PHYSFSX_readInt(PHYSFS_file *f) { int n; assert(fread(&n, sizeof(n), 1, f) == 1); return n; }
 int PHYSFS_tell(PHYSFS_file *f) { return static_cast<int>(ftell(f)); }
@@ -121,9 +133,9 @@ void bank(const char *name, bool valid = true) {
     fwrite(header, sizeof(header), 1, f); fwrite(&sound, sizeof(sound), 1, f);
     fwrite("abcd", 4, 1, f); fclose(f);
 }
-'''
+"""
 
-MAIN = r'''
+MAIN = r"""
 int main() {
     char low[] = "end01.pcx", high[] = "end01b.pcx";
     for (int preferred : {0, 1}) {
@@ -203,7 +215,7 @@ int main() {
     }
     puts("PASS: movie resolution, mission unload, sound rate and payload fallbacks");
 }
-'''
+"""
 
 
 if __name__ == "__main__":

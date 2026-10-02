@@ -8,6 +8,7 @@ Goal: determine whether dxx-redux already supports assigning the left HUD pictur
 - [x] Summarize current support and likely implementation path.
 
 Summary:
+
 - D2 has built-in Shift-F1 and Shift-F2 controls to cycle left and right camera windows. In dxx-redux, the first cycle from none selects rear view.
 - D2 persists the per-window camera mode in `PlayerCfg.Cockpit3DView[2]` in the pilot file.
 - D2 draws these camera windows in full cockpit, status bar, and fullscreen modes.

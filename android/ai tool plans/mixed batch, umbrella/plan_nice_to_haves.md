@@ -6,9 +6,10 @@ Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 
 ---
 
-## 1. Controls editor: long-press to open binding editor  [x]
+## 1. Controls editor: long-press to open binding editor [x]
 
 User requirement (verbatim):
+
 > controls editor needs to have a route to open the edit axis/button binding page for a specific axis/button if it's held for 2 seconds. that would enable quick controller-only bindings setup. for axes, the detection would be looking for an axis held to >80% of full range in a single direction without any other axis going >30% or any other button being pressed (for 2 seconds). for buttons, a button held >2s with no axis >30% or other button presses. only run this detection on the main controller edit page, don't open it for other bindings once a particular binding sub menu is shown.
 
 ### Implemented result
@@ -47,22 +48,26 @@ User requirement (verbatim):
 Create a new `ControllerLongPressDetector` (plain Kotlin class, no Compose) in `android/app/src/main/java/com/dxxredux/app/ControllerLongPressDetector.kt`. Pure logic so it is unit-testable.
 
 Fields:
+
 - `longPressMs: Long = 2000L`
 - `axisSelectThreshold: Float = 0.80f`
 - `axisOtherThreshold: Float = 0.30f`
 
 Public API:
+
 - `fun update(nowMs: Long, axes: FloatArray, pressedButtons: List<String>, gated: Boolean): Trigger?`
   - Returns a `Trigger` when a long-press completes on this tick, else null.
   - `Trigger` is a sealed class: `Trigger.Axis(controlId: String, positive: Boolean)` or `Trigger.Button(controlId: String)`.
   - `gated == true` resets all timers and returns null. Called whenever any `show*Picker` is true, or the page is not front.
 
 Internal state:
+
 - `axisStartMs: LongArray(6)` indexed by the live analog axes array (0..5 for sticks/triggers). -1 when inactive.
 - `axisSign: IntArray(6)` records the direction that started the press (-1 or +1).
 - `buttonStartMs: MutableMap<String, Long>`.
 
 Algorithm each `update`:
+
 1. If `gated`, clear everything and return null.
 2. Build "other activity" flag: any other axis (including hat) with `abs(value) >= axisOtherThreshold`, or any other button pressed.
 3. For each axis index `i` in 0..5 plus hat (mapped to indices 6/7):
@@ -78,6 +83,7 @@ Algorithm each `update`:
 5. For any button no longer in `pressedButtons`: drop its timer.
 
 Mapping helpers:
+
 - `heldAxisControlId(axisIndex)` collapses LS/RS axis holds back to `LS` / `RS` and maps trigger axes to `LT` / `RT`.
 - `heldButtonControlId(buttonName)` maps launcher key names back to the page's existing control ids.
 
@@ -116,6 +122,7 @@ The implementation uses a short poll loop instead of relying on repeated motion 
 ### Tests
 
 Add `android/app/src/test/java/com/dxxredux/app/ControllerLongPressDetectorTest.kt`:
+
 - axis held alone >= 2s -> returns `Axis` trigger once, then nothing on next tick.
 - axis held but sign flips mid-window -> no trigger.
 - axis held alongside a second axis >30% -> no trigger.
@@ -139,9 +146,10 @@ Add `android/app/src/test/java/com/dxxredux/app/ControllerLongPressDetectorTest.
 
 ---
 
-## 2. "Prepare for Descent" loading progress bar  [~]
+## 2. "Prepare for Descent" loading progress bar [~]
 
 User requirement:
+
 > prepare for descent loading screen takes potentially up to ~5 seconds with high res textures. it would be nice to show a texture loading progress bar and maybe the text name of the most recently loaded texture or major step, or one text/bar update every 300ms max to limit drawing overhead.
 >
 > C code emits progress updates every 300ms. The launcher/Kotlin side displays them. Percent is computed as (items_done / total_items) with no weighting for individual texture size. Every 300ms the current texture name is sent along with the percent. The overlay is a half-transparent bar about 20% from the bottom of the screen, with a border and a filled progress region, and the current filename rendered as a less-transparent text overlay centered on the bar.
@@ -185,6 +193,7 @@ void android_loading_progress_end(void);
 ```
 
 Internals (Android build only):
+
 - Static state: `int total`, `int done`, `char last_label[64]`, `struct timespec last_flush`, `int begun`.
 - `android_loading_progress_step` always increments `done` and copies `item_label` (truncate to 63 chars, strip path), then checks the 300ms throttle using `CLOCK_MONOTONIC`. On throttle miss, return without a JNI call. On throttle hit, call one `flush()` helper.
 - `flush()` computes `pct = total > 0 ? (100 * done + total/2) / total : 0`, attaches to `g_jvm`, and calls `MainActivity.showLoadingProgress(String phase, String item, int pct)` on the current activity instance.
@@ -217,6 +226,7 @@ Create `android/app/src/main/java/com/dxxredux/app/LoadingProgressOverlayView.kt
 #### 4. Instrumentation call sites
 
 D2:
+
 - `d2/arch/ogl/ogl.c` `ogl_cache_level_textures()`:
   - Before the `for (i=0; i < Num_bitmap_files; i++)` loop: `android_loading_progress_begin("Caching textures", Num_bitmap_files);`
   - Inside the loop, after `ogl_loadbmtexture(bm)`: `android_loading_progress_step(piggy_game_bitmap_name(bm));`
@@ -268,9 +278,10 @@ Keep the d1/d2 diff minimal: use the same symbol names, same include line (`#inc
 
 ---
 
-## 3. In-game Select button should open settings overlay, not save/load menu  [~]
+## 3. In-game Select button should open settings overlay, not save/load menu [~]
 
 User requirement:
+
 > need some fixes for android TV to transition all remaining touch overlay bits to controller interfaces. the immediate need is for the in-game settings menu (the overlay one) to be the thing opened by the select button, rather than the in-game save/load/quit menu (its current function). there was a task at one point to move extra items into the settings menu when there was no touch interface: that needs to be rechecked.
 
 ### Anchors
@@ -348,9 +359,10 @@ User requirement:
 
 ---
 
-## 4. Launcher slider focus highlighting  [ ]
+## 4. Launcher slider focus highlighting [ ]
 
 User requirement:
+
 > more launcher menus need highlighting. the sliders need green outlines when selected, for example.
 
 ### Anchors
@@ -370,9 +382,10 @@ User requirement:
 
 ---
 
-## 5. Buttons inside drag zones with slide-to-release  [~]
+## 5. Buttons inside drag zones with slide-to-release [~]
 
 User requirement:
+
 > allow buttons to be placed within the drag zones (they currently are allowed, but don't have special handling). if the button is pressed it stays active as long as the drag continues, then the button is released on drag stop. this will give another way to fire weapons while looking with the same thumb.
 
 ### Anchors
@@ -429,9 +442,10 @@ User requirement:
 
 ---
 
-## 6. In-game + launcher brightness (gamma) slider  [ ]
+## 6. In-game + launcher brightness (gamma) slider [ ]
 
 User requirement:
+
 > in-game brightness adjustment that saves next to the af/msaa/etc. settings. also add a slider for it out of game (next to af/msaa/etc. in the graphics launcher sub menu).
 
 ### Anchors

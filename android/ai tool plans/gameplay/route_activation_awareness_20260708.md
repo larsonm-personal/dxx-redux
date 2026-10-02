@@ -1,9 +1,11 @@
 # Route Activation Awareness Study
 
 ## Goal
+
 Study how to add route-step awareness for shootable switches, touch/fly-through triggers, hidden doors, and pass-through wall triggers so both metadata UI and Android guidebot guidance can describe and act on the player's next useful action.
 
 ## Checklist
+
 - [x] Create this plan before further work.
 - [x] Inspect the shared level metadata route analyzer and serialized route fields.
 - [x] Inspect Kotlin metadata route models and display text.
@@ -12,6 +14,7 @@ Study how to add route-step awareness for shootable switches, touch/fly-through 
 - [x] Propose implementation and validation phases.
 
 ## Implementation Checklist
+
 - [x] Add native route activation kind fields and classification.
 - [x] Serialize and preserve activation kind through JNI/headless/Kotlin/automation JSON.
 - [x] Update metadata path display text to use player-action wording.
@@ -20,6 +23,7 @@ Study how to add route-step awareness for shootable switches, touch/fly-through 
 - [x] Run focused validation and record results.
 
 ## Findings
+
 - Current route steps know objective type, route waypoint, source wall, trigger id/type, key index, distance, and opened links. They do not carry a player action such as shoot, fly through, touch, open hidden door, or destroy.
 - `level_metadata_scan.c` already has most of the hard pathing work. `metadata_route_try_trigger_firing_path()` first looks for a direct route to the trigger source side, then falls back to a visible route via `metadata_route_find_visible_path()`. `metadata_route_fire_trigger()` records the chosen route segment in the step. If the chosen segment differs from the source wall's segment, it clears `source_side` to `-1`.
 - Existing generated metadata therefore already has a useful signal: trigger steps with `side == -1` are visible-from-here cases. A sweep of `game_data/mission_files/*.json` found 170 such trigger steps (`open_wall` 152, `open_door` 18). Most trigger steps still have a side, so this is not enough to classify all shootable switches.
@@ -37,6 +41,7 @@ Study how to add route-step awareness for shootable switches, touch/fly-through 
 - Current guidebot messages use the route label, for example `Finding NEXT: Open wall trigger 13`. To get player-facing help, either the label or a new route action phrase needs to become `shoot switch`, `fly through trigger`, `open hidden wall door`, etc.
 
 ## Suggested Data Model
+
 - Add an integer `activation_kind` to `level_metadata_route_step`, with a string serializer. Suggested values:
   - `none`
   - `pickup_key`
@@ -53,6 +58,7 @@ Study how to add route-step awareness for shootable switches, touch/fly-through 
 - Consider adding `source_wall_type` or `activation_detail` later if UI/debugging needs to explain why a step was classified as shootable or fly-through.
 
 ## Classification Sketch
+
 - Keys: `pickup_key`.
 - Hidden doors: `open_hidden_door`.
 - Reactor: `destroy_reactor`.
@@ -64,6 +70,7 @@ Study how to add route-step awareness for shootable switches, touch/fly-through 
   - Else classify conservatively as `activate_switch`.
 
 ## Implementation Phases
+
 1. Native model and tests:
    - Add the `activation_kind` enum/function to `level_metadata_scan.h/.c`.
    - Add a read-only scan-view callback for source-side shootability.
@@ -88,6 +95,7 @@ Study how to add route-step awareness for shootable switches, touch/fly-through 
    - Regenerate focused mission metadata JSON for KCXF2, Obsidian, Counterstrike, and Descent before considering broader regeneration.
 
 ## Implementation Notes
+
 - Added `level_metadata_route_activation_kind` to the shared route step model and serialize it as `activation_kind`.
 - Added a read-only adapter predicate that mirrors the engine's shootable-effect check: a side is shootable if its overlay texture has a valid effect with a destination bitmap that is not already one-shot, or in D2 if the texture has a destroyed replacement.
 - Trigger labels now start with action-oriented wording:
@@ -101,6 +109,7 @@ Study how to add route-step awareness for shootable switches, touch/fly-through 
 - Guidebot route message for a shoot switch is `Finding NEXT: go here and shoot this switch`.
 
 ## Validation Results
+
 - `.\android\run-code-quality.ps1 -Fix -Paths ...` scoped to touched files passed.
 - Rebuilt D1 and D2 `test_level_metadata_scan` targets with MSVC/CMake.
 - `.\buildd1\maths\test_level_metadata_scan.exe` passed.
@@ -109,6 +118,7 @@ Study how to add route-step awareness for shootable switches, touch/fly-through 
 - Did not run the KCXF2/Obsidian emulator guidebot scripts in this pass; the native and Android compile validations cover the new classifier and wiring.
 
 ## Open Questions
+
 - Whether every `WALL_OVERLAY` trigger source should be considered shootable, or only those with a destroyable overlay/effect texture. The implementation uses the safer destroyable overlay/effect predicate.
 - Whether `activate_switch` is too generic for odd source walls. It is the current fallback when a trigger source is neither shootable nor a `WALL_OPEN` fly-through source.
 - D1 trigger metadata has older flag-style trigger semantics. D2 guidebot is the immediate runtime consumer, so the first implementation can make D1 best-effort and keep unknown cases as `activate_switch`.

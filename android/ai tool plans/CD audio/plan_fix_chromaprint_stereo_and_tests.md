@@ -8,6 +8,7 @@ only the per-channel frame count. The official `fpcalc.cpp` does
 `first_part_size * reader.GetChannels()`.
 
 For stereo audio (all CD-DA and most MP3/OGG), this means:
+
 - Fingerprint covers first ~half of intended audio
 - `duration_ms` is exactly half the real value (formula divides by channels)
 - AcoustID returns zero matches (wrong duration + truncated fingerprint)
@@ -15,7 +16,7 @@ For stereo audio (all CD-DA and most MP3/OGG), this means:
   matches even at 0.4 threshold
 
 Evidence: `fpcalc.cpp` line 328:
-  `chromaprint_feed(ctx, frame_data, first_part_size * reader.GetChannels())`
+`chromaprint_feed(ctx, frame_data, first_part_size * reader.GetChannels())`
 
 ## Phases
 
@@ -68,6 +69,7 @@ Downloaded fpcalc v1.5.1 Windows binary. Installed to `c:\local\fpcalc-1.5.1\fpc
 New: `android/tests/test_fpcalc_and_acoustid.ps1` (combined phases 4+5)
 
 Results:
+
 - fpcalc vs our tool on D2 redbook MP3: Duration matches (213s), encoded
   fingerprint length ratio = 1.0 -- PASS
 - AcoustID: 0 matches for D2 redbook tracks using BOTH fpcalc and our fingerprints.
@@ -99,10 +101,11 @@ empty result set would waste API budget for no benefit.
 Results with corrected fingerprints at threshold 0.65:
 
 Score distribution (bimodal -- noise vs true duplicates):
-  0.50: 60180 | 0.55: 5295 | 0.60: 1959 | 0.65: 898 | 0.70: 303
-  0.75: 124   | 0.80: 42   | 0.85: 182  | 0.90: 437 | 0.95: 992 | 1.00: 397
+0.50: 60180 | 0.55: 5295 | 0.60: 1959 | 0.65: 898 | 0.70: 303
+0.75: 124 | 0.80: 42 | 0.85: 182 | 0.90: 437 | 0.95: 992 | 1.00: 397
 
 Key validation results:
+
 1. MIDI-to-CD max score: 0.6384 (well below 0.65 threshold) -- ZERO false matches
 2. D2 redbook MP3 rips vs D2 CDs: correctly matched (0.85+)
 3. Threshold 0.65 cleanly separates noise from true duplicates:
@@ -119,14 +122,14 @@ Key validation results:
    different-synthesizer matches, not false CD matches.
 
 Album-level breakdown at 0.65:
-  D2 MIDI variants: 0 duplicates each (correct -- distinct from Redbook)
-  D2 redbook mp3 rips: 24 duplicates (Redbook same as CD tracks)
-  D2 macplay: 30 duplicates (all tracks)
-  D2 mp3 rips (Definitive): 26 duplicates
-  D2 vertigo: 14 duplicates (all tracks)
-  D1 macplay: 8 duplicates
-  D1 playstation: 22 duplicates
-  Descent Maximum ps1: 30 duplicates (all tracks)
+D2 MIDI variants: 0 duplicates each (correct -- distinct from Redbook)
+D2 redbook mp3 rips: 24 duplicates (Redbook same as CD tracks)
+D2 macplay: 30 duplicates (all tracks)
+D2 mp3 rips (Definitive): 26 duplicates
+D2 vertigo: 14 duplicates (all tracks)
+D1 macplay: 8 duplicates
+D1 playstation: 22 duplicates
+Descent Maximum ps1: 30 duplicates (all tracks)
 
 ## AcoustID API notes
 

@@ -29,6 +29,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "game.h"
 #include "lighting.h"
 #include "newdemo.h"
+#ifdef ANDROID
+#include "android_render_fov.h"
+#endif
 #include "piggy.h"
 #include "bm.h"
 
@@ -430,6 +433,10 @@ void draw_morph_object(object *obj)
 
 	g3_done_instance();
 
-	if (Newdemo_state == ND_STATE_RECORDING)
+	if (
+#ifdef ANDROID
+		android_render_records_objects() &&
+#endif
+		Newdemo_state == ND_STATE_RECORDING)
 		newdemo_record_morph_frame(md);
 }

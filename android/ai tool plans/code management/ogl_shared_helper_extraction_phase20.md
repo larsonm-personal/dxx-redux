@@ -28,17 +28,17 @@ from D1 and D2 `arch/ogl/ogl.c` into shared Android helper code.
 ## Result
 
 - added shared helper:
-	- `android_merged_wall_cached_texmerge_choose_size(...)`
+  - `android_merged_wall_cached_texmerge_choose_size(...)`
 - replaced duplicated size/fallback/limit logic in both `ogl.c` files with a
-	shared helper call
+  shared helper call
 - preserved existing behavior for fallback to base texture dimensions and
-	rejection when dimensions are invalid or exceed `ogl_max_texture_size`
+  rejection when dimensions are invalid or exceed `ogl_max_texture_size`
 - validation passed:
-	- `run-code-quality.ps1 -Fix`
-	- Android `:app:assembleDebug :app:testDebugUnitTest`
-	- `run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
-	- `diff_vs_upstream.ps1 -Top 20`
+  - `run-code-quality.ps1 -Fix`
+  - Android `:app:assembleDebug :app:testDebugUnitTest`
+  - `run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
+  - `diff_vs_upstream.ps1 -Top 20`
 - latest churn lines:
-	- `d1/arch/ogl/ogl.c`: `+2062 -50 total 2112`
-	- `d2/arch/ogl/ogl.c`: `+2089 -49 total 2138`
-	- overall totals: `+18145 -801` across `199` files
+  - `d1/arch/ogl/ogl.c`: `+2062 -50 total 2112`
+  - `d2/arch/ogl/ogl.c`: `+2089 -49 total 2138`
+  - overall totals: `+18145 -801` across `199` files

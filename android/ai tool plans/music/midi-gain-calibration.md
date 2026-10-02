@@ -23,14 +23,14 @@ The ratio is +6.0206 dB. The existing user gain remains relative to the same
 Bundled SC-55 1.34, shipping converter/timeline/renderer, stereo 48 kHz,
 reverb and chorus enabled. Each sample is the opening 60 seconds.
 
-| Track | MIDI RMS dBFS | FM RMS dBFS | MIDI deficit dB |
-| --- | ---: | ---: | ---: |
-| D1 game01 | -32.67 | -27.92 | 4.75 |
-| D1 game07 | -35.01 | -28.84 | 6.16 |
-| D1 game08 | -31.56 | -28.94 | 2.62 |
-| D2 descent | -31.63 | -24.73 | 6.91 |
-| D2 game01 | -39.81 | -27.42 | 12.38 |
-| D2 game02 | -31.23 | -26.92 | 4.32 |
+| Track      | MIDI RMS dBFS | FM RMS dBFS | MIDI deficit dB |
+| ---------- | ------------: | ----------: | --------------: |
+| D1 game01  |        -32.67 |      -27.92 |            4.75 |
+| D1 game07  |        -35.01 |      -28.84 |            6.16 |
+| D1 game08  |        -31.56 |      -28.94 |            2.62 |
+| D2 descent |        -31.63 |      -24.73 |            6.91 |
+| D2 game01  |        -39.81 |      -27.42 |           12.38 |
+| D2 game02  |        -31.23 |      -26.92 |            4.32 |
 
 The median deficit is 5.46 dB, supporting the requested fixed +6 dB adjustment.
 Arrangement differences explain why one gain does not match every song exactly;

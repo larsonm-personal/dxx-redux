@@ -869,6 +869,7 @@ class MainActivity :
 
     private var videoInfoOverlay: VideoInfoOverlay? = null
     private var graphicsConfirmationOverlay: GraphicsConfirmationOverlay? = null
+    private var graphicsTrialInterrupted = false
     private val graphicsSuppressedKeys = mutableSetOf<Int>()
     private var tapFeedbackOverlay: TapFeedbackOverlay? = null
     private var loadingProgressOverlay: LoadingProgressOverlayView? = null
@@ -1058,6 +1059,15 @@ class MainActivity :
         System.loadLibrary(libName)
         Log.i("MainActivity", "Loaded native library: $libName")
         CrashLog.installNativeHandler(this)
+
+        // A live native engine still owns the destroyed Activity's JNI callbacks
+        if (savedInstanceState?.getBoolean("graphics_trial_interrupted") == true && nativeIsGameRunning()) {
+            nativeGraphicsSafetyUiState(false, false)
+            recoverGraphicsProcess(
+                "The game display was recreated during a graphics change. The game was closed; return to the launcher to recover the last accepted settings",
+            )
+            return
+        }
 
         // Sync C-side per-category enable flags with Kotlin prefs
         syncDebugLogPrefs()
@@ -2108,19 +2118,7 @@ class MainActivity :
                     videoInfoOverlay?.suspendPolling()
                 },
                 releaseInput = { videoInfoOverlay?.resumePolling() },
-                recoverProcess = { message ->
-                    reportNativeFatalError(message)
-                    startActivity(
-                        Intent(
-                            this,
-                            SetupActivity::class.java,
-                        ).addFlags(
-                            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                                Intent.FLAG_ACTIVITY_SINGLE_TOP,
-                        ).putExtra("graphics_recovery_message", message),
-                    )
-                    android.os.Process.killProcess(android.os.Process.myPid())
-                },
+                recoverProcess = ::recoverGraphicsProcess,
             ).also { frame.addView(it, FrameLayout.LayoutParams(-1, -1)) }
         setContentView(frame)
         frame.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
@@ -2189,6 +2187,18 @@ class MainActivity :
         } catch (e: Exception) {
             Log.e("MainActivity", "Could not publish native fatal error", e)
         }
+    }
+
+    private fun recoverGraphicsProcess(message: String) {
+        reportNativeFatalError(message)
+        startActivity(
+            Intent(this, SetupActivity::class.java)
+                .addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP,
+                ).putExtra("graphics_recovery_message", message),
+        )
+        android.os.Process.killProcess(android.os.Process.myPid())
     }
 
     // â”€â”€ Immersive fullscreen helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2354,7 +2364,18 @@ class MainActivity :
         }
     }
 
+    private fun hasPendingGraphicsConfirmation(): Boolean =
+        gameStarted && JSONObject(nativeGraphicsSafetyState()).optString("phase") in
+            setOf("preparing", "challenge", "restoring")
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean("graphics_trial_interrupted", graphicsTrialInterrupted || hasPendingGraphicsConfirmation())
+        super.onSaveInstanceState(outState)
+    }
+
     override fun onPause() {
+        // Retain this across rollback acknowledgement until resume or Activity replacement
+        graphicsTrialInterrupted = graphicsTrialInterrupted || hasPendingGraphicsConfirmation()
         graphicsConfirmationOverlay?.cancelForLifecycle()
         nativeGraphicsSafetyUiState(false, false)
         qrActivityResumed = false
@@ -2410,6 +2431,7 @@ class MainActivity :
 
     override fun onResume() {
         super.onResume()
+        graphicsTrialInterrupted = false
         nativeGraphicsSafetyUiState(true, false)
         qrActivityResumed = true
         writeGameActivityState(this, gameVariantId)
@@ -3124,11 +3146,20 @@ class MainActivity :
             ) {
                 if (!gameStarted) return
                 publishDormancyUiPollCounters()
+                val surfaceLocation = IntArray(2)
+                gameSurfaceView.getLocationOnScreen(surfaceLocation)
                 // Android view state complements the engine's next-frame snapshot
                 val uiState =
                     JSONObject()
                         .put("request_id", intent.getStringExtra("request_id").orEmpty())
-                        .put("touch_overlay_active", touchOverlay.isActive)
+                        .put(
+                            "game_surface",
+                            JSONObject()
+                                .put("x", surfaceLocation[0])
+                                .put("y", surfaceLocation[1])
+                                .put("width", gameSurfaceView.width)
+                                .put("height", gameSurfaceView.height),
+                        ).put("touch_overlay_active", touchOverlay.isActive)
                         .put("touch_overlay_shown", touchOverlay.isShown)
                         .put("touch_overlay_attached", touchOverlay.isAttachedToWindow)
                         .put("controller_menu_open", touchOverlay.isControllerMenuOpen())
@@ -3192,6 +3223,14 @@ class MainActivity :
                 if (!gameStarted) return
                 val cmd = intent.getStringExtra("command") ?: return
                 when (cmd) {
+                    "recreate_activity" -> {
+                        Log.i(
+                            "DXX-Lifecycle",
+                            "automation recreate activity=${System.identityHashCode(this@MainActivity)}",
+                        )
+                        recreate()
+                    }
+
                     "gain" -> {
                         val db = intent.getFloatExtra("value", -10.0f)
                         Log.i("DXX-Command", "Setting music gain to $db dB")

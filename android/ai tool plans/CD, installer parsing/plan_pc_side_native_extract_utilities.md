@@ -23,15 +23,15 @@ oracles and manifest fixtures.
 ## This tranche
 
 - [x] move the HFS plus STi2 extraction helper logic out of JNI-only code into
-  shared native code callable from both JNI and desktop tools
+      shared native code callable from both JNI and desktop tools
 - [x] teach `extract_cd.exe` to extract Mac HFS disc content directly into
-  `data_tracks/`
+      `data_tracks/`
 - [x] add an end-to-end desktop parity test that runs the native Mac path and
-  compares output bytes against the checked-in MacPlay `data_tracks/` oracle
+      compares output bytes against the checked-in MacPlay `data_tracks/` oracle
 - [x] update `extract_all_cds.ps1` to trust the native Mac path instead of
-  falling back to the legacy script
+      falling back to the legacy script
 - [x] leave `extract_mac_cd.ps1` in place as the legacy oracle-generation path
-  for now
+      for now
 
 ## Validation target
 
@@ -43,7 +43,7 @@ oracles and manifest fixtures.
 ## Validation completed
 
 - `ctest --test-dir android/tests/build -C Debug --output-on-failure -R
-  "hfs_tests|sti2_tests"` passed after the shared-helper refactor and again
+"hfs_tests|sti2_tests"` passed after the shared-helper refactor and again
   after code formatting
 - `android/tests/build/Debug/extract_cd.exe` extracted the MacPlay data track
   to `temp/` with file-set parity and byte-for-byte parity against the checked-

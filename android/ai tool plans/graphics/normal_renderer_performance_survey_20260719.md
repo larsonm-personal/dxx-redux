@@ -39,10 +39,10 @@ buffer API calls per primitive to one without changing draw order or vertex data
 
 In the fixed D2 Counterstrike level 7 emulator scene, four profiling samples gave:
 
-| Build | Frames | Average render time | Sample render times |
-| --- | ---: | ---: | --- |
-| Baseline | 83 | 45,527 us | 47,351; 40,842; 44,601; 50,204 us |
-| Single upload | 90 | 23,209 us | 24,636; 18,004; 20,033; 30,637 us |
+| Build         | Frames | Average render time | Sample render times               |
+| ------------- | -----: | ------------------: | --------------------------------- |
+| Baseline      |     83 |           45,527 us | 47,351; 40,842; 44,601; 50,204 us |
+| Single upload |     90 |           23,209 us | 24,636; 18,004; 20,033; 30,637 us |
 
 That is a 49.0 percent reduction in average render time for this emulator scene.
 The emulator uses a software-backed GPU, so the absolute timing is not a phone
@@ -143,11 +143,11 @@ one-upload-per-primitive behavior are unchanged.
 On the same 1280x720 SwiftShader AVD and fixed reactor pose, stable early samples
 gave:
 
-| Build | Average render time | Textured polygons | Time per polygon |
-| --- | ---: | ---: | ---: |
-| Per-primitive VBO orphan | 58,239 to 60,111 us | 284 to 303 | 192 to 212 us |
-| Per-frame streaming VBO, run 1 | 26,215 to 29,697 us | 290 to 293 | 91 to 102 us |
-| Per-frame streaming VBO, run 2 | 27,165 to 27,590 us | 288 to 293 | 94 us |
+| Build                          | Average render time | Textured polygons | Time per polygon |
+| ------------------------------ | ------------------: | ----------------: | ---------------: |
+| Per-primitive VBO orphan       | 58,239 to 60,111 us |        284 to 303 |    192 to 212 us |
+| Per-frame streaming VBO, run 1 | 26,215 to 29,697 us |        290 to 293 |     91 to 102 us |
+| Per-frame streaming VBO, run 2 | 27,165 to 27,590 us |        288 to 293 |            94 us |
 
 This is a reproducible 52 to 55 percent render-time reduction in the relevant
 software-GPU profile. It should not be read as a phone FPS prediction, but it
@@ -220,10 +220,10 @@ The arm64 phone log contained three `per_draw_orphan` windows and two
 zero water faces, 123 texture binds, 230 VBO uploads, and about 52.56 KiB of
 vertex data per frame.
 
-| Mode | FPS | Frame avg | Render avg | Sampled upload call |
-| --- | ---: | ---: | ---: | ---: |
-| Packed per-draw orphan | 25.0 | 39,887 us | 572 us | 0.6 us |
-| Per-frame stream | 10.5 | 94,520 us | 94,421 us | 408.1 us |
+| Mode                   |  FPS | Frame avg | Render avg | Sampled upload call |
+| ---------------------- | ---: | --------: | ---------: | ------------------: |
+| Packed per-draw orphan | 25.0 | 39,887 us |     572 us |              0.6 us |
+| Per-frame stream       | 10.5 | 94,520 us |  94,421 us |            408.1 us |
 
 The streaming path also orphaned twice per game frame because this render route
 starts two OGL frames. More importantly, 230 sampled `glBufferSubData` calls at

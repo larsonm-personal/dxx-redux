@@ -1,6 +1,7 @@
 # Launcher Autoselect Newest Pilot Mismatch Plan - 2026-06-04
 
 ## Goal
+
 When the launcher weapon autoselect editor opens:
 
 - Show the ordering from the most recently modified pilot file for the selected game.

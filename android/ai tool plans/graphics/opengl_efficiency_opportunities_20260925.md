@@ -290,12 +290,12 @@ bound buffer, and restoration of the prior copy-read binding
 Measured submission counts from the actual batching helper, with a temporary
 host-only draw counter around its normal GLES shim calls:
 
-| Probe workload | Immediate draws | Batched draws | Pixels |
-| --- | ---: | ---: | --- |
-| Empty | 0 | 0 | Identical |
-| 800 lines | 800 | 2 | Identical |
-| 800 rectangles | 800 | 4 | Identical |
-| 800 alternating lines/rectangles | 800 | 800 | Identical |
+| Probe workload                   | Immediate draws | Batched draws | Pixels    |
+| -------------------------------- | --------------: | ------------: | --------- |
+| Empty                            |               0 |             0 | Identical |
+| 800 lines                        |             800 |             2 | Identical |
+| 800 rectangles                   |             800 |             4 | Identical |
+| 800 alternating lines/rectangles |             800 |           800 | Identical |
 
 Both SwiftShader GLES 3.0 and ANGLE GLES 3.0 on the Intel Arc 140T passed this
 probe. The host harness compiles the production shim and batching sources;
@@ -354,21 +354,21 @@ Authorized on 2026-09-25: finish the initial list, retaining changes according
 to measured gains. The first pass is now the baseline, not the completion scope
 
 - [x] Measure early merged-cache lookup and decide whether to retain it; require
-  cold-load, transparency, invalidation and diagnostic qualification if retained
+      cold-load, transparency, invalidation and diagnostic qualification if retained
 - [x] Measure transient texture reuse, mipmap elimination, and scaling costs;
-  validate menus, palette changes, crops/stride/tiles, and movie-style updates
+      validate menus, palette changes, crops/stride/tiles, and movie-style updates
 - [x] Count consecutive compatible world/model/sprite runs and benchmark a
-  conservative implementation where counts justify it
+      conservative implementation where counts justify it
 - [x] Count compatible adjacent strings and benchmark text-pass batching where
-  counts justify it
+      counts justify it
 - [x] Measure the repeated billboard-center transform and duplicate numerical
-  gauges; retain only useful, visually equivalent changes
+      gauges; retain only useful, visually equivalent changes
 - [x] Attribute GL error polling and reconsider broader state caching only if
-  evidence warrants it
+      evidence warrants it
 - [x] Revisit first-pass workload measurements at multiple resolutions and
-  full/half/empty gauges so retained work has workload-level evidence
+      full/half/empty gauges so retained work has workload-level evidence
 - [x] Finish D1/D2/D1-in-D2 correctness, platform builds, scoped quality checks,
-  and an item-by-item retained/rejected results table
+      and an item-by-item retained/rejected results table
 
 Use the existing private native build and source snapshot after verifying file
 identity, with separate round-two artifacts. Do not reuse other tasks' devices
@@ -383,8 +383,7 @@ work shared the host CPU/GPU. Frame-time A/B windows varied substantially; GPU
 query results were unavailable (zero). No gameplay FPS or handset speedup is
 claimed from this run
 
-The private Android x86_64 Debug build used host GPU acceleration on emulator
-5580. Separate optimized native Windows microbenchmarks used the production GLES
+The private Android x86_64 Debug build used host GPU acceleration on emulator 5580. Separate optimized native Windows microbenchmarks used the production GLES
 shim with ANGLE on Intel Arc 140T and with SwiftShader. Driver microbenchmarks
 include `glFinish` around repeated workloads; they are not Android frame times
 
@@ -394,23 +393,23 @@ is excluded from timing windows. Its matches are candidate runs, not proof that
 all external GL owners can safely be deferred. All measurement switches and
 framebuffer fixtures remain in the isolated scratch tree, not production
 
-| Candidate | Measurement / outcome | Production decision |
-| --- | --- | --- |
-| Gauge batching | Half energy plus empty afterburner: 162 mask draws to 3 at 1280x720; 121 to 3 at 960x540 | Keep first-pass implementation |
-| Buffer-binding tracking | Removes the pointer/draw binding queries; VBO-offset and binding-restoration probes passed in both engines and host drivers | Keep first-pass implementation |
-| Inactive merged diagnostics | 93 face/cover calls per cockpit frame: ungated 128 / 103 us versus gated 13 / 10 us in four 59-frame windows | Keep first-pass implementation |
-| Early composite lookup | Cockpit binds 142 to 77 and active-unit calls 126 to 84; unchanged draw counts; no repeatable frame-time improvement | Do not retain the prototype |
-| Transient texture names | Main menu creates/deletes 7 to 5 per frame; contents still converted/uploaded every call | Keep one bounded reusable texture |
-| 1:1 mipmaps | Main-menu mip generations 2 to 0; identical pixels; removal alone had inconsistent driver timing | Keep with reuse; preserve linear filtering |
-| Redundant CPU scaling | Already-sized menu layer bypasses allocation and indexed-pixel copy; sampled combined scale work drops from 1.607 / 1.951 ms to 0.498 / 0.885 ms | Keep the exact-size bypass |
-| General CPU-to-GPU scaling | Integer CPU scaling and ordinary GPU nearest sampling choose different source columns at fractional ratios | Keep existing scaling for different sizes |
-| Adjacent world/model draws | Cockpit: 20 candidate transitions among 72 draws; reactor: about 45 among 90; bounded host prototype reduces submission cost | Do not ship deferred engine submission without an engine/phone gain and complete state-barrier validation |
-| Adjacent sprites | 0 candidate transitions among 3-4 reactor sprites per frame | No batching change justified in these views |
-| Adjacent strings | 6 candidate transitions among 12 cockpit strings; scaled menus use software-rendered canvases, not many GL strings | Do not extend text-pass ownership for this measured workload |
-| Billboard center transform | Optimized host arithmetic prototype saves about 7-11 ns per sprite, with identical checksums | Leave unchanged; negligible at observed sprite counts |
-| Duplicate numerical gauges | Removes 2 string draws per full cockpit; gauge-region pixels identical for D1, D2 and D1-in-D2 | Keep Android-only removal of the first call |
-| GL error polling | Median 1-2 us per frame in the fixed-view timing windows | Keep diagnostics |
-| Broad uniform/attribute caching | Previous uniform experiment had no meaningful gain; current results do not justify wider state ownership | No new cache |
+| Candidate                       | Measurement / outcome                                                                                                                            | Production decision                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| Gauge batching                  | Half energy plus empty afterburner: 162 mask draws to 3 at 1280x720; 121 to 3 at 960x540                                                         | Keep first-pass implementation                                                                            |
+| Buffer-binding tracking         | Removes the pointer/draw binding queries; VBO-offset and binding-restoration probes passed in both engines and host drivers                      | Keep first-pass implementation                                                                            |
+| Inactive merged diagnostics     | 93 face/cover calls per cockpit frame: ungated 128 / 103 us versus gated 13 / 10 us in four 59-frame windows                                     | Keep first-pass implementation                                                                            |
+| Early composite lookup          | Cockpit binds 142 to 77 and active-unit calls 126 to 84; unchanged draw counts; no repeatable frame-time improvement                             | Do not retain the prototype                                                                               |
+| Transient texture names         | Main menu creates/deletes 7 to 5 per frame; contents still converted/uploaded every call                                                         | Keep one bounded reusable texture                                                                         |
+| 1:1 mipmaps                     | Main-menu mip generations 2 to 0; identical pixels; removal alone had inconsistent driver timing                                                 | Keep with reuse; preserve linear filtering                                                                |
+| Redundant CPU scaling           | Already-sized menu layer bypasses allocation and indexed-pixel copy; sampled combined scale work drops from 1.607 / 1.951 ms to 0.498 / 0.885 ms | Keep the exact-size bypass                                                                                |
+| General CPU-to-GPU scaling      | Integer CPU scaling and ordinary GPU nearest sampling choose different source columns at fractional ratios                                       | Keep existing scaling for different sizes                                                                 |
+| Adjacent world/model draws      | Cockpit: 20 candidate transitions among 72 draws; reactor: about 45 among 90; bounded host prototype reduces submission cost                     | Do not ship deferred engine submission without an engine/phone gain and complete state-barrier validation |
+| Adjacent sprites                | 0 candidate transitions among 3-4 reactor sprites per frame                                                                                      | No batching change justified in these views                                                               |
+| Adjacent strings                | 6 candidate transitions among 12 cockpit strings; scaled menus use software-rendered canvases, not many GL strings                               | Do not extend text-pass ownership for this measured workload                                              |
+| Billboard center transform      | Optimized host arithmetic prototype saves about 7-11 ns per sprite, with identical checksums                                                     | Leave unchanged; negligible at observed sprite counts                                                     |
+| Duplicate numerical gauges      | Removes 2 string draws per full cockpit; gauge-region pixels identical for D1, D2 and D1-in-D2                                                   | Keep Android-only removal of the first call                                                               |
+| GL error polling                | Median 1-2 us per frame in the fixed-view timing windows                                                                                         | Keep diagnostics                                                                                          |
+| Broad uniform/attribute caching | Previous uniform experiment had no meaningful gain; current results do not justify wider state ownership                                         | No new cache                                                                                              |
 
 The early-cache prototype retained cold/unresident, super-transparent, forced
 two-pass and texture-log routes. Its cockpit render medians were 9.214 / 10.107 ms
@@ -446,12 +445,12 @@ path blindly would change pixel placement
 Optimized host upload/draw microbenchmarks, 12 updates per trial, six measured
 trials after warmup, interleaved forward/reverse variant order:
 
-| Driver / visible size | New texture + mipmaps | Reuse + full image upload + no mipmaps |
-| --- | ---: | ---: |
-| ANGLE / 320x200 | 1.313 ms | 0.220 ms |
-| ANGLE / 1280x720 | 4.635 ms | 2.246 ms |
-| SwiftShader / 320x200 | 1.216 ms | 0.687 ms |
-| SwiftShader / 1280x720 | 13.526 ms | 6.277 ms |
+| Driver / visible size  | New texture + mipmaps | Reuse + full image upload + no mipmaps |
+| ---------------------- | --------------------: | -------------------------------------: |
+| ANGLE / 320x200        |              1.313 ms |                               0.220 ms |
+| ANGLE / 1280x720       |              4.635 ms |                               2.246 ms |
+| SwiftShader / 320x200  |              1.216 ms |                               0.687 ms |
+| SwiftShader / 1280x720 |             13.526 ms |                               6.277 ms |
 
 All nine tested upload/filter variants at both sizes produced the same final
 pixel hash on each driver. Changed content was uploaded between iterations.
@@ -475,11 +474,11 @@ match for both drivers. The workloads use the observed draw/run counts with
 synthetic geometry; they do not replay a complete engine frame or include the
 cost of discovering all renderer state boundaries
 
-| Workload | ANGLE immediate / batched | SwiftShader immediate / batched |
-| --- | ---: | ---: |
-| 72 world faces, 20 compatible transitions | 0.932 / 0.561 ms | 5.737 / 2.927 ms |
-| 90 world faces, 45 compatible transitions | 0.624 / 0.316 ms | 6.924 / 4.275 ms |
-| 12 five-glyph strings, 6 compatible transitions | 0.118 / 0.059 ms | 2.618 / 2.100 ms |
+| Workload                                        | ANGLE immediate / batched | SwiftShader immediate / batched |
+| ----------------------------------------------- | ------------------------: | ------------------------------: |
+| 72 world faces, 20 compatible transitions       |          0.932 / 0.561 ms |                5.737 / 2.927 ms |
+| 90 world faces, 45 compatible transitions       |          0.624 / 0.316 ms |                6.924 / 4.275 ms |
+| 12 five-glyph strings, 6 compatible transitions |          0.118 / 0.059 ms |                2.618 / 2.100 ms |
 
 These results justify revisiting world/model batching on a target phone, but
 do not qualify a general deferred renderer for production. Safe integration

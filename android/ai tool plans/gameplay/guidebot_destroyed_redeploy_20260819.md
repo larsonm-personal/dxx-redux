@@ -1,9 +1,11 @@
 # Guide-Bot Destroyed Redeploy Plan
 
 ## Goal
+
 Return the Guide-Bot touch control to its undeployed state when the active Guide-Bot is destroyed, allow a replacement to be deployed, and consistently label the recall command `Warp to Me`.
 
 ## Tasks
+
 - [x] Read repository instructions and locate the Guide-Bot control, deployment, and recall label paths.
 - [x] Trace destruction state from the engine through JNI to the touch overlay.
 - [x] Update the control state and any remaining `Warp Me` labels.
@@ -12,6 +14,7 @@ Return the Guide-Bot touch control to its undeployed state when the active Guide
 - [x] Record implementation and validation results here.
 
 ## Implementation
+
 - Added a live Guide-Bot check that rejects destroyed, exploding, and pending-deletion companion objects.
 - Changed the JNI deployment signal to require both the existing released flag and a live Guide-Bot. The touch Guide control therefore returns to its deploy ring after destruction, while an intact caged Guide-Bot remains undeployed.
 - Updated the Advanced and Claw preset labels to `Warp to Me`.
@@ -19,6 +22,7 @@ Return the Guide-Bot touch control to its undeployed state when the active Guide
 - Added a focused migration regression test for the old `Warp Me` label.
 
 ## Validation
+
 - Scoped `android/run-code-quality.ps1 -Fix` passed.
 - `GuidebotLockedWheelTest` passed 11 tests and `GyroToggleConfigTest` passed 9 tests with zero failures.
 - Android `assembleDebug` produced `app-debug.apk`.

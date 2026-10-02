@@ -29,7 +29,7 @@ Plan:
    - robot AI static buckets
    - robot AI local buckets
    - robot animation-pose buckets
-   These should mirror the existing object bucket style and use small fixed arrays.
+     These should mirror the existing object bucket style and use small fixed arrays.
 
 4. [done] Add a compact "first mismatch neighborhood" helper to the replay runner or comparison output:
    - when state compare fails, print 3 to 5 frames around the first mismatch

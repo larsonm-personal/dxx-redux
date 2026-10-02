@@ -2108,66 +2108,66 @@ Integrity validation through 0469: temp/gq_integrity.py exited 0 (session 20959)
 
 Read-only range audit at frozen HEAD `7877ad30d05887b8e19869ed4c50075e41e2f88e` checked 207 simple whole-file queue paths and identified 58 candidate uncovered trailing ranges. This audit does not cover multipath/hunk assignments and does not assert all candidates were unread: prior supplemental evidence must be reconciled explicitly. The original 819 calls and historical fingerprints remain unchanged. Every PENDING row below requires an exact evidence link and frozen blob/range fingerprint before closure, together with full current source reconciliation
 
-| Supplemental ID | Frozen path | Unassigned tail | Existing assignments | Disposition |
-|---|---|---|---|---|
-| GQ1-TAIL-001 | `android/app/src/main/cpp/extract/extract_cd.c` | L601-L704 | GQ1-CHUNK-0024 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-002 | `android/app/src/main/cpp/extract/hfs_reader.c` | L1201-L1408 | GQ1-CHUNK-0027, GQ1-CHUNK-0028 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-003 | `android/app/src/main/cpp/extract/iso9660_reader.c` | L601-L996 | GQ1-CHUNK-0036 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-004 | `android/app/src/main/cpp/extract/pkg_reader.c` | L601-L999 | GQ1-CHUNK-0038 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-005 | `android/app/src/main/cpp/extract/sow_extract.c` | L601-L1051 | GQ1-CHUNK-0039 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-006 | `android/app/src/main/cpp/extract/sti2_extract.c` | L2401-L2404 | GQ1-CHUNK-0040, GQ1-CHUNK-0041, GQ1-CHUNK-0042, GQ1-CHUNK-0043 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-007 | `android/app/src/main/cpp/extract/test_cue_iso.c` | L3001-L3426 | GQ1-CHUNK-0099, GQ1-CHUNK-0100, GQ1-CHUNK-0101, GQ1-CHUNK-0102, GQ1-CHUNK-0103 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-008 | `android/app/src/main/cpp/extract/test_gog_fd.c` | L1201-L1467 | GQ1-CHUNK-0106, GQ1-CHUNK-0107 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-009 | `android/app/src/main/cpp/extract/test_pkg_toc_bounds.c` | L601-L665 | GQ1-CHUNK-0110 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-010 | `android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp` | L751-L1057 | GQ1-CHUNK-0209 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-011 | `android/app/src/main/cpp/jni_main.c` | L1201-L1496 | GQ1-CHUNK-0048, GQ1-CHUNK-0049 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-012 | `android/app/src/main/cpp/shared/automap_metadata_overlay.c` | L751-L797 | GQ1-CHUNK-0213 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-013 | `android/app/src/main/cpp/shared/cd_preview.c` | L751-L884 | GQ1-CHUNK-0214 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-014 | `android/app/src/main/cpp/shared/digi_tsf_music.c` | L751-L1288 | GQ1-CHUNK-0218 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-015 | `android/app/src/main/cpp/shared/game_automate.cpp` | L3751-L3844 | GQ1-CHUNK-0219, GQ1-CHUNK-0220, GQ1-CHUNK-0221, GQ1-CHUNK-0222, GQ1-CHUNK-0223 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-016 | `android/app/src/main/cpp/shared/game_introspect.cpp` | L2251-L2435 | GQ1-CHUNK-0224, GQ1-CHUNK-0225, GQ1-CHUNK-0226 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-017 | `android/app/src/main/cpp/shared/gles3_shim.c` | L751-L1025 | GQ1-CHUNK-0227 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-018 | `android/app/src/main/cpp/shared/input_demo_controls.cpp` | L751-L764 | GQ1-CHUNK-0228 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-019 | `android/app/src/main/cpp/shared/input_demo_recorder.cpp` | L751-L775 | GQ1-CHUNK-0237 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-020 | `android/app/src/main/cpp/shared/input_demo_replay.cpp` | L751-L817 | GQ1-CHUNK-0238 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-021 | `android/app/src/main/cpp/shared/input_demo_start_shared.c` | L751-L774 | GQ1-CHUNK-0241 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-022 | `android/app/src/main/cpp/shared/input_demo_state_trace.cpp` | L751-L791 | GQ1-CHUNK-0242 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-023 | `android/app/src/main/cpp/shared/multi_save_transfer.c` | L751-L981 | GQ1-CHUNK-0258 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-024 | `android/app/src/main/cpp/shared/rbaudio_bin.c` | L1501-L1960 | GQ1-CHUNK-0261, GQ1-CHUNK-0262 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-025 | `android/app/src/main/cpp/shared/route_planner.cpp` | L3001-L3201 | GQ1-CHUNK-0263, GQ1-CHUNK-0264, GQ1-CHUNK-0265, GQ1-CHUNK-0266 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-026 | `android/app/src/main/cpp/shared/secret_area_game_adapter.c` | L2251-L2563 | GQ1-CHUNK-0268, GQ1-CHUNK-0269, GQ1-CHUNK-0270 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-027 | `android/app/src/main/cpp/shared/secret_area_scan.c` | L751-L1190 | GQ1-CHUNK-0271 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-028 | `android/app/src/main/cpp/shared/state_android_shared.c` | L751-L1057 | GQ1-CHUNK-0272 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-029 | `android/app/src/main/java/com/dxxredux/app/AdvancedSettingsPage.kt` | L2251-L2679 | GQ1-CHUNK-0486, GQ1-CHUNK-0487, GQ1-CHUNK-0488 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-030 | `android/app/src/main/java/com/dxxredux/app/AutoselectEditorPage.kt` | L751-L924 | GQ1-CHUNK-0491 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-031 | `android/app/src/main/java/com/dxxredux/app/HumanReadableConfig.kt` | L751-L763 | GQ1-CHUNK-0504 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-032 | `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` | L3751-L3982 | GQ1-CHUNK-0513, GQ1-CHUNK-0514, GQ1-CHUNK-0515, GQ1-CHUNK-0516, GQ1-CHUNK-0517 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-033 | `android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt` | L601-L698 | GQ1-CHUNK-0061 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-034 | `android/app/src/main/java/com/dxxredux/app/ModManager.kt` | L1501-L1920 | GQ1-CHUNK-0519, GQ1-CHUNK-0520 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-035 | `android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt` | L751-L918 | GQ1-CHUNK-0531 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-036 | `android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt` | L1501-L1966 | GQ1-CHUNK-0532, GQ1-CHUNK-0533 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-037 | `android/app/src/main/java/com/dxxredux/app/SetupAutomationApi.kt` | L751-L1086 | GQ1-CHUNK-0542 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-038 | `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt` | L751-L760 | GQ1-CHUNK-0548 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-039 | `android/app/src/main/java/com/dxxredux/app/TouchEditorPage.kt` | L3751-L4042 | GQ1-CHUNK-0560, GQ1-CHUNK-0561, GQ1-CHUNK-0562, GQ1-CHUNK-0563, GQ1-CHUNK-0564 | COVERED by 0565 supplemental evidence |
-| GQ1-TAIL-040 | `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt` | L5251-L5405 | GQ1-CHUNK-0565, GQ1-CHUNK-0566, GQ1-CHUNK-0567, GQ1-CHUNK-0568, GQ1-CHUNK-0569, GQ1-CHUNK-0570, GQ1-CHUNK-0571 | COVERED by 0571 supplemental evidence; frozen blob 409c0d03ee55c5a51a7b364d04119b5ebfab6440 |
-| GQ1-TAIL-041 | `android/app/src/main/java/com/dxxredux/app/VideoInfoOverlay.kt` | L751-L1004 | GQ1-CHUNK-0572 | COVERED by 0572 supplemental evidence; frozen blob cc91012c6d671ec7e051f4f1113bdfd6b789329b |
-| GQ1-TAIL-042 | `android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt` | L751-L1101 | GQ1-CHUNK-0522 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-043 | `android/get_deps/check-updates.ps1` | L1501-L1867 | GQ1-CHUNK-0592, GQ1-CHUNK-0593 | COVERED complete frozen tail read in imported GQ1-CHUNK-0587; full 1867-line updater reconciled through imported GQ1-CHUNK-0593 |
-| GQ1-TAIL-044 | `android/helpers/regenerate_all_mission_metadata_host.ps1` | L751-L868 | GQ1-CHUNK-0604 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-045 | `android/helpers/run_mission_zip_batch.ps1` | L601-L916 | GQ1-CHUNK-0085 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-046 | `android/tests/test_extract.ps1` | L1201-L1620 | GQ1-CHUNK-0135, GQ1-CHUNK-0136 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-047 | `android/tests/test_input_demo_recorder.cpp` | L901-L991 | GQ1-CHUNK-0700 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-048 | `android/tests/test_input_demo_replay.cpp` | L901-L1059 | GQ1-CHUNK-0701 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-049 | `android/tests/test_lan.ps1` | L901-L1397 | GQ1-CHUNK-0702 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-050 | `android/tests/test_route_snapshot.cpp` | L901-L1385 | GQ1-CHUNK-0707 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-051 | `android/tests/test_saf_archiver.ps1` | L601-L731 | GQ1-CHUNK-0137 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-052 | `d1/main/input_demo_hooks.c` | L751-L1326 | GQ1-CHUNK-0300 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-053 | `d1_d2_ogl_diff.txt` | L901-L922 | GQ1-CHUNK-0630 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-054 | `d2/main/d1_custom.c` | L751-L894 | GQ1-CHUNK-0347 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-055 | `d2/main/d1_save_translate.c` | L1501-L1882 | GQ1-CHUNK-0351, GQ1-CHUNK-0352 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-056 | `d2/main/dxa_metadata_patch.cpp` | L751-L1060 | GQ1-CHUNK-0353 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-057 | `d2/main/input_demo_hooks.c` | L6751-L7138 | GQ1-CHUNK-0358, GQ1-CHUNK-0359, GQ1-CHUNK-0360, GQ1-CHUNK-0361, GQ1-CHUNK-0362, GQ1-CHUNK-0363, GQ1-CHUNK-0364, GQ1-CHUNK-0365, GQ1-CHUNK-0366 | PENDING prior-evidence reconciliation or full supplemental review |
-| GQ1-TAIL-058 | `game_data/mods/d2x-xl/convert_d2xxl_textures.ps1` | L751-L1004 | GQ1-CHUNK-0620 | PENDING prior-evidence reconciliation or full supplemental review |
+| Supplemental ID | Frozen path                                                                 | Unassigned tail | Existing assignments                                                                                                                           | Disposition                                                                                                                     |
+| --------------- | --------------------------------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| GQ1-TAIL-001    | `android/app/src/main/cpp/extract/extract_cd.c`                             | L601-L704       | GQ1-CHUNK-0024                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-002    | `android/app/src/main/cpp/extract/hfs_reader.c`                             | L1201-L1408     | GQ1-CHUNK-0027, GQ1-CHUNK-0028                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-003    | `android/app/src/main/cpp/extract/iso9660_reader.c`                         | L601-L996       | GQ1-CHUNK-0036                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-004    | `android/app/src/main/cpp/extract/pkg_reader.c`                             | L601-L999       | GQ1-CHUNK-0038                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-005    | `android/app/src/main/cpp/extract/sow_extract.c`                            | L601-L1051      | GQ1-CHUNK-0039                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-006    | `android/app/src/main/cpp/extract/sti2_extract.c`                           | L2401-L2404     | GQ1-CHUNK-0040, GQ1-CHUNK-0041, GQ1-CHUNK-0042, GQ1-CHUNK-0043                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-007    | `android/app/src/main/cpp/extract/test_cue_iso.c`                           | L3001-L3426     | GQ1-CHUNK-0099, GQ1-CHUNK-0100, GQ1-CHUNK-0101, GQ1-CHUNK-0102, GQ1-CHUNK-0103                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-008    | `android/app/src/main/cpp/extract/test_gog_fd.c`                            | L1201-L1467     | GQ1-CHUNK-0106, GQ1-CHUNK-0107                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-009    | `android/app/src/main/cpp/extract/test_pkg_toc_bounds.c`                    | L601-L665       | GQ1-CHUNK-0110                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-010    | `android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp`         | L751-L1057      | GQ1-CHUNK-0209                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-011    | `android/app/src/main/cpp/jni_main.c`                                       | L1201-L1496     | GQ1-CHUNK-0048, GQ1-CHUNK-0049                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-012    | `android/app/src/main/cpp/shared/automap_metadata_overlay.c`                | L751-L797       | GQ1-CHUNK-0213                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-013    | `android/app/src/main/cpp/shared/cd_preview.c`                              | L751-L884       | GQ1-CHUNK-0214                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-014    | `android/app/src/main/cpp/shared/digi_tsf_music.c`                          | L751-L1288      | GQ1-CHUNK-0218                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-015    | `android/app/src/main/cpp/shared/game_automate.cpp`                         | L3751-L3844     | GQ1-CHUNK-0219, GQ1-CHUNK-0220, GQ1-CHUNK-0221, GQ1-CHUNK-0222, GQ1-CHUNK-0223                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-016    | `android/app/src/main/cpp/shared/game_introspect.cpp`                       | L2251-L2435     | GQ1-CHUNK-0224, GQ1-CHUNK-0225, GQ1-CHUNK-0226                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-017    | `android/app/src/main/cpp/shared/gles3_shim.c`                              | L751-L1025      | GQ1-CHUNK-0227                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-018    | `android/app/src/main/cpp/shared/input_demo_controls.cpp`                   | L751-L764       | GQ1-CHUNK-0228                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-019    | `android/app/src/main/cpp/shared/input_demo_recorder.cpp`                   | L751-L775       | GQ1-CHUNK-0237                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-020    | `android/app/src/main/cpp/shared/input_demo_replay.cpp`                     | L751-L817       | GQ1-CHUNK-0238                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-021    | `android/app/src/main/cpp/shared/input_demo_start_shared.c`                 | L751-L774       | GQ1-CHUNK-0241                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-022    | `android/app/src/main/cpp/shared/input_demo_state_trace.cpp`                | L751-L791       | GQ1-CHUNK-0242                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-023    | `android/app/src/main/cpp/shared/multi_save_transfer.c`                     | L751-L981       | GQ1-CHUNK-0258                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-024    | `android/app/src/main/cpp/shared/rbaudio_bin.c`                             | L1501-L1960     | GQ1-CHUNK-0261, GQ1-CHUNK-0262                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-025    | `android/app/src/main/cpp/shared/route_planner.cpp`                         | L3001-L3201     | GQ1-CHUNK-0263, GQ1-CHUNK-0264, GQ1-CHUNK-0265, GQ1-CHUNK-0266                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-026    | `android/app/src/main/cpp/shared/secret_area_game_adapter.c`                | L2251-L2563     | GQ1-CHUNK-0268, GQ1-CHUNK-0269, GQ1-CHUNK-0270                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-027    | `android/app/src/main/cpp/shared/secret_area_scan.c`                        | L751-L1190      | GQ1-CHUNK-0271                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-028    | `android/app/src/main/cpp/shared/state_android_shared.c`                    | L751-L1057      | GQ1-CHUNK-0272                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-029    | `android/app/src/main/java/com/dxxredux/app/AdvancedSettingsPage.kt`        | L2251-L2679     | GQ1-CHUNK-0486, GQ1-CHUNK-0487, GQ1-CHUNK-0488                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-030    | `android/app/src/main/java/com/dxxredux/app/AutoselectEditorPage.kt`        | L751-L924       | GQ1-CHUNK-0491                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-031    | `android/app/src/main/java/com/dxxredux/app/HumanReadableConfig.kt`         | L751-L763       | GQ1-CHUNK-0504                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-032    | `android/app/src/main/java/com/dxxredux/app/MainActivity.kt`                | L3751-L3982     | GQ1-CHUNK-0513, GQ1-CHUNK-0514, GQ1-CHUNK-0515, GQ1-CHUNK-0516, GQ1-CHUNK-0517                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-033    | `android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt`             | L601-L698       | GQ1-CHUNK-0061                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-034    | `android/app/src/main/java/com/dxxredux/app/ModManager.kt`                  | L1501-L1920     | GQ1-CHUNK-0519, GQ1-CHUNK-0520                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-035    | `android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt`           | L751-L918       | GQ1-CHUNK-0531                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-036    | `android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt`             | L1501-L1966     | GQ1-CHUNK-0532, GQ1-CHUNK-0533                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-037    | `android/app/src/main/java/com/dxxredux/app/SetupAutomationApi.kt`          | L751-L1086      | GQ1-CHUNK-0542                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-038    | `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt`             | L751-L760       | GQ1-CHUNK-0548                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-039    | `android/app/src/main/java/com/dxxredux/app/TouchEditorPage.kt`             | L3751-L4042     | GQ1-CHUNK-0560, GQ1-CHUNK-0561, GQ1-CHUNK-0562, GQ1-CHUNK-0563, GQ1-CHUNK-0564                                                                 | COVERED by 0565 supplemental evidence                                                                                           |
+| GQ1-TAIL-040    | `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt`            | L5251-L5405     | GQ1-CHUNK-0565, GQ1-CHUNK-0566, GQ1-CHUNK-0567, GQ1-CHUNK-0568, GQ1-CHUNK-0569, GQ1-CHUNK-0570, GQ1-CHUNK-0571                                 | COVERED by 0571 supplemental evidence; frozen blob 409c0d03ee55c5a51a7b364d04119b5ebfab6440                                     |
+| GQ1-TAIL-041    | `android/app/src/main/java/com/dxxredux/app/VideoInfoOverlay.kt`            | L751-L1004      | GQ1-CHUNK-0572                                                                                                                                 | COVERED by 0572 supplemental evidence; frozen blob cc91012c6d671ec7e051f4f1113bdfd6b789329b                                     |
+| GQ1-TAIL-042    | `android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt` | L751-L1101      | GQ1-CHUNK-0522                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-043    | `android/get_deps/check-updates.ps1`                                        | L1501-L1867     | GQ1-CHUNK-0592, GQ1-CHUNK-0593                                                                                                                 | COVERED complete frozen tail read in imported GQ1-CHUNK-0587; full 1867-line updater reconciled through imported GQ1-CHUNK-0593 |
+| GQ1-TAIL-044    | `android/helpers/regenerate_all_mission_metadata_host.ps1`                  | L751-L868       | GQ1-CHUNK-0604                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-045    | `android/helpers/run_mission_zip_batch.ps1`                                 | L601-L916       | GQ1-CHUNK-0085                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-046    | `android/tests/test_extract.ps1`                                            | L1201-L1620     | GQ1-CHUNK-0135, GQ1-CHUNK-0136                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-047    | `android/tests/test_input_demo_recorder.cpp`                                | L901-L991       | GQ1-CHUNK-0700                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-048    | `android/tests/test_input_demo_replay.cpp`                                  | L901-L1059      | GQ1-CHUNK-0701                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-049    | `android/tests/test_lan.ps1`                                                | L901-L1397      | GQ1-CHUNK-0702                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-050    | `android/tests/test_route_snapshot.cpp`                                     | L901-L1385      | GQ1-CHUNK-0707                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-051    | `android/tests/test_saf_archiver.ps1`                                       | L601-L731       | GQ1-CHUNK-0137                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-052    | `d1/main/input_demo_hooks.c`                                                | L751-L1326      | GQ1-CHUNK-0300                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-053    | `d1_d2_ogl_diff.txt`                                                        | L901-L922       | GQ1-CHUNK-0630                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-054    | `d2/main/d1_custom.c`                                                       | L751-L894       | GQ1-CHUNK-0347                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-055    | `d2/main/d1_save_translate.c`                                               | L1501-L1882     | GQ1-CHUNK-0351, GQ1-CHUNK-0352                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-056    | `d2/main/dxa_metadata_patch.cpp`                                            | L751-L1060      | GQ1-CHUNK-0353                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-057    | `d2/main/input_demo_hooks.c`                                                | L6751-L7138     | GQ1-CHUNK-0358, GQ1-CHUNK-0359, GQ1-CHUNK-0360, GQ1-CHUNK-0361, GQ1-CHUNK-0362, GQ1-CHUNK-0363, GQ1-CHUNK-0364, GQ1-CHUNK-0365, GQ1-CHUNK-0366 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
+| GQ1-TAIL-058    | `game_data/mods/d2x-xl/convert_d2xxl_textures.ps1`                          | L751-L1004      | GQ1-CHUNK-0620                                                                                                                                 | PENDING prior-evidence reconciliation or full supplemental review                                                               |
 
 ### Progress through GQ1-CHUNK-0565
 
@@ -2740,3 +2740,1023 @@ The initial narrow ignore-rule report missed active BR-0607 corpus provenance ow
 - Imported and normalized 1 additional complete scope reports; original queue is 660 DONE and 159 TODO, next unit 0658
 - Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
 - Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0658
+
+- Imported and normalized 1 additional complete scope reports; original queue is 661 DONE and 158 TODO, next unit 0659
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0659
+
+- Imported and normalized 1 additional complete scope reports; original queue is 662 DONE and 157 TODO, next unit 0660
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0660
+
+- Imported and normalized 1 additional complete scope reports; original queue is 663 DONE and 156 TODO, next unit 0661
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0661
+
+- Imported and normalized 1 additional complete scope reports; original queue is 664 DONE and 155 TODO, next unit 0662
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0662
+
+- Imported and normalized 1 additional complete scope reports; original queue is 665 DONE and 154 TODO, next unit 0663
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0663
+
+- Imported and normalized 1 additional complete scope reports; original queue is 666 DONE and 153 TODO, next unit 0664
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0664
+
+- Imported and normalized 1 additional complete scope reports; original queue is 667 DONE and 152 TODO, next unit 0665
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0665
+
+- Imported and normalized 1 additional complete scope reports; original queue is 668 DONE and 151 TODO, next unit 0666
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0666
+
+- Imported and normalized 1 additional complete scope reports; original queue is 669 DONE and 150 TODO, next unit 0667
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0667
+
+- Imported and normalized 1 additional complete scope reports; original queue is 670 DONE and 149 TODO, next unit 0668
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0668
+
+- Imported and normalized 1 additional complete scope reports; original queue is 671 DONE and 148 TODO, next unit 0669
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0669
+
+- Imported and normalized 1 additional complete scope reports; original queue is 672 DONE and 147 TODO, next unit 0670
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0670
+
+- Imported and normalized 1 additional complete scope reports; original queue is 673 DONE and 146 TODO, next unit 0671
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0671
+
+- Imported and normalized 1 additional complete scope reports; original queue is 674 DONE and 145 TODO, next unit 0672
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0672
+
+- Imported and normalized 1 additional complete scope reports; original queue is 675 DONE and 144 TODO, next unit 0673
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0673
+
+- Imported and normalized 1 additional complete scope reports; original queue is 676 DONE and 143 TODO, next unit 0674
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0674
+
+- Imported and normalized 1 additional complete scope reports; original queue is 677 DONE and 142 TODO, next unit 0675
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0675
+
+- Imported and normalized 1 additional complete scope reports; original queue is 678 DONE and 141 TODO, next unit 0676
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0676
+
+- Imported and normalized 1 additional complete scope reports; original queue is 679 DONE and 140 TODO, next unit 0677
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0677
+
+- Imported and normalized 1 additional complete scope reports; original queue is 680 DONE and 139 TODO, next unit 0678
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0678
+
+- Imported and normalized 1 additional complete scope reports; original queue is 681 DONE and 138 TODO, next unit 0679
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0679
+
+- Imported and normalized 1 additional complete scope reports; original queue is 682 DONE and 137 TODO, next unit 0680
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0680
+
+- Imported and normalized 1 additional complete scope reports; original queue is 683 DONE and 136 TODO, next unit 0681
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0681
+
+- Imported and normalized 1 additional complete scope reports; original queue is 684 DONE and 135 TODO, next unit 0682
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0682
+
+- Imported and normalized 1 additional complete scope reports; original queue is 685 DONE and 134 TODO, next unit 0683
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0683
+
+- Imported and normalized 1 additional complete scope reports; original queue is 686 DONE and 133 TODO, next unit 0684
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0684
+
+- Imported and normalized 1 additional complete scope reports; original queue is 687 DONE and 132 TODO, next unit 0685
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0685
+
+- Imported and normalized 1 additional complete scope reports; original queue is 688 DONE and 131 TODO, next unit 0686
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0686
+
+- Imported and normalized 1 additional complete scope reports; original queue is 689 DONE and 130 TODO, next unit 0687
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0687
+
+- Imported and normalized 1 additional complete scope reports; original queue is 690 DONE and 129 TODO, next unit 0688
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0688
+
+- Imported and normalized 1 additional complete scope reports; original queue is 691 DONE and 128 TODO, next unit 0689
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0689
+
+- Imported and normalized 1 additional complete scope reports; original queue is 692 DONE and 127 TODO, next unit 0690
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0690
+
+- Imported and normalized 1 additional complete scope reports; original queue is 693 DONE and 126 TODO, next unit 0691
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0691
+
+- Imported and normalized 1 additional complete scope reports; original queue is 694 DONE and 125 TODO, next unit 0692
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0692
+
+- Imported and normalized 1 additional complete scope reports; original queue is 695 DONE and 124 TODO, next unit 0693
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0693
+
+- Imported and normalized 1 additional complete scope reports; original queue is 696 DONE and 123 TODO, next unit 0694
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0694
+
+- Imported and normalized 1 additional complete scope reports; original queue is 697 DONE and 122 TODO, next unit 0695
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0695
+
+- Imported and normalized 1 additional complete scope reports; original queue is 698 DONE and 121 TODO, next unit 0696
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0696
+
+- Imported and normalized 1 additional complete scope reports; original queue is 699 DONE and 120 TODO, next unit 0697
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0697
+
+- Imported and normalized 1 additional complete scope reports; original queue is 700 DONE and 119 TODO, next unit 0698
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0698
+
+- Imported and normalized 1 additional complete scope reports; original queue is 701 DONE and 118 TODO, next unit 0699
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0699
+
+- Imported and normalized 1 additional complete scope reports; original queue is 702 DONE and 117 TODO, next unit 0700
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0700
+
+- Imported and normalized 1 additional complete scope reports; original queue is 703 DONE and 116 TODO, next unit 0701
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0701
+
+- Imported and normalized 1 additional complete scope reports; original queue is 704 DONE and 115 TODO, next unit 0702
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0702
+
+- Imported and normalized 1 additional complete scope reports; original queue is 705 DONE and 114 TODO, next unit 0703
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0703
+
+- Imported and normalized 1 additional complete scope reports; original queue is 706 DONE and 113 TODO, next unit 0704
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0704
+
+- Imported and normalized 1 additional complete scope reports; original queue is 707 DONE and 112 TODO, next unit 0705
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0705
+
+- Imported and normalized 1 additional complete scope reports; original queue is 708 DONE and 111 TODO, next unit 0706
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0706
+
+- Imported and normalized 1 additional complete scope reports; original queue is 709 DONE and 110 TODO, next unit 0707
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0707
+
+- Imported and normalized 1 additional complete scope reports; original queue is 710 DONE and 109 TODO, next unit 0708
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0708
+
+- Imported and normalized 1 additional complete scope reports; original queue is 711 DONE and 108 TODO, next unit 0709
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0709
+
+- Imported and normalized 1 additional complete scope reports; original queue is 712 DONE and 107 TODO, next unit 0710
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0710
+
+- Imported and normalized 1 additional complete scope reports; original queue is 713 DONE and 106 TODO, next unit 0711
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0711
+
+- Imported and normalized 1 additional complete scope reports; original queue is 714 DONE and 105 TODO, next unit 0712
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0712
+
+- Imported and normalized 1 additional complete scope reports; original queue is 715 DONE and 104 TODO, next unit 0713
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0713
+
+- Imported and normalized 1 additional complete scope reports; original queue is 716 DONE and 103 TODO, next unit 0714
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0714
+
+- Imported and normalized 1 additional complete scope reports; original queue is 717 DONE and 102 TODO, next unit 0715
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0715
+
+- Imported and normalized 1 additional complete scope reports; original queue is 718 DONE and 101 TODO, next unit 0716
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0716
+
+- Imported and normalized 1 additional complete scope reports; original queue is 719 DONE and 100 TODO, next unit 0717
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0717
+
+- Imported and normalized 1 additional complete scope reports; original queue is 720 DONE and 99 TODO, next unit 0718
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0718
+
+- Imported and normalized 1 additional complete scope reports; original queue is 721 DONE and 98 TODO, next unit 0719
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0719
+
+- Imported and normalized 1 additional complete scope reports; original queue is 722 DONE and 97 TODO, next unit 0720
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0720
+
+- Imported and normalized 1 additional complete scope reports; original queue is 723 DONE and 96 TODO, next unit 0721
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0721
+
+- Imported and normalized 1 additional complete scope reports; original queue is 724 DONE and 95 TODO, next unit 0722
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0722
+
+- Imported and normalized 1 additional complete scope reports; original queue is 725 DONE and 94 TODO, next unit 0723
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0723
+
+- Imported and normalized 1 additional complete scope reports; original queue is 726 DONE and 93 TODO, next unit 0724
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0724
+
+- Imported and normalized 1 additional complete scope reports; original queue is 727 DONE and 92 TODO, next unit 0725
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0725
+
+- Imported and normalized 1 additional complete scope reports; original queue is 728 DONE and 91 TODO, next unit 0726
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0726
+
+- Imported and normalized 1 additional complete scope reports; original queue is 729 DONE and 90 TODO, next unit 0727
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0727
+
+- Imported and normalized 1 additional complete scope reports; original queue is 730 DONE and 89 TODO, next unit 0728
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0728
+
+- Imported and normalized 1 additional complete scope reports; original queue is 731 DONE and 88 TODO, next unit 0729
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0729
+
+- Imported and normalized 1 additional complete scope reports; original queue is 732 DONE and 87 TODO, next unit 0730
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0730
+
+- Imported and normalized 1 additional complete scope reports; original queue is 733 DONE and 86 TODO, next unit 0731
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0731
+
+- Imported and normalized 1 additional complete scope reports; original queue is 734 DONE and 85 TODO, next unit 0732
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0732
+
+- Imported and normalized 1 additional complete scope reports; original queue is 735 DONE and 84 TODO, next unit 0733
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0733
+
+- Imported and normalized 1 additional complete scope reports; original queue is 736 DONE and 83 TODO, next unit 0734
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0734
+
+- Imported and normalized 1 additional complete scope reports; original queue is 737 DONE and 82 TODO, next unit 0735
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0735
+
+- Imported and normalized 1 additional complete scope reports; original queue is 738 DONE and 81 TODO, next unit 0736
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0736
+
+- Imported and normalized 1 additional complete scope report; original queue is 739 DONE and 80 TODO, next unit 0737
+- Canonical ledger and evidence import succeeded; this progress append repairs a transient file-open failure after normalization, without reimporting or reallocating IDs
+- Existing canonical owners remain reconciled; analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0737
+
+- Imported and normalized 1 additional complete scope reports; original queue is 740 DONE and 79 TODO, next unit 0738
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0738
+
+- Imported and normalized 1 additional complete scope reports; original queue is 741 DONE and 78 TODO, next unit 0739
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0739
+
+- Imported and normalized 1 additional complete scope reports; original queue is 742 DONE and 77 TODO, next unit 0740
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0740
+
+- Imported and normalized 1 additional complete scope reports; original queue is 743 DONE and 76 TODO, next unit 0741
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0741
+
+- Imported and normalized 1 additional complete scope reports; original queue is 744 DONE and 75 TODO, next unit 0742
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0742
+
+- Imported and normalized 1 additional complete scope reports; original queue is 745 DONE and 74 TODO, next unit 0743
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0743
+
+- Imported and normalized 1 additional complete scope reports; original queue is 746 DONE and 73 TODO, next unit 0744
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0744
+
+- Imported and normalized 1 additional complete scope reports; original queue is 747 DONE and 72 TODO, next unit 0745
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0745
+
+- Imported and normalized 1 additional complete scope reports; original queue is 748 DONE and 71 TODO, next unit 0746
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0746
+
+- Imported and normalized 1 additional complete scope reports; original queue is 749 DONE and 70 TODO, next unit 0747
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0747
+
+- Imported and normalized 1 additional complete scope reports; original queue is 750 DONE and 69 TODO, next unit 0748
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0748
+
+- Imported and normalized 1 additional complete scope reports; original queue is 751 DONE and 68 TODO, next unit 0749
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0749
+
+- Imported and normalized 1 additional complete scope reports; original queue is 752 DONE and 67 TODO, next unit 0750
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-CHUNK-0750
+
+- Imported and normalized 1 additional complete scope reports; original queue is 753 DONE and 66 TODO, next unit 0751
+- Existing canonical owners and completed external repairs were reconciled without duplicate fix admission
+- Analysis remains open and no product code was edited in this batch
+
+### Progress through GQ1-RECHECK-0001
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 754 DONE and 65 TODO; next unit GQ1-RECHECK-0002
+- BR-0016 generation/native repairs retained with stale preparation and activity teardown acceptance pending; BR-0276 EOF/drain remains separate; no duplicate finding or runtime PASS
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0002
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 755 DONE and 64 TODO; next unit GQ1-RECHECK-0003
+- BR-0021 partial native cancellation repairs retained; ignored Galaxy inner callback and pending-exception budget publication remain; GQR-0073 capability/progress and BR-0456 caller lifetime coordinated; no new root or build/runtime credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0003
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 756 DONE and 63 TODO; next unit GQ1-RECHECK-0004
+- BR-0029 partial queue/snapshot/atomic preference repairs retained; escort and debug affinity remain; BR-0244 delivery, GQR-0218 allocation and same-count list-generation review coordinated; no new finding or runtime credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0004
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 757 DONE and 62 TODO; next unit GQ1-RECHECK-0005
+- BR-0044 shared overlay local refs/attachment repairs retained; keyboard/host/dormancy exception and reference gaps remain; GQF-0037 strict UTF regrowth coordinated with archived BR-0065; no new root or CheckJNI credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0005
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 758 DONE and 61 TODO; next unit GQ1-RECHECK-0006
+- BR-0077 remains live in loaded-mission aggregate and Boolean enum use; malformed-header admission repairs retained; generated root/row and automation consumers coordinated; no new root or native/runtime credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0006
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 759 DONE and 60 TODO; next unit GQ1-RECHECK-0007
+- BR-0078 atomic CAS/terminating and rejected-preview repairs retained; post-publication startup rollback and failure termination acceptance remain; BR-0044 callbacks and existing acquisition owner coordinated; no new root or race-test credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0007
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 760 DONE and 59 TODO; next unit GQ1-RECHECK-0008
+- BR-0080 player/weapon and overlay bounds repairs retained; host-relay origin and active-slot/sentinel acceptance remain; BR-0029 publication and coop world/life fences preserved; no new root or ASan/network credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0008
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 761 DONE and 58 TODO; next unit GQ1-RECHECK-0009
+- BR-0082 metadata-only body admission remains; coop exclusion/path identity and native runtime validation retained; trailer integrity/header probe required under current-only Android policy; no new root or restore/build credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0009
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 762 DONE and 57 TODO; next unit GQ1-RECHECK-0010
+- BR-0084 dormant subsystem remains; picker import still managed-copy; provider tests are injected rather than production link flow; BR-0085/GQF-0099 mount identity and BR-0419 grant acceptance retained where live; no new root or device credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0010
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 763 DONE and 56 TODO; next unit GQ1-RECHECK-0011
+- BR-0090 production fallback still absent; flavor separation and durable transport UUID retained; connection fences preserved; server supports signed keypair/PoW but client does not; no new root or production-auth/build credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0011
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 764 DONE and 55 TODO; next unit GQ1-RECHECK-0012
+- BR-0099 normal pending-track database check repaired; zero/incomplete load and matcher failure still cache completed identity; sidecar has source but not DB identity; no new root or JVM/native credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0012
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 765 DONE and 54 TODO; next unit GQ1-RECHECK-0013
+- BR-0101 unbounded global cache remains; content identity and serialized checked publication are retained; manager delete/clear does not prune global fingerprints; no new root or retention benchmark credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0013
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 766 DONE and 53 TODO; next unit GQ1-RECHECK-0014
+- BR-0103 writer locking and manifest helper repairs retained; destructive tree-before-manifest publication, silent corrupt-empty and unchecked cleanup remain; BR-0186 source replacement and registry owners coordinated; no new root or crash/race execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0014
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 767 DONE and 52 TODO; next unit GQ1-RECHECK-0015
+- BR-0106 missing Google ID still bypasses verification; JSONC string-safe parser repairs retained but load fallback defaults remain; BR-0090 client fallback coordinated; no new root or real token/startup execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0015
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 768 DONE and 51 TODO; next unit GQ1-RECHECK-0016
+- BR-0109 detached task ownership and try_lock abort remain; sequential startup now returns Result and owns reservations; no new root or task/socket shutdown credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0016
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 769 DONE and 50 TODO; next unit GQ1-RECHECK-0017
+- BR-0110 ignored internal source and global last sender remain; existing isolation test asserts only equal IP/outbound payload; no new root or bidirectional execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0017
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 770 DONE and 49 TODO; next unit GQ1-RECHECK-0018
+- BR-0111 complete attribute bounds remain in both decoders; Android fixed backing buffer can mask actual datagram truncation; padding step and source validation need coordinated acceptance; no new root or malformed packet execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0018
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 771 DONE and 48 TODO; next unit GQ1-RECHECK-0019
+- BR-0112 wrap/probe race repaired by held sockets and checked startup Result; exhaustion still debug-and-drop with no caller status; BR-0109 owns release; no new root or boundary/UDP execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0019
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 772 DONE and 47 TODO; next unit GQ1-RECHECK-0020
+- BR-0113 text-case identity fragmentation remains; same-key tests use lowercase only; concurrent registration/database transaction owner remains separate; no new root or cryptographic/network test credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0020
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 773 DONE and 46 TODO; next unit GQ1-RECHECK-0021
+- BR-0114 TCP loopback still identifies proxied clients; forwarding headers ignored and no trusted-proxy config; refcount cleanup race and session generation remain coordinated; no new root or proxy/network credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0021
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 774 DONE and 45 TODO; next unit GQ1-RECHECK-0022
+- BR-0117 record_auth_fail remains declaration-only; raw message and upgrade limits do not implement auth cooldown; BR-0114 effective IP and verifier budget coordinated; no new root or threshold/verifier execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0022
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 775 DONE and 44 TODO; next unit GQ1-RECHECK-0023
+- BR-0118 unconditional removal after stale snapshot remains across all maps; periodic task runs concurrently; no new root or deterministic race execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0023
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 776 DONE and 43 TODO; next unit GQ1-RECHECK-0024
+- BR-0119 lower-only range check remains; Rust/Android version2 constants synchronized; old-version integration only; no new root or negotiation/network execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0024
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 777 DONE and 42 TODO; next unit GQ1-RECHECK-0025
+- BR-0121 social authorization remains; accept has transaction but no pending/count predicate; current lifecycle tests are positive and block-message only; no new root or DB/network/UI execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0025
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 778 DONE and 41 TODO; next unit GQ1-RECHECK-0026
+- BR-0123 active session revocation absent; existing auth checks fail open on DB errors; BR-0127 session generation and BR-0138 expiry coordinated; no new root or admin/socket cleanup execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0026
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 779 DONE and 40 TODO; next unit GQ1-RECHECK-0027
+- BR-0124 unchecked cast/panicking time construction remains; pinned chrono source confirms both overflow boundaries; BR-0138 mixed timestamp comparison affects expiry outcome; no new root or extreme request/Cargo execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0027
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 780 DONE and 39 TODO; next unit GQ1-RECHECK-0028
+- BR-0125 per-call reqwest client and missing explicit request/flow/body/concurrency limits remain; local pinned defaults verified; BR-0117 auth limiter and BR-0127 pre-auth cap coordinated; no new root or external-request/load execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0028
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 781 DONE and 38 TODO; next unit GQ1-RECHECK-0029
+- BR-0126 unbudgeted application HTTP/status work remains; simple status/health paths are cheap but unsupervised readiness separate; proxy identity coordinated; no new root or load/slow-reader execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0029
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 782 DONE and 37 TODO; next unit GQ1-RECHECK-0030
+- BR-0127 player-only registry and repeated auth still overwrite ownership; bounded send/await teardown repairs retained; stats/STUN/lobby cleanup not generation-fenced; no new root or reconnect/concurrency execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0030
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 783 DONE and 36 TODO; next unit GQ1-RECHECK-0031
+- BR-0128 detached/logged service failures and zero-status WS return remain; STUN runner returns after nested spawn so main handle does not own loop; tests bypass main; no new root or bind-fault/service execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0031
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 784 DONE and 35 TODO; next unit GQ1-RECHECK-0032
+- BR-0131 daily rotation still has unlimited retention and no byte/free-space budget; pinned tracing-appender defaults verified; no new root or logging/service execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0032
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 785 DONE and 34 TODO; next unit GQ1-RECHECK-0033
+- BR-0132 endpoint/frame authorization and raw token diagnostics remain; enlarged datagram buffer retained; BR-0133 capacity ownership coordinated; no new root or real UDP/security execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0033
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 786 DONE and 33 TODO; next unit GQ1-RECHECK-0034
+- BR-0133 check-then-insert/session allocation and terminal lifecycle gaps remain; initial partial-start rollback retained; BR-0132 authentication and BR-0127 generations coordinated; no new root or capacity/load execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0034
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 787 DONE and 32 TODO; next unit GQ1-RECHECK-0035
+- BR-0137 all three unwrap_or(false) admission paths remain; moderation revocation and bounded DB work coordinated with BR-0123/BR-0139; no new root or failure-injection execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0035
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 788 DONE and 31 TODO; next unit GQ1-RECHECK-0036
+- BR-0139 process-wide blocking DB mutex and inline request/periodic calls remain; existing accept transaction retained; BR-0126 caching and BR-0137 authorization coordinated; no new root or storage-load execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0036
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 789 DONE and 30 TODO; next unit GQ1-RECHECK-0037
+- BR-0140 append-only driven tables still have no retention/free-space/write admission; BR-0131 shared disk and BR-0137 failures coordinated; deployed durable identities are not disposable Android state; no new root or retention/disk execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0037
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 790 DONE and 29 TODO; next unit GQ1-RECHECK-0038
+- BR-0143 known-key replay window and unbound new-key proof remain; BR-0090 missing Android keypair implementation and BR-0113 canonical identity coordinated; no new root or replay/security execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0038
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 791 DONE and 28 TODO; next unit GQ1-RECHECK-0039
+- BR-0144 try_send failures still discarded and writer completion unsupervised; bounded queue/send timeout/drain-await repairs retained; BR-0127 cleanup generations coordinated; no new root or queue/failure execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0039
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 792 DONE and 27 TODO; next unit GQ1-RECHECK-0040
+- BR-0153 exact same-key late-join deadlock remains despite lobby drop; session/lobby opposite nesting remains; pinned DashMap guard warning verified; no new root or deadlock/stress execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0040
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 793 DONE and 26 TODO; next unit GQ1-RECHECK-0041
+- BR-0158 GOG/StuffIt/HFS/STi2 skip accounting remains; SOW registration/CTest skip and audio no-media exit2 retained; new synthetic call sites narrow zero-assertion claims; no new root or native/fixture execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0041
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 794 DONE and 25 TODO; next unit GQ1-RECHECK-0042
+- BR-0159 major 7-Zip staging/lock/native-exit/digest/rollback repairs retained; directory-only update discovery and publication reader/crash acceptance remain; other installer extensions not freshly reread; no new root or install execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0042
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 795 DONE and 24 TODO; next unit GQ1-RECHECK-0043
+- BR-0160 POSIX/Windows shared build/fixture ownership and missing deadlines remain; selected newer checked fixture paths do not repair unchecked shared writers/main; no new root or runner/fault execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0043
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 796 DONE and 23 TODO; next unit GQ1-RECHECK-0044
+- BR-0162 zero-pass success remains across emulator/host/extraction paths; empty match and failed archive inspection now fail correctly and publication guards retained; no new root or batch/device execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0044
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 797 DONE and 22 TODO; next unit GQ1-RECHECK-0045
+- BR-0163 unconditional finally/logcat stop retained; ending-helper throw can bypass relay kill and no wait/dispose remains; prior GQ0702 mocked maintained-AST reproduction is historical execution only; no new root or live child/device execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0045
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 798 DONE and 21 TODO; next unit GQ1-RECHECK-0046
+- BR-0164 any-source endpoint roles and wildcard standalone bind remain; LAN caller loopback restriction retained; no new root or UDP forgery execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0046
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 799 DONE and 20 TODO; next unit GQ1-RECHECK-0047
+- BR-0167 second-resolution/reused namespaces and extension-blind aliases remain; retention and atomic JSON writes retained but do not establish identity; no new root or collision/concurrent execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0047
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 800 DONE and 19 TODO; next unit GQ1-RECHECK-0048
+- BR-0168 fixed staging/unbounded direct children and success-only removal remain; existing per-step native exits and bounded Adb wrapper retained; other staging extensions not freshly reconciled; no new root or device/transfer execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0048
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 801 DONE and 18 TODO; next unit GQ1-RECHECK-0049
+- BR-0169 CD exit1/error-bearing-record/nonempty admission retained; GOG counted failures still lack terminal nonzero; broader pipeline extensions not freshly reconciled; no new root or extraction/failure execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0049
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 802 DONE and 17 TODO; next unit GQ1-RECHECK-0050
+- BR-0663 main observed natural nonzero and capture-label repairs retained; forced-stop-before-actual-kill race and smoke accepted-output failure gap remain; alternate oracle completeness coordinated; no new root or replay/child execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-RECHECK-0050
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 803 DONE and 16 TODO; next unit GQ1-SWEEP-001
+- BR-0668 affected live wrapper/baseline absent after12cb9974 test cleanup; no maintained script consumer found in current inventory; historical duplicate/count defect does not apply to absent code; no new root or corpus execution credit
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-001
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 804 DONE and 15 TODO; next unit GQ1-SWEEP-002
+- DMR1-CHUNK-003/004/005/006 current reconciliation required; GQF-0201/GQR-0188 remains current; GQI-0005/0006/0007 stay open; other numbered native findings and full tail/live-delta gates retained
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-002
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 805 DONE and 14 TODO; next unit GQ1-SWEEP-003
+- BR-0029/0044 and GQR-0167/0170/0173 remain; GQR-0170 extended to current CoopSaveCompatibility JNI additions; GQR-0163 orphan removal retained; completed GQR-0024/0039/0044 scope preserved
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-003
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 806 DONE and 13 TODO; next unit GQ1-SWEEP-004
+- GQR-0084/0209/0216 and BR-0078/0202/0044 retained; LaunchPreparationWork serialization and current route/input lifecycle improvements retained; final complete current delta remains open
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-004
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 807 DONE and 12 TODO; next unit GQ1-SWEEP-005
+- BR-0103/0082/0236/0417 and GQI-0006 retained; GQR-0128/0183/0210 remain current; completed native/JVM extraction and strict JNI repairs retained; no new duplicate finding
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-005
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 808 DONE and 11 TODO; next unit GQ1-SWEEP-006
+- BR-0106/0113/0114/0117/0118/0119/0121/0123/0125/0126/0127/0128/0131/0132/0133/0137/0139/0140/0143/0144/0153 and BR-0090 retained; completed engine reconnect proofs remain separate; no new root
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-006
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 809 DONE and 10 TODO; next unit GQ1-SWEEP-007
+- GQR-0154/0170/0172/0173/0174/0176/0179/0198/0205/0218, GQI-0005/0006, BR-0029/0044/0153/0345 and prior import/process owners retained; no duplicate finding
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-007
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 810 DONE and 9 TODO; next unit GQ1-SWEEP-008
+- GQR-0011, BR-0558/0563/0579/0610/0663/0672 and existing release/process owners retained; no duplicate finding
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-008
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 811 DONE and 8 TODO; next unit GQ1-SWEEP-009
+- BR-0158/0160/0162/0163/0164/0167/0168/0169/0396/0406/0662/0663, GQR-0149/0170/0233/0234 and current runtime owners retained; no duplicate finding
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-009
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 812 DONE and 7 TODO; next unit GQ1-SWEEP-010
+- GQR-0172/0173/0176/0192/0197/0234, BR-0201/0556/0655/0663 and existing save/replay owners retained; no duplicate finding
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-010
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 813 DONE and 6 TODO; next unit GQ1-SWEEP-011
+- GQR-0084/0176/0179/0185/0196/0197/0212, GQI-0005, BR-0101/0126/0139/0254/0259/0269/0294/0487/0500/0504/0582 and current metadata/resource owners retained
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-011
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 814 DONE and 5 TODO; next unit GQ1-SWEEP-012
+- GQR-0128/0167/0170/0205/0218, BR-0029/0044/0131/0132/0233/0235/0254/0255/0272/0282/0294/0556/0663 and existing source/runner owners retained
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-012
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 815 DONE and 4 TODO; next unit GQ1-SWEEP-013
+- GQR-0170/0172/0173/0176, BR-0082/0090/0113/0119/0132/0143/0224 and existing schema owners retained; completed BR-0230/0265 remain preserved
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-013
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 816 DONE and 3 TODO; next unit GQ1-SWEEP-014
+- GQR-0163/0165/0184/0185/0186/0188/0189/0190/0192 and DMR reconciliation retained; no broad inherited deduplication or duplicate finding
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-014
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 817 DONE and 2 TODO; next unit GQ1-SWEEP-015
+- Completed GQR-0005 retained; GQR-0008/0011/0225, BR-0001/0002/0556/0558/0563/0579/0663/0672 and existing publication/tooling owners reconciled; no duplicate finding
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Progress through GQ1-SWEEP-015
+
+- Imported complete current recheck evidence with exact assigned queue identity and live-range hashes
+- Original queue is 818 DONE and 1 TODO; next unit GQ1-CLOSE-001
+- GQR-0013/0014/0015/0163/0165/0184/0185/0186/0188/0189/0190/0192, BR-0446/0447/0532 and previous sweep owners retained; all GQI-0001..0007 and tail/live-delta gates audited as still open
+- Analysis and final live-delta gates remain open; no product edits in this recheck
+
+### Investigation runtime checkpoint, 2026-10-02
+
+- Completed pinned Gitleaks all-ref and every reachable raw blob coverage; classified candidates without printing credential values; GQI-0001 resolved at recorded HEAD with later publication recheck required
+- Fresh MSVC fingerprint/enumeration/HFS build succeeded; maintained enumeration runner and 11/11 HFS assertions including both real discs passed
+- Unicode directory diagnostic capture confirms GQI-0002 -> GQF-0251/GQR-0235; new fix remains TODO
+- Five other investigations, 54 missing tails, complete committed/tracked/untracked delta and all accepted fixes remain; analysis is not complete

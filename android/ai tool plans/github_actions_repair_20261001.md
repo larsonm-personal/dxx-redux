@@ -34,6 +34,7 @@
 - Each packaging job passed all 54 D1 and 63 D2 CTest checks, then uploaded its packages and required symbol artifacts
 - Fixed the stale D2 companion path assertion and added coverage for the cloaked-player destination
 - Local D1 and D2 CTest suites passed; final scoped mixed-language formatting and lint checks passed
+- Final tooling smoke rerun in the original checkout passed all 24 checks after formatting, report run_c3ce4506af4c4511b6694ac1cb9a12bf
 - Android tooling run 36973752992 passed both runner platforms
 - Removed the temporary validation workflow after the complete package pass
 - The isolated repair branch excludes unrelated in-progress native-interruption and activity-replacement scenarios; their local changes are preserved

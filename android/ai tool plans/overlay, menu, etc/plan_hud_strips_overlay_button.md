@@ -3,6 +3,7 @@
 ## Status: MOSTLY COMPLETE (pending emulator test)
 
 ## Issue 1: HUD transparency with non-square textures
+
 - Root cause: etc2tool pads non-square textures to pow2 with transparent black.
   The ETC2 loading path uses u=v=1.0, so padding is visible.
   Cockpit textures are non-square (640x480, 1280x960, etc.)
@@ -17,6 +18,7 @@
 - [x] regenerate non-square .etc2 files in all DXA packs
 
 ## Issue 2: Animated texture strips
+
 - Root cause: d2x-xl packs store animation frames as vertical strips (name#0.tga).
   Engine expects separate files per frame (name#0.etc2, name#1.etc2, ...).
   Currently only name#0.etc2 exists, showing all frames on one polygon.
@@ -30,6 +32,7 @@
   targ02b, targ03b) with correct orig dimensions in headers
 
 ## Issue 3: Video overlay label toggle button
+
 - Add a proper button with press feedback that consumes touch events
 - Files: VideoInfoOverlay.kt
 - [x] draw button with rounded rect background + pressed state

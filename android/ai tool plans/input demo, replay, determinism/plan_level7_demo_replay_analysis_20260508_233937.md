@@ -1,10 +1,12 @@
 # Level 7 replay analysis 2026-05-08 233937
 
 ## Goal
+
 - determine why the new D2 level 7 demo desyncs
 - check whether the failure closes out one of the existing replay theories covered by the current AI and impact instrumentation
 
 ## Steps
+
 - [completed] locate the exact replay artifact directory and inspect result, state, and rng trace outputs
 - [completed] identify the earliest meaningful drift from the recorded result and replay traces
 - [completed] compare the first drift window against existing AI, visibility, awareness, agitation, and impact-related instrumentation
@@ -13,6 +15,7 @@
 - [completed] validate the D2 host build and a separate headless replay smoke test after the instrumentation change
 
 ## Notes
+
 - user-observed symptom: replay appears to diverge around frame 2000 +/- 200 with an impact or explosion possibly perturbing player view angle so later shots miss
 - cheap check: inspect the embedded and actual RNG traces plus any existing replay probe logs around frames 1800-2200 to see whether the first hidden drift matches an already instrumented branch
 - first meaningful drift is at frame 2180, visible at the frame 2181 checkpoint boundary

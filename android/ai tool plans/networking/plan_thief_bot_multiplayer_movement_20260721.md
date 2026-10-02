@@ -68,15 +68,15 @@ Use the existing dynamic robot owner as the sole authority for thief locomotion,
 
 The fix should make the authority split explicit:
 
-| State or side effect | Authority | Replication |
-| --- | --- | --- |
-| Position, orientation, velocity, path, AI timers | Current `REMOTE_OWNER` | `MULTI_ROBOT_POSITION` |
-| Thief `AIM_THIEF_*` mode | Current movement owner, except contact-forced retreat | Position packet plus thief contact state |
-| Local inventory removal and steal RNG | Contacted player's peer | Thief contact state containing the resulting stolen-item snapshot |
-| Shared stolen-item list/index | Most recent contacted player's peer | Thief contact state and late-join snapshot |
-| Thief flare creation | Current movement owner | `MULTI_ROBOT_FIRE` flare subtype |
-| Player collision response and HUD feedback | Contacted player's peer | Existing player-local behavior |
-| Robot damage/death/drop creation | Existing robot owner rules | Existing robot damage/explode/powerup packets |
+| State or side effect                             | Authority                                             | Replication                                                       |
+| ------------------------------------------------ | ----------------------------------------------------- | ----------------------------------------------------------------- |
+| Position, orientation, velocity, path, AI timers | Current `REMOTE_OWNER`                                | `MULTI_ROBOT_POSITION`                                            |
+| Thief `AIM_THIEF_*` mode                         | Current movement owner, except contact-forced retreat | Position packet plus thief contact state                          |
+| Local inventory removal and steal RNG            | Contacted player's peer                               | Thief contact state containing the resulting stolen-item snapshot |
+| Shared stolen-item list/index                    | Most recent contacted player's peer                   | Thief contact state and late-join snapshot                        |
+| Thief flare creation                             | Current movement owner                                | `MULTI_ROBOT_FIRE` flare subtype                                  |
+| Player collision response and HUD feedback       | Contacted player's peer                               | Existing player-local behavior                                    |
+| Robot damage/death/drop creation                 | Existing robot owner rules                            | Existing robot damage/explode/powerup packets                     |
 
 This preserves the important existing rule that only the local player can authoritatively remove items from its inventory. It also removes pathing, pose changes, and simulation RNG from non-owners.
 
@@ -320,18 +320,18 @@ Acceptance criteria:
 
 ## Risks and Mitigations
 
-| Risk | Mitigation |
-| --- | --- |
-| Stale attack mode causes an incorrect steal | Carry validated thief mode in every robot position packet |
-| Failed theft does not make owner retreat | Send CONTACT state even when zero items are stolen |
-| New owner resumes an obsolete local path | Invalidate/rebuild thief path on ownership acquisition |
-| Owner-only AI removes remote flares | Add explicit center-flare robot fire replication |
-| Position packet change breaks parsing | Fixed-size append under the existing branch protocol boundary plus packet-size tests |
+| Risk                                        | Mitigation                                                                                                    |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Stale attack mode causes an incorrect steal | Carry validated thief mode in every robot position packet                                                     |
+| Failed theft does not make owner retreat    | Send CONTACT state even when zero items are stolen                                                            |
+| New owner resumes an obsolete local path    | Invalidate/rebuild thief path on ownership acquisition                                                        |
+| Owner-only AI removes remote flares         | Add explicit center-flare robot fire replication                                                              |
+| Position packet change breaks parsing       | Fixed-size append under the existing branch protocol boundary plus packet-size tests                          |
 | Contact packet races with an older position | Owner immediately changes to retreat and queues a new position; log and test ordering under simulated latency |
-| Ownership churn causes a correction | Preserve existing minimum control time, measure churn first, tune only if needed |
-| Coop restore leaves an invalid owner slot | Reset runtime control slots, validate mode, and let normal claim establish ownership |
-| Coop restore loses `Stolen_item_index` | Audit the Redux save extension, persist or reconstruct the index, and assert it after restore |
-| Scope expands into generic interpolation | Treat interpolation as a separate follow-up only after owner-only behavior is measured |
+| Ownership churn causes a correction         | Preserve existing minimum control time, measure churn first, tune only if needed                              |
+| Coop restore leaves an invalid owner slot   | Reset runtime control slots, validate mode, and let normal claim establish ownership                          |
+| Coop restore loses `Stolen_item_index`      | Audit the Redux save extension, persist or reconstruct the index, and assert it after restore                 |
+| Scope expands into generic interpolation    | Treat interpolation as a separate follow-up only after owner-only behavior is measured                        |
 
 ## Files Expected to Change During Implementation
 

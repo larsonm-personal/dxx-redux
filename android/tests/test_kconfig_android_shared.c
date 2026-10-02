@@ -4,10 +4,10 @@
 #include <string.h>
 
 static int check_game(enum kconfig_android_game game, size_t size,
-	const struct kconfig_android_binding *expected, size_t expected_count)
+                      const struct kconfig_android_binding *expected, size_t expected_count)
 {
 	const struct kconfig_android_layout *layout =
-		kconfig_android_get_layout(game);
+	    kconfig_android_get_layout(game);
 	unsigned char joy[64];
 	size_t i;
 
@@ -22,17 +22,13 @@ static int check_game(enum kconfig_android_game game, size_t size,
 int main(void)
 {
 	static const struct kconfig_android_binding d1_expected[] = {
-		{2, 21}, {3, 19}, {4, 2}, {6, 24}, {7, 25}, {8, 22}, {9, 23},
-		{13, 3}, {15, 2}, {17, 0}, {19, 7}, {21, 6}, {23, 1},
-		{27, 6}, {44, 4}, {45, 5}
+		{ 2, 21 }, { 3, 19 }, { 4, 2 }, { 6, 24 }, { 7, 25 }, { 8, 22 }, { 9, 23 }, { 13, 3 }, { 15, 2 }, { 17, 0 }, { 19, 7 }, { 21, 6 }, { 23, 1 }, { 27, 6 }, { 44, 4 }, { 45, 5 }
 	};
 	static const struct kconfig_android_binding d2_expected[] = {
-		{2, 21}, {3, 19}, {4, 2}, {6, 24}, {7, 25}, {8, 22}, {9, 23},
-		{13, 3}, {15, 2}, {17, 0}, {19, 7}, {21, 6}, {23, 1},
-		{27, 3}, {28, 4}, {29, 5}, {50, 6}
+		{ 2, 21 }, { 3, 19 }, { 4, 2 }, { 6, 24 }, { 7, 25 }, { 8, 22 }, { 9, 23 }, { 13, 3 }, { 15, 2 }, { 17, 0 }, { 19, 7 }, { 21, 6 }, { 23, 1 }, { 27, 3 }, { 28, 4 }, { 29, 5 }, { 50, 6 }
 	};
-	const int indices[] = {0, 14, 63, -1};
-	const int values[] = {7, 1, 9, 4};
+	const int indices[] = { 0, 14, 63, -1 };
+	const int values[] = { 7, 1, 9, 4 };
 	unsigned char output[60];
 	unsigned char defaults[60];
 	size_t i;
@@ -48,8 +44,8 @@ int main(void)
 	    kconfig_android_get_layout(KCONFIG_ANDROID_D2)->settings_size != 60)
 		return 1;
 	kconfig_android_fill_joy_settings(
-		kconfig_android_get_layout(KCONFIG_ANDROID_D2), indices, values, 4,
-		output, kconfig_android_get_layout(KCONFIG_ANDROID_D2)->joystick_size);
+	    kconfig_android_get_layout(KCONFIG_ANDROID_D2), indices, values, 4,
+	    output, kconfig_android_get_layout(KCONFIG_ANDROID_D2)->joystick_size);
 	for (i = 0; i <
 	            kconfig_android_get_layout(KCONFIG_ANDROID_D2)->joystick_size;
 	     i++) {
@@ -61,13 +57,13 @@ int main(void)
 		if (i == 14)
 			expected = 1;
 		if (output[i] != expected) {
-			fprintf(stderr, "joystick slot %u mismatch\n", (unsigned)i);
+			fprintf(stderr, "joystick slot %u mismatch\n", (unsigned) i);
 			return 1;
 		}
 	}
 	memset(defaults, 0x55, sizeof(defaults));
 	kconfig_android_fill_kb_settings(defaults, indices, values, 4, output,
-	                                sizeof(output));
+	                                 sizeof(output));
 	if (output[0] != 7 || output[14] != 1 || output[56] != 0x55 ||
 	    output[59] != 0x55)
 		return 1;

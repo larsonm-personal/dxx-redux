@@ -1,6 +1,7 @@
 # Extract In-game Reorder Helper Plan - 2026-06-04
 
 ## Goal
+
 Move a meaningful part of the Android-only in-game autoselect reorder implementation out of duplicated `d1/` and `d2/` code into `android/app/src/main/cpp/shared`.
 
 ## Scope

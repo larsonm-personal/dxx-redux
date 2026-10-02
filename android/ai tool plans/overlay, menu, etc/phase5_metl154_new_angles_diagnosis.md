@@ -23,13 +23,13 @@ to `android\ai tool plans\metl154_prior_work.md`.
 
 Observed problem: on Android, an extra rock-textured sliver or face appears underneath, on top of, or mixed with the transparent `metl154` grate near the `82/83` portal area. The grate works from both directions (there's no problem with transparency, or supertransparency - the grate is transparent, and that works), but it fails in terms of the rock texture blocking what would be a transparency, or being drawn on top of the rock. The extra rock strip disappears when the camera pans far enough that its right edge leaves view.
 
-The task is to figure out why this happens: there were recently a number of opengl changes (such as a fairly involved gles shim), msaa/anisotropic filtering/texture filtering paths, GL shader changes.  The problem happens with both high res texture packs and the base textures, so it isn't that, although some rework was done *to support* high res textures, and that code could be suspect.
+The task is to figure out why this happens: there were recently a number of opengl changes (such as a fairly involved gles shim), msaa/anisotropic filtering/texture filtering paths, GL shader changes. The problem happens with both high res texture packs and the base textures, so it isn't that, although some rework was done _to support_ high res textures, and that code could be suspect.
 
-Some theories are that it's a corrupted 2nd texture entry for that face; that it's a corrupted coordinate for a different texture; that it's a problem with shaders holding stale data.  There could be other reasons.
+Some theories are that it's a corrupted 2nd texture entry for that face; that it's a corrupted coordinate for a different texture; that it's a problem with shaders holding stale data. There could be other reasons.
 
-Your task is to reason about why the game engine or graphics changes might have caused this, and to track it down.  So far, an enormous amount of logging has been added with little result, often because the AI tool was confused about which face was being drawn, or going down rabbit holes trying to blame some of the things I just listed.  It's ok to continue adding logging, but the most important thing is original reasoning about the cause in code.  Some of the below analysis shows a series of rabbit holes that, if this header text were in place before it was done, would have been skipped.
+Your task is to reason about why the game engine or graphics changes might have caused this, and to track it down. So far, an enormous amount of logging has been added with little result, often because the AI tool was confused about which face was being drawn, or going down rabbit holes trying to blame some of the things I just listed. It's ok to continue adding logging, but the most important thing is original reasoning about the cause in code. Some of the below analysis shows a series of rabbit holes that, if this header text were in place before it was done, would have been skipped.
 
-*the rock texture is not part of level geometry. I've verified this in a level editor and in the base unmodified redux game, and in the base game engine as well (the original, unmodified descent engine from interplay). do not go down rabbit holes with the assumption that the rock texture is supposed to be there*
+_the rock texture is not part of level geometry. I've verified this in a level editor and in the base unmodified redux game, and in the base game engine as well (the original, unmodified descent engine from interplay). do not go down rabbit holes with the assumption that the rock texture is supposed to be there_
 
 Another constraint in your analysis - the rock texture appears to be correctly drawn, not stretched, not projected from some far away point or partial triangle, nothing like that. it's a simple square face with a simple square texture, which is drawn edge to edge, showing no odd effects that would be expected if it was being projected in some kind of transparency draw-behind problem.
 
@@ -241,8 +241,8 @@ previous tranche did NOT fix the defect.
   provenance mismatches. So the merge_vbo-vs-shim_stream upload divergence
   was a real cleanup but not the bug.
 - `[metl154diag]` consistently shows `filt=9728/9728 mips=0 texfilt=0
-  aniso=0 tex_wh=64x64 tex_p2=64x64 tex_handle=301 handle_changed=0
-  flags=0x9 real_flags=0x9 ovl_png=0`. Overlay metl154 is bound GL_NEAREST,
+aniso=0 tex_wh=64x64 tex_p2=64x64 tex_handle=301 handle_changed=0
+flags=0x9 real_flags=0x9 ovl_png=0`. Overlay metl154 is bound GL_NEAREST,
   no mipmaps, no anisotropy, native 64x64 palette texture. This kills the
   bilinear-alpha-boundary theory.
 - Face `83/3/1` geometry and UVs are byte-identical before and after the
@@ -254,7 +254,7 @@ previous tranche did NOT fix the defect.
   `shader=plain -> shader=single`. Texmerge reuses cache slot 1 from
   create_frame=593.
 - `[metl154mix]` lines around face 83/3/1 report `sample_alpha=1.000
-  bottom_mix=0.000`, i.e. the centroid sample on the shader path resolves to
+bottom_mix=0.000`, i.e. the centroid sample on the shader path resolves to
   opaque overlay. Adjacent faces sample at very different UVs but route the
   same way. So the defect is not a wholesale per-face misclassification at
   the centroid.
@@ -379,8 +379,8 @@ overlay-rendering-four-cases.md`, cases 2, 3, 4). For the all-stock case
   `SIDE_IS_TRI_13` falls back. Other `tmap2` overlays remain on the GPU
   two-pass path
 - New on-device proof line: `[metl154exp] ... merge_impl=auto_old_texmerge
-	reason=tri13_face1_stock_64x64 ...` or
-	`[metl154exp] ... merge_impl=auto_old_texmerge reason=metl154_tri13_face1_fallback ...`
+reason=tri13_face1_stock_64x64 ...` or
+  `[metl154exp] ... merge_impl=auto_old_texmerge reason=metl154_tri13_face1_fallback ...`
   appears when the default path now auto-falls back without entering special
   mode `old_merge`
 - Validation: `android\run-code-quality.ps1 -Fix` passed after the render
@@ -393,11 +393,11 @@ overlay-rendering-four-cases.md`, cases 2, 3, 4). For the all-stock case
 - Reproduce the bad portal scene in the normal default mode. Do NOT switch to
   special mode `old_merge`
 - Export or read the debug log and confirm the new line
-	`merge_impl=auto_old_texmerge` appears for face `83/3/1`, but not for
-	`83/3/0` or unrelated metl154 quads such as `29/2/0` or `32/0/0`.
-	`reason=tri13_face1_stock_64x64` means both textures were native 64x64;
-	`reason=metl154_tri13_face1_fallback` means the runtime textures were
-	hires-backed
+  `merge_impl=auto_old_texmerge` appears for face `83/3/1`, but not for
+  `83/3/0` or unrelated metl154 quads such as `29/2/0` or `32/0/0`.
+  `reason=tri13_face1_stock_64x64` means both textures were native 64x64;
+  `reason=metl154_tri13_face1_fallback` means the runtime textures were
+  hires-backed
 - Success condition: the rock strip is gone before entering `old_merge`, and
   the log shows the automatic fallback firing in the default mode
 
@@ -515,7 +515,7 @@ overlay-rendering-four-cases.md`, cases 2, 3, 4). For the all-stock case
      the logs can answer whether the near plane created the degeneracy or the
      polygon was already bad before clipping
    - If needed, split this into `generic clip path` and `extra near-plane
-     diagnostics` so the evidence stays clear
+diagnostics` so the evidence stays clear
    - Success signal: each clipped bad draw can be classified as either
      `near-plane involved` or `no near-plane involvement`
 5. Extend the existing metl debug mode instead of inventing a second one-off
@@ -621,7 +621,7 @@ overlay-rendering-four-cases.md`, cases 2, 3, 4). For the all-stock case
       the wrong texture path, and a wrong face can legitimately sample a rock
       bitmap
     - Goal: stop conflating `where the pixels came from` with `which face
-      submitted the draw`
+submitted the draw`
     - Success signal: every suspicious line answers both questions directly
 
 ### D. Comparison discipline for the next round
@@ -796,7 +796,7 @@ get a useful answer instead of only a texture name.
    - Keep it Android-only and fixed-size. A simple overwrite-on-wrap ring of
      `128` or `256` entries is enough for targeted captures
    - This is the closest realizable version of `ask the misplaced rock where
-     it came from`
+it came from`
 5. Expose provenance for interrogation
    - First version can be log-only
    - Better version later can be dumped via introspection or a debug overlay

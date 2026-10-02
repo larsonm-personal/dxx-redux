@@ -14,8 +14,10 @@ both D1 and D2 despite different kc_joystick layouts).
 ## Phase 1: D1 Virtual Gamepad Init (Bug #3 root cause -- COMPLETE)
 
 ### Problem
+
 d1/arch/sdl/joy.c lacks the `#ifdef ANDROID` block that d2/arch/sdl/joy.c has
 (lines 209-246). Without it:
+
 - joy_init() calls SDL_Init() which fails on Android, returns early
 - axis_button_map[] stays all zeros (static global)
 - joy_axisbutton_handler() maps axis 0 -> button 0 (Fire Primary),
@@ -23,11 +25,13 @@ d1/arch/sdl/joy.c lacks the `#ifdef ANDROID` block that d2/arch/sdl/joy.c has
 - Moving either stick fires weapons
 
 ### Fix
+
 Copy D2's `#ifdef ANDROID` virtual gamepad registration block into D1's
 joy_init(). This registers 6 axes with properly initialized axis_button_map
 values (10, 12, 14...) that don't collide with game control buttons.
 
 ### Files
+
 - d1/arch/sdl/joy.c -- add Android virtual gamepad block
   (reference d2/arch/sdl/joy.c lines 209-246)
 
@@ -36,19 +40,23 @@ values (10, 12, 14...) that don't collide with game control buttons.
 ## Phase 2: Left Stick Y Axis Mapping (Bugs #3 partial, #4 -- COMPLETE)
 
 ### Problem
+
 Both games default `joy_out[19] = 1`, mapping axis 1 (Left Y) to Slide U/D.
 TouchBindings.kt labels this axis as "Fwd/Back". The correct target is Throttle
 (kc_joystick index 23), not Slide U/D (index 19).
 
 ### Fix
+
 Change `joy_out[19] = 1` to `joy_out[23] = 1` in three locations:
-1. d2/main/kconfig.c  kconfig_get_default_settings
-2. d1/main/kconfig.c  kconfig_get_default_settings
-3. android/app/src/main/cpp/android_gamepad_config.cpp  android_apply_gamepad_defaults
+
+1. d2/main/kconfig.c kconfig_get_default_settings
+2. d1/main/kconfig.c kconfig_get_default_settings
+3. android/app/src/main/cpp/android_gamepad_config.cpp android_apply_gamepad_defaults
 
 Update test_axis_mapping.json5 expected values if needed.
 
 ### Files
+
 - d2/main/kconfig.c
 - d1/main/kconfig.c
 - android/app/src/main/cpp/android_gamepad_config.cpp
@@ -59,13 +67,14 @@ Update test_axis_mapping.json5 expected values if needed.
 ## Phase 3: D1 Touch Button Remapping (Bug #3 continued -- COMPLETE)
 
 ### Problem
+
 The touch overlay shows identical buttons for D1 and D2, but D1's kc_joystick
 array has a different layout (48 entries vs D2's 56). Key mismatches:
 
-| Touch Button     | D2 kc_joystick[N] | D2 Action       | D1 kc_joystick[N] | D1 Action    |
-|------------------|--------------------|------------------|--------------------|--------------|
-| 27 (Afterburner) | [46]               | Afterburner      | [28]               | Automap(!)   |
-| 50 (Automap)     | [51]               | Automap          | N/A (>48)          | Out of bounds|
+| Touch Button     | D2 kc_joystick[N] | D2 Action   | D1 kc_joystick[N] | D1 Action     |
+| ---------------- | ----------------- | ----------- | ----------------- | ------------- |
+| 27 (Afterburner) | [46]              | Afterburner | [28]              | Automap(!)    |
+| 50 (Automap)     | [51]              | Automap     | N/A (>48)         | Out of bounds |
 
 D1 has no afterburner. D1 has no headlight, energy-to-shield, or toggle bomb
 joystick bindings.
@@ -76,6 +85,7 @@ but the touch overlay LABELS it "Afterburner" which is confusing and shows a
 button that doesn't exist in D1.
 
 ### Fix
+
 1. In TouchOverlayView.kt: when gameVariant == "d1", hide D2-only buttons
    (Afterburner, Headlight, Energy->Shield, Toggle Bomb) during drawing
 2. Fix D1's col_map in all three locations to use proper D1-specific mappings:
@@ -88,6 +98,7 @@ button that doesn't exist in D1.
      is already correct for D1.
 
 ### Files
+
 - d1/main/kconfig.c -- three col_map arrays (kconfig_set_controls,
   kconfig_fill_joy_settings, kconfig_get_default_settings)
 - android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt --

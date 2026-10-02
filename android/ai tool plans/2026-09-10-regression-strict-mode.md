@@ -9,6 +9,7 @@
 Preserve existing user-generated regression changes and report concrete failures without dropping inputs to obtain a pass
 
 Additional findings during full-corpus verification:
+
 - Parallel metadata completion assumed optional reason/metadata_json fields and nonempty summaries; covered with real callback tests for success/failure/empty/missing/timeout/start errors
 - levelpack.7z was incorrectly mounting every collection HOG for every descriptor; use the existing engine descriptor-specific loading for multi-mission archives
 - Azure Catacombs XL declares level version 23, outside the native loader's supported versions; reject unsupported headers in native metadata before loading, retain explicit per-level diagnostics, and test both games

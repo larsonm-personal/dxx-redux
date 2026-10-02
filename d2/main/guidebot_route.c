@@ -83,6 +83,7 @@ static const int Escort_route_debug_log_enabled[1] = { 0 };
 #endif
 
 #include "guidebot_route_internal.h"
+#include "guidebot_path_recovery.h"
 #include "guidebot_save_io.h"
 #include "guidebot_info_overlay.h"
 
@@ -386,6 +387,7 @@ int escort_route_path_recalc_begin(const char *reason)
 
 void escort_route_reset_navigation(void)
 {
+	guidebot_route_reset_recovery_edges();
 	level_metadata_invalidate_live_route_work();
 	escort_route_clear_goal();
 	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
@@ -408,6 +410,7 @@ void escort_route_reset_navigation(void)
 
 void escort_route_init_level(void)
 {
+	guidebot_route_reset_recovery_edges();
 	escort_route_path_recalc_reset();
 	Escort_route_path_recalc_goal_kind = -1;
 	Escort_route_path_recalc_goal_seg = -1;

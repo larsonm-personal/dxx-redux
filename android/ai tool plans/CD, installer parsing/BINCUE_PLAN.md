@@ -1,6 +1,7 @@
 # Plan: BIN/CUE Data Track Extraction + Multi-Disc Audio Management
 
 ## TL;DR
+
 Add support for importing game files from BIN/CUE CD image data tracks (ISO 9660), managing multiple redbook audio sources with user-configurable disc ordering, identifying discs via per-track SHA1 hashes matched against a JSON database, and providing in-game overlay controls for track selection/browsing.
 
 ## Architecture Overview
@@ -18,12 +19,14 @@ The system adds three major capabilities on top of the existing BIN/CUE redbook 
 **Goal:** Extend the CUE parser to handle arbitrary CUE/BIN files (not just `descent_ii.inst`/`.gog`), including multi-FILE CUE sheets.
 
 **Steps:**
+
 1. ✅ Refactor `parse_cue_file()` in `d2/arch/sdl/rbaudio_bin.c` to accept a CUE filename + BIN base path as parameters instead of hardcoding `descent_ii.inst`/`descent_ii.gog`
 2. ✅ Add support for `FILE "name.bin" BINARY` directives — track which BIN file each track belongs to (for multi-BIN CUE sheets, each FILE gets its own handle)
 3. ✅ Create a reusable CUE parser module (new file `android/app/src/main/cpp/cue_parser.c/.h`) that can be called from both the C engine and from JNI for the Kotlin import flow
 4. ✅ The parser should return a structured list: `{track_num, type (data/audio), bin_filename, start_sector, num_sectors}`
 
 **Data structures:**
+
 ```
 cue_bin_file_t { char filename[256]; int file_index; }
 cue_track_t    { int type; int start_sector; int num_sectors; int file_index; }  // file_index maps to which BIN
@@ -31,6 +34,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 ```
 
 **Relevant files:**
+
 - `d2/arch/sdl/rbaudio_bin.c` — current CUE parser to refactor (lines 166-270)
 - New: `android/app/src/main/cpp/cue_parser.c` + `.h`
 
@@ -41,6 +45,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 **Goal:** Read the ISO 9660 filesystem from Mode 1 data tracks in a BIN file and extract game files.
 
 **Steps:**
+
 1. ✅ Create `android/app/src/main/cpp/iso9660_reader.c/.h` — standalone ISO 9660 reader operating on raw BIN files
 2. ✅ Implement Mode 1 sector reading: extract 2048 bytes of user data from each 2352-byte raw sector (skip 16-byte sync+header, ignore 288-byte ECC/EDC tail)
 3. ✅ Parse the Primary Volume Descriptor at logical sector 16 (byte offset = (track_start_sector + 16) * 2352 + 16 for user data within raw sector)
@@ -52,12 +57,14 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 9. Expose via JNI: `native_list_iso_files(binPath, cueTrackInfo)` → returns file list; `native_extract_iso_files(binPath, cueTrackInfo, outputDir)` → extracts with progress callback
 
 **Key ISO 9660 details for Mode 1:**
+
 - Raw sector: 12 sync + 4 header + 2048 data + 288 ECC = 2352
 - PVD at logical sector 16 (offset = track_start + 16 sectors)
 - Root directory record in PVD at offset 156 (34 bytes)
 - Directory records: variable length, filename at offset 33, data extent LBA at offset 2 (LE uint32), data length at offset 10 (LE uint32)
 
 **Relevant files:**
+
 - New: `android/app/src/main/cpp/iso9660_reader.c` + `.h`
 - Reference pattern: `d2/arch/android/physfs_archiver_saf.c` (file I/O patterns)
 
@@ -68,6 +75,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 **Goal:** Hash each track in a CUE/BIN set by SHA1, match against a known-discs JSON database for identification.
 
 **Steps:**
+
 1. ✅ SHA1 hashing done in Kotlin via `java.security.MessageDigest("SHA-1")` — no C SHA1 module needed
 2. ✅ For each track: SHA1 = hash of all raw 2352-byte sectors from start_sector to start_sector+num_sectors (hash the full raw sector data, matching redump convention)
 3. ✅ Create `android/app/src/main/assets/known_discs.json` — JSON database of known disc definitions
@@ -78,6 +86,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 8. "About" dialog shows: disc label, "12/15 track hashes matched" or "all track hashes matched"
 
 **Relevant files:**
+
 - ✅ New: `android/app/src/main/assets/known_discs.json`
 - ✅ New: `android/app/src/main/java/com/dxxredux/app/DiscIdentifier.kt`
 - Migrate from: `d2/main/songs.c` (disc ID constants, lines 233-258), `d2/main/track_names.c` (hardcoded track names, lines 67-85)
@@ -89,6 +98,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 **Goal:** When user loads a BIN+CUE, scan it and present import options.
 
 **Steps:**
+
 1. ✅ Add BIN/CUE file detection to the existing file import flow in `SetupActivity.kt` — when a `.cue` file is selected (or a `.bin` alongside a `.cue`), trigger the CD import flow instead of the normal file copy
 2. ✅ Parse the CUE via JNI (`cue_parser`) to identify data tracks and audio tracks
 3. ✅ Hash tracks via Kotlin (`DiscIdentifier.sha1Hash()`) and run disc identification (`DiscIdentifier`)
@@ -104,6 +114,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 9. ✅ After import, refresh file statuses via `onRefresh()`
 
 **Relevant files:**
+
 - `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt` — import flow (~line 800+), `MusicInfoSection` (~line 1833)
 - `android/app/src/main/java/com/dxxredux/app/FileSetManager.kt` — set selection
 - `android/app/src/main/java/com/dxxredux/app/AssetManifest.kt` — post-extraction hashing
@@ -115,6 +126,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 **Goal:** Support multiple CUE/BIN audio sources with user-configurable ordering and combined track sequences.
 
 **Steps:**
+
 1. ✅ Create `android/app/src/main/java/com/dxxredux/app/AudioSourceManager.kt` — manages a list of audio sources (CUE/BIN pairs)
 2. ✅ Each audio source entry: `{id, cuePath, binPath(s), discLabel, trackCount, audioTrackCount, enabled, order}`
 3. ✅ Storage: `audio_sources.json` in `filesDir` (shared across sets, like current music files)
@@ -128,6 +140,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 11. ✅ `RBAGetDiscID()` returns the legacy disc ID from the source that owns the current track
 
 **Relevant files:**
+
 - New: `android/app/src/main/java/com/dxxredux/app/AudioSourceManager.kt`
 - ✅ `d2/arch/sdl/rbaudio_bin.c` — multi-source playback structs and I/O done
 - `d2/main/songs.c` — disc ID backward compat (lines 250-280)
@@ -141,12 +154,14 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 **Steps:**
 
 ### Quick Controls (overlay top area)
+
 1. ✅ Add prev/next track buttons to `TouchOverlayView.kt` — small ◀/▶ arrows below the track name area, only shown when music is playing
 2. ✅ Wire buttons via JNI: `nativeNextTrack()`, `nativePrevTrack()` called from overlay callbacks in `MainActivity.kt`
 3. ✅ Show current track info in overlay: track label with ♫ prefix, auto-polled every 500ms via overlay poller
 4. ✅ Add a tap-to-expand gesture on the track name label to open the detail panel
 
 ### Detail Panel (drawer)
+
 5. ✅ Create `MusicControlPanel.kt` — semi-transparent full-screen overlay panel showing:
    - Full track list (scrollable with drag), highlight current track in green
    - Tap any track to play it immediately
@@ -155,6 +170,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 7. Track labeling: deferred to Phase 7 (custom names can override database names via `audio_sources.json`)
 
 ### C-side track control functions
+
 8. ✅ Add to `rbaudio_bin.c`:
    - ✅ `RBAPlaySpecificTrack(int combined_track)` — jump to a specific track in the combined sequence
    - ✅ `RBAGetCurrentTrackInfo(int *disc_idx, int *track_num, char *name, int name_len)` — query current state
@@ -164,6 +180,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 9. ✅ Expose these via JNI in `jni_music_control.c`, with `external fun` declarations in `MainActivity.kt`
 
 **Relevant files:**
+
 - ✅ `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt` — prev/next buttons + track label
 - ✅ `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` — callbacks, track polling, panel wiring
 - ✅ New: `android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt` — full track list overlay
@@ -179,6 +196,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 **Goal:** Move all hardcoded disc identification and track naming into the known_discs.json, making the system data-driven.
 
 **Steps:**
+
 1. Populate `known_discs.json` with SHA1 hashes for all known D2 disc variants (GOG, Definitive, Vertigo, OEM, Mac, etc.) — these need to be computed from actual disc images
 2. Include per-track names in the database entries (replacing the hardcoded `d2_track_names[]` in `track_names.c`)
 3. Include D1 disc variants
@@ -187,6 +205,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 6. Add a field to each disc entry: `track_mapping: { title: 2, credits: 3, first_level: 4 }` so the song system can read this instead of using hardcoded constants
 
 **Relevant files:**
+
 - `android/app/src/main/assets/known_discs.json` — database
 - `d2/main/track_names.c` — load from JSON instead of hardcoded table
 - `d2/main/songs.c` — read track mapping from disc entry

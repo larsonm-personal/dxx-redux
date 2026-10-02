@@ -41,15 +41,15 @@ source. Normal debug-log retention still applies
 
 ## Reading comparison results
 
-| Field | Meaning |
-| --- | --- |
-| `bank_match=1` | Current bytes and length match the sample captured after its bank read |
-| `bank_match=0` | Sample changed since that read; intentional custom/D1 compatibility replacements must be excluded before calling this corruption |
-| `cache_input_match=0` | Current sample differs from the input used for the cached conversion |
-| `cache_output_match=0` | The converted output bytes/length changed after conversion |
-| `source_rate` differs from `cached_rate` | The cached conversion used a different source sample rate |
-| Any match field is `-1` | Comparison is unknown, not a mismatch |
-| `read_ok=0` on a tracked sample | The bank read was short/failed; its load fingerprint is intentionally unknown |
+| Field                                    | Meaning                                                                                                                          |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `bank_match=1`                           | Current bytes and length match the sample captured after its bank read                                                           |
+| `bank_match=0`                           | Sample changed since that read; intentional custom/D1 compatibility replacements must be excluded before calling this corruption |
+| `cache_input_match=0`                    | Current sample differs from the input used for the cached conversion                                                             |
+| `cache_output_match=0`                   | The converted output bytes/length changed after conversion                                                                       |
+| `source_rate` differs from `cached_rate` | The cached conversion used a different source sample rate                                                                        |
+| Any match field is `-1`                  | Comparison is unknown, not a mismatch                                                                                            |
+| `read_ok=0` on a tracked sample          | The bank read was short/failed; its load fingerprint is intentionally unknown                                                    |
 
 If all bytes/rates match, compare robot mappings and bank origins between good
 and bad runs. Matching input/output data cannot exclude a later mixer/device
@@ -62,12 +62,12 @@ The inspected retail/GOG `descent2.s22` has SHA-256
 and 183 samples. Its sniper-related samples provide reference values for the
 phone trace; use the robot mapping lines to identify which actually applies
 
-| Sample index | Name | Bank offset | Bytes | FNV-1a 64-bit |
-| --- | --- | --- | --- | --- |
-| 48 | `sniper_1` | 1184987 | 25106 | `97af1ee6e82f3294` |
-| 49 | `sniper_2` | 1210093 | 24498 | `69d8788c02bdd1b0` |
-| 53 | `snipe_1` | 1335652 | 24098 | `9a629f9713cdff17` |
-| 54 | `snipe_2` | 1359750 | 23010 | `7e08721730a93677` |
+| Sample index | Name       | Bank offset | Bytes | FNV-1a 64-bit      |
+| ------------ | ---------- | ----------- | ----- | ------------------ |
+| 48           | `sniper_1` | 1184987     | 25106 | `97af1ee6e82f3294` |
+| 49           | `sniper_2` | 1210093     | 24498 | `69d8788c02bdd1b0` |
+| 53           | `snipe_1`  | 1335652     | 24098 | `9a629f9713cdff17` |
+| 54           | `snipe_2`  | 1359750     | 23010 | `7e08721730a93677` |
 
 These values apply to that exact bank, not every legitimate D2 release
 

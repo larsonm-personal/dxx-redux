@@ -23,16 +23,12 @@ def main() -> None:
         )
 
     jni = read("android/app/src/main/cpp/android_pilot_prefs.cpp")
-    writer = jni.split("JNI_FUNC(nativeWriteEnginePrefs)", 1)[1].split(
-        "JNI_FUNC(nativeReadVisualPrefs)", 1
-    )[0]
+    writer = jni.split("JNI_FUNC(nativeWriteEnginePrefs)", 1)[1].split("JNI_FUNC(nativeReadVisualPrefs)", 1)[0]
     validation = writer.index("cockpit_mode_is_persistable")
     assert validation < writer.index("GetStringUTFChars")
     assert validation < writer.index("for_each_pilot")
 
-    kotlin = read(
-        "android/app/src/main/java/com/dxxredux/app/NativePilotPreferences.kt"
-    )
+    kotlin = read("android/app/src/main/java/com/dxxredux/app/NativePilotPreferences.kt")
     assert "mode == 0 || mode == 2 || mode == 3" in kotlin
     assert kotlin.count("if (!validCockpitMode(cockpitMode)) return -1") == 2
 

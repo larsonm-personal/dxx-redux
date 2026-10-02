@@ -5,11 +5,13 @@ Status: in progress. Phase 1 probes and the Phase 2 `buf` refresh are landed in 
 ## New evidence
 
 From the log, for the bad closed cover `door45#0`:
+
 - `[mwall_mip_upload] name=door45#0 path=stock ... compressed=0 ... bytes=8192 ... bm_flags=0x0 real_flags=0x0` fires at frame-0 level load.
 - No `[mwall_upload_src]` and no `[mwall_upload_cpu]` for `door45#0`. The filters in those probes early-out on `!data`.
 - `[mwall_cover_gpu]` at first tap: `src_hash=0x272e5021 src_idx254=0 src_idx255=0` (CPU source bytes exist NOW, during the tap) but `gpu_hash=0x72b3c670 gpu_avg=3/3/3/255 gpu_black=3971 p0=104/80/156/255`. GPU content is near-black garbage with a stray non-black pixel at p0.
 
 For animated frames `door45#1..#9`:
+
 - All three probes fire in order: `[mwall_upload_src]` (source `decodebuf`, 4096 palette bytes), `[mwall_upload_cpu]` (expanded RGBA 16384 bytes), `[mwall_mip_upload]`.
 - Second tap caught frame `door45#4`: `gpu_hash=0xdb186899` exactly matches its `[mwall_upload_cpu] hash=0xdb186899`, and `src_hash=0x727c9cb4` exactly matches its `[mwall_upload_src] hash=0x727c9cb4`. Round-trip is clean on the RLE/transparent path.
 - The same is true in level 2 for the second "similarly broken" door.
@@ -36,6 +38,7 @@ ogl_loadtexture(buf, ..., bm->bm_flags, ...); // uploads whatever buf points to
 ```
 
 For `door45#0`:
+
 1. At entry `bm->bm_flags == BM_FLAG_PAGED_OUT`, `bm->bm_data == NULL` (set by `gr_init_bitmap(..., NULL)` in piggy.c line 486).
 2. `buf = bm->bm_data` captures NULL.
 3. No hi-res replacement, so no `return` from the PNG/KTX2 blocks.
@@ -48,6 +51,7 @@ For `door45#0`:
 For `door45#1..#9` this bug does NOT fire because the RLE branch refreshes `buf = decodebuf` after page-in, so the fresh palette bytes make it through.
 
 This explains all four observations:
+
 - closed cover: near-black garbage with a single stray pixel.
 - animated frames: render correctly.
 - the "other broken door" in level 2: any animated-door family whose `#0` frame is non-RLE and only drawn as a merged-wall cover will hit the same path.

@@ -1,14 +1,17 @@
 # Plan: D1/D2 Game Control Save/Load Extraction 2026-07-11
 
 ## Goal
+
 - Remove the paired Android save/load and meta-action dispatch bodies from the original D1/D2 `gamecntl.c` files while preserving game-thread ordering and behavior
 
 ## Existing work to preserve
+
 - Preserve the completed songs, PhysFS, and HMP diff-minimization tranches
 - Preserve all unrelated workspace and mission metadata changes
 - Keep desktop game-control behavior unchanged
 
 ## Steps
+
 - [x] Reconfirm the live D1/D2 dispatch blocks, includes, flags, and signature differences
 - [x] Define the smallest direct API in the existing Android meta-actions helper
 - [x] Move the duplicated Android-only behavior and leave mirrored minimal call sites
@@ -19,6 +22,7 @@
 - [x] Record exact reduction, deferred behavior, and the next candidate
 
 ## Guardrails
+
 - Preserve dispatch priority across autosave, difficulty, game menu, save, load, demo toggle, and rewind
 - Preserve pause-window close behavior and request-flag ownership
 - Preserve dead-player and competitive-multiplayer restrictions
@@ -28,6 +32,7 @@
 - Do not broaden this tranche into save-format, rewind-policy, or menu behavior changes
 
 ## Baseline
+
 - Aggregate D1/D2 diff: 341 files, +49969/-3880 against `upstream/main`
 - `d1/main/gamecntl.c`: +455/-9
 - `d2/main/gamecntl.c`: +728/-13
@@ -35,6 +40,7 @@
 - Expected core engine-file reduction: 310 additions
 
 ## Outcome
+
 - Moved `android_clear_saveload_requests`, pause-window save/load dispatch, and in-game meta-action dispatch into `android_meta_actions.c`
 - Kept one mirrored pause call and one mirrored in-game call in the two engine files
 - Preserved request priority, pause-window close behavior, dead and multiplayer gates, autosave result routing, demo toggle behavior, rewind routing, and D1/D2 state API differences
@@ -44,6 +50,7 @@
 - The live aggregate is now 341 files and `+49958/-3886`; it is not a clean tranche delta because concurrent pathing work added new D1/D2 changes while this tranche was in progress
 
 ## Validation
+
 - The automation catalog resolves 48 standalone JSON scripts, 15 support scripts, and 36 PowerShell tests; the new script resolves to 45 steps for each game and has no BOM
 - `git diff --check` passed
 - The repository formatter wrapper could not execute the external `C:\local\clang-format-20\clang-format.exe` in the managed sandbox; changed C/C++ code was reviewed manually and compiled cleanly
@@ -54,6 +61,7 @@
 - The focused runtime test exercised auto-minimize, live difficulty, pause entry, save menu, load menu, game menu, and return to live gameplay
 
 ## Deferred scope and next work
+
 - Keep save formats, rewind policy, and menu implementations out of this helper
 - The adjacent duplicated live-difficulty block is a separate cross-platform feature seam and should be assessed against the rule that the shared boundary must remain smaller than its engine policy
 - Continue from the ranked 2026-07-11 campaign catalog, starting with isolated high-payoff seams rather than reopening this handler

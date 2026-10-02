@@ -3,7 +3,7 @@ function Test-DxxFormatterProcess {
     param([Parameter(Mandatory)]$Record, [Parameter(Mandatory)][string]$RepositoryRoot, $Lock, [string]$StartTicks)
     $comparison = if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
     $root = [IO.Path]::GetFullPath($RepositoryRoot).TrimEnd([char[]]@('/', '\'))
-    $scripts = @('android/run-code-quality.ps1') + @('run-clang-format', 'run-ktlint', 'run-psscriptanalyzer', 'run-shellcheck', 'run-shfmt', 'run-cmake-format', 'run-cmake-lint' | ForEach-Object { "android/helpers/$_.ps1" })
+    $scripts = @('android/run-code-quality.ps1') + @('run-clang-format', 'run-ktlint', 'run-psscriptanalyzer', 'run-shellcheck', 'run-shfmt', 'run-cmake-format', 'run-cmake-lint', 'run-ruff', 'run-rustfmt', 'run-prettier' | ForEach-Object { "android/helpers/$_.ps1" })
     $name = [IO.Path]::GetFileNameWithoutExtension([string]$Record.Name)
     $isPowerShell = $name -in @('pwsh', 'powershell')
     if ($isPowerShell -and $Lock -and $StartTicks -and
@@ -49,9 +49,19 @@ function Test-DxxFormatterProcess {
         }
         return $false
     }
-    $nativeFormatter = $name -match '^(clang-format(?:-[0-9.]+)?|shellcheck|shfmt|cmake-format|cmake-lint)$'
+    $nativeFormatter = $name -match '^(clang-format(?:-[0-9.]+)?|shellcheck|shfmt|cmake-format|cmake-lint|ruff|rustfmt)$'
     $javaFormatter = $name -eq 'java' -and @($argv | Where-Object { [IO.Path]::GetFileName([string]$_) -eq 'ktlint.jar' }).Count -gt 0
-    if (-not $nativeFormatter -and -not $javaFormatter) { return $false }
+    $pythonFormatter = $name -match '^python[0-9.]*$' -and ($argv -join "`0") -match "`0-m`0ruff(`0|$)"
+    $rustupFormatter = $name -eq 'rustup' -and $argv -contains 'run' -and $argv -contains 'rustfmt'
+    $nodeFormatter = $false
+    if ($name -eq 'node' -and $argv.Count -gt 1) {
+        $worker = [string]$argv[1]
+        if (-not [IO.Path]::IsPathRooted($worker) -and $cwd) { $worker = Join-Path $cwd $worker }
+        if ([IO.Path]::IsPathRooted($worker)) {
+            $nodeFormatter = [string]::Equals([IO.Path]::GetFullPath($worker), (Join-Path $root 'android/tools/code-quality/format-text.mjs'), $comparison)
+        }
+    }
+    if (-not $nativeFormatter -and -not $javaFormatter -and -not $pythonFormatter -and -not $rustupFormatter -and -not $nodeFormatter) { return $false }
     $rootPrefix = $root + [IO.Path]::DirectorySeparatorChar
     foreach ($path in @($cwd) + $argv) {
         if (-not $path -or -not [IO.Path]::IsPathRooted($path)) { continue }

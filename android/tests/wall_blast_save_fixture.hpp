@@ -41,10 +41,7 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 				do_exploding_wall_frame();
 				unsigned seed = 0;
 				require(d_rand_get_state(&seed), "observe wall blast SIM seed");
-				frames.push_back({ { "frame", frame }, { "flags", +Walls[wall].flags }, { "hps", +Walls[wall].hps },
-				                   { "doorway", wall_is_doorway(&Segments[segment], side) },
-				                   { "objects", Highest_object_index + 1 }, { "rng", seed },
-				                   { "draws", d_rand_get_call_count() - initial_draws } });
+				frames.push_back({ { "frame", frame }, { "flags", +Walls[wall].flags }, { "hps", +Walls[wall].hps }, { "doorway", wall_is_doorway(&Segments[segment], side) }, { "objects", Highest_object_index + 1 }, { "rng", seed }, { "draws", d_rand_get_call_count() - initial_draws } });
 			}
 			return frames;
 		};
@@ -56,8 +53,7 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 #endif
 		FrameTime = F1_0 / 32;
 		const auto restored = finish();
-		report.push_back({ { "elapsed", elapsed }, { "uninterrupted", uninterrupted }, { "restored", restored },
-		                   { "differences", json::diff(uninterrupted, restored) } });
+		report.push_back({ { "elapsed", elapsed }, { "uninterrupted", uninterrupted }, { "restored", restored }, { "differences", json::diff(uninterrupted, restored) } });
 		std::string endian_file = opposite_path;
 #ifdef DXX_BUILD_DESCENT_II
 		require(state_restore_all_sub(&endian_file[0], 0), "restore opposite-endian wall blast");
@@ -83,8 +79,12 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 					auto damaged = data;
 					if (!malformed) damaged.pop_back();
 					else {
-						const int field = malformed <= 2 ? malformed - 1 : malformed == 5 ? 0 : 2;
-						const int value = malformed == 1 ? -2 : malformed == 2 ? 6 : malformed == 3 ? -1 : malformed == 4 ? F1_0 + 1 : Highest_segment_index + 1;
+						const int field = malformed <= 2 ? malformed - 1 : malformed == 5 ? 0
+						                                                                  : 2;
+						const int value = malformed == 1 ? -2 : malformed == 2 ? 6
+						                                    : malformed == 3   ? -1
+						                                    : malformed == 4   ? F1_0 + 1
+						                                                       : Highest_segment_index + 1;
 						set_int(damaged, damaged.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES + field * 4,
 						        start.checkpoint_swap ? SWAPINT(value) : value);
 					}

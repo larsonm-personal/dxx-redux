@@ -1,11 +1,11 @@
 package com.dxxredux.app
 
-import java.io.ByteArrayInputStream
-import java.io.InputStream
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 
 class DiscIdentifierHashTest {
     @Test

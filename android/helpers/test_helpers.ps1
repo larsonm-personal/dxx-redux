@@ -40,6 +40,10 @@ $script:ACTIVITY = "com.dxxredux.app.SetupActivity"
 $script:DEFAULT_SET_DIR = "files/imported/sets/default"
 $script:PRIMARY_EMULATOR_SERIAL = "emulator-5554"
 $script:SECONDARY_EMULATOR_SERIAL = "emulator-5556"
+if (-not $env:ANDROID_SERIAL) {
+    # Direct adb transfers and child helpers must select the same default device
+    $env:ANDROID_SERIAL = $script:PRIMARY_EMULATOR_SERIAL
+}
 $script:PRIMARY_AVD_NAME = "Nexus5X_Light_1"
 $script:SECONDARY_AVD_NAME = "Nexus5X_Light_2"
 
@@ -53,9 +57,11 @@ function Adb-Timeout {
     # Uses ProcessStartInfo instead of Start-Job because Start-Job with
     # adb.exe hangs on Windows PowerShell 5.1 (pipe/handle inheritance issue).
     param([string[]]$AdbArgs, [int]$Seconds = 8, [switch]$IncludeStandardError)
+    $serial = if ($env:ANDROID_SERIAL) { $env:ANDROID_SERIAL } else { $script:PRIMARY_EMULATOR_SERIAL }
+    $allArgs = @('-s', $serial) + $AdbArgs
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $script:ADB
-    $psi.Arguments = ($AdbArgs | ForEach-Object {
+    $psi.Arguments = ($allArgs | ForEach-Object {
             if ($_ -match '\s') { "`"$_`"" } else { $_ }
         }) -join ' '
     $psi.RedirectStandardOutput = $true
@@ -1182,7 +1188,11 @@ function Test-ResolvedGameDataCaseNormalized {
         } else {
             Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "-la", "$target/") -Seconds 5
         }
-        if (-not $listing) { continue }
+        if (-not $listing) {
+            Write-Status "FAIL: Cannot verify resolved game data in ${target}" "Red"
+            $ok = $false
+            continue
+        }
 
         $expected = @{}
         foreach ($dep in $DepsByTarget[$target]) {
@@ -1206,6 +1216,12 @@ function Test-ResolvedGameDataCaseNormalized {
             $variants = @($seen[$lowerName] | Sort-Object -Unique)
             if ($variants.Count -gt 1 -or $variants[0] -cne $lowerName) {
                 Write-Status "FAIL: game data case variants remain in ${target}: $($variants -join ', ')" "Red"
+                $ok = $false
+            }
+        }
+        foreach ($lowerName in $expected.Keys) {
+            if (-not $seen.ContainsKey($lowerName)) {
+                Write-Status "FAIL: Resolved game data is missing from ${target}: $lowerName" "Red"
                 $ok = $false
             }
         }
@@ -2141,8 +2157,8 @@ function Resolve-TestScript {
     #   3. Filter out steps where "when" (after param substitution) doesn't
     #      match $GameId
     #   4. Replace ${VAR} placeholders in all string values
-    #   5. Write resolved script to a temp file
-    # Returns the path to the resolved temp file, or $ScriptPath if no processing needed.
+    #   5. Write strict JSON for native readers, including scripts without variables
+    # Returns the resolved temp file, or $ScriptPath when the source does not exist
     param(
         [Parameter(Mandatory = $true)]
         [string]$ScriptPath,
@@ -2185,12 +2201,6 @@ function Resolve-TestScript {
                 }
             }
         }
-    }
-
-    # No vars and no "when" fields? No processing needed.
-    $hasWhen = $raw -match '"when"'
-    if ($vars.Count -eq 0 -and -not $hasWhen) {
-        return $ScriptPath
     }
 
     # Filter by "when" and remove _info elements

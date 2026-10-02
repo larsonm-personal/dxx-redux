@@ -51,55 +51,55 @@ The last item fixes a current limitation: launcher pilot preferences cannot be w
 
 ### Gameplay and pilot settings
 
-| Setting | Original Game value | Reason |
-| --- | --- | --- |
-| Cockpit/HUD | Full cockpit, normal HUD, classic reticle and size | Stock initial presentation |
-| Auto-level | On | Retail D1 and D2 player default |
-| Original homing | On in single-player and coop | Existing retail-semantics option |
-| Headlight on when picked up (D2) | On | Retail D2 behavior; set `headlight_off_by_default=false` |
-| Missile view (D2) | On | Retail option default |
-| Guided missile in main display (D2) | Off | Stock initial value |
-| Escort hotkeys (D2) | On | Stock Guide-Bot controls remain available |
-| Classic no-ammo autoselect | On | Uses the existing classic selection routine |
-| No autoselect while firing | Off | Do not suppress stock pickup autoselection |
-| Delayed autoselect after firing | Off | Redux extension |
-| Cycle only autoselect weapons | Off | Redux extension |
-| Weapon ordering | Retail D1/D2 ordering | Game-specific native source of truth |
-| Ammo warnings | Off | Redux HUD helper |
-| Shield warnings | Off | Redux HUD helper |
-| Persistent debris | Off | Redux visual/gameplay extension |
-| Free-flight automap | Off | Stock automap controls; warn that touch translation becomes unavailable |
-| Sticky rear view | Off | Redux input option |
-| D1 D2-style proximity bomb gauge | Off | Not present in retail D1 |
-| No redundant pickup messages | Off | Preserve stock messages |
-| Robot and hostage counts | Off | Remaster HUD helper |
-| Boss health bar | Off | Remaster HUD helper |
-| Map cheat controls accessible | Off | Removes secret reveal, objectives, reactor, and matcen controls |
-| Auto demo recording and recording indicator | Off | Not part of normal retail play |
-| Custom ship, missile, and team colors | Off/default slot colors | Preserve stock multiplayer colors |
-| Transparency effects | Off | Existing original-visual value |
-| Colored dynamic light | Off | Existing original-visual value |
-| Disable cockpit | Off | Keep stock cockpit modes available |
+| Setting                                     | Original Game value                                | Reason                                                                  |
+| ------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------- |
+| Cockpit/HUD                                 | Full cockpit, normal HUD, classic reticle and size | Stock initial presentation                                              |
+| Auto-level                                  | On                                                 | Retail D1 and D2 player default                                         |
+| Original homing                             | On in single-player and coop                       | Existing retail-semantics option                                        |
+| Headlight on when picked up (D2)            | On                                                 | Retail D2 behavior; set `headlight_off_by_default=false`                |
+| Missile view (D2)                           | On                                                 | Retail option default                                                   |
+| Guided missile in main display (D2)         | Off                                                | Stock initial value                                                     |
+| Escort hotkeys (D2)                         | On                                                 | Stock Guide-Bot controls remain available                               |
+| Classic no-ammo autoselect                  | On                                                 | Uses the existing classic selection routine                             |
+| No autoselect while firing                  | Off                                                | Do not suppress stock pickup autoselection                              |
+| Delayed autoselect after firing             | Off                                                | Redux extension                                                         |
+| Cycle only autoselect weapons               | Off                                                | Redux extension                                                         |
+| Weapon ordering                             | Retail D1/D2 ordering                              | Game-specific native source of truth                                    |
+| Ammo warnings                               | Off                                                | Redux HUD helper                                                        |
+| Shield warnings                             | Off                                                | Redux HUD helper                                                        |
+| Persistent debris                           | Off                                                | Redux visual/gameplay extension                                         |
+| Free-flight automap                         | Off                                                | Stock automap controls; warn that touch translation becomes unavailable |
+| Sticky rear view                            | Off                                                | Redux input option                                                      |
+| D1 D2-style proximity bomb gauge            | Off                                                | Not present in retail D1                                                |
+| No redundant pickup messages                | Off                                                | Preserve stock messages                                                 |
+| Robot and hostage counts                    | Off                                                | Remaster HUD helper                                                     |
+| Boss health bar                             | Off                                                | Remaster HUD helper                                                     |
+| Map cheat controls accessible               | Off                                                | Removes secret reveal, objectives, reactor, and matcen controls         |
+| Auto demo recording and recording indicator | Off                                                | Not part of normal retail play                                          |
+| Custom ship, missile, and team colors       | Off/default slot colors                            | Preserve stock multiplayer colors                                       |
+| Transparency effects                        | Off                                                | Existing original-visual value                                          |
+| Colored dynamic light                       | Off                                                | Existing original-visual value                                          |
+| Disable cockpit                             | Off                                                | Keep stock cockpit modes available                                      |
 
 Values not affecting fidelity, such as lifetime stats, level progress, difficulty choice, callsign, macros, and save data, must be preserved.
 
 ### Graphics and presentation
 
-| Setting | Original Game value | Reason |
-| --- | --- | --- |
-| Main view FOV | Base (`0`) | Existing stock projection path |
-| Texture filtering | Nearest (`0`) | Pixel-preserving sampling |
-| Menu filtering | Off | Pixel-preserving menus and briefings |
-| HUD filtering | Off | Current default is on, but this is not the stock appearance |
-| D2 movie filter | Off | Stock pixels |
-| MSAA | Off | Remaster feature |
-| Anisotropic filtering | Off | Remaster feature |
-| Color depth | 16-bit compatibility path | Closest existing option; see missing palette option below |
-| Classic depth ordering | On | Existing option explicitly intended for classic ordering |
-| FPS indicator and Video Info overlay | Off/hidden | Not stock HUD content |
-| External replacement textures | Off | New switch needed; base game art remains usable at its shipped resolution |
-| Internal render mode | Classic 4:3 | New option needed; use D1 320x200 and D2 640x480 where supported, integer-scaled and letterboxed |
-| Intro skip | Off | Play retail intro sequence |
+| Setting                              | Original Game value       | Reason                                                                                           |
+| ------------------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------ |
+| Main view FOV                        | Base (`0`)                | Existing stock projection path                                                                   |
+| Texture filtering                    | Nearest (`0`)             | Pixel-preserving sampling                                                                        |
+| Menu filtering                       | Off                       | Pixel-preserving menus and briefings                                                             |
+| HUD filtering                        | Off                       | Current default is on, but this is not the stock appearance                                      |
+| D2 movie filter                      | Off                       | Stock pixels                                                                                     |
+| MSAA                                 | Off                       | Remaster feature                                                                                 |
+| Anisotropic filtering                | Off                       | Remaster feature                                                                                 |
+| Color depth                          | 16-bit compatibility path | Closest existing option; see missing palette option below                                        |
+| Classic depth ordering               | On                        | Existing option explicitly intended for classic ordering                                         |
+| FPS indicator and Video Info overlay | Off/hidden                | Not stock HUD content                                                                            |
+| External replacement textures        | Off                       | New switch needed; base game art remains usable at its shipped resolution                        |
+| Internal render mode                 | Classic 4:3               | New option needed; use D1 320x200 and D2 640x480 where supported, integer-scaled and letterboxed |
+| Intro skip                           | Off                       | Play retail intro sequence                                                                       |
 
 Preserve display orientation, rounded-corner safe insets, physical output resolution, brightness/gamma, VSync, and window/surface behavior. They are device or accessibility concerns. A classic internal framebuffer can be scaled into the safe physical output without forcing the device itself to 320x200.
 
@@ -107,34 +107,34 @@ Movie subtitles should also be preserved rather than forcibly disabled. They are
 
 ### Android helpers and extra actions
 
-| Setting | Original Game value |
-| --- | --- |
-| Guidebot helper line | Off |
-| Nearest-player line | Off |
-| Rewind support and rewind binding visibility | Off |
-| Touch cheat catalog | Hidden; typed retail cheat codes still work |
-| Automap secret reveal | Hidden and cleared |
-| Automap objective overlay | Hidden and set to Off |
-| Reactor countdown pause/extend | Hidden and cleared |
-| Matcen one-round/pause controls | Hidden and reset to Default |
-| Mid-level difficulty action | Hidden; normal new-game difficulty selection remains |
-| Coop level restart helper | Hidden |
-| Multiplayer warp helper | Hidden |
-| Guide-Bot abdication helper | Hidden when classic coop rules do not create a shared Guide-Bot |
+| Setting                                      | Original Game value                                             |
+| -------------------------------------------- | --------------------------------------------------------------- |
+| Guidebot helper line                         | Off                                                             |
+| Nearest-player line                          | Off                                                             |
+| Rewind support and rewind binding visibility | Off                                                             |
+| Touch cheat catalog                          | Hidden; typed retail cheat codes still work                     |
+| Automap secret reveal                        | Hidden and cleared                                              |
+| Automap objective overlay                    | Hidden and set to Off                                           |
+| Reactor countdown pause/extend               | Hidden and cleared                                              |
+| Matcen one-round/pause controls              | Hidden and reset to Default                                     |
+| Mid-level difficulty action                  | Hidden; normal new-game difficulty selection remains            |
+| Coop level restart helper                    | Hidden                                                          |
+| Multiplayer warp helper                      | Hidden                                                          |
+| Guide-Bot abdication helper                  | Hidden when classic coop rules do not create a shared Guide-Bot |
 
 Keep touch controls, controller bindings, menu zoom, tap-to-continue, touch `OK`, touch `Exit`, launcher save/load access, and the admin route back to the launcher. Those are platform input affordances, not gameplay assistance. Do not reset a player's touch or controller layout when applying the preset.
 
 ### Multiplayer host defaults
 
-| Setting | Original Game value |
-| --- | --- |
-| Coop QoL (`guidebot, arrows, warp`) | Off |
-| Per-player duplicated energy/shields | Off |
-| Client rewind requests | Off |
-| 100 percent death spew | Off |
-| Player spew never expires | Off |
-| Original homing | On for coop |
-| Non-coop FOV | Base |
+| Setting                              | Original Game value |
+| ------------------------------------ | ------------------- |
+| Coop QoL (`guidebot, arrows, warp`)  | Off                 |
+| Per-player duplicated energy/shields | Off                 |
+| Client rewind requests               | Off                 |
+| 100 percent death spew               | Off                 |
+| Player spew never expires            | Off                 |
+| Original homing                      | On for coop         |
+| Non-coop FOV                         | Base                |
 
 Host migration, reconnect support, relay/matchmaking transport, autosave integrity, anti-abuse checks, and deterministic simulation fixes stay enabled. They make the port reliable but do not grant an in-game advantage under normal connected play.
 

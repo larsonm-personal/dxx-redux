@@ -3,6 +3,7 @@
 Issues found during build #1030 testing. 4 phases ordered by severity.
 
 Decisions:
+
 - Config writes: write to all three descent.cfg files (root + d1x-redux/ + d2x-redux/ if they exist)
 - GOG path fix: store correct relative path from filesDir (e.g., "sets/MySet/descent_ii.gog")
 - Source removal: delete extracted files from app data dir (BIN/CUE, GOG audio, custom audio sets). Warn user before delete. Rationale: prevents orphaned files; original source archives still exist for re-import
@@ -21,6 +22,7 @@ Decisions:
 - Root cause of items #5 and #9.1
 
 Fix: extract `updateConfigFiles(filesDir, settings: List<Pair<String,String>>)` helper that writes to:
+
 1. `filesDir/descent.cfg` (fallback for first launch)
 2. `filesDir/d1x-redux/descent.cfg` (if dir exists)
 3. `filesDir/d2x-redux/descent.cfg` (if dir exists)
@@ -35,6 +37,7 @@ Refactor `enableRedbookInConfig` and `writeMusicConfigForLaunch` to use it.
 - Fix: store path relative to filesDir: `"sets/SetName/descent_ii.gog"`
 
 In registerGogAudioSource(), change:
+
 ```kotlin
 val relBase = setDir.toRelativeString(filesDir) + File.separator + base
 cuePath = "$relBase.inst"
@@ -74,12 +77,14 @@ binPaths = listOf("$relBase.gog")
 ### 2D: Add 7z support alongside ZIP -- [x]
 
 Current state:
+
 - ARCHIVE_EXTENSIONS includes "7z" (MusicPickerPage.kt L1004)
 - File picker accepts "application/x-7z-compressed"
 - extractAudioFromArchive() uses ZipInputStream only -- 7z silently fails
 - SetupActivity game file import only handles .zip
 
 Fix:
+
 - Add Apache Commons Compress dependency (pure Java, supports 7z)
 - In MusicPickerPage.kt extractAudioFromArchive(): detect 7z by extension, use SevenZFile
 - In SetupActivity.kt: accept .7z in file picker, add extract7zContents() parallel to extractZipContents()
@@ -105,19 +110,23 @@ Fix:
 ### 3D: Source removal deletes extracted app-dir files -- [x]
 
 Current behavior:
+
 - CD audio removeSource(): only removes from JSON, files left on disk
 - Custom audio removeSet(deleteFiles=true): deletes files via deleteRecursively()
 
 New behavior for ALL source types:
+
 - Check if source files are inside filesDir (app data dir)
 - If yes: delete files and show warning "Extracted files will be deleted. Re-import from original source to restore"
 - If no (SAF/external): keep current "files will remain on disk" message
 
 CD audio removal changes:
+
 - After removeSource(), if BIN/CUE paths resolve inside filesDir, delete those files
 - Show confirmation dialog with delete warning
 
 Custom audio:
+
 - Already deletes files (deleteFiles=true) -- keep existing behavior
 - Update messaging to match: "X audio files will be deleted"
 
@@ -141,10 +150,12 @@ Custom audio:
 ## Verification
 
 After each phase, run:
+
 - Build: `cd android; .\gradlew.bat assembleDebug`
 - Lint: `android\run-code-quality.ps1 --fix`
 
 Key manual tests:
+
 1. Change music mode in picker -> verify both d1x-redux/ and d2x-redux/ descent.cfg updated
 2. Import GOG .exe with audio -> preview a GOG CD track plays
 3. Import lone .gog without .inst -> warning toast

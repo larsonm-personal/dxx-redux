@@ -1,28 +1,31 @@
 # Remove legacy metadata travel calculation
 
 ## Goal
+
 Make the executable metadata route planner the only authority for route status,
 target reachability, distance, and travel time, then delete the older independent
 travel traversal and the temporary status reconciliation.
 
 ## Plan
+
 - [x] Inventory every producer and consumer of legacy travel fields and document
-  the modern route planner's current target and distance semantics.
+      the modern route planner's current target and distance semantics.
 - [x] Define travel metrics as the modern end-route progression through keys,
-  obstruction actions, reactor/boss, and exit.
+      obstruction actions, reactor/boss, and exit.
 - [x] Delete `collect_travel_time`, its private-only traversal helpers, and the
-  exit reconciliation workaround.
+      exit reconciliation workaround.
 - [x] Update scanner serialization and launcher presentation to use the unified
-  status and distance result.
+      status and distance result.
 - [x] Regenerate generated mission metadata to use the unified result.
 - [x] Add focused regressions for hidden doors, trigger barriers, unreachable
-  targets, distance, and route status.
+      targets, distance, and route status.
 - [x] Run scoped quality, D1/D2 builds and CTest, Android tests/build, full host
-  metadata regeneration, and a focused emulator route test.
+      metadata regeneration, and a focused emulator route test.
 - [x] Audit guidebot refresh, Unexplored reuse, public naming, host/launcher
-  schema parity, and built-in mission generation for remaining duplication.
+      schema parity, and built-in mission generation for remaining duplication.
 
 ## Findings
+
 - The legacy calculation was the original approximate completion estimator. It
   greedily visited hostages, reactor, and exit, with separate key-door logic and
   trigger-opened sides treated as passable shortcuts.
@@ -49,6 +52,7 @@ travel traversal and the temporary status reconciliation.
   only the final destination after the calculated progression prefix.
 
 ## Validation
+
 - Scoped code quality passed for C/C++, Kotlin, PowerShell, tests, and this plan.
 - Windows D1 and D2 builds passed.
 - D1 CTest passed 13/13; D2 CTest passed 14/14.

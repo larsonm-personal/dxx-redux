@@ -34,9 +34,7 @@ def function_body(source: str, name: str) -> str:
     return source[start : cursor - 1]
 
 
-def allocator_valid(
-    in_use: list[bool], num_objects: int, highest: int, free_tail: list[int]
-) -> bool:
+def allocator_valid(in_use: list[bool], num_objects: int, highest: int, free_tail: list[int]) -> bool:
     live = [index for index, used in enumerate(in_use) if used]
     if num_objects != len(live) or highest != (live[-1] if live else -1):
         return False
@@ -176,17 +174,13 @@ class SaveRuntimeValidationTest(unittest.TestCase):
 
         d2_reader = function_body(D2_STATE, "state_read_runtime_state")
         secret_return = d2_reader.index("if (secret_restore)")
-        global_publish = d2_reader.index(
-            "Global_laser_firing_count = global_laser_firing_count"
-        )
+        global_publish = d2_reader.index("Global_laser_firing_count = global_laser_firing_count")
         self.assertLess(secret_return, global_publish)
 
         d2_laser_validator = function_body(D2_LASER, "laser_runtime_state_is_valid")
         self.assertIn("helix_orientation >= 0", d2_laser_validator)
         self.assertNotIn("helix_orientation <= LASER_HELIX_MASK", d2_laser_validator)
-        self.assertIn(
-            "Helix_orientation == INT_MAX ? 0 : Helix_orientation + 1", D2_LASER
-        )
+        self.assertIn("Helix_orientation == INT_MAX ? 0 : Helix_orientation + 1", D2_LASER)
 
     def test_variable_sections_are_bounded_before_iteration(self) -> None:
         for source in (D1_STATE, D2_STATE):

@@ -50,16 +50,16 @@ D1 record 12 rather than D1 record 20.
 Read-only decoding of the registered D1 PIG used by the existing Trine 2 test
 confirmed these values. Fixed-point values use 65536 units per whole number:
 
-| Field | D1 record 12: firing accounting | D1 record 20: flying projectile |
-| --- | --- | --- |
-| Energy usage | 32768 = 0.5 | 65536 = 1 |
-| Fire wait | 13107, approximately 0.2 seconds | 13107 |
-| Fire count | 1 | 1 |
-| Speed, each difficulty | 7864320 = 120 | 13107200 = 200 |
-| Strength, each difficulty | 655360 = 10 | 655360 = 10 |
-| Lifetime | 655360 = 10 seconds | 655360 |
-| Blob size | 32768 = 0.5 | 32768 |
-| Render type / source bitmap | BLOB / 141 | BLOB / 141 |
+| Field                       | D1 record 12: firing accounting  | D1 record 20: flying projectile |
+| --------------------------- | -------------------------------- | ------------------------------- |
+| Energy usage                | 32768 = 0.5                      | 65536 = 1                       |
+| Fire wait                   | 13107, approximately 0.2 seconds | 13107                           |
+| Fire count                  | 1                                | 1                               |
+| Speed, each difficulty      | 7864320 = 120                    | 13107200 = 200                  |
+| Strength, each difficulty   | 655360 = 10                      | 655360 = 10                     |
+| Lifetime                    | 655360 = 10 seconds              | 655360                          |
+| Blob size                   | 32768 = 0.5                      | 32768                           |
+| Render type / source bitmap | BLOB / 141                       | BLOB / 141                      |
 
 The current ordinary single-player path therefore uses a speed parameter of
 120 instead of 200. A blanket change of the primary slot lookup to 20 would
@@ -84,10 +84,10 @@ The rendering path is direct:
 Local PIG directory decoding gives:
 
 | Asset identity | Bitmap index |
-| --- | --- |
-| D1 `sprdblob` | 141 |
-| D2 `gauge02#2` | 141 |
-| D2 `sprdblob` | 262 |
+| -------------- | ------------ |
+| D1 `sprdblob`  | 141          |
+| D2 `gauge02#2` | 141          |
+| D2 `sprdblob`  | 262          |
 
 This is a concrete asset-reference defect consistent with the reported wrong
 flying sprites. Both D1 records 12 and 20 contain bitmap 141, so fixing the
@@ -270,16 +270,16 @@ checks only that Spreadfire values are present/positive and record 12 is
 valid. Retain its accounting-ID assertion, strengthen its exact data checks,
 and add a focused reusable weapon integration scenario that actually fires.
 
-| Scenario | Required evidence |
-| --- | --- |
-| Spreadfire, two volleys | Six objects with D1 ID 20; alternating native-D1 vectors/order; speed parameter 200; record-12 resource/cadence accounting |
-| Spreadfire checkpoint mid-flight | Existing and new shots both use 20 and resolved D1 art; phase and fixed-point state match native D1 |
-| Spreadfire art | D1 `sprdblob` pixels at resolved slot; size, palette, transparency, and visible in-flight result match the D1 reference |
-| Custom projectile art | Custom `sprdblob` survives the complete level-load sequence, save/load, and bitmap page-out |
-| Quad Lasers, levels 1-4 | Four bolts, native-D1 multiplier and per-hit damage, exact energy accounting |
-| Smart Missile, player and robot owner | Children 19 versus 29 for registered D1; difficulty-dependent damage/lifetime; identical RNG and target sequence |
-| Remaining primaries/secondaries and flare | Native-D1 creation and hit trace, including low resource and timing boundaries |
-| Native D2 after D1 | Original weapon data, asset content, counts, and firing behavior restored |
+| Scenario                                  | Required evidence                                                                                                          |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Spreadfire, two volleys                   | Six objects with D1 ID 20; alternating native-D1 vectors/order; speed parameter 200; record-12 resource/cadence accounting |
+| Spreadfire checkpoint mid-flight          | Existing and new shots both use 20 and resolved D1 art; phase and fixed-point state match native D1                        |
+| Spreadfire art                            | D1 `sprdblob` pixels at resolved slot; size, palette, transparency, and visible in-flight result match the D1 reference    |
+| Custom projectile art                     | Custom `sprdblob` survives the complete level-load sequence, save/load, and bitmap page-out                                |
+| Quad Lasers, levels 1-4                   | Four bolts, native-D1 multiplier and per-hit damage, exact energy accounting                                               |
+| Smart Missile, player and robot owner     | Children 19 versus 29 for registered D1; difficulty-dependent damage/lifetime; identical RNG and target sequence           |
+| Remaining primaries/secondaries and flare | Native-D1 creation and hit trace, including low resource and timing boundaries                                             |
+| Native D2 after D1                        | Original weapon data, asset content, counts, and firing behavior restored                                                  |
 
 During implementation, run relevant host builds/tests with
 `run-windows-build.ps1 -Target both`, then the focused integration scenarios.

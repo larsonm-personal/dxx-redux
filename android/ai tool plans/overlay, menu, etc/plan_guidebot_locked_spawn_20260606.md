@@ -9,4 +9,5 @@ Goal: let D2 touch users spawn or release the Guide-Bot from the locked Guide wh
 - [x] Run scoped formatting and practical build/test checks
 
 Follow-up fix:
+
 - [x] Consume the pending Guide-Bot spawn/release action on gameplay idle frames rather than only from `HandleGameKey()`, so touch-only activation fires without needing a simultaneous keyboard event.

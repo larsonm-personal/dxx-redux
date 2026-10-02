@@ -3,6 +3,7 @@
 ## Problem 1: Broken sphere clipping on helper lines
 
 The current `draw_path_lines()` has accumulated complexity:
+
 - `past_keepout` flag that disables clipping once the path exits the sphere
 - Only handles "crossing OUT" case, not "crossing INTO"
 - Re-anchors segs[0] to player position causing dist=0 for first point
@@ -10,6 +11,7 @@ The current `draw_path_lines()` has accumulated complexity:
 
 The desired behavior is simple: for each line segment, clip it against the
 player's keepout sphere (3x ship radius). Each segment is handled independently:
+
 - Both endpoints outside sphere: draw full segment
 - One endpoint inside, one outside: clip to sphere boundary, draw the outside part
 - Both endpoints inside: skip entirely
@@ -35,6 +37,7 @@ for each consecutive pair of points (A, B):
 ```
 
 The clipping interpolation:
+
 - `t = (keepout_r - dA) / (dB - dA)` for entering case
 - Clipped point = A + t * (B - A)
 
@@ -82,6 +85,7 @@ blown, compute path to exit segment instead.
 Only `coop_indicator_lines.c` needs changes. No d1/ or d2/ edits.
 
 ## Status
+
 - [x] Rewrite draw_path_lines with clean sphere clipping
 - [x] Gate guidebot line on Buddy_allowed_to_talk
 - [x] Add exit segment fallback for player line

@@ -40,7 +40,6 @@ Remaining: resolve Plutonia3 and TEW-3 routing fallout without global collision 
 
 Next TEW-3 lead: step8 aims to open hidden door250 in585. A flare is logged from actor545, but the step does not complete; the actor wanders, crosses incidental trigger8 and eventually loops on frontier765. Inspect actual/segmented native flare visibility, not only the logged shot intent. route_confirmation.cpp set_visible_flare_target uses a single full-length FVI for ordinary center shots, while level_metadata_door_shot_aim_from_position also requires segmented visibility. This is a hypothesis, not an established cause. No live task processes remain at end of this stage
 
-
 ## Resumed verification and routing findings
 
 TEW secret -3 is now fixed without changing collision semantics. Segmented flare diagnostics proved the shot reached the intended door. The real defect was switching the path target to the far side immediately after opening a remote door, before reaching its source segment. OPEN_HIDDEN_DOOR now preserves the source-side approach until the actor reaches that segment. The existing remote shot-only action remains unchanged. Both repeated simulations complete identically in 6095 frames. New test_tew_hidden_door_approach.ps1 covers the complete repeated objective sequence
@@ -51,12 +50,9 @@ Plutonia L3 remains unresolved. A temporary graph dump demonstrated an alternate
 
 Native and JVM route cache generations advanced together from 28 to 29 so persisted results computed under the removed collision policy are not reused. Final demo/native/Android verification is being repeated after removing the graph diagnostic and invalidating caches
 
-
 Resumed host checks: D1 build passes (no configured CTest suite). Initial D2 rebuild caught an incomplete temporary-diagnostic removal; restored the saved pre-graph source including the accepted TEW fix and reran scoped formatting. D2 rebuild then passes and CTest passes all 49 tests (temp/fvi_resume_native_d2_retry.log). The new TEW integration test passes with two identical 6095-frame completions (temp/fvi_resume_tew_test.log). Explicit demo-path selection test passes (temp/fvi_resume_explicit_test.log)
 
-
 Final resumed validation complete: all 15 committed demos pass (temp/fvi_resume_demos.log). Android externalNativeBuildDebug passes for arm64-v8a, armeabi-v7a and x86_64, and the two targeted launcher scheduling/monitor suites pass all 19 tests (temp/fvi_resume_android.log). No Android input replay was run. Cache invalidation is complete; the remaining compatibility-repair work is Plutonia L3 routing, not FVI restoration. The latest full 293-level sweep remains 282 OK / 4 timeout / 3 failed / 4 unsupported
-
 
 ## Plutonia alternate-path recovery
 
@@ -66,11 +62,9 @@ Added a bounded shared recovery candidate in guidebot_path_recovery.c. After one
 
 Focused Plutonia L3 repeats both complete at 6457 frames, with identical results. Log shows alternate recovery at segment363 avoiding364, goal297,27points on the return trip. Evidence temp/fvi_alternate_route.log and android/temp/fvi_alternate_route. Full293 sweep is in progress at android/temp/fvi_alternate_sweep. Final compatibility and integration gates remain pending for this candidate
 
-
 Full alternate-recovery sweep completed: 284 OK / 2 timeout / 3 failed / 4 unsupported across293 levels. No previous pass lost. AF D1 beta L6 additionally improves from timeout to confirmed (13124 frames), demonstrating use outside Plutonia. Comparison temp/fvi_fix_route_comparison.json and raw evidence android/temp/fvi_alternate_sweep. Deferred Counterstrike secret-5 and TEW L9 remain timeouts
 
 Dedicated Plutonia funnel test passes its two unchanged collision demos and identical repeated complete runs. Added an assertion that alternate-path recovery actually ran, to distinguish this coverage from incidental route success; final execution of that extended assertion pending. Repeated Obsidian L14 and Castaway secret-1 integration tests pass, including expected objective sequences and the Castaway alternate exit evidence. D2 CTest49/49 passes. Final15-demo run and additional focused tests are in progress
-
 
 ## Completion audit
 

@@ -7,9 +7,21 @@ class ControllerInputDiagnosticsTest {
     @Test
     fun bothModeKeepsRawButtonBrakeAndUndeclaredAxisThroughReleaseAndExport() {
         val state = ControllerInputDiagnosticsState()
-        state.device(RawControllerDevice(7, "Handheld", 0x1000411,
-            listOf(RawControllerRange(23, 0x1000010, "AXIS_BRAKE", 0f, 1f, 0.02f, 0f))))
-        assertNull(state.snapshot().axes.single().value)
+        state.device(
+            RawControllerDevice(
+                7,
+                "Handheld",
+                0x1000411,
+                listOf(RawControllerRange(23, 0x1000010, "AXIS_BRAKE", 0f, 1f, 0.02f, 0f)),
+            ),
+        )
+        assertNull(
+            state
+                .snapshot()
+                .axes
+                .single()
+                .value,
+        )
         state.button(7, 0x401, 104, "KEYCODE_BUTTON_L2", true, 100)
         state.axis(7, 0x1000010, 23, "AXIS_BRAKE", 0.45f, 101)
         state.axis(7, 0x1000010, 40, "AXIS_GENERIC_9", 0.7f, 102)
@@ -38,7 +50,14 @@ class ControllerInputDiagnosticsTest {
         state.button(1, 0x401, 188, "KEYCODE_BUTTON_1", false, 4)
         assertEquals(2, state.snapshot().buttons.count { it.pressed })
         state.removeDevice(1)
-        assertEquals(2, state.snapshot().buttons.single().deviceId)
+        assertEquals(
+            2,
+            state
+                .snapshot()
+                .buttons
+                .single()
+                .deviceId,
+        )
     }
 
     @Test
@@ -51,7 +70,13 @@ class ControllerInputDiagnosticsTest {
         assertTrue(state.snapshot().buttons.isEmpty())
         state.axis(1, 0x1000010, 22, "AXIS_GAS", 1f, 2)
         state.clearLiveState()
-        assertNull(state.snapshot().axes.single().value)
+        assertNull(
+            state
+                .snapshot()
+                .axes
+                .single()
+                .value,
+        )
         assertEquals(2, state.snapshot().recentEvents.size)
     }
 

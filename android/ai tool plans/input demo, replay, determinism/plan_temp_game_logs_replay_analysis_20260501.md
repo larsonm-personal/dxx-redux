@@ -6,13 +6,13 @@ Goal: inventory the non-`old/` demo artifacts in `android/temp_game_logs`, repla
 
 ## Phases
 
-| phase | task | status |
-|---|---|---|
-| 1 | Inventory the non-`old/` artifacts and identify which files are replayable input demos versus supporting logs. | completed |
-| 2 | Run the host replay wrapper on each replayable `.dximdemo` and capture fresh replay result, state trace, and RNG trace outputs. | completed |
-| 3 | Compare the replay state and RNG traces against the recorded demo artifacts and note the first mismatch for each demo. | completed |
-| 4 | Read the nearby game log artifacts and analyze the first desync with the trace results. | completed |
-| 5 | Summarize the outputs, mismatch points, and the most likely desync explanation. | completed |
+| phase | task                                                                                                                            | status    |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| 1     | Inventory the non-`old/` artifacts and identify which files are replayable input demos versus supporting logs.                  | completed |
+| 2     | Run the host replay wrapper on each replayable `.dximdemo` and capture fresh replay result, state trace, and RNG trace outputs. | completed |
+| 3     | Compare the replay state and RNG traces against the recorded demo artifacts and note the first mismatch for each demo.          | completed |
+| 4     | Read the nearby game log artifacts and analyze the first desync with the trace results.                                         | completed |
+| 5     | Summarize the outputs, mismatch points, and the most likely desync explanation.                                                 | completed |
 
 ## Notes
 

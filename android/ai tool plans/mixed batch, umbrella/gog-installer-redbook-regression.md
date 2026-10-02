@@ -9,12 +9,14 @@ D2, enter level 1, and verify overlay messages (level name + track name) via a n
 overlay ring buffer in the introspection API.
 
 ### Installer coverage set
+
 - D2 Windows: `game_data/gog installers/setup_descent_2_1.1_(16596).exe`
 - D2 Mac: `game_data/gog installers/descent_2_enUS_1_0_51877.pkg`
 - D1 Windows: `game_data/gog installers/setup_descent_1.4a_(16596).exe`
 - D1 Mac: `game_data/gog installers/descent_enUS_1_0_35122.pkg`
 
 ### Primary D2 source files for this redbook test
+
 - Windows default: `setup_descent_2_1.1_(16596).exe`
   - SHA256: `58ccb37ecd54c73b0ddbde8d9051a0a6498911fbe66cd025179da681e13559cd`
   - Size: 563 MB
@@ -22,12 +24,14 @@ overlay ring buffer in the introspection API.
   - Size: 587 MB
 
 ### Shared-data note
+
 The Mac and PC GOG installers appear to carry the same PC game data. The Mac
 package seems to wrap the DOS build rather than ship original Mac-specific
 assets, which should keep the exe/pkg test paths mostly unified here and in the
 future D1 companion test.
 
 ### Expected verification data (from known_discs.json5, disc "d2-gog-v1.2")
+
 - 9 tracks total (1 data + 8 audio)
 - Track 6: "Ratzez"
 - Level 1 plays track 4 (REDBOOK_FIRST_LEVEL_TRACK = 4 for D2 CD)
@@ -46,6 +50,7 @@ Existing tests use `_deps` to push game data files into the app's private data d
 `run_test.ps1` launches the game and sends the automation broadcast.
 
 This test is fundamentally different:
+
 1. The selected GOG installer must go to `/sdcard/Download/` (NOT the app's private dir)
 2. The import must happen on the **SetupActivity** screen, BEFORE game launch
 3. Import runs on a background thread -- we must wait for it and verify results
@@ -60,12 +65,14 @@ automation engine for the in-game phase.
 ## Phase 1: Extend _deps Infrastructure for /sdcard/Download/
 
 ### 1a. Add .exe to game_data_index.ps1
+
 - [ ] Edit `game_data/generate_game_data_index.ps1`: add `.exe` to `$GameExtensions`
 - [ ] Add `game_data/gog installers` to `$SearchDirs` (new priority entry)
 - [ ] Regenerate index: `.\game_data\generate_game_data_index.ps1`
 - [ ] Verify the .exe hash appears in `game_data_index.txt`
 
 ### 1b. Extend Resolve-GameDataDeps for external storage targets
+
 The current push logic (test_helpers.ps1 lines ~376-380) always uses `run-as` which
 only works for the app's private data dir. For targets like `/sdcard/Download`:
 
@@ -82,8 +89,9 @@ only works for the app's private data dir. For targets like `/sdcard/Download`:
   ```
 
 ### 1c. Verify file placement
+
 - [ ] Run the deps resolution manually and confirm via:
-  `adb shell ls -la /sdcard/Download/${INSTALLER_FILE}`
+      `adb shell ls -la /sdcard/Download/${INSTALLER_FILE}`
 - [ ] Confirm the file is NOT in the app's private data dir
 - [ ] Note: 563 MB file -- push timeout needs to be generous (10+ minutes)
 
@@ -110,6 +118,7 @@ The `setup_introspect.json` already includes `audio_sources` but does NOT expose
 `trackNames`, `discId`, or chromaprint match status.
 
 ### 3a. Add track names to setup_introspect.json audio_sources
+
 - [ ] Edit SetupActivity.kt introspection writer (around line 878)
 - [ ] For each audio source, add:
   - `disc_id`: the known_discs ID string (e.g. "d2-gog-v1.2")
@@ -132,6 +141,7 @@ The `setup_introspect.json` already includes `audio_sources` but does NOT expose
   ```
 
 ### 3b. Verify via introspection after import
+
 - [ ] The test runner will:
   1. Trigger `SETUP_INTROSPECT` after import completes
   2. Parse the JSON and assert:
@@ -148,6 +158,7 @@ The user specifically wants to record the last N overlay popup messages into an
 array accessible asynchronously -- NOT catch them as they appear.
 
 ### 4a. Create overlay_ringbuf.h/cpp
+
 - [ ] Follow the `console_ringbuf.h/cpp` pattern exactly
 - [ ] Header: `overlay_ringbuf.h`
   - `overlay_ringbuf_add(const char *type, const char *text)` -- type is "level", "track", "jukebox"
@@ -168,6 +179,7 @@ array accessible asynchronously -- NOT catch them as they appear.
 - [ ] Add to CMakeLists.txt (shared sources)
 
 ### 4b. Hook into existing overlay calls
+
 - [ ] In `track_names.c`:
   - After `android_send_track_name(s_overlay_text)`: add `overlay_ringbuf_add("track", s_overlay_text)`
   - After `android_send_level_name(buf)`: add `overlay_ringbuf_add("level", buf)`
@@ -175,6 +187,7 @@ array accessible asynchronously -- NOT catch them as they appear.
   - Guard all calls with `#ifdef INTROSPECT_ON`
 
 ### 4c. Expose in game introspection
+
 - [ ] In `game_introspect.cpp`, add an `overlays` section (like `console`):
   ```cpp
   char *overlay_json = overlay_ringbuf_get_json(0, 32);
@@ -185,6 +198,7 @@ array accessible asynchronously -- NOT catch them as they appear.
   ```
 
 ### 4d. Test verification
+
 - [ ] After entering level 1, wait a few seconds, then introspect
 - [ ] The overlay ring buffer should contain:
   - `{"type": "level", "text": "Level 1: Lunar Outpost"}`
@@ -198,6 +212,7 @@ array accessible asynchronously -- NOT catch them as they appear.
 Create `android/tests/test_gog_installer_redbook.ps1` (or similar name).
 
 ### 5a. Pre-game phase (PowerShell orchestration)
+
 - [ ] Source test_helpers.ps1
 - [ ] Ensure emulator healthy
 - [ ] Push the selected D2 installer to /sdcard/Download via _deps resolution
@@ -219,9 +234,10 @@ Create `android/tests/test_gog_installer_redbook.ps1` (or similar name).
   - Timeout: 120s (extraction of 563 MB can be slow)
 - [ ] Assert track names: track 6 == "Ratzez"
 - [ ] Assert descent.cfg has MusicType=2:
-  `adb shell run-as com.dxxredux.app cat files/descent.cfg | grep MusicType`
+      `adb shell run-as com.dxxredux.app cat files/descent.cfg | grep MusicType`
 
 ### 5b. Game launch + automation phase
+
 - [ ] Send `launch` SETUP_COMMAND with game=d2
 - [ ] Wait for game started
 - [ ] Push automation script to device
@@ -229,7 +245,9 @@ Create `android/tests/test_gog_installer_redbook.ps1` (or similar name).
 - [ ] Watch-AutomationResult with timeout
 
 ### 5c. Game automation script (test_gog_installer_redbook.json5)
+
 The in-game portion. NO _deps needed (files are already imported).
+
 - [ ] `_standalone: false` (run via the custom PS1 runner, not run_test.ps1)
 - [ ] Accept pilot name (Ok)
 - [ ] New game -> Counterstrike -> Ok -> Rookie
@@ -252,6 +270,7 @@ testing. For each, the plan is: run the test, see if it fails at that point,
 diagnose, fix, re-run.
 
 ### 6a. GOG extraction on blank install
+
 - **Risk**: `enableRedbookInConfig()` reads/modifies descent.cfg, but on a blank
   install with no prior game launch, descent.cfg may not exist yet.
   - The function has `if (!cfgFile.exists()) return` -- this means it silently
@@ -264,12 +283,14 @@ diagnose, fix, re-run.
   - **Investigation**: add logging, verify the lookup succeeds
 
 ### 6b. findGogPair() file detection
+
 - **Risk**: After extraction, the .gog/.inst files land in the set dir with
   whatever case InnoSetup used. `findGogPair()` uses `.lowercase()` comparison
   so should be ok, but need to verify the actual extracted filenames.
 - **Investigation**: check what names come out of inno_reader.c extraction
 
 ### 6c. audio_playlist.json never written before game launch
+
 - **Risk**: `AudioSourceManager.writePlaylist()` is called somewhere before game
   launch but may not be called after `import_gog` SETUP_COMMAND completes
   on its background thread. The game reads `audio_playlist.json` at startup via
@@ -283,6 +304,7 @@ diagnose, fix, re-run.
   but may not persist it to the playlist JSON that the engine reads.
 
 ### 6d. songs_haved2_cd() detection
+
 - **Risk**: This function checks `GameCfg.OrigTrackOrder` first (quick path,
   returns 1 if set). `enableRedbookInConfig()` sets `OrigTrackOrder=1`. But if
   descent.cfg doesn't exist (see 6a), this won't be set.
@@ -292,6 +314,7 @@ diagnose, fix, re-run.
   statement in songs_haved2_cd().
 
 ### 6e. Track names not propagating to engine
+
 - **Risk**: Track names flow: AudioSourceManager.trackNames -> audio_playlist.json
   -> rbaudio_bin.c parse -> track_names_set_cue_title() -> track_names_lookup()
   -> track_overlay_notify(). If any link breaks, overlay shows "Track 4" instead
@@ -300,6 +323,7 @@ diagnose, fix, re-run.
   is the chromaprint-resolved name or a fallback
 
 ### 6f. Case sensitivity in _deps for .exe filename
+
 - **Risk**: `Resolve-GameDataDeps` lowercases filenames (`$dep.file.ToLower()`).
   The actual file has parentheses and mixed case. The `game_data_index.txt` stores
   the original path. When pushing to /sdcard/Download/, we need the original
@@ -331,27 +355,28 @@ The test will likely fail multiple times as real bugs surface. Process:
 **Critical rule**: When the test fails, assume the bug is real and in the
 application code (not the test infrastructure), until proven otherwise. The
 most likely failure points are:
+
 - descent.cfg not created (Phase 6a)
-- audio_playlist.json not written (Phase 6c)  
+- audio_playlist.json not written (Phase 6c)
 - Track names not propagating (Phase 6e)
 
 ---
 
 ## File Change Summary
 
-| File | Change |
-|------|--------|
-| `game_data/generate_game_data_index.ps1` | Add .exe extension, add gog installers dir |
-| `android/test_helpers.ps1` | Extend Resolve-GameDataDeps for /sdcard/ targets |
+| File                                                          | Change                                                                                                                                                     |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `game_data/generate_game_data_index.ps1`                      | Add .exe extension, add gog installers dir                                                                                                                 |
+| `android/test_helpers.ps1`                                    | Extend Resolve-GameDataDeps for /sdcard/ targets                                                                                                           |
 | `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt` | Add trackNames/discId to setup introspect; fix enableRedbookInConfig on blank install; add writePlaylist+writeMusicConfigForLaunch to launch SETUP_COMMAND |
-| `android/app/src/main/cpp/shared/overlay_ringbuf.h` | New: overlay ring buffer header |
-| `android/app/src/main/cpp/shared/overlay_ringbuf.cpp` | New: overlay ring buffer impl |
-| `android/app/src/main/cpp/shared/track_names.c` | Hook overlay_ringbuf_add calls |
-| `android/app/src/main/cpp/shared/game_introspect.cpp` | Add overlays section, include overlay_ringbuf.h |
-| `android/app/src/main/cpp/shared/game_automate.cpp` | New assert_overlay action type |
-| `android/app/src/main/cpp/CMakeLists.txt` | Add overlay_ringbuf.cpp to D1 and D2 builds |
-| `android/tests/test_gog_installer_redbook.ps1` | New: custom test runner |
-| `android/game_scripts/test_gog_installer_redbook.json5` | Rewrite: in-game automation script |
+| `android/app/src/main/cpp/shared/overlay_ringbuf.h`           | New: overlay ring buffer header                                                                                                                            |
+| `android/app/src/main/cpp/shared/overlay_ringbuf.cpp`         | New: overlay ring buffer impl                                                                                                                              |
+| `android/app/src/main/cpp/shared/track_names.c`               | Hook overlay_ringbuf_add calls                                                                                                                             |
+| `android/app/src/main/cpp/shared/game_introspect.cpp`         | Add overlays section, include overlay_ringbuf.h                                                                                                            |
+| `android/app/src/main/cpp/shared/game_automate.cpp`           | New assert_overlay action type                                                                                                                             |
+| `android/app/src/main/cpp/CMakeLists.txt`                     | Add overlay_ringbuf.cpp to D1 and D2 builds                                                                                                                |
+| `android/tests/test_gog_installer_redbook.ps1`                | New: custom test runner                                                                                                                                    |
+| `android/game_scripts/test_gog_installer_redbook.json5`       | Rewrite: in-game automation script                                                                                                                         |
 
 ---
 

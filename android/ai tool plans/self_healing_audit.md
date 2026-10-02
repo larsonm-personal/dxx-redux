@@ -139,15 +139,15 @@ Launch preparation has no overall or no-progress deadline once the multiplayer l
 
 ## Existing recovery worth preserving
 
-| Area | Mechanisms reviewed | Remaining validation boundary |
-| --- | --- | --- |
-| LAN | Watchdog, resume socket refresh, join retries, leases, periodic discovery queries and remembered-host probes | Watchdog itself must survive a failed reopen; physical broadcast delivery remains a separate issue |
-| Native metadata | Request ownership, progress deadlines, cancellation marker/grace period, isolated worker termination, non-cancellable cleanup (`LevelMetadata.kt:1590,2439`) | Exercise interruption during result publication and immediate retry |
-| File copying/import | Unique temporary sibling, expected-size check, fsync, atomic publication, finally cleanup (`SetupFileImport.kt:740`); startup temporary/marker cleanup (`SetupActivity.kt:3022`) | Sampled paths only; blocked document-provider I/O still needs cancellation testing |
-| Mission extraction | Temporary extraction, content identity checks, invalid-cache rejection/rebuild (`MissionZipExtractionStore.kt:76,157`) | Process death during publication should be tested end to end |
-| Soundfont downloads | Cancellation closes the HTTP call; connect/read/total deadlines; download separate from activation (`SoundfontDownloads.kt:53,66,134`) | Do not assume this contract already applies to other downloads |
-| Mission transfer resume | Per-chunk verification and rollback to last valid boundary, covered by `MissionTransferResumeTest.kt` | Existing integrity tests do not establish cancellation or concurrent-writer safety |
-| Engine exits | Normal native completion retires the process; fatal error reporting returns to the launcher (`jni_main.c:395,619`) | Activity destruction before native completion remains the gap in finding 1 |
+| Area                    | Mechanisms reviewed                                                                                                                                                              | Remaining validation boundary                                                                      |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| LAN                     | Watchdog, resume socket refresh, join retries, leases, periodic discovery queries and remembered-host probes                                                                     | Watchdog itself must survive a failed reopen; physical broadcast delivery remains a separate issue |
+| Native metadata         | Request ownership, progress deadlines, cancellation marker/grace period, isolated worker termination, non-cancellable cleanup (`LevelMetadata.kt:1590,2439`)                     | Exercise interruption during result publication and immediate retry                                |
+| File copying/import     | Unique temporary sibling, expected-size check, fsync, atomic publication, finally cleanup (`SetupFileImport.kt:740`); startup temporary/marker cleanup (`SetupActivity.kt:3022`) | Sampled paths only; blocked document-provider I/O still needs cancellation testing                 |
+| Mission extraction      | Temporary extraction, content identity checks, invalid-cache rejection/rebuild (`MissionZipExtractionStore.kt:76,157`)                                                           | Process death during publication should be tested end to end                                       |
+| Soundfont downloads     | Cancellation closes the HTTP call; connect/read/total deadlines; download separate from activation (`SoundfontDownloads.kt:53,66,134`)                                           | Do not assume this contract already applies to other downloads                                     |
+| Mission transfer resume | Per-chunk verification and rollback to last valid boundary, covered by `MissionTransferResumeTest.kt`                                                                            | Existing integrity tests do not establish cancellation or concurrent-writer safety                 |
+| Engine exits            | Normal native completion retires the process; fatal error reporting returns to the launcher (`jni_main.c:395,619`)                                                               | Activity destruction before native completion remains the gap in finding 1                         |
 
 The 22:34 logs show both engines rejecting D1-in-D2 save version 31, not evidence that resetting networking would make that save load. Current save preflight and host/client warning propagation address that input failure and should remain separate from transport recovery.
 

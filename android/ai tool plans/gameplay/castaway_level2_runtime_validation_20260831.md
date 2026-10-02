@@ -9,12 +9,12 @@ fix works and whether the omitted blue key is actually required.
 ## Plan
 
 - [x] Identify the build, metadata generation, level lifecycle, and Guide-Bot
-  release point
+      release point
 - [x] Reconstruct every compiled selection, temporary prerequisite, legacy
-  fallback, trigger activation, key pickup, and navigation failure
+      fallback, trigger activation, key pickup, and navigation failure
 - [x] Compare the run with the prior log and the checked-in Castaway route
 - [x] Locate each failure in the current planner, certifier, or Guide-Bot
-  navigation code
+      navigation code
 - [x] Record evidence-backed findings and the next corrective work
 
 ## Constraints

@@ -3,9 +3,11 @@
 Status: analysis in progress, recorder instrumentation added for fresh demo capture
 
 Goal:
+
 - identify the first desync point in the two new demos under `android/temp_game_logs`, compare their RNG and state drift patterns, and narrow the likely controlling code path for each
 
 Plan:
+
 - [x] identify the two fresh `.dximdemo` artifacts and their `.rngtrace` sidecars in `android/temp_game_logs`
 - [x] run focused replay checks for both demos and capture the first failing frame or mismatch surface
 - [x] compare recorded vs replay RNG traces around the first divergence for both demos
@@ -19,6 +21,7 @@ Plan:
 - [x] build the touched D2 target and confirm the new probe hooks compile cleanly
 
 Notes:
+
 - prefer the first concrete divergence frame over end-of-demo drift
 - reuse existing replay/rng trace helpers before adding new instrumentation
 - direct headless replay gives the most trustworthy early anchor via `Input demo replay rng state mismatch`, not the raw rng trace line-by-line compare

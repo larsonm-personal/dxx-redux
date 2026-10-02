@@ -199,16 +199,16 @@ Tests:
 
 ## Risks and mitigations
 
-| Risk | Mitigation |
-| --- | --- |
-| Live Guide-Bot rescans renumber labels | Render from a frozen canonical metadata snapshot |
-| Labels appear at a firing vantage point | Derive from aim/side/object center, never activation position |
-| Host and emulator JSON differ | Extend both native serializers and the Kotlin parse/write bridge, then run both regeneration paths |
-| Objective labels disappear behind the automap pass | Draw after `g3_end_frame()`, matching the proven secret-label path |
-| Objective numbers collide with D2 marker numbers | Use a distinct color; retain pure `1..N` text as requested |
-| Route is partial or malformed | Draw valid known steps only and expose exact candidate/projected counts |
-| Toggle affects gameplay or saves | Keep it as isolated per-level debug state and never touch normal cheat, visited, save, or config data |
-| Large metadata diff hides semantic regressions | First inspect focused Obsidian output, then gate full regeneration with route corpus/status tests |
+| Risk                                               | Mitigation                                                                                            |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Live Guide-Bot rescans renumber labels             | Render from a frozen canonical metadata snapshot                                                      |
+| Labels appear at a firing vantage point            | Derive from aim/side/object center, never activation position                                         |
+| Host and emulator JSON differ                      | Extend both native serializers and the Kotlin parse/write bridge, then run both regeneration paths    |
+| Objective labels disappear behind the automap pass | Draw after `g3_end_frame()`, matching the proven secret-label path                                    |
+| Objective numbers collide with D2 marker numbers   | Use a distinct color; retain pure `1..N` text as requested                                            |
+| Route is partial or malformed                      | Draw valid known steps only and expose exact candidate/projected counts                               |
+| Toggle affects gameplay or saves                   | Keep it as isolated per-level debug state and never touch normal cheat, visited, save, or config data |
+| Large metadata diff hides semantic regressions     | First inspect focused Obsidian output, then gate full regeneration with route corpus/status tests     |
 
 ## Definition of done
 

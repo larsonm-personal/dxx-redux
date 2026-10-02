@@ -247,7 +247,7 @@ static int expect_record_and_flush(void)
 	}
 	input_demo_rng_trace_set_context(0, 3276);
 	d_srand(1234);
-	(void)d_rand();
+	(void) d_rand();
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
 	state.forward_thrust_time = 44;
@@ -300,16 +300,16 @@ static int expect_record_and_flush(void)
 	if (!read_text_file(demo_path.c_str(), &text))
 		return report_failure("could not read recorder demo file");
 	expected = std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") + input_demo_test_game_name() +
-		"\",\"mission\":\"" + input_demo_test_game_name() +
-		"\",\"build_number\":" + std::to_string(input_demo_test_build_number()) + ",\"git_version\":\"" + input_demo_test_git_version() + "\",\"arch\":\"" + input_demo_test_arch() +
-		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
-		"\",\"frame_count\":3" + input_demo_test_player_cfg_header_json() + "}\n" +
-		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100},\"state\":" + input_demo_test_frame_state_json(0) + "}\n" +
-		"{\"type\":\"frame\",\"f\":1,\"input\":{\"p\":{\"f1\":1}},\"rng\":{\"s\":100},\"state\":" + input_demo_test_frame_state_json(1) + "}\n" +
-		"{\"type\":\"frame\",\"f\":2,\"input\":{\"s\":{\"f\":0}},\"rng\":{\"s\":102},\"state\":" + input_demo_test_frame_state_json(2) + "}\n" +
-		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
-		"\",\"mission\":\"" + input_demo_test_game_name() +
-		"\",\"level\":1,\"difficulty\":2,\"frame_count\":3,\"game_time64\":120,\"player0\":{\"energy\":67,\"shields\":42,\"score\":12500,\"lives\":3,\"laser_level\":1,\"primary_weapon\":0,\"secondary_weapon\":1,\"flags\":0,\"hostages\":0,\"primary_ammo\":[0,200,0,0,0,0,0,0,0,0,0,0,0,0,0,0],\"secondary_ammo\":[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},\"position\":{\"segment\":142,\"x\":12345678,\"y\":-8765432,\"z\":3456789,\"forward_x\":65536,\"forward_y\":0,\"forward_z\":0},\"level_summary\":{\"robots_alive\":23,\"robots_killed\":8,\"hostages_remaining\":2,\"powerups_remaining\":15,\"control_center_destroyed\":true,\"endlevel_completed\":false}}}\n";
+	           "\",\"mission\":\"" + input_demo_test_game_name() +
+	           "\",\"build_number\":" + std::to_string(input_demo_test_build_number()) + ",\"git_version\":\"" + input_demo_test_git_version() + "\",\"arch\":\"" + input_demo_test_arch() +
+	           "\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
+	           "\",\"frame_count\":3" + input_demo_test_player_cfg_header_json() + "}\n" +
+	           "{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100},\"state\":" + input_demo_test_frame_state_json(0) + "}\n" +
+	           "{\"type\":\"frame\",\"f\":1,\"input\":{\"p\":{\"f1\":1}},\"rng\":{\"s\":100},\"state\":" + input_demo_test_frame_state_json(1) + "}\n" +
+	           "{\"type\":\"frame\",\"f\":2,\"input\":{\"s\":{\"f\":0}},\"rng\":{\"s\":102},\"state\":" + input_demo_test_frame_state_json(2) + "}\n" +
+	           "{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
+	           "\",\"mission\":\"" + input_demo_test_game_name() +
+	           "\",\"level\":1,\"difficulty\":2,\"frame_count\":3,\"game_time64\":120,\"player0\":{\"energy\":67,\"shields\":42,\"score\":12500,\"lives\":3,\"laser_level\":1,\"primary_weapon\":0,\"secondary_weapon\":1,\"flags\":0,\"hostages\":0,\"primary_ammo\":[0,200,0,0,0,0,0,0,0,0,0,0,0,0,0,0],\"secondary_ammo\":[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},\"position\":{\"segment\":142,\"x\":12345678,\"y\":-8765432,\"z\":3456789,\"forward_x\":65536,\"forward_y\":0,\"forward_z\":0},\"level_summary\":{\"robots_alive\":23,\"robots_killed\":8,\"hostages_remaining\":2,\"powerups_remaining\":15,\"control_center_destroyed\":true,\"endlevel_completed\":false}}}\n";
 	if (text != expected)
 		return report_failure_string(std::string("unexpected recorder demo file: ") + text);
 	if (!read_text_file(trace_path.c_str(), &text))
@@ -388,14 +388,14 @@ static int expect_record_and_flush_checkpoint(void)
 		return report_failure("could not read checkpoint recorder demo file");
 	}
 	expected = std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") + input_demo_test_game_name() +
-		"\",\"mission\":\"" + input_demo_test_game_name() +
-		"\",\"build_number\":" + std::to_string(input_demo_test_build_number()) + ",\"git_version\":\"" + input_demo_test_git_version() + "\",\"arch\":\"" + input_demo_test_arch() +
-		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
-		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"" + input_demo_test_player_cfg_header_json() + "}\n" +
-		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"data\":\"REdTUxgAAAA=\"}\n" +
-		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100},\"state\":" + input_demo_test_frame_state_json(0) + "}\n" +
-		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
-		"\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":1}}\n";
+	           "\",\"mission\":\"" + input_demo_test_game_name() +
+	           "\",\"build_number\":" + std::to_string(input_demo_test_build_number()) + ",\"git_version\":\"" + input_demo_test_git_version() + "\",\"arch\":\"" + input_demo_test_arch() +
+	           "\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
+	           "\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"" + input_demo_test_player_cfg_header_json() + "}\n" +
+	           "{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"data\":\"REdTUxgAAAA=\"}\n" +
+	           "{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100},\"state\":" + input_demo_test_frame_state_json(0) + "}\n" +
+	           "{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
+	           "\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":1}}\n";
 	if (text != expected) {
 		remove(demo_path.c_str());
 		remove(trace_path.c_str());
@@ -412,11 +412,11 @@ static int expect_record_and_flush_checkpoint(void)
 	remove(trace_path.c_str());
 	remove_test_dir(dir);
 	if (parsed.metadata.start_mode != "save_checkpoint" || !parsed.has_checkpoint ||
-		!parsed.metadata.has_player_cfg || parsed.metadata.player_cfg.primary_order_count == 0 ||
-		!parsed.frames[0].has_state || parsed.frames[0].state.player0.score != 12500 ||
-		parsed.checkpoint.compression != "none" ||
-		parsed.checkpoint.sha256 != "077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5" ||
-		parsed.checkpoint.data != "REdTUxgAAAA=")
+	    !parsed.metadata.has_player_cfg || parsed.metadata.player_cfg.primary_order_count == 0 ||
+	    !parsed.frames[0].has_state || parsed.frames[0].state.player0.score != 12500 ||
+	    parsed.checkpoint.compression != "none" ||
+	    parsed.checkpoint.sha256 != "077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5" ||
+	    parsed.checkpoint.data != "REdTUxgAAAA=")
 		return report_failure("checkpoint recorder demo round trip mismatch");
 	return 0;
 }
@@ -480,8 +480,8 @@ static int expect_stage_consumed_pulse(void)
 		return report_failure("could not read staged pulse recorder demo file");
 	}
 	if (text.find("\"f1\":1") == std::string::npos ||
-		text.find("\"f2\":2") == std::string::npos ||
-		text.find("\"sw\":4") == std::string::npos) {
+	    text.find("\"f2\":2") == std::string::npos ||
+	    text.find("\"sw\":4") == std::string::npos) {
 		remove(demo_path.c_str());
 		remove(trace_path.c_str());
 		remove_test_dir(dir);
@@ -497,12 +497,12 @@ static int expect_stage_consumed_pulse(void)
 	remove(trace_path.c_str());
 	remove_test_dir(dir);
 	if (parsed.frames.size() != 2 ||
-		!parsed.frames[0].input.pulse.has_fire_primary_count || parsed.frames[0].input.pulse.fire_primary_count != 1 ||
-		!parsed.frames[0].input.pulse.has_fire_secondary_count || parsed.frames[0].input.pulse.fire_secondary_count != 2 ||
-		!parsed.frames[0].input.pulse.has_select_weapon_count || parsed.frames[0].input.pulse.select_weapon_count != 4 ||
-		parsed.frames[1].input.pulse.has_fire_primary_count ||
-		parsed.frames[1].input.pulse.has_fire_secondary_count ||
-		parsed.frames[1].input.pulse.has_select_weapon_count)
+	    !parsed.frames[0].input.pulse.has_fire_primary_count || parsed.frames[0].input.pulse.fire_primary_count != 1 ||
+	    !parsed.frames[0].input.pulse.has_fire_secondary_count || parsed.frames[0].input.pulse.fire_secondary_count != 2 ||
+	    !parsed.frames[0].input.pulse.has_select_weapon_count || parsed.frames[0].input.pulse.select_weapon_count != 4 ||
+	    parsed.frames[1].input.pulse.has_fire_primary_count ||
+	    parsed.frames[1].input.pulse.has_fire_secondary_count ||
+	    parsed.frames[1].input.pulse.has_select_weapon_count)
 		return report_failure("staged pulse recorder demo round trip mismatch");
 	return 0;
 }
@@ -608,13 +608,13 @@ static int expect_truncate_recording(void)
 	remove(trace_path.c_str());
 	remove_test_dir(dir);
 	if (parsed.metadata.version != 3 || parsed.frames.size() != 2 || parsed.metadata.frame_count != 2 || parsed.result.frame_count != 2 ||
-		parsed.frames[0].rng.state != 100 || parsed.frames[0].input.held.forward_thrust_time != 44 ||
-		parsed.frames[1].rng.state != 103 || !parsed.frames[0].events.empty() ||
-		!parsed.frames[1].events.empty())
+	    parsed.frames[0].rng.state != 100 || parsed.frames[0].input.held.forward_thrust_time != 44 ||
+	    parsed.frames[1].rng.state != 103 || !parsed.frames[0].events.empty() ||
+	    !parsed.frames[1].events.empty())
 		return report_failure("truncate recorder demo round trip mismatch");
 	if (text.find("\"events\":1") == std::string::npos ||
-		text.find("\"seq\":0") == std::string::npos ||
-		text.find("\"seq\":1") != std::string::npos)
+	    text.find("\"seq\":0") == std::string::npos ||
+	    text.find("\"seq\":1") != std::string::npos)
 		return report_failure_string(std::string("unexpected truncate recorder rng trace file: ") + text);
 	return 0;
 }
@@ -682,15 +682,15 @@ static int expect_write_state_trace(void)
 	diag.segment_object_list_hash = 5678u;
 	diag.segment_object_link_error_count = 0;
 	if (!input_demo_state_trace_start(trace_path.c_str(),
-					     "replay",
-					     input_demo_test_game_name(),
-					     input_demo_test_game_name(),
-					     2,
-					     1,
-					     "save_checkpoint",
-					     3,
-					     error,
-					     sizeof(error))) {
+	                                  "replay",
+	                                  input_demo_test_game_name(),
+	                                  input_demo_test_game_name(),
+	                                  2,
+	                                  1,
+	                                  "save_checkpoint",
+	                                  3,
+	                                  error,
+	                                  sizeof(error))) {
 		remove_test_dir(dir);
 		return report_failure_string(std::string("state trace start failed: ") + error);
 	}
@@ -762,8 +762,8 @@ static int expect_record_and_flush_events(void)
 		return report_failure_string(std::string("events capture frame 0 failed: ") + error);
 	}
 	if (!input_demo_recorder_append_frame_event_json(
-			"{\"kind\":\"score\",\"gt\":3276,\"score_kind\":\"normal\",\"delta\":200,\"score\":12700}",
-			error, sizeof(error))) {
+	        "{\"kind\":\"score\",\"gt\":3276,\"score_kind\":\"normal\",\"delta\":200,\"score\":12700}",
+	        error, sizeof(error))) {
 		input_demo_recorder_cancel();
 		remove_test_dir(dir);
 		return report_failure_string(std::string("append score event failed: ") + error);
@@ -775,8 +775,8 @@ static int expect_record_and_flush_events(void)
 		return report_failure_string(std::string("events capture frame 1 failed: ") + error);
 	}
 	if (!input_demo_recorder_append_frame_event_json(
-			"{\"kind\":\"robot_damage\",\"gt\":6552,\"robot_obj\":68,\"robot_sig\":3769,\"robot_id\":39,\"damage\":589824,\"shields_before\":1900544,\"shields_after\":1310720,\"dead\":false,\"x\":-22577346,\"y\":-2494632,\"z\":-11045352}",
-			error, sizeof(error))) {
+	        "{\"kind\":\"robot_damage\",\"gt\":6552,\"robot_obj\":68,\"robot_sig\":3769,\"robot_id\":39,\"damage\":589824,\"shields_before\":1900544,\"shields_after\":1310720,\"dead\":false,\"x\":-22577346,\"y\":-2494632,\"z\":-11045352}",
+	        error, sizeof(error))) {
 		input_demo_recorder_cancel();
 		remove_test_dir(dir);
 		return report_failure_string(std::string("append robot damage event failed: ") + error);
@@ -793,8 +793,8 @@ static int expect_record_and_flush_events(void)
 		return report_failure("could not read recorder events demo file");
 	}
 	if (text.find("\"version\":4") == std::string::npos ||
-		text.find("\"events\":[{\"kind\":\"score\",\"gt\":3276,\"score_kind\":\"normal\",\"delta\":200,\"score\":12700}]") == std::string::npos ||
-		text.find("\"events\":[{\"kind\":\"robot_damage\",\"gt\":6552,\"robot_obj\":68,\"robot_sig\":3769,\"robot_id\":39,\"damage\":589824,\"shields_before\":1900544,\"shields_after\":1310720,\"dead\":false,\"x\":-22577346,\"y\":-2494632,\"z\":-11045352}]") == std::string::npos) {
+	    text.find("\"events\":[{\"kind\":\"score\",\"gt\":3276,\"score_kind\":\"normal\",\"delta\":200,\"score\":12700}]") == std::string::npos ||
+	    text.find("\"events\":[{\"kind\":\"robot_damage\",\"gt\":6552,\"robot_obj\":68,\"robot_sig\":3769,\"robot_id\":39,\"damage\":589824,\"shields_before\":1900544,\"shields_after\":1310720,\"dead\":false,\"x\":-22577346,\"y\":-2494632,\"z\":-11045352}]") == std::string::npos) {
 		remove(demo_path.c_str());
 		remove(trace_path.c_str());
 		remove_test_dir(dir);
@@ -810,9 +810,9 @@ static int expect_record_and_flush_events(void)
 	remove(trace_path.c_str());
 	remove_test_dir(dir);
 	if (parsed.metadata.version != 4 || parsed.frames.size() != 2 ||
-		parsed.frames[0].events.size() != 1 || parsed.frames[1].events.size() != 1 ||
-		parsed.frames[0].events[0].find("\"kind\":\"score\"") == std::string::npos ||
-		parsed.frames[1].events[0].find("\"kind\":\"robot_damage\"") == std::string::npos)
+	    parsed.frames[0].events.size() != 1 || parsed.frames[1].events.size() != 1 ||
+	    parsed.frames[0].events[0].find("\"kind\":\"score\"") == std::string::npos ||
+	    parsed.frames[1].events[0].find("\"kind\":\"robot_damage\"") == std::string::npos)
 		return report_failure("events recorder demo round trip mismatch");
 	return 0;
 }
@@ -944,17 +944,17 @@ static int expect_record_and_flush_diag(void)
 		return report_failure("could not read recorder diag demo file");
 	}
 	if (text.find("\"diag\":{\"awareness_events\":7") == std::string::npos ||
-		text.find("\"runtime_state_hash\":2468") == std::string::npos ||
-		text.find("\"object_free_list_hash\":13579") == std::string::npos ||
-		text.find("\"weapon_auto_fusion_delta\":-888") == std::string::npos ||
-		text.find("\"player_weapon_count\":2") == std::string::npos ||
-		text.find("\"highest_object_index\":347") == std::string::npos ||
-		text.find("\"live_object_count\":219") == std::string::npos ||
-		text.find("\"object_slot_counts\":[9") == std::string::npos ||
-		text.find("\"debris_state_hash\":42424242") == std::string::npos ||
-		text.find("\"segment_object_list_hash\":11235813") == std::string::npos ||
-		text.find("\"player_weapon_obj0\":58") == std::string::npos ||
-		text.find("\"player_weapon_obj1\":115") == std::string::npos) {
+	    text.find("\"runtime_state_hash\":2468") == std::string::npos ||
+	    text.find("\"object_free_list_hash\":13579") == std::string::npos ||
+	    text.find("\"weapon_auto_fusion_delta\":-888") == std::string::npos ||
+	    text.find("\"player_weapon_count\":2") == std::string::npos ||
+	    text.find("\"highest_object_index\":347") == std::string::npos ||
+	    text.find("\"live_object_count\":219") == std::string::npos ||
+	    text.find("\"object_slot_counts\":[9") == std::string::npos ||
+	    text.find("\"debris_state_hash\":42424242") == std::string::npos ||
+	    text.find("\"segment_object_list_hash\":11235813") == std::string::npos ||
+	    text.find("\"player_weapon_obj0\":58") == std::string::npos ||
+	    text.find("\"player_weapon_obj1\":115") == std::string::npos) {
 		remove(demo_path.c_str());
 		remove(trace_path.c_str());
 		remove_test_dir(dir);
@@ -970,15 +970,15 @@ static int expect_record_and_flush_diag(void)
 	remove(trace_path.c_str());
 	remove_test_dir(dir);
 	if (parsed.frames.size() != 1 || !parsed.frames[0].has_diag ||
-		parsed.frames[0].diag_json.find("\"runtime_state_hash\":2468") == std::string::npos ||
-		parsed.frames[0].diag_json.find("\"object_signature_seed\":19480") == std::string::npos ||
-		parsed.frames[0].diag_json.find("\"weapon_last_omega_delta\":-999") == std::string::npos ||
-		parsed.frames[0].diag_json.find("\"live_object_hash\":987654321") == std::string::npos ||
-		parsed.frames[0].diag_json.find("\"object_slot_hashes\":[111") == std::string::npos ||
-		parsed.frames[0].diag_json.find("\"segment_object_list_count\":219") == std::string::npos ||
-		parsed.frames[0].diag_json.find("\"player_weapon_hash\":123456789") == std::string::npos ||
-		parsed.frames[0].diag_json.find("\"fireball_object_count\":17") == std::string::npos ||
-		parsed.frames[0].diag_json.find("\"player_weapon_obj1\":115") == std::string::npos)
+	    parsed.frames[0].diag_json.find("\"runtime_state_hash\":2468") == std::string::npos ||
+	    parsed.frames[0].diag_json.find("\"object_signature_seed\":19480") == std::string::npos ||
+	    parsed.frames[0].diag_json.find("\"weapon_last_omega_delta\":-999") == std::string::npos ||
+	    parsed.frames[0].diag_json.find("\"live_object_hash\":987654321") == std::string::npos ||
+	    parsed.frames[0].diag_json.find("\"object_slot_hashes\":[111") == std::string::npos ||
+	    parsed.frames[0].diag_json.find("\"segment_object_list_count\":219") == std::string::npos ||
+	    parsed.frames[0].diag_json.find("\"player_weapon_hash\":123456789") == std::string::npos ||
+	    parsed.frames[0].diag_json.find("\"fireball_object_count\":17") == std::string::npos ||
+	    parsed.frames[0].diag_json.find("\"player_weapon_obj1\":115") == std::string::npos)
 		return report_failure("diag recorder demo round trip mismatch");
 	return 0;
 }
@@ -1012,7 +1012,7 @@ static int expect_long_recording(void)
 		if (i == 37 && !input_demo_recorder_stage_frame_event_json("{\"kind\":\"staged\"}", error, sizeof(error)))
 			return report_failure(error);
 		if (!input_demo_recorder_capture_frame(6554, &state, &pulse, i, 1, i,
-		                                     &snapshot, &diag, error, sizeof(error)))
+		                                       &snapshot, &diag, error, sizeof(error)))
 			return report_failure(error);
 		if (i == 37 || i == frame_count - 1) {
 			if (!input_demo_recorder_append_frame_event_json("{\"kind\":\"late1\"}", error, sizeof(error)) ||
@@ -1023,7 +1023,7 @@ static int expect_long_recording(void)
 	// Rewind drops the last frame's late events and reuses the preceding input state
 	if (!input_demo_recorder_truncate(frame_count - 1) ||
 	    !input_demo_recorder_capture_frame(6554, &state, &pulse, frame_count - 1, 1, frame_count - 1,
-	                                      &snapshot, &diag, error, sizeof(error)))
+	                                       &snapshot, &diag, error, sizeof(error)))
 		return report_failure("long recording rewind failed");
 	// Opening a directory as a file must fail without consuming the recording
 	if (input_demo_recorder_flush(".", error, sizeof(error)) ||

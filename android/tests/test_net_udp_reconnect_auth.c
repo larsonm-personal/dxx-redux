@@ -285,9 +285,9 @@ static int test_route_proof_direct_proxy_nat_and_replay_matrix(void)
 	wrong_challenge[4] ^= 1;
 
 	CHECK(android_net_udp_reconnect_stage_route_proof(
-	          &proof, accepted_counter, 41, direct_route,
-	          sizeof(direct_route), 0, TEST_CONTEXT_STARTING, 100,
-	          challenge));
+	    &proof, accepted_counter, 41, direct_route,
+	    sizeof(direct_route), 0, TEST_CONTEXT_STARTING, 100,
+	    challenge));
 	CHECK(!android_net_udp_reconnect_route_claim_matches(
 	    &proof, rebound_route, sizeof(rebound_route), 0,
 	    TEST_CONTEXT_STARTING, 99, challenge));
@@ -317,9 +317,9 @@ static int test_route_proof_direct_proxy_nat_and_replay_matrix(void)
 	    &proof, &accepted_counter));
 
 	CHECK(android_net_udp_reconnect_stage_route_proof(
-	          &proof, accepted_counter, 42, rebound_route,
-	          sizeof(rebound_route), 0, TEST_CONTEXT_WAITING, 200,
-	          challenge));
+	    &proof, accepted_counter, 42, rebound_route,
+	    sizeof(rebound_route), 0, TEST_CONTEXT_WAITING, 200,
+	    challenge));
 	CHECK(!android_net_udp_reconnect_route_claim_matches(
 	    &proof, direct_route, sizeof(direct_route), 0,
 	    TEST_CONTEXT_WAITING, 150, challenge));
@@ -330,9 +330,9 @@ static int test_route_proof_direct_proxy_nat_and_replay_matrix(void)
 	    &proof, &accepted_counter));
 
 	CHECK(android_net_udp_reconnect_stage_route_proof(
-	          &proof, accepted_counter, 43, direct_route,
-	          sizeof(direct_route), 1, TEST_CONTEXT_PLAYING, 300,
-	          challenge));
+	    &proof, accepted_counter, 43, direct_route,
+	    sizeof(direct_route), 1, TEST_CONTEXT_PLAYING, 300,
+	    challenge));
 	CHECK(!android_net_udp_reconnect_route_claim_matches(
 	    &proof, direct_route, sizeof(direct_route), 0,
 	    TEST_CONTEXT_PLAYING, 250, challenge));
@@ -353,8 +353,8 @@ static int test_stale_request_does_not_replace_live_challenge(void)
 	memset(challenge, 0x21, sizeof(challenge));
 	memset(replacement, 0x84, sizeof(replacement));
 	CHECK(android_net_udp_reconnect_stage_route_proof(
-	          &proof, 90, 91, route, sizeof(route), 0, 3, 100,
-	          challenge));
+	    &proof, 90, 91, route, sizeof(route), 0, 3, 100,
+	    challenge));
 	CHECK(!android_net_udp_reconnect_stage_route_proof(
 	    &proof, 90, 90, route, sizeof(route), 0, 3, 100,
 	    replacement));

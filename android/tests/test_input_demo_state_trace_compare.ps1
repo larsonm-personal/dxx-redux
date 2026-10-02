@@ -35,7 +35,8 @@ function Write-FixtureTrace {
         }
         state = @{}
     } | ConvertTo-Json -Compress -Depth 8
-    [IO.File]::WriteAllText($Path, $json, [Text.UTF8Encoding]::new($false))
+    $expanded = '{"state":{"message":"embedded \"type\":\"frame_state\" is not a record type","slots":[1,2,3]},"type":"world_state"}'
+    [IO.File]::WriteAllText($Path, "$expanded`n$json`n$expanded", [Text.UTF8Encoding]::new($false))
 }
 
 function Invoke-CompareFixture {
@@ -57,6 +58,11 @@ try {
     if ($matching.ExitCode -ne 0) {
         throw "matching state trace compare failed`n$($matching.Output)"
     }
+
+    [IO.File]::AppendAllText($actualPath, "`n{""type"":""world_state"",""state"":{broken}}")
+    $malformedRejected = $false
+    try { Invoke-CompareFixture | Out-Null } catch { $malformedRejected = $true }
+    if (-not $malformedRejected) { throw 'Malformed expanded state record was accepted' }
 
     Write-FixtureTrace -Path $actualPath -SegmentLinkErrorCount 1
     $mismatch = Invoke-CompareFixture

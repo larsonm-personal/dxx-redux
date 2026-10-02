@@ -28,20 +28,20 @@ This replaces the earlier snapshot-plus-spew-cleanup design documented in coop-i
 
 Paths below are relative to the repository root; D2 examples have corresponding D1 hooks unless stated otherwise
 
-| Area | Current behavior and evidence | Gap |
-| --- | --- | --- |
-| Inventory cache | `android/app/src/main/cpp/shared/coop/coop_save.c`: `coop_track_absent_player`, `coop_snapshot_player`, absent list | Snapshots inventory, not ownership of individual drops; cache holds 16 remembered players and evicts the oldest |
-| Disconnect | `d1/main/multi.c`, `d2/main/multi.c`: `multi_disconnect_player` snapshots the remote player; `multi_leave_game` drops eggs and sends `MULTI_PLAYER_DROP` | A graceful leave emits drops; the timeout/disconnect function itself does not synthesize equivalent spew for a crashed client |
-| Rejoin | `coop/coop_multi_status.c`: `coop_send_restore_inventory` takes and removes the absent record, deletes same-level powerups with `object_owner[i] == pnum`, then sends an 86-byte inventory packet | No subtraction for teammate pickups or expiry; record is consumed before an application acknowledgment |
-| Rejoin timing | `d1/main/net_udp.c`, `d2/main/net_udp.c`: object-transfer completion sends rejoin sync, then inventory restore, then starts extras | Spew may already be in the joining client's object snapshot before cleanup; sync, removals, and inventory apply need a coordinated boundary |
-| Applying inventory | `coop_save.c`: `coop_apply_record_to_player` assigns weapons/ammo/resources/stats and ORs durable flags; same-level keys are restored | Not an exact transactional replacement of every inventory field; cannot directly reuse this as the new recovery commit |
-| Drop creation | `d1/main/collide.c`, `d2/main/collide.c`: `drop_player_eggs_remote`; `multi.c`: `multi_do_player_explode` creates remote eggs and maps their object numbers | Peer object creation and numeric player ownership are transport details, not durable item provenance |
-| Spew flag/lifetime | Paired `fireball.c` marks network-created player eggs `OF_PLAYER_DROPPED`; `PlayerSpewNoExpire` makes them immortal; `coop_restore_player_spew_lifetimes` reapplies policy after load | Flag identifies dropped objects but not original owner, batch, exact recoverable contents, or removal outcome |
-| Pickups | Paired `collide.c` calls local `do_powerup`, then marks/removes consumed powerups; `multi_do_remobj` receives object number, owner mapping and duplicate suppression data | Removal has no semantic reason, collector receipt, or recoverable quantity; pickups are already awarded before peers hear about them |
-| Expiry | Paired `powerup.c`/`object.c` process lifetime exhaustion and mark objects dead | No absorbed-inventory credit ledger found |
-| Existing pickup ledger | `coop/coop_powerup_duplication.c` tracks per-player collections for duplicated energy/shields, with save and snapshot support | Explicitly excludes player-dropped objects and prunes vanished objects; cannot serve as a historical spew ledger |
-| Persistence | `coop_save.c/.h` stores active/absent player records in save metadata and a progress-inventory sidecar | No drop ownership, quantities, terminal outcomes, or pending recovery transactions; absent records loaded from metadata inherit the save's level |
-| Identity | UDP reconnect now has a persisted signing identity; inventory records still match client UUID then callsign | Bind recovery ownership to authenticated identity; numeric player slots and unverified callsign matches are insufficient |
+| Area                   | Current behavior and evidence                                                                                                                                                                     | Gap                                                                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Inventory cache        | `android/app/src/main/cpp/shared/coop/coop_save.c`: `coop_track_absent_player`, `coop_snapshot_player`, absent list                                                                               | Snapshots inventory, not ownership of individual drops; cache holds 16 remembered players and evicts the oldest                                  |
+| Disconnect             | `d1/main/multi.c`, `d2/main/multi.c`: `multi_disconnect_player` snapshots the remote player; `multi_leave_game` drops eggs and sends `MULTI_PLAYER_DROP`                                          | A graceful leave emits drops; the timeout/disconnect function itself does not synthesize equivalent spew for a crashed client                    |
+| Rejoin                 | `coop/coop_multi_status.c`: `coop_send_restore_inventory` takes and removes the absent record, deletes same-level powerups with `object_owner[i] == pnum`, then sends an 86-byte inventory packet | No subtraction for teammate pickups or expiry; record is consumed before an application acknowledgment                                           |
+| Rejoin timing          | `d1/main/net_udp.c`, `d2/main/net_udp.c`: object-transfer completion sends rejoin sync, then inventory restore, then starts extras                                                                | Spew may already be in the joining client's object snapshot before cleanup; sync, removals, and inventory apply need a coordinated boundary      |
+| Applying inventory     | `coop_save.c`: `coop_apply_record_to_player` assigns weapons/ammo/resources/stats and ORs durable flags; same-level keys are restored                                                             | Not an exact transactional replacement of every inventory field; cannot directly reuse this as the new recovery commit                           |
+| Drop creation          | `d1/main/collide.c`, `d2/main/collide.c`: `drop_player_eggs_remote`; `multi.c`: `multi_do_player_explode` creates remote eggs and maps their object numbers                                       | Peer object creation and numeric player ownership are transport details, not durable item provenance                                             |
+| Spew flag/lifetime     | Paired `fireball.c` marks network-created player eggs `OF_PLAYER_DROPPED`; `PlayerSpewNoExpire` makes them immortal; `coop_restore_player_spew_lifetimes` reapplies policy after load             | Flag identifies dropped objects but not original owner, batch, exact recoverable contents, or removal outcome                                    |
+| Pickups                | Paired `collide.c` calls local `do_powerup`, then marks/removes consumed powerups; `multi_do_remobj` receives object number, owner mapping and duplicate suppression data                         | Removal has no semantic reason, collector receipt, or recoverable quantity; pickups are already awarded before peers hear about them             |
+| Expiry                 | Paired `powerup.c`/`object.c` process lifetime exhaustion and mark objects dead                                                                                                                   | No absorbed-inventory credit ledger found                                                                                                        |
+| Existing pickup ledger | `coop/coop_powerup_duplication.c` tracks per-player collections for duplicated energy/shields, with save and snapshot support                                                                     | Explicitly excludes player-dropped objects and prunes vanished objects; cannot serve as a historical spew ledger                                 |
+| Persistence            | `coop_save.c/.h` stores active/absent player records in save metadata and a progress-inventory sidecar                                                                                            | No drop ownership, quantities, terminal outcomes, or pending recovery transactions; absent records loaded from metadata inherit the save's level |
+| Identity               | UDP reconnect now has a persisted signing identity; inventory records still match client UUID then callsign                                                                                       | Bind recovery ownership to authenticated identity; numeric player slots and unverified callsign matches are insufficient                         |
 
 Existing settings are `FullDeathSpew` and `PlayerSpewNoExpire`. No gameplay implementation of timeout absorption was found in the surveyed native and Kotlin code. Absorption is therefore a new feature, not an existing balance that can simply be queried
 
@@ -63,14 +63,14 @@ Object indices, signatures and remote mappings locate a current object; they are
 
 Track these states explicitly:
 
-| State | Meaning | Rejoin action |
-| --- | --- | --- |
-| Retained | Confirmed inventory never transferred into a drop | Restore once as the player's existing inventory |
-| In mine | Remaining contents of a live owned drop | Reserve, remove or reduce world contents, transfer to player |
-| Absorbed | Remaining uncollected contents credited at a confirmed timeout | Transfer credit to player once |
-| Collected | Ownership transferred by a committed pickup | Never restore to the former owner |
-| Lost/consumed | Destruction, nonabsorbing expiry, armed/exploded mine, or another explicit nonrecoverable outcome | Do not restore |
-| Reserved | Pickup or recovery transaction is in progress | Resolve the existing transaction; do not start another claim |
+| State         | Meaning                                                                                           | Rejoin action                                                |
+| ------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Retained      | Confirmed inventory never transferred into a drop                                                 | Restore once as the player's existing inventory              |
+| In mine       | Remaining contents of a live owned drop                                                           | Reserve, remove or reduce world contents, transfer to player |
+| Absorbed      | Remaining uncollected contents credited at a confirmed timeout                                    | Transfer credit to player once                               |
+| Collected     | Ownership transferred by a committed pickup                                                       | Never restore to the former owner                            |
+| Lost/consumed | Destruction, nonabsorbing expiry, armed/exploded mine, or another explicit nonrecoverable outcome | Do not restore                                               |
+| Reserved      | Pickup or recovery transaction is in progress                                                     | Resolve the existing transaction; do not start another claim |
 
 Conservation rule: every recoverable unit occupies exactly one inventory, world entry, credit entry, or pending transfer. It cannot simultaneously be restored inventory and collectible spew
 
@@ -155,7 +155,6 @@ This is a shared gameplay-state and protocol migration, not a local change to co
 ## Baseline survey validation
 
 The baseline table describes the source before implementation. The sections below record the resulting implementation and actual validation
-
 
 ## Implemented behavior
 

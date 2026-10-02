@@ -33,16 +33,16 @@ checkpoint correctness blocker; P2 means a confirmed compatibility gap or a
 validation gap. These priorities are implementation guidance, not a claim
 that runtime reproductions were performed.
 
-| ID | Priority | Finding | Reach established in this audit |
-| --- | --- | --- | --- |
-| A1 | P1 | Translated D1 checkpoints disable valid triggers | All 19 triggers in the four checked-in D1 checkpoint replays |
-| A2 | P1 | D1 secret entry, death, save/load, and return routing retain D2 rules | Stock secret exits in levels 10, 21, and 24; direct secret starts and translated checkpoints |
-| A3 | P2 | D1 AI behavior numbers invoke D2 behavior; door path permissions differ | HIDE/FOLLOW_PATH require custom fixtures; brain/run-from and melee initialization need focused stock cases |
-| A4 | P2 | Trigger conversion discards combined actions and damage/drain actions | Supported by native D1 code; absent from the inspected stock HOG |
-| A5 | P1 | Checkpoint translation discards runtime state used by weapons and morphing robots | Explicit skips in the translator; requires checkpoints captured during those states |
-| A6 | P2 | Translated replay startup bypasses metadata agreement checks | D1 checkpoint branch returns before the normal mission/level/difficulty comparison |
-| A7 | P2 | Save/replay/network identity does not establish matching effective D1 semantics | Mission name, engine version, and segment checksum do not identify imported gameplay tables |
-| A8 | Feature gap | Native D1 classic `.dem` playback is still unsupported in D2 | Explicit game-type rejection in the classic demo reader |
+| ID  | Priority    | Finding                                                                           | Reach established in this audit                                                                            |
+| --- | ----------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| A1  | P1          | Translated D1 checkpoints disable valid triggers                                  | All 19 triggers in the four checked-in D1 checkpoint replays                                               |
+| A2  | P1          | D1 secret entry, death, save/load, and return routing retain D2 rules             | Stock secret exits in levels 10, 21, and 24; direct secret starts and translated checkpoints               |
+| A3  | P2          | D1 AI behavior numbers invoke D2 behavior; door path permissions differ           | HIDE/FOLLOW_PATH require custom fixtures; brain/run-from and melee initialization need focused stock cases |
+| A4  | P2          | Trigger conversion discards combined actions and damage/drain actions             | Supported by native D1 code; absent from the inspected stock HOG                                           |
+| A5  | P1          | Checkpoint translation discards runtime state used by weapons and morphing robots | Explicit skips in the translator; requires checkpoints captured during those states                        |
+| A6  | P2          | Translated replay startup bypasses metadata agreement checks                      | D1 checkpoint branch returns before the normal mission/level/difficulty comparison                         |
+| A7  | P2          | Save/replay/network identity does not establish matching effective D1 semantics   | Mission name, engine version, and segment checksum do not identify imported gameplay tables                |
+| A8  | Feature gap | Native D1 classic `.dem` playback is still unsupported in D2                      | Explicit game-type rejection in the classic demo reader                                                    |
 
 Keep the requested Spreadfire and weapon work as the first gameplay slice.
 A1 and A5 must also be addressed before checkpoint replays can serve as
@@ -65,12 +65,12 @@ object/trigger layouts. Object records were decoded by movement, control,
 and render type; each object section ended exactly at its wall-section
 offset. Trigger counts, link counts, and file bounds were checked.
 
-| Stock trigger flags | Meaning | Count |
-| --- | --- | ---: |
-| `0x001` | Door control | 39 |
-| `0x008` | Normal exit | 30 |
-| `0x040` | Matcen | 102 |
-| `0x100` | Secret exit | 3 |
+| Stock trigger flags | Meaning      | Count |
+| ------------------- | ------------ | ----: |
+| `0x001`             | Door control |    39 |
+| `0x008`             | Normal exit  |    30 |
+| `0x040`             | Matcen       |   102 |
+| `0x100`             | Secret exit  |     3 |
 
 All 174 stock triggers lack `TRIGGER_ON` (`0x010`). None have one-shot,
 shield-damage, energy-drain, or combined action flags. The secret triggers
@@ -87,12 +87,12 @@ Their checkpoint payloads were base64-decoded, zlib-decompressed, and
 verified against each recorded size and SHA-256. The saved world records
 contain:
 
-| Fixture under `android/regression_demos/` | Triggers | Flags present | Would receive `TF_DISABLED` |
-| --- | ---: | --- | ---: |
-| `d1_descent_level5_20260616_202713.dximdemo` | 4 | 3 matcen, 1 exit | 4 |
-| `d1_descent_level15_20260617_154210.dximdemo` | 2 | 1 matcen, 1 exit | 2 |
-| `d1_descent_level16_20260618_201843.dximdemo` | 6 | 1 door, 4 matcen, 1 exit | 6 |
-| `d1_descent_level18_20260618_202117.dximdemo` | 7 | 6 matcen, 1 exit | 7 |
+| Fixture under `android/regression_demos/`     | Triggers | Flags present            | Would receive `TF_DISABLED` |
+| --------------------------------------------- | -------: | ------------------------ | --------------------------: |
+| `d1_descent_level5_20260616_202713.dximdemo`  |        4 | 3 matcen, 1 exit         |                           4 |
+| `d1_descent_level15_20260617_154210.dximdemo` |        2 | 1 matcen, 1 exit         |                           2 |
+| `d1_descent_level16_20260618_201843.dximdemo` |        6 | 1 door, 4 matcen, 1 exit |                           6 |
+| `d1_descent_level18_20260618_202117.dximdemo` |        7 | 6 matcen, 1 exit         |                           7 |
 
 This inspection used the native packed records: player 116 bytes, object
 264 bytes, wall 24 bytes, active door 16 bytes, and trigger 54 bytes.
@@ -131,14 +131,14 @@ been crossed. Use a small synthetic case for one-shot state; see A4.
 
 The current compatibility branches cover only part of a transition.
 
-| Path | Native D1 | Current D1-in-D2 difference |
-| --- | --- | --- |
-| Secret entrance | `PlayerFinishedLevel(1)`, hostage credit, end-level scoring, then the mapped secret level | `TT_SECRET_EXIT` takes the D2 teleporter path; D2 demo-data and multiplayer bans and destroyed-secret checks run first |
-| Entry accounting | Finishing the source level credits its carried hostages | `EnterSecretLevel` bypasses `PlayerFinishedLevel`; it shows score glitz only if the reactor is destroyed, then `StartNewLevel` clears carried hostages |
-| Death before secret reactor destruction | Lose a life and restart within the same secret level | D2 restores `SECRETB` or advances from `Entered_from_level` |
-| Death after secret reactor destruction | Advance using D1's level rules | D2 again follows its base-save return/advance path |
-| Manual save/load while in a secret level | Allowed by native D1 | D2's generic negative-level guards reject ordinary save and in-game restore |
-| Exit after a direct secret start or cold checkpoint restore | Derive next normal level from `Secret_level_table[-level-1] + 1` | D1 branch uses `Entered_from_level + 1`, a transient variable only assigned on teleporter entry |
+| Path                                                        | Native D1                                                                                 | Current D1-in-D2 difference                                                                                                                            |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Secret entrance                                             | `PlayerFinishedLevel(1)`, hostage credit, end-level scoring, then the mapped secret level | `TT_SECRET_EXIT` takes the D2 teleporter path; D2 demo-data and multiplayer bans and destroyed-secret checks run first                                 |
+| Entry accounting                                            | Finishing the source level credits its carried hostages                                   | `EnterSecretLevel` bypasses `PlayerFinishedLevel`; it shows score glitz only if the reactor is destroyed, then `StartNewLevel` clears carried hostages |
+| Death before secret reactor destruction                     | Lose a life and restart within the same secret level                                      | D2 restores `SECRETB` or advances from `Entered_from_level`                                                                                            |
+| Death after secret reactor destruction                      | Advance using D1's level rules                                                            | D2 again follows its base-save return/advance path                                                                                                     |
+| Manual save/load while in a secret level                    | Allowed by native D1                                                                      | D2's generic negative-level guards reject ordinary save and in-game restore                                                                            |
+| Exit after a direct secret start or cold checkpoint restore | Derive next normal level from `Secret_level_table[-level-1] + 1`                          | D1 branch uses `Entered_from_level + 1`, a transient variable only assigned on teleporter entry                                                        |
 
 Source anchors:
 
@@ -182,11 +182,11 @@ secret-level return/revisit test to protect D2 behavior.
 
 The same serialized values mean different things:
 
-| Value | D1 | D2 |
-| --- | --- | --- |
-| Behavior `0x82` | HIDE | BEHIND |
-| Behavior `0x84` | FOLLOW_PATH | SNIPE |
-| Local mode `5` | HIDE | BEHIND |
+| Value           | D1          | D2     |
+| --------------- | ----------- | ------ |
+| Behavior `0x82` | HIDE        | BEHIND |
+| Behavior `0x84` | FOLLOW_PATH | SNIPE  |
+| Local mode `5`  | HIDE        | BEHIND |
 
 Definitions are in `d1/main/aistruct.h:49` and `d2/main/aistruct.h:49`.
 The level reader (`d2/main/gamesave.c:409`) and checkpoint translator
@@ -255,13 +255,13 @@ These require custom fixtures; the stock HOG does not exercise them.
 `d2/main/d1_save_translate.c:1492` reads selected runtime state but skips
 other sections that native D1 saves and restores:
 
-| State | Current translation | Consequence to validate |
-| --- | --- | --- |
+| State                                              | Current translation                                                                                                                   | Consequence to validate                                                                        |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | Weapon creation frame and complete hit-object list | `skip_weapon_fidelity_state` at 1426; object reader at 549 sets creation frame to zero and retains only `last_hitobj` in the hit list | Persistent weapons can damage previously hit objects again; homing frame scheduling can differ |
-| Active morph slots | `skip_morph_state` at 1477; commit calls `init_morphs()` | `d2/main/morph.c:214` marks a morphing object for deletion when its morph data is missing |
-| Stuck-object registry | Skipped at 1551 | A saved flare's relationship to its door is not restored |
-| Active effect timing and dynamic state | Records read/skipped at 1565 onward without applying them | Animated or one-shot effect continuation is not faithful |
-| Generated secret-area runtime data | Skipped at 1578 onward | Repository-specific discovery state also needs a restoration decision |
+| Active morph slots                                 | `skip_morph_state` at 1477; commit calls `init_morphs()`                                                                              | `d2/main/morph.c:214` marks a morphing object for deletion when its morph data is missing      |
+| Stuck-object registry                              | Skipped at 1551                                                                                                                       | A saved flare's relationship to its door is not restored                                       |
+| Active effect timing and dynamic state             | Records read/skipped at 1565 onward without applying them                                                                             | Animated or one-shot effect continuation is not faithful                                       |
+| Generated secret-area runtime data                 | Skipped at 1578 onward                                                                                                                | Repository-specific discovery state also needs a restoration decision                          |
 
 Native reference: `d1/main/state.c:361` / `375` preserve the complete
 weapon fields, followed by morph and other runtime sections. The consumers

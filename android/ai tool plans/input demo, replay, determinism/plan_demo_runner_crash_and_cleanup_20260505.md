@@ -1,17 +1,20 @@
 # demo runner crash, headless cwd, and cleanup -- 2026-05-05
 
 Goal:
+
 - diagnose or instrument the Android on-device demo replay crash so the next failure shows whether it dies before checkpoint restore, during restore, or after entering the level
 - fix the headless replay helper so it does not leave the caller PowerShell session in the repo root
 - capture cleanup follow-ups for temporary replay/debug logging now that the forcefield/grate sync path is stabilizing
 
 Plan:
+
 - [x] inspect the Android replay-start and crash breadcrumb path, then either identify the crash site or add focused replay-start breadcrumbs
 - [x] inspect and fix the PowerShell cwd drift in `android/tests/run_input_demo_replay.ps1`
 - [x] run focused validation for the script fix and any touched Android/native files
 - [x] record cleanup tasks to move temporary replay diagnostics behind existing optional logging hooks or remove them
 
 Status:
+
 - No Android device or emulator was attached during this tranche, so the current tombstone could not be inspected directly
 - Added focused replay-start crash breadcrumbs in `d1/main/input_demo_start.c` and `d2/main/input_demo_start.c` to distinguish: command-line handoff, replay load success, new-level launch, checkpoint temp-file write, checkpoint restore complete, and replay armed
 - Android replay logs later proved the restore-time object mismatch: checkpoint restore hit a `CT_CNTRLCEN` object with `OBJ_GHOST` + `RT_NONE`, which is the hidden control-center placeholder shape, not a live reactor

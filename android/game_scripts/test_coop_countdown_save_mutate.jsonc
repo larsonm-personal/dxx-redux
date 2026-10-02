@@ -1,26 +1,23 @@
 [
     {
         "_info": {
-            "games": [
-                "d1",
-                "d2"
-            ],
+            "games": ["d1", "d2"],
             "_standalone": false,
-            "_owner": "test_lan"
-        }
+            "_owner": "test_lan",
+        },
     },
     {
         "action": "set_debug",
         "field": "coop_countdown_save_test",
-        "value": "mutate"
+        "value": "mutate",
     },
     {
         "action": "wait_ms",
-        "ms": 2000
+        "ms": 2000,
     },
     {
         "action": "set_debug",
         "field": "coop_countdown_save_test",
-        "value": "arm_pause"
-    }
+        "value": "arm_pause",
+    },
 ]

@@ -3,12 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#define CHECK(condition) do { \
-	if (!(condition)) { \
-		fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, #condition); \
-		return 0; \
-	} \
-} while (0)
+#define CHECK(condition)                                                    \
+	do {                                                                    \
+		if (!(condition)) {                                                 \
+			fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, #condition); \
+			return 0;                                                       \
+		}                                                                   \
+	} while (0)
 
 static int acknowledge_team(coop_transition_policy *p, coop_transition_phase phase, uint64_t now)
 {

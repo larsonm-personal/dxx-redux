@@ -10,10 +10,9 @@ duplicate-weapon energy bonus when every connected player owns that weapon.
 - [x] Trace duplicate weapon pickup handling and cooperative player ownership in
       both D1 and D2
 - [x] Implement the smallest matching D1 and D2 gameplay changes
-- [x] Evaluate focused regression coverage
-      - The behavior depends on synchronized two-peer engine state and has no
-        isolated unit seam; validation used both engine builds and the Android
-        native builds
+- [x] Evaluate focused regression coverage - The behavior depends on synchronized two-peer engine state and has no
+      isolated unit seam; validation used both engine builds and the Android
+      native builds
 - [x] Run scoped formatting, builds, and relevant tests
 - [x] Record completed work and verification results here
 

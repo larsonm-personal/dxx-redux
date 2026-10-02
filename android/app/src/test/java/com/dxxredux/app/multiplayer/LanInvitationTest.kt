@@ -18,13 +18,24 @@ class LanInvitationTest {
     @Test
     fun rejectsAmbiguousOrNonUnicastInvitations() {
         listOf(
-            "https://192.168.1.42", "descent://host.local", "descent://[::1]",
-            "descent://user@192.168.1.42", "descent://192.168.1.42:42424",
-            "descent://192.168.1.42?game=d1", "descent://192.168.1.42#join",
-            "descent://192.168.1.42/join", "descent://192.168.001.42",
-            "descent://127.0.0.1", "descent://0.0.0.0", "descent://224.0.0.1",
-            "descent://255.255.255.255", "descent://256.1.2.3", "descent://1.2.3",
-            "descent://192.168.1.42%2F", "descent://192.168.1.42\n", "descent://" + "1".repeat(4096),
+            "https://192.168.1.42",
+            "descent://host.local",
+            "descent://[::1]",
+            "descent://user@192.168.1.42",
+            "descent://192.168.1.42:42424",
+            "descent://192.168.1.42?game=d1",
+            "descent://192.168.1.42#join",
+            "descent://192.168.1.42/join",
+            "descent://192.168.001.42",
+            "descent://127.0.0.1",
+            "descent://0.0.0.0",
+            "descent://224.0.0.1",
+            "descent://255.255.255.255",
+            "descent://256.1.2.3",
+            "descent://1.2.3",
+            "descent://192.168.1.42%2F",
+            "descent://192.168.1.42\n",
+            "descent://" + "1".repeat(4096),
         ).forEach { assertNull(it, LanInvitation.parse(it)) }
         assertNull(LanInvitation.parse("descent://192.168.1.255", setOf("192.168.1.255")))
     }

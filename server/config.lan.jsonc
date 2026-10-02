@@ -26,5 +26,5 @@
     "skip_gpgs_verify": true,
 
     // Low proof-of-work difficulty for fast LAN testing
-    "pow_difficulty": 8
+    "pow_difficulty": 8,
 }

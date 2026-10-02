@@ -72,23 +72,23 @@
 ## Implementation result
 
 - [x] Authoritative path consumption now stops after a pass-through navigation
-  transition, preserves the consumed prefix, updates the simulated location,
-  and replans from the new wall state.
+      transition, preserves the consumed prefix, updates the simulated location,
+      and replans from the new wall state.
 - [x] End-of-level planning tries the transition-aware model first. If no strict
-  completion exists, it may retain a completing legacy plan so this new model
-  cannot downgrade established `ok` coverage. Transparent-shot validation does
-  not use that fallback, so it cannot replace a valid transition-aware route.
+      completion exists, it may retain a completing legacy plan so this new model
+      cannot downgrade established `ok` coverage. Transparent-shot validation does
+      not use that fallback, so it cannot replace a valid transition-aware route.
 - [x] Unreachable switch locators now use `unresolved_trigger` rather than the
-  actionable `shoot_switch` activation kind.
+      actionable `shoot_switch` activation kind.
 - [x] A synthetic close-trigger test proves that the planner stops before an
-  invalid suffix, routes to the reopening switch, and then reaches the exit.
+      invalid suffix, routes to the reopening switch, and then reaches the exit.
 - [x] The paired Castaway integration check requires level 1 trigger 2 before
-  reactor and exit, and retains level 2's exact completion sequence and key
-  masks.
+      reactor and exit, and retains level 2's exact completion sequence and key
+      masks.
 - [x] Final D1 and D2 builds, both route snapshot binaries, scoped code quality,
-  and the paired Castaway test pass.
+      and the paired Castaway test pass.
 - [x] The final full corpus completed 133 sources: 132 passed, one archive with
-  no mission descriptor was skipped, and zero failed. Against the pre-fix corpus,
-  Castaway level 1, `-MOON-` moon12, and Entropy v1 level 2 improve from partial
-  to `ok`; no previously `ok` route is downgraded. The temporary D2Crossfire,
-  gigalo, and levigen regressions are all restored to `ok`.
+      no mission descriptor was skipped, and zero failed. Against the pre-fix corpus,
+      Castaway level 1, `-MOON-` moon12, and Entropy v1 level 2 improve from partial
+      to `ok`; no previously `ok` route is downgraded. The temporary D2Crossfire,
+      gigalo, and levigen regressions are all restored to `ok`.

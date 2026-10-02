@@ -4,7 +4,7 @@
 param(
     [switch]$Install,
     [ValidateSet('d1', 'd2')][string]$Game,
-    [ValidateSet('stall', 'record_unreadable', 'publication_blocked', 'rebuild_failure', 'menu_abandoned', 'accept_publication_blocked', 'normal_exit', 'repair_interrupted')][string]$Fault,
+    [ValidateSet('stall', 'record_unreadable', 'publication_blocked', 'rebuild_failure', 'menu_abandoned', 'accept_publication_blocked', 'normal_exit', 'repair_interrupted', 'activity_replaced')][string]$Fault,
     [string]$Serial = 'emulator-5554'
 )
 

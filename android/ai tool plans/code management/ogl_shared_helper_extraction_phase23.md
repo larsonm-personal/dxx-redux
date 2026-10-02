@@ -29,22 +29,22 @@ Extract the duplicated cached-texmerge FBO render pass from D1 and D2
 ## Result
 
 - added shared helper:
-	- `android_merged_wall_cached_texmerge_render_to_texture(...)`
+  - `android_merged_wall_cached_texmerge_render_to_texture(...)`
 - added internal shared wrap helper used by the render path to preserve
-	source-texture wrapstate tracking inside shared code
+  source-texture wrapstate tracking inside shared code
 - replaced duplicated D1/D2 cached-texmerge FBO render-pass block with the
-	shared helper call
+  shared helper call
 - preserved:
-	- GL state save/restore behavior
-	- source texture wrap transitions (`CLAMP_TO_EDGE` then `REPEAT`)
-	- shader setup and draw ordering
-	- post-render filter/aniso finalization behavior
+  - GL state save/restore behavior
+  - source texture wrap transitions (`CLAMP_TO_EDGE` then `REPEAT`)
+  - shader setup and draw ordering
+  - post-render filter/aniso finalization behavior
 - validation passed:
-	- `run-code-quality.ps1 -Fix`
-	- Android `:app:assembleDebug :app:testDebugUnitTest`
-	- `run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
-	- `diff_vs_upstream.ps1 -Top 20`
+  - `run-code-quality.ps1 -Fix`
+  - Android `:app:assembleDebug :app:testDebugUnitTest`
+  - `run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
+  - `diff_vs_upstream.ps1 -Top 20`
 - latest churn lines:
-	- `d1/arch/ogl/ogl.c`: `+1933 -50 total 1983`
-	- `d2/arch/ogl/ogl.c`: `+1960 -49 total 2009`
-	- overall totals: `+17887 -801` across `199` files
+  - `d1/arch/ogl/ogl.c`: `+1933 -50 total 1983`
+  - `d2/arch/ogl/ogl.c`: `+1960 -49 total 2009`
+  - overall totals: `+17887 -801` across `199` files

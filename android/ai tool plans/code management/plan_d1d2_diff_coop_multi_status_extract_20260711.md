@@ -23,12 +23,12 @@ preserving desktop statistics behavior and Android packet bytes.
 - [x] Wire the source into both unconditional main source lists.
 - [x] Replace both duplicated declaration blocks and implementation blocks.
 - [x] Verify the moved implementation remains byte-equivalent and the Android
-  wire layout remains 8 bytes for peer status and 78 bytes for inventory restore.
+      wire layout remains 8 bytes for peer status and 78 bytes for inventory restore.
 - [x] Run scoped static checks.
 - [x] Run practical D1/D2 build validation after the concurrent OGL validation
-  releases the shared build trees.
+      releases the shared build trees.
 - [x] Record final upstream metrics, validation results, and any environment
-  limitations.
+      limitations.
 
 ## Expected payoff
 

@@ -1,29 +1,27 @@
 [
     {
         "_info": {
-            "games": [
-                "d2"
-            ],
+            "games": ["d2"],
             "_standalone": false,
-            "_owner": "test_lan"
-        }
+            "_owner": "test_lan",
+        },
     },
     {
         "action": "set_debug",
         "field": "coop_death_test",
-        "value": "move_away"
+        "value": "move_away",
     },
     {
         "action": "assert",
         "expect": {
             "coop_travel.active": false,
-            "player_dead": false
-        }
+            "player_dead": false,
+        },
     },
     {
         "action": "set_debug",
         "field": "coop_travel_test",
-        "value": "reactor_short"
+        "value": "reactor_short",
     },
     {
         "action": "wait_for",
@@ -31,18 +29,18 @@
         "expect": {
             "coop_travel.phase": 4,
             "coop_travel.prepared": true,
-            "time_paused": true
-        }
+            "time_paused": true,
+        },
     },
     {
         "action": "set_debug",
         "field": "coop_travel_test",
-        "value": "arrival_hold"
+        "value": "arrival_hold",
     },
     {
         "action": "set_debug",
         "field": "coop_travel_test",
-        "value": "delay_host_load"
+        "value": "delay_host_load",
     },
     {
         "action": "wait_for",
@@ -50,18 +48,18 @@
         "expect": {
             "coop_travel.arrivals_placed": true,
             "coop_travel.phase": 8,
-            "time_paused": true
-        }
+            "time_paused": true,
+        },
     },
     {
         "action": "set_debug",
         "field": "coop_travel_test",
-        "value": "arrival_verify"
+        "value": "arrival_verify",
     },
     {
         "action": "set_debug",
         "field": "coop_travel_test",
-        "value": "arrival_release"
+        "value": "arrival_release",
     },
     {
         "action": "wait_for",
@@ -71,22 +69,22 @@
             "coop_restore.transfer_busy": false,
             "time_paused": false,
             "in_game": true,
-            "player_dead": false
-        }
+            "player_dead": false,
+        },
     },
     {
         "action": "set_debug",
         "field": "coop_world_test",
-        "value": "travel_verify"
+        "value": "travel_verify",
     },
     {
         "action": "set_debug",
         "field": "coop_world_test",
-        "value": "destroyed_secret_verify"
+        "value": "destroyed_secret_verify",
     },
     {
         "action": "set_debug",
         "field": "clear_robots",
-        "value": "true"
-    }
+        "value": "true",
+    },
 ]

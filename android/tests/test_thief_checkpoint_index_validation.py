@@ -19,9 +19,7 @@ class ThiefCheckpointIndexValidationTest(unittest.TestCase):
     def test_checkpoint_restore_validates_before_publication(self) -> None:
         restore = SOURCE.index("if (have_checkpoint_thief_state)")
         validation = SOURCE.index("thief_stolen_item_index_is_valid", restore)
-        assignment = SOURCE.index(
-            "Stolen_item_index = checkpoint_thief_state.stolen_item_index", restore
-        )
+        assignment = SOURCE.index("Stolen_item_index = checkpoint_thief_state.stolen_item_index", restore)
 
         self.assertLess(validation, assignment)
 

@@ -10,7 +10,13 @@ import org.junit.Test
 class ControllerConfigSerializationTest {
     @Test
     fun independentShouldersAndAxesCompileToDistinctRuntimeInputs() {
-        val bindings = mapOf("L2" to "Fire Primary", "R2" to "Fire Secondary", "BRAKE" to "Fire Flare", "GAS" to "Drop Bomb")
+        val bindings =
+            mapOf(
+                "L2" to "Fire Primary",
+                "R2" to "Fire Secondary",
+                "BRAKE" to "Fire Flare",
+                "GAS" to "Drop Bomb",
+            )
         for (game in listOf("d1", "d2")) {
             val settings = buildJoySettingsArray(buildJoyPairs(bindings, emptySet(), game), game)
             val result = buildJoyPairs(mapOf("BRAKE" to "Throttle", "GAS" to "Slide L/R"), emptySet(), game)

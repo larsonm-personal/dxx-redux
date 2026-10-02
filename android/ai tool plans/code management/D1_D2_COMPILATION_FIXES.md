@@ -1,9 +1,11 @@
 # D1 D2 Compilation Fixes Summary
 
 ## Overview
+
 Fixed compilation warnings and errors in D1 and D2 `net_udp.c` files related to uninitialized Android logging code.
 
 ## Root Cause
+
 The Android multiplayer sync logging added several `logbuf` local variables that were only used inside `#ifdef __android__` conditional blocks. When building without Android platform, these variables were declared but never used, causing "unused variable" warnings.
 
 ## Fixes Applied
@@ -48,6 +50,7 @@ The Android multiplayer sync logging added several `logbuf` local variables that
    - Wrapped logbuf declaration in `#ifdef __android__`
 
 ## Pattern Applied
+
 All `logbuf` variables used only for Android logging now follow this pattern:
 
 ```c
@@ -59,18 +62,23 @@ char logbuf[256];
 Where the variable is declared in the conditional block where it's actually used.
 
 ## Variables Affected
+
 - `logbuf`: Used for snprintf() calls that format Android-specific diagnostic messages
 - `poll_count`: Static counter incremented outside ifdef but used inside ifdef (suppressed with `(void)poll_count;` in non-Android build)
 
 ## Result
+
 These changes ensure:
+
 1. No unused variable warnings when building without Android
 2. Conditional compilation properly protects variable declarations
 3. Full Android-specific diagnostic logging preserved when building with Android
 4. No duplicate declarations or malformed preprocessor blocks
 
 ## Testing
+
 Build the Android APK with:
+
 ```bash
 cd android
 ./gradlew.bat assembleRelease

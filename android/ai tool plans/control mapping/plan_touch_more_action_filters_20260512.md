@@ -1,9 +1,11 @@
 # Touch More Action Filters - 2026-05-12
 
 ## Goal
+
 Adjust the Android touch overlay More button so it excludes actions that should not be offered by the overflow menu for the current layout or game state.
 
 ## Plan
+
 1. [x] Create this plan file
 2. [x] Inspect current More action filtering and tests after intervening edits
 3. [x] Remove save, load, game menu, and pause from More candidates
@@ -12,6 +14,7 @@ Adjust the Android touch overlay More button so it excludes actions that should 
 6. [x] Update focused tests and run validation
 
 ## Notes
+
 - Keep this scoped to Android touch overlay Kotlin unless a missing native action is discovered.
 - Preserve unrelated current worktree edits.
 - Added `isMultiplayerGameProvider` to the overlay and wired it from `MainActivity` so multiplayer-only More actions are hidden in single player.

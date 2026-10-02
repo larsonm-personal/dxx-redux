@@ -21,5 +21,5 @@ gameplay divergence.
 - Do not change the recorded `.dximdemo` schema or captured state fields in
   this tranche
 - Validation outcome: frame-0 `game_time64` false mismatches are gone, and the
-   first real tracked-state mismatch now appears at frame 400 on `player0.score`
-   because host kills robot 68 one frame later than the Android recording
+  first real tracked-state mismatch now appears at frame 400 on `player0.score`
+  because host kills robot 68 one frame later than the Android recording

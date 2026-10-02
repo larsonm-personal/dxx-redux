@@ -40,11 +40,11 @@ the Brazilian anniversary-edition D1 assets, default rendering, hidden robot
 labels, accelerated playback and the same current host source except for the
 one explicitly identified experimental removal
 
-| Run | Homing acquisition | Result |
-| --- | --- | --- |
-| Fast, no rendering | Existing replay-only complete object scan | Fail |
-| Visual control | Existing replay-only complete object scan | Fail; state trace byte-identical to fast run |
-| Visual experiment | Temporarily remove the replay-only branch; use ordinary rendered-list acquisition | Pass |
+| Run                | Homing acquisition                                                                | Result                                       |
+| ------------------ | --------------------------------------------------------------------------------- | -------------------------------------------- |
+| Fast, no rendering | Existing replay-only complete object scan                                         | Fail                                         |
+| Visual control     | Existing replay-only complete object scan                                         | Fail; state trace byte-identical to fast run |
+| Visual experiment  | Temporarily remove the replay-only branch; use ordinary rendered-list acquisition | Pass                                         |
 
 The passing experiment matches every recorded `state` field on every frame,
 including fixed-point ship position and forward direction. Live-object,
@@ -56,16 +56,16 @@ one frame (1287), then converges without changing the live-object trajectory
 
 Timeline below uses zero-based frame indices and cumulative recorded frame time
 
-| Frame | Elapsed | Observation in failing native replay |
-| --- | --- | --- |
-| 2735 | 1:49.56 | Spreadfire selected; ship and live-object state still match |
-| 4212 | 2:48.68 | First live-object/weapon hash mismatch, in object slots 160-191 |
-| 4223 | 2:49.12 | New homing missile slot 71, signature 1622: recording targets robot 33, replay targets robot 155 |
-| 4227 | 2:49.28 | Traced missile direction and velocity differ |
-| 4275 | 2:51.20 | First simulation RNG call-site/order difference (`do_ai_frame` versus `create_awareness_event`) |
-| 4742 | 3:09.90 | First summary-state mismatch: homing ammo/powerup pickup |
-| 5000 | 3:20.23 | First ship-position mismatch; shields also differ |
-| 5306 | 3:32.48 | First ship-forward-direction mismatch |
+| Frame | Elapsed | Observation in failing native replay                                                             |
+| ----- | ------- | ------------------------------------------------------------------------------------------------ |
+| 2735  | 1:49.56 | Spreadfire selected; ship and live-object state still match                                      |
+| 4212  | 2:48.68 | First live-object/weapon hash mismatch, in object slots 160-191                                  |
+| 4223  | 2:49.12 | New homing missile slot 71, signature 1622: recording targets robot 33, replay targets robot 155 |
+| 4227  | 2:49.28 | Traced missile direction and velocity differ                                                     |
+| 4275  | 2:51.20 | First simulation RNG call-site/order difference (`do_ai_frame` versus `create_awareness_event`)  |
+| 4742  | 3:09.90 | First summary-state mismatch: homing ammo/powerup pickup                                         |
+| 5000  | 3:20.23 | First ship-position mismatch; shields also differ                                                |
+| 5306  | 3:32.48 | First ship-forward-direction mismatch                                                            |
 
 The relevant branch is `d1/main/laser.c::find_homing_object`, introduced in
 commit `acb39c5ff`. Recording uses the retained rendered-object list in reverse
@@ -91,17 +91,17 @@ source path/line labels; their first differing call site is the frame above
 The imported fast run used the same embedded checkpoint and byte-identical D1
 HOG/PIG data, with D2 assets available in the combined data directory
 
-| Frame | Elapsed | First observed difference |
-| --- | --- | --- |
-| 0 | 0:00.04 | Object/AI/link diagnostics already differ; imported checkpoint equivalence is not established |
-| 474 | 0:19.00 approximately | Traced laser position differs while ship position still matches |
-| 1414 | 0:56.7 approximately | A flare has expired in imported playback while native still has it |
-| 1519 | 1:00.89 | Player object/physics hash first differs, before the position summary changes |
-| 1521 | 1:00.97 | Ship X differs by one fixed-point unit: -32113597 versus -32113598 |
-| 2097 | 1:24.03 | Vulcan ammo is 271 versus 369 |
-| 3496 | 2:20.03 | Shields are 17 versus 18 |
-| 3653 | 2:26.31 | Ship is in segment 582 natively, still in 615 when imported |
-| 3654 | 2:26.35 | First forward-direction mismatch, while moving into segment 582 |
+| Frame | Elapsed               | First observed difference                                                                     |
+| ----- | --------------------- | --------------------------------------------------------------------------------------------- |
+| 0     | 0:00.04               | Object/AI/link diagnostics already differ; imported checkpoint equivalence is not established |
+| 474   | 0:19.00 approximately | Traced laser position differs while ship position still matches                               |
+| 1414  | 0:56.7 approximately  | A flare has expired in imported playback while native still has it                            |
+| 1519  | 1:00.89               | Player object/physics hash first differs, before the position summary changes                 |
+| 1521  | 1:00.97               | Ship X differs by one fixed-point unit: -32113597 versus -32113598                            |
+| 2097  | 1:24.03               | Vulcan ammo is 271 versus 369                                                                 |
+| 3496  | 2:20.03               | Shields are 17 versus 18                                                                      |
+| 3653  | 2:26.31               | Ship is in segment 582 natively, still in 615 when imported                                   |
+| 3654  | 2:26.35               | First forward-direction mismatch, while moving into segment 582                               |
 
 Thus the imported angle mismatch follows an earlier positional drift, and
 occurs before the native homing divergence. Segment-dependent auto-leveling is
@@ -158,7 +158,6 @@ Runner arguments common to native runs:
 Use `-Runner fast` for the native no-render control. For imported playback,
 replace `-Game d1` with `-D1InD2` and use a separate state-log path
 
-
 ## Compatibility repairs on 2026-09-21
 
 The follow-up isolates four ordinary gameplay differences and corrects them in
@@ -206,7 +205,6 @@ The follow-up isolates four ordinary gameplay differences and corrects them in
 - No recording, expected result, RNG seed or replay correction was changed. All
   temporary engine probes were removed. Small targeted evidence is retained in
   `temp/level14-physics-probe/` and the sandbox `late-ai.txt` files
-
 
 Final checks:
 

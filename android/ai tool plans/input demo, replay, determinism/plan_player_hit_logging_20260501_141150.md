@@ -24,17 +24,17 @@ The remaining hidden split is more likely on the weapon-hit side than in pure pl
 
 - Completed steps 1 through 4
 - The active player-hit logging path had three relevant demo-specific gates:
-	- `d2/main/physics.c` player drag and motion-detail probes were pinned to frames `545..552`
-	- `d2/main/controls.c` control and wiggle probes were pinned to frames `18..24`
-	- `d2/main/laser.c` robot-weapon creation logging still had a hardcoded replay-only frame/parent gate
+  - `d2/main/physics.c` player drag and motion-detail probes were pinned to frames `545..552`
+  - `d2/main/controls.c` control and wiggle probes were pinned to frames `18..24`
+  - `d2/main/laser.c` robot-weapon creation logging still had a hardcoded replay-only frame/parent gate
 - `d2/main/physics.c` now uses an event-driven threat window instead of frame numbers:
-	- it activates when the local player shares a segment with a live robot-owned weapon
-	- it stays active for the immediate trailing frame so the next-step consequence of the hit is still logged
+  - it activates when the local player shares a segment with a live robot-owned weapon
+  - it stays active for the immediate trailing frame so the next-step consequence of the hit is still logged
 - `d2/main/controls.c` now uses the same threat-window idea for control and wiggle logging, so the next recording captures pre-hit control construction without retuning frame constants
 - `d2/main/collide.c` player-hit logging is now symmetric for recorder and replay:
-	- player damage log now works in both modes
-	- player weapon hit log now works in both modes and includes weapon life, flags, creation time, position, velocity, player position, player velocity, and hit point
-	- bump probe now reports `mode=record|replay` instead of being replay-labeled only
+  - player damage log now works in both modes
+  - player weapon hit log now works in both modes and includes weapon life, flags, creation time, position, velocity, player position, player velocity, and hit point
+  - bump probe now reports `mode=record|replay` instead of being replay-labeled only
 - `d2/main/laser.c` weapon creation logging no longer depends on the old hardcoded replay frame window for robot-owned weapons
 - D2 host build succeeded after the changes
 

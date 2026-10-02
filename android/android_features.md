@@ -142,8 +142,8 @@
 # Technical improvements
 
 - Android build scripts and dependency fetching. These are slop, I didn’t care about style/taste, but they work
-- An introspection and game driving interface. This supports regression tests that open the game up, start a level, open the minimap, etc. and check that the introspection API shows the right things
-- Direct gog installer support (for the gog offline PC installer files), using libarchive, innoextract, etc., which gets game assets out of the installer plus redbook audio for d2
+- An introspection and game driving interface. This supports regression tests that open the game up, start a level, open the automap, etc. and check that the introspection API shows the right things
+- Direct gog installer support (for the gog offline PC/mac installer files), using libarchive, innoextract, etc., which gets game assets out of the installer plus redbook audio for d2
 - Support for installing from a bin+cue CD image, getting game assets from the data track and using the redbook audio tracks for music. Mac CD images are supported as well
 - Regression tests that install from one of the installable discs or gog files, open the game, start a level, and ensure the game runs in the first level
 - Integrated MIDI library

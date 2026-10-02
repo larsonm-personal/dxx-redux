@@ -21,7 +21,11 @@ class MultiplayerControllerFocusPolicyTest {
 
     @Test
     fun connectingBrowserStartsOnCancel() {
-        for (status in listOf(ConnectionStatus.CONNECTING, ConnectionStatus.AUTHENTICATING, ConnectionStatus.RECONNECTING)) {
+        for (status in listOf(
+            ConnectionStatus.CONNECTING,
+            ConnectionStatus.AUTHENTICATING,
+            ConnectionStatus.RECONNECTING,
+        )) {
             assertEquals(
                 MultiplayerBrowserInitialFocusTarget.CANCEL_CONNECT,
                 multiplayerBrowserInitialFocusTarget(status),
@@ -58,5 +62,4 @@ class MultiplayerControllerFocusPolicyTest {
         assertTrue(controllerBackShouldExitTextEntry(textEntryActive = true))
         assertFalse(controllerBackShouldExitTextEntry(textEntryActive = false))
     }
-
 }

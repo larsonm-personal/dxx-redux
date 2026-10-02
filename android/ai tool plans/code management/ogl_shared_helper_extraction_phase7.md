@@ -39,10 +39,10 @@ Out of scope:
 - Keep only the wrappers that are still needed by other logging paths after the diag emitter moves
 - Pass dynamic render inputs explicitly instead of widening shared dependencies unless the dependency is already present in the shared include surface
 - Validation passed:
-	1. `./android/run-code-quality.ps1 -Fix`
-	2. `./android/gradlew.bat :app:assembleDebug :app:testDebugUnitTest`
-	3. `./run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
-	4. `./android/diff_vs_upstream.ps1 -Top 20`
+  1.  `./android/run-code-quality.ps1 -Fix`
+  2.  `./android/gradlew.bat :app:assembleDebug :app:testDebugUnitTest`
+  3.  `./run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
+  4.  `./android/diff_vs_upstream.ps1 -Top 20`
 - The `ogl_get_metl154_source_filter_sample` and `ogl_get_metl154_filter_state` warnings introduced during the first phase-7 pass were removed and are now gone from the Android build output
 - The current Android build reports no warnings for `merged_wall_debug.c`
 - Remaining warnings are outside this tranche, including the long-standing `loadgl.h` macro redefinition noise and the existing `ogl_get_free_texture` return-path warning

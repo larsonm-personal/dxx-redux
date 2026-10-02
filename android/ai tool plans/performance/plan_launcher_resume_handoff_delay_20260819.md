@@ -9,12 +9,12 @@ Date: 2026-08-20
 Status: implementation complete, device verification requested
 
 - [x] Stop awaiting the canceled coordinator after the 100 ms explicit-launch
-  worker grace and process termination
+      worker grace and process termination
 - [x] End launcher preparation feedback before requesting the game activity
 - [x] Limit the modal popup to the 100 ms metadata-handoff phase rather than
-  holding it open throughout filesystem preflight
+      holding it open throughout filesystem preflight
 - [x] Put launcher dialogs and the setup screen under one shared dark launcher
-  Material theme
+      Material theme
 - [x] Extend focused timing diagnostics and monitor coverage
 - [x] Run scoped quality, unit tests, and the Android debug build
 

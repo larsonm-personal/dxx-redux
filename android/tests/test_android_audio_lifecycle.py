@@ -7,33 +7,19 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SOURCE = (REPO_ROOT / "android/app/src/main/cpp/SDL_androidaudio.c").read_text(encoding="utf-8")
 CMAKE = (REPO_ROOT / "android/app/src/main/cpp/CMakeLists.txt").read_text(encoding="utf-8")
 MUSIC = (REPO_ROOT / "android/app/src/main/cpp/shared/digi_tsf_music.c").read_text(encoding="utf-8")
-MUSIC_CONTROL = (REPO_ROOT / "android/app/src/main/cpp/shared/android_music_control.c").read_text(
+MUSIC_CONTROL = (REPO_ROOT / "android/app/src/main/cpp/shared/android_music_control.c").read_text(encoding="utf-8")
+MAIN_ACTIVITY = (REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/MainActivity.kt").read_text(encoding="utf-8")
+MUSIC_PANEL = (REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt").read_text(
     encoding="utf-8"
 )
-MAIN_ACTIVITY = (
-    REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/MainActivity.kt"
-).read_text(encoding="utf-8")
-MUSIC_PANEL = (
-    REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt"
-).read_text(encoding="utf-8")
-SETUP_ACTIVITY = (
-    REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt"
-).read_text(encoding="utf-8")
-SETUP_CONFIG = (
-    REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/SetupConfigFiles.kt"
-).read_text(encoding="utf-8")
-MOD_MANAGER = (
-    REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/ModManager.kt"
-).read_text(encoding="utf-8")
-SETUP_SECTIONS = (
-    REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/SetupSections.kt"
-).read_text(encoding="utf-8")
-STATE_SHARED = (
-    REPO_ROOT / "android/app/src/main/cpp/shared/state_android_shared.c"
-).read_text(encoding="utf-8")
-SAVE_META = (REPO_ROOT / "android/app/src/main/cpp/shared/android_save_meta.h").read_text(
+SETUP_ACTIVITY = (REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt").read_text(encoding="utf-8")
+SETUP_CONFIG = (REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/SetupConfigFiles.kt").read_text(
     encoding="utf-8"
 )
+MOD_MANAGER = (REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/ModManager.kt").read_text(encoding="utf-8")
+SETUP_SECTIONS = (REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/SetupSections.kt").read_text(encoding="utf-8")
+STATE_SHARED = (REPO_ROOT / "android/app/src/main/cpp/shared/state_android_shared.c").read_text(encoding="utf-8")
+SAVE_META = (REPO_ROOT / "android/app/src/main/cpp/shared/android_save_meta.h").read_text(encoding="utf-8")
 
 
 def function_body(source: str, name: str) -> str:
@@ -161,7 +147,9 @@ class AndroidAudioLifecycleTest(unittest.TestCase):
 
         callback_start = MUSIC.index("static void tsf_music_callback(void *udata, Uint8 *stream, int len)")
         callback = MUSIC[callback_start : MUSIC.index("#else /* !ANDROID", callback_start)]
-        self.assertLess(callback.index("pcm_ring_read(&g_rb, out, needed)"), callback.index("pcm_ring_available(&g_rb) == 0"))
+        self.assertLess(
+            callback.index("pcm_ring_read(&g_rb, out, needed)"), callback.index("pcm_ring_available(&g_rb) == 0")
+        )
 
     def test_music_completion_is_polled_on_paired_event_threads(self) -> None:
         self.assertIn("void mix_poll_music(void)", MUSIC)
@@ -184,9 +172,7 @@ class AndroidAudioLifecycleTest(unittest.TestCase):
             "nativeGetMusicOverlayState",
             "nativeGetTrackList",
         ):
-            body = function_body(
-                MUSIC_CONTROL, f"Java_com_dxxredux_app_MainActivity_{query}"
-            )
+            body = function_body(MUSIC_CONTROL, f"Java_com_dxxredux_app_MainActivity_{query}")
             self.assertIn("pthread_mutex_lock(&g_music_snapshot_mutex)", body)
             self.assertNotIn("songs_get_", body)
             self.assertNotIn("RBAGet", body)

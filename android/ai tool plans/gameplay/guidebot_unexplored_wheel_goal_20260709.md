@@ -1,22 +1,25 @@
 # Guidebot unexplored wheel goal
 
 ## Goal
+
 Expose the existing largest-contiguous-unexplored-area route goal in the
 guidebot command wheel and ensure selecting it uses the same intermediate route
 planning as the end-of-level goal.
 
 ## Plan
+
 - [x] Trace the unexplored goal enum, route refresh, command dispatch, and wheel
-  item construction.
+      item construction.
 - [x] Add the missing wheel option at the narrowest UI/command ownership point.
 - [x] Verify unavailable, selected, multiplayer-owner, and route-refresh behavior
-  still follow existing guidebot goal conventions.
+      still follow existing guidebot goal conventions.
 - [x] Add or extend focused integration coverage for wheel visibility and goal
-  selection.
+      selection.
 - [x] Run scoped quality checks, D2 native tests/build, and the focused Android
-  automation test.
+      automation test.
 
 ## Findings
+
 - The native feature was already complete. `META_GUIDE_FIND_UNEXPLORED` dispatches
   to `escort_find_unexplored_goal`, which selects the largest contiguous
   unexplored component and asks the shared metadata route planner for the route.
@@ -34,6 +37,7 @@ planning as the end-of-level goal.
   unexplored target mode; no native or network changes were needed.
 
 ## Changes
+
 - Bumped the touch layout schema to version 9 and rerun an idempotent Guide wheel
   repair for existing installations.
 - Blank Guide wheel centers now receive the stock `Unexplored` action. Guide
@@ -45,6 +49,7 @@ planning as the end-of-level goal.
   custom-center layouts.
 
 ## Validation
+
 - Focused `GuidebotLockedWheelTest` and `GyroToggleConfigTest`: passed.
 - Full `:app:testDebugUnitTest`: passed.
 - `:app:assembleDebug`: passed.

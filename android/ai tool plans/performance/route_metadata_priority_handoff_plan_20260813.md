@@ -134,11 +134,11 @@ once for the executor's lifetime.
 
 Suggested initial limits, to be tuned from profiling on a mid-range device:
 
-| Tier | Use | Android thread priority | Maximum analyzer CPU duty |
-| --- | --- | --- | --- |
-| Active | Current level until `next_ready` | background | 10 percent of one core |
-| Next | Current completion and immediate next level | lower background | 5 percent of one core |
-| Fill | All farther and wraparound levels | lowest | 1 percent of one core |
+| Tier   | Use                                         | Android thread priority | Maximum analyzer CPU duty |
+| ------ | ------------------------------------------- | ----------------------- | ------------------------- |
+| Active | Current level until `next_ready`            | background              | 10 percent of one core    |
+| Next   | Current completion and immediate next level | lower background        | 5 percent of one core     |
+| Fill   | All farther and wraparound levels           | lowest                  | 1 percent of one core     |
 
 Enforce duty cycle cooperatively using thread CPU time against monotonic elapsed
 time. OS thread priority alone is not a sufficient graphics-impact bound. Pause
@@ -230,7 +230,7 @@ retry count, and failure kind.
 - [x] Add priority, milestone, outcome, failure-kind, and progress-token value types.
 - [x] Replace the completed-only launcher state with the locked atomic ledger.
 - [x] Add unit tests for forward ordering, wraparound, focus replacement, secret
-  candidates, progress-sensitive retries, restart recovery, and generation reset.
+      candidates, progress-sensitive retries, restart recovery, and generation reset.
 
 ### Phase 2: Bounded worker execution
 
@@ -239,36 +239,36 @@ retry count, and failure kind.
 - [x] Make normal budget exhaustion return partial progress.
 - [x] Add graceful cancellation before watchdog/owner forced termination.
 - [x] Test single-flight ownership, higher-priority preemption, checkpoint flush, and
-  lower-priority non-preemption.
+      lower-priority non-preemption.
 
 ### Phase 3: Immediate import scheduling and handoff
 
 - [x] Wire explicit successful-import notifications for every import path.
 - [x] Wake and focus the launcher coordinator on the first incomplete imported level.
 - [x] Start the game coordinator from the active-level request and verify that it
-  resumes launcher-generated visibility chunks rather than starting from zero.
+      resumes launcher-generated visibility chunks rather than starting from zero.
 - [x] Add an integration test that imports content, begins a partial level-1 pass,
-  launches the game, and observes monotonic progress to `next_ready`.
+      launches the game, and observes monotonic progress to `next_ready`.
 
 ### Phase 4: In-game forward queue
 
 - [x] Extend the D1 and D2 Android hooks with authoritative mission order and next
-  candidates.
+      candidates.
 - [x] Replace `computeActiveLevel` with the focus-aware in-game scheduling loop.
 - [x] Reprioritize on level changes and current-level jumps.
 - [x] Add tests for starting at level 5, advancing normally, entering/returning from
-  a secret level, and reaching end-of-mission fill order.
+      a secret level, and reaching end-of-mission fill order.
 
 ### Phase 5: Guidebot boundary and device validation
 
 - [x] Gate help on next-waypoint availability rather than full completion.
 - [x] Ensure partial-cache adoption occurs only at guidebot planning boundaries.
 - [x] Add introspection fields and high-level automation covering `still calculating`,
-  first-waypoint readiness, and later cache improvement.
+      first-waypoint readiness, and later cache improvement.
 - [x] Profile and validate Active, Next, and Fill tiers, including a very
-  large level such as Uneasy 4. Tune the centralized duty-cycle constants until
-  graphics impact is negligible, then run scoped code quality, Android tests,
-  and the relevant D1/D2 build and regression checks.
+      large level such as Uneasy 4. Tune the centralized duty-cycle constants until
+      graphics impact is negligible, then run scoped code quality, Android tests,
+      and the relevant D1/D2 build and regression checks.
 
 ## Implementation results
 

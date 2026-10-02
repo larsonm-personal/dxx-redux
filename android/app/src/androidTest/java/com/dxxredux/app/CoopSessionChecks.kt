@@ -11,27 +11,44 @@ import com.dxxredux.app.multiplayer.NetworkConstants
 import org.json.JSONObject
 
 /** Exercise the real lobby service across migration and host-to-client role changes */
-internal class CoopSessionChecks(private val instrumentation: Instrumentation) {
+internal class CoopSessionChecks(
+    private val instrumentation: Instrumentation,
+) {
     private fun field(name: String) = LobbyService::class.java.getDeclaredField(name).apply { isAccessible = true }
 
     private fun packet(json: JSONObject) {
-        LobbyService::class.java.getDeclaredMethod("handlePacket", JSONObject::class.java, String::class.java)
-            .apply { isAccessible = true }.invoke(LobbyService, json, "192.0.2.1")
+        LobbyService::class.java
+            .getDeclaredMethod("handlePacket", JSONObject::class.java, String::class.java)
+            .apply { isAccessible = true }
+            .invoke(LobbyService, json, "192.0.2.1")
     }
 
     fun run() {
         LobbyService.stopDiscovery()
         try {
             LobbyService.startDiscovery(instrumentation.targetContext, "FormerHost")
-            val requirement = MissionRequirement(
-                revision = "migration-test", game = "d2", missionKey = "d2", displayName = "Counterstrike",
-                kind = MissionRequirement.KIND_BUILTIN,
-            )
-            val game = GameLaunchInfo(
-                game = "d2", mission = "d2", mode = "coop", difficulty = 3, levelNum = 2,
-                maxPlayers = 4, yourSlot = 1, isHost = true, peers = emptyList(), isLan = true,
-                missionRequirement = requirement,
-            )
+            val requirement =
+                MissionRequirement(
+                    revision = "migration-test",
+                    game = "d2",
+                    missionKey = "d2",
+                    displayName = "Counterstrike",
+                    kind = MissionRequirement.KIND_BUILTIN,
+                )
+            val game =
+                GameLaunchInfo(
+                    game = "d2",
+                    mission = "d2",
+                    mode = "coop",
+                    difficulty = 3,
+                    levelNum = 2,
+                    maxPlayers = 4,
+                    yourSlot = 1,
+                    isHost = true,
+                    peers = emptyList(),
+                    isLan = true,
+                    missionRequirement = requirement,
+                )
             LobbyService.hostLobby("FormerHost", "d2", "d2", "coop", 4)
             LobbyService.startGame(3, 2)
             check(LobbyService.lanLaunchEvent.value == null) { "One-player new game unexpectedly launched" }
@@ -54,9 +71,18 @@ internal class CoopSessionChecks(private val instrumentation: Instrumentation) {
             check(LobbyService.joinedLobby.value == null && field("joinedLobbyRefreshJob").get(null) == null)
             LobbyService.joinDiscoveredLobby(
                 LanLobbyAnnounce(
-                    lobbyId = "running", callsign = "NewHost", game = "d2", mission = "d2", mode = "coop",
-                    playerCount = 1, maxPlayers = 4, hostAddress = "192.0.2.1", status = "in_game",
-                    difficulty = 3, levelNum = 2, hostPort = NetworkConstants.HOST_PROXY_PORT,
+                    lobbyId = "running",
+                    callsign = "NewHost",
+                    game = "d2",
+                    mission = "d2",
+                    mode = "coop",
+                    playerCount = 1,
+                    maxPlayers = 4,
+                    hostAddress = "192.0.2.1",
+                    status = "in_game",
+                    difficulty = 3,
+                    levelNum = 2,
+                    hostPort = NetworkConstants.HOST_PROXY_PORT,
                 ),
                 "FormerHost",
             )

@@ -1,9 +1,11 @@
 # Coop start metadata
 
 ## Goal
+
 Add a single per-level-set `coop_starts` metadata stat for single-player mission sets, aggregating the range of coop/player start counts seen across the set.
 
 ## Plan
+
 - [x] Inspect native level metadata row/header generation and UI parsing.
 - [x] Identify the engine data that represents player/coop starts after level load.
 - [x] Add per-level counting and per-set range formatting.
@@ -12,6 +14,7 @@ Add a single per-level-set `coop_starts` metadata stat for single-player mission
 - [x] Run scoped code quality checks.
 
 ## Notes
+
 - Native metadata counts the first normal player start plus every `OBJ_COOP` start in each successfully loaded level.
 - The root metadata result now formats the set-level range as `coop_starts` for blank or `normal` mission types.
 - Launcher parsing, dialog header display, and automation JSON output now preserve the root `coop_starts` value.

@@ -52,15 +52,35 @@ class ConfigImportExportPreferenceTest {
                 ConfigImportExport.EXPORTED_PREFERENCES.associate { pref ->
                     pref.key to
                         when (pref.type) {
-                            ConfigImportExport.ExportedPreferenceType.BOOLEAN -> booleanValue
-                            ConfigImportExport.ExportedPreferenceType.INTEGER -> if (booleanValue) 1 else 0
-                            ConfigImportExport.ExportedPreferenceType.STRING ->
+                            ConfigImportExport.ExportedPreferenceType.BOOLEAN -> {
+                                booleanValue
+                            }
+
+                            ConfigImportExport.ExportedPreferenceType.INTEGER -> {
+                                if (booleanValue) 1 else 0
+                            }
+
+                            ConfigImportExport.ExportedPreferenceType.STRING -> {
                                 when (pref.key) {
-                                    SoundfontStore.PREF_RENDERER -> "ymfm"
-                                    SoundfontStore.PREF_SOUNDFONT -> "a".repeat(64)
-                                    SoundfontStore.PREF_EQ -> MusicEq.encodeProfiles(mapOf(MusicEq.BUNDLED to MusicEq.BROAD))
-                                    else -> "value-${pref.key}"
+                                    SoundfontStore.PREF_RENDERER -> {
+                                        "ymfm"
+                                    }
+
+                                    SoundfontStore.PREF_SOUNDFONT -> {
+                                        "a".repeat(64)
+                                    }
+
+                                    SoundfontStore.PREF_EQ -> {
+                                        MusicEq.encodeProfiles(
+                                            mapOf(MusicEq.BUNDLED to MusicEq.BROAD),
+                                        )
+                                    }
+
+                                    else -> {
+                                        "value-${pref.key}"
+                                    }
                                 }
+                            }
                         }
                 }
 
@@ -71,7 +91,10 @@ class ConfigImportExportPreferenceTest {
             assertEquals(source, decoded.values.mapKeys { it.key.key })
             for (pref in ConfigImportExport.EXPORTED_PREFERENCES) {
                 when (pref.type) {
-                    ConfigImportExport.ExportedPreferenceType.INTEGER -> assertTrue(json.get(pref.key) is Int)
+                    ConfigImportExport.ExportedPreferenceType.INTEGER -> {
+                        assertTrue(json.get(pref.key) is Int)
+                    }
+
                     ConfigImportExport.ExportedPreferenceType.BOOLEAN -> {
                         assertTrue(json.get(pref.key) is Boolean)
                     }
@@ -109,7 +132,10 @@ class ConfigImportExportPreferenceTest {
         for (pref in ConfigImportExport.EXPORTED_PREFERENCES) {
             val wrongValues =
                 when (pref.type) {
-                    ConfigImportExport.ExportedPreferenceType.INTEGER -> listOf("0", true, 0.5, -1, 2, JSONObject(), JSONArray(), JSONObject.NULL)
+                    ConfigImportExport.ExportedPreferenceType.INTEGER -> {
+                        listOf("0", true, 0.5, -1, 2, JSONObject(), JSONArray(), JSONObject.NULL)
+                    }
+
                     ConfigImportExport.ExportedPreferenceType.BOOLEAN -> {
                         listOf("true", 1, JSONObject(), JSONArray(), JSONObject.NULL)
                     }

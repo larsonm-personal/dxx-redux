@@ -1,6 +1,7 @@
 # Plan: Integrate Mac Macplay Descent 1 CD Image
 
 ## Disc Overview
+
 - **Folder**: `game_data/CD images/Descent - Mac macplay/`
 - **Files**: `Descent - Mac macplay.bin` + `.cue` (bin/cue format, single bin, 686 MB)
 - **Track layout**: 1 data track (Mode1/2352) + 13 audio tracks (redbook)
@@ -15,15 +16,18 @@
   guide (CHM-style QuickTime/JPEG content)
 
 ## Cue File Fix (done)
+
 The cue FILE directive referenced `"final.bin"` (the intermediate Aaru conversion output).
 Changed to `"Descent - Mac macplay.bin"` to match the actual filename.
 
 ## What Works Now
+
 1. Track SHA-1 hashing via `extract_cd.exe` -- all 14 tracks hashed successfully
 2. HFS volume listing/extraction via Python `machfs` library
 3. Full HFS content can be extracted to disk
 
 ## What Doesn't Work
+
 1. **ISO extraction fails**: `extract_cd.exe`'s `iso_list_files()` returns "ISO listing failed"
    because the data track uses HFS, not ISO 9660. This is expected and correct behavior.
 2. **Game data extraction**: The .hog/.pig/.ham files are compressed inside the StuffIt
@@ -34,6 +38,7 @@ Changed to `"Descent - Mac macplay.bin"` to match the actual filename.
    - The installer contains: `descent.hog`, `descent.pig`, `CHAOS.HOG` (compressed)
 
 ## Steps Completed
+
 1. [x] Fixed cue FILE directive to match actual .bin filename
 2. [x] Ran extract_cd.exe -- got track hashes (1 data + 13 audio)
 3. [x] Extracted raw data track user data to flat image
@@ -49,6 +54,7 @@ Changed to `"Descent - Mac macplay.bin"` to match the actual filename.
 13. [x] Ran hash_assets.ps1 -- no new game asset entries (data_tracks/ empty, as expected)
 
 ## Audio Track Analysis
+
 - 13 redbook audio tracks (tracks 2-14) -- unique to this disc
 - PC Descent 1 discs have ZERO audio tracks (music is MIDI-based on PC)
 - The Mac port added CD audio, likely replacing the MIDI soundtrack
@@ -56,13 +62,16 @@ Changed to `"Descent - Mac macplay.bin"` to match the actual filename.
 - This is the only D1 disc in the database with redbook audio
 
 ## Remaining Work
+
 - Game asset hashing blocked until StuffIt Installer (STi2) can be decompressed
-   - Could be unblocked by: obtaining StuffIt Expander for Mac, or building
-     unar/lha from source, or finding a working Python StuffIt library
-   - For now, track-level hashes and disc characterization are complete
+  - Could be unblocked by: obtaining StuffIt Expander for Mac, or building
+    unar/lha from source, or finding a working Python StuffIt library
+  - For now, track-level hashes and disc characterization are complete
 
 ## New Disc Integration Checklist (general)
+
 For adding any new CD image to the project:
+
 1. Place bin/cue files in `game_data/CD images/<disc name>/`
 2. Ensure the cue FILE directive references the correct .bin filename
 3. Run `.\extract_all_cds.ps1` (or manually run extract_cd.exe) to:

@@ -1,11 +1,13 @@
 # Level 9 replay analysis 2026-05-11 091552
 
 ## Goal
+
 - determine whether `d2_descent2_level9_20260511_091552.dximdemo` exposes fresh game-engine nondeterminism or one of the already-known level 9 replay failure classes
 - use the bundled result files and rng trace before adding more instrumentation
 - confirm whether current source and host build still reproduce the failure after the later Gauss spread-order fix
 
 ## Steps
+
 - [completed] locate the replay artifact bundle and inspect the result and rng-trace files for the first divergence signal
 - [completed] compare the new failure against the recent level 9 investigations to decide whether it matches an existing root-cause class
 - [completed] inspect the nearest owning code path for the first divergence and form one falsifiable hypothesis
@@ -17,6 +19,7 @@
 - [completed] validate the corrected D2 code against regenerated level-9 recording `d2_descent2_level9_20260511_091859.dximdemo`
 
 ## Notes
+
 - target demo: `android/regression_demos/d2_descent2_level9_20260511_091552.dximdemo`
 - user report: failure is minor player position/orientation drift only, in a lava level, with possible Gauss-versus-lava or player-rock interaction nearby
 - likely evidence sources: sibling `rngtrace` file, headless runtime wrapper result files, and recent level 9 plan notes from `2026-05-10`

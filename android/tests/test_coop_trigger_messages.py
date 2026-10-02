@@ -32,16 +32,20 @@ class CoopTriggerMessagesTest(unittest.TestCase):
         switch = (ROOT / "d2/main/switch.c").read_text()
         header = (ROOT / "d2/main/multi.h").read_text()
         size = re.search(r"#define MULTI_TRIGGER_MESSAGE_LEN (\d+)", header)[1]
-        functions = "\n".join([
-            function(multi, "void multi_send_trigger_message("),
-            function(multi, "static void multi_do_trigger_message("),
-            function(switch, "static void print_trigger_message("),
-        ])
+        functions = "\n".join(
+            [
+                function(multi, "void multi_send_trigger_message("),
+                function(multi, "static void multi_do_trigger_message("),
+                function(switch, "static void print_trigger_message("),
+            ]
+        )
         # Use the production message formats, including their plural suffixes
         messages = re.findall(r'print_trigger_message \(pnum,trigger_num,shot,"([^"\n]+)"\)', switch)
         self.assertEqual(len(messages), 12)
-        source = PREAMBLE.replace("MESSAGE_SIZE", size) + functions + MAIN.replace(
-            "MESSAGE_FORMATS", ",".join('"' + message + '"' for message in messages)
+        source = (
+            PREAMBLE.replace("MESSAGE_SIZE", size)
+            + functions
+            + MAIN.replace("MESSAGE_FORMATS", ",".join('"' + message + '"' for message in messages))
         )
         (ROOT / "temp").mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="coop-trigger-", dir=ROOT / "temp") as directory:
@@ -55,7 +59,7 @@ class CoopTriggerMessagesTest(unittest.TestCase):
             subprocess.run([str(folder / "test.exe")], cwd=folder, check=True)
 
 
-PREAMBLE = r'''
+PREAMBLE = r"""
 #include <cassert>
 #include <cstdarg>
 #include <cstdio>
@@ -89,9 +93,9 @@ void multi_send_data(const ubyte *buf, int size, int priority) {
     assert(priority == 2); assert(size == 2 + MULTI_TRIGGER_MESSAGE_LEN);
     packet.assign(buf, buf + size); ++sends;
 }
-'''
+"""
 
-MAIN = r'''
+MAIN = r"""
 int main() {
     const char *formats[] = {MESSAGE_FORMATS};
     for (const char *format : formats) {
@@ -139,7 +143,7 @@ int main() {
     observer = true; multi_send_trigger_message("test"); assert(sends == previous_sends);
     puts("Co-op trigger notification round-trip checks passed");
 }
-'''
+"""
 
 if __name__ == "__main__":
     unittest.main()

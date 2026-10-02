@@ -3,9 +3,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SOURCE = (
-    REPO_ROOT / "android/app/src/main/cpp/shared/input_demo_start_shared.c"
-).read_text(encoding="utf-8")
+SOURCE = (REPO_ROOT / "android/app/src/main/cpp/shared/input_demo_start_shared.c").read_text(encoding="utf-8")
 
 
 class InputDemoStartDifficultyValidationTest(unittest.TestCase):
@@ -18,9 +16,7 @@ class InputDemoStartDifficultyValidationTest(unittest.TestCase):
 
     def test_translated_checkpoint_revalidates_before_global_assignment(self) -> None:
         parse = SOURCE.index("d1_save_translate_read_checkpoint_start")
-        validation = SOURCE.index(
-            "input_demo_difficulty_is_valid(d1_checkpoint.difficulty)", parse
-        )
+        validation = SOURCE.index("input_demo_difficulty_is_valid(d1_checkpoint.difficulty)", parse)
         assignment = SOURCE.index("Difficulty_level = d1_checkpoint.difficulty", parse)
 
         self.assertLess(validation, assignment)

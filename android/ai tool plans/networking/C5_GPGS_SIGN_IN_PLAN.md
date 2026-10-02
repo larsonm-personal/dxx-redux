@@ -15,7 +15,7 @@ needed by `requestServerSideAccess()`. This is the **web** client ID from
 Google API Console (type "Web application"), NOT the Android client ID.
 
 - Template: `android/auth_config.json5.template` (committed)
-- Actual:   `android/auth_config.json5` (gitignored, user fills in)
+- Actual: `android/auth_config.json5` (gitignored, user fills in)
 - The Gradle build reads the client ID at compile time and injects it
   into `BuildConfig` (or a generated Kotlin constant)
 

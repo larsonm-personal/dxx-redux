@@ -23,10 +23,10 @@ Set up a no-UI Android TV performance test configuration so Shield or TV users c
 
 - `MainActivity` now seeds a TV-only debug perf-test preference set before `DebugLog.init()` reads category prefs
 - That startup override forces:
-	- video info debug controls off
-	- legacy merged-wall experiment off
-	- graphics log category off
-	- texture log category off
+  - video info debug controls off
+  - legacy merged-wall experiment off
+  - graphics log category off
+  - texture log category off
 - `MainActivity.applyGraphicsDebugPrefs()` now auto-shows the video info overlay for debug TV sessions and explicitly resets merged-wall mode to default
 - Core graphics settings are left alone so the run remains a usable baseline instead of a different rendering configuration
 

@@ -19,12 +19,12 @@ but its commonly advertised small size is for SF3, not a directly loadable SF2.
 
 ## Candidates
 
-| Bank | License evidence | Size / fit | Recommendation |
-| --- | --- | --- | --- |
-| GeneralUser GS 2.0.3, S. Christian Collins | Custom GeneralUser license v2.0 permits software use and modification; discloses uncertain origins of some samples | Upstream SF2 is 32,319,396 bytes, about 30.8 MiB; within current limit | Conditional bundle candidate; assess provenance caveat and TinySoundFont playback |
-| FluidR3 GM, Frank Wen | MIT, with original copyright and permission notice retained | Approximately 141 MiB SF2 | Preferred permissive candidate; requires larger-bank memory work or a clearly named reduced derivative |
-| FluidR3Mono GM, Michael Cowgill / Frank Wen and contributors | MIT; retain derivative credits | Common distribution is about 13.8 MB SF3; do not treat this as SF2 or runtime-memory size | Alternative to full Fluid, pending exact artifact and decoded-size validation |
-| MuseScore General, S. Christian Collins / Michael Cowgill / Frank Wen and contributors | MIT; retain all acknowledgements and notices | Distribution index lists about 206 MiB SF2 and 38 MiB SF3 | Later larger option; not needed alongside every Fluid variant initially |
+| Bank                                                                                   | License evidence                                                                                                   | Size / fit                                                                                | Recommendation                                                                                         |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| GeneralUser GS 2.0.3, S. Christian Collins                                             | Custom GeneralUser license v2.0 permits software use and modification; discloses uncertain origins of some samples | Upstream SF2 is 32,319,396 bytes, about 30.8 MiB; within current limit                    | Conditional bundle candidate; assess provenance caveat and TinySoundFont playback                      |
+| FluidR3 GM, Frank Wen                                                                  | MIT, with original copyright and permission notice retained                                                        | Approximately 141 MiB SF2                                                                 | Preferred permissive candidate; requires larger-bank memory work or a clearly named reduced derivative |
+| FluidR3Mono GM, Michael Cowgill / Frank Wen and contributors                           | MIT; retain derivative credits                                                                                     | Common distribution is about 13.8 MB SF3; do not treat this as SF2 or runtime-memory size | Alternative to full Fluid, pending exact artifact and decoded-size validation                          |
+| MuseScore General, S. Christian Collins / Michael Cowgill / Frank Wen and contributors | MIT; retain all acknowledgements and notices                                                                       | Distribution index lists about 206 MiB SF2 and 38 MiB SF3                                 | Later larger option; not needed alongside every Fluid variant initially                                |
 
 The GeneralUser byte count was read from the author's GitHub contents API on
 the research date (Git blob ID 298b552d2e9d1307e03e5c5c99d2c046aaed9ec3).
@@ -32,17 +32,20 @@ This is not a SHA-256 artifact pin. Integration must pin an actual release or
 commit and hash its downloaded SF2 and license files together.
 
 Sources for GeneralUser:
+
 - [Author website](https://www.schristiancollins.com/generaluser.php)
 - [Author repository and synthesis requirements](https://github.com/mrbumpy409/GeneralUser-GS)
 - [Author's complete license](https://github.com/mrbumpy409/GeneralUser-GS/blob/main/documentation/LICENSE.txt)
 
 Sources for Fluid:
+
 - [Maintained Fluid distribution](https://github.com/pianobooster/fluid-soundfont)
 - [Original author README and sample-origin statement](https://github.com/pianobooster/fluid-soundfont/blob/main/README)
 - [MIT license](https://github.com/pianobooster/fluid-soundfont/blob/main/COPYING)
 - [FluidSynth's bank recommendations and sizes](https://www.fluidsynth.org/wiki/SoundFont/)
 
 Sources for the derivatives:
+
 - [FluidR3Mono author discussion](https://musescore.org/en/comment/620926)
 - [FluidR3Mono license/credits](https://github.com/musescore/MuseScore/blob/main/share/sound/FluidR3Mono_License.md)
 - [MuseScore General distribution, license and sample-source table](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/)

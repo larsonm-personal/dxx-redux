@@ -584,17 +584,17 @@ It never freezes players who are still trying to leave the previous mine
 
 ## Existing code and integration points
 
-| Location | Finding |
-| --- | --- |
-| `d1/main/gameseq.c:StartNewLevel` | Briefings are skipped under `GM_MULTI`, before `StartNewLevelSub` |
-| `d2/main/gameseq.c:ShowLevelIntro` | Multiplayer guard skips level intro movies and briefing pages; built-in, demo/OEM, and custom/D1-emulation selection differ |
-| `d2/main/gameseq.c:StartNewLevel` | Calls `ShowLevelIntro` before loading/synchronizing the level |
-| `d1/main/titles.c`, `d2/main/titles.c` | Native briefing parsing, page/screen lifecycle, and input handling; inspect both when adding hooks |
-| `d2/main/titles.c:do_briefing_screens` | Waits in an `event_process()` loop until its window closes |
-| `d2/main/movie.c:RunMovie` | Movie window/event loop needs phase networking, cancellation, and cleanup integration |
-| `d2/main/net_udp.c:net_udp_level_sync` | Existing load/sync barrier is distinct from finishing presentation |
+| Location                                                     | Finding                                                                                                                                |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `d1/main/gameseq.c:StartNewLevel`                            | Briefings are skipped under `GM_MULTI`, before `StartNewLevelSub`                                                                      |
+| `d2/main/gameseq.c:ShowLevelIntro`                           | Multiplayer guard skips level intro movies and briefing pages; built-in, demo/OEM, and custom/D1-emulation selection differ            |
+| `d2/main/gameseq.c:StartNewLevel`                            | Calls `ShowLevelIntro` before loading/synchronizing the level                                                                          |
+| `d1/main/titles.c`, `d2/main/titles.c`                       | Native briefing parsing, page/screen lifecycle, and input handling; inspect both when adding hooks                                     |
+| `d2/main/titles.c:do_briefing_screens`                       | Waits in an `event_process()` loop until its window closes                                                                             |
+| `d2/main/movie.c:RunMovie`                                   | Movie window/event loop needs phase networking, cancellation, and cleanup integration                                                  |
+| `d2/main/net_udp.c:net_udp_level_sync`                       | Existing load/sync barrier is distinct from finishing presentation                                                                     |
 | `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` | Existing `SkipButtonView`, `nativeRequestScreenAdvance(generation)`, and generic tap-to-Enter path; launch must bypass generic advance |
-| `android/app/src/main/cpp/shared/android_screen_advance.h` | Existing screen-generation interface; use its protection when wiring Skip and the separate launch action |
+| `android/app/src/main/cpp/shared/android_screen_advance.h`   | Existing screen-generation interface; use its protection when wiring Skip and the separate launch action                               |
 
 Removing the multiplayer guards alone would leave independent presentation
 loops ahead of the normal sync path, without progress/deadline messages or a
@@ -635,7 +635,7 @@ applying a startup-logo skip setting to all mission content
    marks them presentation-ready. A client sees a waiting screen. The host
    sees the roster and a dedicated `Launch now` overlay button
 4. When the host becomes ready, clients still reviewing content see `Host is
-   ready and waiting for you` plus remaining time, while retaining page controls
+ready and waiting for you` plus remaining time, while retaining page controls
 5. Host Launch now or deadline expiry ends remaining presentations for everyone.
    Clients see `Host is starting the mine` or `Briefing time is up` as appropriate
 6. All clients close presentation safely, load/synchronize the same mine, and
@@ -647,12 +647,12 @@ state; it never directly invokes StartLevel or bypasses readiness
 
 The host's screen shows, for example:
 
-| Player | Progress | State |
-| --- | --- | --- |
-| Host | 5/5 | Ready |
-| Alex | 2/5 | Watching video |
-| Sam | 4/5 | Reading page |
-| Lee | 1/5 | Ready - skipped remaining steps |
+| Player | Progress | State                           |
+| ------ | -------- | ------------------------------- |
+| Host   | 5/5      | Ready                           |
+| Alex   | 2/5      | Watching video                  |
+| Sam    | 4/5      | Reading page                    |
+| Lee    | 1/5      | Ready - skipped remaining steps |
 
 Waiting is the default while someone is reading. No extra confirmation dialog
 is required for Launch now. A client cannot force launch. The host cannot
@@ -738,12 +738,12 @@ Starting the 20-second host-ready interval can only shorten the existing budget
 
 Timing acceptance examples (elapsed from presentation start):
 
-| Host action | Effective deadline | Visible time immediately after action |
-| --- | --- | --- |
-| Finishes or skips at 0:30 | 0:50 | 0:20 |
-| Finishes or skips at 1:55 | 2:00 | 0:05 |
-| Still reviewing at 2:00 | 2:00 | 0:00; close everyone's presentation |
-| Taps the separate Launch now button while waiting | Immediately | Replace timer with loading/synchronizing status |
+| Host action                                       | Effective deadline | Visible time immediately after action           |
+| ------------------------------------------------- | ------------------ | ----------------------------------------------- |
+| Finishes or skips at 0:30                         | 0:50               | 0:20                                            |
+| Finishes or skips at 1:55                         | 2:00               | 0:05                                            |
+| Still reviewing at 2:00                           | 2:00               | 0:00; close everyone's presentation             |
+| Taps the separate Launch now button while waiting | Immediately        | Replace timer with loading/synchronizing status |
 
 The Launch now control requires one deliberate fresh tap, with no second
 confirmation. The user's second overlay button means a distinct control from

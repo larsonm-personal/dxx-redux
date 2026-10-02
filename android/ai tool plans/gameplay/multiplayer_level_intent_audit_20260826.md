@@ -55,12 +55,12 @@ Mission aggregation should classify every normal level first. Uniform results be
 
 Applied without readmes or free-form text:
 
-| Set | Normal starts | Coop-only starts | Campaign payload | Other objects | Result |
-| --- | ---: | ---: | --- | --- | --- |
-| HEADBAND, each level | 8 | 3 | 26 robots | 62 or 12 powerups, reactor | both |
-| Total Insanity, each level | 8 | 0 | none | 20-26 powerups, reactor | anarchy |
-| Whack-a-Pyro | 8 | 0 | none | 13 powerups | anarchy |
-| yuh clean | 8 | 0 | none | 34 powerups | anarchy |
+| Set                        | Normal starts | Coop-only starts | Campaign payload | Other objects              | Result  |
+| -------------------------- | ------------: | ---------------: | ---------------- | -------------------------- | ------- |
+| HEADBAND, each level       |             8 |                3 | 26 robots        | 62 or 12 powerups, reactor | both    |
+| Total Insanity, each level |             8 |                0 | none             | 20-26 powerups, reactor    | anarchy |
+| Whack-a-Pyro               |             8 |                0 | none             | 13 powerups                | anarchy |
+| yuh clean                  |             8 |                0 | none             | 34 powerups                | anarchy |
 
 The standard engine mission parser supplies one useful deterministic override: `type = anarchy` sets `anarchy_only_flag`. It ignores HEADBAND's extra per-mode keys, so those nonstandard keys should not be necessary for the structural classifier.
 

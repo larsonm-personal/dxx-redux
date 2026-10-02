@@ -19,15 +19,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import java.io.File
 
 /** Exercises production settings with real controller key dispatch and focus diagnostics */
-internal class SliderNavigationChecks(private val instrumentation: Instrumentation) {
+internal class SliderNavigationChecks(
+    private val instrumentation: Instrumentation,
+) {
     private fun <T> onMain(block: () -> T): T {
         var result: Result<T>? = null
         instrumentation.runOnMainSync { result = runCatching(block) }
@@ -42,18 +44,25 @@ internal class SliderNavigationChecks(private val instrumentation: Instrumentati
         return null
     }
 
-    private fun logFocus(launcher: SetupActivity) = onMain {
-        val provider = checkNotNull(composeView(launcher.window.decorView)?.accessibilityNodeProvider)
-        for (id in -1..16383) {
-            val node = provider.createAccessibilityNodeInfo(id) ?: continue
-            if (node.isFocused || node.rangeInfo != null) {
-                val bounds = Rect().also(node::getBoundsInScreen)
-                Log.i("DXX-SliderTest", "Android focus: id=$id text=${node.text} range=${node.rangeInfo?.current} bounds=$bounds")
+    private fun logFocus(launcher: SetupActivity) =
+        onMain {
+            val provider = checkNotNull(composeView(launcher.window.decorView)?.accessibilityNodeProvider)
+            for (id in -1..16383) {
+                val node = provider.createAccessibilityNodeInfo(id) ?: continue
+                if (node.isFocused || node.rangeInfo != null) {
+                    val bounds = Rect().also(node::getBoundsInScreen)
+                    Log.i(
+                        "DXX-SliderTest",
+                        "Android focus: id=$id text=${node.text} range=${node.rangeInfo?.current} bounds=$bounds",
+                    )
+                }
             }
         }
-    }
 
-    private fun key(launcher: SetupActivity, code: Int) {
+    private fun key(
+        launcher: SetupActivity,
+        code: Int,
+    ) {
         onMain {
             val now = SystemClock.uptimeMillis()
             for (action in listOf(KeyEvent.ACTION_DOWN, KeyEvent.ACTION_UP)) {
@@ -65,14 +74,23 @@ internal class SliderNavigationChecks(private val instrumentation: Instrumentati
     }
 
     fun run() {
-        val launcher = instrumentation.startActivitySync(Intent(instrumentation.targetContext, SetupActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }) as SetupActivity
-        val configs = listOf("descent.cfg", "d1x-redux/descent.cfg", "d2x-redux/descent.cfg").map { File(launcher.filesDir, it) }
+        val launcher =
+            instrumentation.startActivitySync(
+                Intent(instrumentation.targetContext, SetupActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+            ) as SetupActivity
+        val configs =
+            listOf("descent.cfg", "d1x-redux/descent.cfg", "d2x-redux/descent.cfg").map {
+                File(launcher.filesDir, it)
+            }
         val backups = configs.associateWith { if (it.isFile) it.readBytes() else null }
         val originalOrientation = onMain { launcher.requestedOrientation }
         try {
-            for (orientation in listOf(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)) {
+            for (orientation in listOf(
+                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
+                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+            )) {
                 onMain { launcher.requestedOrientation = orientation }
                 Thread.sleep(500)
                 for (game in listOf("d1", "d2")) {
@@ -90,15 +108,34 @@ internal class SliderNavigationChecks(private val instrumentation: Instrumentati
         }
     }
 
-    private fun graphicsNavigation(launcher: SetupActivity, game: String, wide: Boolean) {
-        Log.i("DXX-SliderTest", "Android graphics navigation: game=$game wide=$wide orientation=${launcher.resources.configuration.orientation}")
+    private fun graphicsNavigation(
+        launcher: SetupActivity,
+        game: String,
+        wide: Boolean,
+    ) {
+        Log.i(
+            "DXX-SliderTest",
+            "Android graphics navigation: game=$game wide=$wide orientation=${launcher.resources.configuration.orientation}",
+        )
         onMain {
             updateAllConfigFiles(launcher.filesDir, listOf("MainViewFov" to "0", "TexFilt" to "2"))
             launcher.setContent {
                 MaterialTheme {
                     // Exercise a wide settings layout, where geometric searches can skip the slider
-                    Box(if (wide) Modifier.wrapContentWidth(Alignment.Start, unbounded = true).requiredWidth(1080.dp) else Modifier) {
-                        androidx.compose.runtime.key(game to wide) { GraphicsSettingsPage(game, launcher.filesDir, onBack = {}) }
+                    Box(
+                        if (wide) {
+                            Modifier
+                                .wrapContentWidth(
+                                    Alignment.Start,
+                                    unbounded = true,
+                                ).requiredWidth(1080.dp)
+                        } else {
+                            Modifier
+                        },
+                    ) {
+                        androidx.compose.runtime.key(
+                            game to wide,
+                        ) { GraphicsSettingsPage(game, launcher.filesDir, onBack = {}) }
                     }
                 }
             }
@@ -115,6 +152,7 @@ internal class SliderNavigationChecks(private val instrumentation: Instrumentati
         repeat(resolutionCount) { key(launcher, KeyEvent.KEYCODE_DPAD_DOWN) }
         key(launcher, KeyEvent.KEYCODE_DPAD_DOWN)
         logFocus(launcher)
+
         fun fov(expected: Int) {
             val actual = onMain { readConfigValue(launcher.filesDir, "MainViewFov") }
             check(actual == expected.toString()) { "FOV expected $expected, got $actual (game=$game wide=$wide)" }
@@ -124,7 +162,9 @@ internal class SliderNavigationChecks(private val instrumentation: Instrumentati
         key(launcher, KeyEvent.KEYCODE_DPAD_DOWN)
         key(launcher, KeyEvent.KEYCODE_BUTTON_A)
         fov(100)
-        check(onMain { readConfigValue(launcher.filesDir, "TexFilt") } == "0") { "Down from FOV skipped first texture filter" }
+        check(
+            onMain { readConfigValue(launcher.filesDir, "TexFilt") } == "0",
+        ) { "Down from FOV skipped first texture filter" }
         key(launcher, KeyEvent.KEYCODE_DPAD_UP)
         key(launcher, KeyEvent.KEYCODE_DPAD_RIGHT)
         fov(110)

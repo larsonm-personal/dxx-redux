@@ -44,3 +44,6 @@ SortIncludes: Never
 
 # Keep C99/C11 designated initializers readable
 Cpp11BracedListStyle: false
+
+# Match .editorconfig for branch-added source files
+LineEnding: LF

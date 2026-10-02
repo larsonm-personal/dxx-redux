@@ -8,6 +8,7 @@ Goal: restore in-game load/save screenshot previews so the highlighted save slot
 - [x] Run focused validation or the nearest available build/test check
 
 Validation:
+
 - Scoped `android\run-code-quality.ps1 -Fix -Paths .\d1\main\state.c` passed; `d1/d2` are excluded from clang-format by repo policy
 - Scoped `android\run-code-quality.ps1 -Fix -Paths .\d2\main\state.c` passed; `d1/d2` are excluded from clang-format by repo policy
 - `run-windows-build.ps1 -Target both` passed for D1 and D2

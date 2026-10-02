@@ -11,14 +11,14 @@ non-exported regardless of build type.
 
 - [x] Confirm the live ranking, clean worktree, finding, and remediation owner
 - [x] Inventory every dynamic receiver, action, sender, manifest/build contract,
-  ADB helper, and existing test
+      ADB helper, and existing test
 - [x] Define one explicit debug-only external receiver policy and internal-only
-  receiver policy
+      receiver policy
 - [x] Apply the policy to Setup, game, multiplayer, and preview receiver owners
 - [x] Add unit contracts for release absence, debug ADB compatibility,
-  and internal non-exported registration
+      and internal non-exported registration
 - [x] Run launcher tests, scoped quality, release/debug Android builds, relevant
-  ADB automation, and Windows D1/D2 validation as needed
+      ADB automation, and Windows D1/D2 validation as needed
 - [x] Audit merged manifests, warnings, and diff scope; mark GQR-0006/GQF-0005 terminal
 
 ## Result

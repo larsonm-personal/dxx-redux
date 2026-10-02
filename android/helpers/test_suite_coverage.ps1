@@ -19,6 +19,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_guidebot_secret_transition'
         )
         network_scenarios = @(
+            'test_emulator_recovery'
             'test_lan_launch_preparation'
             'test_lan_qr_join'
             'test_lan_qr'
@@ -176,11 +177,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_xfing_asset_validation'
         )
         explicit = @(
-            # Require caller-selected devices or an installed distribution APK
-            'test_distribution_build_info'
+            # Requires caller-selected devices on a shared discovery network
             'test_lan_nsd'
-            # Changes app storage permissions and requires a provisioned emulator
-            'test_graphics_recovery'
             # These probes require caller-supplied binaries or data directories
             'test_android_metadata_worker'
             'test_classic_trigger_demo'
@@ -188,8 +186,6 @@ function Get-TestSuiteCoveragePolicy {
             'test_d1_wall_blast_save'
             'test_native_metadata_worker'
             'test_pickup_autoselect_parity'
-            # Requires two healthy, idle emulators before recovery starts
-            'test_emulator_recovery'
             # Full semantic coverage is still incomplete; retain a nonzero gate
             'test_d1_replay_parity'
             'test_dual_emu'
@@ -202,6 +198,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_skip_every_launch_button_manual_unified'
         )
         extended_graphics = @(
+            # The suite provisions the emulator before this recovery owner runs
+            'test_graphics_recovery'
             'test_merged_wall_two_pass_probe'
         )
         gameplay_scenarios = @(
@@ -228,6 +226,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_graphics_lifecycle'
             'test_graphics_mode_restore'
             'test_graphics_msaa_allocation_failure'
+            'test_graphics_native_interruption'
             'test_graphics_settings_confirmation'
             'test_graphics_video_overlay'
             'test_vertigo_merge_creation'
@@ -268,6 +267,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_touch_layout_format'
         )
         launcher = @(
+            'test_graphics_preview'
             'test_host_dialog_loading'
             'test_random_level_preview'
             'test_guidebot_simulation_browser'
@@ -291,6 +291,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_vertigo_level_metadata'
         )
         packaging = @(
+            'test_distribution_build_info'
             'test_distribution_launch'
             'test_android_distributions'
             'test_acoustid_config_packaging'
@@ -337,7 +338,12 @@ function Select-TestSuiteCoverage {
         $name = if ($test.BaseName) { $test.BaseName } else { $test.Name }
         if (-not $families.ContainsKey($name)) { throw "Test needs a suite coverage family: $name" }
     }
-    if ($AllScenarios) { return $Tests }
+    if ($AllScenarios) {
+        return $Tests | Where-Object {
+            $name = if ($_.BaseName) { $_.BaseName } else { $_.Name }
+            $families[$name] -ne 'explicit'
+        }
+    }
     foreach ($family in @($policy.Keys | Sort-Object)) {
         $candidates = @($Tests | Where-Object {
                 $name = if ($_.BaseName) { $_.BaseName } else { $_.Name }

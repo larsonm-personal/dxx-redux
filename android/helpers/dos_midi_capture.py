@@ -1,4 +1,5 @@
 """Prepare an isolated DOS Descent capture runtime; never edits the source game."""
+
 import argparse
 import hashlib
 import json
@@ -9,71 +10,81 @@ import struct
 
 
 def extract_member(hog, name):
-    with hog.open('rb') as stream:
-        if stream.read(3) != b'DHF':
-            raise ValueError('Not a Descent HOG')
+    with hog.open("rb") as stream:
+        if stream.read(3) != b"DHF":
+            raise ValueError("Not a Descent HOG")
         while header := stream.read(17):
             if len(header) != 17:
-                raise ValueError('Truncated HOG entry')
-            entry = header[:13].split(b'\0')[0].decode('ascii')
-            size = struct.unpack_from('<I', header, 13)[0]
+                raise ValueError("Truncated HOG entry")
+            entry = header[:13].split(b"\0")[0].decode("ascii")
+            size = struct.unpack_from("<I", header, 13)[0]
             if size > 128 * 1024 * 1024:
-                raise ValueError('Oversized HOG entry')
+                raise ValueError("Oversized HOG entry")
             if entry.lower() == name.lower():
                 data = stream.read(size)
                 if len(data) != size:
-                    raise ValueError('Truncated HOG member')
+                    raise ValueError("Truncated HOG member")
                 return data
             stream.seek(size, 1)
-    raise ValueError(f'{name} not found in {hog}')
+    raise ValueError(f"{name} not found in {hog}")
 
 
-def prepare(source, output, executable, config_name, song=None, hog_name='DESCENT.HOG',
-            music_device='general-midi', mute_effects=False, opl_capture=False, song_as_title=False):
-    if opl_capture and music_device != 'adlib':
-        raise ValueError('OPL capture requires the AdLib music device')
+def prepare(
+    source,
+    output,
+    executable,
+    config_name,
+    song=None,
+    hog_name="DESCENT.HOG",
+    music_device="general-midi",
+    mute_effects=False,
+    opl_capture=False,
+    song_as_title=False,
+):
+    if opl_capture and music_device != "adlib":
+        raise ValueError("OPL capture requires the AdLib music device")
     if song_as_title and not song:
-        raise ValueError('Title substitution requires --song')
+        raise ValueError("Title substitution requires --song")
     source, output = source.resolve(), output.resolve()
     if output == source or source in output.parents:
-        raise ValueError('Capture output must be outside the source runtime')
+        raise ValueError("Capture output must be outside the source runtime")
     if output.exists():
-        raise ValueError('Use a new output directory to preserve previous captures')
-    for name in (executable, 'DOSBOX/DOSBox.exe'):
+        raise ValueError("Use a new output directory to preserve previous captures")
+    for name in (executable, "DOSBOX/DOSBox.exe"):
         if not (source / name).is_file():
-            raise ValueError(f'Missing {name} in extracted DOS runtime')
+            raise ValueError(f"Missing {name} in extracted DOS runtime")
     # Copy a user-selected, already extracted runtime, including original drivers
-    shutil.copytree(source, output / 'game')
-    game = output / 'game'
-    captures = output / 'captures'
+    shutil.copytree(source, output / "game")
+    game = output / "game"
+    captures = output / "captures"
     captures.mkdir()
     cfg = game / config_name
     if not cfg.exists():
-        bundled = game / '__support/app' / config_name
+        bundled = game / "__support/app" / config_name
         if not bundled.exists():
-            raise ValueError(f'Missing original game config: {config_name}')
+            raise ValueError(f"Missing original game config: {config_name}")
         shutil.copy2(bundled, cfg)
-    original = cfg.read_text(encoding='ascii')
-    (output / 'original-game.cfg').write_text(original, encoding='ascii')
-    device, port = ('0xa001', '0x330') if music_device == 'general-midi' else ('0xa009', '0x388')
-    settings = [('MidiDeviceID', device), ('MidiPort', port), ('MidiVolume', '8')]
-    if re.search(r'(?m)^RedbookEnabled=', original):
-        settings.append(('RedbookEnabled', '0'))
+    original = cfg.read_text(encoding="ascii")
+    (output / "original-game.cfg").write_text(original, encoding="ascii")
+    device, port = ("0xa001", "0x330") if music_device == "general-midi" else ("0xa009", "0x388")
+    settings = [("MidiDeviceID", device), ("MidiPort", port), ("MidiVolume", "8")]
+    if re.search(r"(?m)^RedbookEnabled=", original):
+        settings.append(("RedbookEnabled", "0"))
     if mute_effects:
-        settings.append(('DigiVolume', '0'))
+        settings.append(("DigiVolume", "0"))
     for name, value in settings:
-        original, count = re.subn(rf'(?m)^{name}=.*$', f'{name}={value}', original)
+        original, count = re.subn(rf"(?m)^{name}=.*$", f"{name}={value}", original)
         if count != 1:
-            raise ValueError(f'Expected one {name} setting in {config_name}')
-    cfg.write_text(original, encoding='ascii')
-    irq_match = re.search(r'(?m)^DigiIrq=(\d+)$', original)
+            raise ValueError(f"Expected one {name} setting in {config_name}")
+    cfg.write_text(original, encoding="ascii")
+    irq_match = re.search(r"(?m)^DigiIrq=(\d+)$", original)
     irq = int(irq_match[1]) if irq_match else 5
-    launch = executable + (' -nomovies' if executable.upper() == 'DESCENT2.EXE' else '')
-    cd_mount = ''
-    if executable.upper() == 'DESCENT2.EXE':
-        disc = game / 'DESCENT_II.inst'
-        if not disc.is_file() or not (game / 'DESCENT_II.gog').is_file():
-            raise ValueError('D2 capture requires the original GOG DESCENT_II.inst/.gog disc image')
+    launch = executable + (" -nomovies" if executable.upper() == "DESCENT2.EXE" else "")
+    cd_mount = ""
+    if executable.upper() == "DESCENT2.EXE":
+        disc = game / "DESCENT_II.inst"
+        if not disc.is_file() or not (game / "DESCENT_II.gog").is_file():
+            raise ValueError("D2 capture requires the original GOG DESCENT_II.inst/.gog disc image")
         cd_mount = f'imgmount d "{disc}" -t iso -fs iso\n'
     config = f'''[sdl]
 fullscreen=false
@@ -99,63 +110,97 @@ hdma=5
 mount c "{game}"
 {cd_mount}\
 c:
-echo Press {'Ctrl-Alt-F7 for OPL' if opl_capture else 'Ctrl-Alt-F8 for MIDI' if music_device == 'general-midi' else 'Ctrl-F6 for WAV'}, then Space to launch
+echo Press {"Ctrl-Alt-F7 for OPL" if opl_capture else "Ctrl-Alt-F8 for MIDI" if music_device == "general-midi" else "Ctrl-F6 for WAV"}, then Space to launch
 pause
 {launch}
 exit
 '''
-    (output / 'capture.conf').write_text(config, encoding='ascii')
+    (output / "capture.conf").write_text(config, encoding="ascii")
     if song_as_title:
-        rows = extract_member(game / hog_name, 'descent.sng').decode('ascii').splitlines()
+        rows = extract_member(game / hog_name, "descent.sng").decode("ascii").splitlines()
         row = next((line for line in rows if line.split() and line.split()[0].lower() == song.lower()), None)
         if row is None:
-            raise ValueError('Song is not listed in the original descent.sng')
+            raise ValueError("Song is not listed in the original descent.sng")
         rows[0] = row
-        (game / 'DESCENT.SNG').write_text('\n'.join(rows) + '\n', encoding='ascii')
-        (output / 'title-substitution.txt').write_text(
-            f'Diagnostic capture: loose DESCENT.SNG changes only the title entry to {row.strip()}. '
-            'Original HOG and song/banks are unchanged. DOS may select the HMQ counterpart for FM.\n',
-            encoding='ascii')
+        (game / "DESCENT.SNG").write_text("\n".join(rows) + "\n", encoding="ascii")
+        (output / "title-substitution.txt").write_text(
+            f"Diagnostic capture: loose DESCENT.SNG changes only the title entry to {row.strip()}. "
+            "Original HOG and song/banks are unchanged. DOS may select the HMQ counterpart for FM.\n",
+            encoding="ascii",
+        )
     provenance = {}
     for path in sorted(game.iterdir()):
-        if path.is_file() and path.suffix.lower() in ('.exe', '.386', '.hog', '.cfg', '.plr', '.sng'):
-            provenance[path.name] = {'bytes': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
-    dosbox = game / 'DOSBOX/DOSBox.exe'
-    provenance['DOSBOX/DOSBox.exe'] = {'sha256': hashlib.sha256(dosbox.read_bytes()).hexdigest()}
-    (output / 'provenance.json').write_text(json.dumps(provenance, indent=2) + '\n', encoding='utf8')
+        if path.is_file() and path.suffix.lower() in (".exe", ".386", ".hog", ".cfg", ".plr", ".sng"):
+            provenance[path.name] = {
+                "bytes": path.stat().st_size,
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
+    dosbox = game / "DOSBOX/DOSBox.exe"
+    provenance["DOSBOX/DOSBox.exe"] = {"sha256": hashlib.sha256(dosbox.read_bytes()).hexdigest()}
+    (output / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf8")
     if song:
         data = extract_member(game / hog_name, song)
         (output / song).write_bytes(data)
-        (output / 'song.json').write_text(json.dumps({'hog': hog_name, 'song': song,
-                                                    'sha256': hashlib.sha256(data).hexdigest()}, indent=2) + '\n', encoding='utf8')
-    print(f'Prepared {output}')
-    shortcut = 'Ctrl+Alt+F7' if opl_capture else 'Ctrl+Alt+F8' if music_device == 'general-midi' else 'Ctrl+F6'
-    print(f'Arm {shortcut} at the pause; stop with the same shortcut before exiting')
+        (output / "song.json").write_text(
+            json.dumps({"hog": hog_name, "song": song, "sha256": hashlib.sha256(data).hexdigest()}, indent=2) + "\n",
+            encoding="utf8",
+        )
+    print(f"Prepared {output}")
+    shortcut = "Ctrl+Alt+F7" if opl_capture else "Ctrl+Alt+F8" if music_device == "general-midi" else "Ctrl+F6"
+    print(f"Arm {shortcut} at the pause; stop with the same shortcut before exiting")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--source', type=Path, required=True, help='Extracted GOG DOS runtime, containing DOSBOX/')
-    parser.add_argument('--output', type=Path, required=True, help='New private capture directory')
-    parser.add_argument('--exe', default='DESCENTR.EXE')
-    parser.add_argument('--config', default='DESCENT.CFG')
-    parser.add_argument('--song', help='Also extract an HMP/HMQ member for the MIDI comparison; does not select it in game')
-    parser.add_argument('--hog', default='DESCENT.HOG')
-    parser.add_argument('--music-device', choices=('general-midi', 'adlib'), default='general-midi',
-                        help='General MIDI capture or the GOG D1 AdLib/FM device (0xa009)')
-    parser.add_argument('--mute-effects', action='store_true', help='Set private game effects volume to zero for clean music WAVs')
-    parser.add_argument('--opl-capture', action='store_true', help='Prepare for Ctrl+Alt+F7 DRO register capture (requires --music-device adlib)')
-    parser.add_argument('--song-as-title', action='store_true', help='Use the selected SNG song/banks for the title in the private capture copy')
+    parser.add_argument("--source", type=Path, required=True, help="Extracted GOG DOS runtime, containing DOSBOX/")
+    parser.add_argument("--output", type=Path, required=True, help="New private capture directory")
+    parser.add_argument("--exe", default="DESCENTR.EXE")
+    parser.add_argument("--config", default="DESCENT.CFG")
+    parser.add_argument(
+        "--song", help="Also extract an HMP/HMQ member for the MIDI comparison; does not select it in game"
+    )
+    parser.add_argument("--hog", default="DESCENT.HOG")
+    parser.add_argument(
+        "--music-device",
+        choices=("general-midi", "adlib"),
+        default="general-midi",
+        help="General MIDI capture or the GOG D1 AdLib/FM device (0xa009)",
+    )
+    parser.add_argument(
+        "--mute-effects", action="store_true", help="Set private game effects volume to zero for clean music WAVs"
+    )
+    parser.add_argument(
+        "--opl-capture",
+        action="store_true",
+        help="Prepare for Ctrl+Alt+F7 DRO register capture (requires --music-device adlib)",
+    )
+    parser.add_argument(
+        "--song-as-title",
+        action="store_true",
+        help="Use the selected SNG song/banks for the title in the private capture copy",
+    )
     args = parser.parse_args()
-    if Path(args.exe).name != args.exe or not re.fullmatch(r'[A-Za-z0-9_.]+', args.exe):
-        parser.error('--exe must be a DOS executable basename')
+    if Path(args.exe).name != args.exe or not re.fullmatch(r"[A-Za-z0-9_.]+", args.exe):
+        parser.error("--exe must be a DOS executable basename")
     if Path(args.config).name != args.config:
-        parser.error('--config must be a basename')
-    if Path(args.hog).name != args.hog or (args.song and (Path(args.song).name != args.song or Path(args.song).suffix.lower() not in ('.hmp', '.hmq'))):
-        parser.error('--hog and --song must be basenames; song must be HMP/HMQ')
-    prepare(args.source, args.output, args.exe, args.config, args.song, args.hog,
-            args.music_device, args.mute_effects, args.opl_capture, args.song_as_title)
+        parser.error("--config must be a basename")
+    if Path(args.hog).name != args.hog or (
+        args.song and (Path(args.song).name != args.song or Path(args.song).suffix.lower() not in (".hmp", ".hmq"))
+    ):
+        parser.error("--hog and --song must be basenames; song must be HMP/HMQ")
+    prepare(
+        args.source,
+        args.output,
+        args.exe,
+        args.config,
+        args.song,
+        args.hog,
+        args.music_device,
+        args.mute_effects,
+        args.opl_capture,
+        args.song_as_title,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

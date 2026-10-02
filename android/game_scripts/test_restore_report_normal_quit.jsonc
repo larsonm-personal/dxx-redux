@@ -1,4 +1,1 @@
-[
-    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
-    {"action": "enter_launcher"}
-]
+[{ "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } }, { "action": "enter_launcher" }]

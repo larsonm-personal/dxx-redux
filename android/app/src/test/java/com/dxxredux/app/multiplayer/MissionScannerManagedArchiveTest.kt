@@ -1,12 +1,12 @@
 package com.dxxredux.app.multiplayer
 
-import com.dxxredux.app.ModManager
+import com.dxxredux.app.ALL_GAME_FILENAMES
+import com.dxxredux.app.D2_FILES
 import com.dxxredux.app.FileSetContentManager
 import com.dxxredux.app.MissionDistributionPolicy
 import com.dxxredux.app.MissionDownloadPolicy
 import com.dxxredux.app.MissionZip
-import com.dxxredux.app.D2_FILES
-import com.dxxredux.app.ALL_GAME_FILENAMES
+import com.dxxredux.app.ModManager
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -66,13 +66,18 @@ class MissionScannerManagedArchiveTest {
         val requirement = MissionScanner.requirement("d2", mission, true)
         assertTrue(requirement.isValid)
         assertFalse(requirement.offerAvailable)
-        assertFalse(MissionTransferService.hostArchiveAllowed(requirement.copy(missionKey = "custom", offerAvailable = true), archive))
+        assertFalse(
+            MissionTransferService.hostArchiveAllowed(
+                requirement.copy(missionKey = "custom", offerAvailable = true),
+                archive,
+            ),
+        )
     }
 
     @Test
     fun wholeWrapperPolicyFindsVertigoInsideRenamedHogsAndMixedMissionPacks() {
         for (embeddedName in listOf("D2X.HAM", "d2xlvl01.rl2", "d2xlvls3.rl2")) {
-            val archive = temporaryFolder.newFile("pack-${embeddedName}.zip")
+            val archive = temporaryFolder.newFile("pack-$embeddedName.zip")
             ZipOutputStream(archive.outputStream()).use { zip ->
                 zip.putNextEntry(ZipEntry("custom.mn2"))
                 zip.write("name = Custom\nnum_levels = 1\ncustom.rl2\n".toByteArray())
@@ -86,11 +91,18 @@ class MissionScannerManagedArchiveTest {
             }
             val scan = requireNotNull(MissionZip.inspect(archive))
             assertEquals(MissionDownloadPolicy.PROPRIETARY, MissionDistributionPolicy.archivePolicy(scan))
-            val requirement = MissionRequirement(
-                revision = "test", game = "d2", missionKey = "custom", displayName = "Custom",
-                kind = MissionRequirement.KIND_WRAPPER, wrapperFilename = archive.name,
-                sizeBytes = archive.length(), sha256 = "ab".repeat(32), offerAvailable = true,
-            )
+            val requirement =
+                MissionRequirement(
+                    revision = "test",
+                    game = "d2",
+                    missionKey = "custom",
+                    displayName = "Custom",
+                    kind = MissionRequirement.KIND_WRAPPER,
+                    wrapperFilename = archive.name,
+                    sizeBytes = archive.length(),
+                    sha256 = "ab".repeat(32),
+                    offerAvailable = true,
+                )
             assertFalse(MissionTransferService.hostArchiveAllowed(requirement, archive))
         }
     }
@@ -100,7 +112,8 @@ class MissionScannerManagedArchiveTest {
         val filesDir = temporaryFolder.newFolder("files")
         val setDir = File(filesDir, "sets/default").apply { mkdirs() }
         val manager = ModManager(filesDir, setDir = setDir)
-        val imported = requireNotNull(manager.importMissionZipFile(createMissionZip("castaway", "normal"), "castaway_redux.zip"))
+        val imported =
+            requireNotNull(manager.importMissionZipFile(createMissionZip("castaway", "normal"), "castaway_redux.zip"))
 
         val catalog = MissionScanner.scan(filesDir, setDir, "d2", "coop")
         val mission = catalog.single { it.filename == "castaway" }
@@ -144,7 +157,10 @@ class MissionScannerManagedArchiveTest {
             zip.write(byteArrayOf(1, 2, 3))
             zip.closeEntry()
         }
-        assertEquals(MissionDownloadPolicy.UNVERIFIED, MissionDistributionPolicy.archivePolicy(requireNotNull(MissionZip.inspect(archive))))
+        assertEquals(
+            MissionDownloadPolicy.UNVERIFIED,
+            MissionDistributionPolicy.archivePolicy(requireNotNull(MissionZip.inspect(archive))),
+        )
     }
 
     @Test
@@ -152,7 +168,8 @@ class MissionScannerManagedArchiveTest {
         val filesDir = temporaryFolder.newFolder("mutation-files")
         val setDir = File(filesDir, "sets/default").apply { mkdirs() }
         val manager = ModManager(filesDir, setDir = setDir)
-        val imported = requireNotNull(manager.importMissionZipFile(createMissionZip("mutated", "normal"), "mutated.zip"))
+        val imported =
+            requireNotNull(manager.importMissionZipFile(createMissionZip("mutated", "normal"), "mutated.zip"))
         val before = requireNotNull(manager.ensureMissionContentIdentity(imported.filename))
         val wrapper = manager.modFile(imported.filename)
         val bytes = wrapper.readBytes()

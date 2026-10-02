@@ -38,6 +38,7 @@ The script can alternate between modes any number of times.
 ### Step types by runtime
 
 **Both runtimes** (same JSON format, different data source):
+
 - `log` -- `{"action": "log", "message": "..."}`
 - `wait_ms` -- `{"action": "wait_ms", "ms": 5000}`
 - `wait_for` -- `{"action": "wait_for", "field": "...", "value": "...", "timeout_ms": ...}`
@@ -46,17 +47,20 @@ The script can alternate between modes any number of times.
   (same polling difference)
 
 **Launcher-only** (new):
+
 - `setup_command` -- `{"action": "setup_command", "command": "import_gog",
-  "args": {"path": "...", "include_audio": true}}`
+"args": {"path": "...", "include_audio": true}}`
 - `reset_state` -- `{"action": "reset_state"}`
   (deletes .plr/.plx/descent.cfg/controller_config.json)
 - `write_config` -- `{"action": "write_config", "file": "descent.cfg",
-  "content": "ResolutionX=640\nResolutionY=480\n"}`
+"content": "ResolutionX=640\nResolutionY=480\n"}`
 
 **Game-only** (existing, unchanged):
+
 - `key`, `select`, `skip_briefing`, `send_axis`, `send_button`, `assert_overlay`, `introspect`
 
 **Mode switches:**
+
 - `enter_launcher` -- processed by both runtimes (C engine yields; Kotlin continues)
 - `enter_game` -- processed by launcher (launches game with start_step)
 
@@ -70,6 +74,7 @@ The script can alternate between modes any number of times.
 ### Result file protocol
 
 `automation_result.json` gets a new result value:
+
 ```json
 {"result":"LAUNCHER_CONTINUE","next_step":22,"steps_completed":15,"total_steps":40,"elapsed_ms":12345}
 ```
@@ -78,7 +83,7 @@ Existing `PASS` and `FAIL` values unchanged.
 
 ## Implementation phases
 
-### Phase 1: C engine changes (game_automate.cpp / .h)                     [x]
+### Phase 1: C engine changes (game_automate.cpp / .h) [x]
 
 1. Add `STEP_ENTER_LAUNCHER` to `enum step_type`
 2. Add `STEP_ENTER_GAME` (skip/no-op in game engine -- launcher-only)
@@ -92,7 +97,7 @@ Existing `PASS` and `FAIL` values unchanged.
    in C engine (log + advance)
 8. Expose `game_automate_set_start_step` in game_automate.h
 
-### Phase 2: JNI bridge + MainActivity                                     [x]
+### Phase 2: JNI bridge + MainActivity [x]
 
 9. jni_main.c: add `nativeSetAutomationStartStep(int)` JNI function
 10. MainActivity.kt: declare `external fun nativeSetAutomationStartStep(step: Int)`
@@ -101,7 +106,7 @@ Existing `PASS` and `FAIL` values unchanged.
     `nativeSetAutomationStartStep()` then `nativeLoadAutomationScript()`
 12. Keep existing AUTOMATE broadcast receiver working (backward compat)
 
-### Phase 3: Kotlin launcher script executor                               [x]
+### Phase 3: Kotlin launcher script executor [x]
 
 13. Create `LauncherScriptExecutor.kt`:
     - JSON5 preprocessor: strip `//` comments + trailing commas, then `org.json`
@@ -118,25 +123,25 @@ Existing `PASS` and `FAIL` values unchanged.
     - In `onResume()`: if game just exited, read automation_result.json. If
       `LAUNCHER_CONTINUE`, resume executor from `next_step`. If `PASS`/`FAIL`, done
 
-### Phase 4: PS1 runner updates                                            [x]
+### Phase 4: PS1 runner updates [x]
 
 15. test_helpers.ps1: Watch-AutomationResult -- handle `LAUNCHER_CONTINUE` as still-running
 16. test_helpers.ps1: add `Start-LauncherScript` helper (push script, SETUP_AUTOMATE, watch)
 17. run_test.ps1: auto-detect launcher scripts (first real step is `enter_launcher`).
     Use `SETUP_AUTOMATE` instead of game launch + AUTOMATE
 
-### Phase 5: Migrate test_gog_installer_redbook                           [x]
+### Phase 5: Migrate test_gog_installer_redbook [x]
 
 18. Rewrite test_gog_installer_redbook.json5 as unified launcher+game script
 19. Simplify test_gog_installer_redbook.ps1 to: push GOG exe + invoke
 
-### Phase 6: Migrate remaining high-value tests                            [x]
+### Phase 6: Migrate remaining high-value tests [x]
 
 20. test_resolution -> unified JSON5 (launcher->game->launcher->game)
 21. test_autoselect_crash -> unified JSON5 (launcher->game->launcher->game)
 22. test_controller_compare -> unified JSON5 (launcher->game->launcher) -- may defer
 
-### Phase 7: Verification                                                  [x]
+### Phase 7: Verification [x]
 
 23. Run test_gog_installer_redbook end-to-end
 24. Run test_resolution end-to-end
@@ -146,19 +151,22 @@ Existing `PASS` and `FAIL` values unchanged.
 ## Test migration assessment
 
 ### High value -- move most logic into JSON5
-| Test | What moves to JSON5 | What stays in PS1 |
-|------|---------------------|-------------------|
+
+| Test                       | What moves to JSON5                                   | What stays in PS1              |
+| -------------------------- | ----------------------------------------------------- | ------------------------------ |
 | test_gog_installer_redbook | clear, import, audio verify, MIDI/CD preview, in-game | GOG .exe push, emulator health |
-| test_resolution | reset, default game, write config, explicit game | emulator health, deps |
-| test_autoselect_crash | reset, create pilot, write_autoselect, menu nav | emulator health |
-| test_controller_compare | patch, introspect, game script, compare | emulator health, deps |
+| test_resolution            | reset, default game, write config, explicit game      | emulator health, deps          |
+| test_autoselect_crash      | reset, create pilot, write_autoselect, menu nav       | emulator health                |
+| test_controller_compare    | patch, introspect, game script, compare               | emulator health, deps          |
 
 ### Already optimal -- no change needed
+
 9 standalone scripts: test_launch_to_automap, test_fire_primary, test_death,
 test_axis_mapping, test_dpad_triggers, test_joystick_menu, test_keyboard_defaults,
 test_keyboard_viewport, test_keyboard_manual
 
 ### Not applicable -- stays PS1-only
+
 test_mp/lan/dual_emu (multi-emulator), test_cue_iso/fpcalc (desktop),
 test_bot/server (Rust), test_all_extracts (meta), test_extract (host hashes),
 test_autoselect_plx (static validation), test_saf_* (SAF intents)

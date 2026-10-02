@@ -1,13 +1,10 @@
 [
     {
         "_info": {
-            "games": [
-                "d1",
-                "d2"
-            ],
+            "games": ["d1", "d2"],
             "_standalone": false,
-            "_owner": "test_lan"
-        }
+            "_owner": "test_lan",
+        },
     },
     {
         "action": "wait_for",
@@ -18,13 +15,13 @@
             "coop_briefing.presenting": true,
             "time_paused": true,
             "coop_briefing.seconds_remaining": {
-                "range": [100, 120]
-            }
-        }
+                "range": [100, 120],
+            },
+        },
     },
     {
         "action": "wait_ms",
-        "ms": 90000
+        "ms": 90000,
     },
     {
         "action": "assert",
@@ -34,9 +31,9 @@
             "coop_briefing.presenting": true,
             "time_paused": true,
             "coop_briefing.seconds_remaining": {
-                "range": [5, 30]
-            }
-        }
+                "range": [5, 30],
+            },
+        },
     },
     {
         "action": "wait_for",
@@ -47,7 +44,7 @@
             "coop_briefing.launch_reason": 3,
             "in_game": true,
             "time_paused": false,
-            "multiplayer.num_connected": 2
-        }
-    }
+            "multiplayer.num_connected": 2,
+        },
+    },
 ]

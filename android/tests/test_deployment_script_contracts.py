@@ -65,7 +65,12 @@ class DeploymentScriptContractsTest(unittest.TestCase):
         self.assertIn(dedicated, script)
         self.assertIn(dedicated, readme)
         self.assertIn("default command is additive", readme)
-        for token in ("sha256sum", "staged digest mismatch", "final digest mismatch", "mv -f $REMOTE_TEMP $REMOTE_PATH"):
+        for token in (
+            "sha256sum",
+            "staged digest mismatch",
+            "final digest mismatch",
+            "mv -f $REMOTE_TEMP $REMOTE_PATH",
+        ):
             self.assertIn(token, script)
 
     def test_single_avd_rebuild_is_target_scoped(self) -> None:

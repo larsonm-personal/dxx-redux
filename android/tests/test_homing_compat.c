@@ -2,12 +2,12 @@
 
 #include "homing_compat.h"
 
-#define CHECK(expression) \
-	do { \
-		if (!(expression)) { \
+#define CHECK(expression)                                       \
+	do {                                                        \
+		if (!(expression)) {                                    \
 			fprintf(stderr, "Check failed: %s\n", #expression); \
-			return 1; \
-		} \
+			return 1;                                           \
+		}                                                       \
 	} while (0)
 
 enum {
@@ -26,9 +26,9 @@ int main(void)
 	CHECK(homing_compat_original_enabled(1, 0, 0, GM_MULTI, GM_MULTI_COOP));
 	CHECK(!homing_compat_original_enabled(0, 1, 0, GM_MULTI, GM_MULTI_COOP));
 	CHECK(homing_compat_original_enabled(0, 1,
-		GM_NETWORK | GM_MULTI_ROBOTS | GM_MULTI_COOP, GM_MULTI, GM_MULTI_COOP));
+	                                     GM_NETWORK | GM_MULTI_ROBOTS | GM_MULTI_COOP, GM_MULTI, GM_MULTI_COOP));
 	CHECK(!homing_compat_original_enabled(1, 1,
-		GM_NETWORK, GM_MULTI, GM_MULTI_COOP));
+	                                      GM_NETWORK, GM_MULTI, GM_MULTI_COOP));
 
 	CHECK(homing_compat_acquisition_dot(1, 1, d2_min_dot) == d1_min_dot);
 	CHECK(homing_compat_acquisition_dot(0, 1, d2_min_dot) == d2_min_dot);

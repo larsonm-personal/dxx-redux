@@ -6,14 +6,14 @@ Goal: analyze the newest non-`old/` demo artifacts in `android/temp_game_logs`, 
 
 ## Phases
 
-| phase | task | status |
-|---|---|---|
-| 1 | Inventory current non-`old/` demo artifacts and identify the newest matching `.dximdemo`, `.rngtrace.jsonl`, `.dem`, and debug log. | completed |
-| 2 | Run the input demo through the host replay wrapper and capture the final-state comparison. | completed |
-| 3 | If replay diverges, compare record-side debug logs against host replay logs to find the first mismatch. | completed |
-| 4 | Use the classic `.dem` dump only for direct observed object/player positions where useful, not for hidden AI state. | completed |
-| 5 | Fix the root cause if clear, or add the smallest targeted logging needed for the next run. | completed |
-| 6 | Rebuild and rerun the affected replay/test path after any code changes. | completed |
+| phase | task                                                                                                                                | status    |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| 1     | Inventory current non-`old/` demo artifacts and identify the newest matching `.dximdemo`, `.rngtrace.jsonl`, `.dem`, and debug log. | completed |
+| 2     | Run the input demo through the host replay wrapper and capture the final-state comparison.                                          | completed |
+| 3     | If replay diverges, compare record-side debug logs against host replay logs to find the first mismatch.                             | completed |
+| 4     | Use the classic `.dem` dump only for direct observed object/player positions where useful, not for hidden AI state.                 | completed |
+| 5     | Fix the root cause if clear, or add the smallest targeted logging needed for the next run.                                          | completed |
+| 6     | Rebuild and rerun the affected replay/test path after any code changes.                                                             | completed |
 
 ## Notes
 

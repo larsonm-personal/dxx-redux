@@ -47,4 +47,3 @@ Not exercised by these integration checks: a third connected device surviving
 alongside the host, disconnect during rollback, physical network-loss detection
 timing, and loading the resulting save. Existing disconnect inventory tracking,
 restore mapping, and transition save/load blocking remain in use.
-

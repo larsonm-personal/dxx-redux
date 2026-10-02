@@ -19,6 +19,7 @@ $producerLock = [IO.File]::Open((Join-Path $tempRoot 'producer.lock'), [IO.FileM
 try {
     $extractSource = [System.IO.File]::ReadAllText($extractPath)
     $automationTemplateSource = [System.IO.File]::ReadAllText($automationTemplatePath)
+    $automationTemplate = @(Read-JsoncFile $automationTemplatePath)
     $allExtractsSource = [System.IO.File]::ReadAllText($allExtractsPath)
     $runAllSource = [System.IO.File]::ReadAllText($runAllPath)
     if ($extractSource -notmatch "(?s)function Start-ExtractSetupActivity.*?'am', 'start', '-W', '-S'.*?'pidof'.*?Wait-SetupReady" -or
@@ -42,11 +43,13 @@ try {
     if ($automationTemplateSource -notmatch '(?s)"text": "Multiplayer".*?"key": "esc".*?"text": "New game"') {
         throw 'Extraction launch automation no longer normalizes the multiplayer submenu before New Game'
     }
+    $missionSteps = @($automationTemplate | Where-Object { $_.action -eq 'select_mission' })
     if ($extractSource -notmatch '(?s)\$missionSelectionText = if \(\$MissionSelectionRequired\).*?else \{ '''' \}' -or
-        $automationTemplateSource -notmatch '"action": "select_mission", "text": "MISSION_NAME"') {
+        $missionSteps.Count -ne 1 -or $missionSteps[0].text -cne 'MISSION_NAME' -or
+        $missionSteps[0].optional -cne 'MISSION_OPTIONAL') {
         throw 'Optional extraction mission selection no longer chooses the current mission or skips an absent picker'
     }
-    if ($automationTemplateSource -notmatch '"action": "select", "text": "1", "when": "d1"') {
+    if (@($automationTemplate | Where-Object { $_.action -eq 'select' -and $_.text -ceq '1' -and $_.when -ceq 'd1' }).Count -ne 1) {
         throw 'D1 extraction automation no longer accepts the visible starting-level value through the menu-aware selector'
     }
     if ($allExtractsSource -notmatch '(?s)\$exitCode -ne 98.*?\$attempt -gt 1.*?Confirm-EmulatorHealthWithAdbRecovery.*?Invoke-LauncherStartupRecovery.*?Ensure-LauncherTestDeviceReady') {

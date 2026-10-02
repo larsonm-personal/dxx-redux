@@ -13,13 +13,13 @@ assertions and no redbook expectations.
 
 - [x] replace the D1 placeholder JSON5 with a real launcher-plus-game D1 test
 - [x] add a D1 PowerShell wrapper that stages either D1 installer variant and
-  runs the unified D1 script through `run_test.ps1`
+      runs the unified D1 script through `run_test.ps1`
 - [x] verify launcher-side D1 import expectations match the real 7-file GOG D1
-  extraction set for both installer formats
+      extraction set for both installer formats
 - [x] validate the D1 in-game flow against the real D1 menus and level-load
-  behavior on the emulator
+      behavior on the emulator
 - [x] update nearby notes so the new D1 regression and its validation status
-  are recorded next to the existing D2 coverage
+      are recorded next to the existing D2 coverage
 
 ## Validation target
 

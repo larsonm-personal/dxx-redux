@@ -8,6 +8,7 @@
 - [x] Run scoped formatting and the best available build or validation
 
 Validation completed:
+
 - `.\android\run-code-quality.ps1 -Fix -Paths ...`
 - `.\gradlew.bat :app:assembleDebug` from `android\`
 - `.\run-windows-build.ps1`

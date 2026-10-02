@@ -32,16 +32,33 @@ class ParityTests(unittest.TestCase):
         source = self.root / "workspace"
         parity.snapshot_harness(Path(__file__).resolve().parents[2], source)
         harness = parity.snapshot_harness(source, self.root / "frozen")
-        for name in ("android/tests/run_input_demo_replay.ps1", "android/helpers/test_host_platform.ps1",
-                     "android/helpers/input_demo_replay_menu.ps1", "android/helpers/retain-recent-artifacts.ps1"):
+        for name in (
+            "android/tests/run_input_demo_replay.ps1",
+            "android/helpers/test_host_platform.ps1",
+            "android/helpers/input_demo_replay_menu.ps1",
+            "android/helpers/retain-recent-artifacts.ps1",
+        ):
             (source / name).write_text("throw 'live workspace must not execute'\n")
         demos = self.root / "demos"
         demos.mkdir()
         (demos / "pinned-demo.dximdemo").write_text(json.dumps({"type": "header", **self.header}) + "\n")
         completed = parity.subprocess.run(
-            [pwsh, "-NoProfile", "-File", str(Path(harness["root"]) / "android/tests/run_input_demo_replay.ps1"),
-             "-RepositoryRoot", str(source), "-ListOnly", "-SearchRoot", str(demos)],
-            capture_output=True, text=True, encoding="utf-8", check=False)
+            [
+                pwsh,
+                "-NoProfile",
+                "-File",
+                str(Path(harness["root"]) / "android/tests/run_input_demo_replay.ps1"),
+                "-RepositoryRoot",
+                str(source),
+                "-ListOnly",
+                "-SearchRoot",
+                str(demos),
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
         self.assertIn("pinned-demo.dximdemo", completed.stdout)
         # Failure retention must also load the staged helpers, and explicit staged
@@ -56,11 +73,31 @@ class ParityTests(unittest.TestCase):
         executable.write_bytes(b"not executed: malformed recording fails before launch")
         result = source / "temp/result.json"
         failed = parity.subprocess.run(
-            [pwsh, "-NoProfile", "-File", str(Path(harness["root"]) / "android/tests/run_input_demo_replay.ps1"),
-             "-RepositoryRoot", str(source), "-DemoPath", str(demos / "pinned-demo.dximdemo"),
-             "-DataDir", str(data), "-ExecutablePath", str(executable), "-Runner", "windowed-no-present",
-             "-Mode", "accelerated", "-ResultCopyPath", str(result)],
-            capture_output=True, text=True, encoding="utf-8", check=False)
+            [
+                pwsh,
+                "-NoProfile",
+                "-File",
+                str(Path(harness["root"]) / "android/tests/run_input_demo_replay.ps1"),
+                "-RepositoryRoot",
+                str(source),
+                "-DemoPath",
+                str(demos / "pinned-demo.dximdemo"),
+                "-DataDir",
+                str(data),
+                "-ExecutablePath",
+                str(executable),
+                "-Runner",
+                "windowed-no-present",
+                "-Mode",
+                "accelerated",
+                "-ResultCopyPath",
+                str(result),
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
         self.assertNotEqual(failed.returncode, 0)
         archives = list(result.parent.glob("result.json.failure_*/failure.json"))
         self.assertEqual(len(archives), 1, failed.stdout + failed.stderr)
@@ -102,7 +139,8 @@ class ParityTests(unittest.TestCase):
             "import json,sys\nfrom pathlib import Path\n"
             "out=Path(sys.argv[sys.argv.index('--output')+1])\n"
             "(out/'executed.json').write_text(json.dumps({'controller':str(Path(__file__).resolve())}))\n"
-            "sys.exit(7)\n")
+            "sys.exit(7)\n"
+        )
         original_snapshot = parity.snapshot_harness
 
         def stage_then_edit(repo, directory):
@@ -110,9 +148,17 @@ class ParityTests(unittest.TestCase):
             controller.write_text("raise RuntimeError('live controller must not execute')\n")
             return harness
 
-        args = argparse.Namespace(repo=source, output=self.root / "output", data=source,
-                                  native=controller, imported=controller, minimum_free_gb=0,
-                                  pwsh="unused", timeout=10, demo=[source / "demo"])
+        args = argparse.Namespace(
+            repo=source,
+            output=self.root / "output",
+            data=source,
+            native=controller,
+            imported=controller,
+            minimum_free_gb=0,
+            pwsh="unused",
+            timeout=10,
+            demo=[source / "demo"],
+        )
         with mock.patch.object(parity, "snapshot_harness", side_effect=stage_then_edit):
             self.assertEqual(parity.run(args), 7)
         executed = json.loads((args.output / "executed.json").read_text())
@@ -228,18 +274,39 @@ class ParityTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory(prefix="d1-parity-unit-", dir=scratch)
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
-        self.header = {"game": "d1", "mission": "d1", "level": 14, "difficulty": 0,
-                       "frame_count": 2, "start_mode": "save_checkpoint"}
-        self.result = {**self.header, "version": 2, "player0": {"shields": 30},
-                       "position": {"x": 10}, "level_summary": {"endlevel_completed": True}}
+        self.header = {
+            "game": "d1",
+            "mission": "d1",
+            "level": 14,
+            "difficulty": 0,
+            "frame_count": 2,
+            "start_mode": "save_checkpoint",
+        }
+        self.result = {
+            **self.header,
+            "version": 2,
+            "player0": {"shields": 30},
+            "position": {"x": 10},
+            "level_summary": {"endlevel_completed": True},
+        }
 
     def trace(self, name, engine="d1"):
         meta = {"type": "meta", "diag_version": parity.FRAME_DIAGNOSTIC_VERSION, **self.header}
         # Both binaries emit input_demo_replay_game/mission in trace metadata
-        rows = [meta] + [{"type": "frame_state", "f": i, "ft": 100,
-                          "state": {"x": i}, "rng": {"s": 7}, "diag": {**{name: [0] * length if length else 0
-                                      for name, length in parity.FRAME_DIAGNOSTIC_FIELDS.items()}, "objects": i}}
-                         for i in range(2)]
+        rows = [meta] + [
+            {
+                "type": "frame_state",
+                "f": i,
+                "ft": 100,
+                "state": {"x": i},
+                "rng": {"s": 7},
+                "diag": {
+                    **{name: [0] * length if length else 0 for name, length in parity.FRAME_DIAGNOSTIC_FIELDS.items()},
+                    "objects": i,
+                },
+            }
+            for i in range(2)
+        ]
         return self.write(name, rows)
 
     def write(self, name, rows):
@@ -267,9 +334,13 @@ class ParityTests(unittest.TestCase):
         actual["player0"]["shields"] = 29
         path = self.root / "actual.json"
         path.write_text(json.dumps(actual))
-        report = parity.compare_pair(demo, {"state": self.root / "missing", "rng": self.root / "missing"},
-                                     {"result": path, "state": self.root / "missing", "rng": self.root / "missing"},
-                                     "d1", recorded=True)
+        report = parity.compare_pair(
+            demo,
+            {"state": self.root / "missing", "rng": self.root / "missing"},
+            {"result": path, "state": self.root / "missing", "rng": self.root / "missing"},
+            "d1",
+            recorded=True,
+        )
         self.assertEqual(report["checks"]["terminal_result"]["status"], "fail")
         self.assertEqual(report["checks"]["frames"]["status"], "incomplete")
         self.assertEqual(self.result["player0"]["shields"], 30)
@@ -287,9 +358,11 @@ class ParityTests(unittest.TestCase):
 
     def test_wrong_identity_missing_fields_and_extra_frames_fail(self):
         a = self.trace("a")
-        for mutation in (lambda rows: rows[0].update(mission="wrong"),
-                         lambda rows: rows[1].pop("diag"),
-                         lambda rows: rows.append({**rows[-1], "f": 2})):
+        for mutation in (
+            lambda rows: rows[0].update(mission="wrong"),
+            lambda rows: rows[1].pop("diag"),
+            lambda rows: rows.append({**rows[-1], "f": 2}),
+        ):
             b = self.trace("b")
             self.mutate(b, mutation)
             with self.assertRaises(parity.EvidenceError):
@@ -310,8 +383,10 @@ class ParityTests(unittest.TestCase):
         self.assertTrue(all(key == member for key, member in emitted))
         self.assertEqual(set(parity.FRAME_DIAGNOSTIC_FIELDS), {key for key, _ in emitted})
         header = (shared / "input_demo_state_trace.h").read_text()
-        body = header.split("typedef struct input_demo_state_trace_diag {")[1].split("} input_demo_state_trace_diag;")[0]
-        declared = re.findall(r'\b(?:u?int(?:32|64)_t) (\w+)(?:\[(\w+)\])?;', body)
+        body = header.split("typedef struct input_demo_state_trace_diag {")[1].split("} input_demo_state_trace_diag;")[
+            0
+        ]
+        declared = re.findall(r"\b(?:u?int(?:32|64)_t) (\w+)(?:\[(\w+)\])?;", body)
         self.assertEqual({key for key, _ in declared}, set(parity.FRAME_DIAGNOSTIC_FIELDS))
 
     def test_missing_diagnostic_from_both_captures_is_incomplete(self):
@@ -322,8 +397,7 @@ class ParityTests(unittest.TestCase):
             parity.compare_frames(a, b, self.header, "d1")
 
     def test_every_diagnostic_is_required_and_typed(self):
-        complete = {name: [0] * length if length else 0
-                    for name, length in parity.FRAME_DIAGNOSTIC_FIELDS.items()}
+        complete = {name: [0] * length if length else 0 for name, length in parity.FRAME_DIAGNOSTIC_FIELDS.items()}
         parity.validate_frame_diagnostics(complete, 0)
         for name, length in parity.FRAME_DIAGNOSTIC_FIELDS.items():
             with self.subTest(field=name):
@@ -331,7 +405,9 @@ class ParityTests(unittest.TestCase):
                 del missing[name]
                 with self.assertRaises(parity.EvidenceError):
                     parity.validate_frame_diagnostics(missing, 0)
-                invalid_values = (None, True, "0", [0] * (length - 1), [0] * (length + 1)) if length else (None, True, "0", 0.0, [])
+                invalid_values = (
+                    (None, True, "0", [0] * (length - 1), [0] * (length + 1)) if length else (None, True, "0", 0.0, [])
+                )
                 if length:
                     invalid_values += ([False] * length,)
                 for value in invalid_values:
@@ -378,11 +454,33 @@ class ParityTests(unittest.TestCase):
             parity.compare_frames(a, b, self.header, "d1")
 
     def rng(self, name):
-        return self.write(name, [{"type": "meta", "events": 2, "truncated": False},
-                                 {"type": "rand", "seq": 0, "frame": 0, "gt": 100, "call_count": 1,
-                                  "state_before": 7, "state_after": 8, "result": 1, "file": "native.c"},
-                                 {"type": "rand", "seq": 1, "frame": 1, "gt": 200, "call_count": 2,
-                                  "state_before": 8, "state_after": 9, "result": 2}])
+        return self.write(
+            name,
+            [
+                {"type": "meta", "events": 2, "truncated": False},
+                {
+                    "type": "rand",
+                    "seq": 0,
+                    "frame": 0,
+                    "gt": 100,
+                    "call_count": 1,
+                    "state_before": 7,
+                    "state_after": 8,
+                    "result": 1,
+                    "file": "native.c",
+                },
+                {
+                    "type": "rand",
+                    "seq": 1,
+                    "frame": 1,
+                    "gt": 200,
+                    "call_count": 2,
+                    "state_before": 8,
+                    "state_after": 9,
+                    "result": 2,
+                },
+            ],
+        )
 
     def object_trace(self, name):
         rows = [{"type": "meta", **self.header}]
@@ -390,9 +488,19 @@ class ParityTests(unittest.TestCase):
             row = self.object_storage()
             row.update(type="object_state", version=2, f=i, reset=i == 0)
             shot = schema_example(parity.OBJECT_SCHEMA)
-            shot.update(type=5, id=11, signature=i + 7, control_type=9, movement_type=1, render_type=3,
-                        physics=schema_example(parity.PHYSICS_SCHEMA),
-                        weapon=dict.fromkeys("parent_type parent_num parent_signature creation_time last_hitobj track_goal multiplier creation_framecount".split(), 0))
+            shot.update(
+                type=5,
+                id=11,
+                signature=i + 7,
+                control_type=9,
+                movement_type=1,
+                render_type=3,
+                physics=schema_example(parity.PHYSICS_SCHEMA),
+                weapon=dict.fromkeys(
+                    "parent_type parent_num parent_signature creation_time last_hitobj track_goal multiplier creation_framecount".split(),
+                    0,
+                ),
+            )
             shot["weapon"]["hitobj_list"] = [0, i] + [0] * 998
             row["slots"]["3"] = shot
             row["allocator"].update(num_objects=1, highest_object_index=3)
@@ -402,10 +510,21 @@ class ParityTests(unittest.TestCase):
     def test_reactor_selector_mapping_is_native_only_and_keeps_other_fields_strict(self):
         def reactor(engine, selector):
             obj = schema_example(parity.OBJECT_SCHEMA)
-            obj.update(type=9, id=selector, control_type=16, render_type=1,
-                       polyobj={"model_num": 8, "subobj_flags": 0, "tmap_override": -1,
-                                "alt_textures": 0, "anim_angles": [[0, 0, 0]] * 10},
-                       reactor_gun_pos=[[1, 2, 3]] * 4, reactor_gun_dir=[[4, 5, 6]] * 4)
+            obj.update(
+                type=9,
+                id=selector,
+                control_type=16,
+                render_type=1,
+                polyobj={
+                    "model_num": 8,
+                    "subobj_flags": 0,
+                    "tmap_override": -1,
+                    "alt_textures": 0,
+                    "anim_angles": [[0, 0, 0]] * 10,
+                },
+                reactor_gun_pos=[[1, 2, 3]] * 4,
+                reactor_gun_dir=[[4, 5, 6]] * 4,
+            )
             if engine == "d2":
                 for key in ("reactor_gun_pos", "reactor_gun_dir"):
                     obj[key] += [[0, 0, 0]] * 4
@@ -423,16 +542,19 @@ class ParityTests(unittest.TestCase):
                         row["allocator"].update(num_objects=1, highest_object_index=3)
                     elif engine == "d2" and row.get("state"):
                         self.import_world_storage(row["state"])
+
             self.mutate(a, lambda rows: seed(rows, "d1"))
             self.mutate(b, lambda rows: seed(rows, "d2"))
             raw_a, raw_b = a.read_bytes(), b.read_bytes()
             self.assertEqual(compare(a, b, self.header, "d2")["status"], "pass")
             self.assertEqual((a.read_bytes(), b.read_bytes()), (raw_a, raw_b))
-            for mutation in (lambda obj: obj.update(id=25),
-                             lambda obj: obj.update(shields=123),
-                             lambda obj: obj["polyobj"].update(model_num=9),
-                             lambda obj: obj["reactor_gun_pos"][0].__setitem__(0, 7),
-                             lambda obj: obj.update(unknown=0)):
+            for mutation in (
+                lambda obj: obj.update(id=25),
+                lambda obj: obj.update(shields=123),
+                lambda obj: obj["polyobj"].update(model_num=9),
+                lambda obj: obj["reactor_gun_pos"][0].__setitem__(0, 7),
+                lambda obj: obj.update(unknown=0),
+            ):
                 b.write_bytes(raw_b)
                 self.mutate(b, lambda rows: mutation(next(row for row in rows if "slots" in row)["slots"]["3"]))
                 self.assertEqual(compare(a, b, self.header, "d2")["status"], "fail")
@@ -451,7 +573,10 @@ class ParityTests(unittest.TestCase):
     def robot_object(self, control=1):
         obj = schema_example(parity.OBJECT_SCHEMA)
         obj.update(type=2, control_type=control)
-        obj["ai"] = dict.fromkeys("behavior hide_segment hide_index path_length cur_path_index danger_laser_signature danger_laser_num".split(), 0)
+        obj["ai"] = dict.fromkeys(
+            "behavior hide_segment hide_index path_length cur_path_index danger_laser_signature danger_laser_num".split(),
+            0,
+        )
         obj["ai"].update(flags=[0] * 11, follow_path_start_seg=168, follow_path_end_seg=-1)
         local = schema_example(parity.AI_LOCAL_SCHEMA)
         local.update(last_see_time=-123, last_attack_time=456, wait_time=789)
@@ -472,9 +597,11 @@ class ParityTests(unittest.TestCase):
     def test_saved_ai_mapping_compares_values_and_preserves_raw_and_unknown_state(self):
         for control in (1, 11):
             a = self.object_trace("ai-native")
+
             def robots(rows):
                 for row in rows[1:]:
                     row["slots"]["3"] = self.robot_object(control)
+
             self.mutate(a, robots)
             b = self.write("ai-imported", list(parity.records(a)))
             self.mutate(b, lambda rows: [self.import_robot(row["slots"]["3"]) for row in rows[1:]])
@@ -486,8 +613,10 @@ class ParityTests(unittest.TestCase):
             for group, fields in (("ai", parity.AI_SAVED_STATIC_FIELDS), ("ai_local", parity.AI_SAVED_LOCAL_FIELDS)):
                 for field in fields:
                     damaged = self.write("ai-damaged", list(parity.records(b)))
+
                     def change(rows):
                         rows[2]["slots"]["3"][group]["d1_saved"][field] += 1
+
                     self.mutate(damaged, change)
                     differences = parity.compare_objects(a, damaged, self.header, "d2")["first_field_differences"]
                     self.assertEqual(differences[f"$.object.{group}.{field}"]["frame"], 1)
@@ -521,8 +650,12 @@ class ParityTests(unittest.TestCase):
     def test_neutral_object_fields_and_capacity_cannot_hide_d2_behavior(self):
         robot = self.robot_object()
         self.import_robot(robot)
-        for group, field in (("ai", "dying_sound_playing"), ("ai", "dying_start_time"),
-                             ("ai_local", "next_action_time"), ("ai_local", "next_fire2")):
+        for group, field in (
+            ("ai", "dying_sound_playing"),
+            ("ai", "dying_start_time"),
+            ("ai_local", "next_action_time"),
+            ("ai_local", "next_fire2"),
+        ):
             changed = copy.deepcopy(robot)
             changed[group][field] = 1
             with self.assertRaises(parity.EvidenceError):
@@ -536,8 +669,12 @@ class ParityTests(unittest.TestCase):
         with self.assertRaises(parity.EvidenceError):
             parity.canonical_d1_object(powerup)
         reactor = schema_example(parity.OBJECT_SCHEMA)
-        reactor.update(type=9, control_type=16, reactor_gun_pos=[[1, 2, 3]] * 4 + [[0, 0, 0]] * 4,
-                       reactor_gun_dir=[[4, 5, 6]] * 4 + [[0, 0, 0]] * 4)
+        reactor.update(
+            type=9,
+            control_type=16,
+            reactor_gun_pos=[[1, 2, 3]] * 4 + [[0, 0, 0]] * 4,
+            reactor_gun_dir=[[4, 5, 6]] * 4 + [[0, 0, 0]] * 4,
+        )
         parity.validate_object(reactor, "d2", "$.object")
         self.assertEqual(parity.canonical_d1_object(reactor)["reactor_gun_pos"], [[1, 2, 3]] * 4)
         for key in ("reactor_gun_pos", "reactor_gun_dir"):
@@ -555,18 +692,24 @@ class ParityTests(unittest.TestCase):
         self.assertEqual(diff["$.object.extra_engine_field"]["frame"], 0)
         self.assertEqual(diff["$.object.weapon.hitobj_list[1]"]["frame"], 1)
         self.assertEqual(diff["$.object.weapon.hitobj_list[1]"]["slot"], 3)
+
         def retire(rows):
             rows[2]["slots"]["3"] = None
             rows[2]["allocator"].update(num_objects=0, highest_object_index=-1)
+
         self.mutate(b, retire)
         self.assertIn("$.object", parity.compare_objects(a, b, self.header)["first_field_differences"])
 
     def test_object_evidence_requires_complete_ordered_deltas(self):
-        for mutation in (lambda rows: rows.pop(), lambda rows: rows[1].update(reset=False),
-                         lambda rows: rows[2].update(f=3), lambda rows: rows[2].update(capacity=11),
-                         lambda rows: rows[1]["slots"].update({"10": {}}),
-                         lambda rows: rows[1]["slots"].update({"2": None}),
-                         lambda rows: rows[2].pop("rng")):
+        for mutation in (
+            lambda rows: rows.pop(),
+            lambda rows: rows[1].update(reset=False),
+            lambda rows: rows[2].update(f=3),
+            lambda rows: rows[2].update(capacity=11),
+            lambda rows: rows[1]["slots"].update({"10": {}}),
+            lambda rows: rows[1]["slots"].update({"2": None}),
+            lambda rows: rows[2].pop("rng"),
+        ):
             path = self.object_trace("bad")
             self.mutate(path, mutation)
             with self.assertRaises(parity.EvidenceError):
@@ -584,9 +727,11 @@ class ParityTests(unittest.TestCase):
             parity.compare_objects(a, b, self.header)
 
     def test_missing_live_slots_cannot_match_an_allocator_with_objects(self):
-        for mutation in (lambda row: row["slots"].clear(),
-                         lambda row: row["allocator"].update(num_objects=2),
-                         lambda row: row["allocator"].update(highest_object_index=2)):
+        for mutation in (
+            lambda row: row["slots"].clear(),
+            lambda row: row["allocator"].update(num_objects=2),
+            lambda row: row["allocator"].update(highest_object_index=2),
+        ):
             path = self.object_trace("bad")
             self.mutate(path, lambda rows: mutation(rows[1]))
             with self.assertRaises(parity.EvidenceError):
@@ -624,10 +769,12 @@ class ParityTests(unittest.TestCase):
                         operation = lambda: list(parity.object_states(path, self.header))
                     else:
                         path = self.world_trace("bad-boundary")
+
                         def corrupt(rows):
                             row = rows[1 if boundary == "restored" else -2]
                             row.update({key: copy.deepcopy(valid[key]) for key in parity.OBJECT_STORAGE_SCHEMA})
                             mutation(row)
+
                         self.mutate(path, corrupt)
                         operation = lambda: list(parity.world_states(path, self.header))
                     with self.assertRaises(parity.EvidenceError):
@@ -637,27 +784,67 @@ class ParityTests(unittest.TestCase):
         for engine in ("d1", "d2"):
             variants = [
                 ({"movement_type": 3}, {"spin_rate": [1, 2, 3]}),
-                ({"control_type": 2}, {"explosion": dict.fromkeys("spawn_time delete_time delete_objnum attach_parent prev_attach next_attach".split(), 0)}),
+                (
+                    {"control_type": 2},
+                    {
+                        "explosion": dict.fromkeys(
+                            "spawn_time delete_time delete_objnum attach_parent prev_attach next_attach".split(), 0
+                        )
+                    },
+                ),
                 ({"control_type": 14}, {"light_intensity": 123}),
-                ({"control_type": 13}, {"powerup": {"count": 1, **({"creation_time": 0, "flags": 0} if engine == "d2" else {})}}),
-                ({"control_type": 16}, {"reactor_gun_pos": [[0, 0, 0]] * (8 if engine == "d2" else 4),
-                                       "reactor_gun_dir": [[0, 0, 1]] * (8 if engine == "d2" else 4)}),
+                (
+                    {"control_type": 13},
+                    {"powerup": {"count": 1, **({"creation_time": 0, "flags": 0} if engine == "d2" else {})}},
+                ),
+                (
+                    {"control_type": 16},
+                    {
+                        "reactor_gun_pos": [[0, 0, 0]] * (8 if engine == "d2" else 4),
+                        "reactor_gun_dir": [[0, 0, 1]] * (8 if engine == "d2" else 4),
+                    },
+                ),
             ]
-            poly = {"model_num": 1, "subobj_flags": 0, "tmap_override": -1, "alt_textures": 0, "anim_angles": [[0, 0, 0]] * 10}
+            poly = {
+                "model_num": 1,
+                "subobj_flags": 0,
+                "tmap_override": -1,
+                "alt_textures": 0,
+                "anim_angles": [[0, 0, 0]] * 10,
+            }
             for render in (1, 6):
                 variants.append(({"render_type": render}, {"polyobj": poly}))
             variants.append(({"type": 12, "render_type": 0}, {"polyobj": poly}))
             for render in (2, 4, 5, 7):
                 variants.append(({"render_type": render}, {"vclip": {"vclip_num": 1, "frametime": 2, "framenum": 3}}))
             local = schema_example(parity.AI_LOCAL_SCHEMA)
-            local.update(dict.fromkeys(("next_action_time next_fire2" if engine == "d2" else "last_see_time last_attack_time wait_time").split(), 0))
+            local.update(
+                dict.fromkeys(
+                    (
+                        "next_action_time next_fire2" if engine == "d2" else "last_see_time last_attack_time wait_time"
+                    ).split(),
+                    0,
+                )
+            )
             if engine == "d2":
                 local["d1_saved"] = dict.fromkeys("last_see_time last_attack_time wait_time".split(), 0)
             for key in ("goal_angles", "delta_angles", "goal_state", "achieved_state"):
                 local[key] = [schema_example(parity.AI_LOCAL_SCHEMA[key][0]) for _ in range(10)]
-            ai = dict.fromkeys("behavior hide_segment hide_index path_length cur_path_index danger_laser_signature danger_laser_num".split(), 0)
+            ai = dict.fromkeys(
+                "behavior hide_segment hide_index path_length cur_path_index danger_laser_signature danger_laser_num".split(),
+                0,
+            )
             ai["flags"] = [0] * 11
-            ai.update(dict.fromkeys(("dying_sound_playing dying_start_time" if engine == "d2" else "follow_path_start_seg follow_path_end_seg").split(), 0))
+            ai.update(
+                dict.fromkeys(
+                    (
+                        "dying_sound_playing dying_start_time"
+                        if engine == "d2"
+                        else "follow_path_start_seg follow_path_end_seg"
+                    ).split(),
+                    0,
+                )
+            )
             if engine == "d2":
                 ai["d1_saved"] = dict.fromkeys("follow_path_start_seg follow_path_end_seg".split(), 0)
             for control in (1, 11):
@@ -713,8 +900,7 @@ class ParityTests(unittest.TestCase):
             parity.compare_rng(a, b, stream=1)
 
     def test_missing_rng_values_and_unknown_streams_are_incomplete(self):
-        for mutation in (lambda rows: rows[1].pop("result"),
-                         lambda rows: rows[1].update(stream=2)):
+        for mutation in (lambda rows: rows[1].pop("result"), lambda rows: rows[1].update(stream=2)):
             path = self.rng("rng")
             self.mutate(path, mutation)
             with self.assertRaises(parity.EvidenceError):
@@ -728,11 +914,16 @@ class ParityTests(unittest.TestCase):
         result = self.root / "result.json"
         result.write_text(json.dumps(self.result))
         demo = {"header": self.header, "result": self.result}
-        with mock.patch.object(parity, "compare_frames", return_value={"status": "pass"}), \
-             mock.patch.object(parity, "compare_checkpoint_collision_clock", return_value={"status": "pass"}):
+        with (
+            mock.patch.object(parity, "compare_frames", return_value={"status": "pass"}),
+            mock.patch.object(parity, "compare_checkpoint_collision_clock", return_value={"status": "pass"}),
+        ):
+
             def compare():
-                return parity.compare_pair(demo, {"state": a, "rng": a},
-                                           {"state": b, "rng": b, "result": result}, "d1", recorded=True)
+                return parity.compare_pair(
+                    demo, {"state": a, "rng": a}, {"state": b, "rng": b, "result": result}, "d1", recorded=True
+                )
+
             report = compare()
             self.assertEqual(report["status"], "pass")
             self.assertEqual(report["diagnostics"]["effects_rng"]["status"], "fail")
@@ -740,13 +931,14 @@ class ParityTests(unittest.TestCase):
             self.assertEqual(compare()["status"], "fail")
 
     def test_object_and_boundary_rng_exclude_only_cosmetic_history(self):
-        for fixture, compare in ((self.object_trace, parity.compare_objects),
-                                 (self.world_trace, parity.compare_world)):
+        for fixture, compare in ((self.object_trace, parity.compare_objects), (self.world_trace, parity.compare_world)):
             a, b = fixture("rng-a"), fixture("rng-b")
+
             def change(rows, stream, values):
                 for row in rows:
                     if row.get("type") in ("object_state", "object_boundary"):
                         row["rng"][stream].update(values)
+
             self.mutate(b, lambda rows: change(rows, 1, {"state": 42, "calls": 99}))
             raw = b.read_bytes()
             self.assertEqual(compare(a, b, self.header)["status"], "pass")
@@ -762,15 +954,23 @@ class ParityTests(unittest.TestCase):
         data.mkdir()
         for name in ("descent.hog", "descent.pig"):
             (data / name).write_bytes(b"isolated fixture")
-        args = argparse.Namespace(repo=Path(__file__).resolve().parents[2], data=data,
-                                  output=self.root / "output", native=__file__, imported=__file__, minimum_free_gb=0.01,
-                                  demo=[self.root / "one.dximdemo", self.root / "two.dximdemo"])
+        args = argparse.Namespace(
+            repo=Path(__file__).resolve().parents[2],
+            data=data,
+            output=self.root / "output",
+            native=__file__,
+            imported=__file__,
+            minimum_free_gb=0.01,
+            demo=[self.root / "one.dximdemo", self.root / "two.dximdemo"],
+        )
         args.output.mkdir()
         harness = parity.snapshot_harness(args.repo, args.output / "harness")
         demo = {"header": self.header, "result": self.result}
-        with mock.patch.object(parity, "read_demo", return_value=demo), \
-             mock.patch.object(parity, "capture", side_effect=parity.EvidenceError("timeout")) as capture, \
-             contextlib.redirect_stdout(io.StringIO()):
+        with (
+            mock.patch.object(parity, "read_demo", return_value=demo),
+            mock.patch.object(parity, "capture", side_effect=parity.EvidenceError("timeout")) as capture,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             self.assertNotEqual(parity.run_with_lease(args, harness), 0)
         self.assertEqual(capture.call_count, 6)
         report = json.loads((args.output / "report.json").read_text())
@@ -785,10 +985,18 @@ class ParityTests(unittest.TestCase):
         ai = state["ai"]
         ai["local_capacity"] = 1000
         ai["local_default"].update(last_see_time=0, last_attack_time=0, wait_time=0)
-        ai["boss"].update(Boss_hit_this_frame=0, Boss_been_hit=0, teleport_segments=[0] * 100,
-                          Num_boss_gate_segs=0, gate_segments=[0] * 100)
+        ai["boss"].update(
+            Boss_hit_this_frame=0,
+            Boss_been_hit=0,
+            teleport_segments=[0] * 100,
+            Num_boss_gate_segs=0,
+            gate_segments=[0] * 100,
+        )
         for key in ("paths", "cloak", "awareness"):
-            ai[key] = [example(parity.WORLD_SCHEMA["ai"][key][0]) for _ in range({"paths": 2500, "cloak": 8, "awareness": 64}[key])]
+            ai[key] = [
+                example(parity.WORLD_SCHEMA["ai"][key][0])
+                for _ in range({"paths": 2500, "cloak": 8, "awareness": 64}[key])
+            ]
         for key in ("goal_angles", "delta_angles", "goal_state", "achieved_state"):
             ai["local_default"][key] = [example(parity.AI_LOCAL_SCHEMA[key][0]) for _ in range(10)]
         state["players"] = [{**example(parity.WORLD_SCHEMA["players"][0]), "shields": 100}]
@@ -797,42 +1005,86 @@ class ParityTests(unittest.TestCase):
         rows = [{"type": "meta", **self.header}]
 
         def boundary(phase, frame):
-            rows.append({**self.object_storage(), "type": "object_boundary", "version": 2, "phase": phase,
-                         "f": frame, "reset": True})
-            rows.append({"type": "world_boundary", "version": 10, "phase": phase,
-                         "f": frame, "reset": True, "state": copy.deepcopy(state)})
+            rows.append(
+                {
+                    **self.object_storage(),
+                    "type": "object_boundary",
+                    "version": 2,
+                    "phase": phase,
+                    "f": frame,
+                    "reset": True,
+                }
+            )
+            rows.append(
+                {
+                    "type": "world_boundary",
+                    "version": 10,
+                    "phase": phase,
+                    "f": frame,
+                    "reset": True,
+                    "state": copy.deepcopy(state),
+                }
+            )
 
         boundary("restored", 0)
         for frame in range(2):
-            rows.append({"type": "world_state", "version": 10, "f": frame,
-                         "reset": frame == 0, "state": copy.deepcopy(state) if frame == 0 else {}})
+            rows.append(
+                {
+                    "type": "world_state",
+                    "version": 10,
+                    "f": frame,
+                    "reset": frame == 0,
+                    "state": copy.deepcopy(state) if frame == 0 else {},
+                }
+            )
         boundary("terminal", 2)
         return self.write(name, rows)
 
     def test_pending_selection_and_death_gameplay_are_compared(self):
         a = self.world_trace("runtime-native")
+
         def populate(rows):
             for row in rows:
                 if row.get("type") in ("world_state", "world_boundary") and row["state"]:
-                    row["state"]["weapons"].update(PrimaryWeaponPickedUp=1, SecondaryWeaponPickedUp=1,
-                                                 delayed_primary_autoselect_weapon_index=16,
-                                                 delayed_secondary_autoselect_weapon_index=4)
+                    row["state"]["weapons"].update(
+                        PrimaryWeaponPickedUp=1,
+                        SecondaryWeaponPickedUp=1,
+                        delayed_primary_autoselect_weapon_index=16,
+                        delayed_secondary_autoselect_weapon_index=4,
+                    )
                     row["state"]["death"].update(active=1, elapsed=2 * 65536, saved_flags=2, saved_control=4)
+
         self.mutate(a, populate)
         baseline = list(parity.records(a))
         b = self.write("runtime-imported", copy.deepcopy(baseline))
+
         def translate(rows):
             for row in rows:
                 if row.get("type") in ("world_state", "world_boundary") and row["state"]:
                     self.import_world_storage(row["state"])
+
         self.mutate(b, translate)
         self.assertEqual(parity.compare_world(a, b, self.header, "d2")["status"], "pass")
-        changes = [("weapons", key, value) for key, value in (
-            ("PrimaryWeaponPickedUp", 0), ("SecondaryWeaponPickedUp", 0),
-            ("delayed_primary_autoselect_weapon_index", -1), ("delayed_secondary_autoselect_weapon_index", 3))]
-        changes += [("death", key, value) for key, value in (
-            ("exploded", 1), ("eggs_dropped", 1), ("aborted", 1), ("elapsed", 2 * 65536 + 1),
-            ("saved_flags", 0), ("saved_control", 5))]
+        changes = [
+            ("weapons", key, value)
+            for key, value in (
+                ("PrimaryWeaponPickedUp", 0),
+                ("SecondaryWeaponPickedUp", 0),
+                ("delayed_primary_autoselect_weapon_index", -1),
+                ("delayed_secondary_autoselect_weapon_index", 3),
+            )
+        ]
+        changes += [
+            ("death", key, value)
+            for key, value in (
+                ("exploded", 1),
+                ("eggs_dropped", 1),
+                ("aborted", 1),
+                ("elapsed", 2 * 65536 + 1),
+                ("saved_flags", 0),
+                ("saved_control", 5),
+            )
+        ]
         for group, key, value in changes:
             for index in (2, 4, 6):
                 with self.subTest(group=group, field=key, record=index):
@@ -845,13 +1097,29 @@ class ParityTests(unittest.TestCase):
 
     def test_pending_selection_and_death_contract_rejects_incomplete_state(self):
         a = self.world_trace("runtime-native")
-        changes = [("weapons", key, value) for key, value in (
-            ("PrimaryWeaponPickedUp", 2), ("SecondaryWeaponPickedUp", -1),
-            ("delayed_primary_autoselect_weapon_index", 5), ("delayed_primary_autoselect_weapon_index", -2),
-            ("delayed_secondary_autoselect_weapon_index", 16))]
-        changes += [("death", key, value) for key, value in (
-            ("active", 2), ("exploded", -1), ("eggs_dropped", 2), ("elapsed", -1),
-            ("elapsed", 1), ("aborted", 1), ("saved_flags", 256), ("saved_control", 4))]
+        changes = [
+            ("weapons", key, value)
+            for key, value in (
+                ("PrimaryWeaponPickedUp", 2),
+                ("SecondaryWeaponPickedUp", -1),
+                ("delayed_primary_autoselect_weapon_index", 5),
+                ("delayed_primary_autoselect_weapon_index", -2),
+                ("delayed_secondary_autoselect_weapon_index", 16),
+            )
+        ]
+        changes += [
+            ("death", key, value)
+            for key, value in (
+                ("active", 2),
+                ("exploded", -1),
+                ("eggs_dropped", 2),
+                ("elapsed", -1),
+                ("elapsed", 1),
+                ("aborted", 1),
+                ("saved_flags", 256),
+                ("saved_control", 4),
+            )
+        ]
         baseline = list(parity.records(a))
         for group, key, value in changes:
             for missing in (False, True):
@@ -870,23 +1138,26 @@ class ParityTests(unittest.TestCase):
 
     def test_wall_blast_lifetime_is_required_and_compared(self):
         a = self.world_trace("blast-a")
+
         def populate(rows):
             for row in rows:
                 if row.get("type") in ("world_state", "world_boundary") and row["state"]:
                     row["state"]["segments"] = [schema_example(parity.WORLD_SCHEMA["segments"][0])]
                     row["state"]["exploding_walls"]["slots"] = {"9": [0, 4, 32768]}
+
         self.mutate(a, populate)
-        for group in ({"capacity": 10, "slots": {"9": [0, 4, 32769]}},
-                      {"capacity": 10, "slots": {}}):
+        for group in ({"capacity": 10, "slots": {"9": [0, 4, 32769]}}, {"capacity": 10, "slots": {}}):
             b = self.world_trace("blast-b")
             self.mutate(b, populate)
             self.mutate(b, lambda rows: rows[-1]["state"].update(exploding_walls=group))
             self.assertEqual(parity.compare_world(a, b, self.header)["status"], "fail")
-        for mutation in (lambda rows: rows[-1]["state"].pop("exploding_walls"),
-                         lambda rows: rows[-1].update(version=8),
-                         lambda rows: rows[-1]["state"]["exploding_walls"].update(capacity=9),
-                         lambda rows: rows[-1]["state"]["exploding_walls"].update(slots={"10": [0, 4, 0]}),
-                         lambda rows: rows[-1]["state"]["exploding_walls"].update(slots={"0": [0, 4, 65537]})):
+        for mutation in (
+            lambda rows: rows[-1]["state"].pop("exploding_walls"),
+            lambda rows: rows[-1].update(version=8),
+            lambda rows: rows[-1]["state"]["exploding_walls"].update(capacity=9),
+            lambda rows: rows[-1]["state"]["exploding_walls"].update(slots={"10": [0, 4, 0]}),
+            lambda rows: rows[-1]["state"]["exploding_walls"].update(slots={"0": [0, 4, 65537]}),
+        ):
             b = self.world_trace("blast-b")
             self.mutate(b, populate)
             self.mutate(b, mutation)
@@ -898,13 +1169,15 @@ class ParityTests(unittest.TestCase):
         self.assertEqual(parity.compare_world(a, b, self.header)["status"], "pass")
         reconstructed = list(parity.world_states(a, self.header))
         self.assertEqual(reconstructed[3]["state"]["players"][0]["shields"], 100)
-        for mutation in (lambda rows: rows.pop(),
-                         lambda rows: rows.pop(2),
-                         lambda rows: rows.pop(4),
-                         lambda rows: rows[2]["state"].pop("reactor"),
-                         lambda rows: rows[3].update(reset=False),
-                         lambda rows: rows[-1].update(phase="aborted"),
-                         lambda rows: rows.append(rows[-1])):
+        for mutation in (
+            lambda rows: rows.pop(),
+            lambda rows: rows.pop(2),
+            lambda rows: rows.pop(4),
+            lambda rows: rows[2]["state"].pop("reactor"),
+            lambda rows: rows[3].update(reset=False),
+            lambda rows: rows[-1].update(phase="aborted"),
+            lambda rows: rows.append(rows[-1]),
+        ):
             b = self.world_trace("world-b")
             self.mutate(b, mutation)
             with self.assertRaises(parity.EvidenceError):
@@ -913,13 +1186,19 @@ class ParityTests(unittest.TestCase):
     def test_private_clocks_are_required_and_compared_at_every_boundary(self):
         clocks = ("Collision_delay_last_play_time", "Fusion_next_sound_time", "Fuelcen_last_sound_time")
         for clock in clocks:
-            for index, phase in ((2, "world_boundary:restored"), (4, "world_state:frame"), (6, "world_boundary:terminal")):
+            for index, phase in (
+                (2, "world_boundary:restored"),
+                (4, "world_state:frame"),
+                (6, "world_boundary:terminal"),
+            ):
                 with self.subTest(clock=clock, phase=phase):
                     a, b = self.world_trace("clocks-a"), self.world_trace("clocks-b")
+
                     def change(rows):
                         if index == 4:
                             rows[index]["state"]["globals"] = copy.deepcopy(rows[2]["state"]["globals"])
                         rows[index]["state"]["globals"][clock] = -(1 << 40) + 17
+
                     self.mutate(b, change)
                     report = parity.compare_world(a, b, self.header)
                     self.assertIn(f"{phase}:$.state.globals.{clock}", report["first_field_differences"])
@@ -934,12 +1213,16 @@ class ParityTests(unittest.TestCase):
         demo = {"header": self.header, "checkpoint": {"collision_delay_last_play_time": 33286937}}
         self.assertEqual(parity.compare_world(a, b, self.header)["status"], "pass")
         for path in (a, b):
-            self.assertEqual(parity.compare_checkpoint_collision_clock(demo, path, "d1"),
-                             {"status": "fail", "applicable": True, "expected": 33286937, "actual": 0})
+            self.assertEqual(
+                parity.compare_checkpoint_collision_clock(demo, path, "d1"),
+                {"status": "fail", "applicable": True, "expected": 33286937, "actual": 0},
+            )
             self.mutate(path, lambda rows: rows[2]["state"]["globals"].update(Collision_delay_last_play_time=33286937))
             self.assertEqual(parity.compare_checkpoint_collision_clock(demo, path, "d1")["status"], "pass")
         demo["checkpoint"] = {}
-        self.assertEqual(parity.compare_checkpoint_collision_clock(demo, self.world_trace("legacy"), "d1")["status"], "incomplete")
+        self.assertEqual(
+            parity.compare_checkpoint_collision_clock(demo, self.world_trace("legacy"), "d1")["status"], "incomplete"
+        )
         for value in (None, True, "0"):
             demo["checkpoint"] = {"collision_delay_last_play_time": value}
             with self.assertRaises(parity.EvidenceError):
@@ -971,6 +1254,7 @@ class ParityTests(unittest.TestCase):
 
     def test_world_ai_mapping_covers_default_inactive_slots_and_both_boundaries(self):
         a = self.world_trace("mapped-world-native")
+
         def seed(rows):
             for row in rows:
                 if row["type"] == "object_boundary":
@@ -980,32 +1264,42 @@ class ParityTests(unittest.TestCase):
                 if ai is not None:
                     ai["local_default"].update(last_see_time=-123, last_attack_time=456, wait_time=789)
                     ai["locals"]["999"] = {**copy.deepcopy(ai["local_default"]), "wait_time": -987}
+
         self.mutate(a, seed)
         b = self.write("mapped-world-imported", list(parity.records(a)))
+
         def import_rows(rows):
             for row in rows:
                 if row["type"] == "object_boundary":
                     self.import_robot(row["slots"]["3"])
                 if "ai" in row.get("state", {}):
                     self.import_world_storage(row["state"])
+
         self.mutate(b, import_rows)
         before = b.read_bytes()
         report = parity.compare_world(a, b, self.header, "d2")
         self.assertEqual(report["records_compared"], 6)
         self.assertEqual(report["status"], "pass")
         for path in report["first_field_differences"]:
-            self.assertFalse(any(field in path for field in (*parity.AI_SAVED_LOCAL_FIELDS, *parity.AI_SAVED_STATIC_FIELDS, "d1_saved")))
+            self.assertFalse(
+                any(
+                    field in path
+                    for field in (*parity.AI_SAVED_LOCAL_FIELDS, *parity.AI_SAVED_STATIC_FIELDS, "d1_saved")
+                )
+            )
         self.assertEqual(b.read_bytes(), before)
         for index, phase in ((2, "world_boundary:restored"), (4, "world_state:frame"), (6, "world_boundary:terminal")):
             for slot in (None, "999"):
                 for field in parity.AI_SAVED_LOCAL_FIELDS:
                     damaged = self.write("mapped-world-damaged", list(parity.records(b)))
+
                     def change(rows):
                         if index == 4:
                             rows[index]["state"] = copy.deepcopy(rows[2]["state"])
                         ai = rows[index]["state"]["ai"]
                         local = ai["local_default"] if slot is None else ai["locals"][slot]
                         local["d1_saved"][field] += 1
+
                     self.mutate(damaged, change)
                     report = parity.compare_world(a, damaged, self.header, "d2")
                     suffix = "local_default" if slot is None else f"locals.{slot}"
@@ -1019,17 +1313,27 @@ class ParityTests(unittest.TestCase):
         with self.assertRaisesRegex(parity.EvidenceError, "declared executable"):
             list(parity.world_states(a, self.header, "d2"))
         b = self.write("imported-world-identity", list(parity.records(a)))
-        self.mutate(b, lambda rows: [self.import_world_storage(row["state"])
-                                    for row in rows if "ai" in row.get("state", {})])
+        self.mutate(
+            b, lambda rows: [self.import_world_storage(row["state"]) for row in rows if "ai" in row.get("state", {})]
+        )
         with self.assertRaisesRegex(parity.EvidenceError, "declared executable"):
             list(parity.world_states(b, self.header, "d1"))
 
     def test_world_neutral_capacity_and_wall_state_are_checked_at_every_boundary(self):
         a = self.world_trace("native-capacity")
         center = {**schema_example(parity.WORLD_SCHEMA["robotcenters"][0]), "robot_flags": [123]}
-        self.mutate(a, lambda rows: [row["state"].update(robotcenters=[copy.deepcopy(center)]) for row in rows if "ai" in row.get("state", {})])
+        self.mutate(
+            a,
+            lambda rows: [
+                row["state"].update(robotcenters=[copy.deepcopy(center)])
+                for row in rows
+                if "ai" in row.get("state", {})
+            ],
+        )
         b = self.write("imported-capacity", list(parity.records(a)))
-        self.mutate(b, lambda rows: [self.import_world_storage(row["state"]) for row in rows if "ai" in row.get("state", {})])
+        self.mutate(
+            b, lambda rows: [self.import_world_storage(row["state"]) for row in rows if "ai" in row.get("state", {})]
+        )
         fields = parity.compare_world(a, b, self.header, "d2")["first_field_differences"]
         self.assertFalse(any("players" in path or "walls" in path or "robotcenters" in path for path in fields))
         mutations = (
@@ -1046,24 +1350,35 @@ class ParityTests(unittest.TestCase):
             lambda s: s["ai"]["boss"].pop("Boss_hit_time"),
             lambda s: s["ai"]["path_runtime"].update(last_buddy_polish_path_tick=1),
             lambda s: s["ai"]["path_runtime"].pop("last_buddy_polish_path_tick"),
-            lambda s: s["ai"]["locals"].update({"999": {**copy.deepcopy(s["ai"]["local_default"]), "next_action_time": 1}}),
+            lambda s: s["ai"]["locals"].update(
+                {"999": {**copy.deepcopy(s["ai"]["local_default"]), "next_action_time": 1}}
+            ),
         )
         for index in (2, 4, 6):
             for mutation in mutations:
                 changed = self.write("invalid-capacity", list(parity.records(b)))
+
                 def change(rows):
                     if index == 4:
                         rows[index]["state"] = copy.deepcopy(rows[2]["state"])
                     mutation(rows[index]["state"])
+
                 self.mutate(changed, change)
                 with self.assertRaises(parity.EvidenceError):
                     parity.compare_world(a, changed, self.header, "d2")
 
     def test_d2_ai_mirrors_are_typed_bounded_and_do_not_hide_unknown_state(self):
         a = self.world_trace("native-ai-mirrors")
-        self.mutate(a, lambda rows: [row["state"].update(segments=[schema_example(parity.WORLD_SCHEMA["segments"][0]) for _ in range(2)])
-                                    for row in rows if "ai" in row.get("state", {})])
+        self.mutate(
+            a,
+            lambda rows: [
+                row["state"].update(segments=[schema_example(parity.WORLD_SCHEMA["segments"][0]) for _ in range(2)])
+                for row in rows
+                if "ai" in row.get("state", {})
+            ],
+        )
         b = self.write("imported-ai-mirrors", list(parity.records(a)))
+
         def populate(rows):
             for row in rows:
                 if "ai" not in row.get("state", {}):
@@ -1073,46 +1388,53 @@ class ParityTests(unittest.TestCase):
                 ai.update(Believed_player_seg=1, Ai_last_missile_camera=999)
                 for index, cloak in enumerate(ai["cloak"]):
                     cloak["last_segment"] = index % 2
+
         self.mutate(b, populate)
         raw = b.read_bytes()
         self.assertEqual(parity.compare_world(a, b, self.header, "d2")["status"], "pass")
         self.assertEqual(b.read_bytes(), raw)
         for index, phase in ((2, "world_boundary:restored"), (4, "world_state:frame"), (6, "world_boundary:terminal")):
             for mutation in (
-                    lambda ai: ai.update(Believed_player_seg=2),
-                    lambda ai: ai.update(Believed_player_seg=-2),
-                    lambda ai: ai.update(Believed_player_seg=True),
-                    lambda ai: ai.update(Ai_last_missile_camera=1000),
-                    lambda ai: ai.update(Ai_last_missile_camera=-2),
-                    lambda ai: ai.update(Ai_last_missile_camera=False),
-                    lambda ai: ai["cloak"][7].update(last_segment=2),
-                    lambda ai: ai["cloak"][7].update(last_segment=-2),
-                    lambda ai: ai["cloak"][7].update(last_segment=1.0)):
+                lambda ai: ai.update(Believed_player_seg=2),
+                lambda ai: ai.update(Believed_player_seg=-2),
+                lambda ai: ai.update(Believed_player_seg=True),
+                lambda ai: ai.update(Ai_last_missile_camera=1000),
+                lambda ai: ai.update(Ai_last_missile_camera=-2),
+                lambda ai: ai.update(Ai_last_missile_camera=False),
+                lambda ai: ai["cloak"][7].update(last_segment=2),
+                lambda ai: ai["cloak"][7].update(last_segment=-2),
+                lambda ai: ai["cloak"][7].update(last_segment=1.0),
+            ):
                 bad = self.write("invalid-ai-mirror", list(parity.records(b)))
+
                 def change(rows):
                     if index == 4:
                         rows[index]["state"] = copy.deepcopy(rows[2]["state"])
                     mutation(rows[index]["state"]["ai"])
+
                 self.mutate(bad, change)
                 with self.assertRaises(parity.EvidenceError):
                     parity.compare_world(a, bad, self.header, "d2")
             for group in (None, "cloak", "path_runtime"):
                 bad = self.write("unknown-ai-cache", list(parity.records(b)))
+
                 def change(rows):
                     if index == 4:
                         rows[index]["state"] = copy.deepcopy(rows[2]["state"])
                     ai = rows[index]["state"]["ai"]
                     target = ai if group is None else ai["cloak"][0] if group == "cloak" else ai[group]
                     target["unknown"] = 123
+
                 self.mutate(bad, change)
                 differences = parity.compare_world(a, bad, self.header, "d2")["first_field_differences"]
                 suffix = "" if group is None else ".cloak[0]" if group == "cloak" else ".path_runtime"
                 self.assertIn(f"{phase}:$.state.ai{suffix}.unknown", differences)
         for mutation in (
-                lambda ai: ai.update(Believed_player_seg=1),
-                lambda ai: ai.update(Ai_last_missile_camera=-1),
-                lambda ai: ai["cloak"][0].update(last_segment=-1),
-                lambda ai: ai["path_runtime"].update(last_buddy_polish_path_tick=0)):
+            lambda ai: ai.update(Believed_player_seg=1),
+            lambda ai: ai.update(Ai_last_missile_camera=-1),
+            lambda ai: ai["cloak"][0].update(last_segment=-1),
+            lambda ai: ai["path_runtime"].update(last_buddy_polish_path_tick=0),
+        ):
             bad = self.write("mixed-native-ai-cache", list(parity.records(a)))
             self.mutate(bad, lambda rows: mutation(rows[2]["state"]["ai"]))
             with self.assertRaisesRegex(parity.EvidenceError, "D2-only AI caches"):
@@ -1120,23 +1442,37 @@ class ParityTests(unittest.TestCase):
 
     def test_boss_mapping_preserves_exact_integers_at_each_boundary(self):
         a = self.world_trace("native-boss-mapping")
-        self.mutate(a, lambda rows: [row["state"]["ai"]["boss"].update(Boss_hit_this_frame=23456, Boss_been_hit=-12345)
-                                    for row in rows if "ai" in row.get("state", {})])
+        self.mutate(
+            a,
+            lambda rows: [
+                row["state"]["ai"]["boss"].update(Boss_hit_this_frame=23456, Boss_been_hit=-12345)
+                for row in rows
+                if "ai" in row.get("state", {})
+            ],
+        )
         b = self.write("imported-boss-mapping", list(parity.records(a)))
-        self.mutate(b, lambda rows: [self.import_world_storage(row["state"])
-                                    for row in rows if "ai" in row.get("state", {})])
+        self.mutate(
+            b, lambda rows: [self.import_world_storage(row["state"]) for row in rows if "ai" in row.get("state", {})]
+        )
         report = parity.compare_world(a, b, self.header, "d2")
-        self.assertFalse(any("Boss_been_hit" in path or "Boss_hit_this_frame" in path
-                             for path in report["first_field_differences"]))
-        self.assertFalse(any("Boss_hit_time" in path or "last_buddy_polish_path_tick" in path
-                             for path in report["first_field_differences"]))
+        self.assertFalse(
+            any("Boss_been_hit" in path or "Boss_hit_this_frame" in path for path in report["first_field_differences"])
+        )
+        self.assertFalse(
+            any(
+                "Boss_hit_time" in path or "last_buddy_polish_path_tick" in path
+                for path in report["first_field_differences"]
+            )
+        )
         for index, phase in ((2, "world_boundary:restored"), (4, "world_state:frame"), (6, "world_boundary:terminal")):
             for field, original in (("d1_been_hit", "Boss_been_hit"), ("d1_hit_pending", "Boss_hit_this_frame")):
                 damaged = self.write("damaged-boss-mapping", list(parity.records(b)))
+
                 def change(rows):
                     if index == 4:
                         rows[index]["state"] = copy.deepcopy(rows[2]["state"])
                     rows[index]["state"]["ai"]["boss"][field] = 1
+
                 self.mutate(damaged, change)
                 differences = parity.compare_world(a, damaged, self.header, "d2")["first_field_differences"]
                 self.assertIn(f"{phase}:$.state.ai.boss.{original}", differences)
@@ -1149,11 +1485,17 @@ class ParityTests(unittest.TestCase):
     def imported_trigger(flags):
         actions = (flags & 15) | ((flags >> 2) & 240)
         kind = next((kind for bit, kind in ((256, 4), (8, 3), (1, 0), (64, 2), (128, 5), (512, 6)) if flags & bit), 0)
-        return {"type": kind, "flags": 128 | (64 if flags & 16 else 0) | (2 if flags & 32 else 0),
-                "pad": actions if actions < 128 else actions - 256,
-                "num_links": 1, "value": 12345, "time": -67890,
-                "segments": list(range(10)), "sides": [0] * 10,
-                "d1_saved": {"type": -127, "link_num": 126}}
+        return {
+            "type": kind,
+            "flags": 128 | (64 if flags & 16 else 0) | (2 if flags & 32 else 0),
+            "pad": actions if actions < 128 else actions - 256,
+            "num_links": 1,
+            "value": 12345,
+            "time": -67890,
+            "segments": list(range(10)),
+            "sides": [0] * 10,
+            "d1_saved": {"type": -127, "link_num": 126},
+        }
 
     def test_trigger_mapping_retains_all_flag_combinations_and_original_storage(self):
         for flags in range(1024):
@@ -1166,8 +1508,12 @@ class ParityTests(unittest.TestCase):
         raw = self.imported_trigger(0)
         raw["d1_saved"]["unknown"] = 8
         self.assertEqual(parity.canonical_d1_trigger(raw)["d1_saved"], {"unknown": 8})
-        for mutation in (lambda t: t.update(flags=0), lambda t: t.update(flags=129),
-                         lambda t: t.update(flags=132), lambda t: t.update(type=3)):
+        for mutation in (
+            lambda t: t.update(flags=0),
+            lambda t: t.update(flags=129),
+            lambda t: t.update(flags=132),
+            lambda t: t.update(type=3),
+        ):
             raw = self.imported_trigger(0)
             mutation(raw)
             with self.assertRaises(parity.EvidenceError):
@@ -1176,30 +1522,53 @@ class ParityTests(unittest.TestCase):
     def test_trigger_mapping_checks_boundaries_and_rejects_incomplete_raw_records(self):
         a, b = self.world_trace("native-trigger"), self.world_trace("imported-trigger")
         raw = self.imported_trigger(1 | 16 | 32 | 64)
-        native = {"type": -127, "flags": 113, "link_num": 126, "num_links": 1,
-                  "value": 12345, "time": -67890, "segments": list(range(10)), "sides": [0] * 10}
-        self.mutate(a, lambda rows: [row["state"].update(triggers=[copy.deepcopy(native)]) for row in rows if "ai" in row.get("state", {})])
+        native = {
+            "type": -127,
+            "flags": 113,
+            "link_num": 126,
+            "num_links": 1,
+            "value": 12345,
+            "time": -67890,
+            "segments": list(range(10)),
+            "sides": [0] * 10,
+        }
+        self.mutate(
+            a,
+            lambda rows: [
+                row["state"].update(triggers=[copy.deepcopy(native)]) for row in rows if "ai" in row.get("state", {})
+            ],
+        )
+
         def import_rows(rows):
             for row in rows:
                 if "ai" in row.get("state", {}):
                     self.import_world_storage(row["state"])
                     row["state"]["triggers"] = [copy.deepcopy(raw)]
+
         self.mutate(b, import_rows)
         fields = parity.compare_world(a, b, self.header, "d2")["first_field_differences"]
         self.assertFalse(any("triggers" in path for path in fields))
         for index, phase in ((2, "world_boundary:restored"), (4, "world_state:frame"), (6, "world_boundary:terminal")):
             for field in ("type", "link_num"):
                 changed = self.write("changed-trigger", list(parity.records(b)))
+
                 def change(rows):
                     rows[index]["state"]["triggers"] = [copy.deepcopy(raw)]
                     rows[index]["state"]["triggers"][0]["d1_saved"][field] += 1
+
                 self.mutate(changed, change)
                 fields = parity.compare_world(a, changed, self.header, "d2")["first_field_differences"]
                 self.assertIn(f"{phase}:$.state.triggers[0].{field}", fields)
-        for mutation in (lambda t: t.pop("d1_saved"), lambda t: t["d1_saved"].pop("link_num"),
-                         lambda t: t["d1_saved"].update(type=128), lambda t: t["d1_saved"].update(link_num=False),
-                         lambda t: t.update(pad=256), lambda t: t.update(link_num=-1),
-                         lambda t: t["segments"].pop(), lambda t: t.update(num_links=11)):
+        for mutation in (
+            lambda t: t.pop("d1_saved"),
+            lambda t: t["d1_saved"].pop("link_num"),
+            lambda t: t["d1_saved"].update(type=128),
+            lambda t: t["d1_saved"].update(link_num=False),
+            lambda t: t.update(pad=256),
+            lambda t: t.update(link_num=-1),
+            lambda t: t["segments"].pop(),
+            lambda t: t.update(num_links=11),
+        ):
             changed = self.write("invalid-trigger", list(parity.records(b)))
             self.mutate(changed, lambda rows: mutation(rows[2]["state"]["triggers"][0]))
             with self.assertRaises(parity.EvidenceError):
@@ -1216,11 +1585,13 @@ class ParityTests(unittest.TestCase):
         self.mutate(b, lambda rows: rows[2]["state"]["endlevel"].update(unmapped=99))
         report = parity.compare_world(a, b, self.header)
         self.assertIn("world_boundary:restored:$.state.endlevel.unmapped", report["first_field_differences"])
-        for change in (lambda s: s.pop("endlevel"),
-                       lambda s: s["endlevel"]["frame"].pop("explosion_wait1"),
-                       lambda s: s["endlevel"]["fly"].pop(),
-                       lambda s: s["endlevel"].update(explosion_playing=1),
-                       lambda s: s["endlevel"]["exit_orientation"].pop()):
+        for change in (
+            lambda s: s.pop("endlevel"),
+            lambda s: s["endlevel"]["frame"].pop("explosion_wait1"),
+            lambda s: s["endlevel"]["fly"].pop(),
+            lambda s: s["endlevel"].update(explosion_playing=1),
+            lambda s: s["endlevel"]["exit_orientation"].pop(),
+        ):
             paths = [self.world_trace("missing-endlevel-a"), self.world_trace("missing-endlevel-b")]
             for path in paths:
                 self.mutate(path, lambda rows: change(rows[2]["state"]))
@@ -1232,7 +1603,9 @@ class ParityTests(unittest.TestCase):
         explosion = schema_example(parity.OBJECT_SCHEMA)
         explosion.update(type=1, control_type=2, render_type=2, explosion={})
         for path in paths:
-            self.mutate(path, lambda rows: rows[2]["state"]["endlevel"].update(explosion_playing=1, explosion=[explosion]))
+            self.mutate(
+                path, lambda rows: rows[2]["state"]["endlevel"].update(explosion_playing=1, explosion=[explosion])
+            )
         with self.assertRaisesRegex(parity.EvidenceError, "explosion"):
             parity.compare_world(*paths, self.header)
 
@@ -1262,10 +1635,12 @@ class ParityTests(unittest.TestCase):
 
     def test_world_frame_difference_and_unknown_fields_are_retained(self):
         a, b = self.world_trace("world-a"), self.world_trace("world-b")
+
         def change(rows):
             rows[4]["state"]["players"] = copy.deepcopy(rows[2]["state"]["players"])
             rows[4]["state"]["players"][0]["shields"] = 98
             rows[4]["state"]["unmapped"] = 7
+
         self.mutate(b, change)
         report = parity.compare_world(a, b, self.header)
         self.assertEqual(report["status"], "fail")
@@ -1301,29 +1676,35 @@ class ParityTests(unittest.TestCase):
             for mutation in mutations:
                 with self.subTest(record=index, mutation=mutation):
                     b = self.world_trace("world-b")
+
                     def corrupt(rows):
                         if index == 4:
                             rows[index]["state"] = copy.deepcopy(rows[2]["state"])
                         mutation(rows[index]["state"])
+
                     self.mutate(b, corrupt)
                     with self.assertRaises(parity.EvidenceError):
                         parity.compare_world(a, b, self.header)
 
     def test_nonzero_ai_default_is_compared_without_losing_exceptions(self):
         a, b = self.world_trace("world-a"), self.world_trace("world-b")
+
         def baseline(rows):
             for row in rows:
                 ai = row.get("state", {}).get("ai")
                 if ai is not None:
                     ai["local_default"]["time_player_seen"] = -12345
                     ai["locals"]["999"] = {**copy.deepcopy(ai["local_default"]), "time_player_seen": 0}
+
         for path in (a, b):
             self.mutate(path, baseline)
         self.assertEqual(parity.compare_world(a, b, self.header)["status"], "pass")
+
         def change(rows):
             ai = copy.deepcopy(rows[2]["state"]["ai"])
             ai["local_default"]["time_player_seen"] += 1
             rows[4]["state"]["ai"] = ai
+
         self.mutate(b, change)
         report = parity.compare_world(a, b, self.header)
         self.assertEqual(report["status"], "fail")
@@ -1353,19 +1734,20 @@ class ParityTests(unittest.TestCase):
         ai["locals"]["999"] = {**copy.deepcopy(ai["local_default"]), "next_action_time": 12}
         parity.validate_world_state(state)
         for mutation in (
-                lambda a: a.pop("Believed_player_seg"),
-                lambda a: a["cloak"][0].pop("last_segment"),
-                lambda a: a["path_runtime"].update(last_buddy_polish_path_tick=False),
-                lambda a: a["local_default"].pop("next_fire2"),
-                lambda a: a["local_default"].pop("d1_saved"),
-                lambda a: a["local_default"]["d1_saved"].pop("last_see_time"),
-                lambda a: a["locals"]["999"]["d1_saved"].update(wait_time=False),
-                lambda a: a["locals"]["999"].update(next_action_time=12.0),
-                lambda a: a["locals"]["999"].update(next_fire2=True),
-                lambda a: a["locals"]["999"].update(wait_time=0),
-                lambda a: a["boss"].pop("d1_hit_pending"),
-                lambda a: a["boss"].pop("d1_been_hit"),
-                lambda a: a["boss"].update(d1_been_hit=False)):
+            lambda a: a.pop("Believed_player_seg"),
+            lambda a: a["cloak"][0].pop("last_segment"),
+            lambda a: a["path_runtime"].update(last_buddy_polish_path_tick=False),
+            lambda a: a["local_default"].pop("next_fire2"),
+            lambda a: a["local_default"].pop("d1_saved"),
+            lambda a: a["local_default"]["d1_saved"].pop("last_see_time"),
+            lambda a: a["locals"]["999"]["d1_saved"].update(wait_time=False),
+            lambda a: a["locals"]["999"].update(next_action_time=12.0),
+            lambda a: a["locals"]["999"].update(next_fire2=True),
+            lambda a: a["locals"]["999"].update(wait_time=0),
+            lambda a: a["boss"].pop("d1_hit_pending"),
+            lambda a: a["boss"].pop("d1_been_hit"),
+            lambda a: a["boss"].update(d1_been_hit=False),
+        ):
             damaged = copy.deepcopy(state)
             mutation(damaged["ai"])
             with self.assertRaises(parity.EvidenceError):
@@ -1373,10 +1755,12 @@ class ParityTests(unittest.TestCase):
 
     def test_inactive_ai_slot_changes_remain_compared(self):
         a, b = self.world_trace("world-a"), self.world_trace("world-b")
+
         def change(rows):
             ai = copy.deepcopy(rows[2]["state"]["ai"])
             ai["locals"]["9"] = {**copy.deepcopy(ai["local_default"]), "next_fire": 17}
             rows[4]["state"]["ai"] = ai
+
         self.mutate(b, change)
         result = parity.compare_world(a, b, self.header)
         difference = result["first_field_differences"]["world_state:frame:$.state.ai.locals.9"]

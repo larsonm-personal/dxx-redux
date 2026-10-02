@@ -1,5 +1,9 @@
 #!/usr/bin/env pwsh
 
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Mock file publication while a child process exits')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '', Justification = 'Evaluate only selected function definitions parsed from the checked-in helper AST')]
+param()
+
 $ErrorActionPreference = 'Stop'
 
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"

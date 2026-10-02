@@ -7,11 +7,11 @@ is not a complete innoextract replacement and does not depend on Boost.
 
 ## Version matrix
 
-| Range | Status | Notes |
-| --- | --- | --- |
+| Range                                    | Status                | Notes                                                                                                                                                                 |
+| ---------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Inno Setup 5.3.0 through 5.6.99, Unicode | Intended parser range | Faithful transition fixtures cover the 5.3.8 MD5 and 5.3.9 SHA-1 layouts; registered real installers cover 5.5.7 and 5.6.2 Unicode metadata, listings, and extraction |
-| Inno Setup before 5.3.0 or after 5.6.99 | Rejected | `inno_open` returns an error before parsing entry tables |
-| Non-Unicode installers | Unverified | The parser has legacy string branches, but no registered fixture establishes support |
+| Inno Setup before 5.3.0 or after 5.6.99  | Rejected              | `inno_open` returns an error before parsing entry tables                                                                                                              |
+| Non-Unicode installers                   | Unverified            | The parser has legacy string branches, but no registered fixture establishes support                                                                                  |
 
 The version gate is broader than the verified fixture matrix. Do not describe
 the complete accepted range as tested or supported until transition fixtures
@@ -19,18 +19,18 @@ cover its version-dependent layouts.
 
 ## Compression and feature matrix
 
-| Capability | Status | Notes |
-| --- | --- | --- |
-| Setup header block stream | Implemented | CRC-chunked LZMA1 header decompression |
-| Stored data chunks | Implemented | Buffered and streaming extraction paths |
-| zlib data chunks | Implemented | Buffered and streaming extraction paths |
-| LZMA1 data chunks | Implemented | Buffered and streaming extraction paths |
-| LZMA2 data chunks | Implemented | Buffered and streaming extraction paths |
-| BZip2 data chunks | Unsupported and rejected | No BZip2 decoder is linked |
-| GOG Galaxy inner zlib stream | Implemented | Used only for entries identified by the current Galaxy heuristic |
-| File integrity checksums | Implemented | MD5 before 5.3.9 and SHA-1 from 5.3.9 onward; checked before output publication |
-| Executable call-instruction filter | Unsupported and rejected | `inno_extract_file` rejects `call_instruction_optimized` entries before output |
-| Encrypted chunks | Unsupported and rejected | Encryption metadata is preserved for analysis, and `inno_extract_file` rejects encrypted entries before payload access or output creation |
+| Capability                         | Status                   | Notes                                                                                                                                     |
+| ---------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Setup header block stream          | Implemented              | CRC-chunked LZMA1 header decompression                                                                                                    |
+| Stored data chunks                 | Implemented              | Buffered and streaming extraction paths                                                                                                   |
+| zlib data chunks                   | Implemented              | Buffered and streaming extraction paths                                                                                                   |
+| LZMA1 data chunks                  | Implemented              | Buffered and streaming extraction paths                                                                                                   |
+| LZMA2 data chunks                  | Implemented              | Buffered and streaming extraction paths                                                                                                   |
+| BZip2 data chunks                  | Unsupported and rejected | No BZip2 decoder is linked                                                                                                                |
+| GOG Galaxy inner zlib stream       | Implemented              | Used only for entries identified by the current Galaxy heuristic                                                                          |
+| File integrity checksums           | Implemented              | MD5 before 5.3.9 and SHA-1 from 5.3.9 onward; checked before output publication                                                           |
+| Executable call-instruction filter | Unsupported and rejected | `inno_extract_file` rejects `call_instruction_optimized` entries before output                                                            |
+| Encrypted chunks                   | Unsupported and rejected | Encryption metadata is preserved for analysis, and `inno_extract_file` rejects encrypted entries before payload access or output creation |
 
 ## API semantics
 
@@ -39,9 +39,8 @@ cover its version-dependent layouts.
 - `inno_open_fd` duplicates the source descriptor. The caller retains ownership
   of the descriptor passed to it.
 - `inno_extract_file` extracts one selected entry and returns `0` on success or
-  `-1` on failure.
-- The progress callback reports compressed-input progress. Its integer return
-  value is ignored, so it is informational and cannot cancel extraction.
+  a negative extraction status on failure or cancellation.
+- The progress callback reports compressed-input progress. A nonzero return cancels extraction.
 - Resource ceilings are shared through `extract_limits.h`; integrity and
   compatibility gaps remain tracked by their separate branch-review findings.
 

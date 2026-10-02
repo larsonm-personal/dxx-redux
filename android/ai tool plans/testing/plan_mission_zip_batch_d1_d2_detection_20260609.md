@@ -1,9 +1,11 @@
 # Mission ZIP Batch D1/D2 Detection - 2026-06-09
 
 ## Goal
+
 Make the mission ZIP batch wrapper run each ZIP against the correct game instead of assuming D2 for every mission.
 
 ## Plan
+
 - [x] Inspect the failed batch output and current reusable template.
 - [x] Infer each ZIP's game from mission/level filename extensions before running it.
 - [x] Parameterize the support template for game id and launch button text.
@@ -11,6 +13,7 @@ Make the mission ZIP batch wrapper run each ZIP against the correct game instead
 - [x] Run scoped validation for script parsing and formatting.
 
 ## Notes
+
 - The current template always analyzes with `"game": "d2"` and taps `Launch Descent 2`.
 - D1 mission ZIPs can import successfully but will not appear in the D2 mission list, producing `SELECT_NON_BASE_MISSION: no non-base mission in listbox`.
 - The first failed batch sample was mostly D1: `bratmaze.zip`, `cererian_1.3.zip`, `chromium.zip`, and `Colossus.ZIP`.

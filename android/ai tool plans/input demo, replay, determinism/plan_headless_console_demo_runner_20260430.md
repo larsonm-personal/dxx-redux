@@ -6,15 +6,15 @@ Goal: create a true console input-demo regression runner that does not initializ
 
 ## Phases
 
-| phase | task | status |
-|---|---|---|
-| 1 | Inventory current replay, engine startup, build targets, SDL/render dependencies, and existing regression scripts. | completed |
-| 2 | Identify the smallest reusable game-logic entry point needed to load a checkpoint, run input frames, compare final state, and exit. | completed |
-| 3 | Design a separate console target with its own `main.cpp` and minimal platform stubs for video, audio, input polling, and frame presentation. | completed |
-| 4 | Add a first compile-only host target that links the replay parser/result code and documents missing engine dependencies. | completed |
-| 5 | Extend the target to execute a single D2 `.dximdemo` without SDL video and print only PASS/FAIL plus result details. | completed |
-| 6 | Update regression scripts to prefer the console runner when available and keep the windowed runner as a fallback. | completed |
-| 7 | Add timing output and validation so large demo batches can track speed and deterministic final state. | completed |
+| phase | task                                                                                                                                         | status    |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| 1     | Inventory current replay, engine startup, build targets, SDL/render dependencies, and existing regression scripts.                           | completed |
+| 2     | Identify the smallest reusable game-logic entry point needed to load a checkpoint, run input frames, compare final state, and exit.          | completed |
+| 3     | Design a separate console target with its own `main.cpp` and minimal platform stubs for video, audio, input polling, and frame presentation. | completed |
+| 4     | Add a first compile-only host target that links the replay parser/result code and documents missing engine dependencies.                     | completed |
+| 5     | Extend the target to execute a single D2 `.dximdemo` without SDL video and print only PASS/FAIL plus result details.                         | completed |
+| 6     | Update regression scripts to prefer the console runner when available and keep the windowed runner as a fallback.                            | completed |
+| 7     | Add timing output and validation so large demo batches can track speed and deterministic final state.                                        | completed |
 
 ## Notes
 

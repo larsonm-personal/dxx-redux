@@ -38,21 +38,21 @@ Reuse existing enhanced GuideBot behavior without waiting for that redesign.
 
 ## Findings from the current source
 
-| Location | Current behavior and consequence |
-| --- | --- |
-| android/helpers/regenerate_all_guidebot_simulations.ps1 | Defaults TestSpeedPercent to 160; accepts 100 only for native Headless/Desktop without WriteRegression; a 100 percent experiment cannot become its own canonical baseline today |
-| android/helpers/guidebot_simulation_regression.ps1 | Generation 4, fixed 60 Hz, seed 1; compact records omit speed/controller identity and retain only rounded objective seconds plus total frames |
-| shared/route_confirmation.cpp: speed_up_actor | Multiplies commanded velocity after path steering; 160 percent changes motion relative to physics, turning, doors, and other timers, rather than merely making the host finish sooner |
-| d2/main/ai.c: do_ai_frame | route_confirmation_drive_companion returns before ordinary AI processing, including normal escort logic and its scheduling/recovery behavior |
-| shared/route_confirmation.cpp: route_confirmation_drive_companion | Forces AIM_GOTO_OBJECT, clears SKIP_AI_COUNT, calls ai_follow_path with visibility 2, and has its own endpoint steering/stopping behavior |
-| shared/route_confirmation.cpp: start/before_frame | Difficulty 2; actor at authored player start; frozen invulnerable player; ordinary robots removed; retained bosses/key carriers immobilized; actor enlarged to max(player, GuideBot) radius; reactor countdown paused |
-| shared/route_confirmation.cpp: apply_objective_action | Some actions call check_trigger, damage, or player pickup handlers directly; reaching an action point is not proof of ordinary player interaction |
-| shared/route_confirmation.cpp: recovery helpers | Confirmation has its own flare/door/frontier recovery and replanning; success can depend on behavior absent from the ordinary escort loop |
-| headless/route_confirmation_headless_main.cpp and d2/main/game.c | Both advance through calc_game_time and GameProcessFrame; headless already runs fixed ticks without a wall-clock sleep |
-| android/tests/test_obsidian_level9_motion_tolerance.ps1 | Already probes 100/120/140/160 percent, but asserts only arrival at the blue key; later route failure is explicitly outside this test |
-| android/helpers/guidebot_simulation_regression.ps1 | Engine failure can be replaced by route_mismatch during normalization, losing the primary failure classification |
-| android/helpers/regenerate_all_guidebot_simulations.ps1 | Batch process exit currently fails on infrastructure errors; successful process exit alone does not establish successful route coverage |
-| android/tests/test_guidebot_simulation_headed_headless_parity.ps1 | Checks semantic parity for Counterstrike level 1; it does not prove ordinary gameplay parity or identical completion frames |
+| Location                                                          | Current behavior and consequence                                                                                                                                                                                      |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| android/helpers/regenerate_all_guidebot_simulations.ps1           | Defaults TestSpeedPercent to 160; accepts 100 only for native Headless/Desktop without WriteRegression; a 100 percent experiment cannot become its own canonical baseline today                                       |
+| android/helpers/guidebot_simulation_regression.ps1                | Generation 4, fixed 60 Hz, seed 1; compact records omit speed/controller identity and retain only rounded objective seconds plus total frames                                                                         |
+| shared/route_confirmation.cpp: speed_up_actor                     | Multiplies commanded velocity after path steering; 160 percent changes motion relative to physics, turning, doors, and other timers, rather than merely making the host finish sooner                                 |
+| d2/main/ai.c: do_ai_frame                                         | route_confirmation_drive_companion returns before ordinary AI processing, including normal escort logic and its scheduling/recovery behavior                                                                          |
+| shared/route_confirmation.cpp: route_confirmation_drive_companion | Forces AIM_GOTO_OBJECT, clears SKIP_AI_COUNT, calls ai_follow_path with visibility 2, and has its own endpoint steering/stopping behavior                                                                             |
+| shared/route_confirmation.cpp: start/before_frame                 | Difficulty 2; actor at authored player start; frozen invulnerable player; ordinary robots removed; retained bosses/key carriers immobilized; actor enlarged to max(player, GuideBot) radius; reactor countdown paused |
+| shared/route_confirmation.cpp: apply_objective_action             | Some actions call check_trigger, damage, or player pickup handlers directly; reaching an action point is not proof of ordinary player interaction                                                                     |
+| shared/route_confirmation.cpp: recovery helpers                   | Confirmation has its own flare/door/frontier recovery and replanning; success can depend on behavior absent from the ordinary escort loop                                                                             |
+| headless/route_confirmation_headless_main.cpp and d2/main/game.c  | Both advance through calc_game_time and GameProcessFrame; headless already runs fixed ticks without a wall-clock sleep                                                                                                |
+| android/tests/test_obsidian_level9_motion_tolerance.ps1           | Already probes 100/120/140/160 percent, but asserts only arrival at the blue key; later route failure is explicitly outside this test                                                                                 |
+| android/helpers/guidebot_simulation_regression.ps1                | Engine failure can be replaced by route_mismatch during normalization, losing the primary failure classification                                                                                                      |
+| android/helpers/regenerate_all_guidebot_simulations.ps1           | Batch process exit currently fails on infrastructure errors; successful process exit alone does not establish successful route coverage                                                                               |
+| android/tests/test_guidebot_simulation_headed_headless_parity.ps1 | Checks semantic parity for Counterstrike level 1; it does not prove ordinary gameplay parity or identical completion frames                                                                                           |
 
 Paths abbreviated as shared/ and headless/ are under
 android/app/src/main/cpp/. These are source findings, not runtime measurements.
@@ -81,10 +81,10 @@ android/app/src/main/cpp/. These are source findings, not runtime measurements.
 
 Introduce explicit profiles, separate from Mode (Headless/Headed/Desktop):
 
-| Profile | Purpose | Stored result |
-| --- | --- | --- |
-| confirmation_160 | Existing accelerated physical route proof | Existing <mission>.simulation.json |
-| normal_100 | Normal-speed coverage, upgraded to live escort behavior | New <mission>.1x.simulation.json |
+| Profile          | Purpose                                                 | Stored result                      |
+| ---------------- | ------------------------------------------------------- | ---------------------------------- |
+| confirmation_160 | Existing accelerated physical route proof               | Existing <mission>.simulation.json |
+| normal_100       | Normal-speed coverage, upgraded to live escort behavior | New <mission>.1x.simulation.json   |
 
 Use a proposed -Pass Confirmation, Normal, or Both parameter. The complete
 regeneration workflow must explicitly request Both. Keep focused legacy tests
@@ -263,27 +263,27 @@ investigation. Do not compensate for engine nondeterminism in the replay layer.
 ## Implementation sequence and acceptance
 
 - [ ] Phase 0: Re-audit the current routing revision and enumerate all simulation
-  interventions, ordinary equivalents, and retained sandbox assumptions. Specify
-  profile schema, coverage manifest, and deterministic initialization contract
+      interventions, ordinary equivalents, and retained sandbox assumptions. Specify
+      profile schema, coverage manifest, and deterministic initialization contract
 - [ ] Phase 1: Add profile-aware scheduling, native speed/config propagation,
-  independent persistence, budgets, reporting, and strict regression gating.
-  Make complete regeneration run both profiles. Run every route at 100 percent
-  and store fidelity=confirmation_speed_only; repeat the initial full baseline
+      independent persistence, budgets, reporting, and strict regression gating.
+      Make complete regeneration run both profiles. Run every route at 100 percent
+      and store fidelity=confirmation_speed_only; repeat the initial full baseline
 - [ ] Phase 2: Add passive diagnostics and investigate normal-speed-only failures.
-  Fix movement/recovery in production code and preserve each minimal failing
-  scenario. Re-run both profiles over affected routes, then the full corpus
+      Fix movement/recovery in production code and preserve each minimal failing
+      scenario. Re-run both profiles over affected routes, then the full corpus
 - [ ] Phase 3: Implement and verify the simulated player and ordinary escort path.
-  Remove confirmation interventions from normal_100, enable action evidence and
-  intervention assertions, and bump its generation to live_escort_navigation.
-  Re-run the complete corpus; this phase is required for the fidelity objective
+      Remove confirmation interventions from normal_100, enable action evidence and
+      intervention assertions, and bump its generation to live_escort_navigation.
+      Re-run the complete corpus; this phase is required for the fidelity objective
 - [ ] Phase 4: Verify representative fixed-step desktop/Android parity and paced
-  gameplay, then targeted 30/60/120 Hz and bounded frame-jitter scenarios. Keep
-  each timestep schedule a separately identified test configuration. Validate
-  live-object, player pause/return, and unpaused-countdown scenarios
+      gameplay, then targeted 30/60/120 Hz and bounded frame-jitter scenarios. Keep
+      each timestep schedule a separately identified test configuration. Validate
+      live-object, player pause/return, and unpaused-countdown scenarios
 - [ ] Phase 5: Integrate both statuses into the simulation browser and regeneration
-  summaries, document limits and reproduction commands, and regenerate/review
-  both complete baselines. Preserve unresolved failures rather than weakening
-  checks until the report is green
+      summaries, document limits and reproduction commands, and regenerate/review
+      both complete baselines. Preserve unresolved failures rather than weakening
+      checks until the report is green
 
 Implementation validation, to run only when build/device work is available:
 
@@ -317,14 +317,14 @@ requires fixing and rerunning them, not changing their labels.
 
 ## Main files to change later
 
-| Area | Files |
-| --- | --- |
-| Profile, results, budget, corpus scheduling | android/helpers/guidebot_simulation_regression.ps1; android/helpers/regenerate_all_guidebot_simulations.ps1 |
-| Complete workflow and browser | android/regenerate_all_regression_data.ps1; android/helpers/watch_guidebot_simulation.ps1 |
-| Engine session, observation, profile dispatch | android/app/src/main/cpp/shared/route_confirmation.h and .cpp; route_confirmation_result.cpp; new small scenario/player harness files beside them |
-| Configuration in all execution modes | android/app/src/main/cpp/headless/route_confirmation_headless_main.cpp; shared/route_confirmation_desktop.cpp; shared/game_automate.cpp; introspection fields as needed |
-| Thin production hooks and real fixes | d2/main/ai.c; escort.c; guidebot_route.c; aipath.c; game.c; normal interaction handlers only where evidence requires it |
-| Reusable integration coverage | android/tests/test_guidebot_simulation_*.ps1 and relevant mission regressions; android/game_scripts/*.jsonc for ordinary in-game scenarios |
+| Area                                          | Files                                                                                                                                                                   |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Profile, results, budget, corpus scheduling   | android/helpers/guidebot_simulation_regression.ps1; android/helpers/regenerate_all_guidebot_simulations.ps1                                                             |
+| Complete workflow and browser                 | android/regenerate_all_regression_data.ps1; android/helpers/watch_guidebot_simulation.ps1                                                                               |
+| Engine session, observation, profile dispatch | android/app/src/main/cpp/shared/route_confirmation.h and .cpp; route_confirmation_result.cpp; new small scenario/player harness files beside them                       |
+| Configuration in all execution modes          | android/app/src/main/cpp/headless/route_confirmation_headless_main.cpp; shared/route_confirmation_desktop.cpp; shared/game_automate.cpp; introspection fields as needed |
+| Thin production hooks and real fixes          | d2/main/ai.c; escort.c; guidebot_route.c; aipath.c; game.c; normal interaction handlers only where evidence requires it                                                 |
+| Reusable integration coverage                 | android/tests/test_guidebot_simulation__.ps1 and relevant mission regressions; android/game_scripts/_.jsonc for ordinary in-game scenarios                              |
 
 Coordinate with guidebot_optimization_and_modes_20260907.md for ownership and
 mode changes, and with ../2026-09-07-guidebot-route-videos.md for trace reuse.

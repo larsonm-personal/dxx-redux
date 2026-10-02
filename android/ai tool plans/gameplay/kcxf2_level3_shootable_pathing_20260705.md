@@ -1,9 +1,11 @@
 # KCXF2 Level 3 Shootable Pathing Plan
 
 ## Goal
+
 Analyze KCXF2 level 3's pseudo-reactor and late shootable progression path, then improve metadata and in-game guidebot pathing so they agree as closely as possible.
 
 ## Tasks
+
 - [x] Read project instructions and inspect current metadata/guidebot pathing code.
 - [x] Regenerate or inspect KCXF2 level 3 metadata route and identify missing shootable steps.
 - [x] Trace how the in-game guidebot chooses goals versus metadata route-step analysis.
@@ -12,6 +14,7 @@ Analyze KCXF2 level 3's pseudo-reactor and late shootable progression path, then
 - [x] Update this plan with findings and validation.
 
 ## Notes
+
 - User reports KCXF2 level 3 has a shootable pseudo-reactor that reveals a switch below it, then progression to exit.
 - Current guidebot route chooses a different path and omits the last couple shootables.
 - Metadata and guidebot route logic should be kept as close as feasible.
@@ -21,6 +24,7 @@ Analyze KCXF2 level 3's pseudo-reactor and late shootable progression path, then
 - Regenerated KCXF2 metadata now routes level 3 as trigger 26 -> trigger 2 -> trigger 22 -> trigger 21 -> exit and reports route_status ok.
 
 ## Validation
+
 - `cmd.exe /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x86 && "C:\local\android-sdk\cmake\3.31.6\bin\cmake.exe" --build buildd2 --target test_level_metadata_scan --config Debug'`
 - `.\buildd2\maths\test_level_metadata_scan.exe`
 - `cmd.exe /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x86 && "C:\local\android-sdk\cmake\3.31.6\bin\cmake.exe" --build buildd2 --target dxx-redux-d2-headless-metadata --config Debug'`

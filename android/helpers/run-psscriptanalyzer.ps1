@@ -2,7 +2,7 @@
 # run-psscriptanalyzer.ps1 -- Run PSScriptAnalyzer on PowerShell scripts.
 # Usage:
 #   .\run-psscriptanalyzer.ps1          # auto-fix + format (default)
-#   .\run-psscriptanalyzer.ps1 --check  # report issues, exit 1 if any
+#   .\run-psscriptanalyzer.ps1 -Check  # report issues, exit 1 if any
 #   .\run-psscriptanalyzer.ps1 -Paths path\to\file path\to\dir
 
 param(
@@ -32,6 +32,17 @@ function Get-ToolVersionSetting {
 }
 
 . (Join-Path $PSScriptRoot "code-quality-files.ps1")
+$Paths = @(Get-CodeQualityScriptPaths -InputPaths $Paths -RemainingPaths @($args) -ExplicitScope ($PSBoundParameters.ContainsKey('Paths')))
+
+# --- Gather .ps1 files ---
+# Exclude build outputs, gradle wrapper, and NDK cmake cache
+$files = Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $repoRoot -InputPaths $Paths -ValidExtensions @('.ps1', '.psm1', '.psd1') -ExcludePattern '[\\/](build|\.cxx|temp)[\\/]'
+
+if ($files.Count -eq 0) {
+    Write-Host "No PowerShell files found"
+    exit 0
+}
+
 
 # --- Ensure PSScriptAnalyzer is available ---
 $analyzerVersion = Get-ToolVersionSetting -Name "PSSCRIPTANALYZER_VERSION"
@@ -80,14 +91,6 @@ if (-not (Test-Path $settingsFile)) {
     exit 1
 }
 
-# --- Gather .ps1 files ---
-# Exclude build outputs, gradle wrapper, and NDK cmake cache
-$files = Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $repoRoot -InputPaths $Paths -ValidExtensions @('.ps1') -ExcludePattern '[\\/](build|\.cxx|temp)[\\/]'
-
-if ($files.Count -eq 0) {
-    Write-Host "No PowerShell files found"
-    exit 0
-}
 
 Write-Host "Found $($files.Count) PowerShell files"
 
@@ -106,7 +109,7 @@ if ($Check) {
     foreach ($f in $files) {
         $content = Get-Content $f.FullName -Raw
         if (-not $content) { continue }
-        $formatted = Invoke-Formatter -ScriptDefinition $content -Settings $settingsFile
+        $formatted = (Invoke-Formatter -ScriptDefinition $content -Settings $settingsFile) -replace "`r`n", "`n"
         if ($content -ne $formatted) {
             $formatDirty += $f.FullName
         }
@@ -145,10 +148,12 @@ if ($Check) {
         if (-not $content) { continue }
         $formatted = (Invoke-Formatter -ScriptDefinition $content -Settings $settingsFile) -replace "`r`n", "`n"
         if ($content -ne $formatted) {
-            Set-Content -Path $f.FullName -Value $formatted -NoNewline
+            [IO.File]::WriteAllText($f.FullName, $formatted, [Text.UTF8Encoding]::new($false))
             $rel = $f.FullName.Substring((Split-Path $PSScriptRoot).Length + 1)
             Write-Host "  Formatted: $rel"
         }
     }
     Write-Host "PSScriptAnalyzer fix pass complete"
 }
+
+exit 0

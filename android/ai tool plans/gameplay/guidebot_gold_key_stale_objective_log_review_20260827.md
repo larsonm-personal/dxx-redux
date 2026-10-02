@@ -8,11 +8,11 @@ up the key, using the supplied Android debug log and current route-state code.
 ## Work
 
 - [x] Correlate the pickup, route notifications, live certification, and goal
-  publication in the supplied log.
+      publication in the supplied log.
 - [x] Compare the observed sequence with key-state invalidation and adoption
-  logic.
+      logic.
 - [x] Identify the root cause and propose a narrowly scoped correction with
-  regression coverage.
+      regression coverage.
 
 ## Results
 

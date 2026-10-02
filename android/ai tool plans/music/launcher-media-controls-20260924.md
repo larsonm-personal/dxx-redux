@@ -13,8 +13,8 @@ Manual pause retains media controls so hardware Play can resume
 Background playback and game media controls are outside this change
 Preserve existing uncommitted music-editor source changes and do not edit outstanding_bugs.md
 
-
 Implementation notes:
+
 - Framework MediaSession avoids a new media dependency and leaves the native players intact
 - Activity media-key dispatch handles foreground keys; MediaSession handles system/headset commands
 - Keyed Compose previews reset player state when the selected track changes
@@ -22,6 +22,7 @@ Implementation notes:
 - Renderer start reservations prevent a dismissed MIDI load from starting later
 
 Validation:
+
 - Scoped code quality: passed
 - MIDI/CD synchronization and audio lifecycle Python suite: 33/34 passed
 - The remaining lifecycle test expects `ModManager(filesDir, context)` in SetupSections.kt;

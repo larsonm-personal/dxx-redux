@@ -25,8 +25,14 @@ class MissionContentIdentityTest {
             listOf(MissionContentIdentity.DEFAULT_CHUNK_SIZE_BYTES.toLong(), bytes.size.toLong()),
             progress,
         )
-        assertEquals(sha256(bytes.copyOfRange(0, MissionContentIdentity.DEFAULT_CHUNK_SIZE_BYTES)), identity.chunkSha256[0])
-        assertEquals(sha256(bytes.copyOfRange(MissionContentIdentity.DEFAULT_CHUNK_SIZE_BYTES, bytes.size)), identity.chunkSha256[1])
+        assertEquals(
+            sha256(bytes.copyOfRange(0, MissionContentIdentity.DEFAULT_CHUNK_SIZE_BYTES)),
+            identity.chunkSha256[0],
+        )
+        assertEquals(
+            sha256(bytes.copyOfRange(MissionContentIdentity.DEFAULT_CHUNK_SIZE_BYTES, bytes.size)),
+            identity.chunkSha256[1],
+        )
     }
 
     private fun sha256(bytes: ByteArray): String =

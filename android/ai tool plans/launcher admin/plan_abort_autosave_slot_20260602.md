@@ -9,6 +9,7 @@ Goal: make in-game Abort Game create a separate Android autosave type and show i
 5. [completed] Run focused validation and mark completed plan items.
 
 Validation:
+
 - `android\run-code-quality.ps1 -Fix -Paths android\app\src\main\cpp\shared\android_save_meta.h ...` passed after formatting the shared metadata header.
 - `android\gradlew.bat -p android testDebugUnitTest --tests com.dxxredux.app.ResumeSavePanelTest` passed with JDK 21.
 - `buildd1\maths\test_android_save_meta.exe` passed after rebuilding the target through the Visual Studio x86 developer environment.

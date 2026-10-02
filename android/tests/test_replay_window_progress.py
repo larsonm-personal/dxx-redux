@@ -20,18 +20,49 @@ def main():
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     output = args.output.resolve()
-    subprocess.run(["pwsh", "-NoProfile", "-File", str(repo / "android/helpers/retain-recent-artifacts.ps1"),
-                    "-Artifacts", str(output)], check=True)
+    subprocess.run(
+        [
+            "pwsh",
+            "-NoProfile",
+            "-File",
+            str(repo / "android/helpers/retain-recent-artifacts.ps1"),
+            "-Artifacts",
+            str(output),
+        ],
+        check=True,
+    )
     output.mkdir(parents=True, exist_ok=False)
     suffix = output.name
     sandbox = repo / "temp/input_demo_runtime_wrapper" / args.game / (args.demo.stem + "__" + suffix)
     expected_exe = sandbox / (args.game + "x-redux.exe")
-    command = ["pwsh", "-NoProfile", "-File", str(repo / "android/tests/run_input_demo_replay.ps1"),
-               "-DemoPath", str(args.demo.resolve()), "-DataDir", str(args.data.resolve()),
-               "-ExecutablePath", str(args.exe.resolve()), "-Runner", "fast", "-Mode", "accelerated",
-               "-SkipExpectedChecks", "-KeepSandbox", "-SandboxSuffix", suffix,
-               "-TimeoutSeconds", "240", "-ResultCopyPath", str(output / "result.json"),
-               "-StateLogPath", str(output / "state.jsonl.gz"), "-RngLogPath", str(output / "rng.jsonl")]
+    command = [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        str(repo / "android/tests/run_input_demo_replay.ps1"),
+        "-DemoPath",
+        str(args.demo.resolve()),
+        "-DataDir",
+        str(args.data.resolve()),
+        "-ExecutablePath",
+        str(args.exe.resolve()),
+        "-Runner",
+        "fast",
+        "-Mode",
+        "accelerated",
+        "-SkipExpectedChecks",
+        "-KeepSandbox",
+        "-SandboxSuffix",
+        suffix,
+        "-TimeoutSeconds",
+        "240",
+        "-ResultCopyPath",
+        str(output / "result.json"),
+        "-StateLogPath",
+        str(output / "state.jsonl.gz"),
+        "-RngLogPath",
+        str(output / "rng.jsonl"),
+    ]
     command += ["-D1InD2"] if args.game == "d2" else ["-Game", "d1"]
     user = ctypes.WinDLL("user32", use_last_error=True)
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -42,8 +73,12 @@ def main():
     user.PostMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
     kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
     kernel.OpenProcess.restype = wintypes.HANDLE
-    kernel.QueryFullProcessImageNameW.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR,
-                                                ctypes.POINTER(wintypes.DWORD)]
+    kernel.QueryFullProcessImageNameW.argtypes = [
+        wintypes.HANDLE,
+        wintypes.DWORD,
+        wintypes.LPWSTR,
+        ctypes.POINTER(wintypes.DWORD),
+    ]
     kernel.CloseHandle.argtypes = [wintypes.HANDLE]
 
     def find_window():
@@ -113,7 +148,9 @@ def main():
                     phase = "resumed"
             time.sleep(0.1)
         report["exit_code"] = process.returncode
-    interaction_ok = phase == "progressed" if args.game == "d2" else phase == "resumed" and report.get("pause_frame_unchanged")
+    interaction_ok = (
+        phase == "progressed" if args.game == "d2" else phase == "resumed" and report.get("pause_frame_unchanged")
+    )
     report["status"] = "pass" if interaction_ok and process.returncode == 0 else "fail"
     (output / "window-report.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))

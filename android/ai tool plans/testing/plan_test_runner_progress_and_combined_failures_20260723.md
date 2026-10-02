@@ -11,7 +11,7 @@ suite run after emulator-test consolidation.
 - [x] Parse the latest report format into per-test elapsed seconds
 - [x] Add a reusable report-runtime reader with focused tests
 - [x] Show test index, total elapsed time, weighted completion percentage, and
-  estimated remaining time before each full-suite test
+      estimated remaining time before each full-suite test
 - [x] Identify all five failed tests and their durable failure evidence
 - [x] Fix consolidation regressions without weakening assertions
 - [x] Run focused runner, catalog, quality, and emulator validation

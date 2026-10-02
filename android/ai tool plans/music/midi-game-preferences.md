@@ -21,6 +21,7 @@ these findings instead of treating a downloadable SF2 as redistributable or
 claiming that a permissive renderer licenses its instrument assets.
 
 Sources:
+
 - https://github.com/arbruijn/TimGM6mb/blob/master/COPYING.txt
 - https://github.com/mrbumpy409/GeneralUser-GS/blob/main/documentation/LICENSE.txt
 

@@ -3,7 +3,7 @@
 param(
     [switch]$Install,
     [ValidateSet('d1', 'd2')][string]$Game,
-    [ValidateSet('stall', 'record_unreadable', 'publication_blocked', 'rebuild_failure', 'menu_abandoned', 'accept_publication_blocked', 'normal_exit', 'repair_interrupted')][string]$Fault,
+    [ValidateSet('stall', 'record_unreadable', 'publication_blocked', 'rebuild_failure', 'menu_abandoned', 'accept_publication_blocked', 'normal_exit', 'repair_interrupted', 'activity_replaced')][string]$Fault,
     [string]$Serial = 'emulator-5554'
 )
 
@@ -16,7 +16,7 @@ New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 $previousSerial = $env:ANDROID_SERIAL
 $env:ANDROID_SERIAL = $Serial
 $games = if ($Game) { @($Game) } else { @('d1', 'd2') }
-$faults = if ($Fault) { @($Fault) } else { @('stall', 'record_unreadable', 'publication_blocked', 'rebuild_failure', 'menu_abandoned', 'accept_publication_blocked', 'normal_exit', 'repair_interrupted') }
+$faults = if ($Fault) { @($Fault) } else { @('stall', 'record_unreadable', 'publication_blocked', 'rebuild_failure', 'menu_abandoned', 'accept_publication_blocked', 'normal_exit', 'repair_interrupted', 'activity_replaced') }
 $results = [System.Collections.Generic.List[object]]::new()
 $permissionFault = ''
 $originalPermissionMode = ''
@@ -80,7 +80,11 @@ function Restore-FaultPermissions {
 
 function Push-RecoveryScript {
     param([string]$Name, [string]$GameId)
-    $source = Resolve-TestScript -ScriptPath (Join-Path $script:ANDROID_ROOT "game_scripts/$Name") -GameId $GameId
+    $resolved = Resolve-TestScript -ScriptPath (Join-Path $script:ANDROID_ROOT "game_scripts/$Name") -GameId $GameId
+    # Native automation accepts comments, but the formatter's trailing commas require normalization
+    $steps = Get-Content $resolved -Raw | ConvertFrom-Json -NoEnumerate
+    $source = Join-Path $outputDirectory "$GameId-$Name.json"
+    ConvertTo-Json -InputObject $steps -Depth 100 | Set-Content $source -Encoding utf8NoBOM
     Invoke-Device @('push', $source, "/data/local/tmp/$Name") | Out-Null
     Invoke-Device @('shell', 'run-as', $script:PACKAGE, 'cp', "/data/local/tmp/$Name", "files/$Name") | Out-Null
 }
@@ -91,7 +95,8 @@ try {
             $caseName = "$gameId-$faultName"
             Write-Output "Graphics recovery case: $caseName"
             $runner = (Join-Path $PSScriptRoot 'run_test.ps1').Replace("'", "''")
-            $command = "& '$runner' -ScriptName test_graphics_recovery_fixture.jsonc -Game $gameId -LeaveRunning -TimeoutSeconds 180"
+            $fixture = (Resolve-TestScript -ScriptPath (Join-Path $script:ANDROID_ROOT 'game_scripts/test_graphics_recovery_fixture.jsonc') -GameId $gameId).Replace("'", "''")
+            $command = "& '$runner' -ScriptName '$fixture' -Game $gameId -LeaveRunning -TimeoutSeconds 180"
             if ($Install) { $command += ' -Install'; $Install = $false }
             & pwsh -NoProfile -NonInteractive -Command $command 2>&1 |
                 Tee-Object -FilePath (Join-Path $outputDirectory "$caseName-fixture.txt") | Out-Null
@@ -125,6 +130,11 @@ try {
             Invoke-Device @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.AUTOMATE', '--es', 'script', $trigger) | Out-Null
             if ($faultName -notin @('publication_blocked', 'rebuild_failure', 'menu_abandoned', 'normal_exit')) {
                 Wait-RecoveryCondition { (Read-DeviceJson 'files/graphics_safety.json').attempt.phase -eq 3 } 'Armed challenge'
+            }
+            if ($faultName -eq 'activity_replaced') {
+                $beforeReplacement = Assert-Accepted $expected
+                $beforeReplacement | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $outputDirectory "$caseName-before-replacement.json") -Encoding utf8NoBOM
+                Invoke-Device @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.GAME_COMMAND', '--es', 'command', 'recreate_activity') | Out-Null
             }
             if ($faultName -eq 'accept_publication_blocked') {
                 $originalPermissionMode = (Invoke-Device @('shell', 'run-as', $script:PACKAGE, 'stat', '-c', '%a', 'files')).Trim()
@@ -174,14 +184,19 @@ try {
                 } 'Accepted config publication after the durable restore marker' 2
                 if ((Get-GamePid) -ne $originalPid) { throw 'Could not verify durable rollback while the stalled process was still alive' }
             }
-            Wait-RecoveryCondition { (Get-GamePid) -ne $originalPid } 'Bounded game-process recovery' 15
+            try {
+                Wait-RecoveryCondition { (Get-GamePid) -ne $originalPid } 'Bounded game-process recovery' 15
+            } catch {
+                Invoke-Device @('logcat', '-d') | Set-Content (Join-Path $outputDirectory "$caseName-failure-logcat.txt") -Encoding utf8NoBOM
+                throw
+            }
             $elapsed = [int]$timer.ElapsedMilliseconds
             $restoreElapsed = if ($restoreTimer) { [int]$restoreTimer.ElapsedMilliseconds } else { $null }
-            if ($faultName -eq 'rebuild_failure' -and ($restoreElapsed -lt 400 -or $restoreElapsed -gt 2000)) {
-                throw "Repeated rebuilds postponed the one-second restore watchdog: $restoreElapsed ms"
+            if ($faultName -eq 'rebuild_failure' -and ($restoreElapsed -lt 1800 -or $restoreElapsed -gt 4000)) {
+                throw "Repeated rebuilds postponed the three-second restore watchdog: $restoreElapsed ms"
             }
-            if ($faultName -eq 'stall' -and ($elapsed -lt 4500 -or $elapsed -gt 9500)) {
-                throw "Stall recovery did not honor the five-second deadline plus one-second watchdog: $elapsed ms"
+            if ($faultName -eq 'stall' -and ($elapsed -lt 6500 -or $elapsed -gt 11500)) {
+                throw "Stall recovery did not honor the five-second deadline plus three-second watchdog: $elapsed ms"
             }
             Restore-FaultPermissions
             $permissionFault = ''
@@ -195,6 +210,17 @@ try {
             $after | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $outputDirectory "$caseName-after.json") -Encoding utf8NoBOM
             $logs = Invoke-Device @('logcat', '-d')
             $logs | Set-Content (Join-Path $outputDirectory "$caseName-logcat.txt") -Encoding utf8NoBOM
+            if ($faultName -eq 'activity_replaced') {
+                if ($logs -notmatch 'automation recreate activity=' -or $logs -notmatch 'changing_config=true' -or
+                    $logs -notmatch 'restored=true') { throw 'Missing actual Activity replacement lifecycle evidence' }
+                if ($logs -match 'startGame\(\) called while game already running') { throw 'Replacement Activity attempted a second native startup' }
+                if ($elapsed -gt 5000) { throw "Activity replacement recovery exceeded five seconds: $elapsed ms" }
+                $decision = [regex]::Match($logs, 'Graphics trial decision id=[0-9]+ accept=0 reason=background result=2 now_ms=([0-9]+) deadline_ms=([0-9]+)')
+                if (-not $decision.Success -or [long]$decision.Groups[1].Value -ge [long]$decision.Groups[2].Value) {
+                    throw 'Activity replacement did not durably cancel the armed trial before its deadline'
+                }
+                Assert-MirroredConfig $expected
+            }
             if ($faultName -eq 'stall') {
                 if ($logs -notmatch 'armed render-thread stall') { throw 'No evidence the render thread stalled after arming' }
                 Assert-MirroredConfig $expected
@@ -221,12 +247,18 @@ try {
                 Wait-RecoveryCondition {
                     Invoke-Device @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_INTROSPECT') | Out-Null
                     $setup = Read-DeviceJson 'files/setup_introspect.json'
-                    $setup.displayed_launch_error -match 'Graphics settings could not be restored|Could not save or recover graphics settings'
+                    $setup.displayed_launch_error -match 'Graphics settings could not be restored|Could not save or recover graphics settings|The game display was recreated during a graphics change'
                 } 'Surfaced graphics recovery message'
                 if ($faultName -eq 'rebuild_failure') {
                     $setup = Read-DeviceJson 'files/setup_introspect.json'
                     if ($setup.displayed_launch_error -notmatch 'Graphics settings could not be restored in time') {
                         throw 'Accepted-mode rebuild failure did not surface the restore-watchdog message'
+                    }
+                }
+                if ($faultName -eq 'activity_replaced') {
+                    $setup = Read-DeviceJson 'files/setup_introspect.json'
+                    if ($setup.displayed_launch_error -notmatch 'The game display was recreated during a graphics change') {
+                        throw 'Activity replacement did not surface its recovery message'
                     }
                 }
             }

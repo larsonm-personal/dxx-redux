@@ -9,6 +9,7 @@
 Findings: D1 imports populate both D2 gauge tables with the same D1 assets; classic still uses screen-based HIRESMODE. Native D1 already uses asset resolution. Circle/Dot cache their first allocation but subsequently draw a radius-dependent vertex count
 
 Validation so far:
+
 - Both final Windows CMake builds passed (D1 and D2)
 - Scoped mixed-language formatting/lint passed; upstream engine files are excluded by the repository formatter
 - Diagnostic Android build reproduced screen_hires=1 asset_hires=0 layout_hires=1 with a 9x7 cross on supported registered D1 assets
@@ -17,6 +18,7 @@ Validation so far:
 - Extended the reticle runner timeout to cover the full style cycle on the emulator
 
 Final validation:
+
 - Android x86_64 debug APK build passed for both native engines; no new warnings in the changed rendering code
 - Reticle runner passed 236/236 steps, including all nine styles, 14 size-setting checks, and the corrected screen_hires=1 asset_hires=0 layout_hires=0 diagnostic
 - Evidence: temp/d1-launch-runtime-20260929-144037 (automation_result.json, native-logcat.txt, first-strike.png)

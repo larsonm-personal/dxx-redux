@@ -1,23 +1,26 @@
 # KCXF2 level 5 multi-switch route
 
 ## Goal
+
 Fix KCXF2RM level 5 so metadata and guidebot follow the playable progression:
 blue key, blue door, all required shootable switches, red key, red door, and the
 remaining end-of-level route.
 
 ## Plan
+
 - [x] Inspect the generated level 5 route and extract the relevant key doors,
-  hidden doors, triggers, links, and blocking sides from the loaded level.
+      hidden doors, triggers, links, and blocking sides from the loaded level.
 - [x] Reproduce guidebot's post-blue-key route state and identify why a hidden
-  door is preferred over the required multi-switch dependency.
+      door is preferred over the required multi-switch dependency.
 - [x] Correct the shared metadata/guidebot planner without adding mission-specific
-  behavior.
+      behavior.
 - [x] Add focused native coverage and an emulator regression for KCXF2RM level 5.
 - [x] Rebuild D1/D2 and Android, regenerate metadata, and verify the corrected
-  level 5 route in both metadata and live guidebot behavior.
+      level 5 route in both metadata and live guidebot behavior.
 - [ ] Resolve the remaining corpus regressions listed below in a follow-up pass.
 
 ## Findings
+
 - KCXF2RM level 5 trigger 6 alone controls the red-key grate. The two other
   nearby switches open different wall pairs; the level data does not encode a
   three-switch dependency for that grate.

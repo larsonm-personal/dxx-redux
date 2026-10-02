@@ -69,6 +69,7 @@ It also relies on SoundFont modulators, so TinySoundFont compatibility needs
 listening and rendering tests before choosing it as a replacement.
 
 Sources:
+
 - https://github.com/arbruijn/TimGM6mb/blob/master/COPYING.txt
 - https://github.com/mrbumpy409/GeneralUser-GS/blob/main/documentation/LICENSE.txt
 - https://github.com/mrbumpy409/GeneralUser-GS/blob/main/README.md

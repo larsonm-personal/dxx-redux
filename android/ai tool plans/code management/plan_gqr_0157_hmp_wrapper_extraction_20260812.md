@@ -11,15 +11,15 @@ hunks.
 ## Plan
 
 - [x] Freeze the current paired HMP residue, shared converter API, callers,
-  tests, build ownership, and merge-base metrics
+      tests, build ownership, and merge-base metrics
 - [x] Add the public `hmp2mid_mem` wrapper and canonical tempo payload to the
-  branch-added shared HMP owner
+      branch-added shared HMP owner
 - [x] Remove the duplicated inherited includes and wrappers while preserving the
-  original per-game tempo arrays used by the inherited file conversion path,
-  preserving declarations, allocation ownership, and exact MIDI output
+      original per-game tempo arrays used by the inherited file conversion path,
+      preserving declarations, allocation ownership, and exact MIDI output
 - [x] Add or extend focused contracts for D1/D2 API parity and exact successful
-  output bytes
+      output bytes
 - [x] Run scoped quality, focused HMP tests, Windows D1/D2 builds, Android ABI
-  builds, and final inherited-diff accounting
+      builds, and final inherited-diff accounting
 - [x] Mark `GQR-0157` done and `GQF-0170` fixed with terminal evidence in the
-  canonical ledger
+      canonical ledger

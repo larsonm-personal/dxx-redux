@@ -1,17 +1,20 @@
 # Replay analysis 2026-05-09 level9 225113 level8 224859
 
 ## Goal
+
 - classify the two new D2 desync demos by their first owner-level divergence
 - use the newer replay owner logs, including generalized player-weapon lifetime and weapon-vs-robot FVI probes, before adding any more instrumentation
 - determine whether either demo matches an existing failure class or opens a new owner path
 
 ## Steps
+
 - [x] rerun both demos with state trace, rng trace, and replay debug log enabled
 - [x] compare recorded vs replay rng traces to locate each first behavioral mismatch
 - [x] inspect durable owner logs around the first mismatch frame for each demo
 - [x] summarize whether the two demos collapse to an existing root cause or need a new owner hop
 
 ## Notes
+
 - target demos:
   - `android/regression_demos/d2_descent2_level9_20260509_225113.dximdemo`
   - `android/regression_demos/d2_descent2_level8_20260509_224859.dximdemo`

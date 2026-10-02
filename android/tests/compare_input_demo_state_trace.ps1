@@ -15,6 +15,31 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers\powershell_compat.ps1')
 
+$script:StateTraceJsonOptions = $null
+if ($PSVersionTable.PSVersion.Major -ge 7) {
+    $script:StateTraceJsonOptions = [System.Text.Json.JsonDocumentOptions]::new()
+    $script:StateTraceJsonOptions.MaxDepth = 1024
+    $script:StateTraceJsonOptions.AllowTrailingCommas = $true
+    $script:StateTraceJsonOptions.CommentHandling = [System.Text.Json.JsonCommentHandling]::Skip
+}
+
+function Test-StateTraceFrameRecord {
+    param([string]$Line)
+
+    if ($null -eq $script:StateTraceJsonOptions) { return $true }
+    # Validate every record, without converting unused expanded world/object data to PowerShell objects
+    $document = [System.Text.Json.JsonDocument]::Parse($Line, $script:StateTraceJsonOptions)
+    try {
+        $kind = [System.Text.Json.JsonElement]::new()
+        if ($document.RootElement.ValueKind -eq [System.Text.Json.JsonValueKind]::Object -and
+            $document.RootElement.TryGetProperty('type', [ref]$kind) -and
+            $kind.ValueKind -eq [System.Text.Json.JsonValueKind]::String) {
+            return $kind.GetString() -in @('frame', 'frame_state', 'replay_state')
+        }
+        return $true
+    } finally { $document.Dispose() }
+}
+
 function Test-JsonRecordLine {
     param([string]$Line)
 
@@ -526,53 +551,56 @@ function Read-StateTraceFrames {
         }
         $reader = [IO.StreamReader]::new($stream)
         while ($null -ne ($line = $reader.ReadLine())) {
-        if (-not (Test-JsonRecordLine -Line $line)) {
-            continue
-        }
-        $record = ConvertFrom-JsonLine -Line $line
-        if ($record.type -eq 'frame') {
-            if ($record.ContainsKey('ft')) {
-                $lastFrameTime = [int]$record.ft
+            if (-not (Test-JsonRecordLine -Line $line)) {
+                continue
+            }
+            if (-not (Test-StateTraceFrameRecord -Line $line)) {
+                continue
+            }
+            $record = ConvertFrom-JsonLine -Line $line
+            if ($record.type -eq 'frame') {
+                if ($record.ContainsKey('ft')) {
+                    $lastFrameTime = [int]$record.ft
+                }
+                if (-not $record.ContainsKey('state')) {
+                    continue
+                }
+                $frame = [int]$record.f
+                if (-not (Test-FrameInRange -Frame $frame)) {
+                    continue
+                }
+                $item = [ordered]@{
+                    f = $frame
+                    state = $record.state
+                }
+                if ($null -ne $lastFrameTime) {
+                    $item.ft = $lastFrameTime
+                }
+                if ($record.ContainsKey('rng')) {
+                    $item.rng = $record.rng
+                }
+                if ($record.ContainsKey('diag')) {
+                    Set-DiagSentinels -Diag $record.diag
+                    $item.diag = $record.diag
+                }
+                $frames[[string]$frame] = $item
+                continue
+            }
+            if ($record.type -ne 'frame_state' -and $record.type -ne 'replay_state') {
+                continue
             }
             if (-not $record.ContainsKey('state')) {
                 continue
             }
-            $frame = [int]$record.f
-            if (-not (Test-FrameInRange -Frame $frame)) {
-                continue
-            }
-            $item = [ordered]@{
-                f = $frame
-                state = $record.state
-            }
-            if ($null -ne $lastFrameTime) {
-                $item.ft = $lastFrameTime
-            }
-            if ($record.ContainsKey('rng')) {
-                $item.rng = $record.rng
-            }
             if ($record.ContainsKey('diag')) {
                 Set-DiagSentinels -Diag $record.diag
-                $item.diag = $record.diag
             }
-            $frames[[string]$frame] = $item
-            continue
+            $traceFrame = [int]$record.f
+            if (-not (Test-FrameInRange -Frame $traceFrame)) {
+                continue
+            }
+            $frames[[string]$traceFrame] = $record
         }
-        if ($record.type -ne 'frame_state' -and $record.type -ne 'replay_state') {
-            continue
-        }
-        if (-not $record.ContainsKey('state')) {
-            continue
-        }
-        if ($record.ContainsKey('diag')) {
-            Set-DiagSentinels -Diag $record.diag
-        }
-        $traceFrame = [int]$record.f
-        if (-not (Test-FrameInRange -Frame $traceFrame)) {
-            continue
-        }
-        $frames[[string]$traceFrame] = $record
-    }
     } finally {
         if ($reader) { $reader.Dispose() }
         $traceFile.Dispose()

@@ -104,18 +104,18 @@ The seven-path and deletion-count differences between the views include upstream
 
 ## Chunk queue
 
-| ID | State | Rank | Scope | Expected inherited reduction | Risk | Prerequisite | Result |
-|---|---|---:|---|---:|---|---|---|
-| `DMR1-CHUNK-001` | `DONE` | 1 | Paired OGL lookup and profiling helpers | 84-90 | Low-medium | Typed callback and API-size gate | 95 inherited additions removed; focused contracts and configured builds green |
-| `DMR1-CHUNK-002` | `DONE` | 2 | Paired main-view FOV policy | 70-82 | Low-medium | Chunk 001 accepted; no frame-orchestration movement | 80 inherited additions removed; focused policy and configured builds green |
-| `DMR1-CHUNK-003` | `TODO` | 3 | Paired debug texture-overlay drawing | 60-64 | Low | Chunk 002 accepted | Pending |
-| `DMR1-CHUNK-004` | `TODO` | 4 | Paired virtual-gamepad registration | 100-125 | Medium | Batch 1 green; adapter no more than about 40-45 lines | Pending |
-| `DMR1-CHUNK-005` | `TODO` | 5 | Paired scene-object profiler scan | 52-56 | Low-medium | Batch 1 green; no second scan or allocation | Pending |
-| `DMR1-CHUNK-006` | `TODO` | 6 | Remaining D2 input-demo helper residue | 50-58 | Medium | Earlier chunks green; exact replay ordering retained | Pending |
-| `DMR1-CHUNK-007` | `DEFERRED` | 7 | D2 direct-restore slot parser | 28-31 | Low | Coherent state-adjacent reason; below standalone threshold | Threshold deferral |
-| `DMR1-CHUNK-008` | `TODO` | 8 | Paired last-player retention and loaded graphics setup | 56-62 | Low-medium | Coherent adjacent config work now scoped by GQ1-CHUNK-0289 | Reactivated 2026-10-01 under GQF-0201/GQR-0188; preserve native first-run/music/format |
-| `DMR1-CHUNK-009` | `DEFERRED` | 9 | Paired network resync request mechanism | 35-45 | High | Separate correctness reason and deterministic host-loss coverage | Risk/payoff deferral |
-| `DMR1-AUDIT-001` | `TODO` | 10 | Final residual path accounting and rerank | 0 | Low | Last accepted implementation chunk | Pending |
+| ID               | State      | Rank | Scope                                                  | Expected inherited reduction | Risk       | Prerequisite                                                     | Result                                                                                 |
+| ---------------- | ---------- | ---: | ------------------------------------------------------ | ---------------------------: | ---------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `DMR1-CHUNK-001` | `DONE`     |    1 | Paired OGL lookup and profiling helpers                |                        84-90 | Low-medium | Typed callback and API-size gate                                 | 95 inherited additions removed; focused contracts and configured builds green          |
+| `DMR1-CHUNK-002` | `DONE`     |    2 | Paired main-view FOV policy                            |                        70-82 | Low-medium | Chunk 001 accepted; no frame-orchestration movement              | 80 inherited additions removed; focused policy and configured builds green             |
+| `DMR1-CHUNK-003` | `TODO`     |    3 | Paired debug texture-overlay drawing                   |                        60-64 | Low        | Chunk 002 accepted                                               | Pending                                                                                |
+| `DMR1-CHUNK-004` | `TODO`     |    4 | Paired virtual-gamepad registration                    |                      100-125 | Medium     | Batch 1 green; adapter no more than about 40-45 lines            | Pending                                                                                |
+| `DMR1-CHUNK-005` | `TODO`     |    5 | Paired scene-object profiler scan                      |                        52-56 | Low-medium | Batch 1 green; no second scan or allocation                      | Pending                                                                                |
+| `DMR1-CHUNK-006` | `TODO`     |    6 | Remaining D2 input-demo helper residue                 |                        50-58 | Medium     | Earlier chunks green; exact replay ordering retained             | Pending                                                                                |
+| `DMR1-CHUNK-007` | `DEFERRED` |    7 | D2 direct-restore slot parser                          |                        28-31 | Low        | Coherent state-adjacent reason; below standalone threshold       | Threshold deferral                                                                     |
+| `DMR1-CHUNK-008` | `TODO`     |    8 | Paired last-player retention and loaded graphics setup |                        56-62 | Low-medium | Coherent adjacent config work now scoped by GQ1-CHUNK-0289       | Reactivated 2026-10-01 under GQF-0201/GQR-0188; preserve native first-run/music/format |
+| `DMR1-CHUNK-009` | `DEFERRED` |    9 | Paired network resync request mechanism                |                        35-45 | High       | Separate correctness reason and deterministic host-loss coverage | Risk/payoff deferral                                                                   |
+| `DMR1-AUDIT-001` | `TODO`     |   10 | Final residual path accounting and rerank              |                            0 | Low        | Last accepted implementation chunk                               | Pending                                                                                |
 
 ## Per-chunk instructions
 

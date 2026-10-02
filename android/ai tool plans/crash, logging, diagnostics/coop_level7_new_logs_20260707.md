@@ -1,16 +1,19 @@
 # Coop level 7 new log review
 
 ## Goal
+
 - Review the new attached coop/texture diagnostics log
 - Identify what it says about the D2 level 7 multiplayer texture issue
 - Avoid code changes unless the log points to a small, clear fix
 
 ## Plan
+
 - [done] Extract key events and diagnostics from the attached log
 - [done] Compare log tags with the current texture and multiplayer code paths
 - [done] Summarize likely cause and recommended next step
 
 ## Findings
+
 - This run is a fresh D2 level 7 coop launch, not a restore path:
   `use_restore=false`, `restore_slot=-1`, and the game later logs no restore slot file
 - The post-level-load texture reset did run before gameplay:
@@ -26,6 +29,7 @@
 - The persistent invalid `tmap1=910` references are still present, but they are separate segment refs from the tracked visible wall and should not be treated as the cause of this wall unless a future probe lands on one of them
 
 ## Next Step
+
 - Compare `merged_hash=0x2820c6f1` against a known-good state for the same wall, either from single-player level 7 or from a capture after the wall visually flips correct
 - If the good state has the same merged hash, the remaining bug is in upload/draw/sampling state
 - If the good state has a different merged hash, the remaining bug is in the CPU texmerge source data or texmerge cache content

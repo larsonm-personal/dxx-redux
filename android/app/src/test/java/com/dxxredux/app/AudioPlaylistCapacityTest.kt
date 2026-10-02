@@ -1,25 +1,24 @@
 package com.dxxredux.app
 
-import java.io.IOException
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import java.io.IOException
 
 class AudioPlaylistCapacityTest {
     private fun source(
         id: Int,
         tracks: Int,
         audioTracks: Int = tracks,
-    ) =
-        AudioSourceManager.AudioSource(
-            id = "source-$id",
-            cuePath = "source-$id.cue",
-            binPaths = listOf("source-$id.bin"),
-            discLabel = "Source $id",
-            discId = "disc-$id",
-            trackCount = tracks,
-            audioTrackCount = audioTracks,
-            legacyDiscId = id.toLong(),
-        )
+    ) = AudioSourceManager.AudioSource(
+        id = "source-$id",
+        cuePath = "source-$id.cue",
+        binPaths = listOf("source-$id.bin"),
+        discLabel = "Source $id",
+        discId = "disc-$id",
+        trackCount = tracks,
+        audioTrackCount = audioTracks,
+        legacyDiscId = id.toLong(),
+    )
 
     @Test
     fun capacity_acceptsExactLimitsAndOneTrackPlaylist() {

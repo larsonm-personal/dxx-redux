@@ -14,6 +14,7 @@ These are the remaining issues called out after the D1 render crash fix:
 ### 1. Android TV keyboard input routing
 
 Status:
+
 - Implemented in `MainActivity.kt`
 - Shared debug logging now reuses the active log file across the launcher/game process handoff in `DebugLog.kt`, so a single run no longer starts a fresh `debuglog_*.txt` just because `MainActivity` is in the `:game` process
 - Kotlin build validation passed before and after scoped code quality
@@ -41,11 +42,13 @@ Status:
 - Latest user confirmation is that the current TV-keyboard version is now working correctly on device
 
 Why first:
+
 - Highest leverage user-facing blocker
 - Strongest local hypothesis from current code
 - Likely affects every controller-driven text-entry path, not just one screen
 
 Current anchors:
+
 - `showKeyboard()` and IME height reporting already exist in `android/app/src/main/java/com/dxxredux/app/MainActivity.kt`
 - `dispatchKeyEvent()` and `onGenericMotionEvent()` in the same file now leave directional DPAD and joystick navigation on the raw system path while `keyboardActive` is true, but still map controller `A` / `Select` to confirm and controller `B` / remote `BACK` to a local keyboard close
 - `onKeyDown()` and `onKeyUp()` still act as the backstop that swallows controller events if the IME path does not consume them
@@ -54,6 +57,7 @@ Current anchors:
 - `d1/main/newmenu.c` and `d2/main/newmenu.c` own the Android input-menu auto-edit state that decides whether the soft keyboard opens immediately
 
 Current hypothesis:
+
 - The remaining controller-only failure was likely split between missing directional synthesis for stick-driven navigation and a missing `DPAD_CENTER` native key translation for remote select
 - The exported TV logs now show the slide-up problem more directly: the keyboard is shown and the IME reroute path reports `handled=true`, but the TV build kept reporting zero IME height, so the menu-shift logic never received a non-zero keyboard height
 - The newest exported TV log tightened the remaining input root cause further: the shift path is fixed, but the rerouted controller and remote select events were still being swallowed by `MainActivity` because a custom `KeyEvent.flags` marker did not survive the framework dispatch path
@@ -63,6 +67,7 @@ Current hypothesis:
 - The D1 numeric-keyboard root cause was local and concrete: the start-level menu never set `Newmenu_allowed_chars = "09"`, so Android had no signal to request a number keyboard there
 
 Why the current version is correct:
+
 - The TV IME now gets a real editor target through the hidden `KeyboardInputView` instead of the `SurfaceView`, so focus, soft-keyboard lifecycle, and TV-style navigation all follow a normal Android text-input path
 - Confirm and close semantics now match the working device behavior instead of an internal guess: controller `A` and `Select` confirm the highlighted character, while controller `B` and TV remote `BACK` close the keyboard locally without escaping the activity
 - Directional navigation now works because `MainActivity` no longer consumes joystick HAT and left-stick motion while the keyboard is open; the system IME sees the raw controller navigation just like it already saw the working TV remote DPAD path
@@ -70,6 +75,7 @@ Why the current version is correct:
 - Numeric-vs-letter keyboard choice is now correct for level select because D1 and D2 both mark the start-level field as numeric-only with `Newmenu_allowed_chars = "09"`
 
 Other things learned:
+
 - Android TV keyboard failures split cleanly into three different ownership problems: editor target/focus, keyboard-height reporting, and controller-navigation routing. Fixing only one of them produces misleading partial success
 - Custom `KeyEvent.flags` bits are not a reliable way to tag events that travel through the Android framework; a local dispatch-depth guard around the exact `super.dispatchKeyEvent(...)` call is the safer pattern
 - A working TV remote path does not imply that a synthetic controller path is equivalent. In this case the remote succeeded because the IME handled raw directional input, while the synthetic controller route kept getting swallowed or reported `handled=false`
@@ -77,6 +83,7 @@ Other things learned:
 - The durable Android signal for numeric text entry in these menus is still the native `Newmenu_allowed_chars` state, not a launcher-side guess about which field probably wants digits
 
 Cleanup candidates:
+
 - Phone-emulator automation was not extended for the TV/controller semantics because the current scripts only cover generic soft-keyboard and text-entry paths, not raw TV remote or Bluetooth controller IME navigation; keep that coverage manual until a real TV/controller test harness exists
 - Trim this section down after the durable notes are captured elsewhere so the plan keeps the final rationale and cleanup queue without carrying every intermediate hypothesis forever
 - Add one small regression checklist or automation pass for TV keyboard semantics so later cleanup does not re-break `A`/`Select`, `B`/`BACK`, raw directional navigation, or numeric level select
@@ -85,23 +92,28 @@ Cleanup candidates:
 ### 2. MIDI preview slider Up/Down regression
 
 Status:
+
 - Implemented in `MusicPickerPage.kt`
 - Kotlin build validation passed before and after scoped code quality
 - Manual or scripted launcher verification is still pending
 
 Why second:
+
 - Very local surface in one file
 - User reports the previous fix was ineffective, and the current code suggests why
 
 Current anchors:
+
 - `verticalDpadFocusEscape()` in `android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt`
 - MIDI preview `Slider(...)` in the same file
 
 Current hypothesis:
+
 - The current fix only intercepts `KeyEventType.KeyDown`
 - The slider may still react on the matching KeyUp or internal slider handling path, producing the observed one-step skip when focus leaves vertically
 
 Next steps:
+
 - Verify on device that Up/Down now changes focus without seeking on the MIDI preview slider
 - Confirm the same shared helper still behaves correctly on the CD preview sliders that reuse it
 - Add one short launcher-side automation or manual adb verification script if this regression is likely to recur
@@ -109,24 +121,29 @@ Next steps:
 ### 3. MIDI source selector D-pad trap
 
 Status:
+
 - Replaced the exposed dropdown with a plain button-triggered `DropdownMenu` in `MusicPickerPage.kt`
 - Kotlin build validation passed before and after scoped code quality
 - Controller-vs-remote on-device verification is still pending
 
 Why third:
+
 - Same page as the slider issue, so it is efficient to investigate in the same tranche
 - The likely fix surface is still local to `MusicPickerPage.kt`
 
 Current anchors:
+
 - `MidiSection()` source picker in `android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt`
 - The current source selector uses `ExposedDropdownMenuBox` + `OutlinedTextField(menuAnchor())`
 - SetupActivity synthesizes HAT-axis transitions into DPAD key events for controller navigation
 
 Current hypothesis:
+
 - The Material exposed dropdown anchor does not cooperate well with gamepad-synthesized D-pad input on Android TV
 - The TV remote works better because it emits direct DPAD key events, while joystick HAT events take a different path or focus timing
 
 Next steps:
+
 - Verify on Shield that both the TV remote and gamepad can move past the selector into the track list
 - Only add remote-vs-controller event logs if the simplified selector still traps focus on device
 - Keep any follow-up local to `MusicPickerPage.kt` unless a shared TV selector helper becomes clearly worthwhile
@@ -134,19 +151,23 @@ Next steps:
 ### 4. Controller display name detection
 
 Why fourth:
+
 - Lower functional severity than the keyboard and preview-navigation issues
 - Likely needs device-property inspection before a safe implementation choice exists
 
 Current anchors:
+
 - Setup screen controller header in `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`
 - Controller config page detection block in `android/app/src/main/java/com/dxxredux/app/ControllerConfigPage.kt`
 - Both currently show `gamepads.first().name` directly
 
 Current hypothesis:
+
 - On Shield, Android exposes `InputDevice.name == "virtual-search"` for the active Bluetooth controller path, so the current UI is faithfully rendering a poor platform-provided label
 - A better human-readable label may be recoverable from other `InputDevice` properties or a Bluetooth-device lookup, but that needs on-device inspection first
 
 Next steps:
+
 - Add temporary logging or a debug dump of `id`, `name`, `descriptor`, `vendorId`, `productId`, `sources`, `keyboardType`, `isExternal`, and any API-available Bluetooth metadata for connected controllers
 - Compare Shield output against a device where the correct controller name is already shown
 - Then centralize controller display-name formatting in one launcher helper instead of repeating `gamepads.first().name` in multiple screens

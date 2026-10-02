@@ -19,18 +19,17 @@ Current demo run: android/tests/test_input_demo_regressions.ps1 -ResultArchiveRo
 
 Extraction recommendation pending validation: keep geometry and policy in shared implementation files with declarations only in shared headers. Preserve the legacy native path as default. Use explicit per-query opt-in for enhanced planning and enhanced companion physics; moving the code without gating the call does not isolate the base game. Do not enable correction globally just because an enhanced buddy exists. Ordinary player physics must retain the selected compatibility policy. Any occupancy extraction must preserve real native face/portal semantics rather than substitute an unverified zero-length ray. A small native primitive hook is preferable to copying the whole original collision engine
 
-
 Before cleanup pause: complete current-build corpus finished all15 demos,14failed and only d2_descent2_level9_20260511_192533 passed. Controlled A/B build with the edge correction disabled failed during CMake configuration due full disk, before compilation. Both d1/main/fvi.c and d2/main/fvi.c were restored byte-for-byte to their pre-review snapshots. No temporary review code remained. Attribution was unproven at that point. User then explicitly requested comprehensive deletion of all temporary files; raw logs/results were disposable under that instruction
 
 ## Controlled comparison after cleanup
 
 Rebuilt both Windows engines with the normal host build guard, MSVC x86 RelWithDebInfo. Ran all 15 committed fixtures: four D1 full-game replays with drawing/presentation bypassed and eleven D2 headless replays. Expected-result checks remained enabled; no fixture expectations were changed
 
-| Variant | Pass | Fail | Evidence |
-| --- | --- | --- | --- |
-| Current working code | 1 | 14 | temp/fvi_review_current/*.actual.json |
-| Only swept-edge correction disabled in both fvi.c files | 15 | 0 | temp/fvi_review_control/edge_off.log and temp/fvi_review_edge_off/*.actual.json |
-| Current code restored and rebuilt | 1 | 14 | All 15 complete actual JSON results exactly match the first current-code run |
+| Variant                                                 | Pass | Fail | Evidence                                                                        |
+| ------------------------------------------------------- | ---- | ---- | ------------------------------------------------------------------------------- |
+| Current working code                                    | 1    | 14   | temp/fvi_review_current/*.actual.json                                           |
+| Only swept-edge correction disabled in both fvi.c files | 15   | 0    | temp/fvi_review_control/edge_off.log and temp/fvi_review_edge_off/*.actual.json |
+| Current code restored and rebuilt                       | 1    | 14   | All 15 complete actual JSON results exactly match the first current-code run    |
 
 The diagnostic changes exactly one condition in each fvi.c to `if (0 && result == IT_EDGE && rad > 0 && seg->sides[side].wall_num < 0)`. All occupancy, routing, AI and other working-tree changes remain identical. Both source snapshots are restored byte-for-byte in finally; SHA-256 hashes match. The restored-current build and repeatability corpus completed successfully: all 15 complete actual JSON results match the first current-code run exactly. The repeat runner used ReferenceResultRoot and therefore reported 15 comparison passes; against the recorded fixtures these identical results still represent 1 pass and 14 failures. Evidence: temp/fvi_review_control/restored.log, temp/fvi_review_restored/*.actual.json and temp/fvi_review_control/comparison.json
 
@@ -53,7 +52,6 @@ The all-pass edge-off run also shows that the current occupancy helper and July 
 
 This is a review and controlled experiment, not the production extraction or future enhancement-option implementation. The known global correction is restored to its original pre-review state after the experiment so this review does not silently replace the user's current code with an unvalidated routing change
 
-
 ## Implementation follow-through
 
 The earlier paragraph saying the correction was restored describes the end of the controlled experiment, not the current working tree. The compatibility implementation now removes it in both engines. The four fvi.c/.h files match ca9c1b20^ after newline normalization; this establishes restoration to the pre-correction revision, not a claim that these entire files equal the 1996 release
@@ -62,12 +60,9 @@ Route occupancy now lives in shared route_collision.c with declarations only in 
 
 The routing-only door-approach repair restores TEW secret -3. Latest full-set evidence is 282/293 passing, one fewer than the earlier 283-pass baseline: Plutonia L3 is still unresolved. Further recovery should search for a native-physics-executable route while preserving trigger avoidance. An alternate topological path exists, but has not yet been proven by execution. Route cache generations advance together to 29 to invalidate results computed under the removed global correction
 
-
 Final resumed host demo run: all 15 committed recorded-input demos pass against their unchanged expectations, temp/fvi_resume_demos.log and temp/fvi_resume_demos/*.actual.json. These are host final-state checks, not an Android replay/parity result, exhaustive gameplay proof, or a new baseline. Current scoped source formatting and diff checks pass
 
-
 Final resumed validation complete: all 15 committed demos pass (temp/fvi_resume_demos.log). Android externalNativeBuildDebug passes for arm64-v8a, armeabi-v7a and x86_64, and the two targeted launcher scheduling/monitor suites pass all 19 tests (temp/fvi_resume_android.log). No Android input replay was run. Cache invalidation is complete; the remaining compatibility-repair work is Plutonia L3 routing, not FVI restoration. The latest full 293-level sweep remains 282 OK / 4 timeout / 3 failed / 4 unsupported
-
 
 ## Final outcome
 

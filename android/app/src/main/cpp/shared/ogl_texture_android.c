@@ -459,7 +459,7 @@ ogl_texture *android_ogl_transient_blit_texture(int width, int height)
 }
 
 void android_ogl_reset_transient_blit_texture(
-	const struct android_ogl_bind_texture_state *state, int delete_handle)
+    const struct android_ogl_bind_texture_state *state, int delete_handle)
 {
 	if (delete_handle && transient_blit_texture.handle)
 		glDeleteTextures(1, &transient_blit_texture.handle);

@@ -10,8 +10,10 @@ extern "C" {
 
 /* Adjust an unscaled steering command; true means precision must bypass smoothing */
 int guidebot_route_steer_approach(const struct object *objp, const struct vms_vector *goal_point,
-                                struct vms_vector *velocity);
+                                  struct vms_vector *velocity);
 void guidebot_route_recover_approach(struct object *objp, struct vms_vector *goal_point);
+int guidebot_route_recovery_edge_blocked(const struct object *objp, int goal, int from, int to);
+void guidebot_route_reset_recovery_edges(void);
 
 #ifdef __cplusplus
 }

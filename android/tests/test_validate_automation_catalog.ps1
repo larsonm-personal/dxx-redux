@@ -40,6 +40,20 @@ try {
         $probeParsed[0].value -cne 'https://example.invalid/a') {
         $failures.Add('shared JSONC catalog parsing rewrote quoted comment or trailing-comma text')
     }
+    $plainProbe = @'
+[
+  { "_info": { "games": ["d1"], }, },
+  { "action": "write_config", "value": "https://example.invalid/a//b", "literal": "text,} /* literal */", },
+]
+'@
+    [IO.File]::WriteAllText($jsoncProbe, $plainProbe, [Text.UTF8Encoding]::new($false))
+    $probeResolved = Resolve-TestScript -ScriptPath $jsoncProbe -GameId 'd1'
+    $probeParsed = Read-StrictJsonFile -Path $probeResolved
+    if ($probeResolved -eq $jsoncProbe -or @($probeParsed).Count -ne 1 -or
+        $probeParsed[0].value -cne 'https://example.invalid/a//b' -or
+        $probeParsed[0].literal -cne 'text,} /* literal */') {
+        $failures.Add('scripts without variables must emit strict native JSON without rewriting strings')
+    }
 } catch {
     $failures.Add("shared JSONC catalog parsing probe failed: $($_.Exception.Message)")
 } finally {
@@ -230,7 +244,11 @@ try {
     foreach ($name in $policy.core) {
         if ($name -notin $coverageSample.Name) { $failures.Add("Suite sampling omitted mandatory owner $name") }
     }
-    if ($allCoverage.Count -ne $coverageTests.Count) { $failures.Add('Exhaustive suite omitted retained tests') }
+    $expectedUnattendedNames = @($coverageTests | Where-Object Name -notin $policy.explicit | ForEach-Object Name | Sort-Object)
+    $allCoverageNames = @($allCoverage | ForEach-Object Name | Sort-Object)
+    if (Compare-Object $expectedUnattendedNames $allCoverageNames) {
+        $failures.Add('Exhaustive unattended suite must retain all supported scenarios and exclude explicit probes')
+    }
 } catch { $failures.Add("Suite coverage policy: $_") }
 
 if ($failures.Count -gt 0) {

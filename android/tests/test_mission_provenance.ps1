@@ -5,6 +5,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/host_metadata_worker.ps1')
 . (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1')
+. (Join-Path $repoRoot 'android/helpers/powershell_compat.ps1')
 . (Join-Path $repoRoot 'android/helpers/standard_game_data.ps1')
 $missing = @('ROGUE.zip', 'chron10b.zip' | Where-Object {
         -not (Test-Path -LiteralPath (Join-Path $repoRoot "game_data/mission_files/$_") -PathType Leaf)
@@ -36,7 +37,7 @@ try {
     $archive = Get-Item (Join-Path $repoRoot 'game_data/mission_files/ROGUE.zip')
     $dateJson = & $java -cp $cliLibraries com.dxxredux.metadata.cli.MainKt --archive-dates $archive.FullName
     if ($LASTEXITCODE -ne 0) { throw 'Shared archive date reader failed' }
-    $dates = $dateJson | ConvertFrom-Json -AsHashtable
+    $dates = ConvertFrom-CompatibleJsonHashtable -Json $dateJson
     $stage = Join-Path $root 'stage'
     [IO.Compression.ZipFile]::ExtractToDirectory($archive.FullName, $stage, $true)
     $descriptor = Join-Path $stage 'ROG.MSN'
@@ -83,7 +84,7 @@ try {
     $archive = Get-Item (Join-Path $repoRoot 'game_data/mission_files/chron10b.zip')
     $dateJson = & $java -cp $cliLibraries com.dxxredux.metadata.cli.MainKt --archive-dates $archive.FullName
     if ($LASTEXITCODE -ne 0) { throw 'Shared archive date reader failed' }
-    $dates = $dateJson | ConvertFrom-Json -AsHashtable
+    $dates = ConvertFrom-CompatibleJsonHashtable -Json $dateJson
     $stage = Join-Path $root 'chronolos'
     [IO.Compression.ZipFile]::ExtractToDirectory($archive.FullName, $stage, $true)
     $worker = New-MetadataWorker -Executable (Join-RegressionPath $repoRoot buildd2 main (Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d2-metadata-worker')[0])

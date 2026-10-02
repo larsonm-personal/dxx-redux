@@ -62,5 +62,4 @@ class ControllerMenuTouchOverlayDefaultTest {
         assertTrue(isControllerMenuOnlyTouchLayout(TouchLayout(name = CONTROLLER_MENU_TOUCH_PRESET_NAME)))
         assertFalse(isControllerMenuOnlyTouchLayout(TouchLayout(name = DEFAULT_TOUCH_PRESET_NAME)))
     }
-
 }

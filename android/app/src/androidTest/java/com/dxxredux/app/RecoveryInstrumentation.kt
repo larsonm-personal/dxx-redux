@@ -81,13 +81,19 @@ class RecoveryInstrumentation : Instrumentation() {
             }
             engineProbeHost?.let { host ->
                 EngineQueryChecks(this).run(host, engineProbeGame)
-                result.putString("stream", "PASS: engine query, loss, malformed replies, sender checks, lobby preference, engine fallback, mismatch and cancellation\n")
+                result.putString(
+                    "stream",
+                    "PASS: engine query, loss, malformed replies, sender checks, lobby preference, engine fallback, mismatch and cancellation\n",
+                )
                 finish(Activity.RESULT_OK, result)
                 return
             }
             if (lobbyLatencyOnly) {
                 LobbyLatencyChecks(this).run()
-                result.putString("stream", "PASS: responsive discovery during save checks, concurrent launch preparation, commit/abort/retry and manual IP recovery\n")
+                result.putString(
+                    "stream",
+                    "PASS: responsive discovery during save checks, concurrent launch preparation, commit/abort/retry and manual IP recovery\n",
+                )
                 finish(Activity.RESULT_OK, result)
                 return
             }

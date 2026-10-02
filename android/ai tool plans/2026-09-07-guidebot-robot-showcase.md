@@ -33,20 +33,20 @@ layout. Export metadata should identify showcase mode and its seed/profile.
 
 ## Recommended decisions
 
-| Topic | Initial policy |
-| --- | --- |
-| Source of robots | Capture an authored-instance manifest before verification removes ordinary robots |
-| Simulation authority | Completed route recording owns GuideBot, objectives, walls, and progression state |
-| Robot activity | Separate deterministic presentation simulation, with read-only access to the recorded mine |
-| Target | Explicit GuideBot target adapter for perception, aiming, leading, and visual homing |
-| Contact | No physical interaction with GuideBot or replay-owned actors; walls constrain presentation movement |
-| Attacks | Visual projectiles and impact effects with no gameplay callbacks or force |
-| Lifetime | Deterministic per-instance threshold between 1 and 2 seconds of useful visible exposure |
-| Visibility | Main reference follow-camera view, with real occlusion and projected-size checks |
-| Progression robots | Bosses and key carriers keep their recorded progression timeline |
-| Seeking | Restore indexed showcase state alongside the base scene; never simulate backward |
-| Camera attention | Ordinary showcase robots do not become automatic gaze targets in the first version |
-| Live regression | Keep canonical live execution clean; offer showcase in recorded review |
+| Topic                | Initial policy                                                                                      |
+| -------------------- | --------------------------------------------------------------------------------------------------- |
+| Source of robots     | Capture an authored-instance manifest before verification removes ordinary robots                   |
+| Simulation authority | Completed route recording owns GuideBot, objectives, walls, and progression state                   |
+| Robot activity       | Separate deterministic presentation simulation, with read-only access to the recorded mine          |
+| Target               | Explicit GuideBot target adapter for perception, aiming, leading, and visual homing                 |
+| Contact              | No physical interaction with GuideBot or replay-owned actors; walls constrain presentation movement |
+| Attacks              | Visual projectiles and impact effects with no gameplay callbacks or force                           |
+| Lifetime             | Deterministic per-instance threshold between 1 and 2 seconds of useful visible exposure             |
+| Visibility           | Main reference follow-camera view, with real occlusion and projected-size checks                    |
+| Progression robots   | Bosses and key carriers keep their recorded progression timeline                                    |
+| Seeking              | Restore indexed showcase state alongside the base scene; never simulate backward                    |
+| Camera attention     | Ordinary showcase robots do not become automatic gaze targets in the first version                  |
+| Live regression      | Keep canonical live execution clean; offer showcase in recorded review                              |
 
 All timings, thresholds, budgets, and UI labels here are proposed starting values,
 not measured settings. Native implementation should live under android/, with
@@ -58,17 +58,17 @@ and D1 missions loaded through D2, as in the parent plans.
 Paths are relative to the repository root. These observations identify the audit
 surface; they do not establish that a safe integration already exists.
 
-| Existing source | Relevant behavior and consequence |
-| --- | --- |
-| android/app/src/main/cpp/shared/route_confirmation.cpp | remove_ordinary_robots removes ordinary instances and preserves companions/progression robots; capture the roster before removal, without changing the canonical policy |
-| android/app/src/main/cpp/shared/route_confirmation.cpp | The parked ConsoleObject and the moving route actor have different roles; attacking the parked player is not the requested behavior |
-| d2/main/ai.c and d2/main/ai2.c | AI reads ConsoleObject, believed-player state, player flags, velocity, RNG, and other globals; changing only Believed_player_pos is insufficient |
-| d2/main/physics.c and d2/main/fvi.c | Object sweeps can block movement before damage handlers run; zero damage does not imply zero collision response |
-| d2/main/collide.c | Contact and projectile handlers can apply forces and other effects independently of damage |
-| d2/main/fireball.c | Radial explosions can apply force/stun and death processing can release contents; ordinary death dispatch is unsuitable for visibility retirement |
-| d2/main/laser.c | Normal projectiles allocate live objects and can enter smart-weapon, wall, glass, and other gameplay paths |
-| d2/main/render.c | Seismic/palette/render feedback needs explicit isolation as well as damage suppression |
-| android/app/src/main/cpp/shared/android_level_preview.cpp | Existing robot preview has separate animation/projectile state and behavior/weapon helpers worth reviewing; it is not full mine AI |
+| Existing source                                           | Relevant behavior and consequence                                                                                                                                       |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| android/app/src/main/cpp/shared/route_confirmation.cpp    | remove_ordinary_robots removes ordinary instances and preserves companions/progression robots; capture the roster before removal, without changing the canonical policy |
+| android/app/src/main/cpp/shared/route_confirmation.cpp    | The parked ConsoleObject and the moving route actor have different roles; attacking the parked player is not the requested behavior                                     |
+| d2/main/ai.c and d2/main/ai2.c                            | AI reads ConsoleObject, believed-player state, player flags, velocity, RNG, and other globals; changing only Believed_player_pos is insufficient                        |
+| d2/main/physics.c and d2/main/fvi.c                       | Object sweeps can block movement before damage handlers run; zero damage does not imply zero collision response                                                         |
+| d2/main/collide.c                                         | Contact and projectile handlers can apply forces and other effects independently of damage                                                                              |
+| d2/main/fireball.c                                        | Radial explosions can apply force/stun and death processing can release contents; ordinary death dispatch is unsuitable for visibility retirement                       |
+| d2/main/laser.c                                           | Normal projectiles allocate live objects and can enter smart-weapon, wall, glass, and other gameplay paths                                                              |
+| d2/main/render.c                                          | Seismic/palette/render feedback needs explicit isolation as well as damage suppression                                                                                  |
+| android/app/src/main/cpp/shared/android_level_preview.cpp | Existing robot preview has separate animation/projectile state and behavior/weapon helpers worth reviewing; it is not full mine AI                                      |
 
 The current verifier intentionally simplifies the population. Do not implement
 this feature by disabling remove_ordinary_robots and setting invulnerability.
@@ -133,16 +133,16 @@ mine into a single chase that empties later rooms before the viewer reaches them
 Preserve stationary/guard behavior and bound pursuit around the authored area;
 mark this as showcase behavior rather than normal combat AI fidelity.
 
-| Interaction | Presentation behavior |
-| --- | --- |
-| Robot versus GuideBot or replay-owned actor | No contact blocking, bump, damage, force, or awareness callback |
-| Robot versus showcase robot | No physical impulse or blocking; optional deterministic visual spacing affects only showcase actors |
-| Robot versus solid mine wall | Read-only geometry query keeps it inside the mine; adjust only its own movement |
-| Robot versus closed door or blastable wall | Respect recorded solid state; never open, hold open, damage, or trigger it |
-| Door closes across a showcase robot | Resolve/retire the decorative actor without affecting door timing; record the handling reason |
-| Melee robot | Animate approach/attack; no contact result |
-| Thief | Preserve recognizable movement/attack animation; no inventory inspection or theft |
-| Mine-layer or homing/smart weapon | Private visual effects only; bounded child effects inherit presentation ownership |
+| Interaction                                 | Presentation behavior                                                                               |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Robot versus GuideBot or replay-owned actor | No contact blocking, bump, damage, force, or awareness callback                                     |
+| Robot versus showcase robot                 | No physical impulse or blocking; optional deterministic visual spacing affects only showcase actors |
+| Robot versus solid mine wall                | Read-only geometry query keeps it inside the mine; adjust only its own movement                     |
+| Robot versus closed door or blastable wall  | Respect recorded solid state; never open, hold open, damage, or trigger it                          |
+| Door closes across a showcase robot         | Resolve/retire the decorative actor without affecting door timing; record the handling reason       |
+| Melee robot                                 | Animate approach/attack; no contact result                                                          |
+| Thief                                       | Preserve recognizable movement/attack animation; no inventory inspection or theft                   |
+| Mine-layer or homing/smart weapon           | Private visual effects only; bounded child effects inherit presentation ownership                   |
 
 If an ordinary robot would overlap the camera and fill the screen, retreat or
 fade that presentation robot. Do not deflect GuideBot, move the camera, or add
@@ -222,13 +222,13 @@ Define coverage and projected-size thresholds in the versioned profile, relative
 to viewport dimensions. Generation must not depend on asynchronous GPU query
 delivery or interactive render frame rate.
 
-| State | Transition |
-| --- | --- |
-| Unseen | First useful visible sample starts exposure accumulation |
-| Seen | Add fixed-tick visible exposure; pause accumulation while occluded |
-| Ready | Once threshold is reached, start the explosion on a qualifying visible frame |
-| Exploding | Advance only the presentation effect timeline; body no longer attacks |
-| Gone | Stay absent on later visits; backward seek restores the earlier recorded state |
+| State     | Transition                                                                     |
+| --------- | ------------------------------------------------------------------------------ |
+| Unseen    | First useful visible sample starts exposure accumulation                       |
+| Seen      | Add fixed-tick visible exposure; pause accumulation while occluded             |
+| Ready     | Once threshold is reached, start the explosion on a qualifying visible frame   |
+| Exploding | Advance only the presentation effect timeline; body no longer attacks          |
+| Gone      | Stay absent on later visits; backward seek restores the earlier recorded state |
 
 Brief occlusion pauses rather than resets the accumulated exposure, avoiding
 immortal robots that repeatedly peek around a door. A threshold crossed at a
@@ -271,12 +271,12 @@ and showcase scheduling pass, with objective priority and passage framing intact
 
 ## Viewer integration
 
-| Surface | Integration |
-| --- | --- |
-| Video generator | Clean/Robot showcase profile; reuse the same base recording and generate the appropriate derived track |
-| Metadata route player | Contextual Robot showcase toggle/action within the selected touch interface; preserve movement controls, layout, and objective commands |
-| Regression viewer | Raw/Steady/Attentive camera options remain independent; offer Robot showcase on recorded review after capture completes |
-| Partial regression recording | Allow showcase for the valid recorded prefix with a clear partial-result label |
+| Surface                      | Integration                                                                                                                             |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Video generator              | Clean/Robot showcase profile; reuse the same base recording and generate the appropriate derived track                                  |
+| Metadata route player        | Contextual Robot showcase toggle/action within the selected touch interface; preserve movement controls, layout, and objective commands |
+| Regression viewer            | Raw/Steady/Attentive camera options remain independent; offer Robot showcase on recorded review after capture completes                 |
+| Partial regression recording | Allow showcase for the valid recorded prefix with a clear partial-result label                                                          |
 
 Do not inject active extra robots into the canonical live regression process.
 If live showcase is wanted later, it needs an isolated buffered presentation
@@ -325,10 +325,10 @@ without relying entirely on screenshot inspection.
 - [ ] Capture the authored manifest without changing canonical capture results
 - [ ] Restore a base recording and add one moving, firing presentation robot
 - [ ] Prove explicit GuideBot targeting, wall containment, private allocation/RNG,
-  and visual-only impact/death paths before broad stock-AI reuse
+      and visual-only impact/death paths before broad stock-AI reuse
 - [ ] Identify supported behavior adapters and any presentation approximations
 - [ ] Demonstrate source-scene invariance through contact, projectile impacts,
-  blast effects, and a canonical allocation occurring beside showcase allocations
+      blast effects, and a canonical allocation occurring beside showcase allocations
 
 ### Phase 1: usable recorded showcase
 
@@ -344,7 +344,7 @@ without relying entirely on screenshot inspection.
 - [ ] Verify pause, speed changes, toggles, camera-profile changes, and free camera
 - [ ] Cover D2, D1-in-D2, custom robot assets, dense rooms, and effect budgets
 - [ ] Add cache cancellation/invalidation, partial-recording handling, diagnostics,
-  and accurate export metadata
+      and accurate export metadata
 
 ### Later optional extensions
 
@@ -356,20 +356,20 @@ without relying entirely on screenshot inspection.
 
 These are implementation acceptance criteria, not tests run during this task.
 
-| Case | Required result |
-| --- | --- |
-| Direct robot contact and repeated projectile hits on GuideBot | Identical recorded pose/velocity/orientation and controls; no bump or damage |
-| Flash, homing, smart, and earthshaker-style attacks | Recognizable bounded visuals; no whiteout, warning feedback, radial force, or tremor |
-| Attacks beside a switch, door, blastable wall, or glass | Exact base-scene wall/trigger state at every source boundary |
-| Robot containing powerups or other robots | Visual retirement releases nothing and changes no counters |
-| Boss/key-carrier objective and original key drop | Single replay-owned actor follows the recorded objective timeline |
-| Robot behind wall, in tiny slit, distant, or visible only in rear view | No premature visible-exposure countdown |
-| Partial view, occlusion, reappearance, then room revisit | Exposure pauses/resumes predictably; removal persists after explosion |
-| Seek before/through/after death and shuffled repeated seeks | Same body, animation, projectile, effect, and lifetime state as linear replay |
-| Manual pause, objective hold, 0.75x export, 2x interactive playback | Declared clock behavior; no hidden wall-time advancement |
-| Free-camera inspection and switch back to follow | No branch in reference-view deaths or route state |
-| Crowded room, smart children, simultaneous canonical object allocation | No base object eviction, RNG interference, unbounded effects, or silent roster loss |
-| Custom mission robots and D1-in-D2 assets | Correct definitions/models/animations and explicit unsupported-behavior diagnostics |
+| Case                                                                   | Required result                                                                      |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Direct robot contact and repeated projectile hits on GuideBot          | Identical recorded pose/velocity/orientation and controls; no bump or damage         |
+| Flash, homing, smart, and earthshaker-style attacks                    | Recognizable bounded visuals; no whiteout, warning feedback, radial force, or tremor |
+| Attacks beside a switch, door, blastable wall, or glass                | Exact base-scene wall/trigger state at every source boundary                         |
+| Robot containing powerups or other robots                              | Visual retirement releases nothing and changes no counters                           |
+| Boss/key-carrier objective and original key drop                       | Single replay-owned actor follows the recorded objective timeline                    |
+| Robot behind wall, in tiny slit, distant, or visible only in rear view | No premature visible-exposure countdown                                              |
+| Partial view, occlusion, reappearance, then room revisit               | Exposure pauses/resumes predictably; removal persists after explosion                |
+| Seek before/through/after death and shuffled repeated seeks            | Same body, animation, projectile, effect, and lifetime state as linear replay        |
+| Manual pause, objective hold, 0.75x export, 2x interactive playback    | Declared clock behavior; no hidden wall-time advancement                             |
+| Free-camera inspection and switch back to follow                       | No branch in reference-view deaths or route state                                    |
+| Crowded room, smart children, simultaneous canonical object allocation | No base object eviction, RNG interference, unbounded effects, or silent roster loss  |
+| Custom mission robots and D1-in-D2 assets                              | Correct definitions/models/animations and explicit unsupported-behavior diagnostics  |
 
 Compare replay-owned scene state at every source boundary against clean playback,
 including object identities, doors/walls/triggers, keys, progression robots, actor

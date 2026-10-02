@@ -73,6 +73,7 @@ permissions. It covers Java crashes, native crashes, and ANRs.
   phase 3.
 
 Status:
+
 - Done. Added pinned `com.iqiyi.xcrash:xcrash-android-lib:3.1.0` to `android/app/build.gradle`
 - Done. Added `DxxReduxApp` and registered it in `AndroidManifest.xml`
 - Done. xCrash now initializes in all builds and all processes, writing to `filesDir/tombstones`
@@ -103,6 +104,7 @@ Status:
   the bottom of every tombstone variant.
 
 Status:
+
 - Done. `DxxReduxApp` now registers one shared xCrash callback for Java/native/ANR tombstones
 - Done. `CrashLog.appendXCrashSections()` appends the app/build/device header and native breadcrumbs with `TombstoneManager.appendSection()`
 - Done. `android_crash_handler.c` no longer installs signal handlers; it now only keeps the breadcrumb ring, the `Error()` crash directory, and a JNI breadcrumb formatter
@@ -129,6 +131,7 @@ Status:
   do not confuse users (one-shot cleanup in `DxxReduxApp`).
 
 Status:
+
 - Done. `CrashLog.install()` is now a compatibility no-op so xCrash is the only Java crash handler
 - Done. `CrashLog.listCrashFiles()` and `deleteAllCrashFiles()` now operate on `filesDir/tombstones/` and `crash_error_*` files only
 - Done. Existing share flow still works because files are copied to cache before export
@@ -193,6 +196,7 @@ Status:
   to mark the hand-rolled native handler as superseded.
 
 Status:
+
 - Partly done. Dead native crash-handler pieces from the old install path are gone, including the unused install-info plumbing
 - Done. Comments and Kotlin call-site notes now describe breadcrumb initialization instead of a custom signal handler
 - Not done yet. Memory write-up and follow-on plan cleanup remain

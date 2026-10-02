@@ -85,6 +85,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "interp.h"
 #ifdef __ANDROID__
 #include "android_profile.h"
+#include "android_render_fov.h"
+#include "render_gameplay_view.h"
 #include "android_screen_advance.h"
 #include "coop/coop_powerup_duplication.h"
 #include "escort.h"
@@ -932,6 +934,12 @@ void render_object(object *obj)
 		return;
 	}
 
+#ifdef ANDROID
+	if (android_render_cpu_visibility_only()) {
+		android_render_record_visible_object(obj);
+		return;
+	}
+#endif
 	mld_save = Max_linear_depth;
 	Max_linear_depth = Max_linear_depth_objects;
 #ifdef __ANDROID__
@@ -1006,7 +1014,11 @@ void render_object(object *obj)
 
 	gr_settransblend( GR_FADE_OFF, GR_BLEND_NORMAL ); // revert any transparency/blending setting back to normal
 
-	if ( obj->render_type != RT_NONE && Newdemo_state == ND_STATE_RECORDING )
+	if (
+#ifdef ANDROID
+		android_render_records_objects() &&
+#endif
+		obj->render_type != RT_NONE && Newdemo_state == ND_STATE_RECORDING )
 		newdemo_record_render_object(obj);
 
 	Max_linear_depth = mld_save;

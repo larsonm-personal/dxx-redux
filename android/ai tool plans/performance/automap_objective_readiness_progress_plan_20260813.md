@@ -95,12 +95,12 @@ fixed integer scale so JNI and tests do not depend on floating-point equality.
 
 Use these initial phase bands:
 
-| Phase | Estimated level band |
-| --- | --- |
-| Secret-area scan | 0 to 10 percent |
-| Topology | 10 to 20 percent |
-| Level summary | 20 to 30 percent |
-| Route planning | 30 to 100 percent |
+| Phase            | Estimated level band |
+| ---------------- | -------------------- |
+| Secret-area scan | 0 to 10 percent      |
+| Topology         | 10 to 20 percent     |
+| Level summary    | 20 to 30 percent     |
+| Route planning   | 30 to 100 percent    |
 
 These weights are intentionally simple and reflect the measured fact that route
 planning dominates cold-cache time. Keep them as centralized constants so device
@@ -189,14 +189,14 @@ the two do not overlap.
 
 Suggested states:
 
-| Objective mode and route state | Automap behavior |
-| --- | --- |
-| Objectives off | No readiness note or bar |
-| Calculating, no usable objective | `Objectives still calculating` plus bar |
-| Partial/next-ready with a usable objective | Draw available objectives |
+| Objective mode and route state              | Automap behavior                                                     |
+| ------------------------------------------- | -------------------------------------------------------------------- |
+| Objectives off                              | No readiness note or bar                                             |
+| Calculating, no usable objective            | `Objectives still calculating` plus bar                              |
+| Partial/next-ready with a usable objective  | Draw available objectives                                            |
 | Partial/next-ready in All or Remaining mode | Draw available objectives and `More objectives calculating` plus bar |
-| Complete | Draw objectives and hide readiness UI |
-| Terminal failure | `Objectives unavailable`, no moving progress bar |
+| Complete                                    | Draw objectives and hide readiness UI                                |
+| Terminal failure                            | `Objectives unavailable`, no moving progress bar                     |
 
 Do not show a secret-area warning. Secret labels and revealed secret edges remain
 available independently while objectives calculate.
@@ -264,12 +264,12 @@ Tests and introspection:
 ### Phase 1: Progress model and launcher UI
 
 - [x] Preserve structured stage, phase, task ID, and level identity in parsed
-  checkpoint updates
+      checkpoint updates
 - [x] Implement the monotonic fixed-band estimator and skipped-task-ID handling
 - [x] Add the estimated current-level value to the analysis progress model
 - [x] Render the third metadata-viewer bar without changing the two existing bars
 - [x] Add focused unit tests for phase transitions, repeated 0-to-100 tasks,
-  skipped task IDs, unknown phases, cancellation, level reset, and exact completion
+      skipped task IDs, unknown phases, cancellation, level reset, and exact completion
 
 ### Phase 2: Game progress bridge
 
@@ -277,7 +277,7 @@ Tests and introspection:
 - [x] Add generation-checked JNI progress state and atomic native getters
 - [x] Keep progress updates active after `next_ready` until complete
 - [x] Add tests for stale-generation rejection, next/fill filtering, monotonic
-  clamping across retries, reset on level change, and terminal failure
+      clamping across retries, reset on level change, and terminal failure
 
 ### Phase 3: Automap readiness UI and refresh
 
@@ -287,22 +287,22 @@ Tests and introspection:
 - [x] Add the canonical route revision and preserve D2 active-goal adoption rules
 - [x] Rescan the route after adoption and verify the next draw shows objectives
 - [x] Confirm secret labels and revealed secret edges remain available and are not
-  rebuilt merely because route metadata completed
+      rebuilt merely because route metadata completed
 
 ### Phase 4: Regression and device validation
 
 - [x] Expose estimated permille, readiness-note state, route revision, and
-  automap refresh count through introspection
+      automap refresh count through introspection
 - [x] Unit test the estimator and checkpoint parser through Gradle
 - [x] Run a cold-cache automap test that observes the note/bar, leaves the
-  automap open, then observes objective labels without closing and reopening it
+      automap open, then observes objective labels without closing and reopening it
 - [x] Run objective Off, Next, Remaining, All, partial, complete, and failed cases
 - [x] Run the secret-reveal automap test during cold objective computation
 - [x] Verify an active D2 Guide-Bot goal does not change when automap adopts a
-  better artifact, then does adopt it at the next allowed planning boundary
+      better artifact, then does adopt it at the next allowed planning boundary
 - [x] Verify multiplayer and input-demo runs do not hot-activate route data
 - [x] Run scoped code quality, Android unit tests and APK build, native D1/D2
-  tests, Windows host builds, and target-device visual/performance checks
+      tests, Windows host builds, and target-device visual/performance checks
 
 ## Acceptance criteria
 

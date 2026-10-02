@@ -10,9 +10,13 @@ static int begins;
 static int reads;
 static int disjoint;
 
-#define CHECK(condition) do { if (!(condition)) { \
-	fprintf(stderr, "GPU timer check failed at line %d: %s\n", __LINE__, #condition); \
-	exit(1); } } while (0)
+#define CHECK(condition)                                                                      \
+	do {                                                                                      \
+		if (!(condition)) {                                                                   \
+			fprintf(stderr, "GPU timer check failed at line %d: %s\n", __LINE__, #condition); \
+			exit(1);                                                                          \
+		}                                                                                     \
+	} while (0)
 
 void glGenQueries(GLsizei count, GLuint *queries)
 {
@@ -43,7 +47,7 @@ void glGetQueryObjectuiv(GLuint query, GLenum name, GLuint *value)
 void glBeginQuery(GLenum target, GLuint query)
 {
 	CHECK(target == 0x88BF && !active && !pending[query - 1]);
-	active = (int)query;
+	active = (int) query;
 	ready[query - 1] = 0;
 	++begins;
 }

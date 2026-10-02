@@ -101,12 +101,12 @@ primary choice presented to users.
 
 A saved sound profile combines these independent choices:
 
-| Choice | Responsibility |
-| --- | --- |
-| Target music device/arrangement | Select compatible HMP tracks and driver semantics |
-| Renderer | Generate audio with a sample synth or FM synth |
-| Instrument source | Bundled/imported SF2, or original/override FM banks |
-| Tuning | Output gain, percussion balance, stereo width, tuning and supported effects |
+| Choice                          | Responsibility                                                              |
+| ------------------------------- | --------------------------------------------------------------------------- |
+| Target music device/arrangement | Select compatible HMP tracks and driver semantics                           |
+| Renderer                        | Generate audio with a sample synth or FM synth                              |
+| Instrument source               | Bundled/imported SF2, or original/override FM banks                         |
+| Tuning                          | Output gain, percussion balance, stereo width, tuning and supported effects |
 
 Initial profile families should be "DOS FM (original game instruments)",
 "SoundFont (bundled)" and "SoundFont (custom)". Support saving named variations

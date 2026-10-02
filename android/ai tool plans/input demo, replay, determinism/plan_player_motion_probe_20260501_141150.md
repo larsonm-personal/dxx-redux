@@ -28,15 +28,15 @@ The first replay drift is introduced inside the player translation step in `do_p
 - The replay rerun still fails with the same final mismatch: `result.position.x expected -9075092 actual -9075077`
 - Canonical RNG compare still passes completely
 - The new probe shows the first visible position drift is already present before collision handling:
-	- Replay `frame=546 step=pre_fvi` starts from `pos=(-14724001,-2805196,-5158424)` and computes `target=(-14668449,-2814913,-5148038)`
-	- The same step reports `fate=none`, so FVI does not modify the target
-	- The compare output for the next serialized state is `expected (-14668450,-2814913,-5148040)` vs `actual (-14668449,-2814913,-5148038)`
+  - Replay `frame=546 step=pre_fvi` starts from `pos=(-14724001,-2805196,-5158424)` and computes `target=(-14668449,-2814913,-5148038)`
+  - The same step reports `fate=none`, so FVI does not modify the target
+  - The compare output for the next serialized state is `expected (-14668450,-2814913,-5148040)` vs `actual (-14668449,-2814913,-5148038)`
 - Comparing the replay sandbox log to the original Android debug log by `gt` tightens the root cause one step further:
-	- At `gt=1520435`, recorder and replay `after_move` player motion still match
-	- At `gt=1523057`, position still matches but velocity is already split
-		- Recorder: `vel=(1323974,-261507,245636)`
-		- Replay: `vel=(1323989,-261493,245692)`
-	- At `gt=1525678`, the replay `pre_fvi` target differs from the recorder's implied translation by exactly the later visible position error
+  - At `gt=1520435`, recorder and replay `after_move` player motion still match
+  - At `gt=1523057`, position still matches but velocity is already split
+    - Recorder: `vel=(1323974,-261507,245636)`
+    - Replay: `vel=(1323989,-261493,245692)`
+  - At `gt=1525678`, the replay `pre_fvi` target differs from the recorder's implied translation by exactly the later visible position error
 
 ## Conclusion
 

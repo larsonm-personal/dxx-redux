@@ -1,25 +1,28 @@
 # Gamepad-Only Admin Tray Consolidation -- DONE
 
 ## Goal
+
 When no touch interface is available (Android TV / gamepad-only), consolidate
 standalone overlay buttons (Warp, Accept Join) plus music controls and
 unreachable keyboard shortcuts (Automap, Headlight) into the admin tray grid.
 Add D-pad navigation to the admin tray so it works without touch.
 
 ## Detection
+
 - `!packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)` = gamepad-only
 - Computed once in MainActivity.onCreate(), passed to TouchOverlayView
 
 ## Grid Layout (gamepad-only mode)
+
 15 items, 5 clean rows of 3 columns:
 
-| Row | Col 0 | Col 1 | Col 2 |
-|-----|-------|-------|-------|
-| 0 | View+ | View- | AutoLevel |
-| 1 | Quick Save | Quick Load | Game Menu |
-| 2 | Net Events | Exit | Net Stats |
-| 3 | Video Info | Automap | Headlight |
-| 4 | Warp | **Music** | Accept |
+| Row | Col 0      | Col 1      | Col 2     |
+| --- | ---------- | ---------- | --------- |
+| 0   | View+      | View-      | AutoLevel |
+| 1   | Quick Save | Quick Load | Game Menu |
+| 2   | Net Events | Exit       | Net Stats |
+| 3   | Video Info | Automap    | Headlight |
+| 4   | Warp       | **Music**  | Accept    |
 
 Row 4 is the "special" gamepad row. Middle = Music (always available, default
 selection when tray opens via Start button).
@@ -27,6 +30,7 @@ selection when tray opens via Start button).
 Non-gamepad mode stays at 10 items (unchanged).
 
 ### Rationale for extra items
+
 - **Automap (TAB)**: unreachable on gamepad, essential for navigation
 - **Headlight (H)**: unreachable on gamepad, essential in dark levels
 - **Music**: music panel trigger, requested by user
@@ -34,11 +38,13 @@ Non-gamepad mode stays at 10 items (unchanged).
 - **Accept**: accept join request, replaces AcceptJoinButtonView
 
 ## Button Mapping (gamepad-only, in-game)
+
 - **Start**: toggle admin tray
 - **Select**: send ESC (game pause menu)
 - These override the normal mixer/meta routing for buttons 6 and 7
 
 ## D-pad Navigation (admin tray only, when open)
+
 - D-pad left/right/up/down moves `adminTraySelectedIndex`
 - A button activates selected item + closes tray
 - B button closes tray
@@ -47,6 +53,7 @@ Non-gamepad mode stays at 10 items (unchanged).
 - Default selection on open = middle of last row
 
 ## Dynamic Labels
+
 - Warp: "Warp: [callsign]" when available, "Warp: --" when not
 - Accept: "Accept: [callsign]" when pending, "Accept: --" when not
 - These use polling providers similar to existing autoLevel/cockpitMode providers
@@ -54,6 +61,7 @@ Non-gamepad mode stays at 10 items (unchanged).
 ## Files to Modify
 
 ### TouchOverlayView.kt
+
 - [x] Add `var gamepadOnlyMode = false`
 - [x] Add constants: ADMIN_AUTOMAP=10, ADMIN_HEADLIGHT=11, ADMIN_WARP=12, ADMIN_MUSIC=13, ADMIN_ACCEPT_JOIN=14
 - [x] Add `adminTraySelectedIndex` state (-1 = no selection)
@@ -66,6 +74,7 @@ Non-gamepad mode stays at 10 items (unchanged).
 - [x] Add `adminTrayDefaultSelection()` helper
 
 ### MainActivity.kt
+
 - [x] Detect gamepad-only mode via PackageManager
 - [x] Set `touchOverlay.gamepadOnlyMode`
 - [x] Intercept Start/Select in onKeyDown/onKeyUp for admin tray

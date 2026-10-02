@@ -1,0 +1,11 @@
+{
+    "private": true,
+    "description": "Pinned structured text formatters for run-code-quality.ps1",
+    "dependencies": {
+        "@prettier/plugin-xml": "3.4.2",
+        "prettier": "3.9.9"
+    },
+    "engines": {
+        "node": ">=20"
+    }
+}

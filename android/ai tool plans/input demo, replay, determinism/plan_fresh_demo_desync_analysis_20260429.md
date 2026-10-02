@@ -6,20 +6,20 @@ Goal: analyze the fresh non-`old/` demo artifacts in `android/temp_game_logs`, u
 
 ## Phases
 
-| phase | task | status |
-|---|---|---|
-| 1 | Inventory the fresh D2 L1/L2 artifacts and identify the matching `.dem`, `.dximdemo`, rng trace, and game logs. | completed |
-| 2 | Dump each `.dem` to JSONL with `-classicdemo-dump-json` and verify whether `player.control.valid` is present. | completed |
-| 3 | Correlate classic dump, input demo, rng trace, and replay log into TSV for both runs. | completed |
-| 4 | Rerun the fresh input demos through the available replay path and capture new logs. | completed |
-| 5 | Compare frame-by-frame onset windows, classify desyncs, and identify the narrowest plausible root cause. | completed |
-| 6 | Define the next fix or instrumentation needed for a follow-up build. | completed |
-| 7 | Record and restore guidebot escort runtime timestamps in input demo checkpoint/replay, then rerun L2. | completed |
-| 8 | Trace the fresh April 30 L2 replay-only frame-302 awareness event and verify checkpoint/runtime restore boundaries. | completed |
-| 9 | Repair any remaining checkpoint save/load timestamp rebasing bug in the object restore path and rerun L2. | completed |
-| 10 | Trace the earlier side spreadfire pellet that hits robot 100 before frame 302 and compare its replay lifetime against the classic dump. | completed |
-| 11 | Instrument robot 100 health/state in the replay probes and classic dump, then compare the replay frame-302 kill against the classic run. | completed |
-| 12 | Compare record-side versus replay robot 100 motion at the first drift frame, extend hidden-state probes, and decide whether the next step needs a fresh Android recording. | in_progress |
+| phase | task                                                                                                                                                                       | status      |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| 1     | Inventory the fresh D2 L1/L2 artifacts and identify the matching `.dem`, `.dximdemo`, rng trace, and game logs.                                                            | completed   |
+| 2     | Dump each `.dem` to JSONL with `-classicdemo-dump-json` and verify whether `player.control.valid` is present.                                                              | completed   |
+| 3     | Correlate classic dump, input demo, rng trace, and replay log into TSV for both runs.                                                                                      | completed   |
+| 4     | Rerun the fresh input demos through the available replay path and capture new logs.                                                                                        | completed   |
+| 5     | Compare frame-by-frame onset windows, classify desyncs, and identify the narrowest plausible root cause.                                                                   | completed   |
+| 6     | Define the next fix or instrumentation needed for a follow-up build.                                                                                                       | completed   |
+| 7     | Record and restore guidebot escort runtime timestamps in input demo checkpoint/replay, then rerun L2.                                                                      | completed   |
+| 8     | Trace the fresh April 30 L2 replay-only frame-302 awareness event and verify checkpoint/runtime restore boundaries.                                                        | completed   |
+| 9     | Repair any remaining checkpoint save/load timestamp rebasing bug in the object restore path and rerun L2.                                                                  | completed   |
+| 10    | Trace the earlier side spreadfire pellet that hits robot 100 before frame 302 and compare its replay lifetime against the classic dump.                                    | completed   |
+| 11    | Instrument robot 100 health/state in the replay probes and classic dump, then compare the replay frame-302 kill against the classic run.                                   | completed   |
+| 12    | Compare record-side versus replay robot 100 motion at the first drift frame, extend hidden-state probes, and decide whether the next step needs a fresh Android recording. | in_progress |
 
 ## Notes
 

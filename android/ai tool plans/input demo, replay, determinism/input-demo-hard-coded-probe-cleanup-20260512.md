@@ -1,6 +1,7 @@
 # Input demo hard-coded probe cleanup
 
 ## Goal
+
 - Audit hard-coded frame, object, signature, and segment probes in D1/D2 input-demo work
 - Remove stale one-off probe code where it no longer supports a maintained diagnostic path
 - Move reusable probe gating into shared or non-original input-demo helper files where possible
@@ -8,6 +9,7 @@
 - Validate with scoped quality, host builds, replay unit tests, and available affected demos
 
 ## Steps
+
 1. Inventory hard-coded probe sites across D1 and D2 source files
 2. Classify each site as stale debug debt, reusable diagnostic, or real gameplay logic
 3. Move reusable debug decisions into input-demo helper APIs outside original source files
@@ -15,6 +17,7 @@
 5. Run focused validation and update this plan with results
 
 ## Status
+
 - [x] Plan created
 - [x] Probe inventory complete
 - [x] Helper/API changes designed
@@ -22,10 +25,12 @@
 - [x] Validation run
 
 ## Notes
+
 - Keep the existing D1 homing replay parity fix from the prior audit
 - Current RNG sidecars compare source line locations, so avoid unnecessary line shifts in RNG-heavy original files unless validation sidecars are regenerated or the compare result is known to be line-only
 
 ## Inventory
+
 - D1 hard-coded frame/object/segment probes: none found in broad `d1/main` audit. Existing D1 fireball and physics hooks are generic debug gates
 - D2 `input_demo_hooks.c`: one-off frame windows in AI schedule, homing, weapon focus, powerup, replay tail, robot visual, and robot lifecycle probes; object 95 and robot lifecycle object/signature targets
 - D2 `input_demo_hooks.c`: stale suspect spreadfire signature tracking hard-coded frames 594..615
@@ -38,6 +43,7 @@
 - D2 `render.c`: render probe hard-codes frames 300..2000
 
 ## Cleanup Strategy
+
 - Retire stale visual, object-95, segment-254-side-4, and classic stderr-only probes outright
 - Keep generic replay diagnostics, but gate them through debug-enabled helper functions rather than fixed frame windows
 - Move thief/snipe/contact probe activation into `input_demo_hooks.c` helper APIs so original files do not own object/frame policy
@@ -45,6 +51,7 @@
 - Leave gameplay logic and maintained classic-demo JSON dumping behavior unchanged
 
 ## Validation
+
 - `android\stop-stale-formatters.ps1`: no stale formatter tasks
 - `android\run-code-quality.ps1 -Fix -Paths @(...)`: passed for the touched D2 files
 - `.\run-windows-build.ps1 -Target both`: passed for D1 and D2. Existing D2 `loadgl.h`/GLEW macro redefinition warnings remain

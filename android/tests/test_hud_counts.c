@@ -13,7 +13,13 @@
 #include "player.h"
 #include "secretarea.h"
 
-#define CHECK(c) do { if (!(c)) { fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, #c); exit(1); } } while (0)
+#define CHECK(c)                                                    \
+	do {                                                            \
+		if (!(c)) {                                                 \
+			fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, #c); \
+			exit(1);                                                \
+		}                                                           \
+	} while (0)
 
 int Game_mode, N_players, Highest_object_index;
 #ifdef DXX_BUILD_DESCENT_II
@@ -32,17 +38,29 @@ static char hostage_text[80], red_text[24], robot_text[32];
 static int current_color, hostage_y;
 static int secret_total;
 
-void gr_set_curfont(grs_font *font) { grd_curcanv->cv_font = font; }
-void gr_set_fontcolor(int fg, int bg) { (void)bg; current_color = fg; }
-int gr_find_closest_color(int r, int g, int b) { (void)b; return r ? 1 : g ? 2 : 0; }
+void gr_set_curfont(grs_font *font)
+{
+	grd_curcanv->cv_font = font;
+}
+void gr_set_fontcolor(int fg, int bg)
+{
+	(void) bg;
+	current_color = fg;
+}
+int gr_find_closest_color(int r, int g, int b)
+{
+	(void) b;
+	return r ? 1 : g ? 2
+	                 : 0;
+}
 void gr_get_string_drawn_size(const char *text, int *w, int *h)
 {
-	*w = (int)strlen(text) * 7;
+	*w = (int) strlen(text) * 7;
 	*h = 5;
 }
 int gr_string(int x, int y, const char *text)
 {
-	(void)x;
+	(void) x;
 	if (strncmp(text, "robots: ", 8) == 0)
 		snprintf(robot_text, sizeof(robot_text), "%s", text);
 	if (strncmp(text, "hostages: ", 10) == 0)
@@ -59,13 +77,32 @@ int gr_string(int x, int y, const char *text)
 }
 int HUD_message_area_intersects(int x, int y, int w, int h)
 {
-	(void)x; (void)y; (void)w; (void)h;
+	(void) x;
+	(void) y;
+	(void) w;
+	(void) h;
 	return 0;
 }
-const secret_area_state *secret_area_get_state(void) { return NULL; }
-int secret_area_total(const secret_area_state *state) { (void)state; return secret_total; }
-int secret_area_found_count(const secret_area_state *state) { (void)state; return 0; }
-static int right_inset(int y, int h) { (void)y; (void)h; return 0; }
+const secret_area_state *secret_area_get_state(void)
+{
+	return NULL;
+}
+int secret_area_total(const secret_area_state *state)
+{
+	(void) state;
+	return secret_total;
+}
+int secret_area_found_count(const secret_area_state *state)
+{
+	(void) state;
+	return 0;
+}
+static int right_inset(int y, int h)
+{
+	(void) y;
+	(void) h;
+	return 0;
+}
 
 static void check_hostages(int pnum, const char *text, const char *red)
 {
@@ -95,8 +132,8 @@ static void check_secret_robots(const char *text)
 
 int main(void)
 {
-	grs_font font = {0};
-	grs_canvas canvas = {0};
+	grs_font font = { 0 };
+	grs_canvas canvas = { 0 };
 	font.ft_w = 7;
 	font.ft_h = 5;
 	Gamefonts[GFONT_SMALL] = &font;

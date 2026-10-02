@@ -252,6 +252,7 @@ The optional AdLib WAV is captured from the original GOG DOS game, with effects
 muted. It includes a short briefing lead-in and keeps DOSBox's gain; it is not
 time-aligned or loudness-normalized against the GM clips. The raw recording and
 its provenance are retained locally under `descent14-game07/adlib`.
+
 # Game08 FM arrangement regression
 
 `descent14-game08-fm.json` identifies the local original-DOS OPL capture under

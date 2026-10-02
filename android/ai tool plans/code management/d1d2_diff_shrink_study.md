@@ -3,6 +3,7 @@
 Status: active tracking document. Multiple extraction tranches have landed.
 
 Goals:
+
 - Shrink `d1/` and `d2/` diff vs `upstream/main` to ease future upstream merges.
 - Move Android-only code into `android/app/src/main/cpp/shared/` (same
   pattern already used by `game_introspect.cpp`, `merged_wall_debug.c`,
@@ -18,75 +19,77 @@ sorted numstat and a summary to `temp/d1d2_diff_*.txt`. Run it before and
 after each tranche to track progress.
 
 Current totals vs `upstream/main`:
+
 - 199 files changed (93 in d1/, 106 in d2/)
 - +17362 / -801
 
 Progress checkpoint (completed after this study was written):
+
 - rename-finalize cleanup tranche completed and validated
 - OGL shared-helper extraction phase 15 completed:
-   `ogl_android_texmerge_log` moved to shared
+  `ogl_android_texmerge_log` moved to shared
 - OGL shared-helper extraction phase 16 completed:
-   `ogl_android_texmerge_visible_dim` and
-   `ogl_android_texmerge_init_bitmap` moved to shared
+  `ogl_android_texmerge_visible_dim` and
+  `ogl_android_texmerge_init_bitmap` moved to shared
 - OGL shared-helper extraction phase 17 completed:
-   `ogl_android_texmerge_build_uvs` moved to shared
+  `ogl_android_texmerge_build_uvs` moved to shared
 - OGL shared-helper extraction phase 18 completed:
-   `ogl_android_texmerge_reset_entry` moved to shared and cache-entry type
-   centralized via shared struct
+  `ogl_android_texmerge_reset_entry` moved to shared and cache-entry type
+  centralized via shared struct
 - OGL shared-helper extraction phase 19 completed:
-   duplicated cache-clear loop moved to
-   `android_merged_wall_cached_texmerge_clear(...)`
+  duplicated cache-clear loop moved to
+  `android_merged_wall_cached_texmerge_clear(...)`
 - OGL shared-helper extraction phase 20 completed:
-   duplicated cached-texmerge size selection and bounds checks moved to
-   `android_merged_wall_cached_texmerge_choose_size(...)`
+  duplicated cached-texmerge size selection and bounds checks moved to
+  `android_merged_wall_cached_texmerge_choose_size(...)`
 - OGL shared-helper extraction phase 21 completed:
-   duplicated cached-texmerge cache-slot selection moved to
-   `android_merged_wall_cached_texmerge_choose_slot(...)`
+  duplicated cached-texmerge cache-slot selection moved to
+  `android_merged_wall_cached_texmerge_choose_slot(...)`
 - OGL shared-helper extraction phase 22 completed:
-   duplicated cached-texmerge reuse/commit/filter helper blocks moved to
-   `android_merged_wall_cached_texmerge_try_reuse(...)`,
-   `android_merged_wall_cached_texmerge_commit_entry(...)`,
-   `android_merged_wall_cached_texmerge_set_render_filters(...)`, and
-   `android_merged_wall_cached_texmerge_finalize_filters(...)`
+  duplicated cached-texmerge reuse/commit/filter helper blocks moved to
+  `android_merged_wall_cached_texmerge_try_reuse(...)`,
+  `android_merged_wall_cached_texmerge_commit_entry(...)`,
+  `android_merged_wall_cached_texmerge_set_render_filters(...)`, and
+  `android_merged_wall_cached_texmerge_finalize_filters(...)`
 - OGL shared-helper extraction phase 23 completed:
-   duplicated cached-texmerge FBO render pass moved to
-   `android_merged_wall_cached_texmerge_render_to_texture(...)`
+  duplicated cached-texmerge FBO render pass moved to
+  `android_merged_wall_cached_texmerge_render_to_texture(...)`
 - OGL shared-helper extraction phase 24 completed:
-   duplicated cached-texmerge output-texture setup moved to
-   `android_merged_wall_cached_texmerge_setup_output_texture(...)`
+  duplicated cached-texmerge output-texture setup moved to
+  `android_merged_wall_cached_texmerge_setup_output_texture(...)`
 - OGL shared-helper extraction phase 25 completed:
-   duplicated cached-texmerge finalize-orchestration moved to
-   `android_merged_wall_cached_texmerge_finalize_entry(...)`
+  duplicated cached-texmerge finalize-orchestration moved to
+  `android_merged_wall_cached_texmerge_finalize_entry(...)`
 - OGL shared-helper extraction phase 26 completed:
-   duplicated cached-texmerge slot reservation and eviction moved to
-   `android_merged_wall_cached_texmerge_reserve_entry(...)`
+  duplicated cached-texmerge slot reservation and eviction moved to
+  `android_merged_wall_cached_texmerge_reserve_entry(...)`
 - OGL shared-helper extraction phase 27 completed:
-   duplicated Android MSAA FBO create and destroy helpers moved to
-   `shared/ogl_msaa_android.{h,c}` as
-   `android_ogl_msaa_destroy_fbo(...)` and
-   `android_ogl_msaa_create_fbo(...)`
+  duplicated Android MSAA FBO create and destroy helpers moved to
+  `shared/ogl_msaa_android.{h,c}` as
+  `android_ogl_msaa_destroy_fbo(...)` and
+  `android_ogl_msaa_create_fbo(...)`
 - OGL shared-helper extraction phase 28 completed:
-   duplicated Android texture-label anchor and joined-label helpers moved to
-   `android_texture_debug.{h,c}` as
-   `android_texture_debug_get_label_anchor(...)`,
-   `android_texture_debug_add_overlay_label(...)`, and
-   `android_texture_debug_add_joined_labels(...)`
+  duplicated Android texture-label anchor and joined-label helpers moved to
+  `android_texture_debug.{h,c}` as
+  `android_texture_debug_get_label_anchor(...)`,
+  `android_texture_debug_add_overlay_label(...)`, and
+  `android_texture_debug_add_joined_labels(...)`
 - OGL shared-helper extraction phase 29 completed:
-   the remaining duplicated screen-space overlay label block in both `ogl.c`
-   files now reuses `android_texture_debug_add_overlay_label(...)`
+  the remaining duplicated screen-space overlay label block in both `ogl.c`
+  files now reuses `android_texture_debug_add_overlay_label(...)`
 - OGL shared-helper extraction phase 30 completed:
-   duplicated Android texture-debug and render-context global definitions
-   moved from both `ogl.c` files into `android_texture_debug.c`
+  duplicated Android texture-debug and render-context global definitions
+  moved from both `ogl.c` files into `android_texture_debug.c`
 - OGL shared-helper extraction phase 31 completed:
-   duplicated Android texture-list stats and anisotropy reapply helpers moved
-   to `shared/ogl_texture_android.{h,c}` as
-   `android_ogl_get_texture_bytes(...)` and
-   `android_ogl_apply_anisotropy_all(...)`; the tranche also hardened the
-   cached-texmerge shared boundary by passing explicit bind/runtime state into
-   `merged_wall_debug.c`
+  duplicated Android texture-list stats and anisotropy reapply helpers moved
+  to `shared/ogl_texture_android.{h,c}` as
+  `android_ogl_get_texture_bytes(...)` and
+  `android_ogl_apply_anisotropy_all(...)`; the tranche also hardened the
+  cached-texmerge shared boundary by passing explicit bind/runtime state into
+  `merged_wall_debug.c`
 - current OGL churn lines:
-    - `d1/arch/ogl/ogl.c`: `+1672 -50 total 1722`
-    - `d2/arch/ogl/ogl.c`: `+1696 -49 total 1745`
+  - `d1/arch/ogl/ogl.c`: `+1672 -50 total 1722`
+  - `d2/arch/ogl/ogl.c`: `+1696 -49 total 1745`
 
 ---
 
@@ -98,6 +101,7 @@ lists). Tranche 3 (Part B: extraction to `android/app/src/main/cpp/shared/`)
 is largely unfinished.
 
 Evidence in the source today:
+
 - 347 lines matching `metl154|door45|METL154|DOOR45` still live in `d2/`,
   348 in `d1/`. They are concentrated in three files per game:
   - `arch/ogl/ogl.c` (the large majority)
@@ -109,7 +113,7 @@ Evidence in the source today:
   The d1/d2 copies are effectively shims that call those helpers, but
   keep a lot of internal machinery locally. The extraction target is
   real and wired, so the move is mostly "copy static helpers + rename
-  + delete the d1/d2 originals".
+  - delete the d1/d2 originals".
 - The naming in ogl.c still mixes `metl154_*` (internal) with
   `merged_wall_*` (public). Tranche 1 added `#define` bridges so the
   legacy names kept compiling; tranche 3 is supposed to finish the
@@ -124,15 +128,15 @@ and repo-memory notes (`door45-*.md`), but no named symbols remain in
 
 ## 2. Categories of the d1/d2 diff
 
-| Category | Rough line share | Disposition |
-|---|---|---|
-| A. metl154 / merged-wall OGL diagnostic code | ~2500 per game in `arch/ogl/ogl.c` | move most to shared, delete dead |
-| B. ETC2 + shader shim + MSAA + GPU timer + aniso/texfilt runtime controls | ~800-1000 per game in `arch/ogl/ogl.c`, `arch/ogl/gr.c`, `arch/ogl/oglprog.c`, `include/ogl_init.h` | keep in d1/d2, but minimize: move helpers to shared, keep only the `#ifdef ANDROID` dispatch lines |
-| C. Cross-platform new features dropped into d1/d2 (coop saves, coop warp, auto-net, songs rewrite, playsave additions, tranches of multi.c/state.c) | ~6000 lines, spread over dozens of files | some genuinely cross-platform -- let stay; Android-only variants -- extract |
-| D. Android introspection / automation / log hooks inside engine code | small-to-medium -- dozens of `#ifdef INTROSPECT_ON` / `#ifdef ANDROID` stubs scattered across `newmenu.c`, `kconfig.c`, `gauges.c`, `automap.c`, `titles.c`, `inferno.c`, `multi.c`, ... | keep call sites, move handler bodies to shared |
-| E. Touch / onscreen UI hooks (keyboard affordance, "OK" buttons, drag-scroll, touch region publishing) | ~300 lines across `newmenu.c`, `menu.c`, `kconfig.c`, `titles.c`, `gamecntl.c` | keep hooks, extract helpers |
-| F. CMake glue (lots of 2/2, 4/4, 3/3 changes) | ~100 lines, many files | required; not a target for shrinkage |
-| G. Headers exposing new shared state to d1/d2 (`ogl_init.h`, `console.h`, `dxxerror.h`, `rbaudio.h`, `hmp.h`, etc.) | ~100 lines | keep; these are the API surface |
+| Category                                                                                                                                            | Rough line share                                                                                                                                                                         | Disposition                                                                                        |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| A. metl154 / merged-wall OGL diagnostic code                                                                                                        | ~2500 per game in `arch/ogl/ogl.c`                                                                                                                                                       | move most to shared, delete dead                                                                   |
+| B. ETC2 + shader shim + MSAA + GPU timer + aniso/texfilt runtime controls                                                                           | ~800-1000 per game in `arch/ogl/ogl.c`, `arch/ogl/gr.c`, `arch/ogl/oglprog.c`, `include/ogl_init.h`                                                                                      | keep in d1/d2, but minimize: move helpers to shared, keep only the `#ifdef ANDROID` dispatch lines |
+| C. Cross-platform new features dropped into d1/d2 (coop saves, coop warp, auto-net, songs rewrite, playsave additions, tranches of multi.c/state.c) | ~6000 lines, spread over dozens of files                                                                                                                                                 | some genuinely cross-platform -- let stay; Android-only variants -- extract                        |
+| D. Android introspection / automation / log hooks inside engine code                                                                                | small-to-medium -- dozens of `#ifdef INTROSPECT_ON` / `#ifdef ANDROID` stubs scattered across `newmenu.c`, `kconfig.c`, `gauges.c`, `automap.c`, `titles.c`, `inferno.c`, `multi.c`, ... | keep call sites, move handler bodies to shared                                                     |
+| E. Touch / onscreen UI hooks (keyboard affordance, "OK" buttons, drag-scroll, touch region publishing)                                              | ~300 lines across `newmenu.c`, `menu.c`, `kconfig.c`, `titles.c`, `gamecntl.c`                                                                                                           | keep hooks, extract helpers                                                                        |
+| F. CMake glue (lots of 2/2, 4/4, 3/3 changes)                                                                                                       | ~100 lines, many files                                                                                                                                                                   | required; not a target for shrinkage                                                               |
+| G. Headers exposing new shared state to d1/d2 (`ogl_init.h`, `console.h`, `dxxerror.h`, `rbaudio.h`, `hmp.h`, etc.)                                 | ~100 lines                                                                                                                                                                               | keep; these are the API surface                                                                    |
 
 Totals roughly add up to the observed 21018 insertions.
 
@@ -150,16 +154,16 @@ lands. Nothing here is a commitment; they are order-of-magnitude goals.
 
 ### Tier 1 -- biggest, clearest wins
 
-| File | Now (+/-/total) | Target after | Rationale |
-|---|---|---|---|
-| `d1/arch/ogl/ogl.c` | 3318 / 47 / 3365 | ~600-800 | see section 4; move all metl154/merged-wall helpers to shared, move cache + MSAA helpers to shared, keep only call sites and genuine GL path changes |
-| `d2/arch/ogl/ogl.c` | 3352 / 47 / 3399 | ~600-800 | same as d1 |
-| `d1/main/net_udp.c` | 944 / 58 / 1002 | ~300-400 | see section 5; extract host-migration, PDATA, and QoL helpers to shared; keep `#ifdef __ANDROID__` dispatch |
-| `d2/main/net_udp.c` | 1045 / 84 / 1129 | ~300-400 | same |
-| `d1/main/render.c` | 415 / 15 / 430 | ~50-80 | move merged-wall tracked-list + summary logger + android_draw_face_context setter to shared |
-| `d2/main/render.c` | 416 / 13 / 429 | ~50-80 | same |
-| `d1/main/texmerge.c` | 120 / 0 / 120 | ~20 | the `texmerge_metl154_overlay` + `[metl154texmerge]` logger are pure diagnostic, move to shared |
-| `d2/main/texmerge.c` | 120 / 0 / 120 | ~20 | same |
+| File                 | Now (+/-/total)  | Target after | Rationale                                                                                                                                            |
+| -------------------- | ---------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `d1/arch/ogl/ogl.c`  | 3318 / 47 / 3365 | ~600-800     | see section 4; move all metl154/merged-wall helpers to shared, move cache + MSAA helpers to shared, keep only call sites and genuine GL path changes |
+| `d2/arch/ogl/ogl.c`  | 3352 / 47 / 3399 | ~600-800     | same as d1                                                                                                                                           |
+| `d1/main/net_udp.c`  | 944 / 58 / 1002  | ~300-400     | see section 5; extract host-migration, PDATA, and QoL helpers to shared; keep `#ifdef __ANDROID__` dispatch                                          |
+| `d2/main/net_udp.c`  | 1045 / 84 / 1129 | ~300-400     | same                                                                                                                                                 |
+| `d1/main/render.c`   | 415 / 15 / 430   | ~50-80       | move merged-wall tracked-list + summary logger + android_draw_face_context setter to shared                                                          |
+| `d2/main/render.c`   | 416 / 13 / 429   | ~50-80       | same                                                                                                                                                 |
+| `d1/main/texmerge.c` | 120 / 0 / 120    | ~20          | the `texmerge_metl154_overlay` + `[metl154texmerge]` logger are pure diagnostic, move to shared                                                      |
+| `d2/main/texmerge.c` | 120 / 0 / 120    | ~20          | same                                                                                                                                                 |
 
 Per game: roughly 4000 lines of d1/d2 diff reducible to roughly 1000.
 Total saving across both games: order of 6000 lines.
@@ -171,20 +175,20 @@ These are files upstream does not have. Each is either "android only" or
 `android/app/src/main/cpp/shared/`, preserving a single copy where
 possible and renaming in the android tree.
 
-| File | Now / total | Plan |
-|---|---|---|
-| `d1/main/coop_save.c` | 872 | d2 is 929 lines; the two are near-duplicates. Move one copy to `android/app/src/main/cpp/shared/coop_save.c`. Use forward-decl shims where D1/D2 types differ (segment layouts, player struct field differences). If diverged too far, put two copies under `shared/d1/` and `shared/d2/`. |
-| `d2/main/coop_save.c` | 929 | same |
-| `d1/main/coop_save.h` | 161 | move to `shared/` |
-| `d2/main/coop_save.h` | 163 | move to `shared/` |
-| `d1/main/coop_warp.c` | 371 | move to shared; seg/obj types differ so may need the two-copy split |
-| `d2/main/coop_warp.c` | 371 | same |
-| `d1/main/coop_warp.h` | 70 | shared |
-| `d2/main/coop_warp.h` | 70 | shared |
-| `d1/main/auto_net.c` | 97 | shared; the entry point stays in `CMakeLists.txt` |
-| `d2/main/auto_net.c` | 96 | same |
-| `d1/main/auto_net.h` | 62 | shared |
-| `d2/main/auto_net.h` | 65 | shared |
+| File                  | Now / total | Plan                                                                                                                                                                                                                                                                                       |
+| --------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `d1/main/coop_save.c` | 872         | d2 is 929 lines; the two are near-duplicates. Move one copy to `android/app/src/main/cpp/shared/coop_save.c`. Use forward-decl shims where D1/D2 types differ (segment layouts, player struct field differences). If diverged too far, put two copies under `shared/d1/` and `shared/d2/`. |
+| `d2/main/coop_save.c` | 929         | same                                                                                                                                                                                                                                                                                       |
+| `d1/main/coop_save.h` | 161         | move to `shared/`                                                                                                                                                                                                                                                                          |
+| `d2/main/coop_save.h` | 163         | move to `shared/`                                                                                                                                                                                                                                                                          |
+| `d1/main/coop_warp.c` | 371         | move to shared; seg/obj types differ so may need the two-copy split                                                                                                                                                                                                                        |
+| `d2/main/coop_warp.c` | 371         | same                                                                                                                                                                                                                                                                                       |
+| `d1/main/coop_warp.h` | 70          | shared                                                                                                                                                                                                                                                                                     |
+| `d2/main/coop_warp.h` | 70          | shared                                                                                                                                                                                                                                                                                     |
+| `d1/main/auto_net.c`  | 97          | shared; the entry point stays in `CMakeLists.txt`                                                                                                                                                                                                                                          |
+| `d2/main/auto_net.c`  | 96          | same                                                                                                                                                                                                                                                                                       |
+| `d1/main/auto_net.h`  | 62          | shared                                                                                                                                                                                                                                                                                     |
+| `d2/main/auto_net.h`  | 65          | shared                                                                                                                                                                                                                                                                                     |
 
 These 3400-ish lines of d1/d2 can move to shared with essentially no
 upstream diff remaining.
@@ -198,35 +202,35 @@ with the user before moving.
 
 ### Tier 3 -- heavy edits in existing upstream files
 
-| File | Now (+/-/total) | Target | Approach |
-|---|---|---|---|
-| `d1/main/multi.c` / `d2/main/multi.c` | 422 / 15 / 437 and 455 / 15 / 470 | ~120-180 each | most additions are android-port coop QoL and host-migration helpers; move helper bodies to shared, keep call sites |
-| `d1/main/playsave.c` / `d2/main/playsave.c` | 430 / 0 and 279 / 0 | ~60 each | large blocks are android launcher bridge helpers (native-pilot-prefs-bridge memory confirms it); move to `android/app/src/main/cpp/shared/playsave_bridge.c`, keep only the extern declarations |
-| `d1/main/songs.c` / `d2/main/songs.c` | 253 / 0 and 276 / 0 | ~40 each | music system rewrite was largely meant to be cross-platform. Re-check against the `music-system-architecture.md` memory; what is truly android-only (jukebox.c changes, SAF paths, fingerprint hooks) should move to shared |
-| `d2/main/newmenu.c` | 532 / 4 / 536 | ~120 | touch helpers, drag-scroll, keyboard affordance, "OK" button, introspection hooks. The handler bodies can live in `android/shared/newmenu_android.cpp`, keeping only `#ifdef ANDROID` call sites in d1/d2 |
-| `d1/main/newmenu.c` | 287 / 1 / 288 | ~80 | same, smaller tranche |
-| `d2/main/state.c` / `d1/main/state.c` | 216 / 14 and 180 / 6 | ~50 each | coop save/restore glue + tracked-face snapshot restore. Most of this should move next to `coop_save` in shared |
-| `d2/main/titles.c` | 159 / 30 / 189 | ~40 | intro-movie skip, resume-on-input, font resolution. Movie-skip belongs in shared |
-| `d1/main/titles.c` | 76 / 0 / 76 | ~20 | same |
-| `d2/main/kconfig.c` / `d1/main/kconfig.c` | 167 / 5 and 100 / 5 | ~30 each | touch binding + gamepad default; move to shared |
-| `d2/main/gamecntl.c` / `d1/main/gamecntl.c` | 93 / 2 and 74 / 0 | ~30 each | same as kconfig |
-| `d1/misc/hmp.c` / `d2/misc/hmp.c` | 126 / 0 and 125 / 0 | ~20 each | TSF MIDI is 100% android, route through `digi_tsf_music.c` in shared |
-| `d1/misc/physfsx.c` / `d2/misc/physfsx.c` | 105 / 0 and 114 / 1 | ~30 each | SAF archiver wiring; header-only glue into the d1/d2 includes |
-| `d1/arch/ogl/oglprog.c` / `d2/arch/ogl/oglprog.c` | 132 / 21 (each) | ~40 each | gles3 shim selection + shader source switch. Helpers can live in `gles3_shim.c`; the `#ifdef ANDROID` dispatch stays |
-| `d1/arch/ogl/gr.c` / `d2/arch/ogl/gr.c` | 227 / 1 and 228 / 1 | ~60 each | MSAA bind/unbind, texfilt live apply, menu viewport offset. Move bodies to shared |
-| `d1/main/automap.c` / `d2/main/automap.c` | 33 / 5 and 130 / 7 | ~20 each | touch helpers; shared |
-| `d1/main/escort.c` hook | n/a | n/a | d2 only; `d2/main/escort.c 129/5/134` |
-| Many other files <= 50 lines each | collectively ~400 lines | should survive at their current size; evaluate case by case |
+| File                                              | Now (+/-/total)                   | Target                                                      | Approach                                                                                                                                                                                                                    |
+| ------------------------------------------------- | --------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `d1/main/multi.c` / `d2/main/multi.c`             | 422 / 15 / 437 and 455 / 15 / 470 | ~120-180 each                                               | most additions are android-port coop QoL and host-migration helpers; move helper bodies to shared, keep call sites                                                                                                          |
+| `d1/main/playsave.c` / `d2/main/playsave.c`       | 430 / 0 and 279 / 0               | ~60 each                                                    | large blocks are android launcher bridge helpers (native-pilot-prefs-bridge memory confirms it); move to `android/app/src/main/cpp/shared/playsave_bridge.c`, keep only the extern declarations                             |
+| `d1/main/songs.c` / `d2/main/songs.c`             | 253 / 0 and 276 / 0               | ~40 each                                                    | music system rewrite was largely meant to be cross-platform. Re-check against the `music-system-architecture.md` memory; what is truly android-only (jukebox.c changes, SAF paths, fingerprint hooks) should move to shared |
+| `d2/main/newmenu.c`                               | 532 / 4 / 536                     | ~120                                                        | touch helpers, drag-scroll, keyboard affordance, "OK" button, introspection hooks. The handler bodies can live in `android/shared/newmenu_android.cpp`, keeping only `#ifdef ANDROID` call sites in d1/d2                   |
+| `d1/main/newmenu.c`                               | 287 / 1 / 288                     | ~80                                                         | same, smaller tranche                                                                                                                                                                                                       |
+| `d2/main/state.c` / `d1/main/state.c`             | 216 / 14 and 180 / 6              | ~50 each                                                    | coop save/restore glue + tracked-face snapshot restore. Most of this should move next to `coop_save` in shared                                                                                                              |
+| `d2/main/titles.c`                                | 159 / 30 / 189                    | ~40                                                         | intro-movie skip, resume-on-input, font resolution. Movie-skip belongs in shared                                                                                                                                            |
+| `d1/main/titles.c`                                | 76 / 0 / 76                       | ~20                                                         | same                                                                                                                                                                                                                        |
+| `d2/main/kconfig.c` / `d1/main/kconfig.c`         | 167 / 5 and 100 / 5               | ~30 each                                                    | touch binding + gamepad default; move to shared                                                                                                                                                                             |
+| `d2/main/gamecntl.c` / `d1/main/gamecntl.c`       | 93 / 2 and 74 / 0                 | ~30 each                                                    | same as kconfig                                                                                                                                                                                                             |
+| `d1/misc/hmp.c` / `d2/misc/hmp.c`                 | 126 / 0 and 125 / 0               | ~20 each                                                    | TSF MIDI is 100% android, route through `digi_tsf_music.c` in shared                                                                                                                                                        |
+| `d1/misc/physfsx.c` / `d2/misc/physfsx.c`         | 105 / 0 and 114 / 1               | ~30 each                                                    | SAF archiver wiring; header-only glue into the d1/d2 includes                                                                                                                                                               |
+| `d1/arch/ogl/oglprog.c` / `d2/arch/ogl/oglprog.c` | 132 / 21 (each)                   | ~40 each                                                    | gles3 shim selection + shader source switch. Helpers can live in `gles3_shim.c`; the `#ifdef ANDROID` dispatch stays                                                                                                        |
+| `d1/arch/ogl/gr.c` / `d2/arch/ogl/gr.c`           | 227 / 1 and 228 / 1               | ~60 each                                                    | MSAA bind/unbind, texfilt live apply, menu viewport offset. Move bodies to shared                                                                                                                                           |
+| `d1/main/automap.c` / `d2/main/automap.c`         | 33 / 5 and 130 / 7                | ~20 each                                                    | touch helpers; shared                                                                                                                                                                                                       |
+| `d1/main/escort.c` hook                           | n/a                               | n/a                                                         | d2 only; `d2/main/escort.c 129/5/134`                                                                                                                                                                                       |
+| Many other files <= 50 lines each                 | collectively ~400 lines           | should survive at their current size; evaluate case by case |
 
 ### Tier 4 -- cannot or should not shrink
 
-| File / group | Why keep as-is |
-|---|---|
-| Every `CMakeLists.txt` under d1/ and d2/ (about 15 files, 2-30 lines each) | required wiring for target_sources, defines, includes. These are the canonical place to add shared includes. Shrinkage here would mean hiding real build info |
-| `include/ogl_init.h`, `include/internal.h`, `include/hmp.h`, `include/rbaudio.h`, `include/dxxerror.h`, `include/pngfile.h`, `include/console.h`, `include/pstypes.h`, `main/config.h`, `main/kconfig.h`, `main/playsave.h`, `main/newmenu.h`, `main/multi.h`, `main/net_udp.h`, `main/weapon.h`, `main/text.h`, etc. | these are the shared-symbol declarations that `android/shared/` needs to reference. Keep them |
-| `d1/CMakePresets.json` / `d2/CMakePresets.json` (1/1) | infra |
-| `arch/sdl/joy.c`, `arch/sdl/timer.c`, `arch/sdl/window.c`, `arch/sdl/mouse.c`, `arch/sdl/event.c` | platform glue that has to live next to the SDL adapters. Small; leave alone |
-| `d2/include/android_surface.h` | 23 lines, belongs where it is |
+| File / group                                                                                                                                                                                                                                                                                                          | Why keep as-is                                                                                                                                                |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Every `CMakeLists.txt` under d1/ and d2/ (about 15 files, 2-30 lines each)                                                                                                                                                                                                                                            | required wiring for target_sources, defines, includes. These are the canonical place to add shared includes. Shrinkage here would mean hiding real build info |
+| `include/ogl_init.h`, `include/internal.h`, `include/hmp.h`, `include/rbaudio.h`, `include/dxxerror.h`, `include/pngfile.h`, `include/console.h`, `include/pstypes.h`, `main/config.h`, `main/kconfig.h`, `main/playsave.h`, `main/newmenu.h`, `main/multi.h`, `main/net_udp.h`, `main/weapon.h`, `main/text.h`, etc. | these are the shared-symbol declarations that `android/shared/` needs to reference. Keep them                                                                 |
+| `d1/CMakePresets.json` / `d2/CMakePresets.json` (1/1)                                                                                                                                                                                                                                                                 | infra                                                                                                                                                         |
+| `arch/sdl/joy.c`, `arch/sdl/timer.c`, `arch/sdl/window.c`, `arch/sdl/mouse.c`, `arch/sdl/event.c`                                                                                                                                                                                                                     | platform glue that has to live next to the SDL adapters. Small; leave alone                                                                                   |
+| `d2/include/android_surface.h`                                                                                                                                                                                                                                                                                        | 23 lines, belongs where it is                                                                                                                                 |
 
 ---
 
@@ -235,6 +239,7 @@ with the user before moving.
 `d2/arch/ogl/ogl.c` has 3352 inserted lines. Categorizing by function:
 
 ### 4.a metl154 / merged-wall diagnostic helpers (static, Android-only)
+
 Roughly 2000 lines. Every one of these is a candidate to move to
 `android/app/src/main/cpp/shared/merged_wall_debug.c` (or a companion
 file):
@@ -246,7 +251,7 @@ file):
 - `ogl_reset_metl154_tmap2_submit_context`
 - `ogl_set_metl154_tmap2_submit_context`
 - `ogl_get_metl154_input_codes`
-- `ogl_get_metl154_point_code_summary`  <-- the one the user called out
+- `ogl_get_metl154_point_code_summary` <-- the one the user called out
 - `ogl_log_metl154_tmap2_route`
 - `ogl_log_metl154_upload`
 - `ogl_get_metl154_source_bitmap`
@@ -288,7 +293,9 @@ have to live on the hot path). Everything else moves. Saving per game:
 ~1800 lines.
 
 ### 4.b plain-transparent cached-premerge cache (helper block)
+
 About 400 lines:
+
 - `ogl_android_texmerge_cache_entry` struct
 - `ogl_android_texmerge_cache[32]` static table
 - `ogl_android_texmerge_cache_clear`, `ogl_android_texmerge_reset_entry`
@@ -303,6 +310,7 @@ to `android/app/src/main/cpp/shared/merged_wall_cache.c` (or fold into
 `merged_wall_debug.c`). Saving per game: ~400 lines.
 
 ### 4.c `ogl_draw_tmap_2` rewrite
+
 The `g3_draw_tmap_2` / `ogl_draw_tmap_2_internal` /
 `ogl_clip_and_draw_tmap2_merge` decision is a legitimate change to the
 draw path that has to stay in d1/d2 ogl.c. Target size: the outer
@@ -310,11 +318,13 @@ draw path that has to stay in d1/d2 ogl.c. Target size: the outer
 inside those branches becomes calls into `merged_wall_draw.c` in shared.
 
 ### 4.d MSAA FBO + GPU timer + aniso/texfilt runtime controls
+
 About 400 lines including struct state, FBO create/destroy, query
 tripling, aniso helpers, and texfilt live-apply. These are pure Android
 extensions to the renderer.
 
 Options:
+
 1. Keep as-is in d1/d2 ogl.c behind `#ifdef ANDROID`. This is OK -- it is
    already neatly localized.
 2. Move the heavier functions (`ogl_msaa_create_fbo`, `ogl_msaa_destroy_fbo`,
@@ -327,10 +337,12 @@ Options:
 Recommended: option 2. Saving per game: ~300 lines.
 
 ### 4.e `ogl_loadtexture` + KTX2 / ETC2 / DXA mask paths
+
 About 400 lines that interleave Android texture upload paths with the
 existing `ogl_loadtexture`. This is the hardest to extract because the
 function already exists in upstream and the Android additions branch on
 file format and call into `etc2_decode.c`. Leave inline, but:
+
 - extract `ogl_apply_nomip_filter` (standalone helper, ~30 lines)
 - extract `ogl_load_dxa_mask` (~80 lines)
 - keep `ogl_loadtexture` body in d1/d2 but shrink each Android branch to
@@ -339,6 +351,7 @@ file format and call into `etc2_decode.c`. Leave inline, but:
 Target remaining: ~150 lines of inline dispatch.
 
 ### 4.f Include block and forward decls
+
 The top-of-file `#include` additions and one-liner globals are fine to
 keep; ~50 lines total.
 
@@ -349,6 +362,7 @@ keep; ~50 lines total.
 `d2/main/net_udp.c`: 1045 inserted, 84 removed.
 
 Broad shape:
+
 - ~300 lines of android-specific helpers: `mpdiag_pkt_dump`,
   `sockaddr_equal` / `sockaddr_ip_equal`, `find_player_by_identity`,
   `net_udp_rebind_for_hosting`, host-migration PDATA restore,
@@ -361,6 +375,7 @@ Broad shape:
   menu, new packet types, new tracker fields.
 
 Extraction plan:
+
 - Move the helpers listed in the first bullet to
   `android/app/src/main/cpp/shared/net_udp_android.c` with a narrow
   public header. These are self-contained and callable from the
@@ -420,11 +435,13 @@ smoke test passes.
     ~100 lines. Repeat case-by-case.
 
 Work-order progress:
+
 - item 1: done (`cleanup_metl154_rename_finalize.md` complete)
 - item 2: in progress (phases 15, 16, 17, 18, 19, 20, 21, 22, 23, and 24 landed as safe partial extractions of
-   section 4.b helpers)
+  section 4.b helpers)
 
 Before each tranche:
+
 - run `.\android\diff_vs_upstream.ps1` and record the before number
 - run `.\android\run-code-quality.ps1 -Fix`
 - run at least one emulator smoke (`test_launch_to_automap.json5`)
@@ -447,6 +464,7 @@ Preference order, following `copilot-instructions.md`:
    under ~5 lines. Annotate with `// android port: ...`.
 
 Existing working examples:
+
 - `game_introspect.cpp` -- shared, single copy, called from both D1 and D2.
 - `merged_wall_debug.c` -- shared, single copy, partially populated.
 - `console_ringbuf.cpp` -- shared, accessed from engine via C API.
@@ -516,5 +534,5 @@ Follows the established pattern:
   - `d1d2_diff_numstat.txt` -- raw `git diff --numstat` output
   - `d1d2_diff_sorted.txt` -- same, sorted by total churn descending
   - `d1d2_diff_summary.txt` -- header plus top-N table, human readable
-  Run before + after any tranche. Optional `-ShowContent` also dumps the
-  full patch for the top-N files.
+    Run before + after any tranche. Optional `-ShowContent` also dumps the
+    full patch for the top-N files.

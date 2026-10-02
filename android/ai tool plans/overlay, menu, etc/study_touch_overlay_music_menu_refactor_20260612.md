@@ -10,6 +10,7 @@ and game-settings integration without starting implementation yet.
 - [x] Summarize recommended implementation design and tradeoffs
 
 Notes:
+
 - Current `MusicControlPanel` is track-list only. Source selection and volume need a larger model.
 - Launcher storage is split between `music_mode` and
   `use_mission_soundtrack_when_available`; live overlay should preserve that split.

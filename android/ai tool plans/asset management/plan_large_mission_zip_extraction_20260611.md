@@ -1,6 +1,7 @@
 # Large mission ZIP extraction plan
 
 ## Goal
+
 Make large mission ZIP imports such as `castaway_redux.zip` usable everywhere the launcher treats smaller mission ZIPs as mods:
 
 - launch and saved-game resume can load `castaway.hog` and `castaway.mn2`
@@ -9,6 +10,7 @@ Make large mission ZIP imports such as `castaway_redux.zip` usable everywhere th
 - active mod masking and load order continue to use the existing `.active_mod_paths` / PhysFS behavior
 
 ## Current findings
+
 - `MissionZip.inspect()` already classifies ZIPs over `SMALL_IN_MEMORY_LIMIT_BYTES` as `extracted_bundle`, but `ModManager.importMissionZipFile()` still stores the ZIP in `filesDir/mods/` and defers extraction.
 - `ModManager.writeEnabledModPaths()` extracts mission ZIPs into per-game temporary generated directories under `d1x-redux/.generated_mission_zips/` or `d2x-redux/.generated_mission_zips/` on launch.
 - `LevelMetadataAnalyzer.prepareTarget()` separately extracts requested ZIP entries into `cache/level_metadata/.../staged`, with `LEVEL_METADATA_MAX_ZIP_ENTRY_BYTES = 64 MiB`. `castaway.hog` is about 192 MiB, so metadata fails before native analysis starts.
@@ -92,6 +94,7 @@ Flattening should use the exact existing `stagedMissionZipRelativePath(scan, pat
    - Android integration: import `castaway_redux.zip`, inspect metadata, launch the mod, save, quit, resume the save, then remove the mod and confirm linked extracted files are gone.
 
 ## Risks and decisions
+
 - Do not mount extracted mission files globally from the active file set. They should remain available only when the owning mod is enabled, via `.active_mod_paths`.
 - Do not duplicate mission descriptor parsing rules in new code. Continue to use `MissionZip.inspect()` and `GameFileFormats`.
 - Be careful with D1 mission ZIPs that are allowed in D2 launch. Preserve `enabledForLaunch()` behavior.
@@ -99,6 +102,7 @@ Flattening should use the exact existing `stagedMissionZipRelativePath(scan, pat
 - Consider whether small ZIPs should also extract once later. For this task, only large ZIPs need durable extraction to reduce churn.
 
 ## Implementation notes
+
 - Added `MissionZipExtractionStore`, with durable extraction under `mods/.extracted_mission_zips/<owner>/` and a JSON ownership manifest.
 - Large mission ZIP imports now extract once on import and roll back the copied ZIP if extraction fails.
 - Launch now uses the durable extraction root for `extracted_bundle` mission ZIPs while preserving the existing generated staging path for smaller ZIPs.
@@ -106,6 +110,7 @@ Flattening should use the exact existing `stagedMissionZipRelativePath(scan, pat
 - Storage Inspector now labels linked extracted files and owner ZIPs with linked caches. Deleting either one linked file or the owner ZIP removes the owner mod link and the whole extracted cache. If the source ZIP is already missing, deletion removes the orphaned cache record/root.
 
 ## Verification
+
 - `.\android\run-code-quality.ps1 -Fix -Paths android\app\src\main\java\com\dxxredux\app\MissionZipExtractionStore.kt` passed.
 - `.\android\run-code-quality.ps1 -Fix -Paths android\app\src\main\java\com\dxxredux\app\ModManager.kt` passed.
 - `.\android\run-code-quality.ps1 -Fix -Paths android\app\src\main\java\com\dxxredux\app\LevelMetadata.kt` passed.

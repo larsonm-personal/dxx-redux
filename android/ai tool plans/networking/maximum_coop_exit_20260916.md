@@ -34,10 +34,10 @@ The user reports only one occurrence in roughly 50 levels, so prioritize a deter
 Read `psx18.rl2` directly from `max_f.hog` inside the checked-in Maximum ZIP, following the version 7 compiled-mine and wall layouts in the engine. Confirmed 212 segments, 788 vertices, and 65 walls. Wall 41 references trigger 5 at segment 36 side 4, whose child is 34
 
 | Segment | Z extent in world units | Forward child | Exit proximity accepted |
-| --- | --- | --- | --- |
-| 36 | 235.09 to 245.09 | 34 | Yes |
-| 34 | 245.09 to 255.09 | 119 | Yes |
-| 119 | 255.09 to 276.65 | 30 | No |
+| ------- | ----------------------- | ------------- | ----------------------- |
+| 36      | 235.09 to 245.09        | 34            | Yes                     |
+| 34      | 245.09 to 255.09        | 119           | Yes                     |
+| 119     | 255.09 to 276.65        | 30            | No                      |
 
 The exit plane is at approximately Z=245.09. The valid post-crossing segment is only 10 units deep. Merely entering segment 119 makes every later request fail until the replicated ship returns to 36 or 34
 
@@ -85,7 +85,6 @@ Build note: the current Gradle injected-ABI build emits the fresh test-only APK 
 - Android Debug x86_64 APK build (both native engines) passed; scoped code quality and `git diff --check` passed
 
 This confirms the host validation failure under controlled delayed delivery and a newer out-of-vicinity position. It does not establish that the original player followed the attempted continuous-flight path. No gameplay correction has been applied, and the bug remains open
-
 
 ## Fix plan
 

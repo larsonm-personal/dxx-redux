@@ -1,22 +1,35 @@
 #!/usr/bin/env pwsh
 # run-code-quality.ps1 -- Run all code quality checks.
-# Tools: clang-format (C/C++), ktlint (Kotlin), PSScriptAnalyzer (PowerShell),
+# Tools: clang-format (C/C++/Java/C#), ktlint (Kotlin), PSScriptAnalyzer (PowerShell),
 #        UTF-8 BOM lint, shellcheck (bash lint), shfmt (bash format),
-#        cmake-format / cmake-lint (cheshirekow/cmakelang).
+#        cmake-format / cmake-lint, Ruff (Python), rustfmt (Rust), Prettier (text).
+# Only files added since the upstream merge base are eligible, including with -Paths.
+#   .\run-code-quality.ps1 -List   # preview eligible files
+#   .\run-code-quality.ps1 -Fix -Changed -Tools clang-format,ruff
+#   .\run-code-quality.ps1 -InstallTools # install extra pinned tools, then check
 # Usage:
 #   .\run-code-quality.ps1          # check only (exit 1 if issues)
 #   .\run-code-quality.ps1 -Fix     # auto-format all supported languages
 #   .\run-code-quality.ps1 -Fix -Paths path\to\file path\to\dir
 
+[CmdletBinding(PositionalBinding = $false)]
 param(
     [switch]$Fix,
-    [string[]]$Paths
+    [string[]]$Paths,
+    [string]$BaseRef,
+    [switch]$Changed,
+    [switch]$List,
+    [switch]$InstallTools,
+    [ValidateSet('clang-format', 'ktlint', 'psscriptanalyzer', 'utf8-bom', 'shellcheck', 'shfmt', 'cmake-format', 'cmake-lint', 'ruff', 'rustfmt', 'prettier')]
+    [string[]]$Tools,
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$RemainingPaths
 )
 
 # PowerShell script calls bind only the first space-separated value to a named
 # array parameter; preserve remaining positional paths used by the documented CLI
-$explicitScope = $PSBoundParameters.ContainsKey('Paths') -or $args.Count -gt 0
-$Paths = if ($explicitScope) { @($Paths) + @($args) } else { @() }
+$explicitScope = $PSBoundParameters.ContainsKey('Paths') -or $RemainingPaths.Count -gt 0
+$Paths = if ($explicitScope) { @($Paths | Where-Object { $null -ne $_ }) + @($RemainingPaths | Where-Object { $null -ne $_ }) } else { @() }
 $ErrorActionPreference = "Continue"
 $scriptDir = $PSScriptRoot
 $helpersDir = Join-Path $scriptDir "helpers"
@@ -28,6 +41,7 @@ $summaryFile = Join-Path $lockDir "run-code-quality.summary.json"
 $resolvedPaths = @()
 $exitCode = 0
 . (Join-Path $helpersDir "powershell_compat.ps1")
+. (Join-Path $helpersDir "code-quality-files.ps1")
 
 function Resolve-CodeQualityPaths {
     param(
@@ -111,47 +125,7 @@ function Get-CodeQualityFiles {
         [string[]]$TargetPaths
     )
 
-    $results = @()
-    if ($TargetPaths.Count -gt 0) {
-        foreach ($targetPath in $TargetPaths) {
-            $item = Get-Item -LiteralPath $targetPath -Force -ErrorAction SilentlyContinue
-            if (-not $item) {
-                continue
-            }
-
-            if ($item.PSIsContainer) {
-                $results += Get-ChildItem -LiteralPath $item.FullName -File -Recurse -ErrorAction SilentlyContinue |
-                    ForEach-Object { $_.FullName }
-            } else {
-                $results += $item.FullName
-            }
-        }
-
-        return @($results | Sort-Object -Unique)
-    }
-
-    $git = Get-Command git -ErrorAction SilentlyContinue
-    if (-not $git) {
-        return @()
-    }
-
-    $trackedFiles = & $git.Source -C $repoRoot ls-files 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        return @()
-    }
-
-    foreach ($trackedFile in $trackedFiles) {
-        if ([string]::IsNullOrWhiteSpace($trackedFile)) {
-            continue
-        }
-
-        $fullPath = Join-Path $repoRoot $trackedFile
-        if (Test-Path -LiteralPath $fullPath -PathType Leaf) {
-            $results += [System.IO.Path]::GetFullPath($fullPath)
-        }
-    }
-
-    return @($results | Sort-Object -Unique)
+    return @(Select-CodeQualityInputFiles -RepoRoot $repoRoot -AllFiles @(Get-CodeQualityRepositoryFiles -RepoRoot $repoRoot) -InputPaths $TargetPaths)
 }
 
 function Test-Utf8BomFile {
@@ -199,6 +173,7 @@ function Invoke-Utf8BomLint {
     $fixed = @()
 
     foreach ($file in $files) {
+        if ([IO.Path]::GetExtension($file).ToLowerInvariant() -in @('.png', '.bin', '.hog', '.sf2', '.zip', '.7z')) { continue }
         if (-not (Test-Utf8BomFile $file)) {
             continue
         }
@@ -335,8 +310,19 @@ if (-not (Test-Path -LiteralPath $lockDir)) {
 }
 
 try {
-    $resolvedPaths = @(Resolve-CodeQualityPaths $Paths)
-    if ($explicitScope -and $resolvedPaths.Count -eq 0) { throw 'Explicit code-quality scope resolved to no paths' }
+    $requestedPaths = @(Resolve-CodeQualityPaths $Paths)
+    if ($explicitScope -and $requestedPaths.Count -eq 0) { throw 'Explicit code-quality scope resolved to no paths' }
+    $eligibleFiles = @(Get-CodeQualityRepositoryFiles -RepoRoot $repoRoot -BaseRef $BaseRef -Changed:$Changed)
+    $resolvedPaths = @(Select-CodeQualityInputFiles -RepoRoot $repoRoot -AllFiles $eligibleFiles -InputPaths $requestedPaths | ForEach-Object { $_.FullName })
+    if ($List) {
+        $resolvedPaths | ForEach-Object { Get-RepoRelativePath $_ }
+        exit 0
+    }
+    if ($resolvedPaths.Count -eq 0) { Write-Host 'No new files in scope'; exit 0 }
+    if ($InstallTools) {
+        & (Join-Path $helpersDir 'install-code-quality-tools.ps1')
+        if ($LASTEXITCODE -ne 0) { throw 'Code quality tool installation failed' }
+    }
 } catch {
     Write-Error $_
     exit 1
@@ -346,7 +332,7 @@ if ($resolvedPaths.Count -gt 0) {
     $toolParams.Paths = $resolvedPaths
 }
 
-$preDirtyPaths = Get-GitDirtyPaths $resolvedPaths
+$preDirtyPaths = Get-GitDirtyPaths @()
 $postDirtyPaths = @()
 $cleanTransitions = @()
 
@@ -373,116 +359,35 @@ if (Test-Path -LiteralPath $lockFile) {
     Remove-Item -LiteralPath $lockFile -Force -ErrorAction SilentlyContinue
 }
 
+$previousBaseRef = $env:DXX_CODE_QUALITY_BASE_REF
+if ($BaseRef) { $env:DXX_CODE_QUALITY_BASE_REF = $BaseRef }
 Write-CodeQualityLock -Stage 'starting'
 
 Write-Host "=== Code Quality Checks ==="
-if ($resolvedPaths.Count -gt 0) {
-    Write-Host "Scoped paths:"
-    foreach ($resolvedPath in $resolvedPaths) {
-        Write-Host "  $(Get-RepoRelativePath $resolvedPath)"
-    }
-    Write-Host ""
-}
+Write-Host "Eligible new files: $($resolvedPaths.Count) (use -List to preview)"
 Write-Host ""
 
 try {
-    # --- clang-format ---
-    Write-CodeQualityLock -Stage 'clang-format'
-    Write-Host "--- C/C++ (clang-format) ---"
-    if ($Fix) {
-        & "$helpersDir\run-clang-format.ps1" @toolParams
-    } else {
-        $checkParams = @{ Check = $true } + $toolParams
-        & "$helpersDir\run-clang-format.ps1" @checkParams
+    $stages = @('clang-format', 'ktlint', 'psscriptanalyzer', 'utf8-bom', 'shellcheck', 'shfmt', 'cmake-format', 'cmake-lint', 'ruff', 'rustfmt', 'prettier')
+    foreach ($stage in $stages) {
+        if ($Tools -and $Tools -notcontains $stage) { continue }
+        Write-CodeQualityLock -Stage $stage
+        Write-Host "--- $stage ---"
+        if ($stage -eq 'utf8-bom') {
+            if (-not (Invoke-Utf8BomLint -TargetPaths $resolvedPaths -Fix:$Fix)) { $failed += $stage }
+        } else {
+            $parameters = @{ Paths = $resolvedPaths }
+            if (-not $Fix -and $stage -notin @('shellcheck', 'cmake-lint')) { $parameters.Check = $true }
+            try {
+                & (Join-Path $helpersDir "run-$stage.ps1") @parameters
+                if ($LASTEXITCODE -ne 0) { $failed += $stage }
+            } catch {
+                Write-Warning "${stage} failed: $_"
+                $failed += $stage
+            }
+        }
+        Write-Host ""
     }
-    if ($LASTEXITCODE -ne 0) {
-        $failed += "clang-format"
-    }
-    Write-Host ""
-
-    # --- ktlint ---
-    Write-CodeQualityLock -Stage 'ktlint'
-    Write-Host "--- Kotlin (ktlint) ---"
-    if ($Fix) {
-        & "$helpersDir\run-ktlint.ps1" @toolParams
-    } else {
-        $checkParams = @{ Check = $true } + $toolParams
-        & "$helpersDir\run-ktlint.ps1" @checkParams
-    }
-    if ($LASTEXITCODE -ne 0) {
-        $failed += "ktlint"
-    }
-    Write-Host ""
-
-    # --- PSScriptAnalyzer ---
-    Write-CodeQualityLock -Stage 'psscriptanalyzer'
-    Write-Host "--- PowerShell (PSScriptAnalyzer) ---"
-    if ($Fix) {
-        & "$helpersDir\run-psscriptanalyzer.ps1" @toolParams
-    } else {
-        $checkParams = @{ Check = $true } + $toolParams
-        & "$helpersDir\run-psscriptanalyzer.ps1" @checkParams
-    }
-    if ($LASTEXITCODE -ne 0) {
-        $failed += "psscriptanalyzer"
-    }
-    Write-Host ""
-
-    # --- UTF-8 BOM lint ---
-    Write-CodeQualityLock -Stage 'utf8-bom'
-    Write-Host "--- UTF-8 BOM lint ---"
-    if (-not (Invoke-Utf8BomLint -TargetPaths $resolvedPaths -Fix:$Fix)) {
-        $failed += "utf8-bom"
-    }
-    Write-Host ""
-
-    # --- shellcheck ---
-    Write-CodeQualityLock -Stage 'shellcheck'
-    Write-Host "--- Bash lint (shellcheck) ---"
-    # shellcheck has no auto-fix; always runs in report mode
-    & "$helpersDir\run-shellcheck.ps1" @toolParams
-    if ($LASTEXITCODE -ne 0) {
-        $failed += "shellcheck"
-    }
-    Write-Host ""
-
-    # --- shfmt ---
-    Write-CodeQualityLock -Stage 'shfmt'
-    Write-Host "--- Bash format (shfmt) ---"
-    if ($Fix) {
-        & "$helpersDir\run-shfmt.ps1" @toolParams
-    } else {
-        $checkParams = @{ Check = $true } + $toolParams
-        & "$helpersDir\run-shfmt.ps1" @checkParams
-    }
-    if ($LASTEXITCODE -ne 0) {
-        $failed += "shfmt"
-    }
-    Write-Host ""
-
-    # --- cmake-format ---
-    Write-CodeQualityLock -Stage 'cmake-format'
-    Write-Host "--- CMake format (cmake-format) ---"
-    if ($Fix) {
-        & "$helpersDir\run-cmake-format.ps1" @toolParams
-    } else {
-        $checkParams = @{ Check = $true } + $toolParams
-        & "$helpersDir\run-cmake-format.ps1" @checkParams
-    }
-    if ($LASTEXITCODE -ne 0) {
-        $failed += "cmake-format"
-    }
-    Write-Host ""
-
-    # --- cmake-lint ---
-    Write-CodeQualityLock -Stage 'cmake-lint'
-    Write-Host "--- CMake lint (cmake-lint) ---"
-    # cmake-lint has no auto-fix; always runs in report mode
-    & "$helpersDir\run-cmake-lint.ps1" @toolParams
-    if ($LASTEXITCODE -ne 0) {
-        $failed += "cmake-lint"
-    }
-    Write-Host ""
 
     # --- Summary ---
     Write-Host "=== Summary ==="
@@ -491,7 +396,7 @@ try {
     } else {
         Write-Host "Failed checks: $($failed -join ', ')"
         if (-not $Fix) {
-            Write-Host "Run with --fix to auto-format and strip UTF-8 BOMs"
+            Write-Host "Run with -Fix to auto-format and strip UTF-8 BOMs"
         }
         $exitCode = 1
     }
@@ -500,7 +405,7 @@ try {
     $failed += "runner"
     $exitCode = 1
 } finally {
-    $postDirtyPaths = Get-GitDirtyPaths $resolvedPaths
+    $postDirtyPaths = Get-GitDirtyPaths @()
     $cleanTransitions = @($preDirtyPaths | Where-Object { $postDirtyPaths -notcontains $_ })
     Write-CodeQualitySummary -Stage 'finished' -PreDirty $preDirtyPaths -PostDirty $postDirtyPaths -CleanTransitions $cleanTransitions
     if ($Fix -and $cleanTransitions.Count -gt 0) {
@@ -512,6 +417,7 @@ try {
         }
     }
     Remove-CodeQualityLock
+    $env:DXX_CODE_QUALITY_BASE_REF = $previousBaseRef
 }
 
 exit $exitCode

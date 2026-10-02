@@ -2,134 +2,180 @@
 // Verifies that the Android guidebot command can select an unexplored
 // automap component as an alternate terminal route goal.
 [
-    {"_info": {
-        "games": ["d2"],
-        "_deps": [
-            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
-            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
-            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"}
-        ]
-    }},
+    {
+        "_info": {
+            "games": ["d2"],
+            "_deps": [
+                {
+                    "file": "descent2.hog",
+                    "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+                },
+                {
+                    "file": "descent2.ham",
+                    "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+                },
+                { "file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b" },
+            ],
+        },
+    },
 
-    {"action": "enter_launcher"},
-    {"action": "reset_state"},
-    {"action": "clear_mods"},
-    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
-    {"action": "setup_command", "command": "write_bool_pref",
-     "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
-    {"action": "setup_command", "command": "write_bool_pref",
-     "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
-    {"action": "enter_game", "game": "d2"},
+    { "action": "enter_launcher" },
+    { "action": "reset_state" },
+    { "action": "clear_mods" },
+    { "action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250 },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": { "key": "show_resume_offer", "value": false },
+        "post_delay_ms": 250,
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": { "key": "skip_intro_movie", "value": false },
+        "post_delay_ms": 250,
+    },
+    { "action": "enter_game", "game": "d2" },
 
-    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
-    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
-    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
+    { "action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000 },
+    { "action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200 },
+    { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000 },
+    { "action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000 },
 
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
-    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
-    {"action": "select", "text": "Counterstrike", "optional": true, "post_delay_ms": 100, "timeout_ms": 1000},
-    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
-    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
-    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},
+    { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000 },
+    { "action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000 },
+    { "action": "select", "text": "Counterstrike", "optional": true, "post_delay_ms": 100, "timeout_ms": 1000 },
+    { "action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000 },
+    { "action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000 },
+    { "action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100 },
 
-    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
-    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
-    {"action": "assert", "expect": {
-        "in_game": "true",
-        "screen_mode": "game",
-        "current_level_num": "1"
-    }},
+    { "action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000 },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000 },
+    {
+        "action": "assert",
+        "expect": {
+            "in_game": "true",
+            "screen_mode": "game",
+            "current_level_num": "1",
+        },
+    },
 
     // Keep combat object deletions from adding unrelated route notifications
     // during the exact automap-event coalescing checks below.
-    {"action": "set_debug", "field": "clear_robots", "value": "true", "post_delay_ms": 500},
+    { "action": "set_debug", "field": "clear_robots", "value": "true", "post_delay_ms": 500 },
 
-    {"action": "log", "message": "=== TEST: guidebot cage release ==="},
-    {"action": "wait_for", "timeout_ms": 10000, "expect": {
-        "in_game": "true",
-        "current_level_num": "1",
-        "guidebot.released": "false",
-        "guidebot.buddy_objnum": {"gte": 0}
-    }},
-    {"action": "set_debug", "field": "release_guidebot_cage", "value": "true", "post_delay_ms": 500},
-    {"action": "wait_for", "timeout_ms": 10000, "expect": {
-        "guidebot.released": "true",
-        "guidebot.buddy_objnum": {"gte": 0}
-    }},
-    {"action": "introspect"},
-    {"action": "log", "message": "=== TEST: guidebot cage release PASS ==="},
+    { "action": "log", "message": "=== TEST: guidebot cage release ===" },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "in_game": "true",
+            "current_level_num": "1",
+            "guidebot.released": "false",
+            "guidebot.buddy_objnum": { "gte": 0 },
+        },
+    },
+    { "action": "set_debug", "field": "release_guidebot_cage", "value": "true", "post_delay_ms": 500 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "guidebot.released": "true",
+            "guidebot.buddy_objnum": { "gte": 0 },
+        },
+    },
+    { "action": "introspect" },
+    { "action": "log", "message": "=== TEST: guidebot cage release PASS ===" },
 
-    {"action": "log", "message": "=== TEST: guidebot HUD progress layout ==="},
-    {"action": "set_debug", "field": "show_robot_hostage_counts", "value": "true", "post_delay_ms": 250},
-    {"action": "wait_for", "timeout_ms": 5000, "expect": {
-        "hud_layout.show_robot_hostage_counts": "true",
-        "hud_layout.progress.robots.present": "true",
-        "hud_layout.progress.robots.drawn": "true",
-        "hud_layout.progress.hostages.present": "true",
-        "hud_layout.progress.hostages.drawn": "true"
-    }},
-    {"action": "meta_action", "id": 1037, "post_delay_ms": 250},
-    {"action": "select_radial", "menu": "Guide", "text": "Unexplored", "post_delay_ms": 100},
-    {"action": "wait_for", "timeout_ms": 3000, "expect": {
-        "hud_layout.message_rect_count": {"gt": 0},
-        "hud_layout.progress.robots.present": "true",
-        "hud_layout.progress.robots.drawn": "true",
-        "hud_layout.progress.hostages.present": "true",
-        "hud_layout.progress.hostages.drawn": "true"
-    }},
-    {"action": "introspect"},
-    {"action": "log", "message": "=== TEST: guidebot HUD progress layout -- PASS ==="},
+    { "action": "log", "message": "=== TEST: guidebot HUD progress layout ===" },
+    { "action": "set_debug", "field": "show_robot_hostage_counts", "value": "true", "post_delay_ms": 250 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 5000,
+        "expect": {
+            "hud_layout.show_robot_hostage_counts": "true",
+            "hud_layout.progress.robots.present": "true",
+            "hud_layout.progress.robots.drawn": "true",
+            "hud_layout.progress.hostages.present": "true",
+            "hud_layout.progress.hostages.drawn": "true",
+        },
+    },
+    { "action": "meta_action", "id": 1037, "post_delay_ms": 250 },
+    { "action": "select_radial", "menu": "Guide", "text": "Unexplored", "post_delay_ms": 100 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 3000,
+        "expect": {
+            "hud_layout.message_rect_count": { "gt": 0 },
+            "hud_layout.progress.robots.present": "true",
+            "hud_layout.progress.robots.drawn": "true",
+            "hud_layout.progress.hostages.present": "true",
+            "hud_layout.progress.hostages.drawn": "true",
+        },
+    },
+    { "action": "introspect" },
+    { "action": "log", "message": "=== TEST: guidebot HUD progress layout -- PASS ===" },
 
-    {"action": "log", "message": "=== TEST: guidebot unexplored goal ==="},
-    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
-    {"action": "select_radial", "menu": "Guide", "text": "Unexplored", "post_delay_ms": 500},
-    {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.released": "true",
-        "guidebot.buddy_objnum": {"gte": 0},
-        "guidebot.route_target_mode_name": "unexplored",
-        "guidebot.route_status": "ok",
-        "guidebot.route_planner_source": "shared_cpp",
-        "guidebot.route_first_pending_step": "1",
-        "guidebot.route_first_pending_path_segment_count": {"gt": 0},
-        "guidebot.route_start_matches_buddy": "true",
-        "guidebot.unexplored_component_size": {"gt": 0},
-        "guidebot.unexplored_target_seg": {"gte": 0},
-        "guidebot.unexplored_waypoint_seg": {"gte": 0},
-        "guidebot.unexplored_target_visited": "false",
-        "guidebot.route_pending_event_mask": "0",
-        "guidebot.route_goal_guidance_seg": {"gte": 0},
-        "guidebot.route_live_work.full_plan_calls": "0",
-        "guidebot.route_live_work.tick_overruns": "0",
-        "guidebot.route_live_work.max_tick_us": {"lte": 4000},
-        "guidebot.route_live_work.pending": "false",
-        "level_metadata_route.visibility_cache.bypasses": "0"
-    }},
-    {"action": "set_debug", "field": "guidebot_route_reset_efficiency_counters", "value": "true"},
+    { "action": "log", "message": "=== TEST: guidebot unexplored goal ===" },
+    { "action": "meta_action", "id": 1037, "post_delay_ms": 500 },
+    { "action": "select_radial", "menu": "Guide", "text": "Unexplored", "post_delay_ms": 500 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 20000,
+        "expect": {
+            "guidebot.released": "true",
+            "guidebot.buddy_objnum": { "gte": 0 },
+            "guidebot.route_target_mode_name": "unexplored",
+            "guidebot.route_status": "ok",
+            "guidebot.route_planner_source": "shared_cpp",
+            "guidebot.route_first_pending_step": "1",
+            "guidebot.route_first_pending_path_segment_count": { "gt": 0 },
+            "guidebot.route_start_matches_buddy": "true",
+            "guidebot.unexplored_component_size": { "gt": 0 },
+            "guidebot.unexplored_target_seg": { "gte": 0 },
+            "guidebot.unexplored_waypoint_seg": { "gte": 0 },
+            "guidebot.unexplored_target_visited": "false",
+            "guidebot.route_pending_event_mask": "0",
+            "guidebot.route_goal_guidance_seg": { "gte": 0 },
+            "guidebot.route_live_work.full_plan_calls": "0",
+            "guidebot.route_live_work.tick_overruns": "0",
+            "guidebot.route_live_work.max_tick_us": { "lte": 4000 },
+            "guidebot.route_live_work.pending": "false",
+            "level_metadata_route.visibility_cache.bypasses": "0",
+        },
+    },
+    { "action": "set_debug", "field": "guidebot_route_reset_efficiency_counters", "value": "true" },
 
     // Two same-frame automap transitions must collapse into one high-level
     // semantic route rescan while leaving the player's map unchanged.
-    {"action": "set_debug", "field": "automap_revisit_segment", "value": "0", "post_delay_ms": 1000},
-    {"action": "wait_for", "timeout_ms": 5000, "expect": {
-        "guidebot.route_target_mode_name": "unexplored",
-        "guidebot.unexplored_target_visited": "false",
-        "guidebot.route_event_generations.automap": {"gt": 19},
-        "guidebot.route_pending_event_mask": "0",
-        "guidebot.route_event_notification_count": "2",
-        "guidebot.route_notification_coalesced_count": "1",
-        "guidebot.route_event_coalesced_rescan_count": {"gte": 1},
-        "guidebot.route_metadata_rescan_count": {"gte": 1}
-    }},
+    { "action": "set_debug", "field": "automap_revisit_segment", "value": "0", "post_delay_ms": 1000 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 5000,
+        "expect": {
+            "guidebot.route_target_mode_name": "unexplored",
+            "guidebot.unexplored_target_visited": "false",
+            "guidebot.route_event_generations.automap": { "gt": 19 },
+            "guidebot.route_pending_event_mask": "0",
+            "guidebot.route_event_notification_count": "2",
+            "guidebot.route_notification_coalesced_count": "1",
+            "guidebot.route_event_coalesced_rescan_count": { "gte": 1 },
+            "guidebot.route_metadata_rescan_count": { "gte": 1 },
+        },
+    },
 
-    {"action": "wait_ms", "ms": 6000},
-    {"action": "assert", "expect": {
-        "guidebot.route_target_mode_name": "unexplored",
-        "guidebot.route_event_notification_count": "2",
-        "guidebot.route_notification_coalesced_count": "1",
-        "guidebot.route_event_coalesced_rescan_count": {"gte": 1},
-        "guidebot.route_metadata_rescan_count": {"gte": 1}
-    }},
+    { "action": "wait_ms", "ms": 6000 },
+    {
+        "action": "assert",
+        "expect": {
+            "guidebot.route_target_mode_name": "unexplored",
+            "guidebot.route_event_notification_count": "2",
+            "guidebot.route_notification_coalesced_count": "1",
+            "guidebot.route_event_coalesced_rescan_count": { "gte": 1 },
+            "guidebot.route_metadata_rescan_count": { "gte": 1 },
+        },
+    },
 
-    {"action": "introspect"},
-    {"action": "log", "message": "=== TEST: guidebot unexplored goal -- PASS ==="}
+    { "action": "introspect" },
+    { "action": "log", "message": "=== TEST: guidebot unexplored goal -- PASS ===" },
 ]

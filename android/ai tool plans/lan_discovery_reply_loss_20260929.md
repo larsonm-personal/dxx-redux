@@ -19,13 +19,13 @@ debuglog_20260929_212304.txt (client 192.168.88.21), build 23521 / 7563cd0f
 Implementation and validation
 
 - [x] Repeat host announcements by unicast to recently heard discovery clients,
-  with bounded, expiring state, so discovery can recover when host broadcasts and
-  initial query replies are lost
+      with bounded, expiring state, so discovery can recover when host broadcasts and
+      initial query replies are lost
 - [x] Allow a cancellable 30-second manual join, retain short resume probes, and
-  return promptly for a verified running engine after the launcher preference window
+      return promptly for a verified running engine after the launcher preference window
 - [x] Report no response separately from an actual compatibility rejection
 - [x] Extend real UDP tests for lost replies, delayed manual replies, cancellation,
-  peer expiry/cleanup, and prompt engine success
+      peer expiry/cleanup, and prompt engine success
 - [x] Run scoped quality checks, Android builds and relevant emulator integration tests
 
 Physical Wi-Fi delivery must still be confirmed on the affected phones

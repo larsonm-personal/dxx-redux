@@ -3,8 +3,8 @@
 ## Background
 
 There is a reproducible crash when closing 2-level-deep menus after editing
-autoselect orderings in the launcher.  The exact root cause is not yet pinned
-down.  This document describes how to capture useful diagnostics when
+autoselect orderings in the launcher. The exact root cause is not yet pinned
+down. This document describes how to capture useful diagnostics when
 reproducing the crash by hand.
 
 ## Reproduction steps (from user report)
@@ -19,7 +19,7 @@ reproducing the crash by hand.
 
 ## Emulator setup
 
-Use a debug APK (`assembleDebug`).  The debug build includes the
+Use a debug APK (`assembleDebug`). The debug build includes the
 introspection API and native symbol tables required for useful stack traces.
 
 ### Create a lightweight AVD (one-time)
@@ -38,6 +38,7 @@ emulator -avd CrashDebug -no-snapshot-save -gpu swiftshader_indirect
 ```
 
 Or use the existing AVD:
+
 ```bash
 emulator -avd Nexus5X_Light_1 -no-snapshot-save -gpu swiftshader_indirect
 ```
@@ -68,6 +69,7 @@ adb install -r app\build\outputs\apk\debug\app-debug.apk
 ```
 
 This script:
+
 1. Clears logcat
 2. Reminds you to reproduce the crash
 3. Waits for you to press Enter after the crash
@@ -79,12 +81,14 @@ This script:
 Open two terminals.
 
 **Terminal 1** -- continuous logcat to file:
+
 ```powershell
 adb logcat -c
 adb logcat > temp\crash_logcat.txt
 ```
 
 **Terminal 2** -- reproduce the crash, then collect data:
+
 ```powershell
 # After the crash happens:
 
@@ -109,6 +113,7 @@ adb shell run-as com.dxxredux.app cat files/introspect.json > temp\crash_introsp
 ## What to provide
 
 Bundle these files and provide them back:
+
 - `crash_logcat.txt` -- full logcat from before the crash
 - `crash_tombstone.txt` -- native crash tombstone (has the stack trace)
 - debug log files from `debuglogs/` -- engine log (enable "Game Logs" category)
@@ -121,12 +126,14 @@ stack trace with function names and line numbers (since we use debug builds).
 ## What the diagnostics look like
 
 A native crash in logcat looks like:
+
 ```
 Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x6c
     in tid 1234 (Thread-2), pid 5678 (xredux.app:game)
 ```
 
 The tombstone will have a full backtrace:
+
 ```
 backtrace:
     #00 pc 001234ab  /data/app/.../lib/x86_64/libdescent2.so (ogl_filltexbuf+91)
@@ -140,7 +147,7 @@ Two bugs were found and fixed during investigation:
 
 1. **Use-after-free in window_close()** (d1/d2 arch/sdl/window.c):
    `d_free(wind)` was called before the `EVENT_WINDOW_CLOSED` callback,
-   meaning the callback received a freed pointer.  Fixed by reordering:
+   meaning the callback received a freed pointer. Fixed by reordering:
    callback first, then free.
 
 2. **Stale g_menu_scale_active** (d1/d2 main/newmenu.c): The Android
@@ -155,4 +162,4 @@ Two bugs were found and fixed during investigation:
    `isGameProcessAlive()` check in the launcher.
 
 These fixes are applied but may not be the specific crash in the user's
-reproduction steps (#7 above).  The crash still needs further investigation.
+reproduction steps (#7 above). The crash still needs further investigation.

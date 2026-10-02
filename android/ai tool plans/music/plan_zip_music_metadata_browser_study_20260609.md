@@ -1,9 +1,11 @@
 # ZIP Music Metadata Browser Study - 2026-06-09
 
 ## Goal
+
 Study how mission ZIPs that contain music can expose those tracks from the level metadata view, reuse the existing track browser for preview playback, and align chromaprint lookup caching with existing imported-track behavior.
 
 ## Plan
+
 - [x] Locate existing track browser UI, playback, chromaprint lookup, and cache code.
 - [x] Trace mission ZIP inspection/import and level metadata navigation paths.
 - [x] Inspect the mission ZIP corpus for representative audio-containing archives and edge cases.
@@ -11,6 +13,7 @@ Study how mission ZIPs that contain music can expose those tracks from the level
 - [x] Define implementation phases, tests, and demo ZIPs.
 
 ## Notes
+
 - Do not reimplement track browsing or preview playback if the existing browser can be reused.
 - ZIP-contained tracks may be ephemeral, so cache keys should be based on stable archive/member identity and content hashes rather than temp file paths.
 - Large ZIP handling may need a separate temp-file extraction path from small in-memory analysis.
@@ -18,6 +21,7 @@ Study how mission ZIPs that contain music can expose those tracks from the level
 ## Existing Pieces
 
 ### Track Browser And Preview
+
 - `android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt`
   - `TrackPreviewDialog` is the existing CD/custom-audio track list browser.
   - `MidiSection` plus `MidiTrackPreviewDialog` is the existing MIDI/HMP browser and preview path.
@@ -28,6 +32,7 @@ Study how mission ZIPs that contain music can expose those tracks from the level
 - `android/app/src/main/cpp/shared/midi_enumeration.c` currently enumerates HMP/MID tracks from built-in HOGs and mission HOGs in a real directory, not directly from mission ZIPs.
 
 ### Fingerprint And Lookup
+
 - `FingerprintBridge.kt` can:
   - fingerprint MP3/OGG/FLAC from a filesystem path,
   - fingerprint CD tracks from BIN/CUE data,
@@ -37,6 +42,7 @@ Study how mission ZIPs that contain music can expose those tracks from the level
 - There is no general loose-audio fingerprint cache yet. Imported audio folds the result into the custom audio set record.
 
 ### Mission ZIP And Metadata UI
+
 - `MissionZip.kt` scans ZIP constituents and chooses `stored_zip` vs `extracted_bundle` based on `SMALL_IN_MEMORY_LIMIT_BYTES`.
 - `ModManager.kt` stores mission ZIPs in `filesDir/mods`, exposes `ModDetails.missionZip`, and stages mission ZIP contents for game launch under `.generated_mission_zips`.
 - `ModManager.hasEnabledMissionZipBuiltinMusic` already detects built-in mission music by checking:
@@ -47,6 +53,7 @@ Study how mission ZIPs that contain music can expose those tracks from the level
 - `LevelMetadata.kt` stages selected ZIP level entries into `cacheDir/level_metadata/<uuid>/staged` for native analysis.
 
 ## Corpus Findings
+
 - Current `game_data/mission_files` contains 104 ZIP files.
 - A later focused check of `trine2.zip` showed an important layout that was missed by top-level ZIP scanning: the custom OGG soundtrack is embedded inside `trine2.hog`.
 - Top-level `.sng` files were found in:
@@ -72,6 +79,7 @@ Study how mission ZIPs that contain music can expose those tracks from the level
 ## Proposed Architecture
 
 ### Core Model
+
 Add a ZIP music scanner that produces a reusable, UI-neutral model:
 
 ```kotlin
@@ -106,12 +114,14 @@ data class MissionZipMusicTrack(
 ```
 
 `archiveIdentity` should be stable across app restarts and independent of temp files:
+
 - archive filename,
 - archive length,
 - archive last modified time,
 - optionally archive SHA-256 when lookup/cache work starts.
 
 Track identity should include:
+
 - archive identity,
 - outer entry path,
 - nested DXA/HOG path if any,
@@ -119,7 +129,9 @@ Track identity should include:
 - content SHA-256 once extracted or streamed.
 
 ### Scanner
+
 Create `MissionZipMusic.kt` with:
+
 - `inspectMusic(zipFile: File): MissionZipMusicCatalog?`
 - `hasMusic(scan/catalog)` for UI button visibility
 - helpers to parse `.sng` rows and identify referenced filenames
@@ -128,6 +140,7 @@ Create `MissionZipMusic.kt` with:
 - HOG scan for HMP/MID/HMQ and compressed OGG/MP3/FLAC audio, reusing the simple HOG reader pattern already in Kotlin/C tests where possible
 
 Important behavior:
+
 - `.sng` is not itself playable, but it gives ordering and references. If referenced files are present in the same ZIP/DXA/HOG, use that order. If not, show song-list references as unavailable rows or hide them behind a note, depending on UX preference.
 - HOG-contained `descent.sng` must be parsed. `trine2.hog` uses this exact shape: `descent.sng` lists `descent.ogg`, `briefing.ogg`, `endlevel.ogg`, `endgame.ogg`, `credits.ogg`, and `game01.ogg` through `game09.ogg`.
 - HMP/HMQ/MID should use the MIDI preview path.
@@ -135,9 +148,11 @@ Important behavior:
 - Chromaprint should be limited to OGG/MP3/FLAC initially because `FingerprintBridge` advertises MP3/OGG/FLAC; WAV can be preview-only unless native decoder support is confirmed.
 
 ### Staging And Temp Files
+
 Add `MissionZipMusicStageManager`, probably under `cacheDir/mission_zip_music`.
 
 Responsibilities:
+
 - Materialize exactly one selected track or one selected source into temp files on demand.
 - Use real files because `MediaPlayer` and `FingerprintBridge.fingerprintAudioFile(path)` already want paths.
 - For MIDI/HMP from HOG, either:
@@ -152,7 +167,9 @@ Responsibilities:
   - enforce a size cap such as 256 MB.
 
 ### Reusing The Browser
+
 Refactor, do not fork:
+
 - Extract the generic list/dialog shell from `TrackPreviewDialog` into a composable such as `TrackBrowserDialog`.
 - Extract row model and preview detail model:
   - MIDI preview item uses bytes provider plus `MidiPreviewBridge`.
@@ -162,12 +179,15 @@ Refactor, do not fork:
 - Add a mission-ZIP adapter that maps `MissionZipMusicCatalog` into the same row model.
 
 Recommended split:
+
 - `TrackBrowser.kt`: shared browser UI and common rows.
 - `TrackPreviewDialogs.kt`: MIDI, CD, file detail dialogs.
 - Keep `MusicPickerPage.kt` focused on selecting configured music modes.
 
 ### UI Flow
+
 In `SetupSections.ModDetailsDialog`:
+
 - Compute a `MissionZipMusicCatalog` alongside `topLevelMetadataTargets` when `details.missionZip != null`.
 - If one or more playable tracks are present, show a button near the level metadata button:
   - label: `Music tracks`
@@ -176,9 +196,11 @@ In `SetupSections.ModDetailsDialog`:
 - Do not put music controls inside `LevelMetadataDialog`; the user asked for this "for the metadata view", but the existing level metadata entry point is in the mod details dialog. Keeping the music browser adjacent to level metadata avoids making the native analyzer aware of music.
 
 ### Use Mission Soundtrack Preference
+
 Add an explicit launcher preference for the in-game playback policy, separate from the global music source selection.
 
 Recommended preference:
+
 - Key: `use_mission_soundtrack_when_available`
 - Storage: `dxx_prefs`
 - Type: boolean for first implementation
@@ -186,6 +208,7 @@ Recommended preference:
 - Export/import: include it in the launcher config import/export preference whitelist when implemented
 
 Recommended UI location:
+
 - `EnginePreferencesPage.kt`, in the launcher Game Preferences area.
 - Add a compact music/gameplay preference row labelled `Use mission soundtrack when available`.
 - Supporting text should explain the behavior without exposing implementation details, for example:
@@ -196,6 +219,7 @@ Recommended UI location:
 - Optionally add a secondary status line in `SetupSections.MusicInfoSection`, but only after the preference exists. The main editable control should remain in Game Preferences.
 
 Launch resolution rules:
+
 - `musicTypeOverride` continues to win. Resume/explicit launch paths that pass a music type should preserve current behavior until we intentionally redesign save/resume music policy.
 - Compute `missionHasSoundtrack` from existing detection first:
   - `game != null && ModManager(filesDir).hasEnabledMissionZipBuiltinMusic(game)`
@@ -213,11 +237,13 @@ Launch resolution rules:
   - `files` -> `MusicType=3` plus `CMLevelMusicPath`/M3U config
 
 Why this default:
+
 - Mission authors who ship OGG/HMP/MIDI music generally expect it to be heard with the mission.
 - The current default CD mode already makes Trine 2-style mission music work for many users, so defaulting this preference to true preserves that good behavior while extending it to users who selected MIDI or custom files globally.
 - Users who prefer a global soundtrack can turn the setting off once and keep their selected global music mode for every mission.
 
 Implementation targets:
+
 - `SetupConfigFiles.kt`: replace the current `mode == "cd"` mission-music condition with the new preference gate.
 - `EnginePreferencesPage.kt`: add the toggle and persist it in `dxx_prefs`.
 - `ConfigImportExport.kt`: include the setting with the other launcher/game preferences.
@@ -225,6 +251,7 @@ Implementation targets:
 - Consider extracting a pure launch-policy helper from `writeMusicConfigForLaunch` so the behavior can be unit-tested without launching the game.
 
 Tests:
+
 - Unit-test the launch-policy helper:
   - explicit `musicTypeOverride` wins even when mission music is available.
   - preference true plus mission music selects `MusicType=1` from global `cd`.
@@ -241,10 +268,13 @@ Tests:
   - Disable the preference, choose a global MIDI or audio-files mode, launch again, and verify the global mode is preserved.
 
 Open policy note:
+
 - If multiple enabled mission ZIPs for the same game contain soundtracks, the current boolean detector is still enough to choose `MusicType=1`; the game launch staging and PhysFS search path determine the actual mission HOG/song list. If that order becomes confusing in practice, the mod details UI should surface which enabled mission supplies music.
 
 ### Chromaprint Cache
+
 Add a sidecar manager separate from `CustomAudioSetManager`, for example `MissionZipAudioFingerprintCache.kt`, persisted as:
+
 - `filesDir/mission_zip_audio_fingerprints.json`
 
 Suggested JSON shape:
@@ -275,6 +305,7 @@ Suggested JSON shape:
 ```
 
 Lookup flow:
+
 - On browser open, load cached entries and annotate tracks.
 - On explicit "Identify" or "Identify all" action:
   - stage compressed audio,
@@ -287,6 +318,7 @@ Lookup flow:
 - Cache should not use temp path as identity.
 
 ### Feedback Points
+
 - Should `.sng` rows that reference only base game HMPs be shown as tracks? For many current mission ZIPs the `.sng` just reorders built-in HMP names, not custom audio. My recommendation: show a `Mission song list` source with referenced names, but only enable preview where the referenced content can be resolved from the ZIP/HOG/staged base data.
 - Should the browser include base-game tracks referenced by `.sng`? That is useful for explaining what the mission will play, but it blurs "contained in the zip". My recommendation: first phase only preview contained tracks; second phase resolves base-track references.
 - Should AcoustID lookup be automatic? My recommendation: no. Fingerprint locally on demand or once per track when opening the browser, but web lookup should be an explicit button if an API key is configured.
@@ -297,6 +329,7 @@ Lookup flow:
 ## Implementation Phases
 
 ### Phase 0: Mission Soundtrack Launch Policy
+
 Status: completed 2026-06-09.
 
 - [x] Add the `use_mission_soundtrack_when_available` preference, defaulting to true.
@@ -309,10 +342,12 @@ Status: completed 2026-06-09.
 - [ ] Demonstrate manually with `trine2.zip`, since it has HOG-contained OGG music and exposes the current global-mode coupling problem.
 
 Verification:
+
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\EnginePreferencesPage.kt','android\app\src\main\java\com\dxxredux\app\SetupConfigFiles.kt','android\app\src\main\java\com\dxxredux\app\ConfigImportExport.kt','android\app\src\test\java\com\dxxredux\app\MusicLaunchPolicyTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md','android\ai tool plans\music\plan_trine2_embedded_soundtrack_investigation_20260609.md')`
 
 ### Phase 1: Discovery And UI Button
+
 Status: completed 2026-06-09.
 
 - [x] Add `MissionZipMusic.kt`.
@@ -323,10 +358,12 @@ Status: completed 2026-06-09.
 - [x] Add unit tests for top-level `.sng`, HOG HMP, nested DXA OGG, HOG-contained `.sng` plus OGG, and no-music ZIPs.
 
 Verification:
+
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\MissionZipMusic.kt','android\app\src\main\java\com\dxxredux\app\ModManager.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicTest.kt','android\app\src\test\java\com\dxxredux\app\MusicLaunchPolicyTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 
 ### Phase 2: Browser Refactor
+
 - Extract `TrackBrowserDialog` and preview detail dialogs from `MusicPickerPage.kt`.
 - Adapt existing CD/custom-audio pages to use the extracted browser.
 - Add mission-ZIP adapter for the same browser row model.
@@ -336,6 +373,7 @@ Verification:
   - Existing music UI tests should still pass.
 
 ### Phase 3: Temp Staging And Preview
+
 Status: compressed-audio and MIDI preview slices completed 2026-06-09.
 
 - [x] Add `MissionZipMusicStageManager`.
@@ -356,10 +394,12 @@ Status: compressed-audio and MIDI preview slices completed 2026-06-09.
   - introspect `music_preview` state or add a setup introspection field for file-preview player state.
 
 Verification:
+
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\AudioFilePreviewDialog.kt','android\app\src\main\java\com\dxxredux\app\MissionZipMusicStageManager.kt','android\app\src\main\java\com\dxxredux\app\MusicPickerPage.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicStageManagerTest.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 
 ### Phase 4: Fingerprint Cache
+
 - Status: local chromaprint cache slice completed 2026-06-09.
 - [x] Add `MissionZipAudioFingerprintCache.kt`.
 - [x] Add local chromaprint action for OGG/MP3/FLAC.
@@ -373,11 +413,13 @@ Verification:
   - [ ] cached result annotates browser rows.
 
 Verification:
+
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\MissionZipAudioFingerprintCache.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipAudioFingerprintCacheTest.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicStageManagerTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\MissionZipAudioFingerprintCache.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipAudioFingerprintCacheTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 
 ### Phase 5: AcoustID Lookup UX
+
 - Status: completed 2026-06-09.
 - [x] Add explicit per-track lookup action, enabled only when `AcoustIdClient.configure(context)` succeeds.
 - [x] Add "Identify all" and "Lookup all" actions.
@@ -386,9 +428,11 @@ Verification:
 - [x] Add user-visible status for "local match", "web match", "no match", and "lookup failed".
 
 Verification:
+
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
 
 ### Phase 6: Large ZIP Path
+
 - Status: synthetic regression completed 2026-06-09; real-device demonstration remains.
 - [x] Exercise a mission ZIP over `SMALL_IN_MEMORY_LIMIT_BYTES`.
 - [x] Confirm scanner uses `ZipFile` streaming and stage-on-demand, not full memory extraction.
@@ -396,9 +440,11 @@ Verification:
 - [ ] Add a real-file manual/regression demonstration with `trine2.zip`: open music browser, list 14 OGG tracks in song-list order, preview one level track, fingerprint one OGG, and launch the mission to verify the game enters built-in/addon music mode and plays a HOG-contained OGG.
 
 Verification:
+
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest`
 
 ### Phase 7: Mission ZIP Soundtracks In Chromaprint Database
+
 - Status: completed for the first mission-ZIP database slice 2026-06-10.
 - [x] Add a `fingerprint_mission_zip_music.ps1` script that scans `game_data/mission_files/*.zip`.
 - [x] Extract OGG/MP3/FLAC tracks from top-level ZIP entries, nested DXA/ZIP entries, and HOG members.
@@ -414,6 +460,7 @@ Verification:
 - [x] Run the mission-ZIP script across the full corpus and merge all discovered mission soundtracks.
 
 Verification:
+
 - `.\game_data\fingerprint_mission_zip_music.ps1 -Zip trine2.zip -SkipAcoustId`
 - `.\game_data\fingerprint_mission_zip_music.ps1 -Zip trine2.zip`
 - `.\game_data\update_known_discs_albums.ps1 -DryRun -Force`
@@ -422,6 +469,7 @@ Verification:
 - `.\game_data\update_known_discs_albums.ps1 -Force`
 
 ### Phase 8: Mission ZIP Music Browser Cleanup
+
 - Status: completed 2026-06-10.
 - [x] Change cached fingerprint durations from decimal seconds to compact minute/second text such as `3m2s`.
 - [x] Treat song-list entries as ordering metadata for matching playable tracks instead of showing duplicate non-playable rows.
@@ -430,12 +478,14 @@ Verification:
 - [x] Run focused unit tests and scoped code quality.
 
 Verification:
+
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicTest`
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest`
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest`
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\MissionZipMusic.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 
 ### Phase 9: Passive Local Matching And Web Lookup Consent
+
 - Status: completed 2026-06-10.
 - [x] Track the bundled fingerprint database identity on mission ZIP cache rows so existing fingerprints can be rematched when `known_discs.json5` changes.
 - [x] Run local fingerprinting/matching automatically when the music list opens.
@@ -444,11 +494,13 @@ Verification:
 - [x] Verify focused cache and music browser tests plus scoped code quality.
 
 Verification:
+
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest`
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\AcoustIdPrefs.kt','android\app\src\main\java\com\dxxredux\app\AdvancedSettingsPage.kt','android\app\src\main\java\com\dxxredux\app\ConfigImportExport.kt','android\app\src\main\java\com\dxxredux\app\FingerprintBridge.kt','android\app\src\main\java\com\dxxredux\app\MissionZipAudioFingerprintCache.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipAudioFingerprintCacheTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest`
 
 ### Phase 10: Mission ZIP Launch Staging For Trine 2
+
 - Status: completed 2026-06-10.
 - [x] Inspect `trine2.zip` contents and compare its mission descriptor/HOG layout to the launcher staging rules.
 - [x] Identify why metadata can load but the D2 mission list cannot see the mission.
@@ -457,16 +509,19 @@ Verification:
 - [x] Run focused tests and scoped code quality.
 
 Findings:
+
 - `trine2.zip` contains `trine2.msn` and `.rdl` levels inside `trine2.hog`, so it is a Descent 1 mission.
 - The launcher tags it `game = d1`; D2 launch excludes it from `.active_mod_paths`, so it will not appear under D2 `New Game`.
 - D1 launch stages it under `d1x-redux/.generated_mission_zips/trine2.zip/missions`.
 
 Verification:
+
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ModManagerMissionZipTest --tests com.dxxredux.app.MissionZipTest`
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\test\java\com\dxxredux\app\ModManagerMissionZipTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 - `java -jar C:\local\ktlint-1.8.0\ktlint.jar --format android\app\src\test\java\com\dxxredux\app\ModManagerMissionZipTest.kt`
 
 ### Phase 11: D1 Mission ZIPs In The D2 Engine
+
 - Status: completed 2026-06-10.
 - [x] Confirm D2 native mission listing can enumerate D1 `.msn` add-on missions.
 - [x] Change launcher mod filtering so D1 mission zips can be mounted for D2 launch.
@@ -475,11 +530,13 @@ Verification:
 - [x] Run focused tests and scoped code quality.
 
 Verification:
+
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ModManagerMissionZipTest --tests com.dxxredux.app.MissionZipTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\ModManager.kt','android\app\src\test\java\com\dxxredux\app\ModManagerMissionZipTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ModManagerMissionZipTest --tests com.dxxredux.app.MissionZipTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
 
 ## Demonstration ZIPs
+
 - `Obsidian.zip`: top-level `.sng`, HMP names, existing test pattern for HMP in HOG.
 - `Chasm.zip`: simple top-level `.sng`.
 - `TheOmicronProject.zip`: `.sng` in a subdirectory, useful for rooted path behavior.

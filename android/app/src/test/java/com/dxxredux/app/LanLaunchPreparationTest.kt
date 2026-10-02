@@ -8,7 +8,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LanLaunchPreparationTest {
-    private fun state(attempt: Long, stage: LanLaunchStage) = LanLaunchPreparation("lobby", "host", attempt, stage)
+    private fun state(
+        attempt: Long,
+        stage: LanLaunchStage,
+    ) = LanLaunchPreparation("lobby", "host", attempt, stage)
 
     @Test
     fun lossReorderingAndRetriesCannotUndoDecisions() {

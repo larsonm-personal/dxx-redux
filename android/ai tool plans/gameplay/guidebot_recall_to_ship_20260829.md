@@ -8,13 +8,13 @@ player's ship, docks it on arrival, and leaves it available for deployment again
 ## Plan
 
 - [x] Trace existing Guide-Bot menu, touch command, AI goal, deploy, save, and
-  multiplayer behavior
+      multiplayer behavior
 - [x] Define recall and docking state transitions, including cancellation and
-  invalid/dead object handling
+      invalid/dead object handling
 - [x] Implement the command in the engine and expose it through existing Guide-Bot
-  control surfaces
+      control surfaces
 - [x] Add high-level automation/introspection coverage for recall, docking, and
-  redeployment
+      redeployment
 - [x] Run scoped code quality, relevant tests, and Windows CMake builds
 
 ## Design notes

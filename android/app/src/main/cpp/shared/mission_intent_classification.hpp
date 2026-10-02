@@ -40,7 +40,10 @@ struct ModeDeclarations {
 			hoard = true;
 	}
 
-	bool campaign_declared() const { return normal || coop; }
+	bool campaign_declared() const
+	{
+		return normal || coop;
+	}
 	bool competitive_declared() const
 	{
 		return anarchy || robo_anarchy || capture_flag || hoard;
@@ -92,10 +95,11 @@ inline const char *classification_name(Classification value)
 	return "ambiguous";
 }
 
-class Accumulator {
+class Accumulator
+{
 	Summary summary_;
 
-public:
+  public:
 	void add(const LevelInputs &level)
 	{
 		if (level.level_num <= 0)
@@ -106,11 +110,11 @@ public:
 			summary_.player_start_min = level.player_starts;
 			summary_.coop_start_min = level.coop_starts;
 		} else {
-			summary_.player_start_min = (std::min)(summary_.player_start_min, level.player_starts);
-			summary_.coop_start_min = (std::min)(summary_.coop_start_min, level.coop_starts);
+			summary_.player_start_min = (std::min) (summary_.player_start_min, level.player_starts);
+			summary_.coop_start_min = (std::min) (summary_.coop_start_min, level.coop_starts);
 		}
-		summary_.player_start_max = (std::max)(summary_.player_start_max, level.player_starts);
-		summary_.coop_start_max = (std::max)(summary_.coop_start_max, level.coop_starts);
+		summary_.player_start_max = (std::max) (summary_.player_start_max, level.player_starts);
+		summary_.coop_start_max = (std::max) (summary_.coop_start_max, level.coop_starts);
 		++summary_.normal_levels;
 		if (campaign_actors)
 			++summary_.campaign_actor_levels;
@@ -209,6 +213,6 @@ Json serialize(const Summary &summary)
 	result["reactors"] = summary.reactors;
 	return result;
 }
-}
+} // namespace dxx_mission_intent
 
 #endif

@@ -42,8 +42,8 @@ Out of scope:
 - `ogl_is_merged_wall_logging_target_bitmap` was removed from both `ogl.c` files
 - all remaining local uses now call `android_merged_wall_is_logging_target_bitmap` directly
 - validation passed with the existing known warnings unchanged:
-	- `loadgl.h` macro redefinition warnings
-	- `ogl_get_free_texture` not-all-control-paths-return warning
+  - `loadgl.h` macro redefinition warnings
+  - `ogl_get_free_texture` not-all-control-paths-return warning
 - `diff_vs_upstream.ps1 -Top 20` reported:
-	- `d1/arch/ogl/ogl.c`: `+2217 -50 total 2267`
-	- `d2/arch/ogl/ogl.c`: `+2244 -49 total 2293`
+  - `d1/arch/ogl/ogl.c`: `+2217 -50 total 2267`
+  - `d2/arch/ogl/ogl.c`: `+2244 -49 total 2293`

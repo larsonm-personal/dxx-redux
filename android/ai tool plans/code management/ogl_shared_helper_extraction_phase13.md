@@ -43,8 +43,8 @@ Out of scope:
 - `ogl_log_metl154_palette_source` was removed from both `ogl.c` files
 - all remaining local call sites now invoke `android_merged_wall_log_palette_source` directly
 - validation passed with the existing known warnings unchanged:
-	- `loadgl.h` macro redefinition warnings
-	- `ogl_get_free_texture` not-all-control-paths-return warning
+  - `loadgl.h` macro redefinition warnings
+  - `ogl_get_free_texture` not-all-control-paths-return warning
 - `diff_vs_upstream.ps1 -Top 20` reported:
-	- `d1/arch/ogl/ogl.c`: `+2222 -50 total 2272`
-	- `d2/arch/ogl/ogl.c`: `+2249 -49 total 2298`
+  - `d1/arch/ogl/ogl.c`: `+2222 -50 total 2272`
+  - `d2/arch/ogl/ogl.c`: `+2249 -49 total 2298`

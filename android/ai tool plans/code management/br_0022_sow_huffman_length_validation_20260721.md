@@ -9,15 +9,15 @@ producing output
 ## Plan
 
 - [x] Read repository instructions, the review process, both ledgers, and the
-  live SOW decoder and test registration
+      live SOW decoder and test registration
 - [x] Validate Huffman construction inputs and return checked errors from both
-  code-length readers
+      code-length readers
 - [x] Add focused boundary and malformed-header regression tests
 - [x] Run scoped code quality, native tests, and Android ABI builds
 - [x] Audit handmade comments and update the BR-0022 disposition with exact
-  verification evidence
+      verification evidence
 - [x] Complete the independent P1 verification call and move the finalized
-  finding to the done ledger
+      finding to the done ledger
 
 ## Validation record
 

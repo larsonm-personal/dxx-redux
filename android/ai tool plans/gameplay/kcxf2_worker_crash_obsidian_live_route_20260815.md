@@ -13,16 +13,16 @@ Status: implemented and validated; unrelated cold-corpus findings documented
 ## Plan
 
 - [x] Symbolize and reproduce the KCXF2 `load_mission_ham` crash, then fix the
-  underlying mission-analysis lifecycle or invalid state
+      underlying mission-analysis lifecycle or invalid state
 - [x] Trace canonical-to-live route projection and cache invalidation on
-  Obsidian level 4 to explain why live routing still uses the old exit goal
+      Obsidian level 4 to explain why live routing still uses the old exit goal
 - [x] Add focused native and maintained integration regressions for both cases
 - [x] Run scoped formatting, focused tests, a real KCXF2 analysis, a live
-  Obsidian route test, and paired D1/D2 build validation
+      Obsidian route test, and paired D1/D2 build validation
 - [x] Reproduce why full regression regeneration leaves `Obsidian.json` with
-  the old level-4 route and fix the responsible runner/analyzer/cache path
+      the old level-4 route and fix the responsible runner/analyzer/cache path
 - [x] Regenerate all configured regression data and review the complete diff
-  for intended route updates and unrelated regressions
+      for intended route updates and unrelated regressions
 
 ## Results
 

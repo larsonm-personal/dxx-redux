@@ -1,0 +1,35 @@
+// TEST: Keep the actual multiplayer session running during a graphics trial
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    {
+        "action": "assert",
+        "expect": {
+            "is_network": true,
+            "multiplayer.num_connected": 2,
+            "time_paused": false,
+            "graphics_safety.phase": "idle",
+        },
+    },
+    { "action": "set_debug", "field": "graphics_queue_option", "value": "tex_filt:2" },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.phase": "challenge",
+            "graphics_safety.candidate.TexFilt": 2,
+            "time_paused": false,
+        },
+        "timeout_ms": 10000,
+    },
+    { "action": "controller_input", "expect_ui": { "graphics_open": true, "graphics_selected_ok": false } },
+    { "action": "wait_ms", "ms": 1200 },
+    {
+        "action": "assert",
+        "expect": {
+            "graphics_safety.phase": "challenge",
+            "is_network": true,
+            "multiplayer.num_connected": 2,
+            "time_paused": false,
+            "game_window_is_front": true,
+        },
+    },
+]

@@ -91,6 +91,10 @@ int android_menu_scale_draw_result(
     int source_masked, int render_masked,
     android_menu_scale_canvas_draw_fn draw_source,
     android_menu_scale_result_draw_fn draw_scaled, void *userdata);
+#if defined(ANDROID) && defined(OGL) && defined(INTROSPECT_ON)
+void android_menu_scale_probe_unscaled(int screen_w, int screen_h,
+                                       android_menu_scale_result_draw_fn draw_contents, void *userdata);
+#endif
 void android_menu_scale_scroll_by(int *scroll_y, int delta_y);
 void android_menu_scale_set_viewport(int zoom_milli, int pan_milli);
 void android_menu_scale_reset_viewport(void);

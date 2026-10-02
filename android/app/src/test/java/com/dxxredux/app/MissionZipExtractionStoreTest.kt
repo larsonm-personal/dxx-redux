@@ -29,23 +29,27 @@ class MissionZipExtractionStoreTest {
         val secondFinished = CountDownLatch(1)
         val workers = Executors.newFixedThreadPool(2)
         try {
-            val first = workers.submit<MissionZipExtractionRecord> {
-                MissionZipExtractionStore(filesDir).ensureExtracted(archive.name, archive, scan) { done, total, path ->
-                    if (total > 0 && done == total && path.isEmpty()) {
-                        staged.countDown()
-                        check(release.await(10, TimeUnit.SECONDS))
+            val first =
+                workers.submit<MissionZipExtractionRecord> {
+                    MissionZipExtractionStore(
+                        filesDir,
+                    ).ensureExtracted(archive.name, archive, scan) { done, total, path ->
+                        if (total > 0 && done == total && path.isEmpty()) {
+                            staged.countDown()
+                            check(release.await(10, TimeUnit.SECONDS))
+                        }
                     }
                 }
-            }
             assertTrue(staged.await(10, TimeUnit.SECONDS))
-            val second = workers.submit<MissionZipExtractionRecord> {
-                secondStarted.countDown()
-                try {
-                    MissionZipExtractionStore(filesDir).ensureExtracted(archive.name, archive, scan)
-                } finally {
-                    secondFinished.countDown()
+            val second =
+                workers.submit<MissionZipExtractionRecord> {
+                    secondStarted.countDown()
+                    try {
+                        MissionZipExtractionStore(filesDir).ensureExtracted(archive.name, archive, scan)
+                    } finally {
+                        secondFinished.countDown()
+                    }
                 }
-            }
             assertTrue(secondStarted.await(10, TimeUnit.SECONDS))
             assertFalse("A second manager must wait for publication", secondFinished.await(200, TimeUnit.MILLISECONDS))
             release.countDown()
@@ -283,7 +287,12 @@ class MissionZipExtractionStoreTest {
         val bonus = requireNotNull(catalog.resolveLegacy("BONUS", "d2"))
         assertEquals(2, catalog.missions.size)
         assertTrue(catalog.resourcesFor(rebirth).any { it.virtualPath == "REBIRTH/descent2.s22" })
-        assertFalse(catalog.resourcesFor(rebirth).any { it.virtualPath.startsWith("DOS/") || it.virtualPath.startsWith("D2X/") })
+        assertFalse(
+            catalog.resourcesFor(rebirth).any {
+                it.virtualPath.startsWith("DOS/") ||
+                    it.virtualPath.startsWith("D2X/")
+            },
+        )
         assertFalse(catalog.resourcesFor(bonus).any { it.virtualPath.endsWith("descent2.s22") })
     }
 

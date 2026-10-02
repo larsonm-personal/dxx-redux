@@ -84,13 +84,13 @@ allocation failures during large legacy, GM and FM conversions.
 Gameplay measurements with the converter fix (same emulator, same optimized
 synth APK configuration):
 
-| Case | Preparation before | Preparation after | First PCM before / after |
-| --- | ---: | ---: | ---: |
-| D1 menu, cold synth | 755 ms | 260 ms | 1677 / 1192 ms |
-| D1 briefing | 51 ms | 7 ms | 58 / 19 ms |
-| D1 game01, initial level | 454 ms | 25 ms | 905 / 467 ms |
-| D2 menu, cold synth | 974 ms | 240 ms | 1241 / 493 ms |
-| D2 game02 | 1593-1609 ms | 75-85 ms | 1931-1935 / 413-415 ms |
+| Case                     | Preparation before | Preparation after | First PCM before / after |
+| ------------------------ | -----------------: | ----------------: | -----------------------: |
+| D1 menu, cold synth      |             755 ms |            260 ms |           1677 / 1192 ms |
+| D1 briefing              |              51 ms |              7 ms |               58 / 19 ms |
+| D1 game01, initial level |             454 ms |             25 ms |             905 / 467 ms |
+| D2 menu, cold synth      |             974 ms |            240 ms |            1241 / 493 ms |
+| D2 game02                |       1593-1609 ms |          75-85 ms |   1931-1935 / 413-415 ms |
 
 The remaining gap between preparation and first PCM includes the music's
 authored lead-in. Cold menu preparation also includes loading the fallback

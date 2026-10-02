@@ -51,6 +51,7 @@ extern "C" {
 #include "graphics_config_transaction.h"
 #ifdef ANDROID
 #include "android_graphics_safety.h"
+#include "render_gameplay_view.h"
 #include "android_egl_surface.h"
 #include "android_jni_overlay.h"
 #include "ogl_msaa_android.h"
@@ -4027,6 +4028,26 @@ extern "C" void game_automate_tick(void)
 				android_graphics_safety_debug_black_once();
 #else
 				stop_script_fail("graphics_black_once: Android-only action");
+#endif
+			} else if (s.field == "fov_visibility_verify") {
+#ifdef ANDROID
+				android_render_visibility_verify_set(s.value == "1");
+#else
+				stop_script_fail("fov_visibility_verify: Android-only action");
+#endif
+			} else if (s.field == "msaa_scene_probe") {
+#if defined(ANDROID) && defined(OGL)
+				const int count = (int) strtol(s.value.c_str(), NULL, 10);
+				if (count < 1 || count > 3) stop_script_fail("msaa_scene_probe: expected 1..3 passes");
+				else android_ogl_scene_probe_request(count);
+#else
+				stop_script_fail("msaa_scene_probe: Android OpenGL-only action");
+#endif
+			} else if (s.field == "msaa_menu_probe") {
+#if defined(ANDROID) && defined(OGL)
+				android_ogl_menu_probe_request();
+#else
+				stop_script_fail("msaa_menu_probe: Android OpenGL-only action");
 #endif
 			} else if (s.field == "msaa_color_probe") {
 #if defined(ANDROID) && defined(OGL)

@@ -40,17 +40,17 @@ Out of scope:
 ## Result
 
 - moved duplicated cached-texmerge UV builder into shared helper:
-	- `android_merged_wall_cached_texmerge_build_uvs(...)`
-	- added to `merged_wall_debug.h` and `merged_wall_debug.c`
+  - `android_merged_wall_cached_texmerge_build_uvs(...)`
+  - added to `merged_wall_debug.h` and `merged_wall_debug.c`
 - removed duplicated `ogl_android_texmerge_build_uvs(...)` from both
-	`d1/arch/ogl/ogl.c` and `d2/arch/ogl/ogl.c`
+  `d1/arch/ogl/ogl.c` and `d2/arch/ogl/ogl.c`
 - D1 and D2 cached texmerge UV setup now calls the shared helper directly
 - validation passed:
-	- `run-code-quality.ps1 -Fix`
-	- Android `:app:assembleDebug :app:testDebugUnitTest`
-	- `run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
-	- `diff_vs_upstream.ps1 -Top 20`
+  - `run-code-quality.ps1 -Fix`
+  - Android `:app:assembleDebug :app:testDebugUnitTest`
+  - `run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
+  - `diff_vs_upstream.ps1 -Top 20`
 - `diff_vs_upstream.ps1 -Top 20` reported:
-	- `d1/arch/ogl/ogl.c`: `+2100 -50 total 2150`
-	- `d2/arch/ogl/ogl.c`: `+2127 -49 total 2176`
-	- summary totals: `+18221 -801` across `199` files
+  - `d1/arch/ogl/ogl.c`: `+2100 -50 total 2150`
+  - `d2/arch/ogl/ogl.c`: `+2127 -49 total 2176`
+  - summary totals: `+18221 -801` across `199` files

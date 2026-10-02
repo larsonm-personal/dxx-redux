@@ -24,7 +24,7 @@ static int capture_write(void *context, const char *data, size_t size)
 
 static classic_demo_json_vector vector(int x, int y, int z)
 {
-	classic_demo_json_vector result = {x, y, z};
+	classic_demo_json_vector result = { x, y, z };
 
 	return result;
 }
@@ -40,7 +40,7 @@ static classic_demo_json_matrix matrix(int start)
 }
 
 static void fill_frame(classic_demo_json_frame *frame,
-	classic_demo_json_object objects[2])
+                       classic_demo_json_object objects[2])
 {
 	classic_demo_json_control *control;
 	classic_demo_json_robot_ai *ai;
@@ -162,17 +162,17 @@ static void fill_frame(classic_demo_json_frame *frame,
 static int test_exact_output(void)
 {
 	static const char expected[] =
-		"{\"type\":\"header\",\"format\":\"classic_dem_runtime_dump\",\"game\":\"d2\",\"version\":16,\"game_type\":3,\"mission\":\"mine\\\"\\\\\\n\\t\\u0001\",\"score\":-7,\"primary_weapon\":1,\"secondary_weapon\":2,\"player_flags\":3,\"energy\":4,\"shields\":5}\n"
-		"{\"type\":\"frame\",\"f\":9,\"ft\":10,\"gt\":11,\"level\":-2,\"viewer_objnum\":3,\"object_count\":2,\"player\":{\"objnum\":3,\"score\":20,\"energy\":21,\"shields\":22,\"flags\":23,\"seg\":24,\"phys_flags\":25,\"pos\":[1,2,3],\"last_pos\":[4,5,6],\"vel\":[-1,-2,-3],\"orient\":{\"f\":[10,11,12],\"r\":[13,14,15],\"u\":[16,17,18]},\"control\":{\"valid\":true,\"seg\":31,\"phys_flags\":32,\"player_flags\":33,\"ft\":34,\"resolved_forward\":35,\"pitch\":36,\"heading\":37,\"bank\":38,\"forward\":39,\"sideways\":40,\"vertical\":41,\"afterburner_state\":42,\"afterburner_charge\":43,\"wiggle_applied\":44,\"wiggle_raw\":45,\"wiggle_scaled\":46,\"wiggle_amount\":47,\"ship_wiggle\":48,\"pre_thrust\":[49,50,51],\"thrust\":[52,53,54],\"pre_rot\":[55,56,57],\"rot\":[58,59,60],\"vel_before_wiggle\":[61,62,63],\"wiggle_delta\":[64,65,66],\"vel_after_wiggle\":[67,68,69]},\"wiggle\":{\"valid\":true,\"applied\":44,\"seg\":31,\"phys_flags\":32,\"ft\":34,\"raw\":45,\"scaled\":46,\"amount\":47,\"vel_before\":[61,62,63],\"delta\":[64,65,66],\"vel_after\":[67,68,69],\"uvec\":[16,17,18]}},\"objects\":[{\"objnum\":3,\"sig\":100,\"obj_type\":4,\"id\":5,\"seg\":6,\"flags\":7,\"size\":8,\"shields\":9,\"lifeleft\":10,\"control_type\":11,\"movement_type\":12,\"render_type\":13,\"viewer\":true,\"pos\":[70,71,72],\"last_pos\":[73,74,75],\"orient\":{\"f\":[80,81,82],\"r\":[83,84,85],\"u\":[86,87,88]}},{\"objnum\":4,\"sig\":-100,\"obj_type\":2,\"id\":6,\"seg\":7,\"flags\":8,\"size\":9,\"shields\":-1,\"lifeleft\":11,\"control_type\":12,\"movement_type\":13,\"render_type\":14,\"viewer\":false,\"pos\":[90,91,92],\"last_pos\":[93,94,95],\"phys_flags\":15,\"vel\":[96,97,98],\"robot_ai\":{\"companion\":1,\"behavior\":2,\"mode\":3,\"cur_state\":4,\"goal_state\":5,\"gun\":6,\"path_dir\":7,\"goal_side\":8,\"danger_obj\":9,\"danger_sig\":10,\"player_seg\":11,\"believed_seg\":12,\"goal_seg\":13,\"prev_vis\":14,\"aware\":15,\"aware_time\":16,\"seen\":-17,\"since\":18,\"next_action\":19,\"next_fire\":20,\"next_fire2\":21,\"path_index\":22,\"path_length\":23,\"hide\":24,\"skip\":25},\"orient\":{\"f\":[100,101,102],\"r\":[103,104,105],\"u\":[106,107,108]}}]}\n"
-		"{\"type\":\"robot_damage\",\"f\":9,\"gt\":11,\"objnum\":4,\"sig\":-100,\"id\":6,\"size\":9,\"damage\":12,\"shields_before\":10,\"shields_after\":-2,\"dead\":true,\"pos\":[90,91,92],\"vel\":[96,97,98]}\n"
-		"{\"type\":\"result\",\"frames_decoded\":1,\"objects_emitted\":2,\"truncated\":false}\n";
-	capture_buffer capture = {{0}, 0, sizeof(capture.data) - 1};
+	    "{\"type\":\"header\",\"format\":\"classic_dem_runtime_dump\",\"game\":\"d2\",\"version\":16,\"game_type\":3,\"mission\":\"mine\\\"\\\\\\n\\t\\u0001\",\"score\":-7,\"primary_weapon\":1,\"secondary_weapon\":2,\"player_flags\":3,\"energy\":4,\"shields\":5}\n"
+	    "{\"type\":\"frame\",\"f\":9,\"ft\":10,\"gt\":11,\"level\":-2,\"viewer_objnum\":3,\"object_count\":2,\"player\":{\"objnum\":3,\"score\":20,\"energy\":21,\"shields\":22,\"flags\":23,\"seg\":24,\"phys_flags\":25,\"pos\":[1,2,3],\"last_pos\":[4,5,6],\"vel\":[-1,-2,-3],\"orient\":{\"f\":[10,11,12],\"r\":[13,14,15],\"u\":[16,17,18]},\"control\":{\"valid\":true,\"seg\":31,\"phys_flags\":32,\"player_flags\":33,\"ft\":34,\"resolved_forward\":35,\"pitch\":36,\"heading\":37,\"bank\":38,\"forward\":39,\"sideways\":40,\"vertical\":41,\"afterburner_state\":42,\"afterburner_charge\":43,\"wiggle_applied\":44,\"wiggle_raw\":45,\"wiggle_scaled\":46,\"wiggle_amount\":47,\"ship_wiggle\":48,\"pre_thrust\":[49,50,51],\"thrust\":[52,53,54],\"pre_rot\":[55,56,57],\"rot\":[58,59,60],\"vel_before_wiggle\":[61,62,63],\"wiggle_delta\":[64,65,66],\"vel_after_wiggle\":[67,68,69]},\"wiggle\":{\"valid\":true,\"applied\":44,\"seg\":31,\"phys_flags\":32,\"ft\":34,\"raw\":45,\"scaled\":46,\"amount\":47,\"vel_before\":[61,62,63],\"delta\":[64,65,66],\"vel_after\":[67,68,69],\"uvec\":[16,17,18]}},\"objects\":[{\"objnum\":3,\"sig\":100,\"obj_type\":4,\"id\":5,\"seg\":6,\"flags\":7,\"size\":8,\"shields\":9,\"lifeleft\":10,\"control_type\":11,\"movement_type\":12,\"render_type\":13,\"viewer\":true,\"pos\":[70,71,72],\"last_pos\":[73,74,75],\"orient\":{\"f\":[80,81,82],\"r\":[83,84,85],\"u\":[86,87,88]}},{\"objnum\":4,\"sig\":-100,\"obj_type\":2,\"id\":6,\"seg\":7,\"flags\":8,\"size\":9,\"shields\":-1,\"lifeleft\":11,\"control_type\":12,\"movement_type\":13,\"render_type\":14,\"viewer\":false,\"pos\":[90,91,92],\"last_pos\":[93,94,95],\"phys_flags\":15,\"vel\":[96,97,98],\"robot_ai\":{\"companion\":1,\"behavior\":2,\"mode\":3,\"cur_state\":4,\"goal_state\":5,\"gun\":6,\"path_dir\":7,\"goal_side\":8,\"danger_obj\":9,\"danger_sig\":10,\"player_seg\":11,\"believed_seg\":12,\"goal_seg\":13,\"prev_vis\":14,\"aware\":15,\"aware_time\":16,\"seen\":-17,\"since\":18,\"next_action\":19,\"next_fire\":20,\"next_fire2\":21,\"path_index\":22,\"path_length\":23,\"hide\":24,\"skip\":25},\"orient\":{\"f\":[100,101,102],\"r\":[103,104,105],\"u\":[106,107,108]}}]}\n"
+	    "{\"type\":\"robot_damage\",\"f\":9,\"gt\":11,\"objnum\":4,\"sig\":-100,\"id\":6,\"size\":9,\"damage\":12,\"shields_before\":10,\"shields_after\":-2,\"dead\":true,\"pos\":[90,91,92],\"vel\":[96,97,98]}\n"
+	    "{\"type\":\"result\",\"frames_decoded\":1,\"objects_emitted\":2,\"truncated\":false}\n";
+	capture_buffer capture = { { 0 }, 0, sizeof(capture.data) - 1 };
 	classic_demo_json_writer writer;
-	classic_demo_json_header header = {16, 3, "mine\"\\\n\t\001", -7, 1, 2, 3, 4, 5};
+	classic_demo_json_header header = { 16, 3, "mine\"\\\n\t\001", -7, 1, 2, 3, 4, 5 };
 	classic_demo_json_frame frame;
 	classic_demo_json_object objects[2];
 	classic_demo_json_robot_damage damage;
-	classic_demo_json_result result = {1, 2, 0};
+	classic_demo_json_result result = { 1, 2, 0 };
 
 	fill_frame(&frame, objects);
 	memset(&damage, 0, sizeof(damage));
@@ -205,8 +205,8 @@ static int test_exact_output(void)
 static int test_standalone_wiggle(void)
 {
 	static const char expected[] =
-		"{\"type\":\"frame\",\"f\":1,\"ft\":2,\"gt\":3,\"level\":4,\"viewer_objnum\":-1,\"object_count\":0,\"player\":{\"objnum\":5,\"score\":0,\"energy\":0,\"shields\":0,\"flags\":0,\"seg\":6,\"phys_flags\":7,\"pos\":[0,0,0],\"last_pos\":[0,0,0],\"vel\":[0,0,0],\"orient\":{\"f\":[0,0,0],\"r\":[0,0,0],\"u\":[0,0,0]},\"control\":{\"valid\":false},\"wiggle\":{\"valid\":true,\"applied\":8,\"seg\":9,\"phys_flags\":10,\"ft\":11,\"raw\":12,\"scaled\":13,\"amount\":14,\"vel_before\":[15,16,17],\"delta\":[18,19,20],\"vel_after\":[21,22,23],\"uvec\":[24,25,26]}},\"objects\":[]}\n";
-	capture_buffer capture = {{0}, 0, sizeof(capture.data) - 1};
+	    "{\"type\":\"frame\",\"f\":1,\"ft\":2,\"gt\":3,\"level\":4,\"viewer_objnum\":-1,\"object_count\":0,\"player\":{\"objnum\":5,\"score\":0,\"energy\":0,\"shields\":0,\"flags\":0,\"seg\":6,\"phys_flags\":7,\"pos\":[0,0,0],\"last_pos\":[0,0,0],\"vel\":[0,0,0],\"orient\":{\"f\":[0,0,0],\"r\":[0,0,0],\"u\":[0,0,0]},\"control\":{\"valid\":false},\"wiggle\":{\"valid\":true,\"applied\":8,\"seg\":9,\"phys_flags\":10,\"ft\":11,\"raw\":12,\"scaled\":13,\"amount\":14,\"vel_before\":[15,16,17],\"delta\":[18,19,20],\"vel_after\":[21,22,23],\"uvec\":[24,25,26]}},\"objects\":[]}\n";
+	capture_buffer capture = { { 0 }, 0, sizeof(capture.data) - 1 };
 	classic_demo_json_writer writer;
 	classic_demo_json_frame frame;
 
@@ -233,15 +233,15 @@ static int test_standalone_wiggle(void)
 	frame.player.wiggle.uvec = vector(24, 25, 26);
 	classic_demo_json_writer_init(&writer, capture_write, &capture);
 	return classic_demo_json_write_frame(&writer, &frame) &&
-		!writer.failed && !strcmp(capture.data, expected);
+	       !writer.failed && !strcmp(capture.data, expected);
 }
 
 static int test_failure_contract(void)
 {
-	capture_buffer capture = {{0}, 0, 16};
+	capture_buffer capture = { { 0 }, 0, 16 };
 	classic_demo_json_writer writer;
-	classic_demo_json_header header = {16, 3, "mission", 0, 0, 0, 0, 0, 0};
-	classic_demo_json_result result = {0, 0, 0};
+	classic_demo_json_header header = { 16, 3, "mission", 0, 0, 0, 0, 0, 0 };
+	classic_demo_json_result result = { 0, 0, 0 };
 	classic_demo_json_frame invalid_frame;
 
 	classic_demo_json_writer_init(&writer, capture_write, &capture);
@@ -254,7 +254,7 @@ static int test_failure_contract(void)
 	capture.fail_after = sizeof(capture.data) - 1;
 	classic_demo_json_writer_init(&writer, capture_write, &capture);
 	return !classic_demo_json_write_frame(&writer, &invalid_frame) &&
-		writer.failed && capture.size == 0;
+	       writer.failed && capture.size == 0;
 }
 
 int main(void)

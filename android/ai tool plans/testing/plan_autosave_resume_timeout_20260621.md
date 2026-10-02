@@ -1,10 +1,12 @@
 # Autosave resume timeout 2026-06-21
 
 ## Goal
+
 - Investigate `test_autosave_resume_missing_pilot_unified` from `report_20260621_122914.md`.
 - Find a durable fix for the suite failure without timeout churn.
 
 ## Plan
+
 - [x] Read project instructions and load the report.
 - [x] Inspect the full per-test log and owning automation script.
 - [x] Identify whether the failure is app behavior, launcher resume detection, or test script state.
@@ -12,6 +14,7 @@
 - [x] Run targeted validation and record results.
 
 ## Notes
+
 - The D1 leg reached `resume_offer_enabled = true` and validated the expected resume candidate.
 - Failure happened later in `assert_button` because `Load Last Save` was not visible to the accessibility scan.
 - Button search only scrolled downward, so a launcher left below the resume panel could keep moving away from the target.

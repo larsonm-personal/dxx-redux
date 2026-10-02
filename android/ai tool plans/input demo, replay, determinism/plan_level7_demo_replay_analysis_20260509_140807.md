@@ -1,11 +1,13 @@
 # Level 7 replay analysis 2026-05-09 140807
 
 ## Goal
+
 - determine why the new D2 level 7 demo desyncs
 - check whether the widened robot projectile recorder coverage exposes the earlier hidden branch directly
 - add general pre-fire gate logging so a fresh demo can capture why robots do not reach the actual-fire branch
 
 ## Steps
+
 - [completed] locate the recorded demo, rng trace, and replay artifact directory for timestamp 20260509_140807
 - [completed] identify the earliest meaningful drift from the recorded result and replay traces
 - [completed] compare the first drift window against the widened robot projectile lifecycle instrumentation and existing AI / impact probes
@@ -15,6 +17,7 @@
 - [completed] rerun the same level 7 replay and confirm the new gate probe appears in the preserved sandbox log
 
 ## Notes
+
 - user provided the replay actual result for temp\\input_demo_runtime_wrapper\\d2\\d2_descent2_level7_20260509_140807 and said the matching rngtrace is in the same directory as the recorded demo
 - cheap check: find the timestamped .dximdemo plus rngtrace, then compare the earliest RNG / state mismatch against any new weapon_create and probe_weapon_life events for robot-owned non-homing shots
 - replayed with -TraceState -TraceRng and confirmed the first player-visible state mismatch at frame 4102 / gt 14268692

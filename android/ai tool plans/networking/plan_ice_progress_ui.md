@@ -49,6 +49,7 @@ Add `iceStatus: IceStatus` to MatchmakingState.
 Replace the current flat NetworkEventsPanel listing with a step-by-step view:
 
 In the LobbyScreen, add a new `IceProgressPanel(state)` composable that shows:
+
 1. [check/spinner/x] STUN Discovery: "full_cone, 3 candidates" / "running..." / "failed"
 2. [check/spinner/x] UPnP: "mapped 203.0.113.5:42424" / "not available"
 3. [check/spinner/x] Peer Exchange: "received from 2 peers" / "waiting..."
@@ -60,12 +61,14 @@ This replaces NetworkEventsPanel. Keep NetworkEventsPanel for the browser screen
 ### C. Update MatchmakingService to Track ICE Phases
 
 In launchStunDiscovery():
+
 - Set phase = STUN_DISCOVERY at start
 - Set phase = STUN_COMPLETE with natType and candidateCount on success
 - Set upnpMapped if UPnP succeeded
 - Set phase = FAILED on error
 
 In launchConnectivityCheck():
+
 - Set phase = PROBING at start
 - Set phase = COMPLETE with probeResult on success
 - Set phase = COMPLETE with probeResult = "relay" on failure/timeout
@@ -77,6 +80,7 @@ Add: netLogFromNative() also calls MatchmakingStateHolder.appendLog() so the lin
 appear in the StatusLog and are visible in the overlay.
 
 The C logs during pilot-select/connecting will then show in:
+
 1. The in-game NetworkEventsOverlay (reads statusLog via stateProvider)
 2. The NetLog export file (already working via existing bridge)
 

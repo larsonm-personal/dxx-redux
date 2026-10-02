@@ -40,17 +40,17 @@ Out of scope:
 ## Result
 
 - added shared cache-clear helper:
-	- `android_merged_wall_cached_texmerge_clear(...)`
+  - `android_merged_wall_cached_texmerge_clear(...)`
 - replaced duplicated local cache-clear loop bodies in both `ogl.c` files with
-	shared helper calls
+  shared helper calls
 - preserved existing `ogl_android_texmerge_cache_initialized = 1` behavior in
-	both games
+  both games
 - validation passed:
-	- `run-code-quality.ps1 -Fix`
-	- Android `:app:assembleDebug :app:testDebugUnitTest`
-	- `run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
-	- `diff_vs_upstream.ps1 -Top 20`
+  - `run-code-quality.ps1 -Fix`
+  - Android `:app:assembleDebug :app:testDebugUnitTest`
+  - `run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
+  - `diff_vs_upstream.ps1 -Top 20`
 - latest churn lines:
-	- `d1/arch/ogl/ogl.c`: `+2075 -50 total 2125`
-	- `d2/arch/ogl/ogl.c`: `+2102 -49 total 2151`
-	- overall totals: `+18171 -801` across `199` files
+  - `d1/arch/ogl/ogl.c`: `+2075 -50 total 2125`
+  - `d2/arch/ogl/ogl.c`: `+2102 -49 total 2151`
+  - overall totals: `+18171 -801` across `199` files

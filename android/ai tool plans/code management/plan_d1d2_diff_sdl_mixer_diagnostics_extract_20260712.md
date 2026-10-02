@@ -23,6 +23,6 @@ SFX latency/start logging out of the upstream-original D1 and D2 mixer files.
 
 ## Result
 
-- D1 moved from 177 to 86 additions and D2 from 173 to 82.  After conditional
+- D1 moved from 177 to 86 additions and D2 from 173 to 82. After conditional
   CMake wiring, 174 inherited additions were removed.
 - All three Android ABI targets compile and link the shared diagnostics source.
