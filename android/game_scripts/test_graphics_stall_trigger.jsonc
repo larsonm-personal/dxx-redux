@@ -4,21 +4,21 @@
         "_info": {
             "games": ["d1", "d2"],
             "_standalone": false,
-            "_owner": "test_graphics_recovery"
-        }
+            "_owner": "test_graphics_recovery",
+        },
     },
     {
         "action": "set_debug",
         "field": "graphics_stall_once",
-        "value": "12000"
+        "value": "12000",
     },
     {
         "action": "set_debug",
         "field": "graphics_queue_option",
-        "value": "tex_filt:2"
+        "value": "tex_filt:2",
     },
     {
         "action": "wait_ms",
-        "ms": 15000
-    }
+        "ms": 15000,
+    },
 ]

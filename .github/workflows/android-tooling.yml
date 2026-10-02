@@ -4,24 +4,24 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'android/**'
-      - 'run-linux-build.sh'
-      - 'run-windows-build.ps1'
-      - 'cmake/**'
-      - 'game_data/mods/d2x-xl/**'
-      - 'd1/main/bmread.c'
-      - 'd2/main/bmread.c'
-      - '.github/workflows/**'
+      - "android/**"
+      - "run-linux-build.sh"
+      - "run-windows-build.ps1"
+      - "cmake/**"
+      - "game_data/mods/d2x-xl/**"
+      - "d1/main/bmread.c"
+      - "d2/main/bmread.c"
+      - ".github/workflows/**"
   push:
     paths:
-      - 'android/**'
-      - 'run-linux-build.sh'
-      - 'run-windows-build.ps1'
-      - 'cmake/**'
-      - 'game_data/mods/d2x-xl/**'
-      - 'd1/main/bmread.c'
-      - 'd2/main/bmread.c'
-      - '.github/workflows/**'
+      - "android/**"
+      - "run-linux-build.sh"
+      - "run-windows-build.ps1"
+      - "cmake/**"
+      - "game_data/mods/d2x-xl/**"
+      - "d1/main/bmread.c"
+      - "d2/main/bmread.c"
+      - ".github/workflows/**"
 
 permissions:
   contents: read

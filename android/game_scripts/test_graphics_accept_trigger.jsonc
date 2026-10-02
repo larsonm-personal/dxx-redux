@@ -4,31 +4,31 @@
         "_info": {
             "games": ["d1", "d2"],
             "_standalone": false,
-            "_owner": "test_graphics_recovery"
-        }
+            "_owner": "test_graphics_recovery",
+        },
     },
     {
         "action": "controller_input",
         "key": "DLEFT",
         "pressed": true,
-        "post_delay_ms": 50
+        "post_delay_ms": 50,
     },
     {
         "action": "controller_input",
         "key": "DLEFT",
         "pressed": false,
-        "post_delay_ms": 50
+        "post_delay_ms": 50,
     },
     {
         "action": "controller_input",
         "key": "A",
         "pressed": true,
-        "post_delay_ms": 50
+        "post_delay_ms": 50,
     },
     {
         "action": "controller_input",
         "key": "A",
         "pressed": false,
-        "post_delay_ms": 50
-    }
+        "post_delay_ms": 50,
+    },
 ]
