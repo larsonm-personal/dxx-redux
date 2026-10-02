@@ -52,14 +52,26 @@ jobs:
       run: cmake --preset=x86-release -D CMAKE_BUILD_TYPE=RelWithDebInfo -D VCPKG_TARGET_TRIPLET=${{ matrix.arch }}-windows -S d1 -B buildd1
 
     - name: Build D1
-      run: cmake --build buildd1
+      run: cmake --build buildd1 --parallel 4
+
+    - name: Test D1
+      env:
+        SDL_AUDIODRIVER: dummy
+        SDL_VIDEODRIVER: dummy
+      run: ctest --test-dir buildd1 --output-on-failure
 
     - name: Configure CMake D2
       shell: pwsh
       run: cmake --preset=x86-release -D CMAKE_BUILD_TYPE=RelWithDebInfo -D VCPKG_TARGET_TRIPLET=${{ matrix.arch }}-windows -S d2 -B buildd2
 
     - name: Build D2
-      run: cmake --build buildd2
+      run: cmake --build buildd2 --parallel 4
+
+    - name: Test D2
+      env:
+        SDL_AUDIODRIVER: dummy
+        SDL_VIDEODRIVER: dummy
+      run: ctest --test-dir buildd2 --output-on-failure
 
     - name: List generated PDB files
       shell: pwsh
@@ -70,6 +82,7 @@ jobs:
       with:
         name: msvc-${{ matrix.arch }}-${{ github.sha }}
         path: 'buildd?/main/*.*'
+        if-no-files-found: error
 
     - name: Upload symbol artifact
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

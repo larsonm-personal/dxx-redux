@@ -37,13 +37,25 @@ jobs:
         run: cmake -S d1 -B buildd1 -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
       - name: Build D1
-        run: cmake --build buildd1
+        run: cmake --build buildd1 --parallel 4
+
+      - name: Test D1
+        env:
+          SDL_AUDIODRIVER: dummy
+          SDL_VIDEODRIVER: dummy
+        run: ctest --test-dir buildd1 --output-on-failure
 
       - name: Configure D2
         run: cmake -S d2 -B buildd2 -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
       - name: Build D2
-        run: cmake --build buildd2
+        run: cmake --build buildd2 --parallel 4
+
+      - name: Test D2
+        env:
+          SDL_AUDIODRIVER: dummy
+          SDL_VIDEODRIVER: dummy
+        run: ctest --test-dir buildd2 --output-on-failure
 
       - name: Package
         run: ./contrib/packaging/macos/build_package.sh
@@ -53,3 +65,4 @@ jobs:
         with:
           name: macos
           path: '*.zip'
+          if-no-files-found: error

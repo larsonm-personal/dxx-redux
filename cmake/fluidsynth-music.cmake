@@ -70,6 +70,11 @@ function(dxx_add_fluidsynth)
         endif()
     endif()
     add_subdirectory("${fluid_SOURCE_DIR}" "${fluid_BINARY_DIR}" EXCLUDE_FROM_ALL)
+    if(WIN32)
+        # Windows loads linked DLLs beside the executables, including host tests
+        set_target_properties(libfluidsynth PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                                                       "${CMAKE_BINARY_DIR}/main")
+    endif()
     # Build only the linked library, not upstream CLI, examples or test executables
     set_property(DIRECTORY "${fluid_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
     if(ANDROID)
