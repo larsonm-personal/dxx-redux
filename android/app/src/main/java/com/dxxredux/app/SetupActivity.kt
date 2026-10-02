@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.res.Configuration
+import android.hardware.input.InputManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -2236,7 +2237,13 @@ class SetupActivity : ComponentActivity() {
     // -- Controller live-state -------------------------------------------
 
     /** Axis values observable by Compose (LX, LY, RX, RY, LT, RT). */
-    internal val controllerAxes = FloatArray(6)
+    internal val controllerAxes = FloatArray(CONTROLLER_SAMPLE_AXIS_COUNT)
+
+    internal var controllerConfigHoldTrigger: ControllerLongPressDetector.Trigger? = null
+    internal var controllerConfigSelectedControl: String? = null
+    internal var controllerConfigBindings: Map<String, String> = emptyMap()
+
+    internal val controllerInputDiagnostics = ControllerInputDiagnostics()
 
     /** D-Pad HAT axis values (hatX, hatY). */
     internal val dpadAxes = FloatArray(2)
@@ -2268,6 +2275,7 @@ class SetupActivity : ComponentActivity() {
 
     /** True while a controller-config picker dialog is open and should receive D-pad/A input. */
     internal var controllerConfigDialogOpen = false
+    internal var controllerConfigActionSelection = 0
 
     /** Active controller-config dialog view for dialog-local key routing. */
     internal var controllerConfigDialogView: View? = null
@@ -2319,6 +2327,7 @@ class SetupActivity : ComponentActivity() {
         targetView: View? = null,
         event: MotionEvent,
     ): Boolean {
+        controllerInputDiagnostics.motion(event)
         if (event.source and InputDevice.SOURCE_JOYSTICK != InputDevice.SOURCE_JOYSTICK ||
             event.action != MotionEvent.ACTION_MOVE
         ) {
@@ -2329,12 +2338,7 @@ class SetupActivity : ComponentActivity() {
             controllerConfigDialogView = targetView.rootView
         }
 
-        controllerAxes[0] = event.getAxisValue(MotionEvent.AXIS_X)
-        controllerAxes[1] = event.getAxisValue(MotionEvent.AXIS_Y)
-        controllerAxes[2] = event.getAxisValue(MotionEvent.AXIS_Z)
-        controllerAxes[3] = event.getAxisValue(MotionEvent.AXIS_RZ)
-        controllerAxes[4] = event.getAxisValue(MotionEvent.AXIS_LTRIGGER)
-        controllerAxes[5] = event.getAxisValue(MotionEvent.AXIS_RTRIGGER)
+        readControllerAxes(event, controllerAxes)
         dpadAxes[0] = event.getAxisValue(MotionEvent.AXIS_HAT_X)
         dpadAxes[1] = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
         axisGeneration.intValue++
@@ -2441,6 +2445,7 @@ class SetupActivity : ComponentActivity() {
         }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        controllerInputDiagnostics.key(event)
         if (LauncherPreviewMediaSession.dispatchKeyEvent(event)) return true
         val name = gamepadButtonName(event.keyCode)
         if (name != null) {
@@ -2831,6 +2836,7 @@ class SetupActivity : ComponentActivity() {
                 dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration.intValue,
                 pressedButtons = pressedButtons,
+                rawControllerInputs = controllerInputDiagnostics.snapshot,
                 pickedImportUris = pendingPickedImportUris.value,
                 lanJoinRequest = pendingLanJoin.value,
                 onLanJoinConsumed = ::consumeLanJoin,
@@ -3082,6 +3088,8 @@ class SetupActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        getSystemService(InputManager::class.java).registerInputDeviceListener(controllerInputDiagnostics, null)
+        controllerInputDiagnostics.refresh()
         try {
             NativeFatalErrorStore.consume(filesDir)?.let { launchFailureMessage.value = it }
         } catch (e: Exception) {
@@ -3238,6 +3246,8 @@ class SetupActivity : ComponentActivity() {
     }
 
     override fun onPause() {
+        getSystemService(InputManager::class.java).unregisterInputDeviceListener(controllerInputDiagnostics)
+        controllerInputDiagnostics.clearLiveState()
         if (launchPreparation.value?.phase == LauncherPreparationPhase.STARTING_GAME) {
             finishLaunchPreparation("activity_started")
         }
@@ -3316,6 +3326,7 @@ private fun SetupScreen(
     dpadAxes: FloatArray,
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
+    rawControllerInputs: ControllerInputDiagnosticsSnapshot,
     pickedImportUris: List<Uri>,
     lanJoinRequest: LanJoinRequest?,
     onLanJoinConsumed: () -> Unit,
@@ -4228,6 +4239,14 @@ private fun SetupScreen(
                 dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration,
                 pressedButtons = pressedButtons,
+                rawControllerInputs = rawControllerInputs,
+                onRawDialogKeyEvent = activity.controllerInputDiagnostics::key,
+                onActionSelectionChanged = { activity.controllerConfigActionSelection = it },
+                onHoldSelectionChanged = { activity.controllerConfigHoldTrigger = it },
+                onMappingStateChanged = { control, bindings ->
+                    activity.controllerConfigSelectedControl = control
+                    activity.controllerConfigBindings = bindings
+                },
                 gameVariant = selectedEngine,
                 controllerNavigationActive = controllerNavigationActive,
                 onDialogGenericMotionEvent = { view, event -> activity.handleControllerMotion(view, event) },
@@ -4352,10 +4371,8 @@ private fun SetupScreen(
                             TextButton(onClick = { showAbout = false }) { Text("OK") }
                         },
                         dismissButton = {
-                            if (!BuildConfig.GITHUB_RELEASE) {
-                                TextButton(onClick = { openPlayStorePage(context) }) {
-                                    Text("Store page")
-                                }
+                            TextButton(onClick = { openPlayStorePage(context) }) {
+                                Text("Store page")
                             }
                         },
                         title = { Text("DXX-Redux") },
@@ -4368,11 +4385,17 @@ private fun SetupScreen(
                                     shortHash = BuildInfo.GIT_SHORT_HASH,
                                     nativeDebugBuild = BuildConfig.NATIVE_DEBUG_BUILD,
                                 )
+                            val storeNote =
+                                if (BuildConfig.GITHUB_RELEASE) {
+                                    "\n\nStore page links to the Play Store version, not this sideload build."
+                                } else {
+                                    ""
+                                }
                             Text(
                                 "$buildLine\n" +
                                     "${AppBuildDetails.aboutText()}\n" +
                                     "Arch: $arch\n" +
-                                    "Renderer: ${BuildConfig.RENDERER}",
+                                    "Renderer: ${BuildConfig.RENDERER}$storeNote",
                             )
                         },
                     )
@@ -5747,6 +5770,7 @@ private fun SetupScreen(
                         dpadAxes = dpadAxes,
                         axisGeneration = axisGeneration,
                         pressedButtons = pressedButtons,
+                        rawControllerInputs = rawControllerInputs,
                         prefs = prefs,
                         selectedGame = selectedEngine,
                         initialFocusRequester = if (shouldSeedLauncherFocus) initialFocus else null,
@@ -5924,6 +5948,7 @@ private fun ControllerSection(
     dpadAxes: FloatArray,
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
+    rawControllerInputs: ControllerInputDiagnosticsSnapshot,
     prefs: SharedPreferences,
     selectedGame: String = "d2",
     initialFocusRequester: FocusRequester? = null,
@@ -6262,5 +6287,6 @@ private fun ControllerSection(
             color = if (pressedButtons.isEmpty()) axisColor else Color(0xFF4CAF50),
         )
         Spacer(modifier = Modifier.height(8.dp))
+        ControllerRawInputReadout(rawControllerInputs)
     }
 }

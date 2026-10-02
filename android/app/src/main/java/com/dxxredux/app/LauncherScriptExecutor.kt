@@ -237,6 +237,17 @@ class LauncherScriptExecutor(
                     currentStep++
                 }
 
+                "controller_input" -> {
+                    val activity = context as SetupActivity
+                    dispatchControllerAutomationInput(
+                        step,
+                        activity::dispatchKeyEvent,
+                        activity::dispatchGenericMotionEvent,
+                    )
+                    delay(step.optLong("post_delay_ms", 100))
+                    currentStep++
+                }
+
                 "test_preview_media_controls" -> {
                     try {
                         testPreviewMediaControls(context, step.getString("audio_path"))

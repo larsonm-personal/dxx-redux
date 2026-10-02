@@ -1,8 +1,6 @@
 package com.dxxredux.app
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -55,22 +53,6 @@ private fun getInstalledVersionCode(context: Context): Int =
     } catch (_: Exception) {
         0
     }
-
-fun openPlayStorePage(context: Context) {
-    val pkg = context.packageName
-    try {
-        context.startActivity(
-            Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg")),
-        )
-    } catch (_: Exception) {
-        context.startActivity(
-            Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse("https://play.google.com/store/apps/details?id=$pkg"),
-            ),
-        )
-    }
-}
 
 /**
  * Banner shown at the top of the launcher when a Play Store update is available.

@@ -140,8 +140,8 @@ static bool load_config_into_playercfg(void)
 		return false;
 	std::ifstream ifs(config_path);
 	struct player_config staged;
-	int staged_axis_deadzone[6];
-	int axis_pct[6];
+	int staged_axis_deadzone[ANDROID_AXIS_MAILBOX_AXIS_BUTTON_COUNT] = {};
+	int axis_pct[ANDROID_AXIS_MAILBOX_AXIS_BUTTON_COUNT] = {};
 	int control_type;
 	int automap_free_flight;
 	json cfg;
@@ -172,6 +172,8 @@ static bool load_config_into_playercfg(void)
 		{ "RS_Y", 3 },
 		{ "LT", 4 },
 		{ "RT", 5 },
+		{ "BRAKE", 11 },
+		{ "GAS", 12 },
 	};
 	static const struct {
 		int keysettings_index;
@@ -207,8 +209,10 @@ static bool load_config_into_playercfg(void)
 		staged.AutomapFreeFlight = static_cast<ubyte>(automap_free_flight);
 		for (size_t i = 0; i < sizeof(axis_map) / sizeof(axis_map[0]); ++i) {
 			int pct;
-			if (!cfg["thresholds"].contains(axis_map[i].name) ||
-			    !json_int_in_range(cfg["thresholds"][axis_map[i].name], 5, 95, &pct))
+			if (axis_map[i].axis >= 11 && !cfg["thresholds"].contains(axis_map[i].name))
+				pct = 30;
+			else if (!cfg["thresholds"].contains(axis_map[i].name) ||
+			         !json_int_in_range(cfg["thresholds"][axis_map[i].name], 5, 95, &pct))
 				return false;
 			axis_pct[axis_map[i].axis] = pct;
 			staged_axis_deadzone[axis_map[i].axis] =
@@ -216,7 +220,7 @@ static bool load_config_into_playercfg(void)
 		}
 		for (size_t i = 0; i < sizeof(analog_deadzone_map) / sizeof(analog_deadzone_map[0]); ++i) {
 			const int bound_axis = staged.KeySettings[1][analog_deadzone_map[i].keysettings_index];
-			if (bound_axis >= 0 && bound_axis < 6)
+			if ((bound_axis >= 0 && bound_axis < 6) || bound_axis == 11 || bound_axis == 12)
 				staged.JoystickDead[analog_deadzone_map[i].deadzone_index] =
 				    threshold_pct_to_playercfg_deadzone(
 				        axis_pct[bound_axis], analog_deadzone_map[i].scale);
@@ -226,7 +230,8 @@ static bool load_config_into_playercfg(void)
 	}
 
 	PlayerCfg = staged;
-	for (int axis = 0; axis < 6; ++axis) {
+	for (const auto &entry : axis_map) {
+		const int axis = entry.axis;
 		joy_axis_button_deadzone[axis] = staged_axis_deadzone[axis];
 		android_axis_mailbox_set_button_deadzone(axis, staged_axis_deadzone[axis]);
 	}

@@ -162,6 +162,20 @@ int main()
 	assert(snapshot.axis_generation[2] == batch_generation);
 	assert(snapshot.axis_generation[10] == batch_generation);
 	assert(snapshot.touch_source[2]);
+	/* BRAKE/GAS retain press/release edges independently of the standard triggers */
+	android_axis_mailbox_reset_for_tests();
+	android_axis_mailbox_publish(11, 25000, 0);
+	android_axis_mailbox_publish(12, 24000, 0);
+	android_axis_mailbox_publish(11, 0, 0);
+	assert(android_axis_mailbox_take_snapshot(&snapshot));
+	assert(snapshot.raw_value[4] == 0 && snapshot.raw_value[5] == 0);
+	assert(snapshot.raw_value[11] == 0 && snapshot.raw_value[12] == 24000);
+	assert(android_axis_mailbox_take_transition(snapshot.batch_generation, &transition));
+	assert(transition.axis == 11 && transition.raw_value == 25000);
+	assert(android_axis_mailbox_take_transition(snapshot.batch_generation, &transition));
+	assert(transition.axis == 12 && transition.raw_value == 24000);
+	assert(android_axis_mailbox_take_transition(snapshot.batch_generation, &transition));
+	assert(transition.axis == 11 && transition.raw_value == 0);
 	puts("android axis mailbox tests passed");
 	return 0;
 }

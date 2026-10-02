@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +45,9 @@ fun GraphicsSettingsPage(
     val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
     val scrollState = rememberScrollState()
     val initialFocus = remember { FocusRequester() }
+    val lastResolutionFocus = remember { FocusRequester() }
+    val fovFocus = remember { FocusRequester() }
+    val firstTextureFilterFocus = remember { FocusRequester() }
     RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
 
     Surface(
@@ -88,21 +92,44 @@ fun GraphicsSettingsPage(
                                 .verticalScroll(scrollState),
                     ) {
                         // -- Render Resolution --
-                        ResolutionSection(filesDir = filesDir, prefs = prefs)
+                        ResolutionSection(
+                            filesDir = filesDir,
+                            prefs = prefs,
+                            lastOptionModifier =
+                                Modifier.focusRequester(lastResolutionFocus).focusProperties {
+                                    down =
+                                        fovFocus
+                                },
+                        )
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Main View FOV --
-                        MainViewFovSection(filesDir = filesDir)
+                        // Wide sliders can lose spatial focus searches to narrow radio buttons
+                        MainViewFovSection(
+                            filesDir = filesDir,
+                            modifier =
+                                Modifier.focusRequester(fovFocus).focusProperties {
+                                    up = lastResolutionFocus
+                                    down = firstTextureFilterFocus
+                                },
+                        )
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Texture Filtering --
-                        TexFilterSection(filesDir = filesDir)
+                        TexFilterSection(
+                            filesDir = filesDir,
+                            firstOptionModifier =
+                                Modifier.focusRequester(firstTextureFilterFocus).focusProperties {
+                                    up =
+                                        fovFocus
+                                },
+                        )
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
@@ -180,13 +207,16 @@ private val MAIN_VIEW_FOV_OPTIONS =
     )
 
 @Composable
-private fun MainViewFovSection(filesDir: File) {
+private fun MainViewFovSection(
+    filesDir: File,
+    modifier: Modifier = Modifier,
+) {
     val ctx = LocalContext.current
     val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
     var value by remember {
         mutableIntStateOf((readConfigValue(filesDir, "MainViewFov") ?: "0").toIntOrNull() ?: 0)
     }
-    MainViewFovControl(value = value, onValueChange = {
+    MainViewFovControl(value = value, modifier = modifier, onValueChange = {
         updateAllConfigFiles(filesDir, listOf("MainViewFov" to it.toString()))
         value = it
         bumpGraphicsSettingsGeneration(prefs)
@@ -197,6 +227,7 @@ private fun MainViewFovSection(filesDir: File) {
 internal fun MainViewFovControl(
     value: Int,
     onValueChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val selectedIndex = MAIN_VIEW_FOV_OPTIONS.indexOfFirst { it.second == value }.takeIf { it >= 0 } ?: 0
     val selected = MAIN_VIEW_FOV_OPTIONS[selectedIndex]
@@ -217,7 +248,7 @@ internal fun MainViewFovControl(
             },
             valueRange = 0f..MAIN_VIEW_FOV_OPTIONS.lastIndex.toFloat(),
             steps = MAIN_VIEW_FOV_OPTIONS.size - 2,
-            modifier = Modifier.weight(1f).tvFocusBorder(),
+            modifier = modifier.weight(1f).tvFocusBorder(),
         )
         Text(
             text = selected.first,
@@ -231,6 +262,7 @@ internal fun MainViewFovControl(
 private fun ResolutionSection(
     filesDir: File,
     prefs: SharedPreferences,
+    lastOptionModifier: Modifier = Modifier,
 ) {
     Text("Render Resolution", fontWeight = FontWeight.Bold, fontSize = 11.sp)
     Spacer(modifier = Modifier.height(1.dp))
@@ -243,7 +275,7 @@ private fun ResolutionSection(
         val stored = prefs.getString("render_resolution", null) ?: ""
         mutableStateOf(if (stored in validValues) stored else defaultValue)
     }
-    options.forEach { (value, label) ->
+    options.forEachIndexed { index, (value, label) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
@@ -256,7 +288,7 @@ private fun ResolutionSection(
                     updateDescentCfgResolution(filesDir, value)
                     bumpGraphicsSettingsGeneration(prefs)
                 },
-                modifier = Modifier.tvFocusBorder(),
+                modifier = (if (index == options.lastIndex) lastOptionModifier else Modifier).tvFocusBorder(),
             )
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
@@ -264,13 +296,16 @@ private fun ResolutionSection(
 }
 
 @Composable
-private fun TexFilterSection(filesDir: File) {
+private fun TexFilterSection(
+    filesDir: File,
+    firstOptionModifier: Modifier = Modifier,
+) {
     val ctx = LocalContext.current
     val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
     var texFilter by remember {
         mutableIntStateOf((readConfigValue(filesDir, "TexFilt") ?: "0").toIntOrNull() ?: 0)
     }
-    TextureFilterControl(value = texFilter, onValueChange = {
+    TextureFilterControl(value = texFilter, firstOptionModifier = firstOptionModifier, onValueChange = {
         updateAllConfigFiles(filesDir, listOf("TexFilt" to it.toString()))
         texFilter = it
         bumpGraphicsSettingsGeneration(prefs)
@@ -281,11 +316,12 @@ private fun TexFilterSection(filesDir: File) {
 internal fun TextureFilterControl(
     value: Int,
     onValueChange: (Int) -> Unit,
+    firstOptionModifier: Modifier = Modifier,
 ) {
     val texFilterOptions = listOf("None (nearest)" to 0, "Bilinear" to 1, "Trilinear" to 2)
     Text("Texture Filtering", fontWeight = FontWeight.Bold, fontSize = 11.sp)
     Spacer(modifier = Modifier.height(1.dp))
-    texFilterOptions.forEach { (label, option) ->
+    texFilterOptions.forEachIndexed { index, (label, option) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
@@ -293,7 +329,7 @@ internal fun TextureFilterControl(
             RadioButton(
                 selected = value == option,
                 onClick = { onValueChange(option) },
-                modifier = Modifier.tvFocusBorder(),
+                modifier = (if (index == 0) firstOptionModifier else Modifier).tvFocusBorder(),
             )
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }

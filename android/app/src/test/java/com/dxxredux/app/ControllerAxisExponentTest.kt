@@ -26,9 +26,11 @@ class ControllerAxisExponentTest {
 
     @Test
     fun clampedMapKeepsKnownAxisDefaults() {
-        val exponents = clampedControllerAxisExponents(mapOf("RS_X" to 2.5f, "unknown" to 4.0f))
+        val exponents = clampedControllerAxisExponents(mapOf("RS_X" to 2.5f, "BRAKE" to 3f, "unknown" to 4.0f))
 
-        assertEquals(6, exponents.size)
+        assertEquals(8, exponents.size)
+        assertEquals(3f, exponents["BRAKE"] ?: 0f, 0.0001f)
+        assertEquals(DEFAULT_CONTROLLER_AXIS_EXPONENT, exponents["GAS"] ?: 0f, 0.0001f)
         assertEquals(2.5f, exponents["RS_X"] ?: 0f, 0.0001f)
         assertEquals(DEFAULT_CONTROLLER_AXIS_EXPONENT, exponents["LS_X"] ?: 0f, 0.0001f)
         assertTrue("unknown" !in exponents)

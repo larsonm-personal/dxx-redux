@@ -8,6 +8,24 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ControllerConfigSerializationTest {
+    @Test
+    fun independentShouldersAndAxesCompileToDistinctRuntimeInputs() {
+        val bindings = mapOf("L2" to "Fire Primary", "R2" to "Fire Secondary", "BRAKE" to "Fire Flare", "GAS" to "Drop Bomb")
+        for (game in listOf("d1", "d2")) {
+            val settings = buildJoySettingsArray(buildJoyPairs(bindings, emptySet(), game), game)
+            val result = buildJoyPairs(mapOf("BRAKE" to "Throttle", "GAS" to "Slide L/R"), emptySet(), game)
+            val analogSettings = buildJoySettingsArray(result, game)
+            assertEquals(11, analogSettings[23].toInt() and 0xFF)
+            assertEquals(12, analogSettings[17].toInt() and 0xFF)
+            assertEquals(29, settings[if (game == "d1") 33 else 35].toInt() and 0xFF)
+            assertEquals(31, settings[if (game == "d1") 43 else 45].toInt() and 0xFF)
+        }
+        assertEquals(26, BUTTON_CONTROLS.getValue("L2"))
+        assertEquals(27, BUTTON_CONTROLS.getValue("R2"))
+        assertEquals(4, AXIS_CONTROLS.getValue("LT"))
+        assertEquals(5, AXIS_CONTROLS.getValue("RT"))
+    }
+
     private fun nativeBytes(count: Int): JSONArray = JSONArray().apply { repeat(count) { put(255) } }
 
     private fun validNativeConfig(): JSONObject =

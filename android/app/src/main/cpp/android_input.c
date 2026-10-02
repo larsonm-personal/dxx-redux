@@ -38,6 +38,7 @@
 #include "joy.h"
 #include "mouse.h"
 #include "playsave.h"
+#include "kconfig.h"
 #ifdef NETWORK
 #include "multi.h"
 #endif
@@ -1140,6 +1141,10 @@ void android_lifecycle_actions_game_tick(int screen_is_game, int has_game_window
 			return;
 
 		if (visibility == ANDROID_LIFECYCLE_VISIBILITY_FOREGROUND) {
+			/* Launcher edits must reach the running engine, not only Kotlin input maps */
+			extern int android_reload_live_gamepad_config(void);
+			if (has_game_window && android_reload_live_gamepad_config())
+				kc_set_controls();
 			android_profile_resume();
 			mix_background_resume();
 			RBABackgroundResume();

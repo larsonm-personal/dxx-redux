@@ -16,8 +16,12 @@ internal val BUTTON_CONTROLS =
         "Start" to 7,
         "L3" to 8,
         "R3" to 9,
+        "L2" to 26,
+        "R2" to 27,
         "LT" to 19,
         "RT" to 21,
+        "BRAKE" to 29,
+        "GAS" to 31,
     )
 
 // Virtual axis indices for each physical stick/trigger axis.
@@ -29,6 +33,8 @@ internal val AXIS_CONTROLS =
         "RS_Y" to 3,
         "LT" to 4,
         "RT" to 5,
+        "BRAKE" to 11,
+        "GAS" to 12,
     )
 
 // Axis-button SDL indices: axis -> (negative button, positive button).
@@ -41,6 +47,8 @@ internal val AXIS_BUTTON_SDL =
         "RS_Y" to Pair(16, 17),
         "LT" to Pair(18, 19),
         "RT" to Pair(20, 21),
+        "BRAKE" to Pair(28, 29),
+        "GAS" to Pair(30, 31),
     )
 
 /*
@@ -189,7 +197,7 @@ const val DEFAULT_STICK_DEAD_ZONE = 10
 const val DEFAULT_CONTROLLER_AXIS_EXPONENT = 1.0f
 
 // Axis IDs that support per-axis thresholds.
-private val THRESHOLD_AXES = listOf("LS_X", "LS_Y", "RS_X", "RS_Y", "LT", "RT")
+private val THRESHOLD_AXES = AXIS_CONTROLS.keys.toList()
 private val STICK_THRESHOLD_AXES = setOf("LS_X", "LS_Y", "RS_X", "RS_Y")
 
 private fun defaultThresholdForAxis(axis: String): Int =

@@ -157,6 +157,7 @@ fun Modifier.tvFocusable(): Modifier =
 
 fun Modifier.repeatVerticalDpadFocus(
     downFocusRequester: FocusRequester? = null,
+    useTraversalOrder: Boolean = false,
     onMove: ((direction: Int) -> Boolean)? = null,
 ): Modifier =
     composed {
@@ -174,6 +175,10 @@ fun Modifier.repeatVerticalDpadFocus(
 
         fun moveFocus(direction: Int) {
             if (currentOnMove?.invoke(direction) == true) return
+            if (useTraversalOrder) {
+                focusManager.moveFocus(if (direction < 0) FocusDirection.Previous else FocusDirection.Next)
+                return
+            }
             if (direction < 0) {
                 focusManager.moveFocus(FocusDirection.Up)
             } else {

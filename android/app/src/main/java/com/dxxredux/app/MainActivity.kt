@@ -861,7 +861,7 @@ class MainActivity :
     // Loaded from controller_config.json; used in onGenericMotionEvent()
     private var halfAxisCombiners = emptyList<Triple<Int, Int, Int>>()
     private var controllerAxisExponents = defaultControllerAxisExponents()
-    private val rawAxisValues = FloatArray(6) // LX, LY, RX, RY, LT, RT
+    private val rawAxisValues = FloatArray(CONTROLLER_SAMPLE_AXIS_COUNT)
 
     // Input mixer: combines button/axis from touch, controller, gyro
     private lateinit var inputMixer: InputMixer
@@ -2273,6 +2273,7 @@ class MainActivity :
         gyroManager?.pause()
         suspendUiWork()
         controllerKeys.releaseAll()
+        controllerAxisMetaKeys.releaseAll()
         controllerMenuAxes.reset { _, _ -> }
         controllerMenuAxesActive = false
         hatXState = 0
@@ -3427,11 +3428,13 @@ class MainActivity :
 
     /** Load controller meta-action bindings from controller_config.json. */
     private fun loadMetaBindings() {
+        controllerAxisMetaKeys.releaseAll()
         buttonMetaBindings = emptyMap()
         controllerBoundActions = emptySet()
         dpadMetaBindings = emptyMap()
         halfAxisCombiners = emptyList()
         controllerAxisExponents = defaultControllerAxisExponents()
+        controllerAxisThresholds = defaultThresholds()
         mixerButtonMap = emptyMap()
 
         val file = File(filesDir, "controller_config.json")
@@ -3448,6 +3451,12 @@ class MainActivity :
                 val loaded = mutableMapOf<String, Float>()
                 for (key in exponentsObj.keys()) loaded[key] = exponentsObj.getDouble(key).toFloat()
                 controllerAxisExponents = clampedControllerAxisExponents(loaded)
+            }
+            json.optJSONObject("thresholds")?.let { thresholds ->
+                controllerAxisThresholds =
+                    defaultThresholds().mapValues { (axis, default) ->
+                        thresholds.optInt(axis, default).coerceIn(5, 95)
+                    }
             }
             if (json.has("meta_bindings")) {
                 val meta = json.getJSONObject("meta_bindings")
@@ -3702,6 +3711,8 @@ class MainActivity :
             KeyEvent.KEYCODE_BUTTON_START -> 7
             KeyEvent.KEYCODE_BUTTON_THUMBL -> 8
             KeyEvent.KEYCODE_BUTTON_THUMBR -> 9
+            KeyEvent.KEYCODE_BUTTON_L2 -> BUTTON_CONTROLS.getValue("L2")
+            KeyEvent.KEYCODE_BUTTON_R2 -> BUTTON_CONTROLS.getValue("R2")
             else -> -1
         }
 
@@ -3948,6 +3959,8 @@ class MainActivity :
 
     // â”€â”€ Gamepad analog axes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private val controllerKeys = ControllerKeyDispatch()
+    private val controllerAxisMetaKeys = ControllerKeyDispatch()
+    private var controllerAxisThresholds = defaultThresholds()
     private val controllerMenuAxes = ControllerMenuAxes()
     private var controllerMenuAxesActive = false
 
@@ -3958,6 +3971,26 @@ class MainActivity :
         if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
             event.action == MotionEvent.ACTION_MOVE
         ) {
+            for ((control, motionAxis) in CONTROLLER_MOTION_AXES) {
+                val buttons = AXIS_BUTTON_SDL.getValue(control)
+                val value = controllerAxisValue(control, event.getAxisValue(motionAxis))
+                val threshold = controllerAxisThresholds.getValue(control) / 100f
+                for ((button, active) in listOf(
+                    buttons.first to (value < -threshold),
+                    buttons.second to (value > threshold),
+                )) {
+                    val meta = buttonMetaBindings[button] ?: continue
+                    if (active) {
+                        controllerAxisMetaKeys.press(button, 0, false) {
+                            { pressed ->
+                                dispatchMetaAction(meta, pressed)
+                            }
+                        }
+                    } else {
+                        controllerAxisMetaKeys.release(button)
+                    }
+                }
+            }
             if (gameSurfaceView.keyboardActive) {
                 val lx = event.getAxisValue(MotionEvent.AXIS_X)
                 val ly = event.getAxisValue(MotionEvent.AXIS_Y)
@@ -4024,6 +4057,8 @@ class MainActivity :
             rawAxisValues[3] = ry
             rawAxisValues[4] = lt
             rawAxisValues[5] = rt
+            rawAxisValues[11] = controllerAxisValue("BRAKE", event.getAxisValue(MotionEvent.AXIS_BRAKE))
+            rawAxisValues[12] = controllerAxisValue("GAS", event.getAxisValue(MotionEvent.AXIS_GAS))
             val controllerAxes =
                 mutableMapOf(
                     0 to lx,
@@ -4032,11 +4067,13 @@ class MainActivity :
                     3 to ry,
                     4 to lt,
                     5 to rt,
+                    11 to rawAxisValues[11],
+                    12 to rawAxisValues[12],
                 )
             // Compute half-axis combiner virtual axes
             for ((virt, posSource, negSource) in halfAxisCombiners) {
-                val pos = if (posSource in 0..5) rawAxisValues[posSource] else 0f
-                val neg = if (negSource in 0..5) rawAxisValues[negSource] else 0f
+                val pos = if (posSource in rawAxisValues.indices) rawAxisValues[posSource] else 0f
+                val neg = if (negSource in rawAxisValues.indices) rawAxisValues[negSource] else 0f
                 controllerAxes[virt] = (pos - neg).coerceIn(-1f, 1f)
             }
             inputMixer.setAxes("ctrl", controllerAxes)

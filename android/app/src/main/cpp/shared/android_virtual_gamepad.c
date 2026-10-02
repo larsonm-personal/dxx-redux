@@ -59,4 +59,28 @@ void android_virtual_gamepad_init(int *axis_map, int *button_map,
 		button_map[button] = button;
 		button_text[button] = d_strdup(temp);
 	}
+
+	/* Independent digital shoulders and BRAKE/GAS axes, matching Kotlin control maps */
+	for (j = 0; j < 2; j++) {
+		const char *name = j == 0 ? "BRAKE" : "GAS";
+		int axis = 11 + j;
+		int button = 28 + j * 2;
+		axis_map[axis] = axis;
+		axis_button_map[axis] = button;
+		sprintf(temp, "J1 %s", name);
+		axis_text[axis] = d_strdup(temp);
+		sprintf(temp, "J1 -%s", name);
+		button_text[button] = d_strdup(temp);
+		sprintf(temp, "J1 +%s", name);
+		button_text[button + 1] = d_strdup(temp);
+		button_map[26 + j] = 26 + j;
+		sprintf(temp, "J1 %s", j == 0 ? "L2" : "R2");
+		button_text[26 + j] = d_strdup(temp);
+	}
+	for (j = 13; j < ANDROID_VIRTUAL_GAMEPAD_AXES; j++) {
+		axis_map[j] = j;
+		axis_button_map[j] = -1;
+		sprintf(temp, "J1 VC%d", j - 10);
+		axis_text[j] = d_strdup(temp);
+	}
 }

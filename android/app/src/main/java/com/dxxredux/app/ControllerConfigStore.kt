@@ -130,8 +130,6 @@ internal fun isNativeControllerConfigValid(json: JSONObject): Boolean {
     }
 }
 
-private const val VIRTUAL_AXIS_BASE = 8
-
 // Col1 -> Col2 kc_joystick index map for BT_JOY_BUTTON entries.
 // Must match kc_joystick[] layout in d2/main/kconfig.c / d1/main/kconfig.c.
 // Used to place secondary button bindings (e.g., d-pad) when col1 is already taken.
@@ -226,11 +224,11 @@ internal fun buildJoyPairs(
         handledAsHalfAxis.add(controlId)
     }
 
-    var nextVirtual = VIRTUAL_AXIS_BASE
+    var nextVirtual = 0
     val combiners = mutableListOf<Triple<Int, Int, Int>>()
     for ((axisFunc, entries) in halfAxisGroups) {
         val kcIdx = AXIS_KC_INDEX[axisFunc] ?: continue
-        val virtualAxis = nextVirtual++
+        val virtualAxis = CONTROLLER_COMBINER_AXES[nextVirtual++]
         indices.add(kcIdx)
         values.add(virtualAxis)
         indices.add(kcIdx + 1)

@@ -1,0 +1,15 @@
+[
+    {"action": "key", "key": "escape", "post_delay_ms": 200},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "controller_input", "axes": {"BRAKE": 0.875, "GAS": 0.875}, "post_delay_ms": 300},
+    {"action": "assert", "expect": {"fire_primary_state": 0, "fire_secondary_state": 0}},
+    {"action": "controller_input", "axes": {"BRAKE": 0, "GAS": 0}},
+    {"action": "controller_input", "key": "L2", "pressed": true, "post_delay_ms": 300},
+    {"action": "assert", "expect": {"fire_primary_state": {"ne": 0}, "fire_secondary_state": 0}},
+    {"action": "controller_input", "key": "L2", "pressed": false, "post_delay_ms": 300},
+    {"action": "assert", "expect": {"fire_primary_state": 0}},
+    {"action": "controller_input", "key": "R2", "pressed": true, "post_delay_ms": 300},
+    {"action": "assert", "expect": {"fire_primary_state": 0, "fire_secondary_state": {"ne": 0}}},
+    {"action": "controller_input", "key": "R2", "pressed": false, "post_delay_ms": 300},
+    {"action": "assert", "expect": {"fire_primary_state": 0, "fire_secondary_state": 0}}
+]

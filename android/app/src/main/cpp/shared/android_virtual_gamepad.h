@@ -1,11 +1,11 @@
 #ifndef ANDROID_VIRTUAL_GAMEPAD_H
 #define ANDROID_VIRTUAL_GAMEPAD_H
 
-/* Virtual IDs shared with TouchBindings.kt and MainActivity.kt */
+/* Virtual IDs shared with ControllerInputs.kt, ControllerConfigModel.kt and TouchBindings.kt */
 #define ANDROID_VIRTUAL_GAMEPAD_BASE_AXES    8
 #define ANDROID_VIRTUAL_GAMEPAD_BASE_BUTTONS 10
-#define ANDROID_VIRTUAL_GAMEPAD_AXES         11
-#define ANDROID_VIRTUAL_GAMEPAD_BUTTONS      26
+#define ANDROID_VIRTUAL_GAMEPAD_AXES         16
+#define ANDROID_VIRTUAL_GAMEPAD_BUTTONS      32
 
 /* Arrays need AXES/BUTTONS entries; names use the engine's d_strdup allocator
  * Only registered slots are written, preserving unused SDL map entries */

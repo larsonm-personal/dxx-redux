@@ -8,19 +8,66 @@ import org.json.JSONObject
 
 internal fun controllerAutomationKeyCode(name: String): Int =
     when (name.uppercase()) {
-        "A" -> KeyEvent.KEYCODE_BUTTON_A
-        "B" -> KeyEvent.KEYCODE_BUTTON_B
-        "X" -> KeyEvent.KEYCODE_BUTTON_X
-        "Y" -> KeyEvent.KEYCODE_BUTTON_Y
-        "L1" -> KeyEvent.KEYCODE_BUTTON_L1
-        "R1" -> KeyEvent.KEYCODE_BUTTON_R1
-        "SELECT" -> KeyEvent.KEYCODE_BUTTON_SELECT
-        "START" -> KeyEvent.KEYCODE_BUTTON_START
-        "DUP" -> KeyEvent.KEYCODE_DPAD_UP
-        "DDOWN" -> KeyEvent.KEYCODE_DPAD_DOWN
-        "DLEFT" -> KeyEvent.KEYCODE_DPAD_LEFT
-        "DRIGHT" -> KeyEvent.KEYCODE_DPAD_RIGHT
-        else -> error("Unknown controller key: $name")
+        "A" -> {
+            KeyEvent.KEYCODE_BUTTON_A
+        }
+
+        "B" -> {
+            KeyEvent.KEYCODE_BUTTON_B
+        }
+
+        "X" -> {
+            KeyEvent.KEYCODE_BUTTON_X
+        }
+
+        "Y" -> {
+            KeyEvent.KEYCODE_BUTTON_Y
+        }
+
+        "L1" -> {
+            KeyEvent.KEYCODE_BUTTON_L1
+        }
+
+        "R1" -> {
+            KeyEvent.KEYCODE_BUTTON_R1
+        }
+
+        "L2" -> {
+            KeyEvent.KEYCODE_BUTTON_L2
+        }
+
+        "R2" -> {
+            KeyEvent.KEYCODE_BUTTON_R2
+        }
+
+        "SELECT" -> {
+            KeyEvent.KEYCODE_BUTTON_SELECT
+        }
+
+        "START" -> {
+            KeyEvent.KEYCODE_BUTTON_START
+        }
+
+        "DUP" -> {
+            KeyEvent.KEYCODE_DPAD_UP
+        }
+
+        "DDOWN" -> {
+            KeyEvent.KEYCODE_DPAD_DOWN
+        }
+
+        "DLEFT" -> {
+            KeyEvent.KEYCODE_DPAD_LEFT
+        }
+
+        "DRIGHT" -> {
+            KeyEvent.KEYCODE_DPAD_RIGHT
+        }
+
+        else -> {
+            name.toIntOrNull()?.also { require(it in 0..KeyEvent.getMaxKeyCode()) }
+                ?: error("Unknown controller key: $name")
+        }
     }
 
 /** Exercise Activity dispatch, including configured bindings, instead of bypassing it through SDL */
@@ -59,11 +106,17 @@ internal fun dispatchControllerAutomationInput(
                 "RS_Y" to MotionEvent.AXIS_RZ,
                 "HAT_X" to MotionEvent.AXIS_HAT_X,
                 "HAT_Y" to MotionEvent.AXIS_HAT_Y,
+                "LT" to MotionEvent.AXIS_LTRIGGER,
+                "RT" to MotionEvent.AXIS_RTRIGGER,
+                "BRAKE" to MotionEvent.AXIS_BRAKE,
+                "GAS" to MotionEvent.AXIS_GAS,
             )
         val properties = MotionEvent.PointerProperties().apply { id = 0 }
         val coordinates = MotionEvent.PointerCoords()
         for (name in axes.keys()) {
-            val axis = ids[name] ?: error("Unknown controller axis: $name")
+            val axis =
+                ids[name] ?: name.toIntOrNull()?.also { require(it in 0..63) }
+                    ?: error("Unknown controller axis: $name")
             coordinates.setAxisValue(axis, axes.getDouble(name).toFloat())
         }
         val event =

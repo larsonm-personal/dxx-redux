@@ -19,7 +19,7 @@ text{font-family:Arial,Helvetica,sans-serif}
 <g id="controller">
 <path id="left-trigger" class="part" d="M563 387 L565 354 Q565 341 592 339 L684 337 Q710 337 715 351 L724 385 Z"/>
 <path id="right-trigger" class="part" d="M1076 385 L1085 351 Q1090 337 1116 337 L1208 339 Q1235 341 1235 354 L1237 387 Z"/>
-<text class="hardware" x="641" y="367">LT</text><text class="hardware" x="1159" y="367">RT</text>
+<text class="hardware" x="641" y="367">LT/L2</text><text class="hardware" x="1159" y="367">RT/R2</text>
 <path id="body" d="M562 395 Q603 368 686 387 L768 408 Q900 430 1032 408 L1114 387 Q1197 368 1238 395 Q1281 427 1307 535 L1382 913 Q1397 986 1345 1014 Q1298 1039 1253 988 L1121 843 Q1067 817 1020 837 Q900 869 780 837 Q733 817 679 843 L547 988 Q502 1039 455 1014 Q403 986 418 913 L493 535 Q519 427 562 395 Z" fill="#353535" stroke="#999" stroke-width="3"/>
 <path d="M473 974 Q496 920 536 783 M1327 974 Q1304 920 1264 783" fill="none" stroke="#555" stroke-width="3"/>
 <path id="left-bumper" class="part" d="M551 418 Q568 379 615 378 L690 380 Q721 384 731 420 Z"/>
@@ -36,10 +36,10 @@ text{font-family:Arial,Helvetica,sans-serif}
 <circle class="part" cx="1221" cy="554" r="33"/><text class="hardware" x="1221" y="563">B</text>
 <circle class="part" cx="1160" cy="615" r="33"/><text class="hardware" x="1160" y="624">A</text>
 </g></g>
-<g id="lt-label"><text class="label" x="400" y="168" text-anchor="middle">LT / SECONDARY FIRE</text>
+<g id="lt-label"><text class="label" x="400" y="168" text-anchor="middle">LT/L2 / SECONDARY FIRE</text>
 </g>
 <polyline id="lt-line" class="leader" points="400,188 400,244 620,345"/><circle cx="620" cy="345" r="4" fill="#ffe260"/>
-<g id="rt-label"><text class="label" x="1400" y="168" text-anchor="middle">RT / PRIMARY FIRE</text>
+<g id="rt-label"><text class="label" x="1400" y="168" text-anchor="middle">RT/R2 / PRIMARY FIRE</text>
 </g>
 <polyline id="rt-line" class="leader" points="1400,188 1400,244 1180,345"/><circle cx="1180" cy="345" r="4" fill="#ffe260"/>
 <g id="select-label"><text class="label" x="750" y="168" text-anchor="middle">SELECT / VIEW</text>

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.os.SystemClock
 import android.view.InputDevice
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Toast
@@ -16,6 +17,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,6 +42,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -88,7 +92,7 @@ private const val NAV_INPUT_THRESHOLD = 0.5f
 private const val FRESH_AXIS_SAMPLE_POLL_MS = 50L
 private const val FRESH_AXIS_SAMPLE_POLLS = 4
 private const val ACTION_BUTTON_COLUMNS = 2
-private const val ACTION_BUTTON_ROWS = 3
+private const val ACTION_BUTTON_ROWS = 6
 private val actionButtonHighlightShape = RoundedCornerShape(6.dp)
 
 private fun moveActionButtonSelection(
@@ -119,6 +123,8 @@ private fun refreshAxisIndicesForControl(controlId: String?): Pair<Set<Int>, Set
         "RS" -> setOf(2, 3) to emptySet()
         "LT" -> setOf(4) to emptySet()
         "RT" -> setOf(5) to emptySet()
+        "BRAKE" -> setOf(11) to emptySet()
+        "GAS" -> setOf(12) to emptySet()
         "DLeft", "DRight" -> emptySet<Int>() to setOf(0)
         "DUp", "DDown" -> emptySet<Int>() to setOf(1)
         else -> emptySet<Int>() to emptySet()
@@ -205,11 +211,16 @@ private fun axisPosLabel(funcLabel: String): String =
 // ── Main Composable ─────────────────────────────────────────────────────────
 
 @Composable
-fun ControllerConfigPage(
+internal fun ControllerConfigPage(
     axes: FloatArray,
     dpadAxes: FloatArray,
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
+    rawControllerInputs: ControllerInputDiagnosticsSnapshot = ControllerInputDiagnosticsSnapshot(),
+    onRawDialogKeyEvent: (KeyEvent) -> Unit = {},
+    onActionSelectionChanged: (Int) -> Unit = {},
+    onHoldSelectionChanged: (ControllerLongPressDetector.Trigger?) -> Unit = {},
+    onMappingStateChanged: (String?, Map<String, String>) -> Unit = { _, _ -> },
     gameVariant: String = "d2",
     controllerNavigationActive: Boolean = false,
     onDialogGenericMotionEvent: ((View, MotionEvent) -> Boolean)? = null,
@@ -290,13 +301,24 @@ fun ControllerConfigPage(
     var showDpadPicker by remember { mutableStateOf(false) }
     var showSlotDialog by remember { mutableStateOf(false) }
     var showControllerPresetPicker by remember { mutableStateOf(false) }
+    var showRawInputs by remember { mutableStateOf(false) }
     var selectedActionButtonIndex by remember { mutableIntStateOf(0) }
+    SideEffect { onActionSelectionChanged(selectedActionButtonIndex) }
     var suppressActionButtonARelease by remember { mutableStateOf(false) }
     var staleAxisIndices by remember { mutableStateOf(emptySet<Int>()) }
     var staleDpadIndices by remember { mutableStateOf(emptySet<Int>()) }
     var refreshAxisJob by remember { mutableStateOf<Job?>(null) }
     val longPressDetector = remember { ControllerLongPressDetector() }
     val axisGenerationState by rememberUpdatedState(axisGeneration)
+    SideEffect { onMappingStateChanged(selectedControl, bindings.toMap()) }
+
+    DisposableEffect(Unit) {
+        onHoldSelectionChanged(null)
+        onDispose {
+            onHoldSelectionChanged(null)
+            onMappingStateChanged(null, emptyMap())
+        }
+    }
 
     fun logPickerState(message: String) {
         LauncherDebugLog.log("[ctrl-picker] $message")
@@ -352,7 +374,8 @@ fun ControllerConfigPage(
     val ry = if (3 in staleAxisIndices) 0f else axes[3]
     val lt = if (4 in staleAxisIndices) 0f else axes[4]
     val rt = if (5 in staleAxisIndices) 0f else axes[5]
-    val effectiveAxes = floatArrayOf(lx, ly, rx, ry, lt, rt)
+    val effectiveAxes = axes.copyOf(CONTROLLER_SAMPLE_AXIS_COUNT)
+    for (index in staleAxisIndices) effectiveAxes[index] = 0f
     val effectiveDpadAxes = floatArrayOf(hatX, hatY)
 
     LaunchedEffect(axisGeneration) {
@@ -406,13 +429,15 @@ fun ControllerConfigPage(
 
             5 -> "RT"
 
+            11 -> "BRAKE"
+
+            12 -> "GAS"
+
             else -> null
         }
 
     fun heldButtonControlId(buttonName: String): String? =
         when (buttonName) {
-            "L2" -> "LT"
-            "R2" -> "RT"
             "D-Up" -> "DUp"
             "D-Down" -> "DDown"
             "D-Left" -> "DLeft"
@@ -424,11 +449,12 @@ fun ControllerConfigPage(
     val showButtonPickerState by rememberUpdatedState(showButtonPicker)
     val showStickPickerState by rememberUpdatedState(showStickPicker)
     val showDpadPickerState by rememberUpdatedState(showDpadPicker)
+    val showRawInputsState by rememberUpdatedState(showRawInputs)
     val axesState by rememberUpdatedState(effectiveAxes)
     val dpadAxesState by rememberUpdatedState(effectiveDpadAxes)
     val pressedButtonsState by rememberUpdatedState(pressedButtons)
 
-    val pickerOpen = showButtonPicker || showStickPicker || showDpadPicker
+    val pickerOpen = showButtonPicker || showStickPicker || showDpadPicker || showRawInputs
 
     DisposableEffect(pickerOpen) {
         onPickerOpenChanged(pickerOpen)
@@ -474,7 +500,12 @@ fun ControllerConfigPage(
                 2 -> exportSelection()
                 3 -> importSelection()
                 4 -> cancelSelection()
-                else -> saveSelection()
+                5 -> saveSelection()
+                6, 7 -> showRawInputs = true
+                8 -> openControlPicker("BRAKE")
+                9 -> openControlPicker("GAS")
+                10 -> openControlPicker("L2")
+                11 -> openControlPicker("R2")
             }
         },
     )
@@ -483,9 +514,13 @@ fun ControllerConfigPage(
         var previousNavX = 0
         var previousNavY = 0
         var wasADown = false
+        var wasBDown = false
         while (true) {
-            val pickerOpen = showButtonPickerState || showStickPickerState || showDpadPickerState
+            val pickerOpen = showButtonPickerState || showStickPickerState || showDpadPickerState || showRawInputsState
             val currentButtons = pressedButtonsState.toList()
+            val bDown = "B" in currentButtons
+            if (showRawInputsState && wasBDown && !bDown) showRawInputs = false
+            wasBDown = bDown
             val trigger =
                 longPressDetector.update(
                     nowMs = SystemClock.elapsedRealtime(),
@@ -501,6 +536,7 @@ fun ControllerConfigPage(
                     null -> null
                 }
             if (openedControl != null) {
+                onHoldSelectionChanged(trigger)
                 logPickerState("trigger opened=$openedControl trigger=$trigger pickerOpen=$pickerOpen")
                 if (trigger is ControllerLongPressDetector.Trigger.Button && trigger.buttonName == "A") {
                     suppressActionButtonARelease = true
@@ -1149,6 +1185,44 @@ fun ControllerConfigPage(
                 )
             }
 
+            // Digital shoulders remain distinct from LT/RT and BRAKE/GAS axes
+            for ((control, cx) in listOf("L2" to lgCx, "R2" to rgCx)) {
+                val buttonY = gripY + scale * 0.105f
+                val buttonX = cx - bumperW / 2f
+                val pressed = control in pressedButtons
+                drawRoundRect(
+                    color = if (pressed) cActive else cInactive,
+                    topLeft = Offset(buttonX, buttonY),
+                    size = Size(bumperW, bumperH),
+                    cornerRadius = CornerRadius(bumperH / 2f),
+                )
+                drawLabel(textMeasurer, control, cx, buttonY + bumperH / 2f, scale)
+                val pad = scale * 0.008f
+                controlBounds[control] =
+                    Rect(buttonX - pad, buttonY - pad, buttonX + bumperW + pad, buttonY + bumperH + pad)
+                bindings[control]?.let { function ->
+                    if (control == "L2") {
+                        drawFuncLabelRightAligned(
+                            textMeasurer,
+                            abbreviate(function),
+                            buttonX - scale * 0.01f,
+                            buttonY + bumperH / 2f,
+                            scale,
+                            cAssignLabel,
+                        )
+                    } else {
+                        drawFuncLabelLeftAligned(
+                            textMeasurer,
+                            abbreviate(function),
+                            buttonX + bumperW + scale * 0.01f,
+                            buttonY + bumperH / 2f,
+                            scale,
+                            cAssignLabel,
+                        )
+                    }
+                }
+            }
+
             // R3 (stick press) – small circle, up-right from right stick
             val r3Cx = rsCx + l3Offset * invSqrt2
             val r3Cy = rsCy - l3Offset * invSqrt2
@@ -1325,7 +1399,7 @@ fun ControllerConfigPage(
                 color = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = "Tap to assign",
+                text = "Tap to assign; hold 2s (axis >=80%)",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1390,6 +1464,7 @@ fun ControllerConfigPage(
         Spacer(modifier = Modifier.height(4.dp))
 
         // ── Live readout ──
+        ControllerRawInputSummary(rawControllerInputs)
         val activeButtonsStr = pressedButtons.joinToString(", ").ifEmpty { "none" }
         Text(
             text = "Pressed buttons: $activeButtonsStr",
@@ -1556,6 +1631,53 @@ fun ControllerConfigPage(
         }
     }
 
+    val infoWithRawInputs: @Composable ColumnScope.() -> Unit = {
+        infoAndButtons()
+        Spacer(modifier = Modifier.height(4.dp))
+        OutlinedButton(
+            onClick = { showRawInputs = true },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(36.dp)
+                    .then(actionButtonModifier(actionButtonHighlightVisible && selectedActionButtonIndex in 6..7))
+                    .focusProperties { canFocus = false },
+        ) { Text("Raw inputs", fontSize = 12.sp) }
+        Text("Additional inputs", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        for ((rowIndex, controls) in listOf(listOf("BRAKE", "GAS"), listOf("L2", "R2")).withIndex()) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for ((column, control) in controls.withIndex()) {
+                    val selectionIndex = 8 + rowIndex * 2 + column
+                    val bringIntoView = remember { BringIntoViewRequester() }
+                    LaunchedEffect(selectedActionButtonIndex, actionButtonHighlightVisible) {
+                        if (actionButtonHighlightVisible &&
+                            selectedActionButtonIndex == selectionIndex
+                        ) {
+                            bringIntoView.bringIntoView()
+                        }
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            selectedActionButtonIndex = selectionIndex
+                            openControlPicker(control)
+                        },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .bringIntoViewRequester(bringIntoView)
+                                .then(
+                                    actionButtonModifier(
+                                        actionButtonHighlightVisible && selectedActionButtonIndex == selectionIndex,
+                                    ),
+                                ).focusProperties { canFocus = false },
+                    ) {
+                        Text("$control: ${bindings[control] ?: "None"}", fontSize = 11.sp)
+                    }
+                }
+            }
+        }
+    }
+
     // ── Layout ──
 
     Surface(
@@ -1588,7 +1710,7 @@ fun ControllerConfigPage(
                                 .verticalScroll(rightScroll)
                                 .padding(start = 8.dp),
                     ) {
-                        infoAndButtons()
+                        infoWithRawInputs()
                     }
                     ScrollArrows(rightScroll)
                 }
@@ -1611,7 +1733,7 @@ fun ControllerConfigPage(
                     )
                 }
                 Spacer(modifier = Modifier.height(6.dp))
-                infoAndButtons()
+                infoWithRawInputs()
             }
         }
     }
@@ -1699,20 +1821,32 @@ fun ControllerConfigPage(
             .map { it.value }
             .toSet()
 
+    if (showRawInputs) {
+        AlertDialog(
+            onDismissRequest = { showRawInputs = false },
+            modifier =
+                Modifier.onPreviewKeyEvent { event ->
+                    onRawDialogKeyEvent(event.nativeKeyEvent)
+                    if (event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_BUTTON_B) {
+                        if (event.nativeKeyEvent.action == KeyEvent.ACTION_UP) showRawInputs = false
+                        true
+                    } else {
+                        false
+                    }
+                },
+            title = { Text("Raw controller inputs") },
+            text = {
+                DialogGenericMotionBridge(onDialogGenericMotionEvent, onDialogViewChanged)
+                ControllerRawInputReadout(rawControllerInputs, requestFocus = true)
+            },
+            confirmButton = { TextButton(onClick = { showRawInputs = false }) { Text("Close") } },
+        )
+    }
+
     if (showButtonPicker && selectedControl != null) {
-        val isTrigger = selectedControl == "LT" || selectedControl == "RT"
-        val axisKey =
-            when (selectedControl) {
-                "LT" -> "LT"
-                "RT" -> "RT"
-                else -> null
-            }
-        val axisVal =
-            when (selectedControl) {
-                "LT" -> lt
-                "RT" -> rt
-                else -> null
-            }
+        val isTrigger = selectedControl in listOf("LT", "RT", "BRAKE", "GAS")
+        val axisKey = selectedControl?.takeIf { isTrigger }
+        val axisVal = axisKey?.let { effectiveAxes[AXIS_CONTROLS.getValue(it)] }
         ButtonFunctionPickerDialog(
             controlLabel = selectedControl!!,
             currentFunc = bindings[selectedControl!!],
@@ -1949,6 +2083,7 @@ private fun ButtonFunctionPickerDialog(
             BUTTON_FUNCTIONS
         }
     val isAxisFunc = currentFunc != null && (currentFunc in AXIS_KC_INDEX || currentFunc in HALF_AXIS_MAP)
+    var showAxisFunctions by remember { mutableStateOf(isAxisFunc) }
     val usesDeadZone = currentFunc in HALF_AXIS_MAP
     val thresholdLabel = if (usesDeadZone) "Dead zone" else "Threshold"
     val thresholdRange = if (usesDeadZone) 0f..95f else 5f..95f
@@ -2023,6 +2158,14 @@ private fun ButtonFunctionPickerDialog(
                     }
                     // Single-direction axis options (for triggers)
                     if (axisFunctions.isNotEmpty()) {
+                        TextButton(onClick = { showAxisFunctions = !showAxisFunctions }) {
+                            Text(
+                                if (showAxisFunctions) "Hide axis functions" else "Axis functions",
+                                fontSize = PICKER_FONT_SIZE,
+                            )
+                        }
+                    }
+                    if (showAxisFunctions && axisFunctions.isNotEmpty()) {
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "Single-Direction Axis",
@@ -2111,7 +2254,7 @@ private fun ButtonFunctionPickerDialog(
         },
         confirmButton = {
             if (currentFunc != null) {
-                TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(saveFocus)) { Text("Save") }
+                TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(saveFocus)) { Text("Done") }
             }
         },
         dismissButton = {

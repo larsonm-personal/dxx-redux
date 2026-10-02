@@ -48,6 +48,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var coopSessionOnly = false
     private var lobbyLatencyOnly = false
     private var lanQrOnly = false
+    private var sliderNavigationOnly = false
 
     override fun onCreate(arguments: Bundle?) {
         if (arguments?.getString("suite") == "engine_query") {
@@ -56,6 +57,7 @@ class RecoveryInstrumentation : Instrumentation() {
         }
         lobbyLatencyOnly = arguments?.getString("suite") == "lobby_latency"
         lanQrOnly = arguments?.getString("suite") == "lan_qr"
+        sliderNavigationOnly = arguments?.getString("suite") == "slider_navigation"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         coopSessionOnly = arguments?.getString("suite") == "coop_session"
         super.onCreate(arguments)
@@ -65,6 +67,12 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (sliderNavigationOnly) {
+                SliderNavigationChecks(this).run()
+                result.putString("stream", "PASS: controller slider navigation and adjustment\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (lanQrOnly) {
                 LanQrChecks(this).run()
                 result.putString("stream", "PASS: QR reveal, rendered decoding, reset and link routing\n")

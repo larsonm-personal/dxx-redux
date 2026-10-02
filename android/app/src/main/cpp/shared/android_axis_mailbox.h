@@ -1,8 +1,9 @@
 #ifndef ANDROID_AXIS_MAILBOX_H
 #define ANDROID_AXIS_MAILBOX_H
 
-#define ANDROID_AXIS_MAILBOX_AXIS_COUNT        11
-#define ANDROID_AXIS_MAILBOX_AXIS_BUTTON_COUNT 8
+/* Counts match android_virtual_gamepad.h; BRAKE/GAS use axes 11/12 */
+#define ANDROID_AXIS_MAILBOX_AXIS_COUNT        16
+#define ANDROID_AXIS_MAILBOX_AXIS_BUTTON_COUNT 13
 
 #ifdef __cplusplus
 extern "C" {

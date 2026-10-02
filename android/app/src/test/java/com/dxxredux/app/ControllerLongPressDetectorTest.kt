@@ -6,6 +6,82 @@ import org.junit.Test
 
 class ControllerLongPressDetectorTest {
     @Test
+    fun simultaneousTriggerAxisAndMirroredButtonChooseAxisOnce() {
+        for ((axisIndex, button) in listOf(4 to "L2", 5 to "R2", 11 to "L2", 12 to "R2")) {
+            val detector = ControllerLongPressDetector()
+            val axes = FloatArray(CONTROLLER_SAMPLE_AXIS_COUNT)
+            axes[axisIndex] = 0.9f
+            val buttons = listOf(button)
+
+            assertNull(detector.update(0, axes, pressedButtons = buttons, gated = false))
+            assertNull(detector.update(1999, axes, pressedButtons = buttons, gated = false))
+            assertEquals(
+                ControllerLongPressDetector.Trigger.Axis(axisIndex, positive = true),
+                detector.update(2000, axes, pressedButtons = buttons, gated = false),
+            )
+            assertNull(detector.update(4000, axes, pressedButtons = buttons, gated = false))
+        }
+    }
+
+    @Test
+    fun triggerAxisTimerSurvivesLaterMirroredButton() {
+        for ((axisIndex, button) in listOf(4 to "L2", 5 to "R2", 11 to "L2", 12 to "R2")) {
+            val detector = ControllerLongPressDetector()
+            val axes = FloatArray(CONTROLLER_SAMPLE_AXIS_COUNT)
+            axes[axisIndex] = 0.9f
+
+            assertNull(detector.update(0, axes, pressedButtons = emptyList(), gated = false))
+            assertNull(detector.update(1000, axes, pressedButtons = listOf(button), gated = false))
+            assertEquals(
+                ControllerLongPressDetector.Trigger.Axis(axisIndex, positive = true),
+                detector.update(2000, axes, pressedButtons = listOf(button), gated = false),
+            )
+        }
+    }
+
+    @Test
+    fun triggerAxisArrivingAtButtonDeadlineSuppressesButtonPicker() {
+        for ((axisIndex, button) in listOf(4 to "L2", 5 to "R2", 11 to "L2", 12 to "R2")) {
+            val detector = ControllerLongPressDetector()
+            val axes = FloatArray(CONTROLLER_SAMPLE_AXIS_COUNT)
+            val buttons = listOf(button)
+
+            assertNull(detector.update(0, axes, pressedButtons = buttons, gated = false))
+            axes[axisIndex] = 0.9f
+            assertNull(detector.update(2000, axes, pressedButtons = buttons, gated = false))
+            assertEquals(
+                ControllerLongPressDetector.Trigger.Axis(axisIndex, positive = true),
+                detector.update(4000, axes, pressedButtons = buttons, gated = false),
+            )
+        }
+    }
+
+    @Test
+    fun digitalOnlyTriggerStillChoosesButton() {
+        for (button in listOf("L2", "R2")) {
+            val detector = ControllerLongPressDetector()
+            val axes = FloatArray(6)
+            val buttons = listOf(button)
+
+            assertNull(detector.update(0, axes, pressedButtons = buttons, gated = false))
+            assertEquals(
+                ControllerLongPressDetector.Trigger.Button(button),
+                detector.update(2000, axes, pressedButtons = buttons, gated = false),
+            )
+        }
+    }
+
+    @Test
+    fun triggerAxisDoesNotIgnoreUnrelatedButton() {
+        val detector = ControllerLongPressDetector()
+        val axes = FloatArray(6)
+        axes[4] = 0.9f
+
+        assertNull(detector.update(0, axes, pressedButtons = listOf("R2"), gated = false))
+        assertNull(detector.update(2000, axes, pressedButtons = listOf("R2"), gated = false))
+    }
+
+    @Test
     fun axisHeldAloneTriggersOncePerHold() {
         val detector = ControllerLongPressDetector()
         val axes = FloatArray(6)

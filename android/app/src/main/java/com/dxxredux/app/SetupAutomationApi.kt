@@ -25,6 +25,7 @@ internal const val SETUP_COMMAND_RESULT_FAILED = 1
 // Compose dialogs have their own window; target the focused root rather than
 // discovering buttons or injecting gestures into the covered activity
 private fun SetupActivity.automationRootView(): View {
+    controllerConfigDialogView?.takeIf { controllerConfigDialogOpen && it.isShown }?.let { return it }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         WindowInspector.getGlobalWindowViews().lastOrNull { it.isShown && it.hasWindowFocus() }?.let { return it }
     }
@@ -816,6 +817,38 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         root.put("screen", "setup")
         root.put("can_launch", d2Ready || d1Ready)
         root.put("about_build_info", AppBuildDetails.aboutText())
+        val rawControllerInputs = controllerInputDiagnostics.snapshot.toJson()
+        root.put("controller_raw_inputs", rawControllerInputs)
+        root.put(
+            "controller_mapping",
+            JSONObject()
+                .put("active", controllerConfigActive)
+                .put("dialog_open", controllerConfigDialogOpen)
+                .put("action_index", controllerConfigActionSelection)
+                .put("axes", JSONArray(controllerAxes.toList()))
+                .put("selected_control", controllerConfigSelectedControl ?: JSONObject.NULL)
+                .put("bindings", JSONObject(controllerConfigBindings))
+                .put(
+                    "last_hold_trigger",
+                    when (val trigger = controllerConfigHoldTrigger) {
+                        is ControllerLongPressDetector.Trigger.Axis -> {
+                            JSONObject()
+                                .put("kind", "axis")
+                                .put("axis_index", trigger.axisIndex)
+                                .put("positive", trigger.positive)
+                        }
+
+                        is ControllerLongPressDetector.Trigger.Button -> {
+                            JSONObject().put("kind", "button").put("button_name", trigger.buttonName)
+                        }
+
+                        null -> {
+                            JSONObject.NULL
+                        }
+                    },
+                ),
+        )
+        AtomicFilePublication.writeUtf8(File(dir, "controller_raw_inputs.json"), rawControllerInputs.toString(2) + "\n")
         root.put("launch_error", launchPreflightFailure ?: JSONObject.NULL)
         root.put("active_set", activeSet)
         val runningGamePid = automationRunningGameProcessPid()

@@ -2731,7 +2731,11 @@ extern "C" char *game_introspect_get_state(void)
 	/* -- Live axis state (always available -- useful for binding tests) -- */
 	{
 		json axes = json::array();
+#ifdef ANDROID
+		for (int i = 0; i < ANDROID_AXIS_MAILBOX_AXIS_COUNT; i++) {
+#else
 		for (int i = 0; i < 8; i++) {
+#endif
 			axes.push_back({ { "axis", i },
 			                 { "raw", Controls.raw_joy_axis[i] },
 			                 { "value", Controls.joy_axis[i] } });
@@ -2740,7 +2744,7 @@ extern "C" char *game_introspect_get_state(void)
 #if defined(ANDROID)
 		json axis_button_down_edges = json::array();
 		json axis_button_up_edges = json::array();
-		for (int button = 0; button < 26; ++button) {
+		for (int button = 0; button < 32; ++button) {
 			axis_button_down_edges.push_back(joy_axisbutton_get_down_edges(button));
 			axis_button_up_edges.push_back(joy_axisbutton_get_up_edges(button));
 		}
@@ -2811,6 +2815,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["slide_on_state"] = (int) Controls.slide_on_state;
 		j["bank_on_state"] = (int) Controls.bank_on_state;
 		j["fire_primary_state"] = (int) Controls.fire_primary_state;
+		j["fire_secondary_state"] = (int) Controls.fire_secondary_state;
 		j["fire_primary_count"] = (int) Controls.fire_primary_count;
 		j["global_laser_firing_count"] = Global_laser_firing_count;
 		j["next_laser_fire_delta"] = (long long) (Next_laser_fire_time - GameTime64);

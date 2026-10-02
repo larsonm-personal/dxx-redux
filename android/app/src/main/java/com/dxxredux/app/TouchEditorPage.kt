@@ -544,6 +544,7 @@ fun TouchEditorPage(
                             modifier =
                                 Modifier
                                     .verticalScroll(panelScrollState)
+                                    .repeatVerticalDpadFocus(useTraversalOrder = true)
                                     .padding(horizontal = 12.dp, vertical = 8.dp),
                         ) {
                             when (panelType) {
@@ -2563,8 +2564,8 @@ private fun StickPropertiesPanel(
 
     // Deadzone & sensitivity
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        LabeledSlider("Deadzone", stick.deadzone.toFloat(), 0f, 50f, Modifier.weight(1f)) {
-            onUpdate(stick.copy(deadzone = it.toInt()))
+        LabeledIntSlider("Deadzone", stick.deadzone, 0, 50, Modifier.weight(1f), steps = 49) {
+            onUpdate(stick.copy(deadzone = it))
         }
         LabeledSlider(
             "Sens: $xLabel",
@@ -3494,7 +3495,7 @@ private fun MoreActionsPropertiesPanel(
 // ═════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun LabeledSlider(
+internal fun LabeledSlider(
     label: String,
     value: Float,
     min: Float,
@@ -3514,12 +3515,13 @@ private fun LabeledSlider(
 }
 
 @Composable
-private fun LabeledIntSlider(
+internal fun LabeledIntSlider(
     label: String,
     value: Int,
     min: Int,
     max: Int,
     modifier: Modifier = Modifier,
+    steps: Int = 0,
     onChange: (Int) -> Unit,
 ) {
     Column(modifier = modifier) {
@@ -3528,6 +3530,7 @@ private fun LabeledIntSlider(
             value = value.toFloat(),
             onValueChange = { onChange(it.roundToInt().coerceIn(min, max)) },
             valueRange = min.toFloat()..max.toFloat(),
+            steps = steps,
             modifier = Modifier.height(28.dp).tvFocusBorder(),
         )
     }
@@ -4166,6 +4169,7 @@ private fun GyroSettingsDialog(
     var refRoll by remember { mutableStateOf(gyro.refRoll) }
 
     AlertDialog(
+        modifier = Modifier.repeatVerticalDpadFocus(useTraversalOrder = true),
         onDismissRequest = onDismiss,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {

@@ -38,6 +38,8 @@ internal class ControllerLongPressDetector(
 
         val heldButtons = pressedButtons.distinct()
 
+        // Evaluate axes first so simultaneous holds choose the analog binding
+        // A trigger's mirrored L2/R2 is allowed here and blocked by axisBusy below
         for (axisIndex in 0 until AXIS_COUNT) {
             val value = axisValue(axes, axisIndex)
             val sign = value.sign()
@@ -231,13 +233,15 @@ internal class ControllerLongPressDetector(
             when (axisIndex) {
                 4 -> "L2"
                 5 -> "R2"
+                11 -> "L2"
+                12 -> "R2"
                 else -> null
             }
         return heldButtons.any { it != mirroredButton }
     }
 
     private companion object {
-        private const val AXIS_COUNT = 6
+        private const val AXIS_COUNT = CONTROLLER_SAMPLE_AXIS_COUNT
         private const val DPAD_AXIS_COUNT = 2
         private const val STATE_INACTIVE = -1L
         private const val STATE_TRIGGERED = -2L

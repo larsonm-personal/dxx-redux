@@ -113,10 +113,24 @@ internal object FileProviderGrantStore {
     ): File {
         require(rootName in roots) { "Unsupported FileProvider cache root" }
         DebugLog.flush()
+        val rawControllerInputs =
+            runCatching {
+                (context as? SetupActivity)
+                    ?.controllerInputDiagnostics
+                    ?.snapshot
+                    ?.toJson()
+                    ?.toString(2)
+                    ?: File(context.filesDir, "controller_raw_inputs.json").takeIf { it.isFile }?.readText()
+            }.getOrElse { "[unavailable: ${it.message}]" }
+        val rawAppendix =
+            rawControllerInputs
+                ?.let {
+                    "\n=== Raw controller inputs at log export (recent events are historical) ===\n$it\n"
+                }.orEmpty()
         return copyLogSnapshotFile(
             File(context.cacheDir, rootName),
             source,
-            LogAssetSnapshot.capture(context.filesDir).toByteArray(Charsets.UTF_8),
+            (LogAssetSnapshot.capture(context.filesDir) + rawAppendix).toByteArray(Charsets.UTF_8),
             onProgress,
         )
     }
