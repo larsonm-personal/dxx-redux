@@ -8,7 +8,10 @@ $adb = Resolve-RegressionAndroidSdkTool -DepBase $depBase -Subdir 'platform-tool
 $sdk = Split-Path (Split-Path $adb)
 $versions = @{}
 Get-Content (Join-Path $repoRoot 'android/get_deps/tool_versions.conf') | ForEach-Object {
-    if ($_ -match '^(NDK_VERSION|CMAKE_VERSION|MIN_SDK)=(.+)$') { $versions[$Matches[1]] = $Matches[2] }
+    if ($_ -match '^(NDK_VERSION|CMAKE_VERSION)=(.+)$') { $versions[$Matches[1]] = $Matches[2] }
+}
+Get-Content (Join-Path $repoRoot 'android/distribution_versions.conf') | ForEach-Object {
+    if ($_ -match '^CURRENT_MIN_SDK=(.+)$') { $versions.MIN_SDK = $Matches[1] }
 }
 $device = if ($Serial) { @('-s', $Serial) } else { @() }
 $abi = (& $adb @device shell getprop ro.product.cpu.abi).Trim()

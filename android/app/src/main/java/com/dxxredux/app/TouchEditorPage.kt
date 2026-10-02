@@ -395,7 +395,18 @@ fun TouchEditorPage(
         )
     val coroutineScope = rememberCoroutineScope()
     val isPortrait = LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT
-    val targetOverlayBounds = activity?.windowManager?.currentWindowMetrics?.bounds
+    val targetOverlayBounds =
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            activity?.windowManager?.currentWindowMetrics?.bounds
+        } else {
+            @Suppress("DEPRECATION")
+            activity?.windowManager?.defaultDisplay?.let { display ->
+                val size = android.graphics.Point()
+                @Suppress("DEPRECATION")
+                display.getRealSize(size)
+                android.graphics.Rect(0, 0, size.x, size.y)
+            }
+        }
     val targetOverlayWidth = targetOverlayBounds?.width()?.toFloat()?.takeIf { it > 0f } ?: canvasWidth
     val targetOverlayHeight = targetOverlayBounds?.height()?.toFloat()?.takeIf { it > 0f } ?: canvasHeight
     val density = LocalDensity.current

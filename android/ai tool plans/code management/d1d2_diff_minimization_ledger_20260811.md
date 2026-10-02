@@ -113,7 +113,7 @@ The seven-path and deletion-count differences between the views include upstream
 | `DMR1-CHUNK-005` | `TODO` | 5 | Paired scene-object profiler scan | 52-56 | Low-medium | Batch 1 green; no second scan or allocation | Pending |
 | `DMR1-CHUNK-006` | `TODO` | 6 | Remaining D2 input-demo helper residue | 50-58 | Medium | Earlier chunks green; exact replay ordering retained | Pending |
 | `DMR1-CHUNK-007` | `DEFERRED` | 7 | D2 direct-restore slot parser | 28-31 | Low | Coherent state-adjacent reason; below standalone threshold | Threshold deferral |
-| `DMR1-CHUNK-008` | `DEFERRED` | 8 | Paired last-player retention predicates | 24-28 | Low | Coherent adjacent config work | Threshold deferral |
+| `DMR1-CHUNK-008` | `TODO` | 8 | Paired last-player retention and loaded graphics setup | 56-62 | Low-medium | Coherent adjacent config work now scoped by GQ1-CHUNK-0289 | Reactivated 2026-10-01 under GQF-0201/GQR-0188; preserve native first-run/music/format |
 | `DMR1-CHUNK-009` | `DEFERRED` | 9 | Paired network resync request mechanism | 35-45 | High | Separate correctness reason and deterministic host-loss coverage | Risk/payoff deferral |
 | `DMR1-AUDIT-001` | `TODO` | 10 | Final residual path accounting and rerank | 0 | Low | Last accepted implementation chunk | Pending |
 
@@ -266,3 +266,10 @@ The initial full-diff survey assigns the live surface as follows. `DMR1-AUDIT-00
 - Out-of-scope worktree check: Initial and final status and the complete scoped diff were audited. This worker did not edit, format, revert, stage, delete, or otherwise change any out-of-scope dirty path. During validation, external orchestration advanced `HEAD` from `0498798fc927581626c3f5978e219c68e64990c0` to `34ed94767d2a2dbca3e07dd1ba672be467cfb3f1` and committed the chunk together with pre-existing and concurrent work; the chunk paths are present and clean at the new head. The final live dirty paths are `plan_next_30_local_correctness_fixes_20260811.md`, `LanDiscoveryTab.kt`, `android/outstanding_bugs.md`, `lan_game_result_first_20260811.md`, and `plan_coop_save_death_spew_lifetime_20260811.md`; none was touched by this worker. No out-of-scope dirty path changed because of this chunk
 - Residual and rerank: DMR1-CHUNK-003 is the next eligible item. Its prerequisite is satisfied, and this chunk moved no frame orchestration
 - Root acceptance: accepted after review of the scoped implementation and source-list/test wiring, independent confirmation of D1 `+239/-28` and D2 `+391/-28` against `upstream/main`, and a clean scoped `git diff --check`. The focused D1/D2 CTest, game-target links, configured Android ABI links, and the unrelated umbrella Windows failure are recorded precisely. The concurrent HEAD advance and subsequent D1/D2 state edits are isolated in survey generation 2 above
+
+## 2026-10-01 reactivation of DMR1-CHUNK-008
+
+- GQ1-CHUNK-0289 supplies coherent adjacent config work: exact paired eighteen-line loaded graphics synchronization plus the existing identical six-line/ten-line retention helpers, 68 raw inherited lines and modeled 56..62 net reduction
+- Canonical implementation owner is GQF-0201/GQR-0188 in general_code_quality_ledger_20260811.md; do not dispatch a competing predicate extraction
+- Use existing auto_net.c/.h for explicit current/saved-name selection and android_graphics_options.c/.h for already-parsed loaded graphics application; retain native first-run/music defaults and file-format keys/layout, add no subsystem or private-layout facade
+- Required acceptance adds exact filter/global/FOV application and actual paired config round trips to the existing empty/coop/transient/ordinary pilot and desktop/no-file startup checks, plus isolated savings and paired build validation

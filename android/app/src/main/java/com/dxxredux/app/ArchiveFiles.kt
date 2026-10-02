@@ -1,5 +1,6 @@
 package com.dxxredux.app
 
+import android.os.Build
 import net.sf.sevenzipjbinding.ExtractOperationResult
 import net.sf.sevenzipjbinding.ISequentialOutStream
 import net.sf.sevenzipjbinding.PropID
@@ -437,10 +438,15 @@ private fun extractRarWithSevenZipBinding(
     }
 }
 
+// JVM tests use the host tar path with SDK_INT=0; Android needs the API-26 process APIs
+@Suppress("NewApi")
 private fun extractRarWithHostTar(
     archive: File,
     targetRoot: File,
 ) {
+    if (Build.VERSION.SDK_INT in 1..25) {
+        throw IOException("Native RAR backend is unavailable; host tar fallback requires Android 8.0 or newer")
+    }
     validateHostTarArchiveOutputs(archive, targetRoot)
     val diagnosticFile = File(targetRoot.parentFile, "${targetRoot.name}.tar.log")
     diagnosticFile.delete()
@@ -484,6 +490,7 @@ private fun extractRarWithHostTar(
     }
 }
 
+@android.annotation.TargetApi(26)
 private fun validateHostTarArchiveOutputs(
     archive: File,
     targetRoot: File,

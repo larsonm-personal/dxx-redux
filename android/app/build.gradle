@@ -4,12 +4,20 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
-// Direct-install distribution, selected by release-github.ps1
-def githubRelease = (project.findProperty('githubRelease') ?: 'false').toBoolean()
+// Three distributions share the UI/engine and retain the existing Gradle task names
+// Default: Play; githubRelease: matching direct APK; legacyRelease: API-23 direct APK
+def legacyRelease = (project.findProperty('legacyRelease') ?: 'false').toBoolean()
+def githubRelease = legacyRelease || (project.findProperty('githubRelease') ?: 'false').toBoolean()
 
 // Load tool versions from central config
 def toolVersions = new Properties()
 toolVersions.load(new FileInputStream(rootProject.file("get_deps/tool_versions.conf")))
+
+def distributionVersions = new Properties()
+distributionVersions.load(new FileInputStream(rootProject.file('distribution_versions.conf')))
+def distributionPrefix = legacyRelease ? 'LEGACY' : 'CURRENT'
+def distributionMinSdk = distributionVersions["${distributionPrefix}_MIN_SDK"].toInteger()
+def distributionTargetSdk = distributionVersions["${distributionPrefix}_TARGET_SDK"].toInteger()
 
 // Load keystore.properties if it exists (for release signing)
 def keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -245,6 +253,38 @@ def launcherIconSource = new File(launcherArtDir, "icon_512.png")
 def launcherTvBannerSource = new File(launcherArtDir, "tv_banner.png")
 def generatedLauncherResDir = file("$buildDir/generated/icon-res/main")
 
+// Keep one maintained manifest; direct APKs exclude Play's provider and app ID entirely
+def directInstallManifest = layout.buildDirectory.file('generated/direct-install/AndroidManifest.xml')
+if (githubRelease) {
+    tasks.register('generateDirectInstallManifest') {
+        inputs.file('src/main/AndroidManifest.xml')
+        outputs.file(directInstallManifest)
+        doLast {
+            def factory = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+            factory.setNamespaceAware(true)
+            def document = factory.newDocumentBuilder().parse(file('src/main/AndroidManifest.xml'))
+            def application = document.getElementsByTagName('application').item(0)
+            def androidNamespace = 'http://schemas.android.com/apk/res/android'
+            application.setAttributeNS(androidNamespace, 'android:vmSafeMode', '@bool/legacy_vm_safe_mode')
+            for (def child = application.firstChild; child != null;) {
+                def next = child.nextSibling
+                if (child instanceof org.w3c.dom.Element && child.getAttributeNS(androidNamespace, 'name') in [
+                        'com.google.android.gms.games.APP_ID',
+                        'com.google.android.gms.games.provider.PlayGamesInitProvider']) {
+                    application.removeChild(child)
+                }
+                child = next
+            }
+            def outputFile = directInstallManifest.get().asFile
+            outputFile.parentFile.mkdirs()
+            def transformer = javax.xml.transform.TransformerFactory.newInstance().newTransformer()
+            transformer.transform(new javax.xml.transform.dom.DOMSource(document),
+                new javax.xml.transform.stream.StreamResult(outputFile))
+        }
+    }
+    tasks.named('preBuild').configure { dependsOn('generateDirectInstallManifest') }
+}
+
 def readLauncherPng = { File inputFile ->
     if (!inputFile.exists()) {
         throw new GradleException("Missing launcher art: ${inputFile}. Put the PNG in android/app_images/")
@@ -345,16 +385,22 @@ android {
 
     defaultConfig {
         testInstrumentationRunner "com.dxxredux.app.RecoveryInstrumentation"
-        applicationId githubRelease ? "com.dxxredux.app.github" : "com.dxxredux.app"
+        applicationId legacyRelease ? "com.dxxredux.app.github.legacy" :
+            (githubRelease ? "com.dxxredux.app.github" : "com.dxxredux.app")
         manifestPlaceholders = [
-            launcherLabel: githubRelease ? 'DXX-Redux (GitHub)' : 'DXX-Redux',
+            launcherLabel: legacyRelease ? 'DXX-Redux (Legacy)' : (githubRelease ? 'DXX-Redux (GitHub)' : 'DXX-Redux'),
             playGamesEnabled: (!githubRelease).toString()
         ]
-        minSdk toolVersions['MIN_SDK'].toInteger()
-        targetSdk toolVersions['TARGET_SDK'].toInteger()
+        minSdk distributionMinSdk
+        targetSdk distributionTargetSdk
         versionCode gitVersionCode
         versionName project.findProperty('versionNameOverride') ?: "1.1"
         buildConfigField "boolean", "GITHUB_RELEASE", githubRelease.toString()
+        buildConfigField "boolean", "LEGACY_RELEASE", legacyRelease.toString()
+        buildConfigField "int", "MIN_SDK", distributionMinSdk.toString()
+        buildConfigField "int", "TARGET_SDK", distributionTargetSdk.toString()
+        // Android 6 ART can miscompile large coroutine methods; native engines stay compiled
+        resValue "bool", "legacy_vm_safe_mode", legacyRelease.toString()
 
         def opengl = (project.findProperty('useOpenGL') ?: 'true') == 'true'
         buildConfigField "String", "RENDERER", "\"${opengl ? 'OpenGL ES' : 'Software'}\""
@@ -424,6 +470,10 @@ android {
 
     sourceSets {
         main {
+            kotlin.srcDir(githubRelease ? 'src/directInstall/java' : 'src/playServices/java')
+            if (githubRelease) {
+                manifest.srcFile(directInstallManifest.get().asFile)
+            }
             res.srcDir(generatedLauncherResDir)
             assets.srcDir(generatedAcoustIdAssetsDir)
         }
@@ -444,6 +494,8 @@ android {
     }
 
     compileOptions {
+        // NIO, time and collection APIs are also used by archive/QR dependencies
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
@@ -469,6 +521,7 @@ tasks.withType(Test).configureEach {
 }
 
 dependencies {
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs_nio:${toolVersions['DESUGAR_JDK_LIBS_VERSION']}"
     implementation project(':mission-metadata-core')
     implementation "androidx.core:core-ktx:${toolVersions['CORE_KTX_VERSION']}"
     implementation "androidx.appcompat:appcompat:${toolVersions['APPCOMPAT_VERSION']}"
@@ -484,11 +537,13 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${toolVersions['KOTLINX_SERIALIZATION_VERSION']}"
 
     // Google Play Games Services (GPGS v2) for player identity
-    implementation "com.google.android.gms:play-services-games-v2:${toolVersions['PLAY_SERVICES_GAMES_VERSION']}"
+    if (!githubRelease) {
+        implementation "com.google.android.gms:play-services-games-v2:${toolVersions['PLAY_SERVICES_GAMES_VERSION']}"
 
-    // Play Store In-App Update check
-    implementation "com.google.android.play:app-update:${toolVersions['APP_UPDATE_VERSION']}"
-    implementation "com.google.android.play:app-update-ktx:${toolVersions['APP_UPDATE_VERSION']}"
+        // Play Store In-App Update check
+        implementation "com.google.android.play:app-update:${toolVersions['APP_UPDATE_VERSION']}"
+        implementation "com.google.android.play:app-update-ktx:${toolVersions['APP_UPDATE_VERSION']}"
+    }
 
     // 7z archive support (for music packs distributed as .7z)
     implementation "org.apache.commons:commons-compress:${toolVersions['COMMONS_COMPRESS_VERSION']}"

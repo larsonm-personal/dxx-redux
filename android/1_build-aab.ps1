@@ -65,14 +65,15 @@ if ($VersionCode) {
     $versionCode = [int]$commitCount * 10
 }
 $gitHash = (git -C $repoRoot rev-parse --short HEAD).Trim()
-$buildDate = Get-Date -Format "yyyy-MM-dd"
-$buildTime = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'Pacific Standard Time').ToString('HH:mm')
+$builtAtUtc = [DateTime]::UtcNow
+$buildDate = $builtAtUtc.ToString('yyyy-MM-dd')
+$buildTime = $builtAtUtc.ToString('HH:mm')
 Write-Host ""
 Write-Host "commitCount: $commitCount (# of git commits)"
 Write-Host "versionCode: $versionCode (commitCount*10 + rev)"
 Write-Host "gitHash:     $gitHash"
 Write-Host "buildDate:   $buildDate"
-Write-Host "buildTime:   $buildTime PST"
+Write-Host "buildTime:   $buildTime UTC"
 
 $variantLower = $variant.ToLower()
 # Copy to build-outputs/ with timestamp
@@ -106,7 +107,7 @@ object BuildInfo {
     const val GIT_COMMIT_COUNT = "$versionCode"
     const val GIT_SHORT_HASH = "$gitHash"
     const val BUILD_DATE = "$buildDate"
-    const val BUILD_TIME = "$buildTime PST"
+    const val BUILD_TIME = "$buildTime UTC"
     const val BUILD_TYPE = "$($variant.ToLower())"
 }
 "@

@@ -238,6 +238,8 @@ object CrashLog {
         return buildString {
             append("Package: ${context.packageName}\n")
             append("App version: $versionName ($versionCode)\n")
+            append("Distribution: ${AppBuildDetails.distributionLabel}\n")
+            append("${AppBuildDetails.sdkLabel}\n")
             append("Build: ${BuildInfo.GIT_COMMIT_COUNT} (${BuildInfo.GIT_SHORT_HASH}) ${BuildInfo.BUILD_TYPE}\n")
             append("Built: ${BuildInfo.BUILD_DATE} ${BuildInfo.BUILD_TIME}\n")
             append("Model: ${Build.MODEL}\n")

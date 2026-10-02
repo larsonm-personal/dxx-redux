@@ -3,7 +3,8 @@
 
 param(
     [switch]$NoBuild,
-    [string]$Serial = "emulator-5554"
+    [string]$Serial = "emulator-5554",
+    [string]$ApkPath
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,14 +15,14 @@ Set-StrictMode -Version Latest
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $androidDir = Join-Path $repoRoot "android"
-$apk = Join-Path $androidDir "app\build\outputs\apk\debug\app-debug.apk"
+$apk = if ($ApkPath) { $ApkPath } else { Join-Path $androidDir "app\build\outputs\apk\debug\app-debug.apk" }
 $depBase = (Get-Content (Join-Path $repoRoot "dependency_base.txt") -First 1).Trim()
 $adb = Resolve-RegressionAndroidSdkTool -DepBase $depBase -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
 $sdkRoot = Split-Path (Split-Path $adb)
 $aapt2 = Get-ChildItem (Join-Path $sdkRoot "build-tools") -Filter (Get-RegressionHostExecutableNames -BaseName "aapt2")[0] -Recurse |
     Sort-Object FullName -Descending |
     Select-Object -First 1 -ExpandProperty FullName
-$package = "com.dxxredux.app"
+$package = $script:PACKAGE
 
 function Fail {
     param([string]$Message)
@@ -83,7 +84,13 @@ $before = @(Get-CrashFiles)
 & $adb -s $Serial shell monkey -p $package -c android.intent.category.LAUNCHER 1 | Out-Null
 Start-Sleep -Seconds 3
 
-$pidValue = (& $adb -s $Serial shell pidof $package).Trim()
+$previousSerial = $env:ANDROID_SERIAL
+try {
+    $env:ANDROID_SERIAL = $Serial
+    $pidValue = Get-AppProcessId $package
+} finally {
+    $env:ANDROID_SERIAL = $previousSerial
+}
 if (-not $pidValue) {
     Fail "App process did not start"
 }
@@ -111,6 +118,9 @@ $newReport = $after |
 if (-not $newReport) {
     Fail "Native xCrash report was not created"
 }
+if ($newReport -match '[<>:"/\\|?*]') {
+    Fail 'Crash filename cannot be saved on Windows'
+}
 
 $remotePath = "files/tombstones/$newReport"
 $report = & $adb -s $Serial exec-out "run-as $package cat '$remotePath'" | Out-String
@@ -122,6 +132,22 @@ if ($report -notmatch "signal 11 \(SIGSEGV\)") {
 }
 if ($report -notmatch "(?m)^backtrace:\r?$") {
     Fail "Native report does not contain a backtrace"
+}
+
+$expectedDistribution = switch ($package) {
+    'com.dxxredux.app.github.legacy' { 'Sideload (GitHub, legacy)' }
+    'com.dxxredux.app.github' { 'Sideload (GitHub)' }
+    default { 'Play Store' }
+}
+$badging = (& $aapt2 dump badging $apk) -join "`n"
+if ($badging -notmatch "(?m)^(?:sdkVersion|minSdkVersion):'([0-9]+)'") { Fail 'APK minimum SDK is missing' }
+$minimum = $Matches[1]
+if ($badging -notmatch "(?m)^targetSdkVersion:'([0-9]+)'") { Fail 'APK target SDK is missing' }
+$target = $Matches[1]
+if (-not $report.Contains($expectedDistribution) -or
+    -not $report.Contains("minsdk: api $minimum, targetsdk: api $target") -or
+    $report -notmatch '(?:built=|Built: )\d{4}-\d{2}-\d{2}') {
+    Fail 'Crash header lacks distribution, SDK levels or build date'
 }
 
 Write-Host "PASS: xCrash native report contains signal and backtrace" -ForegroundColor Green

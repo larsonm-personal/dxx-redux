@@ -35,7 +35,7 @@ if (-not (Test-Path $_depBaseFile)) {
 }
 $script:DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
 $script:ADB = Resolve-RegressionAndroidSdkTool -DepBase $script:DEP_BASE -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
-$script:PACKAGE = "com.dxxredux.app"
+$script:PACKAGE = if ($env:DXX_TEST_PACKAGE) { $env:DXX_TEST_PACKAGE } else { "com.dxxredux.app" }
 $script:ACTIVITY = "com.dxxredux.app.SetupActivity"
 $script:DEFAULT_SET_DIR = "files/imported/sets/default"
 $script:PRIMARY_EMULATOR_SERIAL = "emulator-5554"
@@ -161,8 +161,8 @@ function Test-EmulatorHealthy {
     if (-not (Test-DeviceOnline -Serial $Serial)) { return $false }
     $boot = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 5
     if ($boot -ne "1") { return $false }
-    $packages = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "cmd", "package", "list", "packages", "android") -Seconds 5
-    return ($packages -and $packages -match '(?m)^package:android\r?$')
+    $packages = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "pm", "list", "packages", "android") -Seconds 5
+    return ($packages -and $packages -match '(?m)^package:android\r*$')
 }
 
 function Test-AppPackageInstalled {
@@ -335,13 +335,33 @@ function Ensure-LauncherTestDeviceReady {
     return $true
 }
 
+function Get-AppProcessId {
+    param([string]$ProcessName)
+    # Android 6's pidof can return unrelated PIDs on recent emulator kernels
+    $serial = if ($env:ANDROID_SERIAL) { $env:ANDROID_SERIAL } else { 'default' }
+    if (-not (Test-Path variable:script:deviceApiLevels)) { $script:deviceApiLevels = @{} }
+    if (-not $script:deviceApiLevels.ContainsKey($serial)) {
+        $api = Adb-Timeout -AdbArgs @('shell', 'getprop', 'ro.build.version.sdk') -Seconds 3
+        if ($api -match '^\d+$') { $script:deviceApiLevels[$serial] = [int]$api }
+    }
+    if ($script:deviceApiLevels.ContainsKey($serial) -and $script:deviceApiLevels[$serial] -le 23) {
+        $processes = Adb-Timeout -AdbArgs @('shell', 'ps') -Seconds 3
+        foreach ($line in ($processes -split "`n")) {
+            $columns = $line.Trim() -split '\s+'
+            if ($columns.Count -ge 2 -and $columns[-1] -eq $ProcessName) { return $columns[1] }
+        }
+        return $null
+    }
+    return Adb-Timeout -AdbArgs @('shell', 'pidof', $ProcessName) -Seconds 3
+}
+
 function Wait-ProcessDead {
     # Poll until app processes are gone after force-stop.
     param([int]$TimeoutMs = 5000)
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.ElapsedMilliseconds -lt $TimeoutMs) {
-        $mainProcId = Adb-Timeout -AdbArgs @("shell", "pidof", $script:PACKAGE) -Seconds 3
-        $gameProcId = Adb-Timeout -AdbArgs @("shell", "pidof", "$($script:PACKAGE):game") -Seconds 3
+        $mainProcId = Get-AppProcessId $script:PACKAGE
+        $gameProcId = Get-AppProcessId "$($script:PACKAGE):game"
         if ((-not $mainProcId -or $mainProcId -notmatch '^\d+') -and
             (-not $gameProcId -or $gameProcId -notmatch '^\d+')) {
             return $true
@@ -359,12 +379,12 @@ function Stop-AppAndWait {
 }
 
 function Test-AppMainProcessRunning {
-    $processId = Adb-Timeout -AdbArgs @("shell", "pidof", $script:PACKAGE) -Seconds 3
+    $processId = Get-AppProcessId $script:PACKAGE
     return [bool]($processId -and $processId -match '^\d+')
 }
 
 function Test-AppGameProcessRunning {
-    $processId = Adb-Timeout -AdbArgs @("shell", "pidof", "$($script:PACKAGE):game") -Seconds 3
+    $processId = Get-AppProcessId "$($script:PACKAGE):game"
     return [bool]($processId -and $processId -match '^\d+')
 }
 
@@ -2433,7 +2453,7 @@ function Wait-EmulatorBootComplete {
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
         $boot = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 5
         if ($boot -and $boot.Trim() -eq "1") {
-            $packageService = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "cmd", "package", "list", "packages", "android") -Seconds 5
+            $packageService = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "pm", "list", "packages", "android") -Seconds 5
             if ($packageService -and $packageService -notmatch "Can't find service: package" -and $packageService -match "package:android") {
                 return $true
             }

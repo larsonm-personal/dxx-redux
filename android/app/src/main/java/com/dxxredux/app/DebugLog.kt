@@ -332,7 +332,10 @@ object DebugLog {
             .apply()
     }
 
-    private fun currentBuildStamp(): String = "${BuildInfo.GIT_COMMIT_COUNT}:${BuildInfo.GIT_SHORT_HASH}"
+    private fun currentBuildStamp(): String =
+        "${BuildInfo.GIT_COMMIT_COUNT}:${BuildInfo.GIT_SHORT_HASH}:${BuildConfig.VERSION_CODE}:" +
+            "${BuildConfig.APPLICATION_ID}:${BuildConfig.VERSION_NAME}:${BuildInfo.BUILD_DATE}:" +
+            "${BuildInfo.BUILD_TIME}:${BuildConfig.MIN_SDK}:${BuildConfig.TARGET_SDK}"
 
     private fun headerTag(): String {
         val firstEnabled = (0 until DebugLogCategory.COUNT).firstOrNull { enabledCategories[it] }
@@ -358,6 +361,8 @@ object DebugLog {
             append(" build=${BuildInfo.GIT_COMMIT_COUNT} (${BuildInfo.GIT_SHORT_HASH})")
             append(" ${BuildInfo.BUILD_TYPE}")
             append(" built=${BuildInfo.BUILD_DATE} ${BuildInfo.BUILD_TIME}")
+            append(" distribution=${AppBuildDetails.distributionLabel}")
+            append(" minsdk=${BuildConfig.MIN_SDK} targetsdk=${BuildConfig.TARGET_SDK}")
             append(" manufacturer=${Build.MANUFACTURER} model=${Build.MODEL}")
             append(" device=${Build.DEVICE} hardware=${Build.HARDWARE}")
             append(" android=${Build.VERSION.RELEASE} sdk=${Build.VERSION.SDK_INT} os_build=${Build.DISPLAY}")

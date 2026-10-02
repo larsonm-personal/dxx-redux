@@ -358,7 +358,7 @@ abstract class LevelPreviewActivity :
     }
 
     private fun requestPresentationProbe() {
-        if (!BuildConfig.DEBUG || Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
+        if (!BuildConfig.DEBUG || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val width = previewSurfaceView.width
         val height = previewSurfaceView.height
         if (width <= 0 || height <= 0 || !previewSurfaceView.holder.surface.isValid) return

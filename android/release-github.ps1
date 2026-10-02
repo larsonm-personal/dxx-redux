@@ -3,19 +3,23 @@
 
 <#
 .SYNOPSIS
-Build, verify and publish a signed universal APK for Android 7.0 or newer
+Build, verify and publish a signed matching or legacy universal APK
 .DESCRIPTION
 Run from the repo root with PowerShell 5.1/7, Android tools/JDK 21 and keystore.properties
 Publishing needs clean, pushed app source and gh auth login; origin is the default (-Repository overrides)
 Reusing a version does a clean build, moves android-vVERSION and replaces APK/checksums/build metadata
 Use -UploadOnly to verify and upload saved release files without rebuilding; the saved source commit is used
 Output: android/build-outputs/github/android-vVERSION/; -BuildOnly stays local, -Draft stages new releases
+Use -Legacy for the API-23 edition (separate android-legacy-vVERSION tag and app ID)
+Release titles/notes report the minimum and target SDK inspected from the APK
 .EXAMPLE
 ./android/release-github.ps1 -Version 1.2.0
 .EXAMPLE
 ./android/release-github.ps1 -Version 1.2.0-rc.1 -Draft
 .EXAMPLE
 ./android/release-github.ps1 -Version 1.2.0 -BuildOnly
+.EXAMPLE
+./android/release-github.ps1 -Version 1.2.0 -Legacy -BuildOnly
 #>
 [CmdletBinding()]
 param(
@@ -25,7 +29,8 @@ param(
     [string]$NotesFile,
     [switch]$BuildOnly,
     [switch]$UploadOnly,
-    [switch]$Draft
+    [switch]$Draft,
+    [switch]$Legacy
 )
 
 $ErrorActionPreference = 'Stop'
@@ -40,6 +45,17 @@ function Invoke-ReleaseTool {
     param([string]$Tool, [string[]]$Arguments)
     & $Tool @Arguments
     if ($LASTEXITCODE -ne 0) { throw "$Tool failed with exit code $LASTEXITCODE" }
+}
+
+function Get-AndroidVersionLabel {
+    param([int]$Api)
+    $versions = @{
+        19 = '4.4'; 20 = '4.4W'; 21 = '5.0'; 22 = '5.1'; 23 = '6.0'; 24 = '7.0'; 25 = '7.1'
+        26 = '8.0'; 27 = '8.1'; 28 = '9'; 29 = '10'; 30 = '11'; 31 = '12'; 32 = '12L'
+        33 = '13'; 34 = '14'; 35 = '15'; 36 = '16'; 37 = '17'
+    }
+    if ($versions.ContainsKey($Api)) { return $versions[$Api] }
+    return 'unknown'
 }
 
 function Get-ReleaseGit {
@@ -108,9 +124,11 @@ function Set-ReleaseTag {
 }
 
 if ($BuildOnly -and $UploadOnly) { throw '-BuildOnly and -UploadOnly cannot be combined' }
-$tag = "android-v$Version"
+$tag = if ($Legacy) { "android-legacy-v$Version" } else { "android-v$Version" }
 $outDir = Join-Path $PSScriptRoot "build-outputs/github/$tag"
-$apkName = "dxx-redux-$Version-android-universal.apk"
+$apkName = if ($Legacy) { "dxx-redux-$Version-android-legacy-universal.apk" } else { "dxx-redux-$Version-android-universal.apk" }
+$applicationId = if ($Legacy) { 'com.dxxredux.app.github.legacy' } else { 'com.dxxredux.app.github' }
+$distribution = if ($Legacy) { 'legacy' } else { 'github' }
 $apk = Join-Path $outDir $apkName
 $checksumPath = Join-Path $outDir 'SHA256SUMS.txt'
 $metadataPath = Join-Path $outDir 'build-info.json'
@@ -219,6 +237,7 @@ object BuildInfo {
     # Separate GitHub app: Play sign-in/updates disabled; single-player/LAN still require game data
     $gradleArgs = @('-p', $PSScriptRoot, '--no-build-cache', '-PgithubRelease=true',
         "-PversionNameOverride=$Version", "-PversionCodeOverride=$VersionCode", '-PskipBuildInfo', '--console=plain')
+    if ($Legacy) { $gradleArgs += '-PlegacyRelease=true' }
     # Separate task graphs avoid clean/assemble scheduling conflicts with generated assets
     Invoke-ReleaseTool $gradle (@(':app:clean') + $gradleArgs)
     Invoke-ReleaseTool $gradle (@(':app:assembleRelease') + $gradleArgs)
@@ -232,9 +251,19 @@ $signature = (Invoke-ReleaseTool $signer @('verify', '--verbose', '--print-certs
 if ($signature -notmatch 'certificate SHA-256 digest: ([0-9a-fA-F]{64})') { throw 'Missing signing certificate digest' }
 $certificate = $Matches[1].ToLowerInvariant()
 $badging = (Invoke-ReleaseTool $aapt @('dump', 'badging', $sourceApk)) -join "`n"
-if ($badging -notmatch "package: name='com.dxxredux.app.github' versionCode='$VersionCode' versionName='$([regex]::Escape($Version))'") {
+if ($badging -notmatch "package: name='$([regex]::Escape($applicationId))' versionCode='$VersionCode' versionName='$([regex]::Escape($Version))'") {
     throw 'APK package or version does not match the requested release'
 }
+if ($badging -notmatch "(?m)^(?:sdkVersion|minSdkVersion):'([0-9]+)'\s*$") { throw 'APK minimum SDK is missing or invalid' }
+$minSdk = [int]$Matches[1]
+if ($badging -notmatch "(?m)^targetSdkVersion:'([0-9]+)'\s*$") { throw 'APK target SDK is missing or invalid' }
+$targetSdk = [int]$Matches[1]
+if ($targetSdk -lt $minSdk) { throw 'APK target SDK is lower than its minimum SDK' }
+$sdkLabel = "minsdk: api $minSdk (android $(Get-AndroidVersionLabel $minSdk)), targetsdk: api $targetSdk (android $(Get-AndroidVersionLabel $targetSdk))"
+$releaseTitle = "DXX-Redux $Version for Android"
+if ($Legacy) { $releaseTitle += ' (Legacy)' }
+$releaseTitle += " - $sdkLabel"
+Write-Host $sdkLabel
 if ($badging -match 'application-debuggable') { throw 'Refusing to release a debuggable APK' }
 $abiLine = ($badging -split "`n" | Where-Object { $_ -like 'native-code:*' }) -join ' '
 foreach ($abi in @('armeabi-v7a', 'arm64-v8a', 'x86_64')) {
@@ -244,18 +273,36 @@ foreach ($abi in @('armeabi-v7a', 'arm64-v8a', 'x86_64')) {
 if ($UploadOnly) {
     $hash = (Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($hash -ne $savedMetadata.apkSha256 -or $certificate -ne $savedMetadata.certificateSha256 -or
-        $savedMetadata.applicationId -ne 'com.dxxredux.app.github' -or
+        $savedMetadata.applicationId -ne $applicationId -or
         (Get-Content -LiteralPath $checksumPath -Raw -Encoding UTF8).Trim() -ne "$hash  $apkName") {
         throw 'Saved APK/hash/signing metadata does not match; rebuild without -UploadOnly'
     }
+    if (-not $savedMetadata.PSObject.Properties['minSdk'] -or -not $savedMetadata.PSObject.Properties['targetSdk'] -or
+        -not $savedMetadata.PSObject.Properties['distribution'] -or
+        $savedMetadata.minSdk -ne $minSdk -or $savedMetadata.targetSdk -ne $targetSdk -or
+        $savedMetadata.distribution -ne $distribution) {
+        throw 'Saved APK SDK/distribution metadata does not match; rebuild without -UploadOnly'
+    }
     Write-Host "Verified saved APK for $tag ($VersionCode) from $commit; skipping build"
 } else {
+    $distributionVersions = @{}
+    foreach ($line in Get-Content -LiteralPath (Join-Path $PSScriptRoot 'distribution_versions.conf')) {
+        if ($line -match '^((?:CURRENT|LEGACY)_(?:MIN|TARGET)_SDK)=([0-9]+)$') {
+            $distributionVersions[$Matches[1]] = [int]$Matches[2]
+        }
+    }
+    $sdkPrefix = if ($Legacy) { 'LEGACY' } else { 'CURRENT' }
+    if ($minSdk -ne [int]$distributionVersions["${sdkPrefix}_MIN_SDK"] -or
+        $targetSdk -ne [int]$distributionVersions["${sdkPrefix}_TARGET_SDK"]) {
+        throw 'APK SDK versions do not match the selected distribution configuration'
+    }
     Copy-Item -LiteralPath $sourceApk -Destination $apk -Force
     $hash = (Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash.ToLowerInvariant()
     [IO.File]::WriteAllText($checksumPath, "$hash  $apkName`n")
     $metadata = [ordered]@{
         version = $Version; versionCode = $VersionCode; commit = $commit
-        builtAtUtc = $builtAt.ToString('o'); applicationId = 'com.dxxredux.app.github'
+        builtAtUtc = $builtAt.ToString('o'); applicationId = $applicationId; distribution = $distribution
+        minSdk = $minSdk; targetSdk = $targetSdk
         certificateSha256 = $certificate; apkSha256 = $hash
         abis = @('armeabi-v7a', 'arm64-v8a', 'x86_64')
         sourceClean = -not [bool](Get-ReleaseSourceStatus)
@@ -263,7 +310,9 @@ if ($UploadOnly) {
     }
     [IO.File]::WriteAllText($metadataPath, ($metadata | ConvertTo-Json) + "`n")
     $notes = @"
-DXX-Redux $Version for Android (Android 7.0 or newer).
+DXX-Redux $Version for Android ($distribution).
+
+$sdkLabel
 
 - universal APK: includes ARM32, ARM64 and x86_64
 
@@ -284,7 +333,7 @@ Signing certificate SHA-256: $certificate
 $existingRelease = Get-ExistingRelease
 $ghRepository = "github.com/$Repository"
 $createArgs = @('release', 'create', $tag, $apk, $checksumPath, $metadataPath,
-    '--repo', $ghRepository, '--target', $commit, '--title', "DXX-Redux $Version for Android",
+    '--repo', $ghRepository, '--target', $commit, '--title', $releaseTitle,
     '--notes-file', $notesPath, '--draft')
 if ($prerelease) { $createArgs += '--prerelease' }
 try {
@@ -293,7 +342,7 @@ try {
     Set-ReleaseTag
     if ($existingRelease) {
         # Preserve existing notes/status; build-info.json records the current commit/versionCode
-        Invoke-ReleaseTool gh @('release', 'edit', $tag, '--repo', $ghRepository, '--target', $commit)
+        Invoke-ReleaseTool gh @('release', 'edit', $tag, '--repo', $ghRepository, '--target', $commit, '--title', $releaseTitle)
         Write-Host "Replacing generated assets in $tag"
         Invoke-ReleaseTool gh @('release', 'upload', $tag, $apk, $checksumPath, $metadataPath, '--repo', $ghRepository, '--clobber')
     } else {
@@ -303,6 +352,7 @@ try {
         }
     }
 } catch {
-    throw "Release tag/upload/publish failed; inspect $tag on GitHub for its commit and missing or incomplete assets. The tag may already have moved. Local assets remain in $outDir; retry without rebuilding: ./android/release-github.ps1 -Version $Version -Repository $Repository -UploadOnly. Existing drafts remain drafts. $_"
+    $legacyArgument = if ($Legacy) { ' -Legacy' } else { '' }
+    throw "Release tag/upload/publish failed; inspect $tag on GitHub for its commit and missing or incomplete assets. The tag may already have moved. Local assets remain in $outDir; retry without rebuilding: ./android/release-github.ps1 -Version $Version -Repository $Repository -UploadOnly$legacyArgument. Existing drafts remain drafts. $_"
 }
 Invoke-ReleaseTool gh @('release', 'view', $tag, '--repo', $ghRepository, '--json', 'url', '--jq', '.url')

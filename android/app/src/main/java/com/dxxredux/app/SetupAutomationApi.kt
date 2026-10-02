@@ -815,6 +815,7 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         val root = JSONObject()
         root.put("screen", "setup")
         root.put("can_launch", d2Ready || d1Ready)
+        root.put("about_build_info", AppBuildDetails.aboutText())
         root.put("launch_error", launchPreflightFailure ?: JSONObject.NULL)
         root.put("active_set", activeSet)
         val runningGamePid = automationRunningGameProcessPid()

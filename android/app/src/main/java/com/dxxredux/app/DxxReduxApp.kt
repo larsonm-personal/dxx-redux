@@ -55,6 +55,10 @@ class DxxReduxApp : Application() {
             append("$versionName ($versionCode) ")
             append("${BuildInfo.GIT_COMMIT_COUNT} (${BuildInfo.GIT_SHORT_HASH}) ")
             append(BuildInfo.BUILD_TYPE)
+            append(" ${AppBuildDetails.distributionLabel}")
+            // xCrash also uses this value in filenames, including exported reports
+            append(" built=${BuildInfo.BUILD_DATE}T${BuildInfo.BUILD_TIME.replace(":", "").replace(" ", "")}")
+            append(" minsdk=${BuildConfig.MIN_SDK} targetsdk=${BuildConfig.TARGET_SDK}")
         }
     }
 

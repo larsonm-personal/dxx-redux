@@ -9,7 +9,10 @@ $adb = Resolve-RegressionAndroidSdkTool -DepBase $depBase -Subdir 'platform-tool
 $sdk = Split-Path (Split-Path $adb)
 $versions = @{}
 Get-Content (Join-Path $repoRoot 'android/get_deps/tool_versions.conf') | ForEach-Object {
-    if ($_ -match '^(COMPILE_SDK|MIN_SDK|BUILD_TOOLS_VERSION)=(.+)$') { $versions[$Matches[1]] = $Matches[2] }
+    if ($_ -match '^(COMPILE_SDK|BUILD_TOOLS_VERSION)=(.+)$') { $versions[$Matches[1]] = $Matches[2] }
+}
+Get-Content (Join-Path $repoRoot 'android/distribution_versions.conf') | ForEach-Object {
+    if ($_ -match '^CURRENT_MIN_SDK=(.+)$') { $versions.MIN_SDK = $Matches[1] }
 }
 $platform = Get-ChildItem (Join-Path $sdk 'platforms') -Directory -Filter "android-$($versions.COMPILE_SDK)*" |
     Sort-Object Name -Descending | Select-Object -First 1

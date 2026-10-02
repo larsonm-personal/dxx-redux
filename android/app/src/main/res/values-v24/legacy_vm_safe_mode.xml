@@ -1,0 +1,4 @@
+<resources>
+    <!-- Restrict the legacy ART safeguard to Android 6; current Android uses normal compilation -->
+    <bool name="legacy_vm_safe_mode">false</bool>
+</resources>

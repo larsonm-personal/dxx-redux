@@ -24220,3 +24220,7986 @@ The assigned owners already centralize paired progress declarations, Android dia
 </details>
 
 <!-- END IMPORT: GQ1-CHUNK-0184 frozen survey -->
+
+<!-- BEGIN IMPORT: GQ1-CHUNK-0185 frozen survey, resumed 2026-09-30 SHA256:23b588533b7a8eecf4c09e993468d1c821fd0c1859cb70e1f53d3e7ed954afd2 -->
+
+## GQ1-CHUNK-0185 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0185.md`
+- Imported SHA-256: `23b588533b7a8eecf4c09e993468d1c821fd0c1859cb70e1f53d3e7ed954afd2`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0185 frozen survey, resumed 2026-09-30
+
+## Scope and ownership
+
+Reviewed all 716 assigned lines in coop_multi_status.c/.h, coop_player_session.h and coop_powerup_duplication.c at GQ1 head 7877ad30d05887b8e19869ed4c50075e41e2f88e, against base fb555eec75e1ed12c8348805ab335afb4c721b06. All four files are branch-added, with +193/+37/+38/+448 and no base-existing body to revert
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/coop/coop_multi_status.c`: L1-L193; frozen blob `fde4cecc0a33494bf6a79b273d133a2c3c452b9d`
+- `android/app/src/main/cpp/shared/coop/coop_multi_status.h`: L1-L37; frozen blob `5984fc332c041bc818dec63c10318880bc6012db`
+- `android/app/src/main/cpp/shared/coop/coop_player_session.h`: L1-L38; frozen blob `eba012060b59e3f8d92ae4a66755f2de5f8990ba`
+- `android/app/src/main/cpp/shared/coop/coop_powerup_duplication.c`: L1-L448; frozen blob `580244090628e27d9d7f09d9f8c21b48e1af1259`
+
+Scope SHA-256: `74dc8d119d35e01922f8ada2482d352803766b6f8120f00bad0c3e6ff3a2a470`
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The shared owners already contain kill bookkeeping, packet packing, restore/session identity and pickup collection policy. Traced paired multi.c dispatch and kill sites, net_udp.c join/snapshot/sync sites, state.c restore calls, gameseq.c reset/denominator sites, collide.c pickup hooks and object.c visibility hooks. These hooks require canonical game state, object ownership and lifecycle placement. Existing GQD-0039 measured the surrounding 21-path cooperative seam at 68 hook/extraction hunks and +179/-11 after the prior 166-line extraction. Moving another wrapper would retain each hook and export additional game state. No supported removable complete inherited hunk or material line reduction remains in this assigned unit
+
+For attribution context, the frozen whole-path diff for paired gameseq/multi/net_udp/state/powerup files is D1 +222/-12, +459/-27, +1288/-560, +1520/-173, +65/-8; D2 +351/-21, +615/-49, +1381/-587, +2048/-94, +110/-24. These totals contain unrelated branch features and are not claimed as extractable cooperative lines
+
+## Quality and reconciliation
+
+- OBS-001 extends BR-0195, already extended by GQ1-CHUNK-0146: peer-status and pickup/snapshot handlers trust payload identities or host authority without authenticated-sender admission in frozen paired dispatch. Packet framing fixes lengths but does not establish authority. Snapshot count is capped at MAX_OBJECTS * MAX_PLAYERS and exact begin/entry/end counts are required; those checks do not fix spoofed participants or replacement snapshots
+- OBS-002 extends BR-0435: the shared score denominator counts initial robot objects, while kill credit includes materializer robots. Spawn admission does not update this denominator
+- Session restore preserves callsign, address, connected state, object number and packet counters. Sync fallback is an explicit caller-supplied isyou/callsign predicate, not an arbitrary callsign match. No new identity finding is admitted
+- Pickup eligibility excludes dropped powerups, identities are bounded, replacement allocation checks multiplication, pending restore validates strings and remaps/prunes stale or duplicate objects before replacing live collections. Focused session and pickup tests cover basic restore/remap behavior, not authenticated network injection
+- Current-head reconciliation: restore inventory now checks authenticated master authority, world visit and recovery epoch/serial and queues application at a gameplay boundary. The broad BR-0195 owner remains open because peer-status, warp and pickup snapshot dispatch still lack that admission. Current pickup restore discards invalid records with explicit diagnostics and adopts the validated allocation; obsolete August failure behavior must not be fixed again. September recovery design owns remaining-quantity restoration, replacing the former slot-owner spew deletion
+
+## Evidence and limitations
+
+Used git show, git grep, git diff --numstat, rg and full assigned-line inspection; inspected paired packet dispatch/sync, shared save identity, current pickup/session tests and active/done GQ, BR and DMR ledgers. BR-0414 backup identity fix remains recorded and is a different root. Frozen source and current diffs were kept distinct
+
+No product code changed and no network injection, allocation-fault test, build or emulator test ran in this read-only survey. Runtime authority and materializer coverage remain remediation requirements
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); owner BR-0195; existing protocol authority work is broader than the assigned handlers
+- Normalize one RETAIN decision, one issues coverage record and extensions to BR-0195/BR-0435; no new finding or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0185 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0186 frozen survey, resumed 2026-09-30 SHA256:c5a7b3ee8e16992798cbadc9893030864c5585d283edfcd850abb9639d39a331 -->
+
+## GQ1-CHUNK-0186 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0186.md`
+- Imported SHA-256: `c5a7b3ee8e16992798cbadc9893030864c5585d283edfcd850abb9639d39a331`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0186 frozen survey, resumed 2026-09-30
+
+## Scope and ownership
+
+Reviewed all 529 assigned lines in coop_save.h, coop_warp.c/.h and debug_log_categories.h at GQ1 head 7877ad30d05887b8e19869ed4c50075e41e2f88e against base fb555eec75e1ed12c8348805ab335afb4c721b06. These are branch-added shared policy and interfaces
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/coop/coop_save.h`: L1-L213; frozen blob `d8482fab1bc76672785a518d42ca466eec77d3bb`
+- `android/app/src/main/cpp/shared/coop/coop_warp.c`: L1-L236; frozen blob `d3083937585f7206016fac9429f9f135ef254c65`
+- `android/app/src/main/cpp/shared/coop/coop_warp.h`: L1-L59; frozen blob `ec3356bf82fce61b7fe52363ee2b12ec8b40dc34`
+- `android/app/src/main/cpp/shared/debug_log_categories.h`: L1-L21; frozen blob `c997ecec7134651d6cb8691fdf5ddd5135e6878d`
+
+Scope SHA-256: `39c937b6643b9a15bf37177917885380821d1c874fb5abb9ff17f77ffbb43058`
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+Cooperative save layout, player identity, warp selection/packing and category IDs already live in shared Android owners. Paired gameseq.c reset and multi.c dispatch sites are compact lifecycle calls. Paired state.c owns game-format serialization and invokes the shared trailer API. The paired branch-added coop_save.h and coop_warp.h facades are seven lines each, not inherited-file reduction candidates. Removing them merely changes include spelling without removing policy hunks. Moving more save logic must preserve the engine's canonical formats; a warp facade cannot eliminate player-object observations or network dispatch. No material inherited hunk or line removal is supported
+
+## Quality and reconciliation
+
+- OBS-001 extends BR-0029: JNI status/name polling, execute and cycle call shared warp functions directly from UI callers. These access live Players/Objects, mutate the local object and links, advance RNG and write the shared packet buffer while the engine thread runs
+- OBS-002 extends BR-0195: receive validates player and segment indices but trusts the claimed warper. The paired multiplayer dispatch passes no authenticated sender to the warp handler. Current source adds a travel gate to execute but leaves this authority gap
+- BR-0227 is obsolete for the assigned frozen implementation: selection wraps modulo N_players and send receives the already-selected target directly. BR-0228's cooldown/respawn requirement was deliberately removed by the distance-only July policy; no timer repair should restore discarded behavior. Their legacy active-ledger rows require explicit later historical reconciliation
+- Save metadata fixed arrays, tag/version/footer fields, return contracts and D1/D2 extra-field macro match their shared serialization owner. The header is not proof of trailer validation; previously reviewed save-reader roots remain with their owners
+- Native category IDs 0..7 and COUNT=8 match DebugLogCategory.kt exactly, and both files document synchronization. The header does not itself publish mutable flags; that separate race remains BR-0254
+- Distance threshold boundaries are covered by test_coop_warp_policy.c. Target selection, placement and packet authority are outside that pure policy oracle. find_point_seg proves point containment, not a collision-free ship volume; no new defect is asserted without a reproducer establishing an unsupported placement
+
+## Evidence and limitations
+
+Used full frozen-line inspection, git show/grep/diff, rg, R1-CHUNK-0119 evidence, active/done ledgers, paired lifecycle/packet sites, JNI bridges, category consumers and focused warp tests. Current coop_save.h advanced its disposable metadata version and runtime fields; frozen header coverage does not cover those changes
+
+No product change, build, gameplay placement probe, thread-race instrument, network injection or emulator test ran in this read-only unit. Final delta coverage and remediation must validate current shared save layout and warp behavior
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); owner BR-0029; UI/engine thread ownership needs a subsystem boundary
+- Normalize one RETAIN decision, one issues coverage record, extensions to BR-0029/BR-0195 and historical-obsolescence evidence for BR-0227/BR-0228; no new finding
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0186 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0187 frozen survey, resumed 2026-09-30 SHA256:6ae3f941ee5ea909b5e5008734768999abea8a16ee82af9e8555498cfd2edfbc -->
+
+## GQ1-CHUNK-0187 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0187.md`
+- Imported SHA-256: `6ae3f941ee5ea909b5e5008734768999abea8a16ee82af9e8555498cfd2edfbc`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0187 frozen survey, resumed 2026-09-30
+
+## Scope and ownership
+
+Reviewed all 595 assigned lines: input_demo_state_trace.cpp L751-L791, its complete 422-line public header and kconfig_android_shared.c/.h L1-L91/L1-L41 at GQ1 head 7877ad30d05887b8e19869ed4c50075e41e2f88e against base fb555eec75e1ed12c8348805ab335afb4c721b06. All assigned paths are branch-added
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_state_trace.cpp`: L751-L791; frozen blob `99bddf6c5535fedd29e40b32681752ba89c03804`
+- `android/app/src/main/cpp/shared/input_demo_state_trace.h`: L1-L422; frozen blob `655fa0f3853d38e7c1e8b2c18e492a17d398cca0`
+- `android/app/src/main/cpp/shared/kconfig_android_shared.c`: L1-L91; frozen blob `c46caab4d0c28dad1fce1261c30b7e34347390f7`
+- `android/app/src/main/cpp/shared/kconfig_android_shared.h`: L1-L41; frozen blob `67e079ce2cfcc3625e36472b0d3fd5c6b00fc005`
+
+Scope SHA-256: `c291dc1ba44d4b967e6458ebeaae1672ed1aad7fce9ccbe4c8b9cf5c80469ad3`
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+State JSON emission already belongs to a shared owner called by input_demo_hooks_shared.c. Paired engine producers own canonical live object/AI/weapon/segment observations and bounded snapshot construction. Relocating them into the serializer requires engine-state exposure and leaves observation sites behind. Shared controller layouts and default overrides already replace paired loops; inherited kconfig.c retains three compact calls per game plus game-owned DefaultKeySettings copying. Sharing that copying would export canonical defaults or introduce callback policy without removing its source dependency. No material original-file hunk or line reduction is supported
+
+Frozen paired kconfig adapters were traced at D1 L2041-L2075 and D2 L2086-L2127. These are retained interface boundaries, not a proposal to remove the surrounding unrelated inherited control/render changes
+
+## Quality and reconciliation
+
+- OBS-001 extends BR-0233: start opens/truncates the final trace path, ignores initial flush, frame output writes directly and stop discards close failure. A failed run can destroy a prior complete trace and leave a partial final artifact
+- OBS-002 extends BR-0209: the shared replay hook logs a frame-write failure and stops tracing without propagating required-output failure into the replay/headless outcome
+- R1-CHUNK-0135 reviewed exactly this scope. Its output/publication findings remain valid at the GQ1 frozen head; they are extensions rather than new roots. Archived BR-0042 covers arbitrary native JSON string encoding; diagnostic structure fields are fixed-width scalars and arrays
+- The header preserves C/C++ linkage and separates the C diagnostic struct from the C++ string serializer. Array capacities are explicit and paired producers zero-initialize snapshots. No new layout or width defect was found
+- Shared controller code bounds every overridden index, sets joystick sentinels and inversion defaults, preserves engine keyboard defaults and keeps distinct D1/D2 sizes. JNI truncates parallel arrays to their minimum length; allocation/exception handling there belongs to its previously surveyed JNI owner, not these pure helpers
+- Focused kconfig tests cover both default tables, joystick lengths, invalid indices, inversion and keyboard copying. Their tests do not establish trace I/O or completion behavior
+- Current trace code was rewritten to ordered JSON and supports gzip. It now checks the first metadata write. It still opens final output directly and discards fclose/gzclose results. Current behavior needs delta coverage for compression, exception containment and requested-output propagation; frozen evidence does not claim those new paths are covered
+
+## Evidence and limitations
+
+Used git show/grep/diff, rg, complete assigned-line inspection, enclosing trace session start/stop, shared replay writer/caller, paired kconfig adapters, android_gamepad_config.cpp JNI array consumers, focused controller tests and active/done ledgers
+
+No product change, build, runtime replay, disk-fault injection or sanitizer ran in this read-only survey. Existing ordinary tests are context, not a runtime validation claim
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); owner BR-0209; requested-output failure must be propagated through the shared replay completion boundary
+- Normalize one RETAIN decision, one issues coverage record and extensions to BR-0233/BR-0209; no new finding or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0187 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0188 frozen survey, resumed 2026-09-30 SHA256:bebc9b485dd84ff40d723b6ab929bb13418998c3e88aa069053f2b5b4bd381ff -->
+
+## GQ1-CHUNK-0188 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0188.md`
+- Imported SHA-256: `bebc9b485dd84ff40d723b6ab929bb13418998c3e88aa069053f2b5b4bd381ff`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0188 frozen survey, resumed 2026-09-30
+
+## Scope and minimization
+
+Reviewed all 584 assigned lines: cd_preview.c L751-L884, cd_preview.h L1-L64 and chromaprint_db.c/.h L1-L309/L1-L77 at frozen GQ1 head 7877ad30d05887b8e19869ed4c50075e41e2f88e against fb555eec75e1ed12c8348805ab335afb4c721b06. All four paths are branch-added (+884/+64/+309/+77 whole-file additions)
+
+Diff-minimization disposition: NO_INHERITED_EFFECT
+
+Both facilities belong to launcher/import native libraries. No D1/D2 source references either API. Android CMake registers them in launcher extraction/preview targets; JNI fingerprint/preview and Kotlin FingerprintBridge are their consumers. They do not require inherited game policy changes. Related in-game rbaudio_bin.c remains a separate source with its engine transport owner. September cleanup already consolidated their PCM ring mechanism; that improves branch-owned duplication and is not original-file reduction
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/cd_preview.c`: L751-L884; frozen blob `33809af2a1ffa15d3298792d726ceefad9fc8484`
+- `android/app/src/main/cpp/shared/cd_preview.h`: L1-L64; frozen blob `ee8805c8a4baa072ca02f73ac8a4942ed23f290a`
+- `android/app/src/main/cpp/shared/chromaprint_db.c`: L1-L309; frozen blob `bf11a7eb67e3ee098b768b9946d7eb9232fae93f`
+- `android/app/src/main/cpp/shared/chromaprint_db.h`: L1-L77; frozen blob `06243eea5f4757827c450dfb9cb51f741c9aaa7d`
+
+Scope SHA-256: `db733aadc4144ff671fd8d366d1830459e27147ade442958d40de11674bff448`
+
+## Observations and reconciliation
+
+- OBS-001 extends GQF-0145/GQR-0132: invalid threshold clears configuration and sets the numeric threshold to zero, but match ignores the configuration flag and can accept the previously loaded entries. Current source is unchanged except jsonc comment spelling
+- OBS-002, new integer-admission root: loader accepts any JSON integer for track/duration, then uses get<int>() inside a catch. The pinned nlohmann arithmetic converter uses static_cast, which does not throw on representable JSON integers outside int range. With 32-bit int, track 4294967303 narrows to 7 and duration_ms 4295090296 narrows to 123000; the latter passes the positive-duration test. A catalog record can therefore be successfully published with different identity and duration than its JSON. This is distinct from invalid threshold reconfiguration and archived BR-0039's complete-load fix. Reject integer values outside the exact int domain before conversion, preserve the prior database on failure, and extend the registered production database test with signed/unsigned boundary and wrap fixtures
+- OBS-003 extends BR-0276 and GQF-0167: producer EOF can precede final ring publication; public state reports stopped before queued output drains and position is output-frame based. Seek/stop synchronization is already repaired by archived BR-0274; OpenSL initialization and failure cleanup remain archived BR-0275
+- BR-0016 retains the distinct command-ordering question: native control mutexes serialize execution but do not cancel a delayed raw-thread start after a later requested stop. No duplicate native mutex remediation is proposed
+- Database mutex covers publication/matching/free and match strings own their copies. Pending records publish only after the complete schema/decode/allocation pass; archived BR-0075/BR-0074/BR-0073 repairs remain intact. Duration filtering is symmetric and ambiguity is explicit
+- Existing test_chromaprint_db_config.c covers invalid config before load, metadata capacity, match-owned strings, failed-load preservation and ambiguous order. It does not test match after invalid reconfiguration or integer overflow. Seek retains decoder/ring/queue lock order and stop releases playback lock before joining
+
+## Evidence and gaps
+
+Inspected frozen files plus enclosing CD decode/producer lifecycle, current shared-ring changes, JNI entry points, FingerprintBridge, native CMake registration, database config/concurrency tests, preview synchronization tests, earlier cleanup and active/done ledgers. The pinned nlohmann detail/conversions/from_json.hpp arithmetic converter confirms unchecked integer narrowing. No runtime catalog mutation, fault injection, preview playback, build or emulator test ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/4/10/10); proposed owner: GQF-0177; rationale: exact production loader edit and existing registered fixture owner support a complete local fix
+- Normalize NO_INHERITED_EFFECT, issue coverage, GQF-0145/BR-0276 extensions and one new catalog integer finding/remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0188 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0189 frozen survey, resumed 2026-09-30 SHA256:074585a1a78803fe262476e6a76877d06b695f4129aad10fe47ed1814030f2e6 -->
+
+## GQ1-CHUNK-0189 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0189.md`
+- Imported SHA-256: `074585a1a78803fe262476e6a76877d06b695f4129aad10fe47ed1814030f2e6`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0189 frozen survey, resumed 2026-09-30
+
+## Scope and minimization
+
+Reviewed all 542 assigned lines: net_udp_android.h L1-L123, net_udp_p2p_proxy_shared.c/.h L1-L302/L1-L16 and ogl_gpu_timer_android.c/.h L1-L79/L1-L22 at frozen GQ1 head 7877ad30d05887b8e19869ed4c50075e41e2f88e against fb555eec75e1ed12c8348805ab335afb4c721b06. All assigned files are branch-added
+
+Diff-minimization disposition: RETAIN
+
+The network extraction already owns paired helper bodies. Remaining net_udp.c socket/raw-send and dispatcher hooks retain private transport state and packet admission. Timer state is compact pointers to game-owned GL query arrays and counters; begin/end calls preserve render/flip placement. More extraction cannot remove the lifecycle calls, and would expose private socket/queue or GL lifetime. Whole inherited-path attribution is D1/D2 net_udp.c +1288/-560 (305 hunks), +1381/-587 (336); OGL +1876/-65 (132), +1969/-65 (128). These totals include unrelated features, not a removable-line estimate. No additional material inherited reduction was established
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/net/net_udp_android.h`: L1-L123; frozen blob `25f2932278ce77e73d05c6cf4ec33f941b5db0ac`
+- `android/app/src/main/cpp/shared/net/net_udp_p2p_proxy_shared.c`: L1-L302; frozen blob `4af8a9cd738ec13ce3262670b0698c9b0cd907ce`
+- `android/app/src/main/cpp/shared/net/net_udp_p2p_proxy_shared.h`: L1-L16; frozen blob `4cde4b44e11139abd72b9fb73812159ece1722f4`
+- `android/app/src/main/cpp/shared/ogl_gpu_timer_android.c`: L1-L79; frozen blob `f9343b5edaddc5f43922a5df063dfe76c168fc85`
+- `android/app/src/main/cpp/shared/ogl_gpu_timer_android.h`: L1-L22; frozen blob `7f3c263b8e1d278623fc7a7a0f071ff99e0f7003`
+
+Scope SHA-256: `a24ba44b336d046b75c99ab78e20f5ac3f4a9bcb10a6ced8755fb671db128701`
+
+## Quality and historical reconciliation
+
+- OBS-001 extends BR-0260 at the frozen head: begin checks pointer presence but not an already-active query. Multiple render passes before one flip issue nested begins. Current source now returns when a query is in flight, and its registered stub test exercises repeated begins, delayed results, wrap and disjoint samples. It also removed the forced blocking query result read. Final historical recheck should close the accepted current repair after validation
+- Proxy destination bounds, sender-to-slot binding and unchecked malloc initially look actionable in the shared source. Base-commit bodies in both engines already contain these mechanisms. Mechanical body comparison shows declaration/style relocation, raw-send adapter substitution and added pong index/self checks, not newly introduced proxy indexing/allocation behavior. Under the campaign's branch-causation rule these unchanged inherited weaknesses do not form new cleanup findings
+- Header reconnect APIs describe the already-surveyed shared proof owner; later current-head generation/context/preflight additions belong to delta coverage. Completed GQR-0042/GQR-0043/GQR-0044 are not reopened based only on frozen declarations
+- Ping host selection uses multi_who_is_master rather than a fixed slot, records reachability during level sync and retains observer policy. Query reads are gated by Android extension availability at paired begin sites; count/write/in-flight pointers match their static game-owned storage
+
+## Evidence and gaps
+
+Used full assigned frozen inspection, base-versus-head function-body comparison, paired network/OGL caller grep, exact whole-path numstat/hunk counts, current timer diff and test_ogl_gpu_timer.c inspection, historical GQ/adversarial/DMR reconciliation. No packet injection, GPU/device test, allocation fault or native build ran. The unchanged inherited proxy observations are rejected for campaign admission, not claimed safe
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: the only branch-caused frozen defect has a current external repair, while inherited proxy issues lack branch causation
+- Normalize RETAIN, issues coverage and frozen BR-0260 extension with current repair evidence; no new finding or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0189 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0190 frozen survey, resumed 2026-09-30 SHA256:8e690596e08ff59b59ee552d0cb2e6b3eccde2ed49d74a0055bd119514ee5177 -->
+
+## GQ1-CHUNK-0190 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0190.md`
+- Imported SHA-256: `8e690596e08ff59b59ee552d0cb2e6b3eccde2ed49d74a0055bd119514ee5177`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0190 frozen survey, resumed 2026-09-30
+
+## Scope and minimization
+
+Reviewed all 637 assigned lines: android_audio_diagnostics.c/.h L1-L122/L1-L16, android_audio_format.h L1-L76 and android_axis_mailbox.cpp/.h L1-L332/L1-L91 at GQ1 head 7877ad30d05887b8e19869ed4c50075e41e2f88e against fb555eec75e1ed12c8348805ab335afb4c721b06. All five paths are branch-added
+
+Diff-minimization disposition: RETAIN
+
+Diagnostics own paired logging/sample analysis behind mixer-init/SFX/probe calls. SDL OpenSL format validation belongs in its branch-added backend. Axis publication belongs to a shared mutex-protected mailbox, while android_input.c owns dispatch and the paired event.c sites only drain/flush at SDL event boundaries. Removing these calls retains a need for native input delivery and mixer observations. Whole inherited attribution is paired event.c +91/-1 in 12 hunks each; paired digi_mixer.c +87/-8 in 18 hunks and +84/-9 in 17. Those totals include unrelated features. No additional original-file policy body or complete hunk is safely removable
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/android_audio_diagnostics.c`: L1-L122; frozen blob `b5025aa91ade7afdf6527af1781ccc30ca457d8a`
+- `android/app/src/main/cpp/shared/android_audio_diagnostics.h`: L1-L16; frozen blob `d7f6111222f6ddebd01ad6ebc7bada119f0e79e4`
+- `android/app/src/main/cpp/shared/android_audio_format.h`: L1-L76; frozen blob `214f022fd81443aba4ebb1b45c7d5116e0ce78ba`
+- `android/app/src/main/cpp/shared/android_axis_mailbox.cpp`: L1-L332; frozen blob `ea289e86c8637445301bb7398cea8382390bc5db`
+- `android/app/src/main/cpp/shared/android_axis_mailbox.h`: L1-L91; frozen blob `958c9b21249f7b0280bdb9b3990c2ef85bab13af`
+
+Scope SHA-256: `c59590d1212420eb67ff006b8573656cf90518154f62f0250816e2e44d592af6`
+
+## Quality and reconciliation
+
+- OBS-001 extends BR-0250: diagnostic producer/callback/readers share plain counters and a multi-field SFX tuple without an atomic coherent snapshot. The shared diagnostics getter sequence does not provide synchronization. Existing OpenSL lifecycle repairs concern another owner
+- OBS-002 extends BR-0662: the existing registered mailbox test uses assert throughout. Standard RelWithDebInfo NDEBUG builds can report success without evaluating those checks. Registration has moved into branch-added android/tests/CMakeLists.txt, but test semantics still require live recheck before another fix
+- Mailbox pointers/axis indices and raw/deadzone values are bounded; one mutex protects published vectors, generations, transitions and acknowledgements. Stale acknowledgements preserve newer pending generations. Automation suppresses production delivery and release republishes current production values. Flush intentionally preserves continuous state. Current mailbox implementation is frozen-identical
+- OBS-003 is an investigation, not a confirmed defect: button threshold crossings accumulate in an unbounded deque and only game-thread event polling drains it. Establish whether maintained producers can keep publishing across a materially stalled/loading/suspended consumer, and quantify storage/drain delay before admitting a budget fix. Overflow policy must preserve final axis/button releases and ordinary short pulse order; silently dropping all pending events would contradict tested semantics
+- Shared audio format accepts documented U8/S16 variants, bounds channel/rate/frame sizes, computes expected bytes in uint64_t and leaves caller output unchanged on failure. No new format/admission root found. Sample-duration diagnostics are observations of the actual mixer buffer, not a second decoder or game-format owner
+
+## Evidence and gaps
+
+Inspected complete assigned files, full mailbox publish/automation/drain path, paired SDL event/mixer calls, current diagnostics delta, SDL backend observation sites, R1-CHUNK-0129 evidence, focused mailbox tests and active/done GQ/BR ledgers. Disabled joystick draining consumes transitions before acknowledgement; it is not itself a backlog trigger. No race instrument, stalled-consumer stress, native build, allocation fault or emulator test ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0250; rationale: existing audio diagnostic cross-thread publication is the highest supported fix owner
+- Normalize RETAIN, issues coverage, BR-0250/BR-0662 extensions and one bounded backlog investigation (GQI-0005); no new mailbox remediation until exposure and safe overflow semantics are established
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0190 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0191 frozen survey, resumed 2026-09-30 SHA256:5271ef5d456139fede8dcb3b46d108aa00327feab3e73c0fbac104d979e98d64 -->
+
+## GQ1-CHUNK-0191 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0191.md`
+- Imported SHA-256: `5271ef5d456139fede8dcb3b46d108aa00327feab3e73c0fbac104d979e98d64`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0191 frozen survey, resumed 2026-09-30
+
+## Scope and minimization
+
+Reviewed every assigned frozen line: android_save_meta.c/.h L1-L309/L1-L121, android_save_set.c/.h L1-L158/L1-L32 and android_screen_advance.h L1-L39 (659 lines), against the pinned GQ1 BASE and HEAD. All five files are branch-added
+
+Diff-minimization disposition: RETAIN
+
+The shared metadata trailer, deterministic path encoder and screen admission interface already own reusable behavior. Engine serializers retain DGSS layout knowledge, callsign ownership and ordered calls into the shared owner. The September thumbnail consolidation is complete and does not justify another extraction. Whole frozen inherited state paths are D1 +1520/-173 and D2 +2048/-94; these include unrelated runtime serialization, coop and rewind work, not attributable removable metadata lines. No new complete inherited hunk is safely removable
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/android_save_meta.c`: L1-L309; frozen blob `1236b883d386402e0a1b875b605c10cd1fbcc4b5`
+- `android/app/src/main/cpp/shared/android_save_meta.h`: L1-L121; frozen blob `07fe3df28571733949b5913d6080e4ba4e5cf8c6`
+- `android/app/src/main/cpp/shared/android_save_set.c`: L1-L158; frozen blob `ab1459367dc8d953ede2747a12603b3363b20e15`
+- `android/app/src/main/cpp/shared/android_save_set.h`: L1-L32; frozen blob `d749aaf13aec9fc774b146972a4afac08bfc466a`
+- `android/app/src/main/cpp/shared/android_screen_advance.h`: L1-L39; frozen blob `d9cde26e53b716fa53a9a71b9d7fb5fdc02d196d`
+
+Scope SHA-256: `c57ec620112dad0330dd9dafdbc2675132eab069e851d27626aed4607b35d8b4`
+
+## Quality and reconciliation
+
+- OBS-001 extends BR-0082: read_path and read_physfs admit a schema-valid EOF trailer without validating the preceding DGSS body. The newest helper likewise ranks by metadata only. The production JNI discovery already has the canonical owner; select_newest itself has no production caller, only its registered test. Literal base-save-body fixtures prove trailer parsing, not loadability. Preserve that distinction rather than treat the fixture as a successful restore
+- OBS-002 extends GQF-0096/BR-0338: metadata mission identity is eight bytes, while save-set paths sanitize/hash the complete mission. Long valid identities can become path-mismatch orphans. The current mission asset key and schema version 7 need delta review before declaring the prior identity owner fixed
+- OBS-003 extends BR-0029: the screen interface traces to main-looper JNI state queries and requests in android_input.c. The generation check rejects stale sequential requests, but volatile kind/ready/generation/request fields and mutation of the release gate do not provide coherent cross-thread publication. Queue request admission and publish a single engine-owned snapshot under the existing affinity owner
+- Frozen BR-0235 is already repaired: state_android_write_save_metadata returns append failure and both engine serializers reject metadata/close failure with balanced start_time. Do not dispatch the stale void-contract finding again. This is distinct from BR-0082 semantic admission
+- Footer size, tag, enum bounds, exact thumbnail dimensions, zero-filled fixed strings, packed size below uint16_t capacity, failed-seek restoration and priority/path tie-breaking were checked. Build normalizes difficulty bounds; callers own valid music and Guide-Bot enums. No additional trailer arithmetic or buffer root found
+- Save path builders bound slot indices, distinguish single/coop roots, bound sanitized pilot/mission fields and use the complete bounded mission input for a digest suffix. The exposed scope argument and fallback sanitizer are supplied with fixed trusted scopes/fallbacks at production callers, so hypothetical traversal through arbitrary scope/fallback is not admitted. Negative snprintf results are not observed on supported ordinary ASCII paths. Current PATH_MAX fallback is an external portability repair
+- Thumbnail cache setters/capture/save consumers execute on the engine path; no independent concurrent thumbnail producer was found. Sequential pointer borrowing remains valid until serialization completes. Schema changes are disposable Android formats under repository instructions, not a reason to add migration support
+
+## Evidence and gaps
+
+Inspected exact frozen sources, full screen implementation and JNI consumers, shared state metadata writer/reader/validation, paired serializer error exits, current metadata/path deltas, registered save tests, complete-identity tests and active/archive owners. The current test_android_save_set adds long equal-prefix cases but does not exercise the narrowed JNI metadata gate. No native build, fault-injection restore, screen race test or emulator run occurred
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029
+- Normalize RETAIN, existing save/body/identity/engine-affinity extensions and frozen metadata-append external repair; no new finding or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0191 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0192 frozen survey, resumed 2026-09-30 SHA256:bebc9bdc8e508a40f534891655038c79f53a2172f7c7aa86f76f47505e595a44 -->
+
+## GQ1-CHUNK-0192 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0192.md`
+- Imported SHA-256: `bebc9bdc8e508a40f534891655038c79f53a2172f7c7aa86f76f47505e595a44`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0192 frozen survey, resumed 2026-09-30
+
+## Scope and minimization
+
+Reviewed all assigned frozen lines: state_android_shared.c L751-L1057 (including enclosing save_to_path signature/setup), state_android_shared.h L1-L50, track_names.c/.h L1-L291/L1-L57 and tsf_impl.c L1-L11 (716 assigned lines). All files are branch-added at pinned GQ1 HEAD
+
+Diff-minimization disposition: RETAIN
+
+Shared save lifecycle, memory wrappers and music-name table adapters already centralize paired policy. Paired state serializers retain format knowledge and shared save calls; paired songs hooks only announce track/level changes. Whole frozen songs diffs are D1 +58/-7 and D2 +77/-7 and include soundtrack/RNG policy outside this assignment; no shared overlay body remains to extract from them. TinySoundFont implementation macros live in one shared library owner linked by both games, not duplicate engine implementations
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/state_android_shared.c`: L751-L1057; frozen blob `7097e2d188db8386656015edb364f39ad4ee7dc2`
+- `android/app/src/main/cpp/shared/state_android_shared.h`: L1-L50; frozen blob `533e8d46ae0ae0dcedb4954cc054e060930712c4`
+- `android/app/src/main/cpp/shared/track_names.c`: L1-L291; frozen blob `a166033e57eed03971c6d23c426b501ca0b8f7c7`
+- `android/app/src/main/cpp/shared/track_names.h`: L1-L57; frozen blob `6bd80efd9c28daf5fc9091d3acf7ae92a27d0c2b`
+- `android/app/src/main/cpp/shared/tsf_impl.c`: L1-L11; frozen blob `4aa52bd0d7c2a8cf860c24bfd0337249c75351b9`
+
+Scope SHA-256: `814223d2df6760320ce5371903adaeb6ac26ae66165d504d3a89c2379909824e`
+
+## Quality and reconciliation
+
+- OBS-001 extends GQF-0096/BR-0338: progress comparison and periodic context use the eight-byte metadata mission name despite a complete/hash save-set namespace. Frozen metadata creation receives the narrowed nine-byte engine mission field. Current stable asset keys and mission loading changes must be reviewed in the delta before closing identity findings
+- Frozen BR-0258 is already repaired: the periodic scheduler switches A/B and advances the five-minute deadline only after positive save success; failure retains the slot and schedules the retry interval. Death resets the deadline to the retry interval without consuming a slot. Preserve this external repair for the historical recheck
+- Save_to_path stages, validates and publishes before last-set pointer publication; save_to_slot additionally stages the slot and D2 companion transaction. The earlier assigned shared publication owner needs its own crash/rollback policy, but this call sequence does not introduce a separate transaction root. Memory save rejects sticky serialization errors, restore forwards the explicit coop-remap gate and clears globals on normal return. BR-0208's complete-serialization repair remains intact; authority/all-peer restore staging remains BR-0206
+- stop_time in save_to_slot is balanced by each normal engine state_save_all_sub return. The temporary-path-too-long branch omits start_time, but bounded constant root and 32-byte path components keep production slot paths far below PATH_MAX; no reachable supported trigger established, so no new defect admitted. Memory wrappers have their existing engine caller timing contract
+- The blank/lifecycle policy skips multiplayer, secret/nonpositive levels and dead players as intended; documented lifecycle return values distinguish skip/failure. D1/D2 restored player object bounds are checked before dereference, with type/control repair limited to the selected player object
+- OBS-002 extends BR-0029/BR-0044: music UI calls reach mutable CUE/name tables and shared static display buffers concurrently with engine music reload/notify; JNI notification lifetime and exception safety retain their existing callback owner. Frozen music_name_table returns borrowed string pointers from mutable global vectors without locking; reload/clear can invalidate those pointers as well as track_names' static buffers. Byte truncation can split UTF-8 before the shared JNI conversion, so preserve BR-0065 boundary context without reopening its completed codec implementation
+- The CUE count setter upper-bounds 100; negative counts cause lookup to reject all positive tracks, not an out-of-bounds access. Valid production setters provide non-null titles with bounded track indices. Jukebox/mission sidecar loaders enforce 512 KiB, full reads and NUL termination. Archived BR-0091 parsing, exact-before-alias lookup and validated dynamic ownership remain in the separate music_name_table owner. Clearing before a missing file intentionally drops names from the prior playlist; no independent persistence contract violated
+- Current tsf_impl adds validated SoundFont loading and current track_names adds embedded tag lookup/fallback. Those substantial post-freeze additions require delta coverage and are not certified by this macro-only frozen assignment
+
+## Evidence and gaps
+
+Read complete assigned ranges, enclosing save helpers, paired serializer open/close paths, timer nesting, metadata/progress comparison, memory and companion owners, music reload/JNI callbacks, current source deltas and active/archive findings. Save and slowdown tests were inspected but no runtime test, low-space fault, race instrumentation or Android build ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029
+- Normalize RETAIN, identity/affinity/JNI extension evidence and frozen periodic-save repair; no new finding or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0192 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0193 frozen survey, resumed 2026-09-30 SHA256:d60292199bd3c5259ccce10fe6e70e521f90c6f5354f2ec703b19efc963a3915 -->
+
+## GQ1-CHUNK-0193 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0193.md`
+- Imported SHA-256: `d60292199bd3c5259ccce10fe6e70e521f90c6f5354f2ec703b19efc963a3915`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0193 frozen survey, resumed 2026-09-30
+
+## Scope and minimization
+
+Reviewed all 695 assigned frozen lines: android_slowdown_detector.c/.h L1-L297/L1-L125, android_surface_lifecycle.h L1-L21, android_texture_debug.c/.h L1-L196/L1-L41 and android_visual_policy.h L1-L15 at pinned GQ1 HEAD
+
+Diff-minimization disposition: RETAIN
+
+Slowdown aggregation and texture target/label ownership are shared; paired profiling and draw sites remain consumers of their private frame/GL state. Whole frozen OGL diffs are D1 +1876/-65 and D2 +1969/-65 and contain many unrelated renderer changes. The September cleanup already moved paired overlay drawing into this shared texture owner; it is realized reduction, not a new candidate. The visual permission check is already one shared policy
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/android_slowdown_detector.c`: L1-L297; frozen blob `997e7e6134f9b84d3bea05181f7686bdd85d5628`
+- `android/app/src/main/cpp/shared/android_slowdown_detector.h`: L1-L125; frozen blob `bba28bc4976bcea7a08daab8cb546ca9270c4583`
+- `android/app/src/main/cpp/shared/android_surface_lifecycle.h`: L1-L21; frozen blob `37e1b3eec035b8e30f309e24fe4a5c1730aed513`
+- `android/app/src/main/cpp/shared/android_texture_debug.c`: L1-L196; frozen blob `cd324df1a4d91d9741ec9724f739b2bac080c836`
+- `android/app/src/main/cpp/shared/android_texture_debug.h`: L1-L41; frozen blob `ffcedb212601df43e49606bf43b181ef33559ea3`
+- `android/app/src/main/cpp/shared/android_visual_policy.h`: L1-L15; frozen blob `0ad114f2b2a488aed91db450ae04b3b1707e1274`
+
+Scope SHA-256: `7cdd65d5c31d982da3de5f406e8f20ee107aea73d8124893863e3f14be447ef5`
+
+## Quality and reconciliation
+
+- OBS-001 extends BR-0463: the shared stock-PvP predicate protects high-resolution replacements and models, but legacy optional-overlay DTX loading bypasses it. Preserve optional versus mission-owned provenance in that canonical fix; do not disable required mission data indiscriminately. This unchanged current header does not repair its missing consumer
+- OBS-002 extends BR-0305: target setter changes the named diagnostic identity but inherited merged-wall first-handle and source-log history are not reset/keyed by target. The shared setter is a validation seam for the existing owner, not a new reset finding
+- OBS-003 extends BR-0029: overlay enablement and engine rendering/introspection are cross-thread consumers of volatile debug state. Memory barriers plus volatile are not publication ownership. Target parsing itself is invoked by engine automation and keeps bounded terminated names; no independent buffer race admitted without another producer
+- Detector clamps 64-bit work calculations to int32, widens FPS/window arithmetic, bounds ring indexing, keeps a fixed 768-frame allocation and three worst frames, resets discontinuity/suppressed-frame windows and cap/vsync baseline, and guards trigger/capture/cooldown state transitions. Configured max_fps originates in an int16 frame field, so multiply-by-1000 stays representable. No confirmed new detector arithmetic or state-machine root
+- Surface snapshot declarations match acquire/release implementation: one mutex snapshots window/generation/pause and acquires an independent ANativeWindow reference before releasing the lock; release nulls the borrowed snapshot window. EGL consumers release references on every traced normal exit. The current added display-dimension declarations need delta coverage but introduce no frozen interface root
+- Ring_get rejects negative/out-of-range indices and maps oldest entries correctly after wrap. Production profiling owns feed and ring access on the engine thread. Registered detector tests cover intentional waits, render/scheduler slowdown, absolute low FPS, cap change, severe frames, hard stall, resume suppression, network aggregation, capture and cooldown
+- Current detector permits a new hard stall during cooldown and clears previous severe evidence; its maintained test adds that case. Current frame record_us and shared overlay drawing are post-freeze changes requiring delta review. Frozen diagnostics intentionally omit these later semantics
+- Texture anchor calculation rejects missing/short point lists and near/behind centers, divides coordinates before summing and uses checked projection; label writes enforce capacity and terminated names, capture face attribution and bound initial render logs. Valid callers supply non-null points and bitmap records. Removed upload helpers stay removed under archived BR-0226; BR-0347 clipping chroma and broader merged-wall issues retain their existing inherited owners
+
+## Evidence and gaps
+
+Inspected exact assigned source, profiling feed/ring consumers, automation target writer, JNI debug consumers, paired OGL hook counts, visual-policy consumers and relevant historical reports/September plan. Inspected registered slowdown tests and current code changes. No runtime profiling, GL snapshot, race instrument, native build or emulator test ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0463
+- Normalize RETAIN and existing optional-overlay/diagnostic-history/engine-affinity extensions; no new finding or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0193 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0194 frozen survey, resumed 2026-09-30 SHA256:04f7fd67e96243f3a2f9ffa89227e175e4a3300b5dae6597497cdea25f704414 -->
+
+## GQ1-CHUNK-0194 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0194.md`
+- Imported SHA-256: `04f7fd67e96243f3a2f9ffa89227e175e4a3300b5dae6597497cdea25f704414`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0194 frozen survey, resumed 2026-09-30
+
+## Scope and minimization
+
+Reviewed all assigned frozen lines in physfsx_android_setup.c/.h L1-L301/L1-L30, physfsx_android_shared.c/.h L1-L30/L1-L11 and pilot_pref_transaction.cpp/.h L1-L82/L1-L30 at pinned GQ1 HEAD (484 lines). All six are branch-added
+
+Diff-minimization disposition: RETAIN
+
+The pure setup policy owns checked mount ordering and diagnostics; a shared production adapter supplies PhysicsFS operations. Pilot patch transaction owns bounded snapshots and recovery, while engine playsave.c owns file format patches. GQF-0155/GQR-0142 already removed 26 inherited PhysFS lines and two hunks after this freeze. Remaining paired game-directory calls are the intended adapters, not another extraction candidate
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/physfsx_android_setup.c`: L1-L301; frozen blob `5e3ac8356e44ba42d15e99f181592be5e71b6866`
+- `android/app/src/main/cpp/shared/physfsx_android_setup.h`: L1-L30; frozen blob `4f97cb8db12075de8f3f46c1e04a246fe9c52250`
+- `android/app/src/main/cpp/shared/physfsx_android_shared.c`: L1-L30; frozen blob `78a0c1115210a1339739b89a656500a4bcd71adb`
+- `android/app/src/main/cpp/shared/physfsx_android_shared.h`: L1-L11; frozen blob `8626cd91acd21aacf7b921414e6a84487f0fef0c`
+- `android/app/src/main/cpp/shared/pilot_pref_transaction.cpp`: L1-L82; frozen blob `925e999f9a1bb51e6345d2413a16240144511af3`
+- `android/app/src/main/cpp/shared/pilot_pref_transaction.h`: L1-L30; frozen blob `5be72f7c29f7a83b81d09cb337f2d03dfbf08b4c`
+
+Scope SHA-256: `fd36a2051842e097845241e2d44315ddcf78af91530d6e91c5266baad7e85314`
+
+## Quality and reconciliation
+
+- Archived BR-0253 failure-closed startup repair remains intact: every required root, write-directory change, active-set/SAF/mod mount and archiver registration has a status gate; later failure rolls back recorded mounts in reverse order and restores the previous write directory. Optional base/data compatibility fallbacks occur only after required setup. Diagnostics are bounded and cleared at entry
+- Frozen BR-0469 silent native clipping is already corrected here: the 65th nonempty mod path fails with an explicit diagnostic rather than silently loading a partial list. The Kotlin producer pre-launch capacity policy remains a separate live boundary to reconcile, and the native mock suite lacks exact 64/65 tests. Do not claim this fixes the complete owner without checking the producer
+- Long/incomplete required path lines, ferror, fclose, missing versus unreadable manifests and mount-point copy bounds are checked. Tracking capacity is exactly 64 mods plus four possible required roots. Existing duplicate-mounted roots and rollback failures are not independently validated by the mock; normal setup occurs on a freshly initialized PhysicsFS context, so an already populated reinitialization scenario belongs to GQF-0095 rather than another finding
+- OBS-001 extends BR-0236/BR-0029: pilot transaction snapshots every target before mutation and rolls all originals back after a reported patch failure, but uses no shared canonical-file lock or crash recovery journal. Concurrent engine/launcher writers can be overwritten by stale rollback. If restore fails, -2 reports incomplete recovery but all in-memory originals disappear when the function returns; the existing crash/concurrent-generation owner requires retaining recoverable originals rather than claiming the partial repair is complete
+- Native allocation or patch exceptions are outside this C-facing helper's ordinary return protocol; the current target vector construction likewise lacks exception containment. Preserve this failure boundary in BR-0236's grouped transaction review, including allocation and visitor fault injection, rather than treating bool-return fixtures as exhaustive rollback proof
+- Each file is capped at 16 MiB and aggregate snapshots at 64 MiB with subtraction before addition; original reads check seek, length, complete read and close. Zero target count intentionally returns zero. Caller-owned strings remain stable through the invocation. Native focused tests prove two-target success and reported second-patch failure only; they do not inject restore failure, interruption or concurrency
+- Current PhysFS setup takes an explicit isolated directory and the adapter also owns init/args/mission mount lifecycle. Those substantial post-freeze changes need delta coverage; frozen preview getenv behavior is not certification of current metadata isolation
+
+## Evidence and gaps
+
+Read every assigned frozen file, production operation adapter/callers, JNI pilot enumeration and target lifetime, shared atomic-file dependency and focused transaction/setup fixtures; reconciled active/archive GQ/BR owners and completed extraction evidence. No native build, mount-failure runtime, allocation fault, crash recovery or concurrent writer test ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0236
+- Normalize RETAIN, grouped transaction/affinity/init-retry extensions and bounded native mod admission; no new finding or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0194 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0195 frozen survey, resumed 2026-09-30 SHA256:8f38909aa1be231acadac0b1890ae84d9c29a1af7bdf7fc84909087537c09701 -->
+
+## GQ1-CHUNK-0195 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0195.md`
+- Imported SHA-256: `8f38909aa1be231acadac0b1890ae84d9c29a1af7bdf7fc84909087537c09701`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0195 frozen survey, resumed 2026-09-30
+
+## Scope and minimization
+
+Reviewed all assigned frozen lines in etc2_decode.c/.h L1-L357/L1-L17, fingerprint_duration.h L1-L19, fingerprint_gen.c/.h L1-L209/L1-L69 and font_control_shared.h L1-L15 at pinned GQ1 HEAD (686 lines). All six are branch-added
+
+Diff-minimization disposition: NO_INHERITED_EFFECT
+
+The decoder has no caller, include consumer or CMake registration in either frozen or live tracked product/build tree: symbol-exact git grep finds only the two definitions and declarations. The file has been untouched since April while KTX2 decoding uses its separate live owner. Deleting this dead branch-added implementation/header reduces 374 maintained lines but does not reduce inherited hunks. Fingerprint generation/duration and font control parsing already use shared owners and narrow paired calls
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/etc2_decode.c`: L1-L357; frozen blob `f579e5477a0959adc727b5c01a1cddfa41bf6004`
+- `android/app/src/main/cpp/shared/etc2_decode.h`: L1-L17; frozen blob `377896b601bfd30830560c268d2596aa2cae3f56`
+- `android/app/src/main/cpp/shared/fingerprint_duration.h`: L1-L19; frozen blob `3bc40dda79e39a93f03ef40a1dbbcbeb5f31642d`
+- `android/app/src/main/cpp/shared/fingerprint_gen.c`: L1-L209; frozen blob `878590039f2d8e17b57b46a729289a38f3babdde`
+- `android/app/src/main/cpp/shared/fingerprint_gen.h`: L1-L69; frozen blob `8f30bc6651a6fc47de087e580e0961b4884c5412`
+- `android/app/src/main/cpp/shared/font_control_shared.h`: L1-L15; frozen blob `edc85f3d5fe51e09ee9cde5faa6517a95e9bf419`
+
+Scope SHA-256: `7e1d839ac5c2dd165551a145abc577c7b98628010c0606fb219a2180271bac94`
+
+## Quality and reconciliation
+
+- OBS-001 admits GQF-0178/GQR-0165: orphaned ETC2 software decoder and header. Remove both after confirming source/build inventory and dynamic-name searches, keep the production KTX decoder and GPU self-test owner unchanged. The unused image decoder has unchecked signed allocation products, rounded-down block loops and no compressed input length contract, but no production path reaches them; do not create separate runtime security/codec fixes for unreachable code
+- OBS-002 extends GQF-0058: fingerprint_from_audio_file still fully decodes compressed PCM, and stream_feed intentionally feeds complete input. Archived BR-0048's bounded-prefix policy was superseded and the complete-work resource/cancellation owner remains canonical. The streaming CD production path avoids one contiguous raw-track copy but does not establish duration, CPU or cancellation budgets
+- Incremental feed uses size_t frame units, validates multiplication and accumulated frames, chunks chromaprint_feed at INT_MAX/channel count and increments total_frames only after successful full feed. Duration uses quotient/remainder with checked INT_MAX millisecond bounds. Ordinary production channel/rate limits keep the remainder multiplication representable on 32-bit Android; direct arbitrary INT_MAX rates are not a traced supported decoder input
+- Finish obtains Chromaprint-owned raw/encoded buffers, copies into caller-owned output and frees library storage; failure after an allocated raw copy cleans output if encoding fails. Callers initialize output and invoke fingerprint_free on their failure paths. No new ownership or complete-duration arithmetic root established. Partial feed failure is propagated by production callers, which destroy the failed stream rather than retry a partially fed generation
+- fingerprint_durations_compatible uses absolute difference/max in int64 and intentionally treats unavailable duration as compatible. Config callers own a finite valid tolerance; GQF-0145 owns invalid threshold reconfiguration. Archived BR-0040's native symmetric duration repair remains intact; PowerShell parity is GQF-0060
+- Font helper guards null/empty text, distinguishes one-byte controls from two-byte color/spacing controls and treats a trailing operand-less control as one byte; paired font consumers skip only those lengths. Its test's assert-based oracle is a validation context for BR-0662, not a duplicate parser finding
+- ETC2 mode formulas were inspected as part of full coverage, but conformance was not established against an external reference decoder. Since it is unregistered dead code, deletion is the actionable maintainability boundary, not an unsupported claim of live rendering correctness
+
+## Evidence and gaps
+
+Full assigned sources, complete tracked frozen/live symbol and CMake/include searches, decoder history, KTX owner registration, CD/file fingerprint production callers, focused fingerprint tests and active/archive resource and matching owners were inspected. No codec oracle, native build, decoded-image test, long-media memory/CPU measurement or cancellation run occurred
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: GQF-0058
+- Normalize existing resource/test extensions plus new dead-code deletion GQF-0178/GQR-0165. Its individual remediation score is 36 (12/0/4/10/10), independent of this chunk's highest-impact existing owner
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0195 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0196 frozen survey, resumed 2026-09-30 SHA256:4d4310c1f1e5d196637c09dd33a9aa8fecdc036236fe9174399bc57984bdfa08 -->
+
+## GQ1-CHUNK-0196 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0196.md`
+- Imported SHA-256: `4d4310c1f1e5d196637c09dd33a9aa8fecdc036236fe9174399bc57984bdfa08`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0196 frozen survey, resumed 2026-09-30
+
+## Scope and minimization
+
+Reviewed all assigned frozen lines in android_meta_actions.h L1-L125, android_music_control.h L1-L10, android_newmenu_text_wrap.c/.h L1-L149/L1-L21 and android_pilot_listbox_hold.c/.h L1-L266/L1-L45 at pinned GQ1 HEAD (616 lines). All six are branch-added
+
+Diff-minimization disposition: RETAIN
+
+Meta-action IDs/interfaces, text wrapping and hold state already own reusable policy; the inherited menu handlers retain private menu/listbox layout and dispatch callbacks. GQF-0156/GQR-0143 already extracted shared accessor ownership. Remaining explicit ordered hook calls are narrow game adapters; no additional complete inherited hunk can be removed from this assigned owner safely
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/android_meta_actions.h`: L1-L125; frozen blob `16e53bc1da002aba0a0bf652ba0611de5ce75141`
+- `android/app/src/main/cpp/shared/android_music_control.h`: L1-L10; frozen blob `17c3db03941632a800da41c508dbb0c21457042a`
+- `android/app/src/main/cpp/shared/android_newmenu_text_wrap.c`: L1-L149; frozen blob `69548d8a540ac76af3231e70b0c6dbc622b5cbcb`
+- `android/app/src/main/cpp/shared/android_newmenu_text_wrap.h`: L1-L21; frozen blob `eece078282cd78fac09d8b50e8be0b3a2b669b2f`
+- `android/app/src/main/cpp/shared/android_pilot_listbox_hold.c`: L1-L266; frozen blob `fc04c65de6adb71d0f5a23069db26dd72f98d0e6`
+- `android/app/src/main/cpp/shared/android_pilot_listbox_hold.h`: L1-L45; frozen blob `0b714658ec848f5e40133ee8e2d01d826a34e954`
+
+Scope SHA-256: `e1e9334146405495b102941fe73204a3c7d5630f496703220a8c86db68b88aa1`
+
+## Quality and reconciliation
+
+- OBS-001 extends BR-0244/BR-0245: the header explicitly declares UI-produced/game-consumed volatile requests. Separate test/read/clear operations can lose a later request and volatile provides no race-free publication. Exact weapon requests and coop restart declarations add evidence to the existing mailbox owners; current quicksave/load, reactor and matcen additions need delta coverage rather than being silently included in frozen analysis
+- Kotlin TouchBindings constants and native IDs retain the documented META offset/domain, gaps and exact weapon identities. The music-control header matches its engine apply-pending definition. Current added source/replay APIs require their own delta review; declaration count alone is not an unused-code finding
+- OBS-002 extends BR-0202: pilot hold helpers clear on listbox close, item changes, explicit release and caller clear, but paired EVENT_WINDOW_DEACTIVATED only toggles key repeat. Polling after focus loss can therefore advance the retained 600 ms pilot-delete hold and synthesize Ctrl-D without a fresh focused press. Reuse the canonical focus-loss root and validate pilot holds alongside reorder holds
+- Release suppression prevents the physical up after a polled deletion from selecting another item, and is keyed by listbox/button. Deletion callback absence safely consumes rather than dereferencing null. Joystick enter callback is supplied by paired callers; new-player index zero cannot be deleted. Existing BR-0645 test stops at opening the prompt and needs the complete cancel/confirm workflow, which is distinct from implementation focus handling
+- Text wrapping preserves source ownership until a complete new array succeeds; partial allocation/string failure frees constructed entries and leaves caller outputs unmodified. All item types are admitted only by the paired text-only tiny-menu consumer. Unsigned char ctype calls, NUL termination, zero-text behavior and growth cleanup were checked
+- Fixed 256-byte word/candidate buffers can truncate long tab prefixes or concatenated long words. No maintained production fixture demonstrating information loss at an accepted caller boundary was established in this review; retain this limit as a validation gap, not a confirmed new defect. Source_count/capacity overflow likewise needs a supported massive-menu producer before admission
+- Current wrap/hold implementations are frozen-identical. The missing deactivation clear therefore needs live recheck under BR-0202, while current accessor extraction does not repair input lifetime
+
+## Evidence and gaps
+
+Read all exact frozen lines, enclosing paired text-only conversion/ownership restoration, listbox down/up/idle/deactivation/close consumers, meta dispatch/game handlers, Kotlin ID contract and historical active/archive owners. Native code/test registration and current deltas were checked. No menu interaction, long-text fixture, hold focus test, controller race test or native build ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0244
+- Normalize RETAIN, mailbox and menu-focus/test-oracle extensions; no new finding or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0196 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0197 frozen survey, resumed 2026-09-30 SHA256:980ae5efa5030dc2adb30b7e6d5fde41a020b8ca13ea37a5b1bc80c9b4725ff3 -->
+
+## GQ1-CHUNK-0197 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0197.md`
+- Imported SHA-256: `980ae5efa5030dc2adb30b7e6d5fde41a020b8ca13ea37a5b1bc80c9b4725ff3`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0197 frozen survey, resumed 2026-09-30
+
+## Scope and minimization
+
+Reviewed all 570 assigned frozen lines in multi_save_transfer.c L751-L981, music_decode_limits.h L1-L39, music_name_table.cpp/.h L1-L164/L1-L21 and music_track_json.c/.h L1-L97/L1-L18. All six are branch-added
+
+Diff-minimization disposition: RETAIN
+
+Save transfer, decode budgets, sidecar parsing and track-list serialization already have shared owners. Paired multi.c keeps compact ordered packet dispatch and game state; paired songs adapters supply engine-owned paths and track iteration. Moving these private state dependencies outward would invert ownership. Existing DMR/GQ shared songs, save and interface decisions own further inherited reduction; this scope establishes no additional complete removable inherited hunk
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/multi_save_transfer.c`: L751-L981; frozen blob `cde3bd3d5b1c65ed7cd0a119e8a03df3da9b3a94`
+- `android/app/src/main/cpp/shared/music_decode_limits.h`: L1-L39; frozen blob `b2d8923b51d2929f7e1f6b238cac67a553678897`
+- `android/app/src/main/cpp/shared/music_name_table.cpp`: L1-L164; frozen blob `b7534319fc546058685db55c93ea09b7c72b7dd9`
+- `android/app/src/main/cpp/shared/music_name_table.h`: L1-L21; frozen blob `c40f425141fa1ab199aec431e4e68c3edd2919d4`
+- `android/app/src/main/cpp/shared/music_track_json.c`: L1-L97; frozen blob `98956e0d35301baecb9c6a2eecd7952f9b137f25`
+- `android/app/src/main/cpp/shared/music_track_json.h`: L1-L18; frozen blob `944a9d5d48ddbb43c1cb636c2a33a4ff3c026de9`
+
+Scope SHA-256: `42a11e1da3ad3a899009b62b6dee6506d20d53309eb1317e6bf89da0f09910d4`
+
+## Quality and reconciliation
+
+- OBS-001 extends BR-0195: frozen request, ready and client receive handlers rely on payload player/transfer IDs without authenticated sender parameters. Paired dispatch passes only buf. A claimed connected player can affect host readiness and request throttling, while transfer-id equality is not source authority. Current request/ready signatures accept sender identity, so the existing broad owner needs a full live dispatch recheck rather than another finding
+- Transfer admission rejects zero/over-budget data, unknown kind, nonpositive or inconsistent chunk counts; allocation failure releases both buffers, exact final chunk lengths are enforced, duplicate chunks are idempotent, and checksum/completeness gates precede restore. The enclosing host path waits for client readiness before host restoration, preserving the BR-0206 partial repair without closing its complete all-peer acceptance boundary
+- OBS-002 admits GQF-0179/GQR-0166 as an incomplete historical BR-0091 boundary: root.value("version", 0) converts numeric JSON to int before comparison. Pinned nlohmann from_json uses static_cast for signed, unsigned and floating-point values. A sidecar version 1.5 or 4294967297 therefore becomes 1 and can replace the prior table. Require an integer value exactly equal to 1 without narrowing; test signed/unsigned extremes, fractions and prior-table preservation through the production loader. Current parser is frozen-identical. Historical BR-0091 remains closed for its larger schema migration; this local schema-admission gap was not covered by its tests
+- Table parse checks complete UTF-8, duplicate and unknown keys, object/array/string shape and every byte/count budget before swapping. Exact normalized ASCII-folded paths precede ambiguity-aware aliases. Borrowed c_str results and mutable global vectors remain BR-0029/BR-0044 ownership context; no claim of synchronization or independent string ownership is made
+- Decode limits use signed-positive and SIZE_MAX admission, checked frame/channel multiplication and division/remainder for the 1024 expansion cap. One/two-channel and nonempty policies match the production decoders. No new arithmetic root established
+- Track JSON writer bounds capacity with subtraction, supports dry-run sizing, latches failure and checks INT_MAX before returning length. It escapes quotes, slashes, newline, carriage return and tab and normalizes remaining controls to spaces. High bytes pass unchanged to the strict native-string boundary; stable two-pass track generation belongs to BR-0029. No supported producer of INT_MAX records was established
+
+## Evidence and gaps
+
+Read every assigned source/header, enclosing transfer allocation/apply gates, paired packet dispatch, pinned nlohmann numeric conversion, sidecar production consumer and its registered extraction test. Source/build inventory confirms shared ownership. Existing music-name tests are assert-based and do not test unsupported versions; BR-0662 owns the broad release-oracle gap. No native build, malformed-sidecar execution, packet-forgery run, decoder allocation measurement or threaded table test ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0195
+- Normalize RETAIN, existing authority/affinity extensions and the new local schema follow-up GQF-0179/GQR-0166, individually rated 47 (23/0/4/10/10)
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0197 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0198 frozen survey, resumed 2026-09-30 SHA256:542c8c79b13c01338849ee17f0ab068c7a8e368aaf1fc2aff6722c7ef2de0b73 -->
+
+## GQ1-CHUNK-0198 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0198.md`
+- Imported SHA-256: `542c8c79b13c01338849ee17f0ab068c7a8e368aaf1fc2aff6722c7ef2de0b73`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0198 frozen survey, resumed 2026-09-30
+
+## Scope and minimization
+
+Reviewed all 746 assigned frozen lines in android_crash_handler.c/.h L1-L284/L1-L41, android_dxxerror.h L1-L14, android_egl_surface.c/.h L1-L266/L1-L36 and android_file_pair_transaction.c/.h L1-L80/L1-L25. All seven are branch-added
+
+Diff-minimization disposition: RETAIN
+
+Shared breadcrumb, EGL and pair-publication owners already replace paired inherited implementation bodies. OGL retains context/resource adapters and normal engine renderer setup; state_android_shared.c owns the save companion naming and PhysicsFS operation adapter. The assert header already centralizes the diagnostic override. Further moving engine layouts or policy into generic callbacks offers no measured additional inherited reduction in this assigned boundary
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/android_crash_handler.c`: L1-L284; frozen blob `e20bd3297223d71e3fd094728cafe5fa09669e36`
+- `android/app/src/main/cpp/shared/android_crash_handler.h`: L1-L41; frozen blob `ffc90884e4f86a210c47f2db195ad938befb1501`
+- `android/app/src/main/cpp/shared/android_dxxerror.h`: L1-L14; frozen blob `3212ba1c2e2a765854cf91d1af5241fdb7cc57c6`
+- `android/app/src/main/cpp/shared/android_egl_surface.c`: L1-L266; frozen blob `de903d61c4f10bc4ddf63b491b9404e648f2ea58`
+- `android/app/src/main/cpp/shared/android_egl_surface.h`: L1-L36; frozen blob `b3577c259ede1f9cd7cb31363549e6c78a0daaef`
+- `android/app/src/main/cpp/shared/android_file_pair_transaction.c`: L1-L80; frozen blob `0f9fd13bee1ba8c12cb242c59aeac43be141b08b`
+- `android/app/src/main/cpp/shared/android_file_pair_transaction.h`: L1-L25; frozen blob `bf25d624703fc15d45566f9956d435d11d4f5265`
+
+Scope SHA-256: `10f8f82b6bd145a2cf6a54b9cceaad38ba51bfcf1b1ef82b7a929ef0fe0b8822`
+
+## Quality and reconciliation
+
+- OBS-001 extends BR-0240: relaxed atomic sequence allocation happens before plain slot copy; acquire load of the counter cannot publish those later bytes. Concurrent formatting and wraparound writers race on ring slots. Snapshot-file mutex serializes persistence only and does not protect the ring
+- BR-0241 owns the shared latest snapshot pathname: every process initializes by unlinking it and later uses seek/write without cross-process append serialization. BR-0242 owns crash_error_<pid>.txt retention. Sequence overflow and write interruption remain diagnostic-context gaps, not additional admitted roots without supported triggers
+- OBS-002 admits GQF-0180/GQR-0167 as a scope follow-up to archived BR-0065 and completed GQR-0039: this owner still calls GetStringUTFChars and NewStringUTF. jni_level_metadata.cpp and digi_tsf_music.c place native path/mission strings in formatted breadcrumbs; supplementary UTF-8 and scalar-splitting 128-byte truncation can reach NewStringUTF, which expects modified UTF-8. Initialization also makes the second acquisition after a failed first acquisition. Use shared strict JNI conversion, preserve the first pending exception, and truncate stored text at valid scalar boundaries or sanitize diagnostic output under an explicit policy. Cover supplementary characters, invalid/truncated bytes and each acquisition failure. The eight-owner exception repair and assigned codec migration did not include this crash file; keep their accepted results intact and link this uncovered boundary
+- OBS-003 extends BR-0251: EGL initial failures are logged but execution proceeds to context/shim use. Lost-context recreation asks for GLES1 against a GLES3 configuration, re-caches textures even if context creation/current fails, and increments success state. Current EGL owner is frozen-identical. Archived BR-0204 independently retained-window lifetime repair remains intact on all snapshot return paths; it does not fix GL recovery
+- Pair publication snapshots both prior names into backups, publishes companion before primary, and reverses reported rename failures. Prior backup presence causes refusal and candidate cleanup, preserving the recoverable backup. Delete and rollback failures are ignored; no restart recovery is provided here. OBS-004 opens GQI-0006: inject interruption after each rename and backup-delete/restore failures through the production save-slot adapter, verify retry/restart behavior and decide a complete recoverable pair policy. Do not claim permanent data loss solely because backups remain available
+- The registered pair fixture injects only one forward rename failure at steps 1-4 and assumes delete/rollback always succeed. Read the PhysicsFS delete/rename adapter and state_android_publish_save_slot; it supplies deterministic .bak names and does not reconcile remnants before calling the pair helper. Native save-pair recovery is distinct from BR-0236's pilot transaction and GQF-0141's graphics config transaction
+- The assert wrapper records a failure and invokes the ordinary assertion macro; release assertion semantics are inherited policy, not a new promise that every release assertion exits. Capability queries use caller-owned output and run under the existing EGL setup/recovery owner
+
+## Evidence and gaps
+
+Full assigned scope, paired OGL and save publication adapters, breadcrumb producer search, strict JNI conversion owner, native pair test and CMake registration, active/archive concurrency/diagnostic/EGL/transaction roots were inspected. No CheckJNI, acquisition-failure injection, concurrent breadcrumb run, EGL fault run, process-kill save test or native build ran. Current crash-handler session diagnostics added after the freeze require delta coverage
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/4/10/10); proposed owner: GQF-0180
+- Normalize RETAIN, canonical concurrency/EGL references, new JNI boundary follow-up GQF-0180/GQR-0167 and bounded pair-recovery investigation GQI-0006
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0198 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0199 frozen survey, resumed 2026-09-30 SHA256:0f89361c931d5ede72589e1f507adb59acddaa00f941f37e5c9de922962c509b -->
+
+## GQ1-CHUNK-0199 frozen survey, resumed 2026-09-30 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0199.md`
+- Imported SHA-256: `0f89361c931d5ede72589e1f507adb59acddaa00f941f37e5c9de922962c509b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0199 frozen survey, resumed 2026-09-30
+
+## Scope and minimization
+
+Reviewed all 446 assigned frozen lines in automap_metadata_overlay.c L751-L797 and .h L1-L29, boss_hud.c/.h L1-L202/L1-L56, bounded_music_read.h L1-L27 and bounded_rle.c/.h L1-L68/L1-L17. All seven are branch-added
+
+Diff-minimization disposition: RETAIN
+
+Automap overlays, boss rendering and bounded read/RLE policy already have shared owners. Paired automap consumers replace their branch predicate with one call and supply engine-owned edge indexes; boss consumers retain reset/activity hooks and HUD integration. d2/main/d1_custom.c retains archive ownership and calls the validator before decoder use. Those narrow game/format adapters belong in inherited owners; no additional complete inherited hunk reduction was established
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/automap_metadata_overlay.c`: L751-L797; frozen blob `2c9510aa8874567b3dff58688503dd5ad52abda5`
+- `android/app/src/main/cpp/shared/automap_metadata_overlay.h`: L1-L29; frozen blob `db35e27c87de732f72174eaaa43298da525075eb`
+- `android/app/src/main/cpp/shared/boss_hud.c`: L1-L202; frozen blob `d0ec29c3d0d22cee3135429f781319fe6d3b7cec`
+- `android/app/src/main/cpp/shared/boss_hud.h`: L1-L56; frozen blob `34b49b61d6868f89fa5fbd60f2e425fba83c7eed`
+- `android/app/src/main/cpp/shared/bounded_music_read.h`: L1-L27; frozen blob `a8040285e2075212396443e9215d0d52d5f01f7c`
+- `android/app/src/main/cpp/shared/bounded_rle.c`: L1-L68; frozen blob `ce65837bfc8eb1f04cabf88648e0fc37a5f0d9c4`
+- `android/app/src/main/cpp/shared/bounded_rle.h`: L1-L17; frozen blob `a4075f3c331621fa513ab11ca8ec2b46ff724458`
+
+Scope SHA-256: `3c52592719eb06cf3359518798f3d462f6875f6a6e84a746cf4471b622057015`
+
+## Quality and reconciliation
+
+- Secret-edge helper bounds segment indexes and checks mapped secret identity before reading found state. automap_segment_is_within_limit trusts the existing edge index just as its paired inlined predecessor did; both callers originate from generated automap edges. No new branch-caused out-of-range producer was established. Diagnostic getters return engine-owned static state, not transferable string ownership
+- Boss tracking combines object number, signature, type and boss flag and resets at ordinary D1/D2 level setup and D2 secret-level setup. Active/damaged selection avoids nonboss and dead candidates. Difficulty-specific shield scaling remains local to this shared game-aware owner. Width calculation uses int64, handles nonpositive denominators/width and clamps living subpixel health to one. HUD row invalidation and debug initialization precede rendering admission
+- Bounded read accepts repeated positive short reads, rejects zero/negative/overclaimed returns and increments only within the remaining buffer. Nonempty policy matches decoder callers. Its registered extraction test owns nominal, short-read and failure fixtures
+- RLE validation checks declared exact size, bounded row table and one/two-byte row lengths, exact decoded width, terminator at the end of each row and full buffer consumption. Run count arithmetic cannot exceed the positive admitted width, and table-size arithmetic is guarded before addition. Production D2 custom bitmap staging invokes this before decode; the corresponding historical malformed-custom-bitmap repair remains intact
+- Registered native RLE tests and the source staging contract cover malformed header, table, rows, run and terminator cases. They were inspected, not executed. No new resource, lifetime, arithmetic or format rejection defect was established within this assigned range
+- Current boss HUD, bounded read and bounded RLE are frozen-identical. Current automap routing/async changes require delta coverage; this review certifies only the assigned frozen getter/predicate tail and declarations
+
+## Evidence and gaps
+
+Inspected all frozen assigned lines, paired automap edge predicate callers, boss reset/activity/render registrations, shared renderer/header build registrations, bounded-read decoder consumers and registered tests, D2 custom RLE staging and its native/source fixtures. No game rendering, native build, malformed bitmap execution or arbitrary robot-id corpus ran
+
+## Outcome
+
+- Coverage: CLEAN
+- Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: NONE
+- Normalize RETAIN and explicit clean coverage; retain historical parser/lifetime and engine-affinity context without new remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0199 frozen survey, resumed 2026-09-30 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0200 frozen survey, resumed 2026-10-01 SHA256:407a554b8e299125c39b2cf7a0d58239817cd80c8cefe66ae1c25f351b7cafa2 -->
+
+## GQ1-CHUNK-0200 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0200.md`
+- Imported SHA-256: `407a554b8e299125c39b2cf7a0d58239817cd80c8cefe66ae1c25f351b7cafa2`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0200 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 540 assigned frozen lines in android_profile.h L1-L110, android_render_fov.c/.h L1-L45/L1-L12, android_render_resolution.h L1-L18, android_resume_pilot.c/.h L1-L165/L1-L15 and android_rewind_policy.c/.h L1-L106/L1-L69. All eight are branch-added
+
+Diff-minimization disposition: RETAIN
+
+Shared FOV, resume and rewind owners already replace paired implementation bodies. Profile has one shared implementation and desktop no-op facade. Paired render.h still repeats four FOV declarations already owned by android_render_fov.h; replacing each with one include saves only six inherited lines, retains the game-specific main-view declaration and does not remove a complete hunk. This below-payoff interface cleanup is recorded explicitly rather than creating a second large extraction owner. September profile hook consolidation is already complete in live code
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/android_profile.h`: L1-L110; frozen blob `6dbec0d88b685e1315e3919a7afbbb058136b3bd`
+- `android/app/src/main/cpp/shared/android_render_fov.c`: L1-L45; frozen blob `fb6a680d8037c56a5006b5a366ee837e8ef65ca3`
+- `android/app/src/main/cpp/shared/android_render_fov.h`: L1-L12; frozen blob `09af9a3ccfdd1a6fdae87211984726131de5d02c`
+- `android/app/src/main/cpp/shared/android_render_resolution.h`: L1-L18; frozen blob `8729d9d2bd55878583c1f7545a57a3c70054452f`
+- `android/app/src/main/cpp/shared/android_resume_pilot.c`: L1-L165; frozen blob `db20924e850bf13c5d564aa62c5e4dcf1b8311ab`
+- `android/app/src/main/cpp/shared/android_resume_pilot.h`: L1-L15; frozen blob `5332e0cb57d82b86589e73166c690d69c2a9a3e8`
+- `android/app/src/main/cpp/shared/android_rewind_policy.c`: L1-L106; frozen blob `901f287bd6008fbd03fe343b4c93f7ab824c3dbb`
+- `android/app/src/main/cpp/shared/android_rewind_policy.h`: L1-L69; frozen blob `1bc607bb1a0197d28140f771148a779c69f52291`
+
+Scope SHA-256: `e5566d0183ee7a80bdc9cdb3ebe59554f717d821feb44c3fb41583271469fe35`
+
+## Quality and reconciliation
+
+- FOV values are admitted as 0/100/110/120 and lock normalizes boolean without changing stored preference. Fixed zoom values match the registered pure test and paired main-view integration. Mutable graphics configuration remains engine-affinity BR-0029 context, including UI preference application; this header does not introduce synchronization
+- Render resolution caps each dimension before multiplying, bounds total pixels to 3840*2160, and admits only minimum 320*200. Products remain below 32-bit size_t overflow. Negative JNI dimensions become unsigned outside the admitted range
+- OBS-001 extends GQF-0022: resume strcpy relies on the paired save reader's capacity/NUL contract. Inspect and test malformed save callsigns through both production readers before deciding on code changes. Fallback pilot discovery uses exact suffix, bounded callsign length, selectability and reserved sentinel exclusion, and frees the complete PhysicsFS list
+- BR-0255's former ignored return is repaired in frozen and current code: read_player_file failure returns before WriteConfigFile or ready logging. Broader transactional rollback remains an open validation boundary because callsign changes before the reader, which can initialize defaults before failure. Keep the external owner's required state-preservation tests; do not duplicate its root or claim complete closure
+- Rewind capture/request classification enforces cooperative host, alive players, observer and duplicate-callsign policy; target seconds are exactly 5/10/20, with invalid values replaced by 10. Timeline count preserves boundary recorder count. Snapshot selection scans newest eligible old-enough entries and allows a sole strictly older fallback while excluding missing demo timelines
+- Game-time subtraction/rounding assumes runtime game-time values and a bounded configured interval. Arbitrary INT64 extremes can overflow, but no supported producer reaching this assigned helper was established; retain boundary coverage gap without admitting hypothetical arithmetic failure
+- Desktop profile stubs discard arguments intentionally. The KTX metrics declaration has no desktop stub, but the traced callers are Android-only. No desktop compile regression was established. Current profile API additions and centralized inherited hooks need delta coverage
+
+## Evidence and gaps
+
+All assigned sources and headers, frozen/live paired render header diffs, graphics-option application, paired save reader/load and config paths, runtime rewind callsite, pure FOV/rewind tests and CMake registrations were inspected. No native build, malformed-save runtime, UI race run or extreme saved game-time corpus ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029
+- Normalize RETAIN, GQF-0022 and BR-0029/BR-0255 extensions, and documented six-line duplicate-interface opportunity below the campaign's material extraction boundary
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0200 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0201 frozen survey, resumed 2026-10-01 SHA256:de72ae0d49450bae5419ef802beaeb578c0b778d807d7b957cad0a7c626a7110 -->
+
+## GQ1-CHUNK-0201 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0201.md`
+- Imported SHA-256: `de72ae0d49450bae5419ef802beaeb578c0b778d807d7b957cad0a7c626a7110`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0201 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 585 assigned frozen lines in hmp_android_shared.h L1-L15, hog_midi_catalog.h L1-L209, homing_compat.h L1-L52, hud_counts_shared.c/.h L1-L172/L1-L26, hud_layout_shared.h L1-L20 and input_demo_codec.cpp/.h L1-L67/L1-L24. All eight are branch-added
+
+Diff-minimization disposition: RETAIN
+
+HMP conversion, HOG catalog, homing arithmetic, HUD counts/layout and input-demo encoding already have shared owners. Paired HUD callers retain layout integration/right-inset policy; paired homing keeps target selection and game state. The HMP wrapper declaration is already implemented by the completed shared converter, and codec callers share base64/SHA implementations. No additional complete inherited body or hunk could be removed from this assigned boundary without moving game policy
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/hmp_android_shared.h`: L1-L15; frozen blob `1cb734a06df9968d0588385e41f0a17973f11918`
+- `android/app/src/main/cpp/shared/hog_midi_catalog.h`: L1-L209; frozen blob `3dd221e989767c4dd4001a0897278f54f163fca8`
+- `android/app/src/main/cpp/shared/homing_compat.h`: L1-L52; frozen blob `8dafc6eedaf1e33e6957bfe359c3deac4b115820`
+- `android/app/src/main/cpp/shared/hud_counts_shared.c`: L1-L172; frozen blob `68f85a39cd69446c21e6b7a019b36bb07da0335f`
+- `android/app/src/main/cpp/shared/hud_counts_shared.h`: L1-L26; frozen blob `5b61348594f9309f81f76a35ae33dbaba7f74097`
+- `android/app/src/main/cpp/shared/hud_layout_shared.h`: L1-L20; frozen blob `bb4c2cc4d56d4c1766f63b2563d072635fc43fb0`
+- `android/app/src/main/cpp/shared/input_demo_codec.cpp`: L1-L67; frozen blob `2c2e9dda8e78a1673a69dfb6a5718f16851d34ac`
+- `android/app/src/main/cpp/shared/input_demo_codec.h`: L1-L24; frozen blob `34a81d608cdf6183b7aaeb62d8e1e3091943fc57`
+
+Scope SHA-256: `ce75432804bc1be057617e663408aba847148c7f94e276bb640c7025e16d1056`
+
+## Quality and reconciliation
+
+- OBS-001 admits GQF-0181/GQR-0168: hog_midi_catalog_read combines fread, ferror and fclose with short-circuit OR. If fread is short or ferror is set, fclose is never evaluated; buffer cleanup occurs but the file remains open. Truncation between the size check and payload read, or a later I/O error, leaks one FILE/descriptor per preview/enumeration attempt. Current read helper is unchanged even after the new generic filtered-catalog extraction. Always close once and aggregate read/close status; inject short-read and error outcomes through the production helper and measure descriptor cleanup
+- Archived BR-0237 mixed-format, 64-entry and successful-prefix fixes remain intact: one complete HOG scan checks magic, all 17-byte headers, exact remaining spans, seek/tell results and bounded 4096-entry growth before publication. It closes the scanner on every ordinary exit. Read-back checks same file size but not content identity; same-size replacement remains a generation-validation gap, separate from the confirmed leak
+- Catalog read sets outputs empty before owned work and never publishes a failed buffer. The 64 MiB per-entry limit keeps conversion to int valid. Catalog load assumes a fresh or previously freed caller-owned catalog; traced preview/enumeration callers meet that precondition. Current all-entry filtering shares the scan instead of maintaining another parser, but needs delta validation
+- HMP header ownership is consistent: successful MIDI belongs to d_free and paired wrappers preserve tempo semantics. Completed GQR-0157 extraction remains valid; GQF-0144 owns missing exact successful-MIDI wrapper oracles
+- Homing compatibility retains coop-only multiplayer enabling, game-specific acquisition and bounded frame-time arithmetic from inherited behavior. BR-0386 owns rendered/headless target-selection parity outside this arithmetic helper. No new arithmetic or mode defect established under production dot/frame bounds
+- HUD uses bounded strings and engine-owned state. Hostage lost count clamps zero, rows honor message intersections, and secret-only mode returns after the secret row. Cooperative kill stats include session slots intentionally; attribution and population coherence remain existing cooperative owners. Layout integer addition relies on bounded render geometry, so arbitrary INT_MAX rectangles are not a supported producer
+- Codec validates output pointers and nonempty input pointer/size pairs, handles empty SHA/base64 consistently and returns decoded owned bytes. Decode catches std::exception, but output/error allocation can still throw and encoding/hash do not establish no-throw contracts; complete caller exception/resource policy needs the later replay-format review. No new C ABI exception escape was established here. Base64 conformance and canonical-form policy were not rerun
+
+## Evidence and gaps
+
+Inspected all frozen assigned sources, HOG enumeration and preview production callers, current filtered-scan diff, registered HOG fixtures, HMP extraction evidence, paired HUD and homing consumers, codec callers/build registration and historical owners. No I/O fault injection, descriptor-count test, native build, runtime HUD test or base64 oracle ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 44 (H/M/B/C/R = 23/0/4/10/7); proposed owner: GQF-0181
+- Normalize RETAIN, new resource-cleanup GQF-0181/GQR-0168 and existing wrapper/target-selection references
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0201 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0202 frozen survey, resumed 2026-10-01 SHA256:9c82643bf82c4975d9dde0f233cdce4920ba1a98268e31a2605f71b4b251bf01 -->
+
+## GQ1-CHUNK-0202 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0202.md`
+- Imported SHA-256: `9c82643bf82c4975d9dde0f233cdce4920ba1a98268e31a2605f71b4b251bf01`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0202 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 676 assigned frozen lines in coop_indicator_lines.h L1-L19, coop_start_positions.c/.h L1-L79/L1-L9, coop_host_migration_policy.c/.h L1-L37/L1-L28, coop_host_migration.c/.h L1-L98/L1-L7 and coop_level_restart.c/.h L1-L373/L1-L26. All nine are branch-added
+
+Diff-minimization disposition: RETAIN
+
+Shared cooperative spawn, migration and restart owners centralize policy. Paired gameseq.c and multi.c retain compact level, disconnect, per-frame and session-clear hooks using engine-owned state. The policy component is already pure and testable. Moving Player_init, object-owner arrays or serialization layouts into generic callbacks would enlarge coupling without removing another complete inherited body from this assigned scope
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/coop_indicator_lines.h`: L1-L19; frozen blob `25ad1db0005cefe32cbee65826259bd10e8e88ac`
+- `android/app/src/main/cpp/shared/coop_start_positions.c`: L1-L79; frozen blob `a51031c86ea5d150180ce48623c85a9a1d80ddc8`
+- `android/app/src/main/cpp/shared/coop_start_positions.h`: L1-L9; frozen blob `8cbbb20803a39fd2b88a116cd916ed2cc1102be2`
+- `android/app/src/main/cpp/shared/coop/coop_host_migration_policy.c`: L1-L37; frozen blob `aba9fa4ddd1e7d7410654649dc9ed2c9da36c195`
+- `android/app/src/main/cpp/shared/coop/coop_host_migration_policy.h`: L1-L28; frozen blob `da729c7bde6588c4bb5fb33bcf6b3599b5020a91`
+- `android/app/src/main/cpp/shared/coop/coop_host_migration.c`: L1-L98; frozen blob `693ba96b3390b865dbeb50e78212d0dabf135d2b`
+- `android/app/src/main/cpp/shared/coop/coop_host_migration.h`: L1-L7; frozen blob `c9e3504de1f2a24c88afc69e3e7c508e610cac81`
+- `android/app/src/main/cpp/shared/coop/coop_level_restart.c`: L1-L373; frozen blob `78d44c0c90c4f293052204780c58372e287cb096`
+- `android/app/src/main/cpp/shared/coop/coop_level_restart.h`: L1-L26; frozen blob `697703622685318bb8d4a8e94622b24b55e1e1a3`
+
+Scope SHA-256: `a893822cb399279cf7d0dbb993b2f5bb09366b1d50a11efdf5e7c919782231ee`
+
+## Quality and reconciliation
+
+- Spawn fanout tries a fixed twenty offsets, validates containing segment and minimum distance to previous assigned starts, then explicitly falls back to the source. Paired callers bound source and assigned count to initialized cooperative starts. It does not prove full ship-volume wall clearance, but no maintained supported fixture showing a new collision failure was established. Raw model-radius extreme overflow likewise remains a data-admission gap, not a speculative new finding
+- Migration election chooses the first remaining playing slot in bounded caller-owned connection states; local/remote action and object-owner reset match paired disconnect consumers. Negative/invalid counts fail closed in policy. Current added travel, briefing and endgame generation handling requires delta coverage
+- BR-0507 owns handoff ordering: native commits master and notifies Kotlin after best-effort metadata write, while the launcher can replace its working proxy before validating metadata. Metadata open/write/close results are not propagated. Reuse the complete migration handoff owner for generation publication/failure behavior
+- OBS-001 admits GQF-0182/GQR-0169: migration and level-restart metadata interpolate callsign, mission, level title, client ID and save path directly into quoted JSON fields. An accepted level title containing a quote, backslash or control byte makes a successful restart manifest invalid; an accepted quoted mission/callsign can likewise break migration metadata. Use one shared JSON string/schema writer and strict parse/round-trip tests. Archived BR-0042's tool output migration did not include these gameplay metadata producers; its writer is a reusable owner, not proof this scope is repaired
+- Fixed list capacities accommodate all eight bounded callsigns and 36-byte IDs, so no normal offset overflow was established. A zero-player host would leave list buffers uninitialized, but the runtime host/session contract requires a local player; no supported transition reaching zero here was established
+- OBS-002 extends GQI-0006's coupled-generation recovery scope: highest-level persistence renames save before manifest with no rollback. Failure/interruption of the second rename can leave mismatched generations, and subsequent calls can use stale retained-level metadata to skip work. The retained loader reads only the save and does not validate manifest version, identity, size or checksum. Add real save/checkpoint fault fixtures and choose one recoverable pair-publication policy for both this owner and D2 slot companions before dispatching a complete fix
+- Capture serializes to a temporary owned buffer, publishes only complete success, frees the prior snapshot afterward, gates host/alive/observer/duplicate callsigns/transfer state and clears pending capture on restore. Request sets busy before queueing and resets it on synchronous failure. Existing BR-0206 owns asynchronous all-peer transfer failure/state divergence; closing that owner needs current live transfer generation evidence
+- Retained file reads cap size, close allocation/read failures, and free previous storage on successful replacement. PHYSFS_close result is ignored on retained read and identity is copied from the current session rather than validated retained metadata; preserve these facts in the recovery investigation. Local atoi manifest probing lacks typed parse validation and is replaced as part of the shared metadata contract
+
+## Evidence and gaps
+
+Inspected every assigned source/header, paired fanout/level/disconnect/session hooks, restart serialization/load/request paths, current migration/restart changes, build owners and canonical handoff/transfer/JSON roots. No spawn geometry simulation, migration proxy fault test, metadata round-trip, checkpoint interruption/recovery run or native build ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/4/10/10); proposed owner: GQF-0182
+- Normalize RETAIN, new cooperative metadata GQF-0182/GQR-0169, BR-0507/BR-0206 references and extended pair-generation investigation GQI-0006
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0202 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0203 frozen survey, resumed 2026-10-01 SHA256:b3e6b71a1f30577771db258b5f693a5857c438a4727f1761c29f867721ca4c16 -->
+
+## GQ1-CHUNK-0203 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0203.md`
+- Imported SHA-256: `b3e6b71a1f30577771db258b5f693a5857c438a4727f1761c29f867721ca4c16`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0203 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 454 assigned frozen lines in android_autoselect.cpp L1-L454. The file is branch-added and frozen-identical to current HEAD
+
+Diff-minimization disposition: RETAIN
+
+One per-game-compiled JNI owner already shares pilot scanning, order comparison and marshaling across D1/D2. playsave.c owns the binary/text formats and weapon.c owns valid/default orders. Moving those private file-layout or game-table dependencies into this bridge would duplicate engine policy. Repeated scanning with gamepad/preferences bridges is branch-added consolidation context for BR-0236/BR-0268, not another inherited-body extraction in this unit
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/android_autoselect.cpp`: L1-L454; frozen blob `f9e36e252dd398c4f5e0b0ee3af1f72a077ddb82`
+
+Scope SHA-256: `d8f1bea1df822088af775813bd4ac0489ac9f8028b4b44b0100d8d3dc936c744`
+
+## Quality and reconciliation
+
+- Archived BR-0261 repair remains intact for writes: JNI validates exact array lengths, 0..255 byte domain and the complete weapon-order predicate before any patch. Mismatch counting still narrows arbitrary values with &255 and pads short arrays; no malformed maintained Kotlin producer was established, so that difference is a validation gap rather than a second write-safety finding
+- BR-0262's second-only unstable selection is repaired in frozen/live source: seconds, nanoseconds and lexical path provide deterministic selection. Stat failure maps to zero time. No native filesystem tie/failure fixture was found in this scoped review, so preserve the external owner's validation requirement rather than closing it solely from a source comparison
+- OBS-001 extends BR-0236: write loops sum successful visitors and continue after failed patches, leaving partial all-pilot state. opendir failures are skipped, snprintf truncation and readdir errors are not propagated, and no canonical file lock coordinates engine writes. Complete grouped file publication and enumeration should use the existing transaction owner instead of a competing writer
+- OBS-002 admits GQF-0183/GQR-0170: read/mismatch JNI paths do not check GetStringUTFChars, GetIntArrayElements or NewIntArray before dependent calls/dereferences/stores. build_weapon_entries uses unchecked FindClass, NewObjectArray and per-entry NewStringUTF allocations and continues stores with pending exceptions. Under acquisition/allocation failure this can dereference null, invoke prohibited dependent JNI work or replace the first exception. This pilot bridge was outside completed GQR-0039's eight owners; reuse its checked helper/cleanup policy and add production fault fixtures rather than claiming that prior scoped fix covered this file
+- Stack capacities accommodate both games' order shapes and summary fields. Default-order weapon-name indexes are engine-owned validated constants; USE_BUILTIN_ENGLISH_TEXT_STRINGS makes exported weapon names fixed ASCII, so this path establishes no supplementary-character conversion failure. Normal Android filesDir is an ASCII app-private root; its raw modified-UTF API is not the native breadcrumb trigger admitted separately
+- Temporary JNI locals are bounded by at most 22 entries per invocation and are reclaimed on return; this short invocation is distinct from BR-0044's long-lived engine callback frame. Failure cleanup still must release only acquired resources and stop immediately on pending exceptions
+
+## Evidence and gaps
+
+Read all frozen/current source, D1/D2 playsave and weapon-order adapter contracts, NativeAutoselectPatcher dispatch/data layout, source validation fixture, pilot transaction owner and GQR-0039's exact completed scope, shared JNI helpers and build registrations. No acquisition/array-allocation failure run, pilot filesystem fixture, native build or concurrent patch test ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQF-0183
+- Normalize RETAIN, new pilot JNI scope follow-up GQF-0183/GQR-0170 and BR-0236/BR-0262 repair/validation context
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0203 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0204 frozen survey, resumed 2026-10-01 SHA256:0ec85554c40238fe72efd547cd3d707b0f613ba83634733613a095f52039ef87 -->
+
+## GQ1-CHUNK-0204 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0204.md`
+- Imported SHA-256: `0ec85554c40238fe72efd547cd3d707b0f613ba83634733613a095f52039ef87`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0204 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 455 assigned frozen lines in android_gamepad_config.cpp L1-L455. The file is branch-added
+
+Diff-minimization disposition: RETAIN
+
+One per-game-compiled bridge owns configuration decoding and pilot dispatch; kconfig_android_shared.c owns layouts/default mapping, and paired playsave.c owns persisted byte layouts. Calls into those owners are narrow adapters. September Kotlin controller policy consolidation is complete but does not remove native format ownership; no additional complete inherited implementation hunk can move safely into this assigned bridge
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/android_gamepad_config.cpp`: L1-L455; frozen blob `4194f3b96b40beb298556595b4979ff72419db78`
+
+Scope SHA-256: `b53b3720b7f70a78f20b97954cdbfe384e83af875060f5070216a53fbe1d0252`
+
+## Quality and reconciliation
+
+- Archived BR-0265 complete staging repair remains intact: exact version-4/game-specific joystick shape, supported keyboard length, integer bytes, bounded control flags and all six thresholds validate inside one catch boundary before PlayerCfg, global deadzones or mailbox publication. Unsigned values above INT64_MAX narrow negative and are rejected by these nonnegative ranges; no accepted positive-wrap example exists within the JSON uint64 domain here. Avoid copying the separate unchecked-int database finding onto this correctly rejecting boundary
+- Threshold conversion clamps 5..95, uses fixed positive scales 8/3 and produces bounded player deadzones. Axis remap indexes are checked 0..5; virtual gyro defaults only replace unbound 0xff slots. Shared kconfig layout sizes and fixed setting indexes match both compiled games. Policy tests and launcher schema mirror were inspected via historical repair evidence, not rerun
+- BR-0264's literal user-0 path was already replaced with PhysicsFS pref-dir derivation at the freeze. Current code instead derives the config root from the active write directory to support isolated roots. That later path/isolation change needs delta coverage and multi-user fixture evidence before claiming the full external owner is closed
+- OBS-001 extends GQF-0183/GQR-0170: patch/reset/build JNI functions acquire strings/arrays without null or pending-exception checks, continue acquiring after failure, dereference arrays/strcmp results and use unchecked NewByteArray/SetByteArrayRegion publication. These are the same uncovered pilot-bridge acquisition/allocation root as chunk 0203. Apply one checked resource lifetime protocol across both files
+- OBS-002 extends BR-0236: patch_all_plr_files writes each target independently and reports a count even after a later failure; path truncation and enumeration errors do not invalidate the batch. The shared pilot transaction exists but is not used by this bridge. Preserve engine patch ownership while routing all-pilot file-generation coordination through that owner
+- Array builders choose the shorter parallel pair count and discard invalid indexes through the shared fill helper; each output uses its compiled layout size and initializes defaults. The maintained Kotlin producer supplies matching game identity and ordinary action domains. No unsupported cross-library game string was established as a production trigger
+- controller_config_path and ifstream setup precede the inner JSON exception boundary, so allocation failure can still escape the C-facing reload. This is a bounded follow-up within GQF-0183's pilot failure-boundary validation, including C++ allocation faults, rather than proof that malformed JSON escapes the repaired catch
+- Live engine state reload remains engine-affinity BR-0029 context. Assigned code supplies no synchronized snapshot contract; no new independent mailbox race is established because its threshold setter locks internally
+
+## Evidence and gaps
+
+Read the complete frozen file, current 18-line path diff, NativePilotPatcher game dispatch and payload builders, kconfig shared layouts/fill/default ownership, paired playsave reload and patch seams, archived schema repair and active path/transaction/JNI roots, registrations and focused source/JVM test inventory. No JNI or C++ allocation fault, malformed-file launch, multi-user/isolation run, concurrent pilot patch or native build ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQF-0183
+- Normalize RETAIN and references to GQF-0183/GQR-0170, BR-0236/BR-0264/BR-0029 with archived BR-0265 retained as repaired
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0204 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0205 frozen survey, resumed 2026-10-01 SHA256:27d4adcee0464ec136e77de23858b3bdb2b59c64cf27c09f9eeaae8a50084471 -->
+
+## GQ1-CHUNK-0205 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0205.md`
+- Imported SHA-256: `27d4adcee0464ec136e77de23858b3bdb2b59c64cf27c09f9eeaae8a50084471`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0205 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines in android_input.c L1-L750, including the keyboard mapper continued in chunk 0206
+
+Diff-minimization disposition: RETAIN
+
+One shared per-game-compiled input bridge owns JNI admission, touch gesture state and screen-advance policy. Paired title/briefing/movie consumers use the existing narrow screen API; game state and SDL dispatch remain engine-owned. No complete inherited implementation body is assigned here for another safe extraction
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/android_input.c`: L1-L750; frozen blob `bf89fae719768b16ab00599f09ef6abc8030a562`
+
+Scope SHA-256: `85567dd100276f89b7038956a90f22bc3e7f0cdc7b382e73f518368cb0de3a96`
+
+## Quality and reconciliation
+
+- OBS-001 extends BR-0029/BR-0244: JNI reads canvas/window/menu geometry and engine state directly while the engine can change it. Volatile screen generation, kind, ready and pending fields do not publish a coherent snapshot or serialize requests. The generation checks reject ordinary stale requests but do not establish inter-thread synchronization
+- OBS-002 extends BR-0245's unchecked discrete-event publication: touch paths enqueue motion then button changes independently and ignore SDL_PushEvent failures. Saturation can admit only a prefix or discard a release, while gesture bookkeeping has already advanced. Apply the existing failure-aware input owner to touch/key/button publication rather than admitting another duplicate queue-failure root
+- Cutscene suppression tracks held fingers/keys/buttons and consumes matching releases; gesture remapping keeps the selected target rectangle through DOWN/MOVE/UP. Screen consumers call begin/end around their valid kinds and check readiness; the zero-initialized NONE generation is not an established activation trigger in maintained callers
+- Pixel conversion follows a normalized float-to-int conversion before clamping. No maintained producer of NaN or extreme coordinates was established; ordinary device dimensions and locked remap bounds do not prove a reachable overflow. Preserve invalid-domain fixture coverage as a gap instead of a speculative finding
+- Intro preference callback has a bounded local class reference reclaimed at JNI return; it is distinct from BR-0044's persistent engine callback frame. Pending-exception and allocation handling still needs boundary validation, but the constant supported method exists
+
+## Evidence and gaps
+
+Read the complete assigned source and enclosing mapper, paired D1/D2 title/briefing and D2 movie screen-advance consumers, Kotlin touch routing, shared SDL queue contract and BR-0245 saturation evidence. Current android_input.c differs by 211 added and 31 removed lines; later delta coverage must review new commands and recovery behavior. No queue-saturation, touch gesture, thread instrumentation, Android build or screen-transition runtime test ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029
+- Normalize RETAIN and existing BR-0029/BR-0244/BR-0245 references
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0205 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0206 frozen survey, resumed 2026-10-01 SHA256:64c448186b5fe33000d66397bea8e8cd4eee2ea82af6140f25ce33d2804cb76a -->
+
+## GQ1-CHUNK-0206 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0206.md`
+- Imported SHA-256: `64c448186b5fe33000d66397bea8e8cd4eee2ea82af6140f25ce33d2804cb76a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0206 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines in android_input.c L751-L1500, including the keyboard mapper begun in chunk 0205
+
+Diff-minimization disposition: RETAIN
+
+The shared input bridge already owns mappings and launcher entry points for both game builds. Lifecycle visibility transport and surface pause policy have separate shared owners; engine ticks own checkpoint, audio, timer and park behavior. Keep those seams instead of moving engine globals or game-specific window semantics into Kotlin
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/android_input.c`: L751-L1500; frozen blob `bf89fae719768b16ab00599f09ef6abc8030a562`
+
+Scope SHA-256: `35049cf9f55159c0639e22b3b4a8550ed63a1038d8998b983293f78f5f0fe303`
+
+## Quality and reconciliation
+
+- Frozen lifecycle pause/resume already queues visibility and uses the synchronized surface-pause owner. The engine tick handles audio pause/resume, background checkpoint outcome, acknowledgement and balanced stop_time/start_time around parking. Earlier direct UI lifecycle timer access is therefore historical repair context, not a live finding against this assigned implementation
+- OBS-001 extends BR-0029/BR-0244: pause-menu/window queries and overlay pause still traverse engine state from JNI; overlay pause calls timer control from that thread. Save/load, screen admission and settings use unsynchronized shared state. The repaired lifecycle path does not close these remaining owners
+- OBS-002 confirms BR-0266: nativeGetJoinRequest exposes a display name while nativeAcceptJoinRequest sets only a shared boolean. No requester generation or selected team binds the action to the displayed request, so stale approval and team assignment remain the existing authorization root. Preserve its full paired-network validation, without creating a duplicate finding
+- OBS-003 extends BR-0245: synthesized keyboard down/up events discard queue failure. DPAD_CENTER deduplicates the ordinary mapped press path; key ranges and static mappings cover the maintained producer. Legacy SDL 16-bit text encoding and modifier handling require consumer-contract fixtures before claiming a new Unicode defect
+- Dormancy timeout is atomically exchanged into an engine disconnect/Java notification; no volatile timer redesign is needed for that counter. Callback pending-exception policy remains BR-0044 context. Checkpoint diagnostics distinguish commit, skip and failure instead of falsely reporting every request as saved
+
+## Evidence and gaps
+
+Read complete assigned lines, MainActivity key/text/lifecycle and join-action producers, paired join acceptance contracts and archived BR-0266 evidence, surface/visibility/checkpoint ownership. No dormancy emulator run, checkpoint fault, stale-request/team multiplayer fixture, SDL saturation run or race instrumentation ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0266
+- Normalize RETAIN, repaired lifecycle context and references to BR-0266/BR-0029/BR-0244/BR-0245/BR-0044
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0206 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0207 frozen survey, resumed 2026-10-01 SHA256:812a374879a55694b099e83fdb3befda23693d677262f22c963a5513ee3beb31 -->
+
+## GQ1-CHUNK-0207 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0207.md`
+- Imported SHA-256: `812a374879a55694b099e83fdb3befda23693d677262f22c963a5513ee3beb31`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0207 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 588 assigned frozen lines in android_input.c L1501-L2088
+
+Diff-minimization disposition: RETAIN
+
+The input bridge already delegates ordered axis transitions and final snapshots to the shared mailbox. LevelPreview JNI aliases forward to the same physical input implementations; duplication is bounded symbol adaptation, not another implementation owner. Paired SDL event loops consume the shared drain contract
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/android_input.c`: L1501-L2088; frozen blob `bf89fae719768b16ab00599f09ef6abc8030a562`
+
+Scope SHA-256: `75488f226e9b0a8667de26ac54a8326038b17e656b933cb062e205c07d9c1002`
+
+## Quality and reconciliation
+
+- OBS-001 extends GQF-0183/GQR-0170 to the uncovered input acquisition scope: nativeJoystickAxes performs GetIntArrayElements, GetFloatArrayElements and GetBooleanArrayElements consecutively before checking any result. Failure of an earlier acquisition leaves a pending exception during later acquisitions, violating JNI's allowed-call contract even though the final null branch releases only acquired arrays. Stop immediately on first failure and preserve its exception using the same checked resource protocol as the pilot bridges
+- Ordered mailbox drain takes a generation cutoff, applies transitions before the final snapshot and suppresses duplicate final values. Disabled joystick mode still pops transitions and publishes zero applied state. GQI-0005 remains the supported-stall capacity/latency investigation; this consumer does not establish a leak caused by disabling the joystick
+- OBS-002 extends BR-0245: physical joystick-button events discard SDL queue failures after updating held-state tracking. Normal controller buttons and mixer virtual indexes fit Uint8 and the 256-entry tracker; no maintained producer of arbitrary invalid native button integers was established. Automation uses a direct engine event handler and must be tested as a separate dispatch seam
+- OBS-003 extends BR-0029/BR-0244: automap flags, keyboard viewport fields, cockpit/autolevel updates and write_player_file remain shared UI/engine access. Bounds checks on marker index and difficulty do not serialize the compound engine operations
+- OBS-004 extends BR-0044: engine show/hide-keyboard callbacks perform unchecked attachment/class/method/string operations and retain class locals on the persistent frame. This is the long-lived callback case, unlike bounded pilot JNI invocation locals. Native text codec exposure requires a supported non-ASCII producer fixture before another conversion root is admitted
+- LevelPreview native forwarding exists; BR-0460's absent Kotlin physical handlers are outside these aliases. Finite/range input validation is a gap for axis float-to-int conversion, with ordinary mixer/controller inputs bounded; no invalid maintained producer fixture was established here
+
+## Evidence and gaps
+
+Read complete assigned lines, shared axis mailbox, paired SDL drain consumers and focused test, MainActivity/LevelPreview mixer/button producers, keyboard callback and JNI helper contracts. Current paired event consumers differ by 12 added and 5 removed lines each, requiring later delta coverage. No acquisition fault, CheckJNI, long-stall measurement, queue saturation, Android build or keyboard callback runtime fixture ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQF-0183
+- Normalize RETAIN, extension of GQF-0183/GQR-0170 and existing BR-0245/BR-0029/BR-0244/BR-0044/GQI-0005 references
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0207 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0208 frozen survey, resumed 2026-10-01 SHA256:3e018899962f8891ba4e1d9b931e224b0e6b57fec5acb51d59db131707340341 -->
+
+## GQ1-CHUNK-0208 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0208.md`
+- Imported SHA-256: `3e018899962f8891ba4e1d9b931e224b0e6b57fec5acb51d59db131707340341`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0208 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 571 assigned frozen lines in android_pilot_prefs.cpp L1-L571
+
+Diff-minimization disposition: RETAIN
+
+One shared JNI bridge dispatches to game-owned binary/text adapters and the shared grouped-pilot transaction. Keep playsave format knowledge in the engine. Enumeration duplicated with autoselect/gamepad is existing BR-0268/BR-0236 consolidation context; no inherited implementation body is assigned here for another extraction
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/android_pilot_prefs.cpp`: L1-L571; frozen blob `40211aa4db36f02ae5af218cb18cc5a836200be8`
+
+Scope SHA-256: `585ad12b0b2958ef037598df6f79344a0f8bd45eaf06223a70afa55cfe8a3958`
+
+## Quality and reconciliation
+
+- Frozen BR-0236 repair already collects targets, detects output-path truncation and calls pilot_pref_patch_transaction instead of summing independently successful visits. D1's combined visitor requires both cockpit and HUD writes. This repairs that local success-count failure; do not describe this bridge as still using the older independent visitor sum
+- Remaining BR-0236 scope includes skipped opendir/readdir errors, unchecked directory-prefix truncation, missing required counterparts, process interruption and restore failure. The transaction uses memory backups and sequential visitors; its focused test verifies one failed second visitor restores two files and successful visits change both. It does not establish crash/concurrent/generation recovery. Kotlin adds an app-wide outer transaction, whose complete failure contract belongs to later source/delta review
+- OBS-001 extends BR-0268: first-match readdir selection is unsorted and not tied to one source identity; D2 independently selects binary/text pilots, D1 can fall back to unrelated stems, and parser results are discarded after setting has_pilot from filename existence. A malformed first match suppresses later valid files. Full-group writes can spread arbitrary source values into untouched fields. Current Kotlin has an engine-prefs multiple-identity hint, which does not prove complete per-field agreement, deterministic pairing or visual/music conflict handling
+- Archived BR-0267 cockpit admission remains repaired: nativeWriteEnginePrefs checks the canonical persistable predicate before acquisition/enumeration. Paired engine load fallbacks and Kotlin import validation are separate established guards. Music source/order/volume are clamped by the game-owned writer; boolean parameters are normalized
+- OBS-002 extends GQF-0183/GQR-0170: read/visual/homing/music entry points use unchecked GetStringUTFChars, NewIntArray and dependent stores; several writes also dereference an unchecked acquired path. Vector/string allocation during enumeration or patch-target construction can escape JNI and leak acquired resources or DIR handles. The engine-prefs writer checks its string result but does not contain later C++ allocation failures. Apply one checked resource and exception boundary to this remaining pilot bridge
+- Current additions include map-cheat/reset fields and changed homing defaults. They require later delta coverage; frozen JNI positional payloads were compared with their frozen Kotlin decoders rather than incorrectly compared with the newer seven-field live shape
+
+## Evidence and gaps
+
+Read complete frozen source, current diff, frozen/live NativePilotPreferences dispatch, paired playsave adapters and shared text music/visual policy, pilot transaction implementation and focused production-owner test, CMake registration and archived cockpit repair. No JNI/C++ allocation fault, filesystem order/conflict fixture, concurrent write, process interruption, native build or test ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQF-0183
+- Normalize RETAIN, extension of GQF-0183/GQR-0170 and existing BR-0268/BR-0236, with frozen grouped-transaction and archived cockpit repairs retained
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0208 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0209 frozen survey, resumed 2026-10-01 SHA256:9c0bd263b7f1471588bcfc0eccf72aaf24a61add32c57779bbd796b92cac1d23 -->
+
+## GQ1-CHUNK-0209 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0209.md`
+- Imported SHA-256: `9c0bd263b7f1471588bcfc0eccf72aaf24a61add32c57779bbd796b92cac1d23`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0209 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines in headless_metadata_dump_main.cpp L1-L750, plus the enclosing route serializer through its return
+
+Diff-minimization disposition: RETAIN
+
+The per-game host entry point shares runtime initialization, metadata serializers and cooperative-start diagnostics. Canonical geometry/secret/route producers remain engine/shared scanner owners. GQF-0175/GQR-0162 already extracted paired headless target construction; this branch-added executable is not another inherited CMake body to move
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp`: L1-L750; frozen blob `83b0e776a7a2fd2d5e428a2ec35430829906ce1d`
+
+Scope SHA-256: `bd11ffa01dfabce98d7f6507010421b5acf99256607e63522277d5bc38e2bcd3`
+
+## Quality and reconciliation
+
+- OBS-001 confirms BR-0234: serialize_item uses the generic powerup-ID fallback if the authoritative item-name producer returns an empty name. D2's supported Hoard orb naming gap is already owned; fix the producer table and validate direct/contained objects through both serializers, rather than adding a second serializer-specific finding
+- Topological trace visits each valid segment once with MAX_SEGMENTS parent/queue arrays and validates start/target/child indexes. Wall/clip and trigger-link diagnostics validate referenced segment/side/wall indexes; control-center links pass the repaired shared validator. Canonical scanner producers bound secret items/entrances/segments and route step/link counts; no independent serializer count-overrun trigger was established
+- Cooperative-start diagnostics call the actual paired engine player initialization after setting cooperative mode and then restore the previous mode. They serialize all MAX_PLAYERS slots and report duplicates and close pairs. Distance comparison alone is not a whole-ship geometry-clearance proof; retain that fanout policy validation gap without calling the diagnostic a second collision algorithm
+- OBS-002 forms GQI-0007: host screen setup takes dimensions from Game_screen_mode after user config loading, multiplies in int, stores dimensions in short and computes an aspect division without local admission. Non-Android config checks only minimum dimensions and does not apply the completed Android resolution budget. Establish actual host config/argument admission and reproduce excessive/packed dimensions or invalid aspect under both production tools before claiming an allocation or arithmetic defect; avoid reopening BR-0344's completed Android-only scope on speculation
+- ordered_json escaping handles quotes/controls, while error_handler_t::replace intentionally substitutes invalid string encodings. UTF-8 preservation, failure diagnostics and cross-host deterministic publication remain broader serializer/oracle contracts. The output tail still opens/truncates before generating and reports before checked close, existing BR-0233 context outside this assigned range; its separate tail coverage remains required
+- Initialization is one-shot for this process; early-return resources are reclaimed by process exit. Do not transfer GQF-0095's retained metadata-service retry failure onto this executable without a retry producer. Current file changes by 446 added and 28 removed lines, so new metadata schemas and runtime policy require delta coverage
+
+## Evidence and gaps
+
+Read complete assigned source and enclosing serializer, paired non-Android target definitions and config admission, canonical secret count/offset construction and route capacities, item-name owner, host output tail and prior build/metadata repairs. No malformed host-config run, resource-budget measurement, sanitizer, metadata regeneration, cooperative fixture, native build or publication fault test ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 36 (H/M/B/C/R = 12/0/4/10/10); proposed owner: BR-0234
+- Normalize RETAIN, existing BR-0234/BR-0233 context and GQI-0007; completed GQR-0162 and Android resolution repair remain closed in their scopes
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0209 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0210 frozen survey, resumed 2026-10-01 SHA256:55d68a3b7edd214d58a2eb1ad4d78d5b9b7356c4b4180652b62941c0e7783ea7 -->
+
+## GQ1-CHUNK-0210 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0210.md`
+- Imported SHA-256: `55d68a3b7edd214d58a2eb1ad4d78d5b9b7356c4b4180652b62941c0e7783ea7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0210 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 600 assigned frozen lines in android_menu_scale.c L1-L600
+
+Diff-minimization disposition: RETAIN
+
+The branch-added owner already shares menu/kconfig geometry, render transforms and software/OGL blits across D1/D2. Paired newmenu and kconfig consumers supply game-owned contents through callbacks. No additional complete inherited body is assigned here; future performance changes should stay in this owner and preserve compact engine adapters
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/android_menu_scale.c`: L1-L600; frozen blob `995ee57acf253ec84c8066169c84cb042ec5e861`
+
+Scope SHA-256: `d28a91649d016449a153a2cff88d4837b7d826c9446b979485e5d7370b4aa96b`
+
+## Quality and reconciliation
+
+- OBS-001 confirms BR-0269: every scaled redraw allocates source/render/cropped/scaled bitmaps and final OGL blits create/upload/free transient textures. Image-backed ordinary menus still pass a source callback that draws nothing, causing a cleared transparent background allocation, crop, scale and upload. Reuse bounded staging/texture owners with explicit size/palette/context/window invalidation and skip that no-op pass; source geometry automation alone does not validate the existing performance root
+- OBS-002 extends BR-0029: publish/get_state read and write transform globals and g_last_result separately without a coherent inter-thread snapshot. begin_scaled_draw temporarily changes global screen dimensions/font scales while UI JNI can read them; end restores engine state but does not synchronize those readers
+- Scaling clamps source rectangles to ordinary canvas extents, computes uniform fit and rejects non-enlargement; kconfig caps scale at 3.5 and clamps scroll to available content. Region blits bound source_y/copy height and tile OGL uploads at 1024 pixels. Maintained callers derive source geometry from engine menu layout. No supported extreme coordinate or zero-dimension bitmap producer was established for the unchecked lower-level scaler, so preserve boundary fixtures as gaps instead of a speculative arithmetic finding
+- The paired bitmap allocator follows the engine allocation contract. Do not infer that an unchecked bm_data here continues after allocation failure without tracing d_malloc/Error behavior. Normal scaled callbacks restore the saved canvas and dimensions and free temporary bitmaps; allocation churn, rather than an established ordinary lifetime leak, is the admitted performance issue
+- Current changes add atomic zoom/pan, locked interaction snapshots and a direct-render OGL fast path. The old bitmap staging remains, and transient ogl_ubitblt_i still owns texture lifetime. These improvements narrow symptoms but do not establish zero-churn frames or close all legacy transform readers. Their geometry, bounds and snapshot behavior need separate delta coverage
+
+## Evidence and gaps
+
+Read complete frozen file/header, paired newmenu/kconfig callbacks and geometry/scroll producers, bitmap allocation/free contracts, OGL transient blit owner, BR-0269 lag/texture evidence and current 260-added/9-removed-line diff. Maintained unified menu automation exists; no allocation/GL counters, performance device run, context-loss/resize test, boundary fixture, native build or automation ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029
+- Normalize RETAIN and existing BR-0269/BR-0029 references; current snapshots and fast path require delta validation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0210 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0211 frozen survey, resumed 2026-10-01 SHA256:5c27be6e14428c061606bd87813ad2533ac0fe330080bf5fec8bcc1304c338bc -->
+
+## GQ1-CHUNK-0211 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0211.md`
+- Imported SHA-256: `5c27be6e14428c061606bd87813ad2533ac0fe330080bf5fec8bcc1304c338bc`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0211 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines in android_profile.c L1-L750, plus the enclosing bucket-average helper continued in chunk 0212
+
+Diff-minimization disposition: RETAIN
+
+The shared per-game profiler already owns frame/bucket counters, bounded batches, texture diagnostics and flight-capture encoding. Paired game/OGL producers use narrow measurement hooks; September extraction of profile-hook policy is completed external context. No additional inherited body is assigned here for extraction
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/android_profile.c`: L1-L750; frozen blob `36b0e5b129450af1527dd231b0ba8fb32ac11599`
+
+Scope SHA-256: `c653153f5b4f710e720344564fac55321fac5afb32f14c39181e393836a082ea`
+
+## Quality and reconciliation
+
+- OBS-001 confirms BR-0271: note_texture_burst samples completion time, compares it to the prior completion as an idle gap and initializes start_us to that same completion. One positive-duration load reports zero span; back-to-back loads split when the second duration itself crosses 250 ms. Pass or derive checked load start/end boundaries and retain one canonical clock fixture
+- OBS-002 extends BR-0272: texture-burst max_name/max_source and other variable fields enter raw space-delimited key=value records. Bounded snprintf protects buffers but neither makes the grammar reversible nor prevents admitted filenames from injecting delimiters/lines. Use the existing schema owner across ordinary and forced captures
+- OBS-003 admits GQF-0184/GQR-0171: android_flight_append_line rejects every record beyond max_bytes minus 1024, including capture_end. That terminal record uses the same appender, so an otherwise accepted capture with less remaining payload quota than its closing line drops its only completion/dropped-lines summary despite the nominal 1024-byte reserve. Storage/texture/worst-frame activity can fill the quota during the supported 60-second capture. Give terminal/control records access to a bounded reserved region and verify an exactly-once complete envelope at quota boundaries
+- The flight payload and each batch remain bounded, flush before append overflow and retain NUL termination; this finding is missing completion telemetry, not an unbounded allocation or buffer overrun. Reserve capacity must include the final counters while keeping the complete capture under the advertised 256 KiB limit
+- Duration conversion clamps negative/large values where used, lookup indexes validate slot bounds, history traversal uses the detector's bounded ring and bins only positive spans. Fixed record-format/argument pairs were compared. Bytewise copied diagnostic names still need the BR-0272 encoding contract, including truncation policy
+- Clock-read failure and very long counter/duration extremes were not exercised on a supported runtime. Keep boundary coverage gaps rather than inferring ordinary Android clock failure. Profile batches are mutable engine-owned state; cross-thread producer contracts are reviewed with the setters/storage callers in chunk 0212
+
+## Evidence and gaps
+
+Read all assigned lines/enclosing helper, detector ring and capture events, shared debug-log normal/forced batch sinks, SAF storage filename producers, profiling parser, existing texture timing root and current 91-added/3-removed-line diff. Flight quota logic and burst boundary logic remain live-identical. No production quota/terminal fixture, deterministic clock test, hostile-name round trip, native build or runtime capture ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/4/10/10); proposed owner: GQF-0184
+- Normalize RETAIN, new bounded flight-envelope fix GQF-0184/GQR-0171 and existing BR-0271/BR-0272 references
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0211 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0212 frozen survey, resumed 2026-10-01 SHA256:12fb5acf592aff5ef1fd71d16d94cf26de0fef6892eae983dd568f2ef1cdad69 -->
+
+## GQ1-CHUNK-0212 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0212.md`
+- Imported SHA-256: `12fb5acf592aff5ef1fd71d16d94cf26de0fef6892eae983dd568f2ef1cdad69`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0212 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 683 assigned frozen lines in android_profile.c L751-L1433, including the bucket-average helper begun in chunk 0211
+
+Diff-minimization disposition: RETAIN
+
+Shared frame admission, bucket timers, texture/storage diagnostics and detector feeding already serve both games. Engine/OGL callers retain phase placement and object ownership through narrow hooks. The shared profiler is the natural owner for the newly admitted capture-envelope fix and existing diagnostic repairs
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/android_profile.c`: L751-L1433; frozen blob `36b0e5b129450af1527dd231b0ba8fb32ac11599`
+
+Scope SHA-256: `f7118d64a92ea0c198a5f7e42a532168b8b75970477ac4844e07bc10fea7d49f`
+
+## Quality and reconciliation
+
+- OBS-001 extends BR-0029: the UI JNI slowdown setter stores a volatile capture-request flag while engine frame_begin reads it without atomics; profile/debug-category admission and mutable batch state have no complete cross-thread ownership protocol. resume_pending already uses atomic store/exchange and should retain that repair. SAF storage hooks mutate capture/sample batches, so supported off-engine PhysicsFS use needs the same explicit ownership boundary
+- BR-0270's missing D1 instrumentation is already repaired in frozen source: replay, wait, simulation and render brackets and all four GL timing fields exist alongside the corresponding D2 hooks. Full delayed-phase/parser parity fixtures are still needed before closing the historical owner. Do not report D1's fields as unconditionally zero from the older source
+- OBS-002 extends BR-0272: texture/storage records interpolate filenames directly in both ordinary and forced paths; the PowerShell parser stops values at spaces and overwrites duplicate keys. SAF open/pread are maintained name producers. One schema repair should cover this file, downstream parser and new post-freeze load records without duplicate admission
+- OBS-003 references GQF-0184/GQR-0171: capture-end events call the terminal formatter from chunk 0211, which cannot consume the nominal reserved quota. Automatic capture disable currently flushes buffered payload and changes detector state without a completion marker; define an explicit interrupted/disabled end reason in the same envelope contract and test end-event/disable ordering
+- Per-frame robot generation handles wrap with reset, level changes reset age ownership, signatures invalidate reused objects, and stale/unknown remote counts are separated. Duration narrowing for some detector fields remains unchecked for extremely long frames, while bounded normal frames and explicit age saturation do not establish a supported overflow trigger. Keep integer-boundary fixtures rather than inventing a separate runtime failure
+- Nested bucket begins are ignored and unmatched ends are harmless; frame_end completes still-open buckets once and resets active admission. Lifecycle resume clears gap history and suppresses the next detector frame. Disabled profiling can retain an unfinished sample until a later enabled frame or explicit flush; verify toggle semantics with the logging owner rather than silently declaring a complete disable protocol
+- Live additions include record-phase metrics, common scene-state collection and load/restore timing hooks. September profile-hook consolidation is finished but its new telemetry and parser behavior need delta review; it does not by itself repair raw field encoding or terminal quota
+
+## Evidence and gaps
+
+Read all assigned lines, paired frozen game phase placement and GL producers, JNI slowdown setter, detector state/event contract, SAF storage hooks, normal/forced debug sinks, profiling parser and current delta. Existing slowdown tests exercise the detector, not production profiler quota/encoding/ownership. No paired delay sentinel, capture disable/end race, fault fixture, hostile filename, race instrumentation, native build or runtime capture ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029
+- Normalize RETAIN, BR-0029/BR-0272, frozen BR-0270 repair context and reference/disable extension of GQF-0184/GQR-0171
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0212 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0213 frozen survey, resumed 2026-10-01 SHA256:1f8c26adddbfc9a634abda53a79b21e5aea5ac3ff467de5b7f619e8c6f7aad41 -->
+
+## GQ1-CHUNK-0213 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0213.md`
+- Imported SHA-256: `1f8c26adddbfc9a634abda53a79b21e5aea5ac3ff467de5b7f619e8c6f7aad41`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0213 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines in automap_metadata_overlay.c L1-L750
+
+Diff-minimization disposition: RETAIN
+
+This branch-added shared owner already draws secret/objective labels and connectors for both engines. Game/scanner/route producers retain world state and canonical route semantics; paired automap consumers use compact rendering hooks. No complete inherited implementation is assigned here for another extraction
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/automap_metadata_overlay.c`: L1-L750; frozen blob `2c9510aa8874567b3dff58688503dd5ad52abda5`
+
+Scope SHA-256: `6b40c21898594ed130160218263d010b8d7ebb510d29ffc147fa67900eff201d`
+
+## Quality and reconciliation
+
+- OBS-001 confirms BR-0273: connector code changes projected screen endpoints for the font inset but passes unchanged p3_vec values to g3_draw_line. Both OGL backends build vertices from p3_vec, so default Android OGL ignores the inset while the software renderer consumes the projected fields. The maintained marker script asserts candidate/drawn counts, which cannot distinguish the two endpoint geometries. Keep one projected endpoint calculation and validate actual pixels/backend endpoints through the existing rendering owner
+- Objective selection distinguishes OFF, ALL, NEXT and remaining route modes, validates pending indexes, skips START steps and uses the canonical route as fallback. Dynamic carrier lookup validates object kind/live flags/contained key and then falls back to the nearest matching dropped powerup. Object-index reuse and route publication identity still need supported mutation fixtures; the assigned code establishes no independent lifetime failure without that producer context
+- Route producer capacity is 96 steps. Two-position collection is bounded to 192 labels; at most 96 distinct positive numbers require fewer than the 384-byte merged text buffer, so unchecked snprintf return accumulation is not an overflow trigger under this canonical producer contract. Group roots are merged only after resolving each root and flattened before rendering, so no cycle or arbitrary-index producer was established
+- Projection rejects behind/overflow points for objective collection and connectors. Projected fixed-point coordinates converted to int fit the bounded centroid/overlap arithmetic at 192 entries. Secret portal averaging and world-distance arithmetic still require extreme accepted-geometry fixtures; unchanged engine math and theoretical arbitrary integer inputs alone do not establish another branch defect
+- Next-objective text uses a bounded 80-byte stack shape and draws at most three remaining items; pixel fitting is bytewise. Actual route-label generation/encoding and minimum-screen fixtures remain validation gaps. Snapshot counters reset before each label pass; no ordinary accumulating marker-count leak was found
+- Current file adds readiness/progress polling, route-revision refresh and guidance-distance policy (182 additions/11 removals). Connector inset code is outside those changed hunks. These new asynchronous route/display semantics require delta coverage; completed September overlay-owner extraction does not close the independent connector rendering root
+
+## Evidence and gaps
+
+Read all assigned frozen lines, paired software/OGL line backends, route step projection/capacity owner, canonical secret candidate admission, complete label/group/connector control flow, existing marker assertions and current changed-hunk inventory. No endpoint pixel fixture, object-index reuse/route mutation, extreme-geometry sanitizer, native build or automap runtime test ran. The remaining getter/segment-predicate tail belongs to its separate mechanical coverage unit
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/4/10/10); proposed owner: BR-0273
+- Normalize RETAIN and existing BR-0273; current route/readiness policy and producer-identity gaps require later coverage
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0213 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0214 frozen survey, resumed 2026-10-01 SHA256:5a92b802190acaf2a4d5f194bb502cafcf05b9574b24c04a75f3a940ff92bc39 -->
+
+## GQ1-CHUNK-0214 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0214.md`
+- Imported SHA-256: `5a92b802190acaf2a4d5f194bb502cafcf05b9574b24c04a75f3a940ff92bc39`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0214 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines in cd_preview.c L1-L750, plus the enclosing start-FD function and lifecycle/state consumers needed for the assigned producer/callback contract
+
+Diff-minimization disposition: RETAIN
+
+The launcher preview owner shares BIN/CUE decode/resample/output across its path/FD entry points and delegates CUE parsing/exact bounded reads. September extraction already replaces this private ring copy with pcm_ring.h. No additional inherited body is assigned here; broader decoder/output consolidation must preserve standalone preview and engine lifetime differences
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/cd_preview.c`: L1-L750; frozen blob `33809af2a1ffa15d3298792d726ceefad9fc8484`
+
+Scope SHA-256: `e068535b9db31d4cd14a110bc59653098297d22cf5b80062dd4cd4b81f6e1c31`
+
+## Quality and reconciliation
+
+- Archived BR-0274 synchronization repair is present: controls serialize with a control mutex, rendering owns decoder/ring publication under playback lock, and seek disables output then owns callback ring/queue state while resetting decoder and re-priming. Stop releases playback lock before joining. Callback trylock is nonblocking; existing barrier test models old callback enqueue completing before seek replaces the queue. Retain production/device seek validation limits rather than reopening that repaired scope
+- Archived BR-0275 startup repair is present: local OpenSL handles validate create/realize/interface/callback/enqueue/play results before global publication; failure destroys the partial graph in reverse order. Thread creation reports failure and resets running admission, and runtime enqueue failure atomically disables output and reaches stopped renderer state. No unchecked-init finding remains in the assigned frozen implementation
+- OBS-001 extends BR-0276's remaining completion protocol: source EOF sets s_playing false and publishes a final generated chunk before the renderer exits; get_state advertises STOPPED while the ring/hardware can still contain audio. Unlike the historical callback, the frozen callback gates on s_output_enabled and can continue draining, so claiming it still gates directly on s_playing would be stale evidence. Kotlin nevertheless switches the UI to stopped/full duration before audible drain, and OpenSL continues enqueueing silence until explicit teardown. Define source EOF, ring drain and final hardware completion separately
+- The last input sample reaches the refill/EOF boundary with fewer than two interpolation samples and can terminate before emission. Exact finite-stream resampling/tail policy belongs to the same BR-0276 sentinel-output matrix, not a duplicate algorithm finding
+- CUE text uses the bounded exact-read owner, parser results identify the owning file, path/FD list counts are capped at CUE_MAX_FILES, and duplicate descriptors are closed on fdopen failure. Startup cleans earlier BIN handles on later failure. Sector offsets are derived from admitted file sizes; 32-bit long/large-file and unsupported sample-rate domains still need producer fixtures before a new arithmetic finding is admitted
+- s_volume remains a fixed initialized value in this owner; no mutable UI volume writer was found here. Ring writes are bounded by producer space and fixed chunk size under the single producer/consumer protocol. The completed September ring extraction changes 8 additions/54 removals and retains these surrounding lifecycle/EOF decisions
+- Frozen jni_cd_preview acquisition behavior is historical context only: the later completed GQR-0039 explicitly includes that bridge. It is not another uncovered GQF-0183 scope. Broader launcher command/worker lifetime remains BR-0016 context, distinct from this repaired native lock order
+
+## Evidence and gaps
+
+Read all assigned frozen source and enclosing start-FD/lifecycle/state consumers, archived seek/startup repair records, complete focused source-contract/barrier test, JNI dispatch, Kotlin sample-rate/state poll, parser/exact-read contracts, September ring diff and completed JNI owner scope. No OpenSL fault injection, production seek race, sentinel PCM drain, large-file fixture, native build or runtime preview test ran. Remaining lifecycle code still requires its separate mechanical tail coverage
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0276
+- Normalize RETAIN, existing BR-0276/BR-0016 context and completed BR-0274/BR-0275/GQR-0039/September ring repair scopes
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0214 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0215 frozen survey, resumed 2026-10-01 SHA256:8471c5618ffe92c9774e0b5b9511ea97a814ea4e7af6f35cb1153a33bf263457 -->
+
+## GQ1-CHUNK-0215 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0215.md`
+- Imported SHA-256: `8471c5618ffe92c9774e0b5b9511ea97a814ea4e7af6f35cb1153a33bf263457`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0215 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 606 assigned frozen lines in coop_indicator_lines.c and both path-generator bounds, option setter, focused math test and live delta
+
+Diff-minimization disposition: RETAIN
+
+This is already the shared D1/D2 indicator owner. Engine path generation remains engine-owned, guidebot behavior is guarded, and the small shared scalar helpers are reusable. The live exit-trigger flag accessor removes the assigned game's conditional duplication without changing this owner's rendering or threading contracts
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/coop_indicator_lines.c`: L1-L606; frozen blob `7b180f21c29ff0adff027f474d0ad4a4a612c2b0`
+
+Scope SHA-256: `c376e3ea1bcaad0b0a1d77eab9ae21a290491474daaa31275125be5740039cc4`
+
+## Quality and reconciliation
+
+- OBS-001 extends BR-0029: the UI JNI option setter directly changes display flags, frame counter and cached path count/target/alpha while the game thread updates and renders them. Publish options to the engine owner rather than separately synchronizing only individual flags
+- OBS-002 retains BR-0277: outside endpoint distances do not exclude a chord crossing the keep-out sphere, and interpolation of distances for an oblique mixed chord is not a sphere intersection. Anchoring the first waypoint makes its radial case valid but does not constrain later adjacent-segment center chords. The existing scalar test covers fade/viewport behavior and has no geometric clipping fixture
+- Both unsafened path generators produce at most depth plus one points, fitting the depth-plus-four cached array before count clamping. random_flag is zero, so D2's refresh RNG is not consumed on this path; safety insertion is also disabled. No additional buffer overflow or simulation-RNG finding is supported by this caller
+- Connected player access follows the engine playing-slot invariant and rejects in-range non-player objects. Guidebot and projected target uses check indices; projection rejects behind/overflow states. A new malformed player-slot or stale object identity defect needs an admitted producer/reuse fixture, not an arbitrary invalid index
+- Texture diagnostics bound bitmap indices, player objects and formatted references; ordinary segment/texture counts come from the engine. Triggers come from restore/network engine handlers and scans are throttled for 120 frames. Their performance budget remains a measurement gap rather than a new admitted slowdown finding
+- Visibility is endpoint-segment policy, fade is bounded by its helper and blend state is restored. Paired render hooks are inside an active 3D frame. The live delta replaces per-game exit tests with trigger_exit_flags; it leaves both open roots above intact
+
+## Evidence and gaps
+
+Read the complete assigned frozen source, path generation in both engines, frozen JNI dispatch, focused scalar test, prior owner evidence and live diff. No geometry executable, engine build, device threading run, object-reuse fixture or diagnostic timing measurement ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029
+- Normalize RETAIN and existing BR-0029/BR-0277 without duplicate admission
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0215 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0216 frozen survey, resumed 2026-10-01 SHA256:6ccde33107d6cd07606649865491ee4a5a068caa70b5732567ff98f0676f3f57 -->
+
+## GQ1-CHUNK-0216 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0216.md`
+- Imported SHA-256: `6ccde33107d6cd07606649865491ee4a5a068caa70b5732567ff98f0676f3f57`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0216 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines of coop_save.c L1-L750, its shared schema, trailer discovery and paired restore callers
+
+Diff-minimization disposition: RETAIN
+
+This shared owner contains cooperative identities, snapshots and engine-owned inventory policy. D1/D2 extra fields and durable flag masks are deliberate game differences. There is no assigned duplicate upstream body to consolidate broadly
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/coop/coop_save.c`: L1-L750; frozen blob `b6bc653c39c5aeaf37ed9a06c3b01d02c8b60212`
+
+Scope SHA-256: `52fdf9f6ccb47388b4b65e426001e819c45c804dbaa8f79dade5350386f0c2f6`
+
+## Quality and reconciliation
+
+- Framed version-5 footer discovery, exact payload/count arithmetic and checksum validation are already present. BR-0212's historical current-size-only discovery is obsolete for this frozen implementation; strict current-version acceptance agrees with the repository's disposable Android format policy. Do not add the historical suggested migrations
+- Writers check all payload/footer writes, zero metadata/record padding and bound both game weapon arrays to the shared maximum. Reader bounds count multiplication through declared payload size, rejects negative payload start, stages collection bytes and validates counts/difficulty before pending publication. Allocation/file-size budgets and semantic player-record limits remain fixture gaps, not proof of an integer-wrap exploit
+- OBS-001 retains GQF-0096/BR-0338: metadata carries only eight mission filename bytes while newer save-set ownership can retain a longer identity. A checksum does not make this truncated identity unique
+- Restore remapping preserves current player-object ownership and claims each saved slot once. Frozen callers initialize saved object snapshots only for actual player objects, while the remapper itself admits the saved player's connected state; current delta adds explicit restore_object_valid admission. Treat this as a later repair requiring current-delta validation, not a second unfixed duplicate of the broader BR-0206 restore-admission work
+- BR-0388 still owns missing client UUID wire propagation; bounded fallback matching is intentional under this frozen contract. Active/absent matching and eviction fit their capacities, memmove keeps source levels paired, and same-level keys are separate from durable powerups
+- Inventory application is shared with packet restore consumers, whose authenticated authority and semantic admission remain BR-0195. Do not equate the checksum with source authentication or claim the file reader provides game-specific record validation
+- The current file adds 880 lines and removes 77 across campaign/world travel, recovery and portable state. Those additions require their own delta survey; inspecting framing/remapping contrasts does not count that new implementation as reviewed
+
+## Evidence and gaps
+
+Read every assigned frozen line, complete schema and restore-remap header, Android trailer discovery, paired remap producer excerpts, existing identity/restore findings and targeted live changes. The current format fixture was inspected as later evidence only and was not run; it does not execute production remapping. No full save restore, bad-record corpus, build, allocation fault or Android runtime test ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: GQF-0096
+- Normalize RETAIN, existing mission identity/authority roots and historical framing/current remap reconciliation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0216 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0217 frozen survey, resumed 2026-10-01 SHA256:14a8752ed3dd5c9b6afa24cb6765f42f4a78cd43ce04772661ba059c62fad5c7 -->
+
+## GQ1-CHUNK-0217 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0217.md`
+- Imported SHA-256: `14a8752ed3dd5c9b6afa24cb6765f42f4a78cd43ce04772661ba059c62fad5c7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0217 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 725 assigned frozen lines of coop_save.c L751-L1475 and paired autosave/progress callers
+
+Diff-minimization disposition: RETAIN
+
+Cooperative autosave, progress and restore admission already have one shared implementation. Repeated checksum loops and text sidecar publication are possible shared policy extraction points only when coordinated with their actual format and failure contracts; inherited engine serialization remains in the engine
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/coop/coop_save.c`: L751-L1475; frozen blob `b6bc653c39c5aeaf37ed9a06c3b01d02c8b60212`
+
+Scope SHA-256: `3292556efed6b36775af6d7a2dffc777bd0c1b448792404f4628c71244267699`
+
+## Quality and reconciliation
+
+- The frozen autosave now checks staged local save success, restores its temporary callsign/game ID on both results, rotates only after success and sends the peer save command after local publication. Original BR-0235/BR-0258 false-success/rotation-before-write examples are repaired here. Broader generation/pointer atomicity remains BR-0235 and peer coordination remains BR-0206
+- OBS-001 retains BR-0278: both paired GameProcessFrame GameTime64 and multi_do_frame timer_query schedulers still call the same unthrottled owner at 30 seconds. Success-only ring rotation does not coalesce those two deadlines or reset their different clock lifetimes
+- OBS-002 extends GQF-0182's shared JSON owner to autosave history/info and progress. These use raw quoted mission/callsign/client-ID insertion, substring object extraction and unchecked text publication. Current launcher callsigns/generated UUIDs cover ordinary safe values, but they do not define a complete JSON escaping contract for mission filenames, existing identities or reused history. Add strict grammar/escaping and bounded history read/append/publication fixtures rather than duplicating the migration/restart root
+- Fixed BR-0211 is present: the inventory writer stages a checksum payload and checks writes/flush/close; the loader requires exact length, complete reads, identity termination/uniqueness, unique host, slot bounds and capacity before applying records and setting the one-shot gate. v1 acceptance is historical behavior, not authorization to preserve a disposable format migration
+- OBS-003 extends GQI-0006 to the progress publisher: it deletes a deterministic old backup unchecked, moves the current file aside, and ignores rollback/delete results. Process interruption and subsequent retry with a surviving backup need production fault/restart evidence before declaring a complete recovery fix. Preserve the fixed forward-write/staged-read scope rather than relabeling it entirely broken
+- BR-0210 owns progress snapshots occurring before end-level bonuses; BR-0434 owns indistinguishable fresh/checkpoint selection and automatic progress restore independent of that command. Host and absent record staging alone closes neither caller contract
+- Auto-restore command reading bounds declared length but discards read/close status and uses substring kind selection plus narrowing strtol parsing. These are further command-admission cases under BR-0434. Arming is one-shot per explicit reset, waits for live participants with a bounded timeout, disarms on role/mode/endlevel changes and delegates the actual transfer to the existing BR-0206 owner
+- Raw snprintf offsets fit ordinary eight-player fields; larger malformed identities, signed score overflow and extreme timer/sequence lifetimes need admitted producer fixtures before a separate arithmetic finding. Existing saved-record semantic checks are incomplete; do not infer authentication from checksum or invent a tested full transaction
+
+## Evidence and gaps
+
+Read the complete assigned frozen tail, paired game/multiplayer scheduler call sites, progress-selection and prior inventory repair evidence, scoped publication/loader paths and current format fixture. No production sidecar failure, restart/rollback, clock-driven scheduler, bonus-resume or paired launch-choice test ran. Later campaign/world/recovery additions remain outstanding current-delta scope
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0278
+- Normalize RETAIN, existing scheduler/progress/restore findings, extended GQF-0182 and GQI-0006, and fixed BR-0211 scope
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0217 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0218 frozen survey, resumed 2026-10-01 SHA256:cdb37c4dfd8e01289d13a28ba696839f84c8ea56fc908230c6506dc9a754f22f -->
+
+## GQ1-CHUNK-0218 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0218.md`
+- Imported SHA-256: `cdb37c4dfd8e01289d13a28ba696839f84c8ea56fc908230c6506dc9a754f22f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0218 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines in digi_tsf_music.c L1-L750 and completion/start/stop consumers required to resolve the producer/callback contract
+
+Diff-minimization disposition: RETAIN
+
+This is already the paired game music backend. September cleanup replaces its private PCM ring with pcm_ring.h; independent preview and game lifetimes still need their own producers. Later synth/FM/HMP timeline additions are a current-delta obligation, not assigned frozen coverage
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/digi_tsf_music.c`: L1-L750; frozen blob `9b9b18887dc038f487a600169e79d187fa321d2b`
+
+Scope SHA-256: `90b6ebd950f776d6b5d20f70df325f6db5e2568b3b9b2a606906b3cfdd3f7944`
+
+## Quality and reconciliation
+
+- OBS-001 extends existing GQF-0167, regrowth of archived BR-0279: non-looping MIDI and PCM renderers release-store source_finished before returning their final buffer to render_thread_func, which publishes the final ring write afterward. The callback can consume the old ring, observe EOF plus empty, stop playback and publish completion before that final write. Up to one 2048-frame producer chunk can be stranded. The same ordering persists after the current pcm_ring extraction; new HMP timeline EOF also publishes before the write. No duplicate finding is needed
+- Game-frame mix_poll_music dispatch exists in both event owners, so the historical missing-hook-poll symptom is fixed. Producer EOF is now separate from playing, but that state split alone does not order the final publication. Require production barriers and sentinel output, including replacement and explicit stop
+- Archived BR-0079's tuning repair is present: bounded mutex FIFO, render-boundary consumption before pause checks, atomically published configuration/diagnostics, inactive configuration without synth mutation, shutdown drain and creator-failure unwind. Non-finite gain and exact voice boundaries remain covered by the focused contract. Sustained submission while the producer is background-parked needs a supported caller/capacity fixture before an additional blocking finding is admitted
+- Thread startup returns status, clears running/accepting/alive state on failure and both PCM/MIDI callers invoke cleanup before installing the hook. BR-0280's original TSF false-success path is repaired here; its separate Redbook owner must be reconciled on that owner's scope
+- PCM resampling uses admitted mono/stereo stride, bounds idx before sample use, and render writes reserve a whole chunk within the SPSC ring. Archived BR-0252's output policy and BR-0281's bounded read owners remain distinct completed contracts. Single-frame/tail interpolation policy and synth release tails need exact finite-output fixtures rather than an arbitrary out-of-bounds claim
+- Soundfont input is a fixed packaged asset with bytes alive during parse. QuerySpec failure leaves diagnostic fmt/ch locals uninitialized, but the current diff explicitly initializes them; treat this as current repair evidence requiring validation. Desktop direct-callback text is not evidence that this Android-selected source replaces the desktop backend
+- Failed TinyMidiLoader parse frees g_midi_buf through the paired d_free macros, which also clear the pointer. A second-free claim based on reading that call as plain free would be false. Normal teardown joins the producer before freeing its inputs
+
+## Evidence and gaps
+
+Read complete assigned frozen source, enclosing desktop callback/dispatch, paired event poll sites, PCM/MIDI start failure and teardown, paired allocation macros, focused tuning contract, archived repairs and targeted current EOF/ring diff. No audio capture, controlled callback/producer interleaving, thread-creation failure, background queue fixture, build or runtime playback test ran. Later current synth/timeline changes remain unreviewed delta scope
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 50 (H/M/B/C/R = 23/0/7/10/10); proposed owner: GQF-0167
+- Normalize RETAIN, existing EOF publication root and completed tuning/format/read/start/poll scope
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0218 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0219 frozen survey, resumed 2026-10-01 SHA256:8b8f2329099cbda3f3ccbbc6e8a5bdf16e30cb86b07111ea3082e1fac1c4e2e7 -->
+
+## GQ1-CHUNK-0219 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0219.md`
+- Imported SHA-256: `8b8f2329099cbda3f3ccbbc6e8a5bdf16e30cb86b07111ea3082e1fac1c4e2e7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0219 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines in game_automate.cpp L1-L750 and the radial JNI consumer, key-combo/result lifecycle and public request ownership needed for their contracts
+
+Diff-minimization disposition: RETAIN
+
+Automation is already shared and debug-gated. Native key names intentionally map both SDL symbols and engine commands with different interfaces; a small parallel name subset does not justify another abstraction. Engine pose/action knowledge remains here rather than moving to Kotlin
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/game_automate.cpp`: L1-L750; frozen blob `7d4eafe17760b861bdfdb10a95a9bbf34315bb1e`
+
+Scope SHA-256: `8265b71b6fb72136d3cf382f75666fdfc8c618231411765b0edd0b6b2d491c2b`
+
+## Quality and reconciliation
+
+- OBS-001 retains BR-0282: raw run ID, continuation script path and JSONL detail interpolation produce invalid JSON for accepted quotes/backslashes/control text. The reason-only escape drops controls and truncates bytes without a Unicode boundary. Existing nlohmann linkage can own complete records; preserve exact run correlation and handoff fields
+- OBS-002 extends BR-0233's verified-publication contract to automation result files: a temporary filename avoids direct-final truncation, but write/fflush/fclose are ignored and rename can publish an incomplete or empty terminal result. JSONL flush/close errors are also invisible. Require durable terminal failure and prior-generation/correlation policy rather than calling temporary rename alone a successful transaction
+- OBS-003 extends GQF-0180 to the outbound automation radial bridge, outside the completed inbound automation JNI conversion: standard UTF-8 script strings reach NewStringUTF, including supplementary or malformed/truncated text. The second allocation and Java call can continue with a pending exception from the first. Use the same strict conversion and staged first-failure cleanup owner as the crash bridge. Current code retains this path and adds another controller-input bridge using Modified UTF-8; that new bridge remains current-delta scope
+- Radial selection attaches only when needed, deletes its locals and clears callback exceptions to return failure. Those terminal cleanup steps do not make earlier pending-exception calls valid. Kotlin queues selection on the main thread and waits two seconds; a timed-out queued action can execute later, remaining UI/automation command-lifetime context under BR-0029/BR-0284
+- OBS-004 extends BR-0245: automation key/quit injection discards SDL_PushEvent status and can accept only a shortcut prefix or lose its release. Enter-launcher sets force-quit before the unchecked event. Key recognition and printable ASCII unicode assignment are bounded; queue saturation has an existing production contract rather than an invented invalid-key memory issue
+- Pending load requests are mutex-owned and acquire/release signaled; request paths/run IDs are bounded and terminated. File loading/activation and result identity are a separate later scope under BR-0284, not proven transactional by this mailbox. Engine-owned probe snapshots copy fixed-size arrays; duplicate labels replace their prior result, while unbounded script/probe budgets require loader policy context
+- The live file adds 2001 lines and removes 27, including campaign, controller and renderer automation. Assigned output writers remain materially unchanged. These new operations require their own current-delta review and cannot inherit the frozen chunk's coverage
+
+## Evidence and gaps
+
+Read all assigned frozen lines, enclosing key combo and fail/pass result paths, public request mutex, inbound strict JNI call, Kotlin radial timing, archived encoding repair scope and targeted current writer/JNI differences. Runner result tests were located but not run; no JSON round-trip, write fault, SDL pressure, CheckJNI Unicode, delayed radial action, engine build or automation run executed
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0282
+- Normalize RETAIN, existing artifact/event/request roots and extended GQF-0180 outbound JNI scope
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0219 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0220 frozen survey, resumed 2026-10-01 SHA256:44b6231e9e682c94afe8a1ef3d5a711f67b65b06fa9b23dbe9266a7499052aa3 -->
+
+## GQ1-CHUNK-0220 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0220.md`
+- Imported SHA-256: `44b6231e9e682c94afe8a1ef3d5a711f67b65b06fa9b23dbe9266a7499052aa3`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0220 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines in game_automate.cpp L751-L1500 and enclosing face-normal, action parsing/execution and assertion consumers
+
+Diff-minimization disposition: RETAIN
+
+The shared automation owner delegates Android input to the mailbox/engine and retains recognized native menu/window and geometry knowledge. Parallel newmenu/listbox search loops use distinct engine storage and need a strict mission policy before any cleanup extraction. Do not broadly deduplicate inherited menu handlers
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/game_automate.cpp`: L751-L1500; frozen blob `7d4eafe17760b861bdfdb10a95a9bbf34315bb1e`
+
+Scope SHA-256: `bf51134369b70df01fae7c2c30b49d1b5bc17c92831e04f21afd951913f8865b`
+
+## Quality and reconciliation
+
+- OBS-001 retains BR-0283: strict non-base search falls back to a sole recognized base mission in both menu types, and the has-non-base assertion calls that same helper. A failed import with only bundled content can pass the assertion and select the fallback. Split discovery from explicit selection fallback and preserve the imported identity in the batch test
+- OBS-002 extends BR-0224's numeric-domain/schema admission: axis value is converted to int before clamping, so very large/non-finite float admission is unsafe; invalid axis IDs can leave the action active without a terminal result, and button IDs can narrow before ordinary engine validation. Parse complete typed finite domains before any mutation or saturation fixture
+- OBS-003 extends BR-0245: key combo, fallback axis/button and mouse tap enqueue results are discarded, so a prefix/release can be lost without the script learning that input was rejected. The intentional queue-pressure loop does check failure and stops at 4096 attempts, which validates the API's failure contract rather than fixing other callers
+- Android held-axis storage covers eight axes and fits the eleven-axis mailbox vectors. Automation publication captures a complete vector/generation; production-path pulse uses first/last generations and releases automation ownership. Clear returns to the latest production vector. No mailbox-array overflow or new lock race is supported by this caller
+- Menu search bounds current index and skips inert text; case folding casts to unsigned char. Recognized direct-dispatch handlers use the two-field engine key-event layout, reacquire the current front window and return without reusing closed window data. Synthetic direct command acceptance is different from proof that a rendered UI input path worked
+- Face geometry validates segment/side/type/face, then uses engine vertex/vector contracts. The assigned triangle averaging uses narrow sums and extreme-coordinate admission remains a fixture gap; no arbitrary malformed inherited vertex index is claimed as a new branch defect. Full pose relocation belongs to the following chunk
+- Current scoped delta adds scores/credits handlers and dispatches wrapped D1-in-D2 briefings through window_send_event. It leaves the strict non-base predicate and numeric admission roots unchanged. The broader 2001-line current automation extension still needs separate delta coverage
+
+## Evidence and gaps
+
+Read every assigned frozen line and enclosing face-normal completion, axis parser/action, non-base assertion, mailbox header, prior producer evidence and scoped current dispatch diff. No import corpus, numeric sanitizer, queue-pressure execution, menu fixture, extreme geometry, build or emulator test ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0283
+- Normalize RETAIN and existing BR-0283/BR-0224/BR-0245 without duplicate admission
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0220 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0221 frozen survey, resumed 2026-10-01 SHA256:e9b36c187bc3fb005a4000c12678bba0db75e241b91790d3506a8e8644826600 -->
+
+## GQ1-CHUNK-0221 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0221.md`
+- Imported SHA-256: `e9b36c187bc3fb005a4000c12678bba0db75e241b91790d3506a8e8644826600`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0221 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines in game_automate.cpp L1501-L2250 and enclosing parser, loader and replacement activation contracts
+
+Diff-minimization disposition: RETAIN
+
+Shared automation delegates pose, object, trigger and route operations to the owning engine. D2-only guidebot/objective helpers are deliberate policy. Complete script admission should precede smaller parser/dispatch cleanup; no assigned inherited body needs broad deduplication
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/game_automate.cpp`: L1501-L2250; frozen blob `7d4eafe17760b861bdfdb10a95a9bbf34315bb1e`
+
+Scope SHA-256: `6914eb440025cf44b3f514777b2cba64668eabb2e0c8324d1a738b1fd0a2d993`
+
+## Quality and reconciliation
+
+- OBS-001 admits GQF-0185: check_condition parses an owned game_introspect_get_state buffer, frees it, then performs allocating string extraction/dump inside the same try block. If either later operation throws, catch frees the still-nonnull pointer again. An allocation failure after successful parse therefore reaches a deterministic double-free. The current check_condition retains this exact sequence. Use scoped ownership or one explicit release outside the catch; inject production parse, get-string and dump allocation failures and count frees
+- OBS-002 retains BR-0284: parse_script clears and appends into global steps rather than staging. load_script_file accepts a fread prefix and ignores seek/close failures. Replacement publishes request identity/log/reset state before admission and leaves prior active/cursor state on rejection. A mailbox alone does not prevent partial replacement, old-script execution under a new run ID or missing terminal failure
+- OBS-003 extends BR-0224: unknown actions are skipped, schemas and numeric domains are incomplete, and debug damage std::stod/conversion can throw or overflow after a string was admitted. Key flag substring matching accepts unintended tokens. Validate complete typed commands and retain original source indices before engine mutation. BR-0223 remains the resume cursor owner
+- Parser assertion context retains BR-0285's one-decimal numeric equality and BR-0224's vacuous/malformed expectations. Those evaluator lines are supporting context only, not assigned mechanical coverage
+- Face pose work checks game/object/segment/side/face, bounds midpoint fallback to eight attempts and relinks through engine geometry. Face-view position publication precedes final forward-vector validation, so transactional pose failure needs a degenerate admitted level fixture. Exact pose and route guidance clear motion; finite/range checks remain BR-0224. Do not infer malformed vertex or object IDs from arbitrary invalid engine arrays
+- Guidebot cage release bounds its seven-segment local array and wall visited flags, handles paired walls, and reports an intact cage when no blastable wall was destroyed. Its fallback can destroy unrelated blastable walls when local search fails; maintain a cage-identity fixture before treating helper success as proof of correct guidebot release
+- Robot cleanup walks downward and preserves the D2 companion. Objective helpers validate wall identity or key collision result and locate a live matching reactor/boss, but synthetic damage/keys are automation controls, not an end-to-end navigation oracle. Broader current campaign/key-carrier/boss-shot additions remain current-delta scope
+
+## Evidence and gaps
+
+Read complete assigned frozen lines, parser end, exact file loader, replacement activation, prior schema/false-pass owners and current condition source. The new exception finding follows the two explicit free sites and intervening allocating operations; no allocator injection or sanitizer reproducer ran. No malformed script, replacement, degenerate pose, cage-identity, engine build or device automation test executed
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0284
+- New GQF-0185/GQR-0172 impact: 44 (23/0/4/10/7), P2/high
+- Normalize RETAIN, existing admission/assertion owners and new condition-buffer exception ownership
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0221 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0222 frozen survey, resumed 2026-10-01 SHA256:5c31a949bb53e77c25c828532e1c15f509f487103f267010eff9d86bcff4e157 -->
+
+## GQ1-CHUNK-0222 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0222.md`
+- Imported SHA-256: `5c31a949bb53e77c25c828532e1c15f509f487103f267010eff9d86bcff4e157`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0222 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines in game_automate.cpp L2251-L3000, their enclosing axis action and request/result contracts
+
+Diff-minimization disposition: RETAIN
+
+The shared parser/evaluator and request mailbox already serve both engines. A typed schema and transactional run state should own repeated admission policy before extracting individual action branches; inherited engine handlers remain narrow dispatch consumers
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/game_automate.cpp`: L2251-L3000; frozen blob `7d4eafe17760b861bdfdb10a95a9bbf34315bb1e`
+
+Scope SHA-256: `aac1b80754f0b46a64c630d1a5cccffe24272b079958cc31a64e499864027a46`
+
+## Quality and reconciliation
+
+- OBS-001 retains BR-0223: negative start_step passes the less-than-size check and indexes the vector out of bounds. Exact-end/oversized cursors activate a run that returns without a terminal result. Validate the requested cursor against the admitted flat script before publication, with an explicit exact-end completion policy
+- OBS-002 retains BR-0284: incomplete file reads can activate a syntactically valid prefix, parsing publishes directly into g_steps, and failed replacement has already changed identity/log/input state while the old active cursor remains. Bound file size alone does not make activation atomic
+- OBS-003 extends BR-0224: absent/empty expect can vacuously pass, only the first operator is retained, malformed ranges/default values are not rejected, integer get<int>() can narrow and dot-path array parsing uses permissive atoi. Typed field/operator/path admission must reject these before execution rather than trusting parser exceptions to reject every invalid domain
+- OBS-004 retains BR-0285: top-level numeric equality formats actual fractions to one decimal, while nested comparison formats both sides. 0.04 may disagree with itself directly and 1.04 can match 1.0 nested. Large integer comparison through double also needs the existing exact numeric contract. Preserve typed equality and make tolerances explicit
+- OBS-005 retains BR-0287: finite select timeout is checked only during target discovery; later navigation/confirmation/delay phases can run forever. Optional selection does not authorize unbounded navigation. Existing BR-0283 still owns the sole-base fallback used by the non-base assertion
+- The pending request is copied and consumed under its mutex; coalescing requests intentionally selects the latest pending record. Active state and axis probes are used by engine frame/dispatch owners. Acquire/release signaling does not establish BR-0223 cursor or BR-0284 replacement admission
+- Assertion parse cleanup frees exactly once outside subsequent evaluation, unlike the newly admitted check_condition GQF-0185. Evaluator allocation exceptions still need terminal failure containment evidence; no second double-free is asserted here. Failure and success clear held axes and close logs, while ignored result/log write outcomes remain BR-0233/BR-0282
+- Current scoped delta adds not_contains, a terminal guard in advance_step and controller-input dispatch. The guard prevents post-failure advancement but does not repair loader/cursor/schema/deadline/numeric roots. The new controller bridge and other later actions remain current-delta coverage obligations
+
+## Evidence and gaps
+
+Read complete assigned frozen lines, enclosing next axis case, request/result consumers, existing cursor/schema/numeric/deadline findings and scoped current delta. No malformed assertion/path corpus, short-read replacement, negative/exact-end cursor, timeout fixture, allocator failure, build or Android automation execution ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0223
+- Normalize RETAIN and existing BR-0223/BR-0284/BR-0224/BR-0285/BR-0287/BR-0283/BR-0233/BR-0282
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0222 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0223 frozen survey, resumed 2026-10-01 SHA256:2897cb990a2c0d2db819631d1f0c0e68d7390e1cb832519d3acb6a45be2bdd5f -->
+
+## GQ1-CHUNK-0223 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0223.md`
+- Imported SHA-256: `2897cb990a2c0d2db819631d1f0c0e68d7390e1cb832519d3acb6a45be2bdd5f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0223 frozen survey, resumed 2026-10-01
+
+## Scope and minimization
+
+Reviewed all 750 assigned frozen lines in game_automate.cpp L3001-L3750 and shared input, overlay and probe contracts
+
+Diff-minimization disposition: RETAIN
+
+These are shared debug action branches over engine-owned input, music, renderer and route helpers. A validated action schema and run lifecycle are the meaningful common owners; converting the switch to another dispatch abstraction would not repair its admission or result contracts
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/game_automate.cpp`: L3001-L3750; frozen blob `7d4eafe17760b861bdfdb10a95a9bbf34315bb1e`
+
+Scope SHA-256: `2ed3d9b76e3d56a43dd612a907720d13851b829aa97004feac854f08b445765e`
+
+## Quality and reconciliation
+
+- OBS-001 retains BR-0286: overlay assertions always ask for cursor zero and accept any retained matching row, allowing a prior run's level/track message to satisfy a current assertion. Capture a run boundary or expected generation before action execution
+- OBS-002 retains BR-0287: skip_briefing resets the step timer on every front-window/Game_wind transition, so repeated churn defeats a finite timeout. skip_intro retains its original deadline, and the crosshair probe has a bounded request-specific wait; preserve those distinct contracts
+- OBS-003 extends BR-0224/BR-0245: meta-action dispatch results are ignored, release-only and held-button paths lack complete schema/cleanup guarantees, and debug stod/strtol conversions do not establish finite representable domains. Invalid debug fields and engine/launcher owner mismatch must fail rather than silently contribute to PASS
+- Outbound radial strings remain extended GQF-0180; the action checks its two identifiers and the Java result but does not repair that bridge. Screen-advance actions intentionally submit current/previous generations and rely on the shared native rejection policy. Touch helpers and button events still require production admission/output verification
+- Crosshair results are correlated with request_frame and status before storage; comparisons require both render_sample_valid flags and use a bounded 64-cell grid. SAD sum cannot overflow ordinary long: at most 64 times 255. Zero overlap currently skips SAD enforcement, and hot-coordinate/hash predicates do not establish meaningful shared pixel coverage. A production disjoint-mask/render fixture is required before admitting a separate pixel-oracle finding
+- Stored probe labels have no clear/erase site in the frozen owner and can be reused across requested runs. That reinforces BR-0284's complete run-state replacement obligation alongside BR-0286's generation-aware diagnostic assertion contract; current label existence alone does not prove a current-run capture
+- Enter-launcher writes a continuation before force-exit and ignores result publication failure, retaining BR-0233/BR-0282 and BR-0245. Synthetic endlevel/postlevel calls advance before blocking engine UI and restore temporary mode/connection state on ordinary return; process/window changes still need an actual integration fixture
+- Music control checks operation results and Redbook peek transitions; this is a control acknowledgement rather than captured audible output. Pose helpers report failures before phase advance. Current scoped delta adds explicit movie advance, read-briefing and real-endlevel/music-source options; later cooperative/recovery/debug additions remain unreviewed current-delta scope
+
+## Evidence and gaps
+
+Read every assigned frozen line, shared meta-action result contract, overlay/probe ownership, 8-by-8 sample constants, prior findings and scoped current changes through music control. No device input, repeated-run overlay/probe, window-churn, disjoint-mask, audible music, launcher continuation, engine build or integration test ran. The separately grouped L3751-L3844 tail retains its own mechanical coverage
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0286
+- Normalize RETAIN and existing input/schema/lifecycle/diagnostic roots without duplicate admission
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0223 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0224 frozen survey, resumed 2026-10-01 SHA256:ab23d9343f4a36093f9ca7387dba8cedc9c5a26f81b56b6f2e6a9a43a0b684ef -->
+
+## GQ1-CHUNK-0224 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0224.md`
+- Imported SHA-256: `ab23d9343f4a36093f9ca7387dba8cedc9c5a26f81b56b6f2e6a9a43a0b684ef`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0224 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Reviewed every assigned frozen line in shared/game_introspect.cpp L1-L750. Disposition: RETAIN
+
+The serializer is branch-added and already shared by D1/D2; game format and topology remain engine-owned. The paired gr_flip callers each need one game_introspect_sample_framebuffer(w,h) call after the shared drawable-size/readback owners. At the frozen boundary their enclosing mixed renderer hunks have 174 and 177 additions, zero deletions; those totals include MSAA, timers, overlay and swap policy and are not removable introspection bodies. Moving a single sampling call behind another facade would add indirection without material inherited reduction. Menu/window accessor consolidation is already completed by GQR-0143; retain its private engine-layout adapters
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/game_introspect.cpp`: L1-L750; frozen blob `d0adb8d84d6d9659eeb84e41ecdb47396b7eacb9`
+
+Scope SHA-256: `704efb9a8d52161bd2c7c0b87678adbbdd1cd416f8d0e00248fa2e4643c2c594`
+
+## Quality and reconciliation
+
+- Request-only framebuffer sampling is selected by merged-wall snapshot pending or game_introspect_dump_requested, after readback preparation; it is not an unconditional per-frame full-screen read. Width and height are drawable dimensions from the renderer, not direct script integers
+- BR-0588 owns request identity and fresh publication. Frozen framebuffer metrics retain the last sample and have no request generation. Current scoped delta adds atomic request/dump/framebuffer generation fields, requiring later end-to-end recheck with receivers, publishers and host readers rather than source-only closure
+- Screen/map metrics record glGetError and aggregate bounded byte channels. Positive dimension admission alone does not establish allocation/product limits; allocation failure, supported drawable maxima, GL failure and map-region geometry still need production fixtures. No demonstrated supported-size overflow or unconditional hot-loop defect is admitted here
+- Newmenu/listbox serializers use engine accessors and typed JSON. Canvas/item coordinates are logical engine coordinates; presented zoom/pan and touch transforms need correlated geometry evidence before claiming an incorrect native coordinate contract. Engine-thread snapshots remain part of BR-0029 where UI accesses the same state
+- Player/ammo arrays use fixed engine capacities; weapon samples reject indices outside MAX_WEAPON_TYPES and distinguish initialized N_weapon_types. The capacity access is not itself an out-of-bounds read
+- Secret-area state count is capped locally; nested item/entrance counts and packed segment offsets originate in secret_area_scan, whose insertion functions reject counts at SECRET_AREA_MAX_ITEMS/ENTRANCES and whose packed producer supplies offsets. Do not treat internally produced counts as arbitrary script input
+- Route/topology snapshots, live analysis and visibility cache use engine owners; 17-byte hash formatting accommodates sixteen hex digits plus terminator, and route count clamping continues immediately after L750. Invalid engine strings/JSON dump failure and complete publication are deferred to the serializer tail and existing publication owner
+- Current delta is 765 additions and 52 deletions overall, including scene, campaign and network diagnostics; only scoped declarations/generation and scene additions were inspected here. The remaining current source requires the mandatory delta generation
+
+## Evidence and gaps
+
+Read all 750 assigned lines, paired renderer call sites and frozen mixed hunk attribution, producer count guards, GQR-0143 and existing concurrency/publication owners. No GL, size-budget, allocation-fault, coordinate-transform, request race, engine build or device integration fixture ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 44 (H/M/B/C/R = 23/0/4/10/7); proposed owner: BR-0588; rationale: existing request correlation contract remains open
+- Normalize retained shared serializer and current-delta requirement without duplicate finding admission
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0224 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0225 frozen survey, resumed 2026-10-01 SHA256:7cfad5bc8ca22b2e94653bd4012ba0c233c8b1ad9e1869ca1f23ad4a0c90e577 -->
+
+## GQ1-CHUNK-0225 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0225.md`
+- Imported SHA-256: `7cfad5bc8ca22b2e94653bd4012ba0c233c8b1ad9e1869ca1f23ad4a0c90e577`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0225 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Reviewed all 750 assigned frozen lines in game_introspect.cpp L751-L1500. Disposition: RETAIN
+
+The branch-added serializer already serves both engines. Route, escort, thief, HUD, network and merged-wall structures remain with their engine producers; serializer field assignments do not duplicate engine mutation or format policy. The assigned range contains no inherited implementation body to extract. Engine-private accessor ownership and compact renderer calls were measured/reconciled in chunks 0166/0224 and completed GQR-0143; moving serializers into another generic facade adds no inherited reduction
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/game_introspect.cpp`: L751-L1500; frozen blob `d0adb8d84d6d9659eeb84e41ecdb47396b7eacb9`
+
+Scope SHA-256: `de8f775de6ce87f8973abe6273d0b6a670c911a1eb1e2550c3360e48f66a3dfe`
+
+## Quality and reconciliation
+
+- OBS-001 retains BR-0288: merged-wall last-draw exposes frame/GL/route state but not the actual submitted shader debug mode/program/uniform output. Current serializer still has exactly that omission. Typed geometry/config snapshots cannot prove mode-specific rendered pixels or current-request application
+- Route count and opened-link iteration are bounded by LEVEL_METADATA_MAX_ROUTE_STEPS/LINKS. Guide-Bot active-step indexing comes from the live engine plan and checks nonnegative index below that plan's route count. Target/endpoint validity is checked before equality or vector serialization
+- Guide-Bot object lookup validates Buddy_objnum against Highest_object_index; controlled-slot indexing separately checks MAX_ROBOTS_CONTROLLED. Thief lookup requires a live robot object and uses its engine-admitted robot ID; a hostile ID requires loader/producer evidence before attributing an independent serializer out-of-bounds defect
+- Path-parity serialization reads the recorded result only and does not invoke the mutating probe. BR-0381 remains the probe owner, without a duplicate serializer finding
+- Snapshot faces/covers iterate fixed capacities and require valid records. Eight-hex-digit formatting uses a nine-byte buffer; target/source texture hashes are strings, avoiding numeric JSON precision loss. Snapshot request_frame and frame_id are observable, but consumers must actually correlate them
+- General state, screen-advance generation/readiness and cooperative restore diagnostics delegate existing owners; existing BR-0244/BR-0588 own admission, synchronized request identity and publication. Preview JSON parsing failure becomes null but does not prove successful preview evidence
+- HUD rectangles and debug rows expose prepared state separately from drawn flags. Multiplayer slot counts are capped at MAX_PLAYERS, object-owner histograms range-check owner before indexing, and object enumeration uses engine-owned Highest_object_index. No arbitrary script array index is introduced here
+- Remaining C ABI construction/dump exception containment and raw game-string encoding require the enclosing entry-point tail in 0226/0166. This chunk does not assert that partial try blocks protect all JSON allocation or publication failures
+- Current file contains substantial new scene, campaign and cooperative diagnostics; full current-delta review remains required. The inspected last-draw serializer has no applied-mode repair
+
+## Evidence and gaps
+
+Read every assigned line, including recovered L1094-L1132 after the initial output truncation, typed snapshot definitions, existing owners and current last-draw code. No renderer fault, malformed producer, repeated request, route/robot, exception allocation, native build or emulator integration ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 44 (H/M/B/C/R = 23/0/4/10/7); proposed owner: BR-0288; rationale: applied shader output remains unverified
+- Normalize existing rendering/request roots without new duplicate admission
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0225 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0226 frozen survey, resumed 2026-10-01 SHA256:bee9706208d761e39a2aa3c90b8516a05e51750718800995ff9aa82c2623567d -->
+
+## GQ1-CHUNK-0226 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0226.md`
+- Imported SHA-256: `bee9706208d761e39a2aa3c90b8516a05e51750718800995ff9aa82c2623567d`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0226 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Reviewed all 750 assigned frozen lines in game_introspect.cpp L1501-L2250, with the enclosing entry-point/publisher tail L2251-L2435. Disposition: RETAIN
+
+The branch-added shared serializer keeps lifecycle, renderer, audio, bindings and engine state with existing owners. Its engine event-loop consumers are one game_introspect_check_and_dump call per game under INTROSPECT_ON; game-specific state layout remains in engine accessors, whose public-body consolidation is already GQR-0143 DONE. The reviewed serializer has no inherited duplicate body, and another universal diagnostics facade would move shared code without reducing those necessary observation hooks
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/game_introspect.cpp`: L1501-L2250; frozen blob `d0adb8d84d6d9659eeb84e41ecdb47396b7eacb9`
+
+Scope SHA-256: `75e136b4be48a947cfb5ca626781f7804367b93804a84e0c74245a1e55299e3c`
+
+## Quality and reconciliation
+
+- OBS-001 proposes GQF-0186: game_introspect_get_state has no whole-function exception boundary although JSON construction/dump allocates. The JNI C getter and paired C event-loop dump caller likewise have no C++ catch. A forced bad_alloc during any of those assignments or dump escapes the C ABI instead of returning the declared null/failure result. Track-list malloc at L1823 is freed only after parse and assignment, so allocation failure there also leaks that buffer; the enclosing PhysFS list is similarly manually released after allocating copies. game_introspect_check_and_dump allocates a temporary std::string after acquiring json_str, and framebuffer sampling allocates its vector outside containment. Current live source retains these paths. Use scoped ownership and contain exceptions at exported introspection boundaries, preserving prior publication and exposing a bounded failed request; production allocation-fault fixtures must prove no crossing, leak, stale success or partial file
+- This is a separate producer root from GQF-0185's automation condition double-free. That consumer's try begins after game_introspect_get_state returns, so it cannot contain producer failure. JNI pilot/input exception admission is GQF-0183, not a duplicate introspection owner
+- BR-0029 retains main-looper game-state reads versus engine-owned window/config/world state. BR-0250 owns separately sampled cross-thread audio diagnostics; repeated getters can mix generations even when each access is race-free. BR-0254 owns debug-category publication. No read-only getter is credited with synchronization merely because it returns a scalar
+- Mixer spec outputs are zero-initialized; audio/ring percentages use bounded capacity and 16-bit peak domains. Redbook status distinguishes completion, I/O error, stop and playing/paused; existing archived lifecycle/terminal fixes remain preserved
+- BR-0288 still owns configured merged-wall mode versus applied shader/render output. BR-0588/BR-0244 own request freshness and one-shot publication. Current atomic generations improve internal request tracking, but acknowledgement advances before allocation/file success and host end-to-end correlation still needs recheck
+- Joystick item count is engine-defined, keyboard and axis arrays use their fixed capacities, and button serialization caps at JOY_MAX_BUTTONS. Binding indices identify engine kconfig slots; serializer does not itself mutate config or prove launcher/game binding equality. BR-0644 remains the maintained test's missing assertion owner
+- MSAA diagnostics distinguish requested setting from effective creation/bind/resolve state, preserving archived BR-0647's actual-output repair. Automap carrier position is used only after a successful getter. Keyboard scale result is zero-initialized when inactive; coherence remains a producer contract
+- Final dump already uses replace for non-UTF-8 legacy level names, so malformed-byte title dumping is not a new strict-UTF-8 crash. Nullable parsed console/overlay snapshots and music JSON require allocation containment even with parse exceptions locally caught or parse allow_exceptions false
+- Disk publisher checks fflush, fclose and rename but ignores fputs result and consumes the request before publication. Publication completeness/fresh acknowledgement stays within existing request/publication roots rather than a duplicate generalized I/O finding
+
+## Evidence and gaps
+
+Read every assigned line, enclosing tail, JNI getter and paired event-loop consumers, existing active/done owners and current tail. Allocation exception/leak evidence is static control flow, not a executed allocator-fault test. No audio concurrency, live binding, GL, file fault, native build or device integration ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029; rationale: existing engine-affinity root is the highest live impact
+- New producer exception-containment owner independently rates 44 (23/0/4/10/7), pending production fault validation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0226 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0227 frozen survey, resumed 2026-10-01 SHA256:09601c5708c08f8b976d6092bbe356ed2ed2fd9f389aa584252b7308942b031a -->
+
+## GQ1-CHUNK-0227 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0227.md`
+- Imported SHA-256: `09601c5708c08f8b976d6092bbe356ed2ed2fd9f389aa584252b7308942b031a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0227 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Reviewed all 750 assigned frozen lines in gles3_shim.c L1-L750 and its enclosing shader lifecycle/callers. Disposition: RETAIN
+
+The fixed-function compatibility layer is already branch-added/shared; it replaces legacy GL entry points through one guarded header rather than copying per-game pipeline policy. Paired ogl_init.h frozen changes are 31 additions/one deletion each, including platform headers/definitions, with one shim include each; paired ogl.c also has one shim include each. Initialization itself is in branch-added android_egl_surface.c. Moving matrix/shader/client-state bodies again cannot remove those platform declarations. Tail array-source policy was reviewed in 0147/0166; retain the central owner and prior BR-0196 repair
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/gles3_shim.c`: L1-L750; frozen blob `410c86b07f554e4eabdf2b00caf09d340368abe1`
+
+Scope SHA-256: `bf6b3673fe86c5f86715330a8c19a02717478863909315157a2e8cf428cdce2c`
+
+## Quality and reconciliation
+
+- OBS-001 proposes GQF-0187: compile_shader queries GL_COMPILE_STATUS and logs failure but returns the failed shader; init then attaches/links it, logs failed GL_LINK_STATUS and proceeds to uniform lookup, glUseProgram, VAO/VBO creation and the initialized success message. The shared EGL startup caller has no success result to check. Shader/program creation returning zero, compile failure or link failure therefore leaves an unusable shim while startup continues as initialized. Current source retains that behavior. Stage checked resources, delete partial objects, return explicit failure and prevent successful engine-render startup until the pipeline is usable; production GL fault fixtures and paired device launch must distinguish failure from initialized success
+- This shader-program admission root is distinct from BR-0240's EGL context/surface admission and archived BR-0196's client/VBO source selection. Preserve those owners rather than treating a completed array fix as evidence of a usable program
+- BR-0289 remains unchanged: vertex shader assigns gl_PointSize = 1.0, while the shim header discards legacy glPointSize and engine pixel callers compute resolution-scaled size. Current shader still hardcodes one; later 2D batching is a required live-delta path, not closure of all point rendering
+- JNI-set volatile debug mode remains within BR-0029 engine-affinity/snapshot scope. State caches, matrix stacks and program ownership assume the GL engine thread; no per-variable synchronization facade is warranted
+- Matrix multiplication uses a temporary for aliased input/output and stack indices are locally bounded. Overflowed pushes are ignored; observed renderer nesting and degenerate projection/rotation input need actual supported caller fixtures before admitting an independent matrix defect
+- Pointer setters retain the GL_ARRAY_BUFFER binding at declaration time, preserving archived BR-0196. Current delta replaces GL queries with tracked bind/delete wrappers and adds a production buffer/probe check; bypassing raw GL calls and context-reset coherence remain current-delta review obligations
+- External program activation updates MVP when dirty and clears secondary texcoord ownership on return. Alpha comparator and tex-env mode are stored/ignored respectively while the shader implements the engine's ordinary modulation/GEQUAL-style cutout; alternate reachable comparator/env modes require caller evidence before a compatibility finding
+- Initialization creates an unretained local VAO name; complete context destruction normally releases GL objects. No supported same-context repeated-init leak or shutdown defect is asserted without tracing lifecycle use. Probe state restoration and draw packing continue in separately completed 0147 scope
+
+## Evidence and gaps
+
+Read every assigned frozen line, paired include registration/numstat, shared EGL startup call, prior shader/array owners and all current shim diff hunks. No GL creation/compile/link fault, point footprint, context churn, matrix boundary, native build or device integration ran. Shader failure evidence is static production control flow
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: proposed GQF-0187; rationale: paired Android renderer admits an unusable pipeline
+- Existing BR-0289 rates 44 and remains a separate canonical output repair
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0227 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0228 frozen survey, resumed 2026-10-01 SHA256:4b728e66620161a4400b616f9444d27406c412f9512669f33d0628a35649b127 -->
+
+## GQ1-CHUNK-0228 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0228.md`
+- Imported SHA-256: `4b728e66620161a4400b616f9444d27406c412f9512669f33d0628a35649b127`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0228 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Reviewed all 750 assigned frozen lines in input_demo_controls.cpp L1-L750 and its L751-L764 file-read tail. Disposition: RETAIN
+
+The branch-added typed control codec is already shared by D1/D2 and owns held-state/pulse schema, integer admission and coalescing. Inherited engines consume it through shared input-demo hook/start owners rather than containing the assigned JSON/parser bodies. There is no assigned inherited body to extract, and moving field assignments into a macro/reflection layer adds coupling without measured inherited reduction. Keep engine format application with those existing adapters
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_controls.cpp`: L1-L750; frozen blob `d3d064af1d839eac56830aa4a6576dcc3dddb445`
+
+Scope SHA-256: `a1f0a0bfd2c752bcab39f2690fecf6afca763bdd676818223673da3cc846900b`
+
+## Quality and reconciliation
+
+- Archived BR-0220 is repaired: loaded p.sw uses maximum ten rather than UCHAR_MAX, with maintained paired tests accepting 0..10 and rejecting 11/254/255
+- Archived BR-0221 is repaired: signed JSON rejects oversized unsigned values before narrowing; record/frame/stream validation enforces strictly positive 1..INPUT_DEMO_FRAME_TIME_MAX. Tests include signed extrema, zero, bound plus one and four unsigned overflow cases. Current file has no frozen-to-live changes
+- Held-state update flags distinguish omission from explicit zero, so release transitions survive parse/apply. Pulse fields are transient, D2-only fields are rejected for D1, and unknown state/pulse/top-level keys fail explicitly
+- Coalescing requires contiguous frame identities, validates frame time, and extends a run only when both new and prior pulses are empty; repeated nonzero pulses cannot be collapsed into one firing. Run/count wrap needs billions of frames and consumer resource admission rather than an unproven ordinary fixture defect
+- Complete stream validation requires f:0, increasing record frames and initial frame time. Per-record output is mutated during parse on failure, but its caller must honor false; file-read publishes only a locally parsed/validated vector. Replay expansion/run overlap and top-level frame budgets belong to subsequent fixture/replay owners
+- Standalone JSONL writer opens/truncates before null/path/stream validation and returns before checking destructor close. Frozen call search finds it only in the native codec test, with no production file publisher; a user-save corruption claim is therefore not admitted. Any later live production use requires recheck of this helper's publication contract
+- C-facing clear/update functions do no C++ allocation. Allocating codec interfaces are C++ and report schema failure through bool/error; enclosing fixture loader exception/resource bounds are the next coverage scope, not credited here as already verified
+- Archived BR-0217 weapon-order validation is a separate fixture setting owner and remains preserved; it is not duplicated by control-pulse schema ownership
+
+## Evidence and gaps
+
+Read every assigned line and enclosing read tail, complete frozen/current diff (empty), production codec caller search, and paired selector/time/zero/game-field/file-roundtrip tests. No native codec binary, giant-frame, file-close fault, allocation fixture, engine build or replay integration ran in this read-only chunk
+
+## Outcome
+
+- Coverage: CLEAN
+- Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: prior admitted codec defects are fixed and no new supported live root remains
+- Preserve completed domain repairs and record caller/consumer gaps without new admission
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0228 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0229 frozen survey, resumed 2026-10-01 SHA256:8438f0dfc9a7d49dc2fc36d25451b83a3b9753d305e7b6340edc757a8b6c138f -->
+
+## GQ1-CHUNK-0229 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0229.md`
+- Imported SHA-256: `8438f0dfc9a7d49dc2fc36d25451b83a3b9753d305e7b6340edc757a8b6c138f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0229 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Reviewed all 602 assigned frozen lines in input_demo_debug_logging.cpp. Disposition: CANDIDATE, existing BR-0290 owner
+
+The logging implementation is already branch-added/shared, with state-local observation calls in inherited engines. Paired object.c each contains one added watcher call; their enclosing frozen zero-context hunks contain one and seven additions respectively, with the other six D2 additions carrying move identity reset. Extracting that call adds no reduction. D2 collide.c separately makes six identical path/reason pairs while reason simply delegates to path: remove the six redundant inherited calls and consolidate naming under the existing shared logger. Estimated removable inherited lines: six, no whole hunk; preserve every reason-only early-return branch and exact event identity. BR-0290 already owns this candidate, including the debug replay oracle; do not admit another extraction root
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_debug_logging.cpp`: L1-L602; frozen blob `9a4840e58400e43f8577f5d4c9c629ca28e71077`
+
+Scope SHA-256: `6462b75ee9af5c2169b2881027c83b66a59322f453842ec0cfeb6ae1c2f3e097`
+
+## Quality and reconciliation
+
+- BR-0290 is unchanged in current source: path and reason produce identical records, and live shared source has no frozen-to-current diff. Prior 0156 evidence is extended by reading the complete implementation and frozen accepted-collision pair
+- Debug availability is compiled out on Android NDEBUG and opt-in through the engine startup argument otherwise. Setter is called by the shared start owner, not demonstrated as a main-looper JNI write; a scalar flag alone does not prove a cross-thread race
+- printf uses bounded vsnprintf, checks a negative result and forces termination. Structured robot delta contains numeric fields only within a 1200-byte buffer; its fixed schema/32-bit values do not require arbitrary string escaping
+- Watch arrays have MAX_OBJECTS capacity and loop on engine Highest_object_index; moved/source/spawned slot lookup checks that index range. Weapon/robot pointer subtraction follows engine object-array callers rather than arbitrary JNI pointers
+- Robot watching scans objects after each move to identify between-slot changes. It is potentially quadratic and the 96-log cap bounds records rather than unchanged scans. That is opt-in fine-grained evidence by design; supported-scene cost measurement is required before a separate performance finding
+- Per-frame watcher validity resets on frame change; object-slot reuse signatures and repeated-run frame identity deserve production diagnostic fixtures before attributing a distinct false-state defect. First append-error suppression persists in this owner, but a repeated failure is not represented as success
+- Several probe helpers deliberately emit only stage labels despite richer parameters. API simplification could reduce branch-added verbosity, but removing observation semantics or inherited calls needs an actual consumer/oracle contract, not a cosmetic move
+- Explosion/player distance and fixed arithmetic use engine geometry; no separate supported coordinate-overflow evidence was found. D2 replay probe appending is delegated to the existing recorder/replay owners, while ordinary debug logging avoids simulation mutation or RNG calls
+
+## Evidence and gaps
+
+Read every assigned frozen line, debug compile/start guards, object move and duplicate-collision consumers, frozen hunk attribution, existing 0156/BR-0290 evidence and current diff (empty). No debug replay, record-count, dense scene performance, slot reuse, append fault, release build or engine integration ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 38 (H/M/B/C/R = 12/5/4/10/7); proposed owner: BR-0290; rationale: remove six duplicate inherited diagnostic calls with preserved branch evidence
+- Normalize candidate as extension of existing owner without duplicate GQ admission
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0229 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0230 frozen survey, resumed 2026-10-01 SHA256:7c896c3828d5b62a640bb7610bac18707acfc00fd0b13e0638f2555880f95029 -->
+
+## GQ1-CHUNK-0230 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0230.md`
+- Imported SHA-256: `7c896c3828d5b62a640bb7610bac18707acfc00fd0b13e0638f2555880f95029`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0230 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Reviewed all 750 assigned frozen lines in input_demo_fixture.cpp L1-L750 plus the checkpoint parser completion L751-L763. Disposition: RETAIN
+
+Fixture/checkpoint/RNG JSON policy is branch-added and shared; inherited replay consumers use typed structures and existing shared start/replay owners. Player-order domains match engine semantics without moving engine-format application into Kotlin. The assigned range contains no inherited parser body to remove. Consolidating short integer readers among branch-added codecs has zero inherited payoff; semantic checkpoint admission is the meaningful owner before abstraction
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_fixture.cpp`: L1-L750; frozen blob `9483bf94dc46e7dcc8326a06d886243c7cbe3dc5`
+
+Scope SHA-256: `6133a5938af81fbaf0a51685f33e3f698134d5d2d9cfccb65b9f10276fc96cbf`
+
+## Quality and reconciliation
+
+- OBS-001 proposes GQF-0188: optional checkpoint subsystem clocks accept every signed int64 and unsigned narrowing through parse_int64_field; only start_gt is checked nonnegative. Supply a complete valid escort state plus buddy_sorry_time = 9223372036854775807. D2 escort restore copies it unchanged, then ordinary companion AI evaluates Buddy_sorry_time + F1_0, causing signed overflow. Likewise collision_delay_last_play_time = INT64_MAX reaches its restored gate's addition of F1_0/3; thief timing has unchecked GameTime64-minus-restored-time consumers. Current parser and explicit buddy/collision sinks retain the defect. Require exact signed admission and a safe relative timing envelope for every restored subsystem clock, preserving legitimate negative sentinel/history values; test production restore and first AI/collision step under UBSan
+- Archived BR-0297 repaired master start_gt/replay duration/save-time bounds, not these separately restored escort/thief/collision clocks. Keep its completed origin repair and extend the timing admission with this distinct missing subsystem envelope. Do not claim a fresh master-clock regression
+- Archived BR-0217 order permutations are fully validated for each game domain, including D1 pseudo-entry 16 and one sentinel 255. Count checks precede fixed-buffer indexing. Current scoped additions also validate separate D1-in-D2 orders and guidebot routing mode, pending full current-delta coverage
+- Archived BR-0291 difficulty limits, BR-0383 thief inventory index and BR-0219 checkpoint expanded/encoded size guards are present. SHA text and payload authenticity are delegated to the replay decoder rather than credited solely by nonempty-string checks. BR-0218 temporary-save isolation belongs to the restore owner and stays completed
+- Escort state requires its complete six-field core, thief state its complete three-field group; absent optional values retain explicit unset sentinels. Other escort goal/index/owner semantics require actual restored-game consumer fixtures before admitting a separate memory-safety claim
+- RNG stream/coalescer validates positive runs and contiguous starts, publishes a local output only after success, and compares optional call count presence/value before collapsing runs. Extreme run addition wraps uint32 and standalone read lacks badbit/byte-budget checks; production call tracing is required because these standalone helpers may be test-only
+- Metadata requires valid game, mission/build/architecture, nonzero level, start-mode/save pairing and player config. rng_mode is only nonempty here; canonical interpretation remains BR-0246 and subsequent metadata/start scope
+- Current overall delta is 170 additions/46 deletions, including settings and later load/publication changes. Only scoped settings/order additions and relevant live timing sinks were inspected; remaining current delta is unreviewed
+
+## Evidence and gaps
+
+Read every assigned line, checkpoint completion, archived domain repairs, current scoped diff and shared replay/engine restore and timer consumers. Timing overflow evidence is a concrete production arithmetic trace; no restored UBSan fixture or executable parser probe ran. No RNG huge-run/read fault, allocation, full current-delta, native build or paired replay integration ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 44 (H/M/B/C/R = 23/0/4/10/7); proposed owner: proposed GQF-0188; rationale: admitted restored clocks overflow ordinary subsystem arithmetic
+- Normalize new subsystem timing envelope separately from completed master-clock and resource repairs
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0230 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0231 frozen survey, resumed 2026-10-01 SHA256:d748bd38cd2b65ebfacffca6df3fbaaf488e3153510afc1e7a7df1dc08ab9cec -->
+
+## GQ1-CHUNK-0231 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0231.md`
+- Imported SHA-256: `d748bd38cd2b65ebfacffca6df3fbaaf488e3153510afc1e7a7df1dc08ab9cec`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0231 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Reviewed all 574 assigned frozen lines in input_demo_fixture.cpp L751-L1324. Disposition: RETAIN
+
+The file/header/frame/checkpoint schema already has a branch-added shared owner. Engine consumers use typed replay APIs and existing shared start hooks; no assigned inherited codec body can move out. Current streaming/move changes reduce branch-owned copies without reducing inherited hunks. Replacing JSON round trips with a typed common boundary may improve codec cost, but requires schema/producer validation and has zero inherited merge payoff
+
+## Frozen scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_fixture.cpp`: L751-L1324; frozen blob `9483bf94dc46e7dcc8326a06d886243c7cbe3dc5`
+
+Scope SHA-256: `00978629fcc7b6a28915280bd52e94244427a2702ba997dc87cb0a5805370906`
+
+## Quality and reconciliation
+
+- OBS-001 proposes GQF-0189: whole-file byte limits do not bound aggregate typed frames. Frozen parser appends every frame into a vector, validates header count only after all parsing and copies the complete vector on publication. A two-million-frame file with compact contiguous records and minimal input/RNG fits the 128 MiB raw limit, but each frame contains an input_demo_result by value even without state; that member alone is 268 bytes with the explicit pack(4), so retained state alone exceeds 511 MiB before controls, vector capacity, text/JSON copies and replay expansion. Replay load allocates further control/RNG/expanded arrays, and its C-facing entry has no whole-load exception boundary. Current stream/move code improves copying and rejects records beyond header but retains all typed frames, accepts uint32 header counts and raises raw limit to one GiB; no aggregate typed allocation/frame/event budget exists. Enforce checked admission for total retained/expanded memory before growth and contain allocation failure, retaining prior session/output; test compact high-count and event/diagnostic-heavy files with production allocation accounting
+- This extends an unclosed aggregate-memory dimension of archived BR-0219 while preserving its completed checkpoint/base64/ratio ceilings. It is distinct from GQF-0168 quadratic direct-command parsing: that owner decodes one frame's events, whereas this admission must bound the complete resident fixture/replay session
+- GQF-0188 subsystem timer admission remains open at shared validate_checkpoint used by reader and writer. Typed output preserves exact admitted timer values; serialization alone is not semantic safety
+- BR-0246 retains canonical RNG-mode/preflight disagreement. Header parser validates string type and metadata schema but does not establish mode compatibility or reject duplicate JSON keys as a semantic contract
+- BR-0222 owns transactional publication of demo and sidecars. Frozen production file_write opens/truncates before serialization validation and omits checked close; current recorded writer validates bookends first and explicitly closes, but set-level publication still needs its owner-level fault/recovery test
+- Header/checkpoint/frame/result order is checked, duplicate checkpoint rejected and trailer required final. Parsed file is staged locally, but validation happens after frame allocation; failure isolation is not a resource budget
+- Frame control/RNG/snapshot JSON calls reuse established strict readers, preserving BR-0220/BR-0221/BR-0298 repairs. Events must be objects, but no per-frame event limit exists here; GQF-0168 owns dispatch count and one-pass policy. Diagnostic JSON requires an object, not a validated simulation oracle
+- Result trailer only checks frame_count against metadata here; engine result/oracle identity and comparison are subsequent result/replay scope. State absent is distinguished by has_state; full result storage remains allocated in every typed frame regardless
+- Current delta introduces bounded record reads, direct stream parsing, move publication and recorded bookends. Full current-delta review and fault behavior remain required rather than marking the frozen resource owner closed from a streaming comment
+
+## Evidence and gaps
+
+Read every assigned line, fixture/result structure layout, frozen/shared live limits, replay load allocations and current fixture diff/exception sites. The 268-byte member and compact-record count are arithmetic/static evidence; no huge allocation or process exhaustion experiment ran. No production allocator-count, short read, disk publication fault, native build or paired replay integration ran
+
+## Outcome
+
+- Coverage: ISSUES
+- Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: proposed GQF-0189; rationale: compact admitted local files drive excessive resident memory and uncontained allocation failure
+- Retain existing schema, RNG-mode and artifact-set owners without duplicate admission
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0231 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0232 frozen survey, resumed 2026-10-01 SHA256:9be6b083016b73a6a11a2c7fafb15987a819e17c2d61e9d5505f201a4f9d64a5 -->
+
+## GQ1-CHUNK-0232 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0232.md`
+- Imported SHA-256: `9be6b083016b73a6a11a2c7fafb15987a819e17c2d61e9d5505f201a4f9d64a5`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0232 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The assigned branch-added shared replay hook owner already consolidates paired orchestration and state hashing. Frozen BASE..HEAD measures 2243 added lines here, 1326 added lines in the branch-added D1 hook sink and 7138 in the branch-added D2 sink; these are not inherited-line savings. Inherited game.c totals are D1 296 additions/24 deletions and D2 386 additions/41 deletions, mixed game-loop integrations beyond this range. Record, prepare, RNG synchronization, frame stepping, stop and finish call the common owner through small engine-semantic callbacks. Moving this policy back into either inherited engine or introducing larger callback tables would increase coupling. GameTime, controls, AI layouts and object identity remain engine-owned. No additional removable inherited body was established in this scope
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_hooks_shared.c`: L1-L750; frozen blob `b567d08ad68e7a7a9d1b2bd9bceb3867577fbc08`
+
+Scope SHA-256: `c085a359cfc8d81af063fde1d7910b54594dea5f5507f7f3173a335cc10142b8`
+
+## Quality and evidence
+
+Every frozen line L1-L750 was read, including reset and collision gates, hashing, AI static/local and robot animation admission, recording capture, delay, prepare, stop/finish, RNG synchronization, step, mismatch and trace publication, and the start of runtime diagnostics. Checked paired hook owners, game-loop call sites, debug logging, active/done BR and GQ ownership, and frozen-to-current hunk inventory and changed assigned-range bodies
+
+1. EXTENDS BR-0292: recording unconditionally captures full result and runtime/object/AI diagnostic snapshots even when per-frame-state output is disabled. Current hook adds profiling around that same capture and retains the unconditional scans. The recorder storage extension is a separate current reconciliation question because its implementation has changed. Preserve the existing owner and paired off/on capture-counter, state/RNG/result and Android performance validation
+2. EXTENDS BR-0293: session reset clears only global robot/fireball validity and AI/animation presence; no bump reset or robot/fireball presence reset is added by the current owner. The inherited diagnostic-session root already covers stale slot histories, bump data and event-error latches. The debug watcher found in chunk 0229 belongs to this lifecycle owner, not a new issue. Validate repeated same-process sessions and slot absence/reuse rather than changing simulation data
+3. RETAIN BR-0209/BR-0233: callbacks and trace writes still require headless failure and durable-output admission from those canonical owners; no duplicate finding. Current additions include boundary/world/object traces and a fast replay progress loop, requiring delta coverage before closure
+4. Historical BR-0294 collision diagnostic gating has current partial repair: the frozen unconditional D1 collision gate is removed in favor of shared debug enablement. Other hot-path probe owners require their own coverage; do not declare the broad BR closed
+
+Clean dimensions: unsigned hash arithmetic and signed-64 bit decomposition are defined; robot animation checks robot ID, gun count and joint submodel bounds before indexing. Shared replay frame time validation belongs to the completed control decoder bounds. Engine simulation remains in game callbacks, with no replay-specific physics compensation admitted here
+
+Evidence gaps: no executable off/on timing or session trace test was run during read-only analysis. Current added fast-replay and D1-in-D2 object-view update behavior is reserved for current-generation coverage
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0292; rationale: paired recording hot-path work is still unconditional with a clear scoped capture gate
+
+## Outcome
+
+ISSUES: existing BR-0292, BR-0293, BR-0209 and BR-0233 owners extended; no new fix root
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0232 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0233 frozen survey, resumed 2026-10-01 SHA256:330ac09b1023834246afd2814aa14399c2dc756569f8d4e62a60f6e303ded263 -->
+
+## GQ1-CHUNK-0233 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0233.md`
+- Imported SHA-256: `330ac09b1023834246afd2814aa14399c2dc756569f8d4e62a60f6e303ded263`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0233 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The branch-added shared hook sink owns typed runtime, object, result and collision diagnostics for both games. Frozen paired branch-added hook sinks add 1326 D1 and 7138 D2 lines, not inherited reductions. Inherited collide.c totals are D1 118 additions/11 deletions and D2 470 additions/72 deletions, mixed physics and diagnostic changes. The relevant bump hooks are compact four calls per game with engine-owned force inputs; deleting or moving original physics arithmetic merely to shorten the adapter would invert ownership. Zero additional removable inherited body was established. Keep this shared owner and prune obsolete diagnostic policy through established roots
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_hooks_shared.c`: L751-L1500; frozen blob `b567d08ad68e7a7a9d1b2bd9bceb3867577fbc08`
+
+Scope SHA-256: `bf89e367dd68588197ea71afbde93ae93dc4279e9688602e0bf44e7171389ce6`
+
+## Quality and evidence
+
+Every frozen line L751-L1500 was read, with enclosing capture bodies through chunk 0234. Checked paired memset-before-capture wrappers, runtime getters, fixed trace capacities, shared reset, active/done ledgers and the complete current tail diff
+
+EXTENDS BR-0293: previous robot hashes are compared using only global validity, with no per-slot presence or session identity. Once frame zero marks the history valid, a subsequently occupied slot can report its previous session hash. Current diff leaves this reset and comparison unchanged. Preserve the existing paired same-process absence, creation, removal and slot-reuse trace oracle
+
+EXTENDS BR-0292: runtime/free-list, segment chain, player-weapon, live-object, AI and animation walks feed the unconditional disabled recording capture already established in chunk 0232. No independent performance root
+
+Clean dimensions: free-list indexing admits only 0..MAX_OBJECTS and bounds the loop; segment chains reject invalid object indices and stop after MAX_OBJECTS steps; trace arrays and bucket writes enforce fixed capacity, and duplicate neighbor segments are excluded. Assigned point-list sample lookup checks allocated extent before access; AI index field widths and engine producers require the remaining subsystem scope before making a malformed-checkpoint claim. Capture wrappers clear the complete diagnostic before accumulation. The hard-coded robot 15/fireball 174 samples select bounded existing slots and create diagnostic specificity, not an established memory fault
+
+Current reconciliation: additional player velocity/pickup state and D1 reactor diagnostic-ID normalization change observability without changing engine simulation. Full added-owner admission and parity remain delta work, not declared verified here
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0293; rationale: process history still affects paired deterministic diagnostic comparisons
+
+## Outcome
+
+ISSUES: existing diagnostic lifecycle/performance/logging roots extended; no new fix root
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0233 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0234 frozen survey, resumed 2026-10-01 SHA256:59c61c592f38be9f1e1b7e292841e484875965fa5ebb9f69a274aeb5332430f9 -->
+
+## GQ1-CHUNK-0234 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0234.md`
+- Imported SHA-256: `59c61c592f38be9f1e1b7e292841e484875965fa5ebb9f69a274aeb5332430f9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0234 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The branch-added shared hook sink owns typed runtime, object, result and collision diagnostics for both games. Frozen paired branch-added hook sinks add 1326 D1 and 7138 D2 lines, not inherited reductions. Inherited collide.c totals are D1 118 additions/11 deletions and D2 470 additions/72 deletions, mixed physics and diagnostic changes. The relevant bump hooks are compact four calls per game with engine-owned force inputs; deleting or moving original physics arithmetic merely to shorten the adapter would invert ownership. Zero additional removable inherited body was established. Keep this shared owner and prune obsolete diagnostic policy through established roots
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_hooks_shared.c`: L1501-L2243; frozen blob `b567d08ad68e7a7a9d1b2bd9bceb3867577fbc08`
+
+Scope SHA-256: `55c3b6443d292b0f03efa943111ae1a6b05fd85aa4e0b9c3b691d54852eab9b7`
+
+## Quality and evidence
+
+Every frozen line L1501-L2243 was read, completing object capture, history update, segment aggregate, result snapshot and bump diagnostic bodies. Checked shared capture/reset, paired wrappers and collide.c bump call hunks, active/done ledgers, and complete assigned-range current diff
+
+EXTENDS BR-0293: fireball history likewise has only global validity; absent slots retain prior hashes. AI/animation presence arrays are rebuilt after each frame, whereas robot/fireball histories are not. The static last-player-bump record updates on contact but is never reset at session start. Current changes normalize one ID and leave both lifecycle gaps present
+
+EXTENDS BR-0295: player-bump step hashing increments the only step pointer through its terminator before the final console step=%s field. All four paired caller labels therefore become empty in this branch. Current diff does not repair it. Preserve the existing owner and exact FNV/label oracle
+
+EXTENDS BR-0294/BR-0292: optional collision work and fixed frame 58..62/slot 82 watch are diagnostic policy in the shared sink, not new engine semantics. Current shared collision activation now checks debug availability/enabled, a partial existing repair; full ordinary-gameplay, release and focused-probe validation is still needed. Expensive full state capture remains the BR-0292 off/on gate
+
+Clean dimensions: fixed AI/weapon/fireball trace entries obey capacities; segment aggregate chains reject invalid indices and cycle-length excess. Result ammo access uses paired engine maxima and zero-fills larger common slots. Null diagnostic/result caller preconditions are supplied by the maintained wrappers; no new parser or JNI interface is introduced. Capture preserves simulation values and does not apply replay-specific correction
+
+Evidence gaps: no collision-log or repeated-session executable fixture ran during analysis; force overflow requires concrete admitted engine values and is not asserted from theoretical extreme arithmetic. Current D1-in-D2 saved AI field selection remains delta coverage
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0293; rationale: process history still affects paired deterministic diagnostic comparisons
+
+## Outcome
+
+ISSUES: existing diagnostic lifecycle/performance/logging roots extended; no new fix root
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0234 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0235 frozen survey, resumed 2026-10-01 SHA256:a1052088ceeded7e82d6b174a6c3c297e9603bc48a8bcf38f3924b875ec75c86 -->
+
+## GQ1-CHUNK-0235 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0235.md`
+- Imported SHA-256: `a1052088ceeded7e82d6b174a6c3c297e9603bc48a8bcf38f3924b875ec75c86`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0235 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The shared recording owner already replaces 28 original stop-body lines per game with one call and centralizes quick-record lifecycle. Frozen inherited newdemo.c totals are D1 42 additions/31 deletions and D2 847 additions/58 deletions; D2 includes unrelated deterministic-demo work. Paired headers add D1 two and D2 24 lines, also mixed interface changes. The assigned four-function facade and shared policy owner are narrow natural boundaries; expanding callback adapters or moving engine save knowledge into JVM code would add coupling. No further removable inherited policy body was established
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_newdemo_shared.c`: L1-L705; frozen blob `b5c8c4ea1446f58e5ae25aed6e3427c1a1c135cc`
+
+Scope SHA-256: `e46f9e9e134452e15445c7a4283e638dac03f5fcf4bfee40b6b8a0587a6b22b9`
+
+## Quality and evidence
+
+Every frozen line L1-L705 was read. Checked shared recorder settings/flush contract, shared replay hooks, paired newdemo.c call and replacement hunks, CMake registrations, active/done ledger roots, and complete frozen-to-current diff
+
+EXTENDS BR-0296: time-zero plus exact initial ship pose selects new_level without proving canonical new-game player state. Later-level inherited inventory/score/lives survive into recording but StartNewGame replay resets them. Current changes add player preferences and D1-in-D2 orders, not a starting gameplay-state checkpoint. Preserve the existing checkpoint-by-default owner and paired later-level inventory/result replay validation
+
+EXTENDS BR-0222: flush failure is not returned to the quick-record stop caller; primary-file existence admits the classic sidecar even after failed primary/trace publication. Caller mkdir/delete/close/rename policy remains untransactional. No separate publication finding. Require prior artifact-set preservation and open/write/close/rename fault injection, including existing primary residue
+
+REFERENCE BR-0247/BR-0292: RNG trace lifetime and disabled state-capture work retain their established recorder/hook owners. Fixed checkpoint size bounds are used before MALLOC; archived BR-0218 untrusted replay temporary storage is a different consumer and remains repaired
+
+Clean dimensions: acquired checkpoint buffers are released after recorder start copies settings; checkpoint reads check complete length and the supported size before publishing bytes. Slug output strips directory components, handles ASCII case explicitly and terminates bounded output. Retention enumeration frees its list and exits on failed delete instead of looping forever. Multiplayer and invalid level are rejected, unsupported RNG recording modes return before mutation, and quick recording clears bookkeeping on failed start. Existing unchecked classic-demo close/rename behavior includes inherited semantics; scope any repair to the branch artifact-set contract
+
+Evidence gaps: reserved checkpoint capture naming needs a concrete collision/ownership failure before admitting a new data-loss root. Long mission filename truncation and 255-attempt fallback need an admitted supported filename/collision oracle before extending publication claims. No device recording or fault injection was run during analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0296; rationale: paired later-level recording does not reconstruct inherited gameplay state
+
+## Outcome
+
+ISSUES: existing recording admission and artifact publication roots extended; no new fix root
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0235 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0236 frozen survey, resumed 2026-10-01 SHA256:cf738d0563b11b9ac9b423784bb547056dfe8740e1f81cff2608e5a252252a59 -->
+
+## GQ1-CHUNK-0236 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0236.md`
+- Imported SHA-256: `cf738d0563b11b9ac9b423784bb547056dfe8740e1f81cff2608e5a252252a59`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0236 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The shared recording owner already replaces 28 original stop-body lines per game with one call and centralizes quick-record lifecycle. Frozen inherited newdemo.c totals are D1 42 additions/31 deletions and D2 847 additions/58 deletions; D2 includes unrelated deterministic-demo work. Paired headers add D1 two and D2 24 lines, also mixed interface changes. The assigned four-function facade and shared policy owner are narrow natural boundaries; expanding callback adapters or moving engine save knowledge into JVM code would add coupling. No further removable inherited policy body was established
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_newdemo_shared.h`: L1-L9; frozen blob `0da371731f5bd3ba83f7eed297ea7cfdbd9ecf2b`
+
+Scope SHA-256: `97262820c09db5e633e95b2d66957f871b2e869effa4b1d129ccf0ddc1ba3b45`
+
+## Quality and evidence
+
+All nine frozen header lines were read. The four declarations exactly match shared implementations and paired engine includes. Both games register the shared C owner in their main CMake lists. Current header is unchanged. No duplicated policy body, stale declaration, mutable data, parser, resource owner or thread boundary exists here. The engine .c compilation convention supplies consistent language linkage to these same-game calls; no separate C/JNI ABI wrapper is claimed necessary
+
+Implementation-quality roots are covered in chunk 0235 and do not create a defect in this header. No executable build ran for this read-only declaration scope
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: declarations are clean and correctly connected to the shared owner
+
+## Outcome
+
+CLEAN: declaration, ownership, paired build registration and implementation contract checked
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0236 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0237 frozen survey, resumed 2026-10-01 SHA256:3fe61aba034f151c0009a59dc4fd03a82fc44ee33d6dfbbb6a03bf526afba81e -->
+
+## GQ1-CHUNK-0237 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0237.md`
+- Imported SHA-256: `3fe61aba034f151c0009a59dc4fd03a82fc44ee33d6dfbbb6a03bf526afba81e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0237 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The branch-added C++ recorder owns session, control/RNG encoding, diagnostic payloads and artifact flush behind an existing C facade. Paired branch-added hook sinks add 1326 D1 and 7138 D2 lines. Inherited newdemo.c totals are D1 42 additions/31 deletions and D2 847 additions/58 deletions, with compact recorder-start calls and the already-shared stop replacement reviewed in 0235. D2 controls.c is 66 additions/four deletions for mixed direct-control integration; D1 controls.c has no frozen change. Paired main/maths CMake and Android CMake register one owner and shared recorder tests. No copied recorder body remains in inherited files, and no material additional inherited reduction was established. Engine state capture and command execution remain engine-owned
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_recorder.cpp`: L1-L750; frozen blob `4aae67d2eb6a9f3b00937a4cbcc2fc589adcc02a`
+
+Scope SHA-256: `7fd5a4d3b1dac3ceef5c9ea8c133dd1ec55d2ad8e12fd7ed5402b5bc9a5e1638`
+
+## Quality and evidence
+
+Every frozen L1-L750 was read plus L751-L775 to complete flush and forwarding wrapper. Checked shared codec/fixture admission, RNG trace lifecycle, hook capture, quick flush caller, paired registrations, recorder test entry/case inventory and existing owners. Read the complete 89-addition/123-deletion current recorder diff
+
+1. EXTENDS GQF-0189/GQR-0176: frozen recording accumulates seven synchronized frame vectors without aggregate byte/frame admission and allocates complete typed demo copies at flush. Current removes empty state/diagnostic vectors and full demo copies, but still retains every control frame and encoded frame string and unbounded pending events. Recording has no duration/retained-byte/frame-count ceiling before push_back and uint32 conversion, and no complete C-facing allocation containment in start, capture, staging or flush. Start publishes active before allocating mission/checkpoint; capture pushes several independent containers, and append mutates a stored encoded line before its later growth operations. Allocation failure can escape engine callbacks or leave incomplete session data. Extend the existing aggregate frame-memory root, rather than duplicate its budget/containment mechanism. Require production allocator accounting across compact and diagnostic-heavy recordings, exact retained-budget boundaries, injected failures between container and string growth, prior session consistency and normal long-recording replay controls
+2. EXTENDS BR-0292: frozen disabled state output still retains a cleared 268-byte result and empty diagnostic string per frame. The current representation removes those containers; that storage symptom is partially repaired. Shared capture still unconditionally scans full engine snapshots, as 0232 established. Keep the paired off/on capture-cost oracle and do not mark the entire owner done
+3. EXTENDS BR-0222: primary demo is published before trace, failed trace resets the session, and quick caller checks file existence. Current uses a recorded-frame writer and improves the primary writer close contract elsewhere, but flush still does not transactionally publish the artifact set
+4. RETAIN BR-0247/BR-0296: trace memory and canonical recording starting state retain their distinct existing roots
+
+Clean dimensions: pulse additions saturate and weapon selector keeps the latest nonzero selection; truncate rejects expansion and clears pending pulse/events; frame encoders preserve held-state transitions and RNG call-count presence. Checkpoint size is admitted before copy/compress; zlib size casts operate under the shared bounded checkpoint limit. Current encoded event extension assumes the engine-produced object's final member layout; assigned writer shape supports it, but allocation containment must keep mutation coherent. Difficulty/exact-weapon staging bounds are explicit. Static session ownership stays on engine thread in maintained callers
+
+Evidence gaps: no allocator-failure, long-session heap or artifact fault fixture was executed during analysis. Existing tests exercise ordinary capture, options and truncate; the inventory does not establish memory/failure coverage. Untrusted event admission and replay dispatch cost remain separately reviewed parser owners
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQR-0176; rationale: aggregate frame retention and C-entry allocation failure remain admitted across recording and replay
+
+## Outcome
+
+ISSUES: aggregate memory owner extended to recording; existing performance/publication/start-state roots retained without duplicate admission
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0237 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0238 frozen survey, resumed 2026-10-01 SHA256:a42f59a60b212532de85b18e08bc5603848d142adc188042cfcf2d5e7abef2d5 -->
+
+## GQ1-CHUNK-0238 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0238.md`
+- Imported SHA-256: `a42f59a60b212532de85b18e08bc5603848d142adc188042cfcf2d5e7abef2d5`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0238 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The branch-added replay owner centralizes both games' file admission, checkpoint payload, expansion, event parsing and cursor APIs behind a shared C facade. Paired branch-added hook sinks are 1326/7138 frozen additions; inherited game.c totals are D1 296/24 and D2 386/41 added/deleted lines and contain mixed game-loop integrations. Shared start/step/direct-command policies already absorb replay-specific orchestration. Typed callbacks preserve game-owned command semantics. No additional removable inherited replay-parser body was established; moving policy back or adding a bigger callback schema would increase coupling
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_replay.cpp`: L1-L750; frozen blob `143c5e8871d824c6c7b947f119de434310f12302`
+
+Scope SHA-256: `134aeb085b87f6da3c561c875d28fdbe08e8a5e2e02c2e70dbbcf1cb86ddf563`
+
+## Quality and evidence
+
+Every frozen L1-L750 was read plus L751-L817 to complete command-event getters and cursor functions. Checked shared fixture/codec limits, direct-command policy full body, paired value consumers, existing owners, and complete current diff (move publication only plus utility include)
+
+1. NEW numeric admission root: direct-command integer members use is_number_integer followed by get<int32_t> before destination/semantic range checks. nlohmann integer extraction narrows by conversion, not checked range admission. A JSON change_difficulty difficulty=4294967299 becomes 3 and passes the 0..4 check; select_weapon_exact weapon_class=4294967296 and weapon_index=4294967297 become 0 and 1 and pass both shared and engine callback bounds. Guidebot special_key and marker slot similarly narrow. This is unchanged current code. Malformed command inputs are accepted as different valid actions, violating deterministic admission and leaving no visible error. Admit GQF-0190/GQR-0177 with exact signed/unsigned int32 admission before semantic bounds and validate-before-apply. A producer-to-replay fixture must cover INT32 boundaries, UINT64_MAX, positive and negative wraparound aliases, ordinary command values, and zero callbacks for rejected batches. This differs from GQF-0168's repeated event decode cost; repairs can share a decoder but retain separate root/oracles
+2. EXTENDS GQF-0189/GQR-0176: control and RNG copies, expanded replay frames and event vectors allocate without aggregate admission. The global session is reset and marked loaded before string/checkpoint/frame/event allocation finishes, with no whole C-facing load exception boundary. Current move publication reduces copies but does not bound growth or make session publication atomic. Include legacy FX sidecar getline/JSON allocation in the same aggregate-input admission audit; sidecar read has no per-record/file ceiling, unlike the main fixture
+3. EXTENDS GQF-0168: count reparses every event; indexed getter reparses from event zero for each command. Shared dispatch materializes then validates all before apply, but the repeated decode work is quadratic. Keep bounded typed batch admission with one decode
+4. RETAIN BR-0246/BR-0209: canonical RNG-mode preflight and headless/output failure are existing owners. Archived BR-0219 checkpoint size/ratio ceilings and BR-0297 master-clock origin/duration envelope remain present. GQF-0188 covers the remaining subordinate restored clocks, not a regrowth claim about the master clock
+
+Clean dimensions: checkpoint decompression enforces encoded/decoded/ratio limits before allocation, complete decoded length and SHA-256 before retention. RNG expansion checks frame bounds and contiguity; replay time requires positive frame durations and checked signed sum. End/current/next/cursor accessors reject unloaded and end-of-stream state before indexing. The controlled getter exposes engine state without mutation. There is no new JNI or GL owner in this path
+
+Evidence gaps: no large-memory or integer-boundary production executable fixture ran during analysis. Legacy sidecar numeric conversion and completeness policy require the later RNG metadata sweep before a separate semantic finding; its allocation exposure belongs to the already-admitted aggregate input owner
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQR-0176; rationale: retained replay expansion and partial C-facing session publication remain unbounded. New numeric-command owner rates 47 (23/0/7/10/7)
+
+## Outcome
+
+ISSUES: new direct-command numeric admission root; aggregate memory and event-decode owners extended
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0238 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0239 frozen survey, resumed 2026-10-01 SHA256:6a849231a813fc558c2bd95eedb8c69a4ed539f488cb44cdb6b831e26fa7876f -->
+
+## GQ1-CHUNK-0239 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0239.md`
+- Imported SHA-256: `6a849231a813fc558c2bd95eedb8c69a4ed539f488cb44cdb6b831e26fa7876f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0239 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The branch-added result owner centralizes exact schema, typed comparison and JSON formatting for both games. Result write consumers are two compact calls in branch-added input_demo_hooks.c (1326 D1 and 7138 D2 frozen added lines). Original game-loop integrations are already shared as reviewed in 0232; the schema has no copied body to remove from inherited files. Engine capture owns meaning and the common result structure owns transport. No additional material inherited reduction was established, and moving schema into original engine files would increase merge pressure
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_result.cpp`: L1-L706; frozen blob `aaff8f9f35d8a338011db96080f397263d486612`
+
+Scope SHA-256: `71468259a6c17df52b82f0179406302647cba8058eb01eac96123a90a779e012`
+
+## Quality and evidence
+
+All frozen L1-L706 were read. Checked typed header, shared fixture/recorder/replay uses, paired result-writing consumers, result test/compare-files consumer inventory, active/done roots and frozen-to-current comparison (no changes)
+
+REFERENCE archived BR-0298: exact scalar type and destination-width admission, nonnegative unsigned conversion, bounded NUL-free strings, exact ammo arrays and staged publication are already repaired. Both complete result and snapshot object decoding are inside their parsing exception catches. Numeric narrowing in the separate direct-command decoder is GQF-0190, not a result-parser regrowth
+
+EXTENDS BR-0233/BR-0209: the production result writer serializes before opening, but writes directly to the final path and checks good() before any explicit flush/close. A delayed close failure cannot change its returned success, and old valid output is already truncated on a later write failure. Paired result callers and headless completion remain existing failure/publication owners. Require actual result write/flush/close/rename fault injection and preserved prior output before reporting success
+
+EXTENDS GQF-0189/GQR-0176 boundary audit: standalone result read materializes an entire file without byte admission before strict parsing; compare-files has test-only consumers at the frozen head, so no remote product attack is asserted for that helper. Formatting and mismatch-string allocation in the C comparison/snapshot-buffer/result-writer entry points have no complete allocation boundary; include the shared result leaf APIs in aggregate recording/replay failure containment. Preserve the completed semantic parser repair rather than assuming it contains all file-read and writer operations
+
+Clean dimensions: ordered serialization emits stable pretty result JSON and compact snapshots; int64 comparisons avoid subtraction overflow, exact string comparisons use the fixed validated buffers, snapshot omits metadata by design and optional summaries gate comparison. All counted ammo accesses use fixed common maxima. Missing metadata, unknown fields, malformed booleans/numeric types and invalid fixed strings reject before caller output publication. Boolean and integer schema shapes remain coherent with recorder/engine capture
+
+Evidence gaps: no close-failure, allocation-failure or production replay fixture ran during analysis. Optional position-forward and GameTime presence semantics need a supported generated malformed-output path before admitting a separate false-pass root; the maintained producer emits complete present fields
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQR-0176; rationale: shared C-facing result leaf allocation paths belong to the admitted recording/replay containment boundary, reference-only
+
+## Outcome
+
+ISSUES: existing publication/failure boundaries extended; completed result schema repair preserved; no new fix root
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0239 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0240 frozen survey, resumed 2026-10-01 SHA256:c044aae4186b20c710a481201037ff20a479ff7956e2b402c65575142ab6c9b4 -->
+
+## GQ1-CHUNK-0240 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0240.md`
+- Imported SHA-256: `c044aae4186b20c710a481201037ff20a479ff7956e2b402c65575142ab6c9b4`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0240 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The branch-added header supplies one C/C++ facade for the shared RNG trace implementation. Paired inherited rand.c totals are D1 191 additions/seven deletions and D2 212 additions/seven deletions; their two annotated rand/srand calls and shared include use this interface, while broad RNG backend/session work is outside this declaration unit. Moving stream-specific simulation RNG semantics merely to shorten this header consumer would invert engine ownership. No additional removable body exists in the assigned declarations
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_rng_trace.h`: L1-L54; frozen blob `b55c6986d3aa4fcb76f55c96ce9b0b5b2385321c`
+
+Scope SHA-256: `f04ee0dc3ec9e50e9727840301e8f0f3abfc9ff0a78348399facebcb5e37b40e`
+
+## Quality and evidence
+
+All 54 frozen lines were read. Checked all implementation function signatures, paired rand.c includes and annotated call sites, recording/replay session lifecycle consumers and previous trace owners. Current header is unchanged. The suffix constant is the shared artifact naming owner; integer and size widths match implementations, include guards and C++ linkage are correct, context/set/reset/clear and truncate/write declarations are used, and no mutable global storage or policy body is duplicated here
+
+Trace buffering remains existing BR-0247 and seeded-state argument evaluation remains BR-0361 in their implementation/engine scopes. These do not create an independent header defect. Raw source pointers passed to the trace refer to annotated static compiler literals in the maintained RNG wrappers; no dangling lifetime claim is admitted from this signature alone
+
+Evidence gaps: no new compilation or runtime trace was run for this read-only declaration review. Remaining inherited RNG body minimization belongs to its assigned range/sweep and existing owners
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: declaration/implementation linkage is clean with no independent live fix
+
+## Outcome
+
+CLEAN: interface widths, C linkage, shared suffix ownership, paired consumers and lifecycle signatures checked
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0240 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0241 frozen survey, resumed 2026-10-01 SHA256:70192cdd53884d72cb5177f0bc1dd5c75c92816c5ec9e30ebc74b14494d668d1 -->
+
+## GQ1-CHUNK-0241 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0241.md`
+- Imported SHA-256: `70192cdd53884d72cb5177f0bc1dd5c75c92816c5ec9e30ebc74b14494d668d1`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0241 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The branch-added startup owner centralizes paired argument parsing, player configuration, checkpoint temporary ownership and replay startup behind engine-owned restore/load/new-game primitives. Its paired branch-added input_demo_start.c consumers are compact common-owner forwarding calls. Frozen inherited game.c totals are D1 296 additions/24 deletions and D2 386 additions/41 deletions across mixed game-loop work already traced in 0232. No new original-file policy body can be removed by moving this already-shared implementation. D1 translation remains game-specific; extracting original save-layout knowledge into Android/JVM policy would invert ownership. Identical preprocessor branches in the shared mission-name helper have zero original-file reduction and do not justify a new remediation root
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_start_shared.c`: L1-L750; frozen blob `d99cf1269e7281ae12f0e582ef0eb99ad5049e4a`
+
+Scope SHA-256: `fc945ba35f0b6db95d8fbaa3ac9ec9be0b83c1cbb143178ec5babde8f7eb27b0`
+
+## Quality and evidence
+
+Every frozen L1-L750 was read plus L751-L774 to close paired diagnostic formatting. Checked shared interface and two start facades, replay/fixture metadata admission, inherited startup consumers, archived temporary/weapon/difficulty/level/time/translation fixes and the complete current startup diff
+
+EXTENDS BR-0246: command-line and replay preflight approve the lexical RNG metadata owner, then strict replay load publishes its own canonical mode without binding it to that decision. Current startup additions do not change this gate. Preserve the canonical metadata identity repair and duplicate/escaped/decoy-key production oracle
+
+EXTENDS BR-0300: d1_in_d2_start_from_level is set in options but remains unread by native startup. Current additions preserve that dead option. Remove the option/runner/report contract or implement its documented semantics through its existing owner, not a new flag-duplication finding
+
+EXTENDS GQF-0188: current start wrapper applies metadata collision_delay_last_play_time to the paired collision timer after restore. This strengthens the already-admitted arbitrary subordinate clock path; it does not repair its bounds. Require safe relative-domain admission and first-step UBSan verification, preserving legitimate negative history
+
+Preserve completed BR-0218: owned checkpoint names use dedicated directory, PID/monotonic ID, skip existing candidates, check write/close/remove and delete only the created path. No repeated recorded-filename deletion is present. TOCTOU would require a supported competing writer/process threat fixture before claiming new arbitrary-file loss
+
+Preserve completed BR-0217/BR-0291/BR-0299/BR-0297: weapon-order schema, difficulty, ordinary loaded-mission level bounds and master-clock envelope remain in place. Translated checkpoint startup delegates reference/level/version admission to the engine translation owner with archived BR-0367/BR-0379 fixes; do not infer regrowth from its StartNewGame call alone
+
+Clean dimensions: argument-value access checks bounds and missing flag-shaped values; player callsign is bounded and terminated; one-shot intro suppression clears on consumption; rejected game/missing metadata/failed restore unload replay. Temporary read path is not selected by recorded filename. Diagnostic wrappers preserve engine-owned PlayerCfg/read_player_file semantics
+
+Current delta: adds authoritative level-entry replay cfg, native D1-in-D2 order domains, routing mode, restored boundary trace and subordinate collision metadata publication. These changes require current-generation parity/integration coverage; no build or replay fixture ran during read-only analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0246; rationale: shared canonical metadata gate remains unbound to the replay admission
+
+## Outcome
+
+ISSUES: existing metadata/obsolete-mode/clock owners extended; archived startup admission and temporary ownership fixes preserved
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0241 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0242 frozen survey, resumed 2026-10-01 SHA256:43a67b5f5ef0251c0c824419891af549a715e47b7cab0324c64dded96e452fe2 -->
+
+## GQ1-CHUNK-0242 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0242.md`
+- Imported SHA-256: `43a67b5f5ef0251c0c824419891af549a715e47b7cab0324c64dded96e452fe2`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0242 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The branch-added trace owner centralizes paired diagnostic schema and state JSONL transport. Paired branch-added hook sinks (1326 D1/7138 D2 frozen additions) capture engine semantics and call this shared formatter. Inherited game-loop totals D1 296/24 and D2 386/41 added/deleted lines are mixed integrations already reviewed in 0232. The assigned scalar/array mapping has one canonical owner rather than copied original-engine serializers. Cosmetic schema wrappers or moving mappings into inherited code have zero merge payoff. No further removable inherited body was established
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/input_demo_state_trace.cpp`: L1-L750; frozen blob `99bddf6c5535fedd29e40b32681752ba89c03804`
+
+Scope SHA-256: `b70d0f2e36ee64dec88151c358ffc034149b2193720dcb8a8f056a3e7d3a1c42`
+
+## Quality and evidence
+
+All frozen L1-L750 were read plus L751-L791 to complete frame output. Checked shared result snapshot encoder and paired capture/trace callers, fixed-size diagnostic arrays, existing history/publication roots, current I/O tail and builder prefix. A full current diff was too large for one output; current schema migration was mechanically checked by key-set comparison, with complete current-generation field-mapping/parity coverage still required
+
+EXTENDS BR-0233/BR-0209: frozen start marks the session active and returns success despite unchecked header fflush, while reset/stop ignore fclose. Per-frame fflush is checked, but individual earlier write errors and final close errors need a complete failure contract. Current start checks a shared writer and frame writes check fwrite/fflush or gzwrite/gzflush, partially repairing immediate admission. Current reset still ignores fclose/gzclose and direct final-path opening still truncates old output before verified completion. Require explicit complete close/error propagation and owned staged publication, with paired headless failure status and plain/gzip fault injection
+
+EXTENDS GQF-0189/GQR-0176: fixed diagnostic serialization and snapshot JSON builders allocate beneath C-facing frame/start output with no complete exception containment. Current meta/frame JSON and shared write_json string growth add such operations. Include these trace leaf paths in the existing recording/replay allocation containment boundary; do not claim a new unbounded container from fixed-size schema construction
+
+REFERENCE BR-0293: the serializer exposes previous hashes and last-bump fields supplied by the shared producer; stale session history is that producer's canonical root, not an independent serializer defect. BR-0651/BR-0669 remain completeness/behavioral comparison test owners
+
+Clean dimensions: every frozen array loop uses its own fixed compile-time bound, scalar mappings reference the typed field, output JSON numerics avoid textual parsing, and the string emitter escapes controls/backslash/quotes without reading beyond NUL. Fixed snapshot buffer checks complete encoded size before output. Current schema key comparison removes no old field and adds only two pickup fields; exact values/order have not yet been proven by that mechanical check. Current gzip suffix gate checks path length before subtraction
+
+Evidence gaps: no publication fault, allocation fault or trace parity execution ran during analysis. Whole current gzip/schema conversion is delta work. UTF-8 validity and consumer completeness are not claimed from the frozen manual string escaping alone
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQR-0176; rationale: C-facing trace leaf allocation paths extend the admitted recording/replay containment boundary, reference-only
+
+## Outcome
+
+ISSUES: existing publication and allocation boundaries extended; no new fix root
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0242 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0243 frozen survey, resumed 2026-10-01 SHA256:74969274980d433e00e4a40612a77907729ceadd9a0bffca736ae6d3ac14ebf5 -->
+
+## GQ1-CHUNK-0243 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0243.md`
+- Imported SHA-256: `74969274980d433e00e4a40612a77907729ceadd9a0bffca736ae6d3ac14ebf5`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0243 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The branch-added scan/view owner centralizes metadata summary policy for both games. The branch-added secret_area_game_adapter supplies engine callbacks, while shared route_snapshot/route_planner own planning and bounded serialization. Paired main CMake lists each register the same scan and adapter owners; no source body remains duplicated in inherited files for this unit. The two small registrations are necessary build inputs, not removable policy. Bounded route and scan schemas preserve engine constants through an explicit view without importing engine layout into JVM code. No material additional inherited reduction was established
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/level_metadata_scan.c`: L1-L565; frozen blob `68db811e48f2898092226d5f26010c724fbc666e`
+
+Scope SHA-256: `e8c2609fc26912e6dbfa47a4850f4774f680025dee43ba30314bf094d9a7bb24`
+
+## Quality and evidence
+
+All frozen L1-L565 were read. Checked shared view, secret-area callback admission, route planner project_step/project_plan bounds, paired registrations, scan-test completion predicate locations, active/done roots and complete current scan diff (prefix and later hunks recovered after truncated supporting output)
+
+EXTENDS BR-0301: frozen trigger completion returns true when any link is complete, suppressing a required remaining effect. Current replaces completion with a required-step predicate and all-link checks for unlock/open/close effects, adds actual activation/disabled/one-shot history and richer action types. That is a substantive existing repair, requiring current producer, cache refresh, multi-link/transition and guided-route fixtures before closing the canonical owner; no duplicate defect is admitted from the frozen predicate
+
+REFERENCE archived BR-0468: checked squared distance accumulation, out-of-range sentinel distinct from saturation, unsigned integer sqrt and complete int reporting domain remain intact. Current scan changes do not touch them
+
+Clean dimensions: view bounds num_segments to 1..9000 before workspace access; BFS marks before queueing so capacity follows admitted segments; child/reverse links are checked; energy grouping uses checked squared distance and unsigned sqrt. Volume converts coordinates to double before subtraction/multiply. Adapter side_is_flyable checks both segment and side before access. Route projection rejects more than 96 steps and more than ten links before fixed-array copying, so final memcpy uses a bounded producer count. Optional geometry/guidebot callbacks are checked and missing vertices skip their volume contribution
+
+Evidence gaps: global scan scratch makes the implementation non-reentrant, but no supported frozen concurrent scan caller was established; current async route behavior must be traced in delta coverage before asserting a race. Recursive union-find is bounded by the admitted component graph but requires a worst-case chain/stack fixture before a stack-exhaustion finding. Failed center callback uses zero; maintained engine center semantics need an actual admitted failure before reporting incorrect grouping. No runtime scan, corpus or sanitizer execution ran during analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0301; rationale: known multi-link completion has current repair evidence requiring semantic closure validation
+
+## Outcome
+
+ISSUES: existing completion root reconciled; completed numeric arithmetic repair preserved
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0243 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0244 frozen survey, resumed 2026-10-01 SHA256:68d9f986f2dd0234eb32847a3fa4e32ff15beb763c602669ea53a0fb499445b3 -->
+
+## GQ1-CHUNK-0244 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0244.md`
+- Imported SHA-256: `68d9f986f2dd0234eb32847a3fa4e32ff15beb763c602669ea53a0fb499445b3`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0244 frozen survey, resumed 2026-10-01
+
+## Diff-minimization assessment
+
+Disposition: RETAIN
+
+The branch-added scan/view owner centralizes metadata summary policy for both games. The branch-added secret_area_game_adapter supplies engine callbacks, while shared route_snapshot/route_planner own planning and bounded serialization. Paired main CMake lists each register the same scan and adapter owners; no source body remains duplicated in inherited files for this unit. The two small registrations are necessary build inputs, not removable policy. Bounded route and scan schemas preserve engine constants through an explicit view without importing engine layout into JVM code. No material additional inherited reduction was established
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/level_metadata_scan.h`: L1-L270; frozen blob `4a0a5465b3d89e37f1fe21a54e2f0b2429215999`
+
+Scope SHA-256: `46785ab3269d513962cf7aa07757ede645c6837a1454ff3db3c02373c1e8a5a6`
+
+## Quality and evidence
+
+All 270 frozen header lines were read. Checked paired CMake/adapter/view initialization, enum string switches, bounded route projection and MSVC packing push/pop, and current header changes
+
+The shared callback view, state and route steps match engine producer and route consumers. C linkage, fixed widths, shared key masks, six side topology, route capacity and eight-byte MSVC packing boundary are explicit. The normalized-volume baseline has its generating-algorithm provenance comment rather than a duplicated tunable constant
+
+REFERENCE BR-0302: MAX_TARGETS=512 retains the existing candidate-truncation root in the route planner; no standalone header bug is admitted. All 1000 objects/9000 segments are represented in the view and internal target inventory behavior belongs to that owner. BR-0301 completion semantics belong to the implementation covered in 0243
+
+Clean dimensions: declarations match shared scan or engine adapter ownership; no mutable storage, allocation, parser, persistence or game-specific mapping is duplicated here. Projector checks route/link capacities before exposing the fixed schema. Current additions introduce ordered trigger actions, richer wall/navigation callbacks, guided-route data and cache byte telemetry while maintaining balanced packing. Their producer ABI and semantics require current-generation coverage; source declaration alone does not establish an overrun
+
+Evidence gaps: no CMake build or Win64 layout/runtime oracle ran during this read-only declaration review. Native callback structs are not wire formats and should change coherently without a pre-release compatibility migration
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: shared schema/linkage/capacity interface is clean with implementation roots tracked separately
+
+## Outcome
+
+CLEAN: shared view, schema, packing, declarations and bounded producers checked
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0244 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0245 frozen survey, resumed 2026-10-01 SHA256:4053c2afa236cd37229f56ec7cbf59614c53f5e00fd90645be9078f7eddfe9ca -->
+
+## GQ1-CHUNK-0245 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0245.md`
+- Imported SHA-256: `4053c2afa236cd37229f56ec7cbf59614c53f5e00fd90645be9078f7eddfe9ca`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0245 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/merged_wall_debug.c`: L1-L750; frozen blob `1730702fb80066da23c8634fc5aeab69b07781be`
+
+Scope SHA-256: `63de0e7e31a753e2ee5b4d3189d55ead036a09b3d829ab635a87f65caa94a67c`
+
+## Diff-minimization assessment
+
+CANDIDATE: finish shared ownership of the paired cached plain-texmerge transaction. Frozen inherited `d1/arch/ogl/ogl.c:L663-L711` and `d2/arch/ogl/ogl.c:L674-L722` contain semantically identical 49-line bodies; only declaration order differs. Frozen full-file attribution is +1876/-65 and +1969/-65 respectively; paired main/texmerge.c is +38/-1 each, mixed diagnostic/engine changes rather than all removable cache code. The natural owner already implements reuse, size admission, reservation, texture setup, completion, commit and eviction in this branch-added file. Consolidate the remaining transaction in that owner and retain only the per-game runtime-state adapter/compact call. Existing game OGL allocation, initialization, size accounting, free symbols and GameCfg remain native owners, not mirrored layouts or Kotlin policy. Estimated net inherited reduction is 80-90 lines across two complete cache-body hunks, after compact runtime plumbing; no broad renderer rewrite or new callback table. The live callers retain the identical transaction and now expose a stable ogl_texture_runtime_state, strengthening this boundary. GQF-0191/GQR-0178 owns the candidate, separate from ETC2 self-test GQF-0019 and completed September overlay drawing DMR1-CHUNK-003
+
+## Context and reconciliation
+
+Read the full assigned 750 frozen lines, enclosing setup_output_texture through L770, corresponding paired cache callers, exported ogl_get_free_texture/ogl_init_texture and size/filter globals, source palette/name entry points, cache lifetime history and renderer contract tests. Frozen base/head attribution and full assigned-file current delta were inspected. Clear calls the release callback before resetting each pointer, preserving archived BR-0303. Reservation refuses eviction without a callback. Texture dimension admission requires positive dimensions within the live GL maximum, bounded cache lookup is keyed by bitmap identity/orientation, and output slot failure defaults to -1
+
+## Observations
+
+- New GQF-0191: duplicated inherited transaction remains after the lower-level shared extraction. Validate exact cache-hit/create/evict/failure behavior, source flags/average color/orientation, texture accounting, filters and output slot in both engines, measure isolated before/after inherited lines/hunks, and run paired Windows/Android builds plus meaningful GLES integration. Keep BR-0304 binding correction and allocation-success decisions separate but coordinate overlapping owner edits
+- The helper at L591 changes parameters on the currently bound texture, not the passed object. Its compositor use is the retained BR-0304 root, reviewed in the next contiguous unit, not a second finding here
+- Shared diagnostic flags remain volatile and snapshot/result state plain; BR-0029 owns synchronization review rather than treating volatile as sufficient
+- Completed BR-0303 free-before-reset and BR-0256 unsafe bind-skip repair remain closed. No cache lifetime regrowth was found
+
+## Clean dimensions and evidence gaps
+
+Fixed-capacity cache and diagnostic arrays, bounded copy_string, null/positive checks on size/slot operations, bitmap/game-format ownership and release-before-reset were checked. Do not claim all full-file OGL additions removable. Bitmap pointer cache invalidation on asset mutation, extreme device GL sizes versus short bitmap fields, full render state, software-build dependencies and GLES allocation failure require remaining source/producer and device coverage. The source-only ordering regression does not prove live GPU lifetime. Current extra probe logging and per-unit active texture routing are delta coverage, not frozen evidence
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed owner: GQF-0191; rationale: duplicated paired inherited cache policy has material measured merge payoff and a stable shared owner
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0245 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0246 frozen survey, resumed 2026-10-01 SHA256:e0f1037f205cbb6e1d3fa0472b1657e56db27b1412ba2c5e15f9e1e1b0869421 -->
+
+## GQ1-CHUNK-0246 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0246.md`
+- Imported SHA-256: `e0f1037f205cbb6e1d3fa0472b1657e56db27b1412ba2c5e15f9e1e1b0869421`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0246 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/merged_wall_debug.c`: L751-L1500; frozen blob `1730702fb80066da23c8634fc5aeab69b07781be`
+
+Scope SHA-256: `8f94ab588ae03589c2705ea31d3f29904fdde2fb3b8b40640a40e3a66bfa8749`
+
+## Diff-minimization assessment
+
+CANDIDATE reference to GQF-0191/GQR-0178: the paired 49-line inherited cache creation bodies call this unit's finalize/reserve/setup transaction pieces. The shared Android owner can consolidate policy while retaining game-local runtime plumbing and exported native allocation/accounting symbols. Frozen OGL totals +1876/-65 D1 and +1969/-65 D2 are mixed; only about 80-90 net lines/two cache-body hunks are the candidate payoff. Main/texmerge.c +38/-1 each includes separate consumers and is not claimed as removable. No second extraction owner or callback table is needed
+
+## Context and reconciliation
+
+Read every assigned frozen line L751-L1500 and enclosing input-code routine through L1517; paired cache constructors, ogl_init header exports, source bitmap resolver L3339-L3349 and diagnostic sample caller L1711-L1775 were read. Complete current assigned-file diff was read, plus full live paired constructors. Cache failure releases then resets before publication, reservation releases before overwriting, source resolution rejects missing data/nonpositive dimensions, UV output loops honor max_points, and GL state queries restore the active unit/bindings they temporarily touch
+
+## Observations
+
+- GQF-0191 extraction evidence: finalize, reserve, reuse and setup already supply the shared transaction boundary. Current constructors are still duplicates except local declaration order; shared runtime state now exists in each engine
+- Extend BR-0304: L849-L852 changes both source wrap metadata before binding the source objects; L877-L880 repeats the mistake on restore. The live added active-texture helper calls occur after clamp operations, so that repair does not close BR-0304. Setup_output_texture binds the new output first, making clamp target ordering especially important. Require real GL state and edge-pixel oracles at distinct source sizes/orientations and failure cleanup
+- Archived BR-0256 remains closed: unconditional binding in the frozen helper avoids cross-unit false reuse; current per-unit binding routing is later delta and must be validated separately
+- BR-0305 first-handle/source-log lifetime is visible in the consuming diag routine and remains the existing diagnostic-session owner
+
+## Clean dimensions and evidence gaps
+
+FBO-incomplete path deletes its framebuffer and restores prior binding before returning failure; cache commit occurs only after successful compositor result. Fixed arrays, alpha palette classes, source positive dimensions, modulo sampling for ordinary finite UV, max_points output capacity and active-unit restoration were checked. No unsupported null/NaN external-input claim was admitted: corresponding engine geometry producers and caller contracts must establish reachability. Source sampling uses packed row indexing while other source stats use rowsize; subbitmap reachability remains for source/context sweeps. Scissor/stencil/rasterizer state and GL draw failure are not completely isolated by this compositor; a real reachable state/failure fixture is needed before admitting a new root. No new product test was run in analysis
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed owner: GQF-0191; rationale: reference evidence for the same paired inherited transaction consolidation, with separate retained BR-0304 rendering correctness
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0246 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0247 frozen survey, resumed 2026-10-01 SHA256:978ed4270dc130405f4b21029759b6f622587d4df82a7dcc22f6a83007ca7f2b -->
+
+## GQ1-CHUNK-0247 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0247.md`
+- Imported SHA-256: `978ed4270dc130405f4b21029759b6f622587d4df82a7dcc22f6a83007ca7f2b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0247 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/merged_wall_debug.c`: L1501-L2250; frozen blob `1730702fb80066da23c8634fc5aeab69b07781be`
+
+Scope SHA-256: `357baf54e7e4fac62ee6d2fff7a312b993e25f95885743f773bef0762af5ff2c`
+
+## Diff-minimization assessment
+
+RETAIN: point-code, screen-area, submit/split, source-provenance, GL-state and draw-context policy is already in the branch-added shared owner. Paired inherited OGL files contain compact calls using native vertex/UV/shader state; paired render.c hooks deliberately retain actual segment/side layout and draw timing. Frozen mixed attribution is OGL +1876/-65 D1, +1969/-65 D2 and render.c +239/-28 D1, +391/-28 D2. These totals do not quantify removable diagnostic code. The representative six per-game face sites retain two narrow context/log calls before their native render_face; combining them through a wrapper alone would obscure timing and does not move remaining substantive policy. No new table, segment mirror, callback inventory or whole render-body extraction is justified. The earlier GQF-0191 transaction candidate remains separate and receives no new payoff from these diagnostic routines
+
+## Context and reconciliation
+
+Every L1501-L2250 assigned line and enclosing bbox completion L2251-L2261 were read. Checked preceding input-code signature/guards, source bitmap resolver, full frozen target API, paired submit/diag/split and render-face hook sites, complete frozen/live source-provenance call inventory, active/done ledgers and previously read full current source delta. Draw context starts from game-owned valid segment/side accesses and uses explicit clear; downstream geometry producers, not Kotlin or JSON, supply vertex lists
+
+## Observations
+
+- Extend BR-0305: first GL handle at L1770-L1772 and source mask at L2031-L2038 remain global across target switches; frozen setter publishes name/mode but resets neither. The current delta adds probes without changing this lifetime. Require independent A/B source records and handle baselines across mode/name/lifecycle transitions
+- Extend BR-0306: frozen and current git grep find source palette/alpha analyzer calls only in D2. D1 has no corresponding PNG/native/fallback call. Restore equivalent reachability at a shared source-aware boundary or compact native calls, keeping buffer/source identity in the engine
+- BR-0029 retains volatile/plain cross-thread diagnostic publication. No synchronization closure is claimed from a setter memory barrier alone
+- BR-0288 applied shader mode remains a distinct existing introspection oracle; these state logs publish the observed program/route but do not validate actual applied uniform state
+
+## Clean dimensions and evidence gaps
+
+Six/four-point logging arrays are populated within capacity, fan snprintf rejects negative/overrun return values before advancing its position, split logging requires exactly four points, UV diagnostics use the earlier bounded helper, target/index checks preserve non-target fast exits, and explicit source-data and positive-dimension checks were reviewed. Source bitmap packed sampling versus rowsize, extreme imported dimensions/channel products and finite UV assumptions require producer fixtures before a new bounds claim; no speculative finding admitted. Quadratic duplicate-pair logging is bounded by the renderer's admitted polygon count and occurs in the explicit diagnostic path. Archived BR-0307 output-capacity repair is visible in the following helper and stays closed. Current secondary-unit clearing now routes through shared active/bind helpers and requires delta/device cache-state validation. No build or GLES test was run during read-only analysis
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029; rationale: shared diagnostic publication remains the highest-impact live owner, with separate existing session and paired provenance roots
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0247 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0248 frozen survey, resumed 2026-10-01 SHA256:ba785761dc24286e45225a8ec2247946d803fb625bb66fa07cc705aed98276be -->
+
+## GQ1-CHUNK-0248 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0248.md`
+- Imported SHA-256: `ba785761dc24286e45225a8ec2247946d803fb625bb66fa07cc705aed98276be`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0248 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/merged_wall_debug.c`: L2251-L3000; frozen blob `1730702fb80066da23c8634fc5aeab69b07781be`
+
+Scope SHA-256: `d9656cd19071b14fb68fb78a5684f950bdab08251ff748964c8886219a6b8b1d`
+
+## Diff-minimization assessment
+
+RETAIN: bounding boxes, polygon tests, focus comparison, fixed-capacity draw-face ranking, portal diagnostics and target classification are already centralized in this branch-added owner. Paired OGL consumers each retain one compact probe_record_draw_face call immediately before their native draw submission; native engine segment/side and bitmap lookups stay in C. Frozen full mixed OGL attribution is +1876/-65 D1 and +1969/-65 D2, render.c +239/-28 and +391/-28; the unit supplies no separately removable inherited policy body. Moving generic geometry into another new owner would reduce shared file size but not inherited merge pressure. No callback table, layout mirror or wrapper-only extraction admitted
+
+## Context and reconciliation
+
+Read complete assigned L2251-L3000 and enclosing crosshair-target cover predicate through L3047 plus target admission through L3096. The capacity repair, fixed-array definitions, paired native single-texture probe call sites, both projection implementations L89-L103, focus candidate bucket/comparator use L5512-L5558, source target API, archived BR-0307 and active BR-0308/BR-0312/BR-0313 were checked. The full frozen D2 snapshot regression script was inspected; current full source delta was previously read and leaves this geometry block unchanged
+
+## Observations
+
+- Extend BR-0308: target centers include full-screen center and canvas bitmap offsets, whereas paired g3_project_point stores canvas-local Canv_w2/Canv_h2 coordinates. Candidate polygon/bbox/distance calculations at L2886-L2924 compare these mixed spaces. The current diff does not repair that block. Validate canonical local centers and one framebuffer-offset conversion with paired full-screen and nonzero x/y cockpit/letterbox sentinel cases
+- Extend BR-0313: focus comparator L2461-L2482 ranks focus_bucket/distance/overlap/orders, and the inspected consumer L5527-L5536 derives these from boxes while exact polygon flags are omitted. True polygon hits need explicit precedence and hit-kind publication; simple fixed poses do not verify swapped draw order or a box-only false positive
+- The 64-entry generic probe store ranks candidates and replaces the worst; this confirms the existing BR-0312 proposed bounded-ranking direction. It does not repair the separately reviewed 32-entry merged-face prefix truncation
+- Archived BR-0307 capacity admission at L2276 is present; both probe recorder and projected arrays use the 16-point bound before writing. No memory-safety regrowth found
+
+## Clean dimensions and evidence gaps
+
+Probe candidate structures are zero-initialized, copied by value into bounded storage and insertion-sorted with indices remaining in range. Depth sums use fix64 for at most 16 fix values; portal segment/side/wall indices are checked before related array accesses. Source/target bitmap classification honors named and crosshair modes. Polygon classification assumes convex nondegenerate projected geometry; all-cross-products-within-tolerance cases should be exercised in a real rendered edge-on/degenerate fixture before a separate false-hit claim. Dump/readback dedup lists store at most 16 identities, but saturation does not itself cap total work; downstream consumers and snapshot bounds remain for later contiguous coverage. Current diagnostic gating changes affect capture completeness and require delta validation. No tests/builds/device probes were run in read-only analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0308; rationale: paired coordinate mismatch has a concrete producer/consumer trace and existing narrow geometry validation direction
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0248 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0249 frozen survey, resumed 2026-10-01 SHA256:5e82edda038c57413d0edf7257a2bdee4e67a20b8ab977d8572c4e76090e5441 -->
+
+## GQ1-CHUNK-0249 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0249.md`
+- Imported SHA-256: `5e82edda038c57413d0edf7257a2bdee4e67a20b8ab977d8572c4e76090e5441`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0249 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/merged_wall_debug.c`: L3001-L3750; frozen blob `1730702fb80066da23c8634fc5aeab69b07781be`
+
+Scope SHA-256: `0a8c288b40d9792566fc069f406e8bb41f9a82993ac8e46a8f537dceb1476f2b`
+
+## Diff-minimization assessment
+
+RETAIN: framebuffer grid sampling, source hashing, palette conversion, texture GPU readback and CPU merged-reference comparison already belong to the branch-added shared owner. Paired native hooks feed bitmap and draw context without copying parser/game-format policy to Android UI. Frozen mixed OGL totals are +1876/-65 D1 and +1969/-65 D2; paired main/texmerge.c +38/-1 each covers separate compact debug hooks, not a duplicated readback implementation. Representative tap-probe callers remain in the shared owner. Moving these bodies between Android files gives no inherited reduction, and no new adapter/callback table or copied bitmap layout is justified
+
+## Context and reconciliation
+
+Read all L3001-L3750 plus enclosing merge-reference completion through L3773, preceding target-coordinate/polygon helpers, bitmap source resolver, palette bounds, sample/readback fixed constants and arrays. Checked active BR-0308/BR-0309/BR-0310, full current source delta previously read, source PNG replacement branches and shared tap merge-reference/readback and framebuffer sample callers. Frozen native GL_PACK_* search found no custom pack row/skip/pixel-buffer state producer; current extra creation probe normalizes and restores pack state but leaves the legacy sampler/readback implementation unchanged
+
+## Observations
+
+- Extend BR-0308: framebuffer sampling at L3207 passes tracked canvas-local sx/sy to L3136-L3140, which interprets them as full-screen readback coordinates. Fix canonical coordinate conversion with the same crosshair ranking owner and verify offset sentinel pixels rather than just metadata
+- Extend BR-0310: L3582 enables indexed-stock expected comparison solely on equal dimensions, with no replacement-source exclusion. PNG/KTX replacement texture ownership leaves stock bm_data intact. Current delta does not repair the comparison. Use exact uploaded provenance or explicitly unavailable comparison for replacements, preserving GPU sample/hash diagnostics
+- BR-0309 remains the cap owner: readback handle admission at L3415-L3417 repeats the saturate-with-success pattern, admitting and forgetting post-cap handles. Include this general texture readback list with cover dump/readback admission tests and reset lifetimes; do not create a competing cap finding
+
+## Clean dimensions and evidence gaps
+
+GPU readback requires positive dimensions at most 256 each, allocation is at most 262144 bytes and sums at most 16711680 per component; FBO/error failure restores the binding, deletes its temporary FBO and frees the buffer. Successful path frees after bounded pixel/sample processing. Palette conversion indexes are bytes or checked 0..255; shifts/hash arithmetic are unsigned, render sample arrays/index loops match fixed row/column counts, and publication waits for the final GL error/valid-cell check. Source stats respect rowsize; CPU oriented merge assumes packed square top input while other paths respect rowsize, so supported subbitmap source reachability needs production fixtures before an additional claim. Live shared sampler assumes ordinary GL pack state; no custom frozen producer was found, so no unsupported stack-write scenario admitted. Cached GPU output has no bm_data and bypasses CPU reference rather than dereferencing missing data. Degenerate geometry and unbounded GL-error-drain behavior require actual producer/context-loss evidence. No build or device test was run during this analysis unit
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0310; rationale: concrete replacement-source mismatch in paired supported loaders, separate coordinate and bounded-admission owners retained
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0249 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0250 frozen survey, resumed 2026-10-01 SHA256:5a3d6a3d320ab8a67fe722b69404149705b159f123b78427a5ecbe491df84f91 -->
+
+## GQ1-CHUNK-0250 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0250.md`
+- Imported SHA-256: `5a3d6a3d320ab8a67fe722b69404149705b159f123b78427a5ecbe491df84f91`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0250 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/merged_wall_debug.c`: L3751-L4500; frozen blob `1730702fb80066da23c8634fc5aeab69b07781be`
+
+Scope SHA-256: `a04b5150baf7d15fc0138aa7995f9409aa9757eaf287184c68b7ec5f05d45c8a`
+
+## Diff-minimization assessment
+
+RETAIN: bitmap dump, cover light statistics, cover GPU readback, live GL-state/LOD diagnostics and snapshot publication already reside in this shared Android file. Their exact/bbox consumers are shared cover matching, so no duplicated inherited diagnostic body remains to move. Paired native OGL callers supply native bitmap/UV/color pointers and runtime filtering values through compact hooks; frozen mixed OGL totals +1876/-65 D1 and +1969/-65 D2 are not removable code estimates. Consolidating two shared readback helpers might improve internal reuse but does not reduce inherited merge pressure and requires distinct result/provenance/state contracts; no wrapper-only or callback-table extraction admitted
+
+## Context and reconciliation
+
+Read every L3751-L4500 assigned line plus enclosing live cover routine through L4633, prior source resolver/admission/target comparators and corresponding exact/bbox consumers around L4988/L5101. Checked BR-0309/BR-0311, prior replacement-loader and visible-size contracts, bounded snapshot fields and full current source diff previously read. Current edits leave cover LOD/source dimensions and the admission behavior unchanged
+
+## Observations
+
+- Extend BR-0311: L4497-L4507 derives texel spans from the CPU stock/bottom bitmap even when the sampled texture is a replacement or higher-resolution cached output. The assigned live GL-state queries identify the bound texture, but do not fix the scale. Validate exact sampled visible dimensions and label the bbox-derived estimate as approximate; include 64/256/1024, padding, cache source-order and orientation fixtures
+- Extend BR-0309: GPU admission occurs before size and allocation/FBO checks at L4142-L4145; post-cap identities are still admitted by the existing helper. Bitmap dump admits after its 64x64 bound and can emit each row again for forgotten post-cap keys. Test total expensive operations and omissions, not just bounded remembered-array size; retain retry semantics for failures explicitly
+- BR-0308/BR-0313 continue to own downstream selection/coordinate accuracy; cover GPU averages and source hashes do not establish the selected cover actually lies under the crosshair. No new selection owner created
+
+## Clean dimensions and evidence gaps
+
+Hex conversion reserves NUL and bounds all 64-byte dump rows, four-vertex light samples store only i<4 while aggregates use the admitted renderer count, UV values originate as fix and log2 rejects nonpositive ratios. GPU readback dimensions are positive and capped at 256 each; sums/hash indices remain bounded. Incomplete-FBO, OOM and read-error paths restore the prior binding/delete temporary FBOs and free allocated data; success frees before publication. GL state queries restore the active texture unit. Snapshot target strings are bounded and zeroed before copy. Palette/source hashes describe source bytes separately from GPU output rather than claiming equality here. Full read/draw framebuffer independence, nondefault pack state, context loss and selected texture-slot generation require actual renderer state fixtures; no unsupported memory-safety scenario admitted. Shared readback duplication can be reconsidered only with a simpler common transaction that preserves each diagnostic's output. No product tests/builds were run in read-only analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0311; rationale: sampled GL texture versus CPU source dimensions produce concrete incorrect mip diagnostics in supported replacements/cached composition
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0250 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0251 frozen survey, resumed 2026-10-01 SHA256:1da641e0cf946bea8e1f7e6c6e4edef3739c1a85c9907125996774e907788d24 -->
+
+## GQ1-CHUNK-0251 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0251.md`
+- Imported SHA-256: `1da641e0cf946bea8e1f7e6c6e4edef3739c1a85c9907125996774e907788d24`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0251 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/merged_wall_debug.c`: L4501-L5250; frozen blob `1730702fb80066da23c8634fc5aeab69b07781be`
+
+Scope SHA-256: `673b90e35e0991f01cfb4aeb5f800fcf576ac8ff5ed75f6b49754edce1038638`
+
+## Diff-minimization assessment
+
+RETAIN: face tracking, exact/bbox cover matching, cover-event storage, selected-rank helpers and post-focus overdraw diagnostics already share one Android implementation. Paired OGL consumers retain compact next_draw_order, track_face, log_cover and native draw calls; paired render.c context/log hooks preserve exact native submission timing. Frozen mixed OGL totals are +1876/-65 D1 and +1969/-65 D2, render.c +239/-28 and +391/-28; these totals do not establish an additional removable body. Combining context and logging into a wrapper alone or moving shared routines between Android files supplies no substantive inherited ownership improvement. GQF-0191 cache transaction remains the separately admitted minimization candidate
+
+## Context and reconciliation
+
+Read every L4501-L5250 plus enclosing post-focus overdraw routine through L5389. Previous unit's source/LOD and bounds helpers, struct/array capacities, BR-0312/BR-0316/BR-0318 histories, paired native ordering around next_draw_order and ordinary/merged producer calls, prior full current source delta and fixed snapshot regression context were checked. Current track_face/log_cover added diagnostic gates and moved begin_frame_tracking to entry, but retain prefix capacity and the same cover matching algorithms
+
+## Observations
+
+- Extend BR-0312: tracker returns once the 32-entry retained prefix is full before examining target identity or geometry. Exact/bbox cover matching and overdraw walk only that prefix; the later center target cannot participate. Current gating reduces disabled work but still retains first-32 policy. Require target-first/last, reversed draw order, 31/32/33/64+ and explicit completeness counters with coherent cover-event references
+- BR-0318 needs reconciliation rather than a repeated live-bug assertion: the frozen and current ordinary native paths call next_draw_order before probe_record_draw_face, and this shared order helper begins frame tracking. That producer trace supplies an earlier reset than the historical report assumed. The recorder itself still omits an explicit reset; verify every producer and first-face/capacity/view fixture before closing the historical owner. Current entry resets in track_face/log_cover are additional later delta evidence
+- BR-0316 remains the view-generation owner: a global frame bucket and event indices do not establish separate camera/canvas ownership. Full D2 main/auxiliary render trace is later contiguous and engine coverage, not claimed complete here
+- BR-0311 source-dimension LOD and BR-0308 coordinate mismatch remain references; later overdraw logging includes exact polygon flags but also box admission, which does not close BR-0313 focus ranking
+
+## Clean dimensions and evidence gaps
+
+Projected storage rejects counts outside the 16-point capacity before array writes, event copies use matching fixed arrays and 64-event admission, event_index/face_index are validated before consuming retained entries, strings are bounded, and the six-overdraw-output limit is enforced separately from total hit counting. No BR-0307 bounds regrowth found. At most one exact and one bbox event is attached per retained face, making the 64-event storage sufficient for the 32-face prefix under present policy; new ranking/replacement must preserve that ownership. Geometric face equality uses bounded exact position matching; premature first-cover selection versus actual depth/blend visibility requires rendered producer fixtures before a separate attribution claim. Face logger's weaker native index assumptions require game-load producer tracing before any new external bounds defect. Current disabled-diagnostic gating must preserve pending snapshot/tap capture completeness in delta validation. No product tests/builds were run in read-only analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0312; rationale: deterministic retained-prefix omission remains concrete in both native game paths, separate lifecycle reconciliation preserved
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0251 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0252 frozen survey, resumed 2026-10-01 SHA256:cec60b5d08d0e9cce6676a23918330065b09a96e0fe473f3f80f71228ee8168d -->
+
+## GQ1-CHUNK-0252 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0252.md`
+- Imported SHA-256: `cec60b5d08d0e9cce6676a23918330065b09a96e0fe473f3f80f71228ee8168d`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0252 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/merged_wall_debug.c`: L5251-L6000; frozen blob `1730702fb80066da23c8634fc5aeab69b07781be`
+
+Scope SHA-256: `387ddb5424716d5a8b306c7997490e325fc6a346aeb6231e7eb82da5f5172bbc`
+
+## Diff-minimization assessment
+
+RETAIN: post-focus overdraw, focus cover ranking/logging, route UV/orientation models and native texture/effect/door state diagnostics already share one branch-added Android owner. The final snapshot calls focus_covers locally, so neither paired inherited file contains its ranking body. Frozen mixed OGL +1876/-65 D1 and +1969/-65 D2 plus render.c +239/-28 and +391/-28 are context metrics, not removable lines. Game TmapInfo/Effects/ActiveDoors are accessed in native game-compiled code with D2-specific fields under its build guard; a layout mirror or callback inventory would increase coupling without a measured inherited reduction. No candidate from simply moving shared-only code or wrapping native calls
+
+## Context and reconciliation
+
+Read full L5251-L6000 plus final active-door helper brace L6001, prior geometry/comparator helpers, matching fixed struct capacities, final snapshot focus call L7729-L7752, paired vclip frame-array headers, native door counter producers and active BR-0308/BR-0312/BR-0313. Full current merged-wall source delta was previously inspected and leaves this assigned block unchanged
+
+## Observations
+
+- Extend BR-0313: all four exact polygon flags are calculated at L5482-L5511, but L5527-L5536 focus rank/distance depends on box containment. The best candidate is selected using that earlier comparator, then only logged. Require exact polygon priority and documented fallback/hit kind under reversed draw orders and skewed geometry. Current code retains this behavior
+- Extend BR-0308: focus candidate construction and overdraw acceptance repeat mixed screen/canvas centers against local projected geometry. Coordinate conversion must be one shared contract across selection, logging and readback, not patched only in the final result
+- BR-0312 prefix retention remains an upstream completeness prerequisite: focus candidate_count and omitted_count cover retained events only, not faces already excluded by the 32-entry tracker
+
+## Clean dimensions and evidence gaps
+
+Focus candidates are bounded by 64 events, candidate indices are checked against retained faces before construction, every selected/omitted candidate is invalidated and the ranking loop terminates, detailed focus output honors its cap and publishes counts. UV route strings reserve NUL, orientations use the same four native mapping cases, corner lookup checks index/projected state, texture/effect IDs are gated before access and D2-only metadata stays guarded. Hashing uses unsigned FNV; native-int byte hashing is an in-process diagnostic identity and no cross-endian portable artifact claim was made. Fixed UV subtraction before float conversion can overflow on extreme opposite-sign coordinates; a supported engine/import fixture is needed before asserting new branch-caused user impact. Effect current-frame lookup trusts vc.num_frames after checking it, and door scan trusts Num_open_doors; paired native format/state producers need later broad engine coverage before claiming all malformed-state bounds safe or admitting another root. Existing engine door-capacity assertions are inherited context, not a cleanup finding by themselves. The currently constant flip hook has an explicit documented future-model role; deleting it is not justified from one constant return. No tests/builds/device probes were run during analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0313; rationale: exact geometry is calculated but ignored during concrete focus ranking, with existing coordinate and capacity dependencies
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0252 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0253 frozen survey, resumed 2026-10-01 SHA256:e0f8ebb961e38f52cf48301fdc9045dc2325f95ecbd9b5b0c9327472a32ab2f6 -->
+
+## GQ1-CHUNK-0253 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0253.md`
+- Imported SHA-256: `e0f8ebb961e38f52cf48301fdc9045dc2325f95ecbd9b5b0c9327472a32ab2f6`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0253 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/merged_wall_debug.c`: L6001-L6750; frozen blob `1730702fb80066da23c8634fc5aeab69b07781be`
+
+Scope SHA-256: `d21cbc4862a44f4310b35797995cd489a348f4649ff6d5ed502d152796289e28`
+
+## Diff-minimization assessment
+
+RETAIN: side/wall/effect/door state, palette provenance, layer/merged bitmap diagnostics, draw-face conversion and geometry ray already belong to the shared native Android owner. Game format/layout knowledge stays in C using engine headers and D2 field guards; no Kotlin mirror or duplicate inherited diagnostic implementation. Paired render.c +239/-28 D1, +391/-28 D2 and OGL +1876/-65/+1969/-65 are mixed attribution totals. The relevant inherited camera setup already owns its native rear-view transformation; fixing the ray should capture/pass that camera at a compact native boundary rather than relocating render orchestration or inventing another layout/callback inventory. No separately measured minimization candidate admitted
+
+## Context and reconciliation
+
+Read all assigned L6001-L6750 and the complete enclosing geometry ray through L6835. Inspected previously covered source/UV/palette helpers and native effect/door contracts, paired render_frame rear-view/normal camera setup around D1 L1561-L1599/D2 L1874-L1912, full shared geometry-hit classification header and maintained host test, active BR-0315 and archived BR-0314. Previously inspected current source diff adds narrowly selected creation probes and leaves object-forward ray construction unchanged
+
+## Observations
+
+- Extend BR-0315: L6717 builds the ray from Viewer->orient.fvec, while both game renderers apply a near-180-degree head matrix for rear view before g3_set_view_matrix. A successful FVI wall in the object-forward direction can therefore represent a different surface from the displayed rear crosshair. Capture actual active render camera origin/direction and validate paired front/rear sentinels through projected and geometry-only paths, including offsets and view identity
+- Archived BR-0314 remains fixed: geometry fate and hit segment/side are classified before context construction, find_hitpoint_uv, source/palette attribution or success. No forced side-center success survives for HIT_NONE/HIT_BAD_P0/invalid metadata. Existing host contract exercises those cases, but does not validate camera orientation or real on-device FVI injection
+- BR-0310 readback source provenance remains a called-owner reference through layer/merged diagnostics; BR-0308/BR-0316 coordinate/view consistency remains separate from this real-hit classification
+
+## Clean dimensions and evidence gaps
+
+Side/child/connect-side/wall/texture IDs are checked before related lookups; palette indices are validated, null palette references are identified, bitmap absence avoids missing-data dereference, and fixed draw-face arrays copy matching capacities. State/hash outputs remain diagnostic values; no format portability or cross-endian replay guarantee inferred. Native clip frame counts, effect frames, door/cloaking counters and fixed-point ray endpoint arithmetic still rely on engine/import invariants; actual malformed production load/state fixtures are needed before admitting new bounds/overflow findings. Restored fixture/index safety stays with existing replay and engine owners. Current creation probe is opt-in but its pack/GL-state restoration needs delta/device validation. No product tests/builds or rendered front/rear fixtures were run during this analysis unit
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0315; rationale: a supported paired rear-view camera transform is absent from the geometry fallback's direction
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0253 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0254 frozen survey, resumed 2026-10-01 SHA256:c148cf04dd35cad24f0ae232ad26f97d7db950d1c34a33e30ce64acedad59cbc -->
+
+## GQ1-CHUNK-0254 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0254.md`
+- Imported SHA-256: `c148cf04dd35cad24f0ae232ad26f97d7db950d1c34a33e30ce64acedad59cbc`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0254 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/merged_wall_debug.c`: L6751-L7500; frozen blob `1730702fb80066da23c8634fc5aeab69b07781be`
+
+Scope SHA-256: `2f31ccf5cc959d410a59311215b65c7feb67847d432ceb3589089ab2224a2ec9`
+
+## Diff-minimization assessment
+
+RETAIN: ordinary-face ranking, geometry fallback, route/UV modeling, request setup and framebuffer sampling already belong to the shared Android native owner. Native camera and texture layout knowledge stays in the engine. Paired OGL +1876/-65 D1 and +1969/-65 D2 are mixed attribution totals; the scoped probe hooks are compact callers, and no additional separately measured inherited reduction was established. GQF-0191 retains the independently measured cache constructor consolidation
+
+## Context and reconciliation
+
+Read every assigned L6751-L7500 and the geometry enclosure through L6835 plus framebuffer completion through L7524. Checked preceding bounded draw-face capture, hit classification, route mapping, palette/source/readback helpers and actual request terminal caller. Read D2 main/HUD/extra-view sequencing, cockpit subcanvas render and Viewer/Rear_view restoration, per-render frame-ID increment, and end-of-frame OGL readback caller. Previously read full current merged_wall_debug.c diff; active current source retains the selection, object-forward ray and framebuffer publication branches
+
+## Observations
+
+- BR-0316 remains a live root: main rendering precedes show_extra_views, do_cockpit_window_view replaces Viewer/Rear_view and invokes render_frame on a subcanvas, and render_mine increments the same global frame generation. The shared arrays reset for that generation before gr_flip completes the request from the composed screen. Restoring Viewer afterward does not restore the main-view candidate bucket or camera matrices. Preserve an explicitly selected view's geometry, canvas and generation through publication and test distinct main/left/right sentinels
+- BR-0308 retains local projected coordinates versus offset-added canvas/screen centers and readback conversion; BR-0312 retains merged-prefix loss. BR-0315 retains object-forward rear-view geometry. BR-0310 retains replacement-versus-stock CPU comparison. These existing owners cover the called behavior without duplicate admission
+- Generic draw-face output is logged independently but final selection in this range scans merged_wall_tracked_faces; the zero-merged-face terminal branch in the following chunk can suppress the geometry/ordinary diagnostic path entirely, retained under BR-0317
+- Archived BR-0314 stays repaired: real wall classification precedes primary geometry identity and successful status. Nearest merged context remains diagnostic context rather than invented wall success. Correlation between fallback render-grid samples and actual geometry identity needs a real fixture before any additional claim
+- Route agreement compares two declared UV models, not independent captured GPU routing. It is useful model evidence but cannot replace render-output validation. New creation probes are limited by their explicit debug/name gate and do not establish this legacy path's correctness
+
+## Clean dimensions and evidence gaps
+
+Fixed draw-face/rank arrays and selected indices are bounded; initialized candidate comparisons have deterministic hit-kind/order/distance/area tie breaks. Texture IDs are checked before lookups, UV extents derive from fixed-point values converted before float arithmetic, strings have bounded copies, and vertex logs consume admitted capacities. Center and 4x4 sample sums fit int for normal drawable dimensions; initialized byte arrays avoid using uninitialized output on a failed read, but lack of an explicit error status and nondefault GL pack/read state need device fixtures before separate admission. Request/result cross-thread synchronization remains BR-0029, not solved by volatile flags and barriers. No builds, device frames, fault injection or integration tests ran in this analysis unit
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0316; rationale: supported extra-camera rendering replaces shared geometry before composed-screen publication
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0254 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0255 frozen survey, resumed 2026-10-01 SHA256:af8af26184d53e34727c224f4d491f60abd860178cb151235fb07c15c5ce0262 -->
+
+## GQ1-CHUNK-0255 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0255.md`
+- Imported SHA-256: `af8af26184d53e34727c224f4d491f60abd860178cb151235fb07c15c5ce0262`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0255 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/merged_wall_debug.c`: L7501-L8109; frozen blob `1730702fb80066da23c8634fc5aeab69b07781be`
+
+Scope SHA-256: `4e70853b4edb21288c6dab675ffed93c7ecaf68e7349c71bf58b9d269048bebf`
+
+## Diff-minimization assessment
+
+RETAIN: framebuffer sample completion, full/partial bounded face selection, focus-cover logging and request teardown are already shared Android behavior. Engine camera orchestration and layouts retain their native owners. A main-view ownership hook should remain compact; moving inherited render orchestration or adding callback/layout inventories has no measured payoff. No additional minimization candidate admitted
+
+## Context and reconciliation
+
+Read all assigned L7501-L8109, including every terminal path and final ANDROID guard. Checked complete preceding request/sample and generic probe enclosures, per-frame reset/order helper, paired ordinary OGL producer ordering, current no_tracked_faces branch, D2 main-to-auxiliary render sequence, cockpit subcanvas Viewer/Rear_view restore, frame generation and gr_flip sampling. Read complete active BR-0316/BR-0317/BR-0318 evidence and validation descriptions; archived BR-0314 stays fixed. The current diff leaves this final selection and early return unchanged
+
+## Observations
+
+- Extend BR-0317: L7630-L7649 marks a probe valid with no_tracked_faces and returns before either generic tap-probe call when no merged face was retained. Ordinary single-texture candidates and the real-wall geometry fallback cannot execute through this branch. Split probe terminal behavior from merged-only snapshot status; cover paired ordinary-only, geometry-only and genuine no-hit frames and once-only teardown
+- BR-0316 remains current: auxiliary render generations replace main geometry while the end-of-frame samples describe the composed screen. BR-0308 still compares local projections against screen or offset-added canvas centers; BR-0312 still pretruncates merged candidates, and BR-0313 still ranks focus cover by boxes. Preserve separate owners and cross-check a shared camera/canvas/generation contract
+- Reconcile BR-0318 rather than repeat its historical conclusion: both frozen ordinary OGL paths call android_merged_wall_next_draw_order before recording the face. That helper begins frame tracking at L4806, so the later cover logger cannot clear that first face merely because it is the first ordinary draw. Current producers preserve this ordering. Keep all-producer and first-only/reordered real-render fixtures in the historical recheck before disposition; no unsupported first-candidate-loss assertion is admitted here
+- Clarify BR-0309's dormant general texture gate: every maintained frozen general GPU-readback caller inspected passes force=1, bypassing that separate handle-cache admission check intentionally. Request setup does not reset that general list, but no runtime cache-limit bypass is claimed without a non-forced producer. The actual cover dump/readback saturation remains the accepted BR-0309 owner
+- Request/result publication remains BR-0029: valid and pending fields are updated before all face/cover members have been populated, and a barrier plus volatile does not establish a cross-thread immutable snapshot. Preserve complete publication and consumption semantics at the owner boundary
+
+## Clean dimensions and evidence gaps
+
+Full and partial selection initializes eight slots and only appends bounded valid retained indices; every selected pass progresses or terminates. Cover publication checks face identity, restricts output to eight entries and counts omissions; vertex and string output uses admitted capacities. No terminal mode teardown was missing in inspected branches. Unmatched partial context remains explicit rather than a successful projected face. Real first-only, zero-merged, rear-view, offset-canvas, multi-camera, nondefault GL-state and concurrent-consumer fixtures remain required. No engine builds, GPU frames or tests were executed during this read-only unit
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0317; rationale: the merged-only early return defeats a supported generic probe fallback
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0255 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0256 frozen survey, resumed 2026-10-01 SHA256:1204ac56caa7d9cbdc2b42a3c00622cd3d8a0b5b5ed835ade0c89a1a3621c61f -->
+
+## GQ1-CHUNK-0256 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0256.md`
+- Imported SHA-256: `1204ac56caa7d9cbdc2b42a3c00622cd3d8a0b5b5ed835ade0c89a1a3621c61f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0256 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/midi_enumeration.h`: L1-L40; frozen blob `09869e86892c0a932b24d72e16b1addf6bc368ee`
+
+Scope SHA-256: `38ab68b4ad2ef4712f93f7dc92d6c3e6da42df699857b825a963f09599d8e707`
+
+## Diff-minimization assessment
+
+RETAIN: one 40-line native enumeration header documents the shared C owner and malloc/free boundary used by both Android game targets. There is no duplicated inherited policy, Kotlin game-layout mirror or independently measurable merge-pressure reduction
+
+## Context and reconciliation
+
+Read every assigned header line, public native implementation through its return, JNI enumerate caller and both target source-list references. The header is unchanged at current HEAD. Shared implementation and JNI failure/encoding paths retain their own coverage and existing owners; this declaration does not repair or duplicate them
+
+## Clean dimensions and evidence gaps
+
+The include guard and pointer return signature match the C implementation. Ownership is documented as malloc/free, and the JNI caller frees returned storage after creating its Java value. The descriptive sources/tracks example is an example rather than a complete enforced schema; implementation also publishes completeness/error fields. No header-only allocation, arithmetic, resource or ABI defect is established. Existing JNI acquisition/UTF handling belongs to the bridge owner, and enumeration admission/output belongs to its implementation. No build or end-to-end enumeration test ran in this declaration-only analysis unit
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: clean declaration and documented ownership, no actionable independent finding
+
+Coverage outcome: CLEAN
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0256 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0257 frozen survey, resumed 2026-10-01 SHA256:07df44c9de07cfa34355d89e759e6d4dda36addcbf29381ac65197f03848a67f -->
+
+## GQ1-CHUNK-0257 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0257.md`
+- Imported SHA-256: `07df44c9de07cfa34355d89e759e6d4dda36addcbf29381ac65197f03848a67f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0257 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/midi_preview.c`: L1-L724; frozen blob `ae0eed357d5923136395eb23ed580465916af5ed`
+
+Scope SHA-256: `e2b6b5222550e436abe325942f332144cdaf64bfd4f58a5faf8f803ee8a12293`
+
+## Diff-minimization assessment
+
+RETAIN: launcher MIDI output, controls, HOG catalog and sample-frame timeline already have shared native Android owners. The frozen local PCM ring duplicates CD preview but the September cleanup has already moved both to pcm_ring; do not admit a second completed cleanup. HMP conversion stays shared with the native engine owner and preserves inherited game-format knowledge. No separately measured inherited hunk reduction remains in this scope
+
+## Context and reconciliation
+
+Read every assigned L1-L724. Checked frozen shared sample-frame rendering/reconstruction, archived BR-0028/BR-0030/BR-0319 repairs, active BR-0016/BR-0276, MIDI JNI/header contracts and prior GQ budget owners. Read the full current midi_preview.c diff with recovered untruncated init/start/stop enclosure, current MidiPreviewBridge lifecycle lock/generation handling, current setup/dialog reserved starts, synchronization test contracts and the completed approximate-seek plan
+
+## Observations
+
+- Extend BR-0276: frozen L243-L245 marks stopped and disables output at producer EOF before L273 writes final PCM. Callback L321-L325 therefore strands final and older ring samples. get_state publishes producer timeline time; the 262,144-sample ring can lead consumed audio by about 2.73 seconds at stereo 48 kHz. Current render_midi_frames retains the same EOF/output-disabled branch despite shared ring extraction, atomic state snapshots and a changed synthesizer. Separate producer EOF from consumer/hardware drain and validate tail sentinels, consumed position and terminal callback quiescence
+- BR-0016's frozen external issue-order root is separate from the native control mutex, which already serializes actual calls. Current MidiPreviewBridge reserveStart/startReserved/stop adds a lifecycle lock and atomic generation; setup and dialog callers reserve before asynchronous work. Treat this as a current repair candidate requiring the existing delayed-read/zero-delay lifecycle fixture rather than claiming the stale-start defect remains unchanged
+- Archived BR-0028/BR-0030 remain repaired in the frozen scope: render/control/synth access is protected, reset excludes callback consumption, and staged OpenSL creation checks every interface/callback/enqueue/play result and destroys reverse-order local resources before failure return. Explicit stop joins the producer and destroys output before freeing MIDI bytes/messages
+- Archived BR-0319 is fixed at the frozen head: audible rendering and seek reconstruction share event-aligned sample frames with bounded discard blocks and queued suffix preservation. Current code deliberately replaces that expensive behavior with event-proportional approximate seek, as documented in plan_midi_preview_fast_approximate_seek_20260811.md and the current public header. Notes spanning a seek restart envelopes by design. Do not reopen linear-equivalence expectations against this documented weaker launcher contract; validate current note/controller/sustain state and responsiveness in the delta
+- Track parsing is repeated for duration; complete-track allocation/work limits and cancellation remain GQF-0058/GQF-0145 references, not new owners. Current rate admission tightens to 8000..96000; frozen positive-only sample rate could overflow the OpenSL millihertz conversion for unsupported JNI values, but actual producer/admission fixtures are required before separate numeric admission
+
+## Clean dimensions and evidence gaps
+
+The frozen ring uses unsigned cursor differences, capacity-bounded producer chunks and acquire/release publication; stop/seek reset excludes concurrent callback storage access. Catalog ownership frees its temporary index after all entry outcomes. Invalid start, parse, output or thread creation returns through cleanup and releases control ownership. Synth/state snapshots, persistent bank ownership and current approximate event indexing remain later-delta obligations. Finite seek fractions, duration conversion, malformed MIDI, callback/OpenSL errors, repeated rapid controls and actual PCM need production fixtures; synchronization/source-contract tests alone do not prove audible tail delivery. No builds, device playback, allocation faults or tests ran during this read-only scope
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0276; rationale: producer EOF still disables callback consumption while generated PCM remains queued
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0257 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0258 frozen survey, resumed 2026-10-01 SHA256:e87693df3f22cbd4fab8b5a1a924f1b0a4c7cf8e973b6c4e9b53decae54575ee -->
+
+## GQ1-CHUNK-0258 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0258.md`
+- Imported SHA-256: `e87693df3f22cbd4fab8b5a1a924f1b0a4c7cf8e973b6c4e9b53decae54575ee`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0258 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/multi_save_transfer.c`: L1-L750; frozen blob `cde3bd3d5b1c65ed7cd0a119e8a03df3da9b3a94`
+
+Scope SHA-256: `309189dc1ee442142e1184f0c6ec5c1f937ccae9d6ed878c6e15276dfaf8ba84`
+
+## Diff-minimization assessment
+
+RETAIN: rewind/restore/restart transport, immutable send buffer, receive ownership, packet framing, acknowledgements and timeout policy already live in one shared Android native implementation. Paired multi.c contains engine and dispatch adapters (+459/-27 D1, +615/-49 D2 frozen mixed totals), not a complete extractable duplicate in this scope. Save formats stay in native state owners; no Kotlin layout copy, callback inventory or additional measured inherited reduction admitted
+
+## Context and reconciliation
+
+Read all L1-L750 plus the enclosing rewind request through L768. Previously reviewed the complete L751-L981 receive/admission tail in GQ1-CHUNK-0197 and reconciled its authority owner. Read active BR-0206, frozen partial repairs, current diff for the assigned send/apply/framing/timeout paths with untruncated recovery, and current restore barrier begin/failure/local-success/receive/release/tick behavior. Read current budget/timeout/window fixture and paired inherited attribution totals. New campaign/world/rollback paths and complete current barrier remain mandatory later-delta coverage
+
+## Observations
+
+- Extend BR-0206 at the frozen head: client L251/L288 sends READY_APPLY before actual fallible restore and publishes no post-apply result to the host. Host L517 waits only for branch entry, then restores locally. This is not proof that every peer loaded the same generation; a client failure can leave old or partly mutated state while the host commits. Existing owner must validate distinct callsigns, every failure phase, loader/frame boundary and generation fencing
+- Frozen partial repairs are retained: multi_perform_rewind_request queues the immutable transfer before host apply when clients exist; selected bytes are copied before publishing active state. Cooperative restore setup returns -1 through failed rather than permitting legacy fallback on open/size/allocation/read/packet-prevention failure. The no-client path remains intentionally local. Do not restate the historical host-first or setup-zero claims against these fixed branches
+- Current code is substantially newer: restore_barrier_begin owns a pause, local_done records actual success or fails the session, loaded/release/run phases use authenticated sender and world-visit identity, loader cancellation/deadlines are checked, and failed restore closes the mine rather than silently continuing a mixed generation. Host ordinary restoration now consumes the exact immutable bytes sent to peers instead of reopening a mutable disk slot. These are current repair candidates, not grounds to assert the old implementation is unchanged or to close BR-0206 without the full production fault matrix
+- BR-0195 retains the frozen trust in payload sender fields from the previously covered tail/status dispatch. Current request/READY/status signatures add authenticated sender and epoch/revision checks; complete dispatch and stale-packet/reconnect paths need the delta. An 8-bit transfer ID alone is not authority or a durable generation
+- Frozen throughput is capped at eight chunks per render frame with a fixed 60-second deadline; current code adds real-time chunk budget, progress/absolute deadlines and reliable-window backpressure. Reviewed policy fixture models low-FPS and maximum campaign envelopes, but does not by itself prove transport delivery, ACK loss or all-peer restoration
+
+## Clean dimensions and evidence gaps
+
+Data size is admitted before rounding/allocation, total chunks fit the wire field, packet storage is initialized, transmitted data length is bounded by the chunk payload, sender indices originate from its monotonic bounded next_chunk, and duplicate receive chunks/checksum completion are guarded in the covered tail. Explicit reset frees owned arrays exactly once. Host rewind detaches the copied data before reset and frees it after synchronous restore. PHYSFS handles and buffers close/free on every inspected open/size/allocation/short-read/success path. Engine roster bounds and process timer invariants remain native contracts. Hash is corruption detection, not authentication. Full barrier success/failure and reordered/lost ACKs, disconnect/rejoin, short reads and allocation faults require paired production sessions. No builds, multiplayer/device runs or tests were executed for this analysis unit
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0206; rationale: frozen multiplayer apply acknowledgement precedes fallible restore; current barrier must be reconciled through full fault/generation validation
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0258 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0259 frozen survey, resumed 2026-10-01 SHA256:a5fd1e5cd51865c30132898daf5f07504638b046d445aa1b9ab335c91db44f7c -->
+
+## GQ1-CHUNK-0259 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0259.md`
+- Imported SHA-256: `a5fd1e5cd51865c30132898daf5f07504638b046d445aa1b9ab335c91db44f7c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0259 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/net/net_udp_android.c`: L1-L709; frozen blob `457b911a8ca391c37c8ff640e960fd41974b79f3`
+
+Scope SHA-256: `f89d9a8e7919303c2791b4d2864940ce6908e271ce657d1f37ced0415cc0faaf`
+
+## Diff-minimization assessment
+
+RETAIN: paired welcome/observer/reconnect/proxy helpers have already been extracted into this shared native owner. Frozen paired net_udp.c totals (+1288/-560 D1, +1381/-587 D2) contain removals, compact adapters and unrelated additions, not a new entirely removable hunk. Native roster/socket/packet layout knowledge stays in C; existing callback seams are specific to inherited owners. No new broad deduplication or layout/callback inventory is justified
+
+## Context and reconciliation
+
+Read all assigned L1-L709, paired welcome/observer capacity callers, authentication dispatch with N_players, direct-reattempt packet size/token gates and the exact base direct-reattempt implementation. Read the full scoped current diff with recovered untruncated middle/terminal sections. Reconciled canonical completed GQF-0055/GQF-0056/GQF-0057 and GQR-0042/GQR-0043/GQR-0044 plus prior network review. Current generation/visit/join preflight and silent-host integration remain independently subject to the later complete delta
+
+## Historical issues and current repairs
+
+- Frozen validate_request advances the stored counter immediately after verifying the signed request, before route proof. Completed GQR-0042 now checks the old counter without mutation, stages route/proxy/context/challenge identity and commits only after successful proof. No new route-proof finding is admitted
+- Frozen request/challenge transcripts and player serialization omit title/protocol/session-generation context. Completed GQR-0043 current code binds game kind, protocol and a fresh generation, validates player/context identity and preserves the generation through replication. The current WAITING temporary-slot exception is explicitly documented and still relies on caller master/session checks; validate its full path during the delta rather than assert a mismatch bypass from this adapter alone
+- Frozen signature verification is reached without pre-JNI admission. Completed GQR-0044 routes request and proof through the shared bounded verification admission owner and uses normalized address bytes. Existing production load/fairness/rotation tests and paired builds are recorded in the completed ledger; they were not rerun in this analysis
+- Direct reattempt parsing, target/address update and proxy status semantics reproduce the base engine implementation. Packet-size and token validation belong to paired dispatch, and the byte player number is checked against MAX_PLAYERS before status addressing. Any broader route-authentication or IPv6 contract requires its actual inherited/network owner; no branch-created direct-reattempt defect is established here
+
+## Clean dimensions and evidence gaps
+
+Identity move/store/remove loops and wire copies use fixed admitted capacities; challenge/proof size and slot/signature bounds precede reads and verification; one successful proof consumes pending storage. Unsigned little-endian assembly shifts at most 56 bits. Welcome slots use engine-valid roster counts, and both observer callers check capacity before the shared scan; contradictory roster/count state requires a production producer fixture before admitting an overflow. Packet-dump labels are native caller strings and bounded formatting stops hex output before its fixed buffer end; concurrency belongs to existing engine-thread ownership, not an inferred additional logger defect. Rebinding reports open failure and preserves socket-owner callbacks; object-sync ordering and proxy resets reproduce inherited semantics. Negative roster count, inconsistent observer occupancy, malformed packet dispatch, non-IPv4 address, key/random/JNI failure and current join-generation/host-loss fixtures remain integration obligations. No product build, packet injection, crypto load or tests ran during this read-only analysis unit
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: frozen reconnect roots already have completed current repairs and no additional actionable branch-created finding was established
+
+Coverage outcome: CLEAN
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0259 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0260 frozen survey, resumed 2026-10-01 SHA256:2ed68057d91fe4ed66b3db22f3a4bfd03246f8ebdb824f9bb0a81c75b870bb85 -->
+
+## GQ1-CHUNK-0260 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0260.md`
+- Imported SHA-256: `2ed68057d91fe4ed66b3db22f3a4bfd03246f8ebdb824f9bb0a81c75b870bb85`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0260 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/pngfile_stb.c`: L1-L650; frozen blob `4ef27fba0438a3810d75bcecfcbe7bf1e0e468b0`
+
+Scope SHA-256: `3b5e418d7322462b3b4499ec82c9db9b728723dee4edf6a74854182c58af5464`
+
+## Diff-minimization assessment
+
+RETAIN: Android replacement-texture decoding, bounded PhysFS discovery, negative cache and KTX staging already share one native owner for both games. Native png/ETC upload contracts stay with compact engine adapters. Current file is renamed to pngfile.c; compare blobs across that rename rather than interpret path deletion as completed removal. No additional complete inherited hunk reduction was measured; dead software ETC2 removal remains independently owned GQF-0178
+
+## Context and reconciliation
+
+Read every assigned L1-L650, the current loader's exact failed-open and negative-cache saturation branches, rename history, full frozen-to-current blob diff, source ownership/free paths, maintained replacement-limit source guard, completed BR-0320 and active BR-0346/BR-0637/BR-0641 contracts. Duplicate scans found no existing owner for the borrowed-index lifetime failure
+
+## Observations
+
+- Admit GQF-0192/GQR-0179: texture_lookup_resolve_indexed_path returns a pointer owned by the global file index. Both read_png L424-L428 and read_ktx2_file L514-L518 call miss_cache_add(filename) after PHYSFS_openRead fails, then pass resolved_filename to a second miss insertion. At 12,288 misses, miss_cache_add calls clear_texture_lookup_cache, which also frees every file-index string. The second insertion dereferences/hashes/strlen/copies freed storage. Even when the first insertion starts at 12,287, the second can clear its own borrowed input before hashing it. Current renamed loader retains the identical code. This is a single-thread allocation lifetime defect, separate from reticle invalidation and traversal limits
+- Preserve file-index ownership across negative-cache eviction, or own both names before any operation that can free them. Prefer a narrow miss-only reset on saturation while retaining full public invalidation for actual mount/asset lifecycle changes. Production read_png/read_ktx2_file failure injection at below/exact/above miss quota must exercise the real index-owned path, sanitizer/free counters and lookup controls after eviction
+- Archived BR-0320 remains repaired: iterative enumeration enforces depth/entry/directory/path/retained/indexed limits, stops on failure, frees queued paths and discards partial indexes. Current traversal additionally limits root recursion to textures and logs bounded load timing; these changes do not repair negative-cache pointer lifetime
+- BR-0346 retains its separate D1 reticle caller issue; BR-0637/BR-0641 retain cross-upload dimension and output-addressability contracts. Native stock/replacement readback provenance remains BR-0310. Do not duplicate those owners or treat source-token tests as actual hostile-file decoding
+
+## Clean dimensions and evidence gaps
+
+Index hashes use unsigned arithmetic and bounded probing. Path joining uses subtraction-based bounds; growable walk allocation is capped, queued ownership is freed on failure, and failed complete indexes are cleared before publication as empty. PNG input byte size is admitted before allocation/narrowing, metadata dimensions/channel count before pixel decode, and ordinary file/heap outcomes release resources. KTX validates supported format, dimensionality/layers/faces/levels, dimensions, original extents and exact per-level block sizes before packing, with bounded total and complete destroy paths. KTX metadata is copied with memcpy for alignment; endian portability, image-offset success/range and dependency allocation before post-parse dimension admission require pinned-library/production fixtures before additional findings. Palette/channel output is initialized only after successful decode and ownership is documented for the caller. No native builds, failed-open quota fixture, ASan run, malformed KTX or device texture test was executed during analysis
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQF-0192; rationale: a bounded cache eviction frees a borrowed path still used by both live decoder failure paths
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0260 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0261 frozen survey, resumed 2026-10-01 SHA256:7aa6374ddc46950c93f1168070ba67cd712f7f3b1687a9ec4bedef39ca998939 -->
+
+## GQ1-CHUNK-0261 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0261.md`
+- Imported SHA-256: `7aa6374ddc46950c93f1168070ba67cd712f7f3b1687a9ec4bedef39ca998939`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0261 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/rbaudio_bin.c`: L1-L750; frozen blob `36edcdeddf9e729b5ed80286f641ce5f5fbd31e0`
+
+Scope SHA-256: `1de6fb21b13d9708d0015bb164d3fffc7963fdccb9bba45bddc8bbedb29dd47f`
+
+## Diff-minimization assessment
+
+RETAIN: one shared Redbook backend already owns CUE/BIN I/O, source geometry and playback for both games. Frozen inherited songs changes are 58/7 D1 and 77/7 D2, with paired header additions 11/0 each; earlier shared songs and header owners already account for these seams. No new complete inherited hunk removal is established. September canonical BIN URI and shared PCM ring extractions are completed owners, not unfinished work
+
+## Context and reconciliation
+
+Read complete frozen L1-L750 plus the enclosing playlist parser through L916, source close/count ownership, initialization/exit, the complete frozen-to-current rbaudio_bin.c diff, current exact CUE failure path, archived BR-0326 capacity/rollback contract, BR-0325 CUE budget and BR-0324 audio-only routing. Read maintained header-contract test and SAF staging runner; these do not exercise malformed native JSON or descriptor-count faults. The former BR-0326 resolution explicitly left both exhaustive fixtures unexecuted
+
+## Observations
+
+- Admit GQF-0193/GQR-0180: parse_source_cue opens bin_files[i] at L596 but advances source.num_bins only at L614 after bh_length succeeds. An empty BIN or length failure takes L605-L611 cleanup while close_source_bins only closes indices below the old count. The opened handle is then erased by clear_playlist_state and leaked. Current L576-L594 is identical. Record ownership immediately on a successful open, before any subsequent fallible operation, or close the just-opened handle explicitly. Repeated zero-size/fstat/seek failure after the first and later opens must leave real descriptor counts unchanged
+- Admit GQF-0194/GQR-0181: the hand-written native playlist JSON reader is not length bounded or grammar complete. pj_skip_value advances over a trailing backslash and then over the NUL sentinel before its next read; an unterminated string nested in an object/array similarly advances past NUL. pj_long multiplies signed long without overflow admission; pj_string drops JSON escape introducers, silently truncates identity strings, and accepts control/invalid escapes. Unknown scalars are skipped without grammar validation. Current functions are unchanged. Use a complete bounded JSON reader with exact numeric/string admission and an exception-safe C boundary, validating a private complete generation before source I/O/publication
+- Keep BR-0326's completed eight-source/100-track, complete outer separators, hard failure without legacy fallback and one-playable-track changes. These new defects are narrow residual resource ownership and parser correctness gaps, not reopening the original missing-capacity implementation. Preserve BR-0325 bounded exact CUE read and BR-0324 bounded audio-only iterator
+- Playback flags/status ownership remains BR-0250/BR-0029; source I/O diagnostics and initialized state are distinct from parser admission. Large-file stdio fseek(long), proc descriptor syntax and shared offset behavior need actual 32-bit/provider fixtures before extra root admission
+
+## Clean dimensions and evidence gaps
+
+CUE text byte length and exact read are bounded before allocation, every ordinary read path closes its CUE handle, source/track arrays have explicit capacities, invalid geometry closes already-counted BIN handles, legacy geometry checks sector bounds and transfers sole handle ownership only after success. No product code, compilation, malformed JSON/ASan/UBSan or descriptor-count integration fixture was run during this analysis
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed primary owner: GQF-0194; GQF-0193 separately rated 44 (23/0/4/10/7)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0261 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0262 frozen survey, resumed 2026-10-01 SHA256:35a02bd2d1f5dcef227ed6fdfe30e8e63b69150b9ba89ea50d88adaf1796f9b3 -->
+
+## GQ1-CHUNK-0262 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0262.md`
+- Imported SHA-256: `35a02bd2d1f5dcef227ed6fdfe30e8e63b69150b9ba89ea50d88adaf1796f9b3`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0262 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/rbaudio_bin.c`: L751-L1500; frozen blob `36edcdeddf9e729b5ed80286f641ce5f5fbd31e0`
+
+Scope SHA-256: `8204c8dabc0e8ff6434fdef269778a7327b5ec1fe5c9d66292999c792b6e7955`
+
+## Diff-minimization assessment
+
+RETAIN: shared Redbook parser, audio-only iteration, sector read, resampler, producer and callback already centralize both games. Completed September pcm_ring extraction accounts for the repeated ring code. No new inherited removal is measured
+
+## Context and reconciliation
+
+Read all frozen L751-L1500, recovering L1235-L1459 separately after tool truncation; read preceding parser/string/source ownership, complete current blob diff, archived BR-0326/BR-0324 contracts, initialization/exit and existing GQF-0167 producer completion evidence. Later public API is already covered by imported chunk 0153, with current request-generation changes reserved for live-delta testing
+
+## Observations
+
+- Extend GQF-0194/GQR-0181 from chunk 0261: unknown field pj_skip_value is invoked at L840; track-name keys use unchecked atoi at L832, legacy_disc_id unchecked pj_long L808 then cast to unsigned long L855. Invalid signed/unsigned extremes, malformed nesting/escapes, truncated unknown fields and identity truncation need production admission fixtures before file opens or publication. The 64 KiB source cap does not make arithmetic or one-past-NUL reads safe
+- Extend GQF-0193/GQR-0180: s_num_sources is incremented before parse_source_cue and fail calls clear_playlist_state, but that cannot recover an uncounted opened BIN. Legacy malformed_cue correctly closes s_gog_handle and success transfers ownership exactly once; do not conflate it with the leaked per-source handle
+- Extend GQF-0167: render_cd_frames clears s_playing and publishes completion/song_finished at L1204-L1208 before producer rb_write L1281. Callback gates on s_playing L1337 and discards queued audio. Current render additionally conditions its final pcm_ring_write on s_playing, so the last generated partial chunk is itself dropped at EOF. Existing owner covers ordered final PCM publication and full drain before completion; current asynchronous request generations require stale/new request controls, not a second EOF owner
+- Retain BR-0250/BR-0029 for shared flags/diagnostic ownership and preserve archived BR-0324 data-track skipping. A current generation mutex/seqlock diff is evidence of partial repairs, not proof that callback/main/producer access is completely synchronized
+
+## Clean dimensions and evidence gaps
+
+Outer parser separators, capacity limits and hard-error cleanup are present; one playable audio track succeeds, data-only playlists fail. Legacy source checks all index records and ascending geometry before publishing. Sector offsets use 64-bit multiplication, exact reads fail with actionable terminal diagnostics, audio iterator respects track/range bounds, thread creation failures roll back running/alive flags, and background wait/stop wakeups use a mutex/condition. No source fault, descriptor, native parser, final PCM, sanitizer, thread race or device build test was executed during analysis
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQF-0194 (reference); GQF-0167 and BR-0250/BR-0029 retain their independent scopes
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0262 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0263 frozen survey, resumed 2026-10-01 SHA256:f929ed7fde6de00f8e8a8a281bb5b4d2471e0618913ab660e6c45dd769572eee -->
+
+## GQ1-CHUNK-0263 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0263.md`
+- Imported SHA-256: `f929ed7fde6de00f8e8a8a281bb5b4d2471e0618913ab660e6c45dd769572eee`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0263 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/route_planner.cpp`: L1-L750; frozen blob `50eae3db31ec598e3d168008b90694478cc9761a`
+
+Scope SHA-256: `b7b1050c242ba93dad3258eb72291d999ba609d2080231e2a1fea097de96a508`
+
+## Diff-minimization assessment
+
+RETAIN: snapshot, edge and planner owners already centralize geometry and route policy for both games. The inherited secretarea headers have identical 42-line additions per game, but the public adapter/header survey already owns those seams. No new complete inherited removal is measured; moving shared geometry among files is not a D1/D2 diff reduction
+
+## Context and reconciliation
+
+Read all frozen L1-L750, current exact side_normal/exit activation/crossing aim/detailed midpoint calculations, snapshot coordinate callbacks and admitted construction, public header, planner call sites and focused route test visibility/budget fixtures. Checked archived BR-0215 work/cache/cancellation fix and open BR-0229 packing contract. Current planner grew by 2,485 additions/213 deletions and requires a separate full live-delta pass, not inferred equivalence from shared names
+
+## Observations
+
+- Admit GQF-0195/GQR-0182: accepted route coordinates are signed int with no narrower geometric envelope. side_normal L62-L74 widens differences to int64, but each difference can be 4,294,967,295 and its product can exceed INT64_MAX. The product/subtraction occurs before later long-double scaling. exit_activation_position L96 subtracts int coordinates before widening; detailed edge midpoint L644 adds two int coordinates before division. Current retains all three expressions. INT64_MIN absolute/negation in normal consumers is unsafe too if overflow produces that value. Midpoint overflow is reachable for ordinary small segments translated above 16,384 fixed-point units, without giant segment extents
+- Use representable wide geometry before every addition/subtraction/product, a cross-platform bounded normal representation and explicit final narrowing. Avoid rejecting legitimate engine fixed-point coordinates solely to hide intermediate overflow. Public plan_route/select_trigger_firing_path tests must exercise translated geometry, both int extremes, cross products beyond 64-bit, reversed faces and degenerate fallback, with UBSan and exact ordinary route controls
+- Preserve archived BR-0215: callback work admission and sample-cache entry limits are present, cancellation is checked before callback work, and C facade uses one aggregate budget. No supported-max scaling fixture was executed here; do not infer a new budget root from optional unbudgeted internal C++ usage alone
+- BR-0229 remains the frozen ambient MSVC packing owner. Frozen route_planner_c.h has an unmatched pack push; current header adds its pop. Record a current repair candidate for pack-1/default/pack-16 C/C++ and paired include tests before canonical closure; no duplicate ABI finding
+
+## Clean dimensions and evidence gaps
+
+Segment/wall/trigger indices are checked before assigned-range indexing, heap positions track swaps and bounded graph nodes, distances widen coordinate differences before squaring, weighted sampling uses 64-bit arithmetic with internal weights 1/3, cache hashing is unsigned and equality includes namespace/kind/source identity. Callers bind cache lifetime to a snapshot/request. Trigger-source discovery validates source walls/trigger state and side membership before construction. No builds, translated/extreme geometry, ASan/UBSan, callback maximum-work, cancellation latency or packing test was executed during analysis
+
+Provisional impact rating: 44 (H/M/B/C/R = 23/0/4/10/7); proposed primary owner: GQF-0195
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0263 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0264 frozen survey, resumed 2026-10-01 SHA256:880e1ddb4ecddc2e0ee02655798bd801378fbdc387158f649648aa53ad32b5be -->
+
+## GQ1-CHUNK-0264 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0264.md`
+- Imported SHA-256: `880e1ddb4ecddc2e0ee02655798bd801378fbdc387158f649648aa53ad32b5be`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0264 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/route_planner.cpp`: L751-L1500; frozen blob `50eae3db31ec598e3d168008b90694478cc9761a`
+
+Scope SHA-256: `bbc7c89b86d3513bcd73ee05dbad99a07298957ce83b50dc5562a5cb071fc596`
+
+## Diff-minimization assessment
+
+RETAIN: shared progress mutation, graph search, target discovery and firing-position selection already own paired routing. Inherited callbacks retain engine collision/state semantics. No new complete inherited hunk removal is established
+
+## Context and reconciliation
+
+Read every assigned frozen L751-L1500 plus enclosing component-candidate function, target/source callers, current target inventory and primary boss selection, active BR-0302/BR-0329/BR-0330 and completed BR-0215 contracts. Read registered test target, focused visibility/budget/cancellation fixtures and relevant current admission/budget code
+
+## Observations
+
+- Extend BR-0302: frozen key/carrier vectors stop at 512 candidates and exits at 512 sides without explicit overflow. Current L2090/L2104/L2167 retains those conditions despite admitting 1,000 objects and 9,000 segments. A sole reachable later candidate remains discarded. Preserve this existing owner and require complete discovery or explicit admission failure with reorder/sole-reachable boundary fixtures
+- BR-0329 frozen discovery retains only the first boss. Current inventory stores all bosses and progress_primary restores the initial dependency state and tries successive candidates until one succeeds. This is a substantive current repair candidate; run multiple-boss first-unreachable/last-reachable/reordered fixtures, failure rollback, budget controls and paired route consumers before closing its ledger entry
+- Reference GQF-0195: the detailed firing path invokes the unsafe midpoint/normal owner from chunk 0263. Keep one arithmetic owner rather than another discovery finding
+- Preserve archived BR-0215 aggregate work/cache/cancellation limits. Frozen visibility selection respects its per-callback budget, current facade retains 2,000,000 work/65,536 cache caps and interruption handling; current transition-aware state nodes and guidance graph are mandatory delta coverage, not proof of original semantics. BR-0330 continues to own fleeing carriers in later progression logic
+
+## Clean dimensions and evidence gaps
+
+Key flags reject unknown enum indices, progress vectors check indices, paired hidden/blastable state mutation validates reverse-side bounds, graph search starts only from admitted valid positions, nonnegative distance/progress ordering and one-node heap membership prevent parent cycles on produced searches, path reconstruction and traversal check target/path indices. Audio concerns do not apply to these sources. Components mark before queue insertion and reserve bounded segment storage. No new raw parser/filesystem/thread boundary originates here. Maximum target, multiple boss, restored clocks, malformed externally fabricated C++ search objects and live route-generation tests were not run during this analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0302 (reference)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0264 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0265 frozen survey, resumed 2026-10-01 SHA256:acf43f0ba4e5137104f1719eddbd298b2850897bfb6e678598344b3d10b99cd9 -->
+
+## GQ1-CHUNK-0265 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0265.md`
+- Imported SHA-256: `acf43f0ba4e5137104f1719eddbd298b2850897bfb6e678598344b3d10b99cd9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0265 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/route_planner.cpp`: L1501-L2250; frozen blob `50eae3db31ec598e3d168008b90694478cc9761a`
+
+Scope SHA-256: `3b5552d2a98d9ce93c8f824a34a653d527c90a6fb0fa19de55d474f66301b47f`
+
+## Diff-minimization assessment
+
+RETAIN: shared dependency planner already owns end-level, unexplored, key, hidden-door and partial-route semantics for both games. Native adapters keep engine observation. No new complete inherited hunk reduction is established
+
+## Context and reconciliation
+
+Read all frozen L1501-L2250 plus enclosing move-to-visible completion, prior target/search helpers, current carrier-anchor/acquire_key functions, current fleeing snapshot/hash callbacks and focused fleeing/stationary continuation assertions. Checked BR-0330 full root and related original snapshot/adapter evidence, BR-0302 target capacity, GQF-0195 geometry and BR-0215 work/cancellation ownership. Public planner C facade exception boundary is covered by prior chunk 0167 and enclosing context
+
+## Observations
+
+- BR-0330 original branch-survey evidence describes c01d8fe before the frozen GQ1 head. This GQ1 scope ALREADY has normalized fleeing state, preserve_carrier_continuation_anchor and invocation after key grant. Current additionally treats remote_door as requiring the safe anchor. Focused current tests require the fleeing plan to continue from segment 0 after targeting segment 1 and require the stationary case to remain incomplete. Treat the older open row as a repair/validation reconciliation candidate rather than repeat its obsolete missing-fleeing-field claim. Multiple asymmetric/reversed/trigger doors, fingerprint invalidation and actual Counterstrike level 10 still require execution before closure
+- Reference GQF-0195 for plan_end_level's exit_activation_position at L1600 and visible_target detailed sampling. Keep one geometry arithmetic owner; no new deduplication or route-generation owner
+- BR-0302 retains candidate-prefix loss before selection. Single selected key and exit alternatives after recursive failure need production route fixtures before admitting an independent solvability root; optional fabricated internal state is not evidence of an engine-facing indexing failure
+- Preserve archived BR-0215 bounded analysis/cancellation contract. Dependency state restores around recovery-key trials and unexplored candidates; public route execution is bounded by step/depth/iteration limits and its request budget. Live transition-aware paths, route-state effects and richer conditional visibility remain full delta work
+
+## Clean dimensions and evidence gaps
+
+Initialize requires valid start; bounded route-step admission precedes push, partial routes retain explicit status/problems and unresolved activation clears its pose. Path joins avoid duplicating shared endpoints. Wall-pair helpers check both forward/reverse indices. Hidden-door in-progress flags are cleared on handled success/failure and key bits are bounded to three colors. Carrier identity checks object range/type before behavior access, preserves objective marker and changes only continuation pose. No new raw I/O, external parser, file-format or thread boundary originates here. No compile, synthetic progression, Counterstrike level 10, paired metadata, allocator-failure or runtime route test was executed during analysis
+
+Provisional impact rating: 44 (H/M/B/C/R = 23/0/4/10/7); proposed owner: GQF-0195 (reference); BR-0330 is a repair reconciliation candidate
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0265 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0266 frozen survey, resumed 2026-10-01 SHA256:46e9ea7403732b2f79a5b6e0d3a99dbd1295299bb6b2ba0d11e2678793e24e81 -->
+
+## GQ1-CHUNK-0266 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0266.md`
+- Imported SHA-256: `46e9ea7403732b2f79a5b6e0d3a99dbd1295299bb6b2ba0d11e2678793e24e81`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0266 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/route_planner.cpp`: L2251-L3000; frozen blob `50eae3db31ec598e3d168008b90694478cc9761a`
+
+Scope SHA-256: `0870d2992dd0f60cb8313971c0f5fe1dea43312385bbdba5acb2ba09e88a1eab`
+
+## Diff-minimization assessment
+
+RETAIN: shared trigger resolution, fallback planning, callback facade and bounded route projection already own paired policy; native adapters preserve game collision and trigger semantics. No new inherited hunk reduction is measured
+
+## Context and reconciliation
+
+Read every frozen L2251-L3000 plus project_plan through L3035, preceding dependency/search helpers, BR-0331 full alternatives/rollback contract, BR-0330/BR-0329 reconciliation, archived BR-0215 budget contract, current fire_trigger selection and failed-activation branches plus caller avoid/retry handling. Earlier chunk 0167 already covers the frozen C facade tail/header
+
+## Observations
+
+- Extend BR-0331: if no immediately reachable firing path exists, frozen fire_trigger defaults to raw_sources.front at L2453 and recursively attempts only it. Failure at L2509-L2512 returns without transactionally trying remaining opener walls. move_to_target only avoids certain trigger failures, so failed-source prerequisites and opener ordering remain the existing root. Current adds conditional/optimistic/guided firing passes, surface preparation and expanded caller avoid/retry strings, but still starts from raw_sources.front and multiple failed-source paths return immediately. The changes need all-opener permutations and exact complete-state rollback fixtures before determining remaining fix scope
+- BR-0330 fleeing-anchor and BR-0329 multi-boss changes are repair candidates; retain their original root rather than duplicate it. GQF-0195 remains owner for crossing aim and activation arithmetic. BR-0302 still owns the target discovery cap
+- Preserve BR-0215 shared ordinary/strict visibility budgets and cancellation. Current asynchronous/projectile guidance and transition-aware planning are not audited by frozen callbacks alone; full current-generation coverage is still required
+- Projection admits route/link capacity before copying, sanitizes invalid positions to zero and uses bounded diagnostic/string copies. The travel-time double-to-int conversion has no explicit finite/range guard, but a supported producer reaching a nonrepresentable total has not been established here; exercise extreme/cyclic route-distance fixtures before an additional admission finding
+
+## Clean dimensions and evidence gaps
+
+Dependency depth and loop guards are explicit, trigger indices are validated before active-bit access, source side/wall checks protect intended paths, key/trigger avoided-state rollback is present on handled paths, unresolved activation is intentionally distinguished from physically verified actions, path queries have progress/callback budgets, and C facade conversion retains typed endpoint/query ownership. Projection links are capacity checked and route summary uses sentinel -1 for no pending step. No path/network/raw decoder/write surface originates here. No opener permutations, allocation-failure rollback, full live projectile/cross-wall planning, sanitizer, high-level route metadata or paired build test was run during analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0331 (reference)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0266 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0267 frozen survey, resumed 2026-10-01 SHA256:005c4fd20331816aa09d00f2f1e114d7d88fc029ea7045199d34faeb96128e72 -->
+
+## GQ1-CHUNK-0267 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0267.md`
+- Imported SHA-256: `005c4fd20331816aa09d00f2f1e114d7d88fc029ea7045199d34faeb96128e72`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0267 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/route_snapshot.cpp`: L1-L620; frozen blob `4ae32bc90dcae83b2cc41c725b89989d069b2ca0`
+
+Scope SHA-256: `ef28265525377e1e9a567a4ee08c573ff65e940431a501a416c9e0e6f99e9847`
+
+## Diff-minimization assessment
+
+RETAIN: shared snapshot callbacks, normalization, fingerprints, staged vectors and C summary already own paired capture. Engine constants and live observations remain in native adapters. No new complete inherited removal is measured
+
+## Context and reconciliation
+
+Read all 620 frozen lines assigned under L1-L750, complete frozen-to-current snapshot diff, current public C header, registered tests and focused construction/hash/action/fleeing assertions, BR-0330/BR-0331/BR-0332 roots, current cache-key builder/test and renamed live secretarea.c profile/key/canonical adoption. Do not treat the adapter's renamed path as removed behavior
+
+## Observations
+
+- Extend BR-0332 at its producer boundary: frozen navigation fingerprints include route-affecting wall/side state independently of topology; the original persistent-key consumer omits that explicit domain. Snapshot stage correctly captures both. Current cache has intentionally changed to generation/game/profile/topology identity and tests explicitly require mutable progression/trigger/object state to reuse prepared entries. Current native adoption publishes cached canonical routes; live certifier/prepared-guidance behavior must be checked with two same-layout missions differing in immutable wall/navigation semantics before deciding which portion of BR-0332 still needs a fix. Do not mechanically restore the obsolete former cache key or treat policy change as a proven repair
+- BR-0330 is already a frozen repair candidate: L266/L330 hash fleeing and L504-L505 capture it. Current retains capture and both hashes. Earlier original root describing missing behavior predates this GQ1 head. Preserve its required fingerprint/continuation/Counterstrike fixtures without duplicating the stale claim
+- BR-0331 remains owner for opener alternatives: L426-L429 retain every bounded opener in producer order, and planner decides alternative solvability. GQF-0195 owns unsafe arithmetic on accepted full-int coordinates; capture itself correctly preserves engine fixed-point coordinates and must not introduce an arbitrary narrower envelope
+- Current domain fingerprints, ordered compound trigger actions, one-shot/topology fields, transit masks, switch-reveal recognition and replay fixture capture are substantive delta behavior. Full diff was read, but public callback producer semantics, selective domain invalidation and serializer/fixture failure publication require dedicated live-generation fixtures
+
+## Clean dimensions and evidence gaps
+
+Hash arithmetic is unsigned with explicit integer byte order, booleans and vector cardinalities; all frozen route-object behavior used by the assigned planner is captured and hashed. Counts are validated before allocation/callback iteration, adjacency callback is required, opener/link counts are bounded, topology wall target lookup validates segment/side, and downstream planner validates callback IDs before indexing. A private next generation is moved into the caller only after complete capture/hashing, preserving the previous snapshot after ordinary admission failure. C summary clears output and contains standard/unknown exceptions, bounded diagnostics cannot overflow, and move-owned vectors avoid double ownership. Source state coherence depends on caller thread/generation and needs live integration rather than a fabricated callback mutation assertion. No build, cache-collision mission pair, allocator injection, sanitizer, fingerprint execution or device route test was run during analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0332 (reference)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0267 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0268 frozen survey, resumed 2026-10-01 SHA256:87f78b3f0236db1f0c92a4e147f2fd372f6f0ef34ed99cb9a87077dbabd9c505 -->
+
+## GQ1-CHUNK-0268 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0268.md`
+- Imported SHA-256: `87f78b3f0236db1f0c92a4e147f2fd372f6f0ef34ed99cb9a87077dbabd9c505`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0268 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/secret_area_game_adapter.c`: L1-L750; frozen blob `2ac0d3fb155689f8d409eece4bc3980eab86cda9`
+
+Scope SHA-256: `43c9a32076098d5fa99ffec2d54a7f26fe4d8e2dd2901166314ff879128e910c`
+
+## Diff-minimization assessment
+
+RETAIN: one separately compiled native adapter owns paired engine observations and shared metadata state. Frozen secretarea headers add 42 lines each; gameseq adds 222/12 D1 and 351/21 D2 across mixed branch features. Those compact hooks and original header owner do not yield an additional complete hunk through another wrapper. Current adapter is renamed to shared/secretarea.c, not removed
+
+## Context and reconciliation
+
+Read every frozen L1-L750 plus complete shootable-wall function L751-L781, enclosing clearance topology construction L1510-L1567 and related bounded opener context, active BR-0334, archived BR-0215/BR-0333, current clearance/portal classification and publication, cached position admission, source rename history and maintained route/clearance fixture inventory. Original adversarial evidence predates the GQ1 fixes; do not repeat its unbounded-cache or unchecked control-center-count claims
+
+## Observations
+
+- Extend BR-0334: destination-center object_intersects_wall at L563-L573 returns only radius or 1; frozen publication L1565-L1566 copies that scalar to each incoming side. The original three-segment bad-center component heuristic also remains. Current adds a portal-center occupancy/edge-width test and a separate narrow_portal flag before publishing clearance. This is a partial geometric repair candidate, not the original destination-only implementation. Required paired actual engine geometry/physics fixtures must test wide/too-narrow portals, skewed off-center passages and component-size invariance before determining remaining scope
+- Archived BR-0215 remains implemented in this frozen range: 65,536 visibility entries, checked resize failure, bounded probing, one-million FVI count and cancellation check before collision work. Later FVI producer context and current separate cache/telemetry/bytes still need coverage, but no second work-budget root is admitted here
+- Archived BR-0333 remains repaired: metadata classification at L659 validates the full fixed control-center-link structure before any traversal. Completed paired loader/reactor validation owns the separate inherited seams. Preserve its explicit missing binary/sanitizer fixture limits rather than claim newly tested correctness
+- Visibility world identity uses current geometry, adjacency, wall identities/textures and doorway flags; key equality includes callback kind, source/target pose and clearance radius. Current occupancy cache and prepared/certifier behavior are new live-delta work. Native object/robot/player globals assume admitted engine ownership; no supported invalid producer was established for an additional callback-index finding
+
+## Clean dimensions and evidence gaps
+
+Route-copy sources are bounded by projector/cache admission before this private helper is called. Cache keys are fully initialized by the consumers, unsigned hashing/probing is bounded, allocation failure preserves old entries and degrades to uncached work, and reset preserves owned capacity safely. Segment/side/wall/clip/effect callbacks guard their indexed domains, ordinary trigger links have a capped accessor, and generation rollover avoids zero. D2-only companion blocking remains correctly guarded; shared core has native engine headers because it is compiled separately per game. No build, real portal/FVI fixture, malformed control-center binary, allocator failure, sanitizer, cache maximum-work or device test was executed during analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0334 (reference)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0268 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0269 frozen survey, resumed 2026-10-01 SHA256:469e29453e7a9e4f2adeddd3cfbfed8aa98f878cd86497b4086b8300236e3d7e -->
+
+## GQ1-CHUNK-0269 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0269.md`
+- Imported SHA-256: `469e29453e7a9e4f2adeddd3cfbfed8aa98f878cd86497b4086b8300236e3d7e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0269 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/secret_area_game_adapter.c`: L751-L1500; frozen blob `2ac0d3fb155689f8d409eece4bc3980eab86cda9`
+
+Scope SHA-256: `a708585fd2426d985bc9b2dfd495bbaf52c1e1a676623e5783be30cd8f5a2c0f`
+
+## Diff-minimization assessment
+
+RETAIN: the per-game compiled shared adapter owns geometry and collision callbacks using native engine types. Existing small paired header/gameseq seams do not contain an additional complete redundant transaction in this range. Keep native FVI and wall semantics in that owner rather than introducing callback wrappers
+
+## Context and reconciliation
+
+Read all frozen L751-L1500, enclosing shootable-wall and trigger-open functions, paired FVI headers and bounded segment-list producers, current chain/segmented visibility consumers, active BR-0334 and archived BR-0215. Current secretarea.c adds adjoining-face credibility and bounded segmented intended-wall confirmation; its full new cache/certifier implementation remains live-delta work
+
+## Observations
+
+- No additional actionable defect was admitted from this scope. Archived BR-0215 owns the checked collision-work quota, cancellation and bounded visibility cache already present in the frozen callbacks. Calls consume that quota before native collision work, including segmented credibility fallback
+- Native object_is_fleeing reads AIB_RUN_FROM and scan-view initialization wires it into the snapshot. This independently confirms that the older BR-0330 missing-behavior claim is already repaired in the GQ1 freeze; current carrier planning requires semantic fixtures rather than adding this bit again
+- FVI list credibility checks connectivity and endpoints after native traversal. Although the consumer does not redundantly clamp n_segs, both native producers initialize and cap writes below MAX_FVI_SEGS=100; no supported producer of an oversized list was established. A speculative consumer-only bounds finding is not admitted
+- Target-wall impact is accepted as direct physical proof; transparent/no-hit rays require connected credibility. The passability callback permits only unlocked keyless player-hit doors, excludes the intended target, and respects the strict transparency policy. Indexed wall/effect/side inputs are validated before dereference
+
+## Clean dimensions and evidence gaps
+
+Object and geometry callbacks validate their exposed indexes; boss and companion inspect Robot_info only after checking N_robot_types. Key-owner selection validates the optional cooperative escort owner. Cache keys include query kind, poses, target and radius and are zero initialized. Player_num and admitted engine arrays remain native ownership invariants. No new direct paired deduplication payoff, heap ownership leak or unchecked callback-index producer survived tracing. Wide-coordinate vm_vec_dist_quick/interpolation must be considered alongside GQF-0195 during actual geometry fixtures; no separate native-physics claim is admitted without that production fixture. No runtime, sanitizer, maximum-budget, engine physics or device test was run
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none
+
+Coverage outcome: CLEAN
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0269 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0270 frozen survey, resumed 2026-10-01 SHA256:96f031a7b6a509e56774c94c445533b61bf258ceebef999a3c127289e032df97 -->
+
+## GQ1-CHUNK-0270 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0270.md`
+- Imported SHA-256: `96f031a7b6a509e56774c94c445533b61bf258ceebef999a3c127289e032df97`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0270 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/secret_area_game_adapter.c`: L1501-L2250; frozen blob `2ac0d3fb155689f8d409eece4bc3980eab86cda9`
+
+Scope SHA-256: `c4bf8216256b5f3841ead1369ef46fdff9dcd0e2510c5dcbcf07403c3965ed57`
+
+## Diff-minimization assessment
+
+RETAIN: shared topology indexing, scan-view construction and cache admission already own reusable paired behavior. Per-game compilation preserves native trigger and FVI semantics without duplicating engine layout knowledge. No additional complete inherited hunk is removable solely through extraction of this range
+
+## Context and reconciliation
+
+Read every frozen L1501-L2250 plus complete rescan L2251-L2294 and related public wrappers, active BR-0301/BR-0332/BR-0334/BR-0335/BR-0336, current cache loader and live prepared-route/certifier call sites. Frozen and live differ substantially in compiled guidance, certificates and bounded resumable jobs; do not infer current stale-target behavior merely from the old implementation
+
+## Observations
+
+- Extend BR-0336: frozen L1979-L1982 short circuits PHYSFS_close when the accepted exact-length file returns a short/error read. Current secretarea.c L3361-L3364 retains that exact ownership defect. Allocation and wrong-length exits close correctly; private record buffers are freed. Required production injectable read/close tests must assert one close per open, no decode on partial input and correct fallback/counters. No duplicate handle-leak owner is allocated
+- Extend BR-0334: incoming clearance is assigned solely from destination segment_clearance at L1565-L1566, and bad-center components of size below three are relaxed. Current adds a portal-specific narrow flag while retaining the component heuristic. Actual paired swept geometry fixtures decide the residual scope
+- Extend BR-0335: frozen canonical reuse copies the old state and synthesizes a one-segment pending path after only completion/shoot-pose checks. Fresh live fingerprint generation is not used to rebase moving boss/carrier positions. Current removes this function and uses level_metadata_select_compiled_route, certificate validity, selected live candidates and per-call deadline/work budgets. That is a repair candidate requiring moving-object, start, downstream-wall and local/replicated boss fixtures, not evidence that the old copy logic remains live
+- BR-0332 remains the existing persistent identity owner. Frozen canonical cache load bypasses planning on decode success. Current intentionally reuses immutable prepared guidance across mutable world changes, so adding every old mutable fingerprint to the key would contradict its new contract. Immutable same-layout/different-wall and live-certification fixtures must decide whether a residual collision exists
+- BR-0301 owns multi-link completion semantics used by cached-step scanning; BR-0330 fleeing capture and BR-0331 all-opener ordering remain the existing planner owners. No additional source-order root is admitted
+
+## Clean dimensions and evidence gaps
+
+Opener entries are bounded by wall/link maxima, duplicate links are suppressed, overflow invalidates the index and bounded direct enumeration supplies a fallback. Trigger callback link access is capped before indexing. Scan-view construction centralizes paired constants and guards D2-only policies. Persistent cache requires exact size, validated decode/key/checksum and staged checked writes/close/rename; temporary publication failure is removed. Planner state and summaries are initialized, budget/cancellation failures override apparent success, and segment/unexplored endpoints bypass canonical reuse. Prior validity intentionally protects partially built topology until completion. No cache read fault, descriptor-count, real portal/FVI, boss teleport, allocator, sanitizer or device test was run
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0334 (reference)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0270 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0271 frozen survey, resumed 2026-10-01 SHA256:4c1b7847dc7a799724bb048566d9708bb62eba2e2d842e787cd13ea320d2976f -->
+
+## GQ1-CHUNK-0271 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0271.md`
+- Imported SHA-256: `4c1b7847dc7a799724bb048566d9708bb62eba2e2d842e787cd13ea320d2976f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0271 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/secret_area_scan.c`: L1-L750; frozen blob `f1e07773749ac2e7f93b73af1297483ae328b2cf`
+
+Scope SHA-256: `78603a2fff12852c2b171145737ec28e7fcdac22bcbf8973cf8a9c670593b495`
+
+## Diff-minimization assessment
+
+RETAIN: one shared pure scanner already centralizes paired classification, required-route masks and component selection behind normalized engine callbacks. Native secretarea headers contain only the existing 42-line integration seams. Replacing scanner helpers with wrappers would not remove another independent inherited hunk
+
+## Context and reconciliation
+
+Read all frozen L1-L750, complete scanner tail L751-L1190 for caller admission and classification/publication, active BR-0213/BR-0214/BR-0337, native signed-byte contained counts, current scanner diff (288 additions/24 removals), current scan-view contract and its adapter wiring. Tail is enclosing context, not a substitute for its separate queued scope
+
+## Observations
+
+- Extend BR-0337: frozen required targets include only direct key powerups, keyed doors and reactor/control-center segments. Neither secret_area_scan_view nor the production secret scanner has an object_is_boss callback, and the component classifier treats a boss as an ordinary robot. Current still lacks that callback, although the separate route scan view has it. Required paired boss/reactor/dead-object fixtures and Counterstrike level 4 regeneration remain with the existing owner
+- BR-0214 is partially repaired before this freeze: candidate_summary aggregates non-marginal facts across all boundary sides before details are collected, so the original first-16-prefix classification claim no longer applies. append_entrance still truncates the published 16-entry topology, and current retains it for both door/trigger and new liquid pockets. Complete routing inventory and 16/17-entrance nearest/reachable fixtures remain required
+- BR-0213 is a current repair candidate: new member-based stable identities, checked saved identity admission and remapping replace the old count-only positional restore. Member hashing is independent of display sorting and the decoder commits only after complete validation. Paired reorder/replacement/same-level fixtures and native serialization integration must be run before closure. Disposable Android formats do not require the older suggested migration path
+- Current illusion-edge handling removes the old illusion-off exclusion, and hidden progress interiors can expose separate optional compartments. New liquid boundaries, inventory ordering and identity serialization require live-delta semantic validation. No new frozen root is allocated merely from those substantial later features
+
+## Clean dimensions and evidence gaps
+
+Scan admission bounds num_segments and requires callbacks before fixed scratch arrays are accessed. BFS marks distance/component before enqueue, so every queue has at most one entry per admitted segment. Key masks/indexes, reverse-side checks, duplicate target suppression and route parent chains stay within admitted bounds. Full candidate counts disable explicitly above max_generated while one extra scratch entry detects overflow. Label totals use 64-bit values over at most 9,000 int coordinates and average back into the coordinate envelope. Native contained counts are signed bytes, so ordinary engine object inventories cannot produce the speculative int overflow implied by an arbitrary synthetic callback. Static scratch lifetime assumes serialized engine scanning; maximum supported work, cancellation and threaded live jobs need actual producer validation rather than an unbounded-input claim. No build, corpus regeneration, physics fixture, sanitizer or runtime test was executed
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0337 (reference)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0271 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0272 frozen survey, resumed 2026-10-01 SHA256:943966cfc2b23433fd96c7d31d731d80a5576be0885ecdeab1a35b53babd1803 -->
+
+## GQ1-CHUNK-0272 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0272.md`
+- Imported SHA-256: `943966cfc2b23433fd96c7d31d731d80a5576be0885ecdeab1a35b53babd1803`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0272 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/cpp/shared/state_android_shared.c`: L1-L750; frozen blob `7097e2d188db8386656015edb364f39ad4ee7dc2`
+
+Scope SHA-256: `ad81f93333c53b2b3697f2afe42a86c6a152770ca6a907b8cdfb2448f58b3f23`
+
+## Diff-minimization assessment
+
+RETAIN: the existing per-game compiled shared helper removes paired save namespace, publication, lifecycle, metadata and memory adapter bodies while leaving inherited save-format serializers in each engine. Frozen state.c changes span 1,520 additions/173 removals D1 and 2,048 additions/94 removals D2 across mixed features; an additional whole serializer extraction would violate native format ownership and lacks a bounded removal proof here
+
+## Context and reconciliation
+
+Read every frozen L1-L750 and enclosing complete save/lifecycle functions through L1057, original GQF-0096/BR-0338 and GQI-0006, previous primary metadata/transaction/periodic scopes, and the complete current shared-helper diff (203 additions/11 removals). Preserve earlier frozen metadata-append and retry repairs rather than reopen their older adversarial descriptions
+
+## Observations
+
+- Extend GQF-0096/BR-0338: helper mission buffers and last-save-set identity use the fixed metadata mission-name capacity while path ownership separately encodes mission names. Full canonical identity remains necessary at resume/validation boundaries. Current adds mission_asset_key lookup for native mission load, but filename/last-set identity ownership is still distinct and requires actual long-mission resume/save fixtures before deciding the complete residual repair
+- GQI-0006 retains deterministic .bak publication recovery investigation. Single-file helper deletes old backups and ignores rollback/delete outcomes; D2 slots stage a secret companion and publish through the previously reviewed pair helper. Interrupted first/second rename, failing delete/rollback and restart/retry behavior must establish a recovery policy before claiming permanent loss or creating another publication finding
+- Frozen BR-0235 metadata append error propagation is already implemented: coop and Android trailer write failures return false. Staged save validation precedes destination publication, and last-save-set publication returns a checked failure. Engine save callers and publication generation recovery remain separate validation seams
+- Frozen BR-0258 retry rotation is already repaired: next periodic slot changes only after positive success; failure schedules the same slot ten seconds later. Current preserves that policy. Shared memory context and cooperative remap are cleared after the native restore call; rewind ownership remains with its existing dedicated adapter
+- Current adds launcher thumbnail rendering/readback, mission-asset resolution, coop preflight, matcen metadata, music-source restoration and direct quick-slot restore. Those features are explicit live-delta work and are not evidence that old frozen metadata or player-format interfaces can be deleted
+
+## Clean dimensions and evidence gaps
+
+Last-set reads have bounded exact lengths and close on all read paths; text writes check length/flush and unconditionally close. Slot/path builders centralize shared namespace policy; D2-only companion and boss/secret-level restrictions are guarded. Trailer probes save and restore stream positions and memory wrappers reject missing backing context. Description capture ensures a terminating byte, metadata durations clamp negative engine values, and single-player lifecycle/autosave entry points reject active multiplayer or dead/nonpositive levels. Filename and supplied fixed engine buffers remain native caller contracts. No descriptor leak from the route-cache short-circuit is repeated here. No long-mission resume, process-interruption, rollback fault, memory-restore, thumbnail/GPU, allocator, native save or device test was executed during this analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: GQF-0096 (reference)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0272 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0273 frozen survey, resumed 2026-10-01 SHA256:f37673515c669fa091d9eeeeb04b6287eb878a47be9ef7b7275982808713f6f3 -->
+
+## GQ1-CHUNK-0273 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0273.md`
+- Imported SHA-256: `f37673515c669fa091d9eeeeb04b6287eb878a47be9ef7b7275982808713f6f3`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0273 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/NetworkEventsOverlay.kt`: L1-L281; frozen blob `1fdec25118dfa84c392e5dca06353181b2d22671`
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/NetworkEventsPanel.kt`: L1-L168; frozen blob `e9c055bd8f41f87c4fa5580a3b65e6e874106e65`
+
+Scope SHA-256: `10b0bbceff77278a94c7b026280a013053ed42c900012682e843b0075666d70e`
+
+## Diff-minimization assessment
+
+RETAIN: Canvas game overlay and Compose setup panel intentionally have distinct rendering, size and interaction ownership. Shared matchmaking state already supplies normalized diagnostic values. Similar label fragments do not yield inherited D1/D2 line or hunk removal, and a new presentation abstraction is not justified solely by this group
+
+## Context and reconciliation
+
+Read all 449 assigned frozen lines, both current file deltas, active BR-0116/BR-0339/BR-0340/BR-0341, current MatchmakingState ownership, complete MainActivity suspension/stop/destruction seams and network service terminal diagnostic-reset inventory
+
+## Observations
+
+- Extend BR-0339: onDraw computes coerceIn(160*density, width*0.45), an empty range below 355.56 dp including zero width. Current adds wrapping but retains this exact throwing width calculation. Panel height also lacks viewport admission. Existing combined network/stats/coop owner should use total bounded layout and actual view fixtures rather than a second overlay crash finding
+- BR-0340 is already partially repaired before the GQ1 freeze: explicit suspend/resume remove pending callbacks, and current activity onStop invokes suspendUiWork with an idempotent activity guard. The overlay itself still has no detach/dispose hook or provider clearing. Do not repeat the older assertion that activity stop never suspends it or assume an old-activity leak remains without the detach/recreate/collection matrix
+- BR-0341 retains generation ownership: the setup panel displays diagnostics while disconnected when stale fields remain. Current network close/failure branches still selectively clear connectionInfo; exact reconnect/late-result generation semantics belong to the service review and sentinel fixtures. Consumers cannot establish freshness from strings alone
+- BR-0116 owns eager candidate/pair rendering capacity; network UI loops over the model rather than admitting independent untrusted payload. Caps belong at producer admission, with bounded presentation as part of the existing overlay layout owner
+
+## Clean dimensions and evidence gaps
+
+Polling is posted only on a false-to-true show transition; hide/suspend remove callbacks and provider exceptions clear the cached snapshot. Paint instances are reused, per-row colors are reset and Compose expansion state is saved. Frozen log display takes only eight last rows and 60 characters per row; current wrapping removes that character cap and needs live producer/layout validation. No parser, engine-format mirror or native allocation originates in these views. No actual view/density/zero-width draw, lifecycle/collection, hostile diagnostic or reconnect fixture was executed
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: BR-0339 (reference)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0273 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0274 frozen survey, resumed 2026-10-01 SHA256:6de765535d198ab6dd78b9f46a8f01ee5d5bf17e09938c91a1c07237c6e2cea0 -->
+
+## GQ1-CHUNK-0274 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0274.md`
+- Imported SHA-256: `6de765535d198ab6dd78b9f46a8f01ee5d5bf17e09938c91a1c07237c6e2cea0`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0274 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/java/com/dxxredux/app/ImportStorageGuard.kt`: L1-L114; frozen blob `64b66d917e01182fb4343996587f9ecfa434ba4d`
+- `android/app/src/main/java/com/dxxredux/app/lobby/LobbyProtocol.kt`: L1-L334; frozen blob `b219ee803a63e7f8155d86ce84739733509e4685`
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/NetworkConstants.kt`: L1-L52; frozen blob `e844b1df47c14083169776e1c1828bbef4c8191d`
+
+Scope SHA-256: `91dd017b5b7dd8bac915c7df9526130da7001d3e6e8091f4a264da929575d877`
+
+## Diff-minimization assessment
+
+RETAIN: storage preflight, typed LAN serialization and shared network constants already own distinct reusable policy. Protocol duplication is intentional across Rust/Kotlin/native seams and documented for synchronization. No inherited D1/D2 hunk removal follows from wrapping these serializers; engine enums and port constants keep their native ownership
+
+## Context and reconciliation
+
+Read every assigned frozen line (114/334/52), all three current diffs, archived BR-0018 extraction ownership, active BR-0342, frozen ModManager URI-size-to-preflight-to-output call paths, current LauncherFileCopy exact-length/transactional admission and lobby dispatch signatures. Current adds version-2 mission preparation/status/transfers; those new schemas and consumers remain mandatory live-delta work
+
+## Observations
+
+- Admit GQF-0196/GQR-0183: requireFreeSpace adds 50 MiB to any accepted nonnegative Long without checked arithmetic. A provider SIZE=Long.MAX_VALUE or just above Long.MAX_VALUE-HEADROOM wraps requiredFreeBytes negative, so ordinary nonnegative available space passes. Frozen mod/mission URI import then opens output; current default-max LauncherFileCopy also permits this value before calling the same guard. archiveEntryBytes likewise sums positive sizes unchecked, and frozen formatMib adds its rounding unit before division. This is the narrow sizing/preflight residual, not a reopening of completed BR-0018 actual extraction budgets
+- Use one checked or saturating nonnegative sizing policy for reservation/aggregate/display, reject impossible declared sizes before opening output, and preserve explicit unknown-size handling. Provider and aggregate boundary fixtures should exercise Long.MAX_VALUE, exact safe headroom boundary, repeated positive sizes, negatives and valid controls; assert correct exceptions/diagnostics and no writer open. Current centralized binary formatter must be reconciled before changing its owner
+- Extend BR-0342: LAN builders publish public lobby IDs and claimed client identities without authenticated per-role credentials/sequence. Current gains client-ID heartbeat, protocol version and launch attempt fields, but dispatch still calls PLAYER_LIST/JOIN_REJECT/KICK handlers without sender address. Partial LEAVE/READY identity checks do not close the whole authority root. Preserve the existing hostile-sender/replay/launch-domain matrix and ordinary LAN integration
+- Network constants document Rust/native synchronization; current bumps protocol version to 2. Unsupported gameModeToInt input still defaults to anarchy, an existing BR-0342 launch-admission consequence. Cleartext production policy remains BR-0343 in its separately assigned resource scope
+
+## Clean dimensions and evidence gaps
+
+URI query cursors and asset descriptors use scoped close, invalid/unknown lengths have an explicit null result, diagnostics are best-effort and ancestor probing stays within the selected target chain. JSON builders escape strings rather than interpolating raw text; parsePacket catches malformed data/length failures. These are serializers, not proof of authenticated receive authority or strict typed field admission. Visual options use their existing shared policy owner. No runtime provider, overflow JVM fixture, storage failure, hostile LAN peer, protocol parity, socket, native or device test was executed
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: BR-0342 (reference); new sizing remediation independently rates 33 (12/0/4/10/7)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0274 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0275 frozen survey, resumed 2026-10-01 SHA256:192b49b98ce00cecda9f71f2d45277757ed8d05933debf504f8e5ea901be5c25 -->
+
+## GQ1-CHUNK-0275 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0275.md`
+- Imported SHA-256: `192b49b98ce00cecda9f71f2d45277757ed8d05933debf504f8e5ea901be5c25`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0275 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/NetworkProtocol.kt`: L1-L666; frozen blob `dec71905021d771964db73f6f77e99826cf359f5`
+
+Scope SHA-256: `a8e4d05c9a60e66b4f8ff8221979945f25ad2123262506367fc903fa6602ccd3`
+
+## Diff-minimization assessment
+
+RETAIN: the normalized Kotlin serializable schema and sealed dispatcher provide one maintained client contract. Rust remains the independently compiled server schema; extracting a runtime cross-language wrapper would add dependency/translation ownership without inherited D1/D2 hunk reduction. Add executable parity where required by existing findings instead
+
+## Context and reconciliation
+
+Read all 666 frozen lines, complete current diff, active BR-0090/BR-0115/BR-0116, current server relay token declaration, protocol version, matchmaking decode/authentication and late-join consumption. Current adds mission-status models; their version-2 schema/consumer semantics remain live-delta coverage
+
+## Observations
+
+- Extend BR-0090: AuthenticateMsg still has no public key/timestamp/signature, no maintained POW_SOLUTION client model exists, and current PowChallenge handling only logs that it is unimplemented. The server-compatible persistent keypair fallback and exact signed schema/parity fixtures remain the original owner rather than a second authentication root
+- Extend BR-0115: the schema accepts variable strings/lists/game_info without semantic byte/count/domain budgets. RTT/ping still use signed Int while the server boundary historically admits u32; oversized admitted metrics can reject the complete decoded update and retain stale state. Strict shared metric ranges and complete frame/field/parity fixtures must establish current behavior. The parser decodes the generic object then the selected typed message; two-pass materialization belongs to that same transport/field admission root
+- BR-0116 remains the owner for candidate and pair count/type/address policy and late-join probes. Data classes alone do not authenticate or authorize a probe target. Client/server endpoint admission and bounded fanout remain required
+- Existing Rust u32 relay tokens fit the Kotlin nullable Long; conversion to UInt is valid only after semantic admission, which belongs at peer assignment consumers. No new numeric-token finding is formed merely from the representable schema
+
+## Clean dimensions and evidence gaps
+
+SerialName documents exact wire names, typed serialization escapes text and rejects incompatible primitives, unknown fields are intentionally ignored and outbound defaults are encoded. Sealed dispatch makes known message handling explicit; absent/unknown types retain raw text for owned caller handling. Decoder exceptions are handled by the service boundary rather than assumed to crash directly from this pure schema. Optional defaults preserve declared wire behavior, not inherited game save formats. No additional native-format mirror, manual JSON escape or resource-lifetime leak originates here. No production authentication, metric-extreme, deep JSON/transport-budget, malformed game_info, candidate expansion, schema parity or network integration fixture was executed
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: BR-0090 (reference)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0275 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0276 frozen survey, resumed 2026-10-01 SHA256:1f5d508f01974a8bb7c6e75a6d424f218ed658cd872db6cc36d37c257cf69404 -->
+
+## GQ1-CHUNK-0276 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0276.md`
+- Imported SHA-256: `1f5d508f01974a8bb7c6e75a6d424f218ed658cd872db6cc36d37c257cf69404`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0276 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/java/com/dxxredux/app/StorageFailureDialog.kt`: L1-L29; frozen blob `cab411b91568bbe714c56902e31a3e00f7191a7e`
+
+Scope SHA-256: `eb6c52e42e49362947aa662ddc168012624fe7b3aa393f536f7f8d1f9767be60`
+
+## Diff-minimization assessment
+
+RETAIN: this 29-line Compose dialog is the existing shared storage-failure presentation owner. Both dismissal paths use the supplied callback and message construction stays with ImportStorageGuard. An additional wrapper would not remove a duplicate inherited hunk or simplify ownership
+
+## Context and observations
+
+Read every frozen and current line; file is unchanged. The dialog presents escaped Compose text, permits selection and delegates dismissal without native/IO work, global state or owned resources. Standard AlertDialog retains platform input/focus/configuration behavior. No additional actionable defect or deduplication candidate was identified. Incorrect reservation or message sizes originate in GQF-0196/ImportStorageGuard, not this presenter
+
+## Clean dimensions and evidence gaps
+
+Optional UI state, import rollback, threading and message admission are caller contracts. No parser, filesystem mutation, game-format duplication, allocation budget or repeated timer is introduced. No Compose device, controller, text-scaling or configuration test was executed because this is an analysis-only scope
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none
+
+Coverage outcome: CLEAN
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0276 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0277 frozen survey, resumed 2026-10-01 SHA256:7a76a52eda12f9373ce1d6c0c2a6e1affe80d9f0d7fd839dc4ecff4e668dd38c -->
+
+## GQ1-CHUNK-0277 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0277.md`
+- Imported SHA-256: `7a76a52eda12f9373ce1d6c0c2a6e1affe80d9f0d7fd839dc4ecff4e668dd38c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0277 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `android/app/src/main/res/xml/network_security_config.xml`: L1-L10; frozen blob `83a301d8d0668e209be305afd20de7df2702ce07`
+
+Scope SHA-256: `70a9a8aed364df711a626d27f9e16fef214be4438099e80356c16b8fbfc6b414`
+
+## Diff-minimization assessment
+
+RETAIN: one small network-security resource is the policy owner; correcting build-variant placement changes that owner rather than reducing inherited engine code. No additional wrapper, generated policy layer or native seam removal is justified
+
+## Context and reconciliation
+
+Read all ten frozen/current unchanged lines, active BR-0343, current resource/manifest variant inventory, main manifest reference, internal/release Gradle declarations and runtime URL normalization. Current has only src/main/res/xml/network_security_config.xml; main manifest selects it. The internal build explicitly inherits debug settings/fallbacks while setting debuggable false
+
+## Observations
+
+- Extend BR-0343: emulator/localhost/127.0.0.1 cleartext exception remains in src/main and is therefore shared by release/internal packaging. Runtime still honors explicit ws:// input rather than rejecting it for production before authentication. Correct resource/manifest variant admission and runtime transport validation are both part of the existing owner
+- Keep emulator development available only in the intentionally development build. Actual merged debug/internal/release manifest/resource inspection and connection attempts must prove rejection before credential acquisition/transmission and ordinary trusted wss authentication. Do not infer packaging behavior from the development-only comment
+- BR-0005 separately owns exported command authority; no additional receiver finding originates in this XML scope
+
+## Clean dimensions and evidence gaps
+
+XML lists only explicit loopback/emulator domains and does not enable all-domain cleartext or trust arbitrary certificates. There is no private endpoint credential, resource-lifetime state, manual parser or native-format mirror in this resource. The substantive defect is variant scope, not invalid XML. No Gradle packaging, merged-resource inspection, real transport/credential attempt, debug/internal/release APK or device test was executed during analysis
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: BR-0343 (reference)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0277 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0278 frozen survey, resumed 2026-10-01 SHA256:745b4b279f6fd96ac32f1d30715e15eb705392acd9f8b296b1df3046c8625957 -->
+
+## GQ1-CHUNK-0278 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0278.md`
+- Imported SHA-256: `745b4b279f6fd96ac32f1d30715e15eb705392acd9f8b296b1df3046c8625957`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0278 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/2d/bitblt.c`: diff hunks 1-8, new L387-L412; frozen blob `42d4a584b9d67274bef545dd5ae87dcb8b032b18`
+- `d1/2d/bitmap.c`: diff hunks 1-4, new L34-L272; frozen blob `af8016320f4e0c1b9caffcf37b5b358bef595d53`
+- `d1/2d/clip.h`: diff hunks 1-2, new L1-L146; frozen blob `94d56107e3ac523074de87173640e9563a109c3e`
+- `d1/2d/font.c`: diff hunks 1-13, new L39-L1017; frozen blob `15dbb07e4a619b729a6d03523142ca6f97381fe9`
+- `d1/2d/palette.c`: diff hunks 1-3, new L87-L122; frozen blob `f7b005c6299e353777693f5ae9ea4e04a8d9376b`
+- `d1/2d/rect.c`: diff hunks 1-3, new L31-L41; frozen blob `116762b1ec2d4bde943ed7d7d4161756e6b43c56`
+
+Scope SHA-256: `c3a4fd3fb6ac46b63caa28c052b1926e33af5f8fa3cf159dd998ff6ffbb2bb8d`
+
+## Diff-minimization assessment
+
+CANDIDATE: extract only the paired branch-added gr_internal_color_string_linear transaction into the existing per-game compiled shared font owner. Frozen d1/d2 function L790-L862 is byte identical, 73 physical lines each, SHA-256 0c7dc0eb5ccb05f008a729d860adabe231b02dfcec50d8f242b6c584d89d918a. Current function is unchanged. Removing both complete bodies models 146 inherited lines and two complete added hunks; the existing header/include and CMake source already provide the boundary. A small OGL-guarded external declaration and shared function need no private font mirror or callback table. Expected repository reduction is approximately 70 lines, to be measured after implementation
+
+## Context and reconciliation
+
+Read all 33 assigned zero-context native diff hunks (201 review lines) across six paths, matching D2 hunks, enclosing clipped bitmap dispatch, bitmap texture data setter/remap invalidation, rectangle dispatch, character metrics, complete OGL/linear color string paths and drawn-size helpers, palette eviction/reset, shared font implementation/header/control decoder, paired 2D CMake wiring, current native deltas and completed July scaled-font extraction plan. Native scope fingerprints preserve both assigned hunk ordinals and new-line extents; no native scope was marked complete when the old helper returned an empty list
+
+## Observations
+
+- Admit GQF-0197/GQR-0184 for the bounded 73-line paired color-font fallback extraction. Existing shared android_font_scale.c already compiles once per game and has narrow get_char_width/get_centered_x declarations plus bitmap/font public APIs. Keep the current OGL versus linear dispatch and exact fixed/proportional/kerning/centering/newline/scaled/masked allocation/free behavior; guard this cross-platform OGL fallback correctly rather than Android-only
+- The July completed extraction removed a distinct 127-line Android monochrome renderer. Its plan deliberately left generic color rendering local in that tranche. This new candidate neither reopens that completed work nor broadens into inherited font loaders, OGL rendering, or measurement policy. Keep handmade comments and native font ownership. Post-fix paired actual colored-font raster fixtures must compare pixels, positions, scaling, clipping and temporary ownership, then build both games on desktop and Android
+- Bitmap dispatch now clips source offsets for linear destinations even under OGL; actual BM_OGL destinations still use the ordinary renderer. Rectangle dispatch has the same early-return split. Stock bitmap remap invalidates the owned root texture, while Android PNG/KTX replacements intentionally survive CPU page-in/remap. Existing texture-binding and scaled-menu resource owners remain separate
+- Palette-cache eviction is now bounded round-robin rather than d_rand; reset initializes the next index, so visual cache misses do not consume the shared simulation stream. This is an intentional deterministic repair, not another RNG deletion opportunity
+- Drawn-size helper skips complete and truncated control sequences and matches per-character integer spacing/line height for its HUD callers. Current font delta changes stored filename capacity/termination and texture API arity outside the admitted fallback body; no additional frozen finding is created from those repaired/new boundaries
+
+## Clean dimensions and evidence gaps
+
+Paired changes are equivalent except the D2 crash-header include and game-specific clip guards. Glyph selection checks font membership before proportional/fixed data access; every scaled bitmap is freed after the masked blit and ordinary glyphs reuse source storage. OGL string batching begins once before traversal and ends on all ordinary exits, with one potential glyph per input byte and a single atlas. Include guards prevent duplicate clip definitions. Do not add another extraction for the tiny remap guard, palette counter, clipping conditions or draw-size helper solely because their text matches. Existing BR-0269 allocation churn and renderer binding policy are retained. No raster fixture, actual allocation failure, GPU draw, sanitizer, desktop/Android build, or device test was executed during analysis
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed primary owner: GQF-0197
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0278 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0279 frozen survey, resumed 2026-10-01 SHA256:76a160e90fd9760b6404676cafb5d5a3056be7396853d97d8e28b47954b3c7c1 -->
+
+## GQ1-CHUNK-0279 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0279.md`
+- Imported SHA-256: `76a160e90fd9760b6404676cafb5d5a3056be7396853d97d8e28b47954b3c7c1`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0279 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/3d/interp.c`: diff hunks 1-14, new L21-L429; frozen blob `d1ac9e771b84a25e27bae337ece95890769921c7`
+
+Scope SHA-256: `3f271b5a113d4317f28357385483d62abdd62d14cc16d46b5d561943d1ea8a5b`
+
+## Diff-minimization assessment
+
+RETAIN: the paired interpreter changes preserve game-native model traversal, lighting and morph behavior. Runtime count guards and a five-line UVL copy helper are too small to justify another shared engine boundary; the complete new stack ownership belongs beside the draw calls
+
+## Context and reconciliation
+
+Read all fourteen assigned zero-context hunks, complete enclosing ordinary and morph polygon paths, paired D2 diff, complete live deltas and archived BR-0307. Ordinary UVLs are copied to fixed capacity local storage before lighting, so reusable model bytes remain unchanged. Morph fan construction takes exactly three locally copied UVLs and updates the two rolling fan vertices without modifying source bytes. Per-face arrays are bounded by the existing MAX_POINTS_PER_POLY and native minimum-three/strict-maximum guards precede copying and point traversal
+
+## Observations and clean dimensions
+
+- Archived BR-0307 already repaired the branch-added unchecked polygon count and the separate shared projection capacity. Preserve that repair rather than creating another count finding. The archive explicitly records absent hostile truncated-POF sanitizer coverage; a passing count check does not prove the inherited pointer-only model decoder has a complete payload
+- D2 diagnostics and current palette-index semantics remain separate from the assigned D1 UVL ownership. The current NDEBUG guard around the recursion assertion is a later paired build change, not a frozen new root
+- Local fixed arrays remove per-face heap allocation and free, preserve three-channel lighting, avoid source mutation and carry no retained resource lifetime. The same game-native decoder structures remain independently compiled for each game. No additional supported correctness defect, whole-hunk extraction or allocation owner survived tracing
+
+## Evidence gaps
+
+No malformed/truncated model, ordinary-versus-morph pixel comparison, allocation fixture, sanitizer or desktop/Android build was executed in this analysis. Preserve the archived binary coverage gap without treating unexecuted validation alone as a new defect
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none
+
+Coverage outcome: CLEAN
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0279 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0280 frozen survey, resumed 2026-10-01 SHA256:c20036d9be4341bba6181c117f735eef7b5a01aefc90def22eb2ad246d51de6b -->
+
+## GQ1-CHUNK-0280 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0280.md`
+- Imported SHA-256: `c20036d9be4341bba6181c117f735eef7b5a01aefc90def22eb2ad246d51de6b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0280 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/arch/include/digi_mixer_music.h`: diff hunks 1-1, new L18-L18; frozen blob `34f98e07aa2e26e265e1b1283712006e155f7256`
+- `d1/arch/include/joy.h`: diff hunks 1-5, new L20-L43; frozen blob `c9a9db488cf3982f9f0ee00736350af80ddfc62c`
+- `d1/arch/include/jukebox.h`: diff hunks 1-1, new L15-L18; frozen blob `6423c1bd1735b3c57c5396bc482028676375b1c1`
+- `d1/arch/include/window.h`: diff hunks 1-1, new L36-L41; frozen blob `b6ecc3653df7d2b3c9991867e1b599ba41953c85`
+- `d1/arch/ogl/gr.c`: diff hunks 1-25, new L58-L932; frozen blob `933ebbb8597fd0fd152d132a0e7e34daf5a31df2`
+
+Scope SHA-256: `f4d1dd3089f77d9b39f16b15dcdb6b390d614c2f1f6b6c64705f68ff6e937260`
+
+## Diff-minimization assessment
+
+RETAIN: paired headers expose the narrow per-game hook declarations and the graphics file delegates Android EGL ownership and render admission to existing shared owners. Tiny declarations, initialization adapters and platform guards do not support a complete transaction extraction beyond those existing owners
+
+## Context and reconciliation
+
+Read every assigned hunk across all five paths, complete four headers, enclosing EGL setup/destroy/init-window paths, render mode admission/allocation, invalid-filter return and graphics teardown, paired D2 diff and game-specific differences, complete live gr.c deltas, active BR-0251 and archived BR-0344. The live window header already imports shared game_window_introspect_accessors.h; no duplicate accessor extraction remains. Current joystick capacity increases from eight to sixteen and is reserved for the full live-delta consumer review
+
+## Observations
+
+- Extend BR-0251 at both game callers: Android initialize and swap still return no checked status, and init-window continues renderer setup after the shared initialization call. Its explicit existing shader/prerequisite subrecord also overlaps GQF-0187; consolidate that implementation/validation under the existing graphics initialization root during remediation rather than implementing two fixes
+- Archived BR-0344 is already present in the frozen snapshot: shared Android dimension/pixel admission and original-integer startup/menu validation precede allocation. Canvas realloc uses a candidate pointer and preserves the old allocation on failure. Do not reopen the previously unconditional mode-admission or unchecked realloc claim
+- Desktop mode/config arithmetic is separately tracked as GQI-0007, which requires a supported production configuration fixture before admission. The Android repair does not establish that desktop investigation or justify extending its completed scope
+- GL maximum texture query is capped at 2048, paired default depth uses LEQUAL, invalid filter takes the fatal diagnostic then a defined fallback return, and screen-size getters provide defaults before installation. D2 retains its required font remaps; those game differences prohibit a blind whole-file graphics extraction
+- The current desktop icon path owns and frees the loaded SDL surface. September shared 2D batching is also complete; both later changes are preserved
+
+## Clean dimensions and evidence gaps
+
+Audio poll, touch-source, button-state/edge, deadzone and jukebox name declarations have matching paired guards and no resource or parser implementation here. Mixer button constant documents its Kotlin counterpart. Introspection declarations stay gated at their shared header. Platform X11/RPI and desktop GL setup remain separated from Android. No extra extraction is admitted merely for identical configuration queries or short wrappers. No injected EGL failure, real context loss, release/desktop config extreme, device rendering, sanitizer or build was executed
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0251 (reference)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0280 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0281 frozen survey, resumed 2026-10-01 SHA256:9875301216097137667f1fee1df7a1f96bdfc8e0be825670fdf26271be83026d -->
+
+## GQ1-CHUNK-0281 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0281.md`
+- Imported SHA-256: `9875301216097137667f1fee1df7a1f96bdfc8e0be825670fdf26271be83026d`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0281 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/arch/ogl/ogl.c`: diff hunks 108-132, new L3010-L3744; frozen blob `cda1161ddf0e99e013b1526029882b3e1e1ae483`
+- `d1/arch/ogl/oglprog.c`: diff hunks 1-24, new L3-L216; frozen blob `f79a55711dfcfca0602c71a83cffd9329ea59765`
+- `d1/arch/ogl/oglprog.h`: diff hunks 1-2, new L1-L18; frozen blob `193fe08f94cba77306dbb4dace21260fbee6bf4c`
+- `d1/arch/sdl/digi_mixer.c`: diff hunks 1-18, new L19-L254; frozen blob `deda0b448caed3fe95dccef5d5259e051be6f0e8`
+- `d1/arch/sdl/digi.c`: diff hunks 1-1, new L118-L125; frozen blob `59cedd379bc3556549d7bda884483f4bd1331698`
+
+Scope SHA-256: `f3bf01e75ff9c5cb217cbece003e032dc71d37488ef1eb09b8e0ad42d3685449`
+
+## Diff-minimization assessment
+
+CANDIDATE: consolidate only branch-added glyph batch storage/begin/end/append into a separately per-game compiled shared owner, preferably the existing shared 2D batching source with distinct textured state. Frozen D1 and D2 have identical 39-line state/begin/end additions plus the identical 17-line append addition: 112 inherited additions across four complete added hunks. Compact native binding adapters and append calls should leave no more than about 16 lines per game, targeting at least 80 inherited-line reduction. Reuse public GL types and narrow existing texture-binding state; do not mirror engine bitmap layouts or introduce a general callback table. Measure final savings before acceptance
+
+GQF-0019/GQR-0010 separately already own ETC2 self-test extraction. Extend that deferred owner rather than forming a second extraction. Shared profiling, filename building and filtering already own their respective behavior. Paired shader text is largely inherited and has game/context-specific lifetime; moving the complete inherited shader implementation solely for matching text would broaden upstream ownership
+
+## Context and reconciliation
+
+Read all assigned 689 review lines across five paths, complete surrounding bitmap replacement/fallback and batching paths, complete shader implementation/header, mixer initialization/conversion/start and common sound admission, paired D2 batch/self-test differences, current deltas for all five paths, release/debug memory macros, font batch producers, current shared 2D batch/converter implementations, September OpenGL efficiency notes, active/done GQ/BR and DMR1 owner searches, and BR-0269/0288/0322/0323 records
+
+## Observations
+
+- Admit GQF-0198/GQR-0185: release d_realloc is raw realloc. Glyph begin directly assigns three independently fallible allocations to live pointers, publishes requested capacity regardless of failure, and the first glyph memcpy dereferences a null candidate when any allocation failed. A failed growth also loses the prior allocation; a later begin can skip growth because capacity was falsely published. Debug allocator implementation does not prove release safety. Bounded shared storage with ordered flush on capacity/texture boundaries avoids allocation and string-sized retention while consolidating the paired additions. Preserve actual submitted vertices, colors, UVs, binding counters/cache, client-state end behavior and empty strings; ordinary single-atlas font assumptions already bound one glyph per input byte
+- GQF-0019 remains the separate shared diagnostic self-test candidate. The duplicated FBO probe changes viewport, blend/depth, framebuffer/renderbuffer and client arrays; its deferred evaluation must decide intentional debug admission and complete state restoration with an actual render oracle. D2 additionally restores nearest filtering when disabled. Current live self-test bodies remain present, so neither September untextured batching nor orphaned software decoder removal closes this owner
+- BR-0322 remains unchanged: KTX publication contains multiple packed mip levels, while both consumers upload only level zero and clamp GL_TEXTURE_MAX_LEVEL to zero. BR-0323 separately owns stale mip state across slot initialization/reset/reuse. Keep complete-chain upload/failure and reuse/filter fixtures paired; do not infer authored-chain support from a generated mip flag
+- Completed GQF-0006 filename capacity repair is visible in current extension helper calls. Frozen prefix KTX sprintf still uses a bounded engine bitmap-name producer; current named callers must be checked in the live delta before claiming arbitrary path overflow. Replacement path lifetime is already GQF-0192 in the shared reader, not duplicated here
+- PNG unsupported/failure/success paths free decoded pixels/palette once; failed upload reinitializes stock dimensions/alpha and marks lookup complete to avoid repeated replacement searches. Current always reinitializes decoded PNG dimensions/channel alpha after invalidation. Actual paged-out transparency and slot history belong to the existing graphics owners and require pixel fixtures
+- Completed GQF-0172 mixer diagnostics and current sound_mixer_convert centralize the original paired initialization logs and conversion. Current converter rejects invalid rates/length and checks frames against INT_MAX/len_mult before allocation, then publishes output only after success. Do not read the older raw SDL ratio/product as an unresolved live converter root. Common sound dispatch rejects missing backend, negative/out-of-range index, absent/sentinel/empty sample before backend access
+- BR-0288 still requires applied/current-frame shader mode and pixel validation rather than echoed settings. Program creation/compile/link failures in this separate shader file use fatal Error; this is distinct from the failure-blind GLES3 shim initialization already owned by BR-0251/GQF-0187. Uniform setters intentionally require the selected program from their renderer caller. Current desktop null extension guard is preserved
+- Current transient bitmap texture reuse partially addresses BR-0269 GL churn, but it still uploads contents and does not prove the complete CPU buffer/background/lifecycle acceptance. Current binding-cache changes, sound tracing/cached-sample release and desktop buffer sizes remain later-delta coverage
+
+## Clean dimensions and evidence gaps
+
+Per-game source ownership retains GameSounds, sound caches, draw ordering and native shader ABI. ETC2 raw payload storage is freed on alpha rejection and all upload completion/fallback exits; failed GL upload deletes the candidate handle before stock/PNG fallback. Mask helpers and timing counters already have shared owners. No additional broad shader extraction, stock RLE repair or unrelated inherited sound cleanup is admitted. No allocation-failure production run, actual glyph raster/draw-count comparison, state-preservation/self-test fault, authored mip fixture, audio waveform fixture, sanitizer, desktop/Android build or device test was executed during this analysis
+
+Provisional impact rating: 84 (H/M/B/C/R = 32/28/7/10/7); proposed primary owner: GQF-0198; rationale: release allocation failure reaches a native write in paired games, and bounded shared glyph batching targets at least 80 inherited-line reduction
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0281 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0282 frozen survey, resumed 2026-10-01 SHA256:3f37ff1cccfeed4d73f8cb4d501e49b227b9b54778782c4a2183a249b9ea5fd8 -->
+
+## GQ1-CHUNK-0282 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0282.md`
+- Imported SHA-256: `3f37ff1cccfeed4d73f8cb4d501e49b227b9b54778782c4a2183a249b9ea5fd8`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0282 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/arch/sdl/event.c`: diff hunks 1-12, new L17-L279; frozen blob `9e9683640bb70769251d598bf8c789fe5dfe9a94`
+- `d1/arch/sdl/gr.c`: diff hunks 1-9, new L11-L311; frozen blob `107c9b74555fb68bf8d65a4f0aad05aa7f6250df`
+- `d1/arch/sdl/joy.c`: diff hunks 1-26, new L5-L516; frozen blob `298920c491e15a0e091cf7dc4078099a98f918b3`
+- `d1/arch/sdl/jukebox.c`: diff hunks 1-8, new L16-L317; frozen blob `3ea0db1b011de4d014caabe0ab163d39926632cd`
+- `d1/arch/sdl/mouse.c`: diff hunks 1-4, new L134-L181; frozen blob `878cc062b72adc944851577b042c809d622edd17`
+- `d1/arch/sdl/timer.c`: diff hunks 1-2, new L47-L59; frozen blob `7c867a638b89bdbf35198e3072fb59797115d801`
+- `d1/arch/sdl/window.c`: diff hunks 1-3, new L96-L234; frozen blob `d9b86af404da9c20ea852efde9652352112f4689`
+- `d1/arch/win32/include/resource.h`: diff hunks 1-2, new L1-L22; frozen blob `a416746dc460a136e5a556b23c8dd801bf9dc1e8`
+
+Scope SHA-256: `d3d98d86751bfc16f0053bef1af3b8547ffec7503293294e891e25324dc1d26f`
+
+## Diff-minimization assessment
+
+RETAIN: the frozen paired virtual-gamepad registration is the existing DMR1-CHUNK-004 candidate, completed by September cleanup batch 2 through android_virtual_gamepad_init. Current replaces the identical descriptor/label loops with compact pointer-array inputs without exposing either private joystick layout. Preserve that completed extraction and reconcile the stale historical DMR row at closure; do not admit the same initializer again. Completed GQF-0156 already extracted window accessors behind private-layout snapshot adapters. Remaining event/timer/mouse/music hooks are narrow per-game dispatch and resource boundaries
+
+## Context and reconciliation
+
+Read all 422 assigned zero-context review lines across eight paths, complete event loop/send/flush, all joystick handlers, virtual initialization, surrounding desktop registration/close, complete window close and accessors, software mode/palette paths, mouse motion/flush, whole timer, jukebox next/play/name paths, complete resource header, exact paired differences, every current diff, current shared virtual initializer, September cleanup evidence and BR-0345. Both maintained Android targets use OGLES; the assigned software backend is alternate context rather than the active Android graphics entry
+
+## Observations
+
+- Extend BR-0345: window detaches from both lists before completion callback, then frees only after return. Current D1 and D2 game callbacks still longjmp on EVENT_WINDOW_CLOSED, so successful close skips that allocation release. Completed accessor consolidation does not repair the separate nonlocal completion lifetime. Require paired normal-return/nonlocal callbacks, cancellation and actual repeated game exits with allocation ownership evidence
+- Event loop publishes lifecycle diagnostics/actions and automation before input and graphics. Direct diagnostics/game access and overlay threading retain BR-0029; post-input front-window change cancels stale drawing. Current fast replay uses input_demo_process_fast_replay and skips game-window rendering while still drawing/flipping required windows. Preserve the later replay changes and remaining BR-0295/GQF-0189 acceptance rather than mechanically restoring the frozen early return
+- Music completion hooks are dispatched on the event/game thread through mix_poll_music. Original audio callback lifetime remains GQF-0173, while shared mailbox pending-edge capacity/latency remains GQI-0005. Disabled-joystick drain and explicit flush clear queued virtual input. Touch-source high bit is removed before virtual axis mapping, nonzero held axes still generate FrameTime-scaled updates, and directional release precedes a sign-reversed press
+- Virtual initializer preserves eight base axes, ten buttons, twelve axis buttons, three combiner axes with -1 button map, four D-pad buttons, default deadzones and all allocated labels. Current larger desktop capacity/SDL enumeration cap is later delta; untouched inherited close-loop quirks are not admitted as branch-created findings. Supported JNI/mailbox axis producers must remain the admission boundary; arbitrary forged SDL indices alone do not establish a new reachable defect
+- Android mouse events with zero relative delta update absolute coordinates; relative events accumulate deltas. Android flush avoids querying the dummy SDL cursor. Touch-mouse cadence is BR-0464 at its producer, separate from this consumer. The B-to-Escape fallback recurses with a key event, so it cannot reenter the joystick branch; dispatch failure remains BR-0245 at injection
+- timer_delay2 now replaces nonpositive requested FPS with MAXIMUM_FPS before division; rounding and VSync busy polling retain inherited timing policy. FX-only jukebox selection uses the separate random stream, ordinary next-song wrapping and name/overlay hooks retain shared track-name ownership (including GQF-0179/BR-0091). New current extension inventory is later coverage
+- Software backend explicitly checks surface creation, applies palette invalidation on load and leaves D2 font remaps local. Its original-integer configuration/screen budget requires the existing GQI-0007 supported alternate-backend fixture; no second speculative admission is formed. Current desktop icon surfaces are freed. Resource include guards are game-specific and preserve Windows IDs
+
+## Clean dimensions and evidence gaps
+
+Counter accessors bounds-check public button reads, held-axis values derive from signed 16-bit SDL input before division, emitted button indices come from the registered contract, and the event loop checks whether callbacks closed a window before normal traversal continues. Native private window/joystick layouts stay in engine code. No new wrapper for tiny mouse/timer/getter matches or whole event-loop extraction improves ownership. No production window allocation/nonlocal-exit fixture, input edge/stall/controller run, alternate software render, sanitizer, desktop/Android build or device integration was executed during analysis
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029 (reference)
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0282 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0283 frozen survey, resumed 2026-10-01 SHA256:00422b5ca9ac94dd082faca16c539fa3d7f616fd6d4986ec4b3e63458b2e8872 -->
+
+## GQ1-CHUNK-0283 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0283.md`
+- Imported SHA-256: `00422b5ca9ac94dd082faca16c539fa3d7f616fd6d4986ec4b3e63458b2e8872`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0283 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/arch/ogl/ogl.c`: diff hunks 1-64, new L13-L1619; frozen blob `cda1161ddf0e99e013b1526029882b3e1e1ae483`
+
+Scope SHA-256: `5eeddcba217a4a19056f2b47d58477ae588885fd76c199e3fd9d3c9483eefbf6`
+
+## Diff-minimization assessment
+
+CANDIDATE: extend GQF-0198/GQR-0185 to the exact paired 30-line 3D line storage/begin/end and 10-line append additions, alongside the previously admitted glyph transaction. These 80 added inherited lines across four complete added hunks share the same unchecked allocation/publication root. Begin/end block SHA-256 is 5f9ac8e355d4fa74363c8a99508f1770cf018528127e4125ae0b7624e14fdbeb; append/restored client-enable block is a676f028f8a04507d09fcafc3f6af2aa6e11847ac8036ddbc47cfd30d2f766ad. Keep point conversion, palette/fade and per-game line calculation local. Model approximately 140 inherited lines removed across glyph/line transactions after compact binding adapters; do not increase M above 28 until final reduction proves at least 150
+
+Also admit bounded removal of the 13-line D1 ogl_cache_polymodel_textures copied function (plus adjacent added spacing). It is absent in the merge-base D1 file, defined but never declared/called in frozen/current D1 or shared code, while the original D2 function has maintained exit-model callers. This is branch-created dead duplication, not permission to remove the used D2 original. Existing GQF-0191 already owns the larger cached plain-texmerge transaction, so no duplicate owner is formed
+
+## Context and reconciliation
+
+Read all 64 assigned hunks (728 changed review lines), enclosing texture initialization/reset/slot search/bind/wrap and palette invalidation, complete line batching/draw, ordinary and dual-texture draw through cleanup, paired batch bodies, native automap two-phase line producers/end, current D1 full renderer diff from 0281, relevant D2 live binding/line portions, archived BR-0256 and active BR-0346, all frozen/base/live polymodel symbol uses including D2 exit-model production, shared texture/viewport/MSAA/debug owners and September efficiency evidence. Whole later D2 renderer semantics remain the subsequent live-delta generation
+
+## Observations
+
+- GQF-0198 extends to release line batch growth: both vertices and colors assign raw realloc to retained pointers and capacity publishes without checking either candidate. The first ordinary automap line then copies through null after failure. Shared bounded line storage/ordered capacity flush repairs the same root as glyph batching and removes both identical additions. Automap reserves num_edges and draws each eligible edge once across ordinary and sorted bright phases, with end after both; no unsupported excess-count claim is required. Preserve the measured automap batching benefit rather than disabling batching on normal frames
+- Admit GQF-0199/GQR-0186 for D1-only unused copied polymodel cache function removal. Global frozen/current tracked symbol searches find only its D1 definition and a historical diff artifact; all declarations/calls are D2-owned and already present at base. Keep used D2 function and loader/game-format policy unchanged. Paired desktop/Android linking plus source/export inventory can validate the removal; no speculative private-layout facade is needed
+- Extend BR-0346: D1 vertex-reticle still clears lookup and replacement caches every frame, whereas D2 does not. Correct lifecycle invalidation remains in texture-list init/smash. Removal plus production zero-clears/rebuild counters for every reticle and actual mounted-file mutation is the existing acceptance boundary. This is distinct from GQF-0192 miss-cache borrowed path lifetime
+- GQF-0191 keeps the paired cached plain-texmerge allocation/accounting/finalization extraction. The live runtime-state descriptor is already shared between calls. Cache reuse and reserve/commit/failure policy stay in merged_wall_debug; new palette invalidation does not authorize moving all native bitmap ownership
+- GQF-0020 already owns GPU texture byte accumulation and GQF-0021 owns narrowed elapsed accounting. Paired local android_perf_elapsed_us also returns int before its wider texture-profile consumers; keep the local cache buckets and public getters in the same checked accounting review, with duration/corpus fixtures before declaring repaired. Tiny time wrappers alone do not justify an independent extraction
+- BR-0323 remains because texture initializer/reset does not reset has_mipmaps. Archived BR-0256 fixed scalar false bind reuse by issuing every bind at the frozen head. Current reintroduces per-unit shared caching, so exact active-unit, direct binds, deletion, filter changes and diagnostic transitions require later-delta production review; do not mechanically reapply the old scalar finding to the frozen unconditional bind macro
+- Pending rendering settings, framebuffer samples, MSAA state and draw-context publications retain BR-0029. Shared viewport and MSAA already centralize renderer state, and native owners correctly retain frame/texture lifecycle references. BR-0288, BR-0305, BR-0310/0311 and the broader snapshot/geometry owners retain their acceptance instead of creating more debug-policy duplicates
+- Ordinary texture draw restores external shader/unit selection for merged-to-single transition; failed overlay bind restores unit zero, super-transparency is determined after page-in/mask generation, and fallback/cached routes retain source UV orientation and caller lighting. Complete payload/callback state fixtures remain necessary for cache failure paths; allocation count or shader configuration alone is not a pixel oracle
+
+## Clean dimensions and evidence gaps
+
+Texture slot exhaustion reports fatal Error before its defined null return, replacement disabling clears the merged cache through existing owner, null bitmap-texture guards stop normal native dereference, and the default texture statistics query outputs are initialized. Original shader/bitmap/polygon format layout stays native. No broad whole-renderer extraction, point-math/palette mirror or callback table is admitted. No allocation failure, automap/glyph pixel/draw-count comparison, reticle cache counters, current bind sentinel test, malformed model asset, actual GL failure, sanitizer, desktop/Android build or device test was executed during analysis
+
+Provisional impact rating: 84 (H/M/B/C/R = 32/28/7/10/7); proposed owner: GQF-0198 (reference); rationale: same paired release batch allocation root plus approximately 140 total inherited-line reduction after bounded shared batching
+
+Secondary new owner GQF-0199 rating: 45 (H/M/B/C/R = 12/12/4/10/7); rationale: thirteen copied branch-added D1 lines have no maintained caller and can be removed while preserving original D2 behavior
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0283 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0284 frozen survey, resumed 2026-10-01 SHA256:35a29a6051cd7d65bea04ea9cbc900cf50167253d1872274ee2fef08bb893477 -->
+
+## GQ1-CHUNK-0284 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0284.md`
+- Imported SHA-256: `35a29a6051cd7d65bea04ea9cbc900cf50167253d1872274ee2fef08bb893477`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0284 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/arch/ogl/ogl.c`: diff hunks 65-107, new L1621-L3002; frozen blob `cda1161ddf0e99e013b1526029882b3e1e1ae483`
+
+Scope SHA-256: `1f1936660381a4e7994e3751009a9a1c136cf16dd320bfccf90a3f7fd710eff0`
+
+## Diff-minimization assessment
+
+DEFER the paired branch-added diagnostic wall clip transactions until BR-0347's RGB-preserving payload and render oracle define the correct boundary. Two helpers occupy 247 D1 and 246 D2 lines before the public dispatch wrapper; differences are const-point signatures/local arrays/casts, one blank and indentation. Existing merged_wall_debug ownership, public 3D/clipper declarations and narrow native single/dual draw adapters plausibly remove more than 400 inherited lines without moving the inherited scalar clipper. The helpers also touch native recursion guard and submit context and mutate scalar point fields. Do not copy the known lighting defect into a new shared owner first. Recheck after BR-0347 payload/fixture design: prototype per-game compiled shared ownership, retain public dispatch/native draw state, reject private-layout mirroring or callback tables and measure exact adapter plus inherited reduction. This is a mandatory later boundary evaluation, not a new competing clipping-fix root
+
+RETAIN frame start/end/flip orchestration: shared MSAA, GPU timer and viewport already own policy; nested subviews, resolve timing, projection/shader changes, backing/overlay targets and swapping are native sequencing. Moving all paired frame bodies behind a facade would expand state/lifetime coupling. GQF-0019 self-test and GQF-0198 batch consolidation remain separate admitted transactions
+
+## Context and reconciliation
+
+Read every assigned 43 hunks, both complete clipping helpers and wrapper, dual draw cleanup, surrounding bitmap null guard and blending, frame start/end/overlay/readback/flip, checked scratch allocation and whole texture upload, paired clipping differences/clipper public declarations and source extents, relevant current D1/D2 renderer changes, BR-0347, archived BR-0344 and prior shared MSAA/viewport/timer owners. Recovered truncated enclosing projection/end-frame output before disposition. Source counts distinguish 493 helper lines from the larger wrapper-containing 561-line region; no whole-region removal is claimed
+
+## Observations
+
+- Extend BR-0347: both single and dual debug clip routes average each input light RGB into p3_l, then write that scalar into every channel after clipping, including surviving original vertices. Current keeps this behavior. Colored Dynamic Light plus a named target crossing view boundaries therefore changes ordinary output. Preserve original RGB and interpolate new vertices with the same exact edge ratios, retain scalar upstream clip behavior elsewhere, and compare real paired target-off/on pixels across every plane and multi-plane poses before accepting repair/extraction
+- Input code guards 3..MAX_POINTS_IN_POLY before clip arrays, performs all-plane cull, avoids clipping fully inside geometry, projects new points and frees temporary clip points on ordinary/overflow exits. Guards reenter ordinary draw with a recursion flag when input does not fit the diagnostic route. A complete clipper payload/overflow fixture is still necessary; invalid synthetic nv alone is not another branch-produced root without a supported producer
+- Shared MSAA nesting balances at start/end and resolves at depth zero before final framebuffer sampling and swap. Existing BR-0260 still owns one GPU timer query per displayed frame versus nested starts; archived timer-in-flight guard is partial current evidence, not execution of the multi-view oracle. Settings/framebuffer publications retain BR-0029, capture failure containment GQF-0186 and EGL swap/init failure BR-0251
+- Archived BR-0344 staged both scratch allocations before discarding live buffers and casts allocation products to size_t. Original Android mode admission bounds dimensions before packing. Desktop/config arithmetic stays GQI-0007 until a supported producer fixture; do not reopen the completed Android resolution repair. Current desktop canvas scissor clear preserves other cockpit views
+- Texture upload rejects rounded dimensions over the queried/capped limit before CPU expansion and force-white NOCOLOR pixel processing. Fonts deliberately omit mip generation to preserve stroke alpha; world textures generate mips and publish the flag without a complete GL success oracle, which remains BR-0323/BR-0322 graphics ownership. No new arbitrary numeric texture dimension root is admitted from a supported bounded bitmap producer
+- Current transient bitmap texture reuse partially improves BR-0269 but contents still upload; actual unchanged-menu CPU/background/counter/lifetime acceptance remains. Global bind-cache and direct GL blend/enable state transitions require current render-state fixtures before stronger consistency claims. Frame-boundary blend-cache reset accounts for ordinary palette effects; no demonstrated additional supported blend-staleness trigger is admitted here
+- D1 replacement prefix cache is lifecycle-reset and formats inherited bounded bitmap names; the added current explicit name parameter has separate live-delta admission. Empty Android preprocessor block near NOCOLOR conversion is minor residue within the later graphics edits, not a standalone high-impact fix
+
+## Clean dimensions and evidence gaps
+
+Native inherited clipping and game bitmap formats remain local/public engine policy. Temporary clip points release after successful/overflow handling, external UV2 pointer is cleared after dual submit, shader stream buffer is unbound and ordinary menu projection restored at frame end. Framebuffer reads remain conditional on diagnostic demand. No additional wrapper-only frame abstraction or unexecuted hypothetical GL fault is admitted as a new root. No real RGB clipping comparison, shared-boundary compile prototype, nested timer/MSAA fault matrix, texture GL failure, framebuffer allocation fixture, sanitizer, desktop/Android build or device test was executed during this analysis
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0347 (reference); rationale: demonstrated RGB destruction in paired diagnostic clipping, with shared extraction gated on correct payload and render evidence
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0284 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0285 frozen survey, resumed 2026-10-01 SHA256:971d2aa4f841d70e10786feb9f28f0cb288d65721a6f5a70c1acf1d9ae0eeab9 -->
+
+## GQ1-CHUNK-0285 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0285.md`
+- Imported SHA-256: `971d2aa4f841d70e10786feb9f28f0cb288d65721a6f5a70c1acf1d9ae0eeab9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0285 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/include/3d.h`: diff hunks 1-1, new L219-L225; frozen blob `0bc79b313fce61867c7b3f95422ef89de0fde61e`
+- `d1/include/args.h`: diff hunks 1-2, new L30-L56; frozen blob `f1cb7ccbe009799081a8fd848f6b15e76512f8c1`
+- `d1/include/console.h`: diff hunks 1-2, new L35-L37; frozen blob `7f57277f2e7fef01259078d5a626d5767d4c05bd`
+- `d1/include/dxxerror.h`: diff hunks 1-2, new L40-L58; frozen blob `cd8d293007b47dd6eef7d75d983fc8336b071ac7`
+- `d1/include/editor/kdefs.h`: diff hunks 1-2, new L1-L332; frozen blob `8729180fbe2a39969a766b7c9ed3915aa915d369`
+- `d1/include/fix.h`: diff hunks 1-2, new L1-L7; frozen blob `750e1b443528a63396086b60d9c567c601e6819f`
+- `d1/include/gr.h`: diff hunks 1-1, new L330-L330; frozen blob `5c8aa4f1a364f3511a107c791f52f75a9339f3bf`
+- `d1/include/grdef.h`: diff hunks 1-2, new L1-L120; frozen blob `191f10730f950bf73ba266ca28d3cbd6af5b6f4a`
+- `d1/include/ignorecase.h`: diff hunks 1-2, new L1-L80; frozen blob `5203e287e1299b79a16c7b5738b161ec0eb890a6`
+- `d1/include/internal.h`: diff hunks 1-2, new L37-L44; frozen blob `1911d9b813e15bb842ac8c37857bf1af1c8b38f2`
+- `d1/include/loadgl.h`: diff hunks 1-3, new L392-L403; frozen blob `1e8bc354814bfd84f791922a5ee7766b27e60c01`
+- `d1/include/maths.h`: diff hunks 1-3, new L12-L56; frozen blob `7f9eb92f5f29ee7e2e073460603d0f7c4025afeb`
+- `d1/include/ogl_init.h`: diff hunks 1-10, new L14-L129; frozen blob `9303296a10dae9e4ff4fff0e6a37925f13a08c62`
+- `d1/include/physfsx.h`: diff hunks 1-5, new L179-L221; frozen blob `463639f756847a691afb9f399b753af812da6063`
+- `d1/include/pngfile.h`: diff hunks 1-1, new L22-L38; frozen blob `d823b4d79f95311e974a764a0777b2c54274d389`
+- `d1/include/pstypes.h`: diff hunks 1-1, new L24-L24; frozen blob `6b4ba37762b9a14d593ea5a0a7d6087f1f076536`
+
+Scope SHA-256: `371df377f4ab95e19933c1212b62d90807b54f0eddd90d2dec271791b44340fc`
+
+## Diff-minimization assessment
+
+DEFER the paired RNG interface block until native RNG implementation units 0307/0377 establish its whole transaction. Both maths headers have identical new L12-L56 declarations, stream and replay mode constants, caller annotation selection and macro routing. A small branch-owned RNG API header can replace approximately 86 inherited lines with two includes, without callback dispatch or private layout knowledge. Evaluate the implementation together before forming a competing extraction root; preserve existing unannotated declarations, simulation defaults, effects selection, implementation opt-out and compiler-specific function names. Other additions are narrow native declarations, texture layout extensions, balanced include guards, platform preprocessing or the inherited inline line reader and remain local
+
+## Context and reconciliation
+
+Read all assigned hunks in 16 headers, whole RNG/texture/viewport/line-reader declarations and relevant preprocessing, complete guard directive inventories, paired 3D/viewport/PhysFS/RNG/texture/PNG/type differences, all current scoped header deltas, Android assertion header, line-reader consumers, BR-0361 and archived BR-0362. The prior Android startup-default bypass is repaired on current code; preserve its tests and Android invariants rather than reopening it from frozen declarations
+
+## Observations
+
+- Batch declarations expose existing GQF-0198 storage/failure ownership; non-OGL macros safely do nothing. The ordinary automap/font callers and allocation defect were already traced in 0281/0283. This interface does not create another batch fix root
+- PHYSFSX_fgets retains its inherited end-pointer result, including truthy empty-line results, while returning a final unterminated line after writing the NUL. Maintained users treat it as truthy or compare against the expected full-buffer end in strio. The zero-size subtraction and large-file seek narrowing are inherited behavior; no new branch-produced trigger is admitted in this header change
+- RNG macros retain simulation as the default and route explicit effects operations correctly. BR-0361 owns the unsequenced seeded-state observation at the producer, not a signature defect. No changed ABI or duplicated RNG state is introduced here
+- Include guards enclose each complete header and do not conflict across games. Desktop extension remaps undefine only the same names immediately redefined to the existing loader functions. Android GL types and shared shader shim remain guarded; texture fields agree with the paired shared owner. Existing BR-0322/0323 retain mip publication and slot reset fixes
+- Android assertion breadcrumbs preserve the repository's assertion configuration behavior. Console log exclusion matches Android consumers. Current extra projection declaration, batch declarations and texture-name parameter remain live-delta changes with matching previously traced implementation ownership
+
+## Clean dimensions and evidence gaps
+
+No independent declaration, include guard, ABI, API, line-reader, stream selection or desktop preprocessing defect survives the assigned scope. Native formats, game types and texture layout stay authoritative in the engine. No compile, preprocessing matrix, file-reader fixture, seeded trace execution or device test was run. RNG consolidation requires the deferred implementation review and exact include-graph/build measurements
+
+Provisional impact rating: 84 (H/M/B/C/R = 32/28/7/10/7); proposed owner: GQR-0185 (reference); rationale: existing paired batch storage safety and consolidation, with a separate deferred RNG interface boundary
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0285 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0286 frozen survey, resumed 2026-10-01 SHA256:cb4d24ecbbf8cccb2c57539f21b89dff0f8c0c7a71b9b1f7f2516354ff67b606 -->
+
+## GQ1-CHUNK-0286 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0286.md`
+- Imported SHA-256: `cb4d24ecbbf8cccb2c57539f21b89dff0f8c0c7a71b9b1f7f2516354ff67b606`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0286 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/include/rbaudio.h`: diff hunks 1-1, new L62-L72; frozen blob `a30c29aea6ff2e8839744618a9a470094b43bc1f`
+- `d1/include/xmodel.h`: diff hunks 1-2, new L1-L28; frozen blob `c1c2f2c2b534564cf856e6f8cbb41a311edcc952`
+
+Scope SHA-256: `d9f17e485fcc45bc6094e935c5f1f20d480f407825bfa46f127a5d6496f79449`
+
+## Diff-minimization assessment
+
+RETAIN the already-narrow xmodel include guard and game-specific API. The paired eleven-line music API duplication has already been removed on current code: both rbaudio headers now include the branch-owned rbaudio_bin.h. Treat that completed external consolidation as historical evidence with no new competing implementation chunk. Keep inherited disc API declarations and game model types local
+
+## Context and reconciliation
+
+Read every assigned hunk, complete D1 rbaudio/xmodel and paired rbaudio headers, all current scoped header changes and frozen/current definitions of all eight music operations. These operations are implemented once per game build in the shared BIN backend; xmodel's current enum/exists changes are reserved for live-delta implementation review
+
+## Observations
+
+- Multi-source music signatures match the shared backend's definitions and retain integer track/name capacity domains. GQF-0193/0194 own the earlier source handle and playlist parser defects; EOF ownership remains GQF-0167. No signature-specific defect is added here
+- Current rbaudio_bin.h replaces the identical D1/D2 copied declarations and includes the new seek controls in one authoritative API. Preserve this completed minimization
+- xmodel include guard is unique, balanced and surrounds its existing C linkage, vector and 3D includes and all declarations. No model-format layout is moved into Android. Current model-class parameter and exists predicate are different functional changes requiring later producer review, not evidence that this include guard is wrong
+
+## Clean dimensions and evidence gaps
+
+No additional ABI, link, guard, type or duplication defect survives the frozen header scope. Desktop backends do not gain calls to the added Android multi-source symbols merely because declarations are visible. Backend execution, link/build matrices and model fixtures were not run during this survey
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQR-0181 (reference); rationale: existing malformed multi-source playlist admission owns the implementation root
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0286 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0287 frozen survey, resumed 2026-10-01 SHA256:59664ba4d5f392276a778b87e11e21183b5a779fcf3f03f3d5e43fa7c9c78906 -->
+
+## GQ1-CHUNK-0287 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0287.md`
+- Imported SHA-256: `59664ba4d5f392276a778b87e11e21183b5a779fcf3f03f3d5e43fa7c9c78906`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0287 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/state.h`: diff hunks 1-2, new L25-L46; frozen blob `c070b85dcb65c191fd2e5dad4149e45e77847234`
+- `d1/main/switch.c`: diff hunks 1-2, new L41-L151; frozen blob `28f329a81b0a386303182a2ae6b9ce9777a2d99e`
+- `d1/main/switch.h`: diff hunks 1-4, new L26-L98; frozen blob `3fb55cbf66b6f8fd4797a5178bbfeaf6782f6bcd`
+- `d1/main/texmerge.c`: diff hunks 1-9, new L31-L214; frozen blob `87ba1a3cb7ecbdc6289e7bd4b312d58f27d797f2`
+- `d1/main/text.h`: diff hunks 1-5, new L442-L699; frozen blob `cd9711df1d2757a71dba965b8c4713ceaa601fa3`
+- `d1/main/titles.c`: diff hunks 1-23, new L55-L1294; frozen blob `b38ea20ea6ab43364d06c46f4b438f66077cdfbf`
+- `d1/main/wall.c`: diff hunks 1-5, new L37-L1005; frozen blob `de11039ef3c7f00bd397989927a41342935de917`
+- `d1/main/wall.h`: diff hunks 1-11, new L27-L279; frozen blob `0865e57bb88d8c34ddcbd4454869d529a22e2fc5`
+- `d1/main/weapon.c`: diff hunks 1-4, new L48-L726; frozen blob `ac3c5bcfede59dd0e52d36614b79e70bc4b992c1`
+- `d1/main/weapon.h`: diff hunks 1-1, new L139-L142; frozen blob `3bf20295963063046c478d4a21599f65e324ea5c`
+
+Scope SHA-256: `cc5c5c063de1e2ad058e90ac47429c974534fa447ee0ba1aced0dcb69ddf5e9a`
+
+## Diff-minimization assessment
+
+RETAIN the narrow native save/trigger/wall declarations, game-specific weapon order domain and title/briefing actions. Shared rewind-file ownership already replaces file I/O and shared screen-advance code owns generation/readiness/input admission; wrapping whole handlers would mirror private briefing state or introduce callback dispatch. The July 12 completed texmerge-owner extraction removed 190 inherited additions and left 38 additions/1 deletion per game. Preserve that boundary and original cache/merge code
+
+The new D1 text-count defect can also reduce inherited churn by keeping the added unlocalized duplicate-callsign message outside the old text asset index domain, rather than growing old assets and tables. Choose the narrow native literal/fallback boundary after production loader validation; no broad shared text format or migration is requested
+
+## Context and reconciliation
+
+Read every assigned hunk in ten files, enclosing whole texmerge lifecycle/reuse/create, title handler/startup/skip and briefing handlers/startup/close, weapon ordering and paired validator, original text getter/fallback loader, wall transparency flag owner and stuck-object slot selection, public save/trigger/wall declarations, shared screen-advance header and implementation, all current scoped deltas, completed July texmerge-owner plan, BR-0649 and existing save/pilot/diagnostic owners. Static fallback inventory counts 107 initializers, legal indices 0..106, while new index 621 requests 621-514 = 107
+
+## Observations
+
+- Admit GQF-0200/GQR-0187: D1 text.h raises N_TEXT_STRINGS 621 to 622 and adds dxx_gettext(621, Duplicate callsign), but untouched text.c has only 107 extra_strings entries for indices 514..620. Its supported shorter-text fallback loop now reaches i=621 and indexes extra_strings[107] at L253. Frozen/current retain the same mismatch; the engine does not define USE_BUILTIN_ENGLISH_TEXT_STRINGS (only the Android autoselect adapter does). Legal older/shareware text assets that enter fallback therefore expose an out-of-bounds pointer read during startup, and the new network rejection text lacks a defined fallback. Keep original asset count/domain or add an explicitly bounded fallback appropriate to this one new message; verify actual loader with minimum/legacy/full assets, newline variants, rejection rendering and paired controls under sanitizer. Do not admit unrelated preexisting loader parsing hazards as this root
+- Shared texmerge owner reset/note/log already centralizes duplicated diagnostic fields while cache bitmap, orientation, paging and lifetime stay local. Tiny paired flush tags do not justify a new logging facade. GQF-0191 remains the separate plain GPU merged-cache creation transaction
+- Title and briefing begin/end guard ownership follows successful window creation and local event loop completion. B closes briefing, other fresh buttons advance; the primary A/touch path applies shared suppression. Current coop briefing and corrected canvas/projection are later-delta changes. Global intro preferences remain BR-0029 publication ownership
+- Extend BR-0649: title requested/song_playing local flags are set after a call regardless of actual playback success. The maintained intro-skip test still needs actual music state/progress evidence, rather than turning a request flag into proof of successful playback
+- Exact weapon order validation rejects null/wrong counts, invalid entries and duplicate domain positions, preserving D1 quad-laser index 16, 255 breakpoint and different D2 domains. Existing archived pilot validation remains repaired; retain native format authority rather than a generic permutation API for this small function
+- Wall transparency now reads persistent bitmap flags instead of temporary PAGED_OUT flags. Unsigned tick modulo preserves a valid stuck slot through signed tick wrap. New quick-record stop distinguishes paired lifecycle policy from ordinary recording pause at secret exit. Save/rewind format APIs retain matching typed owners
+
+## Clean dimensions and evidence gaps
+
+No additional distinct native handler lifetime, trigger/rewind ABI, merge orientation, weapon domain, bitmap flag or slot modulo defect survives the assigned changes. Existing save transaction, UI publication and music playback test owners remain separate. No production text asset, sanitizer, parser fixture, title/briefing controller exercise, cache allocation/GL pixel fixture, host build or Android build was executed in this analysis. The fallback bounds evidence is a source inventory and exact index derivation, not an executed engine crash
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/4/10/7); proposed owner: GQR-0187 (primary); rationale: new D1 text-count extension reads past the legal supported fallback table during startup
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0287 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0288 frozen survey, resumed 2026-10-01 SHA256:0c35e25da9c98a995d02964fa045f5d33f6d89018a0470059ec02a1e2df0bee8 -->
+
+## GQ1-CHUNK-0288 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0288.md`
+- Imported SHA-256: `0c35e25da9c98a995d02964fa045f5d33f6d89018a0470059ec02a1e2df0bee8`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0288 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/input_demo_start.h`: L1-L17; frozen blob `b4c6d91b0d5d4e8125828f91aa4b6d1b7f35e057`
+- `d1/main/kconfig.c`: diff hunks 1-34, new L56-L2084; frozen blob `83302bf4ade965797bbfa2da2e2ee210f31e88f9`
+- `d1/main/kconfig.h`: diff hunks 1-1, new L67-L73; frozen blob `e1cadb5e24ee2b6e6c0c6fe2e24dba561b2b0be1`
+- `d1/main/kmatrix.c`: diff hunks 1-7, new L50-L429; frozen blob `943d5c21055ce7d8233888300fbab4acb701317e`
+- `d1/main/laser.c`: diff hunks 1-28, new L45-L1654; frozen blob `39cdc6b174550e6d3c91e875e84877aa093fe240`
+- `d1/main/laser.h`: diff hunks 1-3, new L71-L110; frozen blob `e7e8011f91a2d812d1badd0b64af811b8fb0fbcc`
+- `d1/main/menu.c`: diff hunks 1-41, new L59-L2284; frozen blob `2050963671420eeff7e6112e955e3e180887f54f`
+- `d1/main/menu.h`: diff hunks 1-1, new L25-L25; frozen blob `3d151caf5eacb63e8f320d09d02d4ac296dc64f0`
+- `d1/main/mglobal.c`: diff hunks 1-1, new L95-L97; frozen blob `f6dbafd8675add3cb0507ef751187f0a85db19a5`
+- `d1/main/mission.c`: diff hunks 1-2, new L116-L337; frozen blob `9d66290b9ff07029cd4f2c25ce8d2fc0876b338d`
+- `d1/main/mission.h`: diff hunks 1-3, new L44-L72; frozen blob `529447a735c5c9c24f7f34987d8963fc1f333063`
+
+Scope SHA-256: `a9240df625f063bb632ef4e97084f414daaa0739b7a83c8f319d67ba53483cdc`
+
+## Diff-minimization assessment
+
+RETAIN paired native control-table access, per-game weapon runtime/mission formats and UI lifecycle hooks. Shared kconfig_android_shared already owns binding-array fills/default overlays, android_menu_scale owns scaling and android_screen_advance owns transient admission; native callbacks keep private kc_menu/briefing/weapon state authoritative. Exact paired 47-line binding-text helper depends on private item type and six engine text tables. Extracting its whole switch requires mirroring those domains or passing a table facade while leaving the native switch; a string-format-only helper would retain most inherited churn. Small identical fill adapters are already calls to one authoritative policy. Avoid broad native handler extraction or moving homing/gameplay into Android
+
+## Context and reconciliation
+
+Read all assigned hunks in eleven paths and complete input-demo-start header. Recovered initially truncated laser hunks by reading its complete native U0 diff. Read enclosing binding display/menu/read-only/drag/axis code, paired text and settings adapters, postlevel readiness/cleanup, player creation/filter/main menu, Android resolution and graphics menu loops, homing acquisition/turn/weapon runtime, mission-size and packing context; all current scoped diffs; BR-0263/0386 and archived BR-0354/0344. Shared screen-advance and control/menu/serializer roots from earlier reviewed units remain authoritative
+
+## Observations
+
+- BR-0386 applies to D1 as well: frozen initial single-player target acquisition uses the prior render list for ordinary play and a complete object scan only for replay. Current removes the replay-only branch in both native paths, a partial repair requiring equal-dot/reversed-order/newly revealed target and capacity fixtures in ordinary, rendered replay, no-present, no-render and headless modes. No successful replay test is inferred from source removal
+- Preserve archived BR-0354 staged weapon domain repair. Native setter validates fusion, boolean phases, D1 mine counters and pending count; bounded INT_MAX missile-gun increment preserves parity without signed overflow. The native validator remains engine-owned, including D1 zero-valued D2-only state. Current weapon-selector guards and original homing behavior remain later-delta functionality
+- BR-0263 retains game-qualified keyboard settings at the persisted loader/producer boundary; native shared fill helpers receive each game's own defaults and layout, which does not repair an unqualified external schema. No new per-adapter duplication root is created
+- Binding text is always initialized and NUL-terminated in an eleven-byte buffer, with ten-character display precision. Existing validated pilot input owns table value domains; native switch and table indices remain local. Read-only joystick menus cannot begin editing, reset, delete or keyboard assignment. Desktop kc_menu is zero initialized, so the new flag is deterministic
+- Android touch sources bypass the controller deadzone without changing controller scaling. Source-marked events and matched control bits remain typed; no unsupported arbitrary SDL axis index is admitted. Menu focus/holds remain BR-0202, scaled buffer and GL texture churn BR-0269, input publication BR-0029/GQI-0005. Native detailed laser probes retain BR-0294 opt-in acceptance
+- Postlevel advance remains unready until reactor/peer completion, consumes only admitted generation-tagged requests or fresh primary events, and exits through the existing end_time/window lifecycle. Old failed window creation background cleanup is inherited, not a new branch-created defect here
+- Archived BR-0344 Android mode admission and current staged allocation repair remain preserved; full renderer/config desktop bounds stay GQI-0007. Menu still packs the frozen raw custom dimensions before the validator, with current ordering already corrected by the completed repair. New graphics setters centralize policy and persist through the shared owner; UI/JNI threads need BR-0029 ownership rather than new local menu copies
+- Misc menu storage grows to the exact new item count; current AutoselectOnlyOnce adds one item and shifts all corresponding value/change indices with array growth. Mission Mac shareware size support reaches load/list and briefing classification consistently. MSVC mission packing has a matching push/pop and remains isolated to the native ABI
+
+## Clean dimensions and evidence gaps
+
+Vulcan SIM RNG evaluations are now sequenced before shot creation, preserving per-shot order across compilers. Native replay declarations have C linkage; current player-config application declaration matches its shared owner. New pilot acceptance and selectable-file filters retain completed pilot validation. No new source-only callback wrapper, duplicated private structure, table mirror or hypothetical long-runtime counter overflow is admitted. No control/drag/focus, homing/determinism, restored runtime, render mode, packing, corpus/mission fixture, host/Android build or device test was executed during this analysis
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029 (reference); rationale: existing shared input/graphics preference publication still spans UI and engine ownership, with homing and keyboard fixes retaining their own acceptance
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0288 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0289 frozen survey, resumed 2026-10-01 SHA256:d6b096fa28053a04139420848e5fecfda78509556e7141175f2701f68a13f6c4 -->
+
+## GQ1-CHUNK-0289 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0289.md`
+- Imported SHA-256: `d6b096fa28053a04139420848e5fecfda78509556e7141175f2701f68a13f6c4`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0289 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/collide.c`: diff hunks 1-33, new L54-L1763; frozen blob `34addcb9855486263a7b8a98eaeaf3a310eeaeab`
+- `d1/main/collide.h`: diff hunks 1-1, new L45-L46; frozen blob `247874c8af1fc051ac07011863d1f0756d8f82d1`
+- `d1/main/config.c`: diff hunks 1-20, new L36-L401; frozen blob `9ec99dfa5f3f696f86a3b6c417e95d7117bd1cbb`
+- `d1/main/config.h`: diff hunks 1-3, new L47-L59; frozen blob `ed750fc9948bfebc4d11417ba478c95053ee3328`
+- `d1/main/console.c`: diff hunks 1-10, new L23-L342; frozen blob `53fc875566ec2e4e510a4ae4c4092a526eb61ab7`
+- `d1/main/coop_save.h`: L1-L7; frozen blob `aa49aa15ffee1f9051a246a74d5588894720d4d9`
+- `d1/main/coop_warp.h`: L1-L7; frozen blob `651893e8cf9f9c0b54ef52e6f8499ea39ea607ad`
+- `d1/main/digi.h`: diff hunks 1-1, new L97-L97; frozen blob `6e10f02c3d034570169911312b42e5df7b2e6922`
+- `d1/main/effects.c`: diff hunks 1-2, new L57-L99; frozen blob `0282b22d1f581ba072cff77eac2cf8e4d3191ea0`
+- `d1/main/effects.h`: diff hunks 1-1, new L66-L74; frozen blob `d84f7dc142613be159b9737b2ad63d82d7050c52`
+- `d1/main/endlevel.c`: diff hunks 1-22, new L60-L964; frozen blob `53a7b94c689be68c9193133d2941fc216fe58177`
+- `d1/main/fireball.c`: diff hunks 1-26, new L53-L1464; frozen blob `7482d6f1e2ebfd72e507180930efdee580b5feb6`
+- `d1/main/fuelcen.c`: diff hunks 1-3, new L37-L501; frozen blob `0e2dfe4318fe78ebc0a581dde6fb34ef5ffc1012`
+- `d1/main/fuelcen.h`: diff hunks 1-5, new L27-L162; frozen blob `dbe3605bffd9ffcedb0bd15d12484a90d43b1ff4`
+- `d1/main/fvi.c`: diff hunks 1-5, new L35-L941; frozen blob `ae71459b135120deaf2e98b80bf5ae1c4e5b427f`
+- `d1/main/fvi.h`: diff hunks 1-3, new L109-L143; frozen blob `d7117d67081139eb7c906ddb8be439f492608e87`
+
+Scope SHA-256: `d3c60a001fd1a5b7175ff4ef5568d799806122041761c0e5f08ed638526a6dfd`
+
+## Diff-minimization assessment
+
+CANDIDATE: reactivate DMR1-CHUNK-008 with coherent adjacent config work, under GQF-0201/GQR-0188 rather than a competing predicate-only root. Each native config file has identical six-line saved-player and ten-line retention functions plus the identical eighteen-line loaded graphics synchronization block (SHA-256 2a20eece226c4ad519fd7dde43085a854f2734539d73db1ba6453a00dbf5712b). Raw duplicated scope is 68 inherited lines before replacing calls/includes. Model 56..62 net inherited lines removed, at least two complete added sync hunks. Use existing auto_net.c/.h for a selector taking current/saved names, and existing android_graphics_options.c/.h for applying already parsed GameCfg to native globals/FOV. Neither needs callback dispatch, struct mirrors or a new subsystem. Keep D1/D2 first-run/music defaults and native config read/write strings/layout local, as DMR1 requires. Preserve all handmade comments when moving the scope
+
+RETAIN collision/loot/rewind/FVI simulation, transient screen actions and stream-classification call sites. Shared effect runtime, coop duplication, boss HUD, trace and screen-advance already own reusable policy. Paired Android console severity forwarding is only a thirteen-line sink body per game; extracting this alone leaves native formatting/buffer/desktop routing and adds a new small bridge, with lower payoff than the admitted config transaction. Broader con_printf replacement would reopen original console contracts and is not justified by this scope
+
+## Context and reconciliation
+
+Read all assigned hunks in sixteen files and complete seven-line coop shims, recovering initially truncated config/console/effects assigned output separately. Read full shared effect runtime, graphics options C/header and log header; exact paired last-player predicates/loaded sync and DMR1-CHUNK-008; enclosing collision forces/loot/duplication, fireball spawn/net capacity, FVI callback publication and actual non-reentrant metadata predicate/producer, effect reset/tick, console sinks, endlevel FX blasts; current scoped deltas including endlevel, matcen and coop recovery; BR-0371/0378/0294 plus existing timer/graphics/save roots. Both loaded-sync hashes agree and both game targets already register the shared graphics owner
+
+## Observations
+
+- Admit GQF-0201/GQR-0188 as DMR1-CHUNK-008 reactivation. The prior deferral required coherent adjacent config work and explicitly prohibited a new subsystem; loaded-graphics setup now supplies that bounded adjacent transaction. Validate empty/current/coop-autosave/transient/saved names, exact parsed filter clamp/global/FOV publication and defaults/no-file behavior with actual paired config read/write. Keep the D2 GOG disc/music first-run branch local and preserve startup sequencing, desktop behavior and existing BR-0199 transactional graphics repair
+- Detailed collision, fireball and FVI probes remain existing BR-0294. Current shared D1 activation gate has a partial repair from prior units, but native call/format/sink coverage still needs off/on/release production counters and unchanged state/RNG traces. Bump force algebra remains identical; final negate only restores the diagnostic orientation and cannot alter already-applied force
+- Collision sound timestamp setter feeds existing GQF-0188 restored timer envelope. Current fuelcen exposes the analogous sound cadence for save observation; review its new serializer admission in the live delta, not as a new frozen root. Timer globals and setter format knowledge remain native
+- Fireball robot spawn increments population, distinct from actual killed count; BR-0371 still owns input-demo result baseline semantics. Current adds the missing network capacity check before robot creation. Frozen new player-spew marking bounds the captured net range and every object index and tags only powerups, retaining bounded producer-owned records. Mine count modulo four is bounded, placement falls back to the known player segment
+- Coop powerup duplicate detection gates before pickup, records successful local collection and preserves the object for other players only after the shared record succeeds. Current recovery snapshot/recording is a different live transaction with its own later generation review. No local movement of whole pickup or drop routines is admitted
+- FVI callback reads new pointer fields only when the per-game explicit flag is set; D1 bit 16 and D2 bit 32 preserve their existing flag domains. Sole maintained producer zeroes query and supplies a synchronous stack context; predicate reads bounded wall flags and does not recurse into FVI. Each ordinary query clears callback globals. Hypothetical arbitrary callback recursion is not an observed supported root, and original FVI state was already non-reentrant
+- Shared effects already own deterministic loop calculation and bitmap application while native ticking/one-shot actions retain engine formats. Effect flags/references in translated D1-in-D2 records retain BR-0378. Endlevel star/blast randomness is FX while physical debris, loot, collision explosion cadence and wall damaging blasts stay SIM. Current flyout/actor movement and reset changes require later-delta integration proof
+- Config added integers still parse through original strtol/narrowing conventions; effective filter clamps and renderer bounds reside in their shared owners. Archived BR-0344 mode admission remains repaired; unsupported host resolution/config domains remain GQI-0007. No new arbitrary scalar/parser claim is admitted without a production consumer trigger
+
+## Clean dimensions and evidence gaps
+
+Coop headers only forward authoritative shared declarations. Rewind fuel-center signatures preserve engine format ownership, sample-rate constant agrees with the existing backend, and platform log exclusions leave desktop file routing intact. Existing original console vsprintf/empty-buffer and endlevel explosion-pointer hazards are inherited rather than new branch defects. No production config round trip, startup/pilot/reset fixture, projection/bounds, collision/loot/death-supply/RNG matrix, FVI callback execution, sanitizer, host/Android build or device test was run. Candidate savings remain a measured source model pending exact post-change numstat and paired build validation
+
+Provisional impact rating: 57 (H/M/B/C/R = 12/21/7/10/7); proposed owner: GQR-0188 (primary); rationale: coherent config policy removes modeled 56..62 inherited lines while reactivating the existing deferred DMR1 owner
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0289 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0290 frozen survey, resumed 2026-10-01 SHA256:6d5426fe62a6b23ebb8f8992079c5805958ae2fd8daaf1be2cba9b83da8f78cf -->
+
+## GQ1-CHUNK-0290 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0290.md`
+- Imported SHA-256: `6d5426fe62a6b23ebb8f8992079c5805958ae2fd8daaf1be2cba9b83da8f78cf`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0290 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/inferno.c`: diff hunks 1-19, new L58-L543; frozen blob `8375f94faea14d7660c48be208230f97184a48a1`
+- `d1/main/input_demo_control_info.h`: L1-L65; frozen blob `4d34f818aa7e8f60d98c0439fa72f91990ff4386`
+
+Scope SHA-256: `fa1bdc9cba45c1aaf8eacfbe73156d7d87bec61c3237aac9b573133afc19a303`
+
+## Diff-minimization assessment
+
+RETAIN compact startup hooks and native control-state adapters. Shared startup_resume_shared, input_demo_fp_env and input_demo_hooks_shared already own cross-game policy. The eight-line fatal startup wrapper preserves native Error handling; another facade would add no meaningful inherited reduction. The control adapter is newly authored, not inherited baseline churn, and D2 has additional held/count fields. Keep native field knowledge explicit rather than memcpy or a private-layout mirror
+
+## Context and reconciliation
+
+Read all nineteen assigned inferno hunks and the complete input_demo_control_info header, enclosing startup/quit/cleanup and complete current scoped diffs; paired control conversion; full shared startup resume and floating-point C/header owners; complete BR-0255 and BR-0201 records. Current startup moves setjmp before replay/resume and adds expected-exit marking, cancellation reset and mission asset shutdown. Those changes remain later-delta verification, not proof that the broader teardown transaction is closed
+
+## Observations
+
+- BR-0201 retains the non-MSVC per-frame rounding restoration gap. Startup sets and checks FE_TONEAREST, but replay restoration remains no-op outside MSVC. On x86 MSVC it resets x87 rounding/precision and MXCSR. Preserve shared policy and require alternate-rounding injection plus real paired replay/recording traces; no duplicate local startup root
+- BR-0255 still owns selectability versus actual pilot reopen failure. Startup resume checks its helper and restore return, while the helper's pilot transaction needs its existing full failure oracle. Native startup's older SysPilot read/write sequence is not independently admitted as a new frozen branch defect
+- BR-0029 owns Android force-quit publication and transient input requests; standard quit cancellation resets Quitting and force quit bypasses confirmation intentionally. BR-0345 retains game-window nonlocal teardown. Moving the startup setjmp earlier does not prove callbacks release all resources
+- Metadata validation and preview exit intentionally precede the ordinary title/game flow. Resume presence suppresses titles, failed restoration falls back to the menu, and replay dispatch status follows the shared contract. Mac shareware sizes match the already reviewed paired mission classification
+- D1 control conversion clears the entire destination native/control-state structure and explicitly transfers all axes, held states and count pulses in both directions. D2 adds its native afterburner, converter, headlight and bomb-selection fields; retain that game-owned boundary. No aliasing producer or missing maintained D1 simulation field was identified
+- Shutdown retains native window/config/game/texture/font/text/argument ownership. Current mission-assets shutdown precedes gamedata close. Shared startup argument matching remains case-insensitive and pilot admission rejects empty or option-looking arguments
+
+## Clean dimensions and evidence gaps
+
+No additional duplication, control ABI, startup ordering or desktop portability defect survived tracing this scope. Old native pilot read conventions remain baseline behavior. No startup resume fault, quit/cancel/longjmp, rounding mutation, preview, metadata, control round trip, host/Android build or device test was executed during this analysis
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029 (reference); rationale: existing force-quit publication crosses UI and engine ownership; resume, floating-point and teardown retain their separate existing owners
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0290 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0291 frozen survey, resumed 2026-10-01 SHA256:d337a4a92425c9c472d574855cecc3a18e41b542fffb49906b378f796df79f10 -->
+
+## GQ1-CHUNK-0291 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0291.md`
+- Imported SHA-256: `d337a4a92425c9c472d574855cecc3a18e41b542fffb49906b378f796df79f10`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0291 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/multi.c`: diff hunks 1-54, new L62-L5727; frozen blob `ceccbb8754c167868a987cbafd7db66e07558dda`
+- `d1/main/multi.h`: diff hunks 1-15, new L30-L742; frozen blob `3f594d76579a1a930de0ec0a8082eab29cf9b2f8`
+- `d1/main/multibot.c`: diff hunks 1-7, new L41-L1173; frozen blob `14584c0f2d16fccaf3538226a3247039b6a5a61f`
+
+Scope SHA-256: `80d71b015fc1958bdc40c82be525ba0b99f81fd62ae0d0a4d9b41873190f6aa4`
+
+## Diff-minimization assessment
+
+DEFER bounded adjacent helper consolidation to the existing restore and diagnostic repairs. The paired twenty-seven-line autosave restore-filename helper body is exact (SHA-256 8a594d19af524f8575dbec7dc0576f7d8dc3190f77b25ef81b33974e9170fb2b); 54 raw inherited lines could yield approximately 46 net lines through existing state_android_shared while preserving native state_get_game_id and slot/filename formats. The paired fifty-one-line hidden-door diagnostic body is also identical, approximately 100 raw inherited lines, and could use an existing per-game shared diagnostic owner during BR-0294 work. Evaluate both after restore/diagnostic contracts are proven; do not create competing filename or logging fixes. Preserve native packet layouts, dispatch, host policy, timers, robot smoothing and kill attribution
+
+## Context and reconciliation
+
+Read every assigned hunk across multi.c, multi.h and multibot.c; enclosing disconnect/election/inventory snapshot, periodic autosave, message dialog, door receive/send, damage/repair/ship-status, save transfer fallback, prepare/restore and message length/dispatch checks; full frozen-to-live scoped diffs; paired door and restore helper bodies and shared coop kill/status owner. Recovered truncated context/current-diff output with explicit complete remaining ranges and native U0 current multi diff. Read complete BR-0195/0080/0232 and reconciled previously reviewed BR-0206/0357 and DMR native networking constraints. Initial broad BR-0206 output was truncated and is not claimed as a new complete record read
+
+## Observations
+
+- BR-0195 already owns difficulty/peer-status/warp/inventory/rewind/transfer authority and cooperative damage/repair slot corruption. Frozen difficulty trusts the claimed master byte; damage/repair write the claimed remote slot. Current passes authenticated transport identity through D1 dispatch, but the unchanged difficulty and damage/repair handlers do not consume it. Preserve host-before-relay and receiver atomicity requirements; transport plumbing alone is not closure
+- BR-0080 retains ship-status bounds and overlay snapshot acceptance. Current rejects player and weapon indices plus mismatched known sender and adds restore/life serial admission. Unknown local sender remains a deliberate native/automation path; prove transport admission and sentinel-safe overlay with actual forged packet and paired sanitizer integration before closure
+- BR-0206 owns restore preparation and barrier semantics. Frozen path permits a zero transfer status to fall back to a legacy restore packet, mutates robot ownership before file-ID/read validation and reports complete after ignoring the restore result. Current checks state_restore_all_sub and transition/busy gates, while late failure, rollback, every peer ACK and post-release consistency remain the existing authoritative transaction requirements
+- BR-0232 retains network difficulty history initialization. This scope adds difficulty_reset_history at multi_new_game, before the authoritative later menu/sync choice; do not infer truthful extrema from reset presence alone. Shared difficulty policy remains authoritative
+- Host disconnect snapshots inventory before clearing the slot, invokes shared migration after transport disconnect, and autosaves the surviving cooperative session. Dynamic master reset is paired. Keep DMR constraints against moving election/transport/sync/timers for numstat alone. BR-0357's historical same-version platform layout must be reconciled with current distinct protocol versions in the live delta; do not blindly restore an obsolete version assumption
+- Message dialog grows to two initialized items and keeps the original bounded input text. Native message_length checks admit complete grouped packet extents before dispatch. Added rewind maximum is 440 bytes, covers the largest branch command, and Android hooks are guarded while game-neutral difficulty APIs retain shared declarations
+- Robot smoothing now derives thrust after extract_shortpos updates velocity. Kill statistics use shared killer resolution after successful explode and preserve original host matcen accounting. Boss HUD/profile hooks stay compact. Current robot coordinate/drop manifests and boss-shot classification are separate later additions needing their own production integration
+
+## Clean dimensions and evidence gaps
+
+No new independently actionable packet, protocol, duplication or gameplay root was admitted. Shared kill/status, migration, powerup duplication and save-path owners already centralize policy; native format and gameplay callbacks remain authoritative. No forged-packet/relay, save/barrier/rollback, migration, difficulty-history, boss/profile/smoothing, sanitizer, paired build or device test was executed during this analysis. Helper savings remain a source model pending coherent owner design and measured post-change diff
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: BR-0195 (reference); rationale: admitted peers can mutate cooperative state and out-of-range damage/repair slots; existing root retains the exact host/receiver oracle
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0291 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0292 frozen survey, resumed 2026-10-01 SHA256:a5cb54da8ee350b067f3e3a6155c1b682278aab75d3d854a00de72d6e1c67058 -->
+
+## GQ1-CHUNK-0292 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0292.md`
+- Imported SHA-256: `a5cb54da8ee350b067f3e3a6155c1b682278aab75d3d854a00de72d6e1c67058`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0292 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/input_demo_hooks.c`: L751-L1326; frozen blob `d0a5724c5a13706ae19725a1c35d254101c4a599`
+- `d1/main/input_demo_hooks.h`: L1-L90; frozen blob `a1340e2db774fc26bd708993a2ea6c954421a225`
+- `d1/main/input_demo_start.c`: L1-L72; frozen blob `efdd2c420af20b7a8f87950977819535a5f82655`
+
+Scope SHA-256: `6b5cf9676d11b224c2560f0717e4e9c02263d4e697dd9c05c91ce208741fcf34`
+
+## Diff-minimization assessment
+
+RETAIN narrow native replay/control/result adapters and game-specific AI probe fields. The assigned hooks/start files did not exist at the inherited BASE; wholesale relocation would move authored code rather than remove original inherited churn. Shared input_demo_hooks_shared and input_demo_start_shared already own stepping, RNG restore, tracing, result capture and replay start. D2 has distinct terminal overrides, robot diagnostics and callback preparation. Avoid reproducing native AI structures or adding dispatch tables to merge unlike probe formats
+
+## Context and reconciliation
+
+Read every assigned line of the hooks tail, entire public hook header and replay-start adapter; enclosing collision-pair function; current full scoped diffs; shared prepare/stop/finish/RNG/step/advance transaction, collision trace admission and complete loaded replay start; paired D2 fire/result/terminal callback context. Read complete BR-0209 and archived BR-0370, and retained previously fully reviewed BR-0294/0293/0201 plus checkpoint/recording roots. BASE tree check confirms hooks/start are branch-authored files
+
+## Observations
+
+- BR-0209 applies to D1 too: actual-result write and embedded comparison return only console messages through a void callback, and game-over completion substitutes the full declared frame count. Shared finish then unloads regardless of callback outcome. Require observed cursor/clock, immutable terminal snapshot and typed first-failure propagation through both native/headless process and wrapper. No terminal oracle was executed here
+- BR-0294 remains the detailed probe admission owner. Frozen weapon/robot-path code formats event JSON and replay diagnostics before the sinks decide whether to retain them; robot-fire probe logs a hardcoded replay frame range. Current D1 uses shared replay/activity admission and separates recorder-required event formatting from optional replay formatting. These partial changes require the full disabled/enabled/release production counter and state/RNG matrix, preserving independent collision/state trace contracts
+- BR-0293 retains static accept-sequence history across sessions. Native last_frame/accept_seq only resets when the numeric frame changes, so a new session at the same frame can inherit an old sequence. Keep session-generation reset and recycled object/signature fixtures under that existing root
+- Shared collision pose admission is explicitly trace-enabled plus active record/replay. AI visibility uses explicit debug activation; its FVI specialization intentionally watches object 151. Native D1 unavailable D2 AI fields log sentinel values. Existing BR-0295 trace-label/hash semantics remain authoritative; no generic trace sink replacement is admitted
+- Shared stepping restores FP then prepares controls, processes direct commands, installs RNG and advances only when game time is unpaused. Non-MSVC restoration remains BR-0201. Native controls stay in the explicit per-game adapter already reviewed in 0290; RNG and checkpoint admission remain their existing owners
+- Replay start adapter checks every shared parse/load/setup/trace/start status, uses the D1 game domain and guarded breadcrumbs, and leaves format/mission/checkpoint decisions in the shared per-game owner. Current fast replay declaration has a matching shared implementation. Completed classic-demo alias repair BR-0370 stays closed
+
+## Clean dimensions and evidence gaps
+
+Public declarations retain C linkage and match native/shared implementations. Probe object pointers and literal step/kind labels originate in maintained native call sites; no unsupported arbitrary pointer/string producer is admitted. No result-write fault, early game-over, replay/record/trace mode, session reset, checkpoint, rounding injection, production allocation fault, host/Android build or device test was executed. No new independent root or fix queue entry is formed
+
+Provisional impact rating: 50 (H/M/B/C/R = 23/0/7/10/10); proposed owner: BR-0209 (reference); rationale: both native replay outcomes and the advertised headless process can report success after validation/output failure, with an exact process and observed-frame oracle
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0292 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0293 frozen survey, resumed 2026-10-01 SHA256:5e497cb6e7e021fcf2886b05d559ff44515f112c8640bf99c762a7e2ec2c3235 -->
+
+## GQ1-CHUNK-0293 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0293.md`
+- Imported SHA-256: `5e497cb6e7e021fcf2886b05d559ff44515f112c8640bf99c762a7e2ec2c3235`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0293 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/gameseq.c`: diff hunks 1-43, new L29-L1505; frozen blob `953423292364b8097481033a91d33e426eca9efc`
+- `d1/main/gauges.c`: diff hunks 1-54, new L26-L4418; frozen blob `266d856a31d28dc6c38a7482814294e322ac5590`
+- `d1/main/hud.c`: diff hunks 1-21, new L34-L306; frozen blob `ba4b9ef4c47a8306fb8a4982c76985cd1a55eb5e`
+- `d1/main/hudmsg.h`: diff hunks 1-3, new L16-L22; frozen blob `89d34b5f3814c7c1d7ae21993fac71350a38c201`
+
+Scope SHA-256: `89e68fc2b7d34150c1c4c987cc5d68e7acba74bd8afc76242361531eb577f406`
+
+## Diff-minimization assessment
+
+DEFER further HUD setup consolidation to BR-0349's coherent visible-frame repair. Paired corner-text helper scope is exact twenty-nine lines (SHA-256 d42d6a033066a5dfcf990763b59707015782619f7559b4e75fc6959997c8b9f2), 58 raw native lines, and repeated padded centered rectangle construction is adjacent small geometry. Existing graphics and hud_layout_shared owners can absorb narrowly typed public dimensions/rectangles if the measured result removes meaningful native churn. Keep private message queue/timing, native draw ordering, cockpit/gameplay, player-start and save/level formats local; do not build a private HUD-state mirror or callback facade. Shared hud_counts, boss_hud, coop_start_positions and homing policy already own substantial paired reuse
+
+## Context and reconciliation
+
+Read every assigned hunk in four inherited files and complete scoped current diffs; enclosing spawn generation, score arrays/menu lifecycle, level load/init/rejoin/homing, kill-list positioning and HUD observer/no-HUD/render flow; full shared fanout, layout rectangle header and count-row implementation; paired message preparation and exact inset helpers; complete BR-0349/0435 plus existing replay/result, graphics/cache, difficulty and cooperative restore roots. Recovered the shared layout path as its header after a nonexistent C-file lookup; no missing shared implementation is assumed
+
+## Observations
+
+- BR-0349 remains live unchanged: D1 returns for no-HUD before message preparation, leaving exported rectangles from an earlier visible frame. D2's previously reviewed no-HUD/cruise flow and paired hidden expiry/visibility snapshots require the same existing actual frame oracle. Rectangles must describe a drawn frame, not merely queued messages or a setting echo
+- Prepared rows remain bounded: boss reservation reduces queue capacity, and the D2 guided/restore rows fit the two extra slots. Native queue expiration compacts without skipping the shifted message. Padding/centered dimensions and half-open intersections match actual font measurement under supported renderer bounds. Do not admit arbitrary INT_MAX rectangle overflow without a supported producer
+- HUD lives, score, timer, keys, energy, shields, weapons and counts use current canvas/inset/collision dimensions. Score-added lifetime clears on zero; shared counts already owns robot/hostage/secret rows. Paired private score_time/score_display need no exposed mirror. Current drops the obsolete secret_only parameter coherently in owner and caller
+- BR-0435 retains dynamic cooperative potential-score denominator; native level stats reset and compute only the initial population while spawned robot kills add later earned score. Preserve GQF-0188 restored timer admission and BR-0371 result baseline semantics as distinct existing contracts
+- Shared fanout owns bounded candidate offsets, checked segment lookup, prior-start separation and exact source-position fallback. Native source count is captured before generating starts, avoiding reuse of newly generated records; zero-original-start behavior and allocation failure are inherited broader map admission paths, not separately claimed new here
+- Coop score rows fit the enlarged nineteen-entry table with eight players, bounded formatted row strings and native base bonus rows. Existing BR-0195 status admission prevents forged counts from being treated as normal input; no speculative billions-of-kills overflow root is created. Screen advance begins after input flush and ends after the menu
+- Android level hooks preserve shared duplication/reset/restart/secret/homing policy and native initialization. Palette texture invalidation occurs after final level palette activation, and multiplayer merge caches flush at the declared level seam. Rendering/provenance/cache roots remain existing BR-0269/0288/0305 and GQF-0191/0192, without duplicate ownership
+- Game-over replay remains BR-0209's observed outcome contract. Current level profile, route metadata, recovery, briefing/flyout/endgame and dropped weapon-selection flags need live-delta integration. Current lives clamp, cockpit texture ownership, batch energy drawing and removed reticle coordinate hack remain later changes, with completed September batch policy preserved
+
+## Clean dimensions and evidence gaps
+
+Observer message preparation precedes rendering; temporary reticle context is restored synchronously; desktop logging and mode hooks are guarded. The flash distance replaces floating-point conversion with the intended exact fixed-point policy. No actual HUD pixels/frame snapshot, expiry/no-HUD/cruise, spawn/mapset, score, terminal replay, cache/palette, save/level transition, host/Android build or device test was executed. Geometry extraction remains a coherent-source candidate pending implementation measurements, not an independently scored completed saving
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0349 (reference); rationale: ordinary no-HUD behavior and exported visibility are wrong in paired paths, with actual paired frame/render verification required
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0293 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0294 frozen survey, resumed 2026-10-01 SHA256:ca884c1c480816e6c160f496232ebe257861fd402a4e8c297273f721bf64b91e -->
+
+## GQ1-CHUNK-0294 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0294.md`
+- Imported SHA-256: `ca884c1c480816e6c160f496232ebe257861fd402a4e8c297273f721bf64b91e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0294 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/playsave.c`: diff hunks 1-26, new L25-L2100; frozen blob `558154f14e58e68d50a5d6885fe330bf68126caa`
+- `d1/main/playsave.h`: diff hunks 1-3, new L139-L211; frozen blob `c0ad105e480da9dca425f87b8332e8cde7ebc047`
+- `d1/main/polyobj.c`: diff hunks 1-4, new L50-L536; frozen blob `c2a75bb034eb3493b8b100591652a5f4d45b67dd`
+- `d1/main/powerup.c`: diff hunks 1-11, new L189-L493; frozen blob `2d82c687658999f6c60b88c8ef7effd69462580f`
+
+Scope SHA-256: `7914879fad0c76a756bd80593627a016cc832b2e0d1b8eb2782242d1085e474a`
+
+## Diff-minimization assessment
+
+CANDIDATE GQF-0202/GQR-0189: consolidate the four paired cooperative duplicate-pickup predicates through existing coop_multi_status.c/.h, already compiled per game on desktop and Android. Each complete native helper group has fifty-two lines, 104 raw inherited lines/two complete added hunks. Only D1 ubyte versus D2 ushort weapon mask differs; normalizing that declaration yields SHA-256 09c1e969f04e053553952306bfbf1150688dd89fab527fc799f63d1f1b9e24ea in both frozen and current trees. Model at least 100 inherited lines removed and approximately 45..50 repository net lines, using public native player/weapon domains and an unsigned mask large enough for both games. Keep pickup rewards, ammo mutation, native single-player versus competitive/cooperative flow and game formats local; no callbacks, mirrored layouts, parallel state or new subsystem
+
+RETAIN native pilot binary/text schemas, canonical weapon-order arrays/validation, per-callsign serialization and model color lookup. Existing playsave_layout/text/transaction/android_shared own reusable byte transactions. Music string decoding is paired but remains small native format policy; do not fold it into a generic pilot facade or broaden this bounded pickup candidate
+
+## Context and reconciliation
+
+Read all assigned hunks in four native files, all current scoped diffs; native binary read/close/live-controls and text write/publication, per-callsign writer and transient mirroring, full assigned Android scalar/cockpit/order patch adapters; shared layout and cooperative public headers, existing cross-platform shared status owner and paired CMake registration; exact paired reward groups in frozen/current trees and enclosing Vulcan duplicate/ammo reward flow; complete BR-0236 and archived BR-0261. Historical completed playsave bridge and weapon-permutation repair remain closed
+
+## Observations
+
+- Admit GQF-0202/GQR-0189 with actual paired pickup integration acceptance. Validate single-player, competitive and cooperative reward results for all/missing-primary, laser thresholds and durable flags; connected/waiting/disconnected peers, observer host, upper D2 mask bits, normal/translated D1-in-D2, partial/full ammo and full energy. Compare native object removal/ammo/reward/sound/score and state/RNG traces, not helper-return tests alone
+- BR-0236 explicitly already owns discarded transient-to-normal pilot mirror status, unchecked text generation before binary publication and grouped preference partial commits. Current native write/mirror remains unchanged. Preserve native formats and transactional staging with exact identity/field failure reports; no duplicate per-callsign persistence finding
+- BR-0255 retains selectability versus actual pilot load failure. Frozen selectability bounds callsign/version/mission count and minimum native layout but then closes and reopens through the actual reader. The current reader still owns native layout and gamepad/control reload. Do not treat the precheck as complete read or atomic publication
+- Archived BR-0261 requires exact primary/secondary permutations and native fallback. D1 helper defaults arrays, requires complete 7/6 lines and validates before copying; writer validates before subscript/format. Canonical native order domains remain engine-owned, as already reviewed in 0287/0288. Pending JNI allocation/acquisition containment is separate GQF-0183/GQR-0170
+- Cockpit read/write accepts only persistable modes. Shared layout computes native keysetting offsets from explicit game format parameters, and shared text/transaction owns replacement. Auto-level native version/header/offset semantics remain local. New count/boss/homing preferences match declared player fields and writer keys
+- Native model alternate textures originate in the maintained contiguous player-texture array, and flattened row lookup uses that producer's public bounds. Android replacement admission uses existing visual policy; current model class and animated scene interfaces remain live-delta additions
+- Pickup predicates intentionally inspect every nondisconnected nonobserver peer: duplicate rewards become single-player style only when every such peer already has the item/level/flag. Native Vulcan flow retains surplus ammo versus removal/reward behavior and every handmade comment. Current synthesized dropped-ammo, life clamp and replacement model logic remain later additions; do not mix those changes into predicate extraction
+
+## Clean dimensions and evidence gaps
+
+No new native binary schema, persistence, model-color, order or reward correctness root was formed. Fixed pilot validation and shared byte-transaction ownership remain intact. No real multi-pilot fault/round trip, duplicate pickup, object removal, observer/translated mode, rendering, allocation/sanitizer, host/Android build or device test was executed during this analysis. Savings remain a model pending isolated inherited diff and actual paired integration
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed owner: GQR-0189 (primary); rationale: bounded exact paired policy removes modeled over 100 inherited lines and two complete added hunks without moving game-specific pickup behavior
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0294 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0295 frozen survey, resumed 2026-10-01 SHA256:9037ccd76c657f7fe4143cb58c17d2d51f2cf266de31436eb33f7f27d44e065c -->
+
+## GQ1-CHUNK-0295 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0295.md`
+- Imported SHA-256: `9037ccd76c657f7fe4143cb58c17d2d51f2cf266de31436eb33f7f27d44e065c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0295 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/net_udp.c`: diff hunks 279-305, new L7859-L8181; frozen blob `60b4fd8634d58c582211eb082256f5be2928753f`
+- `d1/main/net_udp.h`: diff hunks 1-10, new L1-L227; frozen blob `4d51f68b3681b3c31e26467f7e89fb0c76f23c67`
+- `d1/main/newdemo.c`: diff hunks 1-14, new L28-L3423; frozen blob `75b6e1a74f31724977e149a22e11468d288b628e`
+- `d1/main/newdemo.h`: diff hunks 1-1, new L109-L110; frozen blob `eaf18dbee56a959b7aec604e7be14b48d3b555bf`
+
+Scope SHA-256: `0b27b849108d71f06f815b6cdb5cad72d90fc016c69376ce83ba569bbfe3d0e6`
+
+## Diff-minimization assessment
+
+RETAIN compact UDP socket/address adapters, native reconnect/refusal state and classic-demo format hooks. The large native P2P/proxy bodies have already moved into net_udp_p2p_proxy_shared.c; input_demo_newdemo_shared owns stop/quick-record lifecycle. Another wrapper for tiny socket getters/send/port or native globals would not remove meaningful churn, and moving refusal timers/host admission would violate the recorded high-coupling gate. Preserve both completed extractions and native packet/demo format ownership
+
+## Context and reconciliation
+
+Read all assigned tail UDP hunks 279..305 and all net_udp/newdemo header/source hunks; enclosing P2P/host ping-pong, authenticated refusal, extras and quick/classic record lifecycle; complete shared proxy C/header and stop/toggle common implementation; all scoped current header/demo diffs and every current UDP hunk intersecting assigned frozen tail L7859..8190; complete archived BR-0225 and existing BR-0195, protocol/record/result roots. Earlier/later UDP delta hunks remain their own queue/current-delta coverage, not claimed covered here
+
+## Observations
+
+- BR-0195 explicitly owns the new host-liveness credential: frozen P2P ping trusts payload from_player equal to current master to refresh LastPacketTime, without address binding. Current defers rx_loss publication until player bounds pass, but unchanged host heartbeat still relies on the public claimed slot. Preserve the existing authenticated-route/host-loss/migration oracle; range checks do not establish identity
+- Shared P2P/proxy extraction retains native token, connection table, packet dispatch and public socket adapter. Bounds/allocation weaknesses copied unchanged from the inherited baseline are not newly allocated defects here. Ordinary host PING verifies the master's native route before refreshing time. Pong indexing/order and proxy routing require their existing full transport-boundary review; no partial-source passing test is inferred
+- Preserve completed BR-0225 signed challenge/credential slot matching and later GQF-0056 generation/title-bound transcript repair. Android refusal receives the authenticated player identity; desktop keeps native callsign/socket identity. Public display names never replace the cryptographic reconnect owner. Live multidevice adversarial reconnect remains an explicit archived verification gap
+- Dynamic-master ping broadcasts now include slot zero when appropriate and skip the local player. Wire ping list itself keeps its original seven remote entries. Current protocol headers add generation, visit/age, reliable world-stamp and explicit maximum-size checks; these must be reviewed with their current wire producer/reader and distinct version contracts
+- Native extras invoke shared pickup snapshot only at the final cooperative phase. Current adds matcen and recovery snapshots and defers join approval during presentation/load; keep these new generation/lifecycle transactions for current-delta integration
+- Classic recording start clears autorecord on temp-file open failure and starts input recording only after classic header creation. Stop, quick toggle, naming and sidecar publication already have one shared owner. BR-0233 retains complete checked recording/output publication; GQF-0189 aggregate recorder memory and BR-0029 per-frame option publication remain separate existing contracts
+- Native reactor trigger validator gates newdemo traversal before bounded native segment/side use; subsequent original wall/child assumptions belong to inherited format admission. Integer interpolation step and FX autoplay file selection retain intended deterministic policy and public quick-record declarations match shared definitions
+
+## Clean dimensions and evidence gaps
+
+Header guards, public adapters and Android conditionals preserve paired/desktop interfaces. Address equality intentionally ignores sockaddr padding through the existing shared policy. No raw packet/heartbeat/relay, reconnect/refusal/migration, extras, record/sidecar I/O fault, deterministic replay, host/Android build or device test was executed. No new independent root or minimization dispatch is formed
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: BR-0195 (reference); rationale: authenticated-peer spoofing can hold a dead host's liveness open, with actual route/timeout/migration acceptance required
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0295 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0296 frozen survey, resumed 2026-10-01 SHA256:2fcab75761855e62fee364bbb6b74b37d6bc52bd28755c124298bd98316638ed -->
+
+## GQ1-CHUNK-0296 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0296.md`
+- Imported SHA-256: `2fcab75761855e62fee364bbb6b74b37d6bc52bd28755c124298bd98316638ed`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0296 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/game.c`: diff hunks 1-50, new L32-L1683; frozen blob `39cce3aa4d77d8269cfdfc871064146d275c2f53`
+- `d1/main/game.h`: diff hunks 1-5, new L35-L181; frozen blob `e00aa618157507d234e11e86ba988239a9ec4e36`
+- `d1/main/gamecntl.c`: diff hunks 1-18, new L74-L1628; frozen blob `93eee07e2b35c37cfaf2175760477841d13c079a`
+- `d1/main/gamefont.c`: diff hunks 1-1, new L118-L122; frozen blob `0e891170c85973a6f7585e561d1bb3ef167a6df4`
+- `d1/main/gamerend.c`: diff hunks 1-12, new L59-L716; frozen blob `aa8afc19f9e29c37ae93e702695dfdbd9d0bd908`
+- `d1/main/gamesave.c`: diff hunks 1-16, new L24-L1433; frozen blob `bf3acee533b3a3dc918fb2ca29a02d61ce4868f2`
+- `d1/main/gameseg.c`: diff hunks 1-1, new L1808-L1808; frozen blob `d28e7d8da6e39086d95354c440e5f53e24074cf6`
+
+Scope SHA-256: `dc37d036d004c51fecb0739daae2d64149ba06a190dde5038ab5500f2a06a521`
+
+## Diff-minimization assessment
+
+DEFER cooperative scheduler removal to existing BR-0278's single shared lifecycle owner; retain native game-loop, event, control, level-format and render-order hooks. Paired scene-object profiling and texture-label rendering already moved to android_profile and android_texture_debug in the completed September cleanup. Do not reopen those extractions or introduce callback tables for native player, weapon, palette or scheduler layouts
+
+## Context and reconciliation
+
+Read every assigned game/source/header, control, font, render, level-I/O and segment hunk; enclosing timer/scheduler, frame draw/teardown, primary/secondary firing, replay/post-frame and pulse staging, font selection and bounded level-name parsing; complete current diffs for the seven assigned files; paired scheduler, frame-statistics and replay-control implementations and cockpit policy context; existing BR-0231, BR-0278, BR-0351, BR-0352, archived BR-0390 and earlier complete paired adversarial reports. Current profiler and texture-overlay entry implementations and shared replay step were checked locally; their other file ranges are not claimed covered here
+
+## Observations
+
+- BR-0278 retains the duplicate process-clock and game-clock cooperative autosave schedules. The assigned game-loop function-static deadline still survives resets and can admit a second write after multi_do_frame. Complete the existing shared host/session/level scheduler with successful ring publication and retry policy; retain its actual paired clock/broadcast/history acceptance matrix
+- BR-0352 is unchanged in current D1 gamefont: Android-motivated integer scaling is guarded only by OGL, shrinking desktop filtered fractional fonts. Preserve Android policy, restore desktop filtered scale and exercise actual paired measurement/render/hit geometry. No competing font-policy wrapper is required
+- BR-0231 owns indistinguishable replay command failure versus ordinary controls outcome. Native wrappers still return zero on direct-command rejection. Current shared stepping also checks RNG synchronization before simulation, so its failure behavior must be traced for both unload policies rather than asserting the historical D2 extra simulated frame remains unconditional. Preserve terminal error and actual no-simulation/no-advance plus interactive/headless status acceptance together with BR-0209
+- Preserve completed BR-0390 scheduler-domain validation and widened arithmetic. Count/timer getter/setter hooks intentionally expose engine state for native save/replay ownership, and compact cockpit persistence validation remains native. Pause underflow containment is Android-gated; original timer lifecycle and public game_is_time_paused contract remain intact
+- Primary/secondary pulses are consumed once, replay death-abort and automap staging keep native ordering, and pending save/music/weapon commands remain on the event/game thread. Replay-only release-marker and post-frame firing need the existing production-versus-replay integration oracle; no replay-specific compensation is authorized by static parity alone
+- Fusion cadence uses FX RNG but also gates awareness and overcharge damage. Current exposes the cadence timer for checkpoint access and corrects the misleading sound-only comment. Preserve current timer ownership and deterministic integration; do not move it as graphics-only work
+- Frame-rate division is guarded against nonpositive limits. The paired Android rolling FPS block remains duplicated but is smaller than a standalone high-payoff dispatch; existing profiler integration is the suitable owner if a coherent telemetry change is admitted. Extreme frame duration, telemetry narrowing and rolling sum behavior were not executed and are not marked tested
+- Level-name parsing bounds the destination and drains to NUL/EOF, while rewind adapters retain native desktop/Android file semantics and checked reactor-trigger admission. Current adds section offsets and wall/texture reference validation; those new whole-format admission changes remain current-delta work, not inferred fully verified by these local hooks
+- Current game-window changes add cooperative presentation/restore pause and teardown ownership. Keep BR-0206 barrier and BR-0345 lifecycle acceptance. Palette restoration preserves both palette and fade table with texture invalidation; overlay extraction keeps direct RGB drawing; native reverse cockpit retains game-specific select/message/persistence ordering
+
+## Clean dimensions and evidence gaps
+
+Android includes, profiling/overlay calls and file adapters preserve native desktop interfaces except the existing font-scaling regression. No actual replay/command failure, scheduler clock/slot/history fault, desktop font pixels, frame-statistics boundary, malformed level, palette/context lifecycle, host/Android build or device integration test was run. All existing defects retain their current owners and completed fixes stay closed
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0278 (reference); rationale: duplicate cooperative writes and persistent deadline drift require one success-aware shared scheduler and actual paired lifecycle acceptance
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0296 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0297 frozen survey, resumed 2026-10-01 SHA256:734571c8f4535efd9b8c96749f34efde927da7213e7bea15059af484b044568c -->
+
+## GQ1-CHUNK-0297 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0297.md`
+- Imported SHA-256: `734571c8f4535efd9b8c96749f34efde927da7213e7bea15059af484b044568c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0297 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/newmenu.c`: diff hunks 129-130, new L3325-L3370; frozen blob `7c566d44c469975b5c0b92321603836ead31d03d`
+- `d1/main/newmenu.h`: diff hunks 1-2, new L115-L155; frozen blob `a7a2ad15cc950922e911af49b4f5129a184709ee`
+- `d1/main/object.c`: diff hunks 1-43, new L41-L2452; frozen blob `e74b4029d347e8b0b4be4756f8859fb2b1cd4ce3`
+- `d1/main/object.h`: diff hunks 1-5, new L105-L555; frozen blob `d2e408ab071992af5f1d71ed8900db9632dce97f`
+- `d1/main/physics.c`: diff hunks 1-13, new L17-L969; frozen blob `8fb4809939e54794ef1e0caef939285083842df7`
+- `d1/main/piggy.c`: diff hunks 1-10, new L48-L1142; frozen blob `ee000f38ca4ccecbb1bd3ddd44e9f2b529659a56`
+- `d1/main/piggy.h`: diff hunks 1-1, new L139-L139; frozen blob `8c9310a3daa25c9eb46bdec4bc333bde95ced3b5`
+
+Scope SHA-256: `8e964db65e3931636c02959d1594d8325e8b401b6573bae99550e4cf056565ee`
+
+## Diff-minimization assessment
+
+RETAIN native object allocator/getter/setter, simulation warning, collision ordering and bitmap admission hooks. Shared homing compatibility, profiling, cooperative visibility and menu-accessor declarations already own reusable additions. Allocator free-list and homing clocks are private native state; exporting them or creating copied layout/callback models solely to move getters/setters would increase coupling. Piggy diagnostics repeat formatting, but depend on private AllBitmaps names and cache state; a many-argument logging wrapper would offer limited net reduction and does not justify a new dispatch
+
+## Context and reconciliation
+
+Read all assigned menu tail/header, object/source/header, physics, piggy/source/header hunks; enclosing listbox draw/close/create, object warning/effects, allocator reset/get/validate/set, object movement/homing cadence, collision retry and final scopes, PIG paging and bitmap flag lookup. Compared complete current diffs for assigned object/physics/piggy/header files and scoped current listbox tail. Checked paired runtime allocator and PIG logger implementations, native private table declarations, existing complete R1-0241/R1-0277 and archived BR-0350. A broad merged_wall_debug output was truncated; only its recovered include/owner boundary and private-source coupling are used, not a claimed full-file review
+
+## Observations
+
+- Preserve completed BR-0350 runtime restore validation: the frozen scope already includes bounds, live census/highest index and exact free-tail partition checks. Historical earlier reports predate that repair. Native setters preserve private allocator state and derived debris/unused counts; malformed full-save/transfer rollback still belongs to existing staged-restore owners, not a reopening of allocator validation
+- BR-0294 retains the hot physics pre/post-collision and retry probe calls. Their diagnostic arguments preserve collision ordering and retry decisions, but actual opt-out production counter/I/O acceptance remains required. Current physics file is unchanged; do not accept source-only gates as a substitute for that integration oracle
+- Robot warning now runs at the simulation boundary against player orientation, live polygon robots and forward/rear direction. Its intentional rendering independence must retain real record/replay/no-render state/RNG acceptance; no new visibility policy is inferred from the static all-object traversal
+- FX effect placement/size/crackle and post-death cadence use the existing saved effects stream. Current death-camera randomness also moves to that stream and corrects the helper comment. Preserve current checkpoint/death runtime and cosmetic allocation ordering; no new simulation RNG compensator is introduced
+- Object signature seed resets/reconstructs from live signatures and the runtime footer retains native short signature semantics. Runtime getters and headers agree. Shared homing compatibility owns retention math while original scheduler state and positive-rate configuration remain native; unsupported restored timer envelopes require the existing full save-domain review
+- Shared profiler begin/end and cooperative powerup hide hooks are Android-gated and keep native render dispatch. Current adds flyout peers, recovery expiry, death clock reset/status, reactor-slot invalidation and additional RNG contexts. These later lifecycle/wire changes remain current-delta review; local hunk inspection does not certify their complete transaction
+- Piggy logging is multiplayer-only and Android-gated. Native page-out still flushes texmerge/RLE ownership before retry and restores time after normal admission. Unchanged inherited oversized bitmap/RLE admission and retries are not newly attributed to this diagnostic patch
+- Bitmap flags now distinguish resident replacements from PIG-backed entries through current GameBitmapOffset. Existing native pointer/table contract and paired semantics remain at the bitmap owner; do not export AllBitmaps or build a mirrored bitmap model for a seven-line accessor
+- Listbox window height correctly includes title; close clears Android scale and current additionally clears interaction state. Shared introspection accessor header replaces duplicated declarations, with native listbox lifetime and window failure cleanup intact. Menu geometry/lifetime behavior remains subject to existing full menu owner acceptance
+
+## Clean dimensions and evidence gaps
+
+Paired public runtime/header shapes and Android/desktop conditionals remain coherent. Physics brace cleanup preserves native scopes. No malformed save/allocator, object-signature wrap, homing/replay/FX trace, collision diagnostic counter, bitmap replacement/pageout, menu lifecycle, host/Android build or device test ran in this survey. Completed allocator and shared-menu repairs stay closed; existing diagnostic and save/lifecycle owners retain their acceptance work
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0294 (reference); rationale: detailed replay/record collision probes need actual inactive production counter and I/O verification without disturbing simulation
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0297 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0298 frozen survey, resumed 2026-10-01 SHA256:2e6064e5fec105204c5352f9a5c2f415a3b393a526f567d9519b9fec879ec314 -->
+
+## GQ1-CHUNK-0298 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0298.md`
+- Imported SHA-256: `2e6064e5fec105204c5352f9a5c2f415a3b393a526f567d9519b9fec879ec314`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0298 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/render.c`: diff hunks 1-38, new L57-L2140; frozen blob `02d2e53a8f8cb6bbb4493a1cf02aef8093ba5ca3`
+- `d1/main/render.h`: diff hunks 1-1, new L46-L52; frozen blob `2ae7626167e58fe9f5ae28542caefb7c2e171e49`
+- `d1/main/scores.c`: diff hunks 1-2, new L47-L221; frozen blob `ba48d0eb3d075fc9ad52cb5f01e2fa21fbb25110`
+- `d1/main/screens.h`: diff hunks 1-1, new L121-L122; frozen blob `e3e6f1e7692290fc1b055ecc928761f5a3913813`
+- `d1/main/secretarea.h`: L1-L42; frozen blob `7f5ce364b936e566a118fb93d59883132dc42b5d`
+- `d1/main/songs.c`: diff hunks 1-23, new L26-L501; frozen blob `dc675040a1a1ab27fc761f4536241f3ec7070089`
+- `d1/main/songs.h`: diff hunks 1-1, new L29-L29; frozen blob `c38b77be61b92cfc30175de18aeaae96e2ca0a0f`
+- `d1/main/state.c`: diff hunks 1-11, new L37-L136; frozen blob `1d7134c9c4f0559e11e42e585a4133476c870fe2`
+
+Scope SHA-256: `4478ede868d0d589efe9fc16f0a8dd15148114045ad71d3e55130f1401826ddb`
+
+## Diff-minimization assessment
+
+CANDIDATE GQF-0203/GQR-0190: move the exact paired merged-texture label producer into existing android_texture_debug.c/.h, already compiled per Android game under OGL. The 53-line body (plus platform guard/blank lines) is byte-identical in frozen and current D1/D2: SHA-256 d3507f7c21026d341d5e164e6cf38475302dc182fa64d89057bfb0e5508f3374. Two complete added hunks contain 106 raw body lines; model at least 100 inherited lines removed and roughly 50..70 repository net reduction through a compact point-list/count/texture-id/secondary-bitmap interface. Use public native bitmap/texture types, existing label state and face context; no callback table, private-layout mirror or new subsystem
+
+RETAIN native FOV render-list/side-effect and game-format/music/score policy. FOV owns private render state and two ordered render calls; extracting those into a callback-driven facade would add coupling. Four repeated public FOV declarations alone offer only six saved lines and no complete hunk removal. Secret-area declarations and serialization are already shared, including completed GQR-0161
+
+## Context and reconciliation
+
+Read every assigned rendering/header, score, screens, complete frozen secret-area header, songs/header and state prefix hunk; enclosing face texture admission, light/draw/label/context reset, depth sort, frame setup/draw, soundtrack initialization/teardown and file/track selection. Compared all current diffs for the seven complete assigned non-state paths and current state-version prefix. Read exact paired frozen/current label bodies, current texture-debug implementation/header and per-game OGL CMake registrations; complete existing BR-0260 and R1-0243/R1-0282 reports; current GPU timer implementation. Current broad route/header and full save carrier additions retain later current-delta coverage
+
+## Observations
+
+- Admit GQF-0203/GQR-0190 as one bounded diagnostic producer. Preserve projected-point-only screen averaging, at least-three-vertex admission, two-slot reservation, independent missing bitmap names, original plus-ten second-label placement, forced non-hires status, anchor values, string termination and face metadata, called after native draw and before clearing context
+- Existing android_texture_debug_get_label_anchor averages/projectively transforms 3D coordinates and therefore cannot replace this producer's projected-screen arithmetic. Existing append helper can be reused with a null bitmap to retain non-hires status. Preserve the handmade explanation; actual paired label data and overlay pixels/counters are required for capacity, projected/unprojected, screen edges, missing names and hires originals whose merged output is low resolution
+- BR-0260 historical nested timer begins are locally contained in current code by the query_in_flight early return before ring polling/begin. Do not dispatch the obsolete missing-guard edit. Full one/two/many-pass, ring occupancy, availability, FOV/auxiliary view and context-loss acceptance remains existing graphics/timer integration work; the active historical ledger entry alone is not evidence that current guard is missing
+- FOV visual pass retains base render list/count and suppresses recorded viewer frames, rendered-object census, automap visitation and robot-derived visibility publication. Keep native depth and diagnostic face ordering. Current render_setup_view exposes CPU setup for the no-draw collector; full homing producer/consumer parity remains BR-0386/current-delta work
+- Face primary/secondary texture guards run before lookup. Alternate texmerge and multiplayer ClassicDepth changes are intentional paired behavior. Original sort arithmetic and arbitrary malformed engine geometry are not newly attributed to the added Android label producer
+- Scores avoid insertion while replay is loaded. Replay unload/terminal outcome timing remains BR-0209; no new replay-only scoreboard compensator is formed. Current adds controller navigation while native score format remains local
+- Soundtrack preference, default-song fallback, list reset/uninit, explicit void callback signatures and Redbook ordinal/offset policy retain their native/shared owner. Shuffle draws use the saved FX stream. Current extends HMQ/MIDI/WAV admission; original realloc and native song-format parsing are unchanged inherited code, not new diagnostic/preference roots. Audio generation/EOF/thread and track selection contracts retain their existing owners
+- State versions, thumbnail and runtime milestones remain engine-format constants. Current adds identity/autoselect/full-width cadence/wall-blast versions; matching readers/writers/translation must be reviewed with later complete save scopes. The paired secretarea header is removed in favor of the existing shared interface, preserving completed extraction
+
+## Clean dimensions and evidence gaps
+
+No new renderer/gameplay, native song/save schema or header ABI defect is admitted. No label pixel/capacity fixture, GPU timer/FOV/context probe, record/replay/homing trace, native soundtrack/Redbook/EOF session, save-version round trip, host/Android build or device test ran. Modeled savings await isolated inherited diff and actual paired integration
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed owner: GQR-0190 (primary); rationale: exact bounded shared label producer removes modeled over 100 inherited lines and two complete added hunks through an established diagnostic owner
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0298 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0299 frozen survey, resumed 2026-10-01 SHA256:9460910e8cebe893539e4a5079eb330adf62371c41e638cae01fc4f94bb023d6 -->
+
+## GQ1-CHUNK-0299 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0299.md`
+- Imported SHA-256: `9460910e8cebe893539e4a5079eb330adf62371c41e638cae01fc4f94bb023d6`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0299 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/ai.c`: diff hunks 1-63, new L56-L3541; frozen blob `b101bad84ce6ced13f00dad8ff43edd54d1bdd76`
+- `d1/main/ai.h`: diff hunks 1-3, new L78-L113; frozen blob `36ff37843be465abaa970a90c21eb8fc49e0a436`
+- `d1/main/aipath.c`: diff hunks 1-7, new L42-L1250; frozen blob `94c7bf45c55cea99be1c9076136c2d73ae73a2ef`
+- `d1/main/automap.c`: diff hunks 1-35, new L63-L1319; frozen blob `1fd28eb589db917db89b6597d58a5d1c0bfb612a`
+- `d1/main/automap.h`: diff hunks 1-1, new L26-L58; frozen blob `4c4bb048295657a8707917034e3098ae10c6b1c7`
+- `d1/main/bm.c`: diff hunks 1-2, new L145-L163; frozen blob `34b3a93857a0ccd9ca855e2c34a7d6146b1733a6`
+- `d1/main/cntrlcen.c`: diff hunks 1-17, new L34-L510; frozen blob `043d9865d81f2bd2acc89c9a6f4c0b0d45938b9d`
+- `d1/main/cntrlcen.h`: diff hunks 1-6, new L28-L100; frozen blob `47bd30a13cf9eeac470a04f14c9bed2d34d1207b`
+
+Scope SHA-256: `cafe25dd562fa408d5d099ea922cca80b3a830960cca65043cb1f9e0ddc5f86b`
+
+## Diff-minimization assessment
+
+RETAIN native AI save layouts/preflight, private path allocator/editor cursors, automap edge/window state and reactor records. Existing deterministic_math, automap_metadata_overlay, secret-area, rewind-file and replay/profiler owners centralize branch policy. Moving private automap snapshots, paired native serialization or AI preflight into callback/layout facades would broaden coupling and obscure game/version-specific bytes. Small repeated reactor/secret predicates alone do not justify a new owner; existing GQR-0185 already owns paired line/glyph batching
+
+## Context and reconciliation
+
+Read all assigned AI/header/path, automap/header, bitmap-property and reactor/header hunks, including recovered truncated AI tail/header/path and automap prefix. Checked enclosing AI visibility/chatter, complete native conversion/save/read/preflight/restore, deterministic path smoothing and allocator reconstruction, automap input/draw/pacing/entry/close/reveal/colors/edge limits, and reactor trigger readers. Compared complete current diffs for all eight paths. Read complete R1-0233, archived BR-0360/BR-0369 and existing diagnostic/input/thread/lifecycle roots. Broad ledger search output was not used as full evidence; targeted owners and source ranges were recovered
+
+## Observations
+
+- Preserve completed BR-0360 awareness/path/reference admission: native AI preflight measures exact record advancement into temporary arrays, validates appended awareness count/segment/type and path free pointer before restore publication, frees all temporary allocations and seeks back. Native D1/D2 record widths and game/version gates remain format knowledge. Later full-carrier transactional rollback stays with its existing save owner
+- Native AI timers restore relative to GameTime64 and the cloak conversion now writes y correctly. Current fixes appended awareness and believed vectors to explicit little-endian reads matching their writer, while legacy host-format rows retain swap behavior. Preserve that later repair and actual native/swapped/translated save acceptance; do not reapply the historical vector read change blindly
+- AI visibility consolidates return without changing FVI policy. Focused visibility probe gate and sound flags retain their native context; BR-0294 requires actual inactive diagnostic counters/I/O acceptance. Cosmetic chatter/death effects use the saved FX stream while aim, gate, teleport, path and awareness choices remain SIM RNG
+- Deterministic smoothing already delegates arithmetic for robot and editor/player paths. Native runtime getter/setter preserves editor-enabled fields versus documented noneditor sentinel values. Free-pointer reconstruction uses native live AI path spans and original editor policy; malformed object/path domains must retain complete save preflight acceptance rather than claiming this reconstruction helper admits arbitrary data
+- Automap snapshot reads and volatile center request retain BR-0029/BR-0244/BR-0254 engine-thread ownership. Snapshot traverses private used edges once and exposes public diagnostic fields. Shared metadata owns connector/label/next-objective policy; native map owns canvas, edge order, normal/revealed palette and limits
+- Secret reveal rebuilds edges when reveal changes and admits visible secret segments through existing segment-limit policy. Found index is range checked before array use. Existing line batching begin/end surrounds the native edge walk; the aggregate allocation/failure cleanup belongs to GQR-0185, not a new automap batching dispatch
+- Android translation triples only movement axes, while desktop keeps one; ordinary timing follows guarded FPS division. Removal of automap calc_d_tick avoids updating the gameplay scheduler during paused view updates. Extreme input/frame duration and fixed-point consumer boundaries require actual input-domain acceptance, not an invented separate defect based only on unsupported scalar values
+- Android primes the MSAA target before its background, then draws the 3D map and shared overlay in native order. Current adds readiness and bounded live-route update admission excluded during recording/replay/network modes. Keep actual route lifecycle/render acceptance with current-delta work
+- Archived BR-0369 repaired D2 background/partial-initialization cleanup with one synchronous window owner. D1's examined allocation failure code is inherited; do not reopen the D2 double-free root from an unchanged D1 baseline. Preserve active pointer clear and game-window/time/input restoration acceptance
+- Reactor link count, live segment and side domains are validated before toggling or after checked short/block reads. Caller-visible status/header rewind types agree. Mine-exit replay termination and window close retain BR-0209/BR-0345, while current reactor pause/status additions need their own later producer/consumer review
+- Current removes D1 boss-HUD hooks, publishes native AI observation declarations, clears prior-mine awareness on initialization and refreshes difficulty runtime. These later changes are retained for current-delta analysis; this native hunk review does not certify full new runtime behavior
+
+## Clean dimensions and evidence gaps
+
+No new independent native format, AI, automap, reactor or minimization root was formed. Completed awareness/reference and D2 cleanup repairs stay closed. No actual truncated/swapped save, AI/path/replay trace, diagnostic counter, input/thread mailbox, automap pixel/MSAA/allocation failure, reactor link/countdown, host/Android build or device integration test ran in this survey
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029 (reference); rationale: public automap/engine observations and control requests retain the existing cross-thread ownership contract and its broad integration prerequisite
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0299 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0300 frozen survey, resumed 2026-10-01 SHA256:2706b640ab00c43676ab224bb1d59d328d304f9f33a912176df259a3ee522f2b -->
+
+## GQ1-CHUNK-0300 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0300.md`
+- Imported SHA-256: `2706b640ab00c43676ab224bb1d59d328d304f9f33a912176df259a3ee522f2b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0300 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/input_demo_hooks.c`: L1-L750; frozen blob `d0a5724c5a13706ae19725a1c35d254101c4a599`
+
+Scope SHA-256: `f1d8c0fe111cc04a8ea76bf4ada4fbf9446a8b757f52b0c3eacf35bdbdfeef6a`
+
+## Diff-minimization assessment
+
+RETAIN branch-authored D1 replay adapter and typed command callbacks. This complete file is absent at the frozen base, so relocating its diagnostic bodies earns no inherited-diff credit. Common recorder/replay/direct-command/debug APIs already own reusable state and policy; native topology and gameplay callback meaning remain game-specific. No callback or mirrored object layout facade is justified
+
+## Context and reconciliation
+
+Read all assigned L1-L750, enclosing final shot-probe boundary, every current hunk intersecting those frozen lines, complete current direct-command policy, shared post-controls RNG synchronization and earlier step contract, actual debug activity/replay implementations plus release header stubs, native FVI caller and checkpoint-link restore caller. Read complete BR-0231/BR-0294/BR-0385 and relevant archived topology/checkpoint owners previously reviewed. This report does not claim the later D1 hooks or full current D2 hook file as covered
+
+## Observations
+
+- Reconcile historical BR-0231 precisely: assigned frozen and current D1 policy sets unload_replay_on_failure to one, so the original recorded D1 zero-flag edit is obsolete. Shared sync returns zero when replay is unloaded, and shared stepping checks it before calc_game_time/GameProcessFrame. Thus command rejection is currently contained before simulation through this path. Persistent terminal reason, result publication and interactive/headless completion still need existing BR-0231/BR-0209 integration; do not claim the old unconditional extra simulated frame survives
+- Typed policy materializes the entire command batch, validates callbacks first and applies afterward. Exact weapon callback bounds D1 class/index and native difficulty callback validates then delegates engine policy. GQF-0190 strict upstream scalar admission and GQF-0189 allocation containment remain separate existing owners; no new callback-format facade is formed
+- Checkpoint topology helper stages segment heads, checks live object segment, predecessor/successor consistency, cycles and complete census before publishing segment heads. Failure selects native canonical relink. Preserve completed BR-0355 cleared fallback topology and BR-0219 expansion admission; complete malformed carrier rollback remains existing save ownership
+- Current BR-0294 improvements gate FVI activity, durable replay append, physics fate, contact activity, powerup and player-shot probes through shared explicit debug predicates. Android release predicates are constant-zero stubs. Preserve those repaired gates and require actual off/on production distance/format/I/O counters across debug/release instead of repeating obsolete unconditional-path patches
+- Weapon lifetime and homing now return when neither recorder nor debug replay is active, separate recorder JSON from optional replay text, and gate text before construction. Recording still serializes diagnostic events regardless of debug option; determine required replay/state-trace data independently and complete existing BR-0294/GQF-0189 acceptance before removing or retaining capture work
+- Contact helper computes unchanged_velocity before the activity predicate. Even after current opt-in gating, the native call still performs diagnostic preparation before the early return. Keep this concrete local remainder with existing BR-0294's zero inactive preparation oracle rather than allocating a competing performance finding
+- Legacy frame selectors 13/15 remain in the debug-gated FVI fate path. Generic semantic/focus selection belongs to BR-0385 and the existing hard-coded probe cleanup; arbitrary historical slot identity must not become replay behavior. Durable append path remains bounded and checks native object/wall/side access before diagnostic fields
+- Native FVI already supplies its validated live object indices; no unsupported arbitrary public helper caller was established for the local lower-bound-only checks. Lifetime/homing weapon IDs and pointer offsets retain native producer and body-admission contracts. Static helper inspection is not a new remote memory-safety proof
+- Event append error logs once but does not return failure to the producer. Preserve GQF-0189 recorder budget/allocation/terminal failure containment and BR-0233 publication acceptance. No replay-specific state compensation or byte-format change is proposed
+
+## Clean dimensions and evidence gaps
+
+No new independent topology, command, format or minimization root was formed. Existing unloading/synchronization and debug gate improvements are explicitly reconciled; earlier immutable survey evidence is not rewritten. Concurrent outstanding_bugs.md and minimum-SDK-plan changes were observed and preserved untouched. No real command rejection/headless status, topology fixture, probe work counter, allocation fault, record/replay trace, host/Android build or device test ran
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0294 (reference); rationale: current debug gates are partial improvements but inactive diagnostic preparation and recorder capture work still require actual production integration acceptance
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0300 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0301 frozen survey, resumed 2026-10-01 SHA256:bf588c808f638821f6e6f8d5ada9908332dc7a01c458eecad3974a067ba3b247 -->
+
+## GQ1-CHUNK-0301 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0301.md`
+- Imported SHA-256: `bf588c808f638821f6e6f8d5ada9908332dc7a01c458eecad3974a067ba3b247`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0301 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/net_udp.c`: diff hunks 1-134, new L13-L3802; frozen blob `60b4fd8634d58c582211eb082256f5be2928753f`
+
+Scope SHA-256: `62e837d48dc49ab19c865f14b0fa1fbf98615c082e9ce78043372d612371bfed`
+
+## Diff-minimization assessment
+
+RETAIN native socket, packet admission and engine object-format hooks. Shared net_udp_android already owns exact identity lookup, welcome-slot selection, observer/reconnect setup, token/sync setup and socket rebinding. Relocating new authentication glue or mirroring native object layouts earns no inherited-diff credit. Remaining paired codec changes must be handled with the existing protocol owners rather than a broad callback facade
+
+## Context and reconciliation
+
+Read all assigned 134 complete frozen native hunks, enclosing sequence codec/init/welcome, object verification/read loop and complete game-info parser, security composition, current scoped diff hunks through frozen L3802 (truncated initial output recovered by bounded reads), current object reader/verification, actual shared welcome/observer/reconnect helpers and full current game-info preflight. Read complete BR-0195, BR-0356, BR-0357, BR-0388 and archived BR-0225, and completed GQF-0056 transcript-binding resolution. UDP dispatch and sync-poll continuations remain next chunk, not claimed complete here
+
+## Observations
+
+- Frozen object retry clears local rejoined/count/mode while the host publishes CONNECT_PLAYING at stream completion; the shared selector rejects an already-playing slot. Current object reader retains this same retry state. Keep existing BR-0356 generation-bound completion/restart acceptance; current join-attempt/visit envelopes and cancellation are partial later changes, not evidence that stream verification or explicit resync is now complete
+- Object header/body checks stop on truncation but occur after object_count increments and, for body truncation, after allocation/unlink. The loop publishes my_pnum from the start marker and directly maps remote object and segment indices. Existing BR-0356's staged complete-stream and owner/link oracle must exercise malformed/truncated bodies and partial failure as well as loss/reordering. No sanitizer or actual network failure fixture ran
+- Current full game-info parser now requires the actual host address and shared exact-length/session/player-token/master/generation/visit preflight before its side effects. Preserve this new fence; the frozen late len > data_len check is not the current Android behavior. Current helper verifies known mode as well as received mode so stale traffic cannot disable its own visit fence
+- BR-0357's historical same-version Android/desktop premise is obsolete in the current scoped headers: Android advertises 30069 and desktop 30017. Platform-conditional fields still exist; require explicit incompatible-version rejection and actual paired codec/negotiation evidence before closing or designing a shared extension. Do not blindly insert fields into preserved desktop wire format based on the old report
+- Frozen and current sequence codecs still carry display fields, route and authenticated reconnect identity but no 37-byte client_id. Initialization sets local client_id and add-player copies its decoded value, whereas full game-info only republishes the stored field. Existing BR-0388 remains the canonical stable-identity propagation owner; cryptographic key identity does not by itself prove launcher UUID propagation
+- Request and challenge transcript now include title/role and generation nonce through completed GQF-0056; current request transcript also signs join attempt/visit. Preserve archived BR-0225's key-based lookup/challenge proof, duplicate-callsign collision handling and proven route publication. Independent actual direct/proxy/rebind/migration adversarial acceptance remains required, without reopening completed transcript binding
+- Current sync payload wraps matching attempt/visit, rejects obsolete transfer, reconciles recovery before object start and delays participant identity commit to successful sync publication. Preserve these transition fences while reviewing next-chunk receive and completion paths. They do not replace authenticated-sender authority of inner cooperative messages tracked by BR-0195
+- Ordinary socket failure, loopback binding, tracker guards and native Windows lifetime remain platform-local. Shared observer setup retains native public Netgame semantics, and native object_rw conversion must remain per engine. No additional high-payoff inherited block was established after the existing shared extraction
+
+## Clean dimensions and evidence gaps
+
+No new independent root was admitted. Current game-info fence and separate protocol versions are reconciled without claiming complete live UDP coverage. No production codec vectors, malformed object stream, retry/drop/reorder, route authentication, UUID save/restore, desktop/Android build or multiplayer device test ran
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: BR-0356 (reference); rationale: native object completion/retry is still a state publication boundary requiring actual generation and failure validation
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0301 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0302 frozen survey, resumed 2026-10-01 SHA256:6a8f61629ac1ddfb497a54b20a48b1c87d737cfd13e4c10524131773c385a6eb -->
+
+## GQ1-CHUNK-0302 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0302.md`
+- Imported SHA-256: `6a8f61629ac1ddfb497a54b20a48b1c87d737cfd13e4c10524131773c385a6eb`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0302 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/net_udp.c`: diff hunks 135-278, new L3805-L7819; frozen blob `60b4fd8634d58c582211eb082256f5be2928753f`
+
+Scope SHA-256: `542894dc5b91f4bd8192fb4d658820f701f239e0ee1a3ac3daa5074cc76f3860`
+
+## Diff-minimization assessment
+
+RETAIN engine UDP dispatch, object conversion, menu construction and connection transitions. Shared authentication, auto-network startup, P2P reattempt and retry owners already centralize branch policy. Native D1/D2 game-info and gameplay layouts differ; no callback/layout facade or standalone extraction of diagnostic counters is justified
+
+## Context and reconciliation
+
+Read all 144 complete assigned frozen hunks, enclosing full sync reader, sync poll, packet dispatch/security/observer forwarding, multiplayer relay and position acceptance, all current hunks intersecting frozen L3805-L7819, complete current inline initial-sync retry helper, complete BR-0358/BR-0348 and archived BR-0387. Existing BR-0195/BR-0356/BR-0388 were read in the preceding chunk. This does not claim unassigned net_udp native baseline as a full audit or later shared join-wait implementation as covered
+
+## Observations
+
+- BR-0358 remains concrete: D1 frozen and current native read_pdata predicate for non-playing or local slot has an empty body and proceeds to liveness, transform conversion and physics thrust. Current shape/source/visit validation and travel early return are useful but do not reject a same-world delayed position packet after escape/death/end-menu. Preserve one canonical paired packet-state regression and restore the required return without removing legitimate explicit reconnect
+- Frozen read_sync accepts after parsing, checksum and local-slot checks, publishes player state and unconditionally sets NETSTAT_PLAYING without a verified complete object-stream gate. Current join-data envelopes bind attempt/visit and end join waiting when status becomes PLAYING, but current scoped changes add no verification requirement to this body. Existing BR-0356 remains the completion/retry/staging owner; local failure also needs no partial object/link/player publication
+- Current initial-sync retry arms a per-player deadline when a fresh level SYNC is sent and resends after a proven request during the deadline, confirming on valid PDATA. This repairs lost initial SYNC, not incomplete object rejoin or explicit resync of an already-playing slot. Preserve it and do not overstate the old blanket claim that every retry is refused
+- Current Android cooperative endlevel parser preflights exact size, type, session token, sender/host identity, world stamp and exit ages before side effects. PDATA similarly checks exact codec size, sender slot and route before native indexing/history; stale/frozen packets cannot mutate ships, with narrowly defined same-world liveness. Preserve these current fixes instead of repeating frozen shape/source patches
+- Current reliable packet IDs are decoded as four bytes and remain monotonic across level reset; retry buffers use explicit wire capacity, queued batches retain their original world stamp and round-robin retry avoids low-slot starvation. Preserve later integration probes and actual transfer-control exceptions for waiting restore peers; the frozen GET_INTEL_SHORT truncation is obsolete
+- Current multi-message dispatch derives a sender from the source route and passes it into stamped/native dispatch, whereas frozen D1 discarded it. However observers are forwarded before inner handler admission and host relay still precedes local dispatch. Existing BR-0195 must prove authenticated original identity, per-message authority and rejection before relay across direct/proxy/master-forwarded traffic; forwarding new stamps alone is not authentication
+- Join-wait envelopes, pre-admission query/status, transition defer/restart/cancel, restore-reader unwind guards and world-visit fences are current additions requiring their own whole-delta/integration coverage. Keep actual state-machine owners and do not revert them to the frozen request loop
+- Select-players overlay volatile request/publication remains existing BR-0029. Native advanced-menu arrays at frozen head already contain 50/49 D1 items, pre-write checks and exact final-count assertion; preserve archived BR-0387 capacity repair. Later settings/default changes do not justify a new menu-builder facade
+- Existing BR-0348 distinguishes receive capacity from an envelope-inclusive MTU send budget. Current larger join envelope receive storage does not prove fragmentation-safe object datagrams. Verify captured direct/proxy payloads during the existing object-stream integration before closing reliability ownership
+- Current native slot self-discovery still attempts UUID matching with callsign fallback, so BR-0388's sequence propagation remains material. Lost UUID and wrong self-match must fail before dependent inventory/topology or lifetime statistic changes, using existing identity/publication owners
+
+## Clean dimensions and evidence gaps
+
+No new independent root was admitted; later packet fencing, reliable numbering, initial-sync retry and advanced-menu repairs are preserved explicitly. No actual packet-state/loss/reorder/authority/MTU fixture, rollback snapshot, host/Android build, paired device game or off/on profile counters ran
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: BR-0356 (reference); rationale: incomplete stream publication and host/client retry state remain the major integration boundary, alongside BR-0195 authority and BR-0358 position parity
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0302 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0303 frozen survey, resumed 2026-10-01 SHA256:5735627696f0ae0d0c3511cfd5171bed562e511e73e13232d4cb83035363fca2 -->
+
+## GQ1-CHUNK-0303 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0303.md`
+- Imported SHA-256: `5735627696f0ae0d0c3511cfd5171bed562e511e73e13232d4cb83035363fca2`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0303 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/newmenu.c`: diff hunks 1-81, new L50-L1979; frozen blob `7c566d44c469975b5c0b92321603836ead31d03d`
+
+Scope SHA-256: `caee5b64b56e66226750731b7541a191ca9ac08b2a78e3a61ae621bda0855082`
+
+## Diff-minimization assessment
+
+DEFER broad paired newmenu extraction because geometry, item ownership, canvas/palette state and callback ordering are private native state. Existing shared text wrapping, reorder hold, scaling and touch diagnostics already own reusable policy. A copied private newmenu mirror or callback facade would violate the established minimization boundary. Preserve completed GQF-0156 introspection snapshot adapters
+
+## Context and reconciliation
+
+Read all 81 assigned frozen native hunks; initial truncation inside hunk 45 was fully recovered. Read enclosing background cache/load/draw, input activation and key guard, construction/font/selection state, all current diff hunks intersecting frozen L50-L1979, complete actual shared text-wrap owner and current paired focus-loss handlers. Read complete BR-0202, BR-0269, BR-0359 and DMR retained private-menu coupling guidance. Later newmenu event/draw/lifecycle hunks remain next chunk, not claimed covered here
+
+## Observations
+
+- Frozen and current nm_draw_background1 unconditionally frees its OGL texture before every show_fullscr. Filename/palette CPU caching does not preserve a GL handle. This is exact existing BR-0269 image-backed redraw churn, not a new cache finding. Fix actual palette/context/lifetime invalidation through that owner and require GL/CPU production counters and pixels on both games
+- Framed backgrounds invalidate on palette difference and use actual current canvas dimensions with nonpositive extent rejection. Current source also restores replacement texture identity/dimensions after handle invalidation. Preserve these changes while making shared menu staging persistent; do not substitute screen geometry or lose startup palette behavior
+- Newmenu body and scroll-marker fonts consistently use stored scroll_line_spacing for draw and hit geometry. Readable tiny all-text wrapping keeps original item pointers/count until teardown. Shared wrapper stages its owned array, frees admitted strings on failure and publishes outputs only after complete success. Native body-font/canvas ownership remains private, so broad text/layout relocation is not justified
+- Assigned reorder helpers coordinate item text/value movement with scroll visibility while actual hold policy is already shared. Current paired deactivation still resets only mouse_state and key-repeat state without dropping reorder holds. Existing BR-0202 remains canonical for pending/active controller/touch and pilot hold cancellation, including direct-button namespace release, rather than adding another hold state
+- Deferred check/radio taps and keyboard-opening gestures suppress activation after drag. Current source adds centered hit padding, tap-motion bookkeeping and typed bounded interaction region publication; their later motion/event integration requires the next chunk and live-delta coverage. Existing native input-menu activation paths were centralized locally with the Android empty-save-name default; preserve text_len termination and native input ownership
+- Current six accessor bodies are replaced by the narrow game_menu_introspect_read snapshot adapter and shared public owner, preserving completed GQF-0156 inherited-line savings. Do not re-admit moved accessors or replace opaque private layout with a shared mirrored structure
+- Keyboard guard rejects an invalid current item before dereferencing it. All-text keyboard closing behavior and wrap failure/lifecycle must be verified with the complete event/draw path; this local guard alone is not a complete all-text interaction test
+- Scaled contents palette setup restores saved tables while loading the menu palette, then installs cached tables for draw. Copyright/version callback placement belongs to existing BR-0359 and next-chunk scaled draw orchestration; no actual pixel success is claimed from static geometry
+
+## Clean dimensions and evidence gaps
+
+No new independent root was admitted. Native private geometry retention and completed shared wrapping/reorder/introspection ownership are explicit. No paired menu interaction/background/focus pixel fixture, CPU/GL work counters, allocation fault, keyboard/IME lifecycle, host/Android build or device test ran
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0269 (reference); rationale: repeated background upload is concrete and shared renderer lifetime fixes need production counter/pixel acceptance
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0303 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0304 frozen survey, resumed 2026-10-01 SHA256:0817308088b7e7648f19e7b2b0fade898e3d18d59113d9cb5e32da363bd81ff9 -->
+
+## GQ1-CHUNK-0304 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0304.md`
+- Imported SHA-256: `0817308088b7e7648f19e7b2b0fade898e3d18d59113d9cb5e32da363bd81ff9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0304 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/newmenu.c`: diff hunks 82-128, new L1981-L3321; frozen blob `7c566d44c469975b5c0b92321603836ead31d03d`
+
+Scope SHA-256: `12c8a4607c6906b2f2d413fad97294f1b2039006dfd567c0f0f94d4a5fcf30be`
+
+## Diff-minimization assessment
+
+DEFER broad scaled-menu/listbox adapters. They copy opaque native menu structures and preserve per-game callback, palette/font, canvas and item ownership; extracting them requires a private layout mirror or enlarged callback surface. Shared scale, hold, wrap and screen-advance policy already own reusable behavior. Existing performance and focus/callback correctness owners should fix concrete paths before any measured minimization admission
+
+## Context and reconciliation
+
+Read all 47 complete assigned frozen hunks, recovering initial hunk-97 truncation. Read enclosing callback draw/close dispatch, full constructor and wrapped window-create failure, listbox deactivation/hold dispatch, every current scoped diff hunk, current shared draw-result and kconfig draw, begin/end scaled-state contracts and pilot-hold poll/clear/release. BR-0202/BR-0269/BR-0359 were read completely in the preceding chunk. Current interaction snapshot implementation was read only locally at publication and coordinate consumer, not claimed fully covered
+
+## Observations
+
+- Current scale owner differs from the original BR-0269 allocation count: draw_result has a screen-sized source pass only when draw_source is provided and a destination render bitmap, with direct scaled content rather than the historical complete five-buffer pipeline. It still allocates these per draw, and native newmenu still passes a non-null draw_source whose image-backed callback intentionally does nothing. Preserve the reduced pipeline while eliminating remaining staging/upload churn and transparent no-op pass with actual counters and pixels
+- Native scaled-content adapter still allocates an item copy every draw and clones menu state before scaling public items and private geometry. Making the renderer persistent must respect callback lifetime and item mutation/scroll/resize, not retain borrowed stack/menu pointers. No standalone broad menu facade is admitted
+- Contents callback invokes EVENT_NEWMENU_DRAW while shared begin_scaled_draw has enlarged global screen and font dimensions. Current begin/end still do that, confirming existing BR-0359 canvas/copyright/version acceptance remains relevant; static geometry and render flags do not prove the real bottom-screen pixels survive final blits
+- Constructor stages wrapped items only after positive original count, restores them on window-create failure, and close callback temporarily sees the original array before native wrapped cleanup. Preserve that ownership contract and close veto/reentrant callback behavior during renderer changes rather than relocating native close dispatch
+- Both reorder and pilot hold polling occur on idle; pilot hold also polls before visible draw. Native deactivation has no hold-clear/drop. Current helper checks listbox/item/title and elapsed time but no focus generation or front window. Existing BR-0202 must clear native pending/active holds and direct physical input on focus/cancel/suspend; close-only cleanup does not contain stale deletes
+- Current joystick-synthesized keys route through native handlers so callbacks and screen-advance behavior can see them; shoulders add page navigation. Preserve this later change instead of reinstating direct key-command dispatch. Static stick_dir arrays retain edge state across menu lifetimes; fold fresh-edge/focus acceptance into existing lifecycle work rather than duplicating reset infrastructure
+- Current tap-motion threshold invalidates drag taps even before a row scroll, listbox motion clears pilot hold, and close clears interaction publication. Listbox/newmenu region publishers bound their local arrays and publish only for front windows. Complete publication/clear and touch transform lifetime still belongs to current delta/BR-0029 integration
+- Keyboard updates follow current input field and front-menu state; the nested keyboard_shown && !current_item arm is unreachable inside a current-item predicate, but outer non-input handling hides the keyboard. Removing that dead arm is routine local cleanup during the coherent keyboard/menu pass, not an independent high-value root
+- Listbox row geometry preserves selected-font height and inclusive/slop hit arbitration. Wrapped text remains public newmenu_item ownership, and completed introspection title adapter is narrow. No new memory-safety claim is made from unproven arbitrary callback or count contracts
+
+## Clean dimensions and evidence gaps
+
+No new independent root was admitted. Current reduced render pipeline, shared accessor cleanup, handler recursion and drag cancellation are preserved. No actual warm-up CPU/GL counters, paired scaled copyright/version pixels, allocation failure, close/veto/reentrant callback fixture, hold focus lifecycle, keyboard/IME, host/Android build or device test ran
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0269 (reference); rationale: remaining per-frame staging and no-op background work have exact native/shared producers but require lifetime-safe pixel and production work-count acceptance
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0304 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0305 frozen survey, resumed 2026-10-01 SHA256:71ad687daf290548395b7e9615518bc622a04b28ee1df3a0faef6cf6cd938567 -->
+
+## GQ1-CHUNK-0305 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0305.md`
+- Imported SHA-256: `71ad687daf290548395b7e9615518bc622a04b28ee1df3a0faef6cf6cd938567`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0305 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/state.c`: diff hunks 12-12, new L143-L1185; frozen blob `1d7134c9c4f0559e11e42e585a4133476c870fe2`
+
+Scope SHA-256: `972f18e4910a1cd7f2b1bad35569b2df9e840348afece197938e719e53c99b0f`
+
+## Diff-minimization assessment
+
+RETAIN native engine save schema, object/morph/effect references and version gates. These encode game-format knowledge and require public engine arrays and native restore ordering; a shared callback-driven footer facade would add coupling. Completed secret-area serialization and launcher-thumbnail extraction retain their existing shared owners
+
+## Context and reconciliation
+
+Read the entire assigned 1,043-line frozen hunk, recovering its truncated middle, and every current diff intersecting the assigned state prefix. Read current thumbnail readback and footer restore call ordering; complete archived BR-0353/BR-0354/BR-0360/BR-0379 and active BR-0391. Read complete frozen/current paired stuck-object validators and readers plus actual paired wall maintenance consumers. The later complete state body and cross-game translator remain subsequent scopes
+
+## Observations
+
+- Admit GQF-0204/GQR-0191: active stuck records accept wallnum -2 (or SHRT_MIN) when objnum/signature identify a live object, because after exempting -1 both validators check only wallnum >= Num_walls. This is unchanged frozen/current. Readers publish the negative wall and recompute a positive active count. Ordinary D2 remove_obsolete_stuck_objects subsequently evaluates Walls[wallnum].state at the selected tick, indexing below the wall array. D1 does not index Walls there but shares the invalid admission contract. Reject all other negative wall indices before publication; retain -1 slots with stale object/signature as intentionally inactive
+- This is incomplete closure of the BR-0360 domain-validation family, recorded as a new narrow remediation without changing immutable archived evidence. Its prior count, identity, model and effect-reference repairs remain valid. Actual paired footer restore, -1/-2/SHRT_MIN/zero/upper-bound corpus and ordinary D2 maintenance under sanitizers are required; no executed crash is claimed
+- Current STATE_PHYSICS_INFO_DISK_BYTES uses four vectors (64 bytes total) matching the writer. Frozen five-vector span (76 bytes) is already corrected; do not reopen it or restore obsolete vector endian conversion. Current vectors use PHYSFSX_readVector and scalar swapping retains the native format
+- Morph preflight bounds counts, offsets, submodel activity and object/model identity before its apply reader. Effect preflight validates effect identities, flags, frames and one-shot destinations. Raw morph timing/physics or effect-loop timing are not declared safe against arbitrary numeric payloads, but no new concrete arithmetic root was proved in this scope
+- Runtime readers validate the footer on the same handle before rewinding and applying. The broader native caller has already changed player/world state before footer preflight; complete carrier staging, seek/read failures and publication rollback remain GQF-0096/BR-0206 rather than claiming whole-world atomicity from this local pass
+- Current secret-area bodies delegate to the shared owner, with later identity gates; completed GQR-0161 is preserved. Autoselect, cadence and exploding-wall versioned footer additions retain later complete producer/reader coverage
+- Core thumbnail readback still allocates its GL buffer without checking before GL writes; active BR-0391 remains the owner. Launcher thumbnail duplication has already moved to shared code. Static zero blank-thumbnail writer fixes the archived allocation-failure omission and must be retained
+- Archived BR-0379 translation supports its documented modern D1 format; obsolete v6..14 migration requirements are not revived. Android formats are disposable under repository instructions. Native game-format/footer knowledge stays in engine code
+
+## Clean dimensions and evidence gaps
+
+No further independent root or minimization candidate was admitted. No footer mutation fixture, actual crash/ASan run, allocation/seek fault injection, translator round trip, paired host/Android build or device test ran. Current-delta full-carrier acceptance remains mandatory
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQR-0191 (primary); rationale: paired negative-wall admission reaches an exact unchecked ordinary D2 array consumer; narrow range repair has a production restore/maintenance oracle
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0305 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0306 frozen survey, resumed 2026-10-01 SHA256:5419bc993f8b647d57e28c2251016631057a7cb4bb97addfebb767d3111ca5fe -->
+
+## GQ1-CHUNK-0306 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0306.md`
+- Imported SHA-256: `5419bc993f8b647d57e28c2251016631057a7cb4bb97addfebb767d3111ca5fe`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0306 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/main/state.c`: diff hunks 13-93, new L1265-L2919; frozen blob `1d7134c9c4f0559e11e42e585a4133476c870fe2`
+
+Scope SHA-256: `5c3d80138bc69dfdcdf03a3e8cdc3c47fbc8215ef369fc709e440880ff48dbb4`
+
+## Diff-minimization assessment
+
+RETAIN native object/player conversion, restore ordering and game-specific save schema. Existing state_android_shared owns Android save namespaces, metadata staging, mission selection and flight-state policy. Paired filename helpers already identified in chunk 0291 may be consolidated during this coherent owner pass after real inherited-savings measurement; do not create a competing facade around private object/level state
+
+## Context and reconciliation
+
+Read all 81 assigned frozen hunks, native write/header/mission/start-level/object retry/remap/footer and callsign contexts, and every current diff intersecting their range. Read complete BR-0082/BR-0235 and archived BR-0355, plus current shared mission resolution/cooperative metadata preflight and trailer reader, current restore visibility/failure wrapper and complete callsign helper. Chunk 0305's GQF-0096 carrier-staging reference is corrected here: GQF-0096 owns complete mission identity, while structural body admission and restore publication belong to BR-0082/BR-0206. No prior imported report is rewritten
+
+## Observations
+
+- BR-0082 remains the scope-aware body admission owner. Added callsign extraction reads the ordinary header layout, accepts any version above a minimum and checks only the player-structure read; native cooperative format inserts state_game_id and callsign before description. Matching metadata is not sufficient proof of semantic body validity. Current callsign helper is unchanged. Keep header, scope, mission termination, mandatory read/seek and body-validation acceptance under the established owner rather than a launcher-only duplicate parser
+- Current cooperative preflight rejects missing/invalid cooperative trailers before replacing the level. Its shared implementation checks metadata only; it does not validate the complete native body. This is useful containment, not full staged deserialization or whole-world rollback. Current restore wrapper restores window visibility after failure and requests menu return when the world changed, containing the old hidden-window failure path; retain it and validate actual caller/menu behavior during full current-delta integration
+- Current mission load prefers metadata mission_asset_key (or active in-memory rewind key), resolves the enabled package and reports missing packages, falling back to native legacy_name only without a key. Preserve the new exact package identity path; long/colliding mission identity and save-set ownership remain GQF-0096/BR-0338 acceptance rather than assuming old eight-byte handling is the complete live path
+- Native save functions now check required metadata wrapper and close status; staged Android manual/autosave owner was already traced in earlier scopes. Do not reapply BR-0235's obsolete void-wrapper/ignored-close repair. Crash recovery and coherent core/secret companion/pointer generation remain the documented open BR-0235/GQI-0006 scope
+- Object conversion discards robot network owner/slot when writing, reconstructs laser creation time relative to GameTime64 and resets transient hit data, and guards reactor gun rebuilding for a live reactor rather than hidden ghost placeholders. These are intentional native runtime corrections. Current CT_MORPH conversion joins CT_AI and initializes player fields deterministically before the saved fields, retaining shields_certain initialization
+- Completed BR-0355 clears segment heads before D1 checkpoint compatibility relinking; its staged exact-topology helper and paired D2 validator remain the canonical graph repair. Do not revive partial-head/cycle defect from the historical report. Whole checkpoint semantic rejection/legacy policy still needs production entry-point acceptance
+- Current cooperative remap checks saved object ranges/types and carries restore_object_valid to the shared remapper before object copies. After level load it also refreshes the destination local ship index and polls transfer cancellation. Preserve these later corrections; authoritative barrier, packet generation and immutable host apply remain BR-0206 rather than duplicating remap orchestration
+- Current restores optional gear/recovery/campaign via shared pending state with accepted/discarded diagnostics, validates source gear and maps inventory revisions through saved metadata slots. Full schema/reference/authority acceptance belongs to its complete current-delta owners; metadata-driven slot arithmetic is not declared safe based only on this local callsite
+- Completed secret identity serialization is present; active BR-0213 historical positional-only description is stale pending its scheduled reconciliation. Current older save handling clears pickup history and cadence instead of inheriting prior ship state. Empty save naming moved from prefilled descriptions to a temporary accessor active only during the save menu, preserving empty/default editing behavior
+- GQF-0204/GQR-0191 negative active stuck-wall rejection admitted in chunk 0305 remains the single primary; broader save/body and timing acceptance do not replace that missing lower-bound fix. Thumbnail readback remains BR-0391. Native state_get_game_id has inherited open-handle returns outside this added autosave comparison; no duplicate new attribution is made from unchanged baseline code
+
+## Clean dimensions and evidence gaps
+
+No new independent root admitted. Current staging, visibility failure handling, object remap bounds, package identity and deterministic player initialization are preserved. No actual paired save/restore, malformed header/body corpus, scope launch, object graph watchdog, transfer cancellation, crash recovery, metadata slot fixture, host/Android build or device test ran
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0082 (reference); rationale: unchanged helper/header/body admission has an exact production scope-aware restore oracle, while current partial containment must remain intact
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0306 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0307 frozen survey, resumed 2026-10-01 SHA256:dfd03fbd1ecf0a1e40956749cfb25bb7df98d44743b747fe89840b88552dbe66 -->
+
+## GQ1-CHUNK-0307 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0307.md`
+- Imported SHA-256: `dfd03fbd1ecf0a1e40956749cfb25bb7df98d44743b747fe89840b88552dbe66`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0307 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/maths/rand.c`: diff hunks 1-11, new L4-L211; frozen blob `ce199ea4d2ffd9265198859637472e4ce8ee488c`
+
+Scope SHA-256: `6de45c1ead5a20625ed864b7293663aa48db50efb6eafcdcf2549a879ab9c66f`
+
+## Diff-minimization assessment
+
+CANDIDATE GQF-0205/GQR-0192: consolidate the paired RNG API/annotation contract into one lightweight shared header in the existing engine RNG/trace area, included after the native d_rand/d_srand declarations in maths.h. Preserve upstream D_RAND_MAX, fixed-point math and ordinary native declarations. The exact L12..56 block is unchanged in frozen/current D1/D2, SHA-256 a5dae8f852585a20cf09a71bda4314d6db88d27c67cc0f7a4b8f58f6417c73f0. Excluding the two native prototypes and separating blank line, three complete added hunks contain 42 lines per game, 84 total. Two compact includes model roughly 80..84 inherited lines and 35..45 repository net removal; no callbacks, private mirrors or compiled subsystem
+
+DEFER backend/state/annotation implementation extraction until the complete D2 frozen scope 0377 and all build variants are reconciled. D2 has a headless MSVC unannotated-SIM diagnostic absent from D1; preserve that distinction, native backend selection and ordinary libc behavior instead of silently normalizing semantics
+
+## Context and reconciliation
+
+Read all 11 assigned frozen hunks and complete current paired RNG implementations, exact paired frozen maths-header block and complete D1 header, all current diffs for the four paths (none). Read complete BR-0246/BR-0247/BR-0361, shared mode/trace headers, complete existing seed/resume test and per-game maths CMake registrations plus shared include registration. The full D2 frozen added hunks retain their own pending coverage call
+
+## Observations
+
+- Admit the narrow header-only candidate deferred in 0285. Keep SIM/FX enum values, replay-mode constants, public unsigned state/count ABI, native default-stream override, compiler-specific caller name, annotation opt-out and callsite file/function/line expansion identical. Shared header must not include maths.h recursively or accidentally macro-expand native function prototypes
+- BR-0361 remains reproducible by static tracing in both unchanged implementations: d_srand_annotated passes a state getter that writes state_after beside a value argument reading state_after in the same call. Sequence the getter into a local before trace publication. Keep the safety fix in its existing owner; it is not a second new finding and is independent of sharing declarations
+- LCG state uses unsigned wrapping arithmetic, one independent state and counter per valid stream, while reseeding deliberately does not reset counters. Invalid internal draw/count selectors normalize to SIM, state get/set rejects invalid selectors and null output; these are established API contracts, not new unchecked indexing
+- NO_WATCOM_RAND still uses a single libc state across labelled SIM/FX calls, reports LIBC_RESEED and declines state get/set. Existing test explicitly retains ordered libc reseed reproduction. Do not claim its labelled streams are independently restorable or introduce a replay-only compensator
+- The draw annotation evaluates before/after state and result in separate statements. Annotation invokes the shared trace sink without changing native draw or seed order. D2's headless MSVC gap diagnostic is conditional on active trace and unannotated SIM; preserve its caller observation and existing native opt-out definition
+- BR-0246 canonical strict fixture mode and BR-0247 bounded trace retention remain downstream owners. This scope does not validate the textual preflight/parser agreement or trace allocation/retention policy simply because RNG calls are correctly typed. Unsigned counter wrap is defined but long-session trace semantics retain those owners
+- Existing seed/resume test covers deterministic draws, state and labelled call counters, but does not start a trace or inspect reseed state fields. Header consolidation and BR-0361 need actual paired SIM/FX trace coverage for zero/high-bit/max seed and enabled/disabled annotation, debug/optimized MSVC and Android Clang, plus NO_WATCOM_RAND no-state behavior
+
+## Clean dimensions and evidence gaps
+
+No new backend or seed-state defect admitted. Shared header savings are modeled; no isolated edit/numstat, preprocessing/linkage matrix, actual paired trace/replay, RNG test, host/Android build or device test ran. Preserve complete native backend and D2 diagnostics until later scope and actual acceptance
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed owner: GQR-0192 (primary); rationale: exact bounded 84-line paired added contract with six complete added hunks, compact existing include wiring and native trace/ABI oracle
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0307 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0308 frozen survey, resumed 2026-10-01 SHA256:593b5792427dbe81bb8aaa2342fb5b73d9672784c68533f25d8cd5888adf8a8a -->
+
+## GQ1-CHUNK-0308 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0308.md`
+- Imported SHA-256: `593b5792427dbe81bb8aaa2342fb5b73d9672784c68533f25d8cd5888adf8a8a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0308 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/misc/args.c`: diff hunks 1-19, new L123-L319; frozen blob `81753245841709539c0441c3b70e20751770918a`
+- `d1/misc/error.c`: diff hunks 1-3, new L23-L85; frozen blob `ee5ed44e3483f033809be19162c29a0de64c1eb1`
+- `d1/misc/hmp.c`: diff hunks 1-2, new L16-L791; frozen blob `60f8991cf738c954ceac35cbbb760027cd1c7fa3`
+- `d1/misc/physfsx.c`: diff hunks 1-5, new L22-L292; frozen blob `4758ca4291149813aa2d28ee07f6cee85ccae0fb`
+
+Scope SHA-256: `baa02007b275262bfd74c050423e54b11913088ec4432c6da2507f0b3f0a0a97`
+
+## Diff-minimization assessment
+
+RETAIN per-game argument defaults/option parsing and compact fatal bridge. Shared setup and HMP wrapper extraction are already complete: GQF-0155/GQR-0142 and GQF-0170/GQR-0157 remain fixed. Argument defaults refer to game-specific Arg fields and compile features, while init loops retain native allocation, option normalization and D2 route-worker ini policy. A shared opaque Arg mirror or callback parser adds coupling; no independent measured candidate formed
+
+## Context and reconciliation
+
+Read all assigned frozen hunks across args/error/HMP/PhysFS extensions and all current diffs for those files. Read complete current D1 argument implementation, enclosing fatal-message construction and exit, paired D2 default/init policy, complete current shared PhysFS initialization and HMP exported wrapper/header. Compared both native HMP files to frozen merge base: both equal exactly. Read canonical completed extraction records; complete current HMP branch-playback additions retain current-delta coverage
+
+## Observations
+
+- Android defaults clear GameArg before setting desktop-compatible values plus players-dir/network logging, skip ini import and substitute a synthetic argument zero while retaining the remaining arguments. Native option flags override defaults except Android explicitly forces alternate texmerge. Desktop InitArgs still selects mode zero and imports native ini; ReadCmdArgs selects platform mode as designed
+- D2 additionally defaults digital sample rate and movie/hires graphics, and current route-worker initialization skips interactive ini when route-confirm-user-dir is present. Preserve these per-game and tool distinctions. Baseline MAX_ARGS growth and unvalidated get_int_arg next-argument access are inherited outside this branch's new default policy; no new Android-only attribution is made
+- Current error construction bounds Error and Warning formatting with vsnprintf before the existing Android fatal bridge. Frozen unbounded formatting was already corrected; preserve callback output and fatal exit ordering. The compact include/call/desktop-exit seam is not an independent broad diagnostic extraction target
+- The assigned HMP include/wrapper additions are entirely removed in current code. Shared hmp_android_shared now exports hmp2mid_mem with its canonical tempo track and retained caller-owned d_free output. Both native files are byte-equal to merge base; completed extraction is not pending merely because frozen additions remain in this survey
+- Current PhysFS Android initialization is one compact game-directory call/early return. Shared owner checks initialization, permits symbolic links, performs transactional setup with exact failure diagnostics, initializes Android arguments and mission assets. Its metadata variant uses explicit data-dir and releases selected mission mounts. Desktop search paths and ini behavior remain local
+- Windows absolute-drive path shortcut is bounded snprintf and returns through the existing path capacity contract. No new relative path traversal, ownership or platform-guard defect was proved in the assigned hunk
+
+## Clean dimensions and evidence gaps
+
+No new independent root or remediation admitted. No command/default matrix, fatal exit subprocess, conversion/audio fixture, mount-failure injection, paired desktop/Android build or device test ran. Shared full HMP playback and metadata/mission lifetime changes retain mandatory current-delta coverage
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: compact current hooks and completed extraction leave no new admitted defect or measured candidate in this scope
+
+Coverage outcome: CLEAN
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0308 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0309 frozen survey, resumed 2026-10-01 SHA256:c2ebbc876461a076f78b2f235bdd705aa1fed4a885e0907681aae692c5d950e7 -->
+
+## GQ1-CHUNK-0309 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0309.md`
+- Imported SHA-256: `c2ebbc876461a076f78b2f235bdd705aa1fed4a885e0907681aae692c5d950e7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0309 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/texmap/texmapl.h`: diff hunks 1-2, new L1-L152; frozen blob `3a29014fface9934d09bb0424e16f3af498d921a`
+
+Scope SHA-256: `47b225c601433210f647afdc9e0535527fa52a3b5172bccf8021658bb1cb7c15`
+
+## Diff-minimization assessment
+
+RETAIN the unique game-specific private texture-mapper header guard. Five added lines do not justify a shared header or macro owner around inherited assembler/scanline declarations
+
+## Context and reconciliation
+
+Read both complete assigned guard hunks and full frozen private header, verified no current diff and unique guard inventory. Native declarations and assembler interface remain unchanged; no public/global guard collision identified
+
+## Observations
+
+- Guard encloses the complete private mapper declarations without changing linkage, types, duplicate compatible native declarations or include ordering
+- Keep per-game mapper differences and historical comments local. Broader RGB clipping and GL texture policy are outside this guard-only change and retain their established owners
+
+## Clean dimensions and evidence gaps
+
+No new independent root or measured candidate. No preprocessing matrix, desktop/Android build or device test ran
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: balanced unique native header guard only
+
+Coverage outcome: CLEAN
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0309 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0310 frozen survey, resumed 2026-10-01 SHA256:ca13c2e78f67b608e94b509b763f6ef799382e2b5d4124b6b80871ba8e3e0c8e -->
+
+## GQ1-CHUNK-0310 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0310.md`
+- Imported SHA-256: `ca13c2e78f67b608e94b509b763f6ef799382e2b5d4124b6b80871ba8e3e0c8e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0310 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d1/xmodel/strfunc.h`: diff hunks 1-2, new L1-L93; frozen blob `ca6dc0b89efe588bf9010ec2557cdb1316fdb355`
+- `d1/xmodel/tga.cpp`: diff hunks 1-1, new L742-L742; frozen blob `e9bc23f3d93a044b6db67d00631c2921d056dcbf`
+- `d1/xmodel/xmodel.cpp`: diff hunks 1-5, new L68-L218; frozen blob `475aa4ca8f7f138f6d2ae4a46b6c61f4d36ee48d`
+- `d1/xmodel/xmodelnames.h`: diff hunks 1-2, new L1-L157; frozen blob `e40831ae838298776e2764f1edb19eb29c14a14a`
+
+Scope SHA-256: `21eeb52894c91faf3432a71ec980536c5f4b8b7bf03115160f93c3a3ef0fe92e`
+
+## Diff-minimization assessment
+
+RETAIN unique private header guards, native model draw/texture ownership and paired ClassicDepth conditions. Compact GLES mipmap correction belongs to existing BR-0197; broad model-loader extraction would couple game-specific translation tables, ASE/model structures and GL lifetime
+
+## Context and reconciliation
+
+Read every assigned frozen hunk across four paths, enclosing GL texture upload/filter and model draw state, the disabled CTGA::Shrink context, every current diff, current guard endpoints/inventory and xmodel build registration. Read complete BR-0197 and current GLES shim mipmap policy and Android OGLES/include registration. Later current model tables and typed entry points were diff-reviewed only; complete current-delta acceptance remains mandatory
+
+## Observations
+
+- Existing BR-0197 remains unchanged: Android uploads only level zero, sets unsupported GL_GENERATE_MIPMAP afterward, chooses GL_LINEAR_MIPMAP_LINEAR and omits explicit glGenerateMipmap. Current shim only supplies the legacy token; its comment explains ordinary loader handling and no global parameter interception. Actual RGB/RGBA POT/NPOT minification/context acceptance belongs to the existing owner, with no duplicate finding
+- Native ClassicDepth enables/disables depth testing around this draw in multiplayer as well as single-player, consistent with the paired render policy. This scope does not prove arbitrary caller GL-state restoration; no new state defect is formed solely from removing the multiplayer condition
+- Header guards are unique and balanced around static string helpers and native model-name/translation definitions. They do not create a second definition or shared layout owner. Deleted door breakpoint is inside the existing file-level #if 0 shrink implementation and has no compiled runtime behavior
+- Current explicitly copies matrix/vector components into arrays before indexing, replacing cross-subobject pointer arithmetic; preserve that correction. Current translation distinguishes polygon objects/powerups, bounds native modelnum before table lookup and applies team coloring only to the Pyro model. Added names/tables are game policy with later current-delta bounds/ABI coverage
+- Model allocation/VBO shim ownership and enhanced texture admission keep existing graphics/GL owners. No executed allocation, shader, upload, render-state or context-loss safety is inferred from static hooks
+
+## Clean dimensions and evidence gaps
+
+No new independent root or measured minimization candidate admitted. No actual model fixture, mip-level/error inspection, minified pixels, ClassicDepth multiplayer visual test, context recreation, host/Android build or device test ran
+
+Provisional impact rating: 44 (H/M/B/C/R = 23/0/4/10/7); proposed owner: BR-0197 (reference); rationale: exact unchanged special loader omits required GLES mip generation with a production minification/context oracle
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0310 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0311 frozen survey, resumed 2026-10-01 SHA256:80c6282c64e05ccd6226625d05843338f9b2b1a3af61fb7e7792ac6132ce5262 -->
+
+## GQ1-CHUNK-0311 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0311.md`
+- Imported SHA-256: `80c6282c64e05ccd6226625d05843338f9b2b1a3af61fb7e7792ac6132ce5262`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0311 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/2d/bitblt.c`: diff hunks 1-9, new L30-L412; frozen blob `7de3c4a3c142144e5febd54c09abc55f1d10838f`
+- `d2/2d/bitmap.c`: diff hunks 1-4, new L34-L276; frozen blob `702e9e5afaf02446523fc3bd142f705fb276e9f5`
+- `d2/2d/clip.h`: diff hunks 1-2, new L1-L145; frozen blob `bf13246ba40d3bf0965234db6cb7a03a54f484a5`
+- `d2/2d/font.c`: diff hunks 1-13, new L39-L1017; frozen blob `62365a5c8486726ca1185e69cbb717095c7f2ec3`
+- `d2/2d/palette.c`: diff hunks 1-3, new L40-L162; frozen blob `0b9c0c8e804baf6319cd0e9796eae332527d8eab`
+- `d2/2d/rect.c`: diff hunks 1-3, new L31-L41; frozen blob `116762b1ec2d4bde943ed7d7d4161756e6b43c56`
+
+Scope SHA-256: `6ed59acf3ce46d2141fa44cda71452b150a9b4dc6acc568f7ae67d2e6e2f8759`
+
+## Diff-minimization assessment
+
+EXTEND existing GQF-0197/GQR-0184 color-font consolidation and GQF-0198/GQR-0185 bounded batching; both were primary in the D1 scopes and receive reference-only evidence here. Admit GQF-0206 into GQR-0184 for the same native/shared linear-font owner: release allocation failure reaches null pixel writes. No competing remediation is formed. Keep bitmap parent ownership, clipped dispatch, native palette and private guard local
+
+## Context and reconciliation
+
+Read all complete assigned frozen hunks across six paths and all current diffs. Read enclosing current D2 rectangle/clipped blit/bitmap allocation/parent/remap, color/mono font dispatch and palette eviction/reset; paired D1 color allocation call, release u_mem allocation macros, current shared monochrome raw/scaled allocation and native bitmap scaler. Previously read exact paired 73-line color bodies and shared font/CMake ownership in chunk 0278 remain the consolidation evidence; this scope adds the fallible allocation contract
+
+## Observations
+
+- GQF-0206: both native gr_internal_color_string_linear allocate scaled_bm then immediately scale into it without checking bm_data. gr_init_bitmap_alloc stores the result of release malloc, which may be null; gr_bitmap_scale_to passes that pointer to a writer. Current shared android_render_scaled_font_char likewise writes directly into raw_bm after allocation, then scales into a second unchecked allocation. These are branch-added per-glyph producers, distinct from GQF-0198 GL batch realloc/storage admission. Fault failure must stop this glyph before writes/blits, release any acquired raw buffer and retain layout/ownership semantics
+- Native color fallback is byte-identical paired 73-line code already admitted for shared font owner. Extend GQR-0184 with the allocation guard for both the moved color and existing monochrome paths and actual release-mode raw/scaled allocation failure injection. Its existing maximum owner rating stays 64; the new safety finding alone rates 56 (32/0/7/10/7), without adding unrelated harm/minimization scores
+- Current get_drawn_line_width skips the shared complete/truncated control sequence length and accumulates drawn per-glyph spacing; multiline drawn-size uses identical row spacing. Native color fallback dispatches before Android monochrome scaling. Preserve proportional/fixed metrics, centered/newline layout, transparency and actual colored pixels during consolidation
+- OGL glyph batch begin/end and atlas color capture retain GQR-0185. Draw string byte length bounds nominal glyph count, but does not establish allocation success; the release realloc defect already has its separate bounded-storage owner
+- Clipped gr_bitmap computes source offsets for negative destination positions before native software blit; actual OGL destination takes its ordinary GL draw and returns. Rectangles similarly return after OGL draw, then use software scanlines only for linear destinations. No accidental second software draw was found
+- Bitmap page-in preserves live Android replacement textures; remap follows bm_parent to stock root and frees stock GL texture after CPU remap while preserving PNG/KTX replacement policy. Root/parent ownership and GL bind-cache correctness retain existing graphics roots, with no malformed internal-parent-cycle claim
+- Palette computed-color replacement is deterministic round robin within MAX_COMPUTED_COLORS, reset on initialization, and consumes neither SIM nor FX RNG. Native unchanged count/cache policy is retained. Private clip guard is unique and balanced
+- Current font-name storage is PATH_MAX with snprintf termination, and font texture call matches the later upload signature. These current bounds improvements are preserved; no new font-name ABI/ownership defect is admitted
+
+## Clean dimensions and evidence gaps
+
+No actual OOM/crash run is claimed. No release allocation fault fixture, paired colored/mono glyph pixels, clipping/control/layout matrix, palette/RNG oracle, batch draw-count test, context recreation, host/Android build or device test ran. Modeled color savings retain their original primary; per-glyph and batch failure roots are kept separate
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed owner: GQR-0184 (reference); rationale: existing exact paired color transaction candidate is extended with a distinct 56-point release allocation finding in the same coherent font owner
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0311 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0312 frozen survey, resumed 2026-10-01 SHA256:508b368dcf51d6217d2d9fe97f60c486f434a21509317cb27fd38ab82b54b3b6 -->
+
+## GQ1-CHUNK-0312 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0312.md`
+- Imported SHA-256: `508b368dcf51d6217d2d9fe97f60c486f434a21509317cb27fd38ab82b54b3b6`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0312 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/3d/interp.c`: diff hunks 1-19, new L21-L693; frozen blob `f09287982495aa1eb79f0f7c30d2209972b3c51b`
+
+Scope SHA-256: `d9602b2a69f7fbbc03609cbd503b419c9417a0f835855b20e1b358000dc5acff`
+
+## Diff-minimization assessment
+
+RETAIN native model traversal, UVL copy/count guards, fixed stack ownership and morph fan draw order. A five-line memcpy helper or copied light assignment does not justify another engine facade. EXTEND BR-0294 diagnostic cleanup with unused D2 face counters rather than forming a competing diagnostics owner
+
+## Context and reconciliation
+
+Read all 19 complete assigned frozen hunks and all current diffs, complete enclosing ordinary/morph flat/textured polygon paths, archived BR-0307 and earlier paired D1 chunk-0279 evidence. Complete current reference inventory of both D2 face counters found only their declarations, definitions and four increment sites, with no reads or resets
+
+## Observations
+
+- Archived BR-0307 count repair is retained: signed nv must be at least three and below MAX_POINTS_PER_POLY before fixed UVL/RGB arrays, point iteration, counters or draw. Aligned memcpy keeps reusable source model bytes immutable and stack lifetime covers the synchronous renderer. Full bounded hostile model payload admission remains the archived unexecuted binary/sanitizer gap, not a reopened count defect
+- Morph fan uses exactly three UVLs, sets light for all three, advances the third vertex/UV together and copies it into the second rolling vertex. Uniform per-face RGB means the first three initialized RGB entries suffice. Fixed local RGB arrays remove per-face heap allocation/free. Native recursive opcode/point/texture/glow decoding remains per-game inherited policy
+- D2 g3_poly_faces_considered/drawn have no production consumer or reset, despite an Android probe comment. They increment unconditionally during every ordinary model draw and accumulate signed integers indefinitely. Remove the dead branch-added probe and exported declarations during BR-0294's coherent hot-diagnostic cleanup, or retain only if an actual bounded/gated consumer is deliberately established. This is not evidence of executed overflow or a second model renderer safety finding
+- Current model_palette_color recognizes the explicit indexed-color marker before native 15bpp mapping, and the recursion assertion is guarded for debug builds. Preserve paired current color and build semantics; full current-delta model format acceptance remains mandatory
+
+## Clean dimensions and evidence gaps
+
+No new independent defect or measured extraction candidate admitted. No actual malformed/truncated model, count/morph UV fixture, source immutability/pixel comparison, counter-work oracle, sanitizer, paired host/Android build or device test ran
+
+Provisional impact rating: 36 (H/M/B/C/R = 12/0/4/10/10); proposed owner: BR-0294 (reference); rationale: dead unconditional diagnostic counters have a complete local definition/use inventory and direct work-removal oracle without changing renderer decisions
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0312 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0313 frozen survey, resumed 2026-10-01 SHA256:1fbe83636ceb411abd270e34b0918aec4e6af56cd20aff5f25f6a238ea673c95 -->
+
+## GQ1-CHUNK-0313 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0313.md`
+- Imported SHA-256: `1fbe83636ceb411abd270e34b0918aec4e6af56cd20aff5f25f6a238ea673c95`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0313 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/arch/sdl/digi_mixer.c`: diff hunks 1-17, new L19-L251; frozen blob `926270e276268047cd4b4a10bf10841ad423cc23`
+- `d2/arch/sdl/digi.c`: diff hunks 1-1, new L121-L128; frozen blob `0c812424d1ef6a9d1f3633dbc048caa62e1dfefb`
+- `d2/arch/sdl/event.c`: diff hunks 1-12, new L17-L279; frozen blob `9e9683640bb70769251d598bf8c789fe5dfe9a94`
+- `d2/arch/sdl/gr.c`: diff hunks 1-6, new L21-L312; frozen blob `35e52103c941d4fa8caa520604f03f4ef9ec64b0`
+- `d2/arch/sdl/joy.c`: diff hunks 1-28, new L5-L515; frozen blob `78865561a8b3282fc86911b3a25e84bee4854a4c`
+- `d2/arch/sdl/jukebox.c`: diff hunks 1-8, new L15-L315; frozen blob `3a7b46baa84f5345f1b34e48e860fb1893a9aa96`
+- `d2/arch/sdl/mouse.c`: diff hunks 1-5, new L134-L198; frozen blob `33bbcc4dbcd5b0b3934e76c2ea5b7392a91ebc62`
+- `d2/arch/sdl/timer.c`: diff hunks 1-2, new L47-L59; frozen blob `95c3e5adec643a82915d2186c9af604161029df4`
+- `d2/arch/sdl/window.c`: diff hunks 1-3, new L96-L234; frozen blob `d9b86af404da9c20ea852efde9652352112f4689`
+- `d2/arch/win32/include/resource.h`: diff hunks 1-2, new L1-L22; frozen blob `a2793be99925a8dbf55ad2c4402dfccefe4829e7`
+
+Scope SHA-256: `0575293ddbb37fb2c7331159e5845ce3e7bed79ff69d9f1a4e65eb157a3000cd`
+
+## Diff-minimization assessment
+
+RETAIN narrow native event/input/window/music dispatch and alternate software graphics. Completed September virtual-gamepad extraction, GQF-0156 window snapshot and GQF-0172/GQR-0159 mixer-init diagnostics leave compact existing shared seams; do not admit their frozen duplicate bodies again. Native private SDL joystick/window structures remain local
+
+## Context and reconciliation
+
+Read every complete assigned frozen hunk across ten paths and every current diff. Read enclosing current event draw traversal, complete virtual button/axis/axis-button handlers, close notification/detach, game callback nonlocal exit, conversion/start-sound, alternate graphics mode and jukebox next/play ownership. Read complete shared sound_mixer_convert and BR-0345; earlier paired D1 SDL chunk-0282 and completed shared initializer/diagnostics evidence supply paired ownership context
+
+## Observations
+
+- BR-0345 persists in current D2: window_close detaches wind, calls EVENT_WINDOW_CLOSED, then frees it; game handler longjmps before the free. Existing accessor snapshot extraction does not fix this nonlocal ownership path. Preserve close cancellation and live callback contract while arranging exactly-once cleanup; actual paired repeated-session allocation acceptance remains required
+- Current virtual initializer replaces descriptor/label loops with compact map/label inputs, retaining axes/buttons/combiner/D-pad/deadzone contract and local private layouts. Current desktop enumeration caps the joystick count and enlarges the local label buffer. Inherited joy_close indexes num_joysticks rather than looping open handles; do not falsely attribute the unchanged desktop loop defect to the Android null-handle guard
+- Held nonzero virtual axes continue FrameTime-scaled events; touch flag is stripped before indexing and copied into native moved events. Axis-button sign reversal sends release before opposite press and skips negative combiner maps. Bounds-checked read counters and unsigned edge counters remain diagnostics; supported JNI/mailbox producer admission needs its actual integration, not a newly forged SDL-index failure
+- Axis log work remains an existing BR-0294 diagnostic-gating concern. Mailbox growth/drain/edge latency remains GQI-0005. Disabled joystick drain and explicit flush are preserved; no alternate queue or direct native private-state mirror is formed
+- Event/game thread polls music completion, lifecycle actions/diagnostics and automation before input/draw, with front-window change aborting stale traversal. Current fast replay uses input_demo_process_fast_replay, suppresses only loaded no-render game-window draws and flips required menu windows. Preserve this later correction rather than restoring the frozen unconditional early frame return. Publication/overlay ownership and terminal replay acceptance remain BR-0029/BR-0209/BR-0295/GQF-0189
+- Current mixer diagnostics query/log inside their shared owner, with compact native calls; completed GQF-0172 remains fixed. Current conversion delegates to checked shared resampling, resets outputs on rejection, bounds frame/byte multiplication to INT_MAX, checks allocation/SDL conversion and publishes SoundChunks only on success. Frozen raw len_mult allocation is obsolete. Complete source-rate/media/output resource and sound trace delta requires its later actual audio acceptance
+- Current sound trace happens before starting playback so hashing does not delay volume/pan setup after play begins. Raw sample admission rejects null, zero and over-16-MiB source lengths; top-level digi_start_sound checks callback, sound index and missing/sentinel sample. Actual callback/EOF/thread and long audio sessions retain established audio owners
+- Jukebox shuffle consumes FX, never SIM, retaining ordinary sequential wrapping, list lifetime and bounded shared display-name access. Current extensions add HMQ/MIDI/WAV. Track parsing, metadata and audio generation acceptance stay in their existing owners, not this native name-notification seam
+- Mouse absolute zero-relative touch and Android dummy-cursor flush behavior remain paired. Safe FPS fallback prevents nonpositive division. Alternate software backend checks video/canvas creation and resets palette cache; supported dimensions/aspects remain GQI-0007, separate from current Android OGLES builds. Current icon surfaces are freed; resource guard remains unique
+
+## Concurrent workspace reconciliation
+
+HEAD remains 49a4be27ab90a3f223f093bec1390989d1c5aee1. Unrelated working-tree packaging/Kotlin/release changes are now present, including Android distribution source sets and minimum-SDK/distribution plans, beyond the previously observed outstanding-bugs edit. None was changed by this survey. Mandatory current-delta inventory must include the then-current tracked working tree and untracked product files, and inspect overlap again before dispatch; HEAD-only diffs cannot establish closure over concurrent edits
+
+## Clean dimensions and evidence gaps
+
+No new independent root admitted. No window allocation/nonlocal test, input/controller stall fixture, actual sample/resampling/trace/EOF test, alternate software render, replay result trace, sanitizer, paired host/Android build or device test ran
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0345 (reference); rationale: exact paired close/nonlocal callback ownership gap remains with a production session/allocation oracle
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0313 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0314 frozen survey, resumed 2026-10-01 SHA256:74eff45ba01048fbc1b695c022b66d38320190894dd57a4c58b775419f0a3b85 -->
+
+## GQ1-CHUNK-0314 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0314.md`
+- Imported SHA-256: `74eff45ba01048fbc1b695c022b66d38320190894dd57a4c58b775419f0a3b85`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0314 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/arch/ogl/ogl.c`: diff hunks 105-128, new L2991-L3851; frozen blob `a638868ecbe463bce270a305780d8a0d083d7996`
+- `d2/arch/ogl/oglprog.c`: diff hunks 1-24, new L3-L216; frozen blob `f79a55711dfcfca0602c71a83cffd9329ea59765`
+- `d2/arch/ogl/oglprog.h`: diff hunks 1-2, new L1-L18; frozen blob `6ca737e2656a2931121b68bffbe6db8a11c9150a`
+
+Scope SHA-256: `272aec801d87fb3da822341ec0b63fee7927927ae247d72baf0a98235592c1a4`
+
+## Diff-minimization assessment
+
+RETAIN native stock texture and dual-texture shader integration. Shared existing texture, profile and shader-log helpers already own reusable Android policy. The duplicated textured batch is an extension of GQF-0198/GQR-0185, not another dispatch; paired ETC2 self-test extraction remains GQF-0019/GQR-0010
+
+## Context and reconciliation
+
+Read every assigned frozen hunk, recovering the initially truncated self-test and shader prefix in two complete bounded reads. Read complete current diffs for all three paths, enclosing current stock upload/free and batch append/flush, complete native shader program and full BR-0322/0323. Reconciled paired D1 chunk-0281 and current completed texture-name/profile/shared shader changes
+
+## Observations
+
+- Current D2 batch has three direct release realloc assignments and publishes capacity before checking allocation. Its append writes into those arrays and release builds omit the assertions. This is the exact paired GQF-0198 root, with shared bounded separate texture and line batching already assigned to GQR-0185; preserve UV/color, texture binding cache, draw counts and client-state ownership in actual acceptance
+- KTX2 upload consumes only the first packed level and clamps maximum level to zero; BR-0322 remains the existing authored-chain owner. Canonical slot reset still omits mip state, retained under BR-0323. Reject/fallback releases compressed data and failed handles; do not reopen completed lookup capacity or filename-cache work
+- Frozen paths use fixed native bitmap identifiers; current upload now accepts explicit bitmapname arguments. Complete live caller admission belongs in current-delta reconciliation, so old native name bounds alone cannot close the newer named interface
+- Successful current PNG upload always reinitializes the texture dimensions and channel format. Preserve that later correction and balanced image/palette cleanup instead of restoring frozen conditional initialization. Texture decode limits and full publication ownership remain existing BR-0321/0303 owners
+- The large ETC2 diagnostic uses framebuffer/renderbuffer setup, readback and viewport/blend/depth/client-array changes. Existing GQF-0019 owns paired extraction and release gating, including state restoration; this chunk does not admit a competing self-test abstraction
+- Native oglprog compile/link failure calls fatal Error with shared bounded info logs. It is distinct from the failure-blind GLES shim initialization tracked by BR-0251 and GQF-0187. Preserve desktop missing-entry-point failure, shader alpha/debug modes, program teardown and current-matrix uniform contract
+- Stock native page-in, generated transparency masks, frees, bitmap parent/subtexture coordinate mapping and Android color override remain local engine integration. Diagnostic/accounting work stays in GQF-0020/0021 and BR-0294; scalar timing widening is already repaired
+
+## Clean dimensions and evidence gaps
+
+No new independent root admitted. No GL allocation fault, batch raster/draw-count test, authored-mip render, context reset, ETC2 self-test state oracle, sanitizer, paired host/Android build or device run was performed
+
+Provisional impact rating: 84 (H/M/B/C/R = 32/28/7/10/7); proposed owner: GQR-0185 (reference); rationale: the same release allocation and paired batching root already has a primary admission
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0314 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0315 frozen survey, resumed 2026-10-01 SHA256:9ae44b3e067b1b2be6c21e5fb9ea22f441180217b60a31c1d5417f8f72942611 -->
+
+## GQ1-CHUNK-0315 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0315.md`
+- Imported SHA-256: `9ae44b3e067b1b2be6c21e5fb9ea22f441180217b60a31c1d5417f8f72942611`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0315 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/arch/cocoa/SDLMain.h`: diff hunks 1-2, new L1-L16; frozen blob `7b79144f3a30c9be4fc6a34624a7c37870e5bac2`
+- `d2/arch/include/android_surface.h`: L1-L20; frozen blob `43e72846b4fcaf2021b2070d59b53df0a3325ac8`
+- `d2/arch/include/digi_mixer_music.h`: diff hunks 1-1, new L18-L18; frozen blob `34f98e07aa2e26e265e1b1283712006e155f7256`
+- `d2/arch/include/joy.h`: diff hunks 1-5, new L20-L43; frozen blob `c9a9db488cf3982f9f0ee00736350af80ddfc62c`
+- `d2/arch/include/jukebox.h`: diff hunks 1-1, new L15-L18; frozen blob `05befd2b4deaa6cf06ff4ac64dd6145cb6f114e9`
+- `d2/arch/include/mouse.h`: diff hunks 1-1, new L44-L44; frozen blob `9d230f4cf118aa66f520f43c4b971f81bee9d139`
+- `d2/arch/include/window.h`: diff hunks 1-1, new L36-L41; frozen blob `b6ecc3653df7d2b3c9991867e1b599ba41953c85`
+- `d2/arch/ogl/gr.c`: diff hunks 1-25, new L58-L939; frozen blob `0e9beb486303849e314343c3181af02c0bab2059`
+
+Scope SHA-256: `d55da8f4caf949090cad26a35f4a6dc63006d555dd3a875c3536da0bbba8537b`
+
+## Diff-minimization assessment
+
+RETAIN compact native SDL/input/header and graphics integration. Shared EGL surface and render-resolution owners already centralize Android policy; completed window accessor and September 2D batch extraction are preserved
+
+## Context and observations
+
+Read every complete assigned frozen hunk and the authored Android surface header, all current path diffs, enclosing current canvas allocation/mode publication and dimension accessors, and complete shared EGL interface
+
+- Native Android EGL state supplies the paired resource callbacks through the existing shared owner. Missing fifth explicit trailing zero is ordinary static aggregate zero initialization, not an uninitialized generation. Initialize, swap and capability queries retain BR-0251 context lifetime/admission acceptance
+- Canvas allocation uses a temporary realloc result and returns before clearing screen state on failure. Android dimensions are checked by shared render-resolution admission before allocation; desktop SDL mode checks and aspect multiplication retain GQI-0007 rather than creating another Android bound owner
+- Current desktop icon surface is freed after installation. Existing platform guards keep caption/video and RPi/X11 paths distinct. Fallback dimensions and null-screen width/height accessors retain their engine contracts
+- Unique Cocoa guard changes no declarations. Surface bridge is Android guarded. Joystick event/source/edge-counter interfaces match preceding native implementation coverage; MIXER_BTN_BASE explicitly documents its JVM counterpart. Current joystick capacity increase needs actual desktop enumeration acceptance in current-delta reconciliation
+- Current jukebox extension array declaration intentionally becomes unsized for the expanded music formats; track-name and poll interfaces match shared music owners. Current window accessors are supplied by the completed shared header, so the frozen copied declaration block is not another candidate
+- September allocation-free 2D batch changes outside assigned gr.c hunks remain preserved. Do not fold private native SDL layouts or all graphics state into a new subsystem
+
+## Clean dimensions and evidence gaps
+
+No new independent root. No context recreation/failure injection, canvas allocation fault, desktop mode/aspect fixture, input capacity test, paired build or device run was performed
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0251 (reference); rationale: established paired EGL ownership and failure admission need their actual context oracle
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0315 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0316 frozen survey, resumed 2026-10-01 SHA256:60c4e704cac619ed93550bd5f01bce829ebdb8c2b5517c80638c03b29b12727b -->
+
+## GQ1-CHUNK-0316 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0316.md`
+- Imported SHA-256: `60c4e704cac619ed93550bd5f01bce829ebdb8c2b5517c80638c03b29b12727b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0316 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/arch/ogl/ogl.c`: diff hunks 1-63, new L13-L1629; frozen blob `a638868ecbe463bce270a305780d8a0d083d7996`
+
+Scope SHA-256: `020bd24bf6a703d2078da0f34e7cb0776000548c7368da0b2b9672234163d678`
+
+## Diff-minimization assessment
+
+RETAIN existing shared texture/cache/debug/viewport/MSAA ownership, with GQF-0198/GQR-0185 line batching and GQF-0191/GQR-0178 cached-merge transaction candidates already admitted in paired D1 coverage. D2's used native polymodel cache must remain; D1-only dead-copy removal is GQR-0186
+
+## Context and observations
+
+Read all 63 complete assigned frozen hunks, all intersecting current diff hunks, enclosing current texture initializer/reset, cached-merge transaction, level cache, native line append and dual-texture bind/fallback. Read full paired chunk-0283 evidence
+
+- D2 line storage/begin/end and append are the identical release realloc/publication root already admitted in GQF-0198. Capacity alone is asserted after two unchecked raw retained-pointer replacements; ordinary automap append can write null on allocation failure. GQR-0185 remains one shared bounded textured/line batch owner, preserving two-phase ordering and draw benefits
+- Paired cached plain-merge transaction remains GQF-0191/GQR-0178. Existing shared cache chooses/reserves/finalizes entries, and compact native bitmap/texture adapters supply game integration. Slot exhaustion is fatal before the defined null return; do not invent a normal returning null-slot crash. D2 polymodel loader is maintained by exit-model callers, unlike the branch-created D1 dead copy
+- Texture initialize/reset still omits has_mipmaps: existing BR-0323 owns exact handle state. Level init/smash clears lookup/replacement/merged caches. Current transient-blit resets and per-unit binding state differ from frozen unconditional binds; their complete direct-bind/deletion/unit acceptance belongs in current-delta reconciliation, preserving archived scalar-cache repairs
+- Correction to chunk-0314 timing wording: shared profile timing is widened, but current native android_perf_elapsed_us still returns int and cache buckets still use int. GQF-0021 remains open for local narrowing/accounting; do not interpret the previous scalar-timing sentence as full closure. GPU aggregate byte accounting remains GQF-0020
+- Level preloading retains game bitmap names/page-in/progress and diagnostic counts, with native xmodel loading after stock preload. Existing BR-0294 owns hot diagnostics; runtime option/framebuffer/MSAA publication remains BR-0029, not another renderer abstraction
+- Single/dual-texture draws retain source UV/color/orientation, post-page-in super-mask decision, cached-merge fallback and explicit unit-zero restoration after failed overlay bind. Native fixed vertex limits, matrix/shader calls and scoped overlay labels remain native integration; merged diagnostics/geometry/pixel defects retain existing owners and actual raster acceptance
+- Current unit-aware binding descriptor replaces scalar cache assumptions, and circle/disk cached geometry now rebuilds for changed vertex counts. Preserve these later fixes; full context-loss/filter/transient/sentinel behavior cannot be closed by this frozen survey alone
+
+## Clean dimensions and evidence gaps
+
+No new independent root admitted. No actual batch allocation failure, automap/merged-wall pixel or draw-count oracle, cache/context lifecycle fixture, timing/corpus overflow test, sanitizer, paired build or device run was performed
+
+Provisional impact rating: 84 (H/M/B/C/R = 32/28/7/10/7); proposed owner: GQR-0185 (reference); rationale: exact paired release allocation and bounded-batching candidate already primarily admitted
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0316 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0317 frozen survey, resumed 2026-10-01 SHA256:dc7933bd2cfd511aea917ec6f917024746121f02ed69a82d19bd45e9eb8ee7d6 -->
+
+## GQ1-CHUNK-0317 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0317.md`
+- Imported SHA-256: `dc7933bd2cfd511aea917ec6f917024746121f02ed69a82d19bd45e9eb8ee7d6`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0317 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/arch/ogl/ogl.c`: diff hunks 64-104, new L1631-L2987; frozen blob `a638868ecbe463bce270a305780d8a0d083d7996`
+
+Scope SHA-256: `18e078e7065e5ffe569509894027c864886eca73bff402e4dfac11a0421bbbcc`
+
+## Diff-minimization assessment
+
+DEFER final paired diagnostic clip extraction boundary to existing BR-0347 RGB repair. Frozen D2 adds the same large single/dual diagnostic clip routes as D1; earlier chunk-0284 already records approximately 493 paired raw lines and the need for a compact typed payload boundary rather than a larger wrapper. Existing shared viewport/MSAA/texture/GPU timer owners remain retained
+
+## Context and observations
+
+Read every complete assigned hunk, all intersecting current diff hunks, complete current GPU timer helper, ordinary upload transaction through mip generation and full BR-0347/0260
+
+- Single and dual diagnostic clip routes average incoming RGB into p3_l and reconstruct every output channel from that scalar. Targeted partially clipped colored walls therefore lose chroma. BR-0347 is the existing exact paired owner. Preserve original scalar clipper and native point layout; actual all-plane RGB/no-light/single/dual target-off versus target-on pixels must establish the corrected shared payload before claiming deduplication savings
+- Clipped temporary points are freed after draw and projection overflow. Submit context is reset around normal diagnostic draw paths. Diagnostic draw bookkeeping and overlay labels retain existing bounded/gated diagnostic owners; do not independently copy native clipper layout into shared code or admit a callback-table facade
+- External dual-texture draw clears second coordinate pointer and array buffer, then leaves external-program mode before subsequent ordinary draw. Bitmap null guards, source texture orientation, shader alpha cutoff and CPU/fixed projection remain native integration. Existing geometry and diagnostic projection bounds stay with their recorded owners
+- Current GPU timer now returns when query_in_flight is already set and skips busy rings without waiting. Thus old nested-begin claim is statically repaired; BR-0260 still needs its production one/multiple-pass and context-reset acceptance before closure. BR-0251 owns context replacement and query resource lifetime
+- MSAA clear/resolve/overlay paths delegate to shared state and balance frame nesting. ClassicDepth applies deliberately in all modes. Current desktop cockpit clears use scoped scissor preservation, a later correction that must survive cleanup. Framebuffer readback is conditional on actual debug consumers; publication remains BR-0029
+- Scratch pixel/texture arrays are admitted together before replacing old buffers. Android dimension admission is already shared; independent desktop mode/aspect authority remains GQI-0007. Ordinary uploader rejects rounded dimensions above GL limit, forces white for noncolor glyph tinting, avoids font mipmaps and generates other Android mipmaps after upload; stale reused-slot state remains BR-0323
+- Current transient blit reuses a handle and avoids unscaled mip generation, with anisotropy reset and count accounting. Complete reuse/upload failure and direct-binding acceptance belongs in later current-delta review, rather than reinstating frozen per-call texture churn. BR-0322 retains authored KTX2 chains; local timing/accounting remains GQF-0020/0021
+
+## Clean dimensions and evidence gaps
+
+No new independent root or final extraction admission. No RGB clipping raster, GL state sentinel, MSAA/cockpit/context fixture, timer ring production test, upload allocation fault, sanitizer, paired build or device run was performed
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0347 (reference); rationale: concrete paired diagnostic RGB loss, with coherent extraction savings deferred until actual payload and pixel validation
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0317 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0318 frozen survey, resumed 2026-10-01 SHA256:c801cbe30434de86d45fe3a3aaeff0ca7a37ba3c14d62aec68d2698150ace92b -->
+
+## GQ1-CHUNK-0318 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0318.md`
+- Imported SHA-256: `c801cbe30434de86d45fe3a3aaeff0ca7a37ba3c14d62aec68d2698150ace92b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0318 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/include/3d.h`: diff hunks 1-1, new L193-L199; frozen blob `ff7533ac655b74ce93b39f2b447aca5cf1aa213c`
+- `d2/include/args.h`: diff hunks 1-2, new L27-L54; frozen blob `2acdd6cfffa335f4527a134fad5bdec9ef046ce5`
+- `d2/include/console.h`: diff hunks 1-2, new L35-L37; frozen blob `7f57277f2e7fef01259078d5a626d5767d4c05bd`
+- `d2/include/dxxerror.h`: diff hunks 1-4, new L27-L60; frozen blob `43f9135568c373e2542e8621e1d0b26305adf973`
+- `d2/include/editor/kdefs.h`: diff hunks 1-2, new L1-L341; frozen blob `c1fb7dfb799f75c3767d7e2a3df4ebd1e6272dc5`
+- `d2/include/fix.h`: diff hunks 1-2, new L1-L7; frozen blob `e43bd0dbc5c508c855117c81cb55815597d275c4`
+- `d2/include/gr.h`: diff hunks 1-1, new L317-L317; frozen blob `ec071a323631d865f6200b78ac5cc04c695eec63`
+- `d2/include/grdef.h`: diff hunks 1-2, new L1-L63; frozen blob `b7a5ccc9156ef47ba978c8faa2775a262028d3b5`
+- `d2/include/ignorecase.h`: diff hunks 1-2, new L1-L80; frozen blob `b1d906cb00e87039aa0cddde10354971b9fc8e3d`
+- `d2/include/internal.h`: diff hunks 1-2, new L37-L44; frozen blob `1911d9b813e15bb842ac8c37857bf1af1c8b38f2`
+- `d2/include/interp.h`: diff hunks 1-1, new L20-L23; frozen blob `6dfd9b1394fac9d9bdfe375ddc4c47771f9e58bd`
+- `d2/include/loadgl.h`: diff hunks 1-8, new L462-L495; frozen blob `5cf95aa34cf006285553da64ba842941453f03c7`
+- `d2/include/maths.h`: diff hunks 1-3, new L12-L56; frozen blob `b9ea08d69e40ed02214aa2dc90eae2288c02efe1`
+- `d2/include/ogl_init.h`: diff hunks 1-10, new L14-L129; frozen blob `f3759d00d1902718872da7fbb706c470ff283790`
+- `d2/include/physfsx.h`: diff hunks 1-5, new L179-L221; frozen blob `e5801d0112bb55dd656c5f1a1fccf64fe21283e9`
+- `d2/include/pngfile.h`: diff hunks 1-1, new L22-L38; frozen blob `d823b4d79f95311e974a764a0777b2c54274d389`
+
+Scope SHA-256: `83e95776c36e269a07975361a9fda50b59f175150cb6475b96b468c8c4e08d2f`
+
+## Diff-minimization assessment
+
+CANDIDATE reference to GQF-0205/GQR-0192: exact paired RNG annotation/API block already primarily admitted at chunk-0307. Keep native random prototypes before shared annotation include. RETAIN compact public render, diagnostic, SDL and portability interfaces; avoid whole-header/native-layout deduplication
+
+## Context and observations
+
+Read all complete assigned hunks across sixteen headers, every current path diff, complete RNG API prefix, ordinary line-reader body, native texture declaration and complete current Android assertion header
+
+- D2 RNG declarations/constants/stream defaults and annotation macros are the exact existing paired 45-line block. GQR-0192 owns a narrow shared engine_rng header with include-order, caller macro, default override and opt-out acceptance; complete backend generation remains scheduled at chunk-0377. No second API owner or private RNG mirror is formed
+- D2 interp face counter externs persist with no maintained consumer/reset in the previous complete inventory. BR-0294 already owns removal of those two externs, globals and increments, documented at chunk-0312. Keep current indexed model-color flag and native reader/interpreter contract
+- Clarify prior batching assertion wording: desktop release assertions may disappear, while current Android NDEBUG Assert logs and continues. Neither protects subsequent allocation writes. GQF-0198 remains the same release allocation root, not a new assertion defect or evidence that an Android assertion aborts
+- Native batch APIs retain non-OGL no-op definitions and same-texture caller documentation. Current September 2D batch public contract ends before canvas or GL state transitions. Viewport macro and keyboard offset are Android guarded; desktop macro remains unchanged
+- GL loader undef-before-remap blocks avoid macro collisions. GLES3 include/shim guards preserve separate desktop/Apple/legacy GLES paths. Public texture flags/layout are native and shared consumers compile per game; mip reset/publication acceptance stays BR-0322/0323 and context lifetime BR-0251
+- PNG compressed publication uses unsigned dimensions/size and packed bytes with existing parser/upload ownership; obsolete etc2-format comment is contextual migration residue, not permission to add compatibility or another parser. Current named bitmap upload parameter needs whole live caller admission in current-delta reconciliation
+- Final unterminated PHYSFS line returns the populated end pointer, preserving inherited caller contract. Zero-size underflow and neighboring unbounded printf are pre-existing baseline behavior, not new consequences of the added final-line handling. Unique guards change no public declarations
+- Current CPU-only projection, explicit ReadCmdArgs, shared diagnostics and Android console log exclusion retain their already recorded owners. Drawing-size interface delegates to the shared font measurement behavior. No new ABI/preprocessing root established
+
+## Clean dimensions and evidence gaps
+
+No new independent root. No paired C/C++ preprocessor/link test, RNG state/trace test, production font/batch pixel test, final-line I/O fixture, paired desktop/Android build or device run was performed
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed owner: GQR-0192 (reference); rationale: exact paired RNG header block and six complete added hunks already primarily admitted
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0318 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0319 frozen survey, resumed 2026-10-01 SHA256:ef9451155935fb44a679f5d0a90296117fbd36e6ab82be8d87e1448bd85796a7 -->
+
+## GQ1-CHUNK-0319 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0319.md`
+- Imported SHA-256: `ef9451155935fb44a679f5d0a90296117fbd36e6ab82be8d87e1448bd85796a7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0319 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/include/pstypes.h`: diff hunks 1-1, new L24-L24; frozen blob `6b4ba37762b9a14d593ea5a0a7d6087f1f076536`
+- `d2/include/rbaudio.h`: diff hunks 1-1, new L62-L72; frozen blob `a30c29aea6ff2e8839744618a9a470094b43bc1f`
+- `d2/include/replay_debug_overlay.h`: L1-L27; frozen blob `9677ca22b589b7704b6a70848a27eba5eedb1fe1`
+- `d2/include/xmodel.h`: diff hunks 1-2, new L1-L28; frozen blob `44caf18d60812a5a667211cfbf9f68c59930f3fd`
+
+Scope SHA-256: `50d6b85d6c2a5412a8a35de656d4bebdbf6bdc823b223f5de2966152c34165ef`
+
+## Diff-minimization assessment
+
+RETAIN compact platform aliases, D2 replay label declarations and native xmodel interface. Current shared rbaudio_bin header already removes the frozen copied multisource declaration block; do not admit it again. D2-only replay overlay does not justify a paired header subsystem
+
+## Context and observations
+
+Read every complete assigned frozen hunk/header and all current path diffs. Read complete current pstypes/xmodel and shared rbaudio_bin headers, all live replay-label symbol uses, enclosing label producer/consumer and shared start game's D2 guards
+
+- Android ushort/uint aliases use the same native widths as other supported platforms. Upstream endian/packed-type logic is unchanged by this one platform condition
+- Frozen multisource track declarations now resolve through existing rbaudio_bin.h with matching common C API. Audio producer/EOF/metadata acceptance retains existing music owners; declaration consolidation itself is complete
+- D2 replay labels have fixed 128-entry public storage, and producer tests capacity before increment. Shared startup references their header/flag only under DXX_BUILD_DESCENT_II; no nonexistent D1 paired header is presumed. Native projection, frame clearing and canvas-dependent label placement remain consumer scope for later D2 render/gamerend review, not a new defect claimed from declaration text
+- Native xmodel guard encloses C linkage and ordinary public geometry inputs. Current typed model category and existence interface match previously surveyed model upload/draw generation; keep these live changes instead of reinstating ambiguous shared model-number lookup
+
+## Clean dimensions and evidence gaps
+
+No new independent root in these interfaces. No replay-label projection/frame/canvas fixture, audio resource test, preprocessor/link check, paired build or device run was performed; interface coverage does not close consumer semantics
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: narrow native declarations and already completed shared audio declaration extraction
+
+Coverage outcome: CLEAN
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0319 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0320 frozen survey, resumed 2026-10-01 SHA256:9f79803e05d894c3b50435fa9e5cc2e3b27bc081f7811e7b48017d1237520ccf -->
+
+## GQ1-CHUNK-0320 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0320.md`
+- Imported SHA-256: `9f79803e05d894c3b50435fa9e5cc2e3b27bc081f7811e7b48017d1237520ccf`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0320 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/libmve/mveplay.c`: diff hunks 1-16, new L237-L984; frozen blob `61236ed29fd6a9a5132c80ab44ee3df3f64e820e`
+
+Scope SHA-256: `f3e272c7a7bdf7f71cf93512bc41e938f083dd9a63db3692357e11d9e1fe0665`
+
+## Diff-minimization assessment
+
+RETAIN D2-native MVE format, custom allocator and queue ownership. Admit GQF-0207/GQR-0193 for checked movie resampling admission and allocation; no broad decoder extraction. Existing sound_mixer_convert accepts unsigned 8-bit mono and frees with free, so it cannot be blindly substituted for MVE's admitted 8/16-bit mono/stereo custom allocation interface
+
+## Context and observations
+
+Read all sixteen complete frozen hunks and complete current diff (none), enclosing queue/accounting/discard, callback, creation, format conversion, data producer, startup and teardown. Read full BR-0364, allocator registration and MPlayAlloc/Free production implementations, release u_mem macros, shared conversion interface and prior mixer-disabled build limitation
+
+- New resample helper converts a computed double frame count to int and multiplies int frames by output frame size without admission. Native header reads source frequency as unsigned 16-bit with no lower envelope; source rate 1 reaches positive-rate guards. Numeric bound oracle for 65,527 raw 8-bit mono input frames and 44,100-Hz output yields 2,889,740,700 frames/bytes, exceeding INT_MAX before allocation. Stereo output can overflow bytes even where frame count fits. This oracle evaluates bounds, not the native UB/crash path
+- The helper also copies every destination frame into unchecked mve_alloc output. Production allocator MPlayAlloc delegates to d_malloc, which is ordinary malloc under NDEBUG; a supported normal-rate resample with allocation failure therefore reaches null destination memcpy. Failed admission/allocation must leave original custom-owned bytes and length intact and report controlled movie failure rather than publish a bad queue buffer
+- GQR-0193 should use checked wide frame/byte arithmetic and a finite production buffer envelope before conversion/narrowing, validate complete frames and allocation, preserve custom allocator/free pairing and ordinary nearest-frame mapping. Integrate status at the actual audio_data_handler so unsupported input cannot silently continue with wrong-rate bytes. Keep MVE format/native queue local rather than add a competing audio subsystem
+- New resampling helper is outside USE_SDLMIXER while its state variables are inside that guard. Earlier campaign already recorded D2 SDLMIXER=OFF compiler failure. Scope this associated branch-added helper correctly while repairing admission, and validate mixer-enabled and disabled production builds; do not call it an upstream-base defect merely because it was inherited by an earlier extraction
+- Frozen/current startup trim already holds SDL_LockAudio. Thus BR-0364's old missing trim lock is repaired. Callback still consumes nonempty ring before playing, producer only locks while playing, and teardown frees/reset buffers without unregistering postmix. Retain existing BR-0364 full queue publication/trim/drain/reset ownership and actual callback barrier acceptance, not a duplicate new race owner
+- Cached CVT query/template retains output layout and separate non-power-of-two rate conversion. Failed converter logs but publishes len_cvt, and queue overrun only logs after tail meets head; complete safe producer/failure ownership is part of BR-0364's existing queue boundary acceptance. Do not attribute older raw data packet/decompress bounds to this new helper without a distinct supported producer trace
+- Retain deliberate 128-slot queue and 150-ms Android startup target derived from device testing. Ordinary audio source format and movie content compatibility remain native. New checked arithmetic must preserve normal mono/stereo 8/16-bit timing rather than alter tested startup policy
+
+## Clean dimensions and evidence gaps
+
+New local resampler root is established by static production trace and exact numeric bounds. No native overflow sanitizer, release allocation-fault execution, synthetic MVE callback barrier, audio output/timing fixture, mixer-on/off build or Android movie run was performed
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/4/10/7); proposed owner: GQR-0193 (primary); rationale: new D2 movie resampler unchecked arithmetic/allocation, narrow local repair and actual custom-allocator/PCM/movie oracle
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0320 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0321 frozen survey, resumed 2026-10-01 SHA256:c4aee385e4daff70c004e84f07435ab608ad72b6132ef96911ccb8a79320dca2 -->
+
+## GQ1-CHUNK-0321 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0321.md`
+- Imported SHA-256: `c4aee385e4daff70c004e84f07435ab608ad72b6132ef96911ccb8a79320dca2`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0321 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/newdemo.c`: diff hunks 61-61, new L4021-L4514; frozen blob `224fbb724237eade631d8d9fe03ecfb03917b19c`
+- `d2/main/newdemo.h`: diff hunks 1-3, new L104-L140; frozen blob `4acbcb54424dee3f5a6b28c23d97a804a4079c61`
+
+Scope SHA-256: `27ad4d83af0a19a54b8a09385113c393610a64628bd6f6b36840c9be894eaff0`
+
+## Diff-minimization assessment
+
+RETAIN D2-native classic-demo decoder, snapshot adapter and dump transaction. Shared classic_demo_json already owns serialization, while native control/wiggle snapshots retain engine layout knowledge. No paired copied dump implementation exists to extract, and no generic lifecycle wrapper is admitted
+
+## Context and observations
+
+Read complete 494-line frozen dump hunk and every assigned header hunk, all current newdemo/header diffs, archived BR-0370/0389 and complete maintained converter transaction test. Earlier chunk-0183 covered shared serializer/snapshot adapter and classic-demo BR-0233 staged-output correction
+
+- Frozen/current converter opens a stable ordinary source handle, checks platform file identity before output, mounts and validates input header, then creates an exclusive sibling temporary output. Checked writer/flush/sync/close precedes repeated alias check and atomic publication. Preserve archived BR-0370 and the repaired classic-demo branch of BR-0233; do not revive old destructive fopen-final behavior
+- Cleanup resets dump diagnostics, closes input and owned output/source streams, removes owned mount and temporary output. Current input_opened guard avoids closing unrelated infile on early input failure; stop_playback now nulls infile and restores menus when no game window exists. Preserve these later ownership fixes
+- Current existing-mount path explicitly retains caller-owned mounts and checks the resolved source directory against requested mount_dir before opening. Frozen unconditional mount removal is obsolete. Actual repeated/caller-owned mount and shadowing acceptance belongs in current-delta review
+- Shared snapshot copies valid native control/wiggle fields and explicit vectors, with zeroing when unavailable; actual robot damage/frame serializers retain their established D2 adapter. Writer failure is checked around frames and final result, and invalid player-object frames skip emission after resetting diagnostic state. Whole native decoder semantics remain later assigned newdemo scope rather than claimed closed here
+- Current translated D1 demo game/asset identity and level namespace extensions alter earlier decoder generation and header identity. Preserve these changes pending complete current-delta identity/rewind/rewrite acceptance; this dump chunk only verifies integration calls and error propagation. Duplicate adjacent d1_in_d2 include is current cleanup noise, to reconcile with the full earlier decoder owner
+- Native quick-record and control-trace declarations agree with their existing owners. Archived BR-0389's wall payload validator remains preserved. Maintained converter test exercises real distinct conversion, alias source hashes, malformed prior-output preservation and wall truncation under watchdog; it does not establish a complete arbitrary classic-demo decoder sanitizer oracle
+
+## Clean dimensions and evidence gaps
+
+No new independent root or extraction admitted. No converter test, production filesystem write/flush/close fault, source/output alias race, translated D1 identity/rewrite fixture, malformed decoder sanitizer, paired build or device run was performed in this survey
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: shared serialization plus native D2 transaction retains completed alias and staging repairs; decoder/current identity semantics have separate pending scopes
+
+Coverage outcome: CLEAN
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0321 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0322 frozen survey, resumed 2026-10-01 SHA256:a4b64cab26ab7f56f02d7fc42b5f50ec2daa445a2356f8744caf1d0d7861ccf7 -->
+
+## GQ1-CHUNK-0322 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0322.md`
+- Imported SHA-256: `a4b64cab26ab7f56f02d7fc42b5f50ec2daa445a2356f8744caf1d0d7861ccf7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0322 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/escort.c`: diff hunks 117-149, new L4087-L4681; frozen blob `72f86f8f6ddf91fe65592e913a4932ffc5439842`
+- `d2/main/escort.h`: diff hunks 1-3, new L9-L126; frozen blob `9d39d809dab6937103e2d95839419472835403a1`
+
+Scope SHA-256: `b2442789381be79c86f85c2bab769d766ebef61d93f06112d6323b05d96827f1`
+
+## Diff-minimization assessment
+
+RETAIN D2 Guide-Bot menu/game state and native multiplayer ownership; existing owner policy and shared menu scale own narrow reusable policy. Current guidebot_extensions header already moves the large extension declarations out of escort.h. Admit GQF-0208/GQR-0194 for the added scaled-menu source allocation guard; no generic graphics/Guide-Bot subsystem
+
+## Context and observations
+
+Read all 33 complete assigned escort hunks and every header hunk, all intersecting current changes (recovering the initially truncated spawn/owner region in full), enclosing current menu item map/text/activation and scaled draw, complete owner policy and extension header, full BR-0269/0384, native bitmap allocation, rectangle/scanline and background draw paths
+
+- Added Android escort_menu_draw_scaled allocates source_bitmap, then immediately constructs and installs a linear canvas before background/text/selection writes, with no bm_data admission. Native gr_init_bitmap_alloc can retain null under release malloc failure. The selected rectangle reaches gr_scanline and unguarded DATA arithmetic/memset; normal readable menu content needs no malformed asset. GQF-0208 is separate from font glyph allocation GQF-0206 and GL batch allocation GQF-0198
+- Guard source admission before canvas switch or drawing. On failure return the existing zero/fallback status so caller clears scaled touch geometry and draws on the original canvas. Preserve canvas/font state, exactly-once cleanup and successful scale publication; actual release source-allocation injection and menu input/pixel/state comparison are required. Coordinate eventual staging reuse with BR-0269, whose performance root remains separate
+- BR-0269 persists in the local Guide-Bot draw's per-frame CPU bitmap allocation; current transient GL reuse is only part of its acceptance. Native row drawing and shared crop/blit/publication remain compact. No copied engine bitmap layout or per-game callback table is added
+- Menu selected item wraps over native item count and maps keyboard/controller activation through one helper; close frees menu and clears Android scale. Current item count adds recall, controller Y closes and docked invocation deploys. Preserve these later behaviors, with actual recorded direct-command/coop authority acceptance in current delta
+- BR-0384 remains the existing preview/activation owner: item 0 uses menu->goal_str produced against current route, while activation calls set_escort_special_goal(KEY_0). Current labels distinguish exit mode but this alone does not prove preview matches activation. Do not close the mismatch without actual route/network/replay state oracle
+- Native owner packets are nine bytes with explicit claimed versus authenticated sender, eligible owner and mode checks, master-only state, exact request generation and wrap-aware newer-state admission through existing escort_owner_policy. Caller packet length/authenticated dispatch remains network owner BR-0195; no duplicated network authority facade is admitted
+- Current additional spawn/dock/deploy/secret-travel code has its own generation and authority checks, native shortpos/object creation and post-creation owner reconciliation. Preserve it for mandatory full live-delta acceptance, especially reordering, restored identity and failure publication; frozen owner packet checks cannot establish closure of those added paths
+- Native goal/header getters retain D2 layout and per-build routing guards. Current guidebot_extensions makes desktop live/planner routes explicit and keeps Android-only secret-travel interfaces guarded. Completed declaration relocation is not a new frozen dedup candidate
+
+## Clean dimensions and evidence gaps
+
+New scaled-menu allocation root is statically traced to production release allocation and native pixel write. No actual allocation injection, pixel/touch/canvas state comparison, preview activation fixture, authenticated packet/reordering/secret-travel test, sanitizer, paired build or device run was performed
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/4/10/7); proposed owner: GQR-0194 (primary); rationale: narrow D2 Android menu allocation failure before canvas publication with actual draw/input/state oracle
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0322 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0323 frozen survey, resumed 2026-10-01 SHA256:7230e1b7bf54693d0317a91107c08cd8f6b22578dc0122fe0e2a9f94706701c2 -->
+
+## GQ1-CHUNK-0323 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0323.md`
+- Imported SHA-256: `7230e1b7bf54693d0317a91107c08cd8f6b22578dc0122fe0e2a9f94706701c2`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0323 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/newmenu.c`: diff hunks 129-132, new L3294-L3359; frozen blob `a934b863dc2ba940cc1f0ce3d332011fab409190`
+- `d2/main/newmenu.h`: diff hunks 1-5, new L115-L181; frozen blob `4add2d9f11fbd06742aec1e7593b723b6991fbb2`
+
+Scope SHA-256: `2b22f8be5eb0361a746354f7697048d1d8d0f1fadde9d4f441915e70e749697c`
+
+## Diff-minimization assessment
+
+RETAIN narrow native listbox draw/lifetime and corrected title-inclusive window geometry; existing shared pilot hold and completed menu accessor extraction own reusable policy. No broad native menu/layout consolidation
+
+## Context and observations
+
+Read every complete assigned frozen hunk and all intersecting current newmenu/header changes, enclosing current listbox activation/deactivation/draw/close and scaling geometry, full shared pilot hold implementation/header, exact non-ASCII current header comment bytes and full BR-0202. Survey helper now escapes invalid UTF-8 bytes in git display rather than aborting on inherited comment encoding; raw blob fingerprints remain unchanged
+
+- BR-0202 persists: listbox EVENT_WINDOW_DEACTIVATED disables repeat only, while draw still polls the global pilot-delete hold. Shared helper validates selected item/title but has no focus/window generation. A backgrounded unchanged selection can retain threshold and synthesize delete confirmation on resumed/nonfront draw. Close-only hold clearing does not cancel deactivation; existing paired lifecycle owner retains actual input/focus/cancel acceptance
+- Android draw temporarily selects menu texture-filter context and restores previous context after native listbox draw; hold-trigger callback returns before touching potentially retired lb. Current close additionally clears published interaction state, a later fix to preserve. Existing shared hold owns suppression/release/delete key dispatch, not native private listbox layout
+- Listbox window height now includes title_h plus borders, matching source_h used by shared crop scaling and native top offset. Preserve desktop native title geometry rather than revert to old cropped event window
+- Completed game_menu_introspect_accessors header replaces the copied public declaration blocks. Non-introspection declarations remain guarded through shared owner; do not admit removed frozen declarations as another candidate
+- Frozen header edits replace escaped checkbox/radio/slider marker text in comments with literal legacy bytes; current header contains replacement-character UTF-8 bytes in those comments. They do not alter active marker macros. Preserve handmade meaning and restore explicit ASCII escapes during existing BR-0002 native diff/encoding cleanup rather than introduce a new runtime bug or erase comments
+- Current scaled-listbox content uses the existing shared draw_result and interaction publication. Complete allocation/performance/canvas/pixel acceptance remains BR-0269 and other recorded shared scale owners, separate from this title-height and draw-context interface scope
+
+## Clean dimensions and evidence gaps
+
+No new independent root. No actual pilot hold focus/cancel test, callback-retirement fault, listbox title hit geometry/pixels, optimized build or device run was performed
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0202 (reference); rationale: exact paired stale delete hold survives focus loss despite completed declaration extraction and close cleanup
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0323 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0324 frozen survey, resumed 2026-10-01 SHA256:6ddbcdf65435522c23663d85d516e24de6ea82c22e274ea3ba172c477b35a14a -->
+
+## GQ1-CHUNK-0324 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0324.md`
+- Imported SHA-256: `6ddbcdf65435522c23663d85d516e24de6ea82c22e274ea3ba172c477b35a14a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0324 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/net_udp.c`: diff hunks 291-336, new L7535-L8393; frozen blob `ff321f0ad5d8329cf8e142de73f4f8de630888c9`
+- `d2/main/net_udp.h`: diff hunks 1-10, new L1-L227; frozen blob `b364cc141e129eee08d050fb366bcaa9343b390c`
+
+Scope SHA-256: `8cc65535660828ebb6b249aaf188268da5cc40ab188c295f55cab18735bd77a9`
+
+## Diff-minimization assessment
+
+RETAIN compact native packet and extras hooks over the already extracted P2P/proxy and socket helpers. Do not introduce another packet schema or callback mirror while protocol authority and send-budget fixes remain open
+
+## Context and observations
+
+Read every assigned frozen net_udp.c/header hunk, all intersecting current edits, full enclosing current PDATA, ping/pong and extras paths, dispatcher security/observer relay cases and full shared P2P/proxy helper. Recovered truncated helper tail and exact BR-0195, BR-0348, BR-0358 and BR-0388 owner records
+
+- BR-0195 remains the owner of payload-selected master heartbeat and cooperative sender authority. The current P2P ping bounds check now precedes loss publication, but a shared game token alone does not bind the claimed master to the source route. Existing authority validation must reject before liveness, route or observer relay side effects
+- Current PDATA adds exact size/source checks and cooperative visit stamps. Wrong-world traffic is gated before position application; permitted stale-world liveness handling is distinct from reconnect/loss/transform mutation. Preserve initial-sync retry confirmation and join-wait gating while completing the existing authority and transition owners
+- D2 retains the native non-playing-player return in net_udp_read_pdata_packet. BR-0358 still owns the paired D1 empty guard; current visit stamps do not replace same-world connected-state protection
+- The extracted P2P/proxy helper retains native route behavior and is compiled per game. Native pong indexing before its local guard and proxy sender/recipient validation originate in inherited code; do not allocate a duplicate branch finding merely for relocation. The complete packet-authority fix must still verify applicable dispatcher/envelope lengths and slots before helper entry
+- Current host observer forwarding gates PDATA world stamps but forwards MDATA before inner cooperative authority dispatch. This is the already recorded BR-0195 reject-before-relay requirement, not a completed authentication fix
+- Current header uses 4096-byte receive capacity, gameplay visit stamps, join/reconnect generation and transition interfaces. Larger storage does not fix BR-0348's envelope-aware path-MTU send ceiling. The sequence wire layout still has no stable client UUID field; BR-0388 remains open despite later authenticated reconnect machinery
+- Native protocol version now differs between Android and desktop. Preserve explicit schema rejection/negotiation and platform guards under BR-0357 rather than repeat the old same-version premise
+- D2 extras retains matcen modes, Guide-Bot ownership, duplication factors and recovery snapshots in the native sequenced producer. Shared ownership protocol must preserve validated host/session/generation authority and normal extras order
+
+## Clean dimensions and evidence gaps
+
+No new independent root. No actual paired packet injection, relay capture, join/reconnect/migration run, sanitizer or native/device build was performed
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: BR-0195 (reference); rationale: established paired packet authority and heartbeat root remains reachable through the native dispatcher and shared routes
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0324 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0325 frozen survey, resumed 2026-10-01 SHA256:badcf818d37c7b1e2ef5c92f3d949f3d0f3b7210c0e4eecb34deb453995b9b7e -->
+
+## GQ1-CHUNK-0325 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0325.md`
+- Imported SHA-256: `badcf818d37c7b1e2ef5c92f3d949f3d0f3b7210c0e4eecb34deb453995b9b7e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0325 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/input_demo_hooks.c`: L6751-L7138; frozen blob `988a5c1b25ad0613524e2f6a8b2abcd35a0042b0`
+- `d2/main/input_demo_hooks.h`: L1-L334; frozen blob `262183244a0179c8e539f0c4d062ea1e5d8f98c8`
+
+Scope SHA-256: `87a355d09374da8f2e9c17add021cee3b357eaee0a51663c2d0aae97d424a3bd`
+
+## Diff-minimization assessment
+
+RETAIN native replay outcome and game-specific diagnostic adapters over shared stepping, RNG synchronization and lifecycle helpers. Consolidate outcome ownership during BR-0209 rather than add another callback abstraction or remove required native terminal semantics
+
+## Context and observations
+
+Read complete assigned frozen hooks tail and header, recovered the truncated early header declarations, all current edits in both files, complete shared prepare/stop/finish/RNG/step/advance paths and header, current D1-in-D2 continuation helper and complete BR-0209/BR-0292/BR-0293/BR-0294/BR-0295 records
+
+- BR-0209 remains exact: current D2 writer returns void and logs result write/setup/comparison failures. Terminal level/mine callbacks still replace observed cursor and clock with the entire loaded replay aggregate and weaken expected fields. Current headless success marker remains unconditional after the stepping loop. Require observed terminal snapshot and typed first-failure propagation through actual native and wrapper execution
+- Current shared finish now rejects an unloaded session before callbacks, returns a completion boolean and conditionally closes the native window; preserve this partial repair. It still cannot receive the void result writer's failures, so it does not close BR-0209
+- Shared RNG synchronization reports an unsupported state backend and stops without result. Preserve backend policy and real engine d_rand state restore; headless exit must retain that failure rather than manufacture success on unload. Native mismatch diagnostics must not compensate deterministic state or expectations
+- Current D1-in-D2 level-exit continuation deliberately returns before terminal finishing while that gameplay adapter is active. Preserve multi-level replay behavior and verify recorded terminal boundaries in the complete later adapter/current-delta analysis
+- Existing BR-0294 owns expensive fire-probe admission that checks ordinary loaded replay and live player weapons without an explicit debug gate. Energy-stage tail admission already uses input_demo_debug_replay_probe_active; retain that gated path rather than claim every tail probe is ungated
+- Lifecycle reset and metadata correctness remain BR-0293. Current preparation resets the two supplied mismatch/error flags at frame zero; it does not imply complete reset of unrelated diagnostic histories. Keep lightweight trace bookkeeping distinct from disabled capture and optional probes under BR-0292
+- Native public header preserves D2-only Guide-Bot, escort, thief, omega, headlight and weapon semantics plus opaque types. Current header adds shared fast-replay entry point and the homing-bump diagnostic option. Do not broadly merge game-owned hook declarations or force D1 to expose D2 facilities
+
+## Clean dimensions and evidence gaps
+
+No new independent root. No actual failing headless process, early terminal oracle, trace I/O fault, fresh-versus-reused session, paired native build or Android run was performed
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0209 (reference); rationale: exact terminal and output failures still cannot propagate through shared finish and current headless success
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0325 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0326 frozen survey, resumed 2026-10-01 SHA256:4ada5964b8064ab9baf1e3c6f8edb22eb7d94385bdb4d6d518c341e9f3ccacc0 -->
+
+## GQ1-CHUNK-0326 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0326.md`
+- Imported SHA-256: `4ada5964b8064ab9baf1e3c6f8edb22eb7d94385bdb4d6d518c341e9f3ccacc0`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0326 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/d1_in_d2.h`: L1-L66; frozen blob `879a6e2ded70d093a777b96ace44110098a811cf`
+- `d2/main/d1_pig_validation.c`: L1-L239; frozen blob `022d7d1f0716f74fdb9ec799aaaebc605d68e5ff`
+- `d2/main/d1_pig_validation.h`: L1-L18; frozen blob `69946619e59d404ae55384eabd9d608acd43dc4a`
+
+Scope SHA-256: `b95f246731d202233bf24f4f95619c4a95b162abe9bfb89ecd5a3eb6e63f0a03`
+
+## Diff-minimization assessment
+
+RETAIN D2-owned D1 asset facade and bounded format validator. Current relocation under d1_in_d2 and split generation owners already reduce native integration surface; no cross-game asset-format mirror or generic parser framework is justified
+
+## Context and observations
+
+Read complete frozen facade header and validator source/header, all current relocated changes, enclosing current staged model read and generation validation, complete focused validator fixture, native renderer point rotation and polygon/subcall/glow consumers and complete archived BR-0365/BR-0376 records
+
+- New GQF-0209/GQR-0195: structural model validation does not establish the interpreter's signed field and index domains. d1_model_word_at returns uint16_t, but native w/wp reads signed short. A positive in-span branch of 32768 is accepted by the validator yet followed as -32768 by rendering. DEFP_START validates count-derived record extent without reading/checking the start word; start 65535 becomes -1 and rotates into memory before Interp_point_list. SUBCALL validates its branch without validating its animation index; a 24-byte stream with opcode 6, animation word 65535, branch 20 and EOF passes structure but the renderer reads anim_angles[-1]
+- DEFPOINTS counts and DEFP_START start-plus-count also lack the native robot_points capacity bound; polygon point references and glow indices lack their corresponding runtime domains. The current texture-count pass adds TMAPPOLY/RODBM checks but does not close these separate interpreter fields. Preserve this partial texture repair
+- Archived BR-0365 correctly established private generation staging, exact byte extents, bounded traversal and cross-table validation. Its closure did not exercise these accepted semantic bytecode fields. Allocate a local incomplete-boundary owner rather than reopen or duplicate all asset parsing and publication work
+- Fix the engine-owned validator contract against actual renderer limits, signed interpretation, instruction alignment and submodel/point/glow domains before conversion/publication. Preserve native formats and official valid bytecode; do not treat file span checks as an interpreter sandbox. Require production validator-plus-renderer sanitizer fixtures with seeded previous generation unchanged on rejection
+- Bounded RLE validates exact declared size, row tables, runs, terminators, decoded width and remapped row capacity. No independent RLE defect survived the full assigned implementation. Preserve archived BR-0376 and current private bitmap staging
+- Current public facade exposes native generation prepare/release, source flags, content identity and translated sound operations instead of public per-overlay setters. Preserve loading-boundary publication and optional generation ownership; complete later asset implementation/current delta must assess these new interfaces rather than replay the removed facade
+
+## Clean dimensions and evidence gaps
+
+New finding follows exact unchecked fields and native signed consumers. No compiled malformed-bytecode execution, renderer ASan/UBSan run, full asset corpus, Android load or build was performed
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/4/10/7); proposed owner: GQR-0195 (primary); rationale: D2 D1-asset bytecode can pass bounded structure yet arm negative native point/animation accesses
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0326 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0327 frozen survey, resumed 2026-10-01 SHA256:4b6773da34ab2c6c49445a96f8bc42100a0d07ea0c4f38c2086a2c470bbe4dfb -->
+
+## GQ1-CHUNK-0327 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0327.md`
+- Imported SHA-256: `4b6773da34ab2c6c49445a96f8bc42100a0d07ea0c4f38c2086a2c470bbe4dfb`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0327 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/multi.h`: diff hunks 1-21, new L63-L809; frozen blob `1d34f100d60ff9cd74888ec6d191cd43c6d4cc2f`
+- `d2/main/multibot.c`: diff hunks 1-29, new L40-L1403; frozen blob `5956f967db3c2db32bcf20d03575827dc385ce01`
+- `d2/main/multibot.h`: diff hunks 1-3, new L25-L56; frozen blob `44999fe474f11c9744bb617002a58342bbc611ca`
+
+Scope SHA-256: `e4264204c6f0f9f58d7d01e39865eae648f4ebac49c51a374cfbcfffd6c4a2cc`
+
+## Diff-minimization assessment
+
+RETAIN D2-native robot, companion, thief and boss behavior with narrow shared policy and cooperative status owners. These game-owned native object layouts and control slots do not justify paired callback mirrors or another multiplayer schema owner
+
+## Context and observations
+
+Read all assigned frozen multi header, multibot source/header hunks; all current changes in those files; complete enclosing companion restore/timeout/strip/movement priority, position send/receive, flare/fire, explosion and boss-action paths; shared cooperative kill/status functions; full thief policy and fixture; original R1-CHUNK-0274 and existing BR-0195/BR-0374/BR-0435 records
+
+- BR-0195 remains the authoritative cooperative packet root. Current headers pass authenticated sender to more handlers and add stamped dispatch, but existing shared peer status still accepts a payload-selected slot. Preserve partial sender propagation; require actual host reject-before-relay and each changed command's validated authority, rather than claim signatures close the root
+- Current wire constants have moved further since the initial continuation review: Android protocol 30080 and desktop 30025 with different status/drop/restore layouts. Treat current version/schema as a moving worktree dependency for the complete live delta and preserve explicit platform gates. The frozen 30015 layout is evidence, not a patch target
+- Companion restore validates eligibility, reconciles native local control slots, reserves the owner and may replace a lower-priority robot when full. Original review traced that policy; no independent slot-corruption root survived assigned scope. Preserve local/remote ownership, native send priority, timeout exemption, release semantics and replica exclusion while addressing BR-0374 authoritative collision recovery
+- Current robot position producer rejects deleted/dead/exploding objects and invalid segments. Receiver now checks sender slot and segment before shortpos extraction. Preserve those later repairs; remote-to-local object mapping and command authority require the broader packet owner, not a new duplicate index finding
+- Added thief byte uses the shared allowed-mode predicate with explicit no-mode sentinel. Thrust reconstruction follows updated remote velocity, and local thief preparation belongs to its owner. The focused fixture tests predicate values only; actual claim/contact/replica ordering and remote drops remain integration acceptance
+- Remote explosion passes remote=1 to stolen-item handling, preserves native successful kill accounting and uses shared player attribution. Existing BR-0435 owns spawned-score denominator growth; a native kill hook alone does not make score progress coherent
+- Current boss HUD activity moved from every fire/teleport to explicit shot action, and D1-in-D2 boss-hit restore/gate return handling changed later. Preserve those current semantics for complete delta review. Inherited boss packet slot/count assumptions are not newly caused by the narrow assigned HUD/escort hooks
+- Later robot-drop batching and receiver semantic checks extend beyond the assigned frozen hunks. Their current edits were read for context; do not mark their entire live call chain or allocation/RNG parity complete before the mandatory current-delta phase
+
+## Clean dimensions and evidence gaps
+
+No new independent root. No actual two-peer ownership/collision/flare/thief/drop test, packet authority injection, protocol matrix, sanitizer or native/Android build was performed
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: BR-0195 (reference); rationale: expanded cooperative schemas and shared peer status still need authenticated command authority with reject-before-relay acceptance
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0327 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0328 frozen survey, resumed 2026-10-01 SHA256:04ccaf88519e36c6692e1b0fad8af94f17768e4e1fdadc699f1529cbfd9f680d -->
+
+## GQ1-CHUNK-0328 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0328.md`
+- Imported SHA-256: `04ccaf88519e36c6692e1b0fad8af94f17768e4e1fdadc699f1529cbfd9f680d`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0328 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/game.c`: diff hunks 1-73, new L31-L2215; frozen blob `9cef0a60d8cbed43026559859bb830ea8ea9b4c9`
+- `d2/main/game.h`: diff hunks 1-5, new L35-L195; frozen blob `37401a7f496181f4715ca1f95ffdd3e176aceb13`
+- `d2/main/gamecntl.c`: diff hunks 1-34, new L46-L2328; frozen blob `f0a1668ab4e0f668ed5a4e4a3db91d49bd5d3e26`
+
+Scope SHA-256: `4249d52983832bb55c906e4fb868852b313ed63ad442e1a159feddc32418ccf0`
+
+## Diff-minimization assessment
+
+RETAIN native frame ordering, gameplay input and D2-specific replay adapters. Shared profile scene capture, direct-command policy, RNG/lifecycle and existing cooperative scheduler owners cover reuse; remove duplicated scheduler through that owner rather than broadly merge native game loops
+
+## Context and observations
+
+Read all assigned frozen game, game header and gamecntl hunks, recovered full game hunks 52-73 after truncated first display, all current edits in the three files, enclosing live draw/simulation/autosave/replay-control paths, full direct-command policy and complete BR-0231/BR-0278/BR-0386 records
+
+- BR-0278 persists exactly: current game.c retains the level-time 30-second cooperative scheduler and current multi.c retains an independent process-time scheduler. Shared save ownership still needs one lifecycle-aware deadline, success/retry and slot-publication contract with BR-0235/BR-0258. Preserve explicit pause/travel gates and legitimate disconnect saves
+- Correct the old BR-0231 D2 consequence for current code: D2 unloads on direct-command policy rejection, and the shared step now calls RNG synchronization after controls; its unloaded check returns zero before calc_game_time or GameProcessFrame. The formerly described extra unrecorded simulation is statically contained. The error remains log-only and is lost by headless completion under BR-0209; D1 no-unload policy still needs full paired outcome acceptance
+- Native pulse capture before live control clearing and replay pre/post secondary-fire ordering preserve recorded input timing. Replay-only release-marker clearing and presentation-derived homing decisions still need actual recording/replay parity under existing BR-0386; do not remove them by a superficial paired helper extraction or compensate replay results
+- Shared android_profile_scene_state now owns the moved whole-object scan. Native draw uses shared profile buckets and closes frame/bucket on music or replay early return. Current cooperative travel/restore returns occur before profile frame begin. Preserve completed extraction and track remaining elapsed arithmetic/publication under existing profile owners, including GQF-0021 rather than claim scalar widening is complete
+- Tick count/timer validation uses wide addition and native bounded state. Preserve saved runtime cadence and legitimate single-tick behavior, not a new catch-up algorithm. Unsigned simulation frame id wrap is defined
+- D2 palette save/restore retains copied palette/fade tables and Android texture invalidation, separate from native menu/window lifetime. Current source integrates D1 cockpit setup and restore-menu requests; complete generation/viewport acceptance belongs to the later live delta
+- FX RNG replacements for palette and ambient audio preserve simulation stream isolation. Fusion warmup cadence also gates awareness and overcharge damage, as the corrected live handmade comment now states; retain actual saved FX state and native cadence in deterministic acceptance, not a cosmetic-only premise. Current fusion-clock accessor is a later restore-boundary addition to include in the full clock-envelope/current-delta review
+- Detailed converter/fusion energy formatting still precedes optional sink activation, the existing BR-0294 performance root. Tail energy-stage calls now use debug admission. Keep independently enabled state tracing available while gating expensive optional probes and recording capture under BR-0292
+- Current Android Guide-Bot meta goals and recall consume pending actions and record native commands before application; existing BR-0244/BR-0245 own mailbox synchronization and rejection/loss. Preserve owner eligibility and the shared recorded-goal policy during those fixes
+
+## Clean dimensions and evidence gaps
+
+No new independent root. No actual paired failure stepping, input pulse/secondary/homing replay, cooperative autosave clock test, profile timing oracle, native build or Android run was performed
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0278 (reference); rationale: exact duplicate native cooperative autosave schedulers remain in paired frame paths
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0328 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0329 frozen survey, resumed 2026-10-01 SHA256:9cfd8c654a2e2d84d1f06e1db6d590b4949adf8a3942c0c1764d1dfe5f0ebcb6 -->
+
+## GQ1-CHUNK-0329 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0329.md`
+- Imported SHA-256: `9cfd8c654a2e2d84d1f06e1db6d590b4949adf8a3942c0c1764d1dfe5f0ebcb6`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0329 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/ai.c`: diff hunks 90-105, new L2258-L2547; frozen blob `c4b6740310d53027a5cd466b9e765b7cd2693ba2`
+- `d2/main/ai.h`: diff hunks 1-5, new L106-L319; frozen blob `ba3eedda94416c929eabd0604875b3e4028aa73b`
+- `d2/main/ai2.c`: diff hunks 1-94, new L58-L2596; frozen blob `202858bbefff966fe102a552ca205062a98aa9ff`
+
+Scope SHA-256: `be307fa558f9441ce5a6e6ba8cec31fcf97d71561638ee5ca9e8ed497b7af358`
+
+## Diff-minimization assessment
+
+DEFER further native AI extraction until existing optional diagnostic gates and complete current D1-in-D2 actor dispatch/parity are verified. RETAIN engine-owned native save codecs, bounded preflight and D2 gameplay semantics; current separate D1 actor implementation already changes the extraction boundary substantially
+
+## Context and observations
+
+Read all assigned frozen ai tail/header and ai2 hunks, recovered complete ai2 hunks 27-51 after truncated first display, all intersecting current edits and full header delta, entire current AI reader/preflight/restore tail, native AI entry/transition table wrapper and narrow current D1 actor fire/hit/frame dispatch contexts. Read exact archived BR-0360/BR-0383/BR-0390 closure limits and prior BR-0294/BR-0374 owners
+
+- Existing BR-0294 owns added AI visibility, awareness, fire-gate, melee/energy and scheduling probe cost. Native fire-gate macros call helpers on common rejected decisions; existing reviewed helper admission still performs optional preparation before debug gates. Consolidate paired/native actor optional diagnostics in that owner before deciding which native probe adapters can shrink
+- Current D1-in-D2 dispatch returns from d1_in_d2_ai_run_frame before ordinary D2 AI. Removed inline D1 visibility/aim/movement/blind-fire branches now belong to the native-enemy actor module; D2 native behavior remains in ai2.c. Preserve those later changes and actor classification rather than restore obsolete frozen hybrid conditionals. Narrow adapter reads establish ownership, not complete current actor simulation coverage
+- Native D1 next-fire helper preserves deterministic burst count/wait semantics, and robot-hit helper deliberately retains the upstream behavior-versus-mode quirk. Current native_frame owns native early-return order, animation, boss, scheduling and movement. Its full implementation and all callers must be covered in the mandatory live-delta phase with actual paired deterministic parity
+- AI restore preflight bounds exact byte advancement, privately allocates temporary arrays, validates path cursor and boss list counts/segments, awareness types/segments and believed-player segment, frees every temporary and seeks back before the ordinary codec publishes. Preserve these archived BR-0360 safeguards. This is not a complete semantic validation of every inherited AI-local field; do not overstate that closure or allocate branch findings for unchanged baseline fields without an independent introduced boundary
+- Current Boss_dying_sound_playing is now int, matching four-byte save I/O, with explicit signed-byte normalization for pre-35 native saves and a temporary sbyte for the dying-frame consumer. Preserve the legacy native interpretation and avoid removing those compatibility branches under Android prerelease-format guidance
+- Current awareness vectors use the explicit little-endian reader matching the appended writer; earlier preflight vector reads only verify span and do not publish those values. Preserve native swap behavior for older sections and validate actual paired save vectors in the complete save-format owner
+- Relative native boss/cloak/escort clocks use GameTime64 and preserve the dying-start zero sentinel. Current boss-hit time dispatches through the D1 actor adapter. Existing GQR-0175 clock envelope must include later accessors and real first-step sinks rather than infer safety from fixed-width reads alone
+- Current owner retry policy now explicitly admits an authoritative cooperative companion, a partial implementation of BR-0374; retain it and require actual wall-edge recovery/replication acceptance before closure. Current key access uses connected escort owner with local fallback
+- Sound death guard checks translated physical sample range, and cosmetic death fireballs use FX RNG. Preserve archived asset-domain repairs, supported sample maps and independent SIM decisions
+- Public AI header retains game-owned path state and current route/actor service interfaces, adds recall goal capacity and shared event/transition services. Avoid a new callback/layout mirror; actor and route implementation deltas remain separate complete-analysis obligations
+
+## Clean dimensions and evidence gaps
+
+No new independent root. No actual restored AI carrier, endian golden vector, actor/frame RNG parity, cooperative owner collision, probe-off cost measurement, sanitizer or native/Android build was performed
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0294 (reference); rationale: exact hot diagnostic callers persist while later actor extraction requires complete live parity before further consolidation
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0329 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0330 frozen survey, resumed 2026-10-01 SHA256:59b6e2ea15000b8fde08bda812bcffa2cf4165a91339396d4329c1360c57907f -->
+
+## GQ1-CHUNK-0330 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0330.md`
+- Imported SHA-256: `59b6e2ea15000b8fde08bda812bcffa2cf4165a91339396d4329c1360c57907f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0330 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/d1_save_translate.c`: L1501-L1882; frozen blob `ab10dce68b7c84dd51a263c76f961ca659b5d938`
+- `d2/main/d1_save_translate.h`: L1-L104; frozen blob `7a5572ceeea539659d82dc21e6cb453384cd4323`
+- `d2/main/digi.h`: diff hunks 1-1, new L99-L99; frozen blob `40047b87d37d391dcde8c95ceb31dc1b9401cc33`
+
+Scope SHA-256: `ca702c5776a49648ae4a144230864179da866fa99a6b812ebc7251daff8bbe1d`
+
+## Diff-minimization assessment
+
+RETAIN the engine-owned translated D1 checkpoint codec and private validation/publication boundary. Do not extract native-format layouts into Android or restore obsolete skip-only runtime readers; remaining complete-load transaction and clock findings already have owners
+
+## Context and observations
+
+Read the complete assigned frozen translator tail and header plus digital-audio header hunk, all intersecting current translator changes, enclosing current runtime readers/commit/apply, full allocator/morph/stuck validators, player-selector admission and complete object-link validation/rebuild/publication. Reconciled exact BR-0206, archived BR-0220/BR-0355 and related native restore ownership
+
+- Current translator/header moved into d1_in_d2; header is unchanged. Keep game-format knowledge and native version/swap compatibility there. SAMPLE_RATE names the existing 48 kHz output contract and adds no separate cleanup root
+- Current runtime tail restores weapon prior-hit bitmaps and creation frame into unpublished objects instead of skipping them. Morph, effects, stuck objects, exploding walls and cadence now have typed versioned admission before publication. Preserve these fidelity repairs and compare native/transformed carriers during final integration
+- Runtime allocator validation compares live count/highest index against private objects and proves exact unique free-slot coverage. Morph admission bounds native object/model/submodel/point capacities and saved control/movement domains. These additions do not imply all first-step native numeric sinks are safe; GQR-0175 still owns subsystem clock envelopes
+- Current translated stuck reader explicitly rejects negative active wall numbers after admitting only inactive -1, validates object signatures and recomputes occupied count. The GQR-0191 negative-wall repair belongs to remaining native restore carriers; do not apply an obsolete patch to this already guarded translator
+- Complete object-link validation checks segment ownership, bounds, reciprocal neighbors and bounded cycle traversal before private canonical rebuilding. Every node has its neighbor checked in the initial complete loop before traversal. Historical multiple list heads are deliberately canonicalized, with global heads committed only after all stages validate. Preserve archived BR-0355 native topology repairs separately
+- Current apply privately allocates objects/world/AI/runtime, decodes and validates all of them plus path and links before resetting/copying live arrays and committing. Every local failure frees staging. This local transaction does not close BR-0206 coordinated multiplayer application or the entire earlier level-start/mission/asset activation boundary
+- Checkpoint start rejects signed weapon selectors outside D1 0..4 and difficulty outside NDL before player publication/select_weapon, retaining archived BR-0220. Current delayed autoselection uses its explicit native sentinel/domain. Preserve save version gates, zero clock sentinels, legacy endian semantics and reactor/special-reset sequencing
+- Current publication restores saved D1 boss state verbatim rather than imposing a D2 default health correction. Do not reintroduce the removed behavior; actual native D1-in-D2 continuation parity and complete new runtime fidelity helpers remain integration obligations
+
+## Clean dimensions and evidence gaps
+
+No new independent root or further duplication owner. Static review only; no actual malformed translated save, allocation fault, native/transformed first-step parity, sanitizer or paired build was run
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0206 (reference); rationale: private local staging is present while complete authoritative restore and earlier activation transactions still require actual fault validation
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0330 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0331 frozen survey, resumed 2026-10-01 SHA256:995944cc1feb4f033343b04886c1c14e22f473b19a3cb1ac3ebe528f38cc6bb5 -->
+
+## GQ1-CHUNK-0331 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0331.md`
+- Imported SHA-256: `995944cc1feb4f033343b04886c1c14e22f473b19a3cb1ac3ebe528f38cc6bb5`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0331 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/object.h`: diff hunks 1-7, new L108-L589; frozen blob `8c120aef1aa010f0af296597a9601142948e6b92`
+- `d2/main/physics.c`: diff hunks 1-34, new L13-L1160; frozen blob `abbab92ad7be0e06256550e00e3fd720d37f89f3`
+- `d2/main/piggy.c`: diff hunks 1-62, new L54-L2406; frozen blob `73c5318fb932138f03978a1e90baab6d14787784`
+- `d2/main/piggy.h`: diff hunks 1-6, new L47-L132; frozen blob `c04a39c9707c163a7ebd7228d6fb4c92efe67926`
+
+Scope SHA-256: `e7dddb7d19f61509633536ce004aabd9938a97db0f9eca784a21e540462d1c37`
+
+## Diff-minimization assessment
+
+RETAIN native physics/asset interfaces and existing relocated D1 bitmap staging. ADMIT the introduced Android full-payload cache sizing arithmetic failure; DEFER further physics diagnostic extraction until BR-0294 gates and current native actor parity are complete
+
+## Context and observations
+
+Read all assigned frozen object/header, physics, piggy and piggy-header hunks, complete current four-file deltas with truncated piggy hunks recovered separately, whole current PIG initialization and paging boundary, current semantics rotation/bounce/hit/result adapters, current drag/motion/FVI activation contexts, complete relocated bitmap decoding helper/frame loader and exact archived BR-0366 closure. Relocated full asset generations remain mandatory live-delta scope
+
+- New GQF-0210/GQR-0196: frozen and current Android piggy_init_pigfile derive int data_size by narrowing PHYSFS_fileLength minus data_start, then calculate data_size + data_size/10 in signed int. Exact integer oracle: 1,952,257,862 + 195,225,786 = 2,147,483,648 exceeds INT_MAX before d_malloc. Wider payloads also narrow before admission. The new Android path inherits the editor arithmetic rather than the ordinary desktop fixed cache. Require wide span/cache calculation and explicit representable allocation policy before cast/allocation, including SysLowMem; do not attribute unchanged upstream count/offset parsing or paging retries as separately introduced roots
+- Full-payload allocation assumes valid file/table sizes and may request nearly the entire file even when only small headers are referenced. Preserve retail cache performance while rejecting malformed/unsupported payload sizes deterministically before allocation or registry publication. Actual sparse-file/native UBSan and failure tests are still required; the arithmetic oracle alone is not production validation
+- BR-0294 already owns optional physics probes. Current drag and motion helpers compute hashes before their activation tests, and FVI predicate still admits historical object slots 13/15 during ordinary replay. Preserve actual physics state-trace bookkeeping while moving optional preparation behind supported gates. Current relocated final-result helper gates distance/formatting, a repair to preserve
+- Frozen physics hunks 22-24 contain accidental diagnostic fragments inside an existing block comment, not executable invalid code. Keep this distinction; remove branch-inserted dead diagnostic residue under existing hygiene/probe cleanup without erasing original handmade explanation
+- Current native-D1 rotation and hit semantics are extracted to d1_in_d2_semantics with actor classification: native enemies retain D1 integration while injected companion/thief actors use D2 semantics. Bounce velocity preservation follows the same policy. Do not restore obsolete whole-game hybrid branches or change SIM random round-up/order during diagnostic cleanup; actual paired native continuation remains required
+- Current object header retains public allocator state and simulation frame identity, updates native-AI format swapping and cooperative recovery flags. Preserve native/save/network domains and current callers; no new layout mirror or callback table
+- Current D1 bitmap decoder moved to d1_in_d2_bitmaps and retains checked spans, exact reads, RLE row/remap validation, temporary allocation, Mac remap composition and checked final arena copy/publication. Its explicit preserve_palette path supports native generations. Preserve archived BR-0366 guards and GQR-0195 model domain owner; a header rename or helper read is not full relocated-generation coverage
+- Current piggy_get_flags distinguishes resident replacement flags from file-backed paged flags. Mission registry reset/reload and semantic-only level PIG/POG flag reads are additional current owners, requiring complete caller/delta tests before closure; avoid undoing these changes while cleaning frozen wrappers
+- Forced cooperative cache diagnostics use shared Android logging but bypass ordinary category gate. Include their purpose/cost in existing diagnostic policy review; do not infer a new cache owner solely from format-string similarity
+
+## Clean dimensions and evidence gaps
+
+No further independently ranked deduplication root. No compiled malformed cache initialization, UBSan, allocation fault, actual bitmap pixel/parity/cache paging test, diagnostic-off work measurement or paired build was run
+
+Provisional impact rating: 44 (H/M/B/C/R = 23/0/4/10/7); proposed owner: GQR-0196 (primary); rationale: exact introduced Android arithmetic overflow remains live and has a narrow native boundary oracle
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0331 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0332 frozen survey, resumed 2026-10-01 SHA256:f60f99ca7780733ba437e12548919e5933ffd97d23e80b6e67a0b4bd069b2a00 -->
+
+## GQ1-CHUNK-0332 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0332.md`
+- Imported SHA-256: `f60f99ca7780733ba437e12548919e5933ffd97d23e80b6e67a0b4bd069b2a00`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0332 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/cntrlcen.c`: diff hunks 1-18, new L47-L610; frozen blob `55a7e254f79a12ac19643d3281ab39fc5504ecd2`
+- `d2/main/cntrlcen.h`: diff hunks 1-7, new L28-L119; frozen blob `5770efb019b68340eeccb044979963bf2ee0c644`
+- `d2/main/collide.c`: diff hunks 1-107, new L55-L3321; frozen blob `892902c158363e52294700b0cc79fabb703c3013`
+- `d2/main/collide.h`: diff hunks 1-1, new L46-L48; frozen blob `5af51a3e17694038aa8fe271fd7eb0b3bfa648c0`
+
+Scope SHA-256: `1a43cf8ba58a9215f26ef6e2773a0703485e13e4b7ffc548ad3db9dd1dee4f77`
+
+## Diff-minimization assessment
+
+DEFER further collision/reactor extraction until BR-0290 duplicate diagnostics and BR-0294 optional-work gates are resolved with current native actor parity. RETAIN game-owned trigger/save codecs, native damage/SIM sequencing and existing shared cooperative recovery ownership
+
+## Context and observations
+
+Read all assigned frozen reactor/header/collision/header hunks, recovered complete collision hunks 16-83 after truncated initial output, all current deltas including all 26 collision hunks, complete current reactor trigger codecs, mine-drop caller/helper and companion weapon guard, current semantic contact/volatile/dead-reactor/countdown/strength/explosion adapters and exact BR-0290/BR-0295 owners. Native reactor actor implementation was read only at entry and remains complete live-delta scope
+
+- BR-0290 still owns consecutive same-argument weapon-robot path and reason calls. Consolidate supported diagnostic API and retain reason-only omega/final-rejection sites. Coordinate BR-0294 activation before optional formatting, state hashing, distance, JSON or sink work; do not delete independently gated state-trace bookkeeping or replace native collision ordering for logging convenience
+- BR-0295 preserves the player-bump phase label through shared hashing. Native callers still distinguish nonphysics pre/post and normal pre/post; full shared-owner correction belongs there and actual emitted labels remain required
+- Current code removes the environment-driven homing-player-bump suppression helper/branch and returns to native bump behavior. Preserve this later determinism repair instead of restoring historical probe compensation
+- Collision-delay and thief timestamps have restored runtime accessors; GQR-0175 owns their real arithmetic sinks and first-step admission. Include later countdown pause remaining-time addition in the complete live clock envelope rather than assuming a positive scalar alone excludes overflow
+- Current reactor trigger level reader bounds exact scalar reads, filters stale retail links while preserving valid ones, and advances cct per record. Native swap/save reader still rejects malformed active links. Preserve that explicit level-compatibility distinction, endian/layout contract and bounded consumers; avoid new shared format mirrors
+- Current native-D1 reactor frame/countdown/strength/fireball and collision damage/explosion policies moved into semantics. Actor contact deliberately permits native D1 enemy behavior and preserves D2 companion/thief behavior. Volatile-wall kick now follows native D1 SIM order after shove, while D2 keeps its prior order. Do not restore obsolete whole-game conditions or classify every nearby FX roll as simulation-independent without native parity
+- Current boss damage and weapon-hit dispatch use native actor ownership; HUD recognition and cooperative shot events moved to accepted weapon-collision sites. Preserve current creator/signature/protocol repair owners and require actual replicated display/damage checks before closure
+- FullDeathSpew mine helper emits actual armed remainder mines and uses validated fallback position; ordinary stochastic branch retains native random draws. Current recovery consumption receives actual creation status. Preserve this whole resource-accounting owner and bounded remainder count, not a second native/JVM copy of drop rules
+- Companion weapon guard checks parent slot/type before robot metadata access. Complete current source identity and native asset-domain/authority guarantees still require the live-delta collision/object/network review; this narrow guard read does not establish entire publication safety
+- Current cooperative transition freezes accepted damage, starts recovery before drop, blocks unauthorized pickups and records before/after player snapshots. These wrappers invoke existing owners, not new duplicated subsystems. Current player collision MAX_PLAYERS upper-bound correction is present; preserve it
+- Native reactor countdown exit still uses shared replay finish policy and current D1-in-D2 continuation semantics. BR-0209 terminal failure publication and BR-0231 current simulation containment must be reconciled through the complete headless path; no historical extra-step assumption was reintroduced
+
+## Clean dimensions and evidence gaps
+
+No new independent root or distinct large deduplication candidate. No actual debug branch-count/label test, diagnostic-off work measurement, native D1-in-D2 collision/SIM parity, malformed reactor carrier, recovery accounting, multiplayer replication, sanitizer or paired build was run
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0294 (reference); rationale: hot optional diagnostics retain pre-gate work and existing duplicate/label owners cover the cleanup
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0332 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0333 frozen survey, resumed 2026-10-01 SHA256:cd9e92d5aa022cddc37a566e77ffaabb254667acdbab146ec9e81d40f076f864 -->
+
+## GQ1-CHUNK-0333 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0333.md`
+- Imported SHA-256: `cd9e92d5aa022cddc37a566e77ffaabb254667acdbab146ec9e81d40f076f864`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0333 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/aipath.c`: diff hunks 1-44, new L42-L1650; frozen blob `34bf8bf4bd8b9e38ed8946621a9dc874fc3c57b7`
+- `d2/main/automap.c`: diff hunks 1-80, new L63-L1840; frozen blob `4af717a22a4644edb98b71eb035c6322402d6f5d`
+- `d2/main/automap.h`: diff hunks 1-2, new L27-L63; frozen blob `6d9f5d2b8566239a7e1f2616df1dbeff29a5ef2c`
+- `d2/main/bm.c`: diff hunks 1-5, new L56-L243; frozen blob `299741b220751d6e3734b5b9c8d0836047ad7b96`
+
+Scope SHA-256: `5a5bdf7d8163dbe5de93708ec57bd39b14b344c5ec7c55172f3e83b2d9cabfcc`
+
+## Diff-minimization assessment
+
+RETAIN native path/SIM policy and automap engine adapters; DEFER further extraction until complete native actor/routing parity and BR-0381 observational capacity are resolved. ADMIT a live-delta path scratch allocation failure uncovered while reconciling frozen scope
+
+## Context and observations
+
+Read complete assigned frozen aipath/automap/header/bm hunks (automap 1-80 in two complete reads), all current deltas with complete aipath hunks 8-33 recovered after truncation, complete current smoothing and bounded recursive retry context, native wrapper ownership, actual automap draw/marker/close/admission boundaries, allocator release macros and exact BR-0381 owner. Broader current routing/asset implementation remains mandatory live-delta scope
+
+- New live-only GQF-0211/GQR-0197: current move_towards_outside replaces original stack scratch with d_malloc(num_points*sizeof(point_seg)) but never checks it before new_psegs writes/copyback. Both ordinary native random paths and companion smoothing call it. Current route retry likewise immediately memcpy writes into unchecked saved allocation. Under NDEBUG d_malloc is malloc, not fatal allocation; a failed request crashes before controlled recovery. Check bounded size and acquisition before mutation, SIM draws or recursive retry, define smoothing/retry fallback, preserve prior path and release successful scratch exactly once
+- This allocation finding is from frozen-to-current delta, not attributed to frozen additions. No extra inherited removal score is claimed. Production release fault injection must exercise both actual call sites, ordinary/companion paths, expanded paths beyond 200 and recursive retry with prior arena/RNG comparison
+- BR-0381 remains the existing destination-capacity and observational parity owner. Current builder still uses global-arena assumptions for safety insertion while parity callers use separate arrays; complete current caller reconciliation and full pre/post object/arena/RNG hashes are required. Do not solve this with another partial snapshot or native layout mirror
+- Current create_path_points/player/station/random/follower dispatch native D1 actors through separate adapters before D2 implementation. Removed whole-game D1 polish/random-refresh/snipe branches therefore have different current ownership. Preserve those changes and injected companion/thief D2 semantics; complete native actor/path/SIM parity belongs to live-delta analysis
+- Current enhanced routing adds radius/portal/waypoint recovery, bounded two-segment retry, cursor-prefix retirement before signed-byte overflow and exact scripted endpoint handling. Keep its documented Classic and enhanced distinction and native serialized layout. GQR-0175 clock review must include later motion/contact/portal elapsed arithmetic and resets; these wrappers alone do not prove complete restored continuation
+- Shared deterministic smoothing uses integer fixmuldiv and native game math. Preserve effective ordinary/Classic/enhanced policy and actual movement semantics rather than deduplicate upstream algorithms wholesale
+- Automap line batch spans both ordered dim and sorted bright passes and ends before later overlays. GQR-0185 must retain that order/color/GL state and real pixel oracle. Counters reflect draw calls/culling rather than independent GPU success; do not elevate static counts to visual acceptance
+- Marker label buffer has two bytes and only receives local visible indices 0..8, producing 1..9 plus NUL. No reachable two-digit overflow was found in maintained callers. Recorded marker apply has bounds and bounded message copy; direct-command integer narrowing remains the existing owner, not another speculative label defect
+- Current automap allocation failures close synchronously through the sole owning handler, with child arrays/bitmap/automap freed there; failed window creation frees the unowned allocation. Preserve archived repairs and current active-state clearing. Native focus/pause/player-wiggle/state behavior needs actual device failure checks, not a second cleanup owner
+- Current automap drawing updates shared metadata route with adoption disabled during recording/replay and multiplayer. Entry begins metadata generation rather than earlier unconditional rescan. Preserve current route ownership and actual ordinary rendering/staging acceptance; marker touch globals continue through existing mailbox/lifecycle analysis
+- HAM read retains native rewind codecs plus shared DXA metadata patch. Current startup/exit-model gates and asset traces use native asset generation owners; entire current registry/generation transaction is separate live-delta scope
+
+## Clean dimensions and evidence gaps
+
+No further distinct large deduplication candidate. Static release allocator/call-path evidence only; no production path allocation injection, sanitizer, full observational parity hash, native simulation parity, automap pixel/fault/device case or paired build was run
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQR-0197 (primary); rationale: current native scratch allocation directly feeds writes without admission on both ordinary and enhanced paths
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0333 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0334 frozen survey, resumed 2026-10-01 SHA256:7adb71339dbdd058649d510d55f858723e385346d5616c232dfffa9a2cab8985 -->
+
+## GQ1-CHUNK-0334 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0334.md`
+- Imported SHA-256: `7adb71339dbdd058649d510d55f858723e385346d5616c232dfffa9a2cab8985`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0334 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/wall.c`: diff hunks 1-16, new L35-L1485; frozen blob `da0ae3a5ff3e965e608ac67bc8f39684c7b3757d`
+- `d2/main/wall.h`: diff hunks 1-13, new L27-L312; frozen blob `be88bfd01bb14e1e87de55dbf214eaa836e691bf`
+- `d2/main/weapon.c`: diff hunks 1-14, new L69-L1552; frozen blob `0a75bfcd672e682a72d6a7dd67bb05121c1589a9`
+- `d2/main/weapon.h`: diff hunks 1-1, new L182-L185; frozen blob `f7043b37550c57f138d3ea24af9bc5c6eee7d3eb`
+
+Scope SHA-256: `be8270399c75334d00c05509b2c48dddadebb6fb1d06c2e9f52a4c7e217933d4`
+
+## Diff-minimization assessment
+
+RETAIN native wall and weapon adapters and shared semantic owners. Native engine layout, door timing and weapon policy must remain game-specific; no distinct large extraction is admitted
+
+## Context and observations
+
+Read all assigned frozen wall/weapon/header hunks and all current deltas, current doorway helper and stuck-object retirement sink, weapon availability/autoselect context, seismic update and existing archived weapon-order admission resolution
+
+- GQF-0204/GQR-0191 remains live in current D2 remove_obsolete_stuck_objects: wallnum != -1 admits other negative values and indexes Walls before object-signature retirement. This scope supplies the actual sink for the earlier finding; guard both bounds before dereference without changing native retirement semantics. Current translated checkpoint admission already rejects negative wall indices and native D1 retirement does not dereference Walls at this point; do not attribute an already fixed reader defect or make the D1 adapter match D2 blindly
+- Door semantics now live in the native D1 adapter. Preserve native > DOOR_WAIT_TIME, completed opening-state behavior and lack of D2 obstruction reopening. The explicit handmade first-front-door check inside the linked-part loop documents a native quirk; do not replace it with a generalized per-part test as cleanup
+- Android doorway access goes through the native function so travel-exit blocking also applies to exterior sides; desktop macro behavior remains guarded. Current wall_damage_from_player carries explicit actor identity while the legacy wrapper uses -1. Preserve door/cage notifications and current network authority mapping
+- Resident replacement bitmap flags and file-backed flags have distinct owners. Retain piggy_get_flags and its current flag semantics; full registry/generation reconciliation remains separate current-delta scope
+- D1-in-D2 weapon availability, cycle/autoselect, pickup and ordering dispatch through native weapon adapters. Retain the sentinel break in normal autoselection and the documented Classic/enhanced distinction. Entire current native weapon module remains mandatory later delta analysis
+- Archived BR-0217 already requires game-specific weapon-order permutations before publication and its paired focused tests/builds passed. Keep this repair; normal native weapon array indexing alone does not establish another newly reachable admission defect. Direct-command narrowing and translated checkpoint selector admission have separate existing owners
+- Current pickup-once flags reset at level/state transitions and translated runtime restores them. This scoped review does not claim complete native checkpoint continuation or actor/pickup parity
+- Seismic physics remains SIM-owned while Next_seismic_sound_time uses FX draws only when sound is due. Include GameTime64 plus delay arithmetic in the existing GQR-0175 clock-envelope review. Do not change trajectories, lifetimes or physics SIM ordering while consolidating annotations
+
+## Clean dimensions and evidence gaps
+
+No distinct large paired extraction or additional finding. No actual malformed stuck-object runtime sanitizer, native wall/weapon parity replay, restored-clock oracle or paired build was run
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQR-0191 (reference); rationale: this scope confirms the current negative-wall-index runtime sink already admitted
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0334 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0335 frozen survey, resumed 2026-10-01 SHA256:cdcffe161371df999e1b3693f2f17329e3ec46f33cdf87fd2b426baa29688b33 -->
+
+## GQ1-CHUNK-0335 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0335.md`
+- Imported SHA-256: `cdcffe161371df999e1b3693f2f17329e3ec46f33cdf87fd2b426baa29688b33`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0335 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/input_demo_start.c`: L1-L81; frozen blob `ee7b6f53e7771be802647f4412eb521250b6d303`
+- `d2/main/input_demo_start.h`: L1-L21; frozen blob `a9ae9fdc8e53ed3032a2b1b8decf74ba85f0bb54`
+- `d2/main/kconfig.c`: diff hunks 1-37, new L56-L2136; frozen blob `1e7ea56f9f21094bd57bb4dcdd79533f13a04719`
+- `d2/main/kconfig.h`: diff hunks 1-1, new L71-L92; frozen blob `cc54f4e0dcd28174e19e050159b45d7167cfbf3f`
+- `d2/main/kmatrix.c`: diff hunks 1-7, new L53-L474; frozen blob `703c96483b936a4f945533d74191e0696b4ff141`
+
+Scope SHA-256: `3ba8843ccabd699adb5041956c13202db7548b7f2f24026290ccaf9e40064f5a`
+
+## Diff-minimization assessment
+
+RETAIN native control-table and transient-screen adapters. Shared settings fills/defaults, scaled drawing, interaction publication and screen admission already own reusable policy
+
+## Context and observations
+
+Read complete assigned replay-start source/header and kconfig/kmatrix frozen hunks; complete current diffs; current control-handler and private item/menu declarations; full shared settings implementation/header and screen-admission interface; earlier paired chunk 0288 evidence
+
+- Replay start delegates common loading, setup, traces and startup to existing shared owners. Current player-config application declaration matches that lifecycle; no new native replay-start copy is needed
+- Paired 47-line binding text helper remains a local switch over private item types and six native text tables. Ten-character precision plus eleven-byte storage ensures termination. Extraction would require a domain/table facade or retain most of the native switch, so do not create another private-layout mirror or format-only wrapper for small savings
+- Shared kconfig_android_shared owns game-qualified fills and default overrides. Native tables/defaults stay authoritative; persisted keyboard game qualification remains BR-0263 and unchecked JNI acquisition remains GQR-0170
+- Current controller navigation translates a local stack event only while idle or cancelling, reveals selected controls through shared scale state and publishes scroll ownership. It clears scale/interaction state at owning close. Preserve read-only begin/reset/delete/assignment gates and desktop zero-initialization
+- Focus loss resets mouse_state; drag policy and held input remain existing BR-0202/input ownership analysis. Touch sources bypass controller deadzone but preserve actual axis scaling. Do not admit unsupported arbitrary SDL indices or hypothetical long-runtime counter overflow without a producer
+- Current terminal cooperative postlevel mode skips protocol polling, accepts Enter/Space/Esc through owning close and begins shared screen admission ready. Ordinary postlevel readiness still waits for reactor and peers before accepting advance; generation/held-input guards belong to shared admission. Preserve distinct native end_time/peer lifecycle and full cooperative endgame acceptance in later live delta
+- Native format knowledge and private menu/window ownership remain local. No broad handler extraction or independent cleanup owner is warranted
+
+## Clean dimensions and evidence gaps
+
+No new distinct large cleanup or correctness finding. No actual controller/drag/focus, startup replay, cooperative terminal transition, allocation failure, paired build or device test was run
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: BR-0029 (reference); rationale: current preference/input publication spans launcher and engine ownership already admitted
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0335 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0336 frozen survey, resumed 2026-10-01 SHA256:ad458ddee4f73ed14d9f3770b995f65ec29cce6fd2288a87f8cc466275b80f67 -->
+
+## GQ1-CHUNK-0336 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0336.md`
+- Imported SHA-256: `ad458ddee4f73ed14d9f3770b995f65ec29cce6fd2288a87f8cc466275b80f67`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0336 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/gauges.c`: diff hunks 1-61, new L39-L5040; frozen blob `b11a5bd5af15802f8872eb5efa2ac47e7c0d334d`
+- `d2/main/hud.c`: diff hunks 1-22, new L34-L332; frozen blob `26339af0992dc5b10a53bc3dde0b81555a3b409b`
+- `d2/main/hudmsg.h`: diff hunks 1-3, new L16-L22; frozen blob `89d34b5f3814c7c1d7ae21993fac71350a38c201`
+- `d2/main/inferno.c`: diff hunks 1-36, new L40-L635; frozen blob `9b54fb71644c895e41d701439081dfeb26055835`
+- `d2/main/input_demo_control_info.h`: L1-L73; frozen blob `8ad292f4367467683aa8669da98b5345b23e0e21`
+
+Scope SHA-256: `a2edd93bc4f1290769320b64fc55202a061b22c0f713a055afe4a6a4b659a002`
+
+## Diff-minimization assessment
+
+RETAIN native HUD/gameplay adapters and shared count/layout/startup/FP owners. DEFER broader HUD extraction until mode visibility and real rendering parity are repaired; paired corner-text extraction remains the existing 0293 follow-up
+
+## Context and observations
+
+Read all assigned gauges/hud/header/inferno frozen hunks and complete control-info header. Recovered full frozen HUD hunk 12 after output truncation; read complete current scoped diffs with gauges recovered separately, current full draw_hud and HUD preparation boundaries, boss capacity helper, exact BR-0349 owner
+
+- BR-0349 is still live: D2 HudMode==3 remains directly attached to the cruise conditional without return. Normal modes suppress cruise text and immersion continues through HUD drawing. Prepared rectangles also need visible-frame ownership across hidden modes and message expiry. Repair the existing paired owner and require actual hidden/visible frame and cruise controls, not another source-only layout oracle
+- Shared HUD layout and count producers already own reusable collision/count policy; native D2 keeps guided missile, observer and cooperative restore rows. Current Guide-Bot goal row reduces queued capacity and expands rectangle storage to normal+4. Boss reserves one slot; combined rows fit maintained capacity. Do not create a new private HUD snapshot mirror
+- Paired corner-text inset wrappers remain the earlier 0293 mandatory extraction review. Retain actual per-game elements, count callbacks and current installed D1 asset scaling. Rendered HUD pixels and no-HUD expiry must accompany any relocation
+- Current gauge scaling uses installed D1 PIG resolution rather than screen HIRESMODE. Native D1 cockpit drawing/close/reset/window adapters and current derived cockpit texture release/upload have separate current asset/render owners. Preserve actual generation and texture identity rather than mechanically replace dimensions
+- Current bounded two-dimensional energy/afterburner draw batching uses existing graphics storage. GQR-0185 still owns fallible glyph/line storage; retain texture/state/order boundaries and verify actual pixels. Reticle MenuTexFilt context restoration is paired at each native call; do not generalize native drawing with callbacks
+- Score recording emits controlled literal score kinds and native numeric fields. Recorder aggregate/event allocation and disabled diagnostic cost remain GQR-0176 and BR-0292/0294; diagnostic session reset remains BR-0293. Live extra-life clamp changes preserve MAX_LIVES and avoid award sound when no life is added; full native score/SIM parity remains current-delta work
+- Control-info conversion explicitly clears state/pulses and covers D2 afterburner, energy transfer, headlight and bomb toggles. Native field layout remains engine-owned; fixture domain/aggregate limits remain existing admission owners
+- Startup FP setup is required here and remains before initialization; unused gameplay includes are separate GQR-0158. Current startup dispatch selects D1/D2 assets, silent demo dumping selects initialized audio services, expected-exit publication is reset if close is refused, and setjmp now precedes potentially closing startup restore. Preserve archived dump staging and current asset generation transaction; desktop route confirmation and complete native initialization need later delta acceptance
+
+## Clean dimensions and evidence gaps
+
+No distinct new defect or large extraction. No production HUD pixel/hidden-frame test, complete native score/asset parity, startup restore fault, build or device test was run
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0349 (reference); rationale: source confirms the current no-HUD/cruise control-flow regression
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0336 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0337 frozen survey, resumed 2026-10-01 SHA256:5d274a753d465c8b58ba8e80803a52341716d11c666141babaaefe93bf9da884 -->
+
+## GQ1-CHUNK-0337 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0337.md`
+- Imported SHA-256: `5d274a753d465c8b58ba8e80803a52341716d11c666141babaaefe93bf9da884`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0337 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/playsave.c`: diff hunks 1-27, new L54-L1839; frozen blob `b31556777d6377694b369c863cc4c9ad0e4e15bc`
+- `d2/main/playsave.h`: diff hunks 1-3, new L132-L204; frozen blob `8269758c9862c18a2bfd85186808bb722ab24002`
+- `d2/main/polyobj.c`: diff hunks 1-6, new L43-L552; frozen blob `8afca3edffe06e853b05e55d0d5c25a83f1cb1b6`
+- `d2/main/polyobj.h`: diff hunks 1-1, new L114-L116; frozen blob `23470f0855a8178d29199817f01cd6118531197b`
+- `d2/main/powerup.c`: diff hunks 1-35, new L50-L731; frozen blob `b9c987b4e1889e2d0888b6dc44673ec35717f0e7`
+
+Scope SHA-256: `6d41b3555b74da88534b032c8e0271261ee7f32e60a7a520b19a18a666a49024`
+
+## Diff-minimization assessment
+
+CANDIDATE reference to GQF-0202/GQR-0189: paired cooperative duplicate-pickup predicates still match the earlier admitted bounded extraction through existing coop_multi_status. RETAIN native pilot formats, model and pickup adapters
+
+## Context and observations
+
+Read complete frozen playsave/header/polyobj/header/powerup hunks and all current deltas, current full scalar read/patch adapters, selectable pilot precheck, pickup predicates/energy and model lookup, current D1 weapon-order parser/setter/writer, earlier paired 0294 report and archived BR-0261/0267 resolutions
+
+- GQR-0189 still owns exact paired primary/laser/flag reward predicates. D2 uses a wider weapon mask; preserve upper bits, nondisconnected-peer and observer-host semantics and native single/competitive/cooperative reward paths. Actual object removal, ammo, sound, score and RNG controls remain required, including current synthesized drop quantities and translated D1 native pickup differences
+- Shared pilot byte transaction/layout/text helpers already own common publication. BR-0236 retains ignored transient mirror status and grouped partial commits. Native binary offsets/header/version/endian/schema knowledge stay engine-owned; do not create a generic pilot layout facade
+- Archived BR-0261 and BR-0267 validate native orders and persistable cockpit modes before writing; retained readers reject malformed order/cockpit values. Current D1-in-D2 text order parser admits complete exact permutations through native setter, starts from canonical defaults and requires full trailing consumption. Outer parser still frees its word after dispatch. Full current native weapon module remains later delta scope
+- Current new pilot fields initialize and read/write matching routing, pickup-once, map-cheat and homing keys. GuidebotRouting documents synchronization with shared mode policy; Android homing defaults differ from desktop deliberately. Do not add prerelease migrations or copy native tables into Kotlin
+- Selectability validates native minimum layout/callsign/version/mission count, then actual load reopens it. BR-0255 still owns failed pilot startup publication and BR-0262 tied source selection. Pending JNI acquisition/exception containment remains GQR-0170, separate from completed value-domain repair
+- Scalar cockpit helper remains native D2 binary policy with checked reads/seeks and shared byte patch publication. Full multi-pilot identity/rollback acceptance belongs to existing persistence owners
+- Native alternate model texture mapping uses maintained contiguous player texture producer; current xmodel class dispatch and animated scene interfaces retain visual policy and native model ownership. Current removed draw-note probe is no longer a live per-draw defect
+- Current powerups use native D1 animation/boost/Vulcan/quad-selection adapters, synthesized drop-tag quantities and MAX_LIVES clamp. Preserve original pickup mutation and object removal. Energy probe still selects replay frames 817..818: BR-0294 owns opt-in diagnostic removal/gating with unchanged simulation, not replay compensation
+
+## Clean dimensions and evidence gaps
+
+No new independent large cleanup or defect. No actual pickup/drop parity, multi-pilot round trip/fault, native weapon-order replay, model rendering, sanitizer, host/Android build or device test was run
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed owner: GQR-0189 (reference); rationale: exact paired cooperative reward scope remains the admitted bounded extraction
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0337 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0338 frozen survey, resumed 2026-10-01 SHA256:0f77431f7a990f5e035336c0056dd1f96bff87e19f61777b5ef099b4f5ed605f -->
+
+## GQ1-CHUNK-0338 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0338.md`
+- Imported SHA-256: `0f77431f7a990f5e035336c0056dd1f96bff87e19f61777b5ef099b4f5ed605f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0338 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/config.c`: diff hunks 1-20, new L36-L424; frozen blob `98e2964c8bc3a90cf774f9a0d92bd442fe6eb7f3`
+- `d2/main/config.h`: diff hunks 1-3, new L48-L61; frozen blob `54c370e95ba5eee435b0ed621d990914dee909d6`
+- `d2/main/console.c`: diff hunks 1-10, new L23-L343; frozen blob `f3ccc4874950d72eba91d4b13e252e16abf3be84`
+- `d2/main/controls.c`: diff hunks 1-10, new L40-L279; frozen blob `10099fcf5f9cafbd83105321eaf879a2fdea7168`
+- `d2/main/coop_save.h`: L1-L7; frozen blob `c17ecbeb1270865c576eef19a502637c7ff20ab1`
+- `d2/main/coop_warp.h`: L1-L7; frozen blob `d62173414715173ce4aa5a7189f329e76ff95327`
+
+Scope SHA-256: `6f4ceccdbeee9187a1a90555b78251cf5a3aad46976ff2d860bf595b29903294`
+
+## Diff-minimization assessment
+
+CANDIDATE reference to GQF-0201/GQR-0188 and reactivated DMR1-CHUNK-008: consolidate paired saved-player selection and loaded graphics publication through existing auto_net and android_graphics_options owners. RETAIN native config formats/defaults and controls
+
+## Context and observations
+
+Read complete assigned frozen config/header/console/controls hunks and both coop forwarding headers, all current scoped diffs, actual console routing and earlier paired 0289 complete report
+
+- GQR-0188 still owns identical saved-player predicates and loaded graphics synchronization. Retain D2 disc/music first-run defaults, native config keys/parser/writer and current file-length/read-capacity/token guards. Do not create another config subsystem or change native desktop defaults while removing inherited additions
+- Current config reads bounded file length with capacity+1 and PHYSFSX_fgets and skips empty tokenization. Preserve those later guards. Full config allocation/host dimension/provider-generation safety remains current-delta/investigation scope; do not claim whole-reader atomicity from a local change
+- Android console maps priority to logcat and debug_log while introspection receives the shared ring; desktop keeps original gamelog routing. Small thirteen-line severity body alone does not justify a new bridge. Native vsprintf/empty-string assumptions already existed upstream, so no newly attributed branch defect is admitted here
+- Native flying controls now observe pre-scale thrust, afterburner energy and wiggle state through existing trace/dump owners. Algebra remains native: raw sine, frame scaling, player wiggle multiplication and vector addition retain component order. BR-0294 owns disabled probe cost and hard-coded replay-specific diagnostics; BR-0292/0293 retain recording/session lifecycle
+- Touch/controller input ownership and publication remain shared mailbox/BR-0029 and GQI-0005. Native control_info/physics/SIM layout must remain game-specific; do not relocate whole native control loops for apparent textual similarity
+- Coop save/warp headers forward authoritative shared declarations and contain no parallel schema or state
+
+## Clean dimensions and evidence gaps
+
+No distinct new cleanup or defect. No actual config round trip/default/mirror fault, controller/afterburner/wiggle parity, diagnostic counters, sanitizer, build or device test was run
+
+Provisional impact rating: 57 (H/M/B/C/R = 12/21/7/10/7); proposed owner: GQR-0188 (reference); rationale: previously modeled coherent paired config savings remain live
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0338 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0339 frozen survey, resumed 2026-10-01 SHA256:f26cefcda5c244bf5d20f6c4359cfe4387a41343ef75491621c8c78a12ad5a8c -->
+
+## GQ1-CHUNK-0339 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0339.md`
+- Imported SHA-256: `f26cefcda5c244bf5d20f6c4359cfe4387a41343ef75491621c8c78a12ad5a8c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0339 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/fireball.c`: diff hunks 1-50, new L46-L1799; frozen blob `1cb47ff9d9378019a576d302066604a00d217d9d`
+- `d2/main/fireball.h`: diff hunks 1-2, new L24-L77; frozen blob `2d273a988df952b5ce154a343d6a85f1bb2e5ed8`
+- `d2/main/fuelcen.c`: diff hunks 1-3, new L34-L523; frozen blob `89a196bbb8fdabf63fb2d7f78ccccf394fea02e3`
+- `d2/main/fuelcen.h`: diff hunks 1-6, new L26-L174; frozen blob `f10592e367a3a65529d5fc327d4d2362667a1dc6`
+- `d2/main/fvi.c`: diff hunks 1-10, new L37-L1262; frozen blob `1ef9e8ba997fca13a2dd2afe6c80e4af34f58fea`
+- `d2/main/fvi.h`: diff hunks 1-3, new L55-L89; frozen blob `0cb76d42f61ef8aab8808e6421807866dfcaecbc`
+
+Scope SHA-256: `1a5e790e3989988e44ce49a953421388fa5cdacd6e60c6bd469aa08475bceb0a`
+
+## Diff-minimization assessment
+
+RETAIN native explosion/drop/fuel/FVI implementations and compact semantic adapters. Shared rewind, trace, routing and native D1 actor policy already own reusable behavior; moving original gameplay loops would broaden inherited churn
+
+## Context and observations
+
+Read all assigned fireball/fuel/FVI source/header frozen hunks, all actual current scoped diffs, complete current egg/spew retirement and matcen admission context, FVI boundary callback integration, native robot-pair and transparent-pixel helpers, prior paired 0289 policies and BR-0374 ownership acceptance
+
+- BR-0294 retains detailed blast/debris/spawn/explosion/FVI probes and opt-in disabled-cost acceptance. Current FVI probe bodies moved to native semantics; they were relocated rather than eliminated. The frozen closed-door point rejection is removed: current native D1 intentionally samples visible pixels even on a closed door. Preserve that native behavior while gating unused diagnostics
+- FVI callback pointer/user fields are read only under explicit FQ_PASSABLE_WALL_CALLBACK, and ordinary calls clear them. Native recursive FVI remains non-reentrant with a synchronous maintained metadata producer; do not admit hypothetical callback recursion or make a duplicate query-state subsystem
+- Current robot-pair collision admits only two native D1 melee actors; injected D2 actors retain D2 exclusion. Preserve actual semantic role distinction, source handmade comments and full native movement/contact parity rather than copying whole upstream FVI code
+- Debris spin RNG draws are sequenced into three locals before vector construction; physical trajectory/lifetime, real loot, matcen selection and damaging wall blast jitter remain SIM. No cleanup may move them to FX or alter evaluation order
+- Current native D1 adapters own blast damage, flash stun, duplicate replacement, robot drops and drop-count initialization. Original D2 robot explosion continues through its own path; complete current native explosion/actor parity remains mandatory delta analysis
+- Robot drop now checks network creation capacity before insertion. Egg result is guarded before created-object probe and initialization; spew marking stays tied to native newly created powerups and original immortal policy. Full actual partial creation/drop/recovery authority remains current delta, separate from speculative negative fallback without a maintained producer
+- BR-0371/0435 retain robot population versus killed/progress distinctions; incrementing population on spawn is not proof of correct killed-result baseline or cooperative progress
+- Wall route notifications use original native wall/child state with a first-blasted guard and separate owner. Existing BR-0332 hash and native map admission remain authoritative
+- Current fuel sound cadence is exposed for checkpoint observation but still adds a relative delay. Include its restore and native D1 delay in GQR-0175 envelope. Current matcen mode adds activation tracking, one-round/pause policy and level reset; complete shared/native/network restore acceptance is separate later delta scope
+- Rewind codecs retain original native layouts/endian behavior and public declarations agree; no second Android schema is warranted
+
+## Clean dimensions and evidence gaps
+
+No distinct new finding or large cleanup. No actual FVI transparency/callback, native contact/explosion/drop/RNG parity, matcen/network/capacity, restored timer sanitizer, paired build or device test was run
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0294 (reference); rationale: relocated detailed native diagnostics still need complete opt-in cost and parity acceptance
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0339 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0340 frozen survey, resumed 2026-10-01 SHA256:1b79007485aab26a91fa4554a8d23a1f770fce6c5f7d867117c5e34f8b950cef -->
+
+## GQ1-CHUNK-0340 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0340.md`
+- Imported SHA-256: `1b79007485aab26a91fa4554a8d23a1f770fce6c5f7d867117c5e34f8b950cef`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0340 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/d1_custom.c`: L751-L894; frozen blob `74feb3721d8f5ec494102a168503976554cea382`
+- `d2/main/d1_custom.h`: L1-L26; frozen blob `448bf9ae83c6a47e11dea66a93f5b4cc14231228`
+- `d2/main/d1_in_d2_input_demo.c`: L1-L22; frozen blob `0c160ab2498c94fc96939db016578af9ba2f5c8d`
+- `d2/main/d1_in_d2_input_demo.h`: L1-L15; frozen blob `be7250edb08727f38f210c0f4027a1bae9227125`
+- `d2/main/d1_in_d2_semantics.c`: L1-L40; frozen blob `d613f58576319cb4c857bb2c11d15f2a492cea8b`
+- `d2/main/d1_in_d2_semantics.h`: L1-L18; frozen blob `a6facfaee1aba28441a5bcea75d0c618baa3a9c5`
+
+Scope SHA-256: `8bcde5480eaa77918b3cc5869ab7e412da1282104d15765e5ed37e2081dc405f`
+
+## Diff-minimization assessment
+
+RETAIN native custom-asset format and semantic adapters; superseded live-registry overlay save/restore code has already been replaced by owned unpublished generations. ADMIT a distinct current source-identity binding defect uncovered in mapped delta
+
+## Context and observations
+
+Read complete frozen custom tail 751-894 and all five complete headers/helper modules; mapped current custom/header and input-demo diffs, recovering truncated removed sound/POG context 515-650; full current 527-line custom reader, current semantic public interface and maintained resource-drop helper; full asset-identity module, coordinator preparation/publication wrapper, native base identity and publication pre-mutation boundaries, exact BR-0371/0377/0378 owners. Whole frozen custom head and complete current asset/actor publication remain separate scheduled scope
+
+- New live-delta GQF-0212/GQR-0198: custom reader decodes PG1, then DTX, then HX1 into an unpublished generation before hash_custom_sources reopens those three paths. Identity hashing never sees the decoded descriptors/bytes. Replace same-size valid PG1 A with B after PG1 decoding but before hashing: the generation retains A while definition_identity describes B. Publication checks decoded capacities/references and sound conversion, then publishes the supplied identity without reconciling source bytes. Save/network equality can accept another B-backed generation despite different live assets. Bind each decoded and hashed source to one owned immutable generation; a metadata or filename recheck alone cannot close in-place mutation
+- Base PIG/palette hashing similarly reopens after definitions, bitmaps and sounds were read, and optional Guide-Bot identity hashes source paths after generation construction. Include those producer paths in this same source-binding owner during mandatory complete current delta. This scope proves the concrete custom path; it does not claim the full base/extension reader review is finished
+- Actual acceptance must inject same-size valid replacement after decode and during hashing, in-place edits and absent/present transitions. Require either controlled pre-publication rejection with prior registry intact or an identity matching the exact owned decoded bytes. Compare full bitmap/sound/definition bytes plus saved and peer identity gates; no static hash-call test is sufficient
+- Current custom reader now checks native spans/counts/allocations, stages both sounds and bitmaps, repacks source-rate sounds into owned arena, applies PG1 then DTX then HX1 to an unpublished generation and reports failure for caller discard. The older partial live bitmap/sound commit and original restoration arrays are superseded; do not reintroduce them as a repair or migrate prerelease formats
+- Current DPOG indices are native authoritative source IDs with explicit bounds, independent of header names and legacy D1-to-D2 mapping. RLE staging uses bounded validation. HX1 replaces only bounded native definition slots, clears serialized model pointers before fallible read cleanup and validates resulting references. Preserve these completed admission changes; GQR-0195 still owns model-bytecode signed/capacity semantics
+- BR-0377 requires the complete supported sound edition/transition matrix, and BR-0378 coherent effect records. Owned generation architecture is a partial source repair, not proof of those actual runtime matrices or failure rollback. Source sample-rate conversion remains exactly once; current publication quiesces audio/cache before retiring live resources
+- BR-0371 remains live: the relocated result helper still returns num_robots_level in D1 gameplay, bypassing actual num_kills_level baseline. Preserve the existing actual kill/spawn/baseline acceptance and coordinate cooperative progress BR-0435
+- Current input-demo continuation adds the native D1 exit-trigger-frame policy; original resource-drop suppression remains unchanged. Expanded native semantic/actor/physics/door/reactor modules need complete current delta and simulation parity rather than a broad Android gameplay extraction
+
+## Clean dimensions and evidence gaps
+
+No additional large deduplication candidate. Source/control-flow evidence only; no actual mutable-source barrier test, full asset publication/rollback or edition corpus, save/peer comparison, result capture, sanitizer, build or device test was run
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: GQR-0198 (primary); rationale: current source hashing can publish a saved/network identity for different bytes than the decoded core asset generation
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0340 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0341 frozen survey, resumed 2026-10-01 SHA256:192ca4f863186d9433ec97820e360b8eccac0453cc38a23e6642da0cf42ad4c3 -->
+
+## GQ1-CHUNK-0341 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0341.md`
+- Imported SHA-256: `192ca4f863186d9433ec97820e360b8eccac0453cc38a23e6642da0cf42ad4c3`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0341 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/render.c`: diff hunks 1-48, new L54-L2568; frozen blob `d44326d602e63098168eb3dd89defe139e864ad2`
+- `d2/main/render.h`: diff hunks 1-1, new L48-L55; frozen blob `777b7dc427250a9f498be2596acfab30dd5f3ffb`
+- `d2/main/scores.c`: diff hunks 1-3, new L47-L249; frozen blob `18c10a4134185ecb8c5ccac185285d0413fdfcf0`
+- `d2/main/secretarea.h`: L1-L42; frozen blob `7f5ce364b936e566a118fb93d59883132dc42b5d`
+- `d2/main/songs.c`: diff hunks 1-30, new L26-L529; frozen blob `0aed69af810c108b16109a50b9e3a02b8ac3ee03`
+- `d2/main/songs.h`: diff hunks 1-1, new L29-L29; frozen blob `1e99be0d70bdfbda7d386f6212319f4238a38a57`
+- `d2/main/state.c`: diff hunks 1-12, new L37-L155; frozen blob `c3e9415e2d319a7ea773f35d58011982e2a7fdd9`
+
+Scope SHA-256: `4d5388fd3f7512c1d4aef111940ef0b42b9f2ff050f81c47514e1c656a80eace`
+
+## Diff-minimization assessment
+
+RETAIN native view, scores, music and save schema adapters; reuse existing shared owners. Paired texture-label duplication remains the existing admitted GQR-0190 candidate
+
+## Context and observations
+
+Read all seven complete frozen scopes, including render 48 complete hunks, scores and songs full assigned hunks, secret-area public interface and save top 12 complete hunks; recover render label/view hunks 24-30 after output truncation. Full current render/scores/songs diffs and mapped shared secretarea public header; current save delta intersecting assigned top boundary. Full current CPU gameplay view collector and public interface, render view setup/caller, actual homing branch 1130-1210 and score admission; exact BR-0316/0363/0386 owners
+
+- GQR-0190 already owns duplicated merged-texture projected labels. Keep native renderer ownership and current face context; no second extraction or impact credit
+- Render setup has been factored into a CPU projection/traversal collector for skipped drawing, preserving historical rendered-object overflow and reverse list traversal. This does not close BR-0386: current D2 find_homing_object still switches to complete scan solely for input_demo_replay_is_loaded before ordinary window selection. Actual recording/replay candidate, tie, signature and trajectory parity remains mandatory across render profiles
+- BR-0316 tracks merged-wall diagnostic camera lifecycle, not gameplay homing. CPU collection does not prove main-view tracking survives auxiliary draws. BR-0363 remains: replay labels copy canvas-local projection without origin or view identity and append auxiliary views to the same global array. Retain the actual pixels/camera matrices in those owners
+- Visual FOV second pass snapshots/restores base rendered-object and segment lists and guards automap/demo/probe gameplay writes. Preserve native view behavior, endlevel fallback, and desktop guards; full drawing side-effect parity is a separate live delta obligation
+- Current scores uses ten menu slots for three first-place items, so the explicit confirmation is bounded. Replay suppresses persisted scores. Cooperative terminal poll is installed for both first-place text entry and placement message; focused terminal transport acceptance remains with the existing lifecycle owners
+- Songs keeps base/mission preference, shared playlist and Redbook policies, safe initialized/uninitialized song pointers/count, and FX-only soundtrack randomness. Current MIDI/WAV support follows SDLMIXER guards. No additional substantial reusable body
+- Secret-area header is relocated into the shared owner and extended with route readiness, work budget, certificates and saved identities. Its implementation remains scheduled independently; no second per-game interface mirror
+- Assigned save top now documents native D1 actors, full-width relative clocks, session routing and original asset source identity before objects, with shared Guide-Bot runtime version. Preserve engine schema ownership; full state serializers/restore bodies are subsequent scope, and source-identity coherence remains GQR-0198
+
+## Clean dimensions and evidence gaps
+
+No newly admitted defect or large extraction. Static source evidence only; no score/terminal transport, render pixels, homing recording/replay, save roundtrip, compiler or device checks were run
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed owner: GQR-0190 (reference); rationale: existing paired label extraction remains the highest established scope owner, without duplicate savings or defect admission
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0341 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0342 frozen survey, resumed 2026-10-01 SHA256:5cea8e04e1758253430c1798f307b14f8f4118ed8c3b48fb67ff304df55db265 -->
+
+## GQ1-CHUNK-0342 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0342.md`
+- Imported SHA-256: `5cea8e04e1758253430c1798f307b14f8f4118ed8c3b48fb67ff304df55db265`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0342 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/laser.h`: diff hunks 1-3, new L102-L155; frozen blob `4e71cd20e069005c680b7c69a4a4fe8fb5e978fc`
+- `d2/main/lighting.c`: diff hunks 1-3, new L44-L537; frozen blob `7bd555df0bd050e41fce276afcc5646104e13aff`
+- `d2/main/menu.c`: diff hunks 1-44, new L59-L2327; frozen blob `665304f0a707c297bdbc34cde2d9d24880f0d0c7`
+- `d2/main/menu.h`: diff hunks 1-1, new L25-L25; frozen blob `2b4b502b7b856b3ad8916b28de70948bfc9dabcf`
+- `d2/main/mglobal.c`: diff hunks 1-1, new L96-L98; frozen blob `4d7d917c6c330003d1a85a7c4d0a1ded3b26f303`
+- `d2/main/mission.c`: diff hunks 1-12, new L39-L1148; frozen blob `6aaad00b4f0df69d76736ea80322a56cad874d16`
+- `d2/main/mission.h`: diff hunks 1-3, new L44-L99; frozen blob `50a2d9a4676ef7b38e242fb70c5b4e0ac610c412`
+- `d2/main/movie.c`: diff hunks 1-20, new L37-L531; frozen blob `22db94180c4b79842b0e890dfc8712c426242ae1`
+
+Scope SHA-256: `b26a0c2256ad8c0a35847fff31fe38f666f5507072fb9c0319f0a7ad04733439`
+
+## Diff-minimization assessment
+
+RETAIN game-specific mission/menu/movie and lighting adapters. Shared resolution, graphics settings, screen admission, mission assets and gameplay clock owners already contain reusable policy; no new substantial paired body
+
+## Context and observations
+
+Read complete frozen eight-path chunk: laser interface, lighting, all menu 44 hunks, menu interface, difficulty globals, mission 12 hunks/interface and movie 20 hunks, recovering movie 3-20 after console encoding interruption. Full current diff for all eight paths; full current miscellaneous-menu initialization/readback/change handler 2190-2435, mission selection/ownership 1120-1250, descriptor boundary 350-405 and movie event lifecycle 345-445
+
+- Current miscellaneous menu has 43 Android or 46 desktop items, initializes exactly those slots and updates every affected color/checkbox index consistently after adding Autoselect Only Once. Desktop Guide-Bot routing choices remain desktop-only and change the new-game default, preserving current session ownership. No array mismatch in the changed table
+- Native menu edits supply explicit confirmation and gamepad navigation through the existing shared translator. Preserve pilot filtering/default publication, expected-exit breadcrumb, cooperative briefing/transfer failure presentation and desktop menu paths. View/controller publication acceptance remains the existing BR-0029 owner
+- Android graphics menu already invokes shared setters instead of duplicating persistence rules. Resolution text still uses inherited atoi/packing; broader native configuration admission and aspect versus Android limits remains GQI-0007 investigation, without a new parser mirror
+- Mission display labels own allocated buffers and preserve the unprefixed mission identity for LastMission. Allocation failure unwinds buffers/list before publication and close frees the same ownership. Current Android package preparation/activation and startup-failure release are real improvements, but do not establish the full staged-mission/save publication barrier in GQF-0096/BR-0206; preserve later actual late-failure and previous-world acceptance
+- Current mission loader supports absent D2 base HOG, unambiguous Android basename/path matching, current-directory descriptor load and original D1 profile asset dispatch. Native format recognition stays engine-owned; asset source coherence remains GQR-0198 and complete D1 generation review stays scheduled
+- Movie scaling follows actual render dimensions, touch dismissal uses explicit Skip, gamepad/screen admission stays shared. Cooperative planning/cancel/pump and modal-pause window cleanup are explicit; timing scanner reads bounded records and restores the stream, but no actual malformed movie/cancellation or pause test is claimed. Movie library fallback records the resolution actually opened and closes that exact library before replacement
+- Lighting flicker uses FX RNG and headlight failure message remains engine-owned. Laser runtime interface now carries full-width Omega time, consistent with native clock-owner repair; checked relative-clock restoration remains GQR-0175. Avoid extracting tiny native light/menu wrappers or duplicating their state
+
+## Clean dimensions and evidence gaps
+
+No newly admitted defect or major deduplication candidate. Static source evidence only; no actual menu input, mission rollback, malformed movie/pause/skip, save clocks, resolution, build or device checks were run
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: GQF-0096/BR-0206 (reference); rationale: the existing staged mission/save publication boundary remains the material current integration requirement
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0342 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0343 frozen survey, resumed 2026-10-01 SHA256:3ea1f85a39a85acd4dbe86a750c79bdf9affcdd6c6b573e27bc04f26cf0c611b -->
+
+## GQ1-CHUNK-0343 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0343.md`
+- Imported SHA-256: `3ea1f85a39a85acd4dbe86a750c79bdf9affcdd6c6b573e27bc04f26cf0c611b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0343 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/gamefont.c`: diff hunks 1-1, new L117-L121; frozen blob `dbd0f0707e36f2af5568eae7bf27de0c24a23284`
+- `d2/main/gamemine.c`: diff hunks 1-2, new L46-L50; frozen blob `e6b698260c6b17397d0a39484c7be674ca0c42c9`
+- `d2/main/gamepal.c`: diff hunks 1-2, new L63-L103; frozen blob `239222b3b00318f9e5cdebfff8cfc424e4058991`
+- `d2/main/gamepal.h`: diff hunks 1-1, new L26-L26; frozen blob `13c55729d469aae593d912befe4e4a548873a8e8`
+- `d2/main/gamerend.c`: diff hunks 1-25, new L53-L1212; frozen blob `226191957da36fa6046ea2d881f2d8103e691efb`
+- `d2/main/gamesave.c`: diff hunks 1-20, new L24-L1636; frozen blob `ebbc463a6e9f40fb93b510fec865aa519db8f927`
+- `d2/main/gameseg.c`: diff hunks 1-1, new L1890-L1890; frozen blob `db60c84d84dbd5d8c4a1ef115f389370ac31160b`
+- `d2/main/gameseq.c`: diff hunks 1-59, new L29-L2131; frozen blob `67f02f24a96909dda22d3de106f6faea4e91006e`
+
+Scope SHA-256: `407f5472252135b7191970bc1234c7b033eada5b95dbeb771093c0008c224c2e`
+
+## Diff-minimization assessment
+
+RETAIN native level/save/render/palette formats and lifecycle. September debug overlay drawing extraction is already complete; original D1 texture conversion is superseded by the native source-ID owner, not a new deletion candidate
+
+## Context and observations
+
+Read complete frozen eight-path scope, recovering gamesave hunks 15-20 and gameseq 1-7 after truncation; all gameseq 59/render 25/save 20 hunks, font, mine includes, palette/interface and placement RNG annotation. Full current deltas for every path, recovering complete gamerend/gamesave deltas after truncation. Current font load/fallback/init/close, native asset preparation and actual LoadLevel 950-1045; mapped section-seek public owner. Complete relocated native levels/presentation implementations remain mandatory later delta
+
+- GQF-0096/BR-0206 staged publication remains material: current LoadLevel prepares and publishes D1 assets before calling fallible load_level. A validated immutable asset generation alone does not preserve the previous world when level decoding later fails. Keep complete assets/mission/level/save commit and late-failure rollback acceptance with that existing owner; do not add a second source-transaction finding
+- Native D1 textures now retain native source IDs and use d1_in_d2_decode_level_textures rather than the deleted 261-line legacy D1-to-D2 conversion table. Preserve source orientation/shareware rules and check the complete mapped decoder later. Do not count the removed legacy table as available deduplication savings
+- Current gamesave follows explicit section offsets and typed trigger decode, bounds wall references and door/blastable animation indices before access, binds original trigger links and fixes original actor state. It still mutates engine level state during decode; these native format changes do not establish staged save/mission admission. Full malformed file, actual offset/padding, trigger domain and supported edition controls remain required
+- Font resource names now come from original presentation owner, with owned fallback arrays and reset configuration on close. Native integer scale body stays local; shared Android scale and existing allocation/consolidation GQR-0184 are separate established owners
+- September drawing consolidation calls android_texture_debug_draw_overlay instead of the deleted 31-line label loop. Preserve that completed extraction. Remaining replay labels still use global local-canvas positions and retain BR-0363; merged-wall auxiliary camera lifecycle remains BR-0316
+- HUD RNG save/restore is still conditioned on capture/replay modes. Native HUD/gauge SIM-versus-FX ownership and transparency need actual state/trace/pixel acceptance, including no-render modes; no closure based on the helper alone
+- Cooperative resources now share native per-player initialization, while committed travel credits cargo and clears it once. Pause/travel/recovery/briefing/campaign changes remain dedicated current owners and need actual multi-peer matrices. Secret level HUD resets are distinct from parent mine state
+- Live level loading now prepares original definitions before verification, requests background route metadata only under established owner policy and records bounded phase metrics. Core placement remains SIM RNG; music/light-only randomness remains FX. Current diagnostics still hash all texture and segment tables and force-log lifecycle points; BR-0294 retains unnecessary diagnostics cleanup without weakening simulation evidence
+- Original asset/sound/effect/palette publication supersedes the old apply/restore wrappers. Preserve the current unpublished generation design and existing GQR-0198 source binding requirement, BR-0377 sound edition/transition matrix and BR-0378 effect coherence
+
+## Clean dimensions and evidence gaps
+
+No new extraction or defect admission. Static source evidence only; no malformed level/offset corpus, allocation, old-world rollback, assets/palette/HUD pixel checks, simulation parity, cooperative transport, build or device checks were run
+
+Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: GQF-0096/BR-0206 (reference); rationale: current asset publication precedes fallible level decode and retains the existing transaction acceptance requirement
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0343 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0344 frozen survey, resumed 2026-10-01 SHA256:0533e6713eb2521fc27d91f1be35a7625084b1a378c9e120971cc99156431a34 -->
+
+## GQ1-CHUNK-0344 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0344.md`
+- Imported SHA-256: `0533e6713eb2521fc27d91f1be35a7625084b1a378c9e120971cc99156431a34`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0344 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/state.c`: diff hunks 108-127, new L3184-L3749; frozen blob `c3e9415e2d319a7ea773f35d58011982e2a7fdd9`
+- `d2/main/state.h`: diff hunks 1-2, new L24-L47; frozen blob `6f438ab88681bb6c3053c1528198298818707e07`
+- `d2/main/switch.c`: diff hunks 1-15, new L47-L662; frozen blob `9ca849c86ceaf81386da48c6b6379bb7d614bc38`
+- `d2/main/switch.h`: diff hunks 1-6, new L26-L138; frozen blob `38b2b31790f9e5440440de4a6fc1289840515c8c`
+- `d2/main/texmerge.c`: diff hunks 1-9, new L30-L213; frozen blob `00647c879b94c299e44a047f9d050b7e055f6795`
+- `d2/main/text.h`: diff hunks 1-4, new L466-L746; frozen blob `e4a15f3c1c97fb306d5546bf2e3efb9c1324b571`
+- `d2/main/thief_network_policy.h`: L1-L19; frozen blob `c3df4394da9fee1a6a3ffb7277f0bfbf57c72a63`
+- `d2/main/titles.c`: diff hunks 1-30, new L55-L1621; frozen blob `d634bf401723027421bd973e40022282183e04c4`
+
+Scope SHA-256: `7b36a4357cce8e30ef3436a7b590d341b310a3048942970fd3f830bf3612a181`
+
+## Diff-minimization assessment
+
+RETAIN native restore/trigger/title format knowledge and shared rewind, remap, screen and presentation owners. Existing GQR-0178 owns paired cache algorithm deduplication; no second candidate
+
+## Context and observations
+
+Read complete frozen eight-path scope: restore tail hunks 108-127, state interface, trigger 15 hunks/interface, cache nine hunks, text four hunks, complete thief policy and titles 30 hunks. Complete current intersecting restore-tail hunks and all other path deltas, recovering switch header, cache/text/thief and titles top after truncation. Actual metadata application 3740-3868, callsign/game-ID probes 3905-4015 (recover omitted 3919-3926), trigger crossing 713-775 and full shared briefing canvas helper. Whole earlier restore staging and native presentation modules remain separate scheduled delta
+
+- GQF-0096/BR-0206 and BR-0338 remain: runtime and cooperative optional-state validation can fail after engine world/player/flight mutation. Current source/world gear checks, pending-result accounting and event-loop failure request are improvements, but full previous-world rollback/admission needs actual late failure. Do not close the transaction on new guards alone
+- BR-0338 already explicitly owns paired state_get_save_file_callsign scope/layout admission. Current D2 helper still assumes single-player header and reads magic/version/mission without exact-count admission before use; the later player read being checked does not validate all earlier fields. Include truncated prefix and actual cooperative-header tests in that existing complete header/body owner rather than admitting another parser
+- Current cooperative restore tracks bounded object validity before remap, checks player reads, uses restore result counts and preserves synchronized world options. BR-0213 identity/remap acceptance remains independent; richer gear/campaign/recovery state must be reconciled through actual current transport and save matrices
+- Current restore distinguishes original D1 boss health, clears absent pickup/AI/cadence state and rebuilds Guide-Bot routing after saved-policy restoration. Preserve native old-save compatibility and current preference versus replay/network policy. Full-width relative-clock checks stay GQR-0175
+- Trigger runtime extension is explicitly excluded from core serialized record through TRIGGER_DISK_SIZE. Current native original trigger activation/source flags/link rules stay engine-owned. Exit actions use bounded semantic accessor and route/cooperative crossing gates before fallback native activation; use actual native/campaign/Guide-Bot parity tests, without a shared mirror of engine tables
+- GQR-0178 owns paired cached texture algorithm. This scope's Android owner tagging/reuse/reset diagnostics remain adapters; BR-0294 retains dead/unneeded diagnostics review without duplicating that candidate
+- D2 gettext now uses fallback when an admitted entry is null; existing D1 duplicate callsign index problem is separately GQR-0187. Keep native text indices and no second schema
+- Titles and briefing original D1 implementation has relocated to native presentation owner. Existing authored D1 screen tables/robot animation removal is already superseded; count no new savings. Native D2 resolution fallback, actual presentation archive, briefing canvas aspect/3D scaling, screen admission and cooperative page/cancel/pump remain real lifecycle changes requiring supported edition/pixel/input acceptance
+- Shared briefing canvas computes display pixel correction and bounded centered 4:3 placement; retain current drawing/canvas ownership and complete native resource review. Thief network policy remains a small domain helper with no new extraction
+
+## Clean dimensions and evidence gaps
+
+No newly admitted issue. Static evidence only; no truncated/coop save probes, rollback/remap, gear transport, trigger/native simulation, briefing pixels/input/edition, cache pixels, build or device checks were run
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed owner: GQR-0178 (reference); rationale: existing paired cache consolidation is the highest established scope owner, with no duplicate savings
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0344 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0345 frozen survey, resumed 2026-10-01 SHA256:14316a25b31bbc09d27674aa4bf2eb9b32a0fbb878710553df91247fe777368e -->
+
+## GQ1-CHUNK-0345 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0345.md`
+- Imported SHA-256: `14316a25b31bbc09d27674aa4bf2eb9b32a0fbb878710553df91247fe777368e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0345 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/dxa_metadata_patch.cpp`: L751-L1060; frozen blob `3e6e2ab9cc81333cc266552984ee0ca1f7b43953`
+- `d2/main/dxa_metadata_patch.h`: L1-L7; frozen blob `a5b0373b007f2d076a41f0174304a15a1a10e6fd`
+- `d2/main/effects.c`: diff hunks 1-2, new L57-L99; frozen blob `937c55b0ed127a35658d40c9b07f3d4c97b03582`
+- `d2/main/effects.h`: diff hunks 1-1, new L66-L74; frozen blob `d9de5b39cb9557b958b339e9acc1316840578bf9`
+- `d2/main/endlevel.c`: diff hunks 1-26, new L48-L1109; frozen blob `1b6b0ecea2d462da9f67f8cad39bbeecfcc49f60`
+- `d2/main/escort_exit_policy.h`: L1-L15; frozen blob `077a94fc4208993237de92707fcc28e6c4d29541`
+- `d2/main/escort_owner_policy.c`: L1-L102; frozen blob `d81e17c6fadd22b833c6e496a2689a74783ec107`
+- `d2/main/escort_owner_policy.h`: L1-L40; frozen blob `1d98ba697c2aef70f2ce00a66fdfacdc9abb6228`
+- `d2/main/escort.c`: diff hunks 1-4, new L59-L127; frozen blob `72f86f8f6ddf91fe65592e913a4932ffc5439842`
+
+Scope SHA-256: `bcdceaba7096072ae3f11b2afdcc829adb2ca75ec9232e19a1eedfa6c7516fd9`
+
+## Diff-minimization assessment
+
+RETAIN D2 HAM schema, deterministic effects and cinematic/native escort policy. No substantial new paired extraction. Archived BR-0372/0373/0380 repairs remain intact and are not readmitted
+
+## Context and observations
+
+Read complete nine-path frozen scope: metadata patch tail 751-1060 and full public header, both effect hunks/interface, all endlevel 26 hunks, full exit and owner policy modules/interfaces and escort first four hunks. Recover metadata 966-1060 and both effect hunks after truncation. Full current deltas for all complete modules and current escort top intersecting the assigned boundary. Exact archived BR-0372/0373/0380 resolutions and prior complete R1-0286 report; current required_int_value numeric temporary 95-109. Full metadata head, relocated effect runtime and complete current cinematic/native escort implementations remain separate scheduled obligations
+
+- Archived BR-0372 now bounds robot weapon fields to the loaded table and secondary sentinel before signed conversion; BR-0373 snapshots all affected tables/counters before ordered mutation and restores on exception; BR-0380 stages complete animation records and validates progressing timing/count/cursors before publication. This assigned tail confirms those repairs, without claiming mounted malformed-DXA or sanitizer acceptance was executed now
+- Current whole-row effect/wall clip mutations are local validated copies; robot and sound/object bitmap field mutations participate in snapshot rollback. Native schema remains engine-owned. Mandatory full parser review must cover exact JSON signed/unsigned conversion, bitmap frame helpers, semantic enum/count/index domains and cross-references; do not infer complete parser admission from this tail or its existing source-only tests
+- Effect reset and tick already delegate bitmap publication to deterministic native runtime owner. Their native declarations match save reconstruction; paired D1/D2 formats remain distinct and no runtime table mirror is proposed
+- Endlevel randomness remains FX-only cinematic dressing. Current persistent timer/explosion/sound locals have moved into explicit Endlevel_frame reset at a new flyout. Current shared movie selection bounds level IDs and supports optional cinematic source; completion delegates to the appropriate cooperative barrier or native finish owner
+- Current cinematic flythrough consumes long frames in bounded substeps, records transition crossing, keeps remote actors out of gameplay object lists, expands flyout slots to players plus two and guards absent entry side. Associated runtime accessors and multiplayer implementation are not fully reviewed by this assigned frozen scope and remain mandatory live delta
+- Existing screen admission and automation-only frozen endlevel helpers are preserved. Cooperative flyout begins/pumps/holds final camera while waiting for peers; complete native and multi-peer cancel, timeout, replay terminal and restart matrices remain actual acceptance, not closed by these hooks
+- Native escort exit policy prefers external endpoint and falls back to trigger. Transport identity/generation/eligibility and ownership request rules remain a small native domain helper. Current key-change checks are rising-edge objective relevant; route metadata request excludes recording/replay and competitive multiplayer, while cache polling permits cooperative play. Full caller/publication/budget behavior remains later route/escort scope
+- Diagnostic profiling and static flyout location probes remain BR-0294 review, keeping useful native evidence while removing dead or unnecessary instrumentation. Escort header additions/goal labels are native policy declarations, without a second extraction
+
+## Clean dimensions and evidence gaps
+
+No new admitted issue or substantial deduplication. Static evidence only; no mounted patch corpus/table hashes, numeric or enum mutation, animation consumers, native/cinematic/cooperative transport, replay traces, compiler, sanitizer or device checks were run
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0294 (reference); rationale: existing native diagnostics cleanup remains applicable while substantial format/cinematic code is retained
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0345 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0346 frozen survey, resumed 2026-10-01 SHA256:ff0463084c3db700d560435bc004ab5cbf8985fabe5a159e5f7de90a716853e8 -->
+
+## GQ1-CHUNK-0346 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0346.md`
+- Imported SHA-256: `ff0463084c3db700d560435bc004ab5cbf8985fabe5a159e5f7de90a716853e8`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0346 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/ai.c`: diff hunks 1-89, new L53-L2252; frozen blob `c4b6740310d53027a5cd466b9e765b7cd2693ba2`
+
+Scope SHA-256: `202dd22df0453f21b6fe75c45d03f60e6185d0e3cafbd5419d7d4c5ae0626615`
+
+## Diff-minimization assessment
+
+DEFER broad native AI extraction. Current original D1 actor owner already replaces distributed mixed-game branches; retain ordinary D2 logic, format knowledge and diagnostic seams. Existing GQR-0175 relative-clock admission extends to legacy AI timestamp reconstruction
+
+## Context and observations
+
+Read all 89 complete frozen D2 AI hunks through new 2252, recovering complete chase gate hunks 45-46 after truncation; complete current delta intersecting assigned range. Actual current frame entry/owner gate 320-375 and native AI serialization/readers/preflight entry 2020-2240. Full preflight/restore tail was independently covered in resumed 0328/0329; complete new original actor implementation remains mandatory current delta
+
+- Current d1_in_d2_ai_run_frame dispatches original actors before ordinary D2 clock/scheduling behavior. Distributed original-ready/fire/random-turn/timeslice/chase/follow/visibility branches are removed from the D2 body because native owner now executes them. This is already implemented relocation, not a new broad Android deduplication candidate. Require actual original actor versus D1 oracle and ordinary D2 parity in complete delta
+- Shared native awareness producer receives game admission explicitly; original owner delivers awareness and finishes world frames before ordinary D2 fallback. Keep ordered SIM rolls, agitation and awake/path mutation. Remote cooperative companions remain owner-only pose replicas; route confirmation and retry recovery use established domain policies
+- GQR-0175 relative-clock admission extends here: legacy ai_local_read_n_swap computes GameTime64 plus signed 32-bit time_player_seen, time_player_sound_attacked and next_misc_sound_time; ai_cloak_info_read_n_swap similarly adds last_time. The preflight itself calls these readers before byte-count validation. Checking full-width optional fields elsewhere cannot prove these additions safe for an admitted extreme game clock. Include these real readers/preflight and corresponding relative save subtraction in the same clock-envelope repair and production UBSan corpus, retaining normal legacy sentinel/format behavior
+- Frozen cloak serialization assigns Y into Y instead of overwriting X; removing unused sound-time assignment preserves explicit relative-time write. Awareness events and believed/last-fired player positions are explicitly appended as part of deterministic native save state. Preserve versions and existing staged restore owners
+- Current transition-table accessor retains original event/state indexing with assertions; full parser state domains remain tied to native save/asset admission. No second shared state-table mirror or speculative changed behavior
+- BR-0294 retains substantial inline diagnostics cleanup: many schedule/chase/follow snapshots are collected regardless of eventual logging and probe branches retain native state/call order. Keep useful maintained trace behavior and remove obsolete/dead instrumentation only with real state/RNG parity. Actual AI simulation cannot be replaced with static source assertions
+- Current boss sound flag is int and original boss-hit serialization uses its native owner; remote flare/position dispatch and reference RNG are still game simulation. Complete current original boss/escort/network state acceptance remains scheduled
+
+## Clean dimensions and evidence gaps
+
+No new defect admission; extend existing clock owner without duplicate severity credit. Static source only; no actual extreme-clock reader/preflight/serialization UBSan, malformed save, native actor/camera/route/remote companion, simulation/RNG parity, compiler or device checks were run
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: BR-0294 (reference); rationale: native diagnostic reduction retains its existing owner; GQR-0175 separately covers checked clock-envelope work
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0346 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0347 frozen survey, resumed 2026-10-01 SHA256:0d833d4fa207cccd7ef9038e21e8f095a9e3ef6cb947f8bafddf9492e2e88cad -->
+
+## GQ1-CHUNK-0347 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0347.md`
+- Imported SHA-256: `0d833d4fa207cccd7ef9038e21e8f095a9e3ef6cb947f8bafddf9492e2e88cad`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0347 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/d1_custom.c`: L1-L750; frozen blob `74feb3721d8f5ec494102a168503976554cea382`
+
+Scope SHA-256: `c532de9290a54918409bcd369f28af7a741062ba549b60c929037b26af4ab2b4`
+
+## Diff-minimization assessment
+
+RETAIN native custom asset format staging and existing generation ownership. Frozen live-registry save/restore arrays, sound replacement/resampling and legacy bitmap mapping are superseded by the current unpublished original asset generation; no new deletion/extraction candidate
+
+## Context and observations
+
+Read all 750 assigned frozen lines in two complete parts: typed PIG/POG headers, PIG1 layout, original registry save/restore, bounded RLE bitmap staging, nearest sound resample, PCM/decompression/base Mac and DOS sources, POG batch and custom file admission. Reuse independently complete mapped 527-line current reader/identity/publication review in 0340; re-read current 1-185 and 230-340 for native definitions, spans, bitmap staging and sound packing. Current native reader SHA-256 e8e5d1d6d784500430dcdcf09f1a888b266730647b30d62eb14b8d02d077e01d; current native source is clean in git status. Frozen custom tail was independently covered in 0340
+
+- GQR-0198 remains the admitted source-identity root: current custom generation decode and later reopened PG1/DTX/HX1 hashing can describe different valid bytes after source replacement. Preserve actual barrier-controlled mutation, saved/network gate and full decoded-byte coherence acceptance, including corresponding base/optional producers
+- Frozen code mixes old live registry texture commit with individually applied sound replacement and base sample formats. Current replaces that partial publication with staged generation-owned bitmap/sound/model arrays. Do not reintroduce legacy registry shadow arrays as a transaction repair or count their existing removal as additional savings
+- Current PIG1 layout/header offsets are wide and admitted through remaining-source spans before allocation/read. Current bitmap seeks and exact payload bounds feed bounded RLE validation. Source native indices replace the old D1-to-D2 lookup, while unresolved named entries remain isolated from valid owned slots
+- Current sounds remain original 11-kHz bytes in one bounded owned arena; replacements are repacked before live registry mutation and output conversion is exactly once at publication. Freeze-only resampling and DOS/Mac source readers are now owned by native source-generation modules. BR-0377 retains the full supported sound edition and transition matrix; failure and platform controls need actual execution
+- Current HX1 definitions apply bounded indices/counts into unpublished records, reset serialized model pointers after freeing previous owned data and reject failed reads for whole generation discard. GQR-0195 still owns bytecode signed indices/native point capacity domains; structural record/reference checks do not prove renderer semantic safety
+- Native definition/bitmap/sound/model/reference publication ordering and optional Guide-Bot assets need complete mapped base/extension source review in following chunks and mandatory delta. BR-0378 effect coherence remains separate from source hash binding. No universal shared mirror of original game schema
+
+## Clean dimensions and evidence gaps
+
+No new finding or duplicated remediation. Static evidence only; no actual source replacement, malformed PIG/POG/HX1 corpus, allocation/read fault, complete sound/asset transitions, pixel/PCM/save/peer equality, compiler, sanitizer or device check was run
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: GQR-0198 (reference); rationale: preserve exact decoded-byte and source-identity coherence in the existing generation owner
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0347 frozen survey, resumed 2026-10-01 -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0348 frozen survey, resumed 2026-10-01 SHA256:16576da4a941dac67aa811f80ade2707b2febe6e0567de4c8c1195bb13171639 -->
+
+## GQ1-CHUNK-0348 frozen survey, resumed 2026-10-01 imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0348.md`
+- Imported SHA-256: `16576da4a941dac67aa811f80ade2707b2febe6e0567de4c8c1195bb13171639`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0348 frozen survey, resumed 2026-10-01
+
+## Scope fingerprint
+
+- `d2/main/d1_in_d2.c`: L1-L750; frozen blob `58b45497571aaeb8c0c39924fd4c0357848df112`
+
+Scope SHA-256: `37e642f52b82d6cd983d95f3315a13ae78ac67483b197c5543dfb6ba55022700`
+
+## Diff-minimization assessment
+
+RETAIN native original asset format and unpublished generation architecture; superseded shadow registry/reseek/tuning scaffolding is already replaced. ADMIT checked model ownership before fallible validation; coordinate immutable decode with existing source-binding owner
+
+## Context and observations
+
+Read all 750 frozen original overlay lines in two complete parts, including definition/model generation, validation, final-sound-map reseek and shadow player/robot tuning. Map to current native d1_in_d2_assets.c: read complete 1-550, recover 414-431 after truncation; full sound generation 545-677, references and read coordinator 678-833; actual polymodel_read_n 835-882. Current coordinator and identity/publication barriers were independently reviewed in 0340. Full optional/presentation/base bitmap producers remain following scope and mandatory delta
+
+- New GQF-0213/GQR-0199 P1: validate_d1_robot_assets allocates/zeroes models, records full num_polygon_models and calls polymodel_read_n. That native reader writes the file's serialized pointer into pm->model_data, including the first model. Base reader does not clear it before checking n_models, spans, allocation or bytecode. A structurally sufficient PIG with one model, serialized pointer 1 and invalid n_models 0 follows goto done, then d1_in_d2_free_assets calls d_free on pointer 1. Release cleanup therefore trusts file bytes as owned memory. A first-model allocation/read/bytecode failure can take the same invalid-free route. Clear all serialized pointers before any fallible validation or cleanup, and transfer only successful owned allocations
+- Current custom HX1 explicitly clears serialized model pointers before its failed-read cleanup; preserve that repair and apply the ownership rule to base and analogous optional producers. GQR-0195 owns interpreter signed/capacity semantics and remains separate. Archived BR-0365 staging architecture is preserved; it does not prove serialized pointers are safe allocations
+- Actual acceptance requires production malformed base PIG with nonzero serialized pointers and first-model field/span/read/bytecode/allocation failures, multi-model valid/failed ownership transitions, exactly-once frees, unchanged prior generation and ordinary supported controls under ASan/UBSan and release allocator faults. Only static source/control-flow evidence is claimed now
+- Existing GQR-0198 source binding also covers within-decode mutation: read_d1_sound_bank first validates all length/offset headers and allocates total bytes, then rereads headers for payload copying without revalidating lengths. Mutable source changes between passes can invalidate those bounds. Decode and identity need one immutable source, including bitmap path reopened separately from the definition/sound descriptor. Include a barrier at both passes in that existing owner; another path/mtime check is insufficient
+- Current base reader enforces registered supported edition, wide file bound before narrowing, property_end boundary, table capacities, timed clips, loaded model/robot/joint/weapon references and palette/bitmap collection. It rejects failed generation construction before caller publication. Preserve native schema and no launcher mirror
+- Current reference checks include native animation joints after HX1 replacement, original model bytecode/textures, object/gauge/cockpit bitmap references and loaded texture effect capacity. GQR-0195 still covers actual renderer semantic domains beyond structural validation
+- Old shadow effect/vclip/wall/cockpit/player/Guide-Bot state and repeated sound-map traversal are superseded by one owned generation. Count no available extraction savings for removed code. BR-0377 and BR-0378 retain full actual sound edition/transitions and effect coherence; explicit unsupported editions are controlled product policy rather than invented compatibility
+
+## Clean dimensions and evidence gaps
+
+No substantial new deduplication candidate. Static source/control-flow only; no actual invalid-free PIG, mutation barriers, allocator fault, decoded-byte/PCM/pixel/save/peer equality, compiler, sanitizer or device test was run
+
+Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: GQR-0199 (primary); rationale: file-supplied serialized pointer reaches release free on first-model validation failure
+
+Coverage outcome: ISSUES
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0348 frozen survey, resumed 2026-10-01 -->

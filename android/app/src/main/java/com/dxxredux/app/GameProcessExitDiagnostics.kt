@@ -70,6 +70,7 @@ internal object GameProcessExitDiagnostics {
                             }
                         val text =
                             "$title\nLauncher fallback report; no native stack trace available\n" +
+                                AppBuildDetails.diagnosticHeader() +
                                 "Exit timestamp: ${exit.timestamp.takeIf {
                                     it > 0
                                 } ?: "unavailable"}\nReason: ${exit.reason}\n" +
@@ -101,7 +102,11 @@ internal object GameProcessExitDiagnostics {
             // Reconcile every marker, even when the debug log already contains this exit
             recoverMarkers(
                 File(context.filesDir, "tombstones"),
-                exits.map { EngineExitRecord(it.pid, it.timestamp, it.reason, it.status, it.description.orEmpty()) },
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    exits.map { EngineExitRecord(it.pid, it.timestamp, it.reason, it.status, it.description.orEmpty()) }
+                } else {
+                    emptyList()
+                },
                 processExists = { pid ->
                     try {
                         Os.kill(pid, 0)
@@ -114,18 +119,20 @@ internal object GameProcessExitDiagnostics {
             ) {
                 DebugLog.log(DebugLogCategory.LAUNCHER, "game exit report recovery failed: ${it.message}")
             }
-            exits
-                .filter { it.timestamp > lastLoggedTimestamp }
-                .sortedBy { it.timestamp }
-                .forEach { exit ->
-                    DebugLog.log(
-                        DebugLogCategory.LAUNCHER,
-                        "game process exit timestamp_ms=${exit.timestamp} pid=${exit.pid} " +
-                            "reason=${exit.reason} status=${exit.status} importance=${exit.importance} " +
-                            "pss_kb=${exit.pss} rss_kb=${exit.rss} description=${exit.description}",
-                    )
-                    lastLoggedTimestamp = exit.timestamp
-                }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                exits
+                    .filter { it.timestamp > lastLoggedTimestamp }
+                    .sortedBy { it.timestamp }
+                    .forEach { exit ->
+                        DebugLog.log(
+                            DebugLogCategory.LAUNCHER,
+                            "game process exit timestamp_ms=${exit.timestamp} pid=${exit.pid} " +
+                                "reason=${exit.reason} status=${exit.status} importance=${exit.importance} " +
+                                "pss_kb=${exit.pss} rss_kb=${exit.rss} description=${exit.description}",
+                        )
+                        lastLoggedTimestamp = exit.timestamp
+                    }
+            }
         }.onFailure {
             DebugLog.log(DebugLogCategory.LAUNCHER, "game process exit lookup failed: ${it.message}")
         }

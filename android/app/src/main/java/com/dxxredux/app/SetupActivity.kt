@@ -4370,8 +4370,7 @@ private fun SetupScreen(
                                 )
                             Text(
                                 "$buildLine\n" +
-                                    "Date: ${BuildInfo.BUILD_DATE}" +
-                                    " ${BuildInfo.BUILD_TIME}\n" +
+                                    "${AppBuildDetails.aboutText()}\n" +
                                     "Arch: $arch\n" +
                                     "Renderer: ${BuildConfig.RENDERER}",
                             )

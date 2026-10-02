@@ -100,7 +100,7 @@ class MultiplayerForegroundService : Service() {
             }
         }
         if (!serviceLeases.active) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
+            removeForegroundNotification()
             stopSelf()
             return START_NOT_STICKY
         }
@@ -124,6 +124,15 @@ class MultiplayerForegroundService : Service() {
                 .setOngoing(true)
                 .build()
         startForeground(NOTIFICATION_ID, notification)
+    }
+
+    private fun removeForegroundNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
     }
 
     private fun handleRuntimeMessage(message: Message) {
@@ -208,7 +217,7 @@ class MultiplayerForegroundService : Service() {
         if (serviceLeases.active) {
             showForegroundNotification()
         } else {
-            stopForeground(STOP_FOREGROUND_REMOVE)
+            removeForegroundNotification()
             stopSelf()
         }
     }

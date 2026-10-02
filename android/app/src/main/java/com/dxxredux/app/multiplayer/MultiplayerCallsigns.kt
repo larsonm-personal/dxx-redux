@@ -49,7 +49,7 @@ internal object MultiplayerCallsigns {
         roots.flatMap(::pilotDirs).forEach { dir ->
             val files = dir.listFiles() ?: return@forEach
             files.mapNotNull(::callsignFromPilotFile).forEach { callsign ->
-                seen.putIfAbsent(callsign.lowercase(Locale.US), callsign)
+                seen.getOrPut(callsign.lowercase(Locale.US)) { callsign }
             }
         }
         return seen.values.sortedBy { it.lowercase(Locale.US) }

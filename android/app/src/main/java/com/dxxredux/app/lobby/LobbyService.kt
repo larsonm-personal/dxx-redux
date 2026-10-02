@@ -85,7 +85,7 @@ object LobbyService {
     )
 
     private val nsdCandidates = ConcurrentHashMap<String, NsdCandidate>()
-    private val nsdConfirmed = ConcurrentHashMap.newKeySet<String>()
+    private val nsdConfirmed = java.util.Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
 
     @Volatile private var nsdOnlyForTest = false
 

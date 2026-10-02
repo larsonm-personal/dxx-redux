@@ -273,7 +273,7 @@ internal suspend fun setupDownloadFile(
                 return@withContext
             }
 
-            val totalBytes = connection.contentLengthLong.coerceAtLeast(0L)
+            val totalBytes = connection.getHeaderField("Content-Length")?.toLongOrNull()?.coerceAtLeast(0L) ?: 0L
             val destFile = File(destDir, filename)
             val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
             val downloaded =

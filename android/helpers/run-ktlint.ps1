@@ -61,8 +61,13 @@ Write-Host "Using java: $java"
 Write-Host "Using ktlint: $ktlintJar"
 
 # --- Gather Kotlin files ---
-$ktDir = Join-Path $androidRoot "app\src\main\java"
-$files = Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $ktDir -InputPaths $Paths -ValidExtensions @('.kt')
+# Include the production source selection for each distribution
+$files = @(
+    foreach ($source in @('main', 'playServices', 'directInstall')) {
+        $ktDir = Join-Path $androidRoot "app/src/$source/java"
+        Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $ktDir -InputPaths $Paths -ValidExtensions @('.kt')
+    }
+)
 
 if ($files.Count -eq 0) {
     Write-Host "No Kotlin files found"

@@ -65,6 +65,7 @@ class SoundfontDownloadTest {
     }
 
     @Test fun downloadImportsDeduplicatesAndLeavesPreferencesUntilActivation() = runBlocking {
+        preferences.edit().putString(SoundfontStore.PREF_RENDERER, "ymfm").commit()
         val store = SoundfontStore(temporary.root, preferences)
         val bytes = byteArrayOf(1, 2, 3, 4)
         var required = 0L
@@ -131,6 +132,7 @@ class SoundfontDownloadTest {
     }
 
     @Test fun cancellationKeepsSelectionResponsiveAndDiscardsPartialDownload() = runBlocking {
+        preferences.edit().putString(SoundfontStore.PREF_RENDERER, "ymfm").commit()
         val store = SoundfontStore(temporary.root, preferences)
         val entered = CountDownLatch(1)
         val release = CountDownLatch(1)

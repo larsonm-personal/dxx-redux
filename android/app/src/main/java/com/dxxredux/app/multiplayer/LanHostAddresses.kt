@@ -6,6 +6,7 @@ import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -77,7 +78,15 @@ internal class LanHostAddresses(
         if (running) return
         running = true
         try {
-            connectivity.registerNetworkCallback(NetworkRequest.Builder().clearCapabilities().build(), callback)
+            val request = NetworkRequest.Builder()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                request.clearCapabilities()
+            } else {
+                request.removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+                request.removeCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED)
+                request.removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
+            }
+            connectivity.registerNetworkCallback(request.build(), callback)
             registered = true
         } catch (_: RuntimeException) {
             // Interface polling remains available if callback registration fails
