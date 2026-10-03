@@ -45,19 +45,24 @@ compiler crash in Kotlin coroutine code. This can slow the launcher and other
 Java/Kotlin work; the native game engines remain compiled. Android 7 and newer
 use normal VM compilation, including when running the legacy APK.
 
-Build/publish the matching APK with `./android/release-github.ps1 -Version 1.2.0`
-or the legacy APK with the additional `-Legacy` switch. Add `-BuildOnly` to
-prepare local files. The legacy tag is `android-legacy-vVERSION`; the matching
-tag remains `android-vVERSION`. Release titles and generated notes include
-`minsdk: api M (android VERSION), targetsdk: api N (android VERSION)`, inspected
-from the APK. Upload recovery also requires `-Legacy` for a saved legacy build.
+Build/publish both APKs in one `android-vVERSION` release with
+`./android/release-github.ps1 -Version 1.2.0`. Add `-BuildOnly` to prepare both
+builds locally, or `-UploadOnly` to verify and publish both saved builds without
+rebuilding. `-Legacy -BuildOnly` prepares only the legacy APK locally.
+The recommended APK is for Android 7.0 or newer. The other download is named
+`only-for-android-6.0`; use it only on devices unable to install the recommended
+APK. Generated notes include each APK's inspected minimum/target SDK and SHA-256.
+Both builds must have the same source commit, versionCode and signing certificate.
 
-Only the signed universal APK is uploaded. Build metadata and checksums stay
+Only the two signed universal APKs are uploaded. Build metadata and checksums stay
 in the local output directory for `-UploadOnly` verification. Reusing a version
-rebuilds the APK, moves its tag to the built commit, refreshes generated notes
+rebuilds both APKs, moves the tag to the built commit, refreshes generated notes
 and removes obsolete metadata/checksum attachments. Custom notes and the
-release's draft/published status are preserved. GitHub automatically adds the
-source ZIP/tarball links; these cannot be disabled or deleted as release assets.
+release's draft/published status are preserved. Once both uploaded APK hashes
+are verified, the helper retires an old separate legacy release/tag for that
+version. A draft keeps the previous legacy release until publication.
+GitHub automatically adds the source ZIP/tarball links; these cannot be disabled
+or deleted as release assets.
 
 Run `./android/tests/test_android_distributions.ps1` to build and inspect all
 three debug APKs, including both native engines for every supported ABI. To

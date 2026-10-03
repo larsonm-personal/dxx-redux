@@ -65,31 +65,40 @@ function gh {
         }
         if ($endpoint -like '*/releases') {
             if ($global:dxxReleaseTestScenario -eq 'api-failure') { $global:LASTEXITCODE = 1 }
-            if ($global:dxxReleaseTestHasRelease) { return $global:dxxReleaseTestTag }
+            if ($global:dxxReleaseTestHasRelease) { Write-Output $global:dxxReleaseTestTag }
+            if ($global:dxxReleaseTestSeparateLegacy) { Write-Output "android-legacy-v$global:dxxReleaseTestVersion" }
             return
         }
         if ($endpoint -like '*/releases/tags/*') {
             if ($global:dxxReleaseTestScenario -eq 'release-api-failure') { $global:LASTEXITCODE = 1; return }
+            if ($endpoint.EndsWith("/android-legacy-v$global:dxxReleaseTestVersion")) {
+                return (@{ draft = $false; immutable = $false; assets = @(@{ name = "dxx-redux-$global:dxxReleaseTestVersion-android-legacy-universal.apk" }) } | ConvertTo-Json -Depth 4)
+            }
             return (@{ draft = $global:dxxReleaseTestIsDraft; immutable = $global:dxxReleaseTestImmutable; target_commitish = $global:dxxReleaseTestTarget
-                    body = $global:dxxReleaseTestBody; assets = @($global:dxxReleaseTestAssets.Keys | ForEach-Object { @{ name = $_ } })
+                    body = $global:dxxReleaseTestBody; assets = @($global:dxxReleaseTestAssets.Keys | ForEach-Object {
+                            $digest = $null
+                            $assetPath = Join-Path $global:dxxReleaseTestOutput $_
+                            if (Test-Path -LiteralPath $assetPath) { $digest = 'sha256:' + (Get-FileHash -LiteralPath $assetPath).Hash.ToLowerInvariant() }
+                            if ($global:dxxReleaseTestScenario -eq 'uploaded-hash-mismatch') { $digest = 'sha256:' + ('0' * 64) }
+                            @{ name = $_; digest = $digest }
+                        })
                 } | ConvertTo-Json -Depth 4)
         }
         throw "Unexpected gh API request: $args"
     }
     if ($args[0] -eq 'release' -and $args[1] -eq 'create') {
         $title = $args[[Array]::IndexOf($args, '--title') + 1]
-        Assert-Test ($title.Contains($global:dxxReleaseTestSdkLabel)) 'Release title lacks the inspected SDK label'
-        Assert-Test (Test-Path -LiteralPath $args[3]) 'Missing upload APK'
-        Assert-Test ($args[4] -eq '--repo') 'Only the APK should be uploaded'
+        Assert-Test ($title -eq "DXX-Redux $global:dxxReleaseTestVersion for Android") 'Incorrect combined release title'
+        foreach ($index in 3..4) { Assert-Test (Test-Path -LiteralPath $args[$index]) 'Missing upload APK' }
+        Assert-Test ($args[5] -eq '--repo') 'Only the two APKs should be uploaded'
         Assert-Test ($args -contains '--draft') 'Upload must be staged as draft'
-        Assert-Test (($args -contains '--latest=false') -eq $global:dxxReleaseTestLegacy) 'Legacy releases must not replace the latest matching edition'
         Assert-Test ($args -contains $global:dxxReleaseTestCommit) 'Release must target the source commit'
         Assert-Test ((& git -C $global:dxxReleaseTestRemote rev-parse "refs/tags/$($args[2])^{commit}") -eq $global:dxxReleaseTestCommit) 'Release created before tag was updated'
         $global:dxxReleaseTestHasRelease = $true
         $global:dxxReleaseTestIsDraft = $true
         $global:dxxReleaseTestTarget = $global:dxxReleaseTestCommit
         if ($global:dxxReleaseTestScenario -in @('upload-failure', 'rerun-upload-failure')) { $global:LASTEXITCODE = 1 }
-        $global:dxxReleaseTestAssets[[IO.Path]::GetFileName($args[3])] = [IO.File]::ReadAllText($args[3])
+        foreach ($index in 3..4) { $global:dxxReleaseTestAssets[[IO.Path]::GetFileName($args[$index])] = [IO.File]::ReadAllText($args[$index]) }
         $global:dxxReleaseTestBody = [IO.File]::ReadAllText($args[[Array]::IndexOf($args, '--notes-file') + 1])
         return
     }
@@ -98,8 +107,8 @@ function gh {
         Assert-Test ((& git -C $global:dxxReleaseTestRemote rev-parse "refs/tags/$($args[2])^{commit}") -eq $global:dxxReleaseTestCommit) 'Assets uploaded before tag was updated'
         Assert-Test ($global:dxxReleaseTestTarget -eq $global:dxxReleaseTestCommit) 'Release target was not refreshed'
         if ($global:dxxReleaseTestScenario -eq 'replace-failure') { $global:LASTEXITCODE = 1; return }
-        Assert-Test ($args[4] -eq '--repo') 'Replacement should upload only the APK'
-        $global:dxxReleaseTestAssets[[IO.Path]::GetFileName($args[3])] = [IO.File]::ReadAllText($args[3])
+        Assert-Test ($args[5] -eq '--repo') 'Replacement should upload both APKs'
+        foreach ($index in 3..4) { $global:dxxReleaseTestAssets[[IO.Path]::GetFileName($args[$index])] = [IO.File]::ReadAllText($args[$index]) }
         return
     }
     if ($args[0] -eq 'release' -and $args[1] -eq 'delete-asset') {
@@ -112,7 +121,6 @@ function gh {
     }
     if ($args[0] -eq 'release' -and $args[1] -eq 'edit') {
         if ($args -contains '--draft=false') {
-            Assert-Test (($args -contains '--latest=false') -eq $global:dxxReleaseTestLegacy) 'Publishing legacy must not change the latest matching edition'
             $global:dxxReleaseTestIsDraft = $false
             return
         }
@@ -123,9 +131,17 @@ function gh {
         }
         Assert-Test ($args -contains '--target' -and $args -contains $global:dxxReleaseTestCommit) 'Unexpected release edit'
         $title = $args[[Array]::IndexOf($args, '--title') + 1]
-        Assert-Test ($title.Contains($global:dxxReleaseTestSdkLabel)) 'Existing release SDK title was not refreshed'
+        Assert-Test ($title -eq "DXX-Redux $global:dxxReleaseTestVersion for Android") 'Existing release title was not refreshed'
         if ($global:dxxReleaseTestScenario -eq 'retarget-failure') { $global:LASTEXITCODE = 1; return }
         $global:dxxReleaseTestTarget = $global:dxxReleaseTestCommit
+        return
+    }
+    if ($args[0] -eq 'release' -and $args[1] -eq 'delete') {
+        Assert-Test ($args[2] -eq "android-legacy-v$global:dxxReleaseTestVersion" -and $args -contains '--cleanup-tag') 'Only the obsolete separate legacy release/tag may be removed'
+        Assert-Test ($global:dxxReleaseTestAssets.ContainsKey($global:dxxReleaseTestCombinedLegacyName)) 'Separate legacy release deleted before its APK was uploaded'
+        Assert-Test ($global:dxxReleaseTestBody.Contains('Only for Android 6.0')) 'Separate legacy release deleted before combined notes were published'
+        if ($global:dxxReleaseTestScenario -eq 'legacy-retirement-failure') { $global:LASTEXITCODE = 1; return }
+        $global:dxxReleaseTestSeparateLegacy = $false
         return
     }
     if ($args[0] -eq 'release' -and $args[1] -eq 'view') { return }
@@ -154,11 +170,12 @@ if ($args -contains ':app:clean') {
     return
 }
 $global:dxxReleaseTestBuildNumber++
-Assert-Test (($args -contains '-PlegacyRelease=true') -eq $global:dxxReleaseTestLegacy) 'Incorrect legacy build selection'
+$global:dxxReleaseTestBuildingLegacy = $args -contains '-PlegacyRelease=true'
+if ($global:dxxReleaseTestScenario -eq 'legacy-build-failure' -and $global:dxxReleaseTestBuildingLegacy) { $global:LASTEXITCODE = 1; return }
 Assert-Test ($global:dxxReleaseTestCalls[$global:dxxReleaseTestCalls.Count - 2] -like 'gradle *:app:clean *') 'Assemble must follow a successful clean'
 Assert-Test ($args -contains ':app:assembleRelease' -and $args -contains '--no-build-cache') 'Release must assemble without build-cache reuse'
 Assert-Test ($args -contains '-Pkotlin.incremental=false') 'Clean releases must not reuse Kotlin incremental state'
-if ($global:dxxReleaseTestScenario -eq 'build-failure' -or ($global:dxxReleaseTestScenario -eq 'rerun-build-failure' -and $global:dxxReleaseTestBuildNumber -gt 1)) {
+if ($global:dxxReleaseTestScenario -eq 'build-failure' -or ($global:dxxReleaseTestScenario -eq 'rerun-build-failure' -and $global:dxxReleaseTestBuildNumber -gt 2)) {
     $global:LASTEXITCODE = 1; return
 }
 if ($global:dxxReleaseTestScenario -eq 'became-immutable') { $global:dxxReleaseTestImmutable = $true }
@@ -172,7 +189,8 @@ if ($global:dxxReleaseTestScenario -eq 'native-warning') {
 $root = Split-Path $PSScriptRoot
 $output = Join-Path $root 'app/build/outputs/apk/release'
 New-Item -ItemType Directory -Path $output -Force | Out-Null
-Set-Content (Join-Path $output 'app-release.apk') "fixture APK build $global:dxxReleaseTestBuildNumber"
+Set-Content (Join-Path $output 'app-release.apk') "fixture APK build $global:dxxReleaseTestBuildNumber legacy=$global:dxxReleaseTestBuildingLegacy"
+if ($global:dxxReleaseTestScenario -eq 'legacy-source-changed' -and $global:dxxReleaseTestBuildingLegacy) { Set-Content (Join-Path (Split-Path $root) 'source.txt') 'changed during legacy build' }
 if ($global:dxxReleaseTestScenario -eq 'source-changed') { Set-Content (Join-Path (Split-Path $root) 'source.txt') 'changed during build' }
 if ($global:dxxReleaseTestScenario -eq 'source-staged') {
     Set-Content (Join-Path (Split-Path $root) 'source.txt') 'changed during build'
@@ -187,7 +205,7 @@ if ($global:dxxReleaseTestScenario -eq 'head-changed') {
 '@
 $signerFixture = @'
 $global:LASTEXITCODE = 0
-if ($global:dxxReleaseTestScenario -eq 'unsigned' -or ($global:dxxReleaseTestScenario -eq 'rerun-unsigned' -and $global:dxxReleaseTestBuildNumber -gt 1)) {
+if ($global:dxxReleaseTestScenario -eq 'unsigned' -or ($global:dxxReleaseTestScenario -eq 'rerun-unsigned' -and $global:dxxReleaseTestBuildNumber -gt 2)) {
     $global:LASTEXITCODE = 1; return
 }
 if ($global:dxxReleaseTestScenario -eq 'native-warning') {
@@ -198,16 +216,19 @@ if ($global:dxxReleaseTestScenario -eq 'native-warning') {
     }
 }
 $prefix = if ($global:dxxReleaseTestScenario -eq 'draft') { 'Signer #1' } else { 'V2 Signer:' }
-"$prefix certificate SHA-256 digest: " + ('a' * 64)
+$certificate = if ($global:dxxReleaseTestScenario -eq 'upload-only-pair-certificate' -and $args[-1] -like '*-legacy-universal.apk') { 'b' * 64 } else { 'a' * 64 }
+"$prefix certificate SHA-256 digest: $certificate"
 '@
 $aaptFixture = @'
 $global:LASTEXITCODE = 0
+$legacyApk = $args[-1] -like '*-legacy-universal.apk' -or $args[-1] -like '*-only-for-android-*'
+if ($args[-1] -like '*app-release.apk') { $legacyApk = $global:dxxReleaseTestBuildingLegacy }
 $package = if ($global:dxxReleaseTestScenario -eq 'wrong-package') { 'com.dxxredux.app' } else { 'com.dxxredux.app.github' }
-if ($global:dxxReleaseTestLegacy) { $package = 'com.dxxredux.app.github.legacy' }
+if ($legacyApk) { $package = 'com.dxxredux.app.github.legacy' }
 $code = if ($global:dxxReleaseTestScenario -eq 'wrong-version') { 999 } else { $global:dxxReleaseTestVersionCode }
 "package: name='$package' versionCode='$code' versionName='$global:dxxReleaseTestVersion'"
 if ($global:dxxReleaseTestScenario -ne 'sdk-missing') {
-    $minimum = if ($global:dxxReleaseTestScenario -eq 'wrong-min-sdk') { 26 } else { $global:dxxReleaseTestMinSdk }
+    $minimum = if ($global:dxxReleaseTestScenario -eq 'wrong-min-sdk') { 26 } elseif ($legacyApk) { 23 } else { 24 }
     $target = if ($global:dxxReleaseTestScenario -eq 'wrong-target-sdk') { 35 } else { 36 }
     $minimumField = if ($global:dxxReleaseTestScenario -eq 'native-warning') { 'sdkVersion' } else { 'minSdkVersion' }
     "$minimumField`:'$minimum'"
@@ -226,7 +247,8 @@ $cases = @('native-warning', 'publish', 'draft', 'build-only', 'dirty', 'unpushe
     'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-tampered', 'upload-only-checksum',
     'upload-only-signature', 'upload-only-version', 'upload-only-unverified', 'upload-only-legacy', 'upload-only-legacy-changed',
     'upload-only-missing', 'upload-only-unpushed', 'upload-only-conflict', 'upload-only-notes', 'upload-only-replace', 'upload-only-dirty-build',
-    'legacy-edition', 'legacy-edition-build-only', 'upload-only-legacy-edition',
+    'legacy-edition-build-only', 'legacy-build-failure', 'legacy-source-changed', 'combined-migration', 'draft-migration', 'legacy-retirement-failure', 'uploaded-hash-mismatch',
+    'upload-only-pair-commit', 'upload-only-pair-certificate', 'upload-only-legacy-apk-tampered',
     'sdk-missing', 'wrong-min-sdk', 'wrong-target-sdk', 'upload-only-sdk', 'upload-only-distribution')
 foreach ($global:dxxReleaseTestScenario in $cases) {
     $global:dxxReleaseTestLegacy = $global:dxxReleaseTestScenario -like '*legacy-edition*'
@@ -235,10 +257,12 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     $global:dxxReleaseTestSdkLabel = "minsdk: api $global:dxxReleaseTestMinSdk (android $androidVersion), targetsdk: api 36 (android 16)"
     $global:dxxReleaseTestCalls = [Collections.Generic.List[string]]::new()
     $global:dxxReleaseTestBuildNumber = 0
+    $global:dxxReleaseTestBuildingLegacy = $false
+    $global:dxxReleaseTestSeparateLegacy = $global:dxxReleaseTestScenario -in @('combined-migration', 'draft-migration', 'legacy-retirement-failure', 'uploaded-hash-mismatch')
     $global:dxxReleaseTestHasRelease = $global:dxxReleaseTestScenario -in @('existing-release', 'existing-draft', 'immutable-release',
         'older-draft-target', 'release-api-failure', 'replace-failure', 'notes-update-failure', 'cleanup-failure', 'became-immutable', 'older-tag', 'older-annotated-tag',
-        'current-annotated-tag', 'tag-update-failure', 'tag-verification-failure', 'retarget-failure')
-    $global:dxxReleaseTestIsDraft = $global:dxxReleaseTestScenario -in @('existing-draft', 'older-draft-target')
+        'current-annotated-tag', 'tag-update-failure', 'tag-verification-failure', 'retarget-failure', 'combined-migration', 'draft-migration', 'legacy-retirement-failure', 'uploaded-hash-mismatch')
+    $global:dxxReleaseTestIsDraft = $global:dxxReleaseTestScenario -in @('existing-draft', 'older-draft-target', 'draft-migration')
     $global:dxxReleaseTestImmutable = $global:dxxReleaseTestScenario -eq 'immutable-release'
     $global:dxxReleaseTestAssets = @{ 'unrelated.txt' = 'keep this asset' }
     $customNotes = 'Handwritten release notes: keep these'
@@ -288,7 +312,8 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     if ($global:dxxReleaseTestScenario -eq 'dirty') { Set-Content (Join-Path $fixture 'untracked.txt') 'new source' }
     if ($global:dxxReleaseTestScenario -eq 'helper-dirty') { Add-Content (Join-Path $androidDir 'release-github.ps1') '# Local release helper edit' }
     $global:dxxReleaseTestVersion = if ($global:dxxReleaseTestScenario -eq 'draft') { '1.2.0-rc.1' } else { '1.2.0' }
-    $global:dxxReleaseTestTag = if ($global:dxxReleaseTestLegacy) { "android-legacy-v$global:dxxReleaseTestVersion" } else { "android-v$global:dxxReleaseTestVersion" }
+    $global:dxxReleaseTestTag = "android-v$global:dxxReleaseTestVersion"
+    $global:dxxReleaseTestCombinedLegacyName = "dxx-redux-$global:dxxReleaseTestVersion-android-only-for-android-6.0-universal.apk"
     $global:dxxReleaseTestApkName = if ($global:dxxReleaseTestLegacy) { "dxx-redux-$global:dxxReleaseTestVersion-android-legacy-universal.apk" } else { "dxx-redux-$global:dxxReleaseTestVersion-android-universal.apk" }
     $remoteTag = "refs/tags/$global:dxxReleaseTestTag"
     if (($global:dxxReleaseTestHasRelease -and -not $global:dxxReleaseTestIsDraft) -or $global:dxxReleaseTestScenario -eq 'orphan-tag') {
@@ -305,7 +330,8 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     if ($global:dxxReleaseTestScenario -in @('build-only', 'rerun-build-only', 'legacy-edition-build-only')) { $parameters.BuildOnly = $true }
     if ($global:dxxReleaseTestScenario -in @('draft', 'rerun-draft')) { $parameters.Draft = $true }
     # Preseed old local and remote assets to verify replacement without deleting unrelated files
-    $out = Join-Path $androidDir "build-outputs/github/$global:dxxReleaseTestTag"
+    $outputTag = if ($global:dxxReleaseTestLegacy) { "android-legacy-v$global:dxxReleaseTestVersion" } else { $global:dxxReleaseTestTag }
+    $out = Join-Path $androidDir "build-outputs/github/$outputTag"
     $global:dxxReleaseTestOutput = $out
     if ($global:dxxReleaseTestHasRelease) {
         New-Item -ItemType Directory -Path $out -Force | Out-Null
@@ -382,6 +408,17 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
             'upload-only-replace' { $global:dxxReleaseTestHasRelease = $true }
         }
         [IO.File]::WriteAllText($savedPath, ($saved | ConvertTo-Json) + "`n")
+        $legacyOutput = Join-Path $androidDir "build-outputs/github/android-legacy-v$global:dxxReleaseTestVersion"
+        if ($global:dxxReleaseTestScenario -in @('upload-only-pair-commit', 'upload-only-pair-certificate')) {
+            $legacySavedPath = Join-Path $legacyOutput 'build-info.json'
+            $legacySaved = Get-Content $legacySavedPath -Raw | ConvertFrom-Json
+            if ($global:dxxReleaseTestScenario -eq 'upload-only-pair-commit') { $legacySaved.commit = '0' * 40 }
+            if ($global:dxxReleaseTestScenario -eq 'upload-only-pair-certificate') { $legacySaved.certificateSha256 = 'b' * 64 }
+            [IO.File]::WriteAllText($legacySavedPath, ($legacySaved | ConvertTo-Json) + "`n")
+        }
+        if ($global:dxxReleaseTestScenario -eq 'upload-only-legacy-apk-tampered') {
+            Add-Content (Join-Path $legacyOutput "dxx-redux-$global:dxxReleaseTestVersion-android-legacy-universal.apk") 'changed'
+        }
     }
     $failure = $null
     try { & (Join-Path $androidDir 'release-github.ps1') @parameters } catch { $failure = $_ }
@@ -389,16 +426,19 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
         'existing-release', 'existing-draft', 'orphan-tag', 'older-tag', 'older-annotated-tag', 'current-annotated-tag', 'prefix-tag',
         'older-draft-target', 'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-build-only', 'rerun-upload-failure',
         'helper-dirty', 'helper-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy', 'upload-only-replace',
-        'legacy-edition', 'legacy-edition-build-only', 'upload-only-legacy-edition')
+        'legacy-edition-build-only', 'combined-migration', 'draft-migration')
     Assert-Test (($null -eq $failure) -eq $successExpected) "Unexpected result for $global:dxxReleaseTestScenario`: $failure"
     if (-not $successExpected) {
         $expectedFailure = switch ($global:dxxReleaseTestScenario) {
-            { $_ -in @('dirty', 'source-changed', 'source-staged') } { 'clean working tree' }
+            { $_ -in @('dirty', 'source-changed', 'source-staged', 'legacy-source-changed') } { 'clean working tree' }
             { $_ -in @('unpushed', 'upload-only-unpushed') } { 'Push the branch' }
             'commit-api-failure' { 'check gh auth status' }
             { $_ -in @('api-failure', 'release-api-failure') } { 'gh failed' }
             'head-changed' { 'HEAD changed during the build' }
-            { $_ -in @('upload-only-tampered', 'upload-only-checksum', 'upload-only-signature') } { 'Saved APK/hash/signing metadata does not match' }
+            { $_ -in @('upload-only-tampered', 'upload-only-checksum', 'upload-only-signature', 'upload-only-legacy-apk-tampered') } { 'Saved APK/hash/signing metadata does not match' }
+            { $_ -in @('upload-only-pair-commit', 'upload-only-pair-certificate') } { 'must have the same source commit' }
+            'uploaded-hash-mismatch' { 'Uploaded APK verification failed' }
+            'legacy-retirement-failure' { 'retiring android-legacy-v' }
             'upload-only-version' { '-VersionCode differs' }
             { $_ -in @('upload-only-unverified', 'upload-only-dirty-build') } { 'source validation did not pass' }
             'upload-only-legacy-changed' { 'Cannot validate app source' }
@@ -406,7 +446,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
             'upload-only-conflict' { 'cannot be combined' }
             'upload-only-notes' { 'uses saved release notes' }
             { $_ -in @('immutable-release', 'became-immutable') } { 'is immutable' }
-            { $_ -in @('clean-failure', 'build-failure', 'rerun-build-failure') } { 'gradle.ps1 failed' }
+            { $_ -in @('clean-failure', 'build-failure', 'rerun-build-failure', 'legacy-build-failure') } { 'gradle.ps1 failed' }
             { $_ -in @('unsigned', 'rerun-unsigned') } { 'apksigner.ps1 failed' }
             { $_ -in @('wrong-package', 'wrong-version') } { 'package or version' }
             'debuggable' { 'debuggable APK' }
@@ -423,22 +463,22 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     $publishes = @($global:dxxReleaseTestCalls | Where-Object { $_ -like 'release edit *--draft=false*' })
     $replaces = @($global:dxxReleaseTestCalls | Where-Object { $_ -like 'release upload *' })
     if (-not $successExpected -and $global:dxxReleaseTestScenario -notlike 'rerun*' -and
-        $global:dxxReleaseTestScenario -notin @('upload-failure', 'replace-failure', 'notes-update-failure', 'cleanup-failure', 'tag-update-failure', 'tag-create-failure', 'tag-verification-failure', 'retarget-failure')) {
+        $global:dxxReleaseTestScenario -notin @('upload-failure', 'replace-failure', 'notes-update-failure', 'cleanup-failure', 'tag-update-failure', 'tag-create-failure', 'tag-verification-failure', 'retarget-failure', 'uploaded-hash-mismatch', 'legacy-retirement-failure')) {
         Assert-Test (@($global:dxxReleaseTestCalls | Where-Object { $_ -like 'api *--method *' }).Count -eq 0) 'Failed build or validation mutated a remote tag'
     }
     if ($global:dxxReleaseTestScenario -eq 'clean-failure') {
         Assert-Test ($global:dxxReleaseTestBuildNumber -eq 0) 'Assemble ran after clean failed'
     }
     Assert-Test ($publishes.Count -eq [int]($global:dxxReleaseTestScenario -in @('native-warning', 'publish', 'orphan-tag', 'prefix-tag', 'rerun', 'rerun-new-commit', 'rerun-build-failure', 'rerun-unsigned',
-                'helper-dirty', 'helper-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy', 'legacy-edition', 'upload-only-legacy-edition'))) "Incorrect publication for $global:dxxReleaseTestScenario"
+                'helper-dirty', 'helper-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy'))) "Incorrect publication for $global:dxxReleaseTestScenario"
     Assert-Test ($creates.Count -eq [int]($global:dxxReleaseTestScenario -in @('native-warning', 'publish', 'draft', 'upload-failure', 'orphan-tag', 'prefix-tag', 'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-build-failure', 'rerun-unsigned', 'rerun-upload-failure',
-                'helper-dirty', 'helper-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy', 'legacy-edition', 'upload-only-legacy-edition'))) "Incorrect upload for $global:dxxReleaseTestScenario"
-    Assert-Test ($replaces.Count -eq [int]($global:dxxReleaseTestScenario -in @('existing-release', 'existing-draft', 'older-tag', 'older-annotated-tag', 'current-annotated-tag', 'older-draft-target', 'replace-failure', 'notes-update-failure', 'cleanup-failure', 'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-upload-failure', 'upload-only-replace'))) "Incorrect replacement for $global:dxxReleaseTestScenario"
+                'helper-dirty', 'helper-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy'))) "Incorrect upload for $global:dxxReleaseTestScenario"
+    Assert-Test ($replaces.Count -eq [int]($global:dxxReleaseTestScenario -in @('existing-release', 'existing-draft', 'older-tag', 'older-annotated-tag', 'current-annotated-tag', 'older-draft-target', 'replace-failure', 'notes-update-failure', 'cleanup-failure', 'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-upload-failure', 'upload-only-replace', 'combined-migration', 'draft-migration', 'legacy-retirement-failure', 'uploaded-hash-mismatch'))) "Incorrect replacement for $global:dxxReleaseTestScenario"
     if ($global:dxxReleaseTestScenario -in @('replace-failure', 'notes-update-failure')) {
         Assert-Test (@($global:dxxReleaseTestCalls | Where-Object { $_ -like 'release delete-asset *' }).Count -eq 0) 'Failed APK/notes replacement deleted old attachments'
     }
     if ($global:dxxReleaseTestScenario -like 'upload-only*') {
-        Assert-Test ($global:dxxReleaseTestBuildNumber -eq 1 -and @($global:dxxReleaseTestCalls | Where-Object { $_ -like 'gradle *' }).Count -eq 0) 'UploadOnly rebuilt the APK'
+        Assert-Test ($global:dxxReleaseTestBuildNumber -eq 2 -and @($global:dxxReleaseTestCalls | Where-Object { $_ -like 'gradle *' }).Count -eq 0) 'UploadOnly rebuilt an APK'
         if ($successExpected) {
             Assert-Test ((Get-FileHash (Join-Path $out $global:dxxReleaseTestApkName)).Hash -eq $previousHash) 'UploadOnly changed the APK'
         }
@@ -474,7 +514,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     }
     if ($successExpected) {
         $info = Get-Content (Join-Path $out 'build-info.json') -Raw | ConvertFrom-Json
-        $apk = Get-ChildItem $out -Filter '*.apk'
+        $apk = Get-Item (Join-Path $out $global:dxxReleaseTestApkName)
         Assert-Test ($info.apkSha256 -eq (Get-FileHash $apk.FullName).Hash.ToLowerInvariant()) 'Incorrect checksum'
         Assert-Test ($info.commit -eq $global:dxxReleaseTestCommit) 'Incorrect source metadata'
         Assert-Test ($info.versionCode -eq $global:dxxReleaseTestVersionCode) 'Incorrect versionCode after source update'
@@ -486,7 +526,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
         }
         Assert-Test ([IO.File]::ReadAllText((Join-Path $out 'release-notes.md')).Contains($notesText)) 'Release notes lost UTF-8 characters'
         if ($global:dxxReleaseTestScenario -like 'rerun*') {
-            Assert-Test ($global:dxxReleaseTestBuildNumber -eq 2 -and (Get-FileHash $apk.FullName).Hash -ne $previousHash) 'Same-version rerun did not produce a fresh APK'
+            Assert-Test ($global:dxxReleaseTestBuildNumber -eq 4 -and (Get-FileHash $apk.FullName).Hash -ne $previousHash) 'Same-version rerun did not produce a fresh APK pair'
         }
         if ($replaces.Count -gt 0) {
             Assert-Test ($global:dxxReleaseTestAssets[$apk.Name] -eq [IO.File]::ReadAllText($apk.FullName)) 'Release APK was not replaced'
@@ -496,6 +536,9 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
             Assert-Test ($global:dxxReleaseTestBody.Contains($customNotes) -or $global:dxxReleaseTestScenario -like 'rerun*') 'Custom notes were lost'
         }
         if (-not $parameters.BuildOnly) {
+            Assert-Test ($global:dxxReleaseTestAssets.ContainsKey($global:dxxReleaseTestCombinedLegacyName)) 'Combined release lacks the Android 6.0 APK'
+            Assert-Test ($global:dxxReleaseTestBody.Contains('Use this legacy APK only on devices that cannot install the recommended APK')) 'Legacy usage guidance is missing'
+            Assert-Test (([regex]::Matches($global:dxxReleaseTestBody, 'APK SHA-256:')).Count -eq 2) 'Expected one hash for each APK'
             Assert-Test ($global:dxxReleaseTestBody.Contains("Source commit: $($info.commit)")) 'Remote notes have a stale commit'
             Assert-Test ($global:dxxReleaseTestBody.Contains("Android versionCode: $($info.versionCode)")) 'Remote notes have a stale versionCode'
             Assert-Test ($global:dxxReleaseTestBody.Contains("APK SHA-256: $($info.apkSha256)")) 'Remote notes lack the verified APK hash'
@@ -506,7 +549,10 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
         }
         if ($global:dxxReleaseTestScenario -eq 'draft') { Assert-Test ($creates[0].Contains('--prerelease')) 'Missing prerelease flag' }
     }
-    if ($global:dxxReleaseTestScenario -in @('notes-update-failure', 'cleanup-failure')) {
+    if ($global:dxxReleaseTestScenario -eq 'combined-migration') { Assert-Test (-not $global:dxxReleaseTestSeparateLegacy) 'Separate legacy release was not retired' }
+    if ($global:dxxReleaseTestScenario -eq 'draft-migration') { Assert-Test $global:dxxReleaseTestSeparateLegacy 'Draft migration deleted a published legacy release' }
+    if ($global:dxxReleaseTestScenario -eq 'uploaded-hash-mismatch') { Assert-Test $global:dxxReleaseTestSeparateLegacy 'Unverified migration retired the old legacy release' }
+    if ($global:dxxReleaseTestScenario -in @('notes-update-failure', 'cleanup-failure', 'legacy-retirement-failure')) {
         $failedScenario = $global:dxxReleaseTestScenario
         $global:dxxReleaseTestScenario = 'upload-only-replace'
         $parameters.Remove('NotesFile')

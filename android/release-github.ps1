@@ -3,17 +3,18 @@
 
 <#
 .SYNOPSIS
-Build, verify and publish a signed matching or legacy universal APK
+Build, verify and publish current and Android 6.0 APKs in one release
 .DESCRIPTION
 Run from the repo root with PowerShell 5.1/7, Android tools/JDK 21 and keystore.properties
 Publishing needs clean, pushed app source and gh auth login; origin is the default (-Repository overrides)
-Reusing a version does a clean build, moves android-vVERSION and replaces the APK and generated notes
-Only the APK is uploaded; metadata/checksums stay local for recovery and obsolete uploads are removed
+Reusing a version builds both editions, moves android-vVERSION and replaces both APKs and generated notes
+Only APKs are uploaded; metadata/checksums stay local for recovery and obsolete uploads are removed
 GitHub automatically includes source ZIP/tarball links; these cannot be removed by the helper
 Use -UploadOnly to verify and upload saved release files without rebuilding; the saved source commit is used
 Output: android/build-outputs/github/android-vVERSION/; -BuildOnly stays local, -Draft stages new releases
-Use -Legacy for the API-23 edition (separate android-legacy-vVERSION tag and app ID)
-Release titles/notes report the minimum and target SDK inspected from the APK
+Use -Legacy -BuildOnly to prepare just the API-23 edition locally; publishing always includes both
+The legacy APK is labeled only-for-android-6.0 and is only for devices unable to use the current APK
+Release notes report the minimum and target SDK inspected from each APK
 .EXAMPLE
 ./android/release-github.ps1 -Version 1.2.0
 .EXAMPLE
@@ -32,7 +33,8 @@ param(
     [switch]$BuildOnly,
     [switch]$UploadOnly,
     [switch]$Draft,
-    [switch]$Legacy
+    [switch]$Legacy,
+    [Parameter(DontShow)][switch]$VerifyOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -96,12 +98,13 @@ function Assert-RemoteCommit {
 }
 
 function Get-ExistingRelease {
+    param([string]$ReleaseTag = $tag)
     # Pagination includes drafts and avoids interpreting an auth/network error as absence
     $releaseTags = Invoke-ReleaseTool gh @('api', '--hostname', 'github.com', "repos/$Repository/releases", '--paginate', '--jq', '.[].tag_name')
-    if ($tag -notin $releaseTags) { return $null }
-    $release = (Invoke-ReleaseTool gh @('api', '--hostname', 'github.com', "repos/$Repository/releases/tags/$tag")) | ConvertFrom-Json
+    if ($ReleaseTag -notin $releaseTags) { return $null }
+    $release = (Invoke-ReleaseTool gh @('api', '--hostname', 'github.com', "repos/$Repository/releases/tags/$ReleaseTag")) | ConvertFrom-Json
     if ($release.PSObject.Properties['immutable'] -and $release.immutable) {
-        throw "Release $tag is immutable; GitHub does not allow replacing its assets, so use a new version"
+        throw "Release $ReleaseTag is immutable; GitHub does not allow replacing its assets, so use a new version"
     }
     return $release
 }
@@ -137,8 +140,11 @@ function Merge-ReleaseNotes {
 }
 
 if ($BuildOnly -and $UploadOnly) { throw '-BuildOnly and -UploadOnly cannot be combined' }
-$tag = if ($Legacy) { "android-legacy-v$Version" } else { "android-v$Version" }
-$outDir = Join-Path $PSScriptRoot "build-outputs/github/$tag"
+if ($VerifyOnly -and -not $UploadOnly) { throw '-VerifyOnly requires -UploadOnly' }
+if ($Legacy -and -not ($BuildOnly -or $VerifyOnly)) { throw '-Legacy is only for local preparation with -BuildOnly; publish both editions without -Legacy' }
+$tag = "android-v$Version"
+$outputTag = if ($Legacy) { "android-legacy-v$Version" } else { $tag }
+$outDir = Join-Path $PSScriptRoot "build-outputs/github/$outputTag"
 $apkName = if ($Legacy) { "dxx-redux-$Version-android-legacy-universal.apk" } else { "dxx-redux-$Version-android-universal.apk" }
 $applicationId = if ($Legacy) { 'com.dxxredux.app.github.legacy' } else { 'com.dxxredux.app.github' }
 $distribution = if ($Legacy) { 'legacy' } else { 'github' }
@@ -189,7 +195,7 @@ if (-not $UploadOnly -and -not $PSBoundParameters.ContainsKey('VersionCode')) {
 $prerelease = $Version.Contains('-')
 if ($NotesFile) { $NotesFile = (Resolve-Path -LiteralPath $NotesFile).Path }
 
-if (-not $BuildOnly) {
+if (-not ($BuildOnly -or $VerifyOnly)) {
     if (-not $UploadOnly) { Assert-ReleaseSource }
     if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
         throw 'Install GitHub CLI and run gh auth login before publishing, or use -BuildOnly'
@@ -324,7 +330,7 @@ if ($UploadOnly) {
     }
     [IO.File]::WriteAllText($metadataPath, ($metadata | ConvertTo-Json) + "`n")
     # Keep this check: Gradle reads live app files, so source edits could produce a mixed-commit APK
-    if (-not $BuildOnly) { Assert-ReleaseSource }
+    if (-not ($BuildOnly -or $VerifyOnly)) { Assert-ReleaseSource }
     $metadata.sourceVerified = $sourceCleanAtStart -and $metadata.sourceClean -and (Get-ReleaseGit @('rev-parse', 'HEAD')) -eq $commit
     [IO.File]::WriteAllText($metadataPath, ($metadata | ConvertTo-Json) + "`n")
 }
@@ -348,28 +354,84 @@ if ($NotesFile) { $notes += "`n`n" + (Get-Content -LiteralPath $NotesFile -Raw -
 if ($UploadOnly) { $notes = Merge-ReleaseNotes -Generated $notes -Existing (Get-Content -LiteralPath $notesPath -Raw -Encoding UTF8) }
 [IO.File]::WriteAllText($notesPath, $notes.TrimEnd() + "`n")
 Write-Host "Verified APK and release files: $outDir"
+if ($Legacy -or $VerifyOnly) { return }
+
+# Prepare the other edition before any remote mutation; each build gets its own verification
+$legacyParameters = @{ Version = $Version; VersionCode = $VersionCode; Legacy = $true }
+if ($UploadOnly) {
+    $legacyParameters.UploadOnly = $true
+    $legacyParameters.VerifyOnly = $true
+} else {
+    $legacyParameters.BuildOnly = $true
+}
+& $PSCommandPath @legacyParameters
+$legacyDir = Join-Path $PSScriptRoot "build-outputs/github/android-legacy-v$Version"
+$legacyInfo = Get-Content -LiteralPath (Join-Path $legacyDir 'build-info.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($legacyInfo.commit -ne $commit -or $legacyInfo.versionCode -ne $VersionCode -or $legacyInfo.certificateSha256 -ne $certificate) {
+    throw 'Current and legacy APKs must have the same source commit, versionCode and signing certificate; rebuild both editions'
+}
+if (-not $BuildOnly) {
+    if (-not $UploadOnly) { Assert-ReleaseSource }
+    if (-not $legacyInfo.sourceVerified) { throw 'Legacy APK source validation did not pass; rebuild both editions' }
+}
+$legacyAndroid = Get-AndroidVersionLabel $legacyInfo.minSdk
+$legacyApkName = "dxx-redux-$Version-android-only-for-android-$legacyAndroid-universal.apk"
+$legacyApk = Join-Path $outDir $legacyApkName
+Copy-Item -LiteralPath (Join-Path $legacyDir "dxx-redux-$Version-android-legacy-universal.apk") -Destination $legacyApk -Force
+$legacySdkLabel = "minsdk: api $($legacyInfo.minSdk) (android $legacyAndroid), targetsdk: api $($legacyInfo.targetSdk) (android $(Get-AndroidVersionLabel $legacyInfo.targetSdk))"
+$combinedNotes = @"
+<!-- dxx-redux-build:start -->
+DXX-Redux $Version for Android. Both APKs include ARM32, ARM64 and x86_64.
+
+### Android $(Get-AndroidVersionLabel $minSdk) or newer (recommended)
+
+Download: $apkName
+
+$sdkLabel
+
+- APK SHA-256: $hash
+
+### Only for Android $legacyAndroid
+
+Download: $legacyApkName
+
+Use this legacy APK only on devices that cannot install the recommended APK. On Android $(Get-AndroidVersionLabel $minSdk) or newer, use the recommended APK instead.
+
+$legacySdkLabel
+
+- APK SHA-256: $($legacyInfo.apkSha256)
+
+### Build details
+
+- Source commit: $commit
+- Android versionCode: $VersionCode
+- Signing certificate SHA-256: $certificate
+<!-- dxx-redux-build:end -->
+"@
+$notes = Merge-ReleaseNotes -Generated $combinedNotes -Existing (Get-Content -LiteralPath $notesPath -Raw -Encoding UTF8)
+[IO.File]::WriteAllText($notesPath, $notes.TrimEnd() + "`n")
 if ($BuildOnly) { return }
+$releaseTitle = "DXX-Redux $Version for Android"
 $existingRelease = Get-ExistingRelease
 $ghRepository = "github.com/$Repository"
-$createArgs = @('release', 'create', $tag, $apk,
+$createArgs = @('release', 'create', $tag, $apk, $legacyApk,
     '--repo', $ghRepository, '--target', $commit, '--title', $releaseTitle,
     '--notes-file', $notesPath, '--draft')
 if ($prerelease) { $createArgs += '--prerelease' }
-if ($Legacy) { $createArgs += '--latest=false' }
 try {
     # Only mutate the remote tag after APK verification and the final source/release checks
     # Tag/assets updates are not atomic; rerun the same command to repair a partial failure
     Set-ReleaseTag
     if ($existingRelease) {
         Invoke-ReleaseTool gh @('release', 'edit', $tag, '--repo', $ghRepository, '--target', $commit, '--title', $releaseTitle)
-        Write-Host "Replacing APK in $tag"
-        Invoke-ReleaseTool gh @('release', 'upload', $tag, $apk, '--repo', $ghRepository, '--clobber')
+        Write-Host "Replacing both APKs in $tag"
+        Invoke-ReleaseTool gh @('release', 'upload', $tag, $apk, $legacyApk, '--repo', $ghRepository, '--clobber')
         $notes = Merge-ReleaseNotes -Generated (Get-Content -LiteralPath $notesPath -Raw -Encoding UTF8) -Existing $existingRelease.body
         [IO.File]::WriteAllText($notesPath, $notes)
         Invoke-ReleaseTool gh @('release', 'edit', $tag, '--repo', $ghRepository, '--notes-file', $notesPath)
         # Remove old helper uploads after the replacement succeeds; leave unrelated assets alone
         foreach ($asset in $existingRelease.assets) {
-            if ($asset.name -in @('build-info.json', 'build.json', 'SHA256SUMS.txt')) {
+            if ($asset.name -in @('build-info.json', 'build.json', 'SHA256SUMS.txt', "dxx-redux-$Version-android-legacy-universal.apk")) {
                 Invoke-ReleaseTool gh @('release', 'delete-asset', $tag, $asset.name, '--repo', $ghRepository, '--yes')
             }
         }
@@ -377,12 +439,30 @@ try {
         Invoke-ReleaseTool gh $createArgs
         if (-not $Draft) {
             $publishArgs = @('release', 'edit', $tag, '--repo', $ghRepository, '--draft=false')
-            if ($Legacy) { $publishArgs += '--latest=false' }
             Invoke-ReleaseTool gh $publishArgs
         }
     }
 } catch {
-    $legacyArgument = if ($Legacy) { ' -Legacy' } else { '' }
-    throw "Release tag/upload/publish failed; inspect $tag on GitHub for its commit and missing or incomplete assets. The tag may already have moved. Local assets remain in $outDir; retry without rebuilding: ./android/release-github.ps1 -Version $Version -Repository $Repository -UploadOnly$legacyArgument. Existing drafts remain drafts. $_"
+    throw "Release tag/upload/publish failed; inspect $tag on GitHub for its commit and missing or incomplete assets. The tag may already have moved. Local assets remain in $outDir; retry without rebuilding: ./android/release-github.ps1 -Version $Version -Repository $Repository -UploadOnly. Existing drafts remain drafts. $_"
+}
+
+# Retire the old separate release only after GitHub confirms both uploaded APK hashes
+$uploadedRelease = Get-ExistingRelease
+foreach ($expected in @(@{ name = $apkName; hash = $hash }, @{ name = $legacyApkName; hash = $legacyInfo.apkSha256 })) {
+    $uploadedAsset = @($uploadedRelease.assets | Where-Object name -EQ $expected.name)
+    if ($uploadedAsset.Count -ne 1 -or $uploadedAsset[0].digest -ne "sha256:$($expected.hash)") {
+        throw "Uploaded APK verification failed for $($expected.name); keep the separate legacy release and retry with -UploadOnly"
+    }
+}
+$separateLegacyTag = "android-legacy-v$Version"
+$separateLegacy = Get-ExistingRelease -ReleaseTag $separateLegacyTag
+if ($separateLegacy -and -not $uploadedRelease.draft) {
+    $unknownAssets = @($separateLegacy.assets | Where-Object { $_.name -notin @("dxx-redux-$Version-android-legacy-universal.apk", 'build-info.json', 'build.json', 'SHA256SUMS.txt') })
+    if ($unknownAssets.Count -gt 0) { throw "Separate legacy release has unrelated assets; move them before retiring $separateLegacyTag" }
+    try {
+        Invoke-ReleaseTool gh @('release', 'delete', $separateLegacyTag, '--repo', $ghRepository, '--cleanup-tag', '--yes')
+    } catch {
+        throw "Combined release is verified, but retiring $separateLegacyTag failed; retry with -UploadOnly. $_"
+    }
 }
 Invoke-ReleaseTool gh @('release', 'view', $tag, '--repo', $ghRepository, '--json', 'url', '--jq', '.url')
