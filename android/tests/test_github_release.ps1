@@ -157,6 +157,7 @@ $global:dxxReleaseTestBuildNumber++
 Assert-Test (($args -contains '-PlegacyRelease=true') -eq $global:dxxReleaseTestLegacy) 'Incorrect legacy build selection'
 Assert-Test ($global:dxxReleaseTestCalls[$global:dxxReleaseTestCalls.Count - 2] -like 'gradle *:app:clean *') 'Assemble must follow a successful clean'
 Assert-Test ($args -contains ':app:assembleRelease' -and $args -contains '--no-build-cache') 'Release must assemble without build-cache reuse'
+Assert-Test ($args -contains '-Pkotlin.incremental=false') 'Clean releases must not reuse Kotlin incremental state'
 if ($global:dxxReleaseTestScenario -eq 'build-failure' -or ($global:dxxReleaseTestScenario -eq 'rerun-build-failure' -and $global:dxxReleaseTestBuildNumber -gt 1)) {
     $global:LASTEXITCODE = 1; return
 }

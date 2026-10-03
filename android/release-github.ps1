@@ -248,7 +248,8 @@ object BuildInfo {
     $gradle = Resolve-RegressionGradleWrapper -AndroidDir $PSScriptRoot
     Write-Host "Building $tag ($VersionCode) from $commit"
     # Separate GitHub app: Play sign-in/updates disabled; single-player/LAN still require game data
-    $gradleArgs = @('-p', $PSScriptRoot, '--no-build-cache', '-PgithubRelease=true',
+    # Clean releases do not benefit from Kotlin's incremental state across distributions
+    $gradleArgs = @('-p', $PSScriptRoot, '--no-build-cache', '-Pkotlin.incremental=false', '-PgithubRelease=true',
         "-PversionNameOverride=$Version", "-PversionCodeOverride=$VersionCode", '-PskipBuildInfo', '--console=plain')
     if ($Legacy) { $gradleArgs += '-PlegacyRelease=true' }
     # Separate task graphs avoid clean/assemble scheduling conflicts with generated assets
