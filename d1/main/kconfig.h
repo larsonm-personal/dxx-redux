@@ -40,6 +40,9 @@ typedef struct _control_info {
 	ubyte automap_state, automap_count;
 	ubyte cycle_primary_count, cycle_secondary_count, select_weapon_count;
 	fix joy_axis[JOY_MAX_AXES], raw_joy_axis[JOY_MAX_AXES], mouse_axis[3], raw_mouse_axis[3];
+#ifdef ANDROID
+    fix sampled_frame_time; /* Android diagnostics: frame used to construct these commands */
+#endif
 } control_info;
 
 #define CONTROL_USING_JOYSTICK	1

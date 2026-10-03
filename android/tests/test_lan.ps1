@@ -1821,7 +1821,7 @@ function Set-DeviceCoopRestoreSlot {
 }
 
 function Invoke-SavedLateJoinScenario {
-    Write-Status "--- Saved client joins after host restores alone ---" "White"
+    Write-Status "--- Cancelled lobby join, solo restore, and one approved mid-level join ---" "White"
     if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName "test_coop_late_join_seed.jsonc")) { return $false }
     $geared = Wait-ForCondition -Description "host receives client inventory before save" -TimeoutSec 20 -PollMs 500 -Condition {
         $intro = Get-GameIntrospection -Serial $EMU1
@@ -1830,6 +1830,15 @@ function Invoke-SavedLateJoinScenario {
         return $peer.Count -eq 1 -and $peer[0].primary_flags -eq 9 -and $peer[0].homing_ammo -eq 6
     }
     if (-not $geared) { return $false }
+    if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName 'test_coop_late_join_regression.jsonc' -Params @{ drop = $Game; cancel = 'disabled' })) { return $false }
+    if (-not (Wait-ForCondition -Description 'Host records returning client recovery gear' -TimeoutSec 30 -PollMs 500 -Condition {
+                $intro = Get-GameIntrospection -Serial $EMU1
+                return $intro -and $intro.multiplayer.recovery.live -gt 0
+            })) { return $false }
+    Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+    if (-not (Wait-ForCondition -Description 'Host records absent client before saving' -TimeoutSec 60 -PollMs 1000 -Condition {
+                return (Get-IntroNumConnected -Intro (Get-GameIntrospection -Serial $EMU1)) -eq 1
+            })) { return $false }
     if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_late_join_save.jsonc")) { return $false }
     $saved = Wait-ForCondition -Description "coop save completes" -TimeoutSec 20 -PollMs 500 -Condition {
         $result = Get-DeviceAutomationResult -Serial $EMU1
@@ -1844,26 +1853,49 @@ function Invoke-SavedLateJoinScenario {
     }
     if (-not (Start-SetupActivity -Serial $EMU1)) { return $false }
     if (-not (Set-DeviceCoopRestoreSlot -Serial $EMU1 -Slot $slot)) { return $false }
-    Send-MpCommand -Serial $EMU1 -Command "lan_launch" -Extras $hostExtras
+    # Leave room in the lobby so the first client can cancel before auto-start
+    $soloHostExtras = @($hostExtras)
+    $soloHostExtras[[Array]::IndexOf($soloHostExtras, 'max_players') + 1] = '4'
+    Send-MpCommand -Serial $EMU1 -Command "lan_launch" -Extras $soloHostExtras
     $lobby = Wait-ForCondition -Description "host enters empty lobby" -TimeoutSec 30 -PollMs 500 -Condition {
         $intro = Get-GameIntrospection -Serial $EMU1
         return $intro -and $intro.is_network -and (Get-IntroNumConnected -Intro $intro) -eq 1
     }
-    if (-not $lobby -or -not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_late_join_start.jsonc")) { return $false }
+    if (-not $lobby -or -not (Start-SetupActivity -Serial $EMU2)) { return $false }
+    Send-MpCommand -Serial $EMU2 -Command 'lan_launch' -Extras $joinExtras
+    if (-not (Wait-ForCondition -Description 'Client waits in the two-player lobby' -TimeoutSec 45 -PollMs 500 -Condition {
+                $hostState = Get-GameIntrospection -Serial $EMU1
+                $clientState = Get-GameIntrospection -Serial $EMU2
+                return $hostState -and $clientState -and $hostState.multiplayer.network_status -eq 4 -and
+                (Get-IntroNumConnected -Intro $hostState) -eq 2 -and $clientState.multiplayer.network_status -eq 3
+            })) { return $false }
+    if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName 'test_coop_late_join_regression.jsonc' -Params @{ drop = 'disabled'; cancel = $Game })) { return $false }
+    if (-not (Wait-ForCondition -Description 'Host removes cancelled lobby client' -TimeoutSec 15 -PollMs 500 -Condition {
+                return (Get-IntroNumConnected -Intro (Get-GameIntrospection -Serial $EMU1)) -eq 1
+            })) { return $false }
+    Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+    if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_start.jsonc')) { return $false }
     $restored = Wait-ForCondition -Description "host restores save alone" -TimeoutSec 60 -PollMs 1000 -Condition {
         $intro = Get-GameIntrospection -Serial $EMU1
         return $intro -and $intro.in_game -and $intro.coop_restore.status -eq "idle" -and
-        (Get-IntroNumConnected -Intro $intro) -eq 1
+        (Get-IntroNumConnected -Intro $intro) -eq 1 -and $intro.multiplayer.recovery.live -gt 0
     }
     if (-not $restored -or -not (Start-SetupActivity -Serial $EMU2)) { return $false }
     Send-MpCommand -Serial $EMU2 -Command "lan_launch" -Extras $joinExtras
+    if (-not (Wait-ForCondition -Description 'Host receives one approval request' -TimeoutSec 45 -PollMs 500 -Condition {
+                $intro = Get-GameIntrospection -Serial $EMU1
+                return $intro -and $intro.multiplayer.join_request_pending
+            })) { return $false }
+    Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_accept.jsonc' | Out-Null
     $recovered = Wait-ForCondition -Description "late join restores saved plasma and six homing missiles" -TimeoutSec 60 -PollMs 1000 -Condition {
         $intro = Get-GameIntrospection -Serial $EMU2
         if ($intro -and $intro.in_game -and (Get-IntroNumConnected -Intro $intro) -eq 2) {
             $localPlayer = @($intro.multiplayer.players | Where-Object { $_.is_me })[0]
-            return $localPlayer.primary_flags -eq 9 -and $localPlayer.homing_ammo -eq 6 -and $intro.player.laser_level -eq 2
+            $hostState = Get-GameIntrospection -Serial $EMU1
+            return $localPlayer.primary_flags -eq 9 -and $localPlayer.homing_ammo -eq 6 -and $intro.player.laser_level -eq 2 -and
+            $hostState.multiplayer.recovery.ready_to_save -and $hostState.multiplayer.recovery.live -eq 0 -and
+            -not $hostState.multiplayer.join_request_pending
         }
-        Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_late_join_accept.jsonc" | Out-Null
         return $false
     }
     if (-not $recovered) {

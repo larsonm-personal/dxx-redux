@@ -722,6 +722,17 @@ class LauncherScriptExecutor(
                     activity.startActivity(RobotPreviewActivity.createIntent(context, launchRequest))
                 }
 
+                "scroll" -> {
+                    val activity = context as SetupActivity
+                    val direction = step.optString("direction", "down")
+                    require(direction == "down" || direction == "up") { "Unknown scroll direction: $direction" }
+                    repeat(step.optInt("count", 1).coerceIn(1, 20)) {
+                        if (direction == "down") activity.scrollDown() else activity.scrollUp()
+                    }
+                    delay(step.optLong("post_delay_ms", 300))
+                    currentStep++
+                }
+
                 "tap_button" -> {
                     val text = step.optString("text", "")
                     val exact = step.optBoolean("exact", false)

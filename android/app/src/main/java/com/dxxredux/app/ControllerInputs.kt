@@ -27,16 +27,22 @@ internal fun readControllerAxes(
     }
 }
 
-internal fun mixControllerTriggerButtons(
+// Shared with android_axis_mailbox.h: normalized controller channels map to logical axes 0-15
+internal const val CONTROLLER_NORMALIZED_AXIS_OFFSET = 16
+
+internal fun mixControllerAxisButtons(
     mixer: InputMixer,
     values: FloatArray,
     thresholds: Map<String, Int>,
     buttonMap: Map<Int, List<Int>>,
 ) {
-    for (control in listOf("LT", "RT", "BRAKE", "GAS")) {
-        val pressed = values[AXIS_CONTROLS.getValue(control)] > thresholds.getValue(control) / 100f
-        for (action in buttonMap[BUTTON_CONTROLS.getValue(control)].orEmpty()) {
-            mixer.setButton(action, "ctrl:axis$control", pressed)
+    for ((control, buttons) in AXIS_BUTTON_SDL) {
+        val raw = values[AXIS_CONTROLS.getValue(control)]
+        val threshold = thresholds.getValue(control).coerceIn(0, 95) / 100f
+        for ((button, pressed) in listOf(buttons.first to (raw < -threshold), buttons.second to (raw > threshold))) {
+            for (action in buttonMap[button].orEmpty()) {
+                mixer.setButton(action, "ctrl:axis$button", pressed)
+            }
         }
     }
 }

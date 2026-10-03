@@ -682,7 +682,7 @@ object HumanReadableConfig {
         bindings: Map<String, String>,
         inverts: Set<String>,
         thresholds: Map<String, Int> = emptyMap(),
-        axisExponents: Map<String, Float> = emptyMap(),
+        axisResponses: Map<String, ControllerAxisResponse> = emptyMap(),
     ): JSONObject {
         val j = JSONObject()
         j.put("type", "controller_config")
@@ -696,10 +696,10 @@ object HumanReadableConfig {
             for ((k, v) in thresholds) tObj.put(k, v)
             j.put("thresholds", tObj)
         }
-        if (axisExponents.isNotEmpty()) {
+        if (axisResponses.isNotEmpty()) {
             val eObj = JSONObject()
-            for ((k, v) in axisExponents) eObj.put(k, v.toDouble())
-            j.put("axis_exponents", eObj)
+            for ((k, v) in axisResponses) eObj.put(k, v.clamped().toJson())
+            j.put("axis_responses", eObj)
         }
         return j
     }
@@ -708,7 +708,7 @@ object HumanReadableConfig {
         val bindings: Map<String, String>,
         val inverts: Set<String>,
         val thresholds: Map<String, Int>,
-        val axisExponents: Map<String, Float>,
+        val axisResponses: Map<String, ControllerAxisResponse>,
     )
 
     fun humanJsonToControllerConfig(json: JSONObject): ParseResult<ControllerConfigData> {
@@ -733,16 +733,16 @@ object HumanReadableConfig {
             val thresholds = mutableMapOf<String, Int>()
             val tObj = json.optJSONObject("thresholds")
             if (tObj != null) {
-                for (key in tObj.keys()) thresholds[key] = tObj.getInt(key).coerceIn(5, 95)
+                for (key in tObj.keys()) thresholds[key] = tObj.getInt(key).coerceIn(0, 95)
             }
-            val axisExponents = mutableMapOf<String, Float>()
-            val eObj = json.optJSONObject("axis_exponents")
+            val axisResponses = mutableMapOf<String, ControllerAxisResponse>()
+            val eObj = json.optJSONObject("axis_responses")
             if (eObj != null) {
                 for (key in eObj.keys()) {
-                    axisExponents[key] = clampControllerAxisExponent(eObj.getDouble(key).toFloat())
+                    axisResponses[key] = ControllerAxisResponse.fromJson(eObj.getJSONObject(key))
                 }
             }
-            return ParseResult(ControllerConfigData(bindings, inverts, thresholds, axisExponents), warnings)
+            return ParseResult(ControllerConfigData(bindings, inverts, thresholds, axisResponses), warnings)
         } catch (e: Exception) {
             warnings.add("Controller config parse failed: ${e.message}")
             Log.e(TAG, "Controller config parse failed", e)

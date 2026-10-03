@@ -178,6 +178,10 @@ int joy_axis_handler(SDL_JoyAxisEvent *jae)
 #endif
 
 	axis_value = jae->value/256;
+#ifdef ANDROID
+	if (axis >= ANDROID_CONTROLLER_AXIS_OFFSET && axis < ANDROID_AXIS_MAILBOX_AXIS_COUNT)
+		axis_value = jae->value;
+#endif
 	// inaccurate stick is inaccurate. SDL might send SDL_JoyAxisEvent even if the value is the same as before.
 #ifdef ANDROID
 	/* Held virtual axes need repeated nonzero events because kconfig.c scales them by the current FrameTime. */

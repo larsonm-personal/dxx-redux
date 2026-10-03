@@ -37,19 +37,19 @@ class ControllerTriggerBindingsTest {
                 val firstAxis = AXIS_CONTROLS.getValue(controls[0])
                 val secondAxis = AXIS_CONTROLS.getValue(controls[1])
                 values[firstAxis] = 0.29f
-                mixControllerTriggerButtons(mixer, values, defaultThresholds(), buttonMap)
+                mixControllerAxisButtons(mixer, values, defaultThresholds(), buttonMap)
                 assertEquals(emptyList<Pair<Int, Int>>(), events)
                 values[firstAxis] = 1f
-                mixControllerTriggerButtons(mixer, values, defaultThresholds(), buttonMap)
+                mixControllerAxisButtons(mixer, values, defaultThresholds(), buttonMap)
                 values[secondAxis] = 1f
-                mixControllerTriggerButtons(mixer, values, defaultThresholds(), buttonMap)
+                mixControllerAxisButtons(mixer, values, defaultThresholds(), buttonMap)
                 mixer.setButton(action, "ctrl:key", true)
                 values[firstAxis] = 0f
-                mixControllerTriggerButtons(mixer, values, defaultThresholds(), buttonMap)
+                mixControllerAxisButtons(mixer, values, defaultThresholds(), buttonMap)
                 mixer.setButton(action, "ctrl:key", false)
                 assertEquals(listOf(action to 1), events)
                 values[secondAxis] = 0f
-                mixControllerTriggerButtons(mixer, values, defaultThresholds(), buttonMap)
+                mixControllerAxisButtons(mixer, values, defaultThresholds(), buttonMap)
                 assertEquals(listOf(action to 1, action to 0), events)
             }
         }

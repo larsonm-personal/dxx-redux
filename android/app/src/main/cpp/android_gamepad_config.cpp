@@ -192,7 +192,8 @@ static bool load_config_into_playercfg(void)
 		int version;
 		cfg = json::parse(ifs);
 		if (!cfg.is_object() || !cfg.contains("version") ||
-		    !json_int_in_range(cfg["version"], 4, 4, &version) ||
+		    // Keep synchronized with ControllerConfigStore.kt
+		    !json_int_in_range(cfg["version"], 6, 6, &version) ||
 		    !cfg.contains(joy_key) ||
 		    !json_byte_array(cfg[joy_key], staged.KeySettings[1],
 		                     layout->joystick_size, layout->joystick_size) ||
@@ -212,7 +213,7 @@ static bool load_config_into_playercfg(void)
 			if (axis_map[i].axis >= 11 && !cfg["thresholds"].contains(axis_map[i].name))
 				pct = 30;
 			else if (!cfg["thresholds"].contains(axis_map[i].name) ||
-			         !json_int_in_range(cfg["thresholds"][axis_map[i].name], 5, 95, &pct))
+			         !json_int_in_range(cfg["thresholds"][axis_map[i].name], 0, 95, &pct))
 				return false;
 			axis_pct[axis_map[i].axis] = pct;
 			staged_axis_deadzone[axis_map[i].axis] =

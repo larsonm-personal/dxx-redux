@@ -2045,6 +2045,7 @@ extern "C" char *game_introspect_get_state(void)
 			mp["difficulty"] = (int) Netgame.difficulty;
 			mp["game_status"] = (int) Netgame.game_status;
 			mp["network_status"] = Network_status;
+			mp["join_request_pending"] = WaitForRefuseAnswer != 0;
 			mp["my_player_num"] = Player_num;
 			mp["master_player_num"] = multi_who_is_master();
 			mp["i_am_master"] = multi_i_am_master() != 0;
@@ -2779,6 +2780,19 @@ extern "C" char *game_introspect_get_state(void)
 		/* Control timing -- nonzero means the ship is actively rotating/thrusting */
 		j["heading_time"] = (int) Controls.heading_time;
 		j["pitch_time"] = (int) Controls.pitch_time;
+#ifdef ANDROID
+		/* Compare final commands from one sampled frame, independently of render timing */
+		const int control_frame = Controls.sampled_frame_time;
+		j["controller_commands"] = {
+			{ "frame_time", control_frame },
+			{ "pitch", control_frame > 1 ? (double) Controls.pitch_time / (control_frame / 2) : 0.0 },
+			{ "yaw", control_frame > 0 ? (double) Controls.heading_time / control_frame : 0.0 },
+			{ "slide_lr", control_frame > 0 ? (double) Controls.sideways_thrust_time / control_frame : 0.0 },
+			{ "slide_ud", control_frame > 0 ? (double) Controls.vertical_thrust_time / control_frame : 0.0 },
+			{ "bank", control_frame > 0 ? (double) Controls.bank_time / control_frame : 0.0 },
+			{ "throttle", control_frame > 0 ? (double) Controls.forward_thrust_time / control_frame : 0.0 }
+		};
+#endif
 		j["slide_lr_time"] = (int) Controls.sideways_thrust_time;
 		j["slide_ud_time"] = (int) Controls.vertical_thrust_time;
 		j["bank_time"] = (int) Controls.bank_time;

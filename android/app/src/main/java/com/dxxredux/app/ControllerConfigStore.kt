@@ -15,16 +15,16 @@ internal data class ControllerConfigState(
     val bindings: Map<String, String> = emptyMap(),
     val inverts: Set<String> = emptySet(),
     val thresholds: Map<String, Int> = defaultThresholds(),
-    val axisExponents: Map<String, Float> = defaultControllerAxisExponents(),
+    val axisResponses: Map<String, ControllerAxisResponse> = defaultControllerAxisResponses(),
 )
 
 internal fun controllerConfigStateFromHumanData(data: HumanReadableConfig.ControllerConfigData): ControllerConfigState {
     val thresholds = defaultThresholds().toMutableMap()
     for ((controlId, threshold) in data.thresholds) {
-        if (controlId in thresholds) thresholds[controlId] = threshold.coerceIn(5, 95)
+        if (controlId in thresholds) thresholds[controlId] = threshold.coerceIn(0, 95)
     }
-    val axisExponents = clampedControllerAxisExponents(data.axisExponents)
-    return ControllerConfigState(data.bindings, data.inverts, thresholds, axisExponents)
+    val axisResponses = clampedControllerAxisResponses(data.axisResponses)
+    return ControllerConfigState(data.bindings, data.inverts, thresholds, axisResponses)
 }
 
 internal fun controllerConfigStateFromHumanJson(
@@ -39,7 +39,7 @@ internal fun controllerConfigStateToHumanJson(config: ControllerConfigState): JS
         config.bindings,
         config.inverts,
         config.thresholds,
-        config.axisExponents,
+        config.axisResponses,
     )
 
 internal fun readActiveControllerConfig(context: Context): ControllerConfigState? {
@@ -96,7 +96,8 @@ private const val CONFIG_FILENAME = "controller_config.json"
 
 // Bump when the config format changes to force regeneration from defaults.
 // SetupActivity.writeDefaultControllerConfig checks this on startup.
-internal const val CONTROLLER_CONFIG_VERSION = 5
+// Keep synchronized with android_gamepad_config.cpp
+internal const val CONTROLLER_CONFIG_VERSION = 6
 
 internal fun isNativeControllerConfigValid(json: JSONObject): Boolean {
     fun exactInt(value: Any?): Int? =
@@ -126,7 +127,7 @@ internal fun isNativeControllerConfigValid(json: JSONObject): Boolean {
     if (!byteArray("key_settings_keyboard", D1_JOY_SETTINGS_SIZE, D2_KEY_SETTINGS_SIZE)) return false
     val thresholds = json.optJSONObject("thresholds") ?: return false
     return listOf("LS_X", "LS_Y", "RS_X", "RS_Y", "LT", "RT").all { axis ->
-        exactInt(thresholds.opt(axis))?.let { it in 5..95 } == true
+        exactInt(thresholds.opt(axis))?.let { it in 0..95 } == true
     }
 }
 
@@ -375,7 +376,15 @@ internal fun buildMixerButtonMap(
         // Proportional half-axis bindings must not also emit digital button actions
         val halfAxis = HALF_AXIS_MAP[funcLabel]
         if (controlId in AXIS_CONTROLS && halfAxis != null && halfAxis.first !in directAxisFunctions) continue
-        val sdlBtn = BUTTON_CONTROLS[controlId]
+        val axisId = controlId.removeSuffix("_neg").removeSuffix("_pos")
+        val axisButtons = AXIS_BUTTON_SDL[axisId]
+        val sdlBtn =
+            BUTTON_CONTROLS[controlId] ?: when {
+                controlId.endsWith("_neg") -> axisButtons?.first
+                controlId.endsWith("_pos") -> axisButtons?.second
+                controlId in AXIS_CONTROLS -> axisButtons?.second
+                else -> null
+            }
         if (sdlBtn != null) {
             val arr =
                 result.optJSONArray(sdlBtn.toString())
@@ -401,7 +410,7 @@ internal fun saveConfig(
     inverts: Set<String>,
     gameVariant: String = "d2",
     thresholds: Map<String, Int> = defaultThresholds(),
-    axisExponents: Map<String, Float> = defaultControllerAxisExponents(),
+    axisResponses: Map<String, ControllerAxisResponse> = defaultControllerAxisResponses(),
 ) {
     val d1Result = buildJoyPairs(bindings, inverts, "d1")
     val d2Result = buildJoyPairs(bindings, inverts, "d2")
@@ -484,11 +493,11 @@ internal fun saveConfig(
     for ((axis, pct) in thresholds) thresholdsObj.put(axis, pct)
     json.put("thresholds", thresholdsObj)
 
-    val exponentsObj = JSONObject()
-    for ((axis, exponent) in clampedControllerAxisExponents(axisExponents)) {
-        exponentsObj.put(axis, exponent.toDouble())
+    val responsesObj = JSONObject()
+    for ((axis, response) in clampedControllerAxisResponses(axisResponses)) {
+        responsesObj.put(axis, response.toJson())
     }
-    json.put("axis_exponents", exponentsObj)
+    json.put("axis_responses", responsesObj)
 
     if (combiners.isNotEmpty()) {
         val combArr = JSONArray()
@@ -527,7 +536,7 @@ internal fun saveConfig(
         config.inverts,
         gameVariant,
         config.thresholds,
-        config.axisExponents,
+        config.axisResponses,
     )
 }
 
@@ -535,10 +544,10 @@ internal data class LoadedConfig(
     val bindings: Map<String, String>,
     val inverts: Set<String>,
     val thresholds: Map<String, Int>,
-    val axisExponents: Map<String, Float>,
+    val axisResponses: Map<String, ControllerAxisResponse>,
 )
 
 internal fun loadConfig(context: Context): LoadedConfig? {
     val config = readActiveControllerConfig(context) ?: return null
-    return LoadedConfig(config.bindings, config.inverts, config.thresholds, config.axisExponents)
+    return LoadedConfig(config.bindings, config.inverts, config.thresholds, config.axisResponses)
 }

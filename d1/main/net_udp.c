@@ -3405,6 +3405,12 @@ void net_udp_remove_player(UDP_sequence_packet *p)
 #endif
 	N_players--;
 	Netgame.numplayers = N_players;
+#ifdef __ANDROID__
+	/* The vacated lobby slot must not participate in recovery or saved rosters */
+	Players[N_players].connected = CONNECT_DISCONNECTED;
+	Netgame.players[N_players].connected = CONNECT_DISCONNECTED;
+	MPDIAG("remove_player: removed lobby slot %d, players=%d\n", pn, N_players);
+#endif
 
 	net_udp_send_netgame_update();
 }
@@ -6608,6 +6614,10 @@ abort:
 	}
 
 	for (i = N_players; i < MAX_PLAYERS; i++) {
+#ifdef __ANDROID__
+		Players[i].connected = CONNECT_DISCONNECTED;
+		Netgame.players[i].connected = CONNECT_DISCONNECTED;
+#endif
 		memset(Netgame.players[i].callsign, 0, CALLSIGN_LEN+1);
 		Netgame.players[i].rank=0;
 	}
@@ -9037,6 +9047,9 @@ void net_udp_do_refuse_stuff(UDP_sequence_packet *their,
 	/* Do not spend the host's approval interval inside a presentation or load
 	 * The client's next retry can ask for approval after the mine settles */
 	if (net_udp_defer_join(their, authenticated_player_num))
+		return;
+	/* An accepted transfer can span several client retries */
+	if (Network_send_objects || Network_sending_extras)
 		return;
 #endif
 

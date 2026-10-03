@@ -73,7 +73,7 @@ class ConfigSlotRepositoryTest {
                 bindings = mapOf("B" to "Fire Secondary"),
                 inverts = setOf("RS_Y"),
                 thresholds = mapOf("RS_Y" to 42),
-                axisExponents = mapOf("RS_Y" to 2.5f),
+                axisResponses = mapOf("RS_Y" to ControllerAxisResponse(0.25f, 0.5f)),
             )
         val slotSet =
             ConfigSlotSet(
@@ -95,7 +95,7 @@ class ConfigSlotRepositoryTest {
         assertEquals(CONFIG_SLOT_NAME_MAX_LENGTH, roundTripped.slots[1].name.length)
         assertEquals("Fire Secondary", roundTripped.activeSlot.value.bindings["B"])
         assertEquals(42, roundTripped.activeSlot.value.thresholds["RS_Y"])
-        assertEquals(2.5f, roundTripped.activeSlot.value.axisExponents["RS_Y"] ?: 0f, 0.001f)
+        assertEquals(ControllerAxisResponse(0.25f, 0.5f), roundTripped.activeSlot.value.axisResponses["RS_Y"])
     }
 
     @Test

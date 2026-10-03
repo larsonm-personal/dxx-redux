@@ -546,9 +546,10 @@ int coop_recovery_rejoin_ready(const char *callsign, const char *client_id)
 			item->state = COOP_RECOVERY_RECLAIMING;
 			item->revision++;
 			freeze_waiting[i] = 0;
-			for (int peer = 0; peer < MAX_PLAYERS; peer++)
+			for (int peer = 0; peer < N_players; peer++)
 				if (peer != Player_num && Players[peer].connected == CONNECT_PLAYING)
 					freeze_waiting[i] |= 1u << peer;
+			COOPLOG("rejoin recovery freeze: id=%u players=%d waiting=0x%x", item->id, N_players, freeze_waiting[i]);
 			send_item(item, REC_FREEZE, -1);
 		} else if (item->state != COOP_RECOVERY_RECLAIMING) continue;
 		if (freeze_waiting[i]) {

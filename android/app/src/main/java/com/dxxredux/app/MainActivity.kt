@@ -928,7 +928,7 @@ class MainActivity :
     // Half-axis combiners: (virtualAxis, posSourceAxis, negSourceAxis)
     // Loaded from controller_config.json; used in onGenericMotionEvent()
     private var halfAxisCombiners = emptyList<Triple<Int, Int, Int>>()
-    private var controllerAxisExponents = defaultControllerAxisExponents()
+    private var controllerAxisResponses = defaultControllerAxisResponses()
     private val rawAxisValues = FloatArray(CONTROLLER_SAMPLE_AXIS_COUNT)
 
     // Input mixer: combines button/axis from touch, controller, gyro
@@ -3597,12 +3597,13 @@ class MainActivity :
 
     /** Load controller meta-action bindings from controller_config.json. */
     private fun loadMetaBindings() {
+        if (::inputMixer.isInitialized) inputMixer.clearSources("ctrl")
         controllerAxisMetaKeys.releaseAll()
         buttonMetaBindings = emptyMap()
         controllerBoundActions = emptySet()
         dpadMetaBindings = emptyMap()
         halfAxisCombiners = emptyList()
-        controllerAxisExponents = defaultControllerAxisExponents()
+        controllerAxisResponses = defaultControllerAxisResponses()
         controllerAxisThresholds = defaultThresholds()
         mixerButtonMap = emptyMap()
 
@@ -3616,15 +3617,18 @@ class MainActivity :
                 for (key in bindingsObj.keys()) bindings[key] = bindingsObj.getString(key)
                 controllerBoundActions = controllerConfigBoundActionBindings(bindings)
             }
-            json.optJSONObject("axis_exponents")?.let { exponentsObj ->
-                val loaded = mutableMapOf<String, Float>()
-                for (key in exponentsObj.keys()) loaded[key] = exponentsObj.getDouble(key).toFloat()
-                controllerAxisExponents = clampedControllerAxisExponents(loaded)
+            json.optJSONObject("axis_responses")?.let { responsesObj ->
+                val loaded = mutableMapOf<String, ControllerAxisResponse>()
+                for (key in responsesObj.keys()) {
+                    loaded[key] =
+                        ControllerAxisResponse.fromJson(responsesObj.getJSONObject(key))
+                }
+                controllerAxisResponses = clampedControllerAxisResponses(loaded)
             }
             json.optJSONObject("thresholds")?.let { thresholds ->
                 controllerAxisThresholds =
                     defaultThresholds().mapValues { (axis, default) ->
-                        thresholds.optInt(axis, default).coerceIn(5, 95)
+                        thresholds.optInt(axis, default).coerceIn(0, 95)
                     }
             }
             if (json.has("meta_bindings")) {
@@ -3993,7 +3997,12 @@ class MainActivity :
     private fun controllerAxisValue(
         axisKey: String,
         value: Float,
-    ): Float = applyControllerAxisExponent(value, controllerAxisExponents[axisKey] ?: DEFAULT_CONTROLLER_AXIS_EXPONENT)
+    ): Float =
+        applyControllerAxisResponse(
+            value,
+            controllerAxisThresholds.getValue(axisKey),
+            controllerAxisResponses[axisKey] ?: ControllerAxisResponse(),
+        )
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (graphicsSuppressedKeys.contains(event.keyCode)) {
@@ -4176,7 +4185,7 @@ class MainActivity :
         ) {
             for ((control, motionAxis) in CONTROLLER_MOTION_AXES) {
                 val buttons = AXIS_BUTTON_SDL.getValue(control)
-                val value = controllerAxisValue(control, event.getAxisValue(motionAxis))
+                val value = event.getAxisValue(motionAxis)
                 val threshold = controllerAxisThresholds.getValue(control) / 100f
                 for ((button, active) in listOf(
                     buttons.first to (value < -threshold),
@@ -4254,15 +4263,8 @@ class MainActivity :
             val ry = controllerAxisValue("RS_Y", event.getAxisValue(MotionEvent.AXIS_RZ))
             val lt = controllerAxisValue("LT", event.getAxisValue(MotionEvent.AXIS_LTRIGGER))
             val rt = controllerAxisValue("RT", event.getAxisValue(MotionEvent.AXIS_RTRIGGER))
-            rawAxisValues[0] = lx
-            rawAxisValues[1] = ly
-            rawAxisValues[2] = rx
-            rawAxisValues[3] = ry
-            rawAxisValues[4] = lt
-            rawAxisValues[5] = rt
-            rawAxisValues[11] = controllerAxisValue("BRAKE", event.getAxisValue(MotionEvent.AXIS_BRAKE))
-            rawAxisValues[12] = controllerAxisValue("GAS", event.getAxisValue(MotionEvent.AXIS_GAS))
-            mixControllerTriggerButtons(inputMixer, rawAxisValues, controllerAxisThresholds, mixerButtonMap)
+            readControllerAxes(event, rawAxisValues)
+            mixControllerAxisButtons(inputMixer, rawAxisValues, controllerAxisThresholds, mixerButtonMap)
             val controllerAxes =
                 mutableMapOf(
                     0 to lx,
@@ -4271,16 +4273,17 @@ class MainActivity :
                     3 to ry,
                     4 to lt,
                     5 to rt,
-                    11 to rawAxisValues[11],
-                    12 to rawAxisValues[12],
+                    11 to controllerAxisValue("BRAKE", rawAxisValues[11]),
+                    12 to controllerAxisValue("GAS", rawAxisValues[12]),
                 )
             // Compute half-axis combiner virtual axes
             for ((virt, posSource, negSource) in halfAxisCombiners) {
-                val pos = if (posSource in rawAxisValues.indices) rawAxisValues[posSource] else 0f
-                val neg = if (negSource in rawAxisValues.indices) rawAxisValues[negSource] else 0f
+                val pos = controllerAxes[posSource] ?: 0f
+                val neg = controllerAxes[negSource] ?: 0f
                 controllerAxes[virt] = (pos - neg).coerceIn(-1f, 1f)
             }
-            inputMixer.setAxes("ctrl", controllerAxes)
+            // Native channels preserve controller precision and keep touch/gyro contributions separate
+            inputMixer.setAxes("ctrl", controllerAxes.mapKeys { it.key + CONTROLLER_NORMALIZED_AXIS_OFFSET })
 
             // D-pad reported as HAT axes â†’ synthesize keyboard arrow keys
             val hx = event.getAxisValue(MotionEvent.AXIS_HAT_X)

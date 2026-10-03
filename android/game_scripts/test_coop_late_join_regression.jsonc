@@ -1,0 +1,27 @@
+[
+    {
+        "_info": {
+            "games": ["d1", "d2"],
+            "_standalone": false,
+            "_owner": "test_lan",
+            "params": {
+                "drop": { "label": "drop" },
+                "cancel": { "label": "cancel" },
+            },
+        },
+    },
+    { "when": "${drop}", "action": "set_debug", "field": "damage_player", "value": "500" },
+    {
+        "when": "${drop}",
+        "action": "wait_for",
+        "timeout_ms": 15000,
+        "expect": { "player_dead": true, "multiplayer.recovery.world_objects": { "gte": 1 } },
+    },
+    {
+        "when": "${cancel}",
+        "action": "assert",
+        "expect": { "multiplayer.network_status": 3 },
+    },
+    { "when": "${cancel}", "action": "key", "key": "escape" },
+    { "action": "introspect" },
+]

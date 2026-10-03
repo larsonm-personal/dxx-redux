@@ -1,8 +1,12 @@
 #ifndef ANDROID_AXIS_MAILBOX_H
 #define ANDROID_AXIS_MAILBOX_H
 
-/* Counts match android_virtual_gamepad.h; BRAKE/GAS use axes 11/12 */
-#define ANDROID_AXIS_MAILBOX_AXIS_COUNT        16
+/* Logical axes match android_virtual_gamepad.h; channels 16-31 carry normalized
+ * controller contributions independently of legacy touch/gyro channels
+ * Shared offset with ControllerInputs.kt */
+#define ANDROID_CONTROLLER_AXIS_OFFSET         16
+#define ANDROID_CONTROLLER_AXIS_COUNT          16
+#define ANDROID_AXIS_MAILBOX_AXIS_COUNT        32
 #define ANDROID_AXIS_MAILBOX_AXIS_BUTTON_COUNT 13
 
 #ifdef __cplusplus

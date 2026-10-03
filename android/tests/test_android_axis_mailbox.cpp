@@ -1,7 +1,9 @@
 #include "android_axis_mailbox.h"
+#include "android_controller_response.h"
 
 #include <cassert>
 #include <cstdio>
+#include <initializer_list>
 
 static int dispatch_count(const android_axis_mailbox_snapshot &snapshot)
 {
@@ -176,6 +178,27 @@ int main()
 	assert(transition.axis == 12 && transition.raw_value == 24000);
 	assert(android_axis_mailbox_take_transition(snapshot.batch_generation, &transition));
 	assert(transition.axis == 11 && transition.raw_value == 0);
+	/* Controller and touch contributions retain separate channels until action mapping */
+	android_axis_mailbox_reset_for_tests();
+	const int controller_axis = ANDROID_CONTROLLER_AXIS_OFFSET + 3;
+	android_axis_mailbox_publish(3, -4096, 1);
+	android_axis_mailbox_publish(controller_axis, 32767, 0);
+	assert(android_axis_mailbox_take_snapshot(&snapshot));
+	assert(snapshot.raw_value[3] == -4096 && snapshot.touch_source[3]);
+	assert(snapshot.raw_value[controller_axis] == 32767 && !snapshot.touch_source[controller_axis]);
+	assert(!android_axis_mailbox_take_transition(snapshot.batch_generation, &transition));
+	for (int frame : { 273, 1092, 2184 }) {
+		assert(android_controller_command_time(snapshot.raw_value[controller_axis], frame / 2) == frame / 2);
+		assert(android_controller_command_time(-32767, frame / 2) == -(frame / 2));
+		assert(android_controller_command_time(32000, frame / 2) < frame / 2);
+		assert(android_controller_command_time(255, frame) > 0);
+	}
+	android_axis_mailbox_mark_applied(&snapshot, dispatch_count(snapshot));
+	android_axis_mailbox_publish(controller_axis, 0, 0);
+	assert(android_axis_mailbox_take_snapshot(&snapshot));
+	assert(snapshot.should_dispatch[controller_axis]);
+	assert(snapshot.raw_value[3] == -4096);
+
 	puts("android axis mailbox tests passed");
 	return 0;
 }

@@ -194,7 +194,6 @@ internal fun hasControllerMenuBinding(bindings: Map<String, String>): Boolean =
 // Default axis-to-button activation threshold (percentage, 5-95).
 const val DEFAULT_AXIS_THRESHOLD = 30
 const val DEFAULT_STICK_DEAD_ZONE = 10
-const val DEFAULT_CONTROLLER_AXIS_EXPONENT = 1.0f
 
 // Axis IDs that support per-axis thresholds.
 private val THRESHOLD_AXES = AXIS_CONTROLS.keys.toList()
@@ -216,28 +215,18 @@ internal fun thresholdForDialog(
 // Build a default thresholds map with per-axis defaults.
 internal fun defaultThresholds(): Map<String, Int> = THRESHOLD_AXES.associateWith(::defaultThresholdForAxis)
 
-internal fun clampControllerAxisExponent(value: Float): Float =
-    if (value.isFinite()) {
-        value.coerceIn(TouchBindings.MIN_EXPONENT, TouchBindings.MAX_EXPONENT)
-    } else {
-        DEFAULT_CONTROLLER_AXIS_EXPONENT
-    }
+internal fun defaultControllerAxisResponses(): Map<String, ControllerAxisResponse> =
+    THRESHOLD_AXES.associateWith { ControllerAxisResponse() }
 
-internal fun defaultControllerAxisExponents(): Map<String, Float> =
-    THRESHOLD_AXES.associateWith { DEFAULT_CONTROLLER_AXIS_EXPONENT }
-
-internal fun clampedControllerAxisExponents(values: Map<String, Float>): Map<String, Float> {
-    val result = defaultControllerAxisExponents().toMutableMap()
-    for ((axis, value) in values) {
-        if (axis in result) result[axis] = clampControllerAxisExponent(value)
+internal fun clampedControllerAxisResponses(
+    values: Map<String, ControllerAxisResponse>,
+): Map<String, ControllerAxisResponse> {
+    val result = defaultControllerAxisResponses().toMutableMap()
+    for ((axis, response) in values) {
+        if (axis in result) result[axis] = response.clamped()
     }
     return result
 }
-
-internal fun applyControllerAxisExponent(
-    value: Float,
-    exponent: Float,
-): Float = applyResponseCurve(value, ResponseCurve.EXPONENTIAL, clampControllerAxisExponent(exponent))
 
 // Axis functions that implicitly cover discrete button functions.
 internal val AXIS_COVERS_BUTTONS =

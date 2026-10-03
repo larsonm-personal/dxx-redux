@@ -380,6 +380,25 @@ static void test_reordered_collection_and_reclaim(void)
 	CHECK(Objects[10].flags & OF_SHOULD_BE_DEAD);
 }
 
+static void test_solo_rejoin_ignores_unused_slots(void)
+{
+	reset();
+	Players[1].secondary_ammo[HOMING_INDEX] = 4;
+	egg(10, POW_HOMING_AMMO_4);
+	coop_recovery_drop(1, 0);
+	coop_player_record returning;
+	coop_snapshot_player(1, &returning);
+	coop_recovery_departure_record(1, &returning);
+	/* A cancelled lobby join used to leave CONNECT_PLAYING outside N_players */
+	N_players = 1;
+	CHECK(coop_recovery_rejoin_ready(returning.callsign, returning.client_id));
+	CHECK(coop_recovery_save_ready());
+	CHECK(coop_recovery_prepare_rejoin(1, &returning) == 1);
+	CHECK(returning.secondary_ammo[HOMING_INDEX] == 4);
+	CHECK(Objects[10].flags & OF_SHOULD_BE_DEAD);
+	CHECK(coop_recovery_prepare_rejoin(1, &returning) == 0);
+}
+
 static void test_freeze_includes_late_pickup(void)
 {
 	reset();
@@ -921,6 +940,7 @@ int main(void)
 	test_repeated_freeze_preserves_local_collection();
 	test_remove_before_partial_collection();
 	test_reordered_collection_and_reclaim();
+	test_solo_rejoin_ignores_unused_slots();
 	test_freeze_includes_late_pickup();
 	test_partial_collection_expiry_and_rejoin();
 	test_capacity_partial_weapon_and_save_restore();

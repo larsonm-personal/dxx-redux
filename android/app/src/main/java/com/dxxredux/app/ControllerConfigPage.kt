@@ -250,7 +250,7 @@ internal fun ControllerConfigPage(
     val bindings = remember { mutableStateMapOf<String, String>() }
     val inverts = remember { mutableStateListOf<String>() } // inverted axis control IDs
     val thresholds = remember { mutableStateMapOf<String, Int>() }
-    val axisExponents = remember { mutableStateMapOf<String, Float>() }
+    val axisResponses = remember { mutableStateMapOf<String, ControllerAxisResponse>() }
     var initialized by remember { mutableStateOf(false) }
 
     fun loadControllerConfigState(config: ControllerConfigState) {
@@ -260,8 +260,8 @@ internal fun ControllerConfigPage(
         inverts.addAll(config.inverts)
         thresholds.clear()
         thresholds.putAll(config.thresholds)
-        axisExponents.clear()
-        axisExponents.putAll(config.axisExponents)
+        axisResponses.clear()
+        axisResponses.putAll(config.axisResponses)
     }
 
     fun currentControllerConfigState(): ControllerConfigState =
@@ -269,7 +269,7 @@ internal fun ControllerConfigPage(
             bindings = bindings.toMap(),
             inverts = inverts.toSet(),
             thresholds = thresholds.toMap(),
-            axisExponents = axisExponents.toMap(),
+            axisResponses = axisResponses.toMap(),
         )
 
     if (!initialized) {
@@ -1856,8 +1856,8 @@ internal fun ControllerConfigPage(
             axisValue = axisVal,
             threshold = axisKey?.let { thresholdForDialog(it, buttonMode = true, thresholds) },
             onThresholdChange = axisKey?.let { key -> { v: Int -> thresholds[key] = v } },
-            axisExponent = axisKey?.let { axisExponents[it] ?: DEFAULT_CONTROLLER_AXIS_EXPONENT },
-            onAxisExponentChange = axisKey?.let { key -> { v: Float -> axisExponents[key] = v } },
+            axisResponse = axisKey?.let { axisResponses[it] ?: ControllerAxisResponse() },
+            onAxisResponseChange = axisKey?.let { key -> { v: ControllerAxisResponse -> axisResponses[key] = v } },
             axisFunctions = if (isTrigger) TRIGGER_HALF_AXIS_OPTIONS else emptyList(),
             onDialogGenericMotionEvent = onDialogGenericMotionEvent,
             onDialogViewChanged = onDialogViewChanged,
@@ -1908,10 +1908,10 @@ internal fun ControllerConfigPage(
             yThreshold = thresholdForDialog(yKey, yIsButtonMode, thresholds),
             onXThresholdChange = { v -> thresholds[xKey] = v },
             onYThresholdChange = { v -> thresholds[yKey] = v },
-            xExponent = axisExponents[xKey] ?: DEFAULT_CONTROLLER_AXIS_EXPONENT,
-            yExponent = axisExponents[yKey] ?: DEFAULT_CONTROLLER_AXIS_EXPONENT,
-            onXExponentChange = { v -> axisExponents[xKey] = v },
-            onYExponentChange = { v -> axisExponents[yKey] = v },
+            xResponse = axisResponses[xKey] ?: ControllerAxisResponse(),
+            yResponse = axisResponses[yKey] ?: ControllerAxisResponse(),
+            onXResponseChange = { v -> axisResponses[xKey] = v },
+            onYResponseChange = { v -> axisResponses[yKey] = v },
             onDialogGenericMotionEvent = onDialogGenericMotionEvent,
             onDialogViewChanged = onDialogViewChanged,
             onConfirm = { result ->
@@ -2061,8 +2061,8 @@ private fun ButtonFunctionPickerDialog(
     axisValue: Float? = null,
     threshold: Int? = null,
     onThresholdChange: ((Int) -> Unit)? = null,
-    axisExponent: Float? = null,
-    onAxisExponentChange: ((Float) -> Unit)? = null,
+    axisResponse: ControllerAxisResponse? = null,
+    onAxisResponseChange: ((ControllerAxisResponse) -> Unit)? = null,
     axisFunctions: List<String> = emptyList(),
     onDialogGenericMotionEvent: ((View, MotionEvent) -> Boolean)? = null,
     onDialogViewChanged: (View?) -> Unit = {},
@@ -2084,7 +2084,7 @@ private fun ButtonFunctionPickerDialog(
         }
     val isAxisFunc = currentFunc != null && (currentFunc in AXIS_KC_INDEX || currentFunc in HALF_AXIS_MAP)
     var showAxisFunctions by remember { mutableStateOf(isAxisFunc) }
-    val usesDeadZone = currentFunc in HALF_AXIS_MAP
+    val usesDeadZone = isAxisFunc
     val thresholdLabel = if (usesDeadZone) "Dead zone" else "Threshold"
     val thresholdRange = if (usesDeadZone) 0f..95f else 5f..95f
     val thresholdSteps = if (usesDeadZone) 18 else 17
@@ -2115,18 +2115,13 @@ private fun ButtonFunctionPickerDialog(
                         )
                         Spacer(Modifier.height(8.dp))
                     }
-                    if (axisExponent != null && onAxisExponentChange != null) {
-                        Text(
-                            "Exponential response: ${"%.1f".format(axisExponent)}",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Slider(
-                            value = axisExponent,
-                            onValueChange = { onAxisExponentChange(clampControllerAxisExponent(it)) },
-                            valueRange = TouchBindings.MIN_EXPONENT..TouchBindings.MAX_EXPONENT,
-                            steps = 5,
-                            modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+                    if (axisResponse != null && onAxisResponseChange != null && usesDeadZone) {
+                        ControllerResponseEditor(
+                            axisResponse,
+                            threshold ?: 0,
+                            axisValue ?: 0f,
+                            true,
+                            onAxisResponseChange,
                         )
                         Spacer(Modifier.height(8.dp))
                     }
@@ -2286,10 +2281,10 @@ private fun StickPickerDialog(
     yThreshold: Int = DEFAULT_AXIS_THRESHOLD,
     onXThresholdChange: ((Int) -> Unit)? = null,
     onYThresholdChange: ((Int) -> Unit)? = null,
-    xExponent: Float = DEFAULT_CONTROLLER_AXIS_EXPONENT,
-    yExponent: Float = DEFAULT_CONTROLLER_AXIS_EXPONENT,
-    onXExponentChange: ((Float) -> Unit)? = null,
-    onYExponentChange: ((Float) -> Unit)? = null,
+    xResponse: ControllerAxisResponse = ControllerAxisResponse(),
+    yResponse: ControllerAxisResponse = ControllerAxisResponse(),
+    onXResponseChange: ((ControllerAxisResponse) -> Unit)? = null,
+    onYResponseChange: ((ControllerAxisResponse) -> Unit)? = null,
     onDialogGenericMotionEvent: ((View, MotionEvent) -> Boolean)? = null,
     onDialogViewChanged: (View?) -> Unit = {},
     onConfirm: (StickPickerResult) -> Unit,
@@ -2341,26 +2336,6 @@ private fun StickPickerDialog(
         )
     }
 
-    @Composable
-    fun AxisExponentEditor(
-        exponent: Float,
-        onExponentChange: ((Float) -> Unit)?,
-    ) {
-        onExponentChange ?: return
-        Text(
-            "Exponential response: ${"%.1f".format(exponent)}",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Slider(
-            value = exponent,
-            onValueChange = { onExponentChange(clampControllerAxisExponent(it)) },
-            valueRange = TouchBindings.MIN_EXPONENT..TouchBindings.MAX_EXPONENT,
-            steps = 5,
-            modifier = Modifier.fillMaxWidth().tvFocusBorder(),
-        )
-    }
-
     LaunchedEffect(xButtonMode) {
         onXThresholdChange ?: return@LaunchedEffect
         if (xButtonMode && xThreshold == DEFAULT_STICK_DEAD_ZONE) {
@@ -2405,7 +2380,15 @@ private fun StickPickerDialog(
                     )
                     if (!xButtonMode) {
                         Spacer(Modifier.height(6.dp))
-                        AxisExponentEditor(xExponent, onXExponentChange)
+                        onXResponseChange?.let {
+                            ControllerResponseEditor(
+                                xResponse,
+                                xThreshold,
+                                xAxisValue,
+                                false,
+                                it,
+                            )
+                        }
                     }
                     Spacer(Modifier.height(6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2473,7 +2456,15 @@ private fun StickPickerDialog(
                     )
                     if (!yButtonMode) {
                         Spacer(Modifier.height(6.dp))
-                        AxisExponentEditor(yExponent, onYExponentChange)
+                        onYResponseChange?.let {
+                            ControllerResponseEditor(
+                                yResponse,
+                                yThreshold,
+                                yAxisValue,
+                                false,
+                                it,
+                            )
+                        }
                     }
                     Spacer(Modifier.height(6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {

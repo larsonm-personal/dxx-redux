@@ -59,6 +59,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "kconfig_android_shared.h"
 #include "android_log.h"
+#include "android_controller_response.h"
 #include "android_menu_scale.h"
 #ifdef INTROSPECT_ON
 #include "game_automate.h"
@@ -1029,6 +1030,12 @@ int kconfig_handler(window *wind, d_event *event, kc_menu *menu)
 			{
 				int axis, value;
 				event_joystick_get_axis( event, &axis, &value );
+#ifdef ANDROID
+				if (axis >= ANDROID_CONTROLLER_AXIS_OFFSET && axis < ANDROID_AXIS_MAILBOX_AXIS_COUNT) {
+					axis -= ANDROID_CONTROLLER_AXIS_OFFSET;
+					value /= 256;
+				}
+#endif
 				menu->old_jaxis[axis] = value;
 			}
 			break;
@@ -1232,6 +1239,12 @@ void kc_change_joyaxis( kc_menu *menu, d_event *event, kc_item * item )
 
 	Assert(event->type == EVENT_JOYSTICK_MOVED);
 	event_joystick_get_axis( event, &axis, &value );
+#ifdef ANDROID
+	if (axis >= ANDROID_CONTROLLER_AXIS_OFFSET && axis < ANDROID_AXIS_MAILBOX_AXIS_COUNT) {
+		axis -= ANDROID_CONTROLLER_AXIS_OFFSET;
+		value /= 256;
+	}
+#endif
 
 	if ( abs(value-menu->old_jaxis[axis])<32 )
 		return;
@@ -1285,6 +1298,21 @@ void kc_change_invert( kc_menu *menu, kc_item * item )
 
 int undercalibrate_scale(int raw_undercalibrate) {
 	return raw_undercalibrate + 1; 
+}
+
+/* Normalize controller input at the destination so pitch/slide modifiers retain full travel */
+static fix joystick_axis_time(int axis, int control, fix limit)
+{
+	fix value = (Controls.joy_axis[axis] * PlayerCfg.JoystickSens[control] *
+	             undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[control])) / 8;
+#ifdef ANDROID
+	if (axis >= 0 && axis < ANDROID_CONTROLLER_AXIS_COUNT)
+		value += android_controller_command_time(
+		    Controls.raw_joy_axis[axis + ANDROID_CONTROLLER_AXIS_OFFSET], limit);
+#else
+	(void)limit;
+#endif
+	return value;
 }
 
 void kconfig(int n, char * title)
@@ -1416,6 +1444,9 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 #endif
 
 	Controls.pitch_time = Controls.vertical_thrust_time = Controls.heading_time = Controls.sideways_thrust_time = Controls.bank_time = Controls.forward_thrust_time = 0;
+#ifdef ANDROID
+	Controls.sampled_frame_time = FrameTime;
+#endif
 
 	switch (event->type)
 	{
@@ -1509,6 +1540,13 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 			if (!(PlayerCfg.ControlType & CONTROL_USING_JOYSTICK))
 				break;
 			event_joystick_get_axis(event, &axis, &value);
+#ifdef ANDROID
+			if (axis >= ANDROID_CONTROLLER_AXIS_OFFSET && axis < ANDROID_AXIS_MAILBOX_AXIS_COUNT) {
+				Controls.raw_joy_axis[axis] = value;
+				Controls.joy_axis[axis] = android_controller_command_time(value, FrameTime);
+				break;
+			}
+#endif
 			touch_source = event_joystick_get_touch_source(event);
 
 			Controls.raw_joy_axis[axis] = value;
@@ -1638,9 +1676,9 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 			Controls.key_pitch_backward_down_time = 0;
 		// From joystick...
 		if ( !kc_joystick[14].value ) // If not inverted...
-			Controls.pitch_time -= (Controls.joy_axis[kc_joystick[13].value]*PlayerCfg.JoystickSens[1]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[1]))/8;
+			Controls.pitch_time -= joystick_axis_time(kc_joystick[13].value, 1, FrameTime/2);
 		else
-			Controls.pitch_time += (Controls.joy_axis[kc_joystick[13].value]*PlayerCfg.JoystickSens[1]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[1]))/8;
+			Controls.pitch_time += joystick_axis_time(kc_joystick[13].value, 1, FrameTime/2);
 		// From mouse...
 		if ( kc_mouse[13].value != 255 ) {
 			if ( !kc_mouse[14].value ) // If not inverted...
@@ -1673,9 +1711,9 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 			Controls.key_pitch_backward_down_time = 0;
 		// From joystick...
 		if ( !kc_joystick[20].value /*!kc_joystick[14].value*/ )		// If not inverted... NOTE: Use Slide U/D invert setting
-			Controls.vertical_thrust_time += (Controls.joy_axis[kc_joystick[13].value]*PlayerCfg.JoystickSens[3]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[3]))/8;
+			Controls.vertical_thrust_time += joystick_axis_time(kc_joystick[13].value, 3, speed_factor*FrameTime);
 		else
-			Controls.vertical_thrust_time -= (Controls.joy_axis[kc_joystick[13].value]*PlayerCfg.JoystickSens[3]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[3]))/8;
+			Controls.vertical_thrust_time -= joystick_axis_time(kc_joystick[13].value, 3, speed_factor*FrameTime);
 		// From mouse...
 		if ( kc_mouse[13].value != 255 ) {
 			if ( !kc_mouse[20].value /*!kc_mouse[14].value*/ )		// If not inverted... NOTE: Use Slide U/D invert setting
@@ -1706,9 +1744,9 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 	if ( Controls.btn_slide_down_state ) Controls.vertical_thrust_time -= speed_factor*FrameTime;
 	// From joystick...
 	if ( !kc_joystick[20].value )		// If not inverted...
-		Controls.vertical_thrust_time += (Controls.joy_axis[kc_joystick[19].value]*PlayerCfg.JoystickSens[3]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[3]))/8;
+		Controls.vertical_thrust_time += joystick_axis_time(kc_joystick[19].value, 3, speed_factor*FrameTime);
 	else
-		Controls.vertical_thrust_time -= (Controls.joy_axis[kc_joystick[19].value]*PlayerCfg.JoystickSens[3]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[3]))/8;
+		Controls.vertical_thrust_time -= joystick_axis_time(kc_joystick[19].value, 3, speed_factor*FrameTime);
 	// From mouse...
 	if ( kc_mouse[19].value != 255 ) {
 		if ( !kc_mouse[20].value )		// If not inverted...
@@ -1739,9 +1777,9 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 			Controls.key_heading_left_down_time = 0;
 		// From joystick...
 		if ( !kc_joystick[16].value )		// If not inverted...
-			Controls.heading_time += (Controls.joy_axis[kc_joystick[15].value]*PlayerCfg.JoystickSens[0]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[0]))/8;
+			Controls.heading_time += joystick_axis_time(kc_joystick[15].value, 0, FrameTime);
 		else
-			Controls.heading_time -= (Controls.joy_axis[kc_joystick[15].value]*PlayerCfg.JoystickSens[0]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[0]))/8;
+			Controls.heading_time -= joystick_axis_time(kc_joystick[15].value, 0, FrameTime);
 		// From mouse...
 		if ( kc_mouse[15].value != 255 ) {
 			if ( !kc_mouse[16].value )		// If not inverted...
@@ -1774,9 +1812,9 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 			Controls.key_heading_left_down_time = 0;
 		// From joystick...
 		if ( !kc_joystick[18].value /*!kc_joystick[16].value*/ )		// If not inverted... NOTE: Use Slide L/R invert setting
-			Controls.sideways_thrust_time += (Controls.joy_axis[kc_joystick[15].value]*PlayerCfg.JoystickSens[2]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[2]))/8;
+			Controls.sideways_thrust_time += joystick_axis_time(kc_joystick[15].value, 2, speed_factor*FrameTime);
 		else
-			Controls.sideways_thrust_time -= (Controls.joy_axis[kc_joystick[15].value]*PlayerCfg.JoystickSens[2]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[2]))/8;
+			Controls.sideways_thrust_time -= joystick_axis_time(kc_joystick[15].value, 2, speed_factor*FrameTime);
 		// From mouse...
 		if ( kc_mouse[15].value != 255 ) {
 			if ( !kc_mouse[18].value /*!kc_mouse[16].value*/ )		// If not inverted... NOTE: Use Slide L/R invert setting
@@ -1807,9 +1845,9 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 	if ( Controls.btn_slide_right_state ) Controls.sideways_thrust_time += speed_factor*FrameTime;
 	// From joystick...
 	if ( !kc_joystick[18].value )		// If not inverted...
-		Controls.sideways_thrust_time += (Controls.joy_axis[kc_joystick[17].value]*PlayerCfg.JoystickSens[2]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[2]))/8;
+		Controls.sideways_thrust_time += joystick_axis_time(kc_joystick[17].value, 2, speed_factor*FrameTime);
 	else
-		Controls.sideways_thrust_time -= (Controls.joy_axis[kc_joystick[17].value]*PlayerCfg.JoystickSens[2]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[2]))/8;
+		Controls.sideways_thrust_time -= joystick_axis_time(kc_joystick[17].value, 2, speed_factor*FrameTime);
 	// From mouse...
 	if ( kc_mouse[17].value != 255 ) {
 		if ( !kc_mouse[18].value )		// If not inverted...
@@ -1840,9 +1878,9 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 			Controls.key_heading_right_down_time = 0;
 		// From joystick...
 		if ( !kc_joystick[22].value /*!kc_joystick[16].value*/ )		// If not inverted... NOTE: Use Bank L/R invert setting
-			Controls.bank_time -= (Controls.joy_axis[kc_joystick[15].value]*PlayerCfg.JoystickSens[4]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[4]))/8;
+			Controls.bank_time -= joystick_axis_time(kc_joystick[15].value, 4, FrameTime);
 		else
-			Controls.bank_time += (Controls.joy_axis[kc_joystick[15].value]*PlayerCfg.JoystickSens[4]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[4]))/8;
+			Controls.bank_time += joystick_axis_time(kc_joystick[15].value, 4, FrameTime);
 		// From mouse...
 		if ( kc_mouse[15].value != 255 ) {
 			if ( !kc_mouse[22].value /*!kc_mouse[16].value*/ )		// If not inverted... NOTE: Use Bank L/R invert setting
@@ -1873,9 +1911,9 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 	if ( Controls.btn_bank_right_state ) Controls.bank_time -= speed_factor*FrameTime;
 	// From joystick...
 	if ( !kc_joystick[22].value )		// If not inverted...
-		Controls.bank_time -= (Controls.joy_axis[kc_joystick[21].value]*PlayerCfg.JoystickSens[4]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[4]))/8;
+		Controls.bank_time -= joystick_axis_time(kc_joystick[21].value, 4, FrameTime);
 	else
-		Controls.bank_time += (Controls.joy_axis[kc_joystick[21].value]*PlayerCfg.JoystickSens[4]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[4]))/8;
+		Controls.bank_time += joystick_axis_time(kc_joystick[21].value, 4, FrameTime);
 	// From mouse...
 	if ( kc_mouse[21].value != 255 ) {
 		if ( !kc_mouse[22].value )		// If not inverted...
@@ -1890,9 +1928,9 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 	if ( Controls.reverse_state ) Controls.forward_thrust_time -= speed_factor*FrameTime;
 	// From joystick...
 	if ( !kc_joystick[24].value )		// If not inverted...
-		Controls.forward_thrust_time -= (Controls.joy_axis[kc_joystick[23].value]*PlayerCfg.JoystickSens[5]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[5]))/8;
+		Controls.forward_thrust_time -= joystick_axis_time(kc_joystick[23].value, 5, speed_factor*FrameTime);
 	else
-		Controls.forward_thrust_time += (Controls.joy_axis[kc_joystick[23].value]*PlayerCfg.JoystickSens[5]*undercalibrate_scale(PlayerCfg.JoystickUndercalibrate[5]))/8;
+		Controls.forward_thrust_time += joystick_axis_time(kc_joystick[23].value, 5, speed_factor*FrameTime);
 	// From mouse...
 	if ( kc_mouse[23].value != 255 ) {
 		if ( !kc_mouse[24].value )		// If not inverted...

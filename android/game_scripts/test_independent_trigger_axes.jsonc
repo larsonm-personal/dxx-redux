@@ -97,6 +97,71 @@
         "text": "Default Controller",
         "exact": true,
     },
+    // Isolate BRAKE/GAS: the default preset also binds LT/RT and L2/R2 to fire
+    {
+        "action": "controller_input",
+        "axes": {
+            "LT": 0.875,
+        },
+        "post_delay_ms": 2300,
+    },
+    {
+        "action": "controller_input",
+        "axes": {},
+    },
+    {
+        "action": "tap_button",
+        "text": "None",
+        "exact": true,
+    },
+    {
+        "action": "controller_input",
+        "axes": {
+            "RT": 0.875,
+        },
+        "post_delay_ms": 2300,
+    },
+    {
+        "action": "controller_input",
+        "axes": {},
+    },
+    {
+        "action": "tap_button",
+        "text": "None",
+        "exact": true,
+    },
+    {
+        "action": "controller_input",
+        "key": "L2",
+        "pressed": true,
+        "post_delay_ms": 2300,
+    },
+    {
+        "action": "controller_input",
+        "key": "L2",
+        "pressed": false,
+    },
+    {
+        "action": "tap_button",
+        "text": "None",
+        "exact": true,
+    },
+    {
+        "action": "controller_input",
+        "key": "R2",
+        "pressed": true,
+        "post_delay_ms": 2300,
+    },
+    {
+        "action": "controller_input",
+        "key": "R2",
+        "pressed": false,
+    },
+    {
+        "action": "tap_button",
+        "text": "None",
+        "exact": true,
+    },
     {
         "action": "controller_input",
         "key": "L2",
@@ -313,8 +378,8 @@
         "expect": {
             "fire_primary_state": 0,
             "fire_secondary_state": 0,
-            "joy_axes[11].raw": 0,
-            "joy_axes[12].raw": 0,
+            "joy_axes[27].raw": 0,
+            "joy_axes[28].raw": 0,
         },
     },
     {
@@ -331,9 +396,9 @@
                 "ne": 0,
             },
             "fire_secondary_state": 0,
-            "joy_axes[4].raw": 0,
-            "joy_axes[5].raw": 0,
-            "joy_axes[11].raw": {
+            "joy_axes[20].raw": 0,
+            "joy_axes[21].raw": 0,
+            "joy_axes[27].raw": {
                 "gt": 0,
             },
         },
@@ -365,7 +430,7 @@
             "fire_secondary_state": {
                 "ne": 0,
             },
-            "joy_axes[12].raw": {
+            "joy_axes[28].raw": {
                 "gt": 0,
             },
         },

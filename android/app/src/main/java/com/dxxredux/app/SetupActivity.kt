@@ -995,6 +995,11 @@ class SetupActivity : ComponentActivity() {
                         }
                     }
 
+                    "write_controller_response_fixture" -> {
+                        val game = intent.getStringExtra("game") ?: "d2"
+                        runIo { writeControllerResponseFixture(game) }
+                    }
+
                     "write_controller_patch_fixture" -> {
                         val game = intent.getStringExtra("game") ?: "d2"
                         runIo {

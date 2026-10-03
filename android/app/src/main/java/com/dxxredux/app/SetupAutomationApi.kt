@@ -511,6 +511,36 @@ internal fun SetupActivity.writeControllerPatchFixture(game: String) {
     )
 }
 
+/** Known controller curve and bindings for the full MotionEvent-to-engine response sweep */
+internal fun SetupActivity.writeControllerResponseFixture(game: String) {
+    val defaults = loadDefaultControllerConfig(applicationContext)
+    val bindings = defaults.bindings.toMutableMap()
+    bindings["A"] = "Slide On"
+    bindings["B"] = "Bank On"
+    bindings["LS_X"] = "Slide L/R"
+    bindings["LT"] = "Accelerate"
+    bindings["RT"] = "Reverse"
+    bindings["LS_Y_neg"] = "Fire Primary"
+    bindings["LS_Y_pos"] = "Fire Secondary"
+    bindings.remove("LS_Y")
+    ControllerConfigSlotRepository.saveActiveConfig(
+        applicationContext,
+        defaults.copy(
+            bindings = bindings,
+            inverts = emptySet(),
+            thresholds =
+                defaultThresholds().toMutableMap().apply {
+                    this["LS_X"] = 0
+                    this["LS_Y"] = 30
+                    this["LT"] = 10
+                    this["RT"] = 10
+                },
+            axisResponses = defaultControllerAxisResponses().mapValues { ControllerAxisResponse(0.25f, 0.5f) },
+        ),
+        game,
+    )
+}
+
 private data class KcMeta(
     val name: String,
     val type: String,
