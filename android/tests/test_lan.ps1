@@ -326,8 +326,22 @@ if ($GraphicsConfirmation) { . "$PSScriptRoot\..\helpers\test_graphics_multiplay
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
 $ADB = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
-$PACKAGE = "com.dxxredux.app"
+$PACKAGE = if ($env:DXX_TEST_PACKAGE) { $env:DXX_TEST_PACKAGE } else { "com.dxxredux.app" }
 $ACTIVITY = "com.dxxredux.app.SetupActivity"
+
+# This runner resets preferences and save fixtures; physical devices require
+# the isolated diagnostic installation, never the user's normal application
+foreach ($serial in @($HostDevice, $JoinDevice)) {
+    if ($serial -notmatch '^emulator-\d+$') {
+        if ($PACKAGE -ne 'com.dxxredux.app.nsdtest') {
+            throw 'Physical-device LAN fixtures require DXX_TEST_PACKAGE=com.dxxredux.app.nsdtest'
+        }
+        if (-not (Test-DeviceOnline -Serial $serial)) {
+            throw "Physical device is not online: $serial"
+        }
+        $PSDefaultParameterValues['Get-GameIntrospection:Fresh'] = $true
+    }
+}
 
 $EMULATOR = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "emulator" -ToolName "emulator"
 $EMU1 = $HostDevice
@@ -675,7 +689,14 @@ function Invoke-BriefingRejoinScenario {
     }
     if (-not $FirstJoin -and -not (Start-SetupActivity -Serial $EMU2)) { throw 'Could not restart the returning player' }
     if ($BriefingJoinDelaySeconds) {
+        $launcherWakeTimer = [System.Diagnostics.Stopwatch]::StartNew()
         if (-not (Wait-ForCondition -Description 'Original briefing countdown reaches requested late arrival' -TimeoutSec 125 -PollMs 1000 -Condition {
+                    # The physical joiner is still in the launcher during this deliberate wait
+                    # Shift refreshes user activity; WAKEUP alone does not when the screen is already on
+                    if ($EMU2 -notmatch '^emulator-\d+$' -and $launcherWakeTimer.Elapsed.TotalSeconds -ge 15) {
+                        Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'input', 'keyevent', 'KEYCODE_SHIFT_LEFT') -Seconds 5 | Out-Null
+                        $launcherWakeTimer.Restart()
+                    }
                     $state = Get-GameIntrospection -Serial $EMU1
                     return $state.coop_briefing.seconds_remaining -le 120 - $BriefingJoinDelaySeconds
                 })) { throw 'Host countdown did not reach the late-arrival point' }
@@ -2355,6 +2376,15 @@ try {
     }
     Write-Status "SetupActivity ready on both emulators" "Green"
     if ($GraphicsConfirmation) { Initialize-MultiplayerGraphicsFixture }
+    if ($D1LevelTransition) {
+        # This fixture verifies touch recovery, including handhelds that default to controller-only controls
+        foreach ($serial in @($EMU1, $EMU2)) {
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @(
+                'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND', '-p', $PACKAGE,
+                '--es', 'command', 'write_bool_pref', '--es', 'key', 'touch_overlay_enabled', '--ez', 'value', 'true'
+            ) -Seconds 10 | Out-Null
+        }
+    }
 
     if ($Game -eq 'd2') {
         foreach ($serial in @($EMU1, $EMU2)) {
@@ -2861,7 +2891,7 @@ try {
             if ($hostInGame -and $hostNet -and $hostPlayers -ge 2 -and $joinInGame -and $joinNet -and $joinPlayers -ge 2) {
                 return $true
             }
-        } elseif (Test-Path $logcatFile1) {
+        } elseif ($EMU1 -match '^emulator-\d+$' -and $EMU2 -match '^emulator-\d+$' -and (Test-Path $logcatFile1)) {
             $lines = Get-Content $logcatFile1 -ErrorAction SilentlyContinue
             $hasSync = $lines | Where-Object { $_ -match 'send_sync.*sending SYNC to all' }
             $hasTwoPlayers = $lines | Where-Object { $_ -match 'N_players now 2' }
@@ -2910,6 +2940,14 @@ try {
     }
 
     Write-Status "Multiplayer sync completed" "Green"
+
+    if ($EMU1 -notmatch '^emulator-\d+$' -or $EMU2 -notmatch '^emulator-\d+$') {
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_device_network_controls.jsonc' `
+                    -SecondarySerial $EMU2 -SecondaryScript 'test_device_network_controls.jsonc' `
+                    -Description 'Both physical devices consume flight controls after synchronization' -TimeoutSec 25)) {
+            throw 'Physical-device flight controls did not recover after synchronization'
+        }
+    }
 
     # -- Step 5: Verify results --
     Write-Status ""
@@ -3686,7 +3724,12 @@ try {
         $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
             -SecondarySerial $EMU2 -SecondaryScript $clientScript `
             -Description 'First Strike flyout, score, briefing and playable level 2' -TimeoutSec 180
-        if ($testPassed) { Assert-PostTransitionAndroidControls }
+        if ($testPassed) {
+            Assert-PostTransitionAndroidControls
+            $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_device_network_controls.jsonc' `
+                -SecondarySerial $EMU2 -SecondaryScript 'test_device_network_controls.jsonc' `
+                -Description 'Both peers consume flight controls after the level transition' -TimeoutSec 25
+        }
     }
 
     if ($testPassed -and $BriefingPalette) {

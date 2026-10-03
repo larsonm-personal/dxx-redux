@@ -2034,17 +2034,27 @@ function Watch-AutomationResult {
 function Get-GameIntrospection {
     # Request and return parsed game introspection JSON, or $null on failure.
     # If -Serial is provided, targets a specific device (multi-emulator tests).
-    param([string]$Serial)
+    param([string]$Serial, [switch]$Fresh)
+    if ($Fresh) {
+        $removeArgs = @('shell', 'run-as', $script:PACKAGE, 'sh', '-c',
+            "'rm -f files/introspect.json && echo DXX_INTROSPECT_CLEARED'")
+        $cleared = if ($Serial) {
+            Adb-Dev-Timeout -Serial $Serial -AdbArgs $removeArgs -Seconds 5
+        } else {
+            Adb-Timeout -AdbArgs $removeArgs -Seconds 5
+        }
+        if ($cleared -ne 'DXX_INTROSPECT_CLEARED') { return $null }
+    }
     if ($Serial) {
         Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
-            "shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT"
+            "shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT", '-p', $script:PACKAGE
         ) -Seconds 10 | Out-Null
         Start-Sleep -Milliseconds 800
         $json = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
             "shell", "run-as", $script:PACKAGE, "cat", "files/introspect.json"
         ) -Seconds 5
     } else {
-        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT") | Out-Null
+        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT", '-p', $script:PACKAGE) | Out-Null
         Start-Sleep -Milliseconds 800
         $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/introspect.json") -Seconds 5
     }

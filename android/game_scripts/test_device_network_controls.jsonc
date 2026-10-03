@@ -1,0 +1,32 @@
+[
+    {
+        "_info": {
+            "games": ["d1", "d2"],
+            "_standalone": false,
+            "_owner": "test_lan",
+        },
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "in_game": true,
+            "is_network": true,
+            "game_window_is_front": true,
+            "time_paused": false,
+            "multiplayer.num_connected": 2,
+        },
+    },
+    { "action": "send_axis", "axis": 2, "axis_value": 0.5, "post_delay_ms": 0 },
+    {
+        "action": "assert",
+        "expect": {
+            "axis_probe.processed": true,
+            "axis_probe.heading_time": { "gt": 0 },
+        },
+    },
+    { "action": "wait_ms", "ms": 500 },
+    { "action": "send_axis", "axis": 2, "axis_value": 0.0, "post_delay_ms": 0 },
+    { "action": "assert", "expect": { "axis_probe.heading_time": 0 } },
+    { "action": "introspect" },
+]

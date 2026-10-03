@@ -256,6 +256,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_vertigo_metadata_checkpoints'
         )
         input_preferences = @(
+            'test_controller_response'
             'test_controller_raw_inputs'
             'test_controller_trigger_axis_priority'
             'test_independent_trigger_axes'
