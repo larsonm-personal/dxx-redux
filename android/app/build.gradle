@@ -4,10 +4,12 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
-// Three distributions share the UI/engine and retain the existing Gradle task names
-// Default: Play; githubRelease: matching direct APK; legacyRelease: API-23 direct APK
+// Distributions share the UI/engine and retain the existing Gradle task names
+// Default: Play; githubRelease: direct APK; legacyRelease: API-23 APK; ciApk: test artifact
 def legacyRelease = (project.findProperty('legacyRelease') ?: 'false').toBoolean()
-def githubRelease = legacyRelease || (project.findProperty('githubRelease') ?: 'false').toBoolean()
+// CI packages use direct-install sources and are signed separately by the workflow
+def ciApk = (project.findProperty('ciApk') ?: 'false').toBoolean()
+def githubRelease = ciApk || legacyRelease || (project.findProperty('githubRelease') ?: 'false').toBoolean()
 
 // Load tool versions from central config
 def toolVersions = new Properties()
@@ -25,7 +27,7 @@ def keystoreProperties = new Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
-if (githubRelease && !keystorePropertiesFile.exists()) {
+if (githubRelease && !ciApk && !keystorePropertiesFile.exists()) {
     throw new GradleException('GitHub APKs require android/keystore.properties for release signing')
 }
 
@@ -372,7 +374,7 @@ android {
     ndkVersion toolVersions['NDK_FULL_VERSION']
     ndkPath System.getenv('ANDROID_NDK_ROOT') ?: (depBase ? "${depBase}/android-ndk-${toolVersions['NDK_VERSION']}" : null)
 
-    if (keystorePropertiesFile.exists()) {
+    if (keystorePropertiesFile.exists() && !ciApk) {
         signingConfigs {
             release {
                 storeFile rootProject.file(keystoreProperties['storeFile'])
@@ -385,10 +387,10 @@ android {
 
     defaultConfig {
         testInstrumentationRunner "com.dxxredux.app.RecoveryInstrumentation"
-        applicationId legacyRelease ? "com.dxxredux.app.github.legacy" :
+        applicationId ciApk ? "com.dxxredux.app.ci" : legacyRelease ? "com.dxxredux.app.github.legacy" :
             (githubRelease ? "com.dxxredux.app.github" : "com.dxxredux.app")
         manifestPlaceholders = [
-            launcherLabel: legacyRelease ? 'DXX-Redux (Legacy)' : (githubRelease ? 'DXX-Redux (GitHub)' : 'DXX-Redux'),
+            launcherLabel: ciApk ? 'DXX-Redux (CI)' : legacyRelease ? 'DXX-Redux (Legacy)' : (githubRelease ? 'DXX-Redux (GitHub)' : 'DXX-Redux'),
             playGamesEnabled: (!githubRelease).toString()
         ]
         minSdk distributionMinSdk
@@ -437,7 +439,7 @@ android {
         }
         release {
             minifyEnabled false
-            if (keystorePropertiesFile.exists()) {
+            if (keystorePropertiesFile.exists() && !ciApk) {
                 signingConfig signingConfigs.release
             }
         }
@@ -449,7 +451,7 @@ android {
             initWith debug
             debuggable false
             buildConfigField "boolean", "NATIVE_DEBUG_BUILD", "true"
-            if (keystorePropertiesFile.exists()) {
+            if (keystorePropertiesFile.exists() && !ciApk) {
                 signingConfig signingConfigs.release
             }
             matchingFallbacks = ['debug']

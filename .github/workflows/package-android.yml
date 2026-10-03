@@ -1,0 +1,155 @@
+name: Package - Android universal APK
+
+on:
+  # Temporary isolated-branch bootstrap test; removed after the hosted build
+  push:
+    branches: [ci/android-apk-manual-20261002]
+  workflow_dispatch:
+    inputs:
+      signing:
+        description: 'Unsigned artifact or APK signed with the private CI test key'
+        type: choice
+        options: [unsigned, test]
+        default: unsigned
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: Universal APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: '2'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check signing selection
+        env:
+          SIGNING: ${{ inputs.signing || 'unsigned' }}
+          TRUSTED_REF: refs/heads/${{ github.event.repository.default_branch }}
+          KEYSTORE: ${{ inputs.signing == 'test' && secrets.ANDROID_TEST_KEYSTORE_BASE64 || '' }}
+          STORE_PASSWORD: ${{ inputs.signing == 'test' && secrets.ANDROID_TEST_STORE_PASSWORD || '' }}
+          KEY_PASSWORD: ${{ inputs.signing == 'test' && secrets.ANDROID_TEST_KEY_PASSWORD || '' }}
+        run: |
+          if [[ "$SIGNING" == test ]]; then
+            [[ "$GITHUB_EVENT_NAME" == workflow_dispatch && "$GITHUB_REF" == "$TRUSTED_REF" ]] || {
+              echo 'Test-key signing is restricted to manual builds of the default branch' >&2
+              exit 1
+            }
+            [[ -n "$KEYSTORE" && -n "$STORE_PASSWORD" && -n "$KEY_PASSWORD" ]] || {
+              echo 'Configure all three ANDROID_TEST signing secrets before selecting test signing' >&2
+              exit 1
+            }
+          fi
+
+      - name: Install pinned Android build tools
+        run: |
+          source android/get_deps/tool_versions.conf
+          printf '%s\n' "$RUNNER_TEMP/dxx-apk-deps" > dependency_base.txt
+          bash android/get_deps/helpers/get_jdk.sh
+          export JAVA_HOME="$RUNNER_TEMP/dxx-apk-deps/jdk-$JDK_MAJOR"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          set +o pipefail
+          yes | "$sdkmanager" --licenses > /dev/null
+          set -o pipefail
+          "$sdkmanager" --install "platforms;android-$COMPILE_SDK" "build-tools;$BUILD_TOOLS_VERSION" \
+            "ndk;$NDK_FULL_VERSION" "cmake;$CMAKE_VERSION"
+          {
+            echo "JAVA_HOME=$JAVA_HOME"
+            echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$NDK_FULL_VERSION"
+            echo "ANDROID_BUILD_TOOLS=$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION"
+          } >> "$GITHUB_ENV"
+          echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
+          bash android/get_deps/helpers/get_gradle_wrapper.sh
+          df -h .
+
+      - name: Cache build dependencies
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/app/.cxx/dependency-cache
+          key: android-apk-${{ runner.os }}-${{ hashFiles('android/get_deps/tool_versions.conf', 'android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle') }}
+          restore-keys: android-apk-${{ runner.os }}-
+
+      - name: Build universal release-mode APK
+        run: |
+          bash android/gradlew -p android :app:assembleRelease -PciApk=true \
+            "-PversionNameOverride=ci-${GITHUB_SHA:0:12}" --no-daemon --max-workers=2 --console=plain
+
+      - name: Package and optionally sign APK
+        env:
+          SIGNING: ${{ inputs.signing || 'unsigned' }}
+          KEYSTORE: ${{ inputs.signing == 'test' && secrets.ANDROID_TEST_KEYSTORE_BASE64 || '' }}
+          STORE_PASSWORD: ${{ inputs.signing == 'test' && secrets.ANDROID_TEST_STORE_PASSWORD || '' }}
+          KEY_PASSWORD: ${{ inputs.signing == 'test' && secrets.ANDROID_TEST_KEY_PASSWORD || '' }}
+        run: |
+          mkdir -p android/build-outputs/ci-apk
+          source_apk=android/app/build/outputs/apk/release/app-release-unsigned.apk
+          apk="android/build-outputs/ci-apk/dxx-redux-ci-${GITHUB_SHA:0:12}-universal-$SIGNING.apk"
+          if [[ "$SIGNING" == test ]]; then
+            key_file="$RUNNER_TEMP/android-ci-test.jks"
+            trap 'rm -f "$key_file"' EXIT
+            umask 077
+            printf '%s' "$KEYSTORE" | base64 --decode > "$key_file"
+            "$ANDROID_BUILD_TOOLS/apksigner" sign --ks "$key_file" --ks-key-alias ci-test \
+              --ks-pass env:STORE_PASSWORD --key-pass env:KEY_PASSWORD --out "$apk" "$source_apk"
+            "$ANDROID_BUILD_TOOLS/apksigner" verify --verbose "$apk"
+          else
+            cp "$source_apk" "$apk"
+            if "$ANDROID_BUILD_TOOLS/apksigner" verify "$apk" > /dev/null 2>&1; then
+              echo 'Expected an unsigned CI artifact' >&2
+              exit 1
+            fi
+          fi
+          "$ANDROID_BUILD_TOOLS/aapt2" dump badging "$apk" > android/build-outputs/ci-apk/apk-info.txt
+          grep -q "package: name='com.dxxredux.app.ci'" android/build-outputs/ci-apk/apk-info.txt
+          if grep -q application-debuggable android/build-outputs/ci-apk/apk-info.txt; then
+            echo 'Expected a non-debuggable release-mode APK' >&2
+            exit 1
+          fi
+          python3 - "$apk" <<'PY'
+          import struct
+          import sys
+          import zipfile
+
+          with zipfile.ZipFile(sys.argv[1]) as apk:
+              for abi, machine in [('armeabi-v7a', 40), ('arm64-v8a', 183), ('x86_64', 62)]:
+                  for library in ['libdxx-redux-d1.so', 'libdxx-redux-d2.so', 'libdxx_graphics_safety.so', 'libc++_shared.so']:
+                      payload = apk.read(f'lib/{abi}/{library}')
+                      assert payload[:4] == b'\x7fELF', (abi, library)
+                      assert struct.unpack_from('<H', payload, 18)[0] == machine, (abi, library)
+                  print(f'PASS {abi}: both engines and runtime libraries')
+              for name in apk.namelist():
+                  if name.startswith('classes') and name.endswith('.dex'):
+                      dex = apk.read(name)
+                      assert b'Lcom/google/android/gms/' not in dex, 'Unexpected Google Play Services SDK'
+                      assert b'Lcom/google/android/play/' not in dex, 'Unexpected Google Play update SDK'
+          PY
+          (cd android/build-outputs/ci-apk && sha256sum ./*.apk > SHA256SUMS)
+          {
+            echo "### Universal CI APK ($SIGNING)"
+            echo "Source commit: $GITHUB_SHA"
+            echo 'Application ID: com.dxxredux.app.ci'
+            echo 'ARM32, ARM64 and x86_64; both engines; release-mode direct-install distribution'
+            if [[ "$SIGNING" == unsigned ]]; then echo 'This artifact needs signing before installation'; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload universal APK
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: android-universal-apk-${{ inputs.signing || 'unsigned' }}
+          path: android/build-outputs/ci-apk/
+          if-no-files-found: error
+          retention-days: 3
