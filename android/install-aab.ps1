@@ -108,7 +108,7 @@ if ($Aab) {
 
     if ($needsBuild) {
         Write-Host "Building fresh AAB..."
-        & (Join-Path $PSScriptRoot "1_build-aab.ps1") -BuildType "1"
+        & (Join-Path $PSScriptRoot "1_build_aab_apk.ps1") -BuildType "1"
         if ($LASTEXITCODE -ne 0) { throw "AAB build failed" }
         # Re-scan candidates after build
         $candidates = @()
@@ -124,7 +124,7 @@ if ($Aab) {
     }
 
     if ($candidates.Count -eq 0) {
-        Write-Error "No .aab files found. Build first with .\1_build-aab.ps1"
+        Write-Error "No .aab files found. Build first with .\1_build_aab_apk.ps1"
         exit 1
     }
     $aabFile = $candidates | Sort-Object LastWriteTime -Descending | Select-Object -First 1

@@ -257,6 +257,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_independent_trigger_axes'
             'test_controller_live_rebind'
             'test_slider_navigation'
+            'test_controller_overlay'
             'test_controller_compare_unified'
             'test_axis_mapping'
             'test_autoselect_crash_unified'

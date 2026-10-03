@@ -5021,12 +5021,24 @@ private fun SetupScreen(
                                                         }
                                                         val archiveUri = android.net.Uri.fromFile(archiveFile)
                                                         val result =
-                                                            extractStuffitContents(
-                                                                context,
-                                                                archiveUri,
-                                                                tmpDir,
-                                                                archiveName = demo.archiveName,
-                                                            ) { _, _, _ -> }
+                                                            if (demo.archiveName.endsWith(".sit", ignoreCase = true) ||
+                                                                demo.archiveName.endsWith(".hqx", ignoreCase = true)
+                                                            ) {
+                                                                extractStuffitContents(
+                                                                    context,
+                                                                    archiveUri,
+                                                                    tmpDir,
+                                                                    archiveName = demo.archiveName,
+                                                                ) { _, _, _ -> }
+                                                            } else {
+                                                                extractZipContents(
+                                                                    context,
+                                                                    archiveUri,
+                                                                    tmpDir,
+                                                                    budget = ExtractionBudget(),
+                                                                    archiveName = demo.archiveName,
+                                                                ) { _, _, _ -> }
+                                                            }
                                                         if (result.files.isEmpty()) {
                                                             demoDownloading = null
                                                             demoDownloadErrorName = demo.name

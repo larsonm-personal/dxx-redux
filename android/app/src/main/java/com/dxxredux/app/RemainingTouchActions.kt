@@ -116,12 +116,13 @@ internal fun controllerConfigBoundActionBindings(bindings: Map<String, String>):
 private fun remainingCandidateBindings(
     layout: TouchLayout,
     isMultiplayerGame: Boolean,
+    touchControlsEnabled: Boolean,
 ): List<Int> =
     buildList {
         addAll(remainingBaseActionBindings)
         if (layout.gyro.enabled) add(TouchBindings.META_GYRO_TOGGLE)
         if (isMultiplayerGame) addAll(remainingMultiplayerActionBindings)
-        if (layout.radialMenus.none { it.id == "Guide" }) addAll(remainingGuideBindings)
+        if (!touchControlsEnabled || layout.radialMenus.none { it.id == "Guide" }) addAll(remainingGuideBindings)
     }
 
 private fun needsWeaponCycleFallback(
@@ -130,8 +131,9 @@ private fun needsWeaponCycleFallback(
     wheelId: String,
     directBindings: List<Int>,
     cycleBindings: Set<Int>,
+    touchControlsEnabled: Boolean,
 ): Boolean =
-    layout.radialMenus.none { it.id == wheelId } &&
+    (!touchControlsEnabled || layout.radialMenus.none { it.id == wheelId }) &&
         directBindings.any { it !in boundBindings } &&
         cycleBindings.none { it in boundBindings }
 
@@ -170,6 +172,20 @@ internal fun remainingActionUsesHeldActivation(binding: Int): Boolean = binding 
 internal fun remainingTouchActionStartsHeldActivation(action: RemainingTouchAction): Boolean =
     action.adminAction == null && remainingActionUsesHeldActivation(action.binding)
 
+internal fun remainingTouchActionClosesMenu(
+    action: RemainingTouchAction,
+    openedFromController: Boolean,
+): Boolean =
+    if (!openedFromController) {
+        true
+    } else {
+        action.adminAction?.let { adminTrayClosesAfterActivate(it, openedFromController = true) }
+            ?: (
+                action.binding in
+                    setOf(TouchBindings.BTN_AUTOMAP, TouchBindings.META_GUIDE_BOT_MENU, TouchBindings.META_DROP_MARKER)
+            )
+    }
+
 internal fun remainingKeyTouchActions(
     layout: TouchLayout,
     gameVariant: String,
@@ -180,14 +196,15 @@ internal fun remainingKeyTouchActions(
     extraBoundBindings: Set<Int> = emptySet(),
     rewindEnabled: Boolean = true,
     enhancedGuidebotRouting: Boolean = true,
+    touchControlsEnabled: Boolean = true,
 ): List<RemainingTouchAction> {
     val boundBindings =
-        touchLayoutBoundActionBindings(layout) +
+        (if (touchControlsEnabled) touchLayoutBoundActionBindings(layout) else emptySet()) +
             extraBoundBindings +
             if (workingControllerInUse) controllerBoundBindings else emptySet()
     val candidateBindings =
         buildList {
-            addAll(remainingCandidateBindings(layout, isMultiplayerGame))
+            addAll(remainingCandidateBindings(layout, isMultiplayerGame, touchControlsEnabled))
             if (
                 needsWeaponCycleFallback(
                     layout,
@@ -195,6 +212,7 @@ internal fun remainingKeyTouchActions(
                     "PriWpn",
                     remainingPrimaryWeaponBindings,
                     primaryWeaponCycleBindings,
+                    touchControlsEnabled,
                 )
             ) {
                 add(TouchBindings.BTN_CYCLE_PRIMARY)
@@ -206,6 +224,7 @@ internal fun remainingKeyTouchActions(
                     "SecWpn",
                     remainingSecondaryWeaponBindings,
                     secondaryWeaponCycleBindings,
+                    touchControlsEnabled,
                 )
             ) {
                 add(TouchBindings.BTN_CYCLE_SECONDARY)

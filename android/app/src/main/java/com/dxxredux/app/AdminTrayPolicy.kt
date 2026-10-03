@@ -28,8 +28,22 @@ internal fun adminTrayUsesSlider(actionIndex: Int): Boolean =
         else -> false
     }
 
-internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
-    if (adminTrayUsesSlider(actionIndex) || adminTrayCyclesState(actionIndex)) {
+internal fun adminTrayClosesAfterActivate(
+    actionIndex: Int,
+    openedFromController: Boolean = false,
+): Boolean =
+    if (openedFromController) {
+        actionIndex in
+            setOf(
+                TouchOverlayView.ADMIN_LOAD,
+                TouchOverlayView.ADMIN_SAVE,
+                TouchOverlayView.ADMIN_OPEN_MENU,
+                TouchOverlayView.ADMIN_EXIT_LAUNCHER,
+                TouchOverlayView.ADMIN_RESTART_LEVEL,
+                TouchOverlayView.ADMIN_AUTOMAP,
+                TouchOverlayView.ADMIN_AUTOMAP_NAME_MARKER,
+            )
+    } else if (adminTrayUsesSlider(actionIndex) || adminTrayCyclesState(actionIndex)) {
         false
     } else {
         when (actionIndex) {

@@ -50,6 +50,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var lanQrOnly = false
     private var sliderNavigationOnly = false
     private var graphicsCapabilitiesOnly = false
+    private var controllerOverlayOnly = false
 
     override fun onCreate(arguments: Bundle?) {
         if (arguments?.getString("suite") == "engine_query") {
@@ -60,6 +61,7 @@ class RecoveryInstrumentation : Instrumentation() {
         lanQrOnly = arguments?.getString("suite") == "lan_qr"
         sliderNavigationOnly = arguments?.getString("suite") == "slider_navigation"
         graphicsCapabilitiesOnly = arguments?.getString("suite") == "graphics_capabilities"
+        controllerOverlayOnly = arguments?.getString("suite") == "controller_overlay"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         coopSessionOnly = arguments?.getString("suite") == "coop_session"
         super.onCreate(arguments)
@@ -69,6 +71,15 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (controllerOverlayOnly) {
+                ControllerOverlayChecks(this).run()
+                result.putString(
+                    "stream",
+                    "PASS: controller overlay layout, extra actions and persistent touch/controller menus\n",
+                )
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (sliderNavigationOnly || graphicsCapabilitiesOnly) {
                 SliderNavigationChecks(this).run(graphicsCapabilitiesOnly)
                 result.putString(

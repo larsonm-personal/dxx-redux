@@ -112,12 +112,12 @@ try {
     Write-Host "Version code: $versionCode (commit $commitCount, rev $rev)"
     Write-Host ""
 
-    # Build the AAB
-    Write-Host "Step 1: Building AAB..."
+    # Build both local artifacts; only the AAB is uploaded
+    Write-Host "Step 1: Building AAB and universal APK..."
     Write-Host ""
     $variantLabel = switch ($BuildType) { "1" { "debug" } "3" { "internal" } default { "release" } }
     $artifactPath = Join-Path $PSScriptRoot "build-outputs\deploy-$variantLabel-v$versionCode-$([guid]::NewGuid().ToString('N')).aab"
-    & (Join-Path $PSScriptRoot "1_build-aab.ps1") -BuildType $BuildType -VersionCode $versionCode -OutputPath $artifactPath
+    & (Join-Path $PSScriptRoot "1_build_aab_apk.ps1") -BuildType $BuildType -VersionCode $versionCode -OutputPath $artifactPath
     if ($LASTEXITCODE -ne 0) {
         throw "Build failed with exit code $LASTEXITCODE"
     }

@@ -6,6 +6,48 @@ import org.junit.Test
 
 class RemainingKeyTouchActionsTest {
     @Test
+    fun disabledTouchControlsDoNotCoverActionsOrWeaponAndGuideWheels() {
+        val layout =
+            TouchLayout(
+                name = "Custom",
+                buttons = listOf(button(TouchBindings.BTN_HEADLIGHT), button(TouchBindings.BTN_CYCLE_PRIMARY)),
+                radialMenus =
+                    listOf("PriWpn", "SecWpn", "Guide").map {
+                        RadialMenuControl(id = it, xPct = 10f, yPct = 10f, segments = emptyList())
+                    },
+                gyro = GyroConfig(enabled = true),
+            )
+        for (game in listOf("d1", "d2")) {
+            val enabled = remainingKeyTouchActions(layout, game)
+            val disabled = remainingKeyTouchActions(layout, game, touchControlsEnabled = false)
+            assertEquals(
+                remainingKeyTouchActions(layout.copy(buttons = emptyList(), radialMenus = emptyList()), game),
+                disabled,
+            )
+            assertTrue(disabled.any { it.binding == TouchBindings.BTN_CYCLE_PRIMARY })
+            assertTrue(disabled.any { it.binding == TouchBindings.BTN_CYCLE_SECONDARY })
+            assertTrue(disabled.any { it.binding == TouchBindings.META_GYRO_TOGGLE })
+            assertTrue(enabled.none { it.binding == TouchBindings.BTN_CYCLE_PRIMARY })
+            assertEquals(enabled, remainingKeyTouchActions(layout, game, touchControlsEnabled = true))
+            val bound = setOf(TouchBindings.BTN_CYCLE_PRIMARY, TouchBindings.META_GYRO_TOGGLE)
+            assertEquals(
+                disabled.filter { it.binding !in bound },
+                remainingKeyTouchActions(
+                    layout,
+                    game,
+                    touchControlsEnabled = false,
+                    workingControllerInUse = true,
+                    controllerBoundBindings = bound,
+                ),
+            )
+            assertEquals(
+                disabled,
+                remainingKeyTouchActions(layout, game, touchControlsEnabled = false, controllerBoundBindings = bound),
+            )
+        }
+    }
+
+    @Test
     fun originalRoutingHidesAddedGoalsAndEnhancedRestoresThem() {
         val layout = TouchLayout(name = "Empty")
         val enhanced = remainingKeyTouchActions(layout, "d2", enhancedGuidebotRouting = true)

@@ -14,6 +14,14 @@
 
 # google play console setup
 
+Run `./android/1_build_aab_apk.ps1 -BuildType 2` to build a release AAB and a
+signed universal APK together. A single Gradle invocation shares compilation
+and native build work. Both files appear in `android/build-outputs/` with a
+matching timestamp/version name; the APK ends in `-universal.apk` and contains
+all three supported ABIs. Release and Internal (`-BuildType 3`) require
+`android/keystore.properties`; Debug (`-BuildType 1`) uses the debug signing key.
+`-OutputPath` overrides the AAB destination and puts the matching APK beside it.
+
 For direct APK downloads without Play Store installation, see the usage and setup comments in [release-github.ps1](release-github.ps1).
 
 Three distributions share the same launcher UI and native engines:

@@ -7,6 +7,25 @@ import org.junit.Test
 
 class ControllerMenuTouchOverlayDefaultTest {
     @Test
+    fun disabledTouchOverlayUsesControllerPresentationWithoutReplacingSavedConfig() {
+        val saved = TouchLayout(name = "Custom", gyro = GyroConfig(enabled = true))
+        val controller = TouchLayout(name = CONTROLLER_MENU_TOUCH_PRESET_NAME)
+        val effective =
+            effectiveTouchOverlayLayout(saved, controller, touchOverlayEnabled = false, hasController = true)
+        assertEquals(CONTROLLER_MENU_TOUCH_PRESET_NAME, effective.name)
+        assertEquals(saved.gyro, effective.gyro)
+        assertEquals("Custom", saved.name)
+        assertEquals(
+            saved,
+            effectiveTouchOverlayLayout(saved, controller, touchOverlayEnabled = true, hasController = true),
+        )
+        assertEquals(
+            saved,
+            effectiveTouchOverlayLayout(saved, controller, touchOverlayEnabled = false, hasController = false),
+        )
+    }
+
+    @Test
     fun touchDevicesDefaultToTouchDefaultPreset() {
         assertEquals("Touch Default", defaultTouchPresetName(hasTouchscreen = true))
     }

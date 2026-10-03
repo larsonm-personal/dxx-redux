@@ -934,6 +934,10 @@ class TouchOverlayView
         private var adminTrayCheatsPanelRect = RectF()
         private var adminTrayCheatsScrollRect = RectF()
         private var remainingActionOpen = false
+        private var remainingActionOpenedFromController = false
+        private var adminTrayOpenedFromController = false
+        internal var touchControlsEnabled = true
+        internal var remainingActionsLayoutProvider: (() -> TouchLayout)? = null
         private var remainingActionSelectedIndex = -1
         private var remainingActionPointerId = -1
         private var remainingActionPressedIndex = -1
@@ -998,6 +1002,9 @@ class TouchOverlayView
 
         /** Replace the current layout and recompute all control geometry. */
         fun setLayout(newLayout: TouchLayout) {
+            resetAllSticks()
+            releaseAllButtons()
+            closeRemainingActions()
             layout = newLayout
             gyroConfigured = newLayout.gyro.enabled
             if (!gyroConfigured) gyroActiveInGame = false
@@ -1146,7 +1153,7 @@ class TouchOverlayView
             return remainingActionsWithControllerAdminActions(
                 keyActions =
                     remainingKeyTouchActions(
-                        layout = layout,
+                        layout = remainingActionsLayoutProvider?.invoke() ?: layout,
                         gameVariant = gameVariant,
                         isMultiplayerGame = isMultiplayerGameProvider?.invoke() == true,
                         weaponState = weaponState,
@@ -1154,6 +1161,7 @@ class TouchOverlayView
                         workingControllerInUse = workingControllerInUseProvider?.invoke() == true,
                         rewindEnabled = rewindSupportEnabled,
                         enhancedGuidebotRouting = enhancedGuidebotRouting,
+                        touchControlsEnabled = touchControlsEnabled,
                     ),
                 gamepadOnlyMode = gamepadOnlyMode,
                 controllerAdminActions = remainingAdminActionsProvider?.invoke() ?: emptyList(),
@@ -1237,6 +1245,7 @@ class TouchOverlayView
         private fun closeRemainingActions() {
             releaseRemainingHeldActionIfNeeded()
             remainingActionOpen = false
+            remainingActionOpenedFromController = false
             remainingActionSelectedIndex = -1
             remainingActionPointerId = -1
             remainingActionPressedIndex = -1
@@ -1263,6 +1272,7 @@ class TouchOverlayView
             }
             closeAdminTray()
             remainingActionOpen = true
+            remainingActionOpenedFromController = fromGamepad
             remainingActionSelectedIndex = if (fromGamepad) 0 else -1
             remainingActionPointerId = -1
             remainingActionPressedIndex = -1
@@ -1412,7 +1422,7 @@ class TouchOverlayView
                                     invalidate()
                                 } else {
                                     if (!navigateAutomapMarkerMenu(selectedAction)) {
-                                        closeRemainingActions()
+                                        finishRemainingActionInteraction(selectedAction)
                                         triggerRemainingAction(selectedAction)
                                     }
                                 }
@@ -1431,6 +1441,20 @@ class TouchOverlayView
                     false
                 }
             }
+
+        private fun finishRemainingActionInteraction(action: RemainingTouchAction? = null) {
+            releaseRemainingHeldActionIfNeeded()
+            if (!remainingActionOpenedFromController ||
+                (action != null && remainingTouchActionClosesMenu(action, remainingActionOpenedFromController))
+            ) {
+                closeRemainingActions()
+            } else {
+                if (action != null) remainingActionUsedSinceOpen = true
+                remainingActionPointerId = -1
+                remainingActionPressedIndex = -1
+                invalidate()
+            }
+        }
 
         private fun triggerRemainingAction(action: RemainingTouchAction) {
             val adminAction = action.adminAction
@@ -1482,11 +1506,9 @@ class TouchOverlayView
             }
             val actions = currentRemainingTouchActions(weaponState)
             if (actions.isEmpty()) {
-                remainingActionOpen = false
-                remainingActionPointerId = -1
-                remainingActionPressedIndex = -1
-                remainingActionOpenedAtMs = 0L
-                remainingActionUsedSinceOpen = false
+                if (remainingActionOpen || remainingActionPointerId >= 0 || remainingActionHeldBinding >= 0) {
+                    closeRemainingActions()
+                }
                 remainingActionButtonRect = RectF()
                 remainingActionItemRects.clear()
                 return
@@ -1606,7 +1628,7 @@ class TouchOverlayView
                             }
                             invalidate()
                         } else {
-                            closeRemainingActions()
+                            finishRemainingActionInteraction()
                         }
                         return true
                     }
@@ -1634,29 +1656,28 @@ class TouchOverlayView
                         val fired = remainingActionItemRects[pressedIndex].contains(px, py)
                         val action = actions[pressedIndex]
                         if (remainingTouchActionStartsHeldActivation(action)) {
-                            releaseRemainingHeldActionIfNeeded()
-                            closeRemainingActions()
+                            finishRemainingActionInteraction(action)
                         } else if (fired) {
                             if (!navigateAutomapMarkerMenu(action)) {
-                                closeRemainingActions()
+                                finishRemainingActionInteraction(action)
                                 triggerRemainingAction(action)
                             }
                             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                         } else {
-                            closeRemainingActions()
+                            finishRemainingActionInteraction()
                         }
                         return true
                     }
                     remainingActionPointerId = -1
                     remainingActionPressedIndex = -1
                     invalidate()
-                    return false
+                    return remainingActionOpen
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
                     if (pid == remainingActionPointerId || remainingActionPointerId < 0) {
                         if (remainingActionOpen) {
-                            closeRemainingActions()
+                            finishRemainingActionInteraction()
                         } else {
                             remainingActionPointerId = -1
                             remainingActionPressedIndex = -1
@@ -5176,6 +5197,7 @@ class TouchOverlayView
         fun openAdminTray(fromGamepad: Boolean = false) {
             closeRemainingActions()
             if (adminTrayOpen) {
+                if (fromGamepad) adminTrayOpenedFromController = true
                 if (fromGamepad && adminTraySelectedIndex < 0) {
                     adminTraySelectedIndex = defaultAdminTraySelectedIndex()
                     invalidate()
@@ -5183,6 +5205,7 @@ class TouchOverlayView
                 return
             }
             adminTrayOpen = true
+            adminTrayOpenedFromController = fromGamepad
             clearAdminTraySliderState()
             resetAdminTraySlidersFromProviders()
             if (fromGamepad || gamepadOnlyMode) {
@@ -5196,6 +5219,7 @@ class TouchOverlayView
 
         fun closeAdminTray() {
             if (!adminTrayOpen && adminTraySlide <= 0f) return
+            adminTrayOpenedFromController = false
             closeAdminTrayDifficultyMenu()
             closeAdminTrayCheatsMenu()
             clearAdminTraySliderState()
@@ -5423,7 +5447,7 @@ class TouchOverlayView
                         val selectedAction = visibleActions[adminTraySelectedIndex]
                         adminTrayCallback?.invoke(selectedAction)
                         performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                        if (adminTrayClosesAfterActivate(selectedAction)) {
+                        if (adminTrayClosesAfterActivate(selectedAction, adminTrayOpenedFromController)) {
                             closeAdminTray()
                         } else {
                             invalidate()
@@ -5494,10 +5518,10 @@ class TouchOverlayView
                             return true
                         }
                     }
-                    // Tap outside panel closes it
+                    // Controller-opened menus require explicit dismissal
                     val panelTop = computeAdminTrayPanelRect().top
                     if (py < panelTop) {
-                        closeAdminTray()
+                        if (!adminTrayOpenedFromController) closeAdminTray()
                         adminTrayPressedIndex = -1
                         adminTrayPointerId = -1
                         return true
@@ -5521,7 +5545,7 @@ class TouchOverlayView
                     val cy = event.getY(pi)
                     val dy = cy - adminTrayDragStartY
                     // Start drag after small threshold
-                    if (!adminTrayDragging && dy > 10f) {
+                    if (!adminTrayOpenedFromController && !adminTrayDragging && dy > 10f) {
                         adminTrayDragging = true
                         adminTrayPressedIndex = -1
                     }
@@ -5600,7 +5624,7 @@ class TouchOverlayView
                                     adminTrayCallback?.invoke(pressedAction)
                                 }
                                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                                if (adminTrayClosesAfterActivate(pressedAction)) {
+                                if (adminTrayClosesAfterActivate(pressedAction, adminTrayOpenedFromController)) {
                                     closeAdminTray()
                                 }
                             }

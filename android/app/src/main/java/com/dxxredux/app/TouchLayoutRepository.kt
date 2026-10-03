@@ -15,6 +15,14 @@ internal fun defaultTouchPresetName(hasTouchscreen: Boolean): String =
 internal fun isControllerMenuOnlyTouchLayout(layout: TouchLayout): Boolean =
     layout.name == CONTROLLER_MENU_TOUCH_PRESET_NAME
 
+internal fun effectiveTouchOverlayLayout(
+    savedLayout: TouchLayout,
+    controllerMenuLayout: TouchLayout,
+    touchOverlayEnabled: Boolean,
+    hasController: Boolean,
+): TouchLayout =
+    if (!touchOverlayEnabled && hasController) controllerMenuLayout.copy(gyro = savedLayout.gyro) else savedLayout
+
 /**
  * Loads, saves, and provides preset TouchLayouts.
  *

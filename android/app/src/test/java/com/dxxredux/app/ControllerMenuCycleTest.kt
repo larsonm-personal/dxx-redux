@@ -8,6 +8,38 @@ import org.junit.Test
 
 class ControllerMenuCycleTest {
     @Test
+    fun controllerActionsKeepMenuOpenExceptForScreenTransitions() {
+        for (binding in listOf(
+            TouchBindings.BTN_HEADLIGHT,
+            TouchBindings.BTN_ENERGY_SHIELD,
+            TouchBindings.BTN_CYCLE_PRIMARY,
+            TouchBindings.META_GYRO_TOGGLE,
+        )) {
+            val action = RemainingTouchAction("Action", binding)
+            assertFalse(remainingTouchActionClosesMenu(action, openedFromController = true))
+            assertTrue(remainingTouchActionClosesMenu(action, openedFromController = false))
+        }
+        assertTrue(
+            remainingTouchActionClosesMenu(
+                RemainingTouchAction("Map", TouchBindings.BTN_AUTOMAP),
+                openedFromController = true,
+            ),
+        )
+        assertFalse(
+            remainingTouchActionClosesMenu(
+                RemainingTouchAction("Accept", adminAction = TouchOverlayView.ADMIN_ACCEPT_JOIN),
+                openedFromController = true,
+            ),
+        )
+        assertTrue(
+            remainingTouchActionClosesMenu(
+                RemainingTouchAction("Save", adminAction = TouchOverlayView.ADMIN_SAVE),
+                openedFromController = true,
+            ),
+        )
+    }
+
+    @Test
     fun nextControllerMenuSurface_cyclesThroughRemainingAndAdminTray() {
         assertEquals(
             ControllerMenuSurface.REMAINING_ACTIONS,

@@ -492,11 +492,11 @@ internal val DEMO_DOWNLOADS =
             name = "D1 Demo",
             url =
                 "https://github.com/larsonm-personal/dxx-redux/releases/download/" +
-                    "demo_installers/Descent.Shareware.sit",
-            downloadFilename = "Descent.Shareware.sit",
-            archiveName = "Descent Shareware.sit",
-            description = "Descent 1 Mac shareware demo",
-            sizeBytes = 4_735_288L,
+                    "demo_installers/desc14sw.exe",
+            downloadFilename = "desc14sw.exe",
+            archiveName = "desc14sw.exe",
+            description = "Descent 1 PC v1.4 shareware demo (7 levels)",
+            sizeBytes = 2_892_216L,
             files = listOf("descent.hog", "descent.pig"),
         ),
     )

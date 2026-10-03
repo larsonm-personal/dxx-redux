@@ -904,6 +904,10 @@ class MainActivity :
     private var gyroManager: GyroInputManager? = null
     private var gyroRuntimeState = gyroRuntimeStateFromConfig(GyroConfig())
     private var activeTouchLayout = TouchLayoutRepository.defaultLayout()
+    private val controllerMenuTouchLayout by lazy {
+        TouchLayoutRepository.loadBundledPresets(this).firstOrNull { isControllerMenuOnlyTouchLayout(it) }
+            ?: activeTouchLayout
+    }
     private var isActivityResumed = false
     private var lanJoinQr: com.dxxredux.app.multiplayer.LanJoinQrOverlay? = null
     private var isLanQrHost = false
@@ -1245,6 +1249,7 @@ class MainActivity :
         activeTouchLayout = TouchLayoutRepository.load(this)
         gyroRuntimeState = gyroRuntimeStateFromConfig(activeTouchLayout.gyro)
         touchOverlay.setLayout(activeTouchLayout)
+        touchOverlay.remainingActionsLayoutProvider = { activeTouchLayout }
 
         // Input mixer: combines button/axis inputs from touch, controller, gyro
         inputMixer =
@@ -2465,6 +2470,7 @@ class MainActivity :
                 "touch_overlay_enabled",
                 defaultTouchOverlayEnabled(hasTouchscreen = !gamepadOnlyMode, hasController = hasController),
             )
+        updateTouchOverlayLayout(hasController)
         syncDebugLogPrefs()
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
@@ -3726,6 +3732,16 @@ class MainActivity :
         applyGyroConfig(activeTouchLayout.gyro)
     }
 
+    private fun updateTouchOverlayLayout(hasController: Boolean = hasWorkingControllerDevice()) {
+        touchOverlay.touchControlsEnabled = overlayEnabled
+        val effectiveLayout =
+            effectiveTouchOverlayLayout(activeTouchLayout, controllerMenuTouchLayout, overlayEnabled, hasController)
+        if (touchOverlay.getLayout() != effectiveLayout) {
+            touchOverlay.setLayout(effectiveLayout)
+            touchOverlay.updateGyroState(gyroRuntimeState.configured, gyroRuntimeState.activeInGame)
+        }
+    }
+
     private fun dispatchMetaAction(
         actionId: Int,
         pressed: Boolean,
@@ -3759,6 +3775,7 @@ class MainActivity :
             ) {
                 closeControllerSettingsStack()
             } else if (pressed) {
+                updateTouchOverlayLayout()
                 touchOverlay.cycleControllerMenu()
             }
             return
