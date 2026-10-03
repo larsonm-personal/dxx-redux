@@ -53,7 +53,14 @@ printf '%s\n' "$@" >>"$FIXTURE_ROOT/calls"
 if [ "${FIXTURE_FAIL:-}" = "$1" ]; then exit 23; fi
 case "$1" in
 --licenses) read -r _answer; exit 0 ;;
---list) printf '  platforms;android-36.0 | fixture\n  platforms;android-34 | fixture\n'; exit 0 ;;
+--list)
+    if [ "${FIXTURE_ANDROID_CLI:-0}" = 1 ]; then
+        printf '  platforms/android-36.0  fixture\n  platforms/android-34  fixture\n'
+    else
+        printf '  platforms;android-36.0 | fixture\n  platforms;android-34 | fixture\n'
+    fi
+    exit 0
+    ;;
 esac
 [ "${FIXTURE_NO_PAYLOAD:-0}" != 1 ] || exit 0
 for package in "$@"; do
@@ -71,10 +78,15 @@ for package in "$@"; do
 done
 MANAGER
 chmod +x "$SDK/cmdline-tools/latest/bin/sdkmanager"
-run() { bash "$HELPERS/$1" >"$TEST_ROOT/result.log" 2>&1; }
+# Hidden WSL launches can inherit a terminal even in an unattended test runner
+run() { bash "$HELPERS/$1" </dev/null >"$TEST_ROOT/result.log" 2>&1; }
 run finalize.sh
 printf '%s\n' --licenses --list 'platforms;android-36.0' 'build-tools;36.0.0' platform-tools 'cmake;3.31.6' 'platforms;android-34' >"$TEST_ROOT/expected"
 cmp "$TEST_ROOT/expected" "$TEST_ROOT/calls"
+: >"$TEST_ROOT/calls"
+FIXTURE_ANDROID_CLI=1 run finalize.sh
+cmp "$TEST_ROOT/expected" "$TEST_ROOT/calls"
+echo 'PASS: Android CLI package listing resolves the same pinned SDK platform'
 for fail in --licenses --list 'platforms;android-36.0'; do
     : >"$TEST_ROOT/calls"
     if FIXTURE_FAIL="$fail" run finalize.sh; then

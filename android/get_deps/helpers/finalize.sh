@@ -37,6 +37,8 @@ resolve_platform_package() {
 
 echo "Installing platform packages..."
 SDK_PACKAGE_LIST="$("$SDKMANAGER" --list)"
+# Android CLI-backed sdkmanager lists slash paths instead of the classic semicolon IDs
+SDK_PACKAGE_LIST="${SDK_PACKAGE_LIST//\//;}"
 COMPILE_SDK_PACKAGE="$(resolve_platform_package "$COMPILE_SDK")"
 PACKAGES=("$COMPILE_SDK_PACKAGE" "build-tools;$BUILD_TOOLS_VERSION" platform-tools "cmake;$CMAKE_VERSION")
 # Also install the emulator's platform if it differs from COMPILE_SDK

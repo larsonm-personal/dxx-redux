@@ -1,13 +1,10 @@
 name: Package - Android universal APK
 
 on:
-  # Temporary isolated-branch bootstrap test; removed after the hosted build
-  push:
-    branches: [ci/android-apk-manual-20261002]
   workflow_dispatch:
     inputs:
       signing:
-        description: 'Unsigned artifact or APK signed with the private CI test key'
+        description: "Unsigned artifact or APK signed with the private CI test key"
         type: choice
         options: [unsigned, test]
         default: unsigned
@@ -25,7 +22,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
-      CMAKE_BUILD_PARALLEL_LEVEL: '2'
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
