@@ -4,6 +4,14 @@ In GitHub Actions, select **Package - Android universal APK**, then **Run workfl
 The workflow file must be present on the repository's default branch for GitHub to
 offer the manual run button. Choose a branch and the signing mode.
 
+To dispatch a branch containing the workflow with the GitHub CLI, run:
+
+```powershell
+gh workflow run package-android.yml --repo larsonm-personal/dxx-redux --ref cmake -f signing=unsigned
+```
+
+Before this change is merged, use `--ref ci/android-apk-manual-20261002` instead.
+
 - `unsigned` builds without signing secrets and produces an APK to sign later
 - `test` signs with a private, stable test key and is restricted to the default branch
 
