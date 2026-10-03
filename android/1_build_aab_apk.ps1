@@ -1,9 +1,10 @@
 #!/usr/bin/env pwsh
-# Build an AAB and signed universal APK together and copy to build-outputs/
+# Build a Play AAB and signed universal direct-install APK and copy to build-outputs/
 # Usage: .\android\1_build_aab_apk.ps1 [[-BuildType] <string>]
 #        .\android\1_build_aab_apk.ps1 -BuildType "2"  # Release signing
 # OutputPath specifies the AAB destination; the APK is a sibling named <basename>-universal.apk
 # Release/Internal use keystore.properties; Debug uses the Android debug key
+# Release/Internal APKs use the GitHub distribution ID so they can coexist with Play installs
 
 param(
     [ValidateSet('1', '2', '3')][string]$BuildType,
@@ -58,7 +59,6 @@ if ($BuildType -eq '1') {
 } else {
     $variant = "Release"
 }
-$tasks = @("bundle$variant", "assemble$variant")
 if ($variant -ne 'Debug' -and -not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'keystore.properties') -PathType Leaf)) {
     throw 'Release/Internal signing requires android/keystore.properties'
 }
@@ -69,6 +69,9 @@ $signerName = if (Test-RegressionWindowsHost) { 'apksigner.bat' } else { 'apksig
 $apkSigner = Resolve-RegressionAndroidSdkTool -DepBase (Get-RegressionDependencyBase -RepoRoot $repoRoot) `
     -Subdir "build-tools/$buildToolsVersion" -ToolName $signerName
 if (-not (Test-Path -LiteralPath $apkSigner -PathType Leaf)) { throw "APK signing tool not found: $apkSigner" }
+$aapt = Resolve-RegressionAndroidSdkTool -DepBase (Get-RegressionDependencyBase -RepoRoot $repoRoot) `
+    -Subdir "build-tools/$buildToolsVersion" -ToolName aapt2
+if (-not (Test-Path -LiteralPath $aapt -PathType Leaf)) { throw "APK inspection tool not found: $aapt" }
 
 $commitCount = (git -C $repoRoot rev-list --count HEAD).Trim()
 if ($VersionCode) {
@@ -143,10 +146,13 @@ if (-not (Test-Path $gradleWrapperJar) -or -not (Test-Path $gradleWrapperProps))
 }
 
 Write-Host ""
-Write-Host "Building AAB and universal APK ($variant) for armeabi-v7a, arm64-v8a, x86_64..."
+Write-Host "Building Play AAB ($variant) for armeabi-v7a, arm64-v8a, x86_64..."
 Write-Host ""
-# One Gradle invocation shares compilation and native build tasks between both packages
-& (Resolve-RegressionGradleWrapper -AndroidDir $PSScriptRoot) -p $PSScriptRoot @tasks "-PskipBuildInfo" "-PversionCodeOverride=$versionCode"
+$gradle = Resolve-RegressionGradleWrapper -AndroidDir $PSScriptRoot
+$commonProperties = @('-PskipBuildInfo', "-PversionCodeOverride=$versionCode", '-PlegacyRelease=false', '-PciApk=false')
+# Play signs installed apps with its app key; the local upload key cannot update them
+# Select each distribution explicitly, even if gradle.properties has local defaults
+& $gradle -p $PSScriptRoot "bundle$variant" @commonProperties '-PgithubRelease=false'
 if ($LASTEXITCODE -ne 0) { throw "Gradle build failed with exit code $LASTEXITCODE" }
 
 # Find the AAB
@@ -155,10 +161,21 @@ $aabDir = Join-Path $PSScriptRoot "app\build\outputs\bundle\$variantLower"
 $aab = Get-ChildItem "$aabDir\*.aab" -ErrorAction SilentlyContinue | Select-Object -First 1
 if (-not $aab) { throw "AAB not found in $aabDir" }
 
+$directInstall = $variant -ne 'Debug'
+$apkPackage = if ($directInstall) { 'com.dxxredux.app.github' } else { 'com.dxxredux.app' }
+Write-Host "Building universal APK ($variant, $apkPackage)..."
+# Native compilation is reused; JVM sources and the manifest differ between distributions
+& $gradle -p $PSScriptRoot "assemble$variant" @commonProperties "-PgithubRelease=$($directInstall.ToString().ToLowerInvariant())"
+if ($LASTEXITCODE -ne 0) { throw "Gradle APK build failed with exit code $LASTEXITCODE" }
+
 $apkPath = Join-Path $PSScriptRoot "app/build/outputs/apk/$variantLower/app-$variantLower.apk"
 if (-not (Test-Path -LiteralPath $apkPath -PathType Leaf)) { throw "Signed APK not found: $apkPath" }
 & $apkSigner verify $apkPath
 if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed' }
+$badging = (& $aapt dump badging $apkPath) -join "`n"
+if ($LASTEXITCODE -ne 0 -or $badging -notmatch "package: name='$([regex]::Escape($apkPackage))' versionCode='$versionCode'") {
+    throw "APK package/version mismatch; expected $apkPackage versionCode $versionCode"
+}
 
 # Reject a split APK or an artifact missing either game engine
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -181,4 +198,10 @@ $apkSizeMB = [math]::Round((Get-Item -LiteralPath $apkOutPath).Length / 1MB, 1)
 Write-Host ""
 Write-Host "AAB built successfully: $outPath ($aabSizeMB MB)"
 Write-Host "Signed universal APK built successfully: $apkOutPath ($apkSizeMB MB)"
+Write-Host "APK application ID: $apkPackage"
+if ($directInstall) {
+    Write-Host 'Install the APK alongside Google Play; updates to this APK require the same signing key'
+} else {
+    Write-Host 'Debug APK uses the development package/key and can conflict with a Play installation'
+}
 Write-Host ""

@@ -14,8 +14,6 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.StateListDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -1226,6 +1224,10 @@ class MainActivity :
         gameSurfaceView.holder.addCallback(this)
         gameSurfaceView.isFocusable = true
         gameSurfaceView.isFocusableInTouchMode = true
+        // The engine draws focus cues; Android's default highlight washes out the entire surface
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            gameSurfaceView.defaultFocusHighlightEnabled = false
+        }
         gameSurfaceView.requestFocus()
         keyboardInputView =
             KeyboardInputView(this).apply {
@@ -2744,13 +2746,7 @@ class MainActivity :
                 val horizontalPadding = (28f * density).roundToInt()
                 val verticalPadding = (20f * density).roundToInt()
                 setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding)
-                background =
-                    GradientDrawable().apply {
-                        shape = GradientDrawable.RECTANGLE
-                        setColor(PauseOverlayStyle.BACKGROUND_COLOR)
-                        cornerRadius = 24f * density
-                        setStroke(maxOf(3, (3f * density).roundToInt()), PauseOverlayStyle.BORDER_COLOR)
-                    }
+                background = PauseOverlayStyle.cardBackground(density)
             }
         card.addView(
             TextView(this).apply {
@@ -2777,24 +2773,7 @@ class MainActivity :
                 typeface = Typeface.DEFAULT_BOLD
                 isClickable = true
                 isFocusable = true
-                val normal =
-                    GradientDrawable().apply {
-                        setColor(Color.TRANSPARENT)
-                        cornerRadius = 12f * density
-                        setStroke(maxOf(2, (2f * density).roundToInt()), PauseOverlayStyle.BORDER_COLOR)
-                    }
-                val active =
-                    GradientDrawable().apply {
-                        setColor(0x55FFFFFF)
-                        cornerRadius = 12f * density
-                        setStroke(maxOf(2, (2f * density).roundToInt()), PauseOverlayStyle.BORDER_COLOR)
-                    }
-                background =
-                    StateListDrawable().apply {
-                        addState(intArrayOf(android.R.attr.state_pressed), active)
-                        addState(intArrayOf(android.R.attr.state_focused), active)
-                        addState(intArrayOf(), normal)
-                    }
+                background = PauseOverlayStyle.choiceBackground(density)
                 setPadding(
                     (24f * density).roundToInt(),
                     (8f * density).roundToInt(),
@@ -4033,6 +4012,16 @@ class MainActivity :
         if (gameSurfaceView.keyboardActive) {
             when (event.keyCode) {
                 KeyEvent.KEYCODE_BUTTON_A -> {
+                    if (!gamepadOnlyMode) {
+                        // Touch keyboards need A to accept text; TV keyboards use it to select a character
+                        // Keep ownership through release even if accepting text closes the menu
+                        if (event.action == KeyEvent.ACTION_DOWN) {
+                            controllerKeys.press(event.keyCode, event.repeatCount, false) {
+                                { pressed -> if (pressed) acceptKeyboardText() }
+                            }
+                        }
+                        return true
+                    }
                     return dispatchImeNavigationKey(event, KeyEvent.KEYCODE_DPAD_CENTER)
                 }
 
@@ -4273,6 +4262,7 @@ class MainActivity :
             rawAxisValues[5] = rt
             rawAxisValues[11] = controllerAxisValue("BRAKE", event.getAxisValue(MotionEvent.AXIS_BRAKE))
             rawAxisValues[12] = controllerAxisValue("GAS", event.getAxisValue(MotionEvent.AXIS_GAS))
+            mixControllerTriggerButtons(inputMixer, rawAxisValues, controllerAxisThresholds, mixerButtonMap)
             val controllerAxes =
                 mutableMapOf(
                     0 to lx,
@@ -4787,6 +4777,11 @@ class MainActivity :
         }
     }
 
+    private fun acceptKeyboardText() {
+        nativeKeyEvent(0, KeyEvent.KEYCODE_ENTER, '\r'.code)
+        nativeKeyEvent(1, KeyEvent.KEYCODE_ENTER, 0)
+    }
+
     /**
      * Routes soft-keyboard text input into the engine via JNI.
      * commitText â†’ nativeTextInput (one SDL key pair per character)
@@ -4860,8 +4855,7 @@ class MainActivity :
 
         override fun performEditorAction(actionCode: Int): Boolean {
             // "Done" / Enter on the soft keyboard â†’ inject Enter key
-            nativeKeyEvent(0, KeyEvent.KEYCODE_ENTER, '\r'.code)
-            nativeKeyEvent(1, KeyEvent.KEYCODE_ENTER, 0)
+            acceptKeyboardText()
             return true
         }
     }

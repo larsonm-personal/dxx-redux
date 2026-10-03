@@ -23,8 +23,10 @@ class ControllerConfigSerializationTest {
             val analogSettings = buildJoySettingsArray(result, game)
             assertEquals(11, analogSettings[23].toInt() and 0xFF)
             assertEquals(12, analogSettings[17].toInt() and 0xFF)
-            assertEquals(29, settings[if (game == "d1") 33 else 35].toInt() and 0xFF)
-            assertEquals(31, settings[if (game == "d1") 43 else 45].toInt() and 0xFF)
+            assertEquals(104, settings[4].toInt() and 0xFF)
+            assertEquals(126, settings[26].toInt() and 0xFF)
+            assertEquals(255, settings[if (game == "d1") 33 else 35].toInt() and 0xFF)
+            assertEquals(255, settings[if (game == "d1") 43 else 45].toInt() and 0xFF)
         }
         assertEquals(26, BUTTON_CONTROLS.getValue("L2"))
         assertEquals(27, BUTTON_CONTROLS.getValue("R2"))

@@ -68,7 +68,7 @@ int	N_weapon_types=0;
 // autoselect ordering
 
 const ubyte DefaultPrimaryOrder[]={9,8,7,6,5,4,3,2,1,0,255};
-const ubyte DefaultSecondaryOrder[]={9,8,4,3,1,5,0,255,7,6,2};
+const ubyte DefaultSecondaryOrder[]={9,4,3,8,1,5,0,255,7,6,2};
 
 int weapon_order_is_valid(const ubyte *order, int count, int secondary)
 {

@@ -2,7 +2,7 @@ package com.dxxredux.app
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -10,7 +10,6 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -45,8 +44,8 @@ internal class GraphicsConfirmationOverlay(
     private val handler = Handler(Looper.getMainLooper())
     private val title = TextView(context)
     private val details = TextView(context)
-    private val ok = Button(context)
-    private val cancel = Button(context)
+    private val ok = TextView(context)
+    private val cancel = TextView(context)
     private var trialId = 0L
     private var deadline = 0L
     private var preparing = false
@@ -103,17 +102,18 @@ internal class GraphicsConfirmationOverlay(
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER_HORIZONTAL
                 setPadding(dp(24), dp(20), dp(24), dp(20))
-                setBackgroundColor(Color.rgb(24, 24, 24))
+                background = PauseOverlayStyle.cardBackground(resources.displayMetrics.density)
             }
         title.apply {
             text = "Keep these graphics settings?"
             textSize = 22f
-            setTextColor(Color.WHITE)
+            setTextColor(PauseOverlayStyle.TEXT_COLOR)
+            typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
         }
         details.apply {
             textSize = 16f
-            setTextColor(Color.LTGRAY)
+            setTextColor(PauseOverlayStyle.SECONDARY_TEXT_COLOR)
             gravity = Gravity.CENTER
             setPadding(0, dp(12), 0, dp(12))
         }
@@ -122,9 +122,21 @@ internal class GraphicsConfirmationOverlay(
         val buttons = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
         ok.text = "OK"
         cancel.text = "Cancel (5)"
+        for (button in listOf(ok, cancel)) {
+            button.apply {
+                gravity = Gravity.CENTER
+                textSize = 20f
+                typeface = Typeface.DEFAULT_BOLD
+                setTextColor(PauseOverlayStyle.TEXT_COLOR)
+                isClickable = true
+                isFocusable = true
+                background = PauseOverlayStyle.choiceBackground(resources.displayMetrics.density)
+                setPadding(dp(16), dp(8), dp(16), dp(8))
+            }
+        }
         ok.setOnClickListener { choose(true, "ok") }
         cancel.setOnClickListener { choose(false, "cancel") }
-        buttons.addView(ok, LinearLayout.LayoutParams(dp(130), dp(56)))
+        buttons.addView(ok, LinearLayout.LayoutParams(dp(130), dp(56)).apply { marginEnd = dp(16) })
         buttons.addView(cancel, LinearLayout.LayoutParams(dp(150), dp(56)))
         panel.addView(buttons)
         addView(panel, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER))
@@ -167,6 +179,7 @@ internal class GraphicsConfirmationOverlay(
         deadline = state.optLong("deadline_ms")
         ok.isEnabled = !preparing && !restoring
         cancel.isEnabled = !restoring
+        updateSelection()
         title.text = if (restoring) "Restoring graphics settings..." else "Keep these graphics settings?"
         if (restoring && restoreStarted == 0L) restoreStarted = SystemClock.elapsedRealtime()
         // Frequent renderer notifications must not postpone either monotonic deadline
@@ -288,8 +301,8 @@ internal class GraphicsConfirmationOverlay(
     private fun updateSelection() {
         ok.isSelected = selectedOk
         cancel.isSelected = !selectedOk
-        ok.setTextColor(if (selectedOk) Color.YELLOW else Color.WHITE)
-        cancel.setTextColor(if (!selectedOk) Color.YELLOW else Color.WHITE)
+        ok.alpha = if (ok.isEnabled) 1f else 0.5f
+        cancel.alpha = if (cancel.isEnabled) 1f else 0.5f
     }
 
     private fun dismiss() {

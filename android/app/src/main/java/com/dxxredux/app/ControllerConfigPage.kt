@@ -2117,7 +2117,7 @@ private fun ButtonFunctionPickerDialog(
                     }
                     if (axisExponent != null && onAxisExponentChange != null) {
                         Text(
-                            "Response: ${"%.1f".format(axisExponent)}",
+                            "Exponential response: ${"%.1f".format(axisExponent)}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                         )
@@ -2348,7 +2348,7 @@ private fun StickPickerDialog(
     ) {
         onExponentChange ?: return
         Text(
-            "Response: ${"%.1f".format(exponent)}",
+            "Exponential response: ${"%.1f".format(exponent)}",
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
         )

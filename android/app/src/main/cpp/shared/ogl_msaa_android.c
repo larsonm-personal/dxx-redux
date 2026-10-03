@@ -215,15 +215,6 @@ int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
 
 	(void) max_samples; /* The global maximum does not describe attachment support */
 	const int requested_samples = samples;
-	samples = android_gpu_msaa_samples(samples);
-	const int limit = android_gpu_max_renderbuffer_size();
-	if (samples < 2 || w <= 0 || h <= 0 || w > limit || h > limit) {
-		snprintf(logbuf, sizeof(logbuf), "MSAA FBO unsupported: requested=%d effective=%d size=%dx%d limit=%d", requested_samples, samples, w, h, limit);
-		android_ogl_msaa_log(log_message, log_user_data, logbuf);
-		state->failure_latched = 1;
-		android_graphics_safety_renderer_failed("msaa_configuration_unsupported");
-		return 0;
-	}
 
 	{
 		GLint rb = 0, gb = 0, bb = 0, ab = 0;
@@ -239,9 +230,28 @@ int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
 		                    rb, gb, bb, ab, color_fmt);
 	}
 
+	if (color_fmt && color_fmt != android_gpu_msaa_format()) {
+		/* The Retroid reports RGBA8 at startup, then RGB10_A2 once drawing begins
+		 * Refresh attachment support before choosing the shared color/depth count */
+		extern GLfloat ogl_maxanisotropy;
+		extern int ogl_msaa_max_samples, ogl_gpu_timer_available;
+		debug_log_force(DLOG_GRAPHICS, "MSAA window format changed: cached=0x%x current=0x%x; refreshing capabilities",
+		                android_gpu_msaa_format(), color_fmt);
+		android_gpu_capabilities_query(&ogl_maxanisotropy, &ogl_msaa_max_samples, &ogl_gpu_timer_available);
+	}
+
 	if (!color_fmt || color_fmt != android_gpu_msaa_format()) {
 		state->failure_latched = 1;
 		android_graphics_safety_renderer_failed("msaa_window_format_changed");
+		return 0;
+	}
+	samples = android_gpu_msaa_samples(requested_samples);
+	const int limit = android_gpu_max_renderbuffer_size();
+	if (samples < 2 || w <= 0 || h <= 0 || w > limit || h > limit) {
+		snprintf(logbuf, sizeof(logbuf), "MSAA FBO unsupported: requested=%d effective=%d size=%dx%d limit=%d", requested_samples, samples, w, h, limit);
+		android_ogl_msaa_log(log_message, log_user_data, logbuf);
+		state->failure_latched = 1;
+		android_graphics_safety_renderer_failed("msaa_configuration_unsupported");
 		return 0;
 	}
 	android_ogl_msaa_capture_errors("prior_operation");

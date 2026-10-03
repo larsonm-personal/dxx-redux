@@ -15,12 +15,26 @@
 # google play console setup
 
 Run `./android/1_build_aab_apk.ps1 -BuildType 2` to build a release AAB and a
-signed universal APK together. A single Gradle invocation shares compilation
-and native build work. Both files appear in `android/build-outputs/` with a
+signed universal direct-install APK together. Release/Internal build the Play
+AAB (`com.dxxredux.app`), then the GitHub APK (`com.dxxredux.app.github`), reusing
+native compilation. Both files appear in `android/build-outputs/` with a
 matching timestamp/version name; the APK ends in `-universal.apk` and contains
 all three supported ABIs. Release and Internal (`-BuildType 3`) require
 `android/keystore.properties`; Debug (`-BuildType 1`) uses the debug signing key.
 `-OutputPath` overrides the AAB destination and puts the matching APK beside it.
+
+The Release/Internal APK can coexist with a Play installation, with separate app
+data. Keep using the same `keystore.properties` and keystore for direct APK
+updates. Android rejects an update with the same package ID but a different
+signing certificate; Play's app signing key differs from the local upload key.
+Older combined release APKs used the Play package ID and could conflict for this
+reason. Install the new direct APK alongside the old app; export/import your
+configuration if needed, and keep the older installation to retain its saves. Debug
+keeps the development package ID (`com.dxxredux.app`) and debug key, so use an
+emulator or dedicated test device for those APKs.
+
+Check a Release/Internal pair without installing it:
+`./android/tests/test_combined_package_identity.ps1 -Aab PATH -Apk PATH`.
 
 For direct APK downloads without Play Store installation, see the usage and setup comments in [release-github.ps1](release-github.ps1).
 

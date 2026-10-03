@@ -11,7 +11,11 @@
         "Select": "Menu",
         "Start": "Game Menu (ESC)",
         "RT": "Fire Primary",
+        "GAS": "Fire Primary",
+        "R2": "Fire Primary",
         "LT": "Fire Secondary",
+        "BRAKE": "Fire Secondary",
+        "L2": "Fire Secondary",
         "RS_X": "Turn L/R",
         "RS_Y": "Pitch U/D",
         "LS_X": "Slide L/R",
@@ -30,6 +34,8 @@
         "RS_X": 30,
         "RS_Y": 30,
         "LT": 30,
-        "RT": 30
+        "RT": 30,
+        "BRAKE": 30,
+        "GAS": 30
     }
 }

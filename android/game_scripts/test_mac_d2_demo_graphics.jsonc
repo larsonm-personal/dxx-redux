@@ -1,0 +1,296 @@
+// TEST: Cold Mac preview launch and MSAA confirmation after the window attachment format settles
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "vars": {
+                "d2": {
+                    "MISSION": "Descent 2 Demo",
+                    "GAME_NUM": "2",
+                },
+            },
+            "_deps": [
+                {
+                    "sha256": "b3d94652282859e188f9530b63d77b37289ac973bce402025d10021eaffc7a92",
+                    "file": "d2demo.ham",
+                    "target": "files/imported/sets/mac-demo-graphics",
+                },
+                {
+                    "sha256": "e39285e4346f3066cf4ad745abcf3dc4bdf142df7c0395a42b26ae291282696b",
+                    "file": "d2demo.hog",
+                    "target": "files/imported/sets/mac-demo-graphics",
+                },
+                {
+                    "sha256": "88e834d13f15bfe502e32570a44302326e6486f685cb95e12b3b81d0a14b8642",
+                    "file": "d2demo.pig",
+                    "target": "files/imported/sets/mac-demo-graphics",
+                },
+                {
+                    "sha256": "d444c6f93476f8941936164d2981387a26b0a25e3f9d5e930ef96bfbb86c1e68",
+                    "file": "descent2.s11",
+                    "target": "files/imported/sets/mac-demo-graphics",
+                },
+                {
+                    "sha256": "c2f1fbc0e39a53d1d92336c45e59e8d79c50bb36c008a4c2bf9bf80f235226b7",
+                    "file": "exit.ham",
+                    "target": "files/imported/sets/mac-demo-graphics",
+                },
+            ],
+        },
+    },
+    {
+        "action": "enter_launcher",
+    },
+    {
+        "action": "reset_state",
+    },
+    {
+        "action": "setup_command",
+        "command": "create_set",
+        "args": { "name": "mac-demo-graphics" },
+    },
+    {
+        "action": "setup_command",
+        "command": "switch_set",
+        "args": { "name": "mac-demo-graphics" },
+    },
+    {
+        "action": "wait_for",
+        "field": "active_set",
+        "value": "mac-demo-graphics",
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "write_config",
+        "file": "graphics_safety.json",
+        "content": "{\n  \"accepted\": {\n    \"TexFilt\": 0,\n    \"AnisoLevel\": 0,\n    \"MsaaLevel\": 0,\n    \"MenuTexFilt\": 0,\n    \"HudTexFilt\": 0,\n    \"ResolutionX\": 640,\n    \"ResolutionY\": 480,\n    \"AspectX\": 3,\n    \"AspectY\": 4,\n    \"ColorDepth\": 0\n  },\n  \"attempt\": null,\n  \"pending\": {}\n}\n",
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": {
+            "key": "show_resume_offer",
+            "value": false,
+        },
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": {
+            "key": "skip_intro_movie",
+            "value": false,
+        },
+    },
+    {
+        "action": "write_config",
+        "file": "descent.cfg",
+        "content": "TexFilt=0\nAnisoLevel=0\nMsaaLevel=0\nResolutionX=640\nResolutionY=480\n",
+    },
+    {
+        "action": "write_config",
+        "file": "d1x-redux/descent.cfg",
+        "content": "TexFilt=0\nAnisoLevel=0\nMsaaLevel=0\nResolutionX=640\nResolutionY=480\n",
+    },
+    {
+        "action": "write_config",
+        "file": "d2x-redux/descent.cfg",
+        "content": "TexFilt=0\nAnisoLevel=0\nMsaaLevel=0\nResolutionX=640\nResolutionY=480\n",
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+        "when": "d2",
+    },
+    {
+        "action": "wait_for",
+        "field": "intro_active",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 20000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "wait_for",
+        "field": "screen_mode",
+        "value": "menu",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "when": "d2",
+        "post_delay_ms": 100,
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "wait_for",
+        "field": "screen_mode",
+        "value": "menu",
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "post_delay_ms": 100,
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "select_mission",
+        "text": "${MISSION}",
+        "post_delay_ms": 100,
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "when": "d2",
+        "post_delay_ms": 100,
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "select",
+        "text": "Rookie",
+        "post_delay_ms": 100,
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "skip_briefing",
+        "when": "d2",
+        "timeout_ms": 10000,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "field": "game_window_is_front",
+        "value": "true",
+        "timeout_ms": 10000,
+    },
+    {
+        "field": "graphics_option",
+        "action": "set_debug",
+        "value": "msaa_level:2",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.candidate_ready": "true",
+            "msaa.create_complete": "true",
+            "msaa.effective_samples": {
+                "gte": 2,
+            },
+            "graphics_safety.phase": "challenge",
+        },
+        "timeout_ms": 3000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "post_delay_ms": 50,
+        "action": "controller_input",
+        "key": "A",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.current.MsaaLevel": "0",
+            "graphics_safety.accepted.MsaaLevel": "0",
+            "graphics_safety.phase": "idle",
+        },
+        "timeout_ms": 3000,
+    },
+    {
+        "field": "graphics_option",
+        "action": "set_debug",
+        "value": "msaa_level:4",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "msaa.create_complete": "true",
+            "msaa.effective_samples": {
+                "gte": 4,
+            },
+            "graphics_safety.phase": "challenge",
+        },
+        "timeout_ms": 3000,
+    },
+    {
+        "post_delay_ms": 50,
+        "action": "controller_input",
+        "expect_ui": {
+            "graphics_selected_ok": true,
+        },
+        "key": "DLEFT",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "post_delay_ms": 50,
+        "action": "controller_input",
+        "key": "A",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.accepted.MsaaLevel": "4",
+            "graphics_safety.phase": "idle",
+        },
+        "timeout_ms": 3000,
+    },
+    {
+        "field": "msaa_color_probe",
+        "action": "set_debug",
+        "value": "4",
+    },
+    {
+        "expect": {
+            "msaa.last_gl_error": "0",
+            "msaa.resolve_failures": "0",
+            "msaa.last_scene_gl_error": "0",
+            "gpu_capabilities.query_error": "0",
+            "msaa_probe.passed": "true",
+            "msaa_probe.state_restored": "true",
+        },
+        "action": "assert",
+    },
+    {
+        "field": "graphics_option",
+        "action": "set_debug",
+        "value": "msaa_level:2",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.phase": "challenge",
+            "msaa.create_complete": "true",
+        },
+        "timeout_ms": 3000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.current.MsaaLevel": "4",
+            "graphics_safety.accepted.MsaaLevel": "4",
+            "graphics_safety.phase": "idle",
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "expect": {
+            "msaa.last_gl_error": "0",
+            "msaa.resolve_failures": "0",
+        },
+        "action": "assert",
+    },
+    {
+        "message": "Mac D2 preview cold launch, MSAA capability refresh, Cancel, OK, pixels and timeout rollback passed",
+        "action": "log",
+    },
+]

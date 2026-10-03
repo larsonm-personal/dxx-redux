@@ -26,3 +26,17 @@ internal fun readControllerAxes(
         values[AXIS_CONTROLS.getValue(control)] = event.getAxisValue(motionAxis)
     }
 }
+
+internal fun mixControllerTriggerButtons(
+    mixer: InputMixer,
+    values: FloatArray,
+    thresholds: Map<String, Int>,
+    buttonMap: Map<Int, List<Int>>,
+) {
+    for (control in listOf("LT", "RT", "BRAKE", "GAS")) {
+        val pressed = values[AXIS_CONTROLS.getValue(control)] > thresholds.getValue(control) / 100f
+        for (action in buttonMap[BUTTON_CONTROLS.getValue(control)].orEmpty()) {
+            mixer.setButton(action, "ctrl:axis$control", pressed)
+        }
+    }
+}

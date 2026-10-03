@@ -19,7 +19,7 @@ class DeploymentScriptContractsTest(unittest.TestCase):
 
     def test_play_upload_uses_the_selected_artifact_identity(self) -> None:
         wrapper = (ANDROID / "0_upload_to_test.ps1").read_text(encoding="utf-8")
-        builder = (ANDROID / "1_build-aab.ps1").read_text(encoding="utf-8")
+        builder = (ANDROID / "1_build_aab_apk.ps1").read_text(encoding="utf-8")
         deploy = (ANDROID / "2_deploy-playstore.ps1").read_text(encoding="utf-8")
         self.assertIn("-OutputPath $artifactPath", wrapper)
         self.assertIn("-AabPath $artifactPath", wrapper)

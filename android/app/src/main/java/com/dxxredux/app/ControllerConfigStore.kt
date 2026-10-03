@@ -96,7 +96,7 @@ private const val CONFIG_FILENAME = "controller_config.json"
 
 // Bump when the config format changes to force regeneration from defaults.
 // SetupActivity.writeDefaultControllerConfig checks this on startup.
-internal const val CONTROLLER_CONFIG_VERSION = 4
+internal const val CONTROLLER_CONFIG_VERSION = 5
 
 internal fun isNativeControllerConfigValid(json: JSONObject): Boolean {
     fun exactInt(value: Any?): Int? =
@@ -250,10 +250,9 @@ internal fun buildJoyPairs(
     for ((controlId, funcLabel) in bindings) {
         if (controlId in handledAsHalfAxis) continue
         val btnKcIdx = btnKcMap[funcLabel]
-        // Face buttons: skip, identity mapping + mixer_button_map handles them.
-        // Exclude RT/LT (axis controls that also appear in BUTTON_CONTROLS) --
-        // their primary input comes via axis events, not key events.
-        if (btnKcIdx != null && BUTTON_CONTROLS[controlId] != null && !AXIS_CONTROLS.containsKey(controlId)) {
+        // Buttons and trigger button actions use identity mapping + mixer_button_map
+        // so multiple physical inputs can share one action without a native slot limit
+        if (btnKcIdx != null && BUTTON_CONTROLS[controlId] != null) {
             continue
         }
         val axisKcIdx = AXIS_KC_INDEX[funcLabel]
@@ -357,6 +356,43 @@ internal fun buildJoyPairs(
     }
 
     return JoyPairsResult(indices.toIntArray(), values.toIntArray(), combiners)
+}
+
+internal fun buildMixerButtonMap(
+    bindings: Map<String, String>,
+    variant: String,
+): JSONObject {
+    val kcMap = buttonKcIndex(variant)
+    val result = JSONObject()
+    val directAxisFunctions =
+        bindings
+            .filterKeys { it in AXIS_CONTROLS }
+            .values
+            .filter { it in AXIS_KC_INDEX }
+            .toSet()
+    for ((controlId, funcLabel) in bindings) {
+        val kcIdx = kcMap[funcLabel] ?: continue
+        // Proportional half-axis bindings must not also emit digital button actions
+        val halfAxis = HALF_AXIS_MAP[funcLabel]
+        if (controlId in AXIS_CONTROLS && halfAxis != null && halfAxis.first !in directAxisFunctions) continue
+        val sdlBtn = BUTTON_CONTROLS[controlId]
+        if (sdlBtn != null) {
+            val arr =
+                result.optJSONArray(sdlBtn.toString())
+                    ?: JSONArray().also { result.put(sdlBtn.toString(), it) }
+            arr.put(kcIdx)
+            continue
+        }
+        val dpadBtn = DPAD_CONTROLS[controlId]
+        if (dpadBtn != null) {
+            val arr =
+                result.optJSONArray(dpadBtn.toString())
+                    ?: JSONArray().also { result.put(dpadBtn.toString(), it) }
+            arr.put(kcIdx)
+            continue
+        }
+    }
+    return result
 }
 
 internal fun saveConfig(
@@ -466,32 +502,8 @@ internal fun saveConfig(
         json.put("half_axis_combiners", combArr)
     }
 
-    fun buildMixerButtonMap(variant: String): JSONObject {
-        val kcMap = buttonKcIndex(variant)
-        val result = JSONObject()
-        for ((controlId, funcLabel) in bindings) {
-            val kcIdx = kcMap[funcLabel] ?: continue
-            val sdlBtn = BUTTON_CONTROLS[controlId]
-            if (sdlBtn != null) {
-                val arr =
-                    result.optJSONArray(sdlBtn.toString())
-                        ?: JSONArray().also { result.put(sdlBtn.toString(), it) }
-                arr.put(kcIdx)
-                continue
-            }
-            val dpadBtn = DPAD_CONTROLS[controlId]
-            if (dpadBtn != null) {
-                val arr =
-                    result.optJSONArray(dpadBtn.toString())
-                        ?: JSONArray().also { result.put(dpadBtn.toString(), it) }
-                arr.put(kcIdx)
-                continue
-            }
-        }
-        return result
-    }
-    json.put("mixer_button_map_d1", buildMixerButtonMap("d1"))
-    json.put("mixer_button_map_d2", buildMixerButtonMap("d2"))
+    json.put("mixer_button_map_d1", buildMixerButtonMap(bindings, "d1"))
+    json.put("mixer_button_map_d2", buildMixerButtonMap(bindings, "d2"))
 
     File(context.filesDir, CONFIG_FILENAME).writeText(json.toString(2))
 
