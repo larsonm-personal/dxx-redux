@@ -37,6 +37,18 @@ try {
         foreach ($support in $catalog.support) {
             if ($support.owner -notin @($catalog.tests.base_name)) { throw "Support owner absent from catalog: $($support.name)" }
         }
+        $fovOwner = @($catalog.tests | Where-Object name -eq 'test_fov_demo_compatibility')
+        $fovSupport = @($catalog.support | Where-Object { $_.type -eq 'jsonc' -and $_.name -eq 'test_fov_demo_compatibility' })
+        if ($fovOwner.Count -ne 1 -or $fovOwner[0].type -ne 'ps1' -or
+            $fovOwner[0].requires -ne 'emulator' -or $fovOwner[0].timeout_seconds -lt 480 -or
+            $fovSupport.Count -ne 1 -or $fovSupport[0].owner -ne $fovOwner[0].base_name) {
+            throw 'FOV demo support must run through its two-engine integration owner'
+        }
+        $packageProbe = @($catalog.tests | Where-Object name -eq 'test_combined_package_identity')
+        if ($packageProbe.Count -ne 1 -or $packageProbe[0].requires -ne 'none' -or
+            'test_combined_package_identity' -notin (Get-TestSuiteCoveragePolicy).explicit) {
+            throw 'Combined package inspection must remain an explicit host probe with caller-selected artifacts'
+        }
         $recoverySupport = @($catalog.support | Where-Object owner -eq 'test_graphics_recovery')
         if ($recoverySupport.Count -ne 10 -or @($catalog.tests | Where-Object name -like 'test_graphics_*_trigger').Count) {
             throw 'Graphics fault scripts must run through their recovery owner'
