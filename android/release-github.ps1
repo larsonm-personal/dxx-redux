@@ -13,7 +13,7 @@ GitHub automatically includes source ZIP/tarball links; these cannot be removed 
 Use -UploadOnly to verify and upload saved release files without rebuilding; the saved source commit is used
 Output: android/build-outputs/github/android-vVERSION/; -BuildOnly stays local, -Draft stages new releases
 Use -Legacy -BuildOnly to prepare just the API-23 edition locally; publishing always includes both
-The legacy APK is labeled only-for-android-6.0 and is only for devices unable to use the current APK
+Public filenames use android-1-recommended and android-2-only-for-android-6.0 to sort the current APK first
 Release notes report the minimum and target SDK inspected from each APK
 .EXAMPLE
 ./android/release-github.ps1 -Version 1.2.0
@@ -375,7 +375,10 @@ if (-not $BuildOnly) {
     if (-not $legacyInfo.sourceVerified) { throw 'Legacy APK source validation did not pass; rebuild both editions' }
 }
 $legacyAndroid = Get-AndroidVersionLabel $legacyInfo.minSdk
-$legacyApkName = "dxx-redux-$Version-android-only-for-android-$legacyAndroid-universal.apk"
+$recommendedApkName = "dxx-redux-$Version-android-1-recommended-universal.apk"
+$recommendedApk = Join-Path $outDir $recommendedApkName
+Copy-Item -LiteralPath $apk -Destination $recommendedApk -Force
+$legacyApkName = "dxx-redux-$Version-android-2-only-for-android-$legacyAndroid-universal.apk"
 $legacyApk = Join-Path $outDir $legacyApkName
 Copy-Item -LiteralPath (Join-Path $legacyDir "dxx-redux-$Version-android-legacy-universal.apk") -Destination $legacyApk -Force
 $legacySdkLabel = "minsdk: api $($legacyInfo.minSdk) (android $legacyAndroid), targetsdk: api $($legacyInfo.targetSdk) (android $(Get-AndroidVersionLabel $legacyInfo.targetSdk))"
@@ -385,7 +388,7 @@ DXX-Redux $Version for Android. Both APKs include ARM32, ARM64 and x86_64.
 
 ### Android $(Get-AndroidVersionLabel $minSdk) or newer (recommended)
 
-Download: $apkName
+Download: $recommendedApkName
 
 $sdkLabel
 
@@ -414,7 +417,7 @@ if ($BuildOnly) { return }
 $releaseTitle = "DXX-Redux $Version for Android"
 $existingRelease = Get-ExistingRelease
 $ghRepository = "github.com/$Repository"
-$createArgs = @('release', 'create', $tag, $apk, $legacyApk,
+$createArgs = @('release', 'create', $tag, $recommendedApk, $legacyApk,
     '--repo', $ghRepository, '--target', $commit, '--title', $releaseTitle,
     '--notes-file', $notesPath, '--draft')
 if ($prerelease) { $createArgs += '--prerelease' }
@@ -425,13 +428,14 @@ try {
     if ($existingRelease) {
         Invoke-ReleaseTool gh @('release', 'edit', $tag, '--repo', $ghRepository, '--target', $commit, '--title', $releaseTitle)
         Write-Host "Replacing both APKs in $tag"
-        Invoke-ReleaseTool gh @('release', 'upload', $tag, $apk, $legacyApk, '--repo', $ghRepository, '--clobber')
+        Invoke-ReleaseTool gh @('release', 'upload', $tag, $recommendedApk, $legacyApk, '--repo', $ghRepository, '--clobber')
         $notes = Merge-ReleaseNotes -Generated (Get-Content -LiteralPath $notesPath -Raw -Encoding UTF8) -Existing $existingRelease.body
         [IO.File]::WriteAllText($notesPath, $notes)
         Invoke-ReleaseTool gh @('release', 'edit', $tag, '--repo', $ghRepository, '--notes-file', $notesPath)
         # Remove old helper uploads after the replacement succeeds; leave unrelated assets alone
         foreach ($asset in $existingRelease.assets) {
-            if ($asset.name -in @('build-info.json', 'build.json', 'SHA256SUMS.txt', "dxx-redux-$Version-android-legacy-universal.apk")) {
+            if ($asset.name -in @('build-info.json', 'build.json', 'SHA256SUMS.txt', "dxx-redux-$Version-android-legacy-universal.apk",
+                    $apkName, "dxx-redux-$Version-android-only-for-android-$legacyAndroid-universal.apk")) {
                 Invoke-ReleaseTool gh @('release', 'delete-asset', $tag, $asset.name, '--repo', $ghRepository, '--yes')
             }
         }
@@ -448,7 +452,7 @@ try {
 
 # Retire the old separate release only after GitHub confirms both uploaded APK hashes
 $uploadedRelease = Get-ExistingRelease
-foreach ($expected in @(@{ name = $apkName; hash = $hash }, @{ name = $legacyApkName; hash = $legacyInfo.apkSha256 })) {
+foreach ($expected in @(@{ name = $recommendedApkName; hash = $hash }, @{ name = $legacyApkName; hash = $legacyInfo.apkSha256 })) {
     $uploadedAsset = @($uploadedRelease.assets | Where-Object name -EQ $expected.name)
     if ($uploadedAsset.Count -ne 1 -or $uploadedAsset[0].digest -ne "sha256:$($expected.hash)") {
         throw "Uploaded APK verification failed for $($expected.name); keep the separate legacy release and retry with -UploadOnly"

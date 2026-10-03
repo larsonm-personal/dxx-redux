@@ -49,9 +49,11 @@ Build/publish both APKs in one `android-vVERSION` release with
 `./android/release-github.ps1 -Version 1.2.0`. Add `-BuildOnly` to prepare both
 builds locally, or `-UploadOnly` to verify and publish both saved builds without
 rebuilding. `-Legacy -BuildOnly` prepares only the legacy APK locally.
-The recommended APK is for Android 7.0 or newer. The other download is named
-`only-for-android-6.0`; use it only on devices unable to install the recommended
-APK. Generated notes include each APK's inspected minimum/target SDK and SHA-256.
+Public filenames use `android-1-recommended-universal.apk` for Android 7.0 or
+newer and `android-2-only-for-android-6.0-universal.apk` for the legacy APK, after
+the shared product/version prefix. The numbers sort the recommended download
+first. Use the legacy APK only on devices unable to install the recommended APK.
+Generated notes include each APK's inspected minimum/target SDK and SHA-256.
 Both builds must have the same source commit, versionCode and signing certificate.
 
 Only the two signed universal APKs are uploaded. Build metadata and checksums stay

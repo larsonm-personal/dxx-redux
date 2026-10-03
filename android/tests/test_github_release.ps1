@@ -112,7 +112,8 @@ function gh {
         return
     }
     if ($args[0] -eq 'release' -and $args[1] -eq 'delete-asset') {
-        Assert-Test ($args[3] -in @('build-info.json', 'build.json', 'SHA256SUMS.txt')) 'Unexpected asset deletion'
+        Assert-Test ($args[3] -in @('build-info.json', 'build.json', 'SHA256SUMS.txt',
+                $global:dxxReleaseTestApkName, $global:dxxReleaseTestOldCombinedLegacyName)) 'Unexpected asset deletion'
         Assert-Test ($global:dxxReleaseTestCalls[$global:dxxReleaseTestCalls.Count - 2] -like 'release edit *--notes-file *' -or
             $global:dxxReleaseTestCalls[$global:dxxReleaseTestCalls.Count - 2] -like 'release delete-asset *') 'Cleanup must follow successful APK and notes replacement'
         if ($global:dxxReleaseTestScenario -eq 'cleanup-failure') { $global:LASTEXITCODE = 1; return }
@@ -313,7 +314,9 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     if ($global:dxxReleaseTestScenario -eq 'helper-dirty') { Add-Content (Join-Path $androidDir 'release-github.ps1') '# Local release helper edit' }
     $global:dxxReleaseTestVersion = if ($global:dxxReleaseTestScenario -eq 'draft') { '1.2.0-rc.1' } else { '1.2.0' }
     $global:dxxReleaseTestTag = "android-v$global:dxxReleaseTestVersion"
-    $global:dxxReleaseTestCombinedLegacyName = "dxx-redux-$global:dxxReleaseTestVersion-android-only-for-android-6.0-universal.apk"
+    $global:dxxReleaseTestRecommendedName = "dxx-redux-$global:dxxReleaseTestVersion-android-1-recommended-universal.apk"
+    $global:dxxReleaseTestCombinedLegacyName = "dxx-redux-$global:dxxReleaseTestVersion-android-2-only-for-android-6.0-universal.apk"
+    $global:dxxReleaseTestOldCombinedLegacyName = "dxx-redux-$global:dxxReleaseTestVersion-android-only-for-android-6.0-universal.apk"
     $global:dxxReleaseTestApkName = if ($global:dxxReleaseTestLegacy) { "dxx-redux-$global:dxxReleaseTestVersion-android-legacy-universal.apk" } else { "dxx-redux-$global:dxxReleaseTestVersion-android-universal.apk" }
     $remoteTag = "refs/tags/$global:dxxReleaseTestTag"
     if (($global:dxxReleaseTestHasRelease -and -not $global:dxxReleaseTestIsDraft) -or $global:dxxReleaseTestScenario -eq 'orphan-tag') {
@@ -335,7 +338,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     $global:dxxReleaseTestOutput = $out
     if ($global:dxxReleaseTestHasRelease) {
         New-Item -ItemType Directory -Path $out -Force | Out-Null
-        foreach ($name in @($global:dxxReleaseTestApkName, 'SHA256SUMS.txt', 'build-info.json', 'build.json', 'unrelated.txt')) {
+        foreach ($name in @($global:dxxReleaseTestApkName, $global:dxxReleaseTestOldCombinedLegacyName, 'SHA256SUMS.txt', 'build-info.json', 'build.json', 'unrelated.txt')) {
             [IO.File]::WriteAllText((Join-Path $out $name), 'old ' + $name)
             $global:dxxReleaseTestAssets[$name] = 'old ' + $name
         }
@@ -498,7 +501,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     }
     if ($global:dxxReleaseTestScenario -in @('rerun-build-failure', 'rerun-unsigned')) {
         Assert-Test ((Get-FileHash (Join-Path $out $global:dxxReleaseTestApkName)).Hash -eq $previousHash) 'Failed build or verification overwrote the previous verified APK'
-        Assert-Test ($global:dxxReleaseTestAssets[$global:dxxReleaseTestApkName] -eq [IO.File]::ReadAllText((Join-Path $out $global:dxxReleaseTestApkName))) 'Failed build or verification changed the remote APK'
+        Assert-Test ($global:dxxReleaseTestAssets[$global:dxxReleaseTestRecommendedName] -eq [IO.File]::ReadAllText((Join-Path $out $global:dxxReleaseTestApkName))) 'Failed build or verification changed the remote APK'
     }
     if ($global:dxxReleaseTestScenario -in @('build-only', 'rerun-build-only', 'legacy-edition-build-only')) {
         Assert-Test (@($global:dxxReleaseTestCalls | Where-Object { $_ -notlike 'gradle *' }).Count -eq 0) 'BuildOnly contacted GitHub'
@@ -529,14 +532,20 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
             Assert-Test ($global:dxxReleaseTestBuildNumber -eq 4 -and (Get-FileHash $apk.FullName).Hash -ne $previousHash) 'Same-version rerun did not produce a fresh APK pair'
         }
         if ($replaces.Count -gt 0) {
-            Assert-Test ($global:dxxReleaseTestAssets[$apk.Name] -eq [IO.File]::ReadAllText($apk.FullName)) 'Release APK was not replaced'
+            Assert-Test ($global:dxxReleaseTestAssets[$global:dxxReleaseTestRecommendedName] -eq [IO.File]::ReadAllText($apk.FullName)) 'Release APK was not replaced'
             foreach ($name in @('SHA256SUMS.txt', 'build-info.json', 'build.json')) {
                 Assert-Test (-not $global:dxxReleaseTestAssets.ContainsKey($name)) "Obsolete release asset remains: $name"
             }
             Assert-Test ($global:dxxReleaseTestBody.Contains($customNotes) -or $global:dxxReleaseTestScenario -like 'rerun*') 'Custom notes were lost'
         }
         if (-not $parameters.BuildOnly) {
+            Assert-Test ($global:dxxReleaseTestAssets.ContainsKey($global:dxxReleaseTestRecommendedName)) 'Combined release lacks the recommended APK'
             Assert-Test ($global:dxxReleaseTestAssets.ContainsKey($global:dxxReleaseTestCombinedLegacyName)) 'Combined release lacks the Android 6.0 APK'
+            $sortedApks = @($global:dxxReleaseTestAssets.Keys | Where-Object { $_ -like '*.apk' } | Sort-Object)
+            Assert-Test ($sortedApks.Count -eq 2 -and $sortedApks[0] -eq $global:dxxReleaseTestRecommendedName -and
+                $sortedApks[1] -eq $global:dxxReleaseTestCombinedLegacyName) 'Recommended APK must sort first with no obsolete APK names'
+            Assert-Test ($global:dxxReleaseTestBody.Contains("Download: $global:dxxReleaseTestRecommendedName") -and
+                $global:dxxReleaseTestBody.Contains("Download: $global:dxxReleaseTestCombinedLegacyName")) 'Release notes lack the public filenames'
             Assert-Test ($global:dxxReleaseTestBody.Contains('Use this legacy APK only on devices that cannot install the recommended APK')) 'Legacy usage guidance is missing'
             Assert-Test (([regex]::Matches($global:dxxReleaseTestBody, 'APK SHA-256:')).Count -eq 2) 'Expected one hash for each APK'
             Assert-Test ($global:dxxReleaseTestBody.Contains("Source commit: $($info.commit)")) 'Remote notes have a stale commit'
