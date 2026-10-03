@@ -72,12 +72,13 @@ jobs:
           df -h .
 
       - name: Cache build dependencies
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        id: dependencies
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            android/app/.cxx/dependency-cache
+            android/.cxx/dependency-cache
           key: android-apk-${{ runner.os }}-${{ hashFiles('android/get_deps/tool_versions.conf', 'android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle') }}
           restore-keys: android-apk-${{ runner.os }}-
 
@@ -85,6 +86,16 @@ jobs:
         run: |
           bash android/gradlew -p android :app:assembleRelease -PciApk=true \
             "-PversionNameOverride=ci-${GITHUB_SHA:0:12}" --no-daemon --max-workers=2 --console=plain
+
+      - name: Save successful build dependencies
+        if: steps.dependencies.outputs.cache-hit != 'true'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/.cxx/dependency-cache
+          key: ${{ steps.dependencies.outputs.cache-primary-key }}
 
       - name: Package and optionally sign APK
         env:
@@ -124,7 +135,7 @@ jobs:
 
           with zipfile.ZipFile(sys.argv[1]) as apk:
               for abi, machine in [('armeabi-v7a', 40), ('arm64-v8a', 183), ('x86_64', 62)]:
-                  for library in ['libdxx-redux-d1.so', 'libdxx-redux-d2.so', 'libdxx_graphics_safety.so', 'libc++_shared.so']:
+                  for library in ['libdxx-redux-d1.so', 'libdxx-redux-d2.so', 'libdxx-graphics-safety.so', 'libc++_shared.so']:
                       payload = apk.read(f'lib/{abi}/{library}')
                       assert payload[:4] == b'\x7fELF', (abi, library)
                       assert struct.unpack_from('<H', payload, 18)[0] == machine, (abi, library)
