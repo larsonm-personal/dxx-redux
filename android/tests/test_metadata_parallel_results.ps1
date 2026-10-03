@@ -2,6 +2,7 @@
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $helpers = Join-Path (Split-Path $PSScriptRoot) 'helpers'
+. (Join-Path $helpers 'powershell_compat.ps1')
 . (Join-Path $helpers 'atomic_text_file.ps1')
 . (Join-Path $helpers 'host_metadata_workspace.ps1')
 $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $helpers 'regenerate_all_mission_metadata_host.ps1'), [ref]$null, [ref]$null)

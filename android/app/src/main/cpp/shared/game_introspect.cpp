@@ -31,6 +31,7 @@ extern "C" {
 #include "android_mission_assets.h"
 #include "android_log.h"
 #include "android_graphics_safety.h"
+#include "render_gameplay_view.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_level_preview.h"
 #include "android_route_metadata.h"
@@ -2863,6 +2864,13 @@ extern "C" char *game_introspect_get_state(void)
 			j["msaa"]["resolve_failures"] = msaa.resolve_failures;
 			j["msaa"]["flip_serial"] = msaa.flip_serial;
 			j["msaa_probe"] = json::parse(android_ogl_msaa_probe_result_json());
+			j["msaa_menu_probe"] = json::parse(android_ogl_menu_probe_result_json());
+			j["msaa_scene_probe"] = json::parse(android_ogl_scene_probe_result_json());
+			j["fov_visibility"] = {
+				{ "verify_enabled", (bool) android_render_visibility_verify_enabled() },
+				{ "checks", android_render_visibility_verify_checks() },
+				{ "failures", android_render_visibility_verify_failures() }
+			};
 		}
 #else
 		j["msaa_samples"] = 0;

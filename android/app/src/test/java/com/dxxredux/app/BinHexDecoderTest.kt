@@ -34,7 +34,18 @@ class BinHexDecoderTest {
         assertArrayEquals("old".toByteArray(), output.readBytes())
 
         val payloadStart = valid.indexOf(':') + 1
-        val corrupt = valid.replaceRange(payloadStart + 20, payloadStart + 21, if (valid[payloadStart + 20] == '!') "\"" else "!")
+        val corrupt =
+            valid.replaceRange(
+                payloadStart + 20,
+                payloadStart + 21,
+                if (valid[payloadStart + 20] ==
+                    '!'
+                ) {
+                    "\""
+                } else {
+                    "!"
+                },
+            )
         assertThrows(IllegalArgumentException::class.java) {
             BinHexDecoder.decodeDataFork(corrupt.byteInputStream(Charsets.US_ASCII), output)
         }

@@ -20,8 +20,12 @@ class DxaTextureScannerTest {
         assertNull(DxaTextureScanner.validateStructure(sequenceOf(depth64)))
         assertNotNull(DxaTextureScanner.validateStructure(sequenceOf(depth65)))
         assertNotNull(DxaTextureScanner.validateStructure(sequenceOf("safe/../texture.png")))
-        assertNotNull(DxaTextureScanner.validateStructure(generateSequence(0) { it + 1 }.take(65_537).map { "f$it.txt" }))
-        assertNotNull(DxaTextureScanner.validateStructure(generateSequence(0) { it + 1 }.take(49_153).map { "f$it.png" }))
+        assertNotNull(
+            DxaTextureScanner.validateStructure(generateSequence(0) { it + 1 }.take(65_537).map { "f$it.txt" }),
+        )
+        assertNotNull(
+            DxaTextureScanner.validateStructure(generateSequence(0) { it + 1 }.take(49_153).map { "f$it.png" }),
+        )
     }
 
     @Test

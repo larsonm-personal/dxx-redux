@@ -20,11 +20,14 @@ All features apply to both D1 and D2. All C-side changes are duplicated in d1/ a
 ## Feature 1: Robot Kill Stats Overlay
 
 ### What it does
+
 In-game overlay showing:
+
 - Robots killed vs total: "30/130"
 - Per-player % of robot score value earned
 
 ### Existing infrastructure
+
 - `Players[pnum].num_robots_level` -- total robots at level start (set via `count_number_of_robots()` in gameseq.c)
 - `count_number_of_robots()` -- counts alive OBJ_ROBOT objects
 - `Robot_info[id].score_value` -- per-robot-type point value
@@ -35,6 +38,7 @@ In-game overlay showing:
 ### Design
 
 **C side (d2/main, d1/main):**
+
 - Add `coop_kill_stats[MAX_PLAYERS]` struct array: `{int robots_killed, int score_earned}`
 - Compute `total_robot_score_value` at level start: iterate all OBJ_ROBOT, sum `Robot_info[obj.id].score_value`
 - Hook in `multi_do_robot_explode()` -- the MULTI_ROBOT_EXPLODE packet includes killer objnum, resolve to player index, increment that player's counters on all clients
@@ -45,6 +49,7 @@ In-game overlay showing:
 - Note: `num_robots_level` grows during gameplay from matcen spawns (ai2.c:1804, fuelcen.c:327, multibot.c:1144). Use current value as denominator
 
 **Kotlin side:**
+
 - `CoopStatsOverlay` class, polls at ~1 Hz
 - Renders kill count and per-player score %
 - Only visible when `Game_mode & GM_MULTI_COOP`
@@ -52,6 +57,7 @@ In-game overlay showing:
 **No new network packets needed** -- MULTI_ROBOT_EXPLODE already carries killer info, MULTI_SCORE syncs scores.
 
 ### Edge cases
+
 - Matcen robots increase the total -- denominator must be live `num_robots_level`
 - Boss robots may respawn
 - Observer players excluded from stats
@@ -62,15 +68,18 @@ In-game overlay showing:
 ## Feature 2: Shared Teammate Overlay
 
 ### What it does
+
 Shows teammate status: shields, energy (or, if primary is gatling, ammo), current secondary weapon + ammo count. Displayed alongside the robot stats overlay in coop.
 
 ### Design
+
 - Data is already in `Players[]` array which is synced across clients
 - Expose via JNI alongside coop stats: `nativeGetTeammateStatus()` -> per-player [shields, energy, secondary_weapon, secondary_ammo[weapon]]
 - Kotlin overlay renders compact teammate bars
 - Only meaningful fields: shields (fix -> %), energy (fix -> %), secondary weapon name, ammo count
 
 ### Edge cases
+
 - Observer players excluded
 - Disconnected players shown as offline/greyed
 - Shield/energy can exceed 100% with powerups -- clamp display at 200%
@@ -84,12 +93,14 @@ Shows teammate status: shields, energy (or, if primary is gatling, ammo), curren
 **What it does:** Add metadata to multiplayer save files so the resume system can identify which players were in the game and match them to their inventories.
 
 **Current save format:**
+
 - Header: "DGSS", version, (coop: state_game_id + callsign), description, thumbnail, palette
 - Body: between_levels, mission, level, gametime, player struct (all fields including energy/shields/weapons/ammo/score), objects, walls, triggers, etc.
 - Coop saves already store all player structs (currently N_players worth)
 - if there was a save with three players, then resumed with only two, the third player's inventory should be maintained in the save, and carried forward across levels too. limit to 16 players saved this way (discard the oldest). on resume, the third player may no longer have a location - they can spawn at the mine entrance as needed
 
 **Metadata extension -- appended after existing save data:**
+
 ```c
 #define COOP_SAVE_META_TAG  0x434F4F50  // "COOP"
 #define COOP_SAVE_META_VER  1
@@ -131,6 +142,7 @@ struct coop_save_metadata {
 - The tag-based approach means old game versions can still read the save (they stop before the trailer)
 
 **Player persistence across levels and sessions:**
+
 - The save already stores all MAX_PLAYERS (8) player structs. The existing restore code maps them by callsign (`strcmp(Players[i].callsign, restore_players[j].callsign)`)
 - The metadata extension adds an `absent_players[]` array for players who disconnected in previous levels but whose inventories should be preserved
 - When a player disconnects, their full inventory is snapshotted into the absent list before their slot is freed
@@ -141,6 +153,7 @@ struct coop_save_metadata {
 - Players absent at save time have no position -- on rejoin they spawn at the mine entrance (Player_init[0])
 
 **Callsign + client_id matching:**
+
 - On restore, try client_id match first (handles callsign changes between sessions)
 - Fall back to callsign match if client_id is empty or not found
 - The match function:
@@ -173,6 +186,7 @@ struct coop_save_metadata {
 - If not found in either list (new player), give them default starting inventory
 
 **File: `coop_progress.json` in the player's save directory**
+
 ```json
 {
   "sessions": [
@@ -208,6 +222,7 @@ struct coop_save_metadata {
 ### 3E: Session Resume from Lobby
 
 **When a coop lobby forms:**
+
 1. Host scans for `.mg9` (auto-save) and `coop_progress.json` for the selected mission
 2. Each joining client sends their save file metadata to host (new `MULTI_COOP_SAVE_INFO` packet: level, timestamp, callsigns hash)
 3. Host compares all available saves:
@@ -222,6 +237,7 @@ struct coop_save_metadata {
 **Network: 1 new packet type** (`MULTI_COOP_SAVE_INFO`) sent during lobby phase.
 
 ### Edge cases
+
 - Race condition on simultaneous disconnect: each client saves independently, timestamps disambiguate
 - New player joining who wasn't in original session: gets default inventory
 - Callsign changes between sessions: client_id match handles this; callsign-only match is fallback
@@ -235,17 +251,20 @@ struct coop_save_metadata {
 ## Feature 4: Warp to Player
 
 ### What it does
+
 Teleport to a teammate in coop, with a popup button or menu option. Prevents warping past locked doors.
 
 ### Trigger conditions (all must be true)
+
 1. `Game_mode & GM_MULTI_COOP`
-2. >= 2 players connected
+2. > = 2 players connected
 3. Euclidean distance to nearest teammate > `COOP_WARP_DISTANCE_THRESHOLD` (fixed constant, e.g. F1_0 * 200)
 4. Local player hasn't dealt damage to a robot AND hasn't been hit by a robot for `COOP_WARP_ENGAGEMENT_TIMEOUT` seconds (e.g. 20s)
 5. Local player is alive (not dead/respawning)
 6. Cooldown timer expired (e.g. 60s after last warp)
 
 ### Engagement tracking
+
 - New global: `fix64 last_robot_engagement_time`
 - Incremented in two places:
   - `apply_damage_to_robot()` or equivalent in collide.c -- local player dealt damage
@@ -253,16 +272,18 @@ Teleport to a teammate in coop, with a popup button or menu option. Prevents war
 - Reset on level start
 
 ### Locked door constraint
+
 - Use `create_bfs_list()` from escort.c to find all segments reachable from player's current segment without crossing locked doors
 - `segment_is_reachable()` (escort.c:136) uses `ai_door_is_openable()` to check key requirements
 - Before offering warp: BFS from local player's segment, check if target's segment is in the reachable set
 - If not reachable (locked door between them): suppress the warp button, show "Locked door between you" tooltip if attempted from menu
 - The BFS uses `wall.keys` (KEY_BLUE/RED/GOLD) and `WALL_DOOR_LOCKED` flag to determine passability
-- Check against keys held by *any* player (coop keys are shared: `Players[pnum].flags & KEY_*`)
+- Check against keys held by _any_ player (coop keys are shared: `Players[pnum].flags & KEY_*`)
 - Note: `ai_door_is_openable()` checks the local player's keys. For coop warp, check the union of all players' keys. May need a wrapper that tests keys from all connected players
 - Performance: BFS over segments is fast (MAX_SEGMENTS ~900). Run at warp-check time (not every frame). Cache result and invalidate when a key is picked up or a door opens
 
 ### Warp target selection
+
 - With 2 players: target is always the other player
 - With >2 players: the warp button cycles through eligible targets on each press
   - Eligible = connected, alive, reachable (BFS), distant enough
@@ -273,6 +294,7 @@ Teleport to a teammate in coop, with a popup button or menu option. Prevents war
   - If no targets eligible, hide the button
 
 ### Warp mechanics
+
 1. Target = selected teammate (nearest by default, cycles with button presses if >2 players)
 2. Target position = `Objects[Players[target_pnum].objnum].pos`
 3. Spawn offset = random unit vector * `ConsoleObject->size * 4` (2 ship diameters)
@@ -289,20 +311,23 @@ Teleport to a teammate in coop, with a popup button or menu option. Prevents war
    - Set cooldown timer
 
 ### UI
+
 - **Popup button**: Android touch overlay, appears when conditions met. "Warp to [callsign]"
 - **Menu entry**: in the F1/options popup menu, only for coop. Performs warp immediately
 - Button disappears when: player engages robot, gets close enough, or cooldown active
 - After respawn far from action: use shorter engagement timeout (e.g. 5s instead of 20s)
 
 ### Network
+
 - 1 new packet: `MULTI_WARP_TO_PLAYER` (1 type + 1 warper + 1 target + 12 pos + 2 seg = 17 bytes)
 
 ### Edge cases
+
 - Target moving: use position at time of warp execution, not button press
 - Multiple players warp simultaneously: each gets own random offset, unlikely to collide
 - Tiny segments: 30 retries should find something; if not, fail gracefully
 - Target in secret area: if reachable by BFS, allow it. If behind a locked secret door, deny it
-- >2 players: target cycling wraps around, skips ineligible targets
+- > 2 players: target cycling wraps around, skips ineligible targets
 - All targets behind locked doors: hide warp button, don't allow from menu either
 
 ---
@@ -310,9 +335,11 @@ Teleport to a teammate in coop, with a popup button or menu option. Prevents war
 ## Feature 5: End-of-Level Score Breakdown
 
 ### What it does
+
 Enhanced end-of-level screen showing per-player robot kill contributions.
 
 ### Design
+
 - Hook into `DoEndLevelScoreGlitz()` in gameseq.c
 - Add rows showing each player: callsign, robots killed, score earned, % of total
 - Data source: `coop_kill_stats[]` from Feature 1
@@ -324,11 +351,13 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 ## Feature 6: 3D Player Locator HUD (future)
 
 ### What it does
+
 - 3D directional indicator on the HUD pointing toward teammates
 - "Follow me" line rendered in 3D space between players
 - Visible through walls as a compass/arrow indicator
 
 ### Design (deferred -- placeholder for planning)
+
 - Render a small arrow/icon at the screen-space projection of teammate position
 - If off-screen, render at screen edge pointing in the direction
 - "Follow me" line: render a 3D line strip through the mine path (using AI pathfinding points)
@@ -340,6 +369,7 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 ## Implementation Phases
 
 ### Phase 1: Robot Kill Stats + Teammate Status Overlay
+
 - [x] Add `coop_kill_stats[MAX_PLAYERS]` tracking in d2/main (multi.c, multi.h)
 - [x] Add `coop_record_robot_kill()`, `coop_reset_kill_stats()`, `coop_compute_total_robot_score()`, `coop_killer_to_pnum()` in multi.c
 - [x] Hook `multi_do_robot_explode()` for per-player attribution on all clients (multibot.c)
@@ -354,6 +384,7 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 - [x] Test with 2 emulators in coop
 
 ### Phase 2: Client Identity + Save File Metadata Extension
+
 - [x] Generate persistent installation UUID in SharedPreferences on first app launch (`ClientIdentity.kt`)
 - [ ] Return GPGS player_id from server to client (or use installation UUID as fallback)
 - [x] Extend `netplayer_info` with `client_id` field + bump `MULTI_PROTO_VERSION`
@@ -371,6 +402,7 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 - [ ] Test: player disconnects, reconnects next session -- verify inventory preserved
 
 ### Phase 3: Auto-Save on Disconnect / Last in Mine
+
 - [x] Hook `multi_do_quit()` / disconnect path to trigger auto-save to slot 9
 - [x] Bypass "all alive" / "host only" constraints for auto-save
 - [x] Detect "last in mine" (`count_connected_players() == 1`) and save + notify
@@ -379,6 +411,7 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 - [ ] Test: player disconnect mid-level, verify save file created with correct metadata
 
 ### Phase 4: Level Completion Checkpoint + Session Resume
+
 - [x] Write `coop_progress.json` at level-end in coop
 - [x] Kotlin lobby: read coop_progress.json, auto-suggest resume level in CreateLobbyDialog
 - [x] Write `coop_autosave_info.json` sidecar alongside auto-save
@@ -395,6 +428,7 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 - [ ] Test: full flow -- play 2 levels, disconnect, reconnect, verify resume suggestion
 
 ### Phase 5: Warp to Player
+
 - [x] Add engagement tracking (`last_robot_engagement_time`) in collide.c (d1+d2)
 - [x] Custom BFS reachability in `coop_warp.c` (works for both d1 and d2, d1 has no escort.c)
 - [x] Coop key check (keys are shared in coop, local player flags already have all keys)
@@ -413,12 +447,14 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 - [ ] Test: verify locked door constraint blocks warp
 
 ### Phase 6: End-of-Level Score Breakdown
+
 - [x] Modify `DoEndLevelScoreGlitz()` to show per-player stats
 - [x] Duplicate in d1
 - [x] Build passes, lint passes
 - [ ] Test: finish a coop level, verify breakdown display
 
 ### Phase 7: Multi-Slot Autosave + Lobby Resume (completed)
+
 - [x] Rotating autosave slots 5-9 (`coop_autosave_next_slot` counter)
 - [x] `coop_autosave_history.json` with slot/mission/level/timestamp/callsigns/client_ids
 - [x] Kotlin lobby save picker in `CreateLobbyDialog` (filtered by mission + client_id)
@@ -432,6 +468,7 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 - [x] Build passes, lint passes (both d1 and d2)
 
 ### Phase 8: 3D Player Locator HUD + Follow Line (future)
+
 - [ ] 3D arrow/icon rendering in gamerend.c
 - [ ] Off-screen edge indicator
 - [ ] "Follow me" path line using AI pathfinding
@@ -442,6 +479,7 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 ## Backward Compatibility Notes
 
 **Network packets:** Adding new `MULTI_*` packet types will cause `Int3()` (fatal assertion) on older clients that receive them. This is a non-issue because:
+
 1. `MULTI_PROTO_VERSION` is checked at join time via `net_udp_check_game_info_request()`
 2. Mismatched versions get `UPID_VERSION_DENY` and cannot join
 3. Bump `MULTI_PROTO_VERSION` whenever new packet types are added
@@ -449,6 +487,7 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 5. For desktop redux clients: they'll simply see a version mismatch and be told to update
 
 **Save files:** The metadata trailer (appended after existing data with a tag) is backward-compatible:
+
 - Old game versions read the save normally and stop before the trailer
 - The trailer's `COOP_SAVE_META_TAG` lets new versions detect and parse it
 - If the tag is missing, the metadata is simply unavailable -- graceful degradation
@@ -460,31 +499,34 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 ## Key files to modify
 
 ### C side (each change in both d1/ and d2/)
-| File | Changes |
-|------|---------|
-| `main/multi.c` | auto-save hooks, MULTI_WARP_TO_PLAYER packet, MULTI_COOP_SAVE_INFO packet, disconnect save, absent player tracking |
-| `main/multi.h` | new packet type definitions, coop_kill_stats struct, MULTI_PROTO_VERSION bump, netplayer_info client_id field |
-| `main/multibot.c` | per-player kill attribution in multi_do_robot_explode() |
-| `main/collide.c` | engagement time tracking (damage dealt/received), solo kill tracking |
-| `main/gameseq.c` | total_robot_score_value computation at level start, coop_progress.json write, stats reset |
-| `main/state.c` | coop_save_metadata write/read, callsign remapping on restore |
-| `main/gameseg.c` | (read only -- find_point_seg for warp validation) |
-| `main/escort.c` | (read only -- create_bfs_list for reachability, may need to expose) |
-| `main/wall.h` | (read only -- wall/key structs for understanding) |
+
+| File              | Changes                                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `main/multi.c`    | auto-save hooks, MULTI_WARP_TO_PLAYER packet, MULTI_COOP_SAVE_INFO packet, disconnect save, absent player tracking |
+| `main/multi.h`    | new packet type definitions, coop_kill_stats struct, MULTI_PROTO_VERSION bump, netplayer_info client_id field      |
+| `main/multibot.c` | per-player kill attribution in multi_do_robot_explode()                                                            |
+| `main/collide.c`  | engagement time tracking (damage dealt/received), solo kill tracking                                               |
+| `main/gameseq.c`  | total_robot_score_value computation at level start, coop_progress.json write, stats reset                          |
+| `main/state.c`    | coop_save_metadata write/read, callsign remapping on restore                                                       |
+| `main/gameseg.c`  | (read only -- find_point_seg for warp validation)                                                                  |
+| `main/escort.c`   | (read only -- create_bfs_list for reachability, may need to expose)                                                |
+| `main/wall.h`     | (read only -- wall/key structs for understanding)                                                                  |
 
 ### Android / JNI
-| File | Changes |
-|------|---------|
+
+| File                                                    | Changes                                                       |
+| ------------------------------------------------------- | ------------------------------------------------------------- |
 | `android/app/src/main/cpp/shared/android_jni_overlay.c` | new JNI exports for coop stats, teammate status, warp trigger |
-| `android/app/src/main/java/.../CoopStatsOverlay.kt` | new overlay class |
-| `android/app/src/main/java/.../MainActivity.kt` | overlay integration, warp button |
-| `android/app/src/main/java/.../net_udp setup` | lobby resume suggestions |
+| `android/app/src/main/java/.../CoopStatsOverlay.kt`     | new overlay class                                             |
+| `android/app/src/main/java/.../MainActivity.kt`         | overlay integration, warp button                              |
+| `android/app/src/main/java/.../net_udp setup`           | lobby resume suggestions                                      |
 
 ### Shared new files
-| File | Purpose |
-|------|---------|
-| `main/coop_save.c` / `.h` | coop_progress.json read/write, metadata helpers, warp logic, absent player management |
-| `android/.../multiplayer/ClientIdentity.kt` | persistent installation UUID generation/storage, GPGS player_id retrieval |
+
+| File                                        | Purpose                                                                               |
+| ------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `main/coop_save.c` / `.h`                   | coop_progress.json read/write, metadata helpers, warp logic, absent player management |
+| `android/.../multiplayer/ClientIdentity.kt` | persistent installation UUID generation/storage, GPGS player_id retrieval             |
 
 ---
 

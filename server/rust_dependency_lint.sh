@@ -4,9 +4,9 @@
 trap 'if [[ -z "$SKIP_PAUSE" ]]; then echo ""; echo "Press any key to exit..."; read -r -n1 -s; fi' EXIT
 
 set -e
-cd -- "$(dirname -- "$(readlink -f -- "$0")")"    # change to script dir
+cd -- "$(dirname -- "$(readlink -f -- "$0")")" # change to script dir
 
-read -p "Fix cargo registry for 'cargo upgrade'? (y/N): " answer
+read -r -p "Fix cargo registry for 'cargo upgrade'? (y/N): " answer
 if [[ $answer == [Yy] ]]; then
     # see https://github.com/killercup/cargo-edit/issues/879#issuecomment-1826103193
     # as of June 2025 this isn't needed anymore but I can't tell if it's fully resolved

@@ -2,13 +2,13 @@
 
 #include <stdio.h>
 
-#define CHECK(condition)                                                       \
-	do {                                                                       \
-		if (!(condition)) {                                                    \
+#define CHECK(condition)                                                     \
+	do {                                                                     \
+		if (!(condition)) {                                                  \
 			fprintf(stderr, "%s:%d: check failed: %s\n", __FILE__, __LINE__, \
-			        #condition);                                               \
-			return 0;                                                         \
-		}                                                                      \
+			        #condition);                                             \
+			return 0;                                                        \
+		}                                                                    \
 	} while (0)
 
 static int test_packet_sender_must_match_authenticated_transport_player(void)

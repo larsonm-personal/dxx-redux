@@ -18,7 +18,7 @@ including its one-queue-item-per-review-call rule and single-ledger-writer rule.
 - [x] Define a minimal delegation packet and result contract
 - [x] Complete the first delegated chunk using this protocol
 - [x] Complete the 30-chunk orchestrated batch from `R1-CHUNK-0075`
-  through `R1-CHUNK-0104`
+      through `R1-CHUNK-0104`
 - [x] Reuse each worker for two or three chunks, then rotate it
 - [x] Audit all 30 completion records and the next eligible queue item
 

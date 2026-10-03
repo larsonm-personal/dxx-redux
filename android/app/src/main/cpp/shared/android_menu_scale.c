@@ -9,6 +9,10 @@
 #ifdef OGL
 #include "ogl_init.h"
 #endif
+#if defined(ANDROID) && defined(OGL) && defined(INTROSPECT_ON)
+#include "ogl_msaa_probe_android.h"
+#include "palette.h"
+#endif
 
 /* Single tuning point for Android menu fill */
 static const float k_target_fill = 0.85f;
@@ -457,12 +461,48 @@ int android_menu_scale_draw_result(
 	}
 
 	gr_set_current_canvas(save_canvas);
+#if defined(ANDROID) && defined(OGL) && defined(INTROSPECT_ON)
+	android_ogl_menu_probe_source(render_bitmap.bm_data, render_bitmap.bm_w,
+	                              render_bitmap.bm_h, render_bitmap.bm_rowsize, result->dst.x, result->dst.y,
+	                              screen_w, screen_h, gr_current_pal);
+#endif
 	android_menu_scale_blit_bitmap(&render_bitmap, result, render_masked);
+#if defined(ANDROID) && defined(OGL) && defined(INTROSPECT_ON)
+	android_ogl_menu_probe_after_blit();
+#endif
 	gr_set_current_canvas(save_canvas);
 	gr_free_bitmap_data(&render_bitmap);
 	android_menu_scale_publish(result);
 	return 1;
 }
+
+#if defined(ANDROID) && defined(OGL) && defined(INTROSPECT_ON)
+void android_menu_scale_probe_unscaled(int screen_w, int screen_h,
+                                       android_menu_scale_result_draw_fn draw_contents, void *userdata)
+{
+	grs_bitmap reference;
+	grs_canvas canvas;
+	grs_canvas *save_canvas = grd_curcanv;
+	android_menu_scale_result identity = { 0 };
+	int rendered;
+	if (!android_ogl_menu_probe_active() || screen_w <= 0 || screen_h <= 0) return;
+	gr_init_bitmap_alloc(&reference, BM_LINEAR, 0, 0, screen_w, screen_h, screen_w);
+	memset(reference.bm_data, TRANSPARENCY_COLOR, screen_w * screen_h);
+	gr_init_canvas(&canvas, reference.bm_data, BM_LINEAR, screen_w, screen_h);
+	identity.scale = 1.0f;
+	identity.src.w = identity.dst.w = screen_w;
+	identity.src.h = identity.dst.h = screen_h;
+	// The caller disables menu event callbacks on its private reference copy
+	rendered = draw_contents(userdata, &canvas, &identity);
+	gr_set_current_canvas(save_canvas);
+	if (rendered) {
+		android_ogl_menu_probe_source(reference.bm_data, screen_w, screen_h,
+		                              screen_w, 0, 0, screen_w, screen_h, gr_current_pal);
+		android_ogl_menu_probe_after_blit();
+	}
+	gr_free_bitmap_data(&reference);
+}
+#endif
 
 void android_menu_scale_publish(const android_menu_scale_result *result)
 {
@@ -718,14 +758,14 @@ void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,
 #ifdef ANDROID
 		/* Direct-rendered menu text already has the final pixel dimensions */
 		if (bitmap->bm_type == BM_LINEAR && !(bitmap->bm_flags & BM_FLAG_RLE) &&
-			bitmap->bm_w == result->dst.w && bitmap->bm_h == result->dst.h &&
-			target_bitmap && target_bitmap->bm_type == BM_OGL) {
+		    bitmap->bm_w == result->dst.w && bitmap->bm_h == result->dst.h &&
+		    target_bitmap && target_bitmap->bm_type == BM_OGL) {
 			grs_bitmap direct = *bitmap;
 			direct.bm_flags = masked ? BM_FLAG_TRANSPARENT : 0;
 			ogl_android_prepare_overlay_blit();
 			ogl_ubitblt_i(result->dst.w, result->dst.h, result->dst.x,
-				result->dst.y, result->dst.w, result->dst.h, 0, 0,
-				&direct, target_bitmap, 1);
+			              result->dst.y, result->dst.w, result->dst.h, 0, 0,
+			              &direct, target_bitmap, 1);
 			return;
 		}
 #endif

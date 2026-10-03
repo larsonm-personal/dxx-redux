@@ -32,15 +32,15 @@ plan for a follow-up step after the first build-validated extraction.
 ## Result
 
 - phase 3 is now started with the low-risk half of the coop-file move: `coop_warp`
-	lives in `android/app/src/main/cpp/shared/coop/` and the D1/D2 source and
-	header paths were reduced to thin wrappers so existing include sites stay unchanged
+  lives in `android/app/src/main/cpp/shared/coop/` and the D1/D2 source and
+  header paths were reduced to thin wrappers so existing include sites stay unchanged
 - Android validation passed before and after the code-quality pass:
-	- `android\\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+  - `android\\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
 - repo code-quality passed with:
-	- `android\\run-code-quality.ps1 -Fix`
+  - `android\\run-code-quality.ps1 -Fix`
 - Windows host validation also passed for both games with:
-	- `run-windows-build.ps1 -Target both`
+  - `run-windows-build.ps1 -Target both`
 - the quick `coop_save` survey indicates the follow-up should not assume a clean
-	single-copy move: `d2/main/coop_save.h` already adds escort/buddy metadata
-	fields beyond D1, and the current `coop_save.c` file diff is large enough to
-	prefer split shared copies or a shared core with per-game hooks
+  single-copy move: `d2/main/coop_save.h` already adds escort/buddy metadata
+  fields beyond D1, and the current `coop_save.c` file diff is large enough to
+  prefer split shared copies or a shared core with per-game hooks

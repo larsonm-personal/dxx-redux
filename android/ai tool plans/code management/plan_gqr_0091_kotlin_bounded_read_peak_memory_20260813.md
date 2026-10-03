@@ -9,13 +9,13 @@ without changing inherited D1 or D2 files
 ## Plan
 
 - [x] Trace the helper, all production callers, the frozen evidence, and the
-  parallel native policy
+      parallel native policy
 - [x] Replace `ByteArrayOutputStream` growth and final-copy overlap with exact
-  preallocation for trustworthy sizes and bounded segmented reads otherwise
+      preallocation for trustworthy sizes and bounded segmented reads otherwise
 - [x] Pass trustworthy expanded sizes from file and archive callers
 - [x] Add allocation instrumentation tests for exact and one-over limits,
-  segment boundaries, short and zero reads, allocation failure, cleanup, and
-  maintained callers
+      segment boundaries, short and zero reads, allocation failure, cleanup, and
+      maintained callers
 - [x] Run focused JVM tests, scoped code quality, and an Android Kotlin compile
 - [x] Record final paths, peak metrics, validation, and any blockers
 

@@ -261,8 +261,8 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 - Risk: low-medium
 - Validation: exposed count computation plus both-game assertions for robots, hostages, secrets, and aggregate coop kills
 - Completed result: D1 `gauges.c` moved from 226 to 126 additions and D2
-  from 282 to 177.  After one CMake line per game, the inherited-file reduction
-  is 203 additions.  Private score animation and inset policy remain in compact
+  from 282 to 177. After one CMake line per game, the inherited-file reduction
+  is 203 additions. Private score animation and inset policy remain in compact
   local wrappers; D2 alone passes its negative-level `secret_only` flag.
 - Build result: Windows D1/D2 and all three Android ABI links pass.
 
@@ -293,9 +293,8 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 - Known differences: D1 log tag and requested/source-rate variable names
 - Risk: low-medium
 - Validation: a focused fire-weapon SFX test asserting audio probe counters, plus existing fire-primary and fire-secondary scripts
-- Completed result: D1 moved from 177 to 86 additions and D2 from 173 to
-  82.  After four conditional CMake lines per game, 174 inherited additions
-  were removed.  Driver diagnostics now have one public header and shared
+- Completed result: D1 moved from 177 to 86 additions and D2 from 173 to 82. After four conditional CMake lines per game, 174 inherited additions
+  were removed. Driver diagnostics now have one public header and shared
   chunk/init/latency/start logging implementation.
 
 ### P2. Exact duplicated feature kernels
@@ -392,7 +391,7 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 - Risk: low-medium
 - Validation: mission with too few coop starts; assert generated positions are valid, distinct, and deterministic in both games
 - Completed result: 64 additions left each `gameseq.c`; after CMake wiring,
-  the inherited-file reduction is 126 additions.  Assignment, counters, and
+  the inherited-file reduction is 126 additions. Assignment, counters, and
   logging remain local while the exact search order is shared.
 
 ### P3. Smaller clean seams and prerequisites

@@ -11,10 +11,13 @@ on:
 
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   windows:
     name: Windows
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     defaults:
       run:
@@ -22,7 +25,7 @@ jobs:
 
     steps:
       - name: Setup MSYS2
-        uses: msys2/setup-msys2@v2
+        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0
         with:
           msystem: MINGW64
           update: true
@@ -41,19 +44,34 @@ jobs:
             mingw-w64-x86_64-lld
 
       - name: Clone repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: Configure D1
         run: CC=clang CXX=clang++ cmake -S d1 -B buildd1 -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
       - name: Build D1
-        run: cmake --build buildd1 
+        run: cmake --build buildd1 --parallel 4
+
+      - name: Test D1
+        env:
+          SDL_AUDIODRIVER: dummy
+          SDL_VIDEODRIVER: dummy
+        run: ctest --test-dir buildd1 --output-on-failure
 
       - name: Configure D2
         run: CC=clang CXX=clang++ cmake -S d2 -B buildd2 -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
       - name: Build D2
-        run: cmake --build buildd2
+        run: cmake --build buildd2 --parallel 4
+
+      - name: Test D2
+        env:
+          SDL_AUDIODRIVER: dummy
+          SDL_VIDEODRIVER: dummy
+        run: ctest --test-dir buildd2 --output-on-failure
 
       - name: List generated PDB files
         run: find buildd1 buildd2 -type f -name '*.pdb'
@@ -62,13 +80,14 @@ jobs:
         run: ./contrib/packaging/windows/build_package.sh
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: windows
           path: '*.zip'
+          if-no-files-found: error
 
       - name: Upload symbol artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: windows-symbols-msys-clang-${{ github.sha }}
           path: |

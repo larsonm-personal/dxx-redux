@@ -3,93 +3,144 @@
 // Pushes hires sounds + textures DXA to the default set's mod store, writes
 // its manifest, launches D2, and checks hires replacement percent.
 [
-    {"_info": {
-        "games": ["d2"],
-        "vars": {
-            "d2": {"MISSION": "Counterstrike"}
+    {
+        "_info": {
+            "games": ["d2"],
+            "vars": {
+                "d2": { "MISSION": "Counterstrike" },
+            },
+            "params": {
+                "RESOLUTION": {
+                    "label": "Texture resolution",
+                    "options": {
+                        "128": { "DXA_SHA": "55e3bdd20eb339322413db68c6cc04c610dcda32a5484ea036c058d55fe3f895" },
+                        "256": { "DXA_SHA": "91a66ee07304116b2a3e45dc5ec3b8fe6892f6568202407c5f032c90c4b2cccd" },
+                        "512": { "DXA_SHA": "497bdc14023334c86cf2439e0704da56e4d06ac4442c4fe7911eb678344ddb4e" },
+                    },
+                },
+            },
+            "_deps": [
+                {
+                    "file": "descent2.hog",
+                    "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+                },
+                {
+                    "file": "descent2.ham",
+                    "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+                },
+                { "file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b" },
+                {
+                    "file": "descent2.s22",
+                    "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+                },
+                { "file": "alien1.pig", "sha256": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233" },
+                { "file": "alien2.pig", "sha256": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055" },
+                { "file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156" },
+                { "file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1" },
+                { "file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1" },
+                {
+                    "file": "d2-hires-sounds.dxa",
+                    "sha256": "8a46ac26e8442a75ba1807692d44ea1b280bd3bd5b3f52e01c553a2c7892df4d",
+                    "target": "files/imported/sets/default/.content/mods",
+                },
+                {
+                    "file": "d2-hires-${RESOLUTION}-textures-ktx2.dxa",
+                    "sha256": "${DXA_SHA}",
+                    "target": "files/imported/sets/default/.content/mods",
+                },
+            ],
         },
-        "params": {
-            "RESOLUTION": {
-                "label": "Texture resolution",
-                "options": {
-                    "128": {"DXA_SHA": "55e3bdd20eb339322413db68c6cc04c610dcda32a5484ea036c058d55fe3f895"},
-                    "256": {"DXA_SHA": "91a66ee07304116b2a3e45dc5ec3b8fe6892f6568202407c5f032c90c4b2cccd"},
-                    "512": {"DXA_SHA": "497bdc14023334c86cf2439e0704da56e4d06ac4442c4fe7911eb678344ddb4e"}
-                }
-            }
+    },
+
+    { "action": "enter_launcher" },
+    { "action": "setup_command", "command": "switch_set", "args": { "name": "default" }, "post_delay_ms": 250 },
+    { "action": "reset_state" },
+    { "action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250 },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": { "key": "skip_intro_movie", "value": false },
+        "post_delay_ms": 250,
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": { "key": "dlog_texture_enabled", "value": true },
+        "post_delay_ms": 250,
+    },
+    {
+        "action": "write_config",
+        "file": "imported/sets/default/.content/mods/mod_manifest.json",
+        "content": "{\"mods\":[{\"filename\":\"d2-hires-sounds.dxa\",\"displayName\":\"D2 Hires Sounds\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0},{\"filename\":\"d2-hires-${RESOLUTION}-textures-ktx2.dxa\",\"displayName\":\"D2 Hires ${RESOLUTION} Textures\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":1}]}",
+    },
+
+    { "action": "enter_game", "game": "d2" },
+    { "action": "log", "message": "=== TEST: Mod Loading ${RESOLUTION} ===" },
+
+    { "action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000 },
+    { "action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200 },
+    { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000 },
+    { "action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000 },
+    { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000 },
+    { "action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000 },
+    { "action": "select_mission", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 2000 },
+    { "action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000 },
+    { "action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000 },
+    { "action": "skip_briefing", "timeout_ms": 60000, "post_delay_ms": 100 },
+
+    { "action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000 },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
+    {
+        "action": "assert",
+        "expect": {
+            "in_game": "true",
+            "screen_mode": "game",
+            "current_level_num": "1",
+            "debug_flags.texture_log": "true",
         },
-        "_deps": [
-            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
-            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
-            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
-            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
-            {"file": "alien1.pig", "sha256": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233"},
-            {"file": "alien2.pig", "sha256": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055"},
-            {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
-            {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
-            {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
-            {"file": "d2-hires-sounds.dxa", "sha256": "8a46ac26e8442a75ba1807692d44ea1b280bd3bd5b3f52e01c553a2c7892df4d", "target": "files/imported/sets/default/.content/mods"},
-            {"file": "d2-hires-${RESOLUTION}-textures-ktx2.dxa", "sha256": "${DXA_SHA}", "target": "files/imported/sets/default/.content/mods"}
-        ]
-    }},
+    },
 
-    {"action": "enter_launcher"},
-    {"action": "setup_command", "command": "switch_set",
-     "args": {"name": "default"}, "post_delay_ms": 250},
-    {"action": "reset_state"},
-    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
-    {"action": "setup_command", "command": "write_bool_pref",
-     "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
-    {"action": "setup_command", "command": "write_bool_pref",
-     "args": {"key": "dlog_texture_enabled", "value": true}, "post_delay_ms": 250},
-    {"action": "write_config", "file": "imported/sets/default/.content/mods/mod_manifest.json",
-     "content": "{\"mods\":[{\"filename\":\"d2-hires-sounds.dxa\",\"displayName\":\"D2 Hires Sounds\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0},{\"filename\":\"d2-hires-${RESOLUTION}-textures-ktx2.dxa\",\"displayName\":\"D2 Hires ${RESOLUTION} Textures\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":1}]}"},
-
-    {"action": "enter_game", "game": "d2"},
-    {"action": "log", "message": "=== TEST: Mod Loading ${RESOLUTION} ==="},
-
-    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
-    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
-    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
-    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
-    {"action": "select_mission", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 2000},
-    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
-    {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000},
-    {"action": "skip_briefing", "timeout_ms": 60000, "post_delay_ms": 100},
-
-    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
-    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
-    {"action": "assert", "expect": {
-        "in_game": "true",
-        "screen_mode": "game",
-        "current_level_num": "1",
-        "debug_flags.texture_log": "true"
-    }},
-
-    {"action": "introspect"},
-    {"action": "assert", "expect": {"mounted_mods": {"contains": "d2-hires-${RESOLUTION}-textures-ktx2.dxa"}}},
+    { "action": "introspect" },
+    { "action": "assert", "expect": { "mounted_mods": { "contains": "d2-hires-${RESOLUTION}-textures-ktx2.dxa" } } },
 
     // Wait for texture streaming then verify replacement coverage
-    {"action": "wait_for", "timeout_ms": 10000, "expect": {
-        "hires_textures.hires_count": {"gt": 0},
-        "hires_textures.max_hires_w": {"gte": "${RESOLUTION}"},
-        "hires_textures.replacement_pct": {"gte": 85}
-    }},
-    {"action": "introspect"},
-    {"action": "assert", "expect": {"hires_textures.hires_count": {"gt": 0}}},
-    {"action": "assert", "expect": {"hires_textures.max_hires_w": {"gte": "${RESOLUTION}"}}},
-    {"action": "assert", "expect": {"hires_textures.replacement_pct": {"gte": 85}},
-     "_comment": "Replacement success rate: of PNG files found on disk, >= 85% should load (lower to account for oversized sprite strips exceeding GL_MAX_TEXTURE_SIZE on some devices)"},
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "hires_textures.hires_count": { "gt": 0 },
+            "hires_textures.max_hires_w": { "gte": "${RESOLUTION}" },
+            "hires_textures.replacement_pct": { "gte": 85 },
+        },
+    },
+    { "action": "introspect" },
+    { "action": "assert", "expect": { "hires_textures.hires_count": { "gt": 0 } } },
+    { "action": "assert", "expect": { "hires_textures.max_hires_w": { "gte": "${RESOLUTION}" } } },
+    {
+        "action": "assert",
+        "expect": { "hires_textures.replacement_pct": { "gte": 85 } },
+        "_comment": "Replacement success rate: of PNG files found on disk, >= 85% should load (lower to account for oversized sprite strips exceeding GL_MAX_TEXTURE_SIZE on some devices)",
+    },
 
-    {"action": "enter_launcher"},
-    {"action": "setup_command", "command": "delete_mod",
-     "args": {"filename": "d2-hires-sounds.dxa"}, "post_delay_ms": 100},
-    {"action": "setup_command", "command": "delete_mod",
-     "args": {"filename": "d2-hires-${RESOLUTION}-textures-ktx2.dxa"}, "post_delay_ms": 100},
-    {"action": "setup_command", "command": "write_bool_pref",
-     "args": {"key": "dlog_texture_enabled", "value": false}, "post_delay_ms": 250},
-    {"action": "assert", "expect": {"debug_prefs.texture_log_enabled": "false"}},
-    {"action": "log", "message": "=== TEST: Mod Loading ${RESOLUTION} -- PASS ==="}
+    { "action": "enter_launcher" },
+    {
+        "action": "setup_command",
+        "command": "delete_mod",
+        "args": { "filename": "d2-hires-sounds.dxa" },
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "setup_command",
+        "command": "delete_mod",
+        "args": { "filename": "d2-hires-${RESOLUTION}-textures-ktx2.dxa" },
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": { "key": "dlog_texture_enabled", "value": false },
+        "post_delay_ms": 250,
+    },
+    { "action": "assert", "expect": { "debug_prefs.texture_log_enabled": "false" } },
+    { "action": "log", "message": "=== TEST: Mod Loading ${RESOLUTION} -- PASS ===" },
 ]

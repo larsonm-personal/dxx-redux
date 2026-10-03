@@ -3,6 +3,7 @@
 ## Phases
 
 ### Phase 1: C-side core (escort.c, multibot.c, multi.c, collide.c)
+
 - [x] Add `Escort_owner_player` global + init/reset in escort.c
 - [x] Add `MULTI_ESCORT_OWNER` packet type in multi.h, send/receive in multi.c
 - [x] Change 3 guard clauses in escort.c to allow coop + owner-only
@@ -15,15 +16,18 @@
 - [x] Guard do_escort_frame in ai.c to only run for owner in coop
 
 ### Phase 2: Android overlay + touch
+
 - [x] JNI: nativeGetEscortOwnerPlayer(), nativeIsEscortOwner() (with D1/D2 guards)
 - [x] CoopStatsOverlay.kt: guidebot owner indicator line
 - [x] TouchOverlayView.kt: hide Guide radial for non-owners in coop
 - [x] Wire providers in MainActivity.kt
 
 ### Phase 3: Build + test
+
 - [x] Android build (assembleDebug) -- passes with 0 errors
 - [x] Code quality linters (clang-format, ktlint) -- clean on modified files
 - [x] Integration test (test_launch_to_automap) -- PASS, 37/36 steps
 
 ## Status
+
 - All phases: COMPLETE

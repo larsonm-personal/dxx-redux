@@ -682,7 +682,7 @@ static int direct_command_policy_fixture_error(const char *operation, const char
 }
 
 static int write_direct_command_policy_fixture(const char *path,
-	direct_command_policy_fixture_kind fixture_kind)
+                                               direct_command_policy_fixture_kind fixture_kind)
 {
 	input_demo_recorder_settings settings;
 	input_demo_control_state state;
@@ -700,7 +700,7 @@ static int write_direct_command_policy_fixture(const char *path,
 
 	if (fixture_kind == DIRECT_COMMAND_POLICY_FIXTURE_ZERO) {
 		if (!input_demo_recorder_stage_frame_event_json(
-			"{\"kind\":\"score\",\"delta\":1}", error, sizeof(error)))
+		        "{\"kind\":\"score\",\"delta\":1}", error, sizeof(error)))
 			return direct_command_policy_fixture_error("stage zero-command durable event failed", error);
 	} else if (fixture_kind == DIRECT_COMMAND_POLICY_FIXTURE_ONE) {
 		if (!input_demo_recorder_stage_direct_command_change_difficulty(3, error, sizeof(error)))
@@ -709,7 +709,7 @@ static int write_direct_command_policy_fixture(const char *path,
 		if (!input_demo_recorder_stage_direct_command_death_abort(error, sizeof(error)))
 			return direct_command_policy_fixture_error("stage death abort command failed", error);
 		if (!input_demo_recorder_stage_frame_event_json(
-			"{\"kind\":\"score\",\"delta\":2}", error, sizeof(error)))
+		        "{\"kind\":\"score\",\"delta\":2}", error, sizeof(error)))
 			return direct_command_policy_fixture_error("stage interleaved durable event failed", error);
 		if (!input_demo_recorder_stage_direct_command_change_difficulty(3, error, sizeof(error)))
 			return direct_command_policy_fixture_error("stage multiple difficulty command failed", error);
@@ -737,15 +737,15 @@ static int write_direct_command_policy_fixture(const char *path,
 		if (!input_demo_recorder_stage_direct_command_change_difficulty(3, error, sizeof(error)))
 			return direct_command_policy_fixture_error("stage command before unknown failed", error);
 		if (!input_demo_recorder_stage_frame_event_json(
-			"{\"kind\":\"direct_command\",\"command\":\"future_command\"}",
-			error, sizeof(error)))
+		        "{\"kind\":\"direct_command\",\"command\":\"future_command\"}",
+		        error, sizeof(error)))
 			return direct_command_policy_fixture_error("stage unknown command failed", error);
 	} else if (fixture_kind == DIRECT_COMMAND_POLICY_FIXTURE_MALFORMED_LATE) {
 		if (!input_demo_recorder_stage_direct_command_change_difficulty(3, error, sizeof(error)))
 			return direct_command_policy_fixture_error("stage command before malformed failed", error);
 		if (!input_demo_recorder_stage_frame_event_json(
-			"{\"kind\":\"direct_command\",\"command\":\"change_difficulty\"}",
-			error, sizeof(error)))
+		        "{\"kind\":\"direct_command\",\"command\":\"change_difficulty\"}",
+		        error, sizeof(error)))
 			return direct_command_policy_fixture_error("stage malformed command failed", error);
 	} else {
 		if (!input_demo_recorder_stage_direct_command_guidebot_spawn(error, sizeof(error)))
@@ -755,7 +755,7 @@ static int write_direct_command_policy_fixture(const char *path,
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
 	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0,
-		NULL, NULL, error, sizeof(error)))
+	                                       NULL, NULL, error, sizeof(error)))
 		return direct_command_policy_fixture_error("direct command policy capture failed", error);
 	if (!input_demo_recorder_flush(path, error, sizeof(error)))
 		return direct_command_policy_fixture_error("direct command policy flush failed", error);
@@ -763,21 +763,21 @@ static int write_direct_command_policy_fixture(const char *path,
 }
 
 static std::string direct_command_policy_game_call(
-	const input_demo_replay_direct_command_event *event, int validate_only)
+    const input_demo_replay_direct_command_event *event, int validate_only)
 {
 	char call[160];
 
 	snprintf(call, sizeof(call), "%s game kind=%d value0=%d value1=%d text=%s",
-		validate_only ? "validate" : "apply", event->kind,
-		event->value0, event->value1, event->text);
+	         validate_only ? "validate" : "apply", event->kind,
+	         event->value0, event->value1, event->text);
 	return call;
 }
 
 static int direct_command_policy_death_callback(void *context, int validate_only,
-	char *error, size_t error_size)
+                                                char *error, size_t error_size)
 {
 	direct_command_policy_test_context *test_context =
-		static_cast<direct_command_policy_test_context *>(context);
+	    static_cast<direct_command_policy_test_context *>(context);
 
 	(void) error;
 	(void) error_size;
@@ -788,16 +788,16 @@ static int direct_command_policy_death_callback(void *context, int validate_only
 }
 
 static int direct_command_policy_difficulty_callback(void *context, int difficulty,
-	int validate_only, char *error, size_t error_size)
+                                                     int validate_only, char *error, size_t error_size)
 {
 	direct_command_policy_test_context *test_context =
-		static_cast<direct_command_policy_test_context *>(context);
+	    static_cast<direct_command_policy_test_context *>(context);
 	char call[80];
 
 	(void) error;
 	(void) error_size;
 	snprintf(call, sizeof(call), "%s difficulty=%d",
-		validate_only ? "validate" : "apply", difficulty);
+	         validate_only ? "validate" : "apply", difficulty);
 	test_context->calls.push_back(call);
 	if (!validate_only)
 		test_context->mutation_count++;
@@ -805,11 +805,11 @@ static int direct_command_policy_difficulty_callback(void *context, int difficul
 }
 
 static int direct_command_policy_game_callback(void *context,
-	const input_demo_replay_direct_command_event *event,
-	int validate_only, char *error, size_t error_size)
+                                               const input_demo_replay_direct_command_event *event,
+                                               int validate_only, char *error, size_t error_size)
 {
 	direct_command_policy_test_context *test_context =
-		static_cast<direct_command_policy_test_context *>(context);
+	    static_cast<direct_command_policy_test_context *>(context);
 
 	test_context->calls.push_back(direct_command_policy_game_call(event, validate_only));
 	if (validate_only && event->kind == test_context->reject_game_kind) {
@@ -823,7 +823,7 @@ static int direct_command_policy_game_callback(void *context,
 }
 
 static void direct_command_policy_init(input_demo_direct_command_policy *policy,
-	direct_command_policy_test_context *context)
+                                       direct_command_policy_test_context *context)
 {
 	memset(policy, 0, sizeof(*policy));
 	policy->context = context;
@@ -840,24 +840,24 @@ static void direct_command_policy_context_clear(direct_command_policy_test_conte
 }
 
 static int expect_direct_command_policy_calls(
-	const direct_command_policy_test_context *context,
-	const std::vector<std::string> &expected, const char *label)
+    const direct_command_policy_test_context *context,
+    const std::vector<std::string> &expected, const char *label)
 {
 	size_t i;
 
 	if (context->calls.size() != expected.size())
 		return report_failure_string(std::string(label) + " callback count mismatch: expected " +
-			std::to_string(expected.size()) + ", got " + std::to_string(context->calls.size()));
+		                             std::to_string(expected.size()) + ", got " + std::to_string(context->calls.size()));
 	for (i = 0; i != expected.size(); ++i)
 		if (context->calls[i] != expected[i])
 			return report_failure_string(std::string(label) + " callback mismatch at " +
-				std::to_string(i) + ": expected '" + expected[i] + "', got '" +
-				context->calls[i] + "'");
+			                             std::to_string(i) + ": expected '" + expected[i] + "', got '" +
+			                             context->calls[i] + "'");
 	return 0;
 }
 
 static void append_direct_command_policy_game_calls(std::vector<std::string> *calls,
-	int validate_only)
+                                                    int validate_only)
 {
 	input_demo_replay_direct_command_event event;
 	static const int no_payload_kinds[] = {
@@ -920,12 +920,12 @@ static int expect_direct_command_policy(void)
 	direct_command_policy_init(&policy, &context);
 
 	if (!input_demo_direct_command_apply_current_frame(&policy,
-		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+	                                                   INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
 		return report_failure_string(std::string("absent replay policy failed: ") + error);
 	if (!input_demo_replay_load(zero_path.c_str(), error, sizeof(error)))
 		return report_failure_string(std::string("zero-command replay load failed: ") + error);
 	if (!input_demo_direct_command_apply_current_frame(&policy,
-		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+	                                                   INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
 		return report_failure_string(std::string("zero-command policy failed: ") + error);
 	if (!context.calls.empty() || context.mutation_count)
 		return report_failure("zero-command policy invoked a callback");
@@ -935,7 +935,7 @@ static int expect_direct_command_policy(void)
 	if (!input_demo_replay_load(one_path.c_str(), error, sizeof(error)))
 		return report_failure_string(std::string("one-command replay load failed: ") + error);
 	if (!input_demo_direct_command_apply_current_frame(&policy,
-		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+	                                                   INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
 		return report_failure_string(std::string("one-command policy failed: ") + error);
 	expected.clear();
 	expected.push_back("validate difficulty=3");
@@ -949,7 +949,7 @@ static int expect_direct_command_policy(void)
 	if (!input_demo_replay_load(multiple_path.c_str(), error, sizeof(error)))
 		return report_failure_string(std::string("dead-phase replay load failed: ") + error);
 	if (!input_demo_direct_command_apply_current_frame(&policy,
-		INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD, error, sizeof(error)))
+	                                                   INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD, error, sizeof(error)))
 		return report_failure_string(std::string("dead-phase policy failed: ") + error);
 	expected.clear();
 	expected.push_back("validate death");
@@ -963,7 +963,7 @@ static int expect_direct_command_policy(void)
 	if (!input_demo_replay_load(multiple_path.c_str(), error, sizeof(error)))
 		return report_failure_string(std::string("gameplay-phase replay load failed: ") + error);
 	if (!input_demo_direct_command_apply_current_frame(&policy,
-		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+	                                                   INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
 		return report_failure_string(std::string("gameplay-phase policy failed: ") + error);
 	expected.clear();
 	expected.push_back("validate difficulty=3");
@@ -980,7 +980,7 @@ static int expect_direct_command_policy(void)
 	if (!input_demo_replay_load(multiple_path.c_str(), error, sizeof(error)))
 		return report_failure_string(std::string("adapter rejection replay load failed: ") + error);
 	if (input_demo_direct_command_apply_current_frame(&policy,
-		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+	                                                  INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
 		return report_failure("adapter rejection unexpectedly succeeded");
 	if (context.mutation_count != 0)
 		return report_failure("adapter validation failure partially applied commands");
@@ -993,7 +993,7 @@ static int expect_direct_command_policy(void)
 	if (!input_demo_replay_load(malformed_path.c_str(), error, sizeof(error)))
 		return report_failure_string(std::string("malformed replay load failed: ") + error);
 	if (input_demo_direct_command_apply_current_frame(&policy,
-		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+	                                                  INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
 		return report_failure("malformed late command unexpectedly succeeded");
 	if (!context.calls.empty() || context.mutation_count)
 		return report_failure("malformed late command partially dispatched commands");
@@ -1005,7 +1005,7 @@ static int expect_direct_command_policy(void)
 	if (!input_demo_replay_load(unknown_path.c_str(), error, sizeof(error)))
 		return report_failure_string(std::string("unknown replay load failed: ") + error);
 	if (input_demo_direct_command_apply_current_frame(&policy,
-		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+	                                                  INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
 		return report_failure("unknown late command unexpectedly succeeded");
 	if (!context.calls.empty() || context.mutation_count)
 		return report_failure("unknown late command partially dispatched commands");
@@ -1016,7 +1016,7 @@ static int expect_direct_command_policy(void)
 	if (!input_demo_replay_load(unknown_path.c_str(), error, sizeof(error)))
 		return report_failure_string(std::string("unloading replay load failed: ") + error);
 	if (input_demo_direct_command_apply_current_frame(&policy,
-		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+	                                                  INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
 		return report_failure("unloading unknown command unexpectedly succeeded");
 	if (input_demo_replay_is_loaded())
 		return report_failure("D2-style failure policy did not unload replay");
@@ -1027,7 +1027,7 @@ static int expect_direct_command_policy(void)
 	if (!input_demo_replay_load(unsupported_path.c_str(), error, sizeof(error)))
 		return report_failure_string(std::string("unsupported replay load failed: ") + error);
 	if (input_demo_direct_command_apply_current_frame(&policy,
-		INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
+	                                                  INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)))
 		return report_failure("unsupported D1 command unexpectedly succeeded");
 	if (!context.calls.empty() || context.mutation_count)
 		return report_failure("unsupported D1 command invoked a callback");

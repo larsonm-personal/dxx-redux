@@ -5,6 +5,7 @@
 ## Result
 
 All items in scope were implemented and tested end-to-end:
+
 - Android client connects via WebSocket to the Rust matchmaking server
 - Authenticates with dev token (skip_gpgs_verify mode)
 - Receives and displays AUTH_OK, MOTD, SERVER_STATUS, LOBBY_LIST

@@ -147,28 +147,33 @@ For OpenGL builds, corrected after device testing:
 ## Follow-Up Work Plan
 
 1. Palette correctness
-  - Trace palette load/remap order in `nm_draw_background1`, `nm_draw_background`, and scaled bitmap upload
-  - Ensure offscreen sources and final scaled bitmap uploads use the menu/PCX palette on the first draw, not a stale game palette
+
+- Trace palette load/remap order in `nm_draw_background1`, `nm_draw_background`, and scaled bitmap upload
+- Ensure offscreen sources and final scaled bitmap uploads use the menu/PCX palette on the first draw, not a stale game palette
 
 2. Tap mapping correctness
-  - Trace Android mouse/touch remap in `android_input.c` against `newmenu_mouse` and `listbox_mouse`
-  - Verify listbox scroll offset is not applied twice or omitted after destination-to-source remap
-  - Keep publish/clear state tied to the same source rect actually displayed
+
+- Trace Android mouse/touch remap in `android_input.c` against `newmenu_mouse` and `listbox_mouse`
+- Verify listbox scroll offset is not applied twice or omitted after destination-to-source remap
+- Keep publish/clear state tied to the same source rect actually displayed
 
 3. Background/border rendering
-  - Build the scaled menu source from the full menu background box, including the border, while preserving the existing crop math for sizing if needed
-  - Avoid scaling only the interior crop for normal window-backed menus
+
+- Build the scaled menu source from the full menu background box, including the border, while preserving the existing crop math for sizing if needed
+- Avoid scaling only the interior crop for normal window-backed menus
 
 4. Fullscreen PCX menu special case
-  - Keep the full PCX background drawn unscaled
-  - Draw a transparent text/items source over it at the scaled destination, without scaling the background crop
-  - Keep `EVENT_NEWMENU_DRAW` callbacks that intentionally draw full-screen page content from being captured into the text-only source
+
+- Keep the full PCX background drawn unscaled
+- Draw a transparent text/items source over it at the scaled destination, without scaling the background crop
+- Keep `EVENT_NEWMENU_DRAW` callbacks that intentionally draw full-screen page content from being captured into the text-only source
 
 5. Validation
-  - Run scoped code quality with `android/run-code-quality.ps1 -Fix`
-  - Rebuild Android debug with JDK 21
-  - Run the D2 menu-scale automation and capture visual screenshots
-  - Add/extend automation coverage for at least one scrolled menu if the existing script does not exercise the bad tap path
+
+- Run scoped code quality with `android/run-code-quality.ps1 -Fix`
+- Rebuild Android debug with JDK 21
+- Run the D2 menu-scale automation and capture visual screenshots
+- Add/extend automation coverage for at least one scrolled menu if the existing script does not exercise the bad tap path
 
 ## Original Work Plan
 
@@ -181,19 +186,22 @@ For OpenGL builds, corrected after device testing:
 2. D2 OpenGL newmenu path
    - Refactor the existing `newmenu_draw` post-draw block into small Android helpers near the current code
    - Preserve the two cases: opaque menu box and fullscreen PCX background
-  - Build a `BM_LINEAR` source bitmap for the menu region, including the PCX/window background and menu contents
-   - Under `!defined(OGL)`, keep the existing software copy/scale path or route only the math through the helper
-   - Verify touch remapping still uses the cropped source rect, not the uncropped box
+
+- Build a `BM_LINEAR` source bitmap for the menu region, including the PCX/window background and menu contents
+- Under `!defined(OGL)`, keep the existing software copy/scale path or route only the math through the helper
+- Verify touch remapping still uses the cropped source rect, not the uncropped box
 
 3. D2 OpenGL listbox path
    - Apply the same shared rect math to `listbox_draw`
-  - Build and scale an offscreen menu-source bitmap for OGL instead of reading screen `bm_data`
-   - Publish/clear scale state every draw to avoid stale touch transforms
+
+- Build and scale an offscreen menu-source bitmap for OGL instead of reading screen `bm_data`
+- Publish/clear scale state every draw to avoid stale touch transforms
 
 4. D2 OpenGL kconfig path
    - Start by preserving the current kconfig scale behavior: target 0.85, max clamp 2.5, uncropped source box
-  - Build and scale an offscreen menu-source bitmap for OGL instead of reading screen `bm_data`
-   - After visual testing, decide whether to switch kconfig to the new crop-pad helper too
+
+- Build and scale an offscreen menu-source bitmap for OGL instead of reading screen `bm_data`
+- After visual testing, decide whether to switch kconfig to the new crop-pad helper too
 
 5. D1 parity
    - Mirror the D2 Android scale coverage into `d1/main/newmenu.c` and `d1/main/kconfig.c`
@@ -218,7 +226,8 @@ For OpenGL builds, corrected after device testing:
    - Before format/build after any interruption, run `android/stop-stale-formatters.ps1` and kill stale formatters if needed
    - Run focused Android build for D1 and D2 OpenGL targets
    - Run the new integration test script on emulator with logcat cleared and output piped to `temp/`
-  - Run `android/run-code-quality.ps1 -Fix` and wait for it to exit
+
+- Run `android/run-code-quality.ps1 -Fix` and wait for it to exit
 
 ## Validation Notes
 

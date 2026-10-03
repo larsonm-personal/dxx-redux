@@ -18,10 +18,10 @@
 - Replay frames bypass the normal live-input config path: `input_demo_apply_replay_frame()` loads recorded `Controls` and `FrameTime`, and `ReadControlsReplayFrame()` only handles replay-safe follow-up work such as rear-view, automap open, and weapon/item actions
 - Because of that ordering, live-input-only settings such as `ControlType`, key bindings, joystick deadzones, mouse sensitivity, and `maxFps` are not replay hazards for ordinary in-game frames
 - Confirmed gameplay-facing `PlayerCfg` consumers after checkpoint restore are:
-	- `AutoLeveling` in `object.c`, already fixed by preserving the restored `PF_LEVELLING` bit across `read_player_file()`
-	- `PersistentDebris` in `collide.h`, `object.c`, and `fireball.c`, which changes debris lifetime, bounce behavior, and debris-slot pressure
-	- weapon autoselect policy in `weapon.c` and `game.c`: `PrimaryOrder`, `SecondaryOrder`, `NoFireAutoselect`, `SelectAfterFire`, `CycleAutoselectOnly`, and `ClassicAutoselectWeapon`
-	- D2-only `HeadlightActiveDefault` in `powerup.c`, which changes whether a headlight pickup immediately sets `PLAYER_FLAGS_HEADLIGHT_ON`
+  - `AutoLeveling` in `object.c`, already fixed by preserving the restored `PF_LEVELLING` bit across `read_player_file()`
+  - `PersistentDebris` in `collide.h`, `object.c`, and `fireball.c`, which changes debris lifetime, bounce behavior, and debris-slot pressure
+  - weapon autoselect policy in `weapon.c` and `game.c`: `PrimaryOrder`, `SecondaryOrder`, `NoFireAutoselect`, `SelectAfterFire`, `CycleAutoselectOnly`, and `ClassicAutoselectWeapon`
+  - D2-only `HeadlightActiveDefault` in `powerup.c`, which changes whether a headlight pickup immediately sets `PLAYER_FLAGS_HEADLIGHT_ON`
 - `state.c` does not restore these `PlayerCfg` fields, so unlike `AutoLeveling` there is no current checkpoint-state source of truth to reconstruct them during replay startup
 
 ## Code Changes
@@ -33,11 +33,11 @@
 
 - `run-windows-build.ps1 -Target both` succeeded after the logging changes
 - Replayed `android/temp_game_logs/d2_descent2_level1_20260429_074558.dximdemo` again and the host sandbox log now reports:
-	- `auto_level=1`
-	- `debris=0`
-	- `headlight_default=0`
-	- `autoselect=(nofire=0,after=0,cycle=0,classic=0)`
-	- `order_hash=(0xa413d797,0xa413d797)`
+  - `auto_level=1`
+  - `debris=0`
+  - `headlight_default=0`
+  - `autoselect=(nofire=0,after=0,cycle=0,classic=0)`
+  - `order_hash=(0xa413d797,0xa413d797)`
 - The same replay still ends with `Input demo replay result matched embedded trailer terminal-exit subset`
 
 ## Follow-up

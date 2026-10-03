@@ -1,13 +1,17 @@
 # Code Quality + test_lan Fix Plan
+
 Status: COMPLETE
 
 ## Summary
+
 Three changes:
+
 1. PSScriptAnalyzer (PowerShell linter/formatter) added to code quality pipeline
 2. ShellCheck + shfmt (bash linter/formatter) added to code quality pipeline
 3. test_lan game data provisioning fix (Install-AppAndData now uses Resolve-GameDataDeps)
 
 ## Phase 1: PSScriptAnalyzer [DONE]
+
 - Created android/PSScriptAnalyzerSettings.psd1 with exclusions for build/test script patterns
 - Created android/run-psscriptanalyzer.ps1 (lint + format, --check mode)
 - PSScriptAnalyzer installed via Install-Module (no get_deps script needed)
@@ -15,6 +19,7 @@ Three changes:
 - Auto-formatted ~18 files (indentation, whitespace, braces)
 
 ## Phase 2: ShellCheck + shfmt [DONE]
+
 - Added SHELLCHECK_VERSION=0.10.0 and SHFMT_VERSION=3.10.0 to tool_versions.conf
 - Created android/get_deps/get_shellcheck.sh (downloads from GitHub releases)
 - Created android/get_deps/get_shfmt.sh (downloads from GitHub releases)
@@ -25,11 +30,13 @@ Three changes:
 - Auto-formatted 15 .sh files with shfmt
 
 ## Phase 3: run-code-quality.ps1 Integration [DONE]
+
 - Added PSScriptAnalyzer, shellcheck, shfmt sections to run-code-quality.ps1
 - Full pipeline: clang-format -> ktlint -> PSScriptAnalyzer -> shellcheck -> shfmt
 - Both -Fix and check (no flag) modes verified passing
 
 ## Phase 4: test_lan game data fix [DONE]
+
 - Root cause: Install-AppAndData called push_game_data.sh which reads from
   game_data_to_copy_to_emulator/data/ -- that directory only has .gitkeep
 - Fix: Install-AppAndData now sets $env:ANDROID_SERIAL and calls
@@ -37,6 +44,7 @@ Three changes:
 - This uses the same proven mechanism as Start-GameWithRetry/Ensure-GameDataOnDevice
 
 ## Files created
+
 - android/PSScriptAnalyzerSettings.psd1
 - android/run-psscriptanalyzer.ps1
 - android/run-shellcheck.ps1
@@ -45,6 +53,7 @@ Three changes:
 - android/get_deps/get_shfmt.sh
 
 ## Files modified
+
 - android/run-code-quality.ps1 (added 3 tool sections)
 - android/get_deps/tool_versions.conf (added SHELLCHECK/SHFMT versions)
 - android/test_helpers.ps1 (Install-AppAndData: push_game_data.sh -> Resolve-GameDataDeps)

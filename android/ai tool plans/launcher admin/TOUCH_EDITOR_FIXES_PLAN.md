@@ -1,39 +1,47 @@
 # Plan: Touch Editor Fixes -- Top Blocking, Floating Zones, Gyro Recenter
 
 ## TL;DR
+
 Fix 6 issues with the touch control editor: (1) touches blocked at top of screen because system bars aren't hidden, (2) no UI to edit floating zone bounds, (3) floating zones default to left-half when added, (4) floating zones should default to a region around the stick, (5) add sensible default floating zones to presets with analog sticks, (6) add a gyro recenter button type.
 
 ## Root Cause Analysis
 
 ### Issue 1: Top-of-screen touches blocked
+
 The touch editor runs inside SetupActivity which uses edge-to-edge (`setDecorFitsSystemWindows(false)`) but does NOT hide system bars. In landscape mode, the status bar and/or navigation bar remain visible and consume touch events. The BottomSheetScaffold's `innerPadding` shifts the canvas down by the status bar inset height, creating a dead zone at the top where controls appear (via percentage positioning) but touches are intercepted by the system bar.
 
 **Fix**: Hide system bars when TouchEditorPage is active (same as MainActivity does for the game), using `WindowInsetsControllerCompat.hide(systemBars())` with `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`. Restore on editor close.
 
 ### Issue 2: No UI to edit floating zone bounds
+
 The StickPropertiesPanel only has a `Floating` toggle. The `FloatingZone.leftPct/topPct/rightPct/bottomPct` values can only be changed via JSON export/import.
 
 **Fix**: Add 4 percentage sliders (Left, Top, Right, Bottom) shown conditionally when `floating = true`.
 
 ### Issue 3: Floating zones default to left half
+
 `FloatingZone()` constructor defaults to `(0, 0, 50, 100)` -- always the left half.
 
 ### Issue 4: Floating zones should default around the control
+
 When floating is toggled on or a new floating stick is added, the zone should center itself around the stick's current position with reasonable padding.
 
 **Fix**: When toggling `floating` from false to true, compute:
+
 - leftPct = max(0, stick.xPct - 20)
 - rightPct = min(100, stick.xPct + 20)
 - topPct = max(0, stick.yPct - 30)
 - bottomPct = min(100, stick.yPct + 30)
-Apply this as the initial floatingZone.
+  Apply this as the initial floatingZone.
 
 ### Issue 5: Default floating zones in presets with analog sticks
+
 `simple.json` and `advanced.json` have analog sticks but `floating: false` with default zones of `(0, 0, 50, 100)`. The `claw.json` preset has sensible floating zones.
 
 **Fix**: Enable floating on the primary (move) stick in `simple.json` and both sticks in `advanced.json`, with zones appropriate for each stick's position.
 
 ### Issue 6: Gyro recenter button
+
 No action type exists for recentering the gyro. The gyro already has `calibrate()` which resets the reference orientation.
 
 **Fix**: Add a new virtual binding `BTN_GYRO_RECENTER = 101` (overlay-only, next to `BTN_CHEATS_MENU = 100`). Handle in `TouchOverlayView` like `BTN_CHEATS_MENU` -- intercept on press, call `gyroManager?.calibrate()`. No JNI or C-side changes needed.

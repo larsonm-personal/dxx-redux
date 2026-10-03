@@ -24,7 +24,10 @@ class RemainingKeyTouchActionsTest {
         val snapshot = configured.toList()
         val original = configured.filter { touchBindingEnabled(it.binding, true, false) }
 
-        assertEquals(listOf("Secret", "Warp to Me", "Unexplored"), configured.filter { it !in original }.map { it.label })
+        assertEquals(
+            listOf("Secret", "Warp to Me", "Unexplored"),
+            configured.filter { it !in original }.map { it.label },
+        )
         assertTrue(original.any { it.binding == TouchBindings.META_GUIDE_RECALL })
         assertTrue(original.none { it.binding == TouchBindings.META_GUIDE_WARP_TO_ME })
         assertEquals(snapshot, configured.filter { touchBindingEnabled(it.binding, true, true) })
@@ -482,30 +485,28 @@ class RemainingKeyTouchActionsTest {
     private fun weaponState(
         playerFlags: Int = 0,
         currentBomb: Int = -1,
-    ) =
-        WeaponState(
-            primaryFlags = 0,
-            secondaryFlags = 0,
-            playerFlags = playerFlags,
-            primaryAmmo = IntArray(10),
-            secondaryAmmo = IntArray(10),
-            primaryAmmoMax = IntArray(10),
-            secondaryAmmoMax = IntArray(10),
-            currentPrimary = 0,
-            currentSecondary = 0,
-            currentBomb = currentBomb,
-        )
+    ) = WeaponState(
+        primaryFlags = 0,
+        secondaryFlags = 0,
+        playerFlags = playerFlags,
+        primaryAmmo = IntArray(10),
+        secondaryAmmo = IntArray(10),
+        primaryAmmoMax = IntArray(10),
+        secondaryAmmoMax = IntArray(10),
+        currentPrimary = 0,
+        currentSecondary = 0,
+        currentBomb = currentBomb,
+    )
 
     private fun button(
         binding: Int,
         id: String = "button$binding",
-    ) =
-        ButtonControl(
-            id = id,
-            xPct = 10f,
-            yPct = 10f,
-            binding = binding,
-        )
+    ) = ButtonControl(
+        id = id,
+        xPct = 10f,
+        yPct = 10f,
+        binding = binding,
+    )
 
     private fun primaryWeaponBindings() =
         listOf(

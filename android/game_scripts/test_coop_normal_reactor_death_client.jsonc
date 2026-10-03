@@ -1,27 +1,25 @@
 [
     {
         "_info": {
-            "games": [
-                "d2"
-            ],
+            "games": ["d2"],
             "_standalone": false,
-            "_owner": "test_lan"
-        }
+            "_owner": "test_lan",
+        },
     },
     {
         "action": "set_debug",
         "field": "coop_travel_test",
-        "value": "normal_clock_start"
+        "value": "normal_clock_start",
     },
     {
         "action": "set_debug",
         "field": "coop_death_test",
-        "value": "move_away"
+        "value": "move_away",
     },
     {
         "action": "set_debug",
         "field": "damage_player",
-        "value": "500"
+        "value": "500",
     },
     {
         "action": "wait_for",
@@ -30,13 +28,13 @@
             "player_dead": true,
             "player_exploded": true,
             "screen_advance_kind": "death",
-            "screen_advance_can_activate": true
-        }
+            "screen_advance_can_activate": true,
+        },
     },
     {
         "action": "send_button",
         "button": 0,
-        "post_delay_ms": 50
+        "post_delay_ms": 50,
     },
     {
         "action": "wait_for",
@@ -45,12 +43,12 @@
             "coop_travel.waiting_after_death": true,
             "player_dead": true,
             "time_paused": false,
-            "postlevel_active": false
-        }
+            "postlevel_active": false,
+        },
     },
     {
         "action": "wait_ms",
-        "ms": 3000
+        "ms": 3000,
     },
     {
         "action": "assert",
@@ -58,8 +56,8 @@
             "coop_travel.waiting_after_death": true,
             "player_dead": true,
             "time_paused": false,
-            "postlevel_active": false
-        }
+            "postlevel_active": false,
+        },
     },
     {
         "action": "wait_for",
@@ -74,19 +72,19 @@
             "player_dead": false,
             "multiplayer.network_status": 1,
             "multiplayer.players[0].connected": 1,
-            "multiplayer.players[1].connected": 1
-        }
+            "multiplayer.players[1].connected": 1,
+        },
     },
     {
         "action": "set_debug",
         "field": "coop_travel_test",
-        "value": "normal_next_verify"
+        "value": "normal_next_verify",
     },
     {
         "action": "assert",
         "expect": {
             "multiplayer.players[0].deaths": 0,
-            "multiplayer.players[1].deaths": 1
-        }
-    }
+            "multiplayer.players[1].deaths": 1,
+        },
+    },
 ]

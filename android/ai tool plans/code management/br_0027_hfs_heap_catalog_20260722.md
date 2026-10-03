@@ -10,14 +10,14 @@ instead of consuming large fixed stack frames or silently truncating results
 
 - [x] Read repository instructions and the complete BR-0027 finding
 - [x] Trace catalog parsing, public API ownership, Mac fallback callers, tests,
-  and Android build inclusion
+      and Android build inclusion
 - [x] Introduce an owned heap-backed HFS catalog context with checked growth
-  and direct entry extraction
+      and direct entry extraction
 - [x] Migrate listing, single-file extraction, and Mac extraction callers while
-  preserving compatibility where practical
+      preserving compatibility where practical
 - [x] Add allocation, growth, scan-count, reuse, and extraction regression tests
 - [x] Run scoped code quality, native tests, frame-size checks, and Android ABI
-  builds
+      builds
 - [x] Finalize the finding disposition and validation record
 
 ## Validation

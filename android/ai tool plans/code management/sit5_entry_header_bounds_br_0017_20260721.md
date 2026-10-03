@@ -8,11 +8,11 @@ Resolve BR-0017 by preventing SIT5 entry fields from being read until the full
 ## Plan
 
 - [x] Add an overflow-safe fixed-header bounds check shared by SIT5 entry parsing
-  and parent-offset lookup
+      and parent-offset lookup
 - [x] Add regression coverage for truncated entry offsets at the end of an archive
 - [x] Run focused formatting and native extraction tests
 - [x] Mark BR-0017 fixed and move it to the adversarial review done ledger with
-  validation evidence
+      validation evidence
 
 ## Result
 

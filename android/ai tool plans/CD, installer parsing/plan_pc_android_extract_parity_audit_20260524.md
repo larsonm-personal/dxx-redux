@@ -60,54 +60,54 @@ Legend:
 - Coverage: whether the current `extract_regression.json5` setup exercises Android extraction directly. Blank `import_mode` specs currently push pre-extracted `data_tracks` files, so they do not test Android extraction.
 - Gap: the thing to fix first for parity confidence.
 
-| Source | PC source shape | Runtime | Coverage | Gap |
-| --- | --- | --- | --- | --- |
-| d1 mac 2nd bin+cue | CUE + single BIN, HFS/STi, 14 tracks | Yes | No spec | Add spec and setup_cd regression |
-| d2 mac | CUE + single BIN, HFS, 16 tracks | Yes | No spec | Add spec and setup_cd regression |
-| Descent - Anniversary Edition (Brazil) (Covermount) | CUE + single BIN, ISO | Yes | Push-only spec | Set setup_cd |
-| Descent - Anniversary Edition (USA) | CUE + single BIN, ISO | Yes | Push-only spec | Set setup_cd |
-| Descent - Destination Saturn (USA) | CUE + single BIN, ISO | Yes | Push-only spec | Set setup_cd |
-| Descent - Levels of the World (USA) | CUE + single BIN, ISO | Yes | Push-only spec | Set setup_cd |
-| Descent - Mac macplay | CUE + single BIN, HFS/STi, 14 tracks | Yes | setup_cd | Covered |
-| Descent - Test Flight (USA) | CUE + single BIN, ISO + 2 SOW | Yes | Push-only spec | Set setup_cd and verify SOW path |
-| Descent (Europe) | CUE + single BIN, ISO | Yes | Push-only spec | Set setup_cd |
-| Descent (Europe) (Alt) | CUE + single BIN, ISO | Yes | Push-only spec | Set setup_cd |
-| Descent (USA) | CUE + single BIN, ISO | Yes | Push-only spec | Set setup_cd |
-| Descent Anniversary (ISO) | Standalone ISO | Yes | setup_iso | Covered |
-| Definitive Collection EU Disc 1 | CUE + single BIN, ISO | Yes | Push-only spec | Set setup_cd |
-| Definitive Collection EU Disc 2 | CUE + 9 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd and multi-file audio/data regression |
-| Definitive Collection EU Disc 3 | CUE + 8 BIN files, ISO | Yes | Push-only spec | Set setup_cd |
-| Definitive Collection USA Disc 1 | CUE + single BIN, ISO | Yes | Push-only spec | Set setup_cd |
-| Definitive Collection USA Disc 2 | CUE + 9 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd and multi-file audio/data regression |
-| Definitive Collection USA Disc 3 | CUE + 8 BIN files, ISO | Yes | Push-only spec | Set setup_cd |
-| Destination Quartzon Europe | CUE + 13 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd |
-| Destination Quartzon USA | CUE + 13 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd |
-| Destination Quartzon USA Diamond OEM | CUE + 13 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd |
-| Destination Quartzon USA Logitech OEM | CUE + 13 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd |
-| Destination Quartzon 3D Europe | CUE + 6 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd |
-| Descent II - The Vertigo Series (USA) | CUE + 8 BIN files, ISO | Yes | Push-only spec | Set setup_cd |
-| Descent II (Europe) | CUE + 13 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd |
-| Descent II (Europe) (v1.1) | CUE + 9 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd |
-| Descent II (USA) | CUE + 13 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd |
-| Descent II (USA) (3-Level Interactive Preview) | CUE + single BIN, ISO + 3 SOW | Yes | Push-only spec | Set setup_cd and verify multi-SOW path |
-| Descent II (USA) (Alt) | CUE + 13 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd |
-| Descent II (USA) (Rerelease) | CUE + 9 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd |
-| Descent II (USA) (v1.1) | CUE + 9 BIN files, ISO + SOW | Yes | Push-only spec | Set setup_cd |
-| Descent II Infinite Abyss | CUE + 9 BIN files, ISO + `d2data/descent2.sow` | Yes | No spec | Add spec and setup_cd regression |
-| Descent-II-Destination-Quartzon_Win_EN_ISO-Version | CUE + `.img`, plus `.ccd/.sub` sidecars | Yes | Push-only spec, source file list incomplete | Include `.img` in spec generation and set setup_cd |
-| Dimensions for Descent (USA) | CUE + single BIN, ISO | Yes | Push-only spec | Set setup_cd |
+| Source                                              | PC source shape                                | Runtime | Coverage                                    | Gap                                                |
+| --------------------------------------------------- | ---------------------------------------------- | ------- | ------------------------------------------- | -------------------------------------------------- |
+| d1 mac 2nd bin+cue                                  | CUE + single BIN, HFS/STi, 14 tracks           | Yes     | No spec                                     | Add spec and setup_cd regression                   |
+| d2 mac                                              | CUE + single BIN, HFS, 16 tracks               | Yes     | No spec                                     | Add spec and setup_cd regression                   |
+| Descent - Anniversary Edition (Brazil) (Covermount) | CUE + single BIN, ISO                          | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent - Anniversary Edition (USA)                 | CUE + single BIN, ISO                          | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent - Destination Saturn (USA)                  | CUE + single BIN, ISO                          | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent - Levels of the World (USA)                 | CUE + single BIN, ISO                          | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent - Mac macplay                               | CUE + single BIN, HFS/STi, 14 tracks           | Yes     | setup_cd                                    | Covered                                            |
+| Descent - Test Flight (USA)                         | CUE + single BIN, ISO + 2 SOW                  | Yes     | Push-only spec                              | Set setup_cd and verify SOW path                   |
+| Descent (Europe)                                    | CUE + single BIN, ISO                          | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent (Europe) (Alt)                              | CUE + single BIN, ISO                          | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent (USA)                                       | CUE + single BIN, ISO                          | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent Anniversary (ISO)                           | Standalone ISO                                 | Yes     | setup_iso                                   | Covered                                            |
+| Definitive Collection EU Disc 1                     | CUE + single BIN, ISO                          | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Definitive Collection EU Disc 2                     | CUE + 9 BIN files, ISO + SOW                   | Yes     | Push-only spec                              | Set setup_cd and multi-file audio/data regression  |
+| Definitive Collection EU Disc 3                     | CUE + 8 BIN files, ISO                         | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Definitive Collection USA Disc 1                    | CUE + single BIN, ISO                          | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Definitive Collection USA Disc 2                    | CUE + 9 BIN files, ISO + SOW                   | Yes     | Push-only spec                              | Set setup_cd and multi-file audio/data regression  |
+| Definitive Collection USA Disc 3                    | CUE + 8 BIN files, ISO                         | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Destination Quartzon Europe                         | CUE + 13 BIN files, ISO + SOW                  | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Destination Quartzon USA                            | CUE + 13 BIN files, ISO + SOW                  | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Destination Quartzon USA Diamond OEM                | CUE + 13 BIN files, ISO + SOW                  | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Destination Quartzon USA Logitech OEM               | CUE + 13 BIN files, ISO + SOW                  | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Destination Quartzon 3D Europe                      | CUE + 6 BIN files, ISO + SOW                   | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent II - The Vertigo Series (USA)               | CUE + 8 BIN files, ISO                         | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent II (Europe)                                 | CUE + 13 BIN files, ISO + SOW                  | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent II (Europe) (v1.1)                          | CUE + 9 BIN files, ISO + SOW                   | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent II (USA)                                    | CUE + 13 BIN files, ISO + SOW                  | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent II (USA) (3-Level Interactive Preview)      | CUE + single BIN, ISO + 3 SOW                  | Yes     | Push-only spec                              | Set setup_cd and verify multi-SOW path             |
+| Descent II (USA) (Alt)                              | CUE + 13 BIN files, ISO + SOW                  | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent II (USA) (Rerelease)                        | CUE + 9 BIN files, ISO + SOW                   | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent II (USA) (v1.1)                             | CUE + 9 BIN files, ISO + SOW                   | Yes     | Push-only spec                              | Set setup_cd                                       |
+| Descent II Infinite Abyss                           | CUE + 9 BIN files, ISO + `d2data/descent2.sow` | Yes     | No spec                                     | Add spec and setup_cd regression                   |
+| Descent-II-Destination-Quartzon_Win_EN_ISO-Version  | CUE + `.img`, plus `.ccd/.sub` sidecars        | Yes     | Push-only spec, source file list incomplete | Include `.img` in spec generation and set setup_cd |
+| Dimensions for Descent (USA)                        | CUE + single BIN, ISO                          | Yes     | Push-only spec                              | Set setup_cd                                       |
 
 ## Installer/package matrix
 
-| Source class | PC path | Android path | Status |
-| --- | --- | --- | --- |
-| GOG D1 Windows `.exe` | `extract_gog.c` InnoSetup | `GogImportBridge` InnoSetup | Runtime and D1 unified regression covered |
-| GOG D2 Windows `.exe` | `extract_gog.c` InnoSetup | `GogImportBridge` InnoSetup | Runtime and redbook installer regression covered |
-| GOG D1 Mac `.pkg` | `extract_gog.c` XAR/gzip/cpio | `GogImportBridge` `.pkg` | Runtime and D1 unified regression covered |
-| GOG D2 Mac `.pkg` | `extract_gog.c` XAR/gzip/cpio | `GogImportBridge` `.pkg` | Runtime and redbook installer regression covered |
-| DOS demo ZIP/SFX with SOW | DOSBox-X oracle helper | Android ZIP reader plus SOW append mode | Covered by demo package work, not part of CD matrix |
-| Mac demo StuffIt/BinHex | external `unar` oracle and native tests | Android BinHex plus StuffIt/STi | Covered by native oracle tests, runtime validation still noted in prior plan |
-| Loose `.sow` | native `sow_extract.c` | native `sow_extract.c` | Shared native support |
+| Source class              | PC path                                 | Android path                            | Status                                                                       |
+| ------------------------- | --------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------- |
+| GOG D1 Windows `.exe`     | `extract_gog.c` InnoSetup               | `GogImportBridge` InnoSetup             | Runtime and D1 unified regression covered                                    |
+| GOG D2 Windows `.exe`     | `extract_gog.c` InnoSetup               | `GogImportBridge` InnoSetup             | Runtime and redbook installer regression covered                             |
+| GOG D1 Mac `.pkg`         | `extract_gog.c` XAR/gzip/cpio           | `GogImportBridge` `.pkg`                | Runtime and D1 unified regression covered                                    |
+| GOG D2 Mac `.pkg`         | `extract_gog.c` XAR/gzip/cpio           | `GogImportBridge` `.pkg`                | Runtime and redbook installer regression covered                             |
+| DOS demo ZIP/SFX with SOW | DOSBox-X oracle helper                  | Android ZIP reader plus SOW append mode | Covered by demo package work, not part of CD matrix                          |
+| Mac demo StuffIt/BinHex   | external `unar` oracle and native tests | Android BinHex plus StuffIt/STi         | Covered by native oracle tests, runtime validation still noted in prior plan |
+| Loose `.sow`              | native `sow_extract.c`                  | native `sow_extract.c`                  | Shared native support                                                        |
 
 ## Findings
 

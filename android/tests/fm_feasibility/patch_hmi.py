@@ -3,22 +3,25 @@
 Only applied to the pinned BSD player copy. Rules are measured from original
 DOS register captures, with controlled probes and independent song comparisons.
 """
+
 from pathlib import Path
 
 
 def replace_function(source, signature, body):
-    start = source.index(signature + '\n{')
-    end = source.index('\n// ----------------------------------------------------------------------------', start)
-    return source[:start] + signature + '\n{\n' + body + '\n}\n' + source[end:]
+    start = source.index(signature + "\n{")
+    end = source.index("\n// ----------------------------------------------------------------------------", start)
+    return source[:start] + signature + "\n{\n" + body + "\n}\n" + source[end:]
 
 
 def patch(source):
-    source = '#include <cstdint>\n' + Path(__file__).with_name('hmi_pitch_table.inc').read_text() + '\n' + source
-    source = source.replace('m_voices.resize(numChips * 18);', 'm_voices.resize(numChips * 9);')
-    source = source.replace('note < 96 && voice.channel->pitch == 1.0 &&', 'note < 96 &&')
-    marker = '\t\tvoice.freq = hmiFreq[note % 12] | ((note / 12) << 10);'
+    source = "#include <cstdint>\n" + Path(__file__).with_name("hmi_pitch_table.inc").read_text() + "\n" + source
+    source = source.replace("m_voices.resize(numChips * 18);", "m_voices.resize(numChips * 9);")
+    source = source.replace("note < 96 && voice.channel->pitch == 1.0 &&", "note < 96 &&")
+    marker = "\t\tvoice.freq = hmiFreq[note % 12] | ((note / 12) << 10);"
     assert source.count(marker) == 1
-    source = source.replace(marker, '''
+    source = source.replace(
+        marker,
+        """
         const unsigned key = note % 12;
         unsigned freq = hmiFreq[key];
         unsigned block = note / 12;
@@ -29,8 +32,12 @@ def patch(source):
             freq = value & 1023;
             block += value >> 10;
         }
-        voice.freq = freq | (std::min(7u, block) << 10);''')
-    source = replace_function(source, 'void OPLPlayer::write(int chip, uint16_t addr, uint8_t data)', r'''
+        voice.freq = freq | (std::min(7u, block) << 10);""",
+    )
+    source = replace_function(
+        source,
+        "void OPLPlayer::write(int chip, uint16_t addr, uint8_t data)",
+        r"""
     auto raw = [&](uint16_t reg) {
         fm_trace_write(chip, reg, data);
         if (reg < 0x100) m_opl3[chip]->write_address(uint8_t(reg));
@@ -42,8 +49,12 @@ def patch(source):
     // Levels and routing are explicitly written per side below
     if (addr >= 0x20 && addr <= 0xf5 && !(addr >= 0x40 && addr <= 0x55) &&
         !(addr >= 0xc0 && addr <= 0xc8)) raw(addr | 0x100);
-''')
-    source = replace_function(source, 'void OPLPlayer::updateVolume(OPLVoice& voice)', r'''
+""",
+    )
+    source = replace_function(
+        source,
+        "void OPLPlayer::updateVolume(OPLVoice& voice)",
+        r"""
     if (!voice.patch || !voice.channel) return;
     // Independently measured using all velocities, volumes and pan positions
     // Index 63 is unreachable with both full HMI gain stages at 127
@@ -67,14 +78,22 @@ def patch(source):
         write(voice.chip, REG_OP_LEVEL + voice.op + bank, p.op_level[0] | p.op_ksr[0]);
         write(voice.chip, REG_OP_LEVEL + voice.op + bank + 3, carrier | p.op_ksr[1]);
     }
-''')
-    source = replace_function(source, 'void OPLPlayer::updatePanning(OPLVoice& voice)', r'''
+""",
+    )
+    source = replace_function(
+        source,
+        "void OPLPlayer::updatePanning(OPLVoice& voice)",
+        r"""
     if (!voice.patch || !voice.channel) return;
     write(voice.chip, REG_VOICE_CNT + voice.num, voice.patchVoice->conn | 0x20);
     write(voice.chip, REG_VOICE_CNT + voice.num + 0x100, voice.patchVoice->conn | 0x10);
     updateVolume(voice);
-''')
-    source = replace_function(source, 'OPLVoice* OPLPlayer::findVoice(uint8_t channel, const OPLPatch *patch, uint8_t note)', r'''
+""",
+    )
+    source = replace_function(
+        source,
+        "OPLVoice* OPLPlayer::findVoice(uint8_t channel, const OPLPatch *patch, uint8_t note)",
+        r"""
     (void)patch;
     (void)note;
     for (auto& voice : m_voices)
@@ -88,34 +107,47 @@ def patch(source):
             selected = &voice;
     // All held channels have received pitch messages: measured on all 16 inputs
     return selected ? selected : &m_voices[(channel & 15) % 9];
-''')
-    marker = 'void OPLPlayer::midiPitchControl(uint8_t channel, double pitch)\n{'
+""",
+    )
+    marker = "void OPLPlayer::midiPitchControl(uint8_t channel, double pitch)\n{"
     assert source.count(marker) == 1
-    source = source.replace(marker, marker + '''
+    source = source.replace(
+        marker,
+        marker
+        + """
     if ((channel & 15) == 9) return;
     m_channels[channel & 15].hmiPitchSeen = true;
-''')
-    marker = '\t\t\tupdateFrequency(*voice);'
+""",
+    )
+    marker = "\t\t\tupdateFrequency(*voice);"
     assert source.count(marker) == 1
-    source = source.replace(marker, '''
+    source = source.replace(
+        marker,
+        """
             // DOS keys on at nominal pitch, then applies its saved wheel value
             auto& ch = m_channels[channel & 15];
             const bool wheelSeen = ch.hmiPitchSeen;
             ch.hmiPitchSeen = false;
             updateFrequency(*voice);
             ch.hmiPitchSeen = wheelSeen;
-            if (wheelSeen) updateFrequency(*voice);''')
-    marker = '\tcase 10:\n\t\tch.pan = value;'
+            if (wheelSeen) updateFrequency(*voice);""",
+    )
+    marker = "\tcase 10:\n\t\tch.pan = value;"
     assert source.count(marker) == 1
-    source = source.replace(marker, marker + '\n\t\tch.hmiPanSeen = true;')
-    source = source.replace('if (m_stereo)\n\t\t\tupdateChannelVoices(channel, &OPLPlayer::updatePanning);',
-                            '''ch.hmiPanUpdateSide = value < 64 ? 1 : 0;
+    source = source.replace(marker, marker + "\n\t\tch.hmiPanSeen = true;")
+    source = source.replace(
+        "if (m_stereo)\n\t\t\tupdateChannelVoices(channel, &OPLPlayer::updatePanning);",
+        """ch.hmiPanUpdateSide = value < 64 ? 1 : 0;
         updateChannelVoices(channel, &OPLPlayer::updateVolume);
-        ch.hmiPanUpdateSide = -1;''')
-    marker = '\t\tvoice->on = voice->justChanged = true;'
+        ch.hmiPanUpdateSide = -1;""",
+    )
+    marker = "\t\tvoice->on = voice->justChanged = true;"
     assert source.count(marker) == 1
-    source = source.replace(marker, marker + '\n\t\tvoice->hmiHeld = true;')
-    source = replace_function(source, 'void OPLPlayer::midiNoteOff(uint8_t channel, uint8_t note)', r'''
+    source = source.replace(marker, marker + "\n\t\tvoice->hmiHeld = true;")
+    source = replace_function(
+        source,
+        "void OPLPlayer::midiNoteOff(uint8_t channel, uint8_t note)",
+        r"""
     for (auto& voice : m_voices) {
         if (!voice.on || voice.channel != &m_channels[channel & 15] || voice.note != (note & 127)) continue;
         voice.hmiHeld = false;
@@ -124,10 +156,14 @@ def patch(source):
         voice.on = false;
         write(voice.chip, REG_VOICE_FREQH + voice.num, voice.freq >> 8);
     }
-''')
-    marker = '\tswitch (control)\n\t{'
+""",
+    )
+    marker = "\tswitch (control)\n\t{"
     assert source.count(marker) == 1
-    source = source.replace(marker, marker + '''
+    source = source.replace(
+        marker,
+        marker
+        + """
     case 64:
         ch.hmiSustain = value >= 64;
         if (!ch.hmiSustain)
@@ -138,21 +174,29 @@ def patch(source):
                 write(voice.chip, REG_VOICE_FREQH + voice.num, voice.freq >> 8);
             }
         break;
-''')
-    source = source.replace('if (findVoice(channel, note, true))\n\t\treturn;', '')
-    source = source.replace('silenceVoice(voice);\n\t\trunSamples(voice.chip, 48);',
-                            'write(voice.chip, REG_VOICE_FREQH + voice.num, voice.freq >> 8);')
-    marker = '\t\tupdatePatch(*voice, newPatch, i);'
+""",
+    )
+    source = source.replace("if (findVoice(channel, note, true))\n\t\treturn;", "")
+    source = source.replace(
+        "silenceVoice(voice);\n\t\trunSamples(voice.chip, 48);",
+        "write(voice.chip, REG_VOICE_FREQH + voice.num, voice.freq >> 8);",
+    )
+    marker = "\t\tupdatePatch(*voice, newPatch, i);"
     assert source.count(marker) == 1
-    source = source.replace(marker, '\t\twrite(voice->chip, REG_VOICE_FREQH + voice->num, voice->freq >> 8);\n' + marker)
+    source = source.replace(
+        marker, "\t\twrite(voice->chip, REG_VOICE_FREQH + voice->num, voice->freq >> 8);\n" + marker
+    )
     return source
 
 
 def patch_header(header):
-    marker = '\tbool percussion = false;'
+    marker = "\tbool percussion = false;"
     assert header.count(marker) == 1
-    header = header.replace(marker, marker + '\n\tbool hmiPitchSeen = false;\n\tbool hmiPanSeen = false;'
-                            '\n\tbool hmiSustain = false;\n\tint hmiPanUpdateSide = -1;')
-    marker = '\tbool on = false;'
+    header = header.replace(
+        marker,
+        marker + "\n\tbool hmiPitchSeen = false;\n\tbool hmiPanSeen = false;"
+        "\n\tbool hmiSustain = false;\n\tint hmiPanUpdateSide = -1;",
+    )
+    marker = "\tbool on = false;"
     assert header.count(marker) == 1
-    return header.replace(marker, marker + '\n\tbool hmiHeld = false;')
+    return header.replace(marker, marker + "\n\tbool hmiHeld = false;")

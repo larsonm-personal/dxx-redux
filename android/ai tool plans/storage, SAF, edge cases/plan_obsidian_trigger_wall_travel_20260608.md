@@ -1,17 +1,20 @@
 # Obsidian trigger wall travel analysis
 
 ## Goal
+
 - Investigate why many Obsidian maps report failed travel metadata.
 - Determine whether location-triggered disappearing walls are blocking the travel graph.
 - Add a general passability rule if trigger-opened walls should be treated as route-passable.
 
 ## Plan
+
 - [x] Reproduce Obsidian travel failures with the local `Obsidian.zip`.
 - [x] Inspect trigger/wall data exposed to the shared metadata scanner.
 - [x] Patch the scanner/adapter to treat trigger-opened disappearing walls as passable for metadata travel.
 - [x] Re-run Obsidian and base-game verification, then run scoped formatting/build checks.
 
 ## Notes
+
 - User observed normal progression that reveals large map sections by disappearing walls.
 - The intended rule is data-driven, not Obsidian-specific: if a wall disappears because an open-wall trigger targets it, consider it passable for metadata travel.
 - Reproduced via headless D2 dump staged from `Obsidian.zip`: 16 of 18 levels reported non-ok travel before the trigger-wall routing change.

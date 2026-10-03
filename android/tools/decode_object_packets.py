@@ -17,15 +17,28 @@ from collections import OrderedDict
 
 # --- Constants ---
 
-UPID_OBJECT_DATA = 0x0b
+UPID_OBJECT_DATA = 0x0B
 SIZEOF_OBJECT_RW = 264  # verified: 9(hdr) + 7*273 = 1920 per continuation packet
-PER_OBJ_HEADER = 9      # 4 (local objnum) + 1 (owner) + 4 (remote objnum)
+PER_OBJ_HEADER = 9  # 4 (local objnum) + 1 (owner) + 4 (remote objnum)
 
 OBJ_TYPE_NAMES = {
-    0: "WALL", 1: "FIREBALL", 2: "ROBOT", 3: "HOSTAGE", 4: "PLAYER",
-    5: "WEAPON", 6: "CAMERA", 7: "POWERUP", 8: "DEBRIS", 9: "CNTRLCEN",
-    10: "FLARE", 11: "CLUTTER", 12: "GHOST", 13: "LIGHT", 14: "COOP",
-    15: "MARKER", 255: "NONE",
+    0: "WALL",
+    1: "FIREBALL",
+    2: "ROBOT",
+    3: "HOSTAGE",
+    4: "PLAYER",
+    5: "WEAPON",
+    6: "CAMERA",
+    7: "POWERUP",
+    8: "DEBRIS",
+    9: "CNTRLCEN",
+    10: "FLARE",
+    11: "CLUTTER",
+    12: "GHOST",
+    13: "LIGHT",
+    14: "COOP",
+    15: "MARKER",
+    255: "NONE",
 }
 
 # object_rw field offsets (packed, no WORDS_NEED_ALIGNMENT)
@@ -62,34 +75,43 @@ def decode_object_rw_key_fields(data):
     if len(data) < 94:
         return {"error": f"body too short ({len(data)} bytes)"}
 
-    sig = struct.unpack_from('<i', data, 0)[0]
+    sig = struct.unpack_from("<i", data, 0)[0]
     obj_type = data[4]
     obj_id = data[5]
-    next_obj, prev_obj = struct.unpack_from('<hh', data, 6)
+    next_obj, prev_obj = struct.unpack_from("<hh", data, 6)
     ctrl_type = data[10]
     move_type = data[11]
     render_type = data[12]
     flags = data[13]
-    segnum = struct.unpack_from('<h', data, 14)[0]
-    attached = struct.unpack_from('<h', data, 16)[0]
-    px, py, pz = struct.unpack_from('<iii', data, 18)
-    size = struct.unpack_from('<i', data, 66)[0]
-    shields = struct.unpack_from('<i', data, 70)[0]
-    contains_type = struct.unpack_from('<b', data, 86)[0]
-    contains_id = struct.unpack_from('<b', data, 87)[0]
-    contains_count = struct.unpack_from('<b', data, 88)[0]
-    lifeleft = struct.unpack_from('<i', data, 90)[0]
+    segnum = struct.unpack_from("<h", data, 14)[0]
+    attached = struct.unpack_from("<h", data, 16)[0]
+    px, py, pz = struct.unpack_from("<iii", data, 18)
+    size = struct.unpack_from("<i", data, 66)[0]
+    shields = struct.unpack_from("<i", data, 70)[0]
+    contains_type = struct.unpack_from("<b", data, 86)[0]
+    contains_id = struct.unpack_from("<b", data, 87)[0]
+    contains_count = struct.unpack_from("<b", data, 88)[0]
+    lifeleft = struct.unpack_from("<i", data, 90)[0]
 
     type_name = OBJ_TYPE_NAMES.get(obj_type, f"?{obj_type}")
     return {
-        "sig": sig, "type": type_name, "type_num": obj_type, "id": obj_id,
-        "segnum": segnum, "flags": flags,
-        "ctrl": ctrl_type, "move": move_type, "render": render_type,
+        "sig": sig,
+        "type": type_name,
+        "type_num": obj_type,
+        "id": obj_id,
+        "segnum": segnum,
+        "flags": flags,
+        "ctrl": ctrl_type,
+        "move": move_type,
+        "render": render_type,
         "pos": (fix_to_float(px), fix_to_float(py), fix_to_float(pz)),
-        "size": fix_to_float(size), "shields": fix_to_float(shields),
+        "size": fix_to_float(size),
+        "shields": fix_to_float(shields),
         "contains": (contains_type, contains_id, contains_count),
         "lifeleft": fix_to_float(lifeleft),
-        "next": next_obj, "prev": prev_obj, "attached": attached,
+        "next": next_obj,
+        "prev": prev_obj,
+        "attached": attached,
     }
 
 
@@ -105,8 +127,8 @@ def decode_packet(hex_str, label=""):
         return result
 
     pkt_type = data[0]
-    token = struct.unpack_from('<I', data, 1)[0]
-    nobj = struct.unpack_from('<i', data, 5)[0]
+    token = struct.unpack_from("<I", data, 1)[0]
+    nobj = struct.unpack_from("<i", data, 5)[0]
     result["type"] = pkt_type
     result["token"] = token
     result["nobj_declared"] = nobj
@@ -124,9 +146,9 @@ def decode_packet(hex_str, label=""):
             result["truncated_at"] = f"header {i}/{nobj}, loc={loc}, avail={len(data)}"
             break
 
-        local_objnum = struct.unpack_from('<i', data, loc)[0]
-        owner = struct.unpack_from('<b', data, loc + 4)[0]
-        remote_objnum = struct.unpack_from('<i', data, loc + 5)[0]
+        local_objnum = struct.unpack_from("<i", data, loc)[0]
+        owner = struct.unpack_from("<b", data, loc + 4)[0]
+        remote_objnum = struct.unpack_from("<i", data, loc + 5)[0]
         loc += PER_OBJ_HEADER
 
         entry = OrderedDict()
@@ -160,23 +182,20 @@ def decode_packet(hex_str, label=""):
                 entry["partial_fields"] = {
                     "type": OBJ_TYPE_NAMES.get(partial[4], f"?{partial[4]}"),
                     "id": partial[5],
-                    "segnum": struct.unpack_from('<h', partial, 14)[0] if len(partial) >= 16 else "?",
+                    "segnum": struct.unpack_from("<h", partial, 14)[0] if len(partial) >= 16 else "?",
                 }
             objects_parsed += 1
             result["objects"].append(entry)
             break
 
-        body = data[loc:loc + SIZEOF_OBJECT_RW]
+        body = data[loc : loc + SIZEOF_OBJECT_RW]
         loc += SIZEOF_OBJECT_RW
         entry.update(decode_object_rw_key_fields(body))
         objects_parsed += 1
         result["objects"].append(entry)
 
     result["objects_parsed"] = objects_parsed
-    expected_full = 9 + sum(
-        PER_OBJ_HEADER + (SIZEOF_OBJECT_RW if "marker" not in o else 0)
-        for o in result["objects"]
-    )
+    expected_full = 9 + sum(PER_OBJ_HEADER + (SIZEOF_OBJECT_RW if "marker" not in o else 0) for o in result["objects"])
     # Estimate what full packet size should have been
     if result["truncated"]:
         remaining = nobj - len([o for o in result["objects"] if "marker" not in o and not o.get("body_truncated")])
@@ -193,17 +212,19 @@ def format_object(obj, indent="  "):
             return f"{indent}[INIT] player_num={obj['player_num']}"
         elif obj["marker"] == "END":
             return f"{indent}[END] player_num={obj['player_num']} total_count={obj['total_obj_count']}"
-    parts = [f"{indent}local={obj.get('local_objnum','?'):>3d}"]
-    parts.append(f"remote={obj.get('remote_objnum','?'):>3d}")
-    parts.append(f"owner={obj.get('owner','?'):>2d}")
+    parts = [f"{indent}local={obj.get('local_objnum', '?'):>3d}"]
+    parts.append(f"remote={obj.get('remote_objnum', '?'):>3d}")
+    parts.append(f"owner={obj.get('owner', '?'):>2d}")
     if obj.get("body_truncated"):
         pf = obj.get("partial_fields", {})
-        parts.append(f"TRUNCATED (partial: type={pf.get('type','?')} id={pf.get('id','?')} seg={pf.get('segnum','?')})")
+        parts.append(
+            f"TRUNCATED (partial: type={pf.get('type', '?')} id={pf.get('id', '?')} seg={pf.get('segnum', '?')})"
+        )
         return " ".join(parts)
-    parts.append(f"type={obj.get('type','?'):<10s}")
-    parts.append(f"id={obj.get('id','?'):>3d}")
-    parts.append(f"seg={obj.get('segnum','?'):>4d}")
-    parts.append(f"shields={obj.get('shields',0):>8.1f}")
+    parts.append(f"type={obj.get('type', '?'):<10s}")
+    parts.append(f"id={obj.get('id', '?'):>3d}")
+    parts.append(f"seg={obj.get('segnum', '?'):>4d}")
+    parts.append(f"shields={obj.get('shields', 0):>8.1f}")
     if obj.get("contains", (0, 0, 0))[2] > 0:
         ct, ci, cc = obj["contains"]
         parts.append(f"contains=({ct},{ci},{cc})")
@@ -213,7 +234,7 @@ def format_object(obj, indent="  "):
 def format_packet(pkt):
     """Format a decoded packet for display"""
     lines = []
-    hdr = f"--- {pkt['label']} ---  len={pkt['raw_len']}  token=0x{pkt.get('token',0):08x}  nobj={pkt.get('nobj_declared','?')}"
+    hdr = f"--- {pkt['label']} ---  len={pkt['raw_len']}  token=0x{pkt.get('token', 0):08x}  nobj={pkt.get('nobj_declared', '?')}"
     lines.append(hdr)
     if "error" in pkt:
         lines.append(f"  ERROR: {pkt['error']}")
@@ -231,7 +252,7 @@ def extract_pktdump_lines(log_text):
     # Match patterns like:
     #   PKTDUMP TX len=1929 0b...
     #   [netlog] PKTDUMP TX len=1929 0b...
-    pattern = re.compile(r'PKTDUMP\s+(TX|RX)\s+len=(\d+)\s+([0-9a-fA-F]+)')
+    pattern = re.compile(r"PKTDUMP\s+(TX|RX)\s+len=(\d+)\s+([0-9a-fA-F]+)")
     results = []
     for line in log_text.splitlines():
         m = pattern.search(line)
@@ -300,8 +321,7 @@ def analyze_diff(tx_packets, rx_packets):
     if trunc_pkts:
         print(f"\n--- {len(trunc_pkts)} RX packets were truncated ---")
         for p in trunc_pkts:
-            print(f"  {p['label']}: declared={p['nobj_declared']} received, "
-                  f"truncated at: {p['truncated_at']}")
+            print(f"  {p['label']}: declared={p['nobj_declared']} received, truncated at: {p['truncated_at']}")
 
 
 def main():
@@ -320,7 +340,7 @@ def main():
         sys.exit(0)
 
     log_file = sys.argv[1]
-    with open(log_file, 'r', encoding='utf-8', errors='replace') as f:
+    with open(log_file, "r", encoding="utf-8", errors="replace") as f:
         log_text = f.read()
 
     entries = extract_pktdump_lines(log_text)
@@ -367,12 +387,10 @@ def main():
     print(f"TX packets: {len(tx_packets)}")
     print(f"RX packets: {len(rx_packets)}")
     tx_obj_count = sum(
-        len([o for o in p["objects"] if "marker" not in o and not o.get("body_truncated")])
-        for p in tx_packets
+        len([o for o in p["objects"] if "marker" not in o and not o.get("body_truncated")]) for p in tx_packets
     )
     rx_obj_count = sum(
-        len([o for o in p["objects"] if "marker" not in o and not o.get("body_truncated")])
-        for p in rx_packets
+        len([o for o in p["objects"] if "marker" not in o and not o.get("body_truncated")]) for p in rx_packets
     )
     rx_trunc = sum(1 for p in rx_packets if p.get("truncated"))
     print(f"TX objects: {tx_obj_count}")

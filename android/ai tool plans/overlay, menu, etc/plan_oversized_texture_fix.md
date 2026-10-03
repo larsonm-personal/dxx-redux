@@ -1,6 +1,7 @@
 # Oversized Texture Fallback and Cache Diagnostics Fix
 
 ## Problem
+
 1. "Textures behind the ship at spawn are low-res" - reported by user with 256px mod pack
 2. "Hidden door too dark" with 256px pack
 3. Cache diagnostics invisible in logcat (con_printf goes to stdout, not logcat)
@@ -10,6 +11,7 @@
 ## Root Cause Analysis
 
 ### Oversized textures (main issue)
+
 - d2x-xl texture pack stores animation frame strips as tall vertical images
   (e.g. 256x2304 = 9 frames of 256x256 stacked vertically)
 - GL_MAX_TEXTURE_SIZE = 2048 on Android emulator (SwiftShader)
@@ -21,6 +23,7 @@
 - ~48 oversized sprite strips caused this, inflating metrics to fake 100% replacement
 
 ### Hidden door darkness
+
 - Investigated `bm_flags` clobber in `piggy_bitmap_page_out_all()` (sets `=` not `|=`)
 - Finding: `piggy_bitmap_page_in()` restores flags from `GameBitmapFlags[i]`, so clobber
   is not permanent
@@ -31,12 +34,14 @@
 ## Fixes Applied
 
 ### Phase 1: Cache diagnostics to logcat [DONE]
+
 - d1/arch/ogl/ogl.c: switched con_printf to __android_log_print in ogl_cache_level_textures
 - d2/arch/ogl/ogl.c: same change
 - Added `n_png_fail` counter for textures where gltexture was allocated but handle stayed 0
 - "Skipping oversized" messages now also logged to logcat (ANDROID_LOG_WARN)
 
 ### Phase 2: Fix unchecked ogl_loadtexture return [DONE - revised]
+
 - d1/arch/ogl/ogl.c + d2/arch/ogl/ogl.c:
   - Check ogl_loadtexture() return value in ogl_loadbmtexture_f()
   - On failure: reinit gltexture with bitmap dimensions (not NULL), set is_png=1
@@ -58,6 +63,7 @@
   7. Subsequent frames: handle>0 -> early return, no work
 
 ## Test Results
+
 - Build: PASS
 - test_mod_loading_256.json5: PASS
 - Cache diagnostics visible in logcat:
@@ -70,6 +76,7 @@
   - On first render, bitmap data uploaded directly (no PNG retry)
 
 ## Future Considerations
+
 - Sprite strip splitting: instead of falling back to 64x64, could split tall strips
   into individual frames at load time to keep hires quality
 - OGL_MERGE: could enable now that GLES 3.0 is available, improving dual-texture walls

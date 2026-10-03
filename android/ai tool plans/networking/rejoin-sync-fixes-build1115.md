@@ -21,6 +21,7 @@ Could not definitively confirm this is the cause without the original crash pack
 
 **Fix**: Assert kept intact (game ran 20 years with it). Added pre-assert diagnostic
 logging that fires ONLY when the type is wrong:
+
 - `obj_type_name()` helper uses case statement to print human-readable type names
 - `multi_reset_player_object`: logs obj index, type name, segment, id before the assert
 - `multi_prep_level`: logs player index, objnum, type name for any player whose object
@@ -39,6 +40,7 @@ it creates a new UDP socket with a different ephemeral port. The full sockaddr c
 fails, so the player is treated as new and assigned a fresh slot.
 
 **Fix**:
+
 - Added `sockaddr_ip_equal()` helper function that compares only the IP address portion
   of sockaddrs, ignoring the port. Handles both IPv4 (sin_addr) and IPv6 (sin6_addr).
 - Replaced all 4 reconnection matching locations with IP-only comparison:
@@ -53,6 +55,7 @@ fails, so the player is treated as new and assigned a fresh slot.
 ## Previous Fix Confirmed Working (Build 1114)
 
 The WiFi MTU truncation fix from build 1114 is confirmed working in the logs:
+
 - Client correctly detects `TRUNCATED at body 6/8` on every packet
 - Clean `verify_objects: FAIL packet_loss` dialog shown (no crash)
 - 15 of 110 objects lost (every 7th, consistent with 1500-byte MTU truncation)

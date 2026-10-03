@@ -1,22 +1,24 @@
 # Plan: Touch Interface Editor & Advanced Touch Controls
 
 ## TL;DR
+
 Build a customizable touch control system for the Descent Android port, modeled after mobile shooters (CoD Mobile, PUBG Mobile, Apex Legends Mobile). Replace the hardcoded touch layout in TouchOverlayView with a data-driven system of positioned/sized widgets defined in a JSON layout file. Add a visual drag-and-drop editor, dual-stick support, gyro aiming, radial menus (guidebot, weapons), and user-customizable presets. Continue emulating a joystick/controller through the existing JNI bridge — no game engine changes needed.
 
 ## Phase Status
 
-| Phase | Status | Key Files |
-|-------|--------|-----------|
-| 1: Data Model & Layout Persistence | ✅ Complete | TouchBindings.kt (96 lines), TouchControl.kt (~520 lines), TouchLayoutRepository.kt (~170 lines) |
-| 2: Refactor TouchOverlayView | ✅ Complete | TouchOverlayView.kt (~840 lines, fully data-driven) |
-| 3: Gyro Input | ✅ Complete | GyroInputManager.kt (~180 lines), wired in TouchOverlayView + MainActivity |
-| 4: Touch Layout Editor | ✅ Complete | TouchEditorPage.kt (~790 lines), wired in SetupActivity |
+| Phase                                | Status      | Key Files                                                                                           |
+| ------------------------------------ | ----------- | --------------------------------------------------------------------------------------------------- |
+| 1: Data Model & Layout Persistence   | ✅ Complete | TouchBindings.kt (96 lines), TouchControl.kt (~520 lines), TouchLayoutRepository.kt (~170 lines)    |
+| 2: Refactor TouchOverlayView         | ✅ Complete | TouchOverlayView.kt (~840 lines, fully data-driven)                                                 |
+| 3: Gyro Input                        | ✅ Complete | GyroInputManager.kt (~180 lines), wired in TouchOverlayView + MainActivity                          |
+| 4: Touch Layout Editor               | ✅ Complete | TouchEditorPage.kt (~790 lines), wired in SetupActivity                                             |
 | 5: Radial Menus (Guidebot + Weapons) | ✅ Complete | TouchOverlayView.kt, TouchControl.kt, TouchLayoutRepository.kt, TouchEditorPage.kt, MainActivity.kt |
-| 6: Polish & Presets | ✅ Complete | TouchOverlayView.kt, TouchEditorPage.kt, TouchLayoutRepository.kt |
+| 6: Polish & Presets                  | ✅ Complete | TouchOverlayView.kt, TouchEditorPage.kt, TouchLayoutRepository.kt                                   |
 
 ## Current State (post Phase 3)
 
 ### Implemented files
+
 - **TouchBindings.kt** (96 lines): Constants for 23 button indices (BTN_FIRE_PRIMARY=0 through BTN_TOGGLE_BOMB=54), 6 axis indices (AXIS_LEFT_X=0 through AXIS_RTRIGGER=5), label maps, and layout constraint constants (size/opacity/sensitivity/deadzone/exponent limits). Indices mirror `kc_joystick[]` in C.
 - **TouchControl.kt** (~520 lines): 5 enums (ResponseCurve, DPadMode, ButtonShape, SliderOrientation, GyroActivation). `applyResponseCurve()` helper. 9 data classes with full JSON round-trip serialization (FloatingZone, AnalogStickControl, ButtonControl, SliderControl, RadialSegment, RadialMenuControl, DPadControl, GyroConfig, TouchLayout). All use percentage-based positioning (0-100).
 - **TouchLayoutRepository.kt** (~170 lines): `load()`/`save()` to `touch_layout.json`. 3 presets: Simple (1 stick, 2 buttons, map), Advanced (2 sticks with exponential curves, 6 buttons, throttle slider), Claw (2 floating sticks, 5 buttons, gyro enabled with TOUCH_STICK activation).
@@ -25,12 +27,14 @@ Build a customizable touch control system for the Descent Android port, modeled 
 - **MainActivity.kt**: Creates GyroInputManager when `layout.gyro.enabled`, wires `axisCallback` to `nativeJoystickAxis`, calls `resume()`/`pause()` in lifecycle, passes gyro to `touchOverlay.gyroManager`.
 
 ### Existing infrastructure (unchanged)
+
 - **android_input.c**: JNI bridge with `nativeJoystickAxis(axis, value)` (6 axes) and `nativeJoystickButton(button, pressed)`. Also has automap-specific input. Game supports up to 128 axes and 128 buttons per joystick.
 - **ControllerConfigPage.kt**: Existing Compose-based gamepad config UI, accessed from SetupActivity's ControllerSection. Saves to `controller_config.json`.
 - **kconfig system (d2)**: 56-entry `kc_joystick[]` array. 6 analog axes. Per-axis deadzone/sensitivity at engine level.
 - **SDL 1.2.15**: No sensor/gyro API. Gyro done at Android layer.
 
 ### Implementation notes discovered during build
+
 - **Gyro + stick are independent writers**: Both call `nativeJoystickAxis()` separately. The engine sees the last value written per axis per frame. This is functionally correct because gyro fires at sensor rate (~100Hz) while touch fires on ACTION_MOVE events — they naturally interleave. True additive combining would require tracking per-axis stick values in the overlay, which adds complexity for marginal benefit.
 - **Floating stick zone** is computed in pixels from percentage in `computeGeometry()` and checked in `onTouchEvent` — stick appears at first touch position within the zone.
 - **Toggle buttons** maintain `toggled` state across pointer up/down cycles. Visual feedback: brighter fill when toggled on.
@@ -40,6 +44,7 @@ Build a customizable touch control system for the Descent Android port, modeled 
 - **Automap overlay**: Separate code path in `onTouchEvent` when `automapActive=true`. 1-finger drag → heading/pitch, 2-finger pinch → zoom/rotate/translate. Automap buttons (center, markers, MAP) rendered at top.
 
 ### Phase 5 implementation notes (Radial Menus)
+
 - **Data model**: `RadialMenuControl` extended with `centerLabel: String` and `centerBinding: Int` fields for the center zone action (e.g., guidebot "Clear Goal"). Both serialize to JSON with backward-compatible `optString`/`optInt` deserialization.
 - **`RadialSegment`**: Stores `binding` (Android `KeyEvent.KEYCODE_*` values) and optional `weaponIndex: Int` (0-4 for weapon slot mapping, -1 for non-weapon segments). Fired via `keyCallback` → `nativeKeyEvent()` in JNI. Unicode chars derived from keycodes via `keycodeToUnicode()`.
 - **Shared drawing code**: `drawRadialMenu()` handles generic radial menus (guidebot). `drawWeaponWheel()` handles weapon wheels with counter-clockwise layout, inventory filtering, and ammo display.
@@ -54,6 +59,7 @@ Build a customizable touch control system for the Descent Android port, modeled 
 - **keyCallback**: New `(Int, Int, Int) -> Unit` callback on `TouchOverlayView` (action, androidKeyCode, unicodeChar). Wired in `MainActivity` to `nativeKeyEvent()`. Clean separation: radial menus use keyCallback, sticks use axisCallback, buttons use buttonCallback.
 
 ### Phase 5a implementation notes (Inventory-Aware Weapon Wheels)
+
 - **Separate wheels**: Primary weapon wheel ("PriWpn") and secondary weapon wheel ("SecWpn") replace the single combined weapon wheel. Each has 5 segments mapping to weapon slots 0-4 (base weapons). Super weapon variants (slots 5-9) are handled implicitly — they share key bindings with their base weapon and are included in visibility checks.
 - **C JNI hook**: `nativeGetWeaponState()` in jni_main.c (OUTSIDE `#ifdef INTROSPECT_ON`) returns a 43-element IntArray: `[primaryFlags, secondaryFlags, playerFlags, primaryAmmo[0..9], secondaryAmmo[0..9], primaryAmmoMax[0..9], secondaryAmmoMax[0..9]]`. Ammo max values are pre-doubled when player has ammo rack (`PLAYER_FLAGS_AMMO_RACK = 128`). Shared constant documented in both C and Kotlin.
 - **WeaponState.kt**: Data class with `fromArray(IntArray)` parser, `hasPrimary(index)` and `hasSecondary(index)` helpers. Includes both base ammo arrays (0-9) and effective max arrays (ammo-rack-adjusted).
@@ -67,6 +73,7 @@ Build a customizable touch control system for the Descent Android port, modeled 
 ## Mobile Shooter Control Research & Strategy
 
 ### Common Mobile FPS Control Schemes (CoD Mobile, PUBG Mobile, Fortnite, Apex Legends Mobile)
+
 1. **Dual-stick**: Left stick = move (forward/back/strafe), right stick = aim (pitch/yaw). Universal standard.
 2. **Gyro aiming**: Fine-tune aim via phone tilt. Usually supplements the right stick. Three activation modes: always-on, while-touching-aim-stick, toggle-button.
 3. **Floating sticks**: Stick appears wherever you first touch within a zone (rather than fixed position). Reduces thumb fatigue. Most games offer both fixed and floating per-stick.
@@ -81,12 +88,15 @@ Build a customizable touch control system for the Descent Android port, modeled 
 12. **Haptic feedback**: Short vibration on button tap. One line of Android API per event. Standard UX.
 
 ### Descent-Specific Challenges (6DOF vs 3DOF shooter)
+
 Descent has 6 degrees of freedom vs a typical shooter's 3. Extra axes:
+
 - **Vertical slide** (up/down thrust) — D-pad or buttons
 - **Bank/roll** — buttons or dedicated axis
 - **Forward/reverse throttle** — left stick Y or separate slider
 
 ### Recommended Default Layout
+
 - **Left stick**: Forward/reverse (Y) + strafe L/R (X), with exponential response curve
 - **Right stick**: Pitch (Y) + yaw/heading (X), with exponential response curve, floating mode
 - **Gyro** (optional): Pitch + yaw fine adjustment, layered on right stick
@@ -104,6 +114,7 @@ Descent has 6 degrees of freedom vs a typical shooter's 3. Extra axes:
 ## Control Widget Types
 
 ### 1. AnalogStick
+
 - Circular touch zone, renders base ring + thumb indicator
 - Outputs 2 axes (configurable: which kconfig axis pair)
 - Properties:
@@ -122,6 +133,7 @@ Descent has 6 degrees of freedom vs a typical shooter's 3. Extra axes:
   - After curve: `output *= sensitivity`; clamp to -1..1
 
 ### 2. Button
+
 - Circular or rounded-rect touch zone
 - Outputs a joystick button press (configurable button index)
 - Properties:
@@ -133,6 +145,7 @@ Descent has 6 degrees of freedom vs a typical shooter's 3. Extra axes:
 - Min size: 36dp equivalent (Android touch target guideline)
 
 ### 3. Slider
+
 - Rectangular vertical/horizontal drag zone
 - Outputs 1 axis value proportional to drag distance
 - Properties:
@@ -146,6 +159,7 @@ Descent has 6 degrees of freedom vs a typical shooter's 3. Extra axes:
 - Use case: throttle control, fine bank axis
 
 ### 4. RadialMenu
+
 - Press-and-hold activates; renders a wheel of N segments around the touch point
 - User slides to segment, releases to select
 - Properties:
@@ -158,6 +172,7 @@ Descent has 6 degrees of freedom vs a typical shooter's 3. Extra axes:
   - **Weapon select**: Primary (5 segments) and secondary (5 segments), or combined wheel
 
 ### 5. DPad
+
 - Multi-modal directional control with three operating modes:
 - **Properties common to all modes**:
   - `upBinding`, `downBinding`, `leftBinding`, `rightBinding` (int): Button indices for each direction
@@ -190,6 +205,7 @@ Descent has 6 degrees of freedom vs a typical shooter's 3. Extra axes:
   - Good for: slide up/down/left/right, where analog precision isn't needed but quick directional input is
 
 ### 6. GyroControl (non-visual, settings-driven input source)
+
 - Uses Android SensorManager `TYPE_GAME_ROTATION_VECTOR` (fused gyro+accel, no magnetometer drift)
 - Maps phone tilt deltas to configurable axes (usually pitch + yaw)
 - Properties:
@@ -333,12 +349,12 @@ In addition to per-control properties, the `TouchLayout` has global settings:
 
 The response curve is implemented in the Kotlin touch layer, shaping the signal before it reaches JNI. This is separate from the engine's kconfig sensitivity system (which further scales the signal). The two layers serve different purposes:
 
-| Layer | Purpose | Where configured |
-|-------|---------|-----------------|
-| Touch response curve | Shape feel of thumb-on-glass: precision in center, speed at edges | Per-stick in touch_layout.json |
-| Touch sensitivity | Scale magnitude of touch output | Per-axis per-stick in touch_layout.json |
-| Engine deadzone | Ignore small axis values (joystick noise) | Per-axis in playsave/kconfig |
-| Engine sensitivity | Scale axis contribution to movement rate | Per-axis in playsave/kconfig |
+| Layer                | Purpose                                                           | Where configured                        |
+| -------------------- | ----------------------------------------------------------------- | --------------------------------------- |
+| Touch response curve | Shape feel of thumb-on-glass: precision in center, speed at edges | Per-stick in touch_layout.json          |
+| Touch sensitivity    | Scale magnitude of touch output                                   | Per-axis per-stick in touch_layout.json |
+| Engine deadzone      | Ignore small axis values (joystick noise)                         | Per-axis in playsave/kconfig            |
+| Engine sensitivity   | Scale axis contribution to movement rate                          | Per-axis in playsave/kconfig            |
 
 ### Implementation (in Kotlin, per stick update):
 
@@ -363,6 +379,7 @@ fun applyResponseCurve(rawInput: Float, deadzone: Float, curve: ResponseCurve,
 ```
 
 ### Visualization for the editor
+
 When editing a stick's response curve properties, show a small preview graph (128x128 px) of input-vs-output. X axis = raw displacement, Y axis = output. Updates live as the user adjusts exponent/sensitivity sliders. This makes the abstract numbers tangible.
 
 ## Steps
@@ -393,7 +410,7 @@ When editing a stick's response curve properties, show a small preview graph (12
    - Include response curve defaults, size limits, opacity limits as constants
    - File: `android/app/src/main/java/com/dxxredux/app/TouchBindings.kt`
 
-### Phase 2: Refactor TouchOverlayView to be data-driven (*depends on Phase 1*)
+### Phase 2: Refactor TouchOverlayView to be data-driven (_depends on Phase 1_)
 
 4. **Refactor `TouchOverlayView.kt`** to consume `TouchLayout`:
    - Replace hardcoded position/size calculations with layout-driven geometry
@@ -421,7 +438,7 @@ When editing a stick's response curve properties, show a small preview graph (12
    - If `nativeKeyEvent()` doesn't support arbitrary SDL keycodes, add `nativeInjectKey(int sdlk_code)` to android_input.c
    - Weapon selection: inject appropriate key events
 
-### Phase 3: Gyro Input (*parallel with Phase 2*)
+### Phase 3: Gyro Input (_parallel with Phase 2_)
 
 7. **Create `GyroInputManager.kt`**:
    - Register for `TYPE_GAME_ROTATION_VECTOR` sensor via Android SensorManager
@@ -445,7 +462,7 @@ When editing a stick's response curve properties, show a small preview graph (12
    - Invert toggles per axis
    - Calibrate/reset button
 
-### Phase 4: Touch Layout Editor (*depends on Phase 1 & 2*)
+### Phase 4: Touch Layout Editor (_depends on Phase 1 & 2_)
 
 9. **Create `TouchEditorActivity.kt`** (or Composable page within SetupActivity):
    - Full-screen display of all controls at their positions/sizes, rendered on a mock game-screen background
@@ -481,7 +498,7 @@ When editing a stick's response curve properties, show a small preview graph (12
     - On game launch, `MainActivity` reads layout and calls `TouchOverlayView.setLayout()`
     - Hot-reload: returning from editor to game reloads the layout
 
-### Phase 5: Guidebot Command Wheel & Special Controls (*depends on Phase 2*)
+### Phase 5: Guidebot Command Wheel & Special Controls (_depends on Phase 2_)
 
 12. **Guidebot radial menu**:
     - 9 segments: Energy, Energy Center, Shield, Powerup, Robot, Hostage, Scram, Player Spew, Exit
@@ -495,9 +512,10 @@ When editing a stick's response curve properties, show a small preview graph (12
     - Secondary: Concussion, Homing, Proximity, Smart, Mega (5 segments)
     - Two separate wheels or one with sub-menus. Inject weapon select key events.
 
-### Phase 6: Polish & Presets (*depends on all above*) — ✅ Complete
+### Phase 6: Polish & Presets (_depends on all above_) — ✅ Complete
 
 **Implemented:**
+
 - **3 default presets** (Simple, Advanced, Claw) — already done in Phase 1
 - **Per-control opacity** — already done in Phase 2
 - **Slider rendering & touch handling** — SliderState, drawSlider(), touch down/move/release in TouchOverlayView. Supports vertical/horizontal orientation, response curve, sensitivity, spring-back. Editor support: canvas drawing, hit testing, SliderPropertiesPanel, Add Slider dialog option
@@ -521,12 +539,14 @@ When editing a stick's response curve properties, show a small preview graph (12
 ## Relevant Files
 
 ### Existing files to modify
+
 - `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt` — Refactor from hardcoded to data-driven
 - `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` — Load layout on game start, pass to overlay
 - `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt` — Add "Touch Controls" button (~L2553)
 - `android/app/src/main/cpp/android_input.c` — May need `nativeInjectKey()` for radial menus
 
 ### New files to create
+
 - `android/app/src/main/java/com/dxxredux/app/TouchControl.kt` — Data model classes
 - `android/app/src/main/java/com/dxxredux/app/TouchLayoutRepository.kt` — Load/save/defaults/presets
 - `android/app/src/main/java/com/dxxredux/app/TouchBindings.kt` — Shared constants
@@ -534,6 +554,7 @@ When editing a stick's response curve properties, show a small preview graph (12
 - `android/app/src/main/java/com/dxxredux/app/TouchEditorActivity.kt` — Visual editor
 
 ### Reference files (read only)
+
 - `android/app/src/main/java/com/dxxredux/app/ControllerConfigPage.kt` — Editor UI patterns, shared constants scheme
 - `d2/main/kconfig.c` — Source of truth for `kc_joystick[]` axis/button index meanings
 - `d2/main/escort.c` — Guidebot command mapping (KEY_1-9 → escort goals)

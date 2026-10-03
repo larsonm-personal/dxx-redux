@@ -99,23 +99,23 @@ explicit follow-up coverage; do not accidentally advertise support for them
 The initial source review and earlier checked-in validation records identified
 these barriers. The implementation progress above records subsequent changes
 
-| Area | Evidence | Consequence |
-| --- | --- | --- |
-| Launcher probe | `app/src/main/cpp/jni_engine_query.cpp`, `decode`, accepts only `NETSTAT_STARTING` and `NETSTAT_PLAYING`; `EngineQuery.kt` reports other states as unavailable | Manual IP and QR can fail before native admission starts |
-| Native join | Both `net_udp_can_join_netgame` implementations reject other statuses; `net_udp_do_join_game` rejects `NETSTAT_ENDLEVEL` | The native path also needs phase-aware admission |
-| Advertised status | Both `net_udp_send_game_info` implementations report ENDLEVEL during reactor destruction/flyout, and near a timed match's end | Status alone does not identify why a session is temporarily unavailable |
-| Briefing/travel/restore guard | Both `net_udp_defer_join` implementations return while briefing, travel or save transfer is active | Requests are silently retried, with no pending-admission record or phase response |
-| Host approval | The guard also runs before `net_udp_do_refuse_stuff`; Android auto-host enables `RefusePlayers` | Approval intentionally waits until the transition ends, avoiding an expiring F6 prompt during presentation |
-| Request dispatch | `net_udp_process_packet` distinguishes STARTING, WAITING and PLAYING; ENDLEVEL has no admission branch | Simply removing the front-end rejection still would not admit a newcomer |
-| Level synchronization | Android `net_udp_process_request` in WAITING only marks an authenticated existing player ready | A new arrival is not equivalent to an existing participant completing a load |
-| World transfer | `net_udp_welcome_player`, `net_udp_send_objects` and rejoin sync completion reject a destroyed reactor or active exit | A join that starts during play can fail midway when the level ends |
-| Transfer capacity | `Network_send_objects`, `Network_sending_extras` and `UDP_sync_player` serialize joins | Multiple newcomers need queueing rather than concurrent transfers |
-| Client destination | `net_udp_do_join_game` calls `StartNewLevel(Netgame.levelnum)` before waiting for sync | A client can load a source level that the host subsequently leaves |
-| Briefing membership | `coop_briefing_run` captures participants once; `coop_transition_policy` supports removal, not addition | New members cannot be inserted safely by changing only a roster bit |
-| Briefing bootstrap | `coop_briefing_receive` requires a non-observer's first snapshot to be PREPARE and include its slot | A new client cannot adopt a reading-phase snapshot today |
-| Rejoin suppression | Both `StartNewLevelSub` paths call `coop_briefing_disarm_for_rejoin` | Ordinary late joins intentionally skip presentations |
-| Score handling | `kmatrix` checks connected players' escape/end-menu outcomes | Prematurely adding a newcomer can change completion conditions |
-| Existing score catch-up | `shared/net/net_udp_score_catchup.h` repairs authenticated existing peers' adjacent-level completion traffic | Useful precedent for retained snapshots, not a protocol for admitting new peers |
+| Area                          | Evidence                                                                                                                                                       | Consequence                                                                                                |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Launcher probe                | `app/src/main/cpp/jni_engine_query.cpp`, `decode`, accepts only `NETSTAT_STARTING` and `NETSTAT_PLAYING`; `EngineQuery.kt` reports other states as unavailable | Manual IP and QR can fail before native admission starts                                                   |
+| Native join                   | Both `net_udp_can_join_netgame` implementations reject other statuses; `net_udp_do_join_game` rejects `NETSTAT_ENDLEVEL`                                       | The native path also needs phase-aware admission                                                           |
+| Advertised status             | Both `net_udp_send_game_info` implementations report ENDLEVEL during reactor destruction/flyout, and near a timed match's end                                  | Status alone does not identify why a session is temporarily unavailable                                    |
+| Briefing/travel/restore guard | Both `net_udp_defer_join` implementations return while briefing, travel or save transfer is active                                                             | Requests are silently retried, with no pending-admission record or phase response                          |
+| Host approval                 | The guard also runs before `net_udp_do_refuse_stuff`; Android auto-host enables `RefusePlayers`                                                                | Approval intentionally waits until the transition ends, avoiding an expiring F6 prompt during presentation |
+| Request dispatch              | `net_udp_process_packet` distinguishes STARTING, WAITING and PLAYING; ENDLEVEL has no admission branch                                                         | Simply removing the front-end rejection still would not admit a newcomer                                   |
+| Level synchronization         | Android `net_udp_process_request` in WAITING only marks an authenticated existing player ready                                                                 | A new arrival is not equivalent to an existing participant completing a load                               |
+| World transfer                | `net_udp_welcome_player`, `net_udp_send_objects` and rejoin sync completion reject a destroyed reactor or active exit                                          | A join that starts during play can fail midway when the level ends                                         |
+| Transfer capacity             | `Network_send_objects`, `Network_sending_extras` and `UDP_sync_player` serialize joins                                                                         | Multiple newcomers need queueing rather than concurrent transfers                                          |
+| Client destination            | `net_udp_do_join_game` calls `StartNewLevel(Netgame.levelnum)` before waiting for sync                                                                         | A client can load a source level that the host subsequently leaves                                         |
+| Briefing membership           | `coop_briefing_run` captures participants once; `coop_transition_policy` supports removal, not addition                                                        | New members cannot be inserted safely by changing only a roster bit                                        |
+| Briefing bootstrap            | `coop_briefing_receive` requires a non-observer's first snapshot to be PREPARE and include its slot                                                            | A new client cannot adopt a reading-phase snapshot today                                                   |
+| Rejoin suppression            | Both `StartNewLevelSub` paths call `coop_briefing_disarm_for_rejoin`                                                                                           | Ordinary late joins intentionally skip presentations                                                       |
+| Score handling                | `kmatrix` checks connected players' escape/end-menu outcomes                                                                                                   | Prematurely adding a newcomer can change completion conditions                                             |
+| Existing score catch-up       | `shared/net/net_udp_score_catchup.h` repairs authenticated existing peers' adjacent-level completion traffic                                                   | Useful precedent for retained snapshots, not a protocol for admitting new peers                            |
 
 Relevant source anchors in D2 are `net_udp.c:2445` (deferral), `:4521`
 (request dispatch), `:7023` (join entry), `:9132` (approval),
@@ -140,24 +140,24 @@ Increasing that constant would not solve these admission problems
 
 ## Proposed behavior by phase
 
-| Host/session phase | New arrival behavior |
-| --- | --- |
-| Launcher lobby / native player selection | Preserve existing lobby admission and readiness |
-| Ordinary gameplay | Existing approval and object synchronization, protected against a concurrent transition |
-| Briefing preparation | Keep retrying the join; show preparing/loading and a progress indicator |
-| Briefing reading or video | Show the actual local briefing from its beginning with the host's remaining allowance and countdown overlay; do not wait for gameplay admission to show it |
-| Host ready, shortened countdown | Same rule; joining never restarts the 120-second limit or adds another 20 seconds |
-| Closing presentation / loading / final release acknowledgements | Remain pending; follow the committed destination without reopening presentation or modifying that barrier |
-| Reactor countdown, including everyone dying in the mine | Keep the join attempt alive; show escape phase and reactor countdown; wait for the next safe world |
-| First normal exit while teammates still escape | Wait for their outcomes, even if the local host is already watching a flyout or scores |
-| D1 rendered flyout / D1-in-D2 flyout / D2 exit movie | Follow departure/score status, show the actual next briefing if still active when prepared, then join the playable destination |
-| Score review | Show that the team is reviewing results; optionally display a read-only score snapshot; do not join the completed level's roster or award its bonuses |
-| Host and existing client on different sides of score dismissal | Track authoritative destination and session phase; do not infer that every peer shares the host's local screen |
-| Secret entry, return, revisit, or destroyed-secret fallback | Wait through travel; follow the actual committed signed level and world visit, never calculate destination as current level plus one |
-| Save/load, cold resume, rewind, restart, recovery | Wait until transaction completion, then synchronize the resulting world and preserve existing gear-recovery rules |
-| Ordinary pause, automap, menus, modal dialogs, paused movie | Continue serving admission/status where networking is alive; distinguish a quiet simulation from a lost host |
-| Campaign-ending movie, credits, terminal results | Report mission complete; do not promise a next mine. Read-only results are an optional extension |
-| Host lost, session closed, incompatible build/assets, denied/full | Explain the actual failure and leave cleanly; no endless transition wait |
+| Host/session phase                                                | New arrival behavior                                                                                                                                       |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Launcher lobby / native player selection                          | Preserve existing lobby admission and readiness                                                                                                            |
+| Ordinary gameplay                                                 | Existing approval and object synchronization, protected against a concurrent transition                                                                    |
+| Briefing preparation                                              | Keep retrying the join; show preparing/loading and a progress indicator                                                                                    |
+| Briefing reading or video                                         | Show the actual local briefing from its beginning with the host's remaining allowance and countdown overlay; do not wait for gameplay admission to show it |
+| Host ready, shortened countdown                                   | Same rule; joining never restarts the 120-second limit or adds another 20 seconds                                                                          |
+| Closing presentation / loading / final release acknowledgements   | Remain pending; follow the committed destination without reopening presentation or modifying that barrier                                                  |
+| Reactor countdown, including everyone dying in the mine           | Keep the join attempt alive; show escape phase and reactor countdown; wait for the next safe world                                                         |
+| First normal exit while teammates still escape                    | Wait for their outcomes, even if the local host is already watching a flyout or scores                                                                     |
+| D1 rendered flyout / D1-in-D2 flyout / D2 exit movie              | Follow departure/score status, show the actual next briefing if still active when prepared, then join the playable destination                             |
+| Score review                                                      | Show that the team is reviewing results; optionally display a read-only score snapshot; do not join the completed level's roster or award its bonuses      |
+| Host and existing client on different sides of score dismissal    | Track authoritative destination and session phase; do not infer that every peer shares the host's local screen                                             |
+| Secret entry, return, revisit, or destroyed-secret fallback       | Wait through travel; follow the actual committed signed level and world visit, never calculate destination as current level plus one                       |
+| Save/load, cold resume, rewind, restart, recovery                 | Wait until transaction completion, then synchronize the resulting world and preserve existing gear-recovery rules                                          |
+| Ordinary pause, automap, menus, modal dialogs, paused movie       | Continue serving admission/status where networking is alive; distinguish a quiet simulation from a lost host                                               |
+| Campaign-ending movie, credits, terminal results                  | Report mission complete; do not promise a next mine. Read-only results are an optional extension                                                           |
+| Host lost, session closed, incompatible build/assets, denied/full | Explain the actual failure and leave cleanly; no endless transition wait                                                                                   |
 
 Waiting newcomers, including joining readers, must not count as escaped,
 dead, score-ready, load-ready or briefing-ready. A real existing participant
@@ -203,17 +203,17 @@ While showing the actual briefing, use a compact overlay with the same phase,
 countdown and join-status information. Keep the native briefing controls usable
 and distinguish Skip briefing from Cancel join/Back
 
-| Phase | Example explanation | Indicator |
-| --- | --- | --- |
-| Briefing | Briefing - joining the team; content appears behind the overlay | `Up to 1:14 remaining`, countdown bar, optional actual ready-player count |
-| Host has finished briefing | The host is ready. Waiting for the other players | Remaining shortened allowance and countdown bar |
-| Reactor countdown | The mine is being evacuated. You will join the next level | Reactor timer, clearly labeled as time until explosion, not time until joining |
-| Flyout | Players are leaving the mine | Remaining presentation allowance if known; otherwise activity bar and available outcome counts |
-| Score review | The team is reviewing level 3 results | Actual continuation countdown if one is active; otherwise activity bar |
-| Loading | Preparing level 4 | Existing measured loading progress if exposed; otherwise activity bar |
-| Synchronization | Receiving level data | Measured transfer progress if a reliable total exists; otherwise activity bar and received count |
-| Awaiting approval | Waiting for the host to accept your join request | Activity bar |
-| Another join is synchronizing | Waiting for another player to finish connecting | Activity bar |
+| Phase                         | Example explanation                                             | Indicator                                                                                        |
+| ----------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Briefing                      | Briefing - joining the team; content appears behind the overlay | `Up to 1:14 remaining`, countdown bar, optional actual ready-player count                        |
+| Host has finished briefing    | The host is ready. Waiting for the other players                | Remaining shortened allowance and countdown bar                                                  |
+| Reactor countdown             | The mine is being evacuated. You will join the next level       | Reactor timer, clearly labeled as time until explosion, not time until joining                   |
+| Flyout                        | Players are leaving the mine                                    | Remaining presentation allowance if known; otherwise activity bar and available outcome counts   |
+| Score review                  | The team is reviewing level 3 results                           | Actual continuation countdown if one is active; otherwise activity bar                           |
+| Loading                       | Preparing level 4                                               | Existing measured loading progress if exposed; otherwise activity bar                            |
+| Synchronization               | Receiving level data                                            | Measured transfer progress if a reliable total exists; otherwise activity bar and received count |
+| Awaiting approval             | Waiting for the host to accept your join request                | Activity bar                                                                                     |
+| Another join is synchronizing | Waiting for another player to finish connecting                 | Activity bar                                                                                     |
 
 Use determinate bars only for real deadlines or measurable work. Never invent
 an overall join percentage or a finish time for score dismissal/loading.
@@ -368,12 +368,12 @@ The original estimate included dynamic briefing enrollment and a larger
 admission service. Those remain unnecessary. Actual local briefing playback
 is now required and adds a presentation-lifecycle work package
 
-| Package | Scope | Rough effort |
-| --- | --- | --- |
-| Visible waiting | Shared phase/timer responses, JNI/status view, countdown/progress behavior, existing briefing-join regression | 2-4 days |
-| Joining-reader briefing | Safe local content preparation, native playback/overlay, existing deadline, cancellation and rejoin suppression | 2-4 days |
-| Transition continuation | Query/dispatch gates, host phase notification, shared transfer discard/reset, automatic fresh join | 3-5 days |
-| Integration hardening | Arrival/transfer boundary faults, slow loading, D1/D2/imported D1 and UI lifecycle | 2-3 days |
+| Package                 | Scope                                                                                                           | Rough effort |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------- | ------------ |
+| Visible waiting         | Shared phase/timer responses, JNI/status view, countdown/progress behavior, existing briefing-join regression   | 2-4 days     |
+| Joining-reader briefing | Safe local content preparation, native playback/overlay, existing deadline, cancellation and rejoin suppression | 2-4 days     |
+| Transition continuation | Query/dispatch gates, host phase notification, shared transfer discard/reset, automatic fresh join              | 3-5 days     |
+| Integration hardening   | Arrival/transfer boundary faults, slow loading, D1/D2/imported D1 and UI lifecycle                              | 2-3 days     |
 
 These are provisional engineering-effort ranges including focused validation,
 not a delivery commitment. Visible waiting is an incremental milestone, not

@@ -180,7 +180,7 @@ future false certification visible without a 100 MB visibility-ray trace.
 ## Regression coverage
 
 1. Add a small shared planner fixture for `open source -> close source -> shoot
-   revealed switch -> open route` and require the close action to appear.
+revealed switch -> open route` and require the close action to appear.
 2. Add a second fixture that repeats the pattern twice and then gates a key,
    matching Castaway's structure without using its segment or trigger numbers.
 3. Add tests for open/close ordering, reverse-side state updates, one-shot

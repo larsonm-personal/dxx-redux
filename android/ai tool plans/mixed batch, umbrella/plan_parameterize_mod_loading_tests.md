@@ -3,6 +3,7 @@
 ## Status: IN PROGRESS
 
 ## Goal
+
 Create test_mod_loading_256 and test_mod_loading_512 variants alongside the existing
 test_mod_loading_128. Each variant pushes the corresponding texture DXA and asserts
 hires loading at the appropriate resolution. Run-TestMenu.ps1 auto-discovers test_*.json5
@@ -15,18 +16,22 @@ be baked into the source PNGs rather than a runtime bug.
 ## Phases
 
 ### Phase 1: Create test variants
+
 - [x] Create test_mod_loading_256.json5 (DXA sha: dcb36008..., max_hires_w >= 256)
 - [x] Create test_mod_loading_512.json5 (DXA sha: bce93b19..., max_hires_w >= 512)
 
 ### Phase 2: Run-TestMenu.ps1
+
 - [x] No changes needed -- auto-discovers test_*.json5
 
 ### Phase 3: Survey 128px creation pipeline
+
 - [x] Documented findings below
 
 ## 128px Creation Pipeline Survey
 
 ### Pipeline overview
+
 1. Source: `game_data/mods/d2x-xl/d2x-xl/D2-textures-512x512.7z` (native 512px TGA textures)
 2. Script: `convert_all.ps1` calls `convert_d2xxl_textures.ps1 -TexSize 512 -MaxSize 128`
 3. For each TGA, the `Convert-WithMagick` function runs:
@@ -37,16 +42,20 @@ be baked into the source PNGs rather than a runtime bug.
 5. Output packed into ZIP as `d2xxl-hires-textures-d2-128.dxa`
 
 ### 256px path (different)
+
 - Source: `D2-textures-256x256.7z` (native 256px, NO downscale)
 - No ImageMagick involved -- direct TGA->PNG/JPG via System.Drawing
 
 ### 512px path
+
 - Source: `D2-textures-512x512.7z` (native 512px, NO downscale)
 - Same as 256, just bigger source archive
 
 ### Possible X pattern causes
+
 The "X pattern" only appears on 128px textures, not base game or presumably the 256/512
 variants. Possible causes in the pipeline:
+
 1. **ImageMagick sRGB<->linear conversion** -- the colorspace round-trip may introduce
    artifacts on textures that are already in linear space or have unusual color profiles
 2. **Micro-sharpening (`-unsharp 0x0.4`)** -- could amplify low-contrast noise patterns
@@ -60,6 +69,7 @@ variants. Possible causes in the pipeline:
    textures with strong diagonal features
 
 ### Recommended next step
+
 Run the 256 and 512 tests on the emulator. If those look correct, the issue is in the
 128px downscale pipeline (ImageMagick). If they also show the X pattern, the issue is
 in the runtime ETC2 compressor or renderer. This will narrow down the root cause.

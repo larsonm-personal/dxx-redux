@@ -1,9 +1,11 @@
 # Regenerate All Mission Metadata Plan
 
 ## Goal
+
 Regenerate the mission ZIP metadata JSON files in `game_data/mission_files` through the launcher automation path, using the normalized JSON writer added in the previous pass.
 
 ## Tasks
+
 - [x] Confirm the batch generator inputs and output path.
 - [x] Build the current debug APK so metadata generation uses the latest scanner and launcher code.
 - [x] Add a metadata-only batch template so full regeneration does not also smoke-launch every mod.
@@ -13,6 +15,7 @@ Regenerate the mission ZIP metadata JSON files in `game_data/mission_files` thro
 - [x] Update this plan with results and any follow-up failures.
 
 ## Notes
+
 - The batch writes regression metadata next to each source archive unless `-NoRegressionJson` is used. For this regeneration, leave regression JSON enabled.
 - The batch helper normalizes JSON through `android/helpers/normalize_json.py` as each file is saved.
 - Built the current debug APK before regeneration with `android/gradlew.bat assembleDebug`.

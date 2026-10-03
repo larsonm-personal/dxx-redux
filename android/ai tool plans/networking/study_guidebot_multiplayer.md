@@ -23,6 +23,7 @@ This is good news for multiplayer -- the guidebot won't interfere with player mo
 **Were players ever damaged by buddy flares?** In DOS D2, yes -- but only via splash damage from the buddy's mega/smart missiles fired with the `GABBAGABBAHEY` cheat (`cheats.buddyangry`). Normal flares can't hit the parent player due to `laser_are_related()`. The comment at `collide.c:1588` ("Put in at request of Jasen (and Adam) because the Buddy-Bot gets in their way") refers to preventing player weapons from damaging the companion, not the other way around. Rebirth/Redux didn't change this -- the mechanism was always parent-skip in FVI, not an explicit immunity check in `collide_player_and_weapon()`.
 
 **Multiplayer concern**: In multiplayer, the flare's parent is set to the owner's ConsoleObject. On the owner's machine, `laser_are_related()` prevents self-hits. But on OTHER players' machines, when the flare is recreated via `multi_do_robot_fire()` -> `Laser_create_new_easy()`, the parent is set to the robot (the companion), not the player. So the flare COULD hit non-owner players. Fix: add a companion-weapon check in `collide_player_and_weapon()`:
+
 ```c
 // Skip damage from companion robot flares
 if (weapon->ctype.laser_info.parent_type == OBJ_ROBOT &&
@@ -86,6 +87,7 @@ Set when a player destroys the blastable wall(s) containing the guidebot. The `B
 #### 2. Guard Clause Changes (3 places in `escort.c`)
 
 Replace `if (Game_mode & GM_MULTI) return` with:
+
 ```c
 if ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP)) return;  // Only coop
 if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num) return;  // Only owner
@@ -96,6 +98,7 @@ This enables the guidebot **only in coop** and **only for the owner**.
 #### 3. Lock Robot Ownership (`multibot.c`)
 
 In `multi_can_move_robot()` and `multi_do_claim_robot()`, add:
+
 ```c
 if (Robot_info[Objects[objnum].id].companion && REMOTE_OWNER != -1)
     return 0;  // Companion ownership is permanent
@@ -110,6 +113,7 @@ A small new packet type `MULTI_ESCORT_OWNER` (3 bytes: type, player_num, buddy_o
 #### 5. Invulnerability in Coop
 
 Extend the level-24 protection to all coop levels:
+
 ```c
 if (Robot_info[robot->id].companion) {
     if (Game_mode & GM_MULTI_COOP)
@@ -129,15 +133,15 @@ Non-owners trying to press Shift+F4 would see "Guide-Bot is controlled by [calls
 
 ### State That Needs Synchronization
 
-| State | Sync Method | Notes |
-|-------|-------------|-------|
-| Position/orientation | Existing `MULTI_ROBOT_POSITION` | Already works |
-| Flare firing | Existing `MULTI_ROBOT_FIRE` | Already works |
-| Door opens | Existing wall state packets | Already works |
-| Escort owner assignment | New `MULTI_ESCORT_OWNER` packet | One-time, at cage break |
-| Buddy messages | NOT synced | Owner-only display |
-| Escort goal | NOT synced | Owner-only state |
-| Guidebot death (if enabled) | Existing `MULTI_ROBOT_EXPLODE` | Already works |
+| State                       | Sync Method                     | Notes                   |
+| --------------------------- | ------------------------------- | ----------------------- |
+| Position/orientation        | Existing `MULTI_ROBOT_POSITION` | Already works           |
+| Flare firing                | Existing `MULTI_ROBOT_FIRE`     | Already works           |
+| Door opens                  | Existing wall state packets     | Already works           |
+| Escort owner assignment     | New `MULTI_ESCORT_OWNER` packet | One-time, at cage break |
+| Buddy messages              | NOT synced                      | Owner-only display      |
+| Escort goal                 | NOT synced                      | Owner-only state        |
+| Guidebot death (if enabled) | Existing `MULTI_ROBOT_EXPLODE`  | Already works           |
 
 ### What Does NOT Need Sync
 
@@ -171,16 +175,19 @@ Non-owners see the guidebot as a normal robot. It renders with the same model/te
 ### Complexity Assessment
 
 **Low complexity changes** (just removing guards + adding owner check):
+
 - `buddy_message()` guard (line 399)
 - `init_thief_for_level()` stolen items guard (line 1601)
 - `do_escort_menu()` guard (line 1724)
 
 **Medium complexity** (new but small):
+
 - `Escort_owner_player` global + `MULTI_ESCORT_OWNER` packet
 - Lock companion ownership in `multibot.c`
 - Extend invulnerability to all coop levels
 
 **Already working** (no changes needed):
+
 - Position/fire/explosion replication
 - Robot rendering on non-owner machines
 - Door opening wall state sync
@@ -218,6 +225,7 @@ The existing `CoopStatsOverlay.kt` shows robot kill stats and teammate status in
 **Proposed design**: A small guidebot icon (from the robot model sprite sheet, or a simple custom drawable) displayed in the coop overlay area. Next to it, show the owner's callsign (or "You" if local player is owner). Only visible when `Game_mode & GM_MULTI_COOP` and a guidebot exists on the level.
 
 **Implementation**:
+
 - New JNI function: `nativeGetEscortOwnerStatus()` returning owner player index (-1 if no guidebot or not yet freed)
 - C side: expose `Escort_owner_player` via JNI (trivial -- same pattern as existing `nativeGetCoopRobotStats()`)
 - Kotlin side: add a small section to `CoopStatsOverlay.kt` that polls this value and renders the icon + callsign
@@ -228,10 +236,12 @@ The existing `CoopStatsOverlay.kt` shows robot kill stats and teammate status in
 ### Touch Controls: Guidebot Menu Visibility
 
 The guide-bot radial menu trigger already exists in `TouchOverlayView.kt` (control id `"Guide"`, skipped for D1 at line 1485). In multiplayer coop, this control should be:
+
 - **Visible and active** for the escort owner
 - **Hidden** for non-owners (they can't use the guidebot menu anyway)
 
 **Implementation**:
+
 - New JNI function: `nativeIsEscortOwner()` returning boolean
 - In the radial menu trigger loop (line 1485), extend the skip condition:
   ```kotlin
@@ -246,6 +256,7 @@ The guide-bot radial menu trigger already exists in `TouchOverlayView.kt` (contr
 ### Ownership Transfer UX
 
 When ownership transfers (original owner disconnected), the new owner should see:
+
 - A brief HUD message: "Guide-Bot is now following you"
 - The guide-bot radial menu control appears (was previously hidden)
 - The guidebot icon in the coop overlay updates to show "You"

@@ -162,7 +162,9 @@ class MissionZipMusicNamesTest {
         val catalog =
             MissionZipMusicCatalog(
                 "mission.zip",
-                listOf(MissionZipMusicSource("hog", "Castaway music", "missions/castaway.hog", listOf(first, duplicate))),
+                listOf(
+                    MissionZipMusicSource("hog", "Castaway music", "missions/castaway.hog", listOf(first, duplicate)),
+                ),
                 "source-a",
             )
 

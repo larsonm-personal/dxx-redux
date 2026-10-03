@@ -19,7 +19,10 @@ class MusicSourcePreferenceTest {
             val json = ConfigImportExport.exportPreferenceValues(mapOf(PREF_MIDI_EDITOR_SOURCE to source.id))
             val decoded = ConfigImportExport.decodePreferenceValues(json)
             assertNull(decoded.error)
-            val saved = decoded.values.entries.single { it.key.key == PREF_MIDI_EDITOR_SOURCE }.value as String
+            val saved =
+                decoded.values.entries
+                    .single { it.key.key == PREF_MIDI_EDITOR_SOURCE }
+                    .value as String
             assertEquals(source, preferredMidiEditorSource(sources.reversed(), saved))
         }
     }

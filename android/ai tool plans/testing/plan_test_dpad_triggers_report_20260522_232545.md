@@ -17,7 +17,7 @@
 - Also bumped `CONTROLLER_CONFIG_VERSION` to `4` so stale truncated configs regenerate on first launch
 - Added a focused JVM regression test in `android/app/src/test/java/com/dxxredux/app/ControllerConfigSerializationTest.kt` covering D2 indices `50`, `52`, and `54`, plus D1 bounds
 - Validation:
-	- `gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ControllerConfigSerializationTest`
-	- `android/run_test.ps1 -ScriptName test_dpad_triggers.json5 -Game d2`
-	- `android/run_test.ps1 -ScriptName test_dpad_triggers.json5 -Game d1`
+  - `gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ControllerConfigSerializationTest`
+  - `android/run_test.ps1 -ScriptName test_dpad_triggers.json5 -Game d2`
+  - `android/run_test.ps1 -ScriptName test_dpad_triggers.json5 -Game d1`
 - Outcome: D2 now writes default controller config version `4` and final game introspection reports `items[50]=150`, `items[52]=152`, `items[54]=154`; both D2 and D1 `test_dpad_triggers` runs passed

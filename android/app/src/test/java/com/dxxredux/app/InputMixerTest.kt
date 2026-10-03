@@ -28,8 +28,11 @@ class InputMixerTest {
     fun releaseAllReleasesActiveButtonsAndAxes() {
         val buttons = mutableListOf<Pair<Int, Int>>()
         val axes = mutableListOf<Triple<Int, Float, Boolean>>()
-        val mixer = InputMixer({ button, pressed -> buttons += button to pressed },
-            { axis, value, touch -> axes += Triple(axis, value, touch) })
+        val mixer =
+            InputMixer(
+                { button, pressed -> buttons += button to pressed },
+                { axis, value, touch -> axes += Triple(axis, value, touch) },
+            )
 
         mixer.setButton(12, "touch", true)
         mixer.setAxis(2, "ctrl", 0.5f)

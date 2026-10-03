@@ -21,20 +21,20 @@ The next useful signal is not another frame-specific probe. It is event-local st
 - `d2/main/ai2.c` now logs fire-event state snapshots before awareness handling, after awareness handling, and after `set_next_fire_time()`
 - The fire probe now includes robot signature so reruns can be correlated by robot identity instead of one exact frame
 - `d2/main/aipath.c` now logs a consistent robot-local and ai-local state snapshot alongside:
-	- path request begin and done
-	- create-path internal probe and detail records
-	- follow probe
-	- follow advance trigger
-	- follow wrap
-	- follow advance result
+  - path request begin and done
+  - create-path internal probe and detail records
+  - follow probe
+  - follow advance trigger
+  - follow wrap
+  - follow advance result
 - These state snapshots include the fields that are most useful for repeated hand-recorded reruns:
-	- robot signature and id
-	- behavior and mode
-	- current and goal state
-	- path index, path length, hide index, and path direction
-	- awareness fields and visibility history
-	- retry counters and next-action / next-fire timers
-	- current position and velocity
+  - robot signature and id
+  - behavior and mode
+  - current and goal state
+  - path index, path length, hide index, and path direction
+  - awareness fields and visibility history
+  - retry counters and next-action / next-fire timers
+  - current position and velocity
 
 ## Intended Use
 

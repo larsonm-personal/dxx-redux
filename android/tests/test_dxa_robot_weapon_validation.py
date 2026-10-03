@@ -27,20 +27,20 @@ class DxaRobotWeaponValidationTest(unittest.TestCase):
         body = function_body("void apply_robot_field")
         self.assertIn(
             'field == "WeaponType")\n\t\trobot.weapon_type = static_cast<sbyte>('
-            'required_int_value(value, field.c_str(), 0, N_weapon_types - 1))',
+            "required_int_value(value, field.c_str(), 0, N_weapon_types - 1))",
             body,
         )
         self.assertIn(
             'field == "WeaponType2")\n\t\trobot.weapon_type2 = static_cast<sbyte>('
-            'required_int_value(value, field.c_str(), -1, N_weapon_types - 1))',
+            "required_int_value(value, field.c_str(), -1, N_weapon_types - 1))",
             body,
         )
         self.assertNotIn(
-            'robot.weapon_type = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255))',
+            "robot.weapon_type = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255))",
             body,
         )
         self.assertNotIn(
-            'robot.weapon_type2 = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255))',
+            "robot.weapon_type2 = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255))",
             body,
         )
 

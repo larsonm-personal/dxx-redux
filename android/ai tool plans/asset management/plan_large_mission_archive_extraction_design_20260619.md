@@ -1,9 +1,11 @@
 # Large mission archive extraction design
 
 ## Goal
+
 - Design a durable extracted-file path for mission ZIP/7z/RAR archives larger than the initial 10 MB threshold
 
 ## Current Behavior
+
 - Mission packs are imported as mod records with `kind = mission_zip`
 - `MissionZip.inspect(file)` opens the archive and returns a `ScanResult`
 - `ScanResult.importMode` currently chooses:
@@ -18,6 +20,7 @@
 - Advanced storage already labels linked mission ZIP cache files and can delete linked caches with the owner
 
 ## Design Summary
+
 - Make durable extraction the normal path for mission archives whose source archive size is greater than `N MB`
 - Set `N = 10 MB` initially, via a named constant such as `MISSION_ZIP_DURABLE_EXTRACT_THRESHOLD_BYTES`
 - Keep two explicit import/storage paths:
@@ -27,6 +30,7 @@
 - Preserve the original archive as the owner so deletion, reorder, enable/disable, and provenance still work consistently
 
 ## Extraction Decision
+
 - A mission archive should use `extracted_bundle` when any of these are true:
   - source archive size is greater than 10 MB
   - archive format is not ZIP, because 7z/RAR random access is slow or extract-backed already
@@ -40,6 +44,7 @@
 - The extraction manifest should also record total extracted bytes so the UI can show real disk cost
 
 ## Storage Model
+
 - Keep source archives in `filesDir/mods/<ownerFilename>` as today
 - Keep durable extracted files in `filesDir/mods/.extracted_mission_zips/<safe owner filename>/`
 - Keep a manifest at `filesDir/mods/.extracted_mission_zips/manifest.json`
@@ -62,6 +67,7 @@
 - Do not store extracted files under per-game `d1x-redux` or `d2x-redux`, because those generated directories are intentionally launch-time scratch
 
 ## Directory-Backed Scan
+
 - Add a way to produce a `MissionZip.ScanResult` from an existing extraction record
 - Preferred approach:
   - add `MissionZip.inspectExtracted(record)` or `MissionZip.inspectDirectory(rootDir, files)`
@@ -75,6 +81,7 @@
   - store enough scan metadata in the manifest for speed, but also support rebuilding from extracted files as a repair path
 
 ## Launch Path
+
 - `writeEnabledModPaths()` should not re-open or re-extract large archives on ordinary launch
 - For `extracted_bundle`:
   - read the fresh extraction record
@@ -87,6 +94,7 @@
 - The game engine should see the same `.active_mod_paths` shape it sees today: either a root directory plus nested `.dxa` files, or the generated small-ZIP staging path
 
 ## Metadata Browser Path
+
 - The mod details dialog should not open large 7z/RAR/ZIP archives when a fresh extraction record exists
 - `getMissionZipDetails(...)` should:
   - find the extraction record first
@@ -101,6 +109,7 @@
   - avoid reopening the original large archive just to list or preview music
 
 ## UI Changes
+
 - Mission import progress:
   - existing progress UI should show durable extraction as part of import
   - progress labels should distinguish `Copying archive`, `Inspecting level pack`, `Extracting level pack`, and `Finalizing level pack`
@@ -127,6 +136,7 @@
   - if storage is insufficient, keep the owner archive but mark extraction failed and do not enable the mod until repair succeeds
 
 ## Cleanup And Ownership
+
 - Owner archive and extracted directory must be treated as one unit
 - `ModManager.deleteMod(filename)` should continue calling `MissionZipExtractionStore.removeOwner(filename)`
 - `clearAllMods()` should remove `mods/.extracted_mission_zips`
@@ -145,6 +155,7 @@
   - no extraction change
 
 ## Enemy Within And Nested Archives
+
 - Current parent ZIP behavior selects the single child ZIP whose name contains `rebirth`
 - Preserve that behavior
 - Once the child ZIP is selected and copied into `mods/`, apply the same threshold rules to the child archive
@@ -158,6 +169,7 @@
   - record a clear import failure when selection is ambiguous
 
 ## Edge Cases
+
 - ZIP self-extractor preambles:
   - keep existing preamble handling for ZIP streams
   - durable extraction should continue using the same archive abstraction
@@ -190,6 +202,7 @@
   - show extracted size in details so the user can understand disk use
 
 ## Implementation Phases
+
 - Phase 1: constants and extraction decision
   - lower mission ZIP durable threshold to 10 MB
   - keep non-ZIP formats on extracted path
@@ -215,6 +228,7 @@
   - add cleanup/prune checks
 
 ## Verification Strategy
+
 - Unit tests:
   - small ZIP remains `stored_zip`
   - ZIP over 10 MB becomes `extracted_bundle`
@@ -232,12 +246,14 @@
   - delete the mod and verify linked files are removed from advanced storage
 
 ## Open Decisions
+
 - Whether to hash owner archives during import for stronger freshness checks, or rely on size plus last-modified for speed
 - Whether stale/missing extraction should auto-repair during launch or require an explicit repair action
 - Whether parent archive provenance for Enemy Within is worth preserving if the parent ZIP is not kept
 - Whether `N = 10 MB` should be user-configurable later or remain a launcher constant
 
 ## Plan
+
 - [x] Map current mission archive import, launch, metadata, and cleanup paths
 - [x] Define storage/linking model for extracted archives and nested Rebirth ZIPs
 - [x] Identify UI/menu/metadata changes and edge cases

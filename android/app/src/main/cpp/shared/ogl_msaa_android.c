@@ -27,6 +27,17 @@ static void android_ogl_msaa_log(android_ogl_msaa_log_message_fn log_message,
 		log_message(message, log_user_data);
 }
 
+unsigned int android_ogl_msaa_color_format(int red, int green, int blue, int alpha)
+{
+	/* EGL minimum sizes can select RGB10_A2, including on the Retroid Pocket 4 Pro
+	 * ES multisample resolves cannot convert it from an RGBA8 source */
+	if (red == 10 && green == 10 && blue == 10 && alpha == 2)
+		return GL_RGB10_A2;
+	if (red <= 5 && green <= 6 && blue <= 5 && alpha == 0)
+		return GL_RGB565;
+	return alpha > 0 ? GL_RGBA8 : GL_RGB8;
+}
+
 unsigned int android_ogl_msaa_capture_errors(const char *stage)
 {
 	GLenum first = GL_NO_ERROR;
@@ -90,12 +101,29 @@ static void android_ogl_msaa_log_renderbuffer(const char *attachment, GLuint ren
 	          attachment, renderbuffer, width, height, format, samples, error);
 }
 
+static void android_ogl_msaa_log_window_target(void)
+{
+	if (!debug_log_enabled[DLOG_GRAPHICS]) return;
+	GLint encoding = 0, component = 0, read_buffer = 0, draw_buffer = 0, samples = 0, sample_buffers = 0;
+	glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_BACK, GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, &encoding);
+	glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_BACK, GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE, &component);
+	glGetIntegerv(GL_READ_BUFFER, &read_buffer);
+	glGetIntegerv(GL_DRAW_BUFFER0, &draw_buffer);
+	glGetIntegerv(GL_SAMPLES, &samples);
+	glGetIntegerv(GL_SAMPLE_BUFFERS, &sample_buffers);
+	GLenum error = android_ogl_msaa_capture_errors("window_target_diagnostic_query");
+	debug_log(DLOG_GRAPHICS,
+	          "MSAA window target: encoding=0x%x component=0x%x read_buffer=0x%x draw_buffer=0x%x sample_buffers=%d samples=%d query_error=0x%x",
+	          encoding, component, read_buffer, draw_buffer, sample_buffers, samples, error);
+}
+
 void android_ogl_msaa_trace_stage(struct android_ogl_msaa_state *state, const char *stage, int bound, int depth)
 {
 	if (state->trace_remaining <= 0 || !debug_log_enabled[DLOG_GRAPHICS]) return;
 	GLint read = 0, draw = 0, clip[4] = { 0 }, viewport[4] = { 0 };
-	GLboolean mask[4] = { 0 }, depth_mask = 0;
-	GLfloat clear[4] = { 0 };
+	GLboolean mask[4] = { 0 }, depth_mask = 0, coverage_invert = 0;
+	GLfloat clear[4] = { 0 }, coverage = 0;
+	GLint read_buffer = 0, draw_buffer = 0;
 	glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &read);
 	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &draw);
 	glGetIntegerv(GL_SCISSOR_BOX, clip);
@@ -103,12 +131,17 @@ void android_ogl_msaa_trace_stage(struct android_ogl_msaa_state *state, const ch
 	glGetBooleanv(GL_COLOR_WRITEMASK, mask);
 	glGetBooleanv(GL_DEPTH_WRITEMASK, &depth_mask);
 	glGetFloatv(GL_COLOR_CLEAR_VALUE, clear);
+	glGetIntegerv(GL_READ_BUFFER, &read_buffer);
+	glGetIntegerv(GL_DRAW_BUFFER0, &draw_buffer);
+	glGetFloatv(GL_SAMPLE_COVERAGE_VALUE, &coverage);
+	glGetBooleanv(GL_SAMPLE_COVERAGE_INVERT, &coverage_invert);
 	debug_log(DLOG_GRAPHICS,
-	          "MSAA trace: flip=%llu event=%u stage=%s generation=%llu bind_serial=%llu target=%u read=%d draw=%d bound=%d depth=%d size=%dx%d scissor=%d box=%d,%d,%d,%d viewport=%d,%d,%d,%d mask=%d,%d,%d,%d depth_mask=%d clear=%.2f,%.2f,%.2f,%.2f",
+	          "MSAA trace: flip=%llu event=%u stage=%s generation=%llu bind_serial=%llu target=%u read=%d draw=%d bound=%d depth=%d size=%dx%d scissor=%d box=%d,%d,%d,%d viewport=%d,%d,%d,%d mask=%d,%d,%d,%d depth_mask=%d clear=%.2f,%.2f,%.2f,%.2f read_buffer=0x%x draw_buffer=0x%x coverage=%d/%.2f/%d alpha_to_coverage=%d",
 	          state->flip_serial, state->flip_event++, stage, state->generation, state->active_frame_serial, state->fbo, read, draw, bound, depth,
 	          state->w, state->h, glIsEnabled(GL_SCISSOR_TEST), clip[0], clip[1], clip[2], clip[3],
 	          viewport[0], viewport[1], viewport[2], viewport[3], mask[0], mask[1], mask[2], mask[3], depth_mask,
-	          clear[0], clear[1], clear[2], clear[3]);
+	          clear[0], clear[1], clear[2], clear[3], read_buffer, draw_buffer,
+	          glIsEnabled(GL_SAMPLE_COVERAGE), coverage, coverage_invert, glIsEnabled(GL_SAMPLE_ALPHA_TO_COVERAGE));
 }
 
 void android_ogl_msaa_presented(struct android_ogl_msaa_state *state)
@@ -197,18 +230,14 @@ int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
 		glGetIntegerv(GL_GREEN_BITS, &gb);
 		glGetIntegerv(GL_BLUE_BITS, &bb);
 		glGetIntegerv(GL_ALPHA_BITS, &ab);
-		if (rb <= 5 && gb <= 6 && bb <= 5 && ab == 0)
-			color_fmt = 0x8D62;
-		else if (ab > 0)
-			color_fmt = GL_RGBA8;
-		else
-			color_fmt = GL_RGB8;
+		color_fmt = android_ogl_msaa_color_format(rb, gb, bb, ab);
 		__android_log_print(ANDROID_LOG_INFO, "DXX",
 		                    "MSAA: default FB bits r=%d g=%d b=%d a=%d -> fmt=0x%x",
 		                    rb, gb, bb, ab, color_fmt);
 	}
 
 	android_ogl_msaa_capture_errors("prior_operation");
+	android_ogl_msaa_log_window_target();
 	android_ogl_msaa_log_format_support(color_fmt);
 	android_ogl_msaa_log_format_support(GL_DEPTH_COMPONENT16);
 	glGenFramebuffers(1, &state->fbo);

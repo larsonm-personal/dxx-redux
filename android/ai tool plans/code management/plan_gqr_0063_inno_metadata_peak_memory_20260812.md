@@ -9,11 +9,11 @@ without changing inherited D1/D2 sources
 ## Plan
 
 - [x] Inspect the Inno metadata decode path, allocation ownership, existing
-  extraction limits, focused host test target, and canonical finding
+      extraction limits, focused host test target, and canonical finding
 - [x] Carry one live-allocation budget through stored input, stripped raw input,
-  decoded output growth, and every LZMA SDK allocation
+      decoded output growth, and every LZMA SDK allocation
 - [x] Add focused tests for the exact boundary, one byte over, and injected
-  allocation failure using the production budget helpers
+      allocation failure using the production budget helpers
 - [x] Run scoped formatting and focused host tests
 - [x] Build the affected Android native targets for available ABIs where feasible
 - [x] Record exact validation results and remaining blockers here

@@ -344,7 +344,7 @@ When a mismatch is not frame-local and you need more context, widen the grep win
 - If more logging is needed, add durable fields that can be produced on both recording and replay.
 - Prefer logging object signatures over object indices when tracking spawned or recycled objects.
 - Do not rely on `.dem` interpolation for the final diagnosis.
-- when targeting new log lines at re-runs, *I do not re-run the exact same demo*, it's done by hand, and the frame numbers and events will be slightly different, but generally the demos are showing the same categories of desyncs over and over. make the logging independent of specific frames or events
+- when targeting new log lines at re-runs, _I do not re-run the exact same demo_, it's done by hand, and the frame numbers and events will be slightly different, but generally the demos are showing the same categories of desyncs over and over. make the logging independent of specific frames or events
 
 ## Findings Template
 
@@ -381,12 +381,14 @@ Best code hypothesis: this artifact does not support the player-robot body-colli
 Next change or next probe: add durable live+replay logging on the projectile update and hit-acceptance path for the delayed weapon signatures before `collide_player_and_weapon()`/`collide_weapon_and_robot()` fallout, with signatures and segment/pose data carried through so the first one-frame-late hit can be explained mechanically
 
 Follow-up: `PF_WIGGLE` bob/save-restore check for the same artifact
+
 - `d2/main/controls.c` drives bob from `fix_fastsincos((fix)GameTime64)` with fixed-point math only; there is no separate bob phase accumulator to serialize
 - vanilla savegames still write `GameTime64 = 0` in `state_save_all_sub()`, but input-demo checkpoints also record `checkpoint_start_gt = GameTime64` in `newdemo.c`, and `state_restore_all_sub()` adds that value back during replay restore
 - existing recorder/replay wiggle probes already match exactly through at least frame `267` / `gt=841482`, including `raw`, `scaled`, `amount`, `ship_wiggle`, `uvec`, and `vel_after`
 - conclusion: checkpoint restore is preserving wiggle phase for this replay, and PC-vs-Android floating-point noise in the bob path is not a strong lead for the first split in this artifact
 
 Current logging tranche: projectile timing
+
 - [x] Add local-player weapon lifetime logging on both recorder and replay so projectile pose can be compared before the delayed hit frame
 - [x] Add explicit `collide_robot_and_weapon()` entry and skip-reason logs for local-player weapons to separate movement delay from hit rejection
 - [x] Validate the edit with file diagnostics, a successful `run-windows-build.ps1 -Target d2` build, and a replay smoke run that emits `Input demo weapon probe ... step=sequence_entry` plus `Input demo weapon robot path` lines in the sandbox log

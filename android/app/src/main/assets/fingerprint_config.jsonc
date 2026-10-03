@@ -11,5 +11,5 @@
 
     // Duration pre-filter: skip DB entries whose duration differs by more
     // than this fraction from the query. 0.10 = +/- 10%.
-    "duration_tolerance": 0.10
+    "duration_tolerance": 0.1,
 }

@@ -3,6 +3,7 @@
 This workspace converts the Xfing/UUD D1 and D2 texture packs into plain texture DXA archives for DXX Redux/Rebirth installs.
 
 Tracked files:
+
 - `convert-xfing-minimal-dxa.ps1`
 - `verify-xfing-minimal-dxa.ps1`
 - `xfing_minimal_dxa_lib.ps1`

@@ -5,6 +5,7 @@
 ## Completed Work
 
 ### Phase 1a: Texture conversion script -- DONE
+
 - Created `game_data/mods/d2x-xl/convert_d2xxl_textures.ps1`
 - Pure PowerShell + .NET System.Drawing (no external deps like ImageMagick)
 - Reads uncompressed type-2 TGA, converts to PNG, packs into .dxa (renamed ZIP)
@@ -12,12 +13,14 @@
 - Tested: D1 279 textures (190.8 MB .dxa), D2 569 textures (358.7 MB .dxa), 0 errors
 
 ### Phase 1b: Sound conversion script -- DONE
+
 - Created `game_data/mods/d2x-xl/convert_d2xxl_sounds.ps1`
 - Pure PowerShell WAV parser + resampler to 8-bit unsigned mono 22050 Hz .r22
 - Files placed in `Sounds/` subdirectory inside .dxa
 - Tested: D1 113 sounds (1.8 MB .dxa), D2 191 sounds (3.5 MB .dxa), 0 errors
 
 ### Phase 2: Android PNG loading via stb_image -- DONE
+
 - Created `android/app/src/main/cpp/shared/pngfile_stb.c`
   - Implements `read_png()` / `write_png()` from `pngfile.h` using stb_image
   - Supports PNG, TGA, JPG, BMP via single header (stb_image.h)
@@ -31,6 +34,7 @@
 - Android build verified: BUILD SUCCESSFUL
 
 ### DXA format notes
+
 - DXA = renamed ZIP file, auto-mounted by `PHYSFSX_addArchiveContent()` with prepend priority
 - PNGs at ZIP root, sounds in `Sounds/` subdirectory
 - Engine looks for `{bitmapname}.png` at PhysFS search path root
@@ -42,22 +46,24 @@
 
 Three archives from d2x-xl:
 
-| Archive | Contents | Files | Uncompressed |
-|---|---|---|---|
-| D2-textures-512x512.7z (193 MB) | D2 hires wall/object/door textures | 569 TGA + 1 JPG | ~1.2 GB |
-| D1-textures-512x512.7z (115 MB) | D1 hires wall/object/door textures | 279 TGA | ~748 MB |
-| hires-sounds.7z (63 MB) | D1+D2 resampled sound effects | 535 WAV | ~123 MB |
+| Archive                         | Contents                           | Files           | Uncompressed |
+| ------------------------------- | ---------------------------------- | --------------- | ------------ |
+| D2-textures-512x512.7z (193 MB) | D2 hires wall/object/door textures | 569 TGA + 1 JPG | ~1.2 GB      |
+| D1-textures-512x512.7z (115 MB) | D1 hires wall/object/door textures | 279 TGA         | ~748 MB      |
+| hires-sounds.7z (63 MB)         | D1+D2 resampled sound effects      | 535 WAV         | ~123 MB      |
 
 ### Texture archive structure
 
 All textures are in `textures/d1/` or `textures/d2/` subdirectories.
 
 Naming convention matches the game's internal bitmap names exactly:
+
 - `ceil002.tga` -- matches bitmap name "ceil002"
 - `door01#0.tga` -- matches animated frame "door01#0"
 - `box01a#0.tga` -- matches supertransparent frame
 
 File formats:
+
 - Uncompressed TGA (type 2), no RLE
 - Mix of RGB (3 bytes/pixel) and RGBA (4 bytes/pixel)
 - Most are 512x512, some are 256x256, some doors/objects up to 2048x2048 or 4096x4096
@@ -66,6 +72,7 @@ File formats:
 ### Sound archive structure
 
 Four subdirectories:
+
 - `sounds/d2/44khz/` -- 191 WAV files, D2 sounds at 44.1 kHz
 - `sounds/d2/22khz/` -- 184 WAV files, D2 sounds at 22.05 kHz
 - `sounds/d1/` -- 113 WAV files, D1 sounds (appears to be 44.1 kHz)
@@ -88,6 +95,7 @@ Redux has an existing hi-res texture replacement system in `ogl_loadbmtexture_f(
 5. Uploads to GL texture, any resolution (power-of-2 not required on GLES 2+)
 
 Key constraints:
+
 - **format**: PNG only (.png). No TGA, no JPG
 - **depth**: 8-bit color depth required (RGB, RGBA, or paletted)
 - **guard**: `#ifdef HAVE_LIBPNG` -- must be compiled with libpng
@@ -105,6 +113,7 @@ libpng is not currently built/linked for Android NDK.
 ### Sounds: raw PCM only
 
 External sound loading in `ds_load()` (bmread.c):
+
 - Looks for `Sounds/{name}.raw` (11025 Hz) or `Sounds/{name}.r22` (22050 Hz)
 - Format: 8-bit unsigned PCM mono, headerless
 - Loaded via PHYSFS
@@ -133,7 +142,7 @@ The bitmap name mapping is identical -- d2x-xl uses the same internal texture na
    - Alternatively, use `SDL_image` (already a common NDK library) for format-agnostic loading -- it supports PNG, TGA, JPG, and more. But this is a bigger change
    - Or use stb_image.h (single-header, no dependencies, supports PNG/TGA/JPG) -- fits the project's "lightweight single-file" philosophy
 
-3. **Memory/GPU concerns on mobile**: 
+3. **Memory/GPU concerns on mobile**:
    - 512x512 RGBA = 1 MB GPU memory per texture. Original textures are 64x64 = 16 KB. That is a 64x increase
    - D2 has ~569 replacement textures. If all loaded: ~569 MB GPU memory (not feasible on mobile)
    - However, the engine loads textures on demand and evicts them (`ogl_smash_textures`). Only visible textures are loaded at any time, which is typically dozens, not hundreds
@@ -141,7 +150,7 @@ The bitmap name mapping is identical -- d2x-xl uses the same internal texture na
    - **Recommendation**: During import, cap texture size at 512x512 (or 1024x1024) for mobile. Desktop can use full resolution
    - Compressed GPU formats (ETC2) could reduce GPU memory by 4-8x but reqiure a separate conversion pipeline
 
-4. **Disk space**: 
+4. **Disk space**:
    - ~1.2 GB uncompressed TGA is too much for mobile. Converting to PNG should bring it down to ~200-300 MB
    - Could offer as optional download from the launcher
 
@@ -181,6 +190,7 @@ The sound name mapping is also identical. The gaps are larger:
 ### Phase 1: Texture conversion tool (offline, runs on PC)
 
 A script or small tool that:
+
 1. Extracts TGA files from the 7z archive
 2. Converts TGA to PNG (preserving alpha channel)
 3. Optionally downscales to max 512x512 or 1024x1024 for mobile

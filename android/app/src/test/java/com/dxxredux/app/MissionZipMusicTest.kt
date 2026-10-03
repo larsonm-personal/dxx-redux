@@ -15,11 +15,12 @@ import java.util.zip.ZipOutputStream
 class MissionZipMusicTest {
     @Test
     fun detectsTopLevelSongListReferences() {
-        val zip = createZip("music-top-level") {
-            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
-            writeEntry("descent.sng", "descent.hmp\nbriefing.hmp\ngame01.hmp\n".toByteArray())
-        }
+        val zip =
+            createZip("music-top-level") {
+                writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+                writeEntry("descent.sng", "descent.hmp\nbriefing.hmp\ngame01.hmp\n".toByteArray())
+            }
 
         val catalog = MissionZipMusic.inspect(zip)
 
@@ -31,14 +32,15 @@ class MissionZipMusicTest {
 
     @Test
     fun preservesIndependentSongListsAndRepeatedRows() {
-        val zip = createZip("music-multiple-song-lists") {
-            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
-            writeEntry("first.sng", "game01.ogg\ngame01.ogg\n".toByteArray())
-            writeEntry("second.sng", "game02.ogg\n".toByteArray())
-            writeEntry("game01.ogg", byteArrayOf(1))
-            writeEntry("game02.ogg", byteArrayOf(2))
-        }
+        val zip =
+            createZip("music-multiple-song-lists") {
+                writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+                writeEntry("first.sng", "game01.ogg\ngame01.ogg\n".toByteArray())
+                writeEntry("second.sng", "game02.ogg\n".toByteArray())
+                writeEntry("game01.ogg", byteArrayOf(1))
+                writeEntry("game02.ogg", byteArrayOf(2))
+            }
 
         val catalog = requireNotNull(MissionZipMusic.inspect(zip))
 
@@ -64,11 +66,12 @@ class MissionZipMusicTest {
                     "$name.mid" to byteArrayOf(3),
                 )
             }
-        val zip = createZip("music-obsidian-song-list") {
-            writeEntry("obsidian.mn2", "name = Obsidian\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry("obsidian.sng", references.joinToString("\n", postfix = "\n").toByteArray())
-            writeEntry("obsidian.hog", createHogBytes(*hogEntries.toTypedArray()))
-        }
+        val zip =
+            createZip("music-obsidian-song-list") {
+                writeEntry("obsidian.mn2", "name = Obsidian\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry("obsidian.sng", references.joinToString("\n", postfix = "\n").toByteArray())
+                writeEntry("obsidian.hog", createHogBytes(*hogEntries.toTypedArray()))
+            }
 
         val catalog = requireNotNull(MissionZipMusic.inspect(zip))
         val entries = MissionZipMusic.resolveSongList(catalog, catalog.songLists.single())
@@ -83,11 +86,12 @@ class MissionZipMusicTest {
 
     @Test
     fun detectsTopLevelSongListReferencesInSevenZip() {
-        val archive = create7z("music-top-level") {
-            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
-            writeEntry("descent.sng", "game01.hmp\nbriefing.hmp\n".toByteArray())
-        }
+        val archive =
+            create7z("music-top-level") {
+                writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+                writeEntry("descent.sng", "game01.hmp\nbriefing.hmp\n".toByteArray())
+            }
 
         val catalog = MissionZipMusic.inspect(archive)
 
@@ -98,13 +102,14 @@ class MissionZipMusicTest {
 
     @Test
     fun usesTopLevelSongListToOrderPlayableTracksWithoutDuplicateReferences() {
-        val zip = createZip("music-top-level-playable") {
-            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
-            writeEntry("briefing.hmp", ByteArray(16))
-            writeEntry("game01.hmp", ByteArray(24))
-            writeEntry("descent.sng", "game01.hmp\nbriefing.hmp\nmissing.hmp\n".toByteArray())
-        }
+        val zip =
+            createZip("music-top-level-playable") {
+                writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+                writeEntry("briefing.hmp", ByteArray(16))
+                writeEntry("game01.hmp", ByteArray(24))
+                writeEntry("descent.sng", "game01.hmp\nbriefing.hmp\nmissing.hmp\n".toByteArray())
+            }
 
         val catalog = MissionZipMusic.inspect(zip)
 
@@ -116,13 +121,14 @@ class MissionZipMusicTest {
 
     @Test
     fun pathQualifiedSongReferencesSelectExactTopLevelMembers() {
-        val zip = createZip("music-path-qualified") {
-            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
-            writeEntry("descent.sng", "A/theme.ogg\nb/theme.ogg\n".toByteArray())
-            writeEntry("b/theme.ogg", byteArrayOf(2, 2))
-            writeEntry("a/theme.ogg", byteArrayOf(1))
-        }
+        val zip =
+            createZip("music-path-qualified") {
+                writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+                writeEntry("descent.sng", "A/theme.ogg\nb/theme.ogg\n".toByteArray())
+                writeEntry("b/theme.ogg", byteArrayOf(2, 2))
+                writeEntry("a/theme.ogg", byteArrayOf(1))
+            }
 
         val tracks = requireNotNull(MissionZipMusic.inspect(zip)).sources.single { it.id == "archive" }.tracks
 
@@ -134,13 +140,14 @@ class MissionZipMusicTest {
 
     @Test
     fun ambiguousLeafSongReferenceDoesNotChooseByArchiveOrder() {
-        val zip = createZip("music-ambiguous-leaf") {
-            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
-            writeEntry("descent.sng", "theme.ogg\n".toByteArray())
-            writeEntry("b/theme.ogg", byteArrayOf(2, 2))
-            writeEntry("a/theme.ogg", byteArrayOf(1))
-        }
+        val zip =
+            createZip("music-ambiguous-leaf") {
+                writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+                writeEntry("descent.sng", "theme.ogg\n".toByteArray())
+                writeEntry("b/theme.ogg", byteArrayOf(2, 2))
+                writeEntry("a/theme.ogg", byteArrayOf(1))
+            }
 
         val tracks = requireNotNull(MissionZipMusic.inspect(zip)).sources.single { it.id == "archive" }.tracks
 
@@ -151,20 +158,24 @@ class MissionZipMusicTest {
 
     @Test
     fun pathQualifiedSongReferencesSelectExactNestedDxaMembers() {
-        val zip = createZip("music-path-qualified-dxa") {
-            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
-            writeEntry(
-                "music.dxa",
-                createZipBytes {
-                    writeEntry("descent.sng", "a/theme.ogg\nb/theme.ogg\n".toByteArray())
-                    writeEntry("b/theme.ogg", byteArrayOf(2, 2))
-                    writeEntry("a/theme.ogg", byteArrayOf(1))
-                },
-            )
-        }
+        val zip =
+            createZip("music-path-qualified-dxa") {
+                writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+                writeEntry(
+                    "music.dxa",
+                    createZipBytes {
+                        writeEntry("descent.sng", "a/theme.ogg\nb/theme.ogg\n".toByteArray())
+                        writeEntry("b/theme.ogg", byteArrayOf(2, 2))
+                        writeEntry("a/theme.ogg", byteArrayOf(1))
+                    },
+                )
+            }
 
-        val tracks = requireNotNull(MissionZipMusic.inspect(zip)).sources.single { it.containerPath == "music.dxa" }.tracks
+        val tracks =
+            requireNotNull(
+                MissionZipMusic.inspect(zip),
+            ).sources.single { it.containerPath == "music.dxa" }.tracks
 
         assertEquals(listOf("a/theme.ogg", "b/theme.ogg"), tracks.map { it.displayName })
         assertEquals(listOf("a/theme.ogg", "b/theme.ogg"), tracks.map { it.nestedEntryPath })
@@ -172,21 +183,27 @@ class MissionZipMusicTest {
 
     @Test
     fun detectsHogMidiTrack() {
-        val zip = createZip("music-hog-midi") {
-            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry(
-                "mission.hog",
-                createHogBytes(
-                    "level01.rl2" to ByteArray(8),
-                    "game01.hmp" to ByteArray(16),
-                ),
-            )
-        }
+        val zip =
+            createZip("music-hog-midi") {
+                writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry(
+                    "mission.hog",
+                    createHogBytes(
+                        "level01.rl2" to ByteArray(8),
+                        "game01.hmp" to ByteArray(16),
+                    ),
+                )
+            }
 
         val catalog = MissionZipMusic.inspect(zip)
 
         assertNotNull(catalog)
-        val track = catalog!!.sources.single().tracks.single()
+        val track =
+            catalog!!
+                .sources
+                .single()
+                .tracks
+                .single()
         assertEquals("game01.hmp", track.displayName)
         assertEquals(MissionZipMusic.KIND_MIDI, track.kind)
         assertEquals("mission.hog", track.archiveEntryPath)
@@ -195,17 +212,18 @@ class MissionZipMusicTest {
 
     @Test
     fun detectsNestedDxaAudioTrack() {
-        val zip = createZip("music-dxa-audio") {
-            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
-            writeEntry(
-                "music.dxa",
-                createZipBytes {
-                    writeEntry("descent.sng", "briefing.ogg\nlevel01.ogg\n".toByteArray())
-                    writeEntry("level01.ogg", ByteArray(24))
-                },
-            )
-        }
+        val zip =
+            createZip("music-dxa-audio") {
+                writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+                writeEntry(
+                    "music.dxa",
+                    createZipBytes {
+                        writeEntry("descent.sng", "briefing.ogg\nlevel01.ogg\n".toByteArray())
+                        writeEntry("level01.ogg", ByteArray(24))
+                    },
+                )
+            }
 
         val catalog = MissionZipMusic.inspect(zip)
 
@@ -223,12 +241,13 @@ class MissionZipMusicTest {
 
     @Test
     fun malformedOptionalDxaDoesNotHideIndependentArchiveMusic() {
-        val zip = createZip("music-malformed-optional-dxa") {
-            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
-            writeEntry("level01.ogg", byteArrayOf(1, 2, 3))
-            writeEntry("broken.dxa", "not a zip".toByteArray())
-        }
+        val zip =
+            createZip("music-malformed-optional-dxa") {
+                writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+                writeEntry("level01.ogg", byteArrayOf(1, 2, 3))
+                writeEntry("broken.dxa", "not a zip".toByteArray())
+            }
 
         val catalog = MissionZipMusic.inspect(zip)
 
@@ -238,19 +257,20 @@ class MissionZipMusicTest {
 
     @Test
     fun detectsHogContainedSongListAndOggTracks() {
-        val zip = createZip("music-hog-ogg") {
-            writeEntry("trine2.mn2", "name = Trine 2\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry(
-                "trine2.hog",
-                createHogBytes(
-                    "briefing.ogg" to ByteArray(40),
-                    "descent.sng" to "descent.ogg\nbriefing.ogg\ngame01.ogg\nmissing.ogg\n".toByteArray(),
-                    "descent.ogg" to ByteArray(32),
-                    "game01.ogg" to ByteArray(48),
-                    "level01.rl2" to ByteArray(8),
-                ),
-            )
-        }
+        val zip =
+            createZip("music-hog-ogg") {
+                writeEntry("trine2.mn2", "name = Trine 2\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry(
+                    "trine2.hog",
+                    createHogBytes(
+                        "briefing.ogg" to ByteArray(40),
+                        "descent.sng" to "descent.ogg\nbriefing.ogg\ngame01.ogg\nmissing.ogg\n".toByteArray(),
+                        "descent.ogg" to ByteArray(32),
+                        "game01.ogg" to ByteArray(48),
+                        "level01.rl2" to ByteArray(8),
+                    ),
+                )
+            }
 
         val catalog = MissionZipMusic.inspect(zip)
 
@@ -269,10 +289,11 @@ class MissionZipMusicTest {
 
     @Test
     fun returnsNullForZipWithNoMusic() {
-        val zip = createZip("music-none") {
-            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
-            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
-        }
+        val zip =
+            createZip("music-none") {
+                writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+                writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+            }
 
         assertNull(MissionZipMusic.inspect(zip))
     }

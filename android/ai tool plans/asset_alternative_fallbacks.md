@@ -9,17 +9,17 @@ Do not edit android/outstanding_bugs.md
 
 ## Findings and changes
 
-| Asset family | Result |
-| --- | --- |
-| D2 intro/other/robots/OEM and mission movie libraries | Retry the opposite resolution when mounting the preferred library fails; record the actual mission library for unloading |
-| D2 s22/s11 sound banks | Retry the other bank when the selected bank cannot be opened; validate its header before changing sample rate; reinitialize the non-mixer backend when required |
-| D2 title, OEM, order and ending PCX pairs | Prefer the requested resolution and select the alternate when only it exists |
-| D1/D2 mission briefing and ending tex/txb | Mission loaders already try text and encoded versions; D2 subtitles also retry txb |
-| D2 retail/demo HOG, HAM and PIG | Existing engine fallback paths match the launcher's named alternatives; individual required retail level texture banks remain required |
-| D1 title PCX | Existing high-resolution preference already falls back to base images |
-| Android replacement textures, both games | Existing KTX2 failure path falls through to PNG/JPG/TGA, then the base bitmap |
-| Music aliases and WAV, both games | HMQ now follows HMP conversion, MIDI follows MID dispatch, and WAV is admitted by song lists, playback and jukebox scans; Android decodes WAV through SDL into the existing bounded PCM playback path |
-| Raw replacement sounds | Sample-rate-specific raw formats retain their rate contract; no blind substitution of differently sampled raw data |
+| Asset family                                          | Result                                                                                                                                                                                                |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D2 intro/other/robots/OEM and mission movie libraries | Retry the opposite resolution when mounting the preferred library fails; record the actual mission library for unloading                                                                              |
+| D2 s22/s11 sound banks                                | Retry the other bank when the selected bank cannot be opened; validate its header before changing sample rate; reinitialize the non-mixer backend when required                                       |
+| D2 title, OEM, order and ending PCX pairs             | Prefer the requested resolution and select the alternate when only it exists                                                                                                                          |
+| D1/D2 mission briefing and ending tex/txb             | Mission loaders already try text and encoded versions; D2 subtitles also retry txb                                                                                                                    |
+| D2 retail/demo HOG, HAM and PIG                       | Existing engine fallback paths match the launcher's named alternatives; individual required retail level texture banks remain required                                                                |
+| D1 title PCX                                          | Existing high-resolution preference already falls back to base images                                                                                                                                 |
+| Android replacement textures, both games              | Existing KTX2 failure path falls through to PNG/JPG/TGA, then the base bitmap                                                                                                                         |
+| Music aliases and WAV, both games                     | HMQ now follows HMP conversion, MIDI follows MID dispatch, and WAV is admitted by song lists, playback and jukebox scans; Android decodes WAV through SDL into the existing bounded PCM playback path |
+| Raw replacement sounds                                | Sample-rate-specific raw formats retain their rate contract; no blind substitution of differently sampled raw data                                                                                    |
 
 The music extension-admission gaps discovered during the survey were fixed in
 this pass. The shared Android WAV adapter reuses SDL's decoder and applies the

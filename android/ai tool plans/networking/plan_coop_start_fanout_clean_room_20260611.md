@@ -37,6 +37,7 @@ This must be implemented as Redux-native work. Rebirth was used only as behavior
 Use `gameseq_init_network_players()` as the only gameplay hook.
 
 Reason:
+
 - It already owns `Player_init[]`, player object assignment, and synthetic player object creation.
 - It runs before `multi_level_sync()` and before `InitPlayerPosition()`.
 - Both host and clients load the same level and should derive identical synthetic start positions without extra network protocol.
@@ -127,6 +128,7 @@ Conservative first implementation:
 - For non-coop multiplayer, preserve the existing exact clone behavior unless testing shows deathmatch also benefits.
 
 Reason:
+
 - Deathmatch spawn selection has separate random/secluded logic.
 - Changing deathmatch spawn geometry could alter competitive behavior and tests unrelated to the request.
 
@@ -147,6 +149,7 @@ Plan:
 - Add a follow-up task to lift coop classic menu cap to 8 after the spawn fanout is proven.
 
 Reason:
+
 - Android is the immediate target.
 - Start fanout and menu policy are separate risks.
 

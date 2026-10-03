@@ -98,18 +98,12 @@ def main() -> int:
         shutil.copyfile(demo, source)
         source_hash = file_hash(source)
 
-        require_rejected_without_change(
-            executable, data_dir, source, source, source_hash
-        )
+        require_rejected_without_change(executable, data_dir, source, source, source_hash)
         relative_source = Path(os.path.relpath(source, REPO_ROOT))
-        require_rejected_without_change(
-            executable, data_dir, relative_source, source, source_hash
-        )
+        require_rejected_without_change(executable, data_dir, relative_source, source, source_hash)
         hard_link = case_dir / "hard-link.dem"
         os.link(source, hard_link)
-        require_rejected_without_change(
-            executable, data_dir, source, hard_link, source_hash
-        )
+        require_rejected_without_change(executable, data_dir, source, hard_link, source_hash)
 
         malformed = case_dir / "malformed.dem"
         malformed.write_bytes(b"not a classic demo")
@@ -128,9 +122,7 @@ def main() -> int:
             mutated = bytearray(demo_bytes)
             struct.pack_into("<i", mutated, wall_offset, wall_count)
             wall_demo.write_bytes(mutated)
-            require_malformed_preserves_output(
-                executable, data_dir, wall_demo, prior_output, b"preserve wall count"
-            )
+            require_malformed_preserves_output(executable, data_dir, wall_demo, prior_output, b"preserve wall count")
         for count_bytes in range(4):
             truncated = case_dir / f"wall-count-truncated-{count_bytes}.dem"
             truncated.write_bytes(demo_bytes[: wall_offset + count_bytes])

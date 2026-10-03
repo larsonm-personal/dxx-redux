@@ -44,6 +44,7 @@
 static void android_clear_texture_replacement_path_cache(void);
 #ifdef INTROSPECT_ON
 #include "game_introspect.h"
+#include "ogl_msaa_probe_android.h"
 #endif
 #include "merged_wall_debug.h"
 #include "ogl_gpu_timer_android.h"
@@ -2349,6 +2350,9 @@ void ogl_start_frame(void){
 }
 
 void ogl_end_frame(void){
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	android_ogl_scene_probe_after_pass(g_msaa_frame_depth);
+#endif
 	OGL_VIEWPORT(0,0,grd_curscreen->sc_w,grd_curscreen->sc_h);
 #ifdef ANDROID
 	android_ogl_msaa_trace_stage(&ogl_msaa_state, "scene_pass_complete", g_msaa_fbo_bound, g_msaa_frame_depth);
@@ -2546,6 +2550,10 @@ void gr_flip(void)
 	{
 		struct timespec swap_start, swap_end;
 		android_ogl_msaa_trace_stage(&ogl_msaa_state, "composed_before_swap", g_msaa_fbo_bound, g_msaa_frame_depth);
+#ifdef INTROSPECT_ON
+	android_ogl_menu_probe_before_swap(ogl_msaa_state.flip_serial);
+	android_ogl_scene_probe_before_swap(ogl_msaa_state.flip_serial);
+#endif
 		android_perf_clock_now(&swap_start);
 		ogl_swap_buffers_internal();
 		android_perf_clock_now(&swap_end);

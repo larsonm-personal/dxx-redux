@@ -1,12 +1,14 @@
 # Plan: Music System UI Improvements and Bug Fixes
 
 ## Overview
+
 12 items covering bug fixes, new UI composables, and UX improvements to the
 Android launcher's music management system.
 
 ## Phase 1: Bug Fixes (this session)
 
 ### 1A. Filter "[unknown] - [untitled]" track names
+
 - **Problem**: AcoustID returns placeholder names like "[unknown] - [untitled]" which
   display verbatim in the track list and C engine overlay
 - **Approach**: Filter at two levels:
@@ -19,6 +21,7 @@ Android launcher's music management system.
 - **Files**: FingerprintBridge.kt, track_names.c, MusicPickerPage.kt
 
 ### 1B. Import warning toasts (BIN without CUE, CUE without BIN, unrecognized files)
+
 - **Problem**: SetupActivity.kt file picker silently drops:
   - .bin files without a matching .cue
   - .cue files without a matching .bin (NEW - user request)
@@ -31,6 +34,7 @@ Android launcher's music management system.
 - **Files**: SetupActivity.kt ~L1720-1790
 
 ### 1C. Auto-set music mode after CD import
+
 - **Problem**: `enableRedbookInConfig()` sets `descent.cfg MusicType=2` but doesn't set
   SharedPreferences `music_mode` pref to "cd", so the launcher music status stays on
   whatever mode was previously selected
@@ -41,12 +45,14 @@ Android launcher's music management system.
 ## Phase 2: Feature Additions (future session)
 
 ### 2A. Track info screen with mini player
+
 - Mini player should reuse existing C player code via JNI (not Android MediaPlayer)
   so bugs show up in both game and launcher, maintaining quality
 - Need JNI bridge: start_track_preview(bin_path, track_num), stop_preview(), get_position()
 - Show: AcoustID album, track length, track name, play/pause + progress bar
 
 ### 2B. Unify CD audio and audio file track lists
+
 - Make CD audio tracks clickable (currently only audio file tracks are)
 - Shared TrackListItem composable for both
 
@@ -55,12 +61,17 @@ Android launcher's music management system.
 ## Phase 3: UI/UX Polish (future session)
 
 ### 3A. "Files" view redesign (show mode-appropriate content)
+
 ### 3B. CD audio source info view
+
 ### 3C. Audio files source info view
+
 ### 3D. Delete confirmation for audio files (currently missing)
+
 ### 3E. Delete note for CD audio (add context about file retention)
 
 ## Status
+
 - [x] 1A. Filter unknown/untitled track names -- DONE
 - [x] 1B. Import warning toasts (BIN w/o CUE, CUE w/o BIN, unrecognized files) -- DONE
 - [x] 1C. Auto-set music mode after CD import -- DONE

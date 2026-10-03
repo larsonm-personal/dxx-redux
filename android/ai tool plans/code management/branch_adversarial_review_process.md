@@ -34,12 +34,12 @@ Every changed path must appear in a source chunk or a mechanical batch. Coverage
 
 The default budgets are:
 
-| Risk or content | Maximum assigned review lines |
-|---|---:|
-| Critical trust boundary | 600 |
-| High-risk native or compatibility code | 750 |
-| Ordinary authored source | 900 |
-| Tests and documentation | 1,100 |
+| Risk or content                        | Maximum assigned review lines |
+| -------------------------------------- | ----------------------------: |
+| Critical trust boundary                |                           600 |
+| High-risk native or compatibility code |                           750 |
+| Ordinary authored source               |                           900 |
+| Tests and documentation                |                         1,100 |
 
 Up to 16 small related paths may share a call. These are assigned-line budgets, not hard context limits. A reviewer must expand to the enclosing function, relevant callers, tests, paired D1/D2 implementation, or interface definition when needed
 
@@ -139,13 +139,13 @@ Paths with spaces must be passed as distinct quoted arguments. Do not review onl
 
 Mechanical batches are real review work, not automatic skips
 
-| Kind | Required review |
-|---|---|
+| Kind                | Required review                                                                                                                                                                |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `generated-fixture` | Identify the generator and schema, run or locate normalization and regression checks, compare representative boundary cases, and verify that checked-in output is reproducible |
-| `dependency-lock` | Tie changes to an intended manifest change, inspect source and license, check pinning, and use dependency or vulnerability review where available |
-| `artifact` | Check whether the file belongs in version control, inspect type and provenance, check for private data or secrets, and record the reproducible source or removal action |
-| `historical-plan` | Check path identity, upstream relevance, private or stale information, contradictions with the final implementation, and whether the plan should ship at all |
-| `other-data` | Identify its consumer and format, then choose schema, parser, checksum, license, or provenance validation appropriate to the file |
+| `dependency-lock`   | Tie changes to an intended manifest change, inspect source and license, check pinning, and use dependency or vulnerability review where available                              |
+| `artifact`          | Check whether the file belongs in version control, inspect type and provenance, check for private data or secrets, and record the reproducible source or removal action        |
+| `historical-plan`   | Check path identity, upstream relevance, private or stale information, contradictions with the final implementation, and whether the plan should ship at all                   |
+| `other-data`        | Identify its consumer and format, then choose schema, parser, checksum, license, or provenance validation appropriate to the file                                              |
 
 A batch may be marked `SKIP` only when the ledger names why line review is inappropriate and records the substitute validation. Merely calling a file generated is not enough
 
@@ -340,12 +340,12 @@ When an important hypothesis lacks essential evidence, create an `INV` investiga
 
 ## Severity
 
-| Level | Meaning |
-|---|---|
-| P0 | Credible remote compromise, secret exposure, irreversible widespread data loss, or an issue that makes the branch unsafe to test or distribute |
-| P1 | Must fix before the PR: reachable crash, corruption, security control failure, major protocol or compatibility break, resource exhaustion, deadlock, or required build failure |
-| P2 | Should fix: real edge-case bug, localized leak, meaningful test gap, confusing design likely to cause defects, or material performance problem |
-| P3 | Optional improvement: specific naming, simplification, documentation, or low-impact maintainability issue grounded in repository standards |
+| Level | Meaning                                                                                                                                                                        |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P0    | Credible remote compromise, secret exposure, irreversible widespread data loss, or an issue that makes the branch unsafe to test or distribute                                 |
+| P1    | Must fix before the PR: reachable crash, corruption, security control failure, major protocol or compatibility break, resource exhaustion, deadlock, or required build failure |
+| P2    | Should fix: real edge-case bug, localized leak, meaningful test gap, confusing design likely to cause defects, or material performance problem                                 |
+| P3    | Optional improvement: specific naming, simplification, documentation, or low-impact maintainability issue grounded in repository standards                                     |
 
 Severity describes impact, not certainty. Confidence is recorded separately as `high` or `medium`. Low-confidence claims use `INV`
 

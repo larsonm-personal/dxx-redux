@@ -19,7 +19,9 @@ class MultiplayerSourceContractsTest(unittest.TestCase):
             self.assertIn("Assert(opt == SDL_arraysize(m));", android)
 
     def test_auto_host_validates_domains_before_network_publication(self) -> None:
-        source = (ROOT / "android/app/src/main/cpp/shared/net/net_udp_android_autonet_shared.c").read_text(encoding="utf-8")
+        source = (ROOT / "android/app/src/main/cpp/shared/net/net_udp_android_autonet_shared.c").read_text(
+            encoding="utf-8"
+        )
         self.assertLess(
             source.index("level_num < 1 || level_num > Last_level"),
             source.index("net_udp_init();", source.index("int net_udp_auto_host")),
@@ -42,12 +44,11 @@ class MultiplayerSourceContractsTest(unittest.TestCase):
         self.assertGreater(builder.index("Notification.Builder(this)"), builder.index("} else {"))
 
     def test_reactor_pause_is_consumed_while_automap_is_front(self) -> None:
-        actions = (
-            ROOT / "android/app/src/main/cpp/shared/android_meta_actions.c"
-        ).read_text(encoding="utf-8")
+        actions = (ROOT / "android/app/src/main/cpp/shared/android_meta_actions.c").read_text(encoding="utf-8")
         handler = actions[
-            actions.index("int android_handle_ingame_saveload_request") :
-            actions.index("int android_matcen_mode_apply_pending")
+            actions.index("int android_handle_ingame_saveload_request") : actions.index(
+                "int android_matcen_mode_apply_pending"
+            )
         ]
         self.assertIn("android_reactor_pause_toggle_apply_pending()", handler)
 

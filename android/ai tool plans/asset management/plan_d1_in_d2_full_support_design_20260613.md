@@ -3,9 +3,11 @@
 Architectural update, 2026-09-20: the D2-asset prerequisite and overlay-first design below are historical. The current direction is original D1 fidelity, eventual D1-only assets, and concentrated compatibility code as described in the [consolidation plan](d1-in-d2-consolidation-plan.md). Retain this study as background for the earlier implementation
 
 ## Goal
+
 Design a robust path for playing D1 missions inside the D2 executable, with correct D1 base assets, D1 custom texture packs, and compatibility with D1 level pack conventions.
 
 ## Checklist
+
 - [x] Trace D2 mission selection and `EMULATING_D1` activation
 - [x] Trace D2 PhysFS search-path and mission HOG mounting behavior
 - [x] Compare D1 and D2 base asset loading responsibilities

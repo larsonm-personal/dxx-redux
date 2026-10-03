@@ -16,6 +16,6 @@
 - Working hypothesis: the test logic is healthy again, but `android/run_all_tests.ps1` still uses the default 120 second wall-clock cap for `test_dpad_triggers`, which is too tight under full-suite load and kills the process mid D2 run
 - Fix: add `test_dpad_triggers = 240` to the `run_all_tests.ps1` per-test timeout override table instead of touching launcher or game input code
 - Validation:
-	- `android/run_test.ps1 -ScriptName test_dpad_triggers.json5`
-	- `android/run_all_tests.ps1 -Filter test_dpad_triggers`
+  - `android/run_test.ps1 -ScriptName test_dpad_triggers.json5`
+  - `android/run_all_tests.ps1 -Filter test_dpad_triggers`
 - Outcome: the filtered full-suite wrapper now runs `test_dpad_triggers [json5] (timeout: 240s)` and reports `PASS (01:16)` with `Passed: 1 Failed: 0 Timeouts: 0`; validation report: `C:\local\dxx-redux\temp\test_reports\report_20260523_124156.md`

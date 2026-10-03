@@ -112,78 +112,78 @@ static int expect_result_writer(void)
 		return report_failure("could not read result output");
 	}
 	expected = std::string("{\n") +
-		"  \"version\": 2,\n" +
-		"  \"game\": \"d2\",\n" +
-		"  \"mission\": \"d2\",\n" +
-		"  \"level\": 1,\n" +
-		"  \"difficulty\": 2,\n" +
-		"  \"frame_count\": 3,\n" +
-		"  \"game_time64\": 120,\n" +
-		"  \"player0\": {\n" +
-		"    \"energy\": 67,\n" +
-		"    \"shields\": 42,\n" +
-		"    \"score\": 12500,\n" +
-		"    \"lives\": 3,\n" +
-		"    \"laser_level\": 1,\n" +
-		"    \"primary_weapon\": 0,\n" +
-		"    \"secondary_weapon\": 1,\n" +
-		"    \"flags\": 0,\n" +
-		"    \"hostages\": 0,\n" +
-		"    \"primary_ammo\": [\n" +
-		"      0,\n" +
-		"      200,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0\n" +
-		"    ],\n" +
-		"    \"secondary_ammo\": [\n" +
-		"      4,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0,\n" +
-		"      0\n" +
-		"    ]\n" +
-		"  },\n" +
-		"  \"position\": {\n" +
-		"    \"segment\": 142,\n" +
-		"    \"x\": 12345678,\n" +
-		"    \"y\": -8765432,\n" +
-		"    \"z\": 3456789,\n" +
-		"    \"forward_x\": 65536,\n" +
-		"    \"forward_y\": 0,\n" +
-		"    \"forward_z\": 0\n" +
-		"  },\n" +
-		"  \"level_summary\": {\n" +
-		"    \"robots_alive\": 23,\n" +
-		"    \"robots_killed\": 8,\n" +
-		"    \"hostages_remaining\": 2,\n" +
-		"    \"powerups_remaining\": 15,\n" +
-		"    \"control_center_destroyed\": true,\n" +
-		"    \"endlevel_completed\": false\n" +
-		"  }\n" +
-		"}\n";
+	           "  \"version\": 2,\n" +
+	           "  \"game\": \"d2\",\n" +
+	           "  \"mission\": \"d2\",\n" +
+	           "  \"level\": 1,\n" +
+	           "  \"difficulty\": 2,\n" +
+	           "  \"frame_count\": 3,\n" +
+	           "  \"game_time64\": 120,\n" +
+	           "  \"player0\": {\n" +
+	           "    \"energy\": 67,\n" +
+	           "    \"shields\": 42,\n" +
+	           "    \"score\": 12500,\n" +
+	           "    \"lives\": 3,\n" +
+	           "    \"laser_level\": 1,\n" +
+	           "    \"primary_weapon\": 0,\n" +
+	           "    \"secondary_weapon\": 1,\n" +
+	           "    \"flags\": 0,\n" +
+	           "    \"hostages\": 0,\n" +
+	           "    \"primary_ammo\": [\n" +
+	           "      0,\n" +
+	           "      200,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0\n" +
+	           "    ],\n" +
+	           "    \"secondary_ammo\": [\n" +
+	           "      4,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0,\n" +
+	           "      0\n" +
+	           "    ]\n" +
+	           "  },\n" +
+	           "  \"position\": {\n" +
+	           "    \"segment\": 142,\n" +
+	           "    \"x\": 12345678,\n" +
+	           "    \"y\": -8765432,\n" +
+	           "    \"z\": 3456789,\n" +
+	           "    \"forward_x\": 65536,\n" +
+	           "    \"forward_y\": 0,\n" +
+	           "    \"forward_z\": 0\n" +
+	           "  },\n" +
+	           "  \"level_summary\": {\n" +
+	           "    \"robots_alive\": 23,\n" +
+	           "    \"robots_killed\": 8,\n" +
+	           "    \"hostages_remaining\": 2,\n" +
+	           "    \"powerups_remaining\": 15,\n" +
+	           "    \"control_center_destroyed\": true,\n" +
+	           "    \"endlevel_completed\": false\n" +
+	           "  }\n" +
+	           "}\n";
 	if (text != expected) {
 		remove(result_path.c_str());
 		remove_test_dir(dir);
@@ -341,10 +341,10 @@ static int expect_snapshot_round_trip_and_compare(void)
 static int expect_malformed_values_rejected_transactionally(void)
 {
 	const std::string valid_prefix =
-		"{\"version\":2,\"game\":\"d2\",\"mission\":\"d2\","
-		"\"level\":1,\"difficulty\":2,\"frame_count\":3";
+	    "{\"version\":2,\"game\":\"d2\",\"mission\":\"d2\","
+	    "\"level\":1,\"difficulty\":2,\"frame_count\":3";
 	const std::string ammo_prefix =
-		valid_prefix + ",\"player0\":{\"primary_ammo\":[";
+	    valid_prefix + ",\"player0\":{\"primary_ammo\":[";
 	input_demo_result result;
 	std::string error;
 

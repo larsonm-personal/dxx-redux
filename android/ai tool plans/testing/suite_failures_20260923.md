@@ -61,8 +61,7 @@ Record fixes and verified outcomes below as work completes.
 - Scoped mixed-language formatting and lint passed
 - Final Android debug build (all three ABIs), Windows D1/D2 builds, and both
   `test_upstream_compat` CTest targets passed
-- Full affected route owner passed: 23/23 cases with the original report's seed
-  265. Report: `android/temp/route_regression_cases/run_20260923_101321_706/summary.json`
+- Full affected route owner passed: 23/23 cases with the original report's seed 265. Report: `android/temp/route_regression_cases/run_20260923_101321_706/summary.json`
 - Full D1-in-D2 replay owner passed: 8/8 original recordings and expectations,
   including all three Level 7 recordings. Log: `temp/suite-fixes-20260923/replays-final.log`
 

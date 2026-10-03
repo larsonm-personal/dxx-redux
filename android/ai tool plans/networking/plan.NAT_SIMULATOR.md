@@ -1,6 +1,7 @@
 # NAT Simulator Implementation Plan
 
 ## Goal
+
 Application-level NAT simulator as a separate binary in the server crate.
 Used for automated integration tests of the NAT traversal flow.
 
@@ -23,6 +24,7 @@ Used for automated integration tests of the NAT traversal flow.
 ```
 
 All components run in the same tokio process. The test spawns:
+
 1. A matchmaking server (reuse TestServer from integration.rs)
 2. A mini STUN server (echoes back source address in STUN format)
 3. Two NAT simulator instances with configurable NAT type
@@ -43,14 +45,17 @@ a [[bin]] for standalone use. The integration tests import the module.
 ## NAT Simulator Module (src/nat_sim.rs)
 
 Core types:
+
 - NatType enum: FullCone, PortRestricted, Symmetric, SymmetricSequential
 - NatSimulator struct: runs async, manages port mappings, proxies UDP
 
 The simulator binds two UDP sockets:
+
 - internal_socket: test client sends to this
 - external_socket: forwards packets to the real network
 
 Mapping behavior per NAT type:
+
 - FullCone: one external port per internal (src_ip, src_port). Any
   external host can send back to that port.
 - PortRestricted: same mapping, but only allows inbound from (addr, port)

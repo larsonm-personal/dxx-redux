@@ -4,6 +4,7 @@
             android:name="com.dxxredux.app.SafTestProvider"
             android:authorities="${applicationId}.saf-test"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false"
+        />
     </application>
 </manifest>

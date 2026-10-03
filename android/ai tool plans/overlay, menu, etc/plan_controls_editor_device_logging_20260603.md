@@ -3,28 +3,33 @@
 Status: physical Android viewport regression repaired and validated on emulator
 
 ## Problem
+
 - On real devices, controls editor pages still show tiny, garbled, unreadable text.
 - Emulator automation confirms the enlarged/scrolled kconfig path is active, so the failure likely depends on real device render scale, font scale, bitmap contents, or OpenGL upload/blit behavior.
 
 ## Plan
+
 1. Inspect existing kconfig and shared menu-scale diagnostics to see what is already logged. Done.
 2. Add targeted device logs for the offscreen text bitmap contents and final OpenGL blit tiles. Done.
 3. Prefer concise, bounded logs under Game Logs so they can be exported from the launcher. Done.
 4. Run code quality and a debug build after edits. Done.
 
 ## Initial Theories
+
 - The phone may be rendering the kconfig page at a much larger logical resolution than the emulator, causing different `FNTScaleX/Y`, source box, and render target sizes.
 - The text may be damaged before the final blit, which would show up as low pixel coverage or unexpected color-index distribution in the offscreen bitmap.
 - The text may be clean in the offscreen bitmap but damaged during GPU upload/blit, which would show up as large or oddly sliced OpenGL tiles.
 - Device logs showed the offscreen bitmap is clean and the tile upload is within limits. The next suspect is GL presentation state: the scaled menu blit can inherit a stale viewport/FBO state, especially when MSAA is active in-level.
 
 ## Added Logs
+
 - `[kconfig-scale]`: screen, source/destination/render sizes, scale, base font scale, font dimensions, scroll, item count, and original window canvas.
 - `[kconfig-drawstate]`: scaled screen/font state used while drawing into the offscreen bitmap.
 - `[kconfig-bitmap]`: visible offscreen bitmap area, FNV hash, counts for expected text/line colors, and top palette colors.
 - `[menu-scale-blit]`: final OpenGL blit source/destination geometry, tile count, first tile size, power-of-two upload size, and texture limit.
 
 ## Verification
+
 - `android\run-code-quality.ps1 -Fix` passed for the touched C files and this plan.
 - `android\gradlew.bat -p android :app:assembleDebug` passed with JDK 21.
 - Installed emulator automation `test_kconfig_keyboard_stage_d2.json5` passed and showed the new diagnostics in the introspection console.
@@ -32,6 +37,7 @@ Status: physical Android viewport regression repaired and validated on emulator
 - The final automation pass produced `[menu-scale-prepare] source=menu-scale-region ... viewport=(0,0 960x540)` in the introspection console before `[menu-scale-blit]`, confirming the controls editor path now prepares full-screen OGL state before the region blit.
 
 ## Device Log Follow-up
+
 - The phone reported kconfig `render=994x593`, `scaled_fnt=2.97x2.97`, and expected text-color pixels in the offscreen bitmap, so the intermediate text render is not the failing step.
 - The final blit uses one 994x459 tile with a 1024x512 texture under the 2048 texture cap, so oversized texture slicing is also unlikely.
 - Added an OGL helper that prepares scaled menu overlay blits by resolving MSAA when safe, binding the correct framebuffer, forcing a full-screen 2D viewport/cache, and logging the resulting framebuffer/viewport state.
@@ -39,6 +45,7 @@ Status: physical Android viewport regression repaired and validated on emulator
 - Generic scaled menus and kconfig region blits have separate diagnostic counters so earlier option menus do not exhaust the logs before the controls editor appears.
 
 ## Second Device Log Follow-up
+
 - The controls editor path is active on device: kconfig reports `screen=1170x540`, `dst=(88,40 994x459)`, `render=994x593`, `scale=1.48`, and `scaled_fnt=2.97x2.97`.
 - `[kconfig-bitmap]` reports non-empty text, line, selection, box, and yellow color counts, so the software-side bitmap has expected controls-editor pixels before OpenGL upload.
 - `[menu-scale-prepare] source=menu-scale-region` reports framebuffer 0 and viewport `1170x540`, so the controls editor region blit is not obviously using stale MSAA, framebuffer, or viewport state.
@@ -47,12 +54,14 @@ Status: physical Android viewport regression repaired and validated on emulator
 - The new front-runner is final Android presentation: controls text is still rasterized into a `1170x540` game buffer before the phone scales that buffer to the physical surface.
 
 ## Next Work
+
 1. Pass/log the Java `SurfaceView` size into native code so Android OGL setup can compare physical surface size against the game render buffer.
 2. If the game buffer is much smaller than the physical surface, prefer a higher Android render size for the EGL buffer so menus are not stretched from `1170x540`.
 3. Preserve the existing high-res kconfig offscreen bitmap and region blit changes, then retest with device logs looking for the game render size and surface size to converge.
 4. Separately harden the temporary scaled draw state so Android touch/event mapping cannot observe the scaled offscreen screen dimensions.
 
 ## Surface/Resolution Implementation
+
 - Added a `nativeSetSurfaceSize(width, height)` bridge from `MainActivity` so native diagnostics can distinguish Java `SurfaceView` size from the `ANativeWindow` buffer size after `setBuffersGeometry`.
 - Updated native display-size accessors to prefer the Java view size, so video diagnostics and introspection report physical view size instead of the low-resolution game buffer size.
 - Added `[android-egl]` logs for initial EGL surface creation and surface recreation, including game render size, Java view size, native window size before/after geometry, and return code.
@@ -62,6 +71,7 @@ Status: physical Android viewport regression repaired and validated on emulator
 - Updated the controls-editor staging script to force `1280x720`, preserving coverage for the scaled/scrollable kconfig path now that the app default is full resolution.
 
 ## Third Device Log Follow-up
+
 - New phone logs from build `15017` show `game=1170x540 view=2340x1080 win_before=2340x1080 win_after=2340x1080`, so the Java surface-size bridge is working and the physical device view is available.
 - The same logs still show `[menu-scale-prepare] ... viewport=(0,0 1170x540) screen=1170x540`, proving the Android OGL viewport is still limited to the low logical render size.
 - The controls-editor software bitmap remains healthy (`render=994x593`, `scaled_fnt=2.97x2.97`, expected text pixels), so the next fix should target final GL presentation rather than kconfig text drawing.
@@ -70,6 +80,7 @@ Status: physical Android viewport regression repaired and validated on emulator
 - After validation, expected device logs should show a physical viewport near `2340x1080` with `screen=1170x540`, meaning game/menu coordinates remain logical but rasterization reaches native phone pixels.
 
 ## Physical Viewport Implementation
+
 - Replaced the Android `OGL_VIEWPORT` macro body in D1/D2 with an `ogl_android_viewport()` helper.
 - The helper keeps `last_width` and `last_height` at logical game/menu dimensions, but scales the actual `glViewport` rectangle to the Java `SurfaceView` size reported by native surface tracking.
 - Updated Android keyboard-gap scissor clearing to use the same physical scaling.
@@ -77,6 +88,7 @@ Status: physical Android viewport regression repaired and validated on emulator
 - Updated overlay blit preparation and `gr_flip()` menu viewport setup to call the same helper instead of raw logical `glViewport` calls.
 
 ## Physical Viewport Verification
+
 - `android\run-code-quality.ps1 -Fix` passed.
 - `.\android\gradlew.bat -p android :app:assembleDebug` passed with JDK 21.
 - First emulator test rerun still showed `viewport=(0,0 1280x720)` because the emulator had an old installed APK (`versionCode=15010`, last updated 15:42).
@@ -84,6 +96,7 @@ Status: physical Android viewport regression repaired and validated on emulator
 - The final introspection console showed `[menu-scale-prepare] ... viewport=(0,0 1920x1080) screen=1280x720`, confirming the controls-editor render path now uses the physical surface viewport while retaining logical menu coordinates.
 
 ## Physical Viewport Regression
+
 - Device build `15020` regressed the in-level pause menu: the menu is drawn high/right and mostly offscreen.
 - Logs confirm the physical viewport patch is active on device: `[menu-scale-prepare] ... viewport=(0,0 2340x1080) screen=1170x540`.
 - The affected pause menu is the generic scaled menu path (`source=menu-scale`, not `menu-scale-region`), so applying a physical viewport globally is too broad.
@@ -91,6 +104,7 @@ Status: physical Android viewport regression repaired and validated on emulator
 - Next fix: stop scaling the global Android OGL viewport to physical pixels for ordinary/game menus, restoring centered logical presentation. Keep the kconfig enlarged text and scrolling work intact, and prefer high-resolution fixes inside the controls-editor region/offscreen path rather than changing the whole viewport transform.
 
 ## Regression Repair
+
 - Changed the Android OGL viewport helper back to the drawable/game-buffer size instead of the Java `SurfaceView` size.
 - Kept the centralized viewport helper and overlay preparation path, but its drawable-size helper now intentionally returns logical game dimensions because `setBuffersGeometry` keeps the EGL drawable at the game resolution.
 - MSAA FBO sizing, resolve, framebuffer sampling, keyboard-gap scissor, and overlay preparation now all use that same drawable size again.
@@ -98,6 +112,7 @@ Status: physical Android viewport regression repaired and validated on emulator
 - Expected device logs after this repair: generic pause menus should return to `viewport=(0,0 1170x540) screen=1170x540`, while touch logs should also report `screen=1170x540` during scaled-menu taps.
 
 ## Regression Repair Verification
+
 - `android\run-code-quality.ps1 -Fix` passed.
 - `.\android\gradlew.bat -p android :app:assembleDebug` passed with JDK 21 and generated build info stamped `2026-06-03 18:56 PDT`.
 - Added `test_pause_menu_viewport_d2.json5` to cover the generic in-level pause menu path that regressed on device.
@@ -105,6 +120,7 @@ Status: physical Android viewport regression repaired and validated on emulator
 - Reran `test_kconfig_keyboard_stage_d2.json5` against the same fresh install; it passed with controls-editor `source=menu-scale-region` logging `viewport=(0,0 1280x720) screen=1280x720`.
 
 ## Fourth Device Log Follow-up
+
 - Device build `15021` confirms the pause-menu regression is repaired: generic `menu-scale` and controls-editor `menu-scale-region` both report logical `viewport=(0,0 1170x540) screen=1170x540`.
 - Touch logs also stay at `screen=1170x540` with active scaled-menu remapping, and the user reports tap regions plus drag scrolling are significantly better. Treat the current stable touch rect locking and logical screen-size mapping as protected behavior.
 - The controls editor still reports a healthy centered region (`dst=(88,40 994x459)`, `render=994x593`, `scale=1.48`) and expected bitmap contents, so the remaining unreadable device text is likely inside the controls-editor text payload rather than global viewport placement.
@@ -116,12 +132,14 @@ Status: physical Android viewport regression repaired and validated on emulator
 - Expected verification signal: kconfig geometry should stay the same, while `[kconfig-bitmap]` hashes and text-color pixel counts should change because glyph pixels now occupy the scaled area.
 
 ## Fourth Follow-up Verification
+
 - `android\run-code-quality.ps1 -Fix` passed after rerun with a longer timeout.
 - `.\android\gradlew.bat -p android :app:assembleDebug` passed with JDK 21.
 - `test_kconfig_keyboard_stage_d2.json5` passed on the emulator. The controls editor kept the expected `menu-scale-region` geometry, and the final kconfig bitmap hash/color counts changed from the earlier build, confirming the offscreen text payload is different.
 - `test_pause_menu_viewport_d2.json5` passed on the emulator, preserving the fixed generic pause-menu viewport path.
 
 ## Cleanup Plan
+
 - Keep `test_kconfig_keyboard_stage_d2.json5` and `test_pause_menu_viewport_d2.json5`; they now protect the readable controls editor, scroll behavior, and repaired pause-menu viewport.
 - Remove temporary controls-editor bitmap statistics and scale-state logs from D1/D2 kconfig.
 - Remove temporary menu-scale overlay preparation/blit logs now that viewport and tiling are stable.
@@ -129,12 +147,14 @@ Status: physical Android viewport regression repaired and validated on emulator
 - Rebuild and rerun the same kconfig and pause-menu tests after cleanup.
 
 ## Cleanup Status
+
 - Removed the temporary kconfig bitmap/stat logs from D1/D2 while keeping the high-resolution scaled glyph path and scrollable render path intact.
 - Removed the temporary menu-scale prepare/blit logs and simplified `ogl_android_prepare_overlay_blit()` back to behavior-only state setup.
 - Removed temporary touch-remap and EGL surface-size logs while preserving the stable menu touch rect mapping and logical viewport repair.
 - Kept the controls-bottom, controls-editor, and pause-menu scripts as regression coverage rather than throwaway test code.
 
 ## Cleanup Verification
+
 - `android\run-code-quality.ps1 -Fix` passed after cleanup.
 - `.\android\gradlew.bat -p android :app:assembleDebug` passed with JDK 21.
 - `test_kconfig_keyboard_stage_d2.json5` passed after installing the fresh debug APK.

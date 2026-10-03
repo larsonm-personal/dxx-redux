@@ -151,25 +151,32 @@ static json continuity_state()
 	d_rand_get_state(&rng);
 	return {
 		{ "routing_mode", guidebot_routing_mode() },
-		{ "goal", Escort_goal_object }, { "special_goal", Escort_special_goal }, { "goal_index", Escort_goal_index },
-		{ "marker", Looking_for_marker }, { "last_key", Last_buddy_key },
-		{ "released", Buddy_allowed_to_talk }, { "messages_suppressed", Buddy_messages_suppressed },
+		{ "goal", Escort_goal_object },
+		{ "special_goal", Escort_special_goal },
+		{ "goal_index", Escort_goal_index },
+		{ "marker", Looking_for_marker },
+		{ "last_key", Last_buddy_key },
+		{ "released", Buddy_allowed_to_talk },
+		{ "messages_suppressed", Buddy_messages_suppressed },
 		{ "goal_message_bytes", std::vector<unsigned char>(message_bytes, message_bytes + std::strlen(message)) },
 		{ "seen_delta", Buddy_last_seen_player - GameTime64 },
 		{ "player_path_delta", Buddy_last_player_path_created - GameTime64 },
 		{ "path_created_delta", Escort_last_path_created - GameTime64 },
-		{ "route_target_mode", Escort_route_target_mode }, { "route_active", Escort_route_goal.active },
-		{ "route_goal", { Escort_route_goal.target_seg, Escort_route_goal.objective_kind, Escort_route_goal.objective_seg,
-		                  Escort_route_goal.objective_trigger, Escort_route_goal.objective_object, Escort_route_goal.guidance_mode } },
+		{ "route_target_mode", Escort_route_target_mode },
+		{ "route_active", Escort_route_goal.active },
+		{ "route_goal", { Escort_route_goal.target_seg, Escort_route_goal.objective_kind, Escort_route_goal.objective_seg, Escort_route_goal.objective_trigger, Escort_route_goal.objective_object, Escort_route_goal.guidance_mode } },
 		{ "secret_goal", { escort_get_secret_goal_seg(), escort_get_secret_goal_side() } },
 		{ "comeback_delta", Last_come_back_message_time - GameTime64 },
 		{ "sorry_delta", Buddy_sorry_time - GameTime64 },
 		{ "ai_mode", Ai_local_info[Buddy_objnum].mode },
-		{ "path_length", bot.ctype.ai_info.path_length }, { "path_index", bot.ctype.ai_info.cur_path_index },
+		{ "path_length", bot.ctype.ai_info.path_length },
+		{ "path_index", bot.ctype.ai_info.cur_path_index },
 		{ "path_allocator", Point_segs_free_ptr - Point_segs },
-		{ "segment", bot.segnum }, { "position", { bot.pos.x, bot.pos.y, bot.pos.z } },
+		{ "segment", bot.segnum },
+		{ "position", { bot.pos.x, bot.pos.y, bot.pos.z } },
 		{ "velocity", { bot.mtype.phys_info.velocity.x, bot.mtype.phys_info.velocity.y, bot.mtype.phys_info.velocity.z } },
-		{ "rng", rng }, { "rng_calls", d_rand_get_call_count() }
+		{ "rng", rng },
+		{ "rng_calls", d_rand_get_call_count() }
 	};
 }
 static void continuity_step(int frame)
@@ -200,15 +207,15 @@ static bool continuity_payload_validation()
 	PHYSFS_file *file = PHYSFS_openWrite("guidebot-runtime.bin");
 	if (!file) return false;
 	guidebot_save_stream stream = { file, 1, 0, 1, GameTime64, 0 };
-	const bool written = escort_save_runtime(&stream) && (PHYSFS_sint64)stream.bytes == PHYSFS_tell(file);
+	const bool written = escort_save_runtime(&stream) && (PHYSFS_sint64) stream.bytes == PHYSFS_tell(file);
 
 	PHYSFS_close(file);
 	if (!written) return false;
 	file = PHYSFS_openRead("guidebot-runtime.bin");
 	if (!file) return false;
 
-	std::vector<unsigned char> bytes((size_t)PHYSFS_fileLength(file));
-	const bool read = PHYSFS_readBytes(file, bytes.data(), bytes.size()) == (PHYSFS_sint64)bytes.size();
+	std::vector<unsigned char> bytes((size_t) PHYSFS_fileLength(file));
+	const bool read = PHYSFS_readBytes(file, bytes.data(), bytes.size()) == (PHYSFS_sint64) bytes.size();
 	PHYSFS_close(file);
 	if (!read || bytes.empty()) return false;
 	for (int truncated : { 0, 1 }) {
@@ -216,7 +223,7 @@ static bool continuity_payload_validation()
 		file = PHYSFS_openWrite("guidebot-runtime-probe.bin");
 		if (!file) return false;
 		const size_t size = bytes.size() - truncated;
-		const bool copied = PHYSFS_writeBytes(file, bytes.data(), size) == (PHYSFS_sint64)size;
+		const bool copied = PHYSFS_writeBytes(file, bytes.data(), size) == (PHYSFS_sint64) size;
 		PHYSFS_close(file);
 		if (!copied) return false;
 		file = PHYSFS_openRead("guidebot-runtime-probe.bin");
@@ -286,7 +293,10 @@ static int audit_save_continuity(const char *output)
 
 			result["passed"] = result["save_unchanged"].get<bool>() && result["restore_unchanged"].get<bool>() && result["first_divergent_frame"].is_null();
 			passed = passed && result["passed"].get<bool>();
-			const char *scenario = command == KEY_7 ? "scram" : command == KEY_0 ? "next" : command == KEY_9 ? "exit" : command == KEY_6 ? "hostages" : "unexplored";
+			const char *scenario = command == KEY_7 ? "scram" : command == KEY_0 ? "next"
+			                                                : command == KEY_9   ? "exit"
+			                                                : command == KEY_6   ? "hostages"
+			                                                                     : "unexplored";
 			report[mode == GUIDEBOT_ROUTING_ORIGINAL ? "Original" : "Enhanced"][scenario] = result;
 		}
 	}
@@ -296,8 +306,12 @@ static int audit_save_continuity(const char *output)
 	passed = passed && report["payload_validation"].get<bool>();
 	report["passed"] = passed;
 	std::ofstream file(output);
-	try { file << report.dump(2) << '\n'; }
-	catch (const std::exception &error) { std::fprintf(stderr, "CONTINUITY report: %s\n", error.what()); return 2; }
+	try {
+		file << report.dump(2) << '\n';
+	} catch (const std::exception &error) {
+		std::fprintf(stderr, "CONTINUITY report: %s\n", error.what());
+		return 2;
+	}
 	return file.good() && passed ? 0 : 1;
 }
 static void audit_redux_return_events(object *bot)
@@ -326,7 +340,7 @@ static void audit_redux_return_events(object *bot)
 			// Redux can retain the old return path beyond 16 seconds when sight is refreshed
 			redux_do_escort_frame(bot, MIN_ESCORT_DISTANCE + F1_0, visible);
 			check("redux_waits_for_rejoin", Ai_local_info[Buddy_objnum].mode == AIM_GOTO_PLAYER &&
-			      Escort_goal_object != ESCORT_GOAL_EXIT);
+			                                    Escort_goal_object != ESCORT_GOAL_EXIT);
 			place(bot, find_exit_segment());
 			compare(bot, "reactor_rejoin_" + std::to_string(visible) + "_" + std::to_string(age), [&](bool ref) {
 				if (ref) redux_do_escort_frame(bot, MIN_ESCORT_DISTANCE - 1, 2);
@@ -404,7 +418,7 @@ static void audit_stale_player_return(object *bot)
 		const auto &path = bot->ctype.ai_info;
 		check("stale_return_target_" + std::to_string(cloaked), Ai_local_info[Buddy_objnum].goal_segment == target);
 		check("stale_return_endpoint_" + std::to_string(cloaked), path.path_length > 0 &&
-		      Point_segs[path.hide_index + path.path_length - 1].segnum == target);
+		                                                              Point_segs[path.hide_index + path.path_length - 1].segnum == target);
 		check("stale_return_preserves_enemy_memory_" + std::to_string(cloaked), Believed_player_seg == stale_seg);
 		if (!cloaked) {
 			Looking_for_marker = Last_buddy_key = -1;
@@ -415,7 +429,7 @@ static void audit_stale_player_return(object *bot)
 			Buddy_last_seen_player = Buddy_last_player_path_created = GameTime64;
 			do_escort_frame(bot, 0, 2);
 			check("stale_return_resumes_energy_center", Escort_goal_object == ESCORT_GOAL_ENERGYCEN &&
-			      Escort_goal_index >= 0 && Ai_local_info[Buddy_objnum].mode == AIM_GOTO_OBJECT);
+			                                                Escort_goal_index >= 0 && Ai_local_info[Buddy_objnum].mode == AIM_GOTO_OBJECT);
 		}
 	}
 	start.restore(bot);
@@ -460,7 +474,9 @@ static void audit_reactor_room_return(object *bot)
 		int first_exit = -1, return_frames = 0;
 		// Segment centers approximate the log, not its unrecorded positions/inputs
 		for (int frame = 0; frame < 960; ++frame) {
-			const int seg = frame < 260 ? (early_retreat ? 350 : 358) : frame < 560 ? 350 : frame < 860 ? 348 : 370;
+			const int seg = frame < 260 ? (early_retreat ? 350 : 358) : frame < 560 ? 350
+			                                                        : frame < 860   ? 348
+			                                                                        : 370;
 			if (ConsoleObject->segnum != seg) place(ConsoleObject, seg);
 			Believed_player_pos = ConsoleObject->pos;
 			Believed_player_seg = ConsoleObject->segnum;
@@ -469,8 +485,13 @@ static void audit_reactor_room_return(object *bot)
 			const fix distance = vm_vec_dist_quick(&bot->pos, &ConsoleObject->pos);
 			const int visible = object_to_object_visibility(bot, ConsoleObject, FQ_TRANSWALL) ? 2 : 0;
 			compare(bot, "reactor_room_" + std::to_string(scenario) + "_" + std::to_string(frame), [&](bool ref) {
-				if (ref) { redux_do_escort_frame(bot, distance, visible); redux_ai_follow_path(bot, visible, visible, nullptr); }
-				else { do_escort_frame(bot, distance, visible); ai_follow_path(bot, visible, visible, nullptr); }
+				if (ref) {
+					redux_do_escort_frame(bot, distance, visible);
+					redux_ai_follow_path(bot, visible, visible, nullptr);
+				} else {
+					do_escort_frame(bot, distance, visible);
+					ai_follow_path(bot, visible, visible, nullptr);
+				}
 			});
 			do_escort_frame(bot, distance, visible);
 			ai_follow_path(bot, visible, visible, nullptr);
@@ -530,7 +551,7 @@ int test_guidebot_live_navigation(const char *output, const char *audit)
 	const int key_goals[] = { ESCORT_GOAL_BLUE_KEY, ESCORT_GOAL_GOLD_KEY, ESCORT_GOAL_RED_KEY };
 	for (int k = 0; k < 3; ++k) {
 		int objnum = obj_create(OBJ_POWERUP, key_ids[k], ConsoleObject->segnum, &ConsoleObject->pos,
-		                       nullptr, F1_0, CT_POWERUP, MT_NONE, RT_POWERUP);
+		                        nullptr, F1_0, CT_POWERUP, MT_NONE, RT_POWERUP);
 		check("coop_key_created", objnum >= 0);
 		if (objnum < 0) continue;
 		check("coop_key_before_pickup_" + std::to_string(k), escort_set_goal_object() == key_goals[k]);

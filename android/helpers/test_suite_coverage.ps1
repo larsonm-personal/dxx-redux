@@ -19,6 +19,12 @@ function Get-TestSuiteCoveragePolicy {
             'test_guidebot_secret_transition'
         )
         network_scenarios = @(
+            'test_emulator_recovery'
+            'test_lan_launch_preparation'
+            'test_lan_qr_join'
+            'test_lan_qr'
+            'test_lobby_latency'
+            'test_manual_ip_engine'
             'test_lan'
             'test_lan_active_discovery'
             'test_lan_lobby_discovery'
@@ -58,6 +64,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_saf_redbook'
         )
         core = @(
+            'test_github_release'
             'test_7zip_install'
             'test_managed_dependencies'
             'test_sdk_package_inventory'
@@ -170,6 +177,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_xfing_asset_validation'
         )
         explicit = @(
+            # Requires caller-selected devices on a shared discovery network
+            'test_lan_nsd'
             # These probes require caller-supplied binaries or data directories
             'test_android_metadata_worker'
             'test_classic_trigger_demo'
@@ -177,8 +186,6 @@ function Get-TestSuiteCoveragePolicy {
             'test_d1_wall_blast_save'
             'test_native_metadata_worker'
             'test_pickup_autoselect_parity'
-            # Requires two healthy, idle emulators before recovery starts
-            'test_emulator_recovery'
             # Full semantic coverage is still incomplete; retain a nonzero gate
             'test_d1_replay_parity'
             'test_dual_emu'
@@ -191,6 +198,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_skip_every_launch_button_manual_unified'
         )
         extended_graphics = @(
+            # The suite provisions the emulator before this recovery owner runs
+            'test_graphics_recovery'
             'test_merged_wall_two_pass_probe'
         )
         gameplay_scenarios = @(
@@ -209,6 +218,17 @@ function Get-TestSuiteCoveragePolicy {
             'test_quick_record_classic_sidecar'
         )
         graphics_scenarios = @(
+            'test_msaa_render_and_menu'
+            'test_graphics_black_output'
+            'test_graphics_confirmation_input'
+            'test_graphics_context_loss'
+            'test_graphics_egl_failure'
+            'test_graphics_lifecycle'
+            'test_graphics_mode_restore'
+            'test_graphics_msaa_allocation_failure'
+            'test_graphics_native_interruption'
+            'test_graphics_settings_confirmation'
+            'test_graphics_video_overlay'
             'test_vertigo_merge_creation'
             'test_ogl_runtime_texture_options_unified'
             'test_ogl_gauge_batch_unified'
@@ -231,6 +251,11 @@ function Get-TestSuiteCoveragePolicy {
             'test_vertigo_metadata_checkpoints'
         )
         input_preferences = @(
+            'test_controller_raw_inputs'
+            'test_controller_trigger_axis_priority'
+            'test_independent_trigger_axes'
+            'test_controller_live_rebind'
+            'test_slider_navigation'
             'test_controller_compare_unified'
             'test_axis_mapping'
             'test_autoselect_crash_unified'
@@ -242,6 +267,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_touch_layout_format'
         )
         launcher = @(
+            'test_graphics_preview'
             'test_host_dialog_loading'
             'test_random_level_preview'
             'test_guidebot_simulation_browser'
@@ -265,6 +291,9 @@ function Get-TestSuiteCoveragePolicy {
             'test_vertigo_level_metadata'
         )
         packaging = @(
+            'test_distribution_build_info'
+            'test_distribution_launch'
+            'test_android_distributions'
             'test_acoustid_config_packaging'
             'test_xcrash_native_report'
         )
@@ -309,7 +338,12 @@ function Select-TestSuiteCoverage {
         $name = if ($test.BaseName) { $test.BaseName } else { $test.Name }
         if (-not $families.ContainsKey($name)) { throw "Test needs a suite coverage family: $name" }
     }
-    if ($AllScenarios) { return $Tests }
+    if ($AllScenarios) {
+        return $Tests | Where-Object {
+            $name = if ($_.BaseName) { $_.BaseName } else { $_.Name }
+            $families[$name] -ne 'explicit'
+        }
+    }
     foreach ($family in @($policy.Keys | Sort-Object)) {
         $candidates = @($Tests | Where-Object {
                 $name = if ($_.BaseName) { $_.BaseName } else { $_.Name }

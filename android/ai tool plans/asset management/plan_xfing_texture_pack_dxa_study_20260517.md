@@ -1,9 +1,11 @@
 # Xfing Texture Pack DXA Study 20260517
 
 ## Goal
+
 Study the extracted Xfing D1 and D2 texture fix packs and determine the smallest legal DXA packaging path for each game.
 
 ## Tasks
+
 - [x] Review prior DXA and hires texture conversion plans and scripts
 - [x] Inventory `game_data/mods/xfing/dxx_tp/uud1tp` and `game_data/mods/xfing/dxx_tp/uud2tp`
 - [x] Identify whether standalone replacement texture sources exist in the distributions
@@ -12,11 +14,13 @@ Study the extracted Xfing D1 and D2 texture fix packs and determine the smallest
 - [x] Summarize minimal DXA contents, masking needs, and implementation gaps
 
 ## Notes
+
 - Keep working files under `game_data/mods/xfing/dxx_tp/uud1tp/tmp` and `game_data/mods/xfing/dxx_tp/uud2tp/tmp`
 - Avoid copying full commercial data into any proposed output pack
 - Prefer plain replacement or small mask assets over the previous ETC2 hires texture pipeline unless investigation proves otherwise
 
 ## Findings
+
 - Current UUD1 distribution contains a full patched `descent.pig`, three patched loose RDLs, and RTF notes. It does not contain standalone source textures.
 - Current UUD2 distribution contains six full patched D2 PIGs, a patched D1-palette `DESCENT.PIG` plus `descent.256`, `pogtest` showcase files, a DXA containing only `DESCENT2.HAM`, and RTF notes. It does not contain standalone source textures.
 - Existing Android Redux DXA mods are ZIP/DXA archives with root-level replacements such as `.ktx2`, `.png`, masks, sounds, and XL menu art. The current engine also mounts enabled DXAs through PhysFS before base data, so a DXA can technically override whole PIG/HAM files, but doing so would still distribute full commercial data.

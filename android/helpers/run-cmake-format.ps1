@@ -3,7 +3,7 @@
 # added by this branch. Skips upstream d1/ and d2/ CMakeLists.txt files.
 # Usage:
 #   .\run-cmake-format.ps1          # format in-place (default)
-#   .\run-cmake-format.ps1 --check  # dry-run, exit 1 if changes needed
+#   .\run-cmake-format.ps1 -Check  # dry-run, exit 1 if changes needed
 #   .\run-cmake-format.ps1 -Paths path\to\file path\to\dir
 
 param(
@@ -16,6 +16,13 @@ $androidRoot = Split-Path $PSScriptRoot
 $repoRoot = Split-Path $androidRoot
 
 . (Join-Path $PSScriptRoot "code-quality-files.ps1")
+$Paths = @(Get-CodeQualityScriptPaths -InputPaths $Paths -RemainingPaths @($args) -ExplicitScope ($PSBoundParameters.ContainsKey('Paths')))
+
+$files = @(Get-CodeQualityCmakeFiles -RepoRoot $repoRoot -InputPaths $Paths)
+if ($files.Count -eq 0) {
+    Write-Host "No cmake files in scope to format"
+    exit 0
+}
 
 $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
 if (-not (Test-Path $depBaseFile)) {
@@ -49,11 +56,7 @@ Write-Host "Using: $cmakeFormat"
 & $cmakeFormat --version
 
 # --- Gather files ---
-$files = @(Get-CodeQualityCmakeFiles -RepoRoot $repoRoot -InputPaths $Paths)
-if ($files.Count -eq 0) {
-    Write-Host "No cmake files in scope to format"
-    exit 0
-}
+
 Write-Host "Found $($files.Count) cmake files"
 
 # --- Run ---
@@ -79,6 +82,9 @@ if ($Check) {
 } else {
     foreach ($f in $files) {
         & $cmakeFormat -i "$($f.FullName)"
+        if ($LASTEXITCODE -ne 0) { exit 1 }
     }
     Write-Host "Formatted $($files.Count) cmake files"
 }
+
+exit 0

@@ -34,10 +34,10 @@ Goal: verify the native Linux build path from repo root and add a root-level Lin
 - Native Linux desktop prerequisites were installed on this Ubuntu host
 - `./run-linux-build.sh` now succeeds with no flags and builds both `d1` and `d2`
 - Non-game-data desktop tests pass:
-	- `buildd1/maths/test_input_demo_fixture`
-	- `buildd1/maths/test_input_demo_replay`
-	- `buildd2/maths/test_input_demo_fixture`
-	- `buildd2/maths/test_input_demo_replay`
+  - `buildd1/maths/test_input_demo_fixture`
+  - `buildd1/maths/test_input_demo_replay`
+  - `buildd2/maths/test_input_demo_fixture`
+  - `buildd2/maths/test_input_demo_replay`
 - `android/run_cue_iso_tests.sh` now passes all 6 registered tests on this host
 
 ## Follow-up Tranche

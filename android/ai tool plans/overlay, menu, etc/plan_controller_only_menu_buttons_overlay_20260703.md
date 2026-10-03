@@ -1,6 +1,7 @@
 # Controller-only menu buttons overlay
 
 ## Goal
+
 Scope and, if straightforward, implement the controller-only default touch overlay behavior:
 
 - add a built-in touch preset containing only the two menu buttons
@@ -8,6 +9,7 @@ Scope and, if straightforward, implement the controller-only default touch overl
 - keep the overlay menu option active when hidden, but hide the menu buttons until the controller menu-selection switch activates the menus
 
 ## Plan
+
 - [x] Trace the current touch preset definitions, default config loading, and touch-interface detection paths
 - [x] Identify what is already implemented and what still needs changes
 - [x] Make focused code changes if the implementation surface is clear

@@ -625,8 +625,7 @@ simulation. Build and live results follow
 D2 actual rewind passed at 22:38:33 in `temp/coop-rewind-history-d2-live.log`,
 terminal zero with host/client native captures and no failed script results.
 Options: `-CoopRewind -Briefings -NoCoopQol -TimeoutSeconds 180 -SkipBuild`.
-The host selected index 6 at GameTime 3890545; both peers loaded exactly
-3890545. After release the host still had eight snapshots (including resumed
+The host selected index 6 at GameTime 3890545; both peers loaded exactly 3890545. After release the host still had eight snapshots (including resumed
 capture) and successfully selected an older point. Player 0 restored 8 homing
 ammo/score 4567; player 1 restored 9/4568; the reactor was intact, visit advanced
 1 -> 2, and presentations stayed 1/1. Both pause/retry assertions passed.
@@ -776,8 +775,7 @@ Normal-exit regression on the final APK passed at 21:50:24 in
 and no failed script results. Options: D2, level 8, `-NormalExitRace
 -AllowSecretWarps -NoCoopQol -TimeoutSeconds 180 -SkipBuild`. The remaining
 client reported paused=0, blocked=0, reactor=1 and other_waiting=1, with
-GameTime advancing by 617021 fixed units while the countdown fell by exactly
-617021. Normal completion advanced both peers to the next mine. The restore
+GameTime advancing by 617021 fixed units while the countdown fell by exactly 617021. Normal completion advanced both peers to the next mine. The restore
 pause therefore did not freeze or evacuate the remaining normal-exit player
 in this two-player regression. Next restore checks should explicitly delay
 one peer longer than the other and retain clock assertions through the final
@@ -1166,8 +1164,7 @@ stage. The MDATA integration above now consumes the policy; PDATA, end-level
 traffic and object/join synchronization still need integration and adversarial
 live coverage before the complete stale-world issue is closed
 
-The audit also found a direct reliable-send rollover to zero above packet
-150000. Zero matches empty receiver history, so the receiver can acknowledge
+The audit also found a direct reliable-send rollover to zero above packet 150000. Zero matches empty receiver history, so the receiver can acknowledge
 without processing that payload. Both Android engine paths now keep advancing
 the 32-bit sequence and skip zero at integer wrap; desktop behavior is unchanged.
 The live transfer fixture now seeds 149999 and requires an acknowledgment above
@@ -1430,8 +1427,7 @@ The existing normal/secret exit-race regression passed on the same APK at
 -AllowSecretWarps -NoCoopQol -TimeoutSeconds 180 -SkipBuild`. Terminal exit
 zero in `temp/coop-reactor-normal-race.log`; the captured client clock showed
 equal nine-second game-time advance and countdown decrease while the host
-waited. The delayed secret request was rejected and both reached normal level
-9. Neither `temp/coop-reactor-normal-race-*-logcat.log` capture contains a
+waited. The delayed secret request was rejected and both reached normal level 9. Neither `temp/coop-reactor-normal-race-*-logcat.log` capture contains a
 failed script result
 
 D1 briefing/cold-resume regression passed at 14:11:03 on 2026-09-13 with
@@ -2266,21 +2262,21 @@ the code, not a claim about their intent
 
 Relevant current code, with line numbers at investigation time:
 
-| Location | Behavior |
-| --- | --- |
-| `d2/main/switch.c:546` | `TT_SECRET_EXIT`; local-player-only activation, dead-player rejection, demo-data restriction, explicit `GM_MULTI` ban at 562, destroyed-secret check, then `EnterSecretLevel` |
-| `d2/main/switch.c:509` | One-shot triggers become disabled before action validation; a rejected or aborted asynchronous transition must not consume the trigger |
-| `d2/main/switch.c:514` | `TT_EXIT` in a native D2 secret mine calls `ExitSecretLevel` locally; return needs the same team protocol as entry |
-| `d2/main/gameseq.c:1503` | `EnterSecretLevel` asserts no multiplayer, records `Entered_from_level`, saves the base, maps the destination through `Secret_level_table`, and starts the secret |
-| `d2/main/gameseq.c:1347` | `StartNewLevelSecret` loads or restores the secret world but does not run the ordinary network level-sync and multiplayer preparation path |
-| `d2/main/gameseq.c:1442` | `ExitSecretLevel` saves an intact secret world, restores the base if its file exists, otherwise advances from `Entered_from_level` |
-| `d2/main/gameseq.c:1282` | `p_secret_level_destroyed` uses `First_secret_visit` and local secret-save existence as gameplay state |
-| `d2/main/state.c:2219`, `2705` | Save/restore front doors divert multiplayer to ordinary co-op save/restore initiation and return before processing secret filenames |
-| `d2/main/state.c:3139`, `3302` | Secret restore merges selected fields for `Players[Player_num]` and positions that one player at the return segment |
-| `d2/main/state.c:2659` | Return uses one segment center and orientation, not a placement for a team |
-| `d2/main/gameseq.c:1796`, `1820` | Death in a negative-numbered level follows individual secret return/advance logic, including after the multiplayer death handler |
-| `d2/main/gameseq.c:1855` | Ordinary `StartNewLevelSub` has network player setup, level sync, and `multi_prep_level` integration worth reusing |
-| `d2/main/net_udp.c:1944` | End-level handling forces the native D2 secret flag to zero |
+| Location                         | Behavior                                                                                                                                                                      |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `d2/main/switch.c:546`           | `TT_SECRET_EXIT`; local-player-only activation, dead-player rejection, demo-data restriction, explicit `GM_MULTI` ban at 562, destroyed-secret check, then `EnterSecretLevel` |
+| `d2/main/switch.c:509`           | One-shot triggers become disabled before action validation; a rejected or aborted asynchronous transition must not consume the trigger                                        |
+| `d2/main/switch.c:514`           | `TT_EXIT` in a native D2 secret mine calls `ExitSecretLevel` locally; return needs the same team protocol as entry                                                            |
+| `d2/main/gameseq.c:1503`         | `EnterSecretLevel` asserts no multiplayer, records `Entered_from_level`, saves the base, maps the destination through `Secret_level_table`, and starts the secret             |
+| `d2/main/gameseq.c:1347`         | `StartNewLevelSecret` loads or restores the secret world but does not run the ordinary network level-sync and multiplayer preparation path                                    |
+| `d2/main/gameseq.c:1442`         | `ExitSecretLevel` saves an intact secret world, restores the base if its file exists, otherwise advances from `Entered_from_level`                                            |
+| `d2/main/gameseq.c:1282`         | `p_secret_level_destroyed` uses `First_secret_visit` and local secret-save existence as gameplay state                                                                        |
+| `d2/main/state.c:2219`, `2705`   | Save/restore front doors divert multiplayer to ordinary co-op save/restore initiation and return before processing secret filenames                                           |
+| `d2/main/state.c:3139`, `3302`   | Secret restore merges selected fields for `Players[Player_num]` and positions that one player at the return segment                                                           |
+| `d2/main/state.c:2659`           | Return uses one segment center and orientation, not a placement for a team                                                                                                    |
+| `d2/main/gameseq.c:1796`, `1820` | Death in a negative-numbered level follows individual secret return/advance logic, including after the multiplayer death handler                                              |
+| `d2/main/gameseq.c:1855`         | Ordinary `StartNewLevelSub` has network player setup, level sync, and `multi_prep_level` integration worth reusing                                                            |
+| `d2/main/net_udp.c:1944`         | End-level handling forces the native D2 secret flag to zero                                                                                                                   |
 
 All clients currently operate one active world represented by global level,
 segment, object, and player state. Splitting the team would require multiple
@@ -2372,19 +2368,19 @@ it with a visible failure/cancellation result; restore the source and timers
 consistently on an abort. Serialize this status with save/restore operations
 so unrelated completion packets cannot dismiss the warp warning
 
-| Situation | Proposed outcome |
-| --- | --- |
-| Enter from an intact base | Freeze and retain the base world; move the whole team into the secret |
-| Leave an intact secret | Retain the secret world; restore the most recently entered base; move everyone to safe positions near its return point |
-| Revisit | Restore the saved secret world, preserving depleted pickups, dead robots, doors, switches, and automap/secret discovery |
-| Enter the same secret from a later base | Update the return destination and base snapshot; retain the secret's previous progress |
-| Base reactor already destroyed when entry is accepted | Mark the base unavailable for return; on secret departure advance to that base's next normal level, or endgame |
-| Secret reactor destroyed | Mark the secret permanently unavailable for re-entry in the current campaign state; the first valid return teleporter evacuates the team |
-| Secret countdown expires without an exit | Resolve remaining players' deaths once, then perform one team return/advance; never let each death initiate a separate load |
-| One player dies in an intact secret | Normal co-op death/drop/respawn in that same secret; death does not warp the team |
-| Player is already dying when a warp starts | Resolve the death/drop once before capture, transfer the resulting ship state, and do not preserve pre-death gear or add an extra life penalty |
-| Normal exit and secret entry race | Host selects one exit mode for the source generation; normal-first disables secret entry but continues accepting individual normal exits; secret-first starts the coordinated team warp |
-| New join or reconnect during loading | Wait for the committed active world; never join a suspended base |
+| Situation                                             | Proposed outcome                                                                                                                                                                        |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Enter from an intact base                             | Freeze and retain the base world; move the whole team into the secret                                                                                                                   |
+| Leave an intact secret                                | Retain the secret world; restore the most recently entered base; move everyone to safe positions near its return point                                                                  |
+| Revisit                                               | Restore the saved secret world, preserving depleted pickups, dead robots, doors, switches, and automap/secret discovery                                                                 |
+| Enter the same secret from a later base               | Update the return destination and base snapshot; retain the secret's previous progress                                                                                                  |
+| Base reactor already destroyed when entry is accepted | Mark the base unavailable for return; on secret departure advance to that base's next normal level, or endgame                                                                          |
+| Secret reactor destroyed                              | Mark the secret permanently unavailable for re-entry in the current campaign state; the first valid return teleporter evacuates the team                                                |
+| Secret countdown expires without an exit              | Resolve remaining players' deaths once, then perform one team return/advance; never let each death initiate a separate load                                                             |
+| One player dies in an intact secret                   | Normal co-op death/drop/respawn in that same secret; death does not warp the team                                                                                                       |
+| Player is already dying when a warp starts            | Resolve the death/drop once before capture, transfer the resulting ship state, and do not preserve pre-death gear or add an extra life penalty                                          |
+| Normal exit and secret entry race                     | Host selects one exit mode for the source generation; normal-first disables secret entry but continues accepting individual normal exits; secret-first starts the coordinated team warp |
+| New join or reconnect during loading                  | Wait for the committed active world; never join a suspended base                                                                                                                        |
 
 Normal exits retain existing co-op behavior with the setting on or off.
 Once the first normal exit is accepted, block secret entry for the rest of
@@ -2846,16 +2842,16 @@ autosave, rewind, restart, and migration. Existing transfer/status helpers
 must consult it, not each acquire unrelated busy flags. Menu selections and
 network requests pass the same validation at execution time
 
-| Phase | Permitted behavior |
-| --- | --- |
-| Settled | Normal play; save/load and supported rewind/restart can request ownership |
-| Normal exit waiting | Exited players wait; remaining players keep playing, exiting, or dying under the live countdown; secret entry and save/load/rewind/restart are blocked until ordinary progression completes |
+| Phase                       | Permitted behavior                                                                                                                                                                                                                      |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Settled                     | Normal play; save/load and supported rewind/restart can request ownership                                                                                                                                                               |
+| Normal exit waiting         | Exited players wait; remaining players keep playing, exiting, or dying under the live countdown; secret entry and save/load/rewind/restart are blocked until ordinary progression completes                                             |
 | Optional next-mine briefing | Begins only after normal exit/death waiting completes or another authorized progression selects the destination; individual reading/progress, host launch overlay, and bounded deadline; no mine simulation or save/load/rewind/restart |
-| Freeze and capture | Pump network/UI; reconcile accepted events and capture a recoverable source; no new gameplay actions |
-| Warning | Frozen source visible, shared 7-second countdown; no save/load/rewind/restart |
-| Apply and verify | Yellow loading status; apply destination at a safe frame boundary; no gameplay until released |
-| Committed and releasing | Destination fixed; acknowledge release or remove failed peers; no competing operation yet |
-| Recovering | Yellow explanation; restore one agreed checkpoint or return to the lobby; no gameplay in a partially restored world |
+| Freeze and capture          | Pump network/UI; reconcile accepted events and capture a recoverable source; no new gameplay actions                                                                                                                                    |
+| Warning                     | Frozen source visible, shared 7-second countdown; no save/load/rewind/restart                                                                                                                                                           |
+| Apply and verify            | Yellow loading status; apply destination at a safe frame boundary; no gameplay until released                                                                                                                                           |
+| Committed and releasing     | Destination fixed; acknowledge release or remove failed peers; no competing operation yet                                                                                                                                               |
+| Recovering                  | Yellow explanation; restore one agreed checkpoint or return to the lobby; no gameplay in a partially restored world                                                                                                                     |
 
 An accepted save/load/rewind owns the gate before an exit can be accepted,
 and vice versa. Reject competing manual actions with the active operation's
@@ -2936,16 +2932,16 @@ destination is recoverable. A single atomic bundle replacement/commit manifest
 must distinguish a completed destination from partially written transfer data.
 Account for peak Android memory during source retention and destination load
 
-| Failure | Required result |
-| --- | --- |
-| Invalid destination or failed source capture | No world teardown; release the request and explain the failure |
-| Peer times out before commit | Resolve its roster membership, then host continues with ready peers if the destination remains valid; otherwise aborts; never wait forever |
-| Destination fails to load/apply before commit | Host orders restore of the retained source under a fresh generation; restore timers, gear, and outcomes once |
-| Peer fails after host commits | Resync that peer to the destination or disconnect it; no unilateral return to the source |
-| Host disappears during transition | Initial policy: return peers to the lobby with the last agreed recoverable checkpoint; do not elect a host into an uncertain half-transition |
-| Host disappears in settled play | Existing migration may proceed only if the replacement has the complete campaign context and dormant worlds; otherwise use lobby recovery |
-| Source rollback also fails | Return to the lobby with a clear recovery error and the last valid checkpoint/save still available |
-| App is backgrounded or killed | A nonresponsive participant follows timeout policy; resume/rejoin queries the authoritative generation instead of completing its old local operation |
+| Failure                                       | Required result                                                                                                                                      |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Invalid destination or failed source capture  | No world teardown; release the request and explain the failure                                                                                       |
+| Peer times out before commit                  | Resolve its roster membership, then host continues with ready peers if the destination remains valid; otherwise aborts; never wait forever           |
+| Destination fails to load/apply before commit | Host orders restore of the retained source under a fresh generation; restore timers, gear, and outcomes once                                         |
+| Peer fails after host commits                 | Resync that peer to the destination or disconnect it; no unilateral return to the source                                                             |
+| Host disappears during transition             | Initial policy: return peers to the lobby with the last agreed recoverable checkpoint; do not elect a host into an uncertain half-transition         |
+| Host disappears in settled play               | Existing migration may proceed only if the replacement has the complete campaign context and dormant worlds; otherwise use lobby recovery            |
+| Source rollback also fails                    | Return to the lobby with a clear recovery error and the last valid checkpoint/save still available                                                   |
+| App is backgrounded or killed                 | A nonresponsive participant follows timeout policy; resume/rejoin queries the authoritative generation instead of completing its old local operation |
 
 Never let a client timeout mean `resume my old mine`. A paused client can be
 behind the host, but cannot act in a different generation. Across a network

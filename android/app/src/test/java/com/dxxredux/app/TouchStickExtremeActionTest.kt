@@ -56,7 +56,11 @@ class TouchStickExtremeActionTest {
             )
 
         val roundTrip = TouchLayout.fromJson(layout.toJson())
-        val action = roundTrip.sticks.single().extremeActions.single()
+        val action =
+            roundTrip.sticks
+                .single()
+                .extremeActions
+                .single()
 
         assertTrue(action.enabled)
         assertEquals(StickExtremeAxis.Y, action.axis)
@@ -85,13 +89,34 @@ class TouchStickExtremeActionTest {
             )
 
         val json = HumanReadableConfig.touchLayoutToHumanJson(layout)
-        val actionJson = json.getJSONArray("sticks").getJSONObject(0).getJSONArray("extremeActions").getJSONObject(0)
+        val actionJson =
+            json
+                .getJSONArray("sticks")
+                .getJSONObject(0)
+                .getJSONArray("extremeActions")
+                .getJSONObject(0)
         val parsed = HumanReadableConfig.humanJsonToTouchLayout(json)
 
         assertEquals("Afterburner", actionJson.getString("binding"))
         assertTrue(parsed.warnings.toString(), parsed.warnings.isEmpty())
-        assertEquals(TouchBindings.BTN_AFTERBURNER, parsed.value?.sticks?.single()?.extremeActions?.single()?.binding)
-        assertEquals(StickExtremeDirection.POSITIVE, parsed.value?.sticks?.single()?.extremeActions?.single()?.direction)
+        assertEquals(
+            TouchBindings.BTN_AFTERBURNER,
+            parsed.value
+                ?.sticks
+                ?.single()
+                ?.extremeActions
+                ?.single()
+                ?.binding,
+        )
+        assertEquals(
+            StickExtremeDirection.POSITIVE,
+            parsed.value
+                ?.sticks
+                ?.single()
+                ?.extremeActions
+                ?.single()
+                ?.direction,
+        )
     }
 
     @Test

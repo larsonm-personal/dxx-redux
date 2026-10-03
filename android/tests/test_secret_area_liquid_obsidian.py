@@ -1,4 +1,5 @@
 """Run the native Obsidian 13 secret regression against supplied installed assets."""
+
 import argparse
 import json
 from pathlib import Path
@@ -30,11 +31,24 @@ def main():
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    result = subprocess.run([
-        str(args.exe.resolve()), "-hogdir", str(args.hogdir.resolve()),
-        "-extra-dir", str(args.mission_dir.resolve()), "-mission", "obsidian", "-level", "13",
-        "-secretarea-json-out", str(args.output.resolve()),
-    ], capture_output=True, text=True, timeout=60)
+    result = subprocess.run(
+        [
+            str(args.exe.resolve()),
+            "-hogdir",
+            str(args.hogdir.resolve()),
+            "-extra-dir",
+            str(args.mission_dir.resolve()),
+            "-mission",
+            "obsidian",
+            "-level",
+            "13",
+            "-secretarea-json-out",
+            str(args.output.resolve()),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
     assert result.returncode == 0, (result.returncode, result.stdout, result.stderr)
     validate(json.loads(args.output.read_text(encoding="utf-8")))
     print("Obsidian 13: six secrets, both opaque reward pockets, transparent water excluded")

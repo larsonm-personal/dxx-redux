@@ -25,16 +25,16 @@ the base save data, before the metadata trailer is ever consulted.
 
 ## Existing infrastructure inventory
 
-| Component | File | Status |
-|---|---|---|
-| UUID generation | `ClientIdentity.kt` | Working |
-| JNI bridge | `jni_main.c:nativeSetClientId` | Working |
-| C global | `auto_net_client_id[37]` in auto_net.h/c | Working |
-| Network propagation | `net_udp.c` -> `Netgame.players[i].client_id` | Working |
-| Metadata storage | `coop_player_record.client_id[37]` | Working |
-| Metadata matching | `coop_find_player_in_metadata()` | Working, unused in restore |
-| Save header callsign | `state.c:913-918` (write), `1313-1323` (read) | Uses "coopsave" |
-| Player mapping | `state.c:1730-1742` | Callsign-only + slot fallback hack |
+| Component            | File                                          | Status                             |
+| -------------------- | --------------------------------------------- | ---------------------------------- |
+| UUID generation      | `ClientIdentity.kt`                           | Working                            |
+| JNI bridge           | `jni_main.c:nativeSetClientId`                | Working                            |
+| C global             | `auto_net_client_id[37]` in auto_net.h/c      | Working                            |
+| Network propagation  | `net_udp.c` -> `Netgame.players[i].client_id` | Working                            |
+| Metadata storage     | `coop_player_record.client_id[37]`            | Working                            |
+| Metadata matching    | `coop_find_player_in_metadata()`              | Working, unused in restore         |
+| Save header callsign | `state.c:913-918` (write), `1313-1323` (read) | Uses "coopsave"                    |
+| Player mapping       | `state.c:1730-1742`                           | Callsign-only + slot fallback hack |
 
 ## Design
 
@@ -62,6 +62,7 @@ callsign/COOP_AUTOSAVE_CALLSIGN/slot-position hack with client_id matching:
    them (they spawn fresh)
 
 This approach:
+
 - Prefers client_id match (survives callsign changes across sessions)
 - Falls back to callsign match (works for non-Android or pre-UUID saves)
 - Handles player count mismatches (fewer or more players than saved)
@@ -71,10 +72,12 @@ This approach:
 player-slot order (0..N_players, filtered to CONNECT_PLAYING). The index returned
 by `coop_find_player_in_metadata()` (0..7) is the active_players index, NOT the
 original player slot index. We need to either:
+
 - (a) Store the original slot index in `coop_player_record`, or
 - (b) Ensure the metadata active_players order matches restore_players order
 
 Looking at `coop_write_save_metadata()`:
+
 ```c
 for (i = 0; i < MAX_PLAYERS; i++) {
     if (Players[i].connected == CONNECT_PLAYING) {
@@ -97,6 +100,7 @@ This bumps `COOP_SAVE_META_VER` to 4.
 
 Currently `coop_autosave()` swaps caller callsign to "coopsave" before calling
 `state_save_all_sub()`. This serves two purposes:
+
 1. **Stable filename**: `coopsave.mg5` instead of `randomcallsign.mg5`
 2. **Stable save header**: The callsign in the header gates file opening
 
@@ -119,11 +123,13 @@ state_game_id = COOP_AUTOSAVE_GAME_ID;
 ```
 
 The header callsign is written in `state_save_all_sub()` at the very top:
+
 ```c
 PHYSFS_write(fp, &Players[Player_num].callsign, sizeof(char)*CALLSIGN_LEN+1, 1);
 ```
 
 We have two options:
+
 - (a) **Add a parameter** to `state_save_all_sub` for header callsign override
 - (b) **Swap only during header write**, not in the Players array
 
@@ -176,6 +182,7 @@ inner `j` loop is replaced by the metadata lookup from Phase 1.
 ## Implementation order
 
 ### Step 1: Add `original_slot` to coop_player_record (d2+d1)
+
 - Add `uint8_t original_slot` to `coop_player_record`
 - Bump `COOP_SAVE_META_VER` to 4
 - Set it in `coop_snapshot_player()` (pass pnum, store it)
@@ -185,6 +192,7 @@ inner `j` loop is replaced by the metadata lookup from Phase 1.
   d1/main/coop_save.c
 
 ### Step 2: Add header_callsign_override to state_save_all_sub (d2+d1)
+
 - Change signature: `int state_save_all_sub(const char *filename, const char *desc)`
   -> add `const char *header_callsign_override`
 - In the coop header-write section, use override if non-NULL
@@ -195,6 +203,7 @@ inner `j` loop is replaced by the metadata lookup from Phase 1.
   d1/main/state.c, d1/main/state.h, d1/main/coop_save.c
 
 ### Step 3: Replace callsign mapping with metadata/client_id matching (d2+d1)
+
 - In `state_restore_all_sub()`, after reading all restore_players, seek to end of
   known data and call `coop_read_save_metadata()` to get the trailer
 - For each current player i, call `coop_find_player_in_metadata()` with
@@ -207,6 +216,7 @@ inner `j` loop is replaced by the metadata lookup from Phase 1.
 - Files: d2/main/state.c, d1/main/state.c
 
 ### Step 4: Build and test
+
 - Build both d1 and d2
 - Run existing coop autosave regression tests
 - Verify: host loads correctly with real callsign in player data
@@ -215,6 +225,7 @@ inner `j` loop is replaced by the metadata lookup from Phase 1.
 - Verify: old saves without metadata still work (callsign fallback)
 
 ### Step 5: Code quality
+
 - Run `android\run-code-quality.ps1 --fix`
 - Check for warnings in new code
 - Verify d1/d2 diffs are minimal and match existing style
@@ -231,12 +242,14 @@ with HUD message). This handles the case where host matches but a peer doesn't.
 ## Simplified implementation
 
 ### Step 1: Add original_slot to coop_player_record (d2+d1)
+
 - Add `uint8_t original_slot` to the struct
 - Set `rec->original_slot = (uint8_t)pnum` in `coop_snapshot_player()`
 - Files: d2/main/coop_save.h, d2/main/coop_save.c, d1/main/coop_save.h,
   d1/main/coop_save.c
 
 ### Step 2: Replace mapping loop in state_restore_all_sub (d2+d1)
+
 - After reading restore_players, seek to end of file to read metadata trailer
 - Seek back to continue normal sequential reads
 - For each current player, call `coop_find_player_in_metadata()` (client_id first,
@@ -249,6 +262,7 @@ with HUD message). This handles the case where host matches but a peer doesn't.
 ### Step 3: Build and test
 
 ### What stays unchanged
+
 - Callsign swap in coop_autosave() (still swaps to COOP_AUTOSAVE_CALLSIGN)
 - state_save_all_sub signature
 - Save header sentinel (COOP_AUTOSAVE_CALLSIGN / COOP_AUTOSAVE_GAME_ID)
@@ -256,6 +270,7 @@ with HUD message). This handles the case where host matches but a peer doesn't.
 - Non-Android code paths
 
 ## Status
+
 - [ ] Step 1: original_slot in coop_player_record
 - [ ] Step 2: mapping loop replacement
 - [ ] Step 3: build + verify

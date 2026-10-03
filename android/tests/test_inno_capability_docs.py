@@ -15,6 +15,7 @@ class InnoCapabilityDocumentationTests(unittest.TestCase):
         cls.source = (EXTRACT_DIR / "inno_reader.c").read_text(encoding="utf-8")
         cls.header = (EXTRACT_DIR / "inno_reader.h").read_text(encoding="utf-8")
         cls.docs = (EXTRACT_DIR / "INNO_READER_CAPABILITIES.md").read_text(encoding="utf-8")
+        cls.docs = re.sub(r"[ \t]+", " ", cls.docs)
 
     def test_reader_files_link_the_capability_matrix(self):
         for text in (self.source, self.header):
@@ -45,8 +46,10 @@ class InnoCapabilityDocumentationTests(unittest.TestCase):
         self.assertIn("chunk_encrypted", self.header)
         self.assertIn("de->chunk_encrypted", self.source)
         self.assertIn("Encrypted chunks | Unsupported and rejected", self.docs)
-        self.assertIn("informational and cannot cancel extraction", self.docs)
-        self.assertIsNone(re.search(r"if\s*\(\s*(?:writer->)?progress\s*\(", self.source))
+        self.assertIn("nonzero return cancels extraction", self.docs)
+        self.assertIn("A nonzero return cancels extraction", self.header)
+        self.assertIsNotNone(re.search(r"if\s*\(\s*progress\s*\(", self.source))
+        self.assertIn("return DXX_EXTRACT_CANCELLED", self.source)
 
 
 if __name__ == "__main__":

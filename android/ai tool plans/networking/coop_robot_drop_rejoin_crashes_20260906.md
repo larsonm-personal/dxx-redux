@@ -46,5 +46,4 @@ The original robot crash stack proves its created count was outside 1..4. That t
 - Final scoped git diff whitespace check passed
 - Updated APK: android/app/build/outputs/apk/debug/app-debug.apk; installed on both test emulators
 
-
 The earlier SpewRecovery test checked inventory and zero remaining spew, which can both be correct with an empty client recovery ledger. The new row-parity assertion prevents that false success and the seeded collection record makes stale global-buffer contents meaningful rather than mostly zeros

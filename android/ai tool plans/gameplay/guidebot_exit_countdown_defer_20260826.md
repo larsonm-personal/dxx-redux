@@ -16,13 +16,13 @@ deferring reactor and boss objectives that start the escape timer.
 ## Plan
 
 - [x] Add a focused policy for projecting the live route past reactor and boss
-  objectives for an explicit Exit request.
+      objectives for an explicit Exit request.
 - [x] Retain an Exit-specific semantic goal and select a useful physical
-  frontier when countdown-controlled geometry is still closed.
+      frontier when countdown-controlled geometry is still closed.
 - [x] Add host regressions for reactor, boss, retained switch prerequisites,
-  and physical frontier behavior.
+      and physical frontier behavior.
 - [x] Run scoped code quality, focused and full D2 host tests, the Windows D2
-  build, and Android assembly.
+      build, and Android assembly.
 
 ## Results
 

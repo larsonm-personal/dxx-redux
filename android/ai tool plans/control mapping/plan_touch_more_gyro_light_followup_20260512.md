@@ -1,9 +1,11 @@
 # Touch More Gyro Light Follow-up - 2026-05-12
 
 ## Goal
+
 Refine the Android touch overlay so the More menu shows better state for bomb switching, excludes launcher exit, hides gyro toggle when gyro is not configured, fixes gyro toggle persistence semantics, and highlights the light control while the headlight is active.
 
 ## Plan
+
 1. [x] Create this plan file
 2. [x] Inspect current More-menu label generation, gyro toggle handling, and light button drawing after recent edits
 3. [x] Remove launcher exit from More and show current bomb type in the Toggle Bomb label
@@ -12,6 +14,7 @@ Refine the Android touch overlay so the More menu shows better state for bomb sw
 6. [x] Update focused tests and run validation
 
 ## Notes
+
 - Keep this scoped to Android Kotlin unless the investigation shows a missing native state hook.
 - Preserve unrelated current worktree edits.
 - More now omits `META_RETURN_TO_LAUNCHER`, only adds `META_GYRO_TOGGLE` when `layout.gyro.enabled`, and shows `Toggle Bomb [current: ...]` from the actual native `which_bomb()` state.

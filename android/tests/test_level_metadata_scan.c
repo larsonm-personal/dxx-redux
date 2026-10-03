@@ -112,8 +112,7 @@ static void test_reset(void)
 		test_object_id[object] = -1;
 		test_object_seg[object] = -1;
 	}
-	for (seg = 0; seg < TEST_SEGMENTS; ++seg)
-	{
+	for (seg = 0; seg < TEST_SEGMENTS; ++seg) {
 		test_segment_special_values[seg] = 0;
 		test_segment_explored[seg] = 0;
 		test_segment_centers[seg][0] = seg * 100 * TEST_FIX;

@@ -1,12 +1,14 @@
 # Input demo D1/D2 parity audit
 
 ## Goal
+
 - Check whether the D2 missile-camera wake engine fix has a D1 equivalent
 - Audit recent D2-only input-demo determinism fixes for likely D1 parity gaps
 - Patch clear shared-root D1 gaps with minimal source churn
 - Validate with focused quality checks, host builds, and available shared tests
 
 ## Steps
+
 1. Compare D1 and D2 camera/render-side simulation hooks
 2. Compare D1 and D2 input-demo replay timing and direct-command paths
 3. Identify D2-only fixes that are not applicable to D1 because the feature does not exist
@@ -14,6 +16,7 @@
 5. Run scoped quality checks, Windows host build, and shared replay tests
 
 ## Status
+
 - [x] Plan created
 - [x] D1/D2 wake paths compared
 - [x] Missed parity fixes identified
@@ -21,6 +24,7 @@
 - [x] Validation run
 
 ## Notes
+
 - User concern: avoid rediscovering D2-only determinism fixes later when D1 demos are created
 - Keep D1/D2 source edits narrow and style-consistent
 - D1 does not have the D2 missile-camera wake feature surface: no `Missile_viewer`, no `Guided_missile`, no missile/guided cockpit-window users, and no `wake_up_rendered_objects` path. The D2 camera wake engine fix is D2-only

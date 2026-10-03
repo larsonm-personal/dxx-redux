@@ -111,7 +111,10 @@ class LevelMetadataResultTest {
         assertEquals(listOf("Normal", "Coop", "Anarchy"), intent.declarations.enabledLabels())
         assertEquals(8, intent.playerStartMin)
         assertEquals(26, intent.robots)
-        assertEquals("Single-player / coop + multiplayer anarchy", missionIntentClassificationLabel(intent.classification))
+        assertEquals(
+            "Single-player / coop + multiplayer anarchy",
+            missionIntentClassificationLabel(intent.classification),
+        )
     }
 
     @Test
@@ -127,7 +130,7 @@ class LevelMetadataResultTest {
                     "filename": "game05.hmp",
                     "format": "hmp",
                     "resolved_name": "Created for Final Insertion Levels... (Verran Eventide)",
-					"duration_ms": 123456,
+                    "duration_ms": 123456,
                     "metadata_source_filename": "game05.mid",
                     "inherited_from_midi": true,
                     "parse_status": "ok",
@@ -151,8 +154,13 @@ class LevelMetadataResultTest {
         assertTrue(track.metadata.inherited_from_midi)
         assertEquals("Verran Eventide", track.metadata.composer)
         assertEquals("Created for Final Insertion Levels... (Verran Eventide)", track.resolvedName)
-		assertEquals(123456, track.durationMs)
-        assertEquals("Copyright", track.metadata.text_events.single().type)
+        assertEquals(123456, track.durationMs)
+        assertEquals(
+            "Copyright",
+            track.metadata.text_events
+                .single()
+                .type,
+        )
     }
 
     @Test
@@ -168,7 +176,7 @@ class LevelMetadataResultTest {
                     "filename": "credits.flac",
                     "format": "flac",
                     "resolved_name": "Reactor Core (Jane Doe)",
-					"duration_ms": 65432,
+                    "duration_ms": 65432,
                     "parse_status": "ok",
                     "title": "Reactor Core",
                     "composer": "Jane Doe",
@@ -204,7 +212,7 @@ class LevelMetadataResultTest {
                     "filename": "level01.ogg",
                     "format": "ogg",
                     "resolved_name": "Reactor Core (Jane Doe)",
-					"duration_ms": 65432,
+                    "duration_ms": 65432,
                     "parse_status": "ok",
                     "title": "Reactor Core",
                     "composer": "Jane Doe",
@@ -219,13 +227,13 @@ class LevelMetadataResultTest {
         val projection = levelMetadataTrackNamesJson(result.musicTracks)
 
         val row = projection.getJSONObject(0)
-		assertEquals(setOf("track", "name", "filename", "format", "length_s"), row.keys().asSequence().toSet())
+        assertEquals(setOf("track", "name", "filename", "format", "length_s"), row.keys().asSequence().toSet())
         assertEquals(5, row.getInt("track"))
         assertEquals("Reactor Core (Jane Doe)", row.getString("name"))
-		assertEquals("level01.ogg", row.getString("filename"))
-		assertEquals("ogg", row.getString("format"))
-		assertEquals(65, row.getInt("length_s"))
-		assertFalse(row.has("parse_status"))
+        assertEquals("level01.ogg", row.getString("filename"))
+        assertEquals("ogg", row.getString("format"))
+        assertEquals(65, row.getInt("length_s"))
+        assertFalse(row.has("parse_status"))
         assertFalse(row.has("title"))
         assertFalse(row.has("properties"))
     }
@@ -257,21 +265,22 @@ class LevelMetadataResultTest {
 
     @Test
     fun fromJsonPreservesGuidedWeaponRequirementForSwitchesAndDoors() {
-        val result = LevelMetadataResult.fromJson(
-            """
-            {
-              "status": "ok", "source": "Guided route", "game": "d2",
-              "mission_name": "guided", "mission_filename": "guided.mn2",
-              "levels": [{ "level_num": 1, "route_steps": [
-                { "index": 1, "kind": "trigger", "activation_kind": "shoot_switch",
-                  "required_weapon": "guided_missile", "label": "Shoot using guided missile" },
-                { "index": 2, "kind": "hidden_door", "activation_kind": "open_hidden_door",
-                  "required_weapon": "guided_missile", "label": "Shoot using guided missile" },
-                { "index": 3, "kind": "trigger", "activation_kind": "shoot_switch" }
-              ]}], "problems": []
-            }
-            """.trimIndent(),
-        )
+        val result =
+            LevelMetadataResult.fromJson(
+                """
+                {
+                  "status": "ok", "source": "Guided route", "game": "d2",
+                  "mission_name": "guided", "mission_filename": "guided.mn2",
+                  "levels": [{ "level_num": 1, "route_steps": [
+                    { "index": 1, "kind": "trigger", "activation_kind": "shoot_switch",
+                      "required_weapon": "guided_missile", "label": "Shoot using guided missile" },
+                    { "index": 2, "kind": "hidden_door", "activation_kind": "open_hidden_door",
+                      "required_weapon": "guided_missile", "label": "Shoot using guided missile" },
+                    { "index": 3, "kind": "trigger", "activation_kind": "shoot_switch" }
+                  ]}], "problems": []
+                }
+                """.trimIndent(),
+            )
         val steps = result.levels.single().routeSteps
         assertEquals(listOf("guided_missile", "guided_missile", ""), steps.map { it.requiredWeapon })
         assertEquals("Shoot using guided missile", steps[0].label)
@@ -305,8 +314,22 @@ class LevelMetadataResultTest {
                 """.trimIndent(),
             )
 
-        assertEquals(LevelMetadataPosition(12.5, -4.0, 88.25), result.levels.single().routeSteps.single().labelPosition)
-        assertEquals(42, result.levels.single().routeSteps.single().keyCarrierObjnum)
+        assertEquals(
+            LevelMetadataPosition(12.5, -4.0, 88.25),
+            result.levels
+                .single()
+                .routeSteps
+                .single()
+                .labelPosition,
+        )
+        assertEquals(
+            42,
+            result.levels
+                .single()
+                .routeSteps
+                .single()
+                .keyCarrierObjnum,
+        )
     }
 
     @Test
@@ -327,7 +350,11 @@ class LevelMetadataResultTest {
                 """.trimIndent(),
             )
 
-        val replacement = result.levels.single().replacements.single()
+        val replacement =
+            result.levels
+                .single()
+                .replacements
+                .single()
         assertEquals("Player ship size", replacement.label)
         assertEquals(310325, replacement.baseGame)
         assertEquals(310313, replacement.mod)
@@ -361,7 +388,8 @@ class LevelMetadataResultTest {
                           {"kind":"shields","label":"Shields","base_game":655360,"mod":1310720,"format":"fixed"}
                         ]}
                       ]},
-                      {"kind":"asset_replacements","label":"Texture/model/sound replacements","summary":"1 change","items":[
+                      {"kind":"asset_replacements","label":"Texture/model/sound replacements",
+                       "summary":"1 change","items":[
                         {"kind":"textures","label":"Textures","summary":"12 replaced","fields":[]}
                       ]}
                     ]
@@ -372,8 +400,21 @@ class LevelMetadataResultTest {
 
         val groups = result.levels.single().replacementGroups
         assertEquals(4, groups.size)
-        assertEquals("fixed", groups[0].items.single().fields.single().format)
-        val added = groups[1].items.single().fields.single()
+        assertEquals(
+            "fixed",
+            groups[0]
+                .items
+                .single()
+                .fields
+                .single()
+                .format,
+        )
+        val added =
+            groups[1]
+                .items
+                .single()
+                .fields
+                .single()
         assertEquals("Not present", added.baseGameText)
         assertEquals("Added", added.modText)
         assertEquals(60, groups[2].items.single().number)

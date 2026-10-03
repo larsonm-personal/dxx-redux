@@ -1,10 +1,10 @@
 package com.dxxredux.app
 
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.json.JSONObject
 import java.io.File
 
 class CustomAudioSetManagerTest {
@@ -26,12 +26,15 @@ class CustomAudioSetManagerTest {
             ),
         )
 
-        val playlist = manager.writeM3UWith(
-            referenceStager = { _, _, _ -> error("Movie should not be staged") },
-            embeddedNameReader = { _, _ -> null },
-        )!!
-        assertEquals(listOf(File(manager.setDir("album"), "level (mov).mp3").absolutePath),
-            File(playlist).readLines().filterNot { it.startsWith("#") })
+        val playlist =
+            manager.writeM3UWith(
+                referenceStager = { _, _, _ -> error("Movie should not be staged") },
+                embeddedNameReader = { _, _ -> null },
+            )!!
+        assertEquals(
+            listOf(File(manager.setDir("album"), "level (mov).mp3").absolutePath),
+            File(playlist).readLines().filterNot { it.startsWith("#") },
+        )
         assertEquals(listOf("level (mov).mp3"), manager.getDetailedTrackList().map { it.filename })
         val records = JSONObject(File(filesDir, CustomAudioSetManager.NAMES_FILE).readText()).getJSONArray("records")
         assertEquals(1, records.length())

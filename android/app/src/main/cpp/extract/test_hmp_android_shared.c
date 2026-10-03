@@ -171,7 +171,10 @@ static int test_large_song_growth(void)
 			free(midi);
 			if (ok && failure >= 0) break;
 		}
-		if (failure == 64) { free(hmp); return 0; }
+		if (failure == 64) {
+			free(hmp);
+			return 0;
+		}
 	}
 	free(hmp);
 	fail_allocation = -1;

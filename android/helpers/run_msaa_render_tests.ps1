@@ -26,7 +26,9 @@ try {
         if ($Game) { $command += " -Game $Game" }
         & pwsh -NoProfile -NonInteractive -Command $command 2>&1 |
             Tee-Object -FilePath (Join-Path $outputDirectory ($depth + '.txt'))
-        if ($LASTEXITCODE -ne 0) { $passed = $false; break }
+        $testExit = $LASTEXITCODE
+        Adb -AdbArgs @('logcat', '-d') | Set-Content (Join-Path $outputDirectory ($depth + '-logcat.txt')) -Encoding utf8NoBOM
+        if ($testExit -ne 0) { $passed = $false; break }
     }
 } finally {
     if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial }

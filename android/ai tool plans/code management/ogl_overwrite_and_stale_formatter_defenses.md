@@ -17,16 +17,16 @@ tasks that continue writing files after an AI/tool session has moved on.
 ## Notes
 
 - The `d2/arch/ogl/ogl.c` popup overwrite reintroduced stale recovery-era code
-	and malformed content like a nested duplicate `ogl_loadbmtexture_f(...)`, so it
-	was not a useful change
+  and malformed content like a nested duplicate `ogl_loadbmtexture_f(...)`, so it
+  was not a useful change
 - The format scripts themselves are synchronous; the likely failure mode is a
-	terminal command timing out at the tool layer while the underlying formatter
-	keeps running and later writes files into a newer worktree state
+  terminal command timing out at the tool layer while the underlying formatter
+  keeps running and later writes files into a newer worktree state
 - Added `android\stop-stale-formatters.ps1` to list or kill stale formatter
-	process trees before another cleanup pass starts
+  process trees before another cleanup pass starts
 - Added `android\temp\run-code-quality.lock.json` locking to
-	`android\run-code-quality.ps1` so overlapping cleanup passes fail fast
-	instead of silently racing and rewriting files later
+  `android\run-code-quality.ps1` so overlapping cleanup passes fail fast
+  instead of silently racing and rewriting files later
 - Validated the helper with a list-only run and validated the lock with a
-	synthetic active-lock probe that correctly aborted the second
-	`run-code-quality.ps1` invocation
+  synthetic active-lock probe that correctly aborted the second
+  `run-code-quality.ps1` invocation

@@ -1,12 +1,14 @@
 # Demo 134049 RNG regression 2026-05-11
 
 ## Goal
+
 - use the new failing D2 level 9 demo to find the first determinism break
 - strongly test for an overzealous `_fx()` transition before widening scope
 - check whether Phoenix-cannon-related RNG or call ordering is involved
 - keep replay timing state centralized instead of adding replay-only branches to AI/gameplay logic
 
 ## Steps
+
 - [completed] locate the new demo artifact and compare its replay traces to find the first meaningful divergence
 - [completed] map the first divergence to the owning gameplay gate and confirm it is AI gun-point timeslicing keyed off `d_tick_count`
 - [completed] use a temporary AI timeslice change to prove `d_tick_count` controlled the failure window
@@ -16,6 +18,7 @@
 - [completed] rerun focused validation: D2 and D1 Windows builds passed, and replaying the old demo confirmed the expected stale-baseline mismatch shape
 
 ## Notes
+
 - user guidance: prioritize determinism repair over retrospective narration
 - likely suspicion: an overzealous `_fx()` transition, potentially on a Phoenix-adjacent path
 - confirmed root cause candidate: `obj_ref = objnum ^ d_tick_count` flips the `!(obj_ref & 3)` gun-point visibility gate differently between recording and replay

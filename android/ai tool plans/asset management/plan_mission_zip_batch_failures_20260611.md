@@ -1,6 +1,7 @@
 # Mission ZIP batch failures plan
 
 ## Goal
+
 Investigate and fix the four failures from mission ZIP batch `20260610_191752`:
 
 - `castaway_redux.zip`: insufficient app-private free space during durable extraction
@@ -9,6 +10,7 @@ Investigate and fix the four failures from mission ZIP batch `20260610_191752`:
 - `U3AAH.zip`: generic failed result
 
 ## Work phases
+
 1. [x] Inspect per-ZIP artifacts, imports, generated metadata, resolved scripts, and runner logic.
 2. [x] Fix any launcher/import/metadata classification issues that explain deterministic failures.
 3. [x] Fix or gracefully handle metadata worker crash paths found from logs or repro.

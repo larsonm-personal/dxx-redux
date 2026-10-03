@@ -1,12 +1,14 @@
 # Linux Data Recovery Helpers Plan
 
 ## Goal
+
 - [x] Detect missing CD extraction oracles before CD-requiring tests fail deep in execution
 - [x] Offer a clear regeneration path for missing CD oracles
 - [x] Recover or infer valid D1/D2 host replay data directories from populated extracted data
 - [x] Validate the helper behavior with focused script checks
 
 ## Notes
+
 - Keep fixes in Android test scripts and shared helpers
 - Avoid changing base game source
 - Prefer existing extraction and data indexing conventions over new storage layouts

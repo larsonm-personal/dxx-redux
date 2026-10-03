@@ -117,6 +117,7 @@ at the loopback layer without hitting any network stack. This is the same
 technique used by VPN apps, WireGuard userspace, and game proxy tools.
 
 Benefits:
+
 - Zero engine code changes for internet play
 - Lobby connection survives game crashes (can notify peers, allow reconnect)
 - Holepunching is complete before the game starts (transparent to engine)
@@ -125,14 +126,14 @@ Benefits:
 
 ### LAN vs Internet Mode
 
-| Aspect           | LAN Mode                        | Internet Mode                     |
-|------------------|---------------------------------|-----------------------------------|
-| Discovery        | UDP broadcast (Kotlin)          | WebSocket to matchmaking server   |
-| Connection setup | Direct UDP to peer              | STUN + holepunch (or relay)       |
-| Lobby UI         | Same Compose screen             | Same Compose screen               |
-| Auto-join        | nativeAutoJoin(peerIP, 42424)   | nativeAutoJoin("127.0.0.1", 4243x)|
-| Proxy needed?    | No                              | Yes (Kotlin localhost proxy)      |
-| Engine changes   | Auto-join path only             | Auto-join path only (same)        |
+| Aspect           | LAN Mode                      | Internet Mode                      |
+| ---------------- | ----------------------------- | ---------------------------------- |
+| Discovery        | UDP broadcast (Kotlin)        | WebSocket to matchmaking server    |
+| Connection setup | Direct UDP to peer            | STUN + holepunch (or relay)        |
+| Lobby UI         | Same Compose screen           | Same Compose screen                |
+| Auto-join        | nativeAutoJoin(peerIP, 42424) | nativeAutoJoin("127.0.0.1", 4243x) |
+| Proxy needed?    | No                            | Yes (Kotlin localhost proxy)       |
+| Engine changes   | Auto-join path only           | Auto-join path only (same)         |
 
 ---
 
@@ -146,45 +147,45 @@ launch into a co-op game from the launcher without touching in-game menus.
 ### Steps
 
 1.1. Create lobby/LobbyService.kt -- owns a DatagramSocket on port 42400,
-     broadcasts LOBBY_ANNOUNCE every 3 seconds, listens for announcements.
-     Packet format: JSON {type, version, callsign, game, hosting, lobby_id,
-     player_count, max_players}
+broadcasts LOBBY_ANNOUNCE every 3 seconds, listens for announcements.
+Packet format: JSON {type, version, callsign, game, hosting, lobby_id,
+player_count, max_players}
 
 1.2. Add CHANGE_WIFI_MULTICAST_STATE and ACCESS_WIFI_STATE permissions to
-     AndroidManifest.xml. Acquire WifiManager.MulticastLock during lobby
-     lifetime (Android suppresses broadcast/multicast without this).
+AndroidManifest.xml. Acquire WifiManager.MulticastLock during lobby
+lifetime (Android suppresses broadcast/multicast without this).
 
 1.3. Create lobby/LobbyProtocol.kt -- message types: ANNOUNCE, JOIN_LOBBY,
-     LEAVE_LOBBY, PLAYER_LIST, READY, START_GAME, FILE_HASH_REQ,
-     FILE_HASH_RESP. Each message carries lobby_id (UUID) for disambiguation.
-     Host-authoritative player list.
+LEAVE_LOBBY, PLAYER_LIST, READY, START_GAME, FILE_HASH_REQ,
+FILE_HASH_RESP. Each message carries lobby_id (UUID) for disambiguation.
+Host-authoritative player list.
 
 1.4. Create lobby/LobbyScreen.kt (Compose) -- new screen in SetupActivity.
-     Shows discovered LAN lobbies. "Host Game" creates a lobby. "Join" sends
-     JOIN_LOBBY. Player list with ready checkboxes. Host has "Start Game"
-     button (enabled when all ready).
+Shows discovered LAN lobbies. "Host Game" creates a lobby. "Join" sends
+JOIN_LOBBY. Player list with ready checkboxes. Host has "Start Game"
+button (enabled when all ready).
 
 1.5. Add JNI method nativeSetAutoJoin(hostAddr, hostPort, myPort,
-     mission, gameMode, difficulty) to MainActivity. C side stores params
-     in globals, sets auto_join_pending flag.
-     **Detailed design in todo.CLIENT_NETWORKING_PLAN.md Phase C4b**
-     (JNI interface, globals, intent extras, engine menu bypass)
+mission, gameMode, difficulty) to MainActivity. C side stores params
+in globals, sets auto_join_pending flag.
+**Detailed design in todo.CLIENT_NETWORKING_PLAN.md Phase C4b**
+(JNI interface, globals, intent extras, engine menu bypass)
 
 1.6. Add game startup bypass in d2/main/inferno.c or menu.c: if
-     auto_join_pending, skip main menu and call check_auto_join().
-     Implementation in new auto_net.c/h files (shared pattern for d1/d2).
+auto_join_pending, skip main menu and call check_auto_join().
+Implementation in new auto_net.c/h files (shared pattern for d1/d2).
 
 1.7. check_auto_join() in auto_net.c: initializes networking, opens socket
-     on auto_my_port, fills direct_join struct with host addr, calls
-     net_udp_game_connect() directly (bypassing all menus).
+on auto_my_port, fills direct_join struct with host addr, calls
+net_udp_game_connect() directly (bypassing all menus).
 
 1.8. Host auto-start path: auto_host_pending flag, check_auto_host()
-     initializes networking, configures Netgame, loads mission by name,
-     calls net_udp_start_game().
+initializes networking, configures Netgame, loads mission by name,
+calls net_udp_start_game().
 
 1.9. "Start Game" flow in LobbyScreen: host sends START_GAME to all peers
-     (includes host IP, port, mission, mode). All peers launch MainActivity
-     with auto_join intent. Host launches with auto_host intent.
+(includes host IP, port, mission, mode). All peers launch MainActivity
+with auto_join intent. Host launches with auto_host intent.
 
 ### Files to Create
 
@@ -216,6 +217,7 @@ launch into a co-op game from the launcher without touching in-game menus.
 ### Status
 
 Implemented (in server/):
+
 - [x] main.rs: startup, config, TLS, ws+http+relay task spawn
 - [x] ws_handler.rs: WebSocket lifecycle, message dispatch, all message handlers
 - [x] lobby.rs: lobby state, player tracking, presence, connection types
@@ -258,6 +260,7 @@ Implemented (in server/):
 - [x] "Verified only" lobby setting: verified_only field on CreateLobby/Lobby/LobbyInfo, gpgs_verified on PlayerSession, enforcement in JoinLobby and JoinFriendGame
 
 Not yet implemented:
+
 - [ ] Mid-session relay-to-direct migration orchestration
 
 ### Goal
@@ -290,31 +293,31 @@ matchmaking-server/
 ### WebSocket Protocol
 
 Client -> Server:
-  AUTHENTICATE  {play_games_token, callsign}
-  CREATE_LOBBY  {game, mission, mode, max_players}
-  LIST_LOBBIES  {}
-  JOIN_LOBBY    {lobby_id}
-  LEAVE_LOBBY   {}
-  READY         {ready: bool}
-  STUN_RESULT   {reflexive_addr, nat_type}
-  HOLEPUNCH_OK  {}
-  FILE_HASHES   {hashes: [{name, sha256, size}]}
-  START_GAME    {}  (host only)
-  KICK_PLAYER   {player_id}
+AUTHENTICATE {play_games_token, callsign}
+CREATE_LOBBY {game, mission, mode, max_players}
+LIST_LOBBIES {}
+JOIN_LOBBY {lobby_id}
+LEAVE_LOBBY {}
+READY {ready: bool}
+STUN_RESULT {reflexive_addr, nat_type}
+HOLEPUNCH_OK {}
+FILE_HASHES {hashes: [{name, sha256, size}]}
+START_GAME {} (host only)
+KICK_PLAYER {player_id}
 
 Server -> Client:
-  AUTH_OK         {player_id, session_token}
-  AUTH_FAIL       {reason}
-  LOBBY_LIST      {lobbies: [...]}
-  LOBBY_UPDATE    {players, readiness, file_status}
-  PEER_STUN       {player_id, reflexive_addr}
-  HOLEPUNCH_GO    {peer_addrs: [...]}
-  GAME_STARTING   {host_addr, mission, mode, peer_localhost_ports}
-  FILE_MISMATCH   {player, mismatched_files}
-  RELAY_ASSIGNED  {relay_addr, session_token}
-  CONNECTION_INFO {connections: [{peer_id, method, detail}]}
-  ERROR           {code, message}
-  RATE_LIMITED    {retry_after_ms}
+AUTH_OK {player_id, session_token}
+AUTH_FAIL {reason}
+LOBBY_LIST {lobbies: [...]}
+LOBBY_UPDATE {players, readiness, file_status}
+PEER_STUN {player_id, reflexive_addr}
+HOLEPUNCH_GO {peer_addrs: [...]}
+GAME_STARTING {host_addr, mission, mode, peer_localhost_ports}
+FILE_MISMATCH {player, mismatched_files}
+RELAY_ASSIGNED {relay_addr, session_token}
+CONNECTION_INFO {connections: [{peer_id, method, detail}]}
+ERROR {code, message}
+RATE_LIMITED {retry_after_ms}
 
 ### Connection Type Reporting (CONNECTION_INFO)
 
@@ -343,13 +346,14 @@ Server -> Client (sent after GAME_STARTING, once per peer):
 
 Connection method values:
 
-| method              | meaning                                               |
-|---------------------|-------------------------------------------------------|
-| `direct_lan`        | Both peers on same LAN/subnet, no NAT traversal       |
-| `direct_holepunch`  | UDP holepunch succeeded, direct peer-to-peer path     |
-| `relay`             | Holepunch failed, traffic relayed through server      |
+| method             | meaning                                           |
+| ------------------ | ------------------------------------------------- |
+| `direct_lan`       | Both peers on same LAN/subnet, no NAT traversal   |
+| `direct_holepunch` | UDP holepunch succeeded, direct peer-to-peer path |
+| `relay`            | Holepunch failed, traffic relayed through server  |
 
 The `detail` field provides human-readable context:
+
 - `"both peers cone NAT"` -- holepunch was straightforward
 - `"symmetric NAT on one side"` -- holepunch succeeded but was less certain
 - `"both symmetric NAT, holepunch failed"` -- explains why relay is needed
@@ -402,6 +406,7 @@ system:
 6. This GPGS player ID is the persistent identity -- tied to a Google account
 
 Why this works for anti-abuse:
+
 - Google accounts are hard to mass-create (phone verification, CAPTCHA, etc.)
 - Banning a GPGS player ID effectively bans the Google account from our game
 - No passwords, no email collection, no PII stored on our server
@@ -427,6 +432,7 @@ grant_type=authorization_code
 ```
 
 Response:
+
 ```json
 {
   "access_token": "...",
@@ -438,6 +444,7 @@ Response:
 ```
 
 Important implementation notes:
+
 - The client_id/client_secret are the WEB type OAuth credentials, not the
   Android client ID. The Android client ID is only used client-side in
   requestServerSideAccess(SERVER_CLIENT_ID).
@@ -458,6 +465,7 @@ Important implementation notes:
 ### Current Implementation Gap
 
 The server has the scaffolding ready:
+
 - config.rs: google_client_id and google_client_secret loaded from env vars
   (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET) but not yet used
 - ws_handler.rs: AUTHENTICATE handler has a TODO comment, currently passes
@@ -469,6 +477,7 @@ The server has the scaffolding ready:
   player ID fetch logic.
 
 When implementing identity.rs:
+
 1. Use reqwest (already a dependency) to POST to the token endpoint
 2. Parse the JSON response to get access_token
 3. Use access_token to GET /games/v1/players/me
@@ -506,16 +515,16 @@ ROMs). Fallback chain:
 
 At the matchmaking server:
 
-| Limit                          | Value         | Scope      |
-|--------------------------------|---------------|------------|
-| New WebSocket connections      | 3/min         | Per IP     |
-| Failed authentications         | 5/hour        | Per IP     |
-| Lobby creation                 | 1/10 sec      | Per player |
-| Lobby join attempts            | 5/min         | Per player |
-| Relay sessions                 | 2 concurrent  | Per player |
-| Relay bandwidth                | 50 KB/s       | Per session|
-| Relay session duration         | 2 hours max   | Per session|
-| WebSocket message rate         | 30/sec        | Per conn   |
+| Limit                     | Value        | Scope       |
+| ------------------------- | ------------ | ----------- |
+| New WebSocket connections | 3/min        | Per IP      |
+| Failed authentications    | 5/hour       | Per IP      |
+| Lobby creation            | 1/10 sec     | Per player  |
+| Lobby join attempts       | 5/min        | Per player  |
+| Relay sessions            | 2 concurrent | Per player  |
+| Relay bandwidth           | 50 KB/s      | Per session |
+| Relay session duration    | 2 hours max  | Per session |
+| WebSocket message rate    | 30/sec       | Per conn    |
 
 Implementation: sliding window counters in HashMap<Key, VecDeque<Instant>>.
 Cheap in memory, O(1) amortized per check.
@@ -526,21 +535,21 @@ Clients should be told which rate limit they hit so that human players are less 
 - Lobby host can kick players (by player ID, not just IP)
 - Kicked players can't rejoin the same lobby
 - Lobby codes for invite-only sessions (skip public listing)
-  * quick share option for texting. the share link should load the game and pre-fill everything needed to join the lobby and connect (with a warning about sharing if it includes local IPs, etc.)
+  - quick share option for texting. the share link should load the game and pre-fill everything needed to join the lobby and connect (with a warning about sharing if it includes local IPs, etc.)
 - Server-side player reputation (future): track kick frequency, reports
 - Packet validation: malformed messages -> immediate disconnect, no state
   allocated until after authentication
 
 ### How Minecraft Servers Handle This (Reference)
 
-| Technique                | Minecraft                          | Our Equivalent                      |
-|--------------------------|------------------------------------|-------------------------------------|
-| Account verification     | Mojang session server UUID check   | GPGS token exchange                 |
-| Connection throttle      | 4s cooldown per IP (vanilla)       | 3 conn/min/IP rate limit            |
-| Persistent bans          | UUID ban (not IP ban)              | GPGS player ID ban                  |
-| Whitelist mode           | Pre-approved UUIDs only            | "Verified only" lobby setting       |
-| Proxy-level protection   | BungeeCord/Velocity rate limiting  | Server-side rate limiting           |
-| Anti-bot                 | Forced movement check, CAPTCHAs    | GPGS (Google's bot prevention)      |
+| Technique              | Minecraft                         | Our Equivalent                 |
+| ---------------------- | --------------------------------- | ------------------------------ |
+| Account verification   | Mojang session server UUID check  | GPGS token exchange            |
+| Connection throttle    | 4s cooldown per IP (vanilla)      | 3 conn/min/IP rate limit       |
+| Persistent bans        | UUID ban (not IP ban)             | GPGS player ID ban             |
+| Whitelist mode         | Pre-approved UUIDs only           | "Verified only" lobby setting  |
+| Proxy-level protection | BungeeCord/Velocity rate limiting | Server-side rate limiting      |
+| Anti-bot               | Forced movement check, CAPTCHAs   | GPGS (Google's bot prevention) |
 
 ---
 
@@ -577,6 +586,7 @@ one. WebRTC, Steam Networking Sockets, Xbox Live, and PlayStation Network
 all implement some variant of this.
 
 Our implementation follows the same pattern but is tuned for game traffic:
+
 - UDP-first (latency-critical)
 - Minimal candidate gathering (fast startup -- games can't wait 10 seconds)
 - Custom orchestration (hand-rolled; no crate covers the full pipeline)
@@ -587,13 +597,13 @@ race across multiple candidate paths. The first path that succeeds wins.
 
 ### The NAT Landscape for Mobile Games
 
-| NAT Type              | UDP Holepunch? | TCP Holepunch? | Where You See It             |
-|-----------------------|----------------|----------------|------------------------------|
-| Full Cone             | Always         | Always         | Rare (old routers)           |
-| Address-Restricted    | Yes            | Yes            | Common home WiFi             |
-| Port-Restricted Cone  | Yes            | Sometimes      | Most common home WiFi        |
-| Symmetric             | Usually fails  | Usually fails  | Mobile carriers (CGNAT),     |
-|                       |                |                | corporate networks           |
+| NAT Type             | UDP Holepunch? | TCP Holepunch? | Where You See It         |
+| -------------------- | -------------- | -------------- | ------------------------ |
+| Full Cone            | Always         | Always         | Rare (old routers)       |
+| Address-Restricted   | Yes            | Yes            | Common home WiFi         |
+| Port-Restricted Cone | Yes            | Sometimes      | Most common home WiFi    |
+| Symmetric            | Usually fails  | Usually fails  | Mobile carriers (CGNAT), |
+|                      |                |                | corporate networks       |
 
 ### IPv6 Does NOT Solve NAT on Mobile
 
@@ -669,6 +679,7 @@ address-restricted, port-restricted) which covers ~85-90% of home networks.
 5. Once bidirectional UDP flows, the direct path is established.
 
 Implementation notes:
+
 - Self-hosted STUN server embedded in the matchmaking server process.
   Two UDP listeners on separate ports (default 3478 and 3479) for NAT
   type detection (client queries both from the same local socket).
@@ -695,6 +706,7 @@ can predict the next port the NAT will allocate and instruct peers to
 punch to the predicted port.
 
 Algorithm:
+
 1. Client sends STUN to server A -> gets reflexive port P1
 2. Client sends STUN to server B -> gets reflexive port P2
 3. If P2 = P1 + 1 (or close), NAT is sequential-symmetric
@@ -717,16 +729,17 @@ server relays UDP traffic.
 
 Relay packet format:
 
-  [session_token (4 bytes LE) | dest_player_slot (1 byte) | game_packet]
+[session_token (4 bytes LE) | dest_player_slot (1 byte) | game_packet]
 
 Server forwards to the destination peer:
 
-  [session_token (4 bytes LE) | from_player_slot (1 byte) | game_packet]
+[session_token (4 bytes LE) | from_player_slot (1 byte) | game_packet]
 
 5 bytes overhead per packet. Server is stateless per-packet (just a
 lookup table: session_token -> {player_slot -> peer_addr}).
 
 Relay characteristics:
+
 - Added latency: one extra hop, typically 10-30ms depending on server
   location. For a game at 30fps (33ms/frame), this is less than one
   frame of added latency.
@@ -747,13 +760,13 @@ Priority: lowest (always works). Latency: 10-30ms added.
 
 ### Strategy Summary and Expected Coverage
 
-| Strategy                   | Works Against         | Success Rate | Latency  |
-|----------------------------|-----------------------|--------------|----------|
-| Direct LAN                 | Same subnet           | 100%         | <1ms     |
-| UPnP/PCP/NAT-PMP           | Home routers w/ UPnP  | ~40-60%      | Direct   |
-| UDP Holepunch (STUN)       | All cone NATs         | ~85-90%      | Direct   |
-| Predictive Port (Symmetric)| Sequential symmetric  | ~30-50%      | Direct   |
-| Server Relay               | Everything            | 100%         | +10-30ms |
+| Strategy                    | Works Against        | Success Rate | Latency  |
+| --------------------------- | -------------------- | ------------ | -------- |
+| Direct LAN                  | Same subnet          | 100%         | <1ms     |
+| UPnP/PCP/NAT-PMP            | Home routers w/ UPnP | ~40-60%      | Direct   |
+| UDP Holepunch (STUN)        | All cone NATs        | ~85-90%      | Direct   |
+| Predictive Port (Symmetric) | Sequential symmetric | ~30-50%      | Direct   |
+| Server Relay                | Everything           | 100%         | +10-30ms |
 
 Combined, the first four strategies should achieve direct P2P for ~95%+
 of real-world peer pairs. Only the hardest cases (both behind random-port
@@ -849,6 +862,7 @@ direct-path probes in the background. If a direct path opens later
 migrate from relay to direct mid-game.
 
 Implementation:
+
 - Every 30 seconds, the localhost proxy sends a test packet via the
   direct candidate (not through relay).
 - If a response comes back, switch the forwarding path.
@@ -867,27 +881,28 @@ priority logic, fallback decisions) is hand-rolled because no crate
 covers the full pipeline for games. But the low-level primitives should
 use existing crates where possible:
 
-| Component              | Crate                  | Notes                              |
-|------------------------|------------------------|------------------------------------|
-| STUN message parsing   | `stun_codec` (=0.3)    | RFC 5389/8489, Binding Request/    |
-|                        |                        | Response, XOR-MAPPED-ADDRESS.      |
-|                        |                        | Handles encoding/decoding only.    |
-| STUN transport         | hand-rolled            | Just send/recv UDP with the parsed |
-|                        |                        | messages. ~30 lines.               |
-| NAT type detection     | hand-rolled            | Compare two STUN results. ~20 lines|
-| UPnP port mapping      | `igd-next` (=0.15)     | UPnP IGD for requesting port maps. |
-|                        |                        | Server-side testing/reference only.|
-| UDP relay              | hand-rolled            | Simple recv/lookup/send loop. TURN |
-|                        |                        | (RFC 5766) is overkill for our     |
-|                        |                        | custom session-token format.       |
-| Connectivity checks    | hand-rolled            | send test packets, track responses,|
-|                        |                        | pick winner. ~100 lines.           |
-| Candidate exchange     | existing WS protocol   | STUN_RESULT extended to carry      |
-|                        |                        | multiple candidates.               |
-| Orchestration/ICE logic| hand-rolled            | Priority sorting, timeout logic,   |
-|                        |                        | fallback decisions. ~200 lines.    |
+| Component               | Crate                | Notes                               |
+| ----------------------- | -------------------- | ----------------------------------- |
+| STUN message parsing    | `stun_codec` (=0.3)  | RFC 5389/8489, Binding Request/     |
+|                         |                      | Response, XOR-MAPPED-ADDRESS.       |
+|                         |                      | Handles encoding/decoding only.     |
+| STUN transport          | hand-rolled          | Just send/recv UDP with the parsed  |
+|                         |                      | messages. ~30 lines.                |
+| NAT type detection      | hand-rolled          | Compare two STUN results. ~20 lines |
+| UPnP port mapping       | `igd-next` (=0.15)   | UPnP IGD for requesting port maps.  |
+|                         |                      | Server-side testing/reference only. |
+| UDP relay               | hand-rolled          | Simple recv/lookup/send loop. TURN  |
+|                         |                      | (RFC 5766) is overkill for our      |
+|                         |                      | custom session-token format.        |
+| Connectivity checks     | hand-rolled          | send test packets, track responses, |
+|                         |                      | pick winner. ~100 lines.            |
+| Candidate exchange      | existing WS protocol | STUN_RESULT extended to carry       |
+|                         |                      | multiple candidates.                |
+| Orchestration/ICE logic | hand-rolled          | Priority sorting, timeout logic,    |
+|                         |                      | fallback decisions. ~200 lines.     |
 
 Why not use a full ICE/WebRTC crate (e.g., `webrtc-rs`, `str0m`)?
+
 - They bundle DTLS, SRTP, SDP, congestion control -- all unnecessary
   for raw game UDP.
 - They are designed for media streams, not game packets.
@@ -1024,13 +1039,14 @@ Add jni_file_hash.c with a SHA-256 implementation (public domain single-file,
 e.g. a minimal implementation -- the game data files are small enough that
 performance doesn't matter). Exposed via JNI:
 
-  nativeHashGameFiles(filesDir) -> JSON [{filename, sha256, size}, ...]
+nativeHashGameFiles(filesDir) -> JSON [{filename, sha256, size}, ...]
 
 Hash: .hog, .pig, .ham, .mn2/.msn mission files
 
 ### Lobby Hash Exchange
 
 During lobby phase (before game start):
+
 1. Host sends FILE_HASH_REQ via lobby protocol (LAN) or WebSocket (internet)
 2. Client responds with FILE_HASH_RESP containing hashes
 3. Lobby UI shows per-file match/mismatch indicators
@@ -1040,6 +1056,7 @@ During lobby phase (before game start):
 ### Level Pack Transfer
 
 For 3rd-party levels the host has but a client lacks:
+
 - Transfer via reliable channel (TCP on port 42401, or reliable UDP)
 - Filter: hardcoded blocklist of paid asset filenames prevents
   transferring copyrighted base game files
@@ -1050,13 +1067,14 @@ For 3rd-party levels the host has but a client lacks:
 
 ## Server Hosting
 
-| Component       | Monthly Cost | Capacity                           |
-|-----------------|-------------|------------------------------------|
-| VPS (Hetzner)   | $4-6        | ~500 concurrent lobbies, 200 relay |
-| Domain          | ~$1         | --                                 |
-| TLS cert        | Free        | Let's Encrypt                      |
+| Component     | Monthly Cost | Capacity                           |
+| ------------- | ------------ | ---------------------------------- |
+| VPS (Hetzner) | $4-6         | ~500 concurrent lobbies, 200 relay |
+| Domain        | ~$1          | --                                 |
+| TLS cert      | Free         | Let's Encrypt                      |
 
 At scale: relay is the bandwidth bottleneck. Options:
+
 - Per-session bandwidth cap (50 KB/s, game uses 10-15 KB/s)
 - Geographic distribution (add server regions as playerbase grows)
 - Evaluate libjuice (pure C ICE library, ~5K lines) to offload TURN
@@ -1091,7 +1109,7 @@ The engine supports two protocol modes controlled by `Netgame.RetroProtocol`:
 
 ### Implications for Lobby NAT Traversal
 
-**Only N-1 holepunch pairs are required, not N*(N-1)/2.**
+_*Only N-1 holepunch pairs are required, not N*(N-1)/2._*
 
 The critical connections are client-to-host. Non-host peer-to-peer
 connections are optional -- if holepunch between two non-host peers fails,
@@ -1132,7 +1150,7 @@ multi-player session.
 **Relay bandwidth budget per game:**
 
 | Players | Host-only relay (KB/s) | Full relay worst case (KB/s) |
-|---------|------------------------|------------------------------|
+| ------- | ---------------------- | ---------------------------- |
 | 2       | ~15                    | ~15                          |
 | 4       | ~45                    | ~90 (double relay)           |
 | 8       | ~105                   | ~350 (all double relay)      |
@@ -1187,6 +1205,7 @@ protocol. The two never share a socket or a packet format.
 ### Why Not Wrap?
 
 Wrapping game packets inside lobby packets would mean:
+
 - Every game packet passes through Kotlin serialization/deserialization
 - The lobby becomes a performance-critical path (it isn't designed for this)
 - No benefit: the engine already has a complete, tested UDP protocol
@@ -1199,6 +1218,7 @@ modifying them. Zero overhead beyond a memcpy.
 ### Out-of-Band Messages During Gameplay
 
 Some lobby-level concerns persist during gameplay:
+
 - Connection health monitoring (is the holepunch still alive?)
 - NAT keepalive pings every 15 seconds
 - Drop/reconnect coordination if a peer disappears
@@ -1233,14 +1253,14 @@ before "Start Game" is pressed. The flow:
 
 ### What Files Are Hashed
 
-| File Pattern | Required | Description |
-|--------------|----------|-------------|
-| `descent2.hog` | Yes | Main game HOG (levels, textures) |
-| `descent2.ham` | Yes | Object definitions |
-| `descent2.s11` / `descent2.s22` | If present | Expanded mission data |
-| `d2x.hog` | If present | Redux-specific data |
-| `*.mn2` / `*.msn` | Selected mission only | Mission definition |
-| `*.hog` (mission) | Selected mission only | Mission-specific HOG |
+| File Pattern                    | Required              | Description                      |
+| ------------------------------- | --------------------- | -------------------------------- |
+| `descent2.hog`                  | Yes                   | Main game HOG (levels, textures) |
+| `descent2.ham`                  | Yes                   | Object definitions               |
+| `descent2.s11` / `descent2.s22` | If present            | Expanded mission data            |
+| `d2x.hog`                       | If present            | Redux-specific data              |
+| `*.mn2` / `*.msn`               | Selected mission only | Mission definition               |
+| `*.hog` (mission)               | Selected mission only | Mission-specific HOG             |
 
 Base game files (descent2.hog, descent2.ham) are hashed to detect version
 mismatches (e.g., demo vs retail, v1.0 vs v1.2). Mission files are hashed
@@ -1304,13 +1324,13 @@ FILE_HASH_RESP (player -> host):
 
 ### Mismatch Handling
 
-| Scenario | Action |
-|----------|--------|
-| Base game version mismatch | Warning in lobby, host can override |
-| Mission file missing | Offer transfer (Phase 6) for 3rd-party missions |
-| Mission file hash mismatch | Block join -- different level versions |
-| Extra files present | Ignored (not a problem) |
-| Player has demo, host has retail | Hard block -- game will crash/desync |
+| Scenario                         | Action                                          |
+| -------------------------------- | ----------------------------------------------- |
+| Base game version mismatch       | Warning in lobby, host can override             |
+| Mission file missing             | Offer transfer (Phase 6) for 3rd-party missions |
+| Mission file hash mismatch       | Block join -- different level versions          |
+| Extra files present              | Ignored (not a problem)                         |
+| Player has demo, host has retail | Hard block -- game will crash/desync            |
 
 ---
 
@@ -1367,11 +1387,11 @@ Players:
 Server: 45ms
 ```
 
-| Element | Source | Color Coding |
-|---------|--------|-------------|
-| Per-peer ping | UDP LOBBY_PING/PONG | Green <50ms, Yellow 50-100ms, Red >100ms |
-| Connection type | Holepunch result | "direct" or "relay" |
-| Server ping | WebSocket PING_REQ/RESP | Same color coding |
+| Element         | Source                  | Color Coding                             |
+| --------------- | ----------------------- | ---------------------------------------- |
+| Per-peer ping   | UDP LOBBY_PING/PONG     | Green <50ms, Yellow 50-100ms, Red >100ms |
+| Connection type | Holepunch result        | "direct" or "relay"                      |
+| Server ping     | WebSocket PING_REQ/RESP | Same color coding                        |
 
 ### Ping During Gameplay
 
@@ -1393,6 +1413,7 @@ or relay), keeping the architecture simple.
 ### Audio Codec: Opus via libopus
 
 Opus is the standard for real-time voice in games. Properties:
+
 - 6-510 kbps (we'd use ~16-24 kbps for voice)
 - ~150KB compiled for ARM
 - BSD-licensed
@@ -1449,6 +1470,7 @@ without adding perceptible delay.
 
 A dedicated on-screen touch button (part of the game overlay, not the
 engine UI). When held:
+
 1. AudioRecord starts capturing 20ms frames
 2. Each frame is Opus-encoded via JNI call to libopus
 3. Encoded frame is sent as VOICE_DATA to all peers (or host for relay)
@@ -1456,10 +1478,10 @@ engine UI). When held:
 
 ### Voice in Lobby vs In-Game
 
-| Phase | Transport | Control |
-|-------|-----------|---------|
-| Lobby | UDP on lobby port 42400 (LAN) or via relay (internet) | Kotlin AudioRecord/AudioTrack + JNI to libopus |
-| In-game | UDP on game port 42424 via localhost proxy | Same Kotlin audio pipeline, packets injected via proxy |
+| Phase   | Transport                                             | Control                                                |
+| ------- | ----------------------------------------------------- | ------------------------------------------------------ |
+| Lobby   | UDP on lobby port 42400 (LAN) or via relay (internet) | Kotlin AudioRecord/AudioTrack + JNI to libopus         |
+| In-game | UDP on game port 42424 via localhost proxy            | Same Kotlin audio pipeline, packets injected via proxy |
 
 In-game voice packets are injected by the Kotlin proxy layer alongside
 game packets. The proxy recognizes UPID_VOICE and routes to the audio
@@ -1519,49 +1541,49 @@ not in .ngs presets -- presets use `no_name=1`).
 
 ### Complete Settable Fields (42 keys)
 
-| Key | Type | Default | UI Widget | Description |
-|-----|------|---------|-----------|-------------|
-| `gamemode` | u8 | 0 | Radio | 0=Anarchy 1=Team 2=RoboAnarchy 3=Coop 4=CTF 5=Hoard 6=TeamHoard 7=Bounty |
-| `RefusePlayers` | u8 | 0 | Toggle | Restricted game mode |
-| `difficulty` | u8 | player default | Slider 0-4 | Trainee through Insane |
-| `max_numplayers` | u8 | 8 | Slider 2-8 | Max 4 for coop |
-| `max_numobservers` | u8 | 0 | Slider 0-14 | Increments of 2 |
-| `game_flags` | u8 | 0 | Bitmask | NETGAME_FLAG_CLOSED etc. |
-| `AllowedItems` | u32 | NETFLAG_DOPOWERUP | Checkboxes | 27 powerup flags |
-| `Allow_marker_view` | i16 | 1 | Toggle | |
-| `AlwaysLighting` | i16 | 0 | Toggle | Indestructible lights |
-| `ShowEnemyNames` | i16 | 0 | Toggle | |
-| `BrightPlayers` | i16 | 1 | Toggle | |
-| `SpawnStyle` | u8 | 1 | Radio | 0=None 1=HalfSec 2=TwoSec 3=Preview |
-| `NewSpawnAlgorithm` | u8 | 0 | Toggle | |
-| `GaussAmmoStyle` | u8 | 4 | Radio | 1=Dup 2=Deplete 3=Drop 4=Respawn |
-| `KillGoal` | i32 | 0 | Slider 0-10 | x10 kills |
-| `PlayTimeAllowed` | fix | 0 | Slider 0-10 | x5 minutes |
-| `control_invul_time` | i32 | 0 | Slider 0-10 | Reactor invuln minutes |
-| `PacketsPerSec` | i16 | 20 | Slider 10-30 | |
-| `ShortPackets` | u8 | 0 | Toggle | |
-| `NoFriendlyFire` | u8 | 0 | Toggle | Team/coop only |
-| `RetroProtocol` | u8 | 1 | Toggle | P2P protocol |
-| `RespawnConcs` | u8 | 0 | Toggle | |
-| `LowVulcan` | u8 | 0 | Toggle | |
-| `AllowPreferredColors` | u8 | 0 | Toggle | |
-| `AllowColoredLighting` | u8 | 0 | Toggle | |
-| `FairColors` | u8 | 0 | Toggle | All players blue |
-| `BlackAndWhitePyros` | u8 | 1 | Toggle | Alternate ship colors 6/7 |
-| `BornWithBurner` | u8 | 0 | Toggle | |
-| `OriginalD1Weapons` | u8 | 0 | Toggle | |
-| `RebalancedWeapons` | u8 | 0 | Toggle | Beta feature |
-| `PrimaryDupFactor` | u8 | 0 | Slider 0-3 | Extra primary x1/x2/x3/x4 |
-| `SecondaryDupFactor` | u8 | 0 | Slider 0-3 | Extra secondary x1/x2/x3/x4 |
-| `SecondaryCapFactor` | u8 | 0 | Slider 0-2 | Uncapped/MaxSix/MaxTwo |
-| `obs_delay` | u8 | 0 | Toggle | Broadcast delay for observers |
-| `obs_min` | u8 | 0 | Toggle | Minimal observer info |
-| `HomingUpdateRate` | u8 | 25 | Slider 20-30 | Stored as-is, menu shows +20 |
-| `RemoteHitSpark` | u8 | 0 | Toggle | |
-| `AllowCustomModelsTextures` | u8 | 0 | Toggle | |
-| `ReducedFlash` | u8 | 0 | Toggle | |
-| `DisableGaussSplash` | u8 | 0 | Toggle | |
-| `Tracker` | u8 | 1 | Toggle | Only when USE_TRACKER defined |
+| Key                         | Type | Default           | UI Widget    | Description                                                              |
+| --------------------------- | ---- | ----------------- | ------------ | ------------------------------------------------------------------------ |
+| `gamemode`                  | u8   | 0                 | Radio        | 0=Anarchy 1=Team 2=RoboAnarchy 3=Coop 4=CTF 5=Hoard 6=TeamHoard 7=Bounty |
+| `RefusePlayers`             | u8   | 0                 | Toggle       | Restricted game mode                                                     |
+| `difficulty`                | u8   | player default    | Slider 0-4   | Trainee through Insane                                                   |
+| `max_numplayers`            | u8   | 8                 | Slider 2-8   | Max 4 for coop                                                           |
+| `max_numobservers`          | u8   | 0                 | Slider 0-14  | Increments of 2                                                          |
+| `game_flags`                | u8   | 0                 | Bitmask      | NETGAME_FLAG_CLOSED etc.                                                 |
+| `AllowedItems`              | u32  | NETFLAG_DOPOWERUP | Checkboxes   | 27 powerup flags                                                         |
+| `Allow_marker_view`         | i16  | 1                 | Toggle       |                                                                          |
+| `AlwaysLighting`            | i16  | 0                 | Toggle       | Indestructible lights                                                    |
+| `ShowEnemyNames`            | i16  | 0                 | Toggle       |                                                                          |
+| `BrightPlayers`             | i16  | 1                 | Toggle       |                                                                          |
+| `SpawnStyle`                | u8   | 1                 | Radio        | 0=None 1=HalfSec 2=TwoSec 3=Preview                                      |
+| `NewSpawnAlgorithm`         | u8   | 0                 | Toggle       |                                                                          |
+| `GaussAmmoStyle`            | u8   | 4                 | Radio        | 1=Dup 2=Deplete 3=Drop 4=Respawn                                         |
+| `KillGoal`                  | i32  | 0                 | Slider 0-10  | x10 kills                                                                |
+| `PlayTimeAllowed`           | fix  | 0                 | Slider 0-10  | x5 minutes                                                               |
+| `control_invul_time`        | i32  | 0                 | Slider 0-10  | Reactor invuln minutes                                                   |
+| `PacketsPerSec`             | i16  | 20                | Slider 10-30 |                                                                          |
+| `ShortPackets`              | u8   | 0                 | Toggle       |                                                                          |
+| `NoFriendlyFire`            | u8   | 0                 | Toggle       | Team/coop only                                                           |
+| `RetroProtocol`             | u8   | 1                 | Toggle       | P2P protocol                                                             |
+| `RespawnConcs`              | u8   | 0                 | Toggle       |                                                                          |
+| `LowVulcan`                 | u8   | 0                 | Toggle       |                                                                          |
+| `AllowPreferredColors`      | u8   | 0                 | Toggle       |                                                                          |
+| `AllowColoredLighting`      | u8   | 0                 | Toggle       |                                                                          |
+| `FairColors`                | u8   | 0                 | Toggle       | All players blue                                                         |
+| `BlackAndWhitePyros`        | u8   | 1                 | Toggle       | Alternate ship colors 6/7                                                |
+| `BornWithBurner`            | u8   | 0                 | Toggle       |                                                                          |
+| `OriginalD1Weapons`         | u8   | 0                 | Toggle       |                                                                          |
+| `RebalancedWeapons`         | u8   | 0                 | Toggle       | Beta feature                                                             |
+| `PrimaryDupFactor`          | u8   | 0                 | Slider 0-3   | Extra primary x1/x2/x3/x4                                                |
+| `SecondaryDupFactor`        | u8   | 0                 | Slider 0-3   | Extra secondary x1/x2/x3/x4                                              |
+| `SecondaryCapFactor`        | u8   | 0                 | Slider 0-2   | Uncapped/MaxSix/MaxTwo                                                   |
+| `obs_delay`                 | u8   | 0                 | Toggle       | Broadcast delay for observers                                            |
+| `obs_min`                   | u8   | 0                 | Toggle       | Minimal observer info                                                    |
+| `HomingUpdateRate`          | u8   | 25                | Slider 20-30 | Stored as-is, menu shows +20                                             |
+| `RemoteHitSpark`            | u8   | 0                 | Toggle       |                                                                          |
+| `AllowCustomModelsTextures` | u8   | 0                 | Toggle       |                                                                          |
+| `ReducedFlash`              | u8   | 0                 | Toggle       |                                                                          |
+| `DisableGaussSplash`        | u8   | 0                 | Toggle       |                                                                          |
+| `Tracker`                   | u8   | 1                 | Toggle       | Only when USE_TRACKER defined                                            |
 
 ### Launcher UI Organization
 
@@ -1578,13 +1600,13 @@ menu structure:
 
 Ship a few .ngs files with the app:
 
-| Preset Name | Description |
-|-------------|-------------|
-| `coop_standard.ngs` | Cooperative, 4 players, default weapons |
-| `anarchy_classic.ngs` | Anarchy, 8 players, all weapons |
+| Preset Name               | Description                                       |
+| ------------------------- | ------------------------------------------------- |
+| `coop_standard.ngs`       | Cooperative, 4 players, default weapons           |
+| `anarchy_classic.ngs`     | Anarchy, 8 players, all weapons                   |
 | `anarchy_competitive.ngs` | Anarchy, balanced weapons, no respawn concussions |
-| `team_ctf.ngs` | CTF, fair colors, team-appropriate settings |
-| `casual_coop.ngs` | Coop, easy difficulty, extra lives |
+| `team_ctf.ngs`            | CTF, fair colors, team-appropriate settings       |
+| `casual_coop.ngs`         | Coop, easy difficulty, extra lives                |
 
 Users can save custom presets from the launcher UI. These are stored
 in the app's files directory and listed alongside built-in presets.
@@ -1624,6 +1646,7 @@ Java_com_dxxredux_app_MainActivity_nativeAutoHost(
 ### Option 1: Custom Kotlin STUN (Recommended for Initial Implementation)
 
 STUN binding requests are ~100 lines of code:
+
 - Build 20-byte request (type 0x0001, magic cookie 0x2112A442, random txn ID)
 - Send to self-hosted STUN server (addresses received in AUTH_OK)
 - Parse response: find XOR-MAPPED-ADDRESS (attr type 0x0020), XOR with
@@ -1632,12 +1655,13 @@ STUN binding requests are ~100 lines of code:
   (ports differ)
 
 Pros: zero dependencies, tiny code, full control, no reliance on
-  third-party STUN servers, IP allowlisting prevents abuse.
+third-party STUN servers, IP allowlisting prevents abuse.
 Cons: no ICE, no TURN, no candidate gathering beyond basic reflexive.
 
 ### Option 2: libjuice (Recommended for Full ICE)
 
 libjuice (JUICE Is a UDP Interactive Connectivity Establishment library):
+
 - Pure C, ~5,000 lines, no dependencies
 - MPL-2.0 license (compatible with our project)
 - Full ICE-LITE implementation: STUN, candidate gathering, connectivity checks
@@ -1668,6 +1692,7 @@ if we only need basic STUN.
 ### Option 3: Platform STUN (Android IceCandidate via WebRTC)
 
 Android's WebRTC library includes full ICE. But:
+
 - Massive dependency (~10MB)
 - Overkill for our use case
 - Tight coupling to WebRTC data channels
@@ -1762,6 +1787,7 @@ At 10-15 KB/s per player pair, a single VPS with 1 Gbps can relay
 (~2KB each in memory). The bottleneck is relay bandwidth, not CPU or memory.
 
 If the player base grows beyond one server:
+
 - Add regions (US-East, EU-West, Asia) with separate server instances
 - Lobby list queries go to all regions, sorted by ping
 - Cross-region play: player connects to their nearest server, servers
@@ -1775,6 +1801,7 @@ If the player base grows beyond one server:
 
 All WebSocket connections use TLS (WSS). The server presents a valid
 certificate from Let's Encrypt. This provides:
+
 - Encryption: lobby/signaling data is confidential
 - Server authentication: clients verify they're talking to our server
 - Integrity: no man-in-the-middle on signaling messages
@@ -1886,6 +1913,7 @@ messages -- no re-authentication needed per message.
 8. Voice chat (Phase 7) -- requires UDP infrastructure from earlier phases
 
 Independent tracks (can proceed in parallel):
+
 - Track A: Phases 1, 8, 6 (all local, no server)
 - Track B: Phases 2, 3, 4 (server, sequential)
 - Phase 5 can start anytime after Phase 1
@@ -1943,9 +1971,10 @@ Server -> Client:
 ```
 
 Example reason strings:
+
 - "Your client is too old (v1.0.3). Please update to v1.2.0 or later"
 - "This server requires protocol version 3. Your client uses version 1.
-   Update the app from the Play Store"
+  Update the app from the Play Store"
 - "Your client version will stop working on 2026-05-01. Please update"
 
 ### Soft Deprecation
@@ -1967,12 +1996,14 @@ After the deadline, the server switches to hard rejection.
 ### Protocol Version Bump Rules
 
 Bump the protocol version when:
+
 - WebSocket message schema changes (new required fields, changed types)
 - Relay packet format changes
 - Lobby protocol changes that break backward compatibility
 - Authentication flow changes
 
 Do NOT bump for:
+
 - New optional fields in existing messages
 - New message types (old clients ignore unknown types)
 - Server-side-only changes
@@ -1980,9 +2011,11 @@ Do NOT bump for:
 ### Version Constants
 
 Shared between client and server. On the client side, defined in:
+
 - `android/app/src/main/java/com/dxxredux/app/lobby/NetworkConstants.kt`
 
 On the server side, defined in:
+
 - `server/src/protocol.rs`
 
 Both files document that they must be kept in sync.
@@ -2013,6 +2046,7 @@ Games ID.
 
 The server assigns each authenticated player an opaque `player_id`
 (UUID v4 or similar). This ID is:
+
 - Derived from the GPGS player ID at first login (one-to-one mapping)
 - Stored server-side in a `players` table
 - Used for all social features (friends, stats, leaderboards)
@@ -2060,6 +2094,7 @@ enum Presence {
 ```
 
 Presence updates happen automatically:
+
 - WebSocket connect -> Online
 - JOIN_LOBBY -> InLobby
 - START_GAME -> InGame
@@ -2338,13 +2373,13 @@ leaderboards, and player profiles.
 
 ### Log Level Strategy
 
-| Level | Usage |
-|-------|-------|
-| error | Fatal: DB open failure, server bind failure, TLS cert load failure |
-| warn  | Recoverable: rate limit triggers, banned player auth attempts, version rejections, admin auth failures, DB operation errors, non-host game start attempts |
+| Level | Usage                                                                                                                                                                                                                |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| error | Fatal: DB open failure, server bind failure, TLS cert load failure                                                                                                                                                   |
+| warn  | Recoverable: rate limit triggers, banned player auth attempts, version rejections, admin auth failures, DB operation errors, non-host game start attempts                                                            |
 | info  | Significant events: player auth/disconnect, lobby create/join/leave, game start, STUN results, connectivity results, relay allocation, friend accept/remove/block, admin ban/unban, match results, config at startup |
-| debug | WS upgrade acceptance, WS read errors, serialization errors |
-| trace | Reserved for per-packet relay forwarding (not currently emitted, would spam) |
+| debug | WS upgrade acceptance, WS read errors, serialization errors                                                                                                                                                          |
+| trace | Reserved for per-packet relay forwarding (not currently emitted, would spam)                                                                                                                                         |
 
 ### Current Coverage by Module
 
@@ -2358,24 +2393,30 @@ leaderboards, and player profiles.
 ### Logging Notes for Future Phases
 
 #### Phase 3 (Identity -- GPGS token verification)
+
 When implementing real GPGS token verification in ws_handler.rs:
+
 - info! on successful GPGS token exchange (player_id, gpgs_sub)
 - warn! on GPGS token verification failure (error detail, token prefix for debugging)
 - info! on first-time player creation vs returning player
 - debug! for token exchange HTTP request timing
 
 #### Phase 4 (NAT Traversal -- client-side)
+
 Client-side Kotlin logging (use Android Log or timber):
+
 - Log STUN server responses and detected NAT type (self-hosted STUN)
 - Log each connectivity check attempt and result (candidate type, RTT)
 - Log relay fallback trigger
 - Log UPnP/PCP mapping attempts and outcomes
 
 #### Phase 5 (Drop-In/Drop-Out Co-op)
+
 - info! on mid-game player join/leave
 - warn! on rejoin failures
 
 #### Phase 7+ (Localhost Proxy)
+
 - info! on proxy bind, connection established, peer address mapping
 - debug! packet forwarding counts (periodic, not per-packet)
 - warn! on proxy socket errors
@@ -2571,19 +2612,19 @@ Server DB table: connection_events
 
 ### What Minecraft Servers Track (and What We Should Too)
 
-| Minecraft (Paper/Spigot)          | Our Equivalent                       |
-|-----------------------------------|--------------------------------------|
-| TPS (ticks per second)            | N/A (we don't run game logic)        |
-| Player join/leave events          | connection_events table              |
-| Chunk load performance            | N/A                                  |
-| Memory usage + GC stats           | /health endpoint                     |
-| Entity counts                     | lobby count, relay session count      |
-| Plugin load times                 | auth latency, holepunch duration     |
-| World save times                  | DB write latency                     |
-| Player count over time            | player_count_history table           |
-| Chat log                          | N/A (voice only, not logged)         |
-| Command usage stats               | API endpoint hit counts              |
-| Crash dumps + stack traces        | panic handler + structured logging   |
+| Minecraft (Paper/Spigot)   | Our Equivalent                     |
+| -------------------------- | ---------------------------------- |
+| TPS (ticks per second)     | N/A (we don't run game logic)      |
+| Player join/leave events   | connection_events table            |
+| Chunk load performance     | N/A                                |
+| Memory usage + GC stats    | /health endpoint                   |
+| Entity counts              | lobby count, relay session count   |
+| Plugin load times          | auth latency, holepunch duration   |
+| World save times           | DB write latency                   |
+| Player count over time     | player_count_history table         |
+| Chat log                   | N/A (voice only, not logged)       |
+| Command usage stats        | API endpoint hit counts            |
+| Crash dumps + stack traces | panic handler + structured logging |
 
 ### Structured Logging
 
@@ -2678,6 +2719,7 @@ Server -> All Connected Clients:
 ```
 
 New connections during maintenance mode get:
+
 ```
 Server -> Client:
   MAINTENANCE {
@@ -2721,6 +2763,7 @@ Currently `player_id` is `Uuid::new_v4()` on every auth -- the player gets
 a new identity each session. This must be fixed before friends work properly.
 
 **Server changes (db.rs, ws_handler.rs):**
+
 - [x] `players` table already has a UNIQUE `gpgs_player_id` column
 - [x] Add `find_or_create_player_by_gpgs(gpgs_player_id, callsign) -> Uuid`:
       looks up by `gpgs_player_id`; if not found, creates a new row with
@@ -2828,6 +2871,7 @@ This is an optional discovery feature, not a requirement for v1.
 #### Ping Measurement
 
 The user wants two ping values visible:
+
 1. **Client -> matchmaking server** (the client's own latency)
 2. **Lobby/game host -> matchmaking server** (shown alongside each lobby)
 
@@ -2860,6 +2904,7 @@ For direct connections the actual latency would be lower, but this gives
 a useful upper bound that helps players choose lobbies.
 
 **Implementation in ws_handler.rs:**
+
 - After authentication, spawn a per-connection ping task that sends a WS
   ping frame every 30 seconds and measures the pong RTT.
 - Store the RTT on the PlayerSession.
@@ -2895,10 +2940,11 @@ exploits), strip leading/trailing whitespace.
 #### Server-Side Implementation Checklist
 
 Files to modify:
+
 - [x] `protocol.rs`: Add `ServerStatus`, `ActiveGameInfo`, `SendMessage`,
-  `MessageReceived`, `MessageSent` messages
+      `MessageReceived`, `MessageSent` messages
 - [x] `ws_handler.rs`: Send welcome bundle after AUTH_OK; add SEND_MESSAGE
-  handler with rate limiting; host_ping_ms in lobby list
+      handler with rate limiting; host_ping_ms in lobby list
 - [x] `db.rs`: Add `find_or_create_player_by_gpgs()` and `is_blocked()` functions
 - [x] `rate_limit.rs`: Add `check_player_message()` limiter (5/60s)
 - [x] `stats.rs`: No changes needed (counters already exist)
@@ -2906,15 +2952,16 @@ Files to modify:
 - [x] `lobby.rs`: No changes needed
 
 New test cases (all passing, 27 total):
+
 - [x] `test_welcome_bundle`: verify AUTH_OK is followed by SERVER_STATUS,
-  LOBBY_LIST, and FRIEND_LIST_RESP without the client requesting them
+      LOBBY_LIST, and FRIEND_LIST_RESP without the client requesting them
 - [x] `test_player_message`: send message, verify delivery and ack
 - [x] `test_player_message_rate_limit`: exceed 5/60s limit, verify RATE_LIMITED
 - [x] `test_player_message_blocked`: verify blocked sender gets fake ack but
-  target receives nothing
+      target receives nothing
 - [x] `test_player_message_validation`: verify oversized text rejected
 - [x] `test_stable_player_id`: authenticate twice with same gpgs token,
-  verify same player_id returned
+      verify same player_id returned
 - [x] `test_lobby_list_includes_host_ping`: verify host_ping_ms field present
 
 Note: WS ping/pong measurement task not yet implemented (ping_ms field
@@ -2942,6 +2989,7 @@ enhancement -- the infrastructure is in place.
 12. **Admin API + operational features (Phase 15) -- ongoing**
 
 Independent tracks (can proceed in parallel):
+
 - Track A: Phases 1, 8, 6 (all local, no server)
 - Track B: Phases 2+9+12+14, 3, 10, 11, 4 (server, sequential)
 - Phase 5 can start anytime after Phase 1

@@ -4,9 +4,7 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[2]
-SHARED = (REPO / "android/app/src/main/cpp/shared/physfsx_android_shared.c").read_text(
-    encoding="utf-8"
-)
+SHARED = (REPO / "android/app/src/main/cpp/shared/physfsx_android_shared.c").read_text(encoding="utf-8")
 
 
 class PhysfsxAndroidInitContracts(unittest.TestCase):
@@ -25,7 +23,7 @@ class PhysfsxAndroidInitContracts(unittest.TestCase):
         self.assertIn('Error("%s", error)', SHARED)
         self.assertRegex(
             SHARED,
-            r'if \(!init_search_paths\(argv\[0\], game_dir, data_dir, error, error_size\)\)\s*return 0;',
+            r"if \(!init_search_paths\(argv\[0\], game_dir, data_dir, error, error_size\)\)\s*return 0;",
         )
 
     def test_games_retain_only_parameterized_android_init_seams(self):

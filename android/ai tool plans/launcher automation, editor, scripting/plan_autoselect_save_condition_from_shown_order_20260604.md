@@ -1,6 +1,7 @@
 # Launcher Autoselect Save Condition From Shown Order - 2026-06-04
 
 ## Goal
+
 Start over on the launcher autoselect Save condition:
 
 - The launcher has a shown ordering for Descent 1 and Descent 2.

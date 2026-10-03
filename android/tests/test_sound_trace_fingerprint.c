@@ -27,11 +27,11 @@ int main(void)
 	                   "changed live sample must differ from the load snapshot");
 	failures += expect(sound_trace_fingerprint_match(changed, cached_input) == 0 &&
 	                       sound_trace_fingerprint_match(cached_output,
-	                           sound_trace_fingerprint_bytes(mixed, sizeof(mixed))) == 1,
+	                                                     sound_trace_fingerprint_bytes(mixed, sizeof(mixed))) == 1,
 	                   "stale mixer input must be distinguishable from damaged mixer output");
 	mixed[3] ^= 1;
 	failures += expect(sound_trace_fingerprint_match(cached_output,
-	                       sound_trace_fingerprint_bytes(mixed, sizeof(mixed))) == 0,
+	                                                 sound_trace_fingerprint_bytes(mixed, sizeof(mixed))) == 0,
 	                   "changed converted bytes must differ from the conversion snapshot");
 	memcpy(live, "hello", 5);
 	failures += expect(sound_trace_fingerprint_match(loaded, sound_trace_fingerprint_bytes(live, 5)) == 1,

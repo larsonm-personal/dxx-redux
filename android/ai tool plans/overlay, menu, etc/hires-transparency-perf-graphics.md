@@ -1,6 +1,7 @@
 # Plan: Hires Transparency Polish, Performance Monitoring, Advanced Graphics
 
 ## Status key
+
 - [ ] Not started
 - [~] In progress
 - [x] Done
@@ -10,6 +11,7 @@
 ## Phase 1: Hires super-transparency -- current state and remaining issues
 
 ### What's working
+
 - [x] Mask pipeline: `convert_d2xxl_textures.ps1` detects key color #785880 (+/-13 tolerance) in 32-bit TGAs, generates `*_mask.png` files, packages into DXA alongside KTX2
 - [x] Mask loading: `ogl_load_dxa_mask()` in d1/d2 reads mask PNGs from DXA, converts to single-byte buffer, uploads via BM_FLAG_TRANSPARENT palette path
 - [x] Mask polarity: dark pixels (super-transparent) -> byte 255 -> BM_FLAG_TRANSPARENT maps to alpha=0 -> shader discards. Fixed polarity inversion
@@ -20,7 +22,9 @@
 - [x] Generalization: mask loading triggers on any `BM_FLAG_SUPER_TRANSPARENT` bitmap, not just door35. 273 mask PNGs in the DXA, 200 masks load during cache
 
 ### Remaining: door35 edge artifacts
+
 The door35 texture shows minor visual artifacts:
+
 - Lower-left corner: a small extra bit of rock35 visible
 - Some door edges: extra red color bleeding
 
@@ -47,9 +51,11 @@ The door35 texture shows minor visual artifacts:
 ## Phase 2: Performance monitoring and load measurement
 
 ### Goal
+
 Expose CPU frame time + GPU utilization metrics in the video overlay so the user can compare texture pack sizes (base, 128, 256, 512) on real hardware and make recommendations.
 
 ### What already exists
+
 - `g_current_fps` in game.c: 1-second rolling FPS counter (Android-only)
 - `r_polyc`, `r_tpolyc`, `r_bitmapc`: per-frame draw counters (reset in ogl_start_frame)
 - `ogl_get_texture_bytes()`: total GPU texture memory estimate
@@ -59,6 +65,7 @@ Expose CPU frame time + GPU utilization metrics in the video overlay so the user
 ### What to add
 
 #### 2A. Frame timing (CPU-side)
+
 - [x] Add `g_frame_time_us` (microseconds for last frame) alongside `g_current_fps`
 - [x] Add `g_frame_time_avg_us` (rolling average over last 60 frames)
 - [x] Add `g_frame_time_max_us` (max over last 60 frames) -- shows stutter/spikes
@@ -68,6 +75,7 @@ Expose CPU frame time + GPU utilization metrics in the video overlay so the user
 Why microseconds: at 30fps a frame is 33ms. Per-frame timing at ms resolution is too coarse; us gives useful granularity for spotting 1-2ms differences between texture packs.
 
 #### 2B. Draw call and state change counters
+
 - [x] Add counters already partially there: `r_polyc` (total polys), `r_tpolyc` (textured polys), `r_bitmapc` (bitmap draws)
 - [x] Add `r_texbinds` (texture bind calls per frame) -- main indicator of state change overhead
 - [x] Expose via nativeGetVideoStats (r_polyc+r_tpolyc as draw polys)
@@ -75,6 +83,7 @@ Why microseconds: at 30fps a frame is 33ms. Per-frame timing at ms resolution is
 - [x] Add `r_mask_draws` (super-transparent mask draws per frame) -- tracks mask overhead
 
 #### 2C. GPU timing (GLES 3.0)
+
 - [x] Use `EXT_disjoint_timer_query` (widely supported on real hardware, may not work on emulator)
 - [x] Measure GPU time for the main render pass (ogl_start_frame to ogl_end_frame)
 - [x] Display as "GPU: Xms" in overlay
@@ -82,12 +91,14 @@ Why microseconds: at 30fps a frame is 33ms. Per-frame timing at ms resolution is
 - [x] Note: emulator (swiftshader) reports "not available" as expected. On real HW with extension, overlay shows GPU time
 
 #### 2D. Overlay enhancements
+
 - [x] Add to VideoInfoOverlay: frame time (avg/max), draw calls, tex binds, cache time
 - [x] Add a "load bar" visual: green/yellow/red bar showing frame budget usage (33ms = 100% at 30fps)
 - [ ] Show texture pack name and size (from DXA filename) -- deferred, needs DXA name exposed
 - [x] Color-code metrics that are near budget limits (frame time, cache time)
 
 #### 2E. Benchmark mode
+
 Deferred -- will be built around demo file playback. User will create demo files; benchmarks captured automatically during demo playback as part of regression tests (verify enemies killed, etc.).
 
 ---
@@ -97,24 +108,30 @@ Deferred -- will be built around demo file playback. User will create demo files
 ### Easy wins from code survey
 
 #### 3A. Redundant GL state changes
+
 In `ogl_start_frame()` + `ogl_end_frame()`, several GL state changes happen every frame that could be set-once:
+
 - [x] `glDepthFunc(GL_LEQUAL)` -- moved to `ogl_init_state()`, never changes at runtime
 - [x] `glBlendFunc` -- added blend func cache in `ogl_set_blending()` to skip redundant per-draw calls; cache invalidated at frame start since `ogl_do_palfx` changes blend directly
 - [x] Audit: `glEnable(GL_BLEND)`, `glBlendFunc` reset, `GL_CULL_FACE` toggle are all needed per-frame (mid-frame functions change them)
 
 #### 3B. Texture binding reduction
+
 Currently every polygon binds its texture individually. Profile to see if adjacent polygons often share textures:
+
 - [x] Add a "last bound texture" cache: skip glBindTexture if same handle
 - [x] Track cache hit rate in r_texbinds counter
 - [x] This is the single most impactful optimization for fill-rate-limited devices
 
 #### 3C. Mipmap generation
+
 - [x] Verify mipmaps are generated for hires textures (glGenerateMipmap) -- YES for PNG/standard textures
 - [x] KTX2/ETC2 compressed textures have NO mipmaps: `GL_TEXTURE_MAX_LEVEL=0`, `GL_LINEAR` only. `glGenerateMipmap` can't work on compressed formats
 - [ ] Fix: pre-generate mip levels in KTX2 files at build time (see 3D below)
 - [ ] `OGL_FLAG_MIPMAP` was dead code -- removed
 
 #### 3D. KTX2 mipmap chain
+
 - [x] etc2tool already generates full mip chain by default (box-filter downsampling to 4x4)
 - [x] KTX2 reader (`pngfile_stb.c`) already parses all mip levels into `edata.mip_count` + packed buffer
 - [x] Upload code updated to loop over all mip levels with `glCompressedTexImage2D` per level
@@ -122,6 +139,7 @@ Currently every polygon binds its texture individually. Profile to see if adjace
 - [x] Anisotropic filtering applied to ETC2 textures when enabled
 
 #### 3E. Framebuffer format
+
 - [x] Default RGB565 (16-bit): `EGL_RED_SIZE 5, GREEN 6, BLUE 5`
 - [x] RGBA8888 (24-bit color) available via `ColorDepth=1` in `descent.cfg`
 - [x] EGL config modified at init based on `GameCfg.ColorDepth` (read before EGL init)
@@ -129,6 +147,7 @@ Currently every polygon binds its texture individually. Profile to see if adjace
 - [x] Shown in overlay on Render line as RGB565 or RGB888
 
 #### 3F. Shader efficiency
+
 - [ ] Two shaders only (tex2, tex2m). Both are simple -- no obvious inefficiency
 - [ ] For future: if adding post-processing, use a single fullscreen quad pass
 - [ ] Consider if the tex2 (no mask) path can be made the common case during gameplay (it already is for most surfaces)
@@ -138,6 +157,7 @@ Currently every polygon binds its texture individually. Profile to see if adjace
 ## Phase 4: Anti-aliasing and anisotropic filtering
 
 ### 4A. Anisotropic filtering (easy, high impact)
+
 Already partially wired: `ogl_maxanisotropy` exists, `glTexParameterf(GL_TEXTURE_MAX_ANISOTROPY_EXT)` is called in ogl_loadtexture.
 
 - [x] Query `GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT` at init, store max supported level
@@ -151,11 +171,13 @@ Note: this is essentially free on modern GPUs for Descent's rendering complexity
 ### 4B. MSAA (medium effort, high visual impact)
 
 Implementation plan:
+
 - [x] Create MSAA FBO and resolve to default framebuffer (runtime toggle, no restart)
 - [x] Settings: Off / 2x / 4x (query `GL_MAX_SAMPLES` -- emulator reports max=4)
 - [x] FBO approach: create/destroy on demand, bind in ogl_start_frame, resolve in gr_flip
 
 FBO MSAA steps (all implemented):
+
 1. Create color renderbuffer with `glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, w, h)`
 2. Create depth renderbuffer with `glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT16, w, h)`
 3. Attach both to FBO
@@ -168,6 +190,7 @@ FBO MSAA steps (all implemented):
 - [x] Track performance impact via frame time counters
 
 ### 4C. Launcher advanced settings UI
+
 - [x] Add "Graphics" section to advanced settings page
 - [x] Graphics promoted to its own top-level launcher page (GraphicsSettingsPage.kt)
 - [x] Anti-aliasing selector: Off / 2x / 4x MSAA (SharedPreferences, applied via nativeSetGraphicsOption JNI at startup)
@@ -178,6 +201,7 @@ FBO MSAA steps (all implemented):
 - [x] Settings applied at engine startup; TexFilter/ColorDepth/Resolution via descent.cfg, MSAA/AF via JNI
 
 ### 4D. Live overlay controls
+
 - [x] Cycle buttons in VideoInfoOverlay for AA (MSAA) and AF (anisotropy)
 - [x] Show current setting + max supported level in overlay
 - [x] Changes take effect immediately (AF per-texture-bind, MSAA via FBO recreate)
@@ -192,30 +216,34 @@ FBO MSAA steps (all implemented):
 Based on actual codebase analysis, here's what's practical vs aspirational:
 
 ### Practical (low-medium effort, proven benefit)
-| Feature | Effort | Benefit | Notes |
-|---------|--------|---------|-------|
-| Anisotropic filtering | Low | High | Already half-wired. Tunnels benefit enormously |
-| MSAA | Medium | High | FBO approach well-understood. GLES 3.0 guarantees it |
-| Gamma/brightness | Low | Medium | Simple post-process or glClearColor adjustment |
 
-*Texture quality slider: not needed -- users install whatever texture pack they want.*
-*Post-processing pipeline: deferred -- not needed as of now.*
+| Feature               | Effort | Benefit | Notes                                                |
+| --------------------- | ------ | ------- | ---------------------------------------------------- |
+| Anisotropic filtering | Low    | High    | Already half-wired. Tunnels benefit enormously       |
+| MSAA                  | Medium | High    | FBO approach well-understood. GLES 3.0 guarantees it |
+| Gamma/brightness      | Low    | Medium  | Simple post-process or glClearColor adjustment       |
+
+_Texture quality slider: not needed -- users install whatever texture pack they want._
+_Post-processing pipeline: deferred -- not needed as of now._
 
 ### Achievable but significant effort
-| Feature | Effort | Benefit | Notes |
-|---------|--------|---------|-------|
-| Post-processing pipeline | Medium | Medium | Need FBO (same as MSAA). Bloom, CRT filter, color grading possible. Descent's aesthetic suits CRT/scanline filters |
-| Instancing | Medium | Low-Medium | Descent has many small objects but draw counts are already modest (~2000 polys/frame). Benefit is mainly for particle-heavy scenes |
+
+| Feature                  | Effort | Benefit    | Notes                                                                                                                              |
+| ------------------------ | ------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Post-processing pipeline | Medium | Medium     | Need FBO (same as MSAA). Bloom, CRT filter, color grading possible. Descent's aesthetic suits CRT/scanline filters                 |
+| Instancing               | Medium | Low-Medium | Descent has many small objects but draw counts are already modest (~2000 polys/frame). Benefit is mainly for particle-heavy scenes |
 
 ### Impractical or low-value for this codebase
-| Feature | Effort | Concern |
-|---------|--------|---------|
-| Shadow mapping | High | Engine has no shadow infrastructure. Light is per-vertex. Adding would require significant renderer changes and artist work for shadow-casting geometry. Not worth it for a faithful port |
-| Occlusion queries | Medium | Engine already does portal-based visibility (segment rendering). GL occlusion queries would add latency (query results are async) and the engine's existing PVS is already efficient for indoor geometry |
-| 2D array textures | High | Would require rewriting the texture binding model. Every polygon currently binds its own texture. Batching into texture arrays needs sorting, atlas management, and shader changes. Major refactor for modest gain |
-| Uniform buffer objects | Low-Medium | Only 2 shaders, few uniforms. The overhead of per-draw uniform calls is negligible at current draw counts. Not worth the complexity |
+
+| Feature                | Effort     | Concern                                                                                                                                                                                                            |
+| ---------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Shadow mapping         | High       | Engine has no shadow infrastructure. Light is per-vertex. Adding would require significant renderer changes and artist work for shadow-casting geometry. Not worth it for a faithful port                          |
+| Occlusion queries      | Medium     | Engine already does portal-based visibility (segment rendering). GL occlusion queries would add latency (query results are async) and the engine's existing PVS is already efficient for indoor geometry           |
+| 2D array textures      | High       | Would require rewriting the texture binding model. Every polygon currently binds its own texture. Batching into texture arrays needs sorting, atlas management, and shader changes. Major refactor for modest gain |
+| Uniform buffer objects | Low-Medium | Only 2 shaders, few uniforms. The overhead of per-draw uniform calls is negligible at current draw counts. Not worth the complexity                                                                                |
 
 ### Summary
+
 The high-value path is: **pipeline edge fixes -> perf counters -> texture bind cache -> anisotropic filtering -> overlay enhancements -> MSAA**.
 
 ---
@@ -227,7 +255,7 @@ The high-value path is: **pipeline edge fixes -> perf counters -> texture bind c
 3. [x] Phase 3B: Texture bind cache (easy win, enables measurement)
 4. [x] Phase 4A: Anisotropic filtering (query, apply, cycle, d1 mirror)
 5. [x] Phase 2D: Overlay enhancements (basic metrics shown)
-7. [x] Phase 4B: MSAA via FBO (create/destroy, bind/resolve, cycle button, d1 mirror)
+6. [x] Phase 4B: MSAA via FBO (create/destroy, bind/resolve, cycle button, d1 mirror)
 7. [x] Phase 2C: GPU timing (EXT_disjoint_timer_query, overlay display, d1 mirror)
 8. [x] Phase 3A: GL state optimization (blend func cache, glDepthFunc to init, d1 mirror)
 9. [x] Phase 3D: KTX2 mipmap chain upload (all levels, proper filtering, AF)

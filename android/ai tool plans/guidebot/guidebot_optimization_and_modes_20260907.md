@@ -18,17 +18,17 @@ less performance headroom than expected.
 Paths below are relative to the repository root. Function names are the durable
 references; line counts describe this inspection, not targets for deletion.
 
-| Area | Current implementation | Consequence for this work |
-| --- | --- | --- |
-| Classic behavior plus extensions | `d2/main/escort.c`, about 4,347 lines | Goal selection, route reset, physical replan scheduling, secret commands, deploy/recall/warp, ownership, replay, and classic escort/thief behavior still share one file |
-| Extracted enhanced controller | `d2/main/guidebot_route.c`, about 2,107 lines; `guidebot_route_internal.h` | Extraction has started, but dozens of writable globals are shared with `escort.c`; moving the file again alone would not simplify ownership |
-| Physical path and motion | `d2/main/aipath.c`, about 2,355 lines | Enhanced passability, blocked-edge retries, waypoint adjustment, long-path handling, portal recovery, and motion history are interleaved with general robot code |
-| Engine metadata integration | `android/app/src/main/cpp/shared/secretarea.c`, about 4,700 lines | Secret discovery, topology, geometry callbacks, persistent caches, worker publication, snapshots, live selection, and auditing are coupled; `level_metadata_scan.c` is not the main orchestration layer |
-| Initial semantic analysis | `shared/route_planner.cpp`, about 4,936 lines | Dependency search and switch geometry already have work limits and caches; a portal/component graph is built per planner instance |
-| Runtime selection and certification | `shared/guidebot_route_certifier.c`, `guidebot_route_decision.c` | Ordinary end-of-level selection already filters compiled route steps against current facts and chooses bounded guidance candidates |
-| Physical confirmation | `shared/route_confirmation.cpp`, about 1,998 lines | Uses real engine paths, but drives the companion through its own controller and applies objective actions; a simulation pass does not by itself prove ordinary escort-frame behavior |
-| Background scheduling | `RouteMetadataScheduling.kt`, `LevelMetadata.kt`, `android_route_metadata.c` | Initial Android analysis is isolated; active gameplay work uses a 10 percent worker duty setting and automap calculation can use 100 percent |
-| Build selection | `d2/main/CMakeLists.txt`, Android native CMake | Desktop defines `DXX_GUIDEBOT_ROUTE_PLANNER`, but several ordinary escort hooks remain Android-only; compile support is not evidence of identical live behavior |
+| Area                                | Current implementation                                                       | Consequence for this work                                                                                                                                                                               |
+| ----------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Classic behavior plus extensions    | `d2/main/escort.c`, about 4,347 lines                                        | Goal selection, route reset, physical replan scheduling, secret commands, deploy/recall/warp, ownership, replay, and classic escort/thief behavior still share one file                                 |
+| Extracted enhanced controller       | `d2/main/guidebot_route.c`, about 2,107 lines; `guidebot_route_internal.h`   | Extraction has started, but dozens of writable globals are shared with `escort.c`; moving the file again alone would not simplify ownership                                                             |
+| Physical path and motion            | `d2/main/aipath.c`, about 2,355 lines                                        | Enhanced passability, blocked-edge retries, waypoint adjustment, long-path handling, portal recovery, and motion history are interleaved with general robot code                                        |
+| Engine metadata integration         | `android/app/src/main/cpp/shared/secretarea.c`, about 4,700 lines            | Secret discovery, topology, geometry callbacks, persistent caches, worker publication, snapshots, live selection, and auditing are coupled; `level_metadata_scan.c` is not the main orchestration layer |
+| Initial semantic analysis           | `shared/route_planner.cpp`, about 4,936 lines                                | Dependency search and switch geometry already have work limits and caches; a portal/component graph is built per planner instance                                                                       |
+| Runtime selection and certification | `shared/guidebot_route_certifier.c`, `guidebot_route_decision.c`             | Ordinary end-of-level selection already filters compiled route steps against current facts and chooses bounded guidance candidates                                                                      |
+| Physical confirmation               | `shared/route_confirmation.cpp`, about 1,998 lines                           | Uses real engine paths, but drives the companion through its own controller and applies objective actions; a simulation pass does not by itself prove ordinary escort-frame behavior                    |
+| Background scheduling               | `RouteMetadataScheduling.kt`, `LevelMetadata.kt`, `android_route_metadata.c` | Initial Android analysis is isolated; active gameplay work uses a 10 percent worker duty setting and automap calculation can use 100 percent                                                            |
+| Build selection                     | `d2/main/CMakeLists.txt`, Android native CMake                               | Desktop defines `DXX_GUIDEBOT_ROUTE_PLANNER`, but several ordinary escort hooks remain Android-only; compile support is not evidence of identical live behavior                                         |
 
 `shared/` in this document means
 `android/app/src/main/cpp/shared/`. Kotlin paths are under
@@ -101,18 +101,18 @@ behavior, path construction, and steering, with enumerated shared engine safety
 and platform fixes. A fallback assembled from today's modified branches is not
 sufficient evidence of that behavior.
 
-| Feature | Original | Enhanced |
-| --- | --- | --- |
-| Stock object/key/energy/hostage/marker/exit commands, scram, name and messages | Classic semantics | Available alongside enhanced routing |
-| Default progression | Classic key/boss/reactor/exit selection | Compiled mission progression and current-state selection |
-| Switch, hidden-door, blastable-wall and key-carrier guidance | No enhanced objective substitution | Enhanced objective model |
-| `Next`, enhanced exit preview, secrets and unexplored-area commands | Hidden or rejected as unsupported; a default-goal action can invoke classic selection without pretending to be enhanced `Next` | Available |
-| Enhanced clearance/frontier/waypoint/recovery policy | Bypassed | Enabled |
-| Added deploy, recall/dock and warp commands | Hidden for ordinary use, with a deploy action only to recover an already docked bot | Available under existing ownership rules |
-| Enhanced path line and instruction overlays | Suppressed; preserve the user's saved display preferences | Respect existing display preferences |
-| Touch/controller access to classic commands | Available | Available |
-| Multiplayer ownership, pose replication, save object remapping, crash and bounds fixes | Shared infrastructure | Shared infrastructure |
-| Independent automap objectives, mission metadata and secret statistics | Governed by their own options | Governed by their own options |
+| Feature                                                                                | Original                                                                                                                       | Enhanced                                                 |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| Stock object/key/energy/hostage/marker/exit commands, scram, name and messages         | Classic semantics                                                                                                              | Available alongside enhanced routing                     |
+| Default progression                                                                    | Classic key/boss/reactor/exit selection                                                                                        | Compiled mission progression and current-state selection |
+| Switch, hidden-door, blastable-wall and key-carrier guidance                           | No enhanced objective substitution                                                                                             | Enhanced objective model                                 |
+| `Next`, enhanced exit preview, secrets and unexplored-area commands                    | Hidden or rejected as unsupported; a default-goal action can invoke classic selection without pretending to be enhanced `Next` | Available                                                |
+| Enhanced clearance/frontier/waypoint/recovery policy                                   | Bypassed                                                                                                                       | Enabled                                                  |
+| Added deploy, recall/dock and warp commands                                            | Hidden for ordinary use, with a deploy action only to recover an already docked bot                                            | Available under existing ownership rules                 |
+| Enhanced path line and instruction overlays                                            | Suppressed; preserve the user's saved display preferences                                                                      | Respect existing display preferences                     |
+| Touch/controller access to classic commands                                            | Available                                                                                                                      | Available                                                |
+| Multiplayer ownership, pose replication, save object remapping, crash and bounds fixes | Shared infrastructure                                                                                                          | Shared infrastructure                                    |
+| Independent automap objectives, mission metadata and secret statistics                 | Governed by their own options                                                                                                  | Governed by their own options                            |
 
 These are proposed product defaults, not permission gates. If a separate
 "classic navigation with extra commands" preset is desired later, derive it
@@ -157,14 +157,14 @@ Level metadata service -> immutable compiled actions -> enhanced controller
 
 Recommended source boundaries:
 
-| Module | Responsibility and placement |
-| --- | --- |
-| `guidebot_mode` | Mode resolution, capabilities, transition request, epoch, and command dispatch; new shared policy code under `android/`, with a thin D2 adapter |
-| `guidebot_runtime` | Own enhanced command intent, active guidance, pending events/work, adoption, replan limiter, recovery and diagnostic snapshot; portable state/policy under `android/` |
-| `guidebot_navigation` | Cohesive D2 adapter for enhanced physical targets, path requests, waypoint repair and recovery; begin by extracting from existing `guidebot_route.c` and `aipath.c` into a new D2 integration file |
-| Metadata analysis and runtime selection | Extract cohesive route orchestration from `secretarea.c` into shared `level_route_analysis.c` and `level_route_runtime.c`; retain engine geometry callbacks in a narrow adapter and secret discovery in `secretarea.c` |
-| Existing planner, edge, snapshot, decision and certifier modules | Reuse their current representations; split large functions by analysis/selection responsibility only where it removes coupling |
-| Existing confirmation controller | Remain an explicit tool/test consumer of production navigation, with its simulated player actions separate |
+| Module                                                           | Responsibility and placement                                                                                                                                                                                           |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `guidebot_mode`                                                  | Mode resolution, capabilities, transition request, epoch, and command dispatch; new shared policy code under `android/`, with a thin D2 adapter                                                                        |
+| `guidebot_runtime`                                               | Own enhanced command intent, active guidance, pending events/work, adoption, replan limiter, recovery and diagnostic snapshot; portable state/policy under `android/`                                                  |
+| `guidebot_navigation`                                            | Cohesive D2 adapter for enhanced physical targets, path requests, waypoint repair and recovery; begin by extracting from existing `guidebot_route.c` and `aipath.c` into a new D2 integration file                     |
+| Metadata analysis and runtime selection                          | Extract cohesive route orchestration from `secretarea.c` into shared `level_route_analysis.c` and `level_route_runtime.c`; retain engine geometry callbacks in a narrow adapter and secret discovery in `secretarea.c` |
+| Existing planner, edge, snapshot, decision and certifier modules | Reuse their current representations; split large functions by analysis/selection responsibility only where it removes coupling                                                                                         |
+| Existing confirmation controller                                 | Remain an explicit tool/test consumer of production navigation, with its simulated player actions separate                                                                                                             |
 
 New reusable logic belongs under `android/`, per repository instructions. Small
 new D2 integration files are appropriate for code that directly uses `object`,
@@ -210,15 +210,15 @@ state. Original event hooks should return immediately. Do not treat clearing
 
 Audit every integration category, not just files with "guidebot" in the name:
 
-| Hook category | Known entry points/files to inspect |
-| --- | --- |
-| Init, reset, restore | `init_buddy_for_level`, `escort_rebuild_runtime_state_after_restore`, `state.c`, `gamesave.c`, D1-in-D2 setup |
-| Goal, command, menu | `escort_set_goal_object`, `escort_create_path_to_goal`, `set_escort_special_goal`, menu/hotkey and wheel handlers |
-| Frame and movement | `game.c`, `ai.c`, `do_escort_frame`, `ai_follow_path`, `ai_path_set_orient_and_vel`, `create_path_points_avoiding` |
-| World notifications | Wall, trigger, powerup, object, boss/reactor and automap hooks, including direct writes used by tests/restoration |
-| Asynchronous publication | `android_route_metadata.c`, route cache loading and automap-driven adoption |
-| Other state consumers | Introspection, helper line/HUD, save metadata, input-demo capture/restore and direct commands |
-| Multiplayer | Owner packets, target mode, join/rejoin, disconnect, host migration, pose replicas |
+| Hook category            | Known entry points/files to inspect                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Init, reset, restore     | `init_buddy_for_level`, `escort_rebuild_runtime_state_after_restore`, `state.c`, `gamesave.c`, D1-in-D2 setup      |
+| Goal, command, menu      | `escort_set_goal_object`, `escort_create_path_to_goal`, `set_escort_special_goal`, menu/hotkey and wheel handlers  |
+| Frame and movement       | `game.c`, `ai.c`, `do_escort_frame`, `ai_follow_path`, `ai_path_set_orient_and_vel`, `create_path_points_avoiding` |
+| World notifications      | Wall, trigger, powerup, object, boss/reactor and automap hooks, including direct writes used by tests/restoration  |
+| Asynchronous publication | `android_route_metadata.c`, route cache loading and automap-driven adoption                                        |
+| Other state consumers    | Introspection, helper line/HUD, save metadata, input-demo capture/restore and direct commands                      |
+| Multiplayer              | Owner packets, target mode, join/rejoin, disconnect, host migration, pose replicas                                 |
 
 Classify each upstream delta as enhanced behavior, shared safety/platform fix,
 diagnostic-only, or unrelated code. In particular, evaluate long-path cursor
@@ -507,11 +507,11 @@ changes affect it.
 
 Keep three distinct reports:
 
-| Report | What it proves |
-| --- | --- |
-| Metadata semantic route results | Which authored prerequisites and route statuses the planner produces |
-| Engine physical confirmation | Whether the confirmation controller traverses and performs those objectives with its declared assistance |
-| Ordinary live GuideBot scenarios | Actual escort-frame commands, return behavior, stalls, UI, mode switching and ownership |
+| Report                           | What it proves                                                                                           |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Metadata semantic route results  | Which authored prerequisites and route statuses the planner produces                                     |
+| Engine physical confirmation     | Whether the confirmation controller traverses and performs those objectives with its declared assistance |
+| Ordinary live GuideBot scenarios | Actual escort-frame commands, return behavior, stalls, UI, mode switching and ownership                  |
 
 Confirmation should explicitly select Enhanced for its own session and restore
 the previous effective mode on completion, cancellation or error. Record this
@@ -567,17 +567,17 @@ table; do not create tests for every getter or mechanically mirror the new code.
 
 ### Acceptance criteria
 
-| Area | Gate |
-| --- | --- |
-| Original isolation | Zero enhanced selector/certifier/frontier/recovery/adoption invocations from ordinary gameplay; zero GuideBot-only worker requests; no enhanced mutation or extra simulation RNG calls from dormant hooks |
-| Isolation with metadata UI active | Metadata can still be produced for that consumer, but cannot alter Original bot intent or motion |
-| Live semantic cost | Zero ordinary gameplay full-planner calls; no whole-mine switch geometry search in ordinary `Next` |
-| Frame responsiveness | Full scheduled routing work targets 2 ms; investigate any tick above 4 ms on the agreed device. Report p50/p95/p99/max and bounded FVI/work counts, with ordinary motion costs separately visible |
-| Reaction latency | Measure event-to-guidance and command-to-motion latency, including pending work and worst-case audit recovery; reducing work must not introduce multi-second ordinary command delays |
-| Initial performance | Preserve the benchmark's existing significance policy and digest checks; report CPU/wall time, cold/warm/checkpoint cases, first-useful and complete readiness. Aim for a material gain in the dominant measured stages, without promising an unmeasured percentage |
-| Quality | No previously successful enhanced level regresses; no timeout extensions, excluded levels, relabeled failures or relaxed collision checks to manufacture a pass-rate improvement |
-| Simplification | No writable enhanced runtime globals exported to classic code, one adoption path, one reset/transition path, one diagnostic snapshot, and documented reasons for retained fallbacks |
-| Compatibility | Windows D1/D2 and Android all-ABI builds, Linux/macOS CI coverage where available, native tests and serial emulator scenarios pass after implementation |
+| Area                              | Gate                                                                                                                                                                                                                                                                |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Original isolation                | Zero enhanced selector/certifier/frontier/recovery/adoption invocations from ordinary gameplay; zero GuideBot-only worker requests; no enhanced mutation or extra simulation RNG calls from dormant hooks                                                           |
+| Isolation with metadata UI active | Metadata can still be produced for that consumer, but cannot alter Original bot intent or motion                                                                                                                                                                    |
+| Live semantic cost                | Zero ordinary gameplay full-planner calls; no whole-mine switch geometry search in ordinary `Next`                                                                                                                                                                  |
+| Frame responsiveness              | Full scheduled routing work targets 2 ms; investigate any tick above 4 ms on the agreed device. Report p50/p95/p99/max and bounded FVI/work counts, with ordinary motion costs separately visible                                                                   |
+| Reaction latency                  | Measure event-to-guidance and command-to-motion latency, including pending work and worst-case audit recovery; reducing work must not introduce multi-second ordinary command delays                                                                                |
+| Initial performance               | Preserve the benchmark's existing significance policy and digest checks; report CPU/wall time, cold/warm/checkpoint cases, first-useful and complete readiness. Aim for a material gain in the dominant measured stages, without promising an unmeasured percentage |
+| Quality                           | No previously successful enhanced level regresses; no timeout extensions, excluded levels, relabeled failures or relaxed collision checks to manufacture a pass-rate improvement                                                                                    |
+| Simplification                    | No writable enhanced runtime globals exported to classic code, one adoption path, one reset/transition path, one diagnostic snapshot, and documented reasons for retained fallbacks                                                                                 |
+| Compatibility                     | Windows D1/D2 and Android all-ABI builds, Linux/macOS CI coverage where available, native tests and serial emulator scenarios pass after implementation                                                                                                             |
 
 Use scoped formatting only on implementation files changed by that step, after
 the concurrent task is finished. Do not accept benchmark baselines or regenerate

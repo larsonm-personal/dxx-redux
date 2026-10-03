@@ -29,19 +29,19 @@ to `fluid_render` selects production polyphony and interpolation; its historical
 
 ## Runtime settings
 
-| Setting | Current choice | Audit outcome |
-| --- | --- | --- |
-| Sample rate | Initially 48 kHz; gameplay adopts mixer rate; accepted SF2 range 8-96 kHz | Matches upstream range. Rate changes recreate the synth; avoids upstream's obsolete no-op sample-rate setter |
-| Gain | 0.4 at UI -10 dB; exponential relative adjustment | Deliberate +6.02 dB over upstream 0.2 default. PCM clamps at the queue boundary; no automatic normalization or limiter |
-| Polyphony | 128; diagnostic adjustment bounded to 8-256 | Deliberate. SC-55 game01 reaches 67 voices, so returning to the old 48 cap would steal voices |
-| CPU cores | 1 | Upstream default. Avoids extra workers competing with gameplay. No evidence that parallel rendering is needed after the interpolation fix |
-| Thread-safe API | Off | Deliberate, conditional on exclusive synth ownership. Gameplay sends live tuning to the render worker and joins it before teardown. Preview serializes access with its playback mutex |
-| Dynamic sample loading | Off | Upstream default; samples loaded before playback, avoiding disk I/O on note starts |
-| Bank selection | GS | Upstream default, compatible with selected SC-55 bank and current HMI bank handling |
-| Reverb | FDN; room 0.2, damp 0, width 0.5, level 0.3 | Deliberate listening profile. 2.6.1 defaults are DAT, 0.5, 0.2, 0.8, 0.7 respectively. No claim of authentic SC-55 DSP |
-| Chorus | 3 voices, level 1, speed 0.3 Hz, depth 8 ms | Deliberate listening profile. Upstream defaults are 3, 0.6, 0.2 Hz, 4.25 ms. Waveform remains upstream sine default |
-| Effect sends | CC93=24 on melodic channels when chorus enabled; drums retain their sends | Deliberate extra chorus send. MIDI can subsequently override it. Preset/song reverb sends remain in use |
-| Portamento/minimum note duration/overflow policy | Upstream defaults | No overrides. Portamento `auto` preserves the upstream XG/GS interpretation unless MIDI specifies CC37; minimum note length remains 10 ms |
+| Setting                                          | Current choice                                                            | Audit outcome                                                                                                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sample rate                                      | Initially 48 kHz; gameplay adopts mixer rate; accepted SF2 range 8-96 kHz | Matches upstream range. Rate changes recreate the synth; avoids upstream's obsolete no-op sample-rate setter                                                                          |
+| Gain                                             | 0.4 at UI -10 dB; exponential relative adjustment                         | Deliberate +6.02 dB over upstream 0.2 default. PCM clamps at the queue boundary; no automatic normalization or limiter                                                                |
+| Polyphony                                        | 128; diagnostic adjustment bounded to 8-256                               | Deliberate. SC-55 game01 reaches 67 voices, so returning to the old 48 cap would steal voices                                                                                         |
+| CPU cores                                        | 1                                                                         | Upstream default. Avoids extra workers competing with gameplay. No evidence that parallel rendering is needed after the interpolation fix                                             |
+| Thread-safe API                                  | Off                                                                       | Deliberate, conditional on exclusive synth ownership. Gameplay sends live tuning to the render worker and joins it before teardown. Preview serializes access with its playback mutex |
+| Dynamic sample loading                           | Off                                                                       | Upstream default; samples loaded before playback, avoiding disk I/O on note starts                                                                                                    |
+| Bank selection                                   | GS                                                                        | Upstream default, compatible with selected SC-55 bank and current HMI bank handling                                                                                                   |
+| Reverb                                           | FDN; room 0.2, damp 0, width 0.5, level 0.3                               | Deliberate listening profile. 2.6.1 defaults are DAT, 0.5, 0.2, 0.8, 0.7 respectively. No claim of authentic SC-55 DSP                                                                |
+| Chorus                                           | 3 voices, level 1, speed 0.3 Hz, depth 8 ms                               | Deliberate listening profile. Upstream defaults are 3, 0.6, 0.2 Hz, 4.25 ms. Waveform remains upstream sine default                                                                   |
+| Effect sends                                     | CC93=24 on melodic channels when chorus enabled; drums retain their sends | Deliberate extra chorus send. MIDI can subsequently override it. Preset/song reverb sends remain in use                                                                               |
+| Portamento/minimum note duration/overflow policy | Upstream defaults                                                         | No overrides. Portamento `auto` preserves the upstream XG/GS interpretation unless MIDI specifies CC37; minimum note length remains 10 ms                                             |
 
 No further runtime setting changes are justified by the current evidence
 
@@ -77,23 +77,23 @@ Reviewed `cmake/fluidsynth-music.cmake`, the app CMake/Gradle files, upstream
 `CMakeLists.txt`/`src/CMakeLists.txt`, generated configuration headers and actual
 compiler commands for arm64-v8a, armeabi-v7a and x86_64
 
-| Choice | Evidence and decision |
-| --- | --- |
-| Version pins | FluidSynth 2.6.1 and upstream's GCEM commit use exact URLs and SHA-256 hashes. TLS verification is on |
-| Shared library | Intentional shared `libfluidsynth`; existing source-package procedure includes the exact patched source and pins |
-| DSP precision | `enable-floats=OFF`: upstream default double precision, despite using the float output API. Kept; no evidence requiring a precision change |
-| Debug/internal optimization | Actual Debug commands have `-O2` on adapter and FluidSynth object target for all three ABIs. Debug symbols/assertions retained. Internal uses CMake Debug |
-| Release optimization | No local override of release optimization. Gradle's existing RelWithDebInfo configuration uses `-O2 -g -DNDEBUG`; standalone CMake Release follows toolchain defaults. This audit's rebuilt APK is Debug |
-| Fast-math | No integration-wide fast-math. Upstream applies `-fno-math-errno -ffast-math` only to `fluid_iir_filter_impl.cpp` on Clang/GCC, `/fp:fast` on MSVC. Confirmed in Android commands; retained |
-| Architecture | NDK ABI targets; ARMv7 uses `-march=armv7-a -mthumb`. No host-native CPU tuning or added ISA requirement |
-| Threads | `enable-threads=ON`, C++11 OS abstraction, no GLib. One synthesis core selected at runtime; build-time thread support does not itself select parallel voice rendering |
-| OpenMP | Off. Avoids an extra runtime and upstream parallel decoding/mixing paths; kept after the measured interpolation gain |
-| Optional DSP | Signalsmith off, which also removes its limiter and alternate reverb. Production uses FDN and explicit PCM saturation |
-| Audio/MIDI drivers | FluidSynth drivers, network, SDL3, OpenSL ES, Oboe, etc. disabled. App owns audio output, event scheduling and MIDI conversion |
-| Formats/tools | libsndfile/SF3 support, native DLS, LADSPA, readline and platform service integrations disabled. This integration admits SF2 and uses its own PCM decoder |
-| Diagnostic build switches | Generated cache has profiling, coverage, FPE checking/trapping and sanitizers off |
-| Warning policy | `/wd5287` limited to upstream MSVC enum warnings; app warning policy remains in effect on Android |
-| Source patch | Comparison with the unpacked 2.6.1 tree found only `src/drivers/fluid_audio_convert.h`: explicit float cast of a numeric limit. No synthesis algorithm patch |
+| Choice                      | Evidence and decision                                                                                                                                                                                    |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Version pins                | FluidSynth 2.6.1 and upstream's GCEM commit use exact URLs and SHA-256 hashes. TLS verification is on                                                                                                    |
+| Shared library              | Intentional shared `libfluidsynth`; existing source-package procedure includes the exact patched source and pins                                                                                         |
+| DSP precision               | `enable-floats=OFF`: upstream default double precision, despite using the float output API. Kept; no evidence requiring a precision change                                                               |
+| Debug/internal optimization | Actual Debug commands have `-O2` on adapter and FluidSynth object target for all three ABIs. Debug symbols/assertions retained. Internal uses CMake Debug                                                |
+| Release optimization        | No local override of release optimization. Gradle's existing RelWithDebInfo configuration uses `-O2 -g -DNDEBUG`; standalone CMake Release follows toolchain defaults. This audit's rebuilt APK is Debug |
+| Fast-math                   | No integration-wide fast-math. Upstream applies `-fno-math-errno -ffast-math` only to `fluid_iir_filter_impl.cpp` on Clang/GCC, `/fp:fast` on MSVC. Confirmed in Android commands; retained              |
+| Architecture                | NDK ABI targets; ARMv7 uses `-march=armv7-a -mthumb`. No host-native CPU tuning or added ISA requirement                                                                                                 |
+| Threads                     | `enable-threads=ON`, C++11 OS abstraction, no GLib. One synthesis core selected at runtime; build-time thread support does not itself select parallel voice rendering                                    |
+| OpenMP                      | Off. Avoids an extra runtime and upstream parallel decoding/mixing paths; kept after the measured interpolation gain                                                                                     |
+| Optional DSP                | Signalsmith off, which also removes its limiter and alternate reverb. Production uses FDN and explicit PCM saturation                                                                                    |
+| Audio/MIDI drivers          | FluidSynth drivers, network, SDL3, OpenSL ES, Oboe, etc. disabled. App owns audio output, event scheduling and MIDI conversion                                                                           |
+| Formats/tools               | libsndfile/SF3 support, native DLS, LADSPA, readline and platform service integrations disabled. This integration admits SF2 and uses its own PCM decoder                                                |
+| Diagnostic build switches   | Generated cache has profiling, coverage, FPE checking/trapping and sanitizers off                                                                                                                        |
+| Warning policy              | `/wd5287` limited to upstream MSVC enum warnings; app warning policy remains in effect on Android                                                                                                        |
+| Source patch                | Comparison with the unpacked 2.6.1 tree found only `src/drivers/fluid_audio_convert.h`: explicit float cast of a numeric limit. No synthesis algorithm patch                                             |
 
 Raw Debug commands and feature settings are recorded in
 `temp/fluidsynth-audit/compile-flags.json`

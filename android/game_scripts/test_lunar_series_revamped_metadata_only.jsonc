@@ -1,15 +1,33 @@
 [
-    {"_info": {
-        "games": ["d1"],
-        "_deps": [
-            {"file": "lunar_series_revamped.zip", "sha256": "b134ffc1df360d3a760f4390e95ed2bb6736146827e400131846e7765b2e8418", "target": "files/mission_zip_batch_cache"}
-        ]
-    }},
+    {
+        "_info": {
+            "games": ["d1"],
+            "_deps": [
+                {
+                    "file": "lunar_series_revamped.zip",
+                    "sha256": "b134ffc1df360d3a760f4390e95ed2bb6736146827e400131846e7765b2e8418",
+                    "target": "files/mission_zip_batch_cache",
+                },
+            ],
+        },
+    },
 
-    {"action": "enter_launcher"},
-    {"action": "reset_state"},
-    {"action": "clear_mods"},
-    {"action": "import_mission_zip", "file": "lunar_series_revamped.zip", "label": "lunar_series_revamped", "display_name": "lunar_series_revamped.zip"},
-    {"action": "analyze_level_metadata_all", "label": "lunar_series_revamped", "mod_file": "lunar_series_revamped.zip", "game": "d1", "status": "ok", "min_total_levels": 1},
-    {"action": "log", "message": "Lunar Series Revamped metadata-only analysis passed"}
+    { "action": "enter_launcher" },
+    { "action": "reset_state" },
+    { "action": "clear_mods" },
+    {
+        "action": "import_mission_zip",
+        "file": "lunar_series_revamped.zip",
+        "label": "lunar_series_revamped",
+        "display_name": "lunar_series_revamped.zip",
+    },
+    {
+        "action": "analyze_level_metadata_all",
+        "label": "lunar_series_revamped",
+        "mod_file": "lunar_series_revamped.zip",
+        "game": "d1",
+        "status": "ok",
+        "min_total_levels": 1,
+    },
+    { "action": "log", "message": "Lunar Series Revamped metadata-only analysis passed" },
 ]

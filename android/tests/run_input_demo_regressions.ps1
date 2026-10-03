@@ -219,6 +219,9 @@ for ($index = 0; $index -lt $demos.Count; $index++) {
     }
     if ($RunMode -eq 'headless') {
         $args += @('-Runner', 'fast')
+    } else {
+        # D1-under-D2 automatic selection otherwise defaults to no rendering
+        $args += @('-Runner', 'visual')
     }
     if ($DataDir) {
         $args += @('-DataDir', $DataDir)

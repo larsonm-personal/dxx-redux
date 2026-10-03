@@ -3,8 +3,9 @@
 This is a handoff for `po2.7z`. The launcher should continue accepting the archive as downloaded. Do not repack it or rename its internal files merely to make them look like a conventional Rebirth mission.
 
 # original webpage
-* https://web.archive.org/web/20010412075344/http://www.xtremebuilder.com/po2.shtml
-  * lists mod changes, many of which needed its custom executable
+
+- https://web.archive.org/web/20010412075344/http://www.xtremebuilder.com/po2.shtml
+  - lists mod changes, many of which needed its custom executable
 
 ## Bottom line
 
@@ -44,7 +45,7 @@ Do not alias or rename `pluton2.pmh` to `descent2.ham`. PO2 contains 84 weapon r
 3. Add a mission-local PTI text provider for weapon and HUD names without replacing application-wide localization.
 4. Regression-test every PO2 level with PMH, HXM, POG, music, and sound active, including transitions back to stock missions.
 5. Find and compare the original patched executable or source diff before attempting objectives, per-ship mechanics, or wingmen. Express recovered behavior as generic mission data or scripting, not filename-specific logic.
-  a. AI coding tools are getting better and better at automatic decompilation. comparing to a d2 executable of that era or a very early d2x executable probably makes the most sense
+   a. AI coding tools are getting better and better at automatic decompilation. comparing to a d2 executable of that era or a very early d2x executable probably makes the most sense
 6. Consider `.clr` colored lighting later as an optional rendering enhancement.
 
 ## D2X-XL references

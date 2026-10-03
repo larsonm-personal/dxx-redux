@@ -13,9 +13,7 @@ MATCHER = REPO / "android/tests/build/Debug/fingerprint_match.exe"
 KNOWN_DISCS = REPO / "android/app/src/main/assets/known_albums.jsonc"
 
 
-def run_matcher(
-    entries: list[dict], duration_tolerance: str = "0.10"
-) -> subprocess.CompletedProcess[str]:
+def run_matcher(entries: list[dict], duration_tolerance: str = "0.10") -> subprocess.CompletedProcess[str]:
     with tempfile.TemporaryDirectory(prefix="dxx-fingerprint-match-") as directory:
         database = Path(directory) / "database.json"
         database.write_text(json.dumps(entries), encoding="utf-8")

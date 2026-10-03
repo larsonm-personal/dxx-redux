@@ -55,9 +55,7 @@ class NativeFileNamingContractsTest(unittest.TestCase):
             self.assertFalse((REPO / relative).exists(), relative)
 
     def test_build_files_use_current_source_paths(self) -> None:
-        android_cmake = (REPO / "android/app/src/main/cpp/CMakeLists.txt").read_text(
-            encoding="utf-8"
-        )
+        android_cmake = (REPO / "android/app/src/main/cpp/CMakeLists.txt").read_text(encoding="utf-8")
         for relative in (
             "shared/android_music_control.c",
             "shared/net/net_udp_reconnect_jni.c",
@@ -66,9 +64,7 @@ class NativeFileNamingContractsTest(unittest.TestCase):
             self.assertIn(relative, android_cmake)
 
         for game in ("d1", "d2"):
-            game_cmake = (REPO / game / "main/CMakeLists.txt").read_text(
-                encoding="utf-8"
-            )
+            game_cmake = (REPO / game / "main/CMakeLists.txt").read_text(encoding="utf-8")
             self.assertIn("shared/secretarea.c", game_cmake)
 
 

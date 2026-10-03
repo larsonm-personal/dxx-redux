@@ -1,45 +1,54 @@
 [
-    {"_info": {"description": "BRAKE/GAS trigger holds prefer axes over mirrored L2/R2 reports", "games": ["d2"]}},
-    {"action": "enter_launcher"},
-    {"action": "tap_button", "text": "Controller Mapping", "exact": true},
-    {"action": "wait_ms", "ms": 500},
+    { "_info": { "description": "BRAKE/GAS trigger holds prefer axes over mirrored L2/R2 reports", "games": ["d2"] } },
+    { "action": "enter_launcher" },
+    { "action": "tap_button", "text": "Controller Mapping", "exact": true },
+    { "action": "wait_ms", "ms": 500 },
     // Button first, then its paired analog report, within the same hold polling interval
-    {"action": "controller_input", "key": "L2", "pressed": true, "post_delay_ms": 0},
-    {"action": "controller_input", "axes": {"BRAKE": 0.875}, "post_delay_ms": 2300},
-    {"action": "assert", "expect": {
-        "controller_mapping.dialog_open": true,
-        "controller_mapping.axes[4]": {"eq": 0},
-        "controller_mapping.axes[11]": 0.875,
-        "controller_mapping.selected_control": "BRAKE",
-        "controller_mapping.last_hold_trigger.kind": "axis",
-        "controller_mapping.last_hold_trigger.axis_index": 11
-    }},
-    {"action": "controller_input", "key": "L2", "pressed": false},
-    {"action": "controller_input", "axes": {"BRAKE": 0.0}},
-    {"action": "tap_button", "text": "Cancel", "exact": true},
+    { "action": "controller_input", "key": "L2", "pressed": true, "post_delay_ms": 0 },
+    { "action": "controller_input", "axes": { "BRAKE": 0.875 }, "post_delay_ms": 2300 },
+    {
+        "action": "assert",
+        "expect": {
+            "controller_mapping.dialog_open": true,
+            "controller_mapping.axes[4]": { "eq": 0 },
+            "controller_mapping.axes[11]": 0.875,
+            "controller_mapping.selected_control": "BRAKE",
+            "controller_mapping.last_hold_trigger.kind": "axis",
+            "controller_mapping.last_hold_trigger.axis_index": 11,
+        },
+    },
+    { "action": "controller_input", "key": "L2", "pressed": false },
+    { "action": "controller_input", "axes": { "BRAKE": 0.0 } },
+    { "action": "tap_button", "text": "Cancel", "exact": true },
     // Analog first, then the mirrored button; neither event resets the axis hold
-    {"action": "controller_input", "axes": {"GAS": 0.875}},
-    {"action": "controller_input", "key": "R2", "pressed": true, "post_delay_ms": 2300},
-    {"action": "assert", "expect": {
-        "controller_mapping.dialog_open": true,
-        "controller_mapping.axes[5]": {"eq": 0},
-        "controller_mapping.axes[12]": 0.875,
-        "controller_mapping.selected_control": "GAS",
-        "controller_mapping.last_hold_trigger.kind": "axis",
-        "controller_mapping.last_hold_trigger.axis_index": 12
-    }},
-    {"action": "controller_input", "key": "R2", "pressed": false},
-    {"action": "controller_input", "axes": {"GAS": 0.0}},
-    {"action": "tap_button", "text": "Cancel", "exact": true},
+    { "action": "controller_input", "axes": { "GAS": 0.875 } },
+    { "action": "controller_input", "key": "R2", "pressed": true, "post_delay_ms": 2300 },
+    {
+        "action": "assert",
+        "expect": {
+            "controller_mapping.dialog_open": true,
+            "controller_mapping.axes[5]": { "eq": 0 },
+            "controller_mapping.axes[12]": 0.875,
+            "controller_mapping.selected_control": "GAS",
+            "controller_mapping.last_hold_trigger.kind": "axis",
+            "controller_mapping.last_hold_trigger.axis_index": 12,
+        },
+    },
+    { "action": "controller_input", "key": "R2", "pressed": false },
+    { "action": "controller_input", "axes": { "GAS": 0.0 } },
+    { "action": "tap_button", "text": "Cancel", "exact": true },
     // Digital mode still captures the button when no axis is active
-    {"action": "controller_input", "key": "L2", "pressed": true, "post_delay_ms": 2300},
-    {"action": "assert", "expect": {
-        "controller_mapping.dialog_open": true,
-        "controller_mapping.last_hold_trigger.kind": "button",
-        "controller_mapping.selected_control": "L2",
-        "controller_mapping.last_hold_trigger.button_name": "L2"
-    }},
-    {"action": "controller_input", "key": "L2", "pressed": false},
-    {"action": "tap_button", "text": "Cancel", "exact": true},
-    {"action": "tap_button", "text": "Cancel", "exact": true}
+    { "action": "controller_input", "key": "L2", "pressed": true, "post_delay_ms": 2300 },
+    {
+        "action": "assert",
+        "expect": {
+            "controller_mapping.dialog_open": true,
+            "controller_mapping.last_hold_trigger.kind": "button",
+            "controller_mapping.selected_control": "L2",
+            "controller_mapping.last_hold_trigger.button_name": "L2",
+        },
+    },
+    { "action": "controller_input", "key": "L2", "pressed": false },
+    { "action": "tap_button", "text": "Cancel", "exact": true },
+    { "action": "tap_button", "text": "Cancel", "exact": true },
 ]

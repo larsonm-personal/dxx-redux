@@ -10,6 +10,7 @@ address. The game client then tries to send UDP to the public NAT address, which
 (hairpin NAT). The connectivity check proved the host candidate works, but that info is lost.
 
 **Fix**: Add a `best_candidate_addr_for_type()` that accepts the ConnectionType:
+
 - DirectLan -> prefer host candidates (the LAN address)
 - DirectUpnp -> prefer upnp candidates
 - Everything else -> existing priority (srflx > observed > host)
@@ -26,6 +27,7 @@ Add unit tests: `test_best_addr_for_lan_prefers_host`, `test_best_addr_for_upnp_
 **Fix**: Add `NetLog.log(category, message)` next to every `appendLog()` that lacks one.
 
 Categories:
+
 - LOBBY: join, leave, start, kick
 - SOCIAL: friend request, accept, remove, block, join friend game
 - SERVER: MOTD, lobby list, server status, maintenance warning
@@ -40,12 +42,14 @@ Categories:
 polling loop in MainActivity has zero references to netEventsOverlay.
 
 **Fix**: In `startOverlayPolling()`, add auto-show when:
+
 - `gameStarted` is true AND
 - NOT `inGame` (we're in menus -- pilot select, connecting, etc.) AND
 - MatchmakingStateHolder.state.value has an active multiplayer session
   (gameLaunchInfo != null or status is CONNECTED with a currentLobby)
 
 Auto-hide when:
+
 - `inGame` becomes true (entering gameplay, player has control)
 - MatchmakingState goes back to disconnected/no lobby
 

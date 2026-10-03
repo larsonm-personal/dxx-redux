@@ -1,24 +1,27 @@
 # KCXF2RM level 1 route-status regression
 
 ## Goal
+
 Restore KCXF2RM level 1 metadata routing from `partial` to `ok` without making
 the analyzer optimistic about an edge the guidebot cannot execute, and verify
 that the Kotlin metadata consumer and guidebot use the same route result.
 
 ## Plan
+
 - [x] Identify the first unresolved route step and compare it with the previous
-  generated route.
+      generated route.
 - [x] Trace that step through static topology, live edge classification, trigger
-  dependencies, and executable guidebot path creation.
+      dependencies, and executable guidebot path creation.
 - [x] Review Kotlin route presentation/consumption and the guidebot adapter for
-  duplicated or divergent path semantics.
+      duplicated or divergent path semantics.
 - [x] Fix the shared route model at the narrowest correct ownership boundary.
 - [x] Add a focused native regression fixture for the failing topology.
 - [x] Regenerate KCXF2RM metadata and confirm level 1 returns to `ok`.
 - [x] Run D1/D2 native tests, Windows builds, Android tests/build, scoped quality
-  checks, and the focused KCXF2 guidebot integration script as applicable.
+      checks, and the focused KCXF2 guidebot integration script as applicable.
 
 ## Findings
+
 - The strict directional traversal correctly rejected the old route's implicit
   reverse-side flyability. That exposed a real missing dependency rather than a
   nonexistent route.
@@ -41,6 +44,7 @@ that the Kotlin metadata consumer and guidebot use the same route result.
   would not consider.
 
 ## Changes
+
 - Added a wall-specific visibility callback to the shared scan view. Metadata
   and guidebot now call the same game-adapter function for the wall center,
   `FQ_TRANSWALL` ray, and exact target-wall hit rule.
@@ -55,6 +59,7 @@ that the Kotlin metadata consumer and guidebot use the same route result.
   `Start -> trigger 3 -> trigger 1 -> trigger 2 -> Exit`.
 
 ## Validation
+
 - Final direct KCXF2RM host analysis: level 1 `route_status: ok`, empty
   `route_problem`.
 - Full host metadata regeneration: 109 archives passed, 0 failed; the one skip

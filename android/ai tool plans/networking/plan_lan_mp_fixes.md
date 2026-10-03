@@ -26,6 +26,7 @@ for "no selection" instead of empty-string. This lets "" flow through to the
 `missions.find{}` lookup which correctly matches the D1 builtin.
 
 Files:
+
 - android/app/src/main/java/com/dxxredux/app/multiplayer/MissionPicker.kt
 - android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt
 
@@ -43,6 +44,7 @@ and require the game's HOG I/O to extract. Defer names and just show numbered le
 with correct count for now. This is still a big improvement over hardcoded 1-30.
 
 Steps:
+
 1. Add `levelCount: Int` to MissionScanner.MissionInfo, parse from `num_levels=` line
 2. For builtins, hardcode: D2 Counterstrike=30, D1 First Strike=27, D2 First Strike=27
 3. Pass level count from HostLanGameDialog through to StartLanGameDialog
@@ -50,6 +52,7 @@ Steps:
 5. Validate level in 1..levelCount instead of hardcoded 1..30
 
 Files:
+
 - android/app/src/main/java/com/dxxredux/app/multiplayer/MissionPicker.kt
 - android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt
 
@@ -59,6 +62,7 @@ Files:
 from adb logcat output.
 
 Steps:
+
 1. LobbyService.kt: add detailed Log.i/Log.d in:
    - joinLobby(): log target address, lobby ID, socket state, packet bytes
    - sendTo() / sendBroadcast(): log byte count or failure with exception
@@ -71,6 +75,7 @@ Steps:
 4. Add a status line on the LAN screen showing socket status and packet counts
 
 Files:
+
 - android/app/src/main/java/com/dxxredux/app/lobby/LobbyService.kt
 - android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt
 
@@ -80,6 +85,7 @@ Files:
 fail on real networks with AP isolation or multicast filtering.
 
 Steps:
+
 1. Add "lan_launch" command to the existing MP_COMMAND broadcast receiver:
    - Accepts: game, mp_mode (host/join), mission, mode, max_players,
      level_num, difficulty, host_addr, host_port, callsign
@@ -89,6 +95,7 @@ Steps:
    host IP and port, then launching directly as joiner
 
 Files:
+
 - android/app/src/main/java/com/dxxredux/app/SetupActivity.kt
 - android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt
 
@@ -98,6 +105,7 @@ Files:
 UDP relay pattern from run_mp_test.ps1 for cross-emulator engine traffic.
 
 Steps:
+
 1. Create android/game_scripts/test_lan_mp.json5:
    - wait_for screen_mode == "game" (with timeout)
    - assert is_network == true
@@ -112,6 +120,7 @@ Steps:
    - Read automation_result.json from both
 
 Files:
+
 - android/game_scripts/test_lan_mp.json5
 - android/run_lan_test.ps1
 

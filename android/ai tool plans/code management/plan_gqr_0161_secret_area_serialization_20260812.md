@@ -10,21 +10,21 @@ mismatch fallback, and save/restore ordering while reducing the inherited diff.
 ## Plan
 
 - [x] Freeze the clean worktree, paired serialization bodies, adapter API,
-  compilation ownership, tests, and merge-base metrics
+      compilation ownership, tests, and merge-base metrics
 - [x] Move the writer and reader implementations plus necessary declarations to
-  the branch-added adapter owner
+      the branch-added adapter owner
 - [x] Remove paired inherited bodies while preserving the existing call sites
-  and exact file-position ordering
+      and exact file-position ordering
 - [x] Add focused serialization contracts for D1/D2 parity, byte layout,
-  version/endian behavior, and count-mismatch fallback
+      version/endian behavior, and count-mismatch fallback
 - [x] Run scoped quality, focused tests, Windows D1/D2 builds, Android ABI
-  builds, and final inherited-diff accounting
+      builds, and final inherited-diff accounting
 - [x] Mark `GQR-0161` done and `GQF-0174` fixed with terminal evidence in the
-  canonical ledger
+      canonical ledger
 
 ## Shared-header follow-up
 
 - [x] Replaced the byte-identical, branch-added D1/D2 `secretarea.h` files with
-  the matching shared header beside `secretarea.c`
+      the matching shared header beside `secretarea.c`
 - [x] Preserved all include spellings through existing shared include paths
 - [x] Revalidated focused contracts, Windows D1/D2, and all Android ABIs

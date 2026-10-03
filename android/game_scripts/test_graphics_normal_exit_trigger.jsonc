@@ -1,35 +1,42 @@
 // TEST: A normal exit before eligibility leaves requested graphics staged
 [
     {
+        "_info": {
+            "games": ["d1", "d2"],
+            "_standalone": false,
+            "_owner": "test_graphics_recovery",
+        },
+    },
+    {
         "action": "key",
         "key": "f2",
-        "post_delay_ms": 100
+        "post_delay_ms": 100,
     },
     {
         "action": "assert",
         "expect": {
             "menu.subtitle": "Options:",
             "game_window_is_front": "false",
-            "graphics_safety.phase": "idle"
-        }
+            "graphics_safety.phase": "idle",
+        },
     },
     {
         "action": "select",
         "text": "Graphics Options...",
         "timeout_ms": 5000,
-        "post_delay_ms": 100
+        "post_delay_ms": 100,
     },
     {
         "action": "select",
         "text": "Trilinear",
         "timeout_ms": 5000,
-        "post_delay_ms": 100
+        "post_delay_ms": 100,
     },
     {
         "action": "wait_ms",
-        "ms": 8000
+        "ms": 8000,
     },
     {
-        "action": "enter_launcher"
-    }
+        "action": "enter_launcher",
+    },
 ]

@@ -155,17 +155,17 @@ The object signature protects against an object slot being reused after a boss i
 
 ### State transitions
 
-| State | Event | Result |
-|---|---|---|
-| Hidden | Level starts | Clear tracked object and activation state |
-| Hidden | Valid boss becomes hostile | Capture object number, signature, and maximum shields; show row |
-| Hidden | Boss takes effective damage | Treat as engagement and show row |
-| Visible | Same boss fires, sounds, teleports, or takes damage again | Idempotent; keep current row |
-| Visible | Boss shields change | Recalculate green and red pixel widths directly from live object shields |
-| Visible | Boss enters death roll | Keep row visible at zero health during the death roll |
-| Visible | Boss object is removed, changes type, loses its boss flag, or its signature changes | Hide row |
-| Visible | A second boss activates while the tracked boss lives | Keep the first boss stable; remember the second as a candidate if practical |
-| Hidden after first boss | Another already engaged boss remains | Select that candidate, otherwise wait for its next hostile event |
+| State                   | Event                                                                               | Result                                                                      |
+| ----------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Hidden                  | Level starts                                                                        | Clear tracked object and activation state                                   |
+| Hidden                  | Valid boss becomes hostile                                                          | Capture object number, signature, and maximum shields; show row             |
+| Hidden                  | Boss takes effective damage                                                         | Treat as engagement and show row                                            |
+| Visible                 | Same boss fires, sounds, teleports, or takes damage again                           | Idempotent; keep current row                                                |
+| Visible                 | Boss shields change                                                                 | Recalculate green and red pixel widths directly from live object shields    |
+| Visible                 | Boss enters death roll                                                              | Keep row visible at zero health during the death roll                       |
+| Visible                 | Boss object is removed, changes type, loses its boss flag, or its signature changes | Hide row                                                                    |
+| Visible                 | A second boss activates while the tracked boss lives                                | Keep the first boss stable; remember the second as a candidate if practical |
+| Hidden after first boss | Another already engaged boss remains                                                | Select that candidate, otherwise wait for its next hostile event            |
 
 Keeping the zero bar through the existing boss death roll gives the lethal hit visible confirmation. The row disappears when the explosion removes or repurposes the boss object, which is the clearest definition of `vanquished` in both games.
 

@@ -1,16 +1,19 @@
 # Touch Stick Extreme Action Design
 
 ## Goal
+
 - Add a configurable special case for touch sticks: when a stick is dragged beyond normal full scale in a configured direction, trigger an extra action
 - Initial use: on the throttle stick's positive throttle direction, hold afterburner while deflection is greater than 1.5x normal full scale
 - Keep the design general enough for future stick directions, controls, and either held or tapped extra actions
 
 ## Phase 1: Study
+
 - [done] Locate touch stick layout, serialization, editor UI, and runtime input emission
 - [done] Locate action/button binding paths for afterburner and general game actions
 - [done] Identify test seams for pure Kotlin behavior and on-device/runtime smoke verification
 
 ## Phase 2: Design
+
 - [done] Define data model additions with conservative defaults
 - [done] Define runtime behavior for threshold, hysteresis, held/tapped modes, and cancellation
 - [done] Define editor UI placement and wording
@@ -18,11 +21,13 @@
 - [done] Define focused verification plan
 
 ## Phase 3: Implementation Follow-Up
+
 - [done] Implement after the design is accepted
 - [done] Run scoped code quality and relevant unit tests
 - [done] Run an Android debug build
 
 ## Phase 4: Positive Direction And Active Feedback
+
 - [done] Change the default extreme direction to positive
 - [done] Prefix editor field labels with `Extreme Action`
 - [done] Fix stick-up detection for positive Y so the editor direction matches physical throttle-up use
@@ -32,6 +37,7 @@
 - [done] Run scoped code quality, tests, and Android debug build
 
 ## Implementation Notes
+
 - [done] Added `StickExtremeAction` model with axis, direction, threshold, release threshold, binding, and mode
 - [done] Added raw JSON and human-readable JSON round-trip support
 - [done] Added runtime dispatch from pre-clamp stick over-travel through `InputMixer`
@@ -43,6 +49,7 @@
 - [done] Added D2 afterburner charge percent to the weapon-state bridge and rendered depletion as a red top-fill over the green bar
 
 ## Existing Code Shape
+
 - Touch layouts are modeled in `TouchControl.kt`
   - `AnalogStickControl` owns axes, invert flags, response curve, button-mode direction bindings, and double-tap action/mode
   - `TouchLayout.toJson()` persists raw numeric IDs; `HumanReadableConfig` exports/imports readable axis and binding names for bundled presets and config import/export
@@ -60,6 +67,7 @@
 ## Recommended Design
 
 ### Data Model
+
 Add a small reusable config object and attach a list of them to `AnalogStickControl`.
 
 ```kotlin
@@ -85,11 +93,13 @@ val extremeActions: List<StickExtremeAction> = emptyList()
 ```
 
 Notes:
+
 - Use a list, even though the editor initially creates at most one. This makes later "positive X triggers slide-on", "negative Y taps reverse camera", or multiple direction specials possible without reshaping the schema.
 - Defaults are off and harmless. Existing saved layouts parse to `emptyList()`.
 - For a lower-line-count initial implementation, the editor can expose only the first/list-singleton action while the runtime supports all list entries.
 
 ### JSON Shape
+
 Raw runtime JSON:
 
 ```json
@@ -123,6 +133,7 @@ Human-readable JSON should use binding names:
 ```
 
 Implementation locations:
+
 - `TouchControl.kt`
   - Add enums/data class
   - Add `extremeActions` to `AnalogStickControl`
@@ -135,6 +146,7 @@ Implementation locations:
   - In `parseStick()`, resolve action `binding` with `resolveBinding()`
 
 ### Runtime Behavior
+
 Keep normal axis emission unchanged. The axis still tops out at `-1..1`; the extreme action is a second output generated from the same touch drag.
 
 Detection should use the pre-clamp directional component:
@@ -146,11 +158,13 @@ Detection should use the pre-clamp directional component:
 5. Exit when component falls below `releaseThreshold`, when the finger lifts, when the overlay deactivates, when automap/game variant filtering hides the binding, or when pointer stealing resets the stick
 
 This means:
+
 - Default move-stick forward afterburner should be `axis = Y`, `direction = POSITIVE`, `binding = Afterburner`, `mode = HOLD`, `threshold = 1.5`, `releaseThreshold = 1.35`
 - If the user inverts that touch stick, the same negative emitted-axis direction continues to mean "forward" for the game because detection happens after the touch-level invert
 - Sensitivity, deadzone, and response curve should not affect the threshold. The threshold is physical drag distance measured in stick radii
 
 ### Runtime State
+
 Extend `StickState` with one runtime state bit per configured action.
 
 ```kotlin
@@ -166,16 +180,19 @@ Dispatch tags should be unique per stick and action:
 ```
 
 For `HOLD`:
+
 - On enter, call `dispatchTouchButton(binding, true, tag)`
 - On exit/reset, call `dispatchTouchButton(binding, false, tag)`
 - Because `InputMixer` OR-mixes buttons, this does not interfere with a separate visible afterburner button, controller button, or another touch source
 
 For `PULSE_ON_ENTER`:
+
 - On enter, reuse the existing delayed pulse behavior from double-tap or extract a generic `fireTouchPulse(binding, tag)`
 - Do not fire repeatedly while still beyond the threshold
 - Re-arm only after falling below `releaseThreshold`
 
 ### Visibility And Game Variant Filtering
+
 Add a helper similar to `stickBindingVisibleInCurrentMode()`:
 
 ```kotlin
@@ -190,9 +207,11 @@ Use it for extreme actions. If it becomes false while held, release the action i
 This prevents a D2-only afterburner action from leaking into D1 and prevents hidden/automap-inappropriate bindings from staying pressed.
 
 ### Editor UI
+
 Add an "Extreme Action" block to `StickPropertiesPanel`, below the normal axis/button-mode settings and before double-tap.
 
 Initial UI:
+
 - Toggle: `Extreme Action`
 - Binding picker: default `Afterburner`
 - Axis picker: `X` / `Y`
@@ -201,26 +220,32 @@ Initial UI:
 - Threshold slider: `1.1..2.5`, default `1.5`
 
 To keep the first version approachable:
+
 - When enabling on a stick whose `axisY` label is `Fwd/Back`, default to `Y positive`
 - When enabling on other sticks, still default to `Y positive`, but let the user change it
 - Hide `releaseThreshold` from UI initially and derive it as `threshold - 0.15`, clamped to at least `1.0`
 
 Potential label text:
+
 - Section label: `Extreme Action`
 - Toggle: `Enabled`
 - Mode labels: `Hold while pushed past edge`, `Tap once past edge`
 
 ### Bundled Presets
+
 Do not enable the action in all bundled presets by default without play testing. The first implementation should make it easy to turn on from the editor.
 
 Optional follow-up once the behavior feels right:
+
 - Add the disabled/default action object to `simple.json`, `advanced.json`, and `claw.json` for discoverability
 - Or enable it only in the Advanced preset's `move` stick for D2-oriented testing
 
 I recommend leaving bundled presets behavior-neutral for the first patch and relying on editor defaults when the user turns the option on.
 
 ### Future Generalization
+
 This model can later be reused by:
+
 - `SliderControl`: compare slider travel beyond its normal track if the UI is allowed to drag past the end
 - `AxisRegionControl`: compare drag distance beyond a configured region/reference origin
 - Controller axes: the same `ExtremeAxisAction` concept could attach to controller config, though physical controllers usually cannot exceed 1.0, so their threshold model would need to mean "near end" rather than "past end"
@@ -228,6 +253,7 @@ This model can later be reused by:
 If extending beyond sticks, consider renaming the data class to `AxisExtremeAction` and putting it in a shared control behavior section. For the first implementation, stick-local is simpler and avoids speculative plumbing.
 
 ## Verification Plan
+
 - Unit tests:
   - `TouchControl.fromJson()` parses missing `extremeActions` as empty
   - Raw `TouchLayout.toJson()` round-trips an extreme action
@@ -243,6 +269,7 @@ If extending beyond sticks, consider renaming the data class to `AxisExtremeActi
   - Run with a separate afterburner button also held to confirm `InputMixer` OR behavior releases only after both sources release
 
 ## Open Decisions
+
 - Whether the first shipped preset should leave this off, or enable it by default on the movement stick for D2
 - Whether "tap once" should be included in the first implementation or staged after the held-afterburner path
 - Whether the editor should expose a visual outer ring at `1.5x` around sticks with an enabled extreme action. This is useful feedback, but not required for the initial behavior

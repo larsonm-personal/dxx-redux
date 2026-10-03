@@ -67,6 +67,10 @@ int g_replay_robot_labels_enabled = 0;
 
 #if defined(ANDROID) || defined(__ANDROID__)
 #include "android_render_fov.h"
+#include "render_gameplay_view.h"
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+#include "ogl_msaa_probe_android.h"
+#endif
 #endif
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
@@ -133,7 +137,21 @@ void android_render_frame_main_view(fix eye_offset, int window_num)
 		return;
 	}
 
-	render_frame(eye_offset, window_num);
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (android_render_visibility_verify_enabled()) {
+		android_render_visibility_verify_begin();
+		render_frame(eye_offset, window_num);
+		android_render_visibility_verify_reference(window_num);
+		android_ogl_scene_probe_discard_base_view();
+	}
+#endif
+	android_render_set_pass(ANDROID_RENDER_CPU_VISIBILITY);
+	android_render_collect_fov_visibility(eye_offset, window_num);
+	android_render_set_pass(ANDROID_RENDER_NORMAL);
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (android_render_visibility_verify_enabled())
+		android_render_visibility_verify_compare(window_num);
+#endif
 	base_n_render_segs = N_render_segs;
 	base_render_list_bytes = base_n_render_segs > 0 ?
 		sizeof(Android_base_render_list[0]) * base_n_render_segs : 0;
@@ -145,10 +163,12 @@ void android_render_frame_main_view(fix eye_offset, int window_num)
 		       sizeof(base_rendered_objects[0]) * base_num_objects);
 
 	Android_visual_only_render_pass = 1;
+	android_render_set_pass(ANDROID_RENDER_VISUAL_ONLY);
 	Android_render_zoom_override = android_render_main_view_zoom(Render_zoom);
 	render_frame(eye_offset, window_num);
 	Android_render_zoom_override = 0;
 	Android_visual_only_render_pass = 0;
+	android_render_set_pass(ANDROID_RENDER_NORMAL);
 
 	N_render_segs = base_n_render_segs;
 	if (base_render_list_bytes)
@@ -896,7 +916,11 @@ void do_render_object(int objnum, int window_num)
 		render_object(obj);
 
 	/* android port: accumulate replay label overlay positions */
-	if (input_demo_replay_is_loaded() && g_replay_robot_labels_enabled &&
+	if (
+#ifdef ANDROID
+		!android_render_cpu_visibility_only() &&
+#endif
+		input_demo_replay_is_loaded() && g_replay_robot_labels_enabled &&
 		g_replay_robot_label_count < REPLAY_ROBOT_LABEL_MAX) {
 		g3s_point pt;
 		ubyte cc = g3_rotate_point(&pt, &obj->pos);

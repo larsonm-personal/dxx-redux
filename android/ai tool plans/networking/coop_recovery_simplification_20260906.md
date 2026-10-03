@@ -60,4 +60,3 @@ The new co-op save metadata is v8 and progress inventory v4. Prior v7/v3 co-op r
 Coverage limits: physical pickup/rejoin/save-restore were exercised on emulators; expiry, object remapping on host migration, and adversarial packet ordering were exercised by the native harness. Separate end-to-end rewind/level-restart and host-loss-during-freeze runs were not performed. Missing freeze acknowledgements remain pending rather than refunding uncertain contents.
 
 The temporary feedback helper has been removed with the grant engine. do_powerup supplies sound, flash, HUD and weapon-selection behavior again. Existing opt-in gameplay duplication policies remain gameplay policies; the recovery layer does not turn ordinary pickup networking into a general anti-cheat or transaction system.
-

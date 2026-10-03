@@ -9,21 +9,24 @@
 ## steps
 
 1. Move generated TV banner output to `drawable/tv_banner.png`
-Status: completed
+   Status: completed
 
 Result:
+
 - `generateLauncherArt` now writes the TV banner to `build/generated/icon-res/main/drawable/tv_banner.png`
 
 2. Remove the old `src/main/res/drawable/tv_banner.xml` placeholder
-Status: completed
+   Status: completed
 
 Result:
+
 - The placeholder XML banner is deleted, so `@drawable/tv_banner` no longer resolves to mixed resource types
 
 3. Run `:app:processDebugResources` and confirm only the PNG banner remains packaged
-Status: completed
+   Status: completed
 
 Result:
+
 - `gradlew.bat :app:processDebugResources` passed
 - `gradlew.bat :app:clean :app:processDebugResources` passed
 - The generated icon resource directory now contains `drawable/tv_banner.png` and no source `tv_banner` file remains under `src/main/res`

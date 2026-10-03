@@ -30,16 +30,16 @@ This stays Android-first and buildable from host tests:
 ## Completed Notes
 
 - Added `input_demo_control_frame` plus `input_demo_control_records_coalesce_frames()`
-	to the shared helper so recorder-side code can build sparse records from
-	contiguous per-frame snapshots.
+  to the shared helper so recorder-side code can build sparse records from
+  contiguous per-frame snapshots.
 - The coalescer now collapses unchanged runs into `n`, emits `s` only for actual
-	held-state transitions, preserves explicit zero releases, and keeps one-frame
-	pulse updates isolated so they do not smear across later frames.
+  held-state transitions, preserves explicit zero releases, and keeps one-frame
+  pulse updates isolated so they do not smear across later frames.
 - D1 coalescing paths now reject D2-only state/pulse fields early instead of
-	silently dropping them.
+  silently dropping them.
 - Extended `android/tests/test_input_demo_controls.cpp` with coalescing-focused
-	cases for constant runs, pulse splits, explicit releases, frame-time changes,
-	and D1/D2 policy behavior.
+  cases for constant runs, pulse splits, explicit releases, frame-time changes,
+  and D1/D2 policy behavior.
 
 ## Validation
 
@@ -50,7 +50,7 @@ This stays Android-first and buildable from host tests:
 - `buildd1\maths\test_input_demo_controls.exe` passed.
 - `buildd2\maths\test_input_demo_controls.exe` passed.
 - `android\gradlew.bat :app:externalNativeBuildDebug --no-daemon` passed with
-	the coalescer integrated into the Android native build.
+  the coalescer integrated into the Android native build.
 
 ## Exit Criteria
 

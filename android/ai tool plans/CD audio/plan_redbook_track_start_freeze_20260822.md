@@ -9,13 +9,13 @@ diagnostics behavior for D1 and D2.
 ## Plan
 
 - [x] Trace and instrument the synchronous track-start path to identify the
-  expensive work and its thread ownership
+      expensive work and its thread ownership
 - [x] Design and implement a bounded background preparation path with safe
-  cancellation and lifecycle handling
+      cancellation and lifecycle handling
 - [x] Add focused regression coverage for track transitions and background
-  preparation state
+      preparation state
 - [x] Run scoped formatting, native tests, Windows CMake builds, and the
-  relevant Android build or integration test
+      relevant Android build or integration test
 - [x] Record results without editing the protected outstanding bug list
 
 ## Constraints

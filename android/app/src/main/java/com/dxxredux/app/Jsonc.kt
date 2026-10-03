@@ -1,6 +1,6 @@
 package com.dxxredux.app
 
-/** Minimal JSONC comment stripper. Removes // and /* */ comments so the result can be parsed by org.json. */
+/** Removes JSONC comments and trailing commas for consistent org.json parsing */
 object Jsonc {
     fun strip(text: String): String {
         val sb = StringBuilder(text.length)
@@ -39,6 +39,14 @@ object Jsonc {
                     i++
                 }
             } else {
+                if (character == ']' || character == '}') {
+                    var previous = sb.lastIndex
+                    while (previous >= 0 && sb[previous].isWhitespace()) previous--
+                    if (previous >= 0 && sb[previous] == ',') {
+                        // Android's array parser otherwise creates an extra null entry
+                        sb.setCharAt(previous, ' ')
+                    }
+                }
                 sb.append(character)
                 i++
             }

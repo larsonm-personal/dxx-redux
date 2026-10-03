@@ -1,35 +1,35 @@
 {
-  "type": "controller_config",
-  "version": 1,
-  "bindings": {
-    "A": "Fire Flare",
-    "B": "Menu",
-    "X": "Energy\u2192Shield",
-    "Y": "Guide Bot Menu",
-    "L1": "Cycle Secondary",
-    "R1": "Cycle Primary",
-    "Select": "Menu",
-    "Start": "Game Menu (ESC)",
-    "RT": "Fire Primary",
-    "LT": "Fire Secondary",
-    "RS_X": "Turn L/R",
-    "RS_Y": "Pitch U/D",
-    "LS_X": "Slide L/R",
-    "LS_Y": "Throttle",
-    "DUp": "Slide Up",
-    "DDown": "Slide Down",
-    "DLeft": "Bank Left",
-    "DRight": "Bank Right",
-    "L3": "Afterburner",
-    "R3": "Drop Bomb"
-  },
-  "inverts": [],
-  "thresholds": {
-    "LS_X": 30,
-    "LS_Y": 30,
-    "RS_X": 30,
-    "RS_Y": 30,
-    "LT": 30,
-    "RT": 30
-  }
+    "type": "controller_config",
+    "version": 1,
+    "bindings": {
+        "A": "Fire Flare",
+        "B": "Menu",
+        "X": "Energy\u2192Shield",
+        "Y": "Guide Bot Menu",
+        "L1": "Cycle Secondary",
+        "R1": "Cycle Primary",
+        "Select": "Menu",
+        "Start": "Game Menu (ESC)",
+        "RT": "Fire Primary",
+        "LT": "Fire Secondary",
+        "RS_X": "Turn L/R",
+        "RS_Y": "Pitch U/D",
+        "LS_X": "Slide L/R",
+        "LS_Y": "Throttle",
+        "DUp": "Slide Up",
+        "DDown": "Slide Down",
+        "DLeft": "Bank Left",
+        "DRight": "Bank Right",
+        "L3": "Afterburner",
+        "R3": "Drop Bomb"
+    },
+    "inverts": [],
+    "thresholds": {
+        "LS_X": 30,
+        "LS_Y": 30,
+        "RS_X": 30,
+        "RS_Y": 30,
+        "LT": 30,
+        "RT": 30
+    }
 }

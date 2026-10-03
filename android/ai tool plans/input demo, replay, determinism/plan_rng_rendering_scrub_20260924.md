@@ -33,19 +33,19 @@ The inventory covered `d_rand`, `d_srand`, their stream/annotation wrappers, `ma
 
 ## Retained SIM calls
 
-| Candidate | Reason to keep simulation ownership |
-| --- | --- |
-| `collide.c`: `check_collision_delayfunc_exec` | Shared gate also allocates player/robot contact explosions; moving it was previously reverted because allocation and later object-processing order changed |
-| `fireball.c`: debris velocity, spin, lifetime | Both engines dispatch weapon/debris collisions to `collide_weapon_and_debris`; these are physical objects that can intercept weapons |
-| `fireball.c`: exploding-wall positions | The same randomized positions feed periodic `object_create_badass_explosion` calls with nonzero damage, radius, and force |
-| D2 `laser.c`: omega blob perturbation and lifetime | Real `OBJ_WEAPON` objects carry damage; positions affect segment lookup and collision, and lifetime controls persistence |
-| D2 `laser.c`: unlocked omega direction | Perturbed direction feeds the firing ray and goal position, so this changes aim |
-| `game.c`, `cntrlcen.c`, D2 `weapon.c`: recoil/countdown/seismic shaking | Writes live player, companion, or guided-missile physics; the audio-only timers are already FX |
-| `object.c`: network spawn preview | `gameseq.c` uses `previewed_spawn_point` as the actual respawn selection; this is not just camera placement |
-| AI visibility helpers near chatter timers | SIM random vectors update the AI's estimated position of a cloaked player; only chatter cadence belongs on FX |
-| Reactor extra shots, AI/pathing/awareness, matcens, thief behavior | Changes live attacks, routing, spawning, or inventory |
-| Drops, pickup/flare lifetimes, shot spread/speed, smart-child targets | Changes object existence, trajectories, collision timing, or pickup availability |
-| Network spawn/drop/session setup | Gameplay or protocol state rather than rendering; wall-clock seeding remains a separate multiplayer determinism concern |
+| Candidate                                                               | Reason to keep simulation ownership                                                                                                                        |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `collide.c`: `check_collision_delayfunc_exec`                           | Shared gate also allocates player/robot contact explosions; moving it was previously reverted because allocation and later object-processing order changed |
+| `fireball.c`: debris velocity, spin, lifetime                           | Both engines dispatch weapon/debris collisions to `collide_weapon_and_debris`; these are physical objects that can intercept weapons                       |
+| `fireball.c`: exploding-wall positions                                  | The same randomized positions feed periodic `object_create_badass_explosion` calls with nonzero damage, radius, and force                                  |
+| D2 `laser.c`: omega blob perturbation and lifetime                      | Real `OBJ_WEAPON` objects carry damage; positions affect segment lookup and collision, and lifetime controls persistence                                   |
+| D2 `laser.c`: unlocked omega direction                                  | Perturbed direction feeds the firing ray and goal position, so this changes aim                                                                            |
+| `game.c`, `cntrlcen.c`, D2 `weapon.c`: recoil/countdown/seismic shaking | Writes live player, companion, or guided-missile physics; the audio-only timers are already FX                                                             |
+| `object.c`: network spawn preview                                       | `gameseq.c` uses `previewed_spawn_point` as the actual respawn selection; this is not just camera placement                                                |
+| AI visibility helpers near chatter timers                               | SIM random vectors update the AI's estimated position of a cloaked player; only chatter cadence belongs on FX                                              |
+| Reactor extra shots, AI/pathing/awareness, matcens, thief behavior      | Changes live attacks, routing, spawning, or inventory                                                                                                      |
+| Drops, pickup/flare lifetimes, shot spread/speed, smart-child targets   | Changes object existence, trajectories, collision timing, or pickup availability                                                                           |
+| Network spawn/drop/session setup                                        | Gameplay or protocol state rather than rendering; wall-clock seeding remains a separate multiplayer determinism concern                                    |
 
 ## Other RNG paths and limits
 

@@ -9,11 +9,11 @@ without regressing host builds or tests.
 ## Plan
 
 - [x] Extract profiling captures and rank the worst simulation, render, GPU,
-  network, and frame-gap events
+      network, and frame-gap events
 - [x] Correlate expensive frames with object/projectile types and relevant D2
-  final-boss or Earthshaker code paths
+      final-boss or Earthshaker code paths
 - [x] Implement a focused optimization or add targeted diagnostics if the log
-  cannot isolate the cost safely
+      cannot isolate the cost safely
 - [x] Run scoped formatting, tests, and the Windows CMake build
 - [x] Record results and mark this plan complete
 

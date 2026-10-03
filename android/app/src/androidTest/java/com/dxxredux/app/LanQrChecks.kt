@@ -14,32 +14,45 @@ import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.qrcode.QRCodeReader
 
 /** Exercises the real rendered square and the exported link router on Android */
-internal class LanQrChecks(private val instrumentation: Instrumentation) {
+internal class LanQrChecks(
+    private val instrumentation: Instrumentation,
+) {
     private fun <T> onMain(block: () -> T): T {
         var result: Result<T>? = null
         instrumentation.runOnMainSync { result = runCatching(block) }
         return result!!.getOrThrow()
     }
+
     private fun decode(bitmap: Bitmap): String? {
         val pixels = IntArray(bitmap.width * bitmap.height)
         bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
         return try {
-            QRCodeReader().decode(BinaryBitmap(HybridBinarizer(RGBLuminanceSource(bitmap.width, bitmap.height, pixels)))).text
-        } catch (_: com.google.zxing.ReaderException) { null }
+            QRCodeReader()
+                .decode(
+                    BinaryBitmap(HybridBinarizer(RGBLuminanceSource(bitmap.width, bitmap.height, pixels))),
+                ).text
+        } catch (_: com.google.zxing.ReaderException) {
+            null
+        }
     }
 
     fun run() {
         val context = instrumentation.targetContext
-        val launcher = instrumentation.startActivitySync(Intent(context, SetupActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }) as SetupActivity
+        val launcher =
+            instrumentation.startActivitySync(
+                Intent(context, SetupActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+            ) as SetupActivity
         onMain {
             val square = LanJoinQrView(launcher)
             square.layoutParams = android.widget.FrameLayout.LayoutParams(264, 264)
             square.layout(0, 0, 264, 264)
-            fun render(): Bitmap = Bitmap.createBitmap(264, 264, Bitmap.Config.ARGB_8888).also {
-                square.draw(Canvas(it))
-            }
+
+            fun render(): Bitmap =
+                Bitmap.createBitmap(264, 264, Bitmap.Config.ARGB_8888).also {
+                    square.draw(Canvas(it))
+                }
             square.setAddress("192.168.1.42")
             check(decode(render()) == null) { "QR exposed before reveal" }
             square.requestFocus()
@@ -54,8 +67,11 @@ internal class LanQrChecks(private val instrumentation: Instrumentation) {
             square.performClick()
             check(decode(render()) == "descent://192.168.1.42")
             check(square.performLongClick())
-            val expanded = LanJoinQrView::class.java.getDeclaredField("expanded").apply { isAccessible = true }
-                .get(square) as android.app.AlertDialog
+            val expanded =
+                LanJoinQrView::class.java
+                    .getDeclaredField("expanded")
+                    .apply { isAccessible = true }
+                    .get(square) as android.app.AlertDialog
             check(expanded.isShowing) { "Long press did not enlarge QR" }
             expanded.dismiss()
             check(decode(render()) == "descent://192.168.1.42") { "Long press hid the inline QR" }
@@ -73,18 +89,26 @@ internal class LanQrChecks(private val instrumentation: Instrumentation) {
             check(decode(render()) == null)
         }
 
-        val implicit = Intent(Intent.ACTION_VIEW, Uri.parse("descent://192.168.1.42"))
-            .setPackage(context.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val implicit =
+            Intent(Intent.ACTION_VIEW, Uri.parse("descent://192.168.1.42"))
+                .setPackage(context.packageName)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         val resolved = context.packageManager.resolveActivity(implicit, 0)
         check(resolved?.activityInfo?.name == "com.dxxredux.app.multiplayer.LanJoinLinkActivity")
         // Hold the request behind the existing lobby confirmation, without making a network connection
         onMain {
-            com.dxxredux.app.lobby.LobbyService.startDiscovery(context, "QrTest")
-            com.dxxredux.app.lobby.LobbyService.hostLobby("QrTest", "d2", "d2", "anarchy", 4)
+            com.dxxredux.app.lobby.LobbyService
+                .startDiscovery(context, "QrTest")
+            com.dxxredux.app.lobby.LobbyService
+                .hostLobby("QrTest", "d2", "d2", "anarchy", 4)
         }
         try {
             context.startActivity(implicit)
-            val pendingField = SetupActivity::class.java.getDeclaredField("pendingLanJoin").apply { isAccessible = true }
+            val pendingField =
+                SetupActivity::class.java
+                    .getDeclaredField(
+                        "pendingLanJoin",
+                    ).apply { isAccessible = true }
             var request: LanJoinRequest? = null
             val deadline = System.currentTimeMillis() + 10_000
             while (request == null && System.currentTimeMillis() < deadline) {
@@ -98,9 +122,15 @@ internal class LanQrChecks(private val instrumentation: Instrumentation) {
             check(request?.address == "192.168.1.42") { "Router did not deliver to existing launcher" }
             check(com.dxxredux.app.lobby.LobbyService.isHosting.value) { "Link left the active lobby without consent" }
             onMain {
-                SetupActivity::class.java.getDeclaredMethod("consumeLanJoin").apply { isAccessible = true }.invoke(launcher)
-                com.dxxredux.app.lobby.LobbyService.stopDiscovery()
+                SetupActivity::class.java
+                    .getDeclaredMethod(
+                        "consumeLanJoin",
+                    ).apply { isAccessible = true }
+                    .invoke(launcher)
+                com.dxxredux.app.lobby.LobbyService
+                    .stopDiscovery()
             }
+
             // Open the actual scanner through the same accessible button used by a person
             fun click(label: String) {
                 val until = System.currentTimeMillis() + 15_000
@@ -112,16 +142,25 @@ internal class LanQrChecks(private val instrumentation: Instrumentation) {
                 error("Missing button: $label")
             }
             click("Multiplayer")
-            val scannerMonitor = instrumentation.addMonitor("com.journeyapps.barcodescanner.CaptureActivity", null, false)
+            val scannerMonitor =
+                instrumentation.addMonitor(
+                    "com.journeyapps.barcodescanner.CaptureActivity",
+                    null,
+                    false,
+                )
             try {
                 click("Read QR code")
-                val scanner = instrumentation.waitForMonitorWithTimeout(scannerMonitor, 10_000)
-                    ?: error("Read QR code did not launch the scanner")
+                val scanner =
+                    instrumentation.waitForMonitorWithTimeout(scannerMonitor, 10_000)
+                        ?: error("Read QR code did not launch the scanner")
                 onMain {
-                    scanner.setResult(android.app.Activity.RESULT_OK, Intent().apply {
-                        putExtra(com.google.zxing.client.android.Intents.Scan.RESULT, "https://example.invalid/")
-                        putExtra(com.google.zxing.client.android.Intents.Scan.RESULT_FORMAT, "QR_CODE")
-                    })
+                    scanner.setResult(
+                        android.app.Activity.RESULT_OK,
+                        Intent().apply {
+                            putExtra(com.google.zxing.client.android.Intents.Scan.RESULT, "https://example.invalid/")
+                            putExtra(com.google.zxing.client.android.Intents.Scan.RESULT_FORMAT, "QR_CODE")
+                        },
+                    )
                     scanner.finish()
                 }
                 val until = System.currentTimeMillis() + 10_000
@@ -137,7 +176,8 @@ internal class LanQrChecks(private val instrumentation: Instrumentation) {
             }
         } finally {
             onMain {
-                com.dxxredux.app.lobby.LobbyService.stopDiscovery()
+                com.dxxredux.app.lobby.LobbyService
+                    .stopDiscovery()
                 launcher.finish()
             }
         }

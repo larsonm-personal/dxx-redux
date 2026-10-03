@@ -1,26 +1,23 @@
 [
     {
         "_info": {
-            "games": [
-                "d1",
-                "d2"
-            ],
+            "games": ["d1", "d2"],
             "_standalone": false,
-            "_owner": "test_lan"
-        }
+            "_owner": "test_lan",
+        },
     },
     {
         "action": "set_debug",
         "field": "coop_level_restart_test",
-        "value": "verify"
+        "value": "verify",
     },
     {
         "action": "wait_ms",
-        "ms": 3000
+        "ms": 3000,
     },
     {
         "action": "set_debug",
         "field": "coop_level_restart_test",
-        "value": "clock"
-    }
+        "value": "clock",
+    },
 ]

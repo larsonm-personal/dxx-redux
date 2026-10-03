@@ -38,8 +38,10 @@ def main():
                 if kind not in ("none", "in_engine", "video") or not status or "seconds" not in flyout:
                     problems.append(f"{identity}: incomplete flyout record")
                 if seconds is not None and (
-                    isinstance(seconds, bool) or not isinstance(seconds, (int, float))
-                    or not math.isfinite(seconds) or seconds <= 0
+                    isinstance(seconds, bool)
+                    or not isinstance(seconds, (int, float))
+                    or not math.isfinite(seconds)
+                    or seconds <= 0
                 ):
                     problems.append(f"{identity}: invalid duration {seconds}")
                 if status in ("estimated", "measured") and seconds is None:
@@ -59,33 +61,45 @@ def main():
                     if status != "measured" and (kind != "none" or seconds is not None):
                         problems.append(f"{identity}: unavailable flyout has a duration or playback kind")
                 if kind == "in_engine":
-                    timings = [route["seconds"] for route in flyout.get("routes", []) if route.get("seconds") is not None]
+                    timings = [
+                        route["seconds"] for route in flyout.get("routes", []) if route.get("seconds") is not None
+                    ]
                     if seconds is not None and (not timings or seconds != max(timings)):
                         problems.append(f"{identity}: top-level time is not the longest exit")
-                rows.append({
-                    "regression": str(path.relative_to(repo)).replace("\\", "/"),
-                    "mission": mission.get("mission_name", ""),
-                    "game": mission.get("game", ""),
-                    "level": level.get("level_num"),
-                    "level_file": level.get("level_file", ""),
-                    "kind": kind, "status": status, "seconds": seconds,
-                    "movie": flyout.get("movie", {}).get("status", "not_inspected"),
-                    "exit_trigger": flyout.get("exit_trigger", "not_inspected"),
-                    "tunnel": flyout.get("tunnel", {}).get("status", "not_inspected"),
-                    "presentation": flyout.get("presentation", {}).get("status", "not_inspected"),
-                    "route_statuses": ",".join(route["status"] for route in flyout.get("routes", [])),
-                })
+                rows.append(
+                    {
+                        "regression": str(path.relative_to(repo)).replace("\\", "/"),
+                        "mission": mission.get("mission_name", ""),
+                        "game": mission.get("game", ""),
+                        "level": level.get("level_num"),
+                        "level_file": level.get("level_file", ""),
+                        "kind": kind,
+                        "status": status,
+                        "seconds": seconds,
+                        "movie": flyout.get("movie", {}).get("status", "not_inspected"),
+                        "exit_trigger": flyout.get("exit_trigger", "not_inspected"),
+                        "tunnel": flyout.get("tunnel", {}).get("status", "not_inspected"),
+                        "presentation": flyout.get("presentation", {}).get("status", "not_inspected"),
+                        "route_statuses": ",".join(route["status"] for route in flyout.get("routes", [])),
+                    }
+                )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     summary = {
         "missions": mission_count,
         "levels_with_flyout_records": len(rows),
         "problems": problems,
         "statuses": dict(sorted(collections.Counter(row["status"] for row in rows).items())),
-        "in_engine_route_statuses": dict(sorted(collections.Counter(
-            status for row in rows for status in row["route_statuses"].split(",") if status
-        ).items())),
-        "components": {field: dict(sorted(collections.Counter(row[field] for row in rows).items()))
-                       for field in ("movie", "exit_trigger", "tunnel", "presentation")},
+        "in_engine_route_statuses": dict(
+            sorted(
+                collections.Counter(
+                    status for row in rows for status in row["route_statuses"].split(",") if status
+                ).items()
+            )
+        ),
+        "components": {
+            field: dict(sorted(collections.Counter(row[field] for row in rows).items()))
+            for field in ("movie", "exit_trigger", "tunnel", "presentation")
+        },
         "timings": {},
     }
     for label, subset in (

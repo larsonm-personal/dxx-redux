@@ -1,14 +1,17 @@
 # Report 20260612 165248 pause cluster
 
 ## Goal
+
 Focus on two pause-related failures from `temp/test_reports/report_20260612_165248.md`
 without increasing test timeouts.
 
 ## Selected Tests
+
 - [x] `test_pause_menu_return`
 - [x] `test_pause_menu_viewport_d2`
 
 ## Plan
+
 - [x] Inspect the selected scripts and per-test logs
 - [x] Identify whether failures are intro-state, pause-state, emulator health, or script sequencing
 - [x] Patch deterministic script or harness setup only if the cause is clear
@@ -17,6 +20,7 @@ without increasing test timeouts.
 - [x] Record outcome and related remaining failures
 
 ## Notes
+
 - `test_pause_menu_viewport_d2` failed at the immediate post-launch
   `screen_mode=menu` wait and did not pin or consume intro/movie state.
 - `test_pause_menu_return` already pins and skips intro state; the report log only

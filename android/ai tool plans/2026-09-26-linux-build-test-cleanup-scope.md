@@ -36,21 +36,21 @@ This is completion and regression repair, not a new Linux port
 
 ## Concrete gaps found in this checkout
 
-| Area | Evidence | Required work |
-| --- | --- | --- |
-| Workspace cleanup | `clean-workspace.ps1` explicitly rejects deletion outside Windows; its process inventory uses CIM | Implement Linux activity/ownership checks and portable deletion safeguards |
-| Native Gradle retention | `build.gradle` invokes `powershell.exe` only on Windows | Run the shared retention policy on both hosts before new `.cxx` generations |
-| Cleanup tests | `tests/test_clean_workspace.ps1` mocks CIM and creates a Windows junction | Exercise real Linux symlinks, process ownership, and lock semantics alongside Windows cases |
-| Dependency lifecycle | `get_ndk.sh` deletes its download only after successful extraction, extracts directly into the install root, and leaves superseded NDK directories | Staged, validated installation; failure cleanup; bounded obsolete-version retention |
-| JDK reproducibility | `get_jdk.sh` derives a `latest` URL while validating against configured `JDK_VERSION` | Download the exact configured release and verify its archive; retain existing rollback behavior |
-| Environment selection | `helpers/set_vars.sh` chooses the last glob match for JDK/NDK | Resolve configured versions explicitly so pruning and version selection agree |
-| Build entry points | `1_build-aab.ps1` calls `gradlew.bat`; `helpers/build.sh` always waits for a key | Shared wrapper resolution and noninteractive operation with reliable exit codes |
-| Test/helper drift | Direct `gradlew.bat` calls in dual-emulator tests, crash-report tests, mission archive helpers, warning collection, and metadata regeneration | Route callers through shared Gradle/tool helpers; inspect branches before classifying each occurrence as a defect |
-| Host regeneration/tests | Direct Windows build calls in guidebot tests/helpers and metadata runners | Shared host build dispatch, executable lookup, and capability reporting |
-| Process lifetime | `helpers/process_lifetime.ps1` enrolls Windows jobs but initialization is a no-op on Linux | Test and implement owned child/process-group cleanup, including parent termination and grandchildren |
-| Sanitizer parity | Linux build CLI lacks the Windows sanitizer option; sanitizer/replay guards reference Windows builds | Provide Linux configuration or an explicit tracked capability gap, never silent success |
-| Documentation | `.github/copilot-instructions.md` refers to absent `android/run_emulator.sh` | Document `pwsh android/Run-Emulator.ps1` and remove stale paths |
-| Continuous validation | Existing `.github/workflows/package-linux.yml` packages desktop games; no Android test workflow in the tracked workflow inventory | Add Windows/Linux checks for the Android tooling and selected integration paths |
+| Area                    | Evidence                                                                                                                                           | Required work                                                                                                     |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Workspace cleanup       | `clean-workspace.ps1` explicitly rejects deletion outside Windows; its process inventory uses CIM                                                  | Implement Linux activity/ownership checks and portable deletion safeguards                                        |
+| Native Gradle retention | `build.gradle` invokes `powershell.exe` only on Windows                                                                                            | Run the shared retention policy on both hosts before new `.cxx` generations                                       |
+| Cleanup tests           | `tests/test_clean_workspace.ps1` mocks CIM and creates a Windows junction                                                                          | Exercise real Linux symlinks, process ownership, and lock semantics alongside Windows cases                       |
+| Dependency lifecycle    | `get_ndk.sh` deletes its download only after successful extraction, extracts directly into the install root, and leaves superseded NDK directories | Staged, validated installation; failure cleanup; bounded obsolete-version retention                               |
+| JDK reproducibility     | `get_jdk.sh` derives a `latest` URL while validating against configured `JDK_VERSION`                                                              | Download the exact configured release and verify its archive; retain existing rollback behavior                   |
+| Environment selection   | `helpers/set_vars.sh` chooses the last glob match for JDK/NDK                                                                                      | Resolve configured versions explicitly so pruning and version selection agree                                     |
+| Build entry points      | `1_build-aab.ps1` calls `gradlew.bat`; `helpers/build.sh` always waits for a key                                                                   | Shared wrapper resolution and noninteractive operation with reliable exit codes                                   |
+| Test/helper drift       | Direct `gradlew.bat` calls in dual-emulator tests, crash-report tests, mission archive helpers, warning collection, and metadata regeneration      | Route callers through shared Gradle/tool helpers; inspect branches before classifying each occurrence as a defect |
+| Host regeneration/tests | Direct Windows build calls in guidebot tests/helpers and metadata runners                                                                          | Shared host build dispatch, executable lookup, and capability reporting                                           |
+| Process lifetime        | `helpers/process_lifetime.ps1` enrolls Windows jobs but initialization is a no-op on Linux                                                         | Test and implement owned child/process-group cleanup, including parent termination and grandchildren              |
+| Sanitizer parity        | Linux build CLI lacks the Windows sanitizer option; sanitizer/replay guards reference Windows builds                                               | Provide Linux configuration or an explicit tracked capability gap, never silent success                           |
+| Documentation           | `.github/copilot-instructions.md` refers to absent `android/run_emulator.sh`                                                                       | Document `pwsh android/Run-Emulator.ps1` and remove stale paths                                                   |
+| Continuous validation   | Existing `.github/workflows/package-linux.yml` packages desktop games; no Android test workflow in the tracked workflow inventory                  | Add Windows/Linux checks for the Android tooling and selected integration paths                                   |
 
 The inventory includes 238 top-level `android/tests/test_*.ps1` files. This is a file count, not 238 demonstrated failures or independent suites. Python tests, native tests, JSONC game scripts, and support-owned tests also need accounting. Existing source-pattern tests are useful but cannot prove runtime portability
 
@@ -115,16 +115,16 @@ Planning estimate: 14-23 engineering days for the full scope, plus large-corpus/
 
 ## Storage policy by owner
 
-| Owner | Default lifecycle |
-| --- | --- |
-| Dependency downloads and extraction | Unique staging; delete archives/staging after success or failure; next-run recovery for interrupted owned stages |
-| Managed JDK/NDK/tool versions | Keep configured/referenced versions and active users; prune superseded owned versions after validated replacement; keep rollback until publication succeeds |
-| SDK packages and emulator images | Remove obsolete project-owned packages through SDK tooling; preserve packages/AVDs referenced by supported configurations |
-| Native `.cxx` configurations and packages | Existing producer retention of three prior generations per family; protect active configuration/ABI users; explicit cleanup may retain fewer |
-| Fixed CMake/Gradle/Cargo build trees | Reuse compatible trees; remove stale owned variants by policy, not unconditional clean builds |
-| Test reports and large payloads | Bounded generations plus family byte budgets; trim bulky reproducible payloads separately from compact failure evidence |
-| Temporary emulator/device data | Clean owned temporary AVDs, snapshots, uploads, and run data on completion/failure; preserve intentional persistent test AVDs and source assets |
-| Global/shared caches | Use tool-supported pruning only within declared ownership; do not recursively purge user-wide Gradle, Cargo, SDK, or dependency directories |
+| Owner                                     | Default lifecycle                                                                                                                                           |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dependency downloads and extraction       | Unique staging; delete archives/staging after success or failure; next-run recovery for interrupted owned stages                                            |
+| Managed JDK/NDK/tool versions             | Keep configured/referenced versions and active users; prune superseded owned versions after validated replacement; keep rollback until publication succeeds |
+| SDK packages and emulator images          | Remove obsolete project-owned packages through SDK tooling; preserve packages/AVDs referenced by supported configurations                                   |
+| Native `.cxx` configurations and packages | Existing producer retention of three prior generations per family; protect active configuration/ABI users; explicit cleanup may retain fewer                |
+| Fixed CMake/Gradle/Cargo build trees      | Reuse compatible trees; remove stale owned variants by policy, not unconditional clean builds                                                               |
+| Test reports and large payloads           | Bounded generations plus family byte budgets; trim bulky reproducible payloads separately from compact failure evidence                                     |
+| Temporary emulator/device data            | Clean owned temporary AVDs, snapshots, uploads, and run data on completion/failure; preserve intentional persistent test AVDs and source assets             |
+| Global/shared caches                      | Use tool-supported pruning only within declared ownership; do not recursively purge user-wide Gradle, Cargo, SDK, or dependency directories                 |
 
 Because dependencies may live outside the repository and serve other projects, track managed installations and references explicitly. Report protected old versions and why they remain; never assume every old directory under `dependency_base.txt` is disposable. Allow an explicit managed-root policy for dedicated installations
 
@@ -398,7 +398,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Sanitizer session 97709 remains LIVE, building D2 through PID 182539. Latest observation: roughly 582/1557 actions after 7m19s; approximately 11 GiB remains free. Do not restart the existing runner. D1 build is complete; both full instrumented CTest suites are still pending
 - The installer test process is terminal. Full quality checks for the earlier sanitizer changes remain pending until the active Bash build is terminal. outstanding_bugs.md remains untouched
 
-
 ### Linux child supervision and sanitizer findings
 
 - Added a Linux Python supervisor to the shared headless process pool. It watches the requesting PowerShell process through a pidfd, starts an owned process group, adopts orphaned descendants as a subreaper, and kills/reaps remaining descendants on worker or owner exit. Detached sessions are included through adopted-child discovery
@@ -411,7 +410,7 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Corrected supervisor validation completed: all ten tooling smoke tests pass, no skips, exit 0. Report: android/temp/tooling_smoke/run_8dda35c23ecb4117a0189b914ef7300c/summary.json. Fixed aggregate log: android/temp/linux-tooling-smoke.log. The inherited-output test now completes, and the forced-owner-kill/detached-descendant integrations still pass
 
 - Both corrected instrumented native suites now pass: 54/54 D1 in 22 seconds and 63/63 D2 in 40 seconds, report android/temp/engine_sanitizers/20260926_192321. The same run reached all three ConfigBounds variants and detected a real mission-HAM model reload leak (791044 bytes in 124 allocations), rather than a config-reader bounds error. Fixture copies were removed in finally despite the failures
-- The model cleanup already existed behind __ANDROID__ in d2/main/piggy.c. Removed only that guard so host HAM reloads release the previous polygon models too. D1 has no corresponding HAM reload path. This preserves Android behavior and extends its existing cleanup to desktop/headless builds; sanitizer detection remains enabled
+- The model cleanup already existed behind **ANDROID** in d2/main/piggy.c. Removed only that guard so host HAM reloads release the previous polygon models too. D1 has no corresponding HAM reload path. This preserves Android behavior and extends its existing cleanup to desktop/headless builds; sanitizer detection remains enabled
 - Scoped quality for the two-line core change passed. D2 EngineTests plus ConfigBounds are rebuilding/running to validate it; fixed log android/temp/linux-sanitizers-d2-reload.log. Do not claim leak validation before this run completes
 
 - Correction to the preceding reload hypothesis: extending the Android guard did not change the ConfigBounds leak report, although all 63 instrumented D2 native tests still passed. Reverted that experiment completely; d2/main/piggy.c has no diff. The mission asset service already frees the prior models, and packed polymodel pointers complicate LeakSanitizer reachability, so the allocation stack alone did not establish a reload leak
@@ -422,7 +421,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Native suites previously passed 54/54 D1 and 63/63 D2 after the homing fixture correction. CTest LastTest.log under each fixed instrumented build tree retains those results; automatic retention may prune earlier diagnostic report generations, as designed
 - Full scoped quality passed before the lifecycle edit, and scoped quality for the final lifecycle edit passed afterward. git diff --check passes. All sessions started in this tranche are terminal, including original sanitizer session 97709. Approximately 9.3 GiB remains free. outstanding_bugs.md remains unchanged
 - Remaining work includes installer concurrency/SIGKILL recovery, bounded extraction Python on Linux, remaining host wrappers and replay differences, Windows execution evidence and broader CI. Direct child launches outside the shared pool require selective lifetime integration; persistent services such as the ADB server must not be accidentally treated as disposable workers
-
 
 ### Linux dependency transaction recovery
 
@@ -440,7 +438,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Explicit managed-CMake validation is now LIVE in session 62041: bash run-linux-build.sh --target both --jobs 2 --cmake /home/user/local/cmake-3.31.6/bin/cmake. It reconfigured and is rebuilding affected targets in the existing fixed trees; latest observation D1 133/165 actions. Fixed log android/temp/linux-native-managed-cmake.log. Do not start another build while it runs. Run both native CTest suites after it finishes
 - Made the orphan-download test PID handoff atomic to avoid a readiness-file race. Scoped test-file quality and the full archive integration rerun pass; fixed logs android/temp/linux-installer-test-quality.log and android/temp/linux-installer-transactions-final.log. All installer/smoke/formatter sessions are terminal; only managed-CMake session 62041 remains running. The protected bug list is unchanged
 
-
 ### Remaining host route wrappers and managed CMake validation
 
 - Managed-CMake session 62041 completed the D1 build and is still building D2. D1 CTest with /home/user/local/cmake-3.31.6/bin/ctest passes all 54 cases in 4.88 seconds; fixed log android/temp/linux-ctest-d1-managed.log. No duplicate build was started
@@ -454,7 +451,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Normalized explicit executable/data arguments in the Counterstrike wrapper before its supervised process changes working directory. Verified from android/ using relative executable/data/output paths, including spaces in the retail data directory; assertions pass. Removed this extra probe's JSON/native log/lock afterward, retaining android/temp/linux-counterstrike-explicit.log as bounded evidence
 - Saved-world copied checkpoint/player directories are removed after completion. Counterstrike's default fixed report occupies approximately 504 KiB plus a small log and an empty lock. Scoped quality for the final path correction passes, and git diff --check is clean. All build/test/formatter sessions from this tranche are terminal. Approximately 9.0 GiB remains free; outstanding_bugs.md remains untouched
 
-
 ### GitHub Linux tooling failure (run 36290040730)
 
 - The Ubuntu 24.04 job failed only test_managed_dependencies; Windows 2022 passed all nine checks. Uploaded Linux diagnostics show retirement was conservatively blocked by an unreadable tool process (PID 1011), rather than an installer/build failure
@@ -463,7 +459,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Reproduced the original CI failure locally with a same-user Python process made non-inspectable using prctl(PR_SET_DUMPABLE, 0). Original test exits 1 with the same cannot-inspect reason; fixed log android/temp/ci-managed-original-repro.log. The reproduction process and temporary original-test script are removed after validation
 - Scoped PowerShell formatting/lint passes (android/temp/ci-linux-fix-quality.log). Final full smoke validation runs with the non-inspectable Python process still alive. No native code changed; no native rebuild is needed for this test-only correction
 - Full Linux smoke suite passes all ten checks with the unreadable background process present: android/temp/tooling_smoke/run_87d15579f86e496e872d7cbee4ed55bc/summary.json, fixed log android/temp/ci-linux-smoke.log. Reproduction process terminated successfully; temporary probe script removed. Changes remain local; the GitHub workflow has not been rerun with this fix. outstanding_bugs.md remains unchanged
-
 
 ### Remaining dependency retirement coverage
 
@@ -474,7 +469,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - All ten local tooling smoke checks pass with the expanded retention cases: android/temp/tooling_smoke/run_01d2884d31984c3aa130495284921482/summary.json, fixed log linux-retention-coverage-smoke.log. Final directory-name validation uses the same safe suffix grammar as retirement records
 - Real get_dosbox.sh cache admission verifies the installed executable hash without downloading; registration/apply now includes /home/user/local/dosbox-x-2026.01.02. All configured installations are protected, and legacy unowned NDK/shfmt remain unmanaged and untouched. Evidence: android/temp/linux-dosbox-cache-verification.log and linux-retention-coverage-real.json
 - User committed the prior CI fixture correction as 6df32f2c during this work. GitHub run 36291204049 completed successfully for both Ubuntu 24.04 and Windows 2022. That remote evidence covers the fixture correction, not these new uncommitted retention changes
-
 
 ### Linux metadata benchmark runner
 
@@ -490,7 +484,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - D1 public build completed; all 54 D1 CTest cases pass (4.50 seconds), fixed log android/temp/linux-benchmark-build-ctest-d1.log. Its test session 97629 is terminal
 - Build/diagnostic session 11692 remains LIVE, currently D2 176/1204 actions. Do not restart it. After completion, run D2 CTest, then rerun the selected seven retail benchmark levels with SkipBuild to validate the final CRLF digest/report edits (the already-running PowerShell process parsed the earlier revision). Keep normal digest failure visible and use SkipDigestValidation only as an explicitly labeled diagnostic; do not change manifest hashes without auditing content changes
 - Final scoped quality session 23169 is terminal and passes; policy self-test passes after canonical digest changes. All other test/formatter sessions are terminal. Manifest/history/outstanding_bugs.md remain unchanged, git diff --check passes, free space remains approximately 9.0 GiB
-
 
 ### In-place Linux dependency transaction recovery
 
@@ -512,7 +505,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Final scoped benchmark quality passes; git diff --check passes. All build, test and formatter sessions from this tranche are terminal. Approximately 9.0 GiB remains free. outstanding_bugs.md remains untouched
 - Remaining goal work includes bounded extraction Python on Linux, remaining asset-dependent wrappers, replay/benchmark content differences, Windows installer crash recovery, single-file/bootstrap recovery, SDK package retention, and broader build/device CI. No completion claim is made for these gaps
 
-
 ### Pinned bounded-extraction Python on Linux
 
 - Previous turn made progress: completed native builds/117 native tests, cmakelang recovery, final tooling smoke and benchmark runner validation. No prior sessions remained active at turn start
@@ -529,7 +521,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Download/staging and copied runtime fixtures are gone. The real runtime occupies about 78 MiB, retains only its original three pyc files, and passes tree admission after all tests. The shared transaction state retains only format and empty lock. Approximately 8.9 GiB remains free
 - Final mixed-language scoped quality passes (linux-bounded-python-final-quality.log), git diff --check passes, and outstanding_bugs.md remains unchanged. Every installer, smoke, master, supervisor, and formatter session in this tranche is terminal
 
-
 ### Mixed retail data for native route tests
 
 - Previous goal turn completed pinned Linux extraction-runtime provisioning and verified all 12 extended smoke checks, bootstrap reuse, master classification and cleanup
@@ -545,7 +536,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Latest GitHub Actions status remains run 36291204049, successful on Ubuntu and Windows; it does not cover the newer uncommitted changes. No checked-in mission data or protected bug-list edits were made
 - Final extended tooling smoke passes all 12 checks, including shared staging, installer interruption recovery and bounded runtime/extraction: android/temp/tooling_smoke/run_be3f4ab91a554eb8af3097a2dda0f9bc/summary.json; fixed log linux-mixed-data-tooling-smoke.log. Final scoped quality passes (linux-mixed-data-final-quality.log), git diff --check passes, and all sessions from this tranche are terminal
 
-
 ### Single-file soundfont recovery
 
 - Previous goal turn made progress: mixed retail staging, real route coverage, shared owner supervision and all 12 tooling checks passed
@@ -554,7 +544,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Full dependency installer suite passes, including JDK, archive-tool and cmakelang forced-termination recovery (android/temp/linux-soundfont-installer-suite.log). Final archive suite additionally passes the Windows-host-shim soundfont fallback checks; this is Linux execution evidence, not a new Windows CI result (linux-soundfont-final-archive.log)
 - Real soundfont cache admission passes without a download or asset modification. The sibling .dxx-install-state retains only its 15-byte format and empty lock, with no work directory or packaged recovery files; its exact path is ignored in android/.gitignore
 - Non-regular soundfont destinations are rejected and preserved. Scoped quality and git diff --check pass, every test session from this tranche is terminal, and outstanding_bugs.md is unchanged. Bootstrap PowerShell recovery, Windows transaction parity, SDK package retention and the other goal gaps remain open
-
 
 ### PowerShell bootstrap recovery
 
@@ -565,7 +554,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Scoped mixed-language quality passes (linux-powershell-quality.log), git diff --check passes, all test sessions are terminal, and protected outstanding_bugs.md is unchanged. No actual package manager or PowerShell replacement was run: this host reports 7.7.0-preview.1 while the configured bootstrap pin is 7.6.6
 - Cleanup documentation distinguishes download/local-tree recovery from OS package database recovery. Version retirement for user-local PowerShell installations, Windows transaction parity, SDK package retention, remaining test/capability coverage and other documented gaps still need work
 
-
 ### User-local PowerShell version retirement
 
 - Previous goal turn made progress: bootstrap recovery and isolated installer validation passed
@@ -575,7 +563,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Real dependency preview preserved all 11 configured installs and both unmanaged legacy directories; no real deletion or registration was needed (linux-powershell-retention-preview.json). This host has system PowerShell rather than a user-local versioned tree
 - SDK follow-up inventory: system images occupy about 7.7 GiB across API 23 and API 34. Both visible AVD config files reference API 34. Further ownership, registered-checkout and process checks are still required before retiring any package; no SDK content was deleted
 - Corrected managed integration passes, including the injected unreadable pwsh process, external command link, shared pins and actual old-version deletion (android/temp/linux-powershell-retention-final.log). Scoped quality and git diff --check pass. All sessions from this tranche are terminal; outstanding_bugs.md remains unchanged. The full smoke report retains its original fixture failure, with the successful targeted rerun recorded separately
-
 
 ### SDK provisioning portability and partial-install handling
 
@@ -588,7 +575,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Scoped quality passes (linux-sdk-provisioning-quality.log), git diff --check passes and all sessions from this tranche are terminal. outstanding_bugs.md remains unchanged. Windows wrapper selection is exercised by a Linux-hosted fixture; actual Windows CI for these newer changes remains pending
 - SDK package ownership registration, safe old-package retirement and sdkmanager partial-download cleanup remain unfinished; this tranche repairs provisioning and does not claim those storage gaps are complete
 
-
 ### SDK package and reference inventory
 
 - Previous goal turn made progress: shared SDK provisioning, partial-install admission, actual cache reuse and installer integration passed
@@ -599,7 +585,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Integration passes for two sharing checkouts, integer/.0 platform aliases, command-line latest aliases, moved absolute/relative AVD descriptors, environment roots, malformed metadata, unavailable checkout/AVD data and linked-path rejection. The test is included in the shared tooling smoke profile and master no-infrastructure catalog
 - Master HostOnly filter passes one test, zero failures/timeouts/skips (temp/test_reports/report_20260926_213936.md; linux-sdk-inventory-master.log). Scoped quality passes (linux-sdk-inventory-quality.log)
 - Final extended tooling smoke passes all 13 checks (android/temp/tooling_smoke/run_30692a932d154f649a416ff05f43ab71/summary.json; linux-sdk-inventory-smoke.log), including corrected managed PowerShell retirement, all installer recovery fixtures and bounded extraction. Every session from this tranche is terminal; git diff --check passes and outstanding_bugs.md remains unchanged. Inventory does not authorize deletion; ownership registration, process/cache checks and SDK uninstall integration remain open
-
 
 ### Managed SDK package retirement
 
@@ -613,7 +598,6 @@ Full instrumented CTest suites and ConfigBounds are still pending. Existing sour
 - Real registration/apply succeeded: build-tools 37.0.0, CMake 3.31.6, platforms 34/37.0 and the API 34 image are registered and protected; four legacy unowned packages remain protected. No real SDK package was removed. The default AVD root is persisted in the SDK ownership registry (android/temp/linux-sdk-cleanup-registered.json)
 - All sessions from this tranche are terminal. git diff --check passes and outstanding_bugs.md is unchanged. The full smoke report retains the original fixture failure; the corrected master rerun is the final cleanup validation, with the 13 other smoke checks already passing
 - Remaining SDK work: fully automatic interrupted removal when identity metadata was deleted, Windows writer lock parity, and separately reviewed adoption of legacy SDK packages. Standalone provisioning helpers do not yet trigger retirement independently of the final bootstrap step
-
 
 ### Interrupted SDK uninstall recovery
 

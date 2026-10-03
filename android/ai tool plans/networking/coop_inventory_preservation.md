@@ -9,6 +9,7 @@ Two-track system for coop game continuity:
 **Track B -- Level + Inventory Restore**: Start at the most recently completed level with fresh level state, but restore each player's inventory/shields/energy from cached data. This is the "continue from checkpoint" path -- simpler, always works even without a save file, and can be beefed up over time.
 
 Both tracks should preserve player inventory across:
+
 1. Sudden disconnects (including host migration)
 2. Rejoins within the same session
 3. Save/load cycles across sessions
@@ -21,9 +22,11 @@ Both tracks should preserve player inventory across:
 ### Root cause: callsign mismatch in `coop_arm_auto_restore()`
 
 Autosaves are written with `COOP_AUTOSAVE_CALLSIGN` ("coopsave") as the filename prefix:
+
 - File saved as: `coopsave.mg5`, `coopsave.mg6`, etc.
 
 But `coop_arm_auto_restore()` looks for the file using `Players[Player_num].callsign`:
+
 - File looked up as: `<actual_callsign>.mg5` -- **does not exist**
 
 `state_get_game_id()` returns 0, restore silently fails, `coop_auto_restore_armed` never set.
@@ -33,10 +36,12 @@ But `coop_arm_auto_restore()` looks for the file using `Players[Player_num].call
 `multi_restore_game()` (d2/main/multi.c ~L6781) has an Android fallback that tries `COOP_AUTOSAVE_CALLSIGN` when the normal filename is missing. But `coop_arm_auto_restore()` **lacks this fallback** -- the restore never gets armed in the first place.
 
 ### Secondary issues
+
 - **One-shot gate**: `coop_auto_restore_attempted = 1` is set on first call. If the file read fails for any reason, there is no retry -- the flag prevents `coop_arm_auto_restore()` from ever running again
 - **Silent failure**: No HUD message or user-visible indication that restore failed. Only a `con_printf` log
 
 ### Fix needed (Chunk 0)
+
 Add the same `COOP_AUTOSAVE_CALLSIGN` fallback to `coop_arm_auto_restore()` that already exists in `multi_restore_game()`. Both d1 and d2.
 
 ---
@@ -44,6 +49,7 @@ Add the same `COOP_AUTOSAVE_CALLSIGN` fallback to `coop_arm_auto_restore()` that
 ## Current State (what exists)
 
 ### Already working (when the bug above is fixed)
+
 - **Absent player tracking**: `coop_track_absent_player()` snapshots a disconnecting player's full inventory into `coop_absent_list[]` (up to 16 players). Called from `multi_disconnect_player()` on Android
 - **Save file metadata trailer**: `coop_save_metadata` includes both `active_players[8]` and `absent_players[16]` arrays of `coop_player_record`, each storing callsign, client_id, score, energy, shields, laser_level, weapon flags, ammo, player flags
 - **Autosave system**: Rotating slots 5-9, triggered on player disconnect. Writes `coop_autosave_history.json` for lobby consumption
@@ -55,6 +61,7 @@ Add the same `COOP_AUTOSAVE_CALLSIGN` fallback to `coop_arm_auto_restore()` that
 - **Lobby save UI (LobbyScreen CoopSaveOffer)**: In the lobby waiting room, shows the best-matching save and Restore/Start Fresh toggle. Also writes `coop_restore_slot.txt`
 
 ### Gaps
+
 1. **Save restore is broken** (callsign mismatch bug above)
 2. **No inventory restore on rejoin (Track B)**: When a player reconnects mid-session, they get `init_player_stats_new_ship()` defaults. The `coop_absent_list[]` data is never applied to a rejoining player
 3. **MULTI_SHIP_STATUS missing shields**: No periodic full-shields sync. Other players only have a "best guess" shields value
@@ -70,22 +77,24 @@ Add the same `COOP_AUTOSAVE_CALLSIGN` fallback to `coop_arm_auto_restore()` that
 ## Key Files
 
 ### C Engine (d2/) -- all changes mirrored to d1/
-| File | Role |
-|------|------|
-| `d2/main/coop_save.c` | Absent player tracking, save metadata, autosave, auto-restore, progress tracking |
-| `d2/main/coop_save.h` | Structures: `coop_player_record`, `coop_save_metadata`, function declarations |
-| `d2/main/multi.c` | Disconnect handler, ship status packets, host migration, restore game, `multi_do_frame()` |
-| `d2/main/multi.h` | Packet type constants and sizes |
-| `d2/main/net_udp.c` | Player join/rejoin sync, `net_udp_welcome_player`, `net_udp_read_sync_packet` |
-| `d2/main/gameseq.c` | `init_player_stats_new_ship()`, `coop_write_progress_json()` callsite |
-| `d2/main/state.c` | `state_restore_all_sub()` - coop restore callsign matching |
+
+| File                  | Role                                                                                      |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| `d2/main/coop_save.c` | Absent player tracking, save metadata, autosave, auto-restore, progress tracking          |
+| `d2/main/coop_save.h` | Structures: `coop_player_record`, `coop_save_metadata`, function declarations             |
+| `d2/main/multi.c`     | Disconnect handler, ship status packets, host migration, restore game, `multi_do_frame()` |
+| `d2/main/multi.h`     | Packet type constants and sizes                                                           |
+| `d2/main/net_udp.c`   | Player join/rejoin sync, `net_udp_welcome_player`, `net_udp_read_sync_packet`             |
+| `d2/main/gameseq.c`   | `init_player_stats_new_ship()`, `coop_write_progress_json()` callsite                     |
+| `d2/main/state.c`     | `state_restore_all_sub()` - coop restore callsign matching                                |
 
 ### Kotlin (lobby UI)
-| File | Role |
-|------|------|
-| `android/.../multiplayer/LobbyScreen.kt` | `CoopSaveOffer` widget (Track A in-lobby), save selection toggle |
+
+| File                                           | Role                                                                        |
+| ---------------------------------------------- | --------------------------------------------------------------------------- |
+| `android/.../multiplayer/LobbyScreen.kt`       | `CoopSaveOffer` widget (Track A in-lobby), save selection toggle            |
 | `android/.../multiplayer/MultiplayerScreen.kt` | `readCoopAutosaveHistory()`, `writeCoopRestoreSlot()`, `readCoopProgress()` |
-| `android/.../multiplayer/CreateGameDialog.kt` | Game creation dialog with save list + progress-based level suggestion |
+| `android/.../multiplayer/CreateGameDialog.kt`  | Game creation dialog with save list + progress-based level suggestion       |
 
 ---
 
@@ -100,6 +109,7 @@ Add the same `COOP_AUTOSAVE_CALLSIGN` fallback to `coop_arm_auto_restore()` that
 **Files**: `d2/main/coop_save.c` (~L556), `d1/main/coop_save.c` (same)
 
 **Functions to modify**:
+
 - `coop_arm_auto_restore()` -- after the initial `state_get_game_id()` fails, try again with `COOP_AUTOSAVE_CALLSIGN`. Accept `COOP_AUTOSAVE_GAME_ID` sentinel as valid game_id
 
 **Testing**: Create coop lobby, select a save in CreateGameDialog, start game. Verify save is loaded (player positions/inventory match the save, not fresh start). Check console log for "auto-restore armed" and "triggering auto-restore" messages.
@@ -111,6 +121,7 @@ Add the same `COOP_AUTOSAVE_CALLSIGN` fallback to `coop_arm_auto_restore()` that
 **Problem**: Other players don't have an accurate copy of each player's full inventory. Shields and most primary ammo are missing from the periodic sync. This matters for Track B -- the host needs accurate data to cache/restore.
 
 **Changes**:
+
 - `multi_send_ship_status_for_frame()`: Add shields (4 bytes), score (4 bytes), all primary_ammo[0-9] (20 bytes). Current 43 bytes -> ~71 bytes
 - `multi_do_ship_status()`: Update unpacking in both observer and coop branches. In coop mode, write ALL received fields into `Players[pnum]` (not just the partial subset). This ensures `coop_snapshot_player()` gets accurate data when a player disconnects
 - `multi.h`: Update `MULTI_SHIP_STATUS` size constant
@@ -128,6 +139,7 @@ Add the same `COOP_AUTOSAVE_CALLSIGN` fallback to `coop_arm_auto_restore()` that
 **Problem**: The `player` struct tracks cumulative game stats (kills, deaths, hostages, time played) but `coop_player_record` only stores inventory/loadout. When a player disconnects and rejoins, or when restoring from a save, these stats are lost.
 
 **Stats to preserve** (from the `player` struct):
+
 - `net_kills_total` (short) -- total net kills across all levels
 - `net_killed_total` (short) -- total times killed
 - `num_kills_total` (short) -- total robots killed
@@ -140,6 +152,7 @@ Per-level stats (`num_kills_level`, `time_level`, `hostages_level`) reset natura
 Session stats (`Coop_kill_stats[pnum].robots_killed`, `.score_earned`) are per-level and already shared via `MULTI_COOP_PEER_STATUS`. These could optionally be cached but are lower priority.
 
 **Changes**:
+
 - `coop_save.h` (d1+d2): Add stat fields to `coop_player_record`. Bump `COOP_SAVE_META_VER` to 3. New fields:
   ```c
   int16_t  net_kills_total;
@@ -191,6 +204,7 @@ Session stats (`Coop_kill_stats[pnum].robots_killed`, `.score_earned`) are per-l
 **Problem**: The `coop_absent_list[]` is in-memory only. If the game is restarted from a save, absent player records are lost.
 
 **Changes**:
+
 - `coop_save.c/h` (d1+d2): Add `coop_load_absent_from_metadata(const coop_save_metadata *meta)` to repopulate `coop_absent_list[]` from save metadata
 - `state.c` (d1+d2): After `state_restore_all_sub()` completes, read the save's metadata trailer and call `coop_load_absent_from_metadata()`
 - Verify `coop_clear_absent_players()` is NOT called during level transitions (check all call sites)
@@ -206,6 +220,7 @@ Session stats (`Coop_kill_stats[pnum].robots_killed`, `.score_earned`) are per-l
 **Problem**: Autosaves only trigger on disconnect. If the host plays for 20 minutes without anyone disconnecting, there's no recent save.
 
 **Changes**:
+
 - `multi.c` (d1+d2): In `multi_do_frame()`, add a periodic coop autosave (every 30 seconds, host only). Use `timer_query()` or a frame counter
 
 **Files**: `d2/main/multi.c`, `d1/main/multi.c`
@@ -219,6 +234,7 @@ Session stats (`Coop_kill_stats[pnum].robots_killed`, `.score_earned`) are per-l
 **Problem**: `coop_progress.json` only stores the level number. When resuming via Track B (start at last level, fresh level state), players get default loadout.
 
 **Design options**:
+
 - A) Extend `coop_progress.json` to include per-player `coop_player_record` data. Written at level end alongside the level number. On resume, lobby writes a "restore inventory" file that the engine reads at start
 - B) Rely on the autosave system (Track A) for inventory and keep Track B as level-only. Users who want inventory back use Track A
 - C) At level-end, snapshot all players into the absent list, so their state is available on the next session start
@@ -226,6 +242,7 @@ Session stats (`Coop_kill_stats[pnum].robots_killed`, `.score_earned`) are per-l
 **Preferred: Option A** -- extend `coop_progress.json` to carry per-player inventory. This makes Track B fully functional without requiring a save file.
 
 **Changes**:
+
 - `coop_save.c` (d1+d2): In `coop_write_progress_json()`, add a `"players"` array with per-player inventory fields (shields, energy, laser_level, weapon flags, ammo, score, player flags). Reuse `coop_snapshot_player()` to gather the data
 - `MultiplayerScreen.kt`: Extend `readCoopProgress()` to also return the player records. Or write a separate `coop_progress_players.json` sidecar
 - On game start via Track B: write a file or pass data that tells the engine to apply saved inventory to matching players after level load
@@ -239,11 +256,13 @@ Session stats (`Coop_kill_stats[pnum].robots_killed`, `.score_earned`) are per-l
 ### Chunk 6: Lobby UI improvements -- DONE
 
 **Problem**: Autosaves are presented in the CreateGameDialog and LobbyScreen, but:
+
 - There's no top-level "Resume Recent Game" shortcut
 - The two UIs (CreateGameDialog save list and LobbyScreen CoopSaveOffer) are somewhat redundant
 - CreateGameDialog already shows saves with good UX; LobbyScreen shows a simpler version
 
 **Changes**:
+
 - `MultiplayerScreen.kt`: Add a "Recent Coop Games" section on the multiplayer screen. Scan both d1/d2 dirs for `coop_autosave_history.json`. Show last 3-5 saves with mission, level, players, time. Tapping one pre-fills CreateGameDialog or goes straight to lobby creation
 - Clean up the interaction between CreateGameDialog save selection and LobbyScreen CoopSaveOffer so they don't conflict (currently both can write `coop_restore_slot.txt`)
 
@@ -254,6 +273,7 @@ Session stats (`Coop_kill_stats[pnum].robots_killed`, `.score_earned`) are per-l
 ### Chunk 6b: Lobby metadata -- save type labels and player match count -- DONE
 
 **Problem**: The lobby save lists don't tell the host:
+
 1. Whether a save is a **full save** (Track A: restores level state, robot positions, door states, everything) vs a **level checkpoint** (Track B: starts at the right level with inventory, but fresh level state)
 2. How many players currently in the lobby **match** the save's player list
 
@@ -262,6 +282,7 @@ This matters for making informed restore decisions.
 **Design**:
 
 #### Save type label
+
 - Full saves come from `coop_autosave_history.json` (slots 5-9). These are actual `.mg` save files that `state_restore_all_sub()` will load
 - Level checkpoints come from `coop_progress.json` (written at level end). These just set the starting level; no save file is loaded
 - Both could appear in the same list. Tag each entry with a `type` field:
@@ -270,6 +291,7 @@ This matters for making informed restore decisions.
 - Display in UI: prefix the label with a tag like `[Save]` or `[Checkpoint]`, or use an icon/color distinction
 
 #### Player match count
+
 - For autosave entries: compare `save.callsigns` (and/or `client_ids` if available) against the current lobby player list
 - Show as e.g. `"2/3 players match"` or highlight matching names in the callsign list
 - In CreateGameDialog: already scores saves by callsign match when sorting. Surface the match count in the display label
@@ -278,11 +300,13 @@ This matters for making informed restore decisions.
 **Changes**:
 
 C engine:
+
 - `coop_save.c` (d1+d2): Add a `"type": "full_save"` field to each entry in `coop_autosave_history.json`. This is always `"full_save"` for autosaves. The Kotlin side will tag progress entries as `"checkpoint"` when merging them into the same list
 - `coop_save.c` (d1+d2): Add a `"total_score"` field to autosave history entries (sum of all connected players' scores at save time). This gives a quick indicator of game progress without needing to parse the binary save trailer
 - `coop_save.c` (d1+d2): Extend `coop_write_progress_json()` to include per-player `client_ids` array (currently only has `players` callsign array). This allows the Kotlin lobby to match progress entries against lobby players the same way it matches autosave entries
 
 Kotlin:
+
 - `MultiplayerScreen.kt`: Extend `CoopSaveEntry` data class:
   ```kotlin
   data class CoopSaveEntry(
@@ -315,30 +339,37 @@ Kotlin:
 ## Considerations
 
 ### Protocol versioning
+
 - MULTI_SHIP_STATUS size change and new MULTI_COOP_RESTORE_INVENTORY packet break compat with older builds. Fine pre-release
 
 ### Save file backward compatibility
+
 - Existing trailer system is backward-compatible. No format changes needed -- `coop_player_record` already has all fields
 
 ### Host migration
+
 - On migration, new host inherits `coop_absent_list[]` in memory. No transfer needed
 - If game restarts from save on different host, absent list loaded from metadata trailer (Chunk 3)
 
 ### D1/D2 parity
+
 - All C changes mirrored. `coop_save.h` already uses max-of-both layout (10 weapon slots)
 
 ### Player flags on restore
+
 - Restore durable flags: QUAD, AFTERBURNER, MAP_ALL, CONVERTER, AMMO_RACK, HEADLIGHT
 - Do NOT restore: CLOAKED, INVULNERABLE (time-limited), FLAG (CTF)
 - Keys (BLUE/YELLOW/RED KEY in flags): level-specific, only restore if same level
 
 ### Score and game stats
+
 - Score: already tracked in `coop_player_record.score`. Sent via `MULTI_SCORE` packets normally. Added to expanded MULTI_SHIP_STATUS for caching accuracy
 - Kill/death/hostage stats: added to `coop_player_record` in Chunk 1b. These are cumulative totals from the `player` struct, not per-level deltas
 - `total_score` in autosave history JSON: sum of all connected players' scores at save time. Quick progress indicator for the lobby UI without parsing binary trailers
 - Per-level session stats (`Coop_kill_stats`): already synced via `MULTI_COOP_PEER_STATUS` packets (1/sec). Not saved to `coop_player_record` since they reset each level anyway
 
 ### Lobby metadata
+
 - Save type labels: `"full_save"` vs `"checkpoint"`. Full saves restore complete level state via `state_restore_all_sub()`. Checkpoints simply set the start level + restore per-player inventory. The distinction is important for user expectations -- a full save puts you back mid-level with doors opened and robots killed, while a checkpoint starts the level fresh
 - Player match count: computed by comparing save `callsigns`/`client_ids` against current lobby players. Shown as `"2/3 match"` in the save list. Already computed internally for scoring (LobbyScreen `bestMatch` logic) -- just needs to be surfaced in the display label
 - Match scoring uses `client_ids` when available (UUID-based, survives callsign changes), falling back to case-insensitive callsign matching

@@ -1,9 +1,11 @@
 # Demo Installer Extraction Plan
 
 ## Goal
+
 Make demo installer archives a first-class import source for Android and PC-side tooling. The Android launcher should accept known Descent 1 and Descent 2 demo ZIP or EXE packages, extract the contained game data files, record hashes in the existing asset manifest, and identify demo file versions through the normal hash/version display path.
 
 ## Phases
+
 - [x] Inventory `game_data/demo installers` payloads and document installer contents
 - [x] Locate existing PC-side extraction helpers and reuse or align with them where practical
 - [x] Define a shared demo package model for known filenames, package hashes, output files, and game identity
@@ -14,12 +16,14 @@ Make demo installer archives a first-class import source for Android and PC-side
 - [x] Run formatting and relevant tests, then mark completed work in this plan
 
 ## Follow-up: Mac StuffIt Demo Installers
+
 - [x] Inventory `Descent II Preview.sit` and `Descent Shareware.sit` contents and extracted hashes
 - [x] Add known package entries for the Mac StuffIt installers and route `.sit` imports through StuffIt extraction
 - [x] Update docs and tests for the new package hashes and extraction modes
 - [x] Run formatting and focused validation for the updated import paths
 
 ## Follow-up: StuffIt Attribution, Hashes, and Oracles
+
 - [x] Label `stuffit_extract.c` with the main open source references used for the SIT5 parser
 - [x] Audit README extracted-file hash rows against `known_versions.json5` and document any shared-version hashes
 - [x] Add repeatable oracle validation for the two real Mac `.sit` installers, using PC-side extraction hashes as the expected output
@@ -27,6 +31,7 @@ Make demo installer archives a first-class import source for Android and PC-side
 - [x] Run formatting and focused native/helper validation
 
 ## Follow-up: Demo Runtime Issues
+
 - [x] Investigate D2 DOS demo crash at briefing sound start in `mixdigi_convert_sound`
 - [x] Add intelligible version recognition for the `desc14sw.exe` `descent.pig` hash
 - [x] Fix D1 Mac demo mission detection so menus and level range use demo behavior
@@ -34,6 +39,7 @@ Make demo installer archives a first-class import source for Android and PC-side
 - [ ] Add focused validation for the runtime fixes
 
 ## Follow-up: Additional BinHex and Classic SIT Demo Packages
+
 - [x] Hash and inventory the newly downloaded `.hqx` and classic `.sit` demo packages
 - [x] Extract the new packages and record final game data hashes in the README
 - [x] Extend Android import routing for BinHex-wrapped StuffIt packages
@@ -42,6 +48,7 @@ Make demo installer archives a first-class import source for Android and PC-side
 - [x] Review the previous runtime bug fixes for correctness risks
 
 ## Notes
+
 - Keep game-engine source changes out of this tranche unless needed for hash recognition
 - Do not fix the existing demo download URL in this pass
 - Prefer one extraction path for PC and Android semantics even if the host scripts and Android implementation use different archive backends

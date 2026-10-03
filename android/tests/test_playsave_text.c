@@ -26,14 +26,14 @@ static unsigned char *read_fixture(const char *path, size_t *size)
 			fclose(f);
 		return NULL;
 	}
-	data = malloc((size_t)length + 1);
-	if (!data || fread(data, 1, (size_t)length, f) != (size_t)length) {
+	data = malloc((size_t) length + 1);
+	if (!data || fread(data, 1, (size_t) length, f) != (size_t) length) {
 		free(data);
 		fclose(f);
 		return NULL;
 	}
 	data[length] = 0;
-	*size = (size_t)length;
+	*size = (size_t) length;
 	fclose(f);
 	return data;
 }
@@ -46,10 +46,10 @@ int main(void)
 	const char empty_options[] = "[D1X Options]\n[end]\n";
 	const char malformed[] = "[cockpit]\nunknown=keep\n";
 	const struct playsave_text_entry entries[] = {
-		{"mode=", "mode=2\n"},
-		{"robothostagecounts=", "robothostagecounts=1\n"},
-		{"bosshealthbar=", "bosshealthbar=0\n"},
-		{"mapcheatsaccessible=", "mapcheatsaccessible=1\n"}
+		{ "mode=", "mode=2\n" },
+		{ "robothostagecounts=", "robothostagecounts=1\n" },
+		{ "bosshealthbar=", "bosshealthbar=0\n" },
+		{ "mapcheatsaccessible=", "mapcheatsaccessible=1\n" }
 	};
 	const size_t filler_size = 65537;
 	unsigned char *fixture = malloc(sizeof(prefix) - 1 + filler_size + sizeof(suffix));
@@ -66,13 +66,13 @@ int main(void)
 	fixture_size = sizeof(prefix) - 1 + filler_size + sizeof(suffix) - 1;
 	if (!write_fixture(path, fixture, fixture_size) ||
 	    !playsave_text_update_section(path, "[D1X Options]", "[cockpit]",
-		entries, sizeof(entries) / sizeof(entries[0])))
+	                                  entries, sizeof(entries) / sizeof(entries[0])))
 		goto cleanup;
 	result = read_fixture(path, &result_size);
 	if (!result)
 		goto cleanup;
-	if (!strstr((char *)result, "mode=2\nunknown=keep\nrobothostagecounts=1\nbosshealthbar=0\nmapcheatsaccessible=1\n[end]\n") ||
-	    strstr((char *)result, "mode=1\n") || result_size <= filler_size ||
+	if (!strstr((char *) result, "mode=2\nunknown=keep\nrobothostagecounts=1\nbosshealthbar=0\nmapcheatsaccessible=1\n[end]\n") ||
+	    strstr((char *) result, "mode=1\n") || result_size <= filler_size ||
 	    memcmp(result + result_size - sizeof(suffix) + 1, suffix,
 	           sizeof(suffix) - 1)) {
 		free(result);
@@ -80,27 +80,27 @@ int main(void)
 	}
 	free(result);
 
-	if (!write_fixture(path, (const unsigned char *)empty_options,
+	if (!write_fixture(path, (const unsigned char *) empty_options,
 	                   sizeof(empty_options) - 1) ||
 	    !playsave_text_update_section(path, "[D1X Options]", "[cockpit]",
-		entries, sizeof(entries) / sizeof(entries[0])))
+	                                  entries, sizeof(entries) / sizeof(entries[0])))
 		goto cleanup;
 	result = read_fixture(path, &result_size);
-	if (!result || !strstr((char *)result,
-		"[cockpit]\nmode=2\nrobothostagecounts=1\nbosshealthbar=0\nmapcheatsaccessible=1\n[end]\n[end]\n")) {
+	if (!result || !strstr((char *) result,
+	                       "[cockpit]\nmode=2\nrobothostagecounts=1\nbosshealthbar=0\nmapcheatsaccessible=1\n[end]\n[end]\n")) {
 		free(result);
 		goto cleanup;
 	}
 	free(result);
 
-	if (!write_fixture(path, (const unsigned char *)malformed,
+	if (!write_fixture(path, (const unsigned char *) malformed,
 	                   sizeof(malformed) - 1) ||
 	    !playsave_text_update_section(path, "[D1X Options]", "[cockpit]",
-		entries, sizeof(entries) / sizeof(entries[0])))
+	                                  entries, sizeof(entries) / sizeof(entries[0])))
 		goto cleanup;
 	result = read_fixture(path, &result_size);
-	if (!result || !strstr((char *)result,
-		"unknown=keep\nmode=2\nrobothostagecounts=1\nbosshealthbar=0\nmapcheatsaccessible=1\n[end]\n")) {
+	if (!result || !strstr((char *) result,
+	                       "unknown=keep\nmode=2\nrobothostagecounts=1\nbosshealthbar=0\nmapcheatsaccessible=1\n[end]\n")) {
 		free(result);
 		goto cleanup;
 	}

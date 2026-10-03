@@ -11,22 +11,22 @@ Full scope: [consolidation plan](d1-in-d2-consolidation-plan.md)
 
 ## Hook inventory and owners
 
-| Original integration | D1 owner | Purpose / effects | Target boundary and verification |
-| --- | --- | --- | --- |
-| `piggy.c`: D1 PIG readers, frame loading, texture mapping and light remap | `d1_in_d2_bitmaps.c` | Decodes/registers D1 pixels, owns D1 replacement bookkeeping | Shared paging/registration remains in piggy; extraction fixtures cover light/monitor/lava replacements and cleanup; overlay slot mapping transitional until complete generation |
-| `gameseq.c`: pre-load preparation and robot reload boundary | `d1_in_d2.c` facade; asset bodies in `d1_in_d2_assets.c` | Publishes D1 data before level decoding and prevents D2 robot reload from replacing it | Native `LoadLevel` tests cover repeated D1 levels and D1 -> D2 -> D1; late object repair removed from normal path |
-| `collide.c`: explosion-position helpers and damage predicates | `d1_in_d2_semantics.c` | Position choice/mutation and damage rules | Position bodies moved; light guard removed after original metadata publication; preserve collision side effects |
-| `wall.c`: nearby light guard | D1 asset metadata | Superseded by original D1 texture definitions | Removed; direct-hit and nearby-blast tests use untagged D1 metadata through shared handlers |
-| `ai.c`, `ai2.c`, `aipath.c`: D1 scheduling/aiming/path behavior | `d1_in_d2_ai.c` | AI state and RNG ordering, visibility/path decisions | Owns initialization, frame preparation, agitation/recovery/factory exit and awareness reaction, time slicing, full sight/cached perception, relative movement/circling and complete firing operations with companion exclusion. Global awareness, combat/movement, path/boss policy and final frame closure remain open |
-| `physics.c`: rotation integration, skip-count update, surface checks | semantics / bounded physics owner | Physics state and RNG ordering | Operation-level extraction; preserve fixed-point order; native D1 and D2 comparisons |
-| `laser.c`, homing configuration in `object.c`: weapon phase dispatch | `d1_in_d2_weapons.c` | Projectile state, selection, damage, child ownership, targeting and speed | Creation/placement, accounting, child selection, acquisition/retention/steering, firing awareness and speed rules now owned here; shared allocation/collision/replay services remain in the engine |
-| `fvi.c`: transparent-wall crossing and D1 replay observations | `d1_in_d2_semantics.c` | Samples original/merged/RLE pixels using engine services; no world or RNG mutation | D1 bodies and diagnostic formatting removed; traversal retains policy/observation calls. Shared native-D1/D2 fixture covers doors, opaque/transparent pixels and rotated overlays |
-| `fireball.c`, `object.c`, `powerup.c`, remaining `fvi.c` object-collision rules | semantics / assets | Drop policy, object state, pickups, collision interpretation | Prefer complete imported definitions, otherwise narrow operations; behavioral fixtures |
-| `gamemine.c`, `gamesave.c`: D1 texture/version/object conversions | `d1_in_d2_levels.c` | Converts level formats before verification | Faithful source IDs and common checkpoint adapter; legacy slot translation explicit |
-| `switch.c`, `gameseq.c`: D1 exit/secret/death branches | `d1_in_d2_levels.c` | Transitions and persistent player state | One D1 transition owner; full entry/death/restore/return matrix |
-| `mission.c`, `titles.c`, startup/text/cockpit callers | facade / presentation | Profile selection, original UI resources and campaign presentation | D1-only cold boot and native D1 visual checks; no D2 fallback |
-| `polyobj.c`, companion spawn in `ai2.c` | assets / AI | Optional Guide-Bot model and actor routing | Explicit optional asset ownership; D1 enemies unaffected |
-| `input_demo_hooks.c`, `input_demo_start.c`, `net_udp.c`, save adapters | existing D1 save/replay owners | State translation and content/rules identity | Common generation contract and versioned IDs; roundtrip/replay/network validation |
+| Original integration                                                            | D1 owner                                                 | Purpose / effects                                                                      | Target boundary and verification                                                                                                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `piggy.c`: D1 PIG readers, frame loading, texture mapping and light remap       | `d1_in_d2_bitmaps.c`                                     | Decodes/registers D1 pixels, owns D1 replacement bookkeeping                           | Shared paging/registration remains in piggy; extraction fixtures cover light/monitor/lava replacements and cleanup; overlay slot mapping transitional until complete generation                                                                                                                                         |
+| `gameseq.c`: pre-load preparation and robot reload boundary                     | `d1_in_d2.c` facade; asset bodies in `d1_in_d2_assets.c` | Publishes D1 data before level decoding and prevents D2 robot reload from replacing it | Native `LoadLevel` tests cover repeated D1 levels and D1 -> D2 -> D1; late object repair removed from normal path                                                                                                                                                                                                       |
+| `collide.c`: explosion-position helpers and damage predicates                   | `d1_in_d2_semantics.c`                                   | Position choice/mutation and damage rules                                              | Position bodies moved; light guard removed after original metadata publication; preserve collision side effects                                                                                                                                                                                                         |
+| `wall.c`: nearby light guard                                                    | D1 asset metadata                                        | Superseded by original D1 texture definitions                                          | Removed; direct-hit and nearby-blast tests use untagged D1 metadata through shared handlers                                                                                                                                                                                                                             |
+| `ai.c`, `ai2.c`, `aipath.c`: D1 scheduling/aiming/path behavior                 | `d1_in_d2_ai.c`                                          | AI state and RNG ordering, visibility/path decisions                                   | Owns initialization, frame preparation, agitation/recovery/factory exit and awareness reaction, time slicing, full sight/cached perception, relative movement/circling and complete firing operations with companion exclusion. Global awareness, combat/movement, path/boss policy and final frame closure remain open |
+| `physics.c`: rotation integration, skip-count update, surface checks            | semantics / bounded physics owner                        | Physics state and RNG ordering                                                         | Operation-level extraction; preserve fixed-point order; native D1 and D2 comparisons                                                                                                                                                                                                                                    |
+| `laser.c`, homing configuration in `object.c`: weapon phase dispatch            | `d1_in_d2_weapons.c`                                     | Projectile state, selection, damage, child ownership, targeting and speed              | Creation/placement, accounting, child selection, acquisition/retention/steering, firing awareness and speed rules now owned here; shared allocation/collision/replay services remain in the engine                                                                                                                      |
+| `fvi.c`: transparent-wall crossing and D1 replay observations                   | `d1_in_d2_semantics.c`                                   | Samples original/merged/RLE pixels using engine services; no world or RNG mutation     | D1 bodies and diagnostic formatting removed; traversal retains policy/observation calls. Shared native-D1/D2 fixture covers doors, opaque/transparent pixels and rotated overlays                                                                                                                                       |
+| `fireball.c`, `object.c`, `powerup.c`, remaining `fvi.c` object-collision rules | semantics / assets                                       | Drop policy, object state, pickups, collision interpretation                           | Prefer complete imported definitions, otherwise narrow operations; behavioral fixtures                                                                                                                                                                                                                                  |
+| `gamemine.c`, `gamesave.c`: D1 texture/version/object conversions               | `d1_in_d2_levels.c`                                      | Converts level formats before verification                                             | Faithful source IDs and common checkpoint adapter; legacy slot translation explicit                                                                                                                                                                                                                                     |
+| `switch.c`, `gameseq.c`: D1 exit/secret/death branches                          | `d1_in_d2_levels.c`                                      | Transitions and persistent player state                                                | One D1 transition owner; full entry/death/restore/return matrix                                                                                                                                                                                                                                                         |
+| `mission.c`, `titles.c`, startup/text/cockpit callers                           | facade / presentation                                    | Profile selection, original UI resources and campaign presentation                     | D1-only cold boot and native D1 visual checks; no D2 fallback                                                                                                                                                                                                                                                           |
+| `polyobj.c`, companion spawn in `ai2.c`                                         | assets / AI                                              | Optional Guide-Bot model and actor routing                                             | Explicit optional asset ownership; D1 enemies unaffected                                                                                                                                                                                                                                                                |
+| `input_demo_hooks.c`, `input_demo_start.c`, `net_udp.c`, save adapters          | existing D1 save/replay owners                           | State translation and content/rules identity                                           | Common generation contract and versioned IDs; roundtrip/replay/network validation                                                                                                                                                                                                                                       |
 
 This inventory includes format/version branches as migration work, not just explicit mode checks. Function-level entries will be refined while extracting each domain
 
@@ -230,12 +230,12 @@ Selecting a custom D1 mission defers publication until level preparation and pre
 
 Sound-header and payload reload now live together in the generic `piggy_load_mission_data` service. A focused test reproduced embedded D2 HAM sound offsets remaining unresolved after a fresh registry load. Registry reset also failed to reset the embedded-header initialization state. The service now reads newly registered embedded samples, and registry reset permits the headers to be loaded again. These are shared D2 asset-service corrections; no D1 conditions were added to the sound reader
 
-| Original integration | Retained code | Owned work / evidence |
-| --- | --- | --- |
-| `mission.c`: successful descriptor load | One facade call and existing extra-robot movie handling | Facade decides deferred D1 versus immediate D2 definitions and owns model retirement |
-| `gameseq.c`: robot reset / level preparation | Existing phase calls; no D1 loader ordering | Mission and level entry exercise the same transition owner |
-| `mission.c`: `load_mission_ham` | D2 data service followed by existing mission-specific extra HAM loading | No D1 profile decision or callback into preparation |
-| `piggy.c`: mission data / registry reset | Generic HAM, sample and cache operations | Fresh embedded sound headers and payloads survive repeated registry replacement |
+| Original integration                         | Retained code                                                           | Owned work / evidence                                                                |
+| -------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `mission.c`: successful descriptor load      | One facade call and existing extra-robot movie handling                 | Facade decides deferred D1 versus immediate D2 definitions and owns model retirement |
+| `gameseq.c`: robot reset / level preparation | Existing phase calls; no D1 loader ordering                             | Mission and level entry exercise the same transition owner                           |
+| `mission.c`: `load_mission_ham`              | D2 data service followed by existing mission-specific extra HAM loading | No D1 profile decision or callback into preparation                                  |
+| `piggy.c`: mission data / registry reset     | Generic HAM, sample and cache operations                                | Fresh embedded sound headers and payloads survive repeated registry replacement      |
 
 Verification added or extended:
 
@@ -386,7 +386,6 @@ Windows D2 and native D1 builds pass, with full CTest results of 59/59 and 51/51
 
 Android x86-64 assembly passes (`temp/d1-ai-perception-android-build.log`), with the same four existing `ai.c` debug-table/parentheses warnings and no new warnings. The isolated D1-only run passes all 67 steps plus the flyout trace check (`0713859df71d450c95efc2f9aea2e850`, 80.121 seconds; `temp/d1-launch-runtime-20260920-202014/`). It reaches First Strike level 2 with sound and successfully restores original app files/preferences; the backup directory is absent afterward. Final diff whitespace checks pass. The native fixtures establish the specific perception and scheduling behavior; the device run establishes campaign/resource integration, not completion of the remaining AI phases
 
-
 ## Owned frame preparation, navigation recovery and awareness reaction
 
 `ai.c::do_ai_frame` now dispatches to `d1_in_d2_ai_prepare_frame` after the existing companion route/replica guards. The owner handles native skip/observer behavior, primary firing and elapsed-processing clocks, source behavior validation, firing-dependent cloaking, target belief and gun/sight origins. The existing shared robot death-sequence service remains at the same preparation phase; this extraction does not establish native-D1 death algorithm parity
@@ -403,11 +402,9 @@ Shared native-D1/D2 scenes cover skipped/observer frames, primary-clock boundari
 
 These remain intermediate frame boundaries. Global awareness propagation, complete hide execution, combat/movement and deeper path/boss policy still require ownership and native comparison. After those move, unit 6d must replace phase orchestration in `ai.c` with the connected owned frame and make frame-only helpers private. Neither the new hide recovery case nor the existing Android campaign scenario proves complete hide behavior, companion routing or campaign fidelity
 
-
 Android x86-64 assembly passes (`temp/d1-ai-entry-android-build.log`), with the same four pre-existing `ai.c` debug-table/parentheses warnings and no new warnings. The isolated D1-only run passes 67/67 steps and the flyout trace check (`8e1a706f49654ad49f3e19227a9735e6`, 85.361 seconds; `temp/d1-launch-runtime-20260920-204557/`). It reaches level 2 with sound. The runner exits successfully after restoring original files/preferences, and a subsequent check confirms both restored directories and the absence of its backup directory
 
 The next combat extraction must select D1 policy before `ai2.c::ai_fire_laser_at_player` interprets D2 camera/gun-segment flags: that byte is D1 hide submode. It must also remove mission-wide firing readiness from actor-sensitive paths. Moving only aim arithmetic is insufficient. Use the native firing/eligibility operation as the next bounded comparison, preserving projectile creation, RNG and network publication order
-
 
 ## Owned robot firing preparation, eligibility and shot execution
 
@@ -427,9 +424,7 @@ Windows D2 executable/integration and native D1 integration builds pass (`temp/d
 
 Next in unit 6b: relative movement and the connected chase/run-from/still/state-transition frame decisions, followed by native hide/path/boss policy and unit 6d frame closure. The remaining mission-wide AI aliases and flags interpreted by other consumers still require review. The current isolated firing operations should become private where final frame extraction removes their independent engine callers
 
-
 Android x86-64 assembly passes (`temp/d1-ai-firing-android-build.log`) with the same four existing `ai.c` warnings and no new warnings. The isolated D1-only First Strike run passes all 67 steps plus the flyout trace check (`afa5b82503e64dcfa26b756f41d56674`, 87.361 seconds; `temp/d1-launch-runtime-20260920-210010/`). It reaches level 2 with sound. The runner exits successfully; original files/preferences are restored and the backup directory is absent. These device checks cover integration/resource continuity; the shared native fixtures supply the firing-specific evidence
-
 
 ## Owned relative movement and circling
 
@@ -447,9 +442,7 @@ Windows D2 executable/integration and native D1 integration builds pass (`temp/d
 
 The remaining connected work is the frame's chase/run-from/still and late state-transition decisions, followed by native hide/path/boss policy and full frame closure. Shared contact reactions, global awareness and other actor-sensitive callers still need review. This slice verifies relative movement, not complete native enemy behavior or companion navigation
 
-
 The next-source review confirms a major unit 6c gap: native D1 boss flags 1 and 2 are preserved by `d1_in_d2_assets.c`, but `ai.c::do_ai_frame` currently reaches the inherited `FIXME`/break cases instead of native boss updates. Native D1 calls its cloak/teleport/death operation for flag 1 and additionally runs super-boss gating for flag 2. Bring that connected boss operation forward before claiming frame/campaign closure; the earlier post-shot teleport-clock fix does not supply these missing updates. Inspect initialization, gate/teleport allocation, effects and death services together rather than routing those source IDs into D2's boss-index tables
-
 
 Android x86-64 assembly passes (`temp/d1-ai-movement-android-build.log`) with the same four pre-existing `ai.c` warnings and no new warnings. The isolated D1-only run passes all 67 steps and the flyout trace check (`f621e6e980844ec08c475182c1647231`, 91.085 seconds; `temp/d1-launch-runtime-20260920-211022/`). It reaches level 2 with sound. The runner exits successfully, original files/preferences are restored, and the backup directory is absent. Device evidence establishes integration continuity; the common native fixtures establish the movement behavior covered above
 
@@ -655,11 +648,11 @@ Removed from original sources: the large mapping body, unused `d1_tmap_num_uniqu
 
 Public caller map:
 
-| Operation | Actual callers | Effects / failure contract |
-| --- | --- | --- |
-| `d1_in_d2_decode_level_textures` | `gamemine.c::load_mine_data_compiled`, checkpoint world decoder, integration fixture | Both inputs are source D1 references. Uses the installed bank; legacy fallback explicitly converts. Invalid references leave both caller values unchanged. No RNG, object or resource publication |
-| `d1_in_d2_legacy_texture` | Legacy effect/wall adapters in assets, legacy bitmap replacement, owned level decoder, integration fixture | Source D1 ID plus explicit layout/PIG inputs yields a D2 slot; packed overlay bits survive. No active-profile inference or mutation; existing unknown-ID diagnostic retained |
-| `d1_in_d2_fixup_level_object` | `gamesave.c::verify_object` | Binds D1 reactor ID/model after shared name remapping; other object/content cases are unchanged |
+| Operation                        | Actual callers                                                                                             | Effects / failure contract                                                                                                                                                                        |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `d1_in_d2_decode_level_textures` | `gamemine.c::load_mine_data_compiled`, checkpoint world decoder, integration fixture                       | Both inputs are source D1 references. Uses the installed bank; legacy fallback explicitly converts. Invalid references leave both caller values unchanged. No RNG, object or resource publication |
+| `d1_in_d2_legacy_texture`        | Legacy effect/wall adapters in assets, legacy bitmap replacement, owned level decoder, integration fixture | Source D1 ID plus explicit layout/PIG inputs yields a D2 slot; packed overlay bits survive. No active-profile inference or mutation; existing unknown-ID diagnostic retained                      |
+| `d1_in_d2_fixup_level_object`    | `gamesave.c::verify_object`                                                                                | Binds D1 reactor ID/model after shared name remapping; other object/content cases are unchanged                                                                                                   |
 
 Registered-data tests check all 584 original texture IDs in all four overlay orientations (2,336 pairs), out-of-range primary/overlay references against the actual bank, and legacy lava/duplicate-rock/door mappings across explicit layout/PIG choices while native assets are active. Two source references that formerly shared a D2 rock slot remain distinct. The real native checkpoint runner now compares every First Strike side: 1,710 texture pairs after fresh loading and after each of seven checkpoint restores, along with the existing 28 restored robot frames. All normalized records match native D1
 
@@ -685,11 +678,11 @@ The asset owner's reference validation is shared by base preparation, custom sta
 
 Caller and ownership map:
 
-| Operation | Callers | Contract |
-| --- | --- | --- |
-| `d1_custom_read_definitions` | Lifecycle facade's private `prepare_assets`, integration fixture | Optional missing file succeeds. A present invalid file fails with a stage description. Only unpublished data is modified; discard the whole generation on failure |
-| `d1_in_d2_validate_asset_references` | Base reader, custom reader, publisher | Read-only validation against the source generation, before publication; no profile selection, RNG, live resource replacement or engine callbacks |
-| `prepare_assets` | Existing base and level facade operations | Owns read/custom/validate/publish ordering. A rejected HX1 is freed before stopping live sound or releasing custom resources |
+| Operation                            | Callers                                                          | Contract                                                                                                                                                          |
+| ------------------------------------ | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `d1_custom_read_definitions`         | Lifecycle facade's private `prepare_assets`, integration fixture | Optional missing file succeeds. A present invalid file fails with a stage description. Only unpublished data is modified; discard the whole generation on failure |
+| `d1_in_d2_validate_asset_references` | Base reader, custom reader, publisher                            | Read-only validation against the source generation, before publication; no profile selection, RNG, live resource replacement or engine callbacks                  |
+| `prepare_assets`                     | Existing base and level facade operations                        | Owns read/custom/validate/publish ordering. A rejected HX1 is freed before stopping live sound or releasing custom resources                                      |
 
 The host integration test enters the real level asset facade and then normal robot object verification. It checks model radius, mass, drag, native robot fields, animation joints, wrecks and object bitmaps, with three custom-to-stock cycles clearing every replacement. Thirty-two malformed variants cover truncated section boundaries, unsupported version, invalid counts/indices, model sizes/offsets/opcodes, joint references, wrecks and bitmap references. After each rejected stage and cleanup, active model/image/sample pointers and robot bytes remain unchanged. Native D1 reads the same valid HX1 fixture and agrees on the native fields and model/joint/wreck/bitmap results
 
@@ -755,16 +748,16 @@ The connected campaign operation owns completion, secret destinations/returns, d
 
 Integration and removal map:
 
-| Caller | Retained boundary | Body removed or ownership established |
-| --- | --- | --- |
-| `gamesave.c::load_game_data` | Read versioned bytes, call conversion; dispatch native link binding | Old flag priority tree, unchecked link-count narrowing/copy loop and native backreference interpretation |
-| `d1_save_translate.c` | Read source fields, call the same conversion; existing world validation/commit | Separate trigger-type priority and ON-to-disabled policy |
-| `switch.c::check_trigger_sub` | Shared bounds, connection/co-op guards, one native activation dispatch and route notification | Native action algorithm exists only in levels; ordinary D2 switch remains |
-| `switch.c::check_trigger` | Existing diagnostics, route/co-op crossing guards, native crossing dispatch and network publication | Actor/playback and paired one-shot policy are owned as one crossing operation |
-| `switch.c::trigger_write` | Ask the codec for original flags before legacy serialization | Serializer does not reconstruct native actions from one D2 type |
-| `gameseq.c` completion/secret entry/exit | Early owned-operation dispatch | Late native secret branch after D2 snapshotting and history-dependent native return branch removed |
-| `gameseq.c::DoPlayerDead` | Common death/life accounting, owned native consequence, common sound/window completion | Native consequence bypasses the complete D2 secret-world restore sequence |
-| Bonus calculation and `gameseq.h` | One native arithmetic operation; declarations for existing ship reset, respawn and message services | No callback table, exported frame-local context or second asset coordinator |
+| Caller                                   | Retained boundary                                                                                   | Body removed or ownership established                                                                    |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `gamesave.c::load_game_data`             | Read versioned bytes, call conversion; dispatch native link binding                                 | Old flag priority tree, unchecked link-count narrowing/copy loop and native backreference interpretation |
+| `d1_save_translate.c`                    | Read source fields, call the same conversion; existing world validation/commit                      | Separate trigger-type priority and ON-to-disabled policy                                                 |
+| `switch.c::check_trigger_sub`            | Shared bounds, connection/co-op guards, one native activation dispatch and route notification       | Native action algorithm exists only in levels; ordinary D2 switch remains                                |
+| `switch.c::check_trigger`                | Existing diagnostics, route/co-op crossing guards, native crossing dispatch and network publication | Actor/playback and paired one-shot policy are owned as one crossing operation                            |
+| `switch.c::trigger_write`                | Ask the codec for original flags before legacy serialization                                        | Serializer does not reconstruct native actions from one D2 type                                          |
+| `gameseq.c` completion/secret entry/exit | Early owned-operation dispatch                                                                      | Late native secret branch after D2 snapshotting and history-dependent native return branch removed       |
+| `gameseq.c::DoPlayerDead`                | Common death/life accounting, owned native consequence, common sound/window completion              | Native consequence bypasses the complete D2 secret-world restore sequence                                |
+| Bonus calculation and `gameseq.h`        | One native arithmetic operation; declarations for existing ship reset, respawn and message services | No callback table, exported frame-local context or second asset coordinator                              |
 
 The shared host fixture runs 64 native/imported flag combinations through real crossing and activation: shield/energy combinations, both illusion actions in order, source ON present/absent, one-shot paired state, three repeated crossings, remote activation and playback suppression. Separate codec/serialization checks round-trip all 1,024 native flag combinations through v29, v30 and v31 writers/readers, reject wide invalid counts without publication, retain the explicit D2 extension path and verify the ordinary D2 disabled gate
 
@@ -794,11 +787,11 @@ Cleanup owns text, background/screen, robot canvas and portrait buffers on norma
 
 Rendered comparison exposed two additional fidelity errors and the fixes stay at appropriate boundaries:
 
-| Boundary | Evidence and change |
-| --- | --- |
-| `d1_in_d2.c::d1_in_d2_init_base_resources` | Prepending the base HOG hid a loose briefing PCX. Base mounting now preserves existing loose/mission precedence; the presentation resolver still selects the correct game's base archive explicitly |
+| Boundary                                     | Evidence and change                                                                                                                                                                                                                                                                           |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `d1_in_d2.c::d1_in_d2_init_base_resources`   | Prepending the base HOG hid a loose briefing PCX. Base mounting now preserves existing loose/mission precedence; the presentation resolver still selects the correct game's base archive explicitly                                                                                           |
 | `d1_in_d2_assets.c` native model publication | Converting original indexed flat colors into RGB15 lost palette-slot identity when a briefing PCX installed another palette. Native generations now tag their original indices in the runtime model stream; the retained legacy-overlay converter still uses its destination-color conversion |
-| `d2/include/interp.h`, `d2/3d/interp.c` | A generic runtime encoding reserves `0x8000..0x80ff` for indexed colors; ordinary RGB15 retains its existing interpretation. One private decoder serves normal, morphing and representative-color reads. This adds no D1 mode, source-format or lifecycle decision to the interpreter |
+| `d2/include/interp.h`, `d2/3d/interp.c`      | A generic runtime encoding reserves `0x8000..0x80ff` for indexed colors; ordinary RGB15 retains its existing interpretation. One private decoder serves normal, morphing and representative-color reads. This adds no D1 mode, source-format or lifecycle decision to the interpreter         |
 
 The new `android/helpers/test_d1_briefings.ps1` drives both executables through their real window/event entry points. Its private fixture handler sends ordinary key/draw events and captures framebuffer bytes, with no production test observer or exposed session fields. At 640x480 with matching renderer settings, all 84 RGB frames match native D1 exactly in both D1-only and D1-with-D2 configurations. PNGs and manifests are in `temp/d1-briefing-comparison/`
 
@@ -816,12 +809,12 @@ Date: 2026-09-21
 
 The first remaining gameplay group now belongs to `d1_in_d2_semantics.c`. Small arithmetic rules stay small; the native replacement-drop decision and doorway scan move as complete operations. No new file, world storage, phase context or callback framework was added
 
-| Caller | Owned operation and removal | Shared work retained |
-| --- | --- | --- |
-| `wall.c::do_door_close`, `wall_frame_process` | Native obstruction scan and wait decision; the inline D1 object traversal and mode branch are removed | Existing geometry query, active-door storage, animation, sound and ordinary D2 reopen/wait behavior |
-| `powerup.c` energy/shield pickup | One difficulty-amount calculation replaces the two inline trainee branches | Base amount, caps, consumption, messages, score and network publication |
-| `collide.c` force/lava damage, `fireball.c` player blast damage | Contact and blast calculations retain distinct D2 trainee reductions (one-half and one-quarter) | Detection, force application, invulnerability, damage and publication at their existing phases |
-| `fireball.c::maybe_replace_powerup_with_energy` | One native dispatch owns cloak suppression, source weapon IDs, ammo cap, duplicate weapon/quad RNG, boss-gated energy and multiplayer extra-life conversion; both inline native duplicate branches are removed | Existing nearby-object query, ordinary D2 replacement logic and later object creation |
+| Caller                                                          | Owned operation and removal                                                                                                                                                                                    | Shared work retained                                                                                |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `wall.c::do_door_close`, `wall_frame_process`                   | Native obstruction scan and wait decision; the inline D1 object traversal and mode branch are removed                                                                                                          | Existing geometry query, active-door storage, animation, sound and ordinary D2 reopen/wait behavior |
+| `powerup.c` energy/shield pickup                                | One difficulty-amount calculation replaces the two inline trainee branches                                                                                                                                     | Base amount, caps, consumption, messages, score and network publication                             |
+| `collide.c` force/lava damage, `fireball.c` player blast damage | Contact and blast calculations retain distinct D2 trainee reductions (one-half and one-quarter)                                                                                                                | Detection, force application, invulnerability, damage and publication at their existing phases      |
+| `fireball.c::maybe_replace_powerup_with_energy`                 | One native dispatch owns cloak suppression, source weapon IDs, ammo cap, duplicate weapon/quad RNG, boss-gated energy and multiplayer extra-life conversion; both inline native duplicate branches are removed | Existing nearby-object query, ordinary D2 replacement logic and later object creation               |
 
 Door operations preserve native D1's first-doorway behavior for linked parts, including its treatment of weapons/fireballs as blockers. Native obstruction pauses closing without advancing the animation or reopening; timeout enters closing before obstruction testing. The owner reuses `check_poke`, an existing geometry service now declared in the engine header. Replacement drops reuse the existing `weapon_nearby` query. Inactive native replacement returns without changing any object byte or consuming RNG
 
@@ -841,14 +834,14 @@ Date: 2026-09-21
 
 The next rule group uses the existing AI, semantics and weapon owners. No additional source family or callback layer was introduced. `object.c`, `collide.c` and `fireball.c` no longer include the lifecycle facade or perform direct D1 gameplay-mode checks; they invoke the appropriate domain operation. Physics keeps its shared integration loop and already-owned rotation/hit dispatches
 
-| Integration boundary | Ownership or removal |
-| --- | --- |
-| `object.c::missile_camera_can_wake_robot` | AI decides native-enemy eligibility. The mission-wide early return in the world camera update is removed; normal viewer validation, tick distribution, geometry and wake publication remain shared |
-| `collide.c::collide_robot_and_player` | Semantics owns exploding-robot eligibility, using the AI actor role. Native enemies retain D1 contact; engine actors retain D2 filtering |
-| `physics.c` bounce phase | Semantics decides whether to retain reflected velocity. Native D1 retains projectile orientation and recomputes player/robot/debris velocity from actual travel; shared integration and collision ordering remain |
+| Integration boundary                                   | Ownership or removal                                                                                                                                                                                                                                 |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `object.c::missile_camera_can_wake_robot`              | AI decides native-enemy eligibility. The mission-wide early return in the world camera update is removed; normal viewer validation, tick distribution, geometry and wake publication remain shared                                                   |
+| `collide.c::collide_robot_and_player`                  | Semantics owns exploding-robot eligibility, using the AI actor role. Native enemies retain D1 contact; engine actors retain D2 filtering                                                                                                             |
+| `physics.c` bounce phase                               | Semantics decides whether to retain reflected velocity. Native D1 retains projectile orientation and recomputes player/robot/debris velocity from actual travel; shared integration and collision ordering remain                                    |
 | `collide.c` water and `physics.c` force-field handling | Extra mode guards are removed. The source reader retains only TMI_VOLATILE, publication clears the complete destination table before copying, and PG1/DTX/HX1 do not add texture-surface flags. Other shared consumers already rely on that metadata |
-| `collide.c::collide_weapon_and_wall` | Weapons owns native bounce admission at the operation entry. Native bouncing projectiles skip all wall side effects before monitor/door activation, effects, awareness and RNG |
-| `fireball.c` robot blast phase | AI owns flash admission and boss damage scaling. Native enemies reject D2 flash stun; optional engine actors retain it. D1 boss identities cannot index the D2 resistance table; valid D2 resistant bosses retain quarter damage |
+| `collide.c::collide_weapon_and_wall`                   | Weapons owns native bounce admission at the operation entry. Native bouncing projectiles skip all wall side effects before monitor/door activation, effects, awareness and RNG                                                                       |
+| `fireball.c` robot blast phase                         | AI owns flash admission and boss damage scaling. Native enemies reject D2 flash stun; optional engine actors retain it. D1 boss identities cannot index the D2 resistance table; valid D2 resistant bosses retain quarter damage                     |
 
 Two fidelity defects were exposed or confirmed during this extraction. Native D1's bouncing-projectile wall handler returns immediately, whereas the imported shared path continued into awareness generation and consumed SIM draws on each bounce. The new weapon admission restores that source ordering. The old robot blast code indexed `Boss_invulnerable_matter` with the D1 boss flag minus BOSS_D2, outside the D2 table. The AI operation now interprets the actor before applying D2 resistance and bounds the table index
 
@@ -934,7 +927,6 @@ Actual summary records identify native as `game=d1, mission=d1` and imported as 
 Artifacts: `temp/d1-finish-native-replays.log`, `temp/d1-finish-imported-replays.log`, and `temp/d1-finish-replay-results/{native,imported}/*.actual.json`. These runs do not establish strict reproduction: the existing runner normalizes identities and can reduce terminal-exit comparison, the native reference was not replayed twice here, and no paired per-frame/RNG trace comparison was run. Section 0 specifies a strict gate with separate recording/native-repeat/imported verdicts and forbids expected-value substitution or silent skips
 
 Next implementation milestone is F1's strict D1/native-versus-imported replay oracle, followed by F2's earliest-divergence fixes in the owning compatibility modules. Optional actor completion, legacy loader retirement, broader persistence/network/edition/platform coverage and native-engine retirement remain separate open gates
-
 
 ## 2026-09-21: level-14 imported/native replay parity
 
@@ -1047,12 +1039,12 @@ frame summaries, full terminal results, all twelve selected physical/runtime
 diagnostics and all 40,910 SIM RNG values match across 15,462 frames
 
 | Level | Frames | SIM RNG events | Native/imported observed comparisons |
-| --- | ---: | ---: | --- |
-| 14 | 5,696 | 14,381 | Equal |
-| 15 | 2,006 | 3,941 | Equal |
-| 16 | 2,696 | 12,896 | Equal |
-| 18 | 2,634 | 3,809 | Equal |
-| 5 | 2,430 | 5,883 | Equal |
+| ----- | -----: | -------------: | ------------------------------------ |
+| 14    |  5,696 |         14,381 | Equal                                |
+| 15    |  2,006 |          3,941 | Equal                                |
+| 16    |  2,696 |         12,896 | Equal                                |
+| 18    |  2,634 |          3,809 | Equal                                |
+| 5     |  2,430 |          5,883 | Equal                                |
 
 `report.json` retains every unmapped diagnostic/context difference and the full
 qualification gaps; `observed-parity.json` names the exact twelve-field projection
@@ -2830,7 +2822,6 @@ join/rejoin run is claimed for this change. Those network session checks,
 private timer/transition observation and lifetime contracts, the saved-global
 audit and whole-corpus qualification remain open before F1-F5 can close
 
-
 ### September 24: private clocks, diagnostic completeness and replay metadata
 
 World schema 7 now emits the full signed 64-bit collision, Fusion cadence and
@@ -3077,8 +3068,7 @@ Before-fix source, both saves and raw traces are retained in
 
 Shared `endlevel_history.h` serializes only the history read before assignment
 by the next sequence: two signed 32-bit explosion countdowns and sound count
-(0..6). The 12-byte record is appended by native D1 version 19 and D2 version
-38. It does not rebase against game time. Both readers preflight the complete
+(0..6). The 12-byte record is appended by native D1 version 19 and D2 version 38. It does not rebase against game time. Both readers preflight the complete
 record; native checkpoint import stages it before committing. Older saves
 reset absent history, while ordinary level preparation retains the native
 carryover. D2 secret-world restores retain current history with the existing
@@ -3097,6 +3087,7 @@ prior playable history. This excludes active-flyout capture; it neither adds
 active-flyout resume support nor qualifies requests made from a presentation
 
 Host verification passes:
+
 - Four actual flyouts per engine, 1268 identical native/imported raw frames,
   including post-save contamination and a restored branch whose subsequent
   behavior matches uninterrupted execution
@@ -3176,7 +3167,6 @@ live-network or ARM64 runtime qualification
 The earlier
 `temp/d1-endlevel-persistence-source` capsule remains immutable historical
 evidence; it must not be used as the current implementation or future scope
-
 
 ### September 24 continuation: death-camera SIM RNG leak
 
@@ -3309,8 +3299,7 @@ frames, including frame diagnostics, object/world fields, SIM RNG and restored/
 terminal observations. This directly verifies respawn cloak memory and reactor
 identity together. Report: temp/d1-reactor-respawn-current/report.json
 
-That report does not qualify the whole run: one native repeat exited 1 at frame
-160. Its complete prefix matched native-a; its sandbox was automatically removed
+That report does not qualify the whole run: one native repeat exited 1 at frame 160. Its complete prefix matched native-a; its sandbox was automatically removed
 by the helper. A diagnostic rerun completed and its full state/RNG traces and
 result are identical to native-a, with unchanged pinned package hashes. Evidence:
 temp/d1-reactor-repeat-debug/verification.json. Quiet repeat with sandbox retained
@@ -3495,16 +3484,16 @@ earlier pinned binaries and is not evidence for these later query changes.
 
 This is a source audit and gap inventory, not completed persistence qualification.
 
-| Record | Discriminator and ID meaning | Decoder/restore owner and current evidence limit |
-| --- | --- | --- |
-| Native D1 save | Native state writer currently emits version 18; objects/textures/robots retain original D1 IDs | Native state accepts version 6 onward, but d1_save_translate explicitly accepts only 15 through 18. Existing translated checkpoint tests do not establish support for versions 6-14 |
-| Imported D1 save from D2 | Imported writer emits version 40; native base IDs remain original and optional resources use appended runtime IDs. A mandatory base/custom digest and optional companion digest precede objects. Native trigger actions are marked in the core record; original trigger type/link storage begins at version 34 | After mission resolution, the asset/format owner admits only imported version 40, before replacing the world. state.c then reloads level definitions before checking identity and restoring objects; levels/AI restore source extensions. Current-format custom/companion identity and archived version-38 rejection are tested below. No runtime-ID range guessing or old imported migration |
-| Ordinary D2 save | D2 core versions 20 onward, current writer 38, retain D2 runtime IDs. The native trigger-storage extension has count zero | Ordinary state.c remains the reader. Actual level-1 versions 36/37/38 restore with the correct saved/default routing mode. This does not establish every historical save version or custom-definition identity |
-| Input replay checkpoint | dximdemo carries engine/mission context and a saved checkpoint interpreted by its engine/adapter; the paired runner separately pins original assets and binaries | Current full-corpus evidence is against the staged D1-only asset set. It does not establish restoration with changed optional/custom sources |
-| Legacy rendering demo | Native registered D1 emits version 13/game type 2; ordinary D2 emits version 16/game type 3 | Original newdemo readers own framing. Native D1 .dem files remain explicitly unsupported by D2. Ordinary D2 header/event framing is unchanged. Imported D1 recordings formerly using type 3 are rejected because they cannot identify their runtime asset namespace |
-| Imported D1 rendering demo | Version 16/game type 4; event 52 before the first object of each recorded frame contains level byte, length byte, and 32-byte base/custom digest plus optional 32-byte extension digest | newdemo owns framing and seeking; the asset generation owns digest capture and validation. Object decoding requires a matching identity in that frame. Normal playback, export and endian rewrite prepare the correct level definitions. Missing/changed definitions fail explicitly; a native-only recording permits newly available optional assets. Type 4 is rejected by older D2 readers instead of exposing native IDs as D2 IDs. Registered host source/lifecycle evidence below does not establish every historical opcode or Android runtime |
-| Android save metadata | DXAS version 7 carries mission_asset_key, documented as an owner/descriptor/game digest independent of package revision | This key is not evidence of optional definition-content identity. It does not by itself resolve appended runtime IDs after their source package changes |
-| Android rewind snapshot | android_rewind_capture_snapshot calls the ordinary state_save_to_memory path and keeps timeline/time overrides alongside its buffer | Rewind inherits the engine save namespace; same-assets rewind evidence does not prove changed-definition admission. Complete the format/lifetime audit through the existing state restore path |
+| Record                     | Discriminator and ID meaning                                                                                                                                                                                                                                                                                   | Decoder/restore owner and current evidence limit                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Native D1 save             | Native state writer currently emits version 18; objects/textures/robots retain original D1 IDs                                                                                                                                                                                                                 | Native state accepts version 6 onward, but d1_save_translate explicitly accepts only 15 through 18. Existing translated checkpoint tests do not establish support for versions 6-14                                                                                                                                                                                                                                                                                                                                                                   |
+| Imported D1 save from D2   | Imported writer emits version 40; native base IDs remain original and optional resources use appended runtime IDs. A mandatory base/custom digest and optional companion digest precede objects. Native trigger actions are marked in the core record; original trigger type/link storage begins at version 34 | After mission resolution, the asset/format owner admits only imported version 40, before replacing the world. state.c then reloads level definitions before checking identity and restoring objects; levels/AI restore source extensions. Current-format custom/companion identity and archived version-38 rejection are tested below. No runtime-ID range guessing or old imported migration                                                                                                                                                         |
+| Ordinary D2 save           | D2 core versions 20 onward, current writer 38, retain D2 runtime IDs. The native trigger-storage extension has count zero                                                                                                                                                                                      | Ordinary state.c remains the reader. Actual level-1 versions 36/37/38 restore with the correct saved/default routing mode. This does not establish every historical save version or custom-definition identity                                                                                                                                                                                                                                                                                                                                        |
+| Input replay checkpoint    | dximdemo carries engine/mission context and a saved checkpoint interpreted by its engine/adapter; the paired runner separately pins original assets and binaries                                                                                                                                               | Current full-corpus evidence is against the staged D1-only asset set. It does not establish restoration with changed optional/custom sources                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Legacy rendering demo      | Native registered D1 emits version 13/game type 2; ordinary D2 emits version 16/game type 3                                                                                                                                                                                                                    | Original newdemo readers own framing. Native D1 .dem files remain explicitly unsupported by D2. Ordinary D2 header/event framing is unchanged. Imported D1 recordings formerly using type 3 are rejected because they cannot identify their runtime asset namespace                                                                                                                                                                                                                                                                                   |
+| Imported D1 rendering demo | Version 16/game type 4; event 52 before the first object of each recorded frame contains level byte, length byte, and 32-byte base/custom digest plus optional 32-byte extension digest                                                                                                                        | newdemo owns framing and seeking; the asset generation owns digest capture and validation. Object decoding requires a matching identity in that frame. Normal playback, export and endian rewrite prepare the correct level definitions. Missing/changed definitions fail explicitly; a native-only recording permits newly available optional assets. Type 4 is rejected by older D2 readers instead of exposing native IDs as D2 IDs. Registered host source/lifecycle evidence below does not establish every historical opcode or Android runtime |
+| Android save metadata      | DXAS version 7 carries mission_asset_key, documented as an owner/descriptor/game digest independent of package revision                                                                                                                                                                                        | This key is not evidence of optional definition-content identity. It does not by itself resolve appended runtime IDs after their source package changes                                                                                                                                                                                                                                                                                                                                                                                               |
+| Android rewind snapshot    | android_rewind_capture_snapshot calls the ordinary state_save_to_memory path and keeps timeline/time overrides alongside its buffer                                                                                                                                                                            | Rewind inherits the engine save namespace; same-assets rewind evidence does not prove changed-definition admission. Complete the format/lifetime audit through the existing state restore path                                                                                                                                                                                                                                                                                                                                                        |
 
 Subsequent host evidence below closes the demonstrated base/custom/companion
 source substitution and validates complete opposite-endian current saves:

@@ -14,7 +14,7 @@ levels where the overlay alpha has been diluted toward the area fraction
 
 This affects both stock 64x64 textures (mipmaps from `glGenerateMipmap()`) and
 hires KTX2 512x512 textures (mipmaps pre-baked in the DXA converter). The bug
-is identical in both cases because the merge shader's `texture2D(utex2, ...)` 
+is identical in both cases because the merge shader's `texture2D(utex2, ...)`
 selects mip levels automatically, and `mix(bot.rgb, ovl.rgb, ovl.a)` reduces
 the overlay contribution toward zero when alpha is averaged down.
 
@@ -41,6 +41,7 @@ latest log confirmed all wraps are already GL_REPEAT with zero forced changes
 across 15675 lines. The wrap-state hypothesis is definitively ruled out.
 
 ## Status
+
 - [x] Create plan
 - [x] Set alpha cutoff 0.0 -> 0.5 in d2 ogl.c
 - [x] Set alpha cutoff 0.0 -> 0.5 in d1 ogl.c

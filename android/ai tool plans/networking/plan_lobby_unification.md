@@ -1,11 +1,13 @@
 # Lobby Unification Plan: LAN + Matchmaking
 
 ## Goal
+
 Unify the lobby experience so LAN and matchmaking lobbies share as much UI, code, and feature set as possible. Reduce maintenance burden by eliminating duplicated composables and logic.
 
 ## Current State
 
 ### Files
+
 - `LanDiscoveryTab.kt` (~1045 lines) -- LAN discovery view + joined lobby view + host/join/start dialogs + coop save offer
 - `LobbyScreen.kt` (~401 lines) -- matchmaking in-lobby UI (player list, chat, ready, kick, start, coop save)
 - `MultiplayerScreen.kt` -- top-level nav router; `CreateLobbyDialog`, `LobbyCard` (server browser), `LanContent`, `FriendsContent`, `ServerBrowserContent`
@@ -15,23 +17,24 @@ Unify the lobby experience so LAN and matchmaking lobbies share as much UI, code
 
 ### Feature Comparison
 
-| Feature | LAN | Matchmaking |
-|---------|-----|-------------|
-| Player list | YES (LanJoinedLobbyView) | YES (LobbyScreen PlayerCard) |
-| Ready toggle | YES | YES |
-| Coop save offer | YES (LanCoopSaveOffer) | YES (CoopSaveOffer) |
-| Difficulty select | YES (StartLanGameDialog) | YES (CreateLobbyDialog) |
-| Mission/mode/game | YES (HostLanGameDialog) | YES (CreateLobbyDialog) |
-| Host dialog | YES (HostLanGameDialog - no diff/level) | YES (CreateLobbyDialog - all fields) |
-| Start dialog | YES (StartLanGameDialog - separate) | N/A (button in lobby) |
-| Chat | NO | YES (LobbyChatArea) |
-| Kick players | NO | YES (MatchmakingService.kickPlayer) |
-| Ping display | NO | YES (player.pingMs) |
-| Build version check | YES (host vs self) | YES implicit |
-| In-game join | YES (Join In-Game button) | YES (active games list) |
-| Join by IP | YES (2 dialogs) | N/A |
+| Feature             | LAN                                     | Matchmaking                          |
+| ------------------- | --------------------------------------- | ------------------------------------ |
+| Player list         | YES (LanJoinedLobbyView)                | YES (LobbyScreen PlayerCard)         |
+| Ready toggle        | YES                                     | YES                                  |
+| Coop save offer     | YES (LanCoopSaveOffer)                  | YES (CoopSaveOffer)                  |
+| Difficulty select   | YES (StartLanGameDialog)                | YES (CreateLobbyDialog)              |
+| Mission/mode/game   | YES (HostLanGameDialog)                 | YES (CreateLobbyDialog)              |
+| Host dialog         | YES (HostLanGameDialog - no diff/level) | YES (CreateLobbyDialog - all fields) |
+| Start dialog        | YES (StartLanGameDialog - separate)     | N/A (button in lobby)                |
+| Chat                | NO                                      | YES (LobbyChatArea)                  |
+| Kick players        | NO                                      | YES (MatchmakingService.kickPlayer)  |
+| Ping display        | NO                                      | YES (player.pingMs)                  |
+| Build version check | YES (host vs self)                      | YES implicit                         |
+| In-game join        | YES (Join In-Game button)               | YES (active games list)              |
+| Join by IP          | YES (2 dialogs)                         | N/A                                  |
 
 ### Key Architectural Differences
+
 - **LAN**: `LobbyService` singleton, `StateFlow`-based state, direct UDP
 - **Matchmaking**: `MatchmakingService`/`MatchmakingStateHolder`, `StateFlow`-based state, WebSocket
 - Both ultimately produce a `GameLaunchInfo` to launch the game
@@ -43,6 +46,7 @@ Unify the lobby experience so LAN and matchmaking lobbies share as much UI, code
 Create a unified `InLobbyView` composable that both LAN and matchmaking use for the in-lobby screen. This replaces `LanJoinedLobbyView` and `LobbyScreen` with a single component.
 
 **New abstraction layer** -- `LobbyAdapter` interface:
+
 ```kotlin
 interface LobbyAdapter {
     // Read-only state
@@ -79,6 +83,7 @@ data class UnifiedLobbyInfo(
 ```
 
 **Unified `InLobbyView`** composable:
+
 - Player list (shared PlayerCard with optional ping, optional kick button)
 - Ready toggle
 - Chat area (hidden or collapsed when no messages / LAN mode)
@@ -88,12 +93,14 @@ data class UnifiedLobbyInfo(
 - Build version warning (LAN only detail, conditional)
 
 **Two adapter implementations**:
+
 - `LanLobbyAdapter` -- wraps LobbyService state, maps to UnifiedPlayer/UnifiedLobbyInfo
 - `MatchmakingLobbyAdapter` -- wraps MatchmakingStateHolder state
 
 ### Phase 2: Merge host dialogs
 
 `HostLanGameDialog` and `CreateLobbyDialog` are very similar (game/mission/mode/maxPlayers/difficulty/level). Differences:
+
 - LAN: no difficulty/level at host time (separate StartLanGameDialog)
 - Matchmaking: includes difficulty, level, coop saves at create time
 
@@ -102,6 +109,7 @@ Unify into a single `CreateGameDialog` with an `isLan: Boolean` parameter. For L
 ### Phase 3: Add chat to LAN lobby (SMALL)
 
 Add a `MSG_CHAT` protocol message to `LobbyProtocol.kt`:
+
 - Host receives chat and broadcasts to all joiners
 - Joiners send chat to host
 - Simple text relay, no persistence
@@ -111,6 +119,7 @@ Wire into `LanLobbyAdapter.sendChat()`. Chat is then automatically visible in th
 ### Phase 4: Add kick to LAN lobby (SMALL)
 
 Add a `MSG_KICK` protocol message:
+
 - Host sends KICK to the target player address
 - Target player auto-leaves on receiving KICK
 - Wire into `LanLobbyAdapter.kickPlayer()`
@@ -118,6 +127,7 @@ Add a `MSG_KICK` protocol message:
 ### Phase 5: Join-by-IP lobby-first fallback (SMALL)
 
 Merge the two "Join by IP" dialogs into one. When user provides an IP and taps "Join":
+
 1. Try `LobbyService.joinLobbyByIp()` with 1-second timeout (single QUERY + wait)
 2. If no ANNOUNCE arrives within 1s, fall back to direct game engine launch (current `JoinByIpDialog` behavior with `GameLaunchInfo`)
 3. Show progress: "Checking for lobby..." then "No lobby found, joining game directly"
@@ -146,6 +156,7 @@ Recent git history (HEAD~8..HEAD) shows NO code changes that could break LAN dis
 5. **Dual-band AP**: If devices are on different bands (2.4GHz vs 5GHz) with AP isolation per-band, they cannot see each other even on the "same" network
 
 **Recommendation**: Add a LAN diagnostics panel that shows:
+
 - Which interfaces are up and their addresses
 - Whether broadcast sends succeed (already tracked)
 - Whether any packets have been received at all

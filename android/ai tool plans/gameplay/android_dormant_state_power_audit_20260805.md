@@ -143,15 +143,15 @@ Ownership rules:
 
 Policy matrix:
 
-| Activity and engine state | Simulation | Rendering | Audio | Checkpoint | Park |
-| --- | --- | --- | --- | --- | --- |
-| Foreground active single-player | run | run | run | periodic policy only | no |
-| Foreground paused single-player | frozen | event-driven later | user pause policy | no | later |
-| Foreground static menu | none | event-driven later | menu music policy | no | later |
-| Background single-player level | frozen | stop | suspend device | required | yes |
-| Background menu/no level | none | stop | suspend device | none | yes |
-| Background time-driven screen | frozen | stop | suspend device | checkpoint only if safely saveable | yes |
-| Background live multiplayer | run | stop | suspend local output | existing multiplayer policy | no |
+| Activity and engine state       | Simulation | Rendering          | Audio                | Checkpoint                         | Park  |
+| ------------------------------- | ---------- | ------------------ | -------------------- | ---------------------------------- | ----- |
+| Foreground active single-player | run        | run                | run                  | periodic policy only               | no    |
+| Foreground paused single-player | frozen     | event-driven later | user pause policy    | no                                 | later |
+| Foreground static menu          | none       | event-driven later | menu music policy    | no                                 | later |
+| Background single-player level  | frozen     | stop               | suspend device       | required                           | yes   |
+| Background menu/no level        | none       | stop               | suspend device       | none                               | yes   |
+| Background time-driven screen   | frozen     | stop               | suspend device       | checkpoint only if safely saveable | yes   |
+| Background live multiplayer     | run        | stop               | suspend local output | existing multiplayer policy        | no    |
 
 ### Chunk 0: Baseline diagnostics and reproducible measurements
 

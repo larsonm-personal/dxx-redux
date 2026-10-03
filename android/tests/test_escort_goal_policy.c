@@ -5,7 +5,7 @@
 
 int main(void)
 {
-	escort_path_recalc_limiter limiter = {{0}, 0};
+	escort_path_recalc_limiter limiter = { { 0 }, 0 };
 	long long next_allowed = -1;
 
 	assert(!escort_goal_is_pathable(-1));

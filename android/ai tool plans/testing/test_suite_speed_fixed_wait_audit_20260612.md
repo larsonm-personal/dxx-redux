@@ -1,10 +1,12 @@
 # Test suite speed fixed-wait audit 20260612
 
 ## Goal
+
 Find fixed pauses and other low-risk suite slowdowns that can be replaced with
 condition-based waits while preserving test coverage.
 
 ## Plan
+
 - [x] Inventory fixed waits, post delays, and runner sleeps across Android tests
 - [x] Rank candidates by likely wall-time impact and risk
 - [x] Patch clear script-level waits first, preferring existing introspection waits
@@ -13,6 +15,7 @@ condition-based waits while preserving test coverage.
 - [x] Record remaining speedup candidates for later passes
 
 ## Findings
+
 - Script-level fixed time totals before the first patch:
   - `wait_ms`: 80550 ms across maintained JSON5 scripts.
   - `post_delay_ms`: 138950 ms across maintained JSON5 scripts.
@@ -31,6 +34,7 @@ condition-based waits while preserving test coverage.
   - `post_delay_ms`: 108950 ms.
 
 ## Validation
+
 - `test_launch_to_automap.json5` passed for D1 and D2 after removing both
   the launcher tab delay and the pre-difficulty wait.
 - `test_engine_prefs_unified.json5` passed for D1 and D2 after removing both
@@ -39,6 +43,7 @@ condition-based waits while preserving test coverage.
 - `test_fire_primary.json5` passed after removing the pre-difficulty wait.
 
 ## Remaining candidates
+
 - `test_skip_every_launch_button_manual_unified.json5` still carries a large
   intentional 30000 ms manual-observation wait; skip or split this before
   optimizing automated suite time.
@@ -53,6 +58,7 @@ condition-based waits while preserving test coverage.
   signal.
 
 ## Introspection-backed pass plan
+
 - [x] Inspect the runner and automation actions for existing condition support
 - [x] Replace one or two high-value fixed waits with explicit readiness checks
 - [x] Add narrow introspection fields only if an existing field is not enough
@@ -60,6 +66,7 @@ condition-based waits while preserving test coverage.
 - [x] Run scoped code quality and record final results
 
 ## Introspection-backed pass findings
+
 - Native `wait_for` previously supported equality checks only. It now accepts
   the same `expect` object shape as `assert`, so tests can poll numeric and
   containment conditions without logging assertion failures every frame.

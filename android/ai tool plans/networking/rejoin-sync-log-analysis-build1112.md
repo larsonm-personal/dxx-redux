@@ -18,7 +18,7 @@ This is 100% reproducible across ALL 15+ packets in the first rejoin attempt.
 ## Packet Structure Constants
 
 - UPID_MAX_SIZE = 2048
-- sizeof(object_rw) = 264 bytes (packed, __attribute__((packed)))
+- sizeof(object_rw) = 264 bytes (packed, **attribute**((packed)))
 - Per-object wire format: 4 (objnum) + 1 (owner) + 4 (remote_objnum) + 264 (body) = 273 bytes
 - Packet header: 9 bytes (1 UPID + 4 token + 4 nobj)
 - Init marker: 9 bytes (4 objnum=-1 + 1 owner + 4 placeholder)
@@ -44,14 +44,15 @@ Total: 108 objects. Confirmed by `send_objects: finished, obj_count=108`.
 Packet format per frame: 6 good objects + 1 garbage object = 7 items per packet.
 
 #### Packet 1 (nobj=8: init + 7 objects)
+
 - INIT marker: init_objects(), mode=1, my_pnum=2, object_count=0
 - Objects placed at mode=1 (owner=-1, objnum=remote_objnum):
-  - idx=0 type=4(PLAYER) id=0 seg=1   -> matches host obj[0]
-  - idx=1 type=7(ROBOT) id=35 seg=82  -> matches host obj[1]
-  - idx=2 type=7 id=20 seg=86         -> matches host obj[2]
-  - idx=3 type=7 id=5 seg=27          -> matches host obj[3]
-  - idx=4 type=7 id=2 seg=28          -> matches host obj[4]
-  - idx=5 type=7 id=3 seg=29          -> matches host obj[5]
+  - idx=0 type=4(PLAYER) id=0 seg=1 -> matches host obj[0]
+  - idx=1 type=7(ROBOT) id=35 seg=82 -> matches host obj[1]
+  - idx=2 type=7 id=20 seg=86 -> matches host obj[2]
+  - idx=3 type=7 id=5 seg=27 -> matches host obj[3]
+  - idx=4 type=7 id=2 seg=28 -> matches host obj[4]
+  - idx=5 type=7 id=3 seg=29 -> matches host obj[5]
 - **CORRUPT 7th object**: owner=0 -> MODE0 branch fires!
   - special_reset_objects() called (num_objects=6, free list rebuilt)
   - mode set to 0
@@ -60,7 +61,9 @@ Packet format per frame: 6 good objects + 1 garbage object = 7 items per packet.
   - **Host obj[6] (type=7 id=38) is LOST**
 
 #### Subsequent Packets (nobj=7 each)
+
 Same pattern repeats for every packet:
+
 - 6 objects correctly placed via objnum=remote_objnum (owner=-1 matches)
   (note: mode=0, so Int3() fires on `mode != 1` but continues in release)
 - 7th object: owner=0 -> obj_allocate() returns ascending indices (7, 8, 9, ...)
@@ -68,45 +71,45 @@ Same pattern repeats for every packet:
 
 ### Objects LOST (never placed) -- every 7th from the host stream:
 
-| Host obj | Type | ID | Seg | Notes |
-|---|---|---|---|---|
-| 6 | 7 (ROBOT) | 38 | 199 | |
-| 13 | 2 (POWERUP) | 38 | 93 | |
-| 20 | 2 (POWERUP) | 39 | 150 | |
-| 27 | 3 (HOSTAGE) | 0 | 189 | |
-| 35 | 7 (ROBOT) | 1 | 183 | |
-| **46** | **12 (GHOST)** | **6** | **82** | **GHOST LOST** |
-| 53 | 7 (ROBOT) | 2 | 14 | |
-| 60 | 2 (POWERUP) | 38 | 35 | |
-| 67 | 7 (ROBOT) | 2 | 209 | |
-| 74 | 7 (ROBOT) | 2 | 17 | |
-| 81 | 2 (POWERUP) | 37 | 115 | |
-| 88 | 2 (POWERUP) | 37 | 176 | |
-| **95** | **7 (ROBOT)** | **22** | **205** | |
-| 102 | 7 (ROBOT) | 22 | 225 | |
-| 109 | 7 (ROBOT) | 2 | 227 | |
+| Host obj | Type           | ID     | Seg     | Notes          |
+| -------- | -------------- | ------ | ------- | -------------- |
+| 6        | 7 (ROBOT)      | 38     | 199     |                |
+| 13       | 2 (POWERUP)    | 38     | 93      |                |
+| 20       | 2 (POWERUP)    | 39     | 150     |                |
+| 27       | 3 (HOSTAGE)    | 0      | 189     |                |
+| 35       | 7 (ROBOT)      | 1      | 183     |                |
+| **46**   | **12 (GHOST)** | **6**  | **82**  | **GHOST LOST** |
+| 53       | 7 (ROBOT)      | 2      | 14      |                |
+| 60       | 2 (POWERUP)    | 38     | 35      |                |
+| 67       | 7 (ROBOT)      | 2      | 209     |                |
+| 74       | 7 (ROBOT)      | 2      | 17      |                |
+| 81       | 2 (POWERUP)    | 37     | 115     |                |
+| 88       | 2 (POWERUP)    | 37     | 176     |                |
+| **95**   | **7 (ROBOT)**  | **22** | **205** |                |
+| 102      | 7 (ROBOT)      | 22     | 225     |                |
+| 109      | 7 (ROBOT)      | 2      | 227     |                |
 
 15 objects lost, including GHOST id=6 (obj[46]).
 
 ### Objects OVERWRITTEN by garbage (obj_allocate returns these indices):
 
-| Idx | Was Type | Was ID | Overwritten By |
-|---|---|---|---|
-| 6 | (empty) | | garbage type=0 |
-| 7 | 2 (POWERUP) | 39 | garbage type=0 |
-| 8 | 7 (ROBOT) | 1 | garbage type=0 |
-| 9 | 7 (ROBOT) | 1 | garbage type=0 |
-| 10 | 7 (ROBOT) | 13 | garbage type=0 |
-| 11 | 2 (POWERUP) | 37 | garbage type=0 |
-| 12 | 2 (POWERUP) | 39 | garbage type=0 |
-| 13 | (free, obj[13] was lost) | | garbage type=0 |
-| 14 | 2 (POWERUP) | 39 | garbage type=0 |
-| 15 | 2 (POWERUP) | 37 | garbage type=0 |
-| **16** | **12 (GHOST)** | **1** | **garbage type=0** |
-| 17 | 2 (POWERUP) | 37 | garbage type=0 |
-| 18 | 2 (POWERUP) | 37 | garbage type=0 |
-| 19 | 9 (CNTRLCEN) | 2 | garbage type=0 |
-| 20 | (free, obj[20] was lost) | | garbage type=0 |
+| Idx    | Was Type                 | Was ID | Overwritten By     |
+| ------ | ------------------------ | ------ | ------------------ |
+| 6      | (empty)                  |        | garbage type=0     |
+| 7      | 2 (POWERUP)              | 39     | garbage type=0     |
+| 8      | 7 (ROBOT)                | 1      | garbage type=0     |
+| 9      | 7 (ROBOT)                | 1      | garbage type=0     |
+| 10     | 7 (ROBOT)                | 13     | garbage type=0     |
+| 11     | 2 (POWERUP)              | 37     | garbage type=0     |
+| 12     | 2 (POWERUP)              | 39     | garbage type=0     |
+| 13     | (free, obj[13] was lost) |        | garbage type=0     |
+| 14     | 2 (POWERUP)              | 39     | garbage type=0     |
+| 15     | 2 (POWERUP)              | 37     | garbage type=0     |
+| **16** | **12 (GHOST)**           | **1**  | **garbage type=0** |
+| 17     | 2 (POWERUP)              | 37     | garbage type=0     |
+| 18     | 2 (POWERUP)              | 37     | garbage type=0     |
+| 19     | 9 (CNTRLCEN)             | 2      | garbage type=0     |
+| 20     | (free, obj[20] was lost) |        | garbage type=0     |
 
 Then mode-1 objects (owner=1) via obj_allocate at indices 21, 22, 23:
 | 21 | 2 (POWERUP) | 38 | type=7 ROBOT id=1 (owner=1) |
@@ -116,6 +119,7 @@ Then mode-1 objects (owner=1) via obj_allocate at indices 21, 22, 23:
 ### Final Object State (First Attempt)
 
 After all packets, before verify_objects:
+
 - Highest_object_index = 23 (set by last obj_allocate, NOT by direct placement)
 - Objects at indices 24-108 WERE placed correctly via direct placement but are
   INVISIBLE to verify_objects because it only scans 0..Highest_object_index
@@ -124,6 +128,7 @@ After all packets, before verify_objects:
 - Objects at indices 21-23: mode-1 objects (robots owned by player 1)
 
 verify_objects scans 0..23:
+
 - PLAYER=1 (idx 0)
 - GHOST=0 (ghost at idx 16 was overwritten; other ghosts at 45,66,89,90 are above Highest)
 - nplayers=1 < max_numplayers=4 -> SYNC FAILED
@@ -131,18 +136,21 @@ verify_objects scans 0..23:
 ### Why `special_reset_objects()` is NOT called at end-marker
 
 The end-marker code:
+
 ```c
 if (mode == 1) {
     special_reset_objects();
     mode = 0;
 }
 ```
+
 But mode is already 0 (set by the first garbage object in packet 1). So the final
 special_reset_objects that would correctly rebuild Highest_object_index is SKIPPED.
 
 ## Second Rejoin Attempt
 
 The host re-sends with player_num=3, Highest=112. Key differences:
+
 - Static vars in read_object_packet retain state from first attempt (mode=0)
 - The init-marker packet (nobj=8) was apparently lost or logcat dropped its log lines
   - Evidence: object_count=0 and mode=0 in first visible packet, but my_pnum shows
@@ -160,6 +168,7 @@ The host re-sends with player_num=3, Highest=112. Key differences:
 
 Every 7th object (the last in each 7-object packet) is received as all-zeros. This
 causes:
+
 1. owner=0 triggers the MODE0 branch instead of mode-1 placement
 2. First occurrence calls special_reset_objects() prematurely and sets mode=0
 3. obj_allocate() returns indices that collide with later direct placements
@@ -174,11 +183,13 @@ corruption. The first 6 objects in each packet are perfect matches with host dat
 Hypotheses for investigation:
 
 #### H1: The host is NOT ACTUALLY writing the 7th object to the buffer (STRONGEST)
+
 The MPDIAG log shows the host logging obj[6] BEFORE writing it. What if the
 size-check or loop logic has an off-by-one that breaks BEFORE writing the 7th
 object, but AFTER incrementing obj_count_frame to include it?
 
 Key code path:
+
 ```c
 obj_count_frame++;
 obj_count++;
@@ -187,15 +198,18 @@ remote_objnum = objnum_local_to_remote(i, &owner);
 PUT_INTEL_INT(object_buffer+loc, i);  // writes the object
 ...
 ```
+
 The MPDIAG fires AFTER obj_count_frame++ but BEFORE writing. If the loop breaks
 between MPDIAG and PUT_INTEL_INT... but there's no break point there.
 
 HOWEVER: look at the size check placement:
+
 ```c
 if ( loc + sizeof(object_rw) + 9 > UPID_MAX_SIZE-1 )
     break;
 obj_count_frame++;
 ```
+
 The size check is BEFORE obj_count_frame++. So if the size check passes, the
 object IS counted AND written. If it fails, the object is NOT counted.
 
@@ -204,6 +218,7 @@ a post-write MPDIAG that logs loc AFTER writing each object, to confirm the 7th
 object's data is actually in the buffer.
 
 #### H2: The send succeeds but recvfrom returns fewer bytes than sent
+
 If `recvfrom` returns a truncated datagram, the last object would read from
 uninitialized stack memory in the receive buffer (which could be zeros on Android
 due to stack initialization). The `packet` buffer in `net_udp_listen` is NOT
@@ -213,11 +228,13 @@ To investigate: add a log of `msglen` from recvfrom for UPID_OBJECT_DATA packets
 Compare with expected size (9 + nobj * 273 bytes, adjusted for init marker).
 
 Possible causes of truncation:
+
 - WiFi MTU issues (1920-1929 bytes is above 1500 MTU but should fragment at IP layer)
 - Android socket receive buffer too small
 - `recvfrom` with MSG_TRUNC on Android?
 
 #### H3: IP fragmentation causes partial packet delivery
+
 UDP is reassembled at IP layer, so partial delivery shouldn't happen. However, if
 the socket has MSG_TRUNC behavior or the kernel drops the reassembled datagram but
 delivers a partial one...
@@ -225,10 +242,12 @@ delivers a partial one...
 This is unlikely on modern Linux/Android kernels but worth investigating.
 
 #### H4: The MPDIAG macro itself causes a side effect (RULED OUT)
+
 The bug existed in build 1111 before the per-object MPDIAG was added. The
 256-byte stack buffer in the macro doesn't overflow for these format strings.
 
 #### H5: WiFi / UDP delivery issue specific to these packet sizes
+
 Packets are 1920-1929 bytes. The WiFi link between 192.168.88.21 and 192.168.88.46
 might have an effective MTU that causes fragmentation, and one fragment is
 consistently lost. If the LAST fragment is lost, the kernel would discard the
@@ -273,6 +292,7 @@ void net_udp_listen() {
 The `packet` buffer is reused across loop iterations. `udp_receive_packet` zeroes ONE
 byte at `packet[msglen]` but leaves the rest untouched. Bytes beyond the received data
 contain either:
+
 - data from a previous packet in the same loop iteration
 - uninitialized stack garbage (first iteration)
 
@@ -298,6 +318,7 @@ partial datagram, the 7th object's bytes would be whatever is in the stack buffe
 
 The fact that the 7th object is consistently ALL ZEROS (not random garbage) suggests
 EITHER:
+
 - Stack memory at those offsets happens to be zero (possible with Android security
   features like stack zeroing)
 - The previous packet in the loop iteration was the same size, and its 7th object
@@ -317,15 +338,18 @@ comparison without worrying about log truncation of long hex strings. base64 of
 ~1920 bytes is ~2560 chars, which fits in a single logcat line.
 
 #### Send side (net_udp_send_objects, before dxx_sendto)
+
 - Log `loc` (total bytes being sent)
 - Base64-encode and log the full `object_buffer[0..loc-1]`
 
 #### Receive side (net_udp_read_object_packet)
+
 - Pass `length` from net_udp_process_packet into net_udp_read_object_packet
 - Log `length` (msglen from recvfrom)
 - Base64-encode and log the full `data[0..length-1]`
 
 #### Interpretation
+
 - If `length < loc`: **truncation**. recvfrom is delivering fewer bytes than sent
 - If `length == loc` and base64 matches: bug is in the parsing code, not the data
 - If `length == loc` and base64 differs: in-transit corruption
@@ -364,6 +388,7 @@ result in a clean rejoin abort, not silent corruption of the object table.
 Currently only `obj_allocate()` updates Highest_object_index. Direct placement
 (`objnum = remote_objnum`) can place objects at index 90+ while Highest stays at 23.
 After direct placement, add:
+
 ```c
 if (objnum > Highest_object_index)
     Highest_object_index = objnum;
@@ -372,9 +397,11 @@ if (objnum > Highest_object_index)
 #### Fix 3: Unconditional special_reset_objects at end-marker
 
 Currently:
+
 ```c
 if (mode == 1) { special_reset_objects(); mode = 0; }
 ```
+
 A single bad object flipping mode to 0 means the final free-list rebuild is skipped
 and Highest_object_index is wrong. Change to always call special_reset_objects()
 at the end-marker, regardless of mode.
@@ -419,6 +446,7 @@ crash breadcrumbs. The data_len parameter was already plumbed in from build 1112
 diagnostics.
 
 Key log line from client:
+
 ```
 12:51:51.134 MPDIAG: read_object_packet: nobj=8 mode=0 object_count=0 data_len=1500
 ```
@@ -463,6 +491,7 @@ from the truncated region. The SIGABRT was from assert() firing on invalid data.
 ### Fix 1: Bounds-checking in read_object_packet (DONE, both D1 and D2)
 
 Two bounds checks added:
+
 1. **Header check**: `if (loc + 9 > data_len) break;` before reading the 9-byte
    per-object header (objnum + owner + remote_objnum)
 2. **Body check**: `if (loc + sizeof(object_rw) > data_len) break;` before reading
@@ -475,6 +504,7 @@ instead of crashing.
 ### Fix 2: Highest_object_index update during MODE1 placement (DONE, both D1 and D2)
 
 After `objnum = remote_objnum` in the MODE1 branch, added:
+
 ```c
 if (objnum > Highest_object_index)
     Highest_object_index = objnum;
@@ -496,6 +526,7 @@ verify_objects runs.
 ### Fix 4 (Assert/Int3 breadcrumbs): DONE, both D1 and D2
 
 Added `#ifdef __ANDROID__` override in dxxerror.h:
+
 - `Assert(expr)` logs `crash_breadcrumb_v("ASSERT FAIL: %s at %s:%d", ...)` before
   calling `assert(expr)`. Uses expression form (ternary) to remain compatible with
   comma expressions like `SEG_PTR_2_NUM`.
@@ -504,6 +535,7 @@ Added `#ifdef __ANDROID__` override in dxxerror.h:
 ### Net effect of fixes
 
 With truncation at 1500 bytes:
+
 - **Before**: reads garbage past buffer -> corrupt objects -> wrong mode transitions
   -> Highest_object_index stuck at 23 -> special_reset skipped -> SIGABRT or desync
 - **After**: bounds check fires at object 7 -> loop breaks -> 6 of 7 objects placed
@@ -518,29 +550,29 @@ could add retry/resend logic for truncated packets.
 
 ## Appendix: Object Type Reference
 
-| Type | Name |
-|---|---|
-| 0 | OBJ_WALL |
-| 2 | OBJ_POWERUP |
-| 3 | OBJ_HOSTAGE |
-| 4 | OBJ_PLAYER |
-| 7 | OBJ_ROBOT |
-| 9 | OBJ_CNTRLCEN |
-| 12 | OBJ_GHOST |
-| 14 | OBJ_COOP |
+| Type | Name         |
+| ---- | ------------ |
+| 0    | OBJ_WALL     |
+| 2    | OBJ_POWERUP  |
+| 3    | OBJ_HOSTAGE  |
+| 4    | OBJ_PLAYER   |
+| 7    | OBJ_ROBOT    |
+| 9    | OBJ_CNTRLCEN |
+| 12   | OBJ_GHOST    |
+| 14   | OBJ_COOP     |
 
 ## Appendix: Timeline
 
-| Time | Event |
-|---|---|
-| 08:47:21.645 | Client auto_join (2nd attempt to reach menu) |
-| 08:47:22.544 | Host: UPID_REQUEST from Player78 |
-| 08:47:28.585 | Host: welcome_player, starts sending objects (INIT player_num=2 Highest=109) |
-| 08:47:28.585-29.185 | Host: sends 108 objects across ~15 packets at 50fps |
-| 08:47:29.083-29.677 | Client: receives and processes all packets |
-| 08:47:29.677 | Client: end marker, verify_objects -> SYNC FAILED |
-| 08:47:48.310 | Client: auto_join again (3rd attempt) |
-| 08:47:51.225 | Host: welcome_player, resends (INIT player_num=3 Highest=112) |
-| 08:47:51.763-52.357 | Client: receives packets (init marker log possibly lost) |
-| 08:47:52.358 | Client: end marker, verify_objects -> passes with nplayers=7 (stale data) |
-| (shortly after) | Game enters, desynced, crashes |
+| Time                | Event                                                                        |
+| ------------------- | ---------------------------------------------------------------------------- |
+| 08:47:21.645        | Client auto_join (2nd attempt to reach menu)                                 |
+| 08:47:22.544        | Host: UPID_REQUEST from Player78                                             |
+| 08:47:28.585        | Host: welcome_player, starts sending objects (INIT player_num=2 Highest=109) |
+| 08:47:28.585-29.185 | Host: sends 108 objects across ~15 packets at 50fps                          |
+| 08:47:29.083-29.677 | Client: receives and processes all packets                                   |
+| 08:47:29.677        | Client: end marker, verify_objects -> SYNC FAILED                            |
+| 08:47:48.310        | Client: auto_join again (3rd attempt)                                        |
+| 08:47:51.225        | Host: welcome_player, resends (INIT player_num=3 Highest=112)                |
+| 08:47:51.763-52.357 | Client: receives packets (init marker log possibly lost)                     |
+| 08:47:52.358        | Client: end marker, verify_objects -> passes with nplayers=7 (stale data)    |
+| (shortly after)     | Game enters, desynced, crashes                                               |

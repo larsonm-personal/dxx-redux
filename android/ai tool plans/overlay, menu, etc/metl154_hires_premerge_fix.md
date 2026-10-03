@@ -33,8 +33,8 @@
 - `android\run-code-quality.ps1 -Fix` passed.
 - `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest` passed.
 - Desktop/root `cmake` validation was blocked by the local environment, not by this change:
-	- repository root has no top-level `CMakeLists.txt`
-	- direct `d2` configure failed because local desktop SDL dependencies were missing (`SDL_mixer`)
+  - repository root has no top-level `CMakeLists.txt`
+  - direct `d2` configure failed because local desktop SDL dependencies were missing (`SDL_mixer`)
 
 ## Remaining Risk
 

@@ -1,13 +1,10 @@
 [
     {
         "_info": {
-            "games": [
-                "d1",
-                "d2"
-            ],
+            "games": ["d1", "d2"],
             "_standalone": false,
-            "_owner": "test_lan"
-        }
+            "_owner": "test_lan",
+        },
     },
     {
         "action": "wait_for",
@@ -18,14 +15,14 @@
             "coop_briefing.presenting": true,
             "time_paused": true,
             "coop_briefing.seconds_remaining": {
-                "range": [100, 120]
-            }
-        }
+                "range": [100, 120],
+            },
+        },
     },
     {
         "action": "set_debug",
         "field": "coop_briefing_action",
-        "value": "skip"
+        "value": "skip",
     },
     {
         "action": "wait_for",
@@ -34,14 +31,14 @@
             "coop_briefing.phase": 6,
             "coop_briefing.presentation_ready": 1,
             "coop_briefing.seconds_remaining": {
-                "range": [1, 20]
+                "range": [1, 20],
             },
-            "time_paused": true
-        }
+            "time_paused": true,
+        },
     },
     {
         "action": "wait_ms",
-        "ms": 10000
+        "ms": 10000,
     },
     {
         "action": "assert",
@@ -50,9 +47,9 @@
             "coop_briefing.phase": 6,
             "time_paused": true,
             "coop_briefing.seconds_remaining": {
-                "range": [1, 10]
-            }
-        }
+                "range": [1, 10],
+            },
+        },
     },
     {
         "action": "wait_for",
@@ -63,7 +60,7 @@
             "coop_briefing.launch_reason": 3,
             "in_game": true,
             "time_paused": false,
-            "multiplayer.num_connected": 2
-        }
-    }
+            "multiplayer.num_connected": 2,
+        },
+    },
 ]

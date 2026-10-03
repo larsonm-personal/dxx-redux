@@ -40,10 +40,11 @@ The first cold-launch attempt also exceeded the test's 60-second initial-sync
 limit while the client was still in launcher preflight.
 
 Validation completed 2026-09-16:
+
 - Both Windows builds and both transition-policy test executables passed
 - Android x86_64 debug assembly passed (ARM64 was not rebuilt in this check)
 - Two-emulator `test_lan.ps1 -Game d2 -InitialLevel 8 -SecretAdvance
-  -AllowSecretWarps -NoCoopQol -TimeoutSeconds 180 -SkipBuild` passed at 17:29:57
+-AllowSecretWarps -NoCoopQol -TimeoutSeconds 180 -SkipBuild` passed at 17:29:57
 - The host staged the next mine at 17:29:48.449 and entered LOADING at
   17:29:48.488: 39 ms, with no seven-second warning phase
 - This exercised Counterstrike's equivalent destroyed-base progression path;
@@ -65,7 +66,7 @@ Evidence: `temp/coop-fast-warp-lan-resumed.log`,
   explicit movie Skip followed by the still-active briefing pages.
   This case passed on two emulators at 12:29:17 on 2026-09-14 using
   `test_lan.ps1 -Game d2 -Briefings -BriefingCase paused_force -NoCoopQol
-  -TimeoutSeconds 180 -SkipBuild`. The host's ordinary tap left the actual
+-TimeoutSeconds 180 -SkipBuild`. The host's ordinary tap left the actual
   Counterstrike movie running; movie Skip preserved briefing pages and did not
   enable Launch now. Subsequent briefing Skip and host force-launch still
   released both players, including a client paused in its movie. Android

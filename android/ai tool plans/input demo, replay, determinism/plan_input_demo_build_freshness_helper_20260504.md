@@ -1,16 +1,19 @@
 # Plan: Input Demo Build Freshness Helper (2026-05-04)
 
 ## Goal
+
 - survey input-demo-related test entry points that launch host binaries or repeatedly invoke replay wrappers
 - extract the host build freshness check and auto-rebuild path into one shared PowerShell helper
 - wire affected callers so batch scripts do one explicit preflight instead of relying on buried per-run checks
 
 ## Scope
+
 - PowerShell under `android/tests/`
 - keep the freshness roots simple and shared: game dir, `common/`, `arch/`, and `android/app/src/main/cpp/shared/`
 - no gameplay source changes
 
 ## Execution Plan
+
 - Phase 1 complete
   - surveyed `android/tests/*.ps1` for direct `buildd1/buildd2` executable usage and replay-wrapper callers
   - identified direct host-binary callers: `run_input_demo_replay.ps1`, `test_input_demo_runtime_smoke.ps1`

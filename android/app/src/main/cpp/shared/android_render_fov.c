@@ -2,6 +2,22 @@
 
 static int Android_main_view_fov_degrees;
 static int Android_main_view_fov_locked_to_base;
+static enum android_render_pass Android_render_pass;
+
+void android_render_set_pass(enum android_render_pass pass)
+{
+	Android_render_pass = pass;
+}
+
+int android_render_cpu_visibility_only(void)
+{
+	return Android_render_pass == ANDROID_RENDER_CPU_VISIBILITY;
+}
+
+int android_render_records_objects(void)
+{
+	return Android_render_pass != ANDROID_RENDER_VISUAL_ONLY;
+}
 
 static int android_render_clamp_main_view_fov(int fov_degrees)
 {

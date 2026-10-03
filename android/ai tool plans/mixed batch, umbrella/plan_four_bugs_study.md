@@ -10,6 +10,7 @@
 ## Hypotheses
 
 ### Bug 1: D2 preview movie audio skips
+
 - Likely in D2 MVE queue timing, conversion, or output rate mismatch rather than launcher level audio setup
 - Best low cost discriminator is queue depth, underrun, overrun, and SDL_mixer output logging during movie playback
 - Current intro-movie logs point to SDL 1.2 `SDL_BuildAudioCVT()` only applying the easy 2x step for 22050 to 48000 output and leaving the final rate gap to drift into underruns
@@ -17,10 +18,12 @@
 - Resolved Android startup sync uses a 150 ms queued-audio target based on phone testing on the current device and the temporary `[mve-audio]` diagnostics have been removed after verification
 
 ### Bug 2: Select button routing
+
 - The failing controller path may arrive as BACK rather than BUTTON_SELECT on some devices
 - Best low cost discriminator is logging of Select, Start, and Back routing decisions with tray policy state
 
 ### Bug 3: Axis picker stale values
+
 - Motion events may stop reaching the controller config flow while a picker dialog is open
 - Best low cost discriminator is logging both SetupActivity motion updates and picker side live axis generation while the dialog is open
 - Trigger long press can self-block on pads that report both trigger buttons and trigger axes, because the trigger button presence cancels axis selection while the active trigger axis also makes the button path look busy
@@ -36,6 +39,7 @@
 - The launcher base-screen DPAD regression traced to focus restoration rather than event routing: `initialFocus` was anchored only to the gated `Multiplayer` button, so the base setup screen now restores focus to the always-enabled `Define Controls` button instead
 
 ### Bug 4: Touch mouse deadband
+
 - The touch overlay may emit small values that are then zeroed by the native joystick deadzone path
 - Best low cost discriminator is comparing touch mouse output, launcher threshold to PlayerCfg deadzone mapping, and post deadzone engine values
 - Exported debug logs now need to cover the full path: `[touch-mouse]` in Kotlin, `[joy-jni]` in android_input.c, `[joy-sdl]` in joy.c, `[joy-map]` in android_gamepad_config.cpp, and `[joy-dz]` in d1/d2 kconfig.c so no logcat capture is required

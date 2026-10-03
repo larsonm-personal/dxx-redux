@@ -17,7 +17,7 @@ Status: complete
 - [x] Inspect batch artifacts and classify all five archive failures
 - [x] Reproduce and fix import, worker lifecycle, crash, and partial-load causes
 - [x] Compare KCXF2 and Descent routes against reviewed baselines and make route
-  output deterministic without materially increasing analysis time
+      output deterministic without materially increasing analysis time
 - [x] Audit the background coordinator's discovery, scheduling, and persisted state
 - [x] Implement a persistent progress/event store with total-level accounting
 - [x] Add an Advanced-tab progress, history, and export UI

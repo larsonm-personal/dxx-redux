@@ -71,7 +71,8 @@ for package in "$@"; do
 done
 MANAGER
 chmod +x "$SDK/cmdline-tools/latest/bin/sdkmanager"
-run() { bash "$HELPERS/$1" >"$TEST_ROOT/result.log" 2>&1; }
+# Hidden WSL launches can inherit a terminal even in an unattended test runner
+run() { bash "$HELPERS/$1" </dev/null >"$TEST_ROOT/result.log" 2>&1; }
 run finalize.sh
 printf '%s\n' --licenses --list 'platforms;android-36.0' 'build-tools;36.0.0' platform-tools 'cmake;3.31.6' 'platforms;android-34' >"$TEST_ROOT/expected"
 cmp "$TEST_ROOT/expected" "$TEST_ROOT/calls"

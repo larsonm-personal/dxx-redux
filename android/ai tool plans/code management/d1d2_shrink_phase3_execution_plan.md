@@ -94,6 +94,7 @@ Added  Removed  Total  Path
 ### Why total churn grew from +17362 to +24822
 
 New Android-specific instrumentation landed in d1/d2 after the original study:
+
 - Input-demo recorder/replay engine embedded in `newdemo.c`, `game.c`,
   `inferno.c`, `escort.c`, `state.c`, `aipath.c`, `ai.c`, `laser.c`, etc.
 - Multi-stream RNG (`d_rng_stream`, `d_rand_annotated`) rewrite in `rand.c`
@@ -135,25 +136,25 @@ a single-copy shared helper is valid.
 
 ## Categories of remaining churn
 
-| Category | Rough share of remaining +24822 | Plan |
-|---|---|---|
-| Input-demo instrumentation (Tier A) | ~5000 across 8+ files | Extract to `shared/input_demo/` |
-| coop_save + auto_net new files | ~2125 | Move to `shared/coop/` |
-| net_udp.c remaining | ~1200 | Continue `cleanup_net_udp_extract.md` |
-| state.c combined | ~1400 | Depends on coop_save + input_demo moves |
-| ogl.c remaining | ~3271 | Mostly ETC2/KTX2 inline; hard to extract |
-| newmenu.c | ~965 | Touch/keyboard/drag-scroll bodies to shared |
-| multi.c combined | ~877 | Coop QoL helpers to shared |
-| playsave.c combined | ~989 | Bridge bodies to shared |
-| gr.c + oglprog.c combined | ~942 | GLES3 shim + texfilt to shared |
-| songs.c combined | ~529 | Two overlay helpers |
-| render.c combined | ~487 | Merged-wall tracking |
-| escort.c | ~746 | Input-demo trace + guidebot-coop hooks |
-| kconfig + gamecntl combined | ~449 | Touch binding helpers |
-| hmp + physfsx combined | ~453 | TSF MIDI + SAF archiver glue |
-| aipath + ai + laser + physics etc. | ~1200 | Input-demo probes + physics probes |
-| titles + automap | ~370 | Touch/skip helpers |
-| rand.c combined | ~374 | Leave -- RNG rewrite is engine-level |
+| Category                            | Rough share of remaining +24822 | Plan                                        |
+| ----------------------------------- | ------------------------------- | ------------------------------------------- |
+| Input-demo instrumentation (Tier A) | ~5000 across 8+ files           | Extract to `shared/input_demo/`             |
+| coop_save + auto_net new files      | ~2125                           | Move to `shared/coop/`                      |
+| net_udp.c remaining                 | ~1200                           | Continue `cleanup_net_udp_extract.md`       |
+| state.c combined                    | ~1400                           | Depends on coop_save + input_demo moves     |
+| ogl.c remaining                     | ~3271                           | Mostly ETC2/KTX2 inline; hard to extract    |
+| newmenu.c                           | ~965                            | Touch/keyboard/drag-scroll bodies to shared |
+| multi.c combined                    | ~877                            | Coop QoL helpers to shared                  |
+| playsave.c combined                 | ~989                            | Bridge bodies to shared                     |
+| gr.c + oglprog.c combined           | ~942                            | GLES3 shim + texfilt to shared              |
+| songs.c combined                    | ~529                            | Two overlay helpers                         |
+| render.c combined                   | ~487                            | Merged-wall tracking                        |
+| escort.c                            | ~746                            | Input-demo trace + guidebot-coop hooks      |
+| kconfig + gamecntl combined         | ~449                            | Touch binding helpers                       |
+| hmp + physfsx combined              | ~453                            | TSF MIDI + SAF archiver glue                |
+| aipath + ai + laser + physics etc.  | ~1200                           | Input-demo probes + physics probes          |
+| titles + automap                    | ~370                            | Touch/skip helpers                          |
+| rand.c combined                     | ~374                            | Leave -- RNG rewrite is engine-level        |
 
 ---
 
@@ -167,6 +168,7 @@ Extracting them establishes `android/app/src/main/cpp/shared/input_demo/` as
 the canonical home, reducing d1/d2 to thin call-site stubs.
 
 Target directory layout:
+
 ```
 shared/input_demo/
     input_demo_bootstrap.c    -- startup: validate metadata, start replay, dump classic
@@ -178,6 +180,7 @@ shared/input_demo/
 ```
 
 **TA.1 -- escort.c input-demo trace block** (~280 lines in d2 only)
+
 - Plan file: `cleanup_input_demo_escort_trace.md`
 - Block: `input_demo_trace_escort_active`, `input_demo_log_escort_*`,
   `input_demo_reset_escort_state_probes`, `g_input_demo_escort_*` statics --
@@ -189,6 +192,7 @@ shared/input_demo/
 - Risk: low -- pure logging, no side effects on game state
 
 **TA.2 -- inferno.c input-demo bootstrap** (~310 d2 + ~250 d1 lines)
+
 - Plan file: `cleanup_input_demo_inferno_bootstrap.md`
 - Block: `find_cmd_arg`, `maybe_validate_input_demo_metadata`,
   `input_demo_replay_hash_u8_sequence`, `input_demo_apply_replay_player_cfg`,
@@ -202,6 +206,7 @@ shared/input_demo/
 - Risk: low -- called once at startup, no hot path
 
 **TA.3 -- newdemo.c control-trace serializers** (~70 lines each game)
+
 - Plan file: sub-tranche of `cleanup_input_demo_newdemo_extract.md`
 - Block: `nd_write_player_control_trace`, `nd_read_player_control_trace`,
   plus the `nd_player_control_trace` struct and the static
@@ -210,6 +215,7 @@ shared/input_demo/
 - Risk: low
 
 **TA.4 -- newdemo.c quick-record block** (~470 lines in d2, ~350 in d1)
+
 - Plan file: `cleanup_input_demo_newdemo_extract.md`
 - Block: `input_demo_android_quick_recording` statics,
   `input_demo_quick_record_mission_name`, `input_demo_clear_quick_recording`,
@@ -229,6 +235,7 @@ shared/input_demo/
   `newdemo.h`
 
 **TA.5 -- newdemo.c JSON dump block** (~449 lines in d2, ~150 in d1)
+
 - Plan file: same `cleanup_input_demo_newdemo_extract.md` (second sub-tranche)
 - Block: `newdemo_dump_set_error`, `newdemo_dump_active`,
   `newdemo_dump_reset_player_control_trace`, `newdemo_dump_reset_player_wiggle`,
@@ -240,6 +247,7 @@ shared/input_demo/
 - Risk: low -- pure serialization, no game state mutation
 
 **TA.6 -- game.c replay control block** (~480 d2 + ~430 d1 lines)
+
 - Plan file: `cleanup_input_demo_game_extract.md`
 - Block: `input_demo_player_motion_probe_active`,
   `input_demo_player_motion_frame_index`, `input_demo_log_player_motion_state`,
@@ -258,6 +266,7 @@ shared/input_demo/
   struct layouts diverge.
 
 **TA.7 -- state.c input-demo checkpoint blocks** (~400 lines combined)
+
 - Plan file: sub-tranche of `cleanup_state_input_demo_extract.md`
 - Block: `input_demo_capture_recorder_checkpoint` calls and the
   `#ifdef __ANDROID__` blocks scattered through `state_save_all_sub` and
@@ -270,6 +279,7 @@ shared/input_demo/
 - Risk: medium -- interleaved with coop save/restore; do after TA.4 and P3.1
 
 **TA.8 -- ai/aipath/laser/physics probe blocks** (~600 lines combined)
+
 - Plan file: `cleanup_input_demo_probe_files.md`
 - Files: `d2/main/aipath.c` (+383), `d2/main/ai.c` (+229),
   `d2/main/laser.c` (+234), `d2/main/physics.c` (+252),
@@ -379,45 +389,45 @@ Total Tier A expected shrink: **~4500 lines** combined across d1+d2.
 
 Each is a standalone 1-2 hour tranche; do in any order after Tiers A-H.
 
-| Tranche | Files | Est. shrink | Plan file |
-|---|---|---|---|
-| songs.c overlay helpers | d1+d2 songs.c (+529) | ~200 | `cleanup_songs_overlay_extract.md` |
-| render.c merged-wall tracking | d1+d2 render.c (+487) | ~300 | `cleanup_render_merged_wall_extract.md` |
-| titles.c intro-movie skip | d1+d2 titles.c (+246) | ~150 | `cleanup_titles_touch_extract.md` |
-| kconfig.c + gamecntl.c touch | d1+d2 (+482) | ~270 | `cleanup_kconfig_touch_extract.md` |
-| automap.c touch helpers | d1+d2 (+163) | ~120 | `cleanup_automap_escort_extract.md` |
-| hmp.c TSF routing | d1+d2 (+251) | ~200 | `cleanup_hmp_physfsx_extract.md` |
-| physfsx.c SAF archiver | d1+d2 (+222) | ~180 | same |
-| texmerge.c metl154 overlay | d1+d2 (+228) | ~200 | `cleanup_render_merged_wall_extract.md` |
+| Tranche                       | Files                 | Est. shrink | Plan file                               |
+| ----------------------------- | --------------------- | ----------- | --------------------------------------- |
+| songs.c overlay helpers       | d1+d2 songs.c (+529)  | ~200        | `cleanup_songs_overlay_extract.md`      |
+| render.c merged-wall tracking | d1+d2 render.c (+487) | ~300        | `cleanup_render_merged_wall_extract.md` |
+| titles.c intro-movie skip     | d1+d2 titles.c (+246) | ~150        | `cleanup_titles_touch_extract.md`       |
+| kconfig.c + gamecntl.c touch  | d1+d2 (+482)          | ~270        | `cleanup_kconfig_touch_extract.md`      |
+| automap.c touch helpers       | d1+d2 (+163)          | ~120        | `cleanup_automap_escort_extract.md`     |
+| hmp.c TSF routing             | d1+d2 (+251)          | ~200        | `cleanup_hmp_physfsx_extract.md`        |
+| physfsx.c SAF archiver        | d1+d2 (+222)          | ~180        | same                                    |
+| texmerge.c metl154 overlay    | d1+d2 (+228)          | ~200        | `cleanup_render_merged_wall_extract.md` |
 
 ---
 
 ### Do not extract (Tier J)
 
-| File | Reason |
-|---|---|
-| `d1+d2 maths/rand.c` (+374 combined) | Multi-stream RNG rewrite is an engine-level change, not Android-only; leave for upstreaming as-is |
-| `d2/libmve/mveplay.c` (+208 -21) | Movie decoder changes are cross-platform fixes; leave as-is |
-| `d1+d2 arch/sdl/joy.c` (+326 combined) | Platform SDL glue; must stay with the SDL adapters |
+| File                                    | Reason                                                                                               |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `d1+d2 maths/rand.c` (+374 combined)    | Multi-stream RNG rewrite is an engine-level change, not Android-only; leave for upstreaming as-is    |
+| `d2/libmve/mveplay.c` (+208 -21)        | Movie decoder changes are cross-platform fixes; leave as-is                                          |
+| `d1+d2 arch/sdl/joy.c` (+326 combined)  | Platform SDL glue; must stay with the SDL adapters                                                   |
 | `d1+d2 arch/ogl/ogl.c` ETC2/KTX2 blocks | Too interleaved with the existing upload function to extract cleanly; flagged as skip in prior study |
-| All CMakeLists.txt | Required build wiring; not a shrink target |
+| All CMakeLists.txt                      | Required build wiring; not a shrink target                                                           |
 
 ---
 
 ## Projected totals after all tranches
 
-| Group | Est. shrink |
-|---|---|
-| Tier A: input-demo extraction | ~4500 |
-| Tier B: coop_save + auto_net | ~2125 |
-| Tier C: net_udp.c continuation | ~450 |
-| Tier D: state.c coop glue | ~260 |
-| Tier E: gr.c + oglprog.c | ~400 |
-| Tier F: multi.c coop QoL | ~550 |
-| Tier G: playsave.c bridge | ~500 |
-| Tier H: newmenu.c touch | ~350 |
-| Tier I: small mop-up | ~1620 |
-| **Grand total** | **~10755** |
+| Group                          | Est. shrink |
+| ------------------------------ | ----------- |
+| Tier A: input-demo extraction  | ~4500       |
+| Tier B: coop_save + auto_net   | ~2125       |
+| Tier C: net_udp.c continuation | ~450        |
+| Tier D: state.c coop glue      | ~260        |
+| Tier E: gr.c + oglprog.c       | ~400        |
+| Tier F: multi.c coop QoL       | ~550        |
+| Tier G: playsave.c bridge      | ~500        |
+| Tier H: newmenu.c touch        | ~350        |
+| Tier I: small mop-up           | ~1620       |
+| **Grand total**                | **~10755**  |
 
 Bringing insertions from +24822 down to roughly **+14000**, concentrated in
 the few genuinely-shared engine changes (ogl.c ETC2 paths, host-migration

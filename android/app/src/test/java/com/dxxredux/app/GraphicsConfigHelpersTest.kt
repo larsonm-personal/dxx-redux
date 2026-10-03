@@ -14,10 +14,13 @@ class GraphicsConfigHelpersTest {
         val filesDir = filesDirWithConfigs()
         updateAllConfigFiles(filesDir, listOf("MenuTexFilt" to "1", "GammaLevel" to "4"))
         for (preset in GameSettingsPreset.entries) {
-            updateAllConfigFiles(filesDir, listOf(
-                "TexFilt" to preset.textureFilter.toString(),
-                "HudTexFilt" to if (preset.hudFiltering) "1" else "0",
-            ))
+            updateAllConfigFiles(
+                filesDir,
+                listOf(
+                    "TexFilt" to preset.textureFilter.toString(),
+                    "HudTexFilt" to if (preset.hudFiltering) "1" else "0",
+                ),
+            )
             for (game in listOf("d1", "d2")) {
                 val snapshot = readGraphicsConfigSnapshot(filesDir, game).toMap()
                 assertEquals(0, snapshot["tex_filt"])

@@ -35,7 +35,7 @@ glyph rasterization, text controls, spacing, or desktop call selection.
 - [x] Run scoped static checks and record exact inherited-file reduction.
 - [x] Build and link both games on all Android ABIs.
 - [x] Run readable-tiny text, menu scale, control/help readability, and a D1
-  menu path so masked and unmasked scaled text both execute.
+      menu path so masked and unmasked scaled text both execute.
 - [x] Update the catalog and live aggregate.
 
 ## Guardrails

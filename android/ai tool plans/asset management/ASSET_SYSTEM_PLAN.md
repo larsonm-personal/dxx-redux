@@ -181,9 +181,9 @@ enabled: Boolean
 
 ## Risk Assessment
 
-| Risk | Mitigation |
-|---|---|
-| Large file hashing is slow (540MB GOG CD image) | Progress UI; Dispatchers.IO; cache in manifest (done once) |
-| Known hash table starts incomplete | Ship what's available; show short hash for unknowns; expand via community |
-| `assets.json` out of sync with disk | Startup verification; re-hash if size mismatch |
-| Mod PhysFS mounting needs JNI change | Minimal: one string param, one `PHYSFS_addToSearchPath()` call |
+| Risk                                            | Mitigation                                                                |
+| ----------------------------------------------- | ------------------------------------------------------------------------- |
+| Large file hashing is slow (540MB GOG CD image) | Progress UI; Dispatchers.IO; cache in manifest (done once)                |
+| Known hash table starts incomplete              | Ship what's available; show short hash for unknowns; expand via community |
+| `assets.json` out of sync with disk             | Startup verification; re-hash if size mismatch                            |
+| Mod PhysFS mounting needs JNI change            | Minimal: one string param, one `PHYSFS_addToSearchPath()` call            |

@@ -10,11 +10,11 @@ headlight state.
 
 - [x] Confirm the finding and identify the export, import, and consumer paths.
 - [x] Centralize the exported preference type declarations and use them for
-  both serialization and validated import.
+      both serialization and validated import.
 - [x] Add focused round-trip and wrong-type regression coverage for every
-  currently exported Boolean and string preference.
+      currently exported Boolean and string preference.
 - [x] Run scoped formatting, focused and complete Android unit tests, the
-  debug APK/native ABI build, and a final diff audit.
+      debug APK/native ABI build, and a final diff audit.
 - [x] Record results and mark the plan complete.
 
 ## Result

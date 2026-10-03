@@ -4,11 +4,11 @@
 
 Full host metadata regeneration and the full Guide-Bot simulation stage pass. All five lost simulation passes in the incoming diff are restored. No passing simulation was lost against either the incoming working-tree results or HEAD
 
-| Baseline | Passing simulations |
-| --- | ---: |
-| HEAD | 2,124 |
-| Incoming working tree | 2,153 |
-| Published result | 2,162 |
+| Baseline              | Passing simulations |
+| --------------------- | ------------------: |
+| HEAD                  |               2,124 |
+| Incoming working tree |               2,153 |
+| Published result      |               2,162 |
 
 The sweep processed 2,639 level entries: 2,549 native runs and 90 unavailable-level records. Remaining outcomes are 160 failed, 155 timeout, 146 unsupported, and 16 route mismatch. A successful batch does not certify these incomplete levels
 
@@ -27,16 +27,16 @@ All new behavior is shared and uses level state; there are no mission-name branc
 
 Duplicate mission records count separately in this table
 
-| Incoming change group | Records | Disposition |
-| --- | ---: | --- |
-| Saturn L4, standalone and levelpack | 2 | Removed the invalid pre-reactor guided shortcut; restored the original 14-step blue/gold/red-key route; both simulations pass |
-| Chasm L3; Hydro L17/L18; Klassics L2 | 4 | Alternative authored exits restore completing metadata. Chasm and both Hydro levels now pass physically. Klassics remains unsupported because its asset set supplies no Guide-Bot type |
-| Die Hard L6, three copies | 3 | Preserved the hidden-door and switch prerequisites needed to cross the final exit barrier; all copies pass |
-| Die Hard L17, three copies | 3 | Preserved the ordinary switch shot after the boss opens its shutter; all copies pass |
-| Die Hard L11, three copies; FFYL L24 | 4 | Firing-position changes retain the same semantic objectives and keys; no passing simulation is lost |
-| D2Crossfire L3; KAK L4, two copies | 3 | Explicit exit-opening trigger prerequisites replace implicit assumptions; no keys or guided shots are removed |
-| Chronolos secret -1; Phenomia secret -1; Cord-S2; LS Communications Center | 4 | Retained the newly resolved ordinary prerequisites and completing routes; all incoming simulation gains remain passing |
-| Enemy Vignettes L15 | 1 | Retained the valid guided-shot removal: native ordinary fire reaches the boss from outside its room and the mine completes |
+| Incoming change group                                                      | Records | Disposition                                                                                                                                                                            |
+| -------------------------------------------------------------------------- | ------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Saturn L4, standalone and levelpack                                        |       2 | Removed the invalid pre-reactor guided shortcut; restored the original 14-step blue/gold/red-key route; both simulations pass                                                          |
+| Chasm L3; Hydro L17/L18; Klassics L2                                       |       4 | Alternative authored exits restore completing metadata. Chasm and both Hydro levels now pass physically. Klassics remains unsupported because its asset set supplies no Guide-Bot type |
+| Die Hard L6, three copies                                                  |       3 | Preserved the hidden-door and switch prerequisites needed to cross the final exit barrier; all copies pass                                                                             |
+| Die Hard L17, three copies                                                 |       3 | Preserved the ordinary switch shot after the boss opens its shutter; all copies pass                                                                                                   |
+| Die Hard L11, three copies; FFYL L24                                       |       4 | Firing-position changes retain the same semantic objectives and keys; no passing simulation is lost                                                                                    |
+| D2Crossfire L3; KAK L4, two copies                                         |       3 | Explicit exit-opening trigger prerequisites replace implicit assumptions; no keys or guided shots are removed                                                                          |
+| Chronolos secret -1; Phenomia secret -1; Cord-S2; LS Communications Center |       4 | Retained the newly resolved ordinary prerequisites and completing routes; all incoming simulation gains remain passing                                                                 |
+| Enemy Vignettes L15                                                        |       1 | Retained the valid guided-shot removal: native ordinary fire reaches the boss from outside its room and the mine completes                                                             |
 
 The incoming simulation diff had 34 gained passes, five lost passes, and three changed nonpassing outcomes. All 34 gains are preserved. Restoring Ironstar's three copies and Saturn's two copies fixes all five losses. Chasm L3, Hydro L17/L18, and Bitesize secret -1 add four further passes
 

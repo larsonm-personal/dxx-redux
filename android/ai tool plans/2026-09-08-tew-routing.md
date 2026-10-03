@@ -38,7 +38,6 @@ Final TEW 26 validation: both Windows engines build (temp/tew26_verified_build.l
 
 Investigate the unopened frontier at segment 77 after the blue key. Inspect wall state and visibility before changing shared interaction rules, then run deterministic level coverage and the five-mission corpus. Counterstrike secret -5 remains deferred.
 
-
 Wall 0 at 77:0 is an unlocked blue-key door with animation flags 12 (including WCF_HIDDEN). The actor owns the key and is at its frontier, but both the live certifier and flare eligibility required exploration beyond the hidden wall. Static planning correctly treated it as a keyed door. Allow owned-key doors with that animation flag to remain player-reachable and identify them as player-assisted frontiers; permit physical flares with the same key/lock validation. Keyless hidden-door discovery remains unchanged. No mission identifiers occur in engine behavior.
 
 The focused integration test completes all four objectives at frame 3819 in two identical runs and verifies a physical flare at the blue-key door. Native coverage includes missing-key and locked-door rejection for the same hidden animation. Both Windows engines build (temp/tew23_build.log); all 49 native tests pass (temp/tew23_ctest.log). Scoped mixed-language quality passes. The D1 full rebuild emits existing POrderList/SOrderList return-path warnings in untouched weapon.c; changed code adds no warnings. Android device behavior was not tested. Full corpus comparison follows.

@@ -1,5 +1,8 @@
 #!/usr/bin/env pwsh
 # Exercise the real pinned installer and executable, including failure rollback
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Mock download responses to exercise installer rollback')]
+param()
+
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)

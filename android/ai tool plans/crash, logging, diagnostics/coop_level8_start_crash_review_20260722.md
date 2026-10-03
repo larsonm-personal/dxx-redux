@@ -68,15 +68,15 @@ the source at commit `b609c954`, without runtime source changes.
 ## Implementation Tranche
 
 - [x] Enable extracted native-library packaging so xCrash can execute its
-  dumper on current Android.
+      dumper on current Android.
 - [x] Add reason-specific D1/D2 sync rejection breadcrumbs with safe identity
-  and checksum details.
+      and checksum details.
 - [x] Add D1/D2 post-sync level-initialization stage breadcrumbs around the
-  previously unobservable gap.
+      previously unobservable gap.
 - [x] Make host sync propagate local sync-processing failure instead of
-  continuing with `NETSTAT_MENU` or an invalid player.
+      continuing with `NETSTAT_MENU` or an invalid player.
 - [x] Add focused native-crash coverage and compile the D1/D2 network changes
-  on Android and Windows.
+      on Android and Windows.
 - [x] Run scoped code quality, focused tests, and proportional builds.
 
 ## Implementation Validation

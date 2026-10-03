@@ -14,6 +14,13 @@ $androidRoot = Split-Path $PSScriptRoot
 $repoRoot = Split-Path $androidRoot
 
 . (Join-Path $PSScriptRoot "code-quality-files.ps1")
+$Paths = @(Get-CodeQualityScriptPaths -InputPaths $Paths -RemainingPaths @($args) -ExplicitScope ($PSBoundParameters.ContainsKey('Paths')))
+
+$files = @(Get-CodeQualityCmakeFiles -RepoRoot $repoRoot -InputPaths $Paths)
+if ($files.Count -eq 0) {
+    Write-Host "No cmake files in scope to lint"
+    exit 0
+}
 
 $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
 if (-not (Test-Path $depBaseFile)) {
@@ -46,11 +53,7 @@ if (-not $cmakeLint) {
 Write-Host "Using: $cmakeLint"
 & $cmakeLint --version
 
-$files = @(Get-CodeQualityCmakeFiles -RepoRoot $repoRoot -InputPaths $Paths)
-if ($files.Count -eq 0) {
-    Write-Host "No cmake files in scope to lint"
-    exit 0
-}
+
 Write-Host "Found $($files.Count) cmake files"
 
 $savedPref = $ErrorActionPreference
@@ -68,3 +71,5 @@ if ($badFiles.Count -gt 0) {
     exit 1
 }
 Write-Host "All cmake files pass cmake-lint"
+
+exit 0

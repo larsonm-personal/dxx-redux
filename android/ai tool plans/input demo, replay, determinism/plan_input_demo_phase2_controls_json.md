@@ -29,18 +29,18 @@ for later recording/replay work:
 ## Completed Notes
 
 - Added `input_demo_controls.h/.cpp` under `android/app/src/main/cpp/shared`.
-	The helper owns the portable held-state and pulse structs, sparse JSONL key
-	ordering, validation, and file read/write paths using `nlohmann::ordered_json`.
+  The helper owns the portable held-state and pulse structs, sparse JSONL key
+  ordering, validation, and file read/write paths using `nlohmann::ordered_json`.
 - Added tiny `control_info` adapters in `d1/main/input_demo_control_info.h` and
-	`d2/main/input_demo_control_info.h` so the game-specific surface stays small.
+  `d2/main/input_demo_control_info.h` so the game-specific surface stays small.
 - Added `android/tests/test_input_demo_controls.cpp` and wired it into both
-	`d1/maths/CMakeLists.txt` and `d2/maths/CMakeLists.txt` as a host probe.
+  `d1/maths/CMakeLists.txt` and `d2/maths/CMakeLists.txt` as a host probe.
 - The shared portable structs needed explicit packing in their own header. The
-	game headers compile under packed layout from `pstypes.h`, while the shared
-	C++ helper does not unless packing is declared locally.
+  game headers compile under packed layout from `pstypes.h`, while the shared
+  C++ helper does not unless packing is declared locally.
 - The maths probe targets had to stay host-only. In the unified Android CMake
-	graph, D1 and D2 are configured together, so duplicate probe target names must
-	be excluded from `ANDROID` builds.
+  graph, D1 and D2 are configured together, so duplicate probe target names must
+  be excluded from `ANDROID` builds.
 
 ## Validation
 
@@ -52,7 +52,7 @@ for later recording/replay work:
 - `buildd2\maths\test_input_demo_rng_mode.exe` passed.
 - `buildd2\maths\test_input_demo_controls.exe` passed.
 - `android\gradlew.bat :app:externalNativeBuildDebug --no-daemon` passed with
-	the new helper integrated into the Android native source lists.
+  the new helper integrated into the Android native source lists.
 
 ## Exit Criteria
 

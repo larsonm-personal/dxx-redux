@@ -1,21 +1,24 @@
 # KCXF2 metadata status and route wording
 
 ## Goal
+
 Resolve KCXF2RM level 4's contradictory travel/route status and make switch and
 hidden-door route instructions describe the required player action accurately.
 
 ## Plan
+
 - [x] Compare level 4 legacy travel traversal with the executable route result
-  and identify which status should own the UI summary.
+      and identify which status should own the UI summary.
 - [x] Trace `activate_switch`, `shoot_switch`, and `open_hidden_door` to their
-  actual trigger and wall mechanics.
+      actual trigger and wall mechanics.
 - [x] Correct the status source and route labels without obscuring distinct
-  activation behavior needed by guidebot.
+      activation behavior needed by guidebot.
 - [x] Add focused native and emulator regression coverage for status precedence and
-  wording.
+      wording.
 - [x] Regenerate mission metadata and run native, Android, and quality checks.
 
 ## Findings
+
 - Level 4's legacy travel traversal reached all four hostages, then failed to
   reach the exit because that traversal does not model the hidden-door route
   action. The executable route planner did model the hidden door and produced a
@@ -35,6 +38,7 @@ hidden-door route instructions describe the required player action accurately.
   pass-through step. The mixed activate/shoot display was from older metadata.
 
 ## Changes
+
 - Reconcile legacy travel's exit-only failure from a complete executable route,
   including the target count, problem, status, and no-reactor note.
 - Rename activation kind 4 from `activate_switch` to
@@ -45,6 +49,7 @@ hidden-door route instructions describe the required player action accurately.
   current vocabulary.
 
 ## Validation
+
 - Scoped `run-code-quality.ps1 -Fix`: passed.
 - Windows D1 and D2 builds: passed.
 - D1 CTest: 13/13 passed. D2 CTest: 14/14 passed.

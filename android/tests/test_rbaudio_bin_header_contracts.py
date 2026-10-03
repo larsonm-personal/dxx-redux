@@ -75,9 +75,7 @@ const char *(*track_name)(int) = RBAGetTrackName;
 int (*is_audio_track)(int) = RBAIsAudioTrack;
 const char *(*init_status)(void) = RBAGetInitStatus;
 """
-        cpp_source = 'extern "C" {\n#include "rbaudio.h"\n}\n' + c_source.split(
-            "\n", 2
-        )[2]
+        cpp_source = 'extern "C" {\n#include "rbaudio.h"\n}\n' + c_source.split("\n", 2)[2]
         with tempfile.TemporaryDirectory(dir=REPO / "temp") as temp:
             temp_path = Path(temp)
             for game in ("d1", "d2"):

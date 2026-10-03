@@ -1,11 +1,13 @@
 # Level metadata view study
 
 ## Goal
+
 - Study feasibility for a unified Android launcher dialog that shows per-level metadata for archives and mission files
 - Include level number, level name, robots, hostages, secrets, matcens, and energy centers
 - Decide which file types should expose a "Level metadata" preview button
 
 ## Plan
+
 - [x] Inspect existing launcher file metadata previews
 - [x] Inspect mission ZIP and constituent scan flow
 - [x] Inspect native/headless level analysis surfaces and available counts
@@ -13,6 +15,7 @@
 - [x] Note risks, test strategy, and follow-up implementation phases
 
 ## Findings
+
 - Feasible, but the per-level table should be produced through the engine/native loader, not by duplicating RDL/RL2/HOG parsing in Kotlin.
 - Current launcher previews are content summaries only:
   - `GameFileMetadata.summarizeLocalFile` handles local HOG/DXA/PIG/POG.
@@ -32,6 +35,7 @@
   - skip objects flagged `OF_SHOULD_BE_DEAD`
 
 ## Base Game Level Counts
+
 - The "30 levels" HOG preview is currently a total level-file count, not 30 normal levels plus secrets.
 - Current baseline data shows:
   - D1 First Strike: 30 total, 27 normal, 3 secret
@@ -39,6 +43,7 @@
 - The preview should present this as normal plus secret counts when it can infer or load mission ordering.
 
 ## Button Coverage
+
 - Direct file previews should expose "Level metadata" for:
   - `.hog` when it contains level files or is recognized as a base/mission HOG
   - `.msn` and `.mn2` when referenced level files/HOGs can be resolved from the same data set
@@ -51,6 +56,7 @@
   - do not try to fully model patch-overlay behavior in the first pass
 
 ## Recommended Design
+
 - Add one launcher-level data model for analysis results, for example:
   - source title/path
   - game hint
@@ -72,6 +78,7 @@
   - prefer mission descriptor ordering whenever available
 
 ## Risks And Open Points
+
 - Custom missions can rely on extra HAM/HXM/PIG data. Object counts will usually be load-level facts, but full compatibility needs the analyzer to mount the same support files the game would mount for launch.
 - SAF leave-in-place files may need a temporary copy because native analysis wants filesystem paths.
 - HOG-only ordering is inherently weaker than descriptor-backed ordering.
@@ -79,6 +86,7 @@
 - The table could be slow on large mission packs, so async execution and caching are important.
 
 ## Suggested Implementation Phases
+
 - Phase 1: Native analyzer API for base/local HOG and single level files, including robots and hostages.
 - Phase 2: Kotlin `LevelMetadataDialog` and button wiring for direct local HOG/RDL/RL2/SDL/SL2.
 - Phase 3: Descriptor-backed MSN/MN2 resolution and corrected normal/secret preview counts.

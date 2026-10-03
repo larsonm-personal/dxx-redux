@@ -9,14 +9,14 @@ fixtures, then prevent their recurrence without hiding legitimate evidence
 ## Plan
 
 - [x] Confirm the exact target paths are present, tracked, and match the
-  canonical finding inventory
+      canonical finding inventory
 - [x] Audit Git provenance, repository consumers, generators, and fixture
-  dependencies for every target
+      dependencies for every target
 - [x] Remove only the audited target paths and add path-specific ignore rules
 - [x] Add a focused tracked-artifact policy regression with an explicit,
-  narrow inventory
+      narrow inventory
 - [x] Run the policy test, scoped code quality, diff checks, and final status
-  and size audits
+      and size audits
 - [x] Record every removal, recoverability, validation result, and blocker
 
 ## Constraints

@@ -42,7 +42,7 @@
   dependency cycle.
 - Obsidian level 10 is the only currently partial Obsidian level. Across the
   checked mission metadata, 23 level records currently use the same `switch
-  activation route unresolved` classification, so any fix must be general and
+activation route unresolved` classification, so any fix must be general and
   corpus-reviewed rather than special-cased for Aquarius Falls.
 
 ## Smallest appropriate next step
@@ -59,8 +59,7 @@ with bounded, transactional exploration of relevant reachable trigger actions:
 3. Re-run strict firing-path selection for the original opener after each
    state change. Do not admit unresolved actions into a completing branch.
 4. Bound and memoize the search by progress-state signature plus target
-   trigger to avoid cycling through trigger 0/2/9 or repeatedly firing trigger
-   14.
+   trigger to avoid cycling through trigger 0/2/9 or repeatedly firing trigger 14.
 5. Pin the real Aquarius Falls route only after the synthetic fixture proves
    the general behavior, then review all 23 same-signature levels for genuine
    improvements and regressions.

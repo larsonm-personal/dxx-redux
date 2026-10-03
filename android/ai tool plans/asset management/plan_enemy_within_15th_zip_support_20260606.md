@@ -1,9 +1,11 @@
 # Enemy Within 15th ZIP Support Plan
 
 ## Goal
+
 - [x] Inspect `game_data\ewithin-versions.zip`, identify the D2X-Rebirth package, and plan launcher support without implementation code changes in this tranche.
 
 ## Survey Steps
+
 - [x] Read project instructions and existing mission ZIP import/staging code.
 - [x] Inventory the parent ZIP and Rebirth child ZIP.
 - [x] Inventory the Rebirth DXA and HOG contents.
@@ -11,6 +13,7 @@
 - [x] Identify current launcher gaps for parent ZIP selection and nested `missions/` paths.
 
 ## Archive Findings
+
 - Parent `ewithin-versions.zip` contains only `ewithin-rebirth.zip` and `ewithin-xl.zip`.
 - `ewithin-rebirth.zip` contains:
   - `ewithin.dxa`, 403,853,970 bytes
@@ -30,6 +33,7 @@
 - No executable, shared library, VST, VST3, or script payload was found in the Rebirth ZIP or DXA. The VST mention appears to describe how the soundtrack was produced, not runtime code.
 
 ## Support Assessment
+
 - Mission selection should be supportable after staging path fixes. The `.mn2` and `.hog` are valid D2 mission files, but they are already under `missions/`.
 - Levels, secrets, briefings, level-specific HXM robot patches, POG texture overrides, cockpit data, and briefing graphics should be supportable through existing D2 mission/HOG behavior once the HOG is staged at the expected path.
 - Exit sequences should be supportable by existing Rebirth-derived endlevel code if the HOG is visible. The archive includes `exit.ham`, exit model bitmaps, terrain assets, and per-level `.txb` files used by `load_endlevel_data()`.
@@ -39,6 +43,7 @@
 - DOS/vanilla segment limit concerns are not a blocker for DXX-Redux: `d2/main/segment.h` sets `MAX_SEGMENTS` to 9000, while the original limit is 900.
 
 ## Current Gaps
+
 - [x] Parent package import: current `MissionZip.inspect(InputStream)` sees only nested child ZIPs, so `ewithin-versions.zip` will not be recognized.
 - [x] Large input handling: current URI import scans the stream before copying. Parent and Rebirth archives should be copied/spooled to disk and inspected with `ZipFile`.
 - [x] Rebirth child selection: parent ZIP support needs to prefer a child whose name contains `rebirth`, and reject or warn if only XL is available.
@@ -48,6 +53,7 @@
 - [x] Tests need concrete coverage for parent ZIP selection, direct Rebirth ZIP import, nested `missions/` staging, and large archive stream safety.
 
 ## Proposed Implementation Phases
+
 - [x] Phase 1: Refactor mission ZIP import to copy SAF input to a temporary/import file first, then inspect with `ZipFile`. Keep progress reporting and storage guard behavior.
 - [x] Phase 2: Add parent ZIP detection. If a ZIP has no mission descriptor but contains child ZIP candidates, select the Rebirth child by filename, stream that child to the final mod file, and register the extracted child as the mission ZIP. Treat multiple Rebirth candidates as an import error until a UI choice exists.
 - [x] Phase 3: Normalize mission ZIP staging. If entries are rooted under `missions/`, stage them relative to `stageDir` instead of `stageDir/missions`; otherwise preserve the current top-level-to-`missions/` behavior for existing packs.
@@ -62,6 +68,7 @@
 - [ ] Phase 7: Run scoped code quality and targeted tests, then a D2 launch smoke test selecting `Descent: The Enemy Within` and verifying level 1 loads with built-in/addon music selected.
 
 ## Verification Ideas
+
 - [x] Use JVM tests for import/staging path behavior.
 - [ ] Use setup introspection or mission list automation to confirm the mission appears after import.
 - [ ] Use game introspection after launch to confirm `current_level_name` is loaded from level 1.
@@ -69,6 +76,7 @@
 - [ ] Check track overlay or audio status for `level01.ogg` when built-in/addon music is active.
 
 ## Implementation Notes
+
 - `MissionZip.isImportCandidate()` now recognizes direct mission ZIPs and parent ZIPs with a Rebirth child without reading nested archives into memory.
 - `ModManager.importMissionZip()` now spools SAF input to disk before inspection and registration.
 - Parent packages with one child ZIP whose leaf name contains `rebirth` are imported by streaming that child ZIP into `mods/`.
@@ -77,6 +85,7 @@
 - Mission ZIP details now include nested DXA feature summaries.
 
 ## Verification
+
 - [x] `.\android\run-code-quality.ps1 -Fix -Paths <changed files>` passed.
 - [x] `.\android\gradlew.bat -p android :app:testDebugUnitTest --tests com.dxxredux.app.ModManagerMissionZipTest --tests com.dxxredux.app.MissionZipTest` passed.
 - [x] `.\android\gradlew.bat -p android :app:assembleDebug` passed.

@@ -70,16 +70,16 @@ for Android LP64; this does not change audio behavior.
 
 Validated on 2026-09-21:
 
-| Experiment | Result |
-| --- | --- |
-| D1 Level 7, original melodic/drum banks, FM tracks 0,1,2,3,4,5,8 | 20-second render succeeds |
-| ymfmidi nine-voice and eighteen-voice variants | Both render; no PCM rail samples in Level 7 |
-| Direct MIDI API on unmodified ymfmidi | Fails note-off/retrigger behavior |
-| Direct MIDI API with isolated bookkeeping fix | Byte-identical to file playback for Level 7 |
-| Native ymfm YM3812 and MIT emu8950 YM3812 | Same nine-voice register stimulus renders on both |
-| Windows x64 and Android x86_64 | Level 7 and both core-tone WAVs byte-identical across platforms |
-| Android ARM64 | Cross-build/link passes; no physical-phone benchmark yet |
-| D1 Levels 2, 3, 8 | Five-second renders cover the other three bank families; fixed live/file PCM matches |
+| Experiment                                                       | Result                                                                               |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| D1 Level 7, original melodic/drum banks, FM tracks 0,1,2,3,4,5,8 | 20-second render succeeds                                                            |
+| ymfmidi nine-voice and eighteen-voice variants                   | Both render; no PCM rail samples in Level 7                                          |
+| Direct MIDI API on unmodified ymfmidi                            | Fails note-off/retrigger behavior                                                    |
+| Direct MIDI API with isolated bookkeeping fix                    | Byte-identical to file playback for Level 7                                          |
+| Native ymfm YM3812 and MIT emu8950 YM3812                        | Same nine-voice register stimulus renders on both                                    |
+| Windows x64 and Android x86_64                                   | Level 7 and both core-tone WAVs byte-identical across platforms                      |
+| Android ARM64                                                    | Cross-build/link passes; no physical-phone benchmark yet                             |
+| D1 Levels 2, 3, 8                                                | Five-second renders cover the other three bank families; fixed live/file PCM matches |
 
 In a representative optimized run, 20 seconds of Level 7 took approximately
 0.20 seconds on the Windows host and 0.14 seconds in the x86_64 Android emulator.
@@ -264,6 +264,7 @@ used externally to capture reference behavior.
 The reader and WOPL writer were implemented for this experiment from format
 documentation, local game data and the pinned BSD reader, without importing a
 GPL converter or synth. Game data is kept local and is not checked into the repo.
+
 # Original-driver probes and candidate (2026-09-22)
 
 `hmi_probe.py` generates controlled HMP/HMQ sequences in a fresh private session

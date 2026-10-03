@@ -68,12 +68,12 @@ should be required for the first pass beyond enabling the targeted diagnostic.
 
 ## Phase 2: follow the evidence
 
-| Observation | Next experiment |
-| --- | --- |
-| Output already blank at creation | Replay into a separate scratch target; change exactly one implicated GL state at a time |
-| Creation correct, tap blank | Trace cache lifetime, handle reuse/deletion, context and palette generations; compare first reuse with tap |
-| Direct readback correct, diagnostic sampling blank | Investigate sampler/mipmap/readback path before changing merge code |
-| Composite correct but wall still absent | Inspect final wall draw, depth and alpha state; do not treat it as an asset-load problem |
+| Observation                                        | Next experiment                                                                                            |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Output already blank at creation                   | Replay into a separate scratch target; change exactly one implicated GL state at a time                    |
+| Creation correct, tap blank                        | Trace cache lifetime, handle reuse/deletion, context and palette generations; compare first reuse with tap |
+| Direct readback correct, diagnostic sampling blank | Investigate sampler/mipmap/readback path before changing merge code                                        |
+| Composite correct but wall still absent            | Inspect final wall draw, depth and alpha state; do not treat it as an asset-load problem                   |
 
 For a bad creation, preserve original output and run bounded debug replays:
 scissor disabled only, correct CPU-array buffer binding only, then other state

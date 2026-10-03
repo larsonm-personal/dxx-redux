@@ -11,7 +11,10 @@ class LogFileRetentionTest {
     @get:Rule
     val temporary = TemporaryFolder()
 
-    private fun file(name: String, time: Long): File =
+    private fun file(
+        name: String,
+        time: Long,
+    ): File =
         File(temporary.root, name).apply {
             writeText(name)
             assertTrue(setLastModified(time))

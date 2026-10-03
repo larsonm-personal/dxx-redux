@@ -952,7 +952,7 @@ static void test_world_state_trace()
 {
 	init_test_corridor();
 	const int saved_selection[] = { PrimaryWeaponPickedUp, SecondaryWeaponPickedUp,
-		delayed_primary_autoselect_weapon_index, delayed_secondary_autoselect_weapon_index };
+		                            delayed_primary_autoselect_weapon_index, delayed_secondary_autoselect_weapon_index };
 	PrimaryWeaponPickedUp = 1;
 	SecondaryWeaponPickedUp = 0;
 	delayed_primary_autoselect_weapon_index = 16;
@@ -1794,7 +1794,7 @@ static void test_multiplayer_endlevel_tracks()
 	require(ahead.finished && !ahead.active && absent.active && !absent.outside,
 	        "a twenty-second gap retires the first ship while the late ship enters the tunnel");
 	require(!std::memcmp(&original, ConsoleObject, sizeof(original)) && objects == Highest_object_index &&
-	        GameTime64 == saved_time && sim_draws == d_rand_get_call_count(),
+	            GameTime64 == saved_time && sim_draws == d_rand_get_call_count(),
 	        "remote flyouts leave gameplay objects, clock and SIM RNG untouched");
 	Players[3].connected = CONNECT_DISCONNECTED;
 	endlevel_multi_frame();
@@ -2404,7 +2404,13 @@ static void test_robot_path_creation()
 		            d_rand_get_call_count() == untouched_rng,
 		        "inactive path operations leave robot, path output and RNG untouched");
 		create_path_to_player(&robot, 10, 0);
-		require(local.goal_segment == 0 && ai.flags[4] == 17, "companion keeps D2 destination and flags in either profile");
+		require(local.goal_segment == (profile == 1 ? ConsoleObject->segnum : Believed_player_seg) && ai.flags[4] == 17,
+		        "uncloaked D1 companion rejoins the player while D2 keeps its believed destination");
+		Players[Player_num].flags |= PLAYER_FLAGS_CLOAKED;
+		create_path_to_player(&robot, 10, 0);
+		require(local.goal_segment == Believed_player_seg && ai.flags[4] == 17,
+		        "companion respects the believed destination while the player is cloaked");
+		Players[Player_num].flags &= ~PLAYER_FLAGS_CLOAKED;
 		d_srand(17);
 		const unsigned companion_before = d_rand_get_call_count();
 		require(create_path_points(&robot, 0, 1, Point_segs, &count, 10, 1, 1, -1) == 0 && count == 2,
@@ -7942,7 +7948,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				else if (invalid < 4) {
 					// Current native save appends cadence and wall state after autoselect
 					const size_t offset = damaged.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES - (invalid == 1 ? 16 : invalid == 2 ? 8
-					                                                                                                      : 4);
+					                                                                                                                                          : 4);
 					set_int(damaged, offset, invalid == 1 ? 2 : 5);
 				} else {
 					// Native object_rw starts with signature, type/id, links, then
@@ -8712,8 +8718,7 @@ static void write_death_sequence_trace(const char *filename = "death.json")
 		require(input_demo_world_trace_write(static_cast<uint32_t>(trace.size()), nullptr, error, sizeof(error)), "observe actual death lifecycle in world stream");
 		require(sim == d_rand_get_call_count() && fx == d_rand_get_stream_call_count(D_RNG_FX), "death observation never consumes RNG");
 		trace.push_back({ { "phase", phase }, { "dead", Player_is_dead }, { "exploded", Player_exploded }, { "dropped", Player_eggs_dropped }, { "lives", Players[0].lives }, { "hostages", Players[0].hostages_on_board }, { "powerups", powerups() } });
-		trace.back()["runtime"] = { { "active", state.active }, { "exploded", state.exploded }, { "eggs_dropped", state.eggs_dropped },
-		    { "aborted", state.aborted }, { "elapsed", state.elapsed }, { "saved_flags", state.saved_flags }, { "saved_control", state.saved_control } };
+		trace.back()["runtime"] = { { "active", state.active }, { "exploded", state.exploded }, { "eggs_dropped", state.eggs_dropped }, { "aborted", state.aborted }, { "elapsed", state.elapsed }, { "saved_flags", state.saved_flags }, { "saved_control", state.saved_control } };
 	};
 	const auto advance = [](fix dt) {
 		FrameTime = dt;
@@ -9286,9 +9291,9 @@ static void write_briefing_trace(const char *directory, const char *d2_directory
 		int width, height, aspect_x, aspect_y, x, y, canvas_width, canvas_height;
 	};
 	for (const auto &test : {
-	         aspect_case { "wide", 1280, 720, 9, 16, 160, 0, 960, 720 },
-	         aspect_case { "tall", 720, 1280, 16, 9, 0, 370, 720, 540 },
-	         aspect_case { "non-square-pixels", 1280, 720, 3, 4, 0, 0, 1280, 720 } }) {
+	         aspect_case{ "wide", 1280, 720, 9, 16, 160, 0, 960, 720 },
+	         aspect_case{ "tall", 720, 1280, 16, 9, 0, 370, 720, 540 },
+	         aspect_case{ "non-square-pixels", 1280, 720, 3, 4, 0, 0, 1280, 720 } }) {
 		GameCfg.AspectX = test.aspect_x;
 		GameCfg.AspectY = test.aspect_y;
 		Game_screen_mode = SM(test.width, test.height);
@@ -10809,7 +10814,7 @@ int main(int argc, char **argv)
 #ifdef DXX_BUILD_DESCENT_II
 	test_native_ai_object_encoding();
 	for (const int size : { D1_SHARE_BIG_PIGSIZE, D1_SHARE_10_PIGSIZE, D1_SHARE_PIGSIZE,
-	         D1_10_BIG_PIGSIZE, D1_10_PIGSIZE, D1_MAC_PIGSIZE, D1_MAC_SHARE_PIGSIZE })
+	                        D1_10_BIG_PIGSIZE, D1_10_PIGSIZE, D1_MAC_PIGSIZE, D1_MAC_SHARE_PIGSIZE })
 		require(d1_in_d2_source_edition_error(size) != nullptr, "unsupported native source layouts have explicit imported admission errors");
 	for (const int size : { D1_PIGSIZE, D1_OEM_PIGSIZE, 123456 })
 		require(d1_in_d2_source_edition_error(size) == nullptr, "registered and unknown layouts continue through full source validation");

@@ -93,6 +93,7 @@ param(
     [string]$JoinCallsign = "LanJoin",
     [string]$RestoreSavePath,
     [switch]$SkipBuild,
+    [switch]$GraphicsConfirmation,
     [switch]$UseRelay,
     [switch]$GuidebotOwnership,
     [ValidateSet('Original', 'Enhanced')]
@@ -319,6 +320,7 @@ if (($NormalPhysical -or $SecretExitRace) -and ($Game -ne "d2" -or $InitialLevel
 }
 
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
+if ($GraphicsConfirmation) { . "$PSScriptRoot\..\helpers\test_graphics_multiplayer.ps1" }
 
 # -- Constants --
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
@@ -2320,6 +2322,7 @@ try {
         Write-Status "FAIL: SetupActivity didn't start on $EMU2" "Red"; Cleanup; exit 1
     }
     Write-Status "SetupActivity ready on both emulators" "Green"
+    if ($GraphicsConfirmation) { Initialize-MultiplayerGraphicsFixture }
 
     if ($Game -eq 'd2') {
         foreach ($serial in @($EMU1, $EMU2)) {
@@ -2902,6 +2905,9 @@ try {
     }
 
     $testPassed = $true
+    if ($GraphicsConfirmation) {
+        $testPassed = Invoke-MultiplayerGraphicsScenario -TriggerScriptName 'test_graphics_multiplayer_trial.jsonc' -DecisionScriptName 'test_graphics_multiplayer_decide.jsonc'
+    }
     if ($AllowSecretWarps -and $NoCoopQol) {
         $testPassed = $false
         if ($Game -ne "d2") { throw "Secret travel is a D2 option" }
@@ -3624,14 +3630,26 @@ try {
     }
 
     if ($testPassed -and $D1LevelTransition) {
-        $flyoutPrefix = if ($D1FlyoutCase -eq 'near') { 'test_coop_d1_flyout_near' } else { 'test_coop_d1_flyout_players' }
-        $hostScript = if ($D1FlyoutPlayers) { "${flyoutPrefix}_host.jsonc" } else { 'test_coop_d1_transition_host.jsonc' }
-        $clientScript = if ($D1FlyoutPlayers) { "${flyoutPrefix}_client.jsonc" } else { 'test_coop_d1_transition_client.jsonc' }
+        # Keep the finite script catalog explicit for ownership validation
+        $hostScript = 'test_coop_d1_transition_host.jsonc'
+        $clientScript = 'test_coop_d1_transition_client.jsonc'
+        if ($D1FlyoutPlayers) {
+            if ($D1FlyoutCase -eq 'near') {
+                $hostScript = 'test_coop_d1_flyout_near_host.jsonc'
+                $clientScript = 'test_coop_d1_flyout_near_client.jsonc'
+            } else {
+                $hostScript = 'test_coop_d1_flyout_players_host.jsonc'
+                $clientScript = 'test_coop_d1_flyout_players_client.jsonc'
+            }
+        }
         if ($ScoreCatchup) {
-            $hostPace = if ($ScoreCatchup -eq 'host') { 'fast' } else { 'slow' }
-            $clientPace = if ($ScoreCatchup -eq 'client') { 'fast' } else { 'slow' }
-            $hostScript = "test_coop_score_catchup_${hostPace}_host.jsonc"
-            $clientScript = "test_coop_score_catchup_${clientPace}_client.jsonc"
+            if ($ScoreCatchup -eq 'host') {
+                $hostScript = 'test_coop_score_catchup_fast_host.jsonc'
+                $clientScript = 'test_coop_score_catchup_slow_client.jsonc'
+            } else {
+                $hostScript = 'test_coop_score_catchup_slow_host.jsonc'
+                $clientScript = 'test_coop_score_catchup_fast_client.jsonc'
+            }
         }
         $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
             -SecondarySerial $EMU2 -SecondaryScript $clientScript `

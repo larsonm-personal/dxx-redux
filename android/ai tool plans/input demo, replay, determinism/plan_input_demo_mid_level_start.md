@@ -252,12 +252,12 @@ For `save_checkpoint`, capture a real temp save before
    description string and no UI
 3. Read the raw save bytes back into the recorder session without parsing them
 4. Capture replay-only extras at the same boundary: `start_gt = GameTime64`,
-  `next_laser_fire_delta = Next_laser_fire_time - GameTime64`,
-  `next_missile_fire_delta = Next_missile_fire_time - GameTime64`,
-  `last_laser_fired_delta = Last_laser_fired_time - GameTime64`, and
-  `auto_fire_fusion_delta = Auto_fire_fusion_cannon_time - GameTime64`
+   `next_laser_fire_delta = Next_laser_fire_time - GameTime64`,
+   `next_missile_fire_delta = Next_missile_fire_time - GameTime64`,
+   `last_laser_fired_delta = Last_laser_fired_time - GameTime64`, and
+   `auto_fire_fusion_delta = Auto_fire_fusion_cannon_time - GameTime64`
 5. Fill header metadata: `start_mode = "save_checkpoint"` and
-  `start_save = "inputdemo_start.dgss"`
+   `start_save = "inputdemo_start.dgss"`
 6. Delete the temp save once the bytes are safely buffered in memory
 
 The save blob is the checkpoint. The extra fields exist only because the

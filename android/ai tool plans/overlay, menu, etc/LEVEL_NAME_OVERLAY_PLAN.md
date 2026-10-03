@@ -1,6 +1,7 @@
 # Plan: Multi-line Overlay for Level & Track Names
 
 ## TL;DR
+
 Show the level name as a temporary overlay when a new level starts, using the same fade style as the existing track name overlay. Generalize the single-line track overlay into a multi-line overlay container so both level name and track name (which often fire simultaneously) can coexist, with items independently fading and remaining items bumping up.
 
 ## Background / Key Findings

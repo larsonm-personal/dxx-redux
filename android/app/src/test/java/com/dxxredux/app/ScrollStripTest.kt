@@ -100,6 +100,7 @@ class ScrollStripTest {
     @Test
     fun packedItemsMoveContinuouslyAcrossCenterline() {
         val cards = List(3) { ScrollStripCardSize(100f, 50f) }
+
         fun offsetsAt(index: Float): FloatArray =
             scrollStripTouchingOffsets(
                 cards,
@@ -122,11 +123,12 @@ class ScrollStripTest {
 
     @Test
     fun d2RowsUseFixedTiersAndHideUnavailableWeapons() {
-        val ammo = IntArray(10).apply {
-            this[0] = 2
-            this[5] = 3
-            this[6] = 0
-        }
+        val ammo =
+            IntArray(10).apply {
+                this[0] = 2
+                this[5] = 3
+                this[6] = 0
+            }
         val state =
             WeaponState(
                 primaryFlags = flagsOf(0, 1, 6, 7),

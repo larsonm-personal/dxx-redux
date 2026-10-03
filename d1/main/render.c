@@ -56,6 +56,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #if defined(ANDROID) || defined(__ANDROID__)
 #include "android_render_fov.h"
+#include "render_gameplay_view.h"
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+#include "ogl_msaa_probe_android.h"
+#endif
 #endif
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
@@ -119,7 +123,21 @@ void android_render_frame_main_view(fix eye_offset)
 		return;
 	}
 
-	render_frame(eye_offset);
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (android_render_visibility_verify_enabled()) {
+		android_render_visibility_verify_begin();
+		render_frame(eye_offset);
+		android_render_visibility_verify_reference(0);
+		android_ogl_scene_probe_discard_base_view();
+	}
+#endif
+	android_render_set_pass(ANDROID_RENDER_CPU_VISIBILITY);
+	android_render_collect_fov_visibility(eye_offset, 0);
+	android_render_set_pass(ANDROID_RENDER_NORMAL);
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (android_render_visibility_verify_enabled())
+		android_render_visibility_verify_compare(0);
+#endif
 	base_n_render_segs = N_render_segs;
 	base_render_list_bytes = base_n_render_segs > 0 ?
 		sizeof(Android_base_render_list[0]) * base_n_render_segs : 0;
@@ -127,10 +145,12 @@ void android_render_frame_main_view(fix eye_offset)
 		memcpy(Android_base_render_list, Render_list, base_render_list_bytes);
 
 	Android_visual_only_render_pass = 1;
+	android_render_set_pass(ANDROID_RENDER_VISUAL_ONLY);
 	Android_render_zoom_override = android_render_main_view_zoom(Render_zoom);
 	render_frame(eye_offset);
 	Android_render_zoom_override = 0;
 	Android_visual_only_render_pass = 0;
+	android_render_set_pass(ANDROID_RENDER_NORMAL);
 
 	N_render_segs = base_n_render_segs;
 	if (base_render_list_bytes)

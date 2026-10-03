@@ -14,6 +14,7 @@ $ErrorActionPreference = 'Stop'
 $scriptDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
+. (Join-Path $PSScriptRoot 'powershell_compat.ps1')
 . (Join-Path $scriptDir 'test_host_platform.ps1')
 $missionRoot = Join-Path $repoRoot 'game_data\mission_files'
 $manualRoot = Join-Path $androidRoot 'temp\guidebot_simulation_manual'
@@ -28,7 +29,7 @@ function Get-GuidebotBrowserValue {
 function Get-GuidebotBrowserEntries {
     param([Parameter(Mandatory)][string]$Path)
     $text = [IO.File]::ReadAllText($Path, [Text.Encoding]::UTF8)
-    $value = $text | ConvertFrom-Json -NoEnumerate
+    $value = $text | ConvertFrom-CompatibleJsonValue
     $entries = if ($text.TrimStart().StartsWith('[')) { @($value) } else { @($value) }
     if (@($entries | Where-Object { $null -eq $_.PSObject.Properties['levels'] }).Count) { return @() }
     return $entries
@@ -47,7 +48,7 @@ function Get-GuidebotBrowserIndex {
         $simulationEntries = @()
         if (Test-Path -LiteralPath $simulationPath -PathType Leaf) {
             try {
-                $simulationValue = Get-Content -LiteralPath $simulationPath -Raw | ConvertFrom-Json -NoEnumerate
+                $simulationValue = Get-Content -LiteralPath $simulationPath -Raw | ConvertFrom-CompatibleJsonValue
                 $simulationEntries = if ($simulationValue -is [Array]) {
                     @($simulationValue | ForEach-Object { $_ })
                 } else {
@@ -99,7 +100,7 @@ function Get-GuidebotBrowserIndex {
         }
     }
     # Keep level and mission order stable within each priority group
-    return @($items | Sort-Object -Stable -Property @{ Expression = { -not $_.OriginalDescent } })
+    return @(@($items | Where-Object { $null -ne $_ -and $_.OriginalDescent }) + @($items | Where-Object { $null -ne $_ -and -not $_.OriginalDescent }))
 }
 
 function Find-GuidebotBrowserItems {
@@ -248,7 +249,7 @@ function Invoke-GuidebotBrowserRun {
     $resultFile = @(Get-ChildItem (Join-Path $manualRunRoot 'results') -Filter '*.simulation.json' -ErrorAction SilentlyContinue |
             Select-Object -First 1)
     if ($resultFile.Count) {
-        $resultDocument = Get-Content -LiteralPath $resultFile[0].FullName -Raw | ConvertFrom-Json -NoEnumerate
+        $resultDocument = Get-Content -LiteralPath $resultFile[0].FullName -Raw | ConvertFrom-CompatibleJsonValue
         $resultRecord = @(@($resultDocument) | Where-Object { [int]$_.target_index -eq $Item.TargetIndex } | Select-Object -First 1)
         $levelResult = if ($resultRecord.Count) {
             @($resultRecord[0].levels | Where-Object { [int]$_.level_num -eq $Item.Level -and $_.level_file -eq $Item.LevelFile } |

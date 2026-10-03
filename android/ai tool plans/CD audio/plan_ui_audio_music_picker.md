@@ -3,6 +3,7 @@
 ## Phase 1: Quick Fixes -- DONE
 
 ### 1a: "NEXT" button on level complete screen -- DONE
+
 - Added `volatile int g_levelcomplete_active` flag in android_input.c
 - Set/clear around `newmenu_do2()` in `DoEndLevelScoreGlitz()` (d1 + d2)
 - Added JNI getter `nativeIsLevelCompleteActive()`
@@ -11,11 +12,13 @@
 - Scoped to solo score screen only; multiplayer kmatrix deferred
 
 ### 1b: Scroll indicators on Advanced Settings -- DONE
+
 - Wrapped scrollable Column in Box, added `ScrollArrows(scrollState)`
 - Added private `BoxScope.ScrollArrows()` function (same pattern as SetupActivity)
 - Added imports: ScrollState, CircleShape, Icons, KeyboardArrowUp/Down
 
 ### 1c: Reduce log/crash file limits -- DONE
+
 - NetLog.kt: MAX_FILES 10 -> 5
 - CrashLog.kt: MAX_FILES 20 -> 5
 
@@ -39,11 +42,13 @@
 ## Phase 4: Music Picker -- DONE (initial implementation)
 
 Implemented files:
+
 - `CustomAudioSetManager.kt`: manages custom audio file sets (MP3/OGG/FLAC) with JSON persistence
 - `MusicPickerPage.kt`: full-screen Composable page with 3 modes (MIDI, CD Audio, Audio Files)
 - SetupActivity.kt: navigation wiring, ControllerSection "Music" button, config writing at launch
 
 Implementation sub-phases all completed:
+
 - Phase 4a: MusicPickerPage scaffold + navigation wiring -- DONE
 - Phase 4b: Music mode selector (3 FilterChips, SharedPreferences) -- DONE
 - Phase 4c: Redbook section (AudioSourceManager list, enable/disable, reorder, remove) -- DONE
@@ -56,6 +61,7 @@ Implementation sub-phases all completed:
 Build verified: assembleDebug SUCCESS, no new warnings.
 
 ## Phase 5: Integration Testing -- NOT STARTED
+
 - Automation script for level complete NEXT button
 - Device test for audio latency
 - Import test for .gog+.inst

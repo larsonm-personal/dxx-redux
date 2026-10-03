@@ -21,9 +21,7 @@ def normalize(text: str, *args: str) -> subprocess.CompletedProcess[str]:
 
 class RegressionToolContractsTest(unittest.TestCase):
     def test_mission_batch_and_health_use_selected_emulator(self) -> None:
-        batch = (ROOT / "android/helpers/run_mission_zip_batch.ps1").read_text(
-            encoding="utf-8"
-        )
+        batch = (ROOT / "android/helpers/run_mission_zip_batch.ps1").read_text(encoding="utf-8")
         health = (ROOT / "android/helpers/emu_health.ps1").read_text(encoding="utf-8")
         self.assertIn("if (-not $env:ANDROID_SERIAL)", batch)
         self.assertIn("$env:ANDROID_SERIAL = $script:PRIMARY_EMULATOR_SERIAL", batch)
@@ -33,36 +31,20 @@ class RegressionToolContractsTest(unittest.TestCase):
 
     def test_host_uses_shared_mission_variant_policy(self) -> None:
         policy = (
-            ROOT
-            / "android/mission-metadata-core/src/main/kotlin/com/dxxredux/app/MissionVariantPolicy.kt"
+            ROOT / "android/mission-metadata-core/src/main/kotlin/com/dxxredux/app/MissionVariantPolicy.kt"
         ).read_text(encoding="utf-8")
-        host_generator = (
-            ROOT / "android/helpers/regenerate_all_mission_metadata_host.ps1"
-        ).read_text(encoding="utf-8")
-        positions = [
-            policy.index(f'MissionVariantPreference("{variant}"')
-            for variant in ("rebirth", "dos", "d2x")
-        ]
+        host_generator = (ROOT / "android/helpers/regenerate_all_mission_metadata_host.ps1").read_text(encoding="utf-8")
+        positions = [policy.index(f'MissionVariantPreference("{variant}"') for variant in ("rebirth", "dos", "d2x")]
         self.assertEqual(sorted(positions), positions)
         self.assertIn('"mission_archive_variants.ps1"', host_generator)
-        helper = (ROOT / "android/helpers/mission_archive_variants.ps1").read_text(
-            encoding="utf-8"
-        )
+        helper = (ROOT / "android/helpers/mission_archive_variants.ps1").read_text(encoding="utf-8")
         self.assertIn("--select-archive-variant @Names", helper)
 
     def test_mission_archive_appendage_is_shared_across_regression_workflows(self) -> None:
-        helper = (ROOT / "android/helpers/mission_archive_sources.ps1").read_text(
-            encoding="utf-8"
-        )
-        metadata = (
-            ROOT / "android/helpers/regenerate_all_mission_metadata.ps1"
-        ).read_text(encoding="utf-8")
-        fingerprint_wrapper = (
-            ROOT / "game_data/update_all_fingerprints.ps1"
-        ).read_text(encoding="utf-8")
-        fingerprint_worker = (
-            ROOT / "game_data/fingerprint_mission_zip_music.ps1"
-        ).read_text(encoding="utf-8")
+        helper = (ROOT / "android/helpers/mission_archive_sources.ps1").read_text(encoding="utf-8")
+        metadata = (ROOT / "android/helpers/regenerate_all_mission_metadata.ps1").read_text(encoding="utf-8")
+        fingerprint_wrapper = (ROOT / "game_data/update_all_fingerprints.ps1").read_text(encoding="utf-8")
+        fingerprint_worker = (ROOT / "game_data/fingerprint_mission_zip_music.ps1").read_text(encoding="utf-8")
 
         self.assertIn('Id = "d2xxl_downloads"', helper)
         self.assertIn('FingerprintAlbumPrefix = "Mission ZIP - D2X-XL - "', helper)
@@ -102,7 +84,7 @@ class RegressionToolContractsTest(unittest.TestCase):
         for token in (
             '$record["status"] = "failed"',
             "Write-MissionZipFailureJson",
-            '$results += [pscustomobject]$record',
+            "$results += [pscustomobject]$record",
             "Write-MissionZipBatchResult",
         ):
             self.assertIn(token, failure)
@@ -128,12 +110,8 @@ class RegressionToolContractsTest(unittest.TestCase):
         self.assertNotEqual(0, scalar_intent.returncode)
         self.assertIn("mission_intent must be a structured object", scalar_intent.stderr)
 
-        batch_source = (ROOT / "android/helpers/run_mission_zip_batch.ps1").read_text(
-            encoding="utf-8"
-        )
-        formatter_source = (ROOT / "android/helpers/normalized_json_text.ps1").read_text(
-            encoding="utf-8"
-        )
+        batch_source = (ROOT / "android/helpers/run_mission_zip_batch.ps1").read_text(encoding="utf-8")
+        formatter_source = (ROOT / "android/helpers/normalized_json_text.ps1").read_text(encoding="utf-8")
         self.assertIn("ConvertTo-NormalizedJsonText", batch_source)
         self.assertIn('throw "JSON text is empty"', formatter_source)
         self.assertIn("JSON formatter timed out after 30 seconds", formatter_source)

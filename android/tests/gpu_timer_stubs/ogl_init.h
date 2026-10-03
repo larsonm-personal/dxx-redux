@@ -7,7 +7,7 @@ typedef int GLint;
 typedef int GLsizei;
 
 #define GL_QUERY_RESULT_AVAILABLE 0x8867
-#define GL_QUERY_RESULT 0x8866
+#define GL_QUERY_RESULT           0x8866
 
 void glGenQueries(GLsizei count, GLuint *queries);
 void glGetIntegerv(GLenum name, GLint *value);

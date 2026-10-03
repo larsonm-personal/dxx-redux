@@ -14,7 +14,9 @@ class GameProcessExitDiagnosticsTest {
 
     private fun marker(expected: String = ""): File =
         File(temporary.root, "engine_pending_1000_42.txt").apply {
-            writeText("pid=42\nstarted_ms=1000\nexpected_exit=$expected\nRestore active: 1\nPhase: replacing world\nSave: example.mg3\n")
+            writeText(
+                "pid=42\nstarted_ms=1000\nexpected_exit=$expected\nRestore active: 1\nPhase: replacing world\nSave: example.mg3\n",
+            )
         }
 
     @Test
@@ -69,7 +71,10 @@ class GameProcessExitDiagnosticsTest {
     @Test
     fun intentionalQuitClearsMarkerWithoutCreatingACrashReport() {
         marker("user quit")
-        GameProcessExitDiagnostics.recoverMarkers(temporary.root, listOf(EngineExitRecord(42, 1500, 2, 9, ""))) { throw it }
+        GameProcessExitDiagnostics.recoverMarkers(
+            temporary.root,
+            listOf(EngineExitRecord(42, 1500, 2, 9, "")),
+        ) { throw it }
         assertEquals(0, temporary.root.listFiles()!!.size)
     }
 
@@ -83,7 +88,10 @@ class GameProcessExitDiagnosticsTest {
     fun nativeReportWinsOverLauncherFallback() {
         marker()
         val report = File(temporary.root, "crash_error_exit_1000_42.txt").apply { writeText("native detailed report") }
-        GameProcessExitDiagnostics.recoverMarkers(temporary.root, listOf(EngineExitRecord(42, 1500, 2, 9, ""))) { throw it }
+        GameProcessExitDiagnostics.recoverMarkers(
+            temporary.root,
+            listOf(EngineExitRecord(42, 1500, 2, 9, "")),
+        ) { throw it }
         assertEquals("native detailed report", report.readText())
     }
 }

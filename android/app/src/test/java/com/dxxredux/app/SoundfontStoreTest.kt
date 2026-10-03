@@ -23,7 +23,10 @@ class SoundfontStoreTest {
         val reopened = SoundfontStore(temporary.root, preferences)
         assertEquals(MusicEq.FLAT, reopened.read().eq)
         try {
-            reopened.selectEq(MusicEq.BALANCED) { fail("Activated unsupported preset"); true }
+            reopened.selectEq(MusicEq.BALANCED) {
+                fail("Activated unsupported preset")
+                true
+            }
             fail("Accepted unsupported measured EQ")
         } catch (_: IllegalArgumentException) {
         }
@@ -55,7 +58,10 @@ class SoundfontStoreTest {
         val active = store.import(byteArrayOf(1).inputStream(), "Active") { true }
         val inactive = store.import(byteArrayOf(2).inputStream(), "Inactive") { true }
         store.select(active.id) { true }
-        store.delete(inactive.id) { fail("Inactive deletion must not activate a synth"); false }
+        store.delete(inactive.id) {
+            fail("Inactive deletion must not activate a synth")
+            false
+        }
         assertEquals(listOf(active), store.read().fonts)
         assertEquals(active.id, store.read().selected)
         assertFalse(File(temporary.root, "soundfonts/${inactive.id}.sf2").exists())
@@ -218,8 +224,8 @@ class SoundfontStoreTest {
         store.selectRenderer("ymfm") { path, fm -> fm && File(path).exists() }
         val reopened = SoundfontStore(temporary.root, preferences)
         assertEquals("ymfm", reopened.read().renderer)
-            assertTrue(reopened.read().reverb)
-            assertTrue(reopened.read().chorus)
+        assertTrue(reopened.read().reverb)
+        assertTrue(reopened.read().chorus)
         assertEquals(font.id, reopened.read().selected)
         try {
             reopened.selectRenderer("sf2") { _, _ -> false }

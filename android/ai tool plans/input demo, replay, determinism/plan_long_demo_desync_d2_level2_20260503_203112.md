@@ -1,15 +1,18 @@
 # Plan: Long Demo Desync Investigation D2 Level 2 2026-05-03 203112
 
 ## Goal
+
 - Drive `android\temp_game_logs\newest_failing\d2_descent2_level2_20260503_203112.dximdemo` to its first replay desync
 - Identify the first mismatching frame and the nearest controlling gameplay path for the first simulation fork
 
 ## Local Hypothesis
+
 - The first replay fork is in player weapon fire at frame `1266`, not in guidebot, thief, matcen, or rendering
 - The current best hypothesis is that replay reaches a different weapon-fire state by frame `1266`, so the same recorded input produces a spreadfire-linked `create_awareness_event()` burst on replay that the recording only accounts for with two RNG draws across that frame
 - The cheapest discriminating check is to inspect the replay weapon-fire path at frame `1266` and confirm whether replay has diverged in selected weapon or in the local fire-timing state that controls `do_laser_firing_player()`
 
 ## Execution Plan
+
 - Phase 1
   - run the long replay with `-TraceState -CompareStateTrace` to capture the first mismatch frame and mismatch type
 - Phase 2
@@ -20,6 +23,7 @@
   - step to the nearest controlling code path and decide whether the root cause is a replay control-application issue, weapon-selection drift, or weapon-fire timing drift
 
 ## Status (2026-05-04)
+
 - Phase 1 completed
   - the first mismatch is reproducible at `frame=1267` with replay-side RNG mismatch `expected=2017763195 actual=2985398680`
 - Phase 2 completed

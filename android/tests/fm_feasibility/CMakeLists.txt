@@ -39,7 +39,8 @@ target_include_directories(emu8950 SYSTEM PUBLIC "${FM_DEPS}/emu8950")
 add_executable(fm_probe probe.cpp)
 target_link_libraries(fm_probe PRIVATE ymfmidi emu8950)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS patch_live.py patch_hmi.py hmi_pitch_table.inc)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS patch_live.py patch_hmi.py
+                                       hmi_pitch_table.inc)
 execute_process(
     COMMAND
         "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/patch_live.py"
@@ -73,10 +74,11 @@ foreach(source IN LISTS ymfmidi_support)
     list(APPEND hmi_player_support "${hmi_player_dir}/${name}")
 endforeach()
 execute_process(
-    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/patch_live.py"
-        "${CMAKE_CURRENT_BINARY_DIR}/player_baseline.cpp"
-        "${hmi_player_dir}/player.cpp" --hmi-pitch --hmi-driver --hmi-header "${hmi_player_dir}/player.h"
-        COMMAND_ERROR_IS_FATAL ANY)
+    COMMAND
+        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/patch_live.py"
+        "${CMAKE_CURRENT_BINARY_DIR}/player_baseline.cpp" "${hmi_player_dir}/player.cpp"
+        --hmi-pitch --hmi-driver --hmi-header "${hmi_player_dir}/player.h" COMMAND_ERROR_IS_FATAL
+        ANY)
 add_library(ymfmidi_hmi_driver STATIC "${hmi_player_dir}/player.cpp" ${hmi_player_support})
 target_include_directories(ymfmidi_hmi_driver SYSTEM PUBLIC "${hmi_player_dir}")
 target_link_libraries(ymfmidi_hmi_driver PUBLIC ymfm)

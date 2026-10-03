@@ -1,9 +1,11 @@
 # Touch More Overlay Fixes - 2026-05-11
 
 ## Goal
+
 Finish the Android touch overlay "More" button so it is tappable when open, has an editable location in the touch overlay editor, and lists actions that are not already exposed by the current touch layout.
 
 ## Plan
+
 1. [x] Create this plan file
 2. [x] Research the original "More" / remaining-actions design in code and git history
 3. [x] Fix open More popup hit handling so it wins over underlying stick or axis regions
@@ -12,6 +14,7 @@ Finish the Android touch overlay "More" button so it is tappable when open, has 
 6. [x] Run focused tests and code quality checks, then update this plan with results
 
 ## Notes
+
 - Keep the change in Android Kotlin code unless the research shows a C-side action is missing.
 - Preserve existing touch layout files where possible; add defaults for older layouts.
 - Original design was introduced around commit 52da9ba as a remaining-actions overflow for actions not already exposed by the current layout.

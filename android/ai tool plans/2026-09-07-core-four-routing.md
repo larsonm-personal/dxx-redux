@@ -64,7 +64,6 @@ Boss-objective correction validated: both engines build, all 49 native tests pas
 
 Obsidian 10 remains unsupported after the alternate-opener selection correction (obs10_alternate_retry). Investigate Castaway 7's non-shootable source obstruction after gold: identify the trigger and authored prerequisite, correct shared dependency planning, add regression coverage, and validate the full core corpus before refreshing results.
 
-
 Castaway 7 diagnosis: fly-through 40 on closed wall 117 (375:4) and alternate 41 on wall 115 (374:4) need switch 5 (366:4). A shortest optimistic route to switch 5 selects 40/41 again. Closed-source preparation ran before loop detection, hiding the cycle; a failed closed-source dependency also aborted instead of excluding that trigger and searching another path. Detect the loop before preparation and retry paths around inaccessible closed sources. The native run now physically completes all 11 objectives and exits at frame 6838 via triggers 13, 3, 4, and 5 after gold. Temporary diagnostic dumps removed; permanent error text includes trigger, segment, side, and wall. Integration repeat and full corpus verification pending.
 
 Validation exposed a pre-existing alternate-opener issue in the prepared-switch native fixture: moving to a shooting source could open that source, yet append the shot without restoring it. Revalidate the surface after movement and re-enter dependency planning when it disappears; the existing test again requires triggers 2, 1, 0, and now verifies the final restored wall kind. Early cycle rejection skips futile firing-pose graph searches.
@@ -77,11 +76,9 @@ Final validation: both Windows engines build (temp/cast7_verified_build.log); al
 
 User priority: leave Counterstrike secret -5 until last. Investigate Castaway 5 unresolved switch 13 after switch 12: trace authored trigger dependencies and source visibility, fix the shared planner or physical interaction, add focused coverage, and validate the core corpus before refreshing data.
 
-
 Castaway 5: switch 13 at wall 122 (573:0) sits behind closed wall 120 (570:0), opened by fly-through 14 at 361:4. Conditional ray analysis counted transparent grate wall 119 as an extra blocker. It now identifies the first actual obstruction, conditionally clears only that wall, and can plan its authored opening trigger. Physical run verifies 14 then shooting 13.
 
 The remaining shortest-route loop selected switch 20 inside the compartment opened by trigger 30. The valid route instead needs switch 16 at 589:2. Its room boundary wall 139 is opened by fly-through 19 at 96:2, reachable after fly-through 17. Source preparation only checked the switch face itself. It now considers closed boundary walls of the source segment and verifies that the prerequisite changes their state. The physical diagnostic reaches red, reactor, and exit, 12158 frames. Removed unsuccessful alternative-firing-position retries, expanded-sampling experiment, and all temporary dumps. Final builds, metadata refresh, deterministic integration, and full corpus validation follow.
-
 
 Corpus validation found Obsidian 11 regressed to a late physical stall after red. Isolation showed the closed-wall shooting addition exposed unrelated conditional guidance poses: the route cleared one blocker but published poses behind other, unopened blockers. Publish only the prepared conditional firing pose; native coverage now checks that single candidate. Obsidian 11 again completes, 6504 frames, with metadata agreement. Keep original hidden-door/blastable multi-obstruction checks; only closed walls use the first actual ray blocker to avoid misclassifying transparent grates. Direct switch-face preparation is attempted before room-boundary alternatives. Final verification is being repeated.
 

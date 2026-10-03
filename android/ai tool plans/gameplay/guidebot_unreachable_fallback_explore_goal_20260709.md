@@ -1,9 +1,11 @@
 # Guidebot unreachable fallback and exploration goal sketch
 
 ## Goal
+
 Make stale or legacy unreachable guidebot goals fall back to navigating as close as possible, and sketch a future guidebot goal for finding the nearest waypoint toward the largest reachable unexplored mine area.
 
 ## Plan
+
 - [x] Read project instructions
 - [x] Inspect current guidebot nearest-point fallback and goal/menu plumbing
 - [x] Patch unreachable boss/route fallback behavior with minimal source changes
@@ -11,11 +13,13 @@ Make stale or legacy unreachable guidebot goals fall back to navigating as close
 - [x] Run scoped quality and relevant build/test checks
 
 ## Notes
+
 - `exists_in_mine()` can return `-2` for "object exists but guidebot cannot reach it", which bypassed the existing nearest-point fallback because no target segment was retained.
 - The existing nearest-point fallback was also controlled by the Android gameplay preference, so progression-critical boss/reactor/exit goals could still hard fail with the preference off.
 - Normal Android play now treats route goals, boss, reactor, and exit as progression goals that should best-effort to the nearest useful reachable point. Input-demo replay keeps the old behavior unless the existing preference is explicitly enabled.
 
 ## Initial Sketch: Unexplored Goal
+
 - Add a new guidebot command/menu goal named `Unexplored`.
 - Treat `Unexplored` like the normal end-of-level route objective, not like an isolated point target.
 - Normal route objective example: blue key, gold key, red key, reactor, exit.
@@ -49,6 +53,7 @@ Make stale or legacy unreachable guidebot goals fall back to navigating as close
   - Add a second case where the largest unexplored component sits behind a known door/hidden wall, and assert the selected next route step is the intermediate obstruction/key/switch step rather than the final unexplored frontier.
 
 ## Implementation Phase
+
 - [x] Add an explicit guidebot route target mode for `Unexplored`.
 - [x] Select the largest contiguous automap-unexplored component and a reachable/progress waypoint toward it.
 - [x] Reuse the existing end-of-level intermediate route steps before switching the terminal target to `Unexplored`.

@@ -154,7 +154,7 @@ foreach ($archivePath in $Path) {
                     $baseName = [System.IO.Path]::GetFileNameWithoutExtension($entry.Name)
                     $destName = Get-D2xxlTextureEntryPath -GameId $info.game -BaseName $baseName
                 } elseif ($entry.Name -like '*_mask.png') {
-                    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($entry.Name) -replace '_mask$',''
+                    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($entry.Name) -replace '_mask$', ''
                     $destName = Get-D2xxlMaskEntryPath -GameId $info.game -BaseName $baseName
                 } elseif ($entry.Name -like '*.png' -or $entry.Name -like '*.jpg' -or $entry.Name -like '*.tga') {
                     $baseName = [System.IO.Path]::GetFileNameWithoutExtension($entry.Name)

@@ -16,6 +16,6 @@ time reset kernel from both upstream-original `effects.c` files.
 
 ## Result
 
-- Both inherited files moved from 87 to 2 additions.  After CMake wiring, 168
+- Both inherited files moved from 87 to 2 additions. After CMake wiring, 168
   inherited additions were removed.
 - All three Android ABI targets compile and link the shared effect runtime.

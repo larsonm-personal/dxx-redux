@@ -7,6 +7,7 @@
 - [x] Run scoped formatting and relevant tests.
 
 ## Result
+
 - Added determinate progress state for mission zip music chromaprint generation and optional AcoustID lookup.
 - The music tracks dialog now shows a progress bar and count while preview buttons are unavailable.
 - Fingerprintable rows show `Analyzing` during the initial local chromaprint pass.

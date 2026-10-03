@@ -18,15 +18,15 @@
 - Shared native support is mostly aligned now: desktop `extract_cd` and Android JNI both use the same CUE parser, ISO reader, Mac HFS/STi2 fallback, and recursive `.sow` handling
 - Desktop-supported source classes observed in `game_data/CD images/`: CUE-backed raw sector images, standalone ISO images, Mac HFS CDs, recursive `.sow` installer layouts, and multi-FILE CUE sheets with many track files
 - User-facing Android disc import is narrower than the native extractor surface:
-	- The picker recognizes `.cue`, `.iso`, `.inst`, `.gog`, and `.bin`, but not `.img`; this leaves the CUE+IMG Quartzon sample outside the normal Android import path even though the shared CUE parser and desktop extractor can handle it
-	- The picker stores multi-BIN selections in raw picker order and indexes them by `fileIndex`, with no reordering by CUE `FILE` entries; this makes multi-FILE CUE support dependent on selection order
+  - The picker recognizes `.cue`, `.iso`, `.inst`, `.gog`, and `.bin`, but not `.img`; this leaves the CUE+IMG Quartzon sample outside the normal Android import path even though the shared CUE parser and desktop extractor can handle it
+  - The picker stores multi-BIN selections in raw picker order and indexes them by `fileIndex`, with no reordering by CUE `FILE` entries; this makes multi-FILE CUE support dependent on selection order
 - Android setup-command and filesystem-path import are narrower than the SAF UI path:
-	- `import_cd` takes one `cue_path` and one `bin_path`
-	- `importDiscImageFromPath()` rejects data tracks whose `fileIndex` is not `0`, so multi-FILE CUEs are not supported through that path even though desktop `extract_cd` supports them
+  - `import_cd` takes one `cue_path` and one `bin_path`
+  - `importDiscImageFromPath()` rejects data tracks whose `fileIndex` is not `0`, so multi-FILE CUEs are not supported through that path even though desktop `extract_cd` supports them
 - Android extraction regression coverage is thin:
-	- Only the MacPlay spec exercises `setup_cd`
-	- Only the standalone ISO spec exercises `setup_iso`
-	- The rest of the extraction specs still validate extracted outputs by pushing files directly, so Android extractor parity is not currently covered for most retail and OEM disc layouts
+  - Only the MacPlay spec exercises `setup_cd`
+  - Only the standalone ISO spec exercises `setup_iso`
+  - The rest of the extraction specs still validate extracted outputs by pushing files directly, so Android extractor parity is not currently covered for most retail and OEM disc layouts
 
 ## Follow-up
 

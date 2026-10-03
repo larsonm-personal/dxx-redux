@@ -191,6 +191,7 @@ Determine why GuideBot selects later objective 7 while the automap still identif
 - The D2 Windows game, headless analyzers, metadata analyzer, and test targets built successfully.
 - Android `:app:assembleDebug` passed for all configured ABIs after final formatting.
 - Scoped code quality passed.
+
 ## D2 level 21 post-reactor grate follow-up (2026-08-25)
 
 - [x] Locate and parse the supplied exported GuideBot log.
@@ -227,9 +228,9 @@ Determine why GuideBot selects later objective 7 while the automap still identif
 ### Implementation
 
 - [x] Add a shared route-layer operation that adopts the next certified
-  end-of-level objective for an explicit Exit request.
+      end-of-level objective for an explicit Exit request.
 - [x] Add the smallest Android-only hook in the original escort command code,
-  retaining the legacy Exit goal as fallback.
+      retaining the legacy Exit goal as fallback.
 - [x] Add regression coverage for prerequisite adoption and fallback behavior.
 - [x] Run scoped formatting, tests, and the required Windows CMake build.
 

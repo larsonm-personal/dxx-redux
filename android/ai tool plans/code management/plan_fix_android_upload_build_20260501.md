@@ -21,10 +21,10 @@ Restore the Android upload/build path after the recent demo logging changes with
 ## Validation
 
 - Focused native task passed with a compatible JVM override:
-	- `gradlew ':app:buildCMakeDebug[arm64-v8a]-2'`
+  - `gradlew ':app:buildCMakeDebug[arm64-v8a]-2'`
 - End-to-end build stage passed with the same internal build settings from the failing upload attempt:
-	- `1_build-aab.ps1 -BuildType 3 -VersionCode 12751`
-	- Output: `android/build-outputs/dxx-redux-internal-20260501-152718-v12751.aab`
+  - `1_build-aab.ps1 -BuildType 3 -VersionCode 12751`
+  - Output: `android/build-outputs/dxx-redux-internal-20260501-152718-v12751.aab`
 
 ## Remaining Warning
 

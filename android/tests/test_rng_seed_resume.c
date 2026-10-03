@@ -34,7 +34,7 @@ int main(void)
 
 	replay_mode = d_rand_get_replay_mode();
 	if (replay_mode != D_RAND_REPLAY_MODE_LCG_STATE &&
-		replay_mode != D_RAND_REPLAY_MODE_LIBC_RESEED)
+	    replay_mode != D_RAND_REPLAY_MODE_LIBC_RESEED)
 		return report_failure("unexpected RNG replay mode");
 	if (replay_mode == D_RAND_REPLAY_MODE_OUTPUT_LOG)
 		return report_failure("output-log replay mode is not implemented yet");

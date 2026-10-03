@@ -28,16 +28,16 @@ The hidden split is not introduced by control/thrust construction. Recorder and 
 - Replay `pre_drag` differs from `entry`, but that delta is explained by the expected `PF_WIGGLE` path in `read_flying_controls()` and does not, by itself, prove a divergence
 - Replay `post_drag` and `pre_fvi` are both logged before any later object collisions
 - The same move step includes a player-weapon collision and damage event:
-	- `weapon_obj=162`, `weapon_id=42`, `weapon_sig=4175`
-	- collision point `(-14432486,-2900449,-5110660)`
+  - `weapon_obj=162`, `weapon_id=42`, `weapon_sig=4175`
+  - collision point `(-14432486,-2900449,-5110660)`
 - Replay `after_move` includes the result of that player-weapon bump, so recorder-vs-replay `after_move` is not a pure drag comparison on frame `545`
 - A focused bump probe in `d2/main/collide.c` shows the replay hit response path is:
-	- `post_drag vel=(1358211,-270459,247683)`
-	- bump force `float_force=(547553,-143462,31867)`
-	- player post-bump vel `(1323989,-261493,245692)`
+  - `post_drag vel=(1358211,-270459,247683)`
+  - bump force `float_force=(547553,-143462,31867)`
+  - player post-bump vel `(1323989,-261493,245692)`
 - The same bump probe also shows `vm_vec_scale2()` and an all-fixed `fixmuldiv` alternative produce the same force on the replay host for this hit:
-	- `float_force == fix_force`
-	- `delta=(0,0,0)`
+  - `float_force == fix_force`
+  - `delta=(0,0,0)`
 
 ## Conclusion
 

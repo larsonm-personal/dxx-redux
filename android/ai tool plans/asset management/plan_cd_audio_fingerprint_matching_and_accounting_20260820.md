@@ -9,15 +9,15 @@ inventory and completion accounting, including already-hashed tracks.
 ## Work plan
 
 - [x] Reproduce the MacPlay mismatch against the bundled database and trace
-  track geometry through CUE parsing and fingerprint generation.
+      track geometry through CUE parsing and fingerprint generation.
 - [x] Correct the fingerprint input or matching path without weakening strict
-  matching behavior.
+      matching behavior.
 - [x] Extend background hashing discovery and cache accounting to registered
-  CD-audio tracks alongside mission audio.
+      CD-audio tracks alongside mission audio.
 - [x] Add focused and high-level regression coverage for MacPlay matching and
-  CD-audio discovery/accounting.
+      CD-audio discovery/accounting.
 - [x] Run scoped code quality, focused tests, native tests as applicable, and
-  the Android debug build.
+      the Android debug build.
 
 ## Status
 

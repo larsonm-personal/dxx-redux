@@ -46,22 +46,22 @@ for presentation; it does not turn the recording into a normal combat run.
 
 ## Decisions and first-release scope
 
-| Topic | Recommendation |
-| --- | --- |
-| Entry | A second action in the existing per-level metadata dialog |
-| Rendering | Actual engine scene, not an embedded MP4 or static path animation |
-| Initial support | D2 plus original D1 missions through the D2 engine |
-| Playback source | A completed, indexed recording of a real route-confirmation run |
-| Seeking | Restore a recorded scene keyframe and apply scene updates to the requested frame |
-| Basic controls | Play/pause, seek bar, -5/+5 seconds, previous/next objective, tappable objective list |
-| Touch interface | Filter the player's selected TouchOverlayView layout like automap, then add replay actions through the existing overlay/button machinery |
-| Objective jump | Pause on an approach frame roughly 1.5 seconds before the action |
-| Free camera | Optional second milestone; unlocking pauses the route by default |
-| Reattach | Follow GuideBot at the current source time; do not restart the route |
-| Missing recording | Prepare one on demand with visible progress and cancel, then cache it |
-| Partial simulation | Allow explicitly labeled inspection of the recorded prefix |
-| Robot showcase | Optional derived track with active ordinary robots, harmless attacks, and visibility-timed explosions; clean remains the default |
-| Shared work | Reuse route recorder, event identities, camera math, and world markers with video export |
+| Topic              | Recommendation                                                                                                                           |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Entry              | A second action in the existing per-level metadata dialog                                                                                |
+| Rendering          | Actual engine scene, not an embedded MP4 or static path animation                                                                        |
+| Initial support    | D2 plus original D1 missions through the D2 engine                                                                                       |
+| Playback source    | A completed, indexed recording of a real route-confirmation run                                                                          |
+| Seeking            | Restore a recorded scene keyframe and apply scene updates to the requested frame                                                         |
+| Basic controls     | Play/pause, seek bar, -5/+5 seconds, previous/next objective, tappable objective list                                                    |
+| Touch interface    | Filter the player's selected TouchOverlayView layout like automap, then add replay actions through the existing overlay/button machinery |
+| Objective jump     | Pause on an approach frame roughly 1.5 seconds before the action                                                                         |
+| Free camera        | Optional second milestone; unlocking pauses the route by default                                                                         |
+| Reattach           | Follow GuideBot at the current source time; do not restart the route                                                                     |
+| Missing recording  | Prepare one on demand with visible progress and cancel, then cache it                                                                    |
+| Partial simulation | Allow explicitly labeled inspection of the recorded prefix                                                                               |
+| Robot showcase     | Optional derived track with active ordinary robots, harmless attacks, and visibility-timed explosions; clean remains the default         |
+| Shared work        | Reuse route recorder, event identities, camera math, and world markers with video export                                                 |
 
 Do not make YouTube, FFmpeg, audio export, a map inset, chase-camera polish, or
 smooth continuous reverse playback prerequisites for this viewer.
@@ -71,27 +71,27 @@ smooth continuous reverse playback prerequisites for this viewer.
 Kotlin paths below are under android/app/src/main/java/com/dxxredux/app/.
 Shared native paths are under android/app/src/main/cpp/shared/.
 
-| Existing location | Current behavior | Planned use |
-| --- | --- | --- |
-| SetupSections.kt: LevelMetadataLevelDialog | Shows Preview map for a successfully scanned level | Add a route-view action and separate recording availability/status |
-| SetupSections.kt: metadata result launch callbacks | Prepares requests off the UI thread, launches preview Activity, receives result/error | Reuse launch/result pattern and preserve selected level/list position |
-| LevelMetadata.kt: LevelMetadataLevelRow | Contains static route status and steps | Display planned steps; do not mistake them for recorded timed events |
-| LevelMetadata.kt: buildPreviewRequestJson | Prepares mission content and selected level identity | Share asset preparation with a route-specific request |
-| LevelPreviewRequestStore.kt | Owns request directories, validates input paths, creates runtime-write isolation | Reuse ownership helpers and validation approach |
-| LevelPreviewActivity.kt | SurfaceView, TouchOverlayView, InputMixer, loading overlay, native thread, close and result callbacks | Reuse focused lifecycle/input helpers; add playback UI in a separate Activity |
-| TouchLayoutRepository.kt and TouchOverlayView.kt | Selected layout loading, geometry, mode-based visibility/input filtering, contextual action tray | Load the selected layout and apply route-view policy without changing its saved definition |
-| AutomapTouchPolicy.kt | Movement-button allowlist and contextual RemainingTouchAction entries | Follow this pattern for replay action visibility and availability |
-| AndroidManifest.xml | Separate :levelpreview_d1/:levelpreview_d2 and robot preview processes | Add a dedicated D2 route preview process with the same isolation principles |
-| SetupActivity.kt and LevelPreviewReturnRefreshGate.kt | Preserve metadata state after a read-only preview return | Include route-view returns and preserve a paused full game |
-| RouteMetadataPrecomputeCoordinator.kt | Suspends background metadata work while the metadata viewer is focused | Keep the route-view session covered by that ownership/priority policy |
-| android/app/src/main/cpp/jni_main.c: android_start_preview | Native admission, preview request launch, callback, process termination | Extend narrowly for the route-preview runtime; terminate only its own process |
-| android/app/src/main/cpp/android_input.c | Preview input JNI bridges | Forward commands and camera controls without driving simulation input |
-| shared/android_level_preview.cpp | Asset/palette setup and automap/robot preview runtimes | Share a small loader boundary; route playback needs its own loop |
-| shared/route_confirmation.cpp/.h | Canonical route controller, fixed ticks, goals, completion times and terminal state | Record a real run and its interactions |
-| d2/main/render.c, gamerend.c, gauges.c | Engine view setup, scene drawing, cockpit subviews | Add the isolated recorded-scene presentation context from the video design |
-| shared/android_rewind.c and state_android_shared.h | In-memory save/restore building blocks | Audit for experiments; ordinary gameplay rewind is not a route-player timeline |
-| d2/main/controls.c: read_flying_controls | Existing movement axes/control interpretation | Reuse mappings and conventions in a camera controller, without player side effects |
-| shared/game_introspect.cpp and preview introspection | Structured inspection and automation | Add route-player state and acknowledged commands |
+| Existing location                                          | Current behavior                                                                                      | Planned use                                                                                |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| SetupSections.kt: LevelMetadataLevelDialog                 | Shows Preview map for a successfully scanned level                                                    | Add a route-view action and separate recording availability/status                         |
+| SetupSections.kt: metadata result launch callbacks         | Prepares requests off the UI thread, launches preview Activity, receives result/error                 | Reuse launch/result pattern and preserve selected level/list position                      |
+| LevelMetadata.kt: LevelMetadataLevelRow                    | Contains static route status and steps                                                                | Display planned steps; do not mistake them for recorded timed events                       |
+| LevelMetadata.kt: buildPreviewRequestJson                  | Prepares mission content and selected level identity                                                  | Share asset preparation with a route-specific request                                      |
+| LevelPreviewRequestStore.kt                                | Owns request directories, validates input paths, creates runtime-write isolation                      | Reuse ownership helpers and validation approach                                            |
+| LevelPreviewActivity.kt                                    | SurfaceView, TouchOverlayView, InputMixer, loading overlay, native thread, close and result callbacks | Reuse focused lifecycle/input helpers; add playback UI in a separate Activity              |
+| TouchLayoutRepository.kt and TouchOverlayView.kt           | Selected layout loading, geometry, mode-based visibility/input filtering, contextual action tray      | Load the selected layout and apply route-view policy without changing its saved definition |
+| AutomapTouchPolicy.kt                                      | Movement-button allowlist and contextual RemainingTouchAction entries                                 | Follow this pattern for replay action visibility and availability                          |
+| AndroidManifest.xml                                        | Separate :levelpreview_d1/:levelpreview_d2 and robot preview processes                                | Add a dedicated D2 route preview process with the same isolation principles                |
+| SetupActivity.kt and LevelPreviewReturnRefreshGate.kt      | Preserve metadata state after a read-only preview return                                              | Include route-view returns and preserve a paused full game                                 |
+| RouteMetadataPrecomputeCoordinator.kt                      | Suspends background metadata work while the metadata viewer is focused                                | Keep the route-view session covered by that ownership/priority policy                      |
+| android/app/src/main/cpp/jni_main.c: android_start_preview | Native admission, preview request launch, callback, process termination                               | Extend narrowly for the route-preview runtime; terminate only its own process              |
+| android/app/src/main/cpp/android_input.c                   | Preview input JNI bridges                                                                             | Forward commands and camera controls without driving simulation input                      |
+| shared/android_level_preview.cpp                           | Asset/palette setup and automap/robot preview runtimes                                                | Share a small loader boundary; route playback needs its own loop                           |
+| shared/route_confirmation.cpp/.h                           | Canonical route controller, fixed ticks, goals, completion times and terminal state                   | Record a real run and its interactions                                                     |
+| d2/main/render.c, gamerend.c, gauges.c                     | Engine view setup, scene drawing, cockpit subviews                                                    | Add the isolated recorded-scene presentation context from the video design                 |
+| shared/android_rewind.c and state_android_shared.h         | In-memory save/restore building blocks                                                                | Audit for experiments; ordinary gameplay rewind is not a route-player timeline             |
+| d2/main/controls.c: read_flying_controls                   | Existing movement axes/control interpretation                                                         | Reuse mappings and conventions in a camera controller, without player side effects         |
+| shared/game_introspect.cpp and preview introspection       | Structured inspection and automation                                                                  | Add route-player state and acknowledged commands                                           |
 
 Specific findings:
 
@@ -126,7 +126,7 @@ backward seeking and an arbitrary camera make recorded scene playback much more
 valuable. For the combined feature set, prioritize a shared seekable scene
 recording before polishing the viewer controls.
 
-~~~mermaid
+```mermaid
 flowchart LR
     A[Metadata level selection] --> B[Resolve matching recording]
     B --> C[Prepare route if missing]
@@ -135,7 +135,7 @@ flowchart LR
     D --> E[Native scene playback]
     E --> F[Interactive camera and controls]
     E --> G[Video camera and edit schedule]
-~~~
+```
 
 The key separation is capture versus playback:
 
@@ -153,12 +153,12 @@ simulation and a rewound playback world in the same engine globals.
 
 ### Alternatives and the decision gate
 
-| Approach | Benefit | Limitation | Use |
-| --- | --- | --- | --- |
-| Restart and simulate forward for every seek | Small initial prototype | Increasing latency, full restore/determinism concerns, costly scrubbing | Internal proof only |
-| Full simulation checkpoints plus forward replay | Can reuse save machinery | Must capture all controller/planner/runtime state and isolate rendering; ordinary rewind is incomplete | Fallback prototype if scene recording proves harder |
-| Scene keyframes plus per-tick scene changes | Fast arbitrary seek and independent camera, no simulation during playback | Requires complete render-visible state capture | Recommended shared architecture |
-| GuideBot poses plus static level | Very small | Doors/keys/robots are wrong across time | Insufficient for the requested feature |
+| Approach                                        | Benefit                                                                   | Limitation                                                                                             | Use                                                 |
+| ----------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| Restart and simulate forward for every seek     | Small initial prototype                                                   | Increasing latency, full restore/determinism concerns, costly scrubbing                                | Internal proof only                                 |
+| Full simulation checkpoints plus forward replay | Can reuse save machinery                                                  | Must capture all controller/planner/runtime state and isolate rendering; ordinary rewind is incomplete | Fallback prototype if scene recording proves harder |
+| Scene keyframes plus per-tick scene changes     | Fast arbitrary seek and independent camera, no simulation during playback | Requires complete render-visible state capture                                                         | Recommended shared architecture                     |
+| GuideBot poses plus static level                | Very small                                                                | Doors/keys/robots are wrong across time                                                                | Insufficient for the requested feature              |
 
 Prove a door opening, key pickup, and key-carrier death can be reconstructed at
 arbitrary times and viewed from both sides before committing to the format.
@@ -180,15 +180,15 @@ identity, pre-action geometry, and source provenance with the video plan.
 Add scene keyframes, scene updates, and an index. Keep the portable on-disk
 representation separate from C struct layouts and process addresses.
 
-| Data | Required state |
-| --- | --- |
-| Initial content | Mission/level identity, asset/mod content hashes and mount order, source engine/game mode, geometry/content references |
-| Scene keyframe | Complete dynamic render-visible state at one source tick; no dependence on a prior keyframe |
-| Scene update | Object create/remove/change, transforms, model/submodel animation, render type, explosion/projectile state, dynamic wall/door/cloak state, textures, lighting and effects |
-| Render clock | Source GameTime/ticks and animation phases needed to draw a frozen or restored scene consistently |
-| Objective state | Active goal, completed/implicit states, occurrence identities, retained target geometry, actor/target locations |
-| Index | Keyframe offsets and source ranges, event-to-source-frame mapping, total recorded extent, checksums and terminal status |
-| Provenance | Build/profile/seed/difficulty/radii and confirmation result, route input hash, capture origin and exact captured times |
+| Data            | Required state                                                                                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Initial content | Mission/level identity, asset/mod content hashes and mount order, source engine/game mode, geometry/content references                                                    |
+| Scene keyframe  | Complete dynamic render-visible state at one source tick; no dependence on a prior keyframe                                                                               |
+| Scene update    | Object create/remove/change, transforms, model/submodel animation, render type, explosion/projectile state, dynamic wall/door/cloak state, textures, lighting and effects |
+| Render clock    | Source GameTime/ticks and animation phases needed to draw a frozen or restored scene consistently                                                                         |
+| Objective state | Active goal, completed/implicit states, occurrence identities, retained target geometry, actor/target locations                                                           |
+| Index           | Keyframe offsets and source ranges, event-to-source-frame mapping, total recorded extent, checksums and terminal status                                                   |
+| Provenance      | Build/profile/seed/difficulty/radii and confirmation result, route input hash, capture origin and exact captured times                                                    |
 
 Capture state for the entire loaded level, including objects outside the
 GuideBot's current render list. A free camera can look into any accessible
@@ -223,15 +223,15 @@ a paused frame or switching views could alter the next image or scene check.
 
 "Watch GuideBot route" resolves one of these states:
 
-| Availability | Viewer behavior |
-| --- | --- |
-| Matching complete recording | Open at the remembered time, paused; first open starts at frame 0 |
-| Compact simulation result only | Show Preparing route, generate the richer recording, then open |
-| No simulation run yet, valid level input | Offer the same action with "Prepares a route on first use"; run the verifier on demand |
+| Availability                                    | Viewer behavior                                                                                 |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Matching complete recording                     | Open at the remembered time, paused; first open starts at frame 0                               |
+| Compact simulation result only                  | Show Preparing route, generate the richer recording, then open                                  |
+| No simulation run yet, valid level input        | Offer the same action with "Prepares a route on first use"; run the verifier on demand          |
 | Partial/failed run with a valid recorded prefix | Show "Watch partial route" and the terminal reason; allow inspection up to the last valid frame |
-| Stale recording/assets/profile | Prepare a matching recording; do not play it against different geometry |
-| Required assets/engine unavailable | Explain the missing requirement; leave Preview map available |
-| Corrupt/incomplete recording | Reject unreadable blocks, keep useful diagnostics, offer preparation again |
+| Stale recording/assets/profile                  | Prepare a matching recording; do not play it against different geometry                         |
+| Required assets/engine unavailable              | Explain the missing requirement; leave Preview map available                                    |
+| Corrupt/incomplete recording                    | Reject unreadable blocks, keep useful diagnostics, offer preparation again                      |
 
 The result must come from this capture. A Windows regression result is not proof
 that a new Android capture has the same frame times. Use a compatible imported
@@ -293,13 +293,13 @@ preview, then apply a transient route-view control policy. The saved layout stay
 unchanged. Keep the same control geometry and eligible bindings; filtering out
 combat controls should not move the remaining controls to new positions.
 
-| Control group | Following GuideBot | Free camera |
-| --- | --- | --- |
-| Selected movement/look sticks, slide/bank buttons, eligible gesture axes | Hidden/inactive while the view is locked | Visible and active with the player's chosen layout and bindings |
-| Settings/menu entry point and appropriate preview-close control | Retained using the existing contextual overlay behavior | Retained |
-| Weapon, flare, inventory, combat diagnostics, gameplay-only radial actions | Filtered out of drawing and input | Filtered out of drawing and input |
-| Route replay buttons | Play/pause, backward/forward, previous/next objective, objective list, camera toggle | Same actions, with Follow GuideBot available |
-| Speed and precision actions | Existing contextual tray/panel for secondary actions | Same |
+| Control group                                                              | Following GuideBot                                                                   | Free camera                                                     |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| Selected movement/look sticks, slide/bank buttons, eligible gesture axes   | Hidden/inactive while the view is locked                                             | Visible and active with the player's chosen layout and bindings |
+| Settings/menu entry point and appropriate preview-close control            | Retained using the existing contextual overlay behavior                              | Retained                                                        |
+| Weapon, flare, inventory, combat diagnostics, gameplay-only radial actions | Filtered out of drawing and input                                                    | Filtered out of drawing and input                               |
+| Route replay buttons                                                       | Play/pause, backward/forward, previous/next objective, objective list, camera toggle | Same actions, with Follow GuideBot available                    |
+| Speed and precision actions                                                | Existing contextual tray/panel for secondary actions                                 | Same                                                            |
 
 Add replay buttons through the existing TouchOverlayView action/button styling,
 hit testing, pointer ownership, and contextual tray machinery. Keep frequently
@@ -331,21 +331,21 @@ forward/reverse movement bindings as timeline controls or reuse gameplay rewind
 for backward seeking. The selected layout and UI preferences are presentation
 settings, so changing them does not invalidate the underlying scene recording.
 
-| Control | Behavior |
-| --- | --- |
-| Play/pause | Advance or freeze recorded source time; reaching the end pauses on the final frame |
-| -5 / +5 seconds | Clamp within recorded extent; preserve play/pause intent after the seek |
-| Seek bar drag | Pause while dragging, show requested time, decode bounded previews, resume prior play intent on release |
-| Previous objective | Return to current objective's approach if well past it; otherwise go to the previous distinct approach |
-| Next objective | Seek to the next distinct occurrence's approach and pause |
-| Objective row tap | Seek to that occurrence's approach, attach first-person camera, highlight target, and pause |
-| Completion marker/detail action | Optionally seek to the exact completion frame rather than its approach |
-| Speed | 0.25x, 0.5x, 1x, 2x, 4x source playback; change cursor rate, never recorded physics |
-| Follow GuideBot | Attach camera to current recorded actor, reset transient camera input, retain current pause/play state |
-| Automatic view style | Raw, Steady, or Attentive through the route contextual actions; affects presentation only |
-| Robot showcase | Toggle the derived robot track through contextual actions; retain source cursor and pause/play intent, preparing the track if needed |
-| Free camera | Detach at the current viewpoint and pause playback by default |
-| Close / system Back | Dismiss expanded panel first if open, otherwise close the viewer and return to metadata |
+| Control                         | Behavior                                                                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Play/pause                      | Advance or freeze recorded source time; reaching the end pauses on the final frame                                                   |
+| -5 / +5 seconds                 | Clamp within recorded extent; preserve play/pause intent after the seek                                                              |
+| Seek bar drag                   | Pause while dragging, show requested time, decode bounded previews, resume prior play intent on release                              |
+| Previous objective              | Return to current objective's approach if well past it; otherwise go to the previous distinct approach                               |
+| Next objective                  | Seek to the next distinct occurrence's approach and pause                                                                            |
+| Objective row tap               | Seek to that occurrence's approach, attach first-person camera, highlight target, and pause                                          |
+| Completion marker/detail action | Optionally seek to the exact completion frame rather than its approach                                                               |
+| Speed                           | 0.25x, 0.5x, 1x, 2x, 4x source playback; change cursor rate, never recorded physics                                                  |
+| Follow GuideBot                 | Attach camera to current recorded actor, reset transient camera input, retain current pause/play state                               |
+| Automatic view style            | Raw, Steady, or Attentive through the route contextual actions; affects presentation only                                            |
+| Robot showcase                  | Toggle the derived robot track through contextual actions; retain source cursor and pause/play intent, preparing the track if needed |
+| Free camera                     | Detach at the current viewpoint and pause playback by default                                                                        |
+| Close / system Back             | Dismiss expanded panel first if open, otherwise close the viewer and return to metadata                                              |
 
 Previous-objective behavior should be deterministic: for example, return to the
 current approach if more than two source seconds past it, otherwise select the
@@ -558,14 +558,14 @@ target frame, including visibility from a camera different from the capture view
 ### Phase 1: useful metadata route viewer
 
 - [ ] Add the second level action, typed request, D2 route Activity/process, and
-  asset/recording resolution, preserving map preview
+      asset/recording resolution, preserving map preview
 - [ ] Implement on-demand preparation, progress/cancel, and cache publication
 - [ ] Show first-person playback with play/pause, -5/+5, settled scrub seek,
-  previous/next objective and a tappable list
+      previous/next objective and a tappable list
 - [ ] Load the player's selected touch layout, apply automap-style mode filtering,
-  and add replay actions through the existing contextual overlay machinery
+      and add replay actions through the existing contextual overlay machinery
 - [ ] Keep source-time progress, completed state, current target, and terminal
-  failure/finish frame visible and consistent
+      failure/finish frame visible and consistent
 - [ ] Preserve metadata dialog and paused-game state on return
 
 Acceptance: select a level, watch, jump backward/forward, tap an objective, and
@@ -575,7 +575,7 @@ close. The scene and step state agree, and the existing map preview still works.
 
 - [ ] Separate camera input clock and transform from recorded scene time
 - [ ] Enable the retained movement/look portions of the selected touch layout in
-  free-camera mode, preserving customization and suppressing gameplay gestures
+      free-camera mode, preserving customization and suppressing gameplay gestures
 - [ ] Unlock/pause, six-axis flight with camera collision, and one-action reattach
 - [ ] Define input focus, held-input release, and camera recovery after time jumps
 - [ ] Allow playback to resume while the camera remains detached
@@ -601,23 +601,23 @@ Use existing LevelPreviewRequestStoreTest and LevelPreviewReturnRefreshGateTest
 patterns for the new request and return behavior rather than duplicating tests
 for every button or trivial forwarding function.
 
-| Scenario | Required result |
-| --- | --- |
-| Counterstrike L1 | First load, cached reopen, key/reactor/exit jumps, final frame remains inspectable |
-| Counterstrike L2 | Switches, hidden door, fly-through, repeated/near-simultaneous steps |
-| Key-carrier fixture | Rewind restores carrier, forward restores dropped key, collection at exact boundary |
-| Boss/final-level fixture | Death animation and exit state survive arbitrary seeks |
-| D1-in-D2 level and secret level | Correct assets/library/identity and exact requested level |
-| Partial/timeout recording | Prefix seeks work, future unrecorded steps are unavailable, failure remains labeled |
-| Free camera paused/playing at several speeds | Camera moves independently, route scene state is unchanged |
-| Seek across closing/restored wall while detached | Camera remains valid or returns to actor; no wall mutation |
-| Rapid scrub/close/focus loss | Latest target wins, no stuck inputs, no old-scene flash, responsive cancel |
-| Different selected/customized touch layouts | Retained controls preserve placement, size, binding and gesture behavior; replay additions remain reachable without overlap |
-| Mixed movement/fire stick gestures and mode changes | Movement remains usable when unlocked; filtered actions and stale held inputs never fire |
-| Controller/menu-only touch layout | Selected minimal layout is respected; replay actions remain accessible without forced touch sticks |
-| Missing/corrupt/stale recording | Actionable error or regeneration, no wrong-level playback |
-| Existing paused game plus preview | No shared pilot/save/metadata changes and no wrong-process shutdown |
-| Map/robot preview after route viewer | Existing previews remain functional |
+| Scenario                                            | Required result                                                                                                             |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Counterstrike L1                                    | First load, cached reopen, key/reactor/exit jumps, final frame remains inspectable                                          |
+| Counterstrike L2                                    | Switches, hidden door, fly-through, repeated/near-simultaneous steps                                                        |
+| Key-carrier fixture                                 | Rewind restores carrier, forward restores dropped key, collection at exact boundary                                         |
+| Boss/final-level fixture                            | Death animation and exit state survive arbitrary seeks                                                                      |
+| D1-in-D2 level and secret level                     | Correct assets/library/identity and exact requested level                                                                   |
+| Partial/timeout recording                           | Prefix seeks work, future unrecorded steps are unavailable, failure remains labeled                                         |
+| Free camera paused/playing at several speeds        | Camera moves independently, route scene state is unchanged                                                                  |
+| Seek across closing/restored wall while detached    | Camera remains valid or returns to actor; no wall mutation                                                                  |
+| Rapid scrub/close/focus loss                        | Latest target wins, no stuck inputs, no old-scene flash, responsive cancel                                                  |
+| Different selected/customized touch layouts         | Retained controls preserve placement, size, binding and gesture behavior; replay additions remain reachable without overlap |
+| Mixed movement/fire stick gestures and mode changes | Movement remains usable when unlocked; filtered actions and stale held inputs never fire                                    |
+| Controller/menu-only touch layout                   | Selected minimal layout is respected; replay actions remain accessible without forced touch sticks                          |
+| Missing/corrupt/stale recording                     | Actionable error or regeneration, no wrong-level playback                                                                   |
+| Existing paused game plus preview                   | No shared pilot/save/metadata changes and no wrong-process shutdown                                                         |
+| Map/robot preview after route viewer                | Existing previews remain functional                                                                                         |
 
 For every seek fixture, compare scene checksums and objective state against a
 sequentially decoded reference at the same source frame. Seek in nonmonotonic

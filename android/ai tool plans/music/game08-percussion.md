@@ -31,6 +31,7 @@ Do not distribute SF2 edits calibrated around TinySoundFont's 0.01 behavior or
 change the global attenuation model as an unverified fix for this one sound.
 
 Sources for follow-up:
+
 - https://github.com/schellingb/TinySoundFont/blob/853a0a171759f1ddba0de1442133a75912bbeffa/tsf.h
 - https://www.synthfont.com/sfspec24.pdf
 - https://github.com/FluidSynth/fluidsynth/discussions/1708

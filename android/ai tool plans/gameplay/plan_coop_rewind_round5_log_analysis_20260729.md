@@ -78,7 +78,7 @@ screen and the client entered the level after the host left that screen.
 ## Implementation
 
 - [x] Route authoritative multiplayer rewind through the coop-aware memory
-  restore path
+      restore path
 - [x] Fix restored per-player pickup validation against the restored object set
 - [x] Add focused regression coverage for restored pickup-history validation
 - [x] Run scoped code quality and relevant native tests

@@ -22,8 +22,8 @@ static void expect_false(const char *label, int value)
 }
 
 static int feed_frames(struct android_slowdown_detector *detector,
-	                   struct android_slowdown_frame *frame,
-	                   int count, int frame_period_us, int work_us)
+                       struct android_slowdown_frame *frame,
+                       int count, int frame_period_us, int work_us)
 {
 	int events = 0;
 	int i;

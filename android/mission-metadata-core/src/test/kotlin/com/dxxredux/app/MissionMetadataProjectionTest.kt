@@ -16,11 +16,19 @@ class MissionMetadataProjectionTest {
             """{"kind":"in_engine","seconds":123.456,"status":"estimated"}""",
             """{"kind":"none","seconds":null,"status":"no_normal_exit_trigger"}""",
         )) {
-            val level = MissionMetadataProjection.project(
-                Json.parseToJsonElement(rawLevel(
-                    "\"route_required_key_mask\":0,\"route_completing_key_mask_set\":1,\"flyout\":$flyout",
-                )).jsonObject,
-            )["levels"]!!.jsonArray.single().jsonObject
+            val level =
+                MissionMetadataProjection
+                    .project(
+                        Json
+                            .parseToJsonElement(
+                                rawLevel(
+                                    "\"route_required_key_mask\":0,\"route_completing_key_mask_set\":1,\"flyout\":$flyout",
+                                ),
+                            ).jsonObject,
+                    )["levels"]!!
+                    .jsonArray
+                    .single()
+                    .jsonObject
             assertEquals(Json.parseToJsonElement(flyout), level["flyout"])
         }
     }

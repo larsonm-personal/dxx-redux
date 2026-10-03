@@ -14,14 +14,14 @@ This is the canonical archive for terminal `GQF-*`, `GQI-*`, and `GQR-*` records
 
 ## Disposition summary
 
-| State | Count |
-|---|---:|
-| Fixed | 0 |
-| Dismissed | 0 |
-| Deferred | 0 |
-| Duplicate | 0 |
-| Resolved externally | 0 |
-| Obsolete | 0 |
+| State               | Count |
+| ------------------- | ----: |
+| Fixed               |     0 |
+| Dismissed           |     0 |
+| Deferred            |     0 |
+| Duplicate           |     0 |
+| Resolved externally |     0 |
+| Obsolete            |     0 |
 
 ## Archived records
 

@@ -15,9 +15,9 @@ but are excluded from summaries
 Median band differences after 250-2000 Hz matching:
 
 | Game | 80-250 Hz | 2-4 kHz | 4-8 kHz | 8-16 kHz |
-| --- | --- | --- | --- | --- |
-| D1 | -0.9 dB | +1.6 dB | 0.0 dB | -0.7 dB |
-| D2 | -1.3 dB | +1.1 dB | -1.4 dB | -2.5 dB |
+| ---- | --------- | ------- | ------- | -------- |
+| D1   | -0.9 dB   | +1.6 dB | 0.0 dB  | -0.7 dB  |
+| D2   | -1.3 dB   | +1.1 dB | -1.4 dB | -2.5 dB  |
 
 These limited accepted subsets do not show broad high-frequency excess. Timing
 differences and the small D2 subset should be resolved before publishing an OPL3

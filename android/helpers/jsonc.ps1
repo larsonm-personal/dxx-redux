@@ -118,7 +118,7 @@ function Read-StrictJsonFile {
     }
     $jsonDocumentType = 'System.Text.Json.JsonDocument' -as [type]
     if ($jsonDocumentType) {
-        $document = [System.Text.Json.JsonDocument]::Parse($raw)
+        $document = $jsonDocumentType::Parse($raw)
         $document.Dispose()
     } else {
         Add-Type -AssemblyName System.Web.Extensions

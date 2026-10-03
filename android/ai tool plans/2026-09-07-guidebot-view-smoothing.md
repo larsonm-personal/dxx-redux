@@ -41,15 +41,15 @@ gameplay change with different physics and regression consequences.
 
 ## Comparison of smoothing options
 
-| Option | Strength | Main cost | Recommendation |
-| --- | --- | --- | --- |
-| Raw actor camera | Exposes actual heading changes, collisions, and path corrections | Uncomfortable motion remains visible | Always available for diagnosis |
-| Exponential quaternion smoothing | Small, predictable baseline with few parameters | Lags during sustained turns; abrupt desired-heading changes still need care | Keep as a comparison implementation |
-| Critically damped angular spring | Can ease angular velocity into turns and settle without deliberately adding bounce | Requires angular-velocity state and careful integration/limits | Preferred initial live rotation filter |
-| Adaptive low-pass such as One Euro | Can suppress slow jitter while reducing lag at higher motion speed | Fast jitter or a planner flip can be mistaken for intentional fast motion | Consider for direction/velocity estimates if a measured problem remains |
-| Future-and-past orientation smoothing | Can anticipate a real corner and start/end a glance gracefully | Requires recorded future motion; boundary and seek handling matter | Preferred enhancement for recorded playback/video |
-| Position spline or long moving average | Can make the spatial path look much smoother | Cuts corners, changes apparent clearance, can hide actual stalls | Avoid as the default |
-| Retiming motion along the recorded path | Can soften the presentation of starts/stops while preserving path geometry | Changes the video timeline and all event/audio timing | Optional walkthrough export feature |
+| Option                                  | Strength                                                                           | Main cost                                                                   | Recommendation                                                          |
+| --------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Raw actor camera                        | Exposes actual heading changes, collisions, and path corrections                   | Uncomfortable motion remains visible                                        | Always available for diagnosis                                          |
+| Exponential quaternion smoothing        | Small, predictable baseline with few parameters                                    | Lags during sustained turns; abrupt desired-heading changes still need care | Keep as a comparison implementation                                     |
+| Critically damped angular spring        | Can ease angular velocity into turns and settle without deliberately adding bounce | Requires angular-velocity state and careful integration/limits              | Preferred initial live rotation filter                                  |
+| Adaptive low-pass such as One Euro      | Can suppress slow jitter while reducing lag at higher motion speed                 | Fast jitter or a planner flip can be mistaken for intentional fast motion   | Consider for direction/velocity estimates if a measured problem remains |
+| Future-and-past orientation smoothing   | Can anticipate a real corner and start/end a glance gracefully                     | Requires recorded future motion; boundary and seek handling matter          | Preferred enhancement for recorded playback/video                       |
+| Position spline or long moving average  | Can make the spatial path look much smoother                                       | Cuts corners, changes apparent clearance, can hide actual stalls            | Avoid as the default                                                    |
+| Retiming motion along the recorded path | Can soften the presentation of starts/stops while preserving path geometry         | Changes the video timeline and all event/audio timing                       | Optional walkthrough export feature                                     |
 
 The One Euro authors describe its speed-dependent jitter/lag tradeoff and tuning
 in their [reference material](https://gery.casiez.net/1euro/). It does not solve
@@ -64,11 +64,11 @@ Unity or another camera framework.
 
 ## Three user-facing modes
 
-| Mode | Rotation | Target attention | Position |
-| --- | --- | --- | --- |
-| Raw | Actual actor orientation | Off | Actual actor position |
-| Steady | Smoothed travel/actor heading and roll | Off | Actual path, render interpolation only |
-| Attentive | Same smoothing with bounded objective framing | On | Actual path, render interpolation only |
+| Mode      | Rotation                                      | Target attention | Position                               |
+| --------- | --------------------------------------------- | ---------------- | -------------------------------------- |
+| Raw       | Actual actor orientation                      | Off              | Actual actor position                  |
+| Steady    | Smoothed travel/actor heading and roll        | Off              | Actual path, render interpolation only |
+| Attentive | Same smoothing with bounded objective framing | On               | Actual path, render interpolation only |
 
 Recommend Attentive for normal viewing in all three tools, after invariance and
 comfort checks pass. Keep Raw one action away in the regression viewer, with the
@@ -131,14 +131,14 @@ offline presentation when a turn cannot be framed within those limits.
 Target attention should describe why GuideBot is here, while keeping the route
 legible. It is a small weighted preference, not an aimbot camera.
 
-| Phase | Camera behavior |
-| --- | --- |
-| Target hidden or remote | Travel-oriented view; no staring through intervening rock |
-| Relevant target becomes visible near the current leg | Ease into a mild glance while preserving passage context |
-| Target is comfortably framed | Allow it to drift within a screen region; avoid constant exact recentering |
-| Near a switch, key, or required interaction | Increase attention if the view remains comfortable and useful |
-| At very close range/passing the target | Release positional tracking before the direction flips behind the camera |
-| Completed, removed, superseded, or occluded target | Fade attention toward the next useful heading, with a brief stable handoff |
+| Phase                                                | Camera behavior                                                            |
+| ---------------------------------------------------- | -------------------------------------------------------------------------- |
+| Target hidden or remote                              | Travel-oriented view; no staring through intervening rock                  |
+| Relevant target becomes visible near the current leg | Ease into a mild glance while preserving passage context                   |
+| Target is comfortably framed                         | Allow it to drift within a screen region; avoid constant exact recentering |
+| Near a switch, key, or required interaction          | Increase attention if the view remains comfortable and useful              |
+| At very close range/passing the target               | Release positional tracking before the direction flips behind the camera   |
+| Completed, removed, superseded, or occluded target   | Fade attention toward the next useful heading, with a brief stable handoff |
 
 Candidate policy:
 
@@ -219,11 +219,11 @@ acquired a smoother velocity profile.
 The current watch_guidebot_simulation.ps1 launches a visible Desktop confirmation
 run. It has current state and path intent, not a completed future recording.
 
-| Consumer | Available evidence | Initial behavior |
-| --- | --- | --- |
+| Consumer                       | Available evidence                               | Initial behavior                                                              |
+| ------------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------------- |
 | Live Windows regression viewer | Current/past actor state and current route hints | Causal angular spring, current visible-target attention, exact actor position |
-| Metadata player with recording | Actual past/future route and restored scene | Same attention rules with precomputed lookahead and orientation track |
-| Offline video export | Full recorded route plus edit schedule | Same camera policy, optional future/past refinement and retiming |
+| Metadata player with recording | Actual past/future route and restored scene      | Same attention rules with precomputed lookahead and orientation track         |
+| Offline video export           | Full recorded route plus edit schedule           | Same camera policy, optional future/past refinement and retiming              |
 
 Live route hints may anticipate the next visible passage gently, but are intent,
 not proof of future traversal. Bound their horizon, ignore stale hints after a
@@ -286,16 +286,16 @@ action mechanism already specified in the metadata-player plan.
 ## Implementation and evaluation order
 
 - [ ] Add a read-only pose/target/phase interface and shared Raw/Steady/Attentive
-  policy, with exact actor position initially
+      policy, with exact actor position initially
 - [ ] Prototype causal quaternion damping plus target selection in the live
-  regression viewer, retaining a one-action Raw comparison
+      regression viewer, retaining a one-action Raw comparison
 - [ ] Demonstrate capture/simulation invariance with all modes and different
-  render rates/focus conditions before enabling smooth mode by default
+      render rates/focus conditions before enabling smooth mode by default
 - [ ] Tune target acquisition/release on a key, switch, narrow doorway, U-turn,
-  vertical shaft, carrier pickup, and fly-through aperture
+      vertical shaft, carrier pickup, and fly-through aperture
 - [ ] Add recorded future/past heading refinement and deterministic seek warmup
 - [ ] Evaluate whether visible translation roughness remains; add interpolation
-  and only then consider tightly bounded positional filtering or video retiming
+      and only then consider tightly bounded positional filtering or video retiming
 
 Use short side-by-side comparison clips of identical source intervals. Evaluate
 target visibility before action, excessive glances, heading lag, passage framing,

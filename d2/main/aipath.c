@@ -595,6 +595,11 @@ if (!guidebot_route && (objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavio
 				    (WALL_IS_DOORWAY(segp, snum) & WID_FLY_FLAG) ||
 				    ai_door_is_openable(objp, segp, snum);
 
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+			if (guidebot_route && guidebot_route_recovery_edge_blocked(objp, end_seg, cur_seg, segp->children[snum]))
+				side_passable = 0;
+#endif
+
 			if (IS_CHILD(segp->children[snum]) &&
 			    !(((cur_seg == avoid_edge_from) && (segp->children[snum] == avoid_edge_to)) ||
 			      ((cur_seg == avoid_edge_to) && (segp->children[snum] == avoid_edge_from)) ||

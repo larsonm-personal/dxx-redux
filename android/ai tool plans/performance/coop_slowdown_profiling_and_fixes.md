@@ -26,15 +26,15 @@ The September 6 host logs in `C:/Users/first last/Downloads` contain eight compl
 automatic captures, with 463 windows covering 11,424 frames. All use a 25 FPS cap
 and VSync off, giving a 40 ms frame budget
 
-| Evidence | Source |
-| --- | --- |
-| Castaway L5 segment 118: 90.991 ms rendering, 0.863 ms simulation; gameplay window reaches 15.834 FPS | `debuglog_20260906_142906.txt`, frame 36214, line 29230 |
-| Castaway L5 segment 23: 77.309 ms rendering, 0.738 ms simulation | `debuglog_20260906_215106.txt`, frame 3008, line 3188 |
-| Castaway L5 segment 715: 144.747 ms rendering, 2.620 ms simulation, zero live projectiles | `debuglog_20260906_224248.txt`, frame 27642, line 20124 |
-| Latest L5 reactor approach: 23 of 58 windows average over 40 ms non-wait work; nine windows below 20 FPS; minimum 14.739 FPS | Same log, capture 2, 23:01:51-23:02:51 |
-| 73.395 ms simulation plus 54.117 ms rendering during an autosave | Same log, frame 28060, line 20681; save events at lines 20669-20670 |
-| 14 of 15 selected simulation spikes above 30 ms overlap co-op autosaves | All three September 6 host logs |
-| Castaway L6 segment 386: 66.946 ms rendering, 1.462 ms simulation | Latest log, frame 31762, line 23971 |
+| Evidence                                                                                                                     | Source                                                              |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Castaway L5 segment 118: 90.991 ms rendering, 0.863 ms simulation; gameplay window reaches 15.834 FPS                        | `debuglog_20260906_142906.txt`, frame 36214, line 29230             |
+| Castaway L5 segment 23: 77.309 ms rendering, 0.738 ms simulation                                                             | `debuglog_20260906_215106.txt`, frame 3008, line 3188               |
+| Castaway L5 segment 715: 144.747 ms rendering, 2.620 ms simulation, zero live projectiles                                    | `debuglog_20260906_224248.txt`, frame 27642, line 20124             |
+| Latest L5 reactor approach: 23 of 58 windows average over 40 ms non-wait work; nine windows below 20 FPS; minimum 14.739 FPS | Same log, capture 2, 23:01:51-23:02:51                              |
+| 73.395 ms simulation plus 54.117 ms rendering during an autosave                                                             | Same log, frame 28060, line 20681; save events at lines 20669-20670 |
+| 14 of 15 selected simulation spikes above 30 ms overlap co-op autosaves                                                      | All three September 6 host logs                                     |
+| Castaway L6 segment 386: 66.946 ms rendering, 1.462 ms simulation                                                            | Latest log, frame 31762, line 23971                                 |
 
 The previous texture binding cache fix, commit `43bfd55c`, is present in both
 September 6 builds. The 144.747 ms frame records 269 binds and 686 reuses. Do not
@@ -61,14 +61,14 @@ Primary files:
 
 ### Renderer attribution
 
-| Area | Proposed timing and counters | Decision it enables |
-| --- | --- | --- |
-| Visibility | Time `build_segment_list`; count visited/rendered segments and portal tests | Distinguish traversal or visibility work from drawing |
-| Object lists | Time `build_object_lists` and sorting; count list entries and sorts | Identify list-building or sorting costs |
-| Walls | Aggregate wall/segment drawing time and face counts by render pass | Identify expensive geometry or wall submission |
-| Objects | Aggregate object drawing time and counts by pass; retain sampled slowest object identities and type/model totals | Separate player ships, weapons, robots, reactors, and repeated views |
-| Extra views | Time cockpit subviews, missile/rear views, HUD, and overlays around `game_render_frame` | Expose costs outside the main mine view |
-| GL operations | Time texture uploads and existing GPU-query collection; count state changes and submissions | Distinguish driver waits, uploads, and submission overhead |
+| Area          | Proposed timing and counters                                                                                     | Decision it enables                                                  |
+| ------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Visibility    | Time `build_segment_list`; count visited/rendered segments and portal tests                                      | Distinguish traversal or visibility work from drawing                |
+| Object lists  | Time `build_object_lists` and sorting; count list entries and sorts                                              | Identify list-building or sorting costs                              |
+| Walls         | Aggregate wall/segment drawing time and face counts by render pass                                               | Identify expensive geometry or wall submission                       |
+| Objects       | Aggregate object drawing time and counts by pass; retain sampled slowest object identities and type/model totals | Separate player ships, weapons, robots, reactors, and repeated views |
+| Extra views   | Time cockpit subviews, missile/rear views, HUD, and overlays around `game_render_frame`                          | Expose costs outside the main mine view                              |
+| GL operations | Time texture uploads and existing GPU-query collection; count state changes and submissions                      | Distinguish driver waits, uploads, and submission overhead           |
 
 Use explicit render contexts for the main view, auxiliary views, embedded save
 thumbnail, and launcher thumbnail. Count render invocations as well as objects so
@@ -181,12 +181,12 @@ capture. A failure must not reuse an image from another mission, save, or sessio
 Measure the result before expanding scope. If saving is still costly, choose the
 next step from the measured breakdown:
 
-| Remaining cost | Candidate follow-up |
-| --- | --- |
-| Thumbnail rendering dominates | Reuse a suitable normal scene render from the same snapshot generation, after proving view/state association and preview correctness |
-| Readback dominates | Evaluate a bounded asynchronous readback pipeline supported by the actual GLES targets; bind images to a specific save generation and retain a working fallback |
-| Serialization or duplicate save requests dominate | Remove measured redundant work and reuse immutable serialized data only for the same snapshot; preserve engine ownership of format knowledge |
-| File writing/validation dominates | Evaluate bounded background publication from an immutable engine-produced snapshot; preserve staged validation, atomic replacement, result reporting, and peer ordering |
+| Remaining cost                                    | Candidate follow-up                                                                                                                                                     |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Thumbnail rendering dominates                     | Reuse a suitable normal scene render from the same snapshot generation, after proving view/state association and preview correctness                                    |
+| Readback dominates                                | Evaluate a bounded asynchronous readback pipeline supported by the actual GLES targets; bind images to a specific save generation and retain a working fallback         |
+| Serialization or duplicate save requests dominate | Remove measured redundant work and reuse immutable serialized data only for the same snapshot; preserve engine ownership of format knowledge                            |
+| File writing/validation dominates                 | Evaluate bounded background publication from an immutable engine-produced snapshot; preserve staged validation, atomic replacement, result reporting, and peer ordering |
 
 Do not make blank previews or a longer autosave interval the default fix. Preserve
 save cadence and synchronized slot/game-ID behavior. Any deferred work must retain
@@ -197,15 +197,15 @@ the last valid save and handle failure, supersession, restore, and exit safely
 Implement one measured change at a time and compare the same view before and
 after. Candidate branches are deliberately conditional:
 
-| Profile result | Focused fix direction | Correctness constraint |
-| --- | --- | --- |
-| Segment traversal/list building dominates | Remove redundant work within a view or frame; use bounded scratch storage and measured algorithm improvements | Preserve portal visibility, ordering, and changed-wall behavior |
-| Object sorting/transforms dominate | Avoid repeated preparation for identical inputs and improve the measured sorting path | Keep view-dependent transforms, transparency ordering, and simulation untouched |
-| GL state/submission dominates | Eliminate redundant state changes or batch compatible submissions | Preserve the multi-unit texture cache, merged-wall state, masks, and draw order |
-| GPU query collection blocks | Consume only available query results and skip new measurements when the bounded queue is full | Mark skipped/stale measurements; never stall gameplay to maintain profiler coverage |
-| Texture uploads dominate | Prewarm only identified assets during existing load/paging work or correct measured cache churn | Keep memory bounded and texture invalidation correct |
-| HUD/auxiliary views dominate | Avoid repeated preparation and drawing only where inputs and required output are unchanged | Preserve rear/missile views, overlays, and cockpit behavior |
-| GPU time is actually dominant once aligned | Optimize the measured pass and unnecessary overdraw | Preserve the selected graphics quality and all visible gameplay content |
+| Profile result                             | Focused fix direction                                                                                         | Correctness constraint                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Segment traversal/list building dominates  | Remove redundant work within a view or frame; use bounded scratch storage and measured algorithm improvements | Preserve portal visibility, ordering, and changed-wall behavior                     |
+| Object sorting/transforms dominate         | Avoid repeated preparation for identical inputs and improve the measured sorting path                         | Keep view-dependent transforms, transparency ordering, and simulation untouched     |
+| GL state/submission dominates              | Eliminate redundant state changes or batch compatible submissions                                             | Preserve the multi-unit texture cache, merged-wall state, masks, and draw order     |
+| GPU query collection blocks                | Consume only available query results and skip new measurements when the bounded queue is full                 | Mark skipped/stale measurements; never stall gameplay to maintain profiler coverage |
+| Texture uploads dominate                   | Prewarm only identified assets during existing load/paging work or correct measured cache churn               | Keep memory bounded and texture invalidation correct                                |
+| HUD/auxiliary views dominate               | Avoid repeated preparation and drawing only where inputs and required output are unchanged                    | Preserve rear/missile views, overlays, and cockpit behavior                         |
+| GPU time is actually dominant once aligned | Optimize the measured pass and unnecessary overdraw                                                           | Preserve the selected graphics quality and all visible gameplay content             |
 
 If coarse timings still leave most cost inside an undivided driver or renderer
 interval, collect a short platform CPU trace in the later foreground diagnostic
@@ -236,13 +236,13 @@ Host checks after implementation:
 
 Physical-device performance work, scheduled as a separate foreground task:
 
-| Scenario | What to hold fixed or vary |
-| --- | --- |
-| Castaway L5 segments 118 and 23 | Same save, camera orientation, active fight, graphics settings, and co-op roles |
-| Castaway L5 segments 715-785 | Same reactor approach, including a low-projectile view |
+| Scenario                                    | What to hold fixed or vary                                                                  |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Castaway L5 segments 118 and 23             | Same save, camera orientation, active fight, graphics settings, and co-op roles             |
+| Castaway L5 segments 715-785                | Same reactor approach, including a low-projectile view                                      |
 | Castaway L6 segment 386 and later boss area | Verify both the previously captured view and the boss interval that lacked detailed capture |
-| D2 L24 final boss | Recheck Earthshaker-heavy play with the already repaired texture cache |
-| D1 representative busy view and co-op save | Verify shared instrumentation and thumbnail behavior in both games |
+| D2 L24 final boss                           | Recheck Earthshaker-heavy play with the already repaired texture cache                      |
+| D1 representative busy view and co-op save  | Verify shared instrumentation and thumbnail behavior in both games                          |
 
 Record device/build, resolution, graphics options, cap/VSync, thermal state, asset
 warmup, save identity, camera, role, and peer build. Obtain host and client captures

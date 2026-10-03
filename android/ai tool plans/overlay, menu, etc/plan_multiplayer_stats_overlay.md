@@ -3,6 +3,7 @@
 ## Status: IMPLEMENTED
 
 ## Overview
+
 In-game overlay (toggled via admin tray) showing real-time network stats.
 
 ## Data Sources
@@ -35,16 +36,19 @@ In-game overlay (toggled via admin tray) showing real-time network stats.
 ## Implementation Plan
 
 ### 1. Add packet counters to LocalhostProxy
+
 - `PeerProxy`: add `@Volatile var packetsSent/packetsReceived/bytesSent/bytesReceived`
 - `LocalhostProxy.getStats()`: returns list of per-peer stats
 - Increment in `forwardLocalToReal()` and `forwardRealToLocal()`
 
 ### 2. Add JNI for ping values
+
 - `nativeGetMultiplayerPings()` in jni_main.c: returns int array of player pings
 - Reads `Netgame.players[i].ping` for all 8 player slots
 - Must also be added to d1/ (shared header or duplicate)
 
 ### 3. Create MultiplayerStatsOverlay.kt
+
 - Custom `View` added to the FrameLayout in MainActivity (same layer as overlayContainer)
 - Positioned bottom-right or top-right (avoid conflict with touch controls)
 - Semi-transparent background
@@ -52,17 +56,20 @@ In-game overlay (toggled via admin tray) showing real-time network stats.
 - Toggle visibility via touch overlay button or admin tray action
 
 ### 4. Overlay lifecycle
+
 - When shown: start 1Hz polling of JNI ping values and proxy stats
 - Maintain 30-element ring buffer of ping samples for graph
 - Calculate EMA ping with ~10s decay
 - When hidden: stop polling, clear graph data
 
 ### 5. Wire into MainActivity
+
 - Add the view to the frame layout
 - Add toggle mechanism (admin tray, or dedicated button on touch overlay)
 - Feed connection type from MatchmakingState
 
 ## Files Changed
+
 - `LocalhostProxy.kt` -- packet counters and getStats()
 - `jni_main.c` (android/app/src/main/cpp/) -- nativeGetMultiplayerPings JNI
 - `d2/main/net_udp.c` -- expose ping array accessor if needed

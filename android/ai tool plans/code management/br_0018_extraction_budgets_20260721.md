@@ -10,12 +10,12 @@ validation
 ## Plan
 
 - [x] Define and document native limits for entries, expanded bytes,
-  compression ratio, metadata, and extraction memory
+      compression ratio, metadata, and extraction memory
 - [x] Enforce native limits in StuffIt/STi2, HFS, SOW, Inno, PKG, and ISO paths
 - [x] Enforce launcher limits in archive opening, mission inspection, mission
-  music inspection/staging, and durable extraction
+      music inspection/staging, and durable extraction
 - [x] Bound PowerShell ZIP/7z/native-child inspection, DOS demo staging, and
-  mission-music fingerprint extraction
+      mission-music fingerprint extraction
 - [x] Add focused native boundary tests
 - [x] Run scoped native code quality and the nine-test extraction suite
 - [x] Add Kotlin and PowerShell boundary tests and run their relevant checks

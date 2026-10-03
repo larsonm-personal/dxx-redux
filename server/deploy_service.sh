@@ -20,7 +20,7 @@ echo "  User:             $RUN_USER"
 echo ""
 
 # Generate the unit file
-cat <<EOF | sudo tee "$SERVICE_FILE" > /dev/null
+cat <<EOF | sudo tee "$SERVICE_FILE" >/dev/null
 [Unit]
 Description=DXX-Redux Matchmaking Server
 After=network.target

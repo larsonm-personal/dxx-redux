@@ -1,13 +1,16 @@
 # Report 20260612 165248 intro-state cluster
 
 ## Goal
+
 Focus on one small failure cluster from `temp/test_reports/report_20260612_165248.md` without increasing test timeouts.
 
 ## Selected Tests
+
 - [x] `test_controls_bottom_stage_d2`
 - [x] `test_kconfig_keyboard_stage_d2`
 
 ## Plan
+
 - [x] Inspect the selected scripts and per-test logs
 - [x] Confirm whether the first wait is blocked by intro/movie state or emulator health
 - [x] Patch scripts or harness state handling only if the cause is deterministic
@@ -16,6 +19,7 @@ Focus on one small failure cluster from `temp/test_reports/report_20260612_16524
 - [x] Record outcome and remaining related failures
 
 ## Notes
+
 - Both selected tests timed out immediately after launching Descent 2 while waiting for
   `screen_mode=menu`.
 - The scripts reset save state but did not pin or consume intro/movie state, so the

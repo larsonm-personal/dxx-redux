@@ -97,3 +97,17 @@ function ConvertFrom-CompatibleJsonItems {
     $value = $Json | ConvertFrom-Json -ErrorAction Stop
     return $value
 }
+
+function ConvertFrom-CompatibleJsonValue {
+    param([Parameter(Mandatory = $true, ValueFromPipeline = $true)][AllowEmptyString()][string]$Json)
+
+    process {
+        $parameters = @{ InputObject = $Json; ErrorAction = 'Stop' }
+        if ((Get-Command ConvertFrom-Json).Parameters.ContainsKey('NoEnumerate')) {
+            $parameters['NoEnumerate'] = $true
+        }
+        # PowerShell 5.1 already preserves the root array; keep it as one value
+        $value = ConvertFrom-Json @parameters
+        return , $value
+    }
+}

@@ -1,11 +1,14 @@
 # Plan: 6 Issues - Build Info, Admin API, Cancel, URL Rewrite, Overlay, C Logging
 
 ## Issue 1: Build info in netlog first line
+
 Write BuildInfo fields (commit count, hash, date, time, build type) on the "Log started"
 line in NetLog.openLog(). This lets us verify which build produced the log.
+
 - Files: NetLog.kt
 
 ## Issue 2: Rust admin API on separate port
+
 Split admin routes (/api/v1/admin/*) onto a dedicated HTTP port.
 New config fields: `admin_http_listen_addr` (optional SocketAddr) and
 `admin_http_enabled` (bool, default false). When enabled, admin routes are served
@@ -15,19 +18,24 @@ if admin_http_enabled is absent or false AND admin_http_listen_addr is absent).
 Actually simpler: if `admin_http_listen_addr` is set, start an admin-only HTTP
 server on that port and remove admin routes from the public router. If not set,
 keep current behavior (admin routes on public port, gated by bearer token).
+
 - Files: server/src/config.rs, server/src/http_api.rs, server/src/main.rs,
   server/server_config.json5.template
 
 ## Issue 3: Cancel connection button + friends layout
+
 Add "Cancel" button visible during CONNECTING and RECONNECTING states in
 MultiplayerScreen.kt. On press, call MatchmakingService.disconnect().
 Move the friends button to a second Row when status is CONNECTED (to fix
 portrait-mode crowding).
+
 - Files: MultiplayerScreen.kt
 
 ## Issue 4: URL rewriting for bare LAN IPs
+
 Current normalizeServerUrl() adds `wss://` to bare IPs. For private addresses,
 this is wrong -- the LAN server typically has no TLS. Change to:
+
 - If user types bare IP (no scheme), check if it's private/site-local.
   If private, default to `ws://` (not `wss://`).
   If public, default to `wss://`.
@@ -36,6 +44,7 @@ this is wrong -- the LAN server typically has no TLS. Change to:
 - Files: MatchmakingService.kt
 
 ## Issue 5: Overlay on player-select screen (round 5)
+
 Root cause: `mpConnecting = mpState.gameLaunchInfo != null && !inGame`.
 During the "select up to 4 players" screen, `nativeIsInGame()` returns false
 (Screen_mode is SCREEN_MENU, not SCREEN_GAME). So `!inGame` is true. And
@@ -49,11 +58,13 @@ Hypothesis: the issue is that `gameLaunchInfo` gets cleared too early, or
 `inGame` returns something unexpected from the catch block.
 Alternative hypothesis: the game engine launches, gameStarted=true, but nativeIsInGame()
 throws because the engine isn't fully initialized yet. The catch block has:
+
 ```
 if (mpState2.gameLaunchInfo != null || netEventsManualToggle) {
     netEventsOverlay?.show()
 }
 ```
+
 This should show the overlay. So the catch block would also show it.
 BUT: the catch block sets `touchOverlay.isActive = false` and other things. The
 netEventsOverlay?.show() should still work though.
@@ -75,22 +86,24 @@ so we can trace what's happening. Actually better: the fix should be
 more robust. Instead of relying solely on gameLaunchInfo, also check
 `nativeIsHostSelectingPlayers()` (which we KNOW works, since startGameButton
 appears). Show the overlay whenever:
+
 - mpConnecting (gameLaunchInfo != null && !inGame), OR
 - hostSelecting (nativeIsHostSelectingPlayers()), OR
 - netEventsManualToggle
-Also: on the JOINER side, during the "connecting to host" phase, the engine
-is running but nativeIsInGame() returns false. So mpConnecting should catch it.
-Let me ALSO add a dedicated native check: `nativeIsNetworkJoining()` that
-returns true when the player is in the select-players/sync screen as a joiner.
-Actually that's complex. Simpler approach: change the overlay logic to NOT auto-hide
-during MP connections at all. Instead:
+  Also: on the JOINER side, during the "connecting to host" phase, the engine
+  is running but nativeIsInGame() returns false. So mpConnecting should catch it.
+  Let me ALSO add a dedicated native check: `nativeIsNetworkJoining()` that
+  returns true when the player is in the select-players/sync screen as a joiner.
+  Actually that's complex. Simpler approach: change the overlay logic to NOT auto-hide
+  during MP connections at all. Instead:
 - When NOT in a multiplayer game, auto-hide is fine
 - When in a multiplayer game (gameLaunchInfo != null), only hide if
   the user manually toggled off
-This means: once an MP game starts, the overlay stays visible until manual toggle-off.
+  This means: once an MP game starts, the overlay stays visible until manual toggle-off.
 - Files: MainActivity.kt
 
 ## Issue 6: Zero C engine logging (round 5)
+
 The JNI bridge chain: MPDIAG macro -> android_net_log() -> JNI -> netLogFromNative()
 -> NetLog.log() + appendLog(). All pieces exist. The build compiles.
 Possible failure points:
@@ -102,9 +115,11 @@ d) The function just isn't being called (code path not reached)
 Best approach: add logcat debug logging to android_net_log() itself so we can
 trace whether it's being called and whether the JNI call succeeds or fails.
 This will definitively diagnose the issue.
+
 - Files: android/app/src/main/cpp/shared/android_net_log.c
 
 ## Files Modified
+
 - android/app/src/main/java/com/dxxredux/app/multiplayer/NetLog.kt
 - server/src/config.rs
 - server/src/http_api.rs

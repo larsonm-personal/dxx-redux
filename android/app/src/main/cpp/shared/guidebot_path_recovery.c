@@ -16,6 +16,36 @@
 static int precise_recovery;
 static vms_vector precise_recovery_point;
 
+/* Retain failed open approaches for one actor and destination, so retries
+ * cannot cycle through the same blocked exits at neighboring junctions */
+enum { MAX_FAILED_RECOVERY_EDGES = 16 };
+static int recovery_edges[MAX_FAILED_RECOVERY_EDGES][2];
+static int recovery_edge_count, recovery_edge_signature, recovery_edge_goal;
+static fix64 recovery_edge_time;
+
+void guidebot_route_reset_recovery_edges(void)
+{
+	recovery_edge_count = 0;
+	recovery_edge_signature = recovery_edge_goal = -1;
+	recovery_edge_time = 0;
+}
+
+int guidebot_route_recovery_edge_blocked(const object *objp, int goal, int from, int to)
+{
+	if (recovery_edge_signature != objp->signature || recovery_edge_goal != goal ||
+	    GameTime64 < recovery_edge_time) {
+		recovery_edge_count = 0;
+		recovery_edge_signature = objp->signature;
+		recovery_edge_goal = goal;
+	}
+	recovery_edge_time = GameTime64;
+	for (int i = 0; i < recovery_edge_count; ++i)
+		if ((recovery_edges[i][0] == from && recovery_edges[i][1] == to) ||
+		    (recovery_edges[i][0] == to && recovery_edges[i][1] == from))
+			return 1;
+	return 0;
+}
+
 static int recovery_point_fits(const object *objp, int segnum, const vms_vector *point);
 
 /* Match short collision sweeps and the occupancy check used by movement.
@@ -82,19 +112,52 @@ static int find_recovery_waypoint(const object *objp, int segnum,
                                   const vms_vector *to, vms_vector *result)
 {
 	vms_vector center;
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	int rejected_fit = 0, rejected_near = 0, rejected_incoming = 0, rejected_outgoing = 0;
+	static fix64 last_diagnostic;
+#endif
 	if (segnum < 0 || segnum > Highest_segment_index)
 		return 0;
 	compute_segment_center(&center, &Segments[segnum]);
 	for (int sample = 0; sample < 67; ++sample) {
 		vms_vector point = recovery_sample(segnum, &center, sample);
-		if (!recovery_point_fits(objp, segnum, &point) ||
-		    vm_vec_dist(&objp->pos, &point) <= F1_0 ||
-		    !recovery_leg_clear(objp, &objp->pos, objp->segnum, &point) ||
-		    !recovery_leg_clear(objp, &point, segnum, to))
+		if (!recovery_point_fits(objp, segnum, &point)) {
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+			++rejected_fit;
+#endif
 			continue;
+		}
+		if (vm_vec_dist(&objp->pos, &point) <= F1_0) {
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+			++rejected_near;
+#endif
+			continue;
+		}
+		if (!recovery_leg_clear(objp, &objp->pos, objp->segnum, &point)) {
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+			++rejected_incoming;
+#endif
+			continue;
+		}
+		if (!recovery_leg_clear(objp, &point, segnum, to)) {
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+			++rejected_outgoing;
+#endif
+			continue;
+		}
 		*result = point;
 		return 1;
 	}
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	/* Host route diagnostics retain the original collision-query sequence */
+	if (GameTime64 < last_diagnostic || GameTime64 - last_diagnostic >= F1_0) {
+		last_diagnostic = GameTime64;
+		fprintf(stderr, "ROUTE-CONFIRM recovery samples actor_seg=%d sample_seg=%d path_index=%d fit=%d near=%d incoming=%d outgoing=%d actor=(%d,%d,%d) goal=(%d,%d,%d)\n",
+		        objp->segnum, segnum, objp->ctype.ai_info.cur_path_index,
+		        rejected_fit, rejected_near, rejected_incoming, rejected_outgoing,
+		        objp->pos.x, objp->pos.y, objp->pos.z, to->x, to->y, to->z);
+	}
+#endif
 	return 0;
 }
 
@@ -161,6 +224,12 @@ static int recover_alternate_path(object *objp, vms_vector *goal_point)
 		return 0;
 	const ai_static saved_ai = *aip;
 	const ai_local saved_local = *ailp;
+	const int already_blocked = guidebot_route_recovery_edge_blocked(objp, goal, objp->segnum, next_seg);
+	const int saved_edges = recovery_edge_count;
+	if (recovery_edge_count < MAX_FAILED_RECOVERY_EDGES && !already_blocked) {
+		recovery_edges[recovery_edge_count][0] = objp->segnum;
+		recovery_edges[recovery_edge_count++][1] = next_seg;
+	}
 	rng_calls = d_rand_get_call_count();
 	/* Leave enough room for all safety points below the GC threshold. This
 	 * keeps the original path intact until the replacement is accepted */
@@ -177,6 +246,7 @@ static int recover_alternate_path(object *objp, vms_vector *goal_point)
 				accepted = 0;
 	}
 	if (!accepted) {
+		recovery_edge_count = saved_edges;
 		*aip = saved_ai;
 		*ailp = saved_local;
 		Point_segs_free_ptr = Point_segs + used;

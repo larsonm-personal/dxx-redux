@@ -45,11 +45,11 @@
 ## Implementation
 
 - [x] Define an engine launch level for metadata records numbered zero while
-  retaining zero in regression identity and output
+      retaining zero in regression identity and output
 - [x] Emit an explicit infrastructure-error level result instead of `not_run`
-  or a silently retained prior result
+      or a silently retained prior result
 - [x] Add runner integration coverage for level-zero launch translation and
-  infrastructure-error publication
+      infrastructure-error publication
 - [x] Re-run representative level-zero missions and verify that they execute
 - [x] Reproduce and diagnose the EAF2 secret 2 access violation
 - [x] Trace the dormant player's retained and per-frame physics state
@@ -60,7 +60,7 @@
 - [x] Verify EAF2 secret 2 no longer exits through the dormant player
 - [x] Reproduce Counterstrike secrets 3 and 5 with focused logs
 - [x] Fix the first confirmed engine or planner defect without weakening route
-  validation
+      validation
 - [x] Build D2, run CMake and PowerShell tests, and run scoped code quality
 
 ## Fix progress
@@ -73,30 +73,30 @@
   a summary layout other than 72 bytes at compile time. AddressSanitizer found
   the previous producer/consumer mismatch overwriting a 68-byte global with a
   72-byte value.
-- EAF2 secret 2's remaining access violation is not in path evaluation.  The
+- EAF2 secret 2's remaining access violation is not in path evaluation. The
   path search, reconstruction, center insertion, polishing, and controller
-  setup all return normally.  On deterministic frame 603, the otherwise idle
+  setup all return normally. On deterministic frame 603, the otherwise idle
   player ship crosses from segment 1 to segment 2 through wall 0, trigger 8,
-  an exit trigger, while the active objective is still the reactor.  The exit
+  an exit trigger, while the active objective is still the reactor. The exit
   interception intentionally accepts only the GuideBot actor while it is on
   the exit objective, so the player crossing falls through to the normal
-  `ExitSecretLevel` path.  Because the reactor is not destroyed,
+  `ExitSecretLevel` path. Because the reactor is not destroyed,
   `ExitSecretLevel` calls `state_save_all(2, SECRETC_FILENAME, 0)`; the
   no-window route process successfully opens `secret.sgc` and creates the
   thumbnail canvas, then faults at a null PC when `state_save_all_sub` calls
-  `render_frame` in a process with no renderer.  Both EAF2 packages reproduce
+  `render_frame` in a process with no renderer. Both EAF2 packages reproduce
   at the same boundary.
-- GuideBot/player collision is explicitly suppressed by the engine.  The actual
+- GuideBot/player collision is explicitly suppressed by the engine. The actual
   impulses are repeated control-center weapon type 6 hits from reactor object
   11: ordinary player/weapon collision handling bumps the dormant
-  physics-enabled player down the corridor until it crosses the exit.  The
+  physics-enabled player down the corridor until it crosses the exit. The
   selected minimal repair therefore makes the dormant player invulnerable and
   nonphysical instead of adding a broader trigger-authority policy.
 - Route confirmation now gives the dormant player normal engine invulnerability
   and sets both control and movement types to `NONE`, with all physics vectors
-  cleared.  It refreshes invulnerability while running and restores the saved
-  player state on every terminal outcome.  Both copies and two repeats of EAF2
+  cleared. It refreshes invulnerability while running and restores the saved
+  player state on every terminal outcome. Both copies and two repeats of EAF2
   secret 2 now end as the same ordinary route timeout instead of activating the
-  exit or crashing.  Counterstrike level 1 remains confirmed.
+  exit or crashing. Counterstrike level 1 remains confirmed.
 - Counterstrike secret 3 reproduces as a no-progress timeout with no completed
   objectives. Secret 5 reproduces as an immediate no-actionable-goal failure.

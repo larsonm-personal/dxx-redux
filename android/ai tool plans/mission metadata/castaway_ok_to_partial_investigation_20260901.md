@@ -50,14 +50,14 @@ Repair the route-corpus test so future status regressions fail immediately.
 ## Implementation
 
 - [x] Prefer a routable boss, then restore planner state and try a reactor when
-  the boss is unreachable
+      the boss is unreachable
 - [x] Add checked-artifact assertions that Castaway level 9 completes through
-  trigger 26, its reactor, and the exit while level 5 remains honestly partial
+      trigger 26, its reactor, and the exit while level 5 remains honestly partial
 - [x] Add a synthetic isolated-boss/reachable-reactor integration case
 - [x] Exclude `.simulation.json` artifacts from the metadata route corpus test
 - [x] Build both Windows metadata workers and regenerate Castaway
 - [x] Regenerate and compare the full route corpus for collateral changes
 - [x] Confirm no `ok` route became `partial` or `failed`, and retain Obsidian
-  level 1's key and switch prerequisites
+      level 1's key and switch prerequisites
 - [x] Refresh and pass the reviewed 1,732-level route corpus baseline
 - [x] Run focused integration tests, CMake tests, and scoped code quality

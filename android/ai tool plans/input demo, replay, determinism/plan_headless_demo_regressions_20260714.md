@@ -32,18 +32,18 @@ The initial run continued after failures and attempted all 11 demos in 49.5 seco
 
 ## Results
 
-| Demo | Result |
-| --- | --- |
-| `d2_descent2_level10_20260512_231237.dximdemo` | Pass |
-| `d2_descent2_level10_20260514_150656.dximdemo` | Pass |
-| `d2_descent2_level9_20260511_192533.dximdemo` | Pass |
-| `d2_descent2_level9_20260511_192804.dximdemo` | Pass |
-| `d2_descent2_level9_20260511_193107.dximdemo` | Pass |
-| `d2_descent2_level9_20260511_215620.dximdemo` | Pass |
-| `d2_descent2_level9_20260511_215654.dximdemo` | Pass |
-| `d2_descent2_level9_20260511_215831.dximdemo` | Pass |
-| `d2_descent2_level9_20260512_084243.dximdemo` | Pass |
-| `d2_descent2_level9_20260512_115227.dximdemo` | Pass |
-| `d2_descent2_level9_20260512_115624.dximdemo` | Pass |
+| Demo                                           | Result |
+| ---------------------------------------------- | ------ |
+| `d2_descent2_level10_20260512_231237.dximdemo` | Pass   |
+| `d2_descent2_level10_20260514_150656.dximdemo` | Pass   |
+| `d2_descent2_level9_20260511_192533.dximdemo`  | Pass   |
+| `d2_descent2_level9_20260511_192804.dximdemo`  | Pass   |
+| `d2_descent2_level9_20260511_193107.dximdemo`  | Pass   |
+| `d2_descent2_level9_20260511_215620.dximdemo`  | Pass   |
+| `d2_descent2_level9_20260511_215654.dximdemo`  | Pass   |
+| `d2_descent2_level9_20260511_215831.dximdemo`  | Pass   |
+| `d2_descent2_level9_20260512_084243.dximdemo`  | Pass   |
+| `d2_descent2_level9_20260512_115227.dximdemo`  | Pass   |
+| `d2_descent2_level9_20260512_115624.dximdemo`  | Pass   |
 
 The initial failures shared Windows status `-1073741819`, or `0xC0000005`. Debugging found inconsistent MSVC packing for `Mission`, followed by an unsafe headless-only window close from inside the final simulation frame. Both causes are fixed and every supported committed headless demo now exits normally and matches its embedded result.

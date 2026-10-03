@@ -9,6 +9,7 @@
 Both host runners now select the nested Rebirth ZIP through `selectPreferredMissionVariant` and `missionVariantForArchiveFilename` in the shared Kotlin policy before extracting payloads
 
 Validation:
+
 - CLI build and shared Kotlin policy tests passed
 - `test_mission_archive_variants.ps1` exercises both actual extraction functions, ambiguous/unsupported variants, DOS fallback, and direct descriptor archives
 - Level metadata generated for one mission with 32 levels

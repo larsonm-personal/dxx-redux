@@ -14,5 +14,5 @@
 // Rate limit: 3 requests per second per API key.
 {
     // AcoustID application API key
-    "api_key": "YOUR_ACOUSTID_API_KEY_HERE"
+    "api_key": "YOUR_ACOUSTID_API_KEY_HERE",
 }

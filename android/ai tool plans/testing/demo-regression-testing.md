@@ -347,18 +347,18 @@ and C so a future libc `rand()` default is not a blocker:
 1. Add `d_rand_get_state()` and `d_rand_set_state()` to both D1 and D2.
 2. Keep the current LCG formula for normal builds.
 3. Treat `d_rand_get_state()` as replayable-state access only when the current RNG
-  implementation exposes replayable state. For libc `rand()`, do not pretend
-  the last seed passed to `srand()` is the current RNG state.
+   implementation exposes replayable state. For libc `rand()`, do not pretend
+   the last seed passed to `srand()` is the current RNG state.
 4. Add optional counters around `d_rand()` in deterministic mode:
    `d_rand_get_call_count()`, `d_rand_reset_call_count()`, and per-frame expected
    call counts if useful.
 5. Store per-frame RNG records as frame-start reseed values. On LCG builds those
-  values may be actual state snapshots. On libc builds they must be a deliberate
-  deterministic seed schedule.
+   values may be actual state snapshots. On libc builds they must be a deliberate
+   deterministic seed schedule.
 6. Add a replay policy flag that records the RNG implementation used:
-  `lcg_state`, `libc_reseed`, or `output_log`.
+   `lcg_state`, `libc_reseed`, or `output_log`.
 7. Later add per-call output logging as the fallback for libc builds, cross-CRT
-  replay, or debugging RNG-order drift.
+   replay, or debugging RNG-order drift.
 
 This is the safest first phase because it exposes state for the active Windows
 LCG builds without changing the normal RNG sequence or replacing gameplay
@@ -578,12 +578,14 @@ Recommended order:
 2. Restore `new_level` or `save_checkpoint` start state.
 3. Set deterministic RNG mode and initial seed.
 4. For each frame:
-  - Set `FrameTime` from the frame record.
-  - Restore frame RNG state if `rng_mode` is `lcg_state`.
-  - Reseed from the recorded frame-start value if `rng_mode` is `libc_reseed`.
-  - Fill `Controls` from the input object.
-   - Run one normal game frame.
-   - Track optional intermediate assertions.
+
+- Set `FrameTime` from the frame record.
+- Restore frame RNG state if `rng_mode` is `lcg_state`.
+- Reseed from the recorded frame-start value if `rng_mode` is `libc_reseed`.
+- Fill `Controls` from the input object.
+- Run one normal game frame.
+- Track optional intermediate assertions.
+
 5. Serialize final result annotations to `<demo-file>.actual.json`.
 6. Compare to the embedded result trailer.
 
@@ -722,7 +724,7 @@ Completed in this tranche:
   `d_rand_get_state(unsigned int *state)`, which reports failure when the active
   RNG backend cannot expose replayable internal state.
 - Replaced the matching restore helper with `d_rand_set_state(unsigned int
-  state)`, which similarly fails on libc `rand()` builds instead of pretending a
+state)`, which similarly fails on libc `rand()` builds instead of pretending a
   snapshot restore is possible.
 - Updated `android/tests/test_rng_seed_resume.c` so current Windows builds prove
   exact state restore on the active internal LCG path, while `NO_WATCOM_RAND`

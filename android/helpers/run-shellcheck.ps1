@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
-# run-shellcheck.ps1 -- Run shellcheck on bash scripts in android/.
+# run-shellcheck.ps1 -- Run shellcheck on eligible bash scripts.
 # Usage:
 #   .\run-shellcheck.ps1          # report issues (shellcheck has no auto-fix)
-#   .\run-shellcheck.ps1 --check  # same -- check mode for consistency with other tools
+#   .\run-shellcheck.ps1 -Check  # same -- check mode for consistency with other tools
 #   .\run-shellcheck.ps1 -Paths path\to\file path\to\dir
 
 param(
@@ -17,6 +17,16 @@ $platformHelper = Join-Path $androidRoot "get_deps/helpers/Get-DepPlatform.ps1"
 . $platformHelper
 
 . (Join-Path $PSScriptRoot "code-quality-files.ps1")
+$Paths = @(Get-CodeQualityScriptPaths -InputPaths $Paths -RemainingPaths @($args) -ExplicitScope ($PSBoundParameters.ContainsKey('Paths')))
+
+# --- Gather .sh files ---
+$files = Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $repoRoot -InputPaths $Paths -ValidExtensions @('.sh', '.bash') -ExcludePattern '[\\/](build|build-outputs|\.cxx)[\\/]'
+
+if ($files.Count -eq 0) {
+    Write-Host "No shell scripts found"
+    exit 0
+}
+
 
 # --- Locate shellcheck ---
 $DEP_BASE = Get-DependencyBase -RepoRoot $repoRoot
@@ -48,13 +58,6 @@ if (-not $shellcheck) {
 Write-Host "Using: $shellcheck"
 & $shellcheck --version | Select-Object -First 2
 
-# --- Gather .sh files ---
-$files = Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $androidRoot -InputPaths $Paths -ValidExtensions @('.sh') -ExcludePattern '[\\/](build|build-outputs|\.cxx)[\\/]'
-
-if ($files.Count -eq 0) {
-    Write-Host "No shell scripts found"
-    exit 0
-}
 
 Write-Host "Found $($files.Count) shell scripts"
 
@@ -79,3 +82,5 @@ if ($hasIssues) {
     exit 1
 }
 Write-Host "All shell scripts pass shellcheck"
+
+exit 0

@@ -134,9 +134,9 @@ static Json serialize_active_music_metadata()
 		for (unsigned int event_index = 0; event_index < metadata.event_count; ++event_index) {
 			const midi_metadata_text_event &event = metadata.events[event_index];
 			events.push_back({
-				{"track_index", event.track_index},
-				{"type", midi_metadata_event_type_name(event.type)},
-				{"text", event.text ? event.text : ""},
+			    { "track_index", event.track_index },
+			    { "type", midi_metadata_event_type_name(event.type) },
+			    { "text", event.text ? event.text : "" },
 			});
 		}
 		row["text_events"] = events;

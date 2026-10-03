@@ -13,6 +13,7 @@ g3_start_frame_projection, so robot proportions need no separate correction.
 just like the 640x480 replacements.
 
 Validation:
+
 - Scoped code quality checks passed
 - Windows D1 and D2 CMake builds passed; existing weapon.c return-path warnings remain
 - Real briefing renderer comparison passed: 102 frames match between native D1 and imported D1

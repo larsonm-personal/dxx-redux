@@ -50,14 +50,13 @@ Diagnose the supplied Android debug log for two reported Castaway Redux issues w
   changes from 131 to 114 and then 113 while Guide-Bot alternates between short
   come-back paths rather than advancing the objective independently.
 - The player subsequently activates triggers 2, 31, 0, and finally trigger 1.
-  Only after trigger 1 does the route advance to step 2, the red key in segment
-  222.
+  Only after trigger 1 does the route advance to step 2, the red key in segment 222.
 - The red-key route also degrades to a nearest-progress target at segment 174.
   At 17:15:07 the physical path is only the current segment (`[414]`), followed
   by two `short_path_fallback` recoveries and `SCRAM` behavior. The player then
   activates triggers 6, 3, 4, 5, 29, 13, 12, 7, and 11 while exploring manually.
 - Checked-in Castaway metadata independently shows level 2 as `route_status:
-  partial`, with only Start, shoot trigger 1, and red key steps, followed by
+partial`, with only Start, shoot trigger 1, and red key steps, followed by
   `route_problem: gold key unreachable`. It does not encode the switch chain
   demonstrated by the live trigger events.
 

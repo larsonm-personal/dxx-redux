@@ -9,13 +9,13 @@ enum {
 	TEST_MODE_THIEF_WAIT = 17,
 };
 
-#define CHECK(condition)                                                       \
-	do {                                                                       \
-		if (!(condition)) {                                                    \
+#define CHECK(condition)                                                     \
+	do {                                                                     \
+		if (!(condition)) {                                                  \
 			fprintf(stderr, "%s:%d: check failed: %s\n", __FILE__, __LINE__, \
-			        #condition);                                               \
-			return 0;                                                         \
-		}                                                                      \
+			        #condition);                                             \
+			return 0;                                                        \
+		}                                                                    \
 	} while (0)
 
 static int test_only_thief_modes_are_accepted(void)

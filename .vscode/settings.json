@@ -1,8 +1,6 @@
 {
     "java.configuration.updateBuildConfiguration": "automatic",
-    "java.import.exclusions": [
-        "**/temp/**"
-    ],
+    "java.import.exclusions": ["**/temp/**"],
     "java.import.gradle.wrapper.enabled": true,
     "java.import.gradle.java.home": "c:\\local\\jdk-21",
     "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
@@ -24,7 +22,6 @@
         "editor.colorDecorators": false
     },
 
-
     // --- Exclusions for performance (286K -> ~20K indexed files) ---
     // files.exclude hides from explorer AND all indexing (C/C++, Java, search)
     "files.exclude": {
@@ -37,7 +34,7 @@
         "android/tools/etc2tool/build/": true,
         "build/": true,
         "buildd2/": true,
-        "d2/build/": true,
+        "d2/build/": true
     },
     // Keep game-data metadata searchable while skipping large binary payloads
     "search.exclude": {

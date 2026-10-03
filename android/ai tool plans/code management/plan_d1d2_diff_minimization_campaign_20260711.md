@@ -1,16 +1,19 @@
 # Plan: D1/D2 Diff-Minimization Campaign 2026-07-11
 
 ## Goal
+
 - Build a substantial, evidence-backed catalog of remaining D1/D2 cleanup and extraction candidates
 - Process the best candidates in measured tranches until the remaining strong candidates offer only about 20 to 40 lines of upstream-owned reduction each
 
 ## Existing work to preserve
+
 - Preserve completed shared-helper extractions and upstream-sync work from earlier rounds
 - Preserve the active `gamecntl.c` save/load dispatch extraction and finish its validation first
 - Preserve unrelated mission metadata, level metadata, bug-list, and workspace changes
 - Keep desktop behavior and upstream compatibility intact
 
 ## Campaign phases
+
 - [x] Re-read and synthesize all prior D1/D2 shrink studies, execution plans, and tranche reports
 - [x] Refresh the live `upstream/main` diff inventory for original D1/D2 files
 - [x] Build a broad candidate catalog with concrete blocks, payoff, coupling, risk, target helper, and tests
@@ -23,6 +26,7 @@
 - [ ] Record the final residual catalog, deferred risks, validation evidence, and aggregate reduction
 
 ## Candidate acceptance criteria
+
 - Prefer branch-added behavior in files original to upstream
 - Prefer mirrored or behaviorally identical D1/D2 blocks
 - Require a shared boundary materially smaller than the duplicated implementation
@@ -32,6 +36,7 @@
 - Require focused integration coverage for behavior centralized under `android/`
 
 ## Validation policy
+
 - Run scoped format and lint checks without broad-formatting upstream files
 - Build Windows D1 and D2 after every source tranche
 - Build both Android games across configured ABIs for shared native changes
@@ -40,11 +45,13 @@
 - Preserve and explicitly identify unrelated dirty-worktree changes
 
 ## Campaign baseline
+
 - D1/D2 aggregate before the active `gamecntl.c` tranche: 341 files, +49969/-3880 against `upstream/main`
 - Active `gamecntl.c` candidate baseline: D1 +455/-9, D2 +728/-13
 - Active extraction target: 310 additions from the paired dispatch bodies, plus safe redundant include cleanup
 
 ## Campaign refresh outcome
+
 - Working catalog: `d1d2_diff_candidate_catalog_20260711.md`
 - Completed active game-control reduction: 324 additions from inherited files
 - Completed DXA-mask reuse: 37 additions removed from D2 OGL

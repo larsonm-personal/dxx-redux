@@ -9,7 +9,7 @@ new sample demonstrates the texture-bind cache improvement.
 ## Plan
 
 - [x] Identify the benchmark generator, input workload, output schema, and
-  existing menu conventions
+      existing menu conventions
 - [x] Add a focused interactive menu entry with regression coverage
 - [x] Run the benchmark regeneration and preserve normalized output
 - [x] Compare the new results with the directly comparable pre-fix history

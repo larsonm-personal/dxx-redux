@@ -13,6 +13,7 @@ Replace direct `enter_game` / `SETUP_COMMAND launch` automation with real button
 **Approach:** Uses Compose's AccessibilityNodeProvider to walk the semantics tree (IDs -1..16383). No per-button annotation needed -- every clickable Compose element is discovered automatically. Text is matched to clickable nodes via spatial containment (Rect.contains).
 
 **Files modified:**
+
 - `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`
 
 **What was done:**
@@ -40,6 +41,7 @@ Replace direct `enter_game` / `SETUP_COMMAND launch` automation with real button
 **Goal:** New `tap_button` and `assert_button` actions in LauncherScriptExecutor that find buttons by text, validate state, and inject real MotionEvents.
 
 **Files modified:**
+
 - `android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt`
 
 **What was done:**
@@ -59,6 +61,7 @@ Replace direct `enter_game` / `SETUP_COMMAND launch` automation with real button
 **Goal:** Replace `enter_game` with `tap_button` in scripts that already have launcher phases.
 
 **Files modified:**
+
 - `android/game_scripts/test_gog_installer_redbook_unified.json5` -- assert_button enabled:true + tap_button "Launch Descent 2"
 - `android/game_scripts/test_resolution_unified.json5` -- 2x tap_button "Launch Descent 2"
 - `android/game_scripts/test_controller_compare_unified.json5` -- added GAME_NUM var, chip tap + launch tap
@@ -79,6 +82,7 @@ No remaining `enter_game` in any unified scripts.
 4.1. Added `enter_launcher` + chip selection + `tap_button launches_game:true` preamble to all 10 standalone scripts
 
 4.2. Game selection patterns:
+
 - D2-only with both games data (test_saf_basic, test_keyboard_manual): chip tap "Descent 2" + "Launch Descent 2"
 - D2-only with d2-only data (test_fire_primary): just "Launch Descent 2" (no chip needed)
 - Dual-game scripts (7 scripts): added GAME_NUM var mapping, chip tap "Descent ${GAME_NUM}" + "Launch Descent ${GAME_NUM}"
@@ -97,6 +101,7 @@ No remaining `enter_game` in any unified scripts.
 5.4. Code quality linters -- ALL PASS (clang-format 67 files, ktlint 66 files, PSScriptAnalyzer 42 files, shellcheck 27 files, shfmt 27 files)
 
 **Bugs found and fixed during verification:**
+
 - Text in child nodes: Compose puts text in child semantics nodes, not merged into parent clickable. Fix: spatial matching
 - Scan range (4095 too small): game data increases semantics node count. Fix: extended to -1..16383
 - ANR with adaptive gap scan: blocked main thread too long. Fix: fixed range instead of adaptive
@@ -113,24 +118,28 @@ No remaining `enter_game` in any unified scripts.
 
 **Approach:**
 6.1. Extend game introspection (game_introspect.c) with overlay button coordinates:
-   - Add JNI callback to query TouchOverlayView for button positions
-   - Serialize as `"overlay_buttons"` in introspect.json
-   
+
+- Add JNI callback to query TouchOverlayView for button positions
+- Serialize as `"overlay_buttons"` in introspect.json
+
 6.2. Add `STEP_TAP_OVERLAY` in game_automate.cpp:
-   - Find button by text/id substring
-   - Inject SDL touch event at button center coordinates
-   - Validate button exists/visible (fail if not)
+
+- Find button by text/id substring
+- Inject SDL touch event at button center coordinates
+- Validate button exists/visible (fail if not)
 
 6.3. TouchOverlayView already tracks button positions in instance fields:
-   - mapBtnCenterX/Y/Radius (lines 304-306)
-   - adminTrayRects (line 2623)
-   - buttonStates (line 210)
-   - automapBtnRects (line 354)
+
+- mapBtnCenterX/Y/Radius (lines 304-306)
+- adminTrayRects (line 2623)
+- buttonStates (line 210)
+- automapBtnRects (line 354)
 
 6.4. Migration targets:
-   - `key "tab"` -> `tap_overlay "MAP"` (automap)
-   - Admin tray buttons (quick save/load, menu, etc.)
-   - Fire buttons (primary/secondary)
+
+- `key "tab"` -> `tap_overlay "MAP"` (automap)
+- Admin tray buttons (quick save/load, menu, etc.)
+- Fire buttons (primary/secondary)
 
 ---
 

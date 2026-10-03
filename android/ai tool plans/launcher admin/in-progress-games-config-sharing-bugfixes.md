@@ -1,6 +1,7 @@
 # Plan: In-Progress Game Tracking, Game Config Sharing, Bug Fixes
 
 Six items in three phases:
+
 - (A) Two bug fixes -- net stats "disconnected" and WSS cleartext regression
 - (B) Game config sharing -- difficulty/level in lobby, propagated as extensible JSON
 - (C) In-progress game tracking + mid-game join with host-side ICE coroutine
@@ -74,7 +75,7 @@ UPDATE_GAME_INFO handler (host-only, validates 5KB limit, broadcasts update).
 Updated all usages in ws_handler.rs, http_api.rs. All 59 integration tests pass.
 
 **Files**: server/src/lobby.rs, server/src/protocol.rs, server/src/ws_handler.rs,
-  server/src/http_api.rs, server/tests/integration.rs
+server/src/http_api.rs, server/tests/integration.rs
 
 ### B3. Client: Display game config in lobby list and lobby screen -- DONE
 
@@ -86,7 +87,7 @@ CurrentLobbyState carries gameInfo, populated from lobby list or
 pendingGameInfo (for host-created lobbies).
 
 **Files**: NetworkProtocol.kt, MultiplayerScreen.kt, LobbyScreen.kt,
-  MatchmakingState.kt, MatchmakingService.kt, SetupActivity.kt
+MatchmakingState.kt, MatchmakingService.kt, SetupActivity.kt
 
 ### B2 cleanup: Removed backwards-compat wrappers -- DONE
 
@@ -127,7 +128,7 @@ After GAME_STARTING, the host's Kotlin layer starts a periodic update coroutine
 5. Stale detection: no update in >60s -> unjoinable
 
 **Files**: server/src/ws_handler.rs, server/src/lobby.rs, server/src/protocol.rs,
-  server/src/http_api.rs
+server/src/http_api.rs
 
 ### C3. Client can browse and join in-progress games -- DONE
 
@@ -144,17 +145,20 @@ on the wrong port), the host uses its existing shared socket for late-join ICE.
 
 **Key insight**: A temp socket's NAT pinholes don't help the shared socket that
 carries actual game traffic. Instead:
+
 1. Host sends blind probes from the shared socket (opens NAT pinholes)
 2. LocalhostProxy echoes probe REQUESTs from unknown senders (for the joiner's
    ConnectivityChecker to complete successfully)
 3. No temp socket needed -- all pinholes are on the right socket
 
 **Protocol additions**:
+
 - `LATE_JOIN_PROBE` (server->host): joiner_id, joiner_callsign, probe_addrs[]
 - `LATE_JOIN_APPROVED` (server->host): peer PeerAssignment for addPeer()
 - Joiner receives standard CONNECTIVITY_CHECK_GO and GAME_STARTING
 
 **Server-side flow**:
+
 1. Joiner sends JOIN_LOBBY for InGame lobby -> add_player() succeeds
 2. LOBBY_UPDATE triggers joiner's STUN (2+ players)
 3. Joiner sends STUN_RESULT -> server detects InGame + both have candidates:
@@ -176,12 +180,13 @@ the shared receive loop (detects DXPC magic, echoes REQUEST as RESPONSE).
 Added sendLateJoinProbes() to send blind probes from shared socket.
 
 **Edge cases handled**:
+
 - Cleanup: pending_late_joiners cleared in remove_player() on disconnect
 - Multiple simultaneous late joiners: each gets own pending entry + ICE flow
 - Host leaves during ICE: lobby dissolved, joiner notified
 
 **Files**: server/src/protocol.rs, server/src/lobby.rs, server/src/ws_handler.rs,
-  NetworkProtocol.kt, MatchmakingService.kt, LocalhostProxy.kt
+NetworkProtocol.kt, MatchmakingService.kt, LocalhostProxy.kt
 
 ### C5. Host accepts late joiner via existing D2 mechanism -- DONE
 
@@ -191,6 +196,7 @@ the engine's WaitForRefuseAnswer state via JNI and shows an "ACCEPT: callsign"
 button. Tapping it sets RefuseThisPlayer=1 (equivalent of F6).
 
 **End-to-end flow**:
+
 1. After LATE_JOIN_APPROVED, host Kotlin sets up proxy for new peer [C4]
 2. Joiner gets GAME_STARTING, launches game with auto_join via proxy
 3. Joiner engine sends UPID_REQUEST to host via proxy
@@ -202,6 +208,7 @@ button. Tapping it sets RefuseThisPlayer=1 (equivalent of F6).
 9. Joiner receives sync, enters game
 
 **Changes**:
+
 - D1+D2 net_udp.c: Set Netgame.RefusePlayers=1 in net_udp_auto_host
 - android_input.c: nativeGetJoinRequest() (returns callsign or ""),
   nativeAcceptJoinRequest() (sets RefuseThisPlayer=1)
@@ -210,7 +217,7 @@ button. Tapping it sets RefuseThisPlayer=1 (equivalent of F6).
   overlayPoller, clean up in error/non-game paths
 
 **Files**: d1/main/net_udp.c, d2/main/net_udp.c, android_input.c,
-  AcceptJoinButtonView.kt, MainActivity.kt
+AcceptJoinButtonView.kt, MainActivity.kt
 
 ---
 

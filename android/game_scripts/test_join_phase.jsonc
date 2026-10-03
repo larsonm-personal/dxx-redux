@@ -2,70 +2,67 @@
 [
     {
         "_info": {
-            "games": [
-                "d1",
-                "d2"
-            ],
+            "games": ["d1", "d2"],
             "_standalone": false,
             "_owner": "test_lan",
             "params": {
                 "cancel": {
-                    "label": "cancel"
+                    "label": "cancel",
                 },
                 "skip": {
-                    "label": "skip"
+                    "label": "skip",
                 },
                 "transfer_hold": {
-                    "label": "transfer_hold"
+                    "label": "transfer_hold",
                 },
                 "escape": {
-                    "label": "escape"
+                    "label": "escape",
                 },
                 "flyout": {
-                    "label": "flyout"
+                    "label": "flyout",
                 },
                 "scores": {
-                    "label": "scores"
+                    "label": "scores",
                 },
                 "enter_scores": {
-                    "label": "enter_scores"
+                    "label": "enter_scores",
                 },
                 "next_level": {
-                    "label": "next_level"
+                    "label": "next_level",
                 },
                 "launch_next": {
-                    "label": "launch_next"
-                }
-            }
-        }
+                    "label": "launch_next",
+                },
+            },
+        },
     },
     {
         "when": "${cancel}",
         "action": "set_debug",
         "field": "join_wait_test",
-        "value": "cancel"
+        "value": "cancel",
     },
     {
         "when": "${skip}",
         "action": "set_debug",
         "field": "coop_briefing_action",
-        "value": "skip"
+        "value": "skip",
     },
     {
         "when": "${transfer_hold}",
         "action": "set_debug",
         "field": "join_wait_test",
-        "value": "hold_transfer"
+        "value": "hold_transfer",
     },
     {
         "when": "${escape}",
         "action": "set_debug",
         "field": "coop_countdown_save_test",
-        "value": "seed"
+        "value": "seed",
     },
     {
         "when": "${flyout}",
-        "action": "trigger_endlevel"
+        "action": "trigger_endlevel",
     },
     {
         "when": "${flyout}",
@@ -73,35 +70,35 @@
         "timeout_ms": 10000,
         "expect": {
             "endlevel_sequence": {
-                "gt": 0
+                "gt": 0,
             },
-            "screen_advance_can_activate": true
-        }
+            "screen_advance_can_activate": true,
+        },
     },
     {
         "when": "${scores}",
         "action": "wait_for",
         "timeout_ms": 10000,
         "expect": {
-            "screen_advance_can_activate": true
-        }
+            "screen_advance_can_activate": true,
+        },
     },
     {
         "when": "${scores}",
         "action": "request_screen_advance",
-        "generation": "current"
+        "generation": "current",
     },
     {
         "when": "${scores}",
         "action": "wait_for",
         "timeout_ms": 20000,
         "expect": {
-            "postlevel_active": true
-        }
+            "postlevel_active": true,
+        },
     },
     {
         "when": "${enter_scores}",
-        "action": "trigger_endlevel"
+        "action": "trigger_endlevel",
     },
     {
         "when": "${enter_scores}",
@@ -109,58 +106,58 @@
         "timeout_ms": 10000,
         "expect": {
             "endlevel_sequence": {
-                "gt": 0
+                "gt": 0,
             },
-            "screen_advance_can_activate": true
-        }
+            "screen_advance_can_activate": true,
+        },
     },
     {
         "when": "${enter_scores}",
         "action": "wait_for",
         "timeout_ms": 10000,
         "expect": {
-            "screen_advance_can_activate": true
-        }
+            "screen_advance_can_activate": true,
+        },
     },
     {
         "when": "${enter_scores}",
         "action": "request_screen_advance",
-        "generation": "current"
+        "generation": "current",
     },
     {
         "when": "${enter_scores}",
         "action": "wait_for",
         "timeout_ms": 20000,
         "expect": {
-            "postlevel_active": true
-        }
+            "postlevel_active": true,
+        },
     },
     {
         "when": "${next_level}",
         "action": "wait_for",
         "timeout_ms": 10000,
         "expect": {
-            "screen_advance_can_activate": true
-        }
+            "screen_advance_can_activate": true,
+        },
     },
     {
         "when": "${next_level}",
         "action": "request_screen_advance",
-        "generation": "current"
+        "generation": "current",
     },
     {
         "when": "${next_level}",
         "action": "wait_for",
         "timeout_ms": 45000,
         "expect": {
-            "current_level_num": 2
-        }
+            "current_level_num": 2,
+        },
     },
     {
         "when": "${launch_next}",
         "action": "set_debug",
         "field": "coop_briefing_action",
-        "value": "skip"
+        "value": "skip",
     },
     {
         "when": "${launch_next}",
@@ -168,7 +165,7 @@
         "timeout_ms": 20000,
         "expect": {
             "in_game": true,
-            "coop_briefing.active": false
-        }
-    }
+            "coop_briefing.active": false,
+        },
+    },
 ]

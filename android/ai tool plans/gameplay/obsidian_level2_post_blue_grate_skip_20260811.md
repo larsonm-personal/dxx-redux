@@ -9,13 +9,13 @@ same route, without adding mission-specific exceptions.
 ## Plan
 
 - [x] Reconstruct the post-blue-key recommendation and the recent simpler-shot
-  preference rule from source, diagnostics, metadata, tests, and history.
+      preference rule from source, diagnostics, metadata, tests, and history.
 - [x] Define and implement the narrowest data-driven condition that rejects or
-  deprioritizes the grate skip while preserving legitimate remote shots.
+      deprioritizes the grate skip while preserving legitimate remote shots.
 - [x] Add focused regression coverage for Obsidian level 2 and an appropriate
-  positive control.
+      positive control.
 - [x] Run scoped formatting, native route tests, relevant builds, and the
-  focused Android integration test where practical.
+      focused Android integration test where practical.
 - [x] Record the final behavior and validation results here.
 
 ## Constraints

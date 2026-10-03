@@ -1,10 +1,12 @@
 # Plan: D1/D2 OGL Runtime Texture Controls, 2026-07-11
 
 ## Goal
+
 - Centralize the byte-for-byte identical Android texture-filter runtime logic from both inherited OGL files
 - Keep MSAA pending handling local so the texture tranche has no framebuffer callback and does not overlap the later MSAA lifecycle tranche
 
 ## Baseline
+
 - D1 `arch/ogl/ogl.c`: `+2046/-65`
 - D2 `arch/ogl/ogl.c`: `+2139/-64` after the completed DXA-mask reuse tranche
 - D1 lines 624-816 and D2 lines 634-826 are 193 lines each and byte-for-byte identical
@@ -12,6 +14,7 @@
 - Target result: D1 `+1896/-65`, D2 `+1989/-64`
 
 ## Steps
+
 - [x] Add one pointer-backed texture-filter runtime state to `ogl_texture_android.h`
 - [x] Add shared effective-filter, bound-texture filtering, and pending texture-option functions
 - [x] Reuse the existing shared texture-byte, anisotropy, and raw TexFilt helpers
@@ -26,6 +29,7 @@
 - [x] Record exact metrics and update the campaign catalog
 
 ## Guardrails
+
 - The bound texture is already bound before the shared selective-filter call
 - Effective filter zero must remain a no-op
 - `OGL_FLAG_NOCOLOR` textures always obey menu filtering in every render context
@@ -37,6 +41,7 @@
 - Do not change texture upload, lookup, DXA mask, ETC2/KTX2, MSAA creation, or framebuffer flow
 
 ## Validation targets
+
 - `git diff --check` and a search proving no local duplicate helpers remain
 - D1 and D2 Android link for arm64-v8a, armeabi-v7a, and x86_64
 - Windows both-game wrapper if the managed vcpkg/toolchain environment permits it
@@ -44,6 +49,7 @@
 - D1/D2 level or automap launch, D2 MSAA smoke, custom-texture/mod loading, and merged-wall snapshot as applicable
 
 ## Outcome
+
 - Added one shared pointer-backed runtime state and centralized effective filtering, bound-texture filtering, and pending texture-option dispatch in `ogl_texture_android.{c,h}`
 - Reused `android_ogl_get_texture_bytes`, `android_ogl_apply_anisotropy_all`, and `android_ogl_apply_texfilt_all`; the first two no longer remain unused shared helpers
 - Left each inherited OGL file with the same compact state initializer and shared calls while keeping the complete MSAA pending block local
@@ -53,6 +59,7 @@
 - Shared code grew by 183 lines, so total source size fell by 119 lines while the inherited D1/D2 merge surface fell by 302 lines
 
 ## Validation result
+
 - Static review confirmed the D1/D2 adapters remain mirrored, the local duplicate helpers are gone, and the effective-filter call sites use the shared function
 - `git diff --check` passed with only line-ending normalization warnings
 - Both games compiled and linked for arm64-v8a, armeabi-v7a, and x86_64, for six successful game/ABI links

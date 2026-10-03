@@ -1,6 +1,18 @@
 # Android graphics settings confirmation
 
-Status: implementation in progress; includes Retroid Pocket 4 Pro MSAA diagnosis
+Status: implemented and verified on the Retroid Pocket 4 Pro and emulator; MSAA format mismatch fixed
+
+## Completed Retroid diagnosis and validation
+
+The Retroid's EGL window has 10/10/10/2 color channels. The renderer incorrectly selected an RGBA8 multisample source, so the direct window resolve failed with `GL_INVALID_OPERATION` and left the background undrawn. A shared channel-size mapping now selects `GL_RGB10_A2` for that window in both production and diagnostic code. The same physical probe changes from failed window resolve to correct pixels with no GL errors; no EGL-config, clipping, synchronization, or device-specific rendering workaround was needed
+
+Physical D1 and D2 tests pass with requested RGB565 and RGBA8888, 2x/4x trials, cold startup, live changes, native menus and background/resume. The GPU selects a 10/10/10/2 window in both requested color modes and allocates 4x for a 2x request. D2 rear-view and missile-camera composition preserve all sampled scene markers. The FOV-aware scene probe excludes the deliberately replaced simulation pass before observing the final visual pass; this fixes a false diagnostic failure at the user's 100-degree FOV without changing game rendering
+
+The physical failure-before-fix test verifies immediate structural-failure rejection and full accepted-settings rollback. After the fix, an unattended 4x trial restores accepted 2x. A separate responsive black-frame trial visibly retains the Kotlin modal with `Cancel (5)` selected and restores accepted 4x after timeout. Device screenshots show the rendered D1/D2 scenes and the independent Kotlin confirmation over black output; short screen recordings are retained as supplementary evidence. The user's subjective observation was requested but is not assumed from silence
+
+Evidence is in `android/temp/retroid-msaa-20261002-073724/`: before/after owned probes and production introspection, per-case scripts/results, D1/D2 mode and resume snapshots, subview results, screenshots, recordings, and `final-diagnostics.tar`. Temporary D1 shareware data used a separate game-data set. All 40 files in the original app-data backup, including every original save, pilot and preference file, were restored byte-for-byte and checked by SHA-256 (`restore-verification.json`). The temporary set/pilot were removed, USB stay-awake was reset to its original value, the original MSAA-off tuple is accepted, and the fixed standard debug APK remains installed
+
+Final Android and Windows builds pass for both engines. Scoped mixed-language formatting/lint passes. The final emulator matrix passes D1 108/108 and D2 138/138 steps under both requested color depths (`android/temp/msaa-render-20261002-080551/`), including custom-FOV scene coverage. Earlier host/JVM and confirmation-specific integration evidence below covers persistence, input, launcher/menu timing, watchdog and lifecycle behavior. Non-rendering replay exclusion is established by the audited call paths because ordinary Android replay does not expose that mode; no new replay product feature was added for this test
 
 ## Implementation evidence and remaining work
 
@@ -98,7 +110,61 @@ The standard Android build passes for both engines and all three ABIs with these
 
 The lifecycle fixture now enables graphics logging to exercise the resume records. Fresh runs pass 53/53 steps in each engine: D2 `android/temp/graphics-safety-20261001-215227/results.txt`, D1 `android/temp/graphics-safety-20261001-215548/results.txt`. Their captured logcat contains paired surface-create/make-current events and actual resumed OpenGL ES 3 version strings. Both final snapshots are idle and unpaused, with working known-color probes and continued swaps. Context generation remains 1 in both, so this covers surface replacement with the existing context preserved, not the full lost-context resource rebuild branch
 
-Remaining gates include complete pixel/resource restoration verification, known-pattern checks across actual native menu composition/subviews, remaining creation/state diagnostics and controlled experiments, and Activity-replacement/multiplayer coverage. Responsive black output, pre-armed failure callback capture, actual EGL initialization failure, actual MSAA color-allocation failure, bounded repeated accepted-mode rebuild failures, armed render-thread stalls, unreadable records, blocked publication/OK acceptance, abandoned native-menu attempts, normal-exit staging, interrupted config repair, expanded key/axis/touch routing, actual Video Info/settings-tray pause ownership and Home/screen-lock lifecycle now have the device integration evidence above. All verification scenarios below remain required. Initial device runs used an older APK because the IDE ABI override wrote its new APK under `intermediates`; those failures are not feature evidence. The successful runs use the fresh standard APK from `outputs`
+Actual lost-context coverage now uses `graphics_context_loss_once` to detach and destroy the real EGL context at the next resume. The first run (`android/temp/graphics-safety-20261001-221931/results.txt`) reproduced retained MSAA framebuffer names: the context generation advanced but FBO generation did not, with repeated GL_INVALID_FRAMEBUFFER_OPERATION. Recovery now forgets retired FBO/query/binding/viewport state and clears old texture/program caches before creating the new shim objects. Old program deletion is suppressed during this cleanup to prevent stale names from deleting new-context objects or generating invalid-name errors. The next run passed its original assertions but logged GL_INVALID_OPERATION during scene drawing (`android/temp/graphics-safety-20261001-223450/logcat.txt`): merged-texture programs were cleared without being rebuilt. The engine recovery callback now recreates those programs and the normal GL defaults as well
+
+The strengthened `test_graphics_context_loss.jsonc` passes 62/62 steps serially for both engines: D1 `android/temp/graphics-safety-20261001-224013/results.txt`, D2 `android/temp/graphics-safety-20261001-224129/results.txt`. Both real context retirements succeed, context and production MSAA generations reach 3, accepted enhanced filtering plus MSAA=2 survive both cancelled trials, and known-color/state-restoration plus shader/VBO/2D-batch pixel probes pass after Home and screen lock. New cumulative `msaa.scene_error_count` and retained `msaa.last_scene_gl_error` remain zero, so a successful later resolve cannot hide scene errors. Saved logs confirm both retirements/rebuilds and no scene GL errors. Standard Android builds pass for both engines/all three ABIs, both Windows engines build, both graphics host suites pass, and scoped quality checks pass. This proves emulator lost-context reconstruction, not the physical Retroid cold-launch flicker or complete native-menu/subview pixel composition
+
+The later entries below add restoration-resource, Activity-replacement and multiplayer evidence; the latest remaining-gate summary follows them. Responsive black output, pre-armed failure callback capture, actual EGL initialization failure, actual MSAA color-allocation failure, actual context retirement/rebuild, bounded repeated accepted-mode rebuild failures, armed render-thread stalls, unreadable records, blocked publication/OK acceptance, abandoned native-menu attempts, normal-exit staging, interrupted config repair, expanded key/axis/touch routing, actual Video Info/settings-tray pause ownership and Home/screen-lock lifecycle now have the device integration evidence above. All verification scenarios below remain required. Initial device runs used an older APK because the IDE ABI override wrote its new APK under `intermediates`; those failures are not feature evidence. The successful runs use the fresh standard APK from `outputs`
+
+`test_graphics_native_interruption.jsonc` now passes 53/53 steps in each engine: D1 `android/temp/graphics-safety-20261001-224601/results.txt`, D2 `android/temp/graphics-safety-20261001-224706/results.txt`. A real native Tab event opens automap during an armed filtering trial; the coordinator cancels, restores accepted filtering and dismisses the Kotlin modal. A queued edit stays idle behind automap for six seconds, editing back prevents a prompt on return, and a later retained edit challenges only after automap closes. B restores accepted values with balanced pause and no fire input. An initial test expected idle state to clear the historical deadline field; the corrected test observes phase/modal visibility instead. This adds native interruption and automap eligibility evidence; it does not cover Activity replacement or the other preview/demo eligibility cases
+
+The bounded production MSAA trace now includes read/draw buffer selection and sample/alpha coverage state. Creation logs also capture the default window's color encoding, component type, sample buffers and samples, with diagnostic-query errors separated from allocation errors. The owned-target probe records those fields plus actual GL/vendor/renderer/shader versions. It safely handles unavailable GL strings and now accepts 8x requests consistently with the live-capture helper, reporting the actual allocated sample count. These additions are diagnostic; they do not alter production resolve behavior
+
+The final standard Android build passes for both engines/all three ABIs, and scoped quality checks pass. The expanded MSAA matrix passes all four cases, each 61/61 steps: `android/temp/msaa-render-20261001-225226/rgb565.txt` and `rgba8888.txt`. Final logcat is saved alongside them. Both requested color-depth variants report valid window queries and working known-color transfers/state restoration. The 8x-request live capture also passes (the emulator allocates 4x, as reported) at `android/temp/msaa-live-20261001-225600/after.json`, with unchanged accepted/requested config files and the same game PID. Its explicit retained-game fixture passes 30/30 steps at `android/temp/graphics-live-fixture-20261001-225505/results.txt`; an earlier capture correctly refused because the matrix runner had already stopped its game process
+
+The two-device LAN runner now supports `-GraphicsConfirmation`, using provisioned emulators and the normal host/join path. All six cases pass per engine: Cancel, timeout and explicit OK on the host, then the joining peer. Two snapshots within the same armed trial verify advancing frame counters and remote packet sequence values, an unchanged absolute deadline, two connected peers and unpaused simulation. Full current/requested/accepted tuples and the other peer's independent settings are checked after every decision. D2 evidence: `android/temp/graphics-multiplayer-20261001-230417/results.json`; D1 evidence: `android/temp/graphics-multiplayer-20261001-230723/results.json`. The helper and two owned automation scripts pass scoped quality checks
+
+Actual Activity replacement during an armed challenge is now exercised by the debug-only `recreate_activity` command and the `activity_replaced` recovery case. The initial run (`android/temp/graphics-recovery-20261001-231511/`) durably rolled back but exposed a second native startup from the replacement Activity, rejected by the engine admission guard, with no usable recovery message. MainActivity now remembers that a graphics trial was interrupted across saved Activity state. If that Activity is recreated while its native engine remains alive, it keeps the UI unavailable, returns to the launcher with an explicit message and terminates the isolated game process before another engine startup. A fresh-process restoration continues through the existing durable repair path
+
+Both actual-replacement cases pass with the corrected APK: D1 recovery 1,361 ms, D2 1,379 ms. Evidence: `android/temp/graphics-recovery-20261001-232002/results.json`, including real destroy/create identities, `changing_config=true`, `restored=true`, durable cancellation before the original deadline, no duplicate startup, launcher message, all ten accepted values in every config mirror and fresh accepted gameplay without a prompt. The recovery helper now resolves its support fixture before invoking the generic runner, matching the updated test catalog contract. The standard Android build passes for both engines/all three ABIs
+
+Mode rollback now also checks known-color direct/window/offscreen resolve pixels and actual GLES shader/VBO/2D-batch resource reconstruction after both controller Cancel and timeout. The expanded `test_graphics_mode_restore.jsonc` passes 69/69 steps for D1 (`android/temp/graphics-safety-20261001-232232/results.txt`) and D2 (`android/temp/graphics-safety-20261001-232656/results.txt`), with no scene GL errors. The first D2 attempt in the former run reached EGL initialization during timeout rollback but exceeded the one-second restore watchdog and closed the game. Its durable accepted tuple/restore marker and `d2-restore-watchdog-logcat.txt` were preserved; the unchanged repeat passed. This is evidence of a variable emulator restoration delay, not an identified driver fix. Physical-device restoration latency and actual restored input coordinates still need verification
+
+An additional eligibility source audit confirms that the only calls which prepare/arm a trial are in D1/D2's gameplay draw handlers. The shared level/robot previews have their own window handlers, and their JNI startup does not initialize the graphics coordinator. Metadata paths and non-rendering demo states do not call the gameplay hook. This explains the exclusion even though previews reuse `Game_wind`; it supplements, rather than replaces, the remaining runtime eligibility checks
+
+After the Activity-replacement change, ordinary Home/screen-lock lifecycle regression passes 53/53 steps in both engines, retaining the original game PID across both cycles. Evidence: `android/temp/graphics-safety-20261001-232821/results.txt`. Scoped mixed-language quality passes for the Activity, recovery runner/wrapper and expanded mode script; the changed files also pass `git diff --check`
+
+The opt-in `msaa_menu_probe` now samples actual native-menu pixels immediately after drawing and again after production composition, before EGL swap. It selects flat opaque patches from the paletted menu source, checks expected RGB/alpha with RGB565 tolerance, and records both stages under one flip ID. Scaled menus supply their existing software bitmap; unscaled menus use a private software reference with callbacks disabled. For menus drawn into the production multisampled target, observation resolves into an owned matching-format single-sample target without replacing the production final resolve. All changed GL state is restored and verified. No menu readbacks or reference rendering occur without an explicit debug request
+
+The initial scaled-only implementation could not capture native-size menus, which the first D1 run exposed (`android/temp/msaa-render-20261001-234722/rgb565.txt`). After adding that path, D1 passed 67/67 checks (`android/temp/msaa-render-20261001-235708/rgb565.txt`). The expanded fixture now explicitly exercises both unscaled/final-resolve and 110% zoom/early-resolve paths at accepted 2x and 4x. All four final runs pass 83/83 steps: D1 `android/temp/msaa-render-20261002-000702/`, D2 `android/temp/msaa-render-20261002-001042/`, each with RGB565/RGBA8888 results and logcat. Android builds pass for both engines/all three ABIs, both Windows builds pass, and scoped mixed-language quality passes
+
+`capture_msaa_live.ps1 -Serial <adb-serial> -Samples 4 -NativeMenu` captures an already open native menu over a running level, retaining before/after introspection and native diagnostic logs. It reports bad pixels as diagnostic evidence while requiring state restoration, unchanged accepted/config records and the same process. Live D2 captures pass for Options (`android/temp/msaa-live-20261002-001557/`) and nested Graphics Options (`android/temp/msaa-live-20261002-001733/`): both actual menu stages and the owned color-pattern probe pass, with unchanged settings and PID. This extends the earlier owned-target-only captures; it still cannot establish physical presentation stability
+
+The restored-touch fixture exposed the short restore-watchdog interval again, before it reached input checks. The first D1 run retained the accepted tuple and a pending cancel marker after process termination (`android/temp/graphics-restored-touch-20261002-001807/`). The repeat with graphics logging (`android/temp/graphics-restored-touch-20261002-002158/live-logcat.txt`) identifies successful EGL recreation and shader initialization finishing about 975 ms after timeout rejection, followed by the one-second watchdog killing the process during the remaining rebuild. The independent Kotlin restore allowance is now three seconds, with the five-second Keep/Cancel deadline unchanged. Fault-test timing bounds and the design below reflect the revised recovery allowance
+
+With the revised allowance, both expanded mode fixtures pass 70/70 steps, and the new `run_graphics_restored_touch_tests.ps1` passes four real-input cases: D1/D2 at native size and 110% menu zoom. After cancelling an 800x600 candidate back to accepted 640x480, it obtains actual SurfaceView screen bounds from debug UI introspection, transforms the native item center through the current menu viewport and dispatches `adb input tap`. The expected nested Graphics Options menu opens in all four cases, with the original game PID retained. Evidence: `android/temp/graphics-restored-touch-20261002-002708/results.json`, complete before/after engine/UI states, fixture results and logs. The standard Android build and scoped mixed-language quality pass
+
+The revised watchdog also passes stalled-renderer and repeated-EGL-failure recovery in both engines, including durable publication before termination, the launcher recovery message and a fresh accepted level. Stall end-to-end times are 9,762 ms (D1) and 9,616 ms (D2), including debounce, the five-second decision deadline and recovery allowance: `android/temp/graphics-recovery-20261002-003226/results.json`. Repeated-rebuild evidence is in `android/temp/graphics-recovery-20261002-003431/results.json`. An earlier stall run did not execute its trigger because broad JSONC formatting had added trailing commas rejected by the native parser. The recovery runner now resolves and normalizes its pushed support scripts into strict JSON; all four corrected fault cases pass
+
+The new `run_graphics_preview_tests.ps1` verifies isolated robot and level previews in both engines with deliberately unvalidated filtering/MSAA/AF/color-depth settings. All four cases pass: `android/temp/graphics-preview-20261002-005138/results.json`. Real presentation counters advance and visible pixels remain valid beyond the five-second challenge interval, while native confirmation stays disabled, the full accepted record remains unchanged and all three staged config texts survive return to the launcher. Level-preview launch also executes the real level metadata analysis before rendering. An initial fixture incorrectly used the robot-only `frame_count` property for level previews; the final checks use the shared actual flip counter
+
+The first robot-preview launch exposed a prerequisite parsing failure: recently formatted JSONC assets contain trailing commas, which Android's `JSONArray` interprets as an extra null entry. `Jsonc.strip` now removes trailing commas outside strings, including across comments, while preserving line numbers and literal string contents. Three focused regression tests and all 1,104 executed JVM tests pass (one existing skipped test); the standard Android build passes for both engines/all ABIs. Live D1/D2 robot previews verify the actual Android parser behavior, which differs from the JVM JSON dependency. Scoped mixed-language quality passes
+
+The opt-in `msaa_scene_probe` now writes three small opaque marker patches after the real main-view pass, samples them after every subsequent real scene pass through an owned matching-format single-sample resolve, and samples framebuffer zero again before swap. It preserves the GL state used by the probe and reports actual pass viewports, bindings, pixels, errors and the flip ID. Normal rendering performs no marker drawing or readback unless automation explicitly requests the probe. D1/D2 hooks run before `ogl_end_frame()` resets the pass viewport. The expanded MSAA fixture exercises the main view in both engines and D2 level 3 with the left rear-view pane plus an actual missile-camera pass, for both 2x and 4x. The first complete D2 RGB565 run passes 136/136 steps (`android/temp/msaa-render-20261002-011402/rgb565.txt`). Initial fixture attempts stalled behind level 3's briefing; adding the existing `skip_briefing` action fixed the fixture without a new level-loading hook
+
+`capture_msaa_live.ps1 -Serial <adb-serial> -Samples 2 -ScenePasses 1` adds this composition probe to an already running gameplay capture. Use 2 or 3 only when the corresponding subviews are actually rendering; the probe is bounded to 120 frames. Scene and native-menu captures are separate. Wrong pixels remain diagnostic results, while state restoration, unchanged protected records/configs and the same game process remain required. The probe draws three visible patches for its observed frame(s), so repeat a suspected timing-sensitive failure with probes disabled. The live D2 smoke check passes at `android/temp/msaa-live-20261002-012621/after.json`: owned-target MSAA and one actual scene pass both pass, with unchanged settings and PID. Its retained-game setup passes 30/30 steps in `android/temp/graphics-scene-live-fixture.txt`; this live smoke case has production MSAA off, while the four-case matrix below exercises production 2x/4x
+
+The non-rendering replay exclusion has additional source evidence: both SDL event dispatchers return before gameplay draw when `input_demo_process_fast_replay()` handles the foreground replay, and explicitly suppress the `Game_wind` draw when a dialog is foreground. Only that gameplay draw handler calls `android_graphics_safety_before_main_view()`. Android's ordinary replay JNI startup passes `-inputdemo-replay` but has no option for `SysInputDemoNoRender`; metadata jobs set it in their separate startup path, where the coordinator is not initialized. This establishes the current call-path exclusion, not an Android runtime no-render replay test. Do not add an otherwise unnecessary product replay mode merely to create that test
+
+Final scene/menu matrix validation passes with the rebuilt APK in all four cases: D1 106/106 steps and D2 136/136 steps for each of RGB565 and RGBA8888 (`android/temp/msaa-render-20261002-012030/rgb565.txt` and `rgba8888.txt`). Both sample counts are exercised in each run. D2's final scene report records the main 640x320 viewport and two distinct smaller cockpit viewports, all three preserved marker colors, framebuffer zero at the final sample, restored GL state and zero cumulative scene GL errors. The standard Android build passes for both engines/all three ABIs; the Windows build for both engines and scoped mixed-language quality checks also pass. The temporary level-loader debug action used while investigating the briefing wait has been removed from the final source and APK
+
+The Retroid connected on October 2 as `JYPR42510121028`. Before updating its older app in place, all private files and preferences were archived at `android/temp/retroid-msaa-20261002-073724/original-app-data.tar`, including the existing pilot and three demo saves. The standard debug package was rebuilt because the pre-existing local APK belonged to the separate Legacy application ID. Temporary graphics logging and USB stay-awake were enabled for diagnosis; restore the user's preferences and saved data after testing
+
+The first physical capture identifies a format mismatch, not an unexplained driver failure. The device reports ARM Mali-G77 MC9 / OpenGL ES 3.2 and an actual single-sample 10/10/10/2 window, even with requested RGB565. Both the production allocator and owned probe map any alpha-bearing window to RGBA8. The probe's direct window control and offscreen MSAA resolve pass; its RGBA8-to-window resolve returns `GL_INVALID_OPERATION` (1282) and leaves the cleared black sentinel. The production 2x trial reproduces the same 0x502 resolve failure and the coordinator immediately restores the complete accepted tuple. Requested 2x allocates 4x on this GPU, as reported. Evidence: `owned-probe-before.json`, `production-msaa2-before-state.json`, and `production-before-logcat.txt` in the Retroid directory above
+
+The first isolated correction shares format selection between production and diagnostics and maps actual 10/10/10/2 channels to `GL_RGB10_A2`. No EGL selection, scissor, synchronization, or device-name workaround is combined with it. Rebuild and repeat the same physical probe and production trial before expanding the matrix. The initial scene-marker capture with MSAA off also sees two full-size scene passes before a swap, with the second overwriting the first pass's markers; that result does not establish a subview wipe and needs interpretation separately from the confirmed resolve-format error
+
+Physical correction validation and restoration are complete as summarized above. Non-rendering replay remains covered by the explicit call-path audit rather than a nonexistent Android launcher mode
 
 ## Required behavior
 
@@ -112,16 +178,16 @@ The user confirmed that resolution and color depth belong in this feature, in ad
 
 Use one value snapshot containing:
 
-| Config field | Purpose |
-| --- | --- |
-| `TexFilt` | Nearest, bilinear, or trilinear world filtering |
-| `AnisoLevel` | AF |
-| `MsaaLevel` | MSAA |
-| `MenuTexFilt` | Filtering for menus and other non-world textures |
-| `HudTexFilt` | Filtering for HUD textures |
-| `ResolutionX`, `ResolutionY` | Render dimensions |
-| `AspectX`, `AspectY` | Preserve the aspect settings accompanying a resolution change |
-| `ColorDepth` | RGB565 or RGBA8888 request |
+| Config field                 | Purpose                                                       |
+| ---------------------------- | ------------------------------------------------------------- |
+| `TexFilt`                    | Nearest, bilinear, or trilinear world filtering               |
+| `AnisoLevel`                 | AF                                                            |
+| `MsaaLevel`                  | MSAA                                                          |
+| `MenuTexFilt`                | Filtering for menus and other non-world textures              |
+| `HudTexFilt`                 | Filtering for HUD textures                                    |
+| `ResolutionX`, `ResolutionY` | Render dimensions                                             |
+| `AspectX`, `AspectY`         | Preserve the aspect settings accompanying a resolution change |
+| `ColorDepth`                 | RGB565 or RGBA8888 request                                    |
 
 Gamma, FOV, text insets, pilot visual effects, movie filtering, debug switches, and controller settings are outside this snapshot. They continue to save normally and are not reverted with a failed trial. The protected snapshot covers the risky renderer settings and the selective filtering switches discussed with the user
 
@@ -167,13 +233,13 @@ Eligibility must be determined on the game thread:
 
 Do not infer eligibility from `gameStarted`, a successful EGL swap, or `ogl_start_frame()` alone. The engine draws visible game windows underneath native menus, and the GL entry point is also used by other 3D views
 
-| Source of change | Challenge timing |
-| --- | --- |
-| Launcher before game launch | At the first eligible gameplay render attempt after loading/briefings |
-| Launcher while a game is retained in the background | After returning, applying its coherent snapshot, and becoming eligible |
-| Kotlin Video Info settings | After 750 ms without a protected edit, while gameplay is eligible; the Video Info editor itself may remain open |
-| Native menus opened mid-level | After the complete native menu stack closes, at the next eligible gameplay render attempt |
-| Native menus before starting a level | At the first eligible gameplay render attempt after the level starts |
+| Source of change                                    | Challenge timing                                                                                                |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Launcher before game launch                         | At the first eligible gameplay render attempt after loading/briefings                                           |
+| Launcher while a game is retained in the background | After returning, applying its coherent snapshot, and becoming eligible                                          |
+| Kotlin Video Info settings                          | After 750 ms without a protected edit, while gameplay is eligible; the Video Info editor itself may remain open |
+| Native menus opened mid-level                       | After the complete native menu stack closes, at the next eligible gameplay render attempt                       |
+| Native menus before starting a level                | At the first eligible gameplay render attempt after the level starts                                            |
 
 Reset the 750 ms debounce only for an actual protected value change. Compare again when it expires. Turning an option back to its accepted value, or reaching all-off, removes the pending challenge. Returning from native menus needs no extra 750 ms if the user has already stopped editing
 
@@ -311,7 +377,7 @@ Retain the launcher's existing next-start semantics for new resolution/color-dep
 
 A black image with an otherwise responsive engine should restore live on timeout. No framebuffer-color heuristic is required; the user decides whether the trial works
 
-A GL call that never returns prevents the game thread from applying any new configuration. Kotlin can still persist the accepted restore target and request rollback. If the engine does not acknowledge restoration within one second, show a Kotlin recovery message, shut down the isolated game process through the existing controlled exit/recovery path, and return to the launcher with accepted settings repaired. Use a bounded process-exit fallback if normal shutdown is also stuck
+A GL call that never returns prevents the game thread from applying any new configuration. Kotlin can still persist the accepted restore target and request rollback. If the engine does not acknowledge restoration within three seconds, show a Kotlin recovery message, shut down the isolated game process through the existing controlled exit/recovery path, and return to the launcher with accepted settings repaired. This recovery allowance begins after rejection and does not extend the five-second confirmation deadline. The earlier one-second allowance proved too short for successful EGL/shader recreation. Use a bounded process-exit fallback if normal shutdown is also stuck
 
 Do not claim seamless in-level recovery from a blocked driver. Forced recovery may lose play since the last save; the normal live rollback path preserves the running level. This limitation and the independent persistence-before-GL design are necessary for the original black-screen failure case
 
@@ -323,7 +389,7 @@ A hard stall during initial EGL creation or a native-menu mode switch can occur 
 
 ### Report and investigation priority
 
-The user narrowed the original graphics failure to MSAA: every non-off setting causes a flickering background on the Retroid Pocket 4 Pro. The scene might be missing while a menu flickers; distinguish those outcomes rather than assuming the whole renderer stops. There is no device capture or confirmed root cause yet
+The user narrowed the original graphics failure to MSAA: every non-off setting caused a flickering background on the Retroid Pocket 4 Pro. Physical capture confirmed a failed scene resolve caused by the RGBA8/RGB10_A2 format mismatch described above. The investigation procedure below records how the cause was isolated
 
 Investigate the existing renderer first, alongside the confirmation work. The confirmation provides recovery from a bad configuration; it does not establish that MSAA renders correctly
 
@@ -360,15 +426,15 @@ These experiments are diagnostic switches, not unconditional fixes. Retest any s
 
 ### Leading hypotheses and discriminating evidence
 
-| Hypothesis | Evidence or isolated experiment |
-| --- | --- |
-| Resolve inherits a small scissor rectangle | Trace scissor enable/box at clear and resolve; compare with a debug resolve that saves, disables, then restores scissor |
-| Window resolve is illegal for the actual default buffer | Capture actual source/destination formats, color encoding, sample buffers/samples, selected EGL config and per-call resolve errors; compare against a matching single-sample offscreen destination |
-| A scene draw/clear uses the wrong framebuffer | Log actual read/draw bindings alongside tracked `bound` and pass depth; compare known colors at clear, scene end, early menu resolve and final resolve; check bindings immediately before/after lazy ETC2 self-tests |
-| Main scene is wiped or menu is overwritten | Trace a frame's ordered main-view, cockpit/subview, menu-blit, resolve and swap events; test without subviews and with scaled-menu path bypassed separately |
-| Surface alpha exposes the Activity background | Sample alpha as well as RGB; compare RGB565 and RGBA8888, opaque clear and fully opaque diagnostic output |
-| Allocation, context or dimension mismatch | Log actual renderbuffer dimensions/formats/samples, per-format sample support, FBO status, EGL size and GL context identity before/after resume |
-| Device resolve/presentation behavior differs despite legal GL state | Test known-pattern offscreen resolve, direct window resolve and a single-sample texture presentation path independently; compare instrumented and minimally instrumented runs |
+| Hypothesis                                                          | Evidence or isolated experiment                                                                                                                                                                                      |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Resolve inherits a small scissor rectangle                          | Trace scissor enable/box at clear and resolve; compare with a debug resolve that saves, disables, then restores scissor                                                                                              |
+| Window resolve is illegal for the actual default buffer             | Capture actual source/destination formats, color encoding, sample buffers/samples, selected EGL config and per-call resolve errors; compare against a matching single-sample offscreen destination                   |
+| A scene draw/clear uses the wrong framebuffer                       | Log actual read/draw bindings alongside tracked `bound` and pass depth; compare known colors at clear, scene end, early menu resolve and final resolve; check bindings immediately before/after lazy ETC2 self-tests |
+| Main scene is wiped or menu is overwritten                          | Trace a frame's ordered main-view, cockpit/subview, menu-blit, resolve and swap events; test without subviews and with scaled-menu path bypassed separately                                                          |
+| Surface alpha exposes the Activity background                       | Sample alpha as well as RGB; compare RGB565 and RGBA8888, opaque clear and fully opaque diagnostic output                                                                                                            |
+| Allocation, context or dimension mismatch                           | Log actual renderbuffer dimensions/formats/samples, per-format sample support, FBO status, EGL size and GL context identity before/after resume                                                                      |
+| Device resolve/presentation behavior differs despite legal GL state | Test known-pattern offscreen resolve, direct window resolve and a single-sample texture presentation path independently; compare instrumented and minimally instrumented runs                                        |
 
 The ES rules make the first two hypotheses actionable: scissor affects blits, and multisample resolves require matching source/destination formats and rectangle bounds; an ES 3.0 blit destination cannot itself be multisampled. Format-specific sample support can be queried rather than inferred only from `GL_MAX_SAMPLES`. Verify against sections 4.3.3 and 6.1.15 of the [Khronos OpenGL ES 3.0 specification](https://registry.khronos.org/OpenGL/specs/es/3.0/es_spec_3.0.pdf). These are API constraints, not a diagnosis of the Retroid driver
 
@@ -459,39 +525,41 @@ Acceptance requires physical Retroid runs for 2x/4x, both color-depth choices, g
 
 ## Concrete change map
 
-| File or area | Change |
-| --- | --- |
-| New shared `android_graphics_safety.cpp/.h` | Snapshot, state machine, locked durable record, mailbox, deadline decisions |
-| `shared/android_graphics_options.c/.h` | Coherent protected setters and restore path; keep existing unprotected behavior |
-| `shared/graphics_config_transaction.c/.h` | Multi-key config batch patching and recoverable restore publication |
-| `jni_main.c` and new launcher JNI bridge | Trial callbacks, draw acknowledgement, decisions, read/stage/repair APIs |
-| `shared/android_egl_surface.c/.h` | Checked context/surface creation and recovery results |
-| `shared/ogl_msaa_android.c/.h`, `shared/ogl_viewport_android.c/.h` | Stage diagnostics, controlled MSAA probe, trace actual drawable/binding/clip state and evidence-backed MSAA fix |
-| `d1/arch/ogl/ogl.c`, `d2/arch/ogl/ogl.c`, `shared/android_menu_scale.c` | Small diagnostic hooks for clear, scene/subview completion, early menu resolve, final resolve and swap ordering |
-| `d1/arch/sdl/event.c`, `d2/arch/sdl/event.c` | Pump game-thread mailbox/deadline/restores while paused or in menus |
-| `d1/main/game.c`, `d2/main/game.c` | Main-gameplay eligibility hook before rendering |
-| `d1/main/menu.c`, `d2/main/menu.c` | Record native resolution attempts and protected changes; preserve deferred prompt behavior |
-| `d1/arch/ogl/gr.c`, `d2/arch/ogl/gr.c` | Small Android mode restore adapters and resource rebuild hooks |
-| `d1/main/config.c`, `d2/main/config.c` | Recovery before protected config consumption; serialize protected config publication |
-| New `GraphicsConfirmationOverlay.kt` | Modal UI, countdown, default Cancel, fresh-press input |
-| `MainActivity.kt` | Highest-priority input routing, lifecycle cancellation, overlay pause ownership, watchdog/recovery |
-| `VideoInfoOverlay.kt` | Report genuine edits, debounce integration, refresh after restore |
-| `GraphicsSettingsPage.kt`, `SetupConfigFiles.kt`, `SetupActivity.kt` | Stage/read coherent requests through native bridge; repair abandoned trials before launch; refresh resolution UI |
-| Android CMake source lists | Compile shared implementation into both engine variants; add host-test target |
-| `game_introspect.cpp` and automation | Stable safety state and decision actions for integration verification |
+| File or area                                                            | Change                                                                                                           |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| New shared `android_graphics_safety.cpp/.h`                             | Snapshot, state machine, locked durable record, mailbox, deadline decisions                                      |
+| `shared/android_graphics_options.c/.h`                                  | Coherent protected setters and restore path; keep existing unprotected behavior                                  |
+| `shared/graphics_config_transaction.c/.h`                               | Multi-key config batch patching and recoverable restore publication                                              |
+| `jni_main.c` and new launcher JNI bridge                                | Trial callbacks, draw acknowledgement, decisions, read/stage/repair APIs                                         |
+| `shared/android_egl_surface.c/.h`                                       | Checked context/surface creation and recovery results                                                            |
+| `shared/ogl_msaa_android.c/.h`, `shared/ogl_viewport_android.c/.h`      | Stage diagnostics, controlled MSAA probe, trace actual drawable/binding/clip state and evidence-backed MSAA fix  |
+| `d1/arch/ogl/ogl.c`, `d2/arch/ogl/ogl.c`, `shared/android_menu_scale.c` | Small diagnostic hooks for clear, scene/subview completion, early menu resolve, final resolve and swap ordering  |
+| `d1/arch/sdl/event.c`, `d2/arch/sdl/event.c`                            | Pump game-thread mailbox/deadline/restores while paused or in menus                                              |
+| `d1/main/game.c`, `d2/main/game.c`                                      | Main-gameplay eligibility hook before rendering                                                                  |
+| `d1/main/menu.c`, `d2/main/menu.c`                                      | Record native resolution attempts and protected changes; preserve deferred prompt behavior                       |
+| `d1/arch/ogl/gr.c`, `d2/arch/ogl/gr.c`                                  | Small Android mode restore adapters and resource rebuild hooks                                                   |
+| `d1/main/config.c`, `d2/main/config.c`                                  | Recovery before protected config consumption; serialize protected config publication                             |
+| New `GraphicsConfirmationOverlay.kt`                                    | Modal UI, countdown, default Cancel, fresh-press input                                                           |
+| `MainActivity.kt`                                                       | Highest-priority input routing, lifecycle cancellation, overlay pause ownership, watchdog/recovery               |
+| `VideoInfoOverlay.kt`                                                   | Report genuine edits, debounce integration, refresh after restore                                                |
+| `GraphicsSettingsPage.kt`, `SetupConfigFiles.kt`, `SetupActivity.kt`    | Stage/read coherent requests through native bridge; repair abandoned trials before launch; refresh resolution UI |
+| Android CMake source lists                                              | Compile shared implementation into both engine variants; add host-test target                                    |
+| `game_introspect.cpp` and automation                                    | Stable safety state and decision actions for integration verification                                            |
 
 ## Implementation sequence
 
-- [ ] Capture the Retroid MSAA reproduction matrix with existing logs/introspection
-- [ ] Add bounded stage diagnostics and known-pattern resolve/menu probe; run the failing physical-device case
-- [ ] Isolate the failure with one controlled change at a time, implement the supported shared renderer fix and retain D1/D2 regression coverage
-- [ ] Add snapshot normalization, equality/exemption policy, trial state machine, durable record and config batch transaction
-- [ ] Integrate initialization, attempted-configuration markers, native menu changes, config writers, and abandoned-attempt repair
-- [ ] Add game-thread mailbox, gameplay eligibility hooks, filtering/FBO restore, and checked resolution/color-depth restore
-- [ ] Add Kotlin modal, controller/touch routing, absolute deadline and independent watchdog, lifecycle/pause handling
-- [ ] Integrate launcher staging/resume semantics, UI refresh, introspection and automation
-- [ ] Build both Android games, run host coverage and serial device integration tests, and verify desktop guards
-- [ ] Run scoped mixed-language quality tooling on the changed paths and update this plan with results
+- [x] Capture the failing Retroid MSAA case with logs/introspection and verify the corrected device matrix
+- [x] Add bounded stage diagnostics and known-pattern resolve/menu probe; run the failing physical-device case
+- [x] Isolate the failure with one controlled change at a time, implement the supported shared renderer fix and retain D1/D2 regression coverage
+- [x] Add snapshot normalization, equality/exemption policy, trial state machine, durable record and config batch transaction
+- [x] Integrate initialization, attempted-configuration markers, native menu changes, config writers, and abandoned-attempt repair
+- [x] Add game-thread mailbox, gameplay eligibility hooks, filtering/FBO restore, and checked resolution/color-depth restore
+- [x] Add Kotlin modal, controller/touch routing, absolute deadline and independent watchdog, lifecycle/pause handling
+- [x] Integrate launcher staging/resume semantics, UI refresh, introspection and automation
+- [x] Build both Android games, run host coverage and serial device integration tests, and verify desktop guards
+- [x] Run scoped mixed-language quality tooling on the changed paths and update this plan with results
+
+The physical diagnosis and corrected-device validation are complete; detailed evidence and the test-method limits are recorded above
 
 ## Verification
 
@@ -521,3 +589,40 @@ Required scenarios:
 20. On the Retroid, off/2x/4x in both color-depth modes survive cold launch, live toggles, menu transitions and resume; structural MSAA failure rejects a challenged configuration and retains its diagnostics through accepted-settings rollback
 
 Run the Retroid Pocket 4 Pro device checks for actual filtering/MSAA/AF and context/mode restoration. Emulator fault injection verifies coordination and recovery; it cannot establish that the physical device's GPU driver is fixed
+
+## Requested popup entry-point verification, 2026-10-02
+
+Completed on the physical Retroid with APK 23630 for both D1 and D2. The emulator attempt was stopped after detecting another full-suite process using that device; it is not counted as validation. All requested popup entry points pass their behavior checks. The additional renderer-health assertion fails after resolution/context rebuild in both engines, so full mode-restoration validation remains open
+
+FOV review: both engines perform the original-FOV pass for gameplay visibility, homing candidates, automap and demo bookkeeping, then a visual-only custom-FOV pass. The original bookkeeping needs to survive; its full GPU drawing could be removed by a separately verified visibility-only implementation. This verification task does not change that rendering design
+
+### Physical entry-point results
+
+Evidence: `android/temp/retroid-popup-20261002-083353/`, including `results.json`, individual executable automation scripts/results, full native snapshots, `final-logcat.txt`, a post-rollback screenshot and before/test/restored app-data archives
+
+| Entry point | D1 | D2 | Observed behavior |
+| --- | --- | --- | --- |
+| Launcher protected-settings command | 13/13 | 13/13 | Real launcher publication of filtering/MSAA/resolution/color depth stays unchallenged in intro/main menu; first level shows the Kotlin modal with Cancel selected; timeout restores the accepted tuple |
+| Native Graphics Options before a level | 24/24 | 24/24 | Real filtering radio edit stays unchallenged in Options and main menu; first gameplay shows the modal; D-pad selects OK and A durably accepts |
+| Native Graphics Options mid-level | 16/16 | 16/16 | Real filtering radio edit stays unchallenged through the graphics submenu and outer Options menu; closing all menus shows the modal; B restores accepted filtering |
+| Live Video Info overlay | 52/52 | 54/54 | Real controller edits batch filtering/AF, default Cancel via A, MSAA cancellation via B and timeout; underlying values refresh, pause ownership and selected row survive; edit-back suppresses the prompt |
+| Native Screen Resolution | Renderer check fails | Renderer check fails | Real 800x600 edit defers through menus, shows the modal on returning to gameplay, and timeout restores 1334x750 and accepted filtering; context generation advances twice and owned-target pixel probes pass, but scene GL errors continue afterward |
+
+The launcher baselines included accepted AF/HUD filtering, so rollback explicitly retains prior enhancements instead of forcing all-off. Candidate launcher color depth was RGBA8888 and accepted depth RGB565. Controller introspection verifies the Kotlin overlay itself, rather than relying solely on the native challenge phase
+
+An additional D1 run passes 21/21 steps: first-draw `Cancel (5)` changes to `Cancel (4)`, B cancels, a native edit followed by editing back does not prompt, and all-off settings remain unchallenged for six seconds without replacing the accepted enhanced tuple
+
+### Newly reproduced mode-rebuild diagnostic failure
+
+Both native-resolution runs fail their final `msaa.last_scene_gl_error == 0` assertion with 1282 (`GL_INVALID_OPERATION`). D2's live overlay run has zero scene errors before the resolution change; errors accumulate after the change/rollback. The same error is present after the earlier combined launcher-mode timeout. MSAA is off after restoration, resolve failures remain zero, and the owned color/resolve probe passes with restored GL state. The D1 post-rollback screenshot shows the scene and cockpit still rendered. This is separate evidence from the earlier RGB10_A2 MSAA resolve defect
+
+A likely source from code review is stale GPU timer queries: normal mode replacement destroys the EGL context, while query IDs and ring state are cleared only in `ogl_smash_texture_list_internal`'s lost-context branch. The timing helper retains nonzero query IDs across normal replacement. This is a hypothesis, not a confirmed attribution; no speculative renderer fix was made during the entry-point test task
+
+Follow-up:
+
+- Add bounded diagnostics around GPU query read/begin/end operations across ordinary mode replacement, identifying old/new context generations and GL errors at the operation that produces them
+- If confirmed, retire timer resources while their owning context is valid and reset their IDs/ring state for every new context, using shared Android code and minimal D1/D2 hooks
+- Repeat launcher and native resolution rollback on the Retroid in both engines and both requested color depths; require zero new scene errors as well as the existing popup, tuple, context and pixel assertions
+- Keep the custom-FOV visibility-only optimization separate: preserve original render-list, homing, automap and demo side effects, draw only the requested view, and verify replay/gameplay equivalence and CPU/GPU frame cost before removing the baseline draw
+
+The app was stopped before restoration. SHA-256 comparison verifies all 57 original backed-up files were restored exactly, with no extra files in the restored files/shared_prefs trees. Temporary D1 data and test saves were removed with the isolated test tree. USB stay-awake was restored, and the launcher again selects the original default set and player.sg9 resume at 281 seconds. No production source or APK changes were made in this verification task

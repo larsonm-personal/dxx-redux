@@ -118,7 +118,7 @@ considered. The plan picks default-sim because:
 - It preserves the diff against upstream d1/d2 to nearly zero until a specific
   consumer is intentionally moved.
 - A missed migration is a desync today and remains a desync after the split, so
-  default-sim never makes things *worse* than today; it just doesn't help that
+  default-sim never makes things _worse_ than today; it just doesn't help that
   one consumer until it's tagged. Default-FX on a missed simulation site would
   silently break replays of currently-passing demos.
 - The set of non-sim consumers is small and identifiable. The set of simulation
@@ -204,21 +204,21 @@ Explicitly **not** to be migrated (these stay on the sim stream):
 - [ ] Confirm `input_demo_replay.cpp` checkpoint save/restore only reads/writes
       sim state. Add an explicit assert or comment noting FX is never persisted.
 - [x] Re-run the host replay wrapper on a current recorded demo and confirm the
-  replay infrastructure still runs. There is no passing demo yet, so `141502`
-  serves as the current validation/demo-triage target instead.
+      replay infrastructure still runs. There is no passing demo yet, so `141502`
+      serves as the current validation/demo-triage target instead.
 
 ### Phase 3 -- FX stream migration, narrow start
 
 - [x] Migrate the two `d{1,2}/main/game.c` palette consumers
       (`diminish_palette_towards_normal`, `add_computed_color`) to `d_rand_fx()`.
 - [x] Migrate the ambient water/lava sound randomness in `d2/main/game.c` to
-  `d_rand_fx()`.
+      `d_rand_fx()`.
 - [ ] Review `Fusion_next_sound_time` and split warmup-audio jitter from damage
-  timing before moving any of that branch to `d_rand_fx()`.
+      timing before moving any of that branch to `d_rand_fx()`.
 - [x] Build d1 and d2 on Windows; run the focused RNG stream checks.
 - [x] Re-run the host replay wrapper on `141502` and capture the new mismatch
-  position. The frame-1 boundary mismatch moved to frame 2; the remaining
-  early mismatch is legacy palette data from the old pre-split sidecar.
+      position. The frame-1 boundary mismatch moved to frame 2; the remaining
+      early mismatch is legacy palette data from the old pre-split sidecar.
 
 ### Phase 4 -- Broader audit and migration
 
@@ -226,24 +226,24 @@ Explicitly **not** to be migrated (these stay on the sim stream):
       inspection that the consumer does not feed save state, networking, AI,
       physics, or scoring. Migrate to `d_rand_fx()` only after that confirmation.
 - [x] Audit the D2 main-menu autodemo chooser in `main/menu.c` and migrate its
-  idle-time movie/demo selection RNG to `d_rand_fx()`.
+      idle-time movie/demo selection RNG to `d_rand_fx()`.
 - [x] Audit the d1/d2 `endlevel.c` RNG consumers and migrate the explosion,
-  sound-jitter, and starfield presentation rolls to `d_rand_fx()`.
+      sound-jitter, and starfield presentation rolls to `d_rand_fx()`.
 - [x] Audit the d1/d2 `collide.c` collision-delay helper and keep its jitter on
-  the sim stream after deciding collision-adjacent throttles are too close to
-  live player/robot contact handling to treat as safe FX-only state.
+      the sim stream after deciding collision-adjacent throttles are too close to
+      live player/robot contact handling to treat as safe FX-only state.
 - [x] Audit the d1/d2 AI sound-timer paths and keep the `next_misc_sound_time`
-  scheduling rolls on the FX stream after confirming they only throttle robot
-  chatter playback and their own timer update inside `compute_vis_and_vec`.
+      scheduling rolls on the FX stream after confirming they only throttle robot
+      chatter playback and their own timer update inside `compute_vis_and_vec`.
 - [x] Audit the d1/d2 robot death-roll fireball path and move its cadence/size
-  rolls plus the shared `object.c` visual fireball/vclip helper randomness to
-  `d_rand_fx()`.
+      rolls plus the shared `object.c` visual fireball/vclip helper randomness to
+      `d_rand_fx()`.
 - [x] Audit `d1/main/menu.c` plus the planned `scores/newmenu/kconfig/gauges/hud/
-  titles/credits/console/gamefont/text` files in both games and confirm they
-  currently contain no additional RNG consumers to migrate.
+titles/credits/console/gamefont/text` files in both games and confirm they
+      currently contain no additional RNG consumers to migrate.
 - [x] Audit `d1/d2/main/gameseq.c` and keep its wall-clock reseed and spawn-point
-  selection on the sim stream because they directly control multiplayer spawn
-  state.
+      selection on the sim stream because they directly control multiplayer spawn
+      state.
 - [ ] For modules that are clearly all-FX (kconfig visualizer, console decoration),
       use the per-TU `#define DXX_RNG_DEFAULT_STREAM D_RNG_FX` to migrate the file
       in one edit.
@@ -301,33 +301,33 @@ Explicitly **not** to be migrated (these stay on the sim stream):
 ## Progress
 
 - [x] Default decision made: keep `D_RNG_SIM` as the default stream and tag the
-  smaller non-sim surface explicitly with `d_rand_fx()` / `d_srand_fx()`.
+      smaller non-sim surface explicitly with `d_rand_fx()` / `d_srand_fx()`.
 - [x] Phase 1 core landed in `d{1,2}/maths/rand.c` and `d{1,2}/include/maths.h`:
-  two streams, stream-aware state/counter accessors, and legacy APIs still
-  bound to sim.
+      two streams, stream-aware state/counter accessors, and legacy APIs still
+      bound to sim.
 - [x] Phase 2 trace/replay integration landed: annotated wrappers now take a
-  stream and skip FX calls when writing rngtrace sidecars.
+      stream and skip FX calls when writing rngtrace sidecars.
 - [x] Added stream coverage to `android/tests/test_rng_seed_resume.c`.
 - [x] Initial Phase 3 migration landed:
-  `d{1,2}/main/game.c:diminish_palette_towards_normal`,
-  `d2/main/game.c` ambient water/lava sound, and
-  `d{1,2}/2d/palette.c:add_computed_color` now use the FX stream.
+      `d{1,2}/main/game.c:diminish_palette_towards_normal`,
+      `d2/main/game.c` ambient water/lava sound, and
+      `d{1,2}/2d/palette.c:add_computed_color` now use the FX stream.
 - [x] Phase 4 started with a menu/UI audit: D2 main-menu autodemo selection now
-  uses the FX stream, and the matching D1 menu plus the planned UI file set were
-  checked for additional RNG consumers.
+      uses the FX stream, and the matching D1 menu plus the planned UI file set were
+      checked for additional RNG consumers.
 - [x] Phase 4 continued with endlevel/gameseq audit: both `endlevel.c` files now
-  use the FX stream for cinematic explosion and starfield rolls, while both
-  `gameseq.c` files were explicitly left on the sim stream.
+      use the FX stream for cinematic explosion and starfield rolls, while both
+      `gameseq.c` files were explicitly left on the sim stream.
 - [x] Phase 4 re-audited the d1/d2 collision sound-delay jitter in `collide.c`
-  and restored it to the sim stream.
+      and restored it to the sim stream.
 - [x] Phase 4 re-audited `next_misc_sound_time` in d1/d2 AI and confirmed it
-  stays on the FX stream, while the collision-delay helper in `collide.c`
-  stays on the sim stream and the shared non-damaging small-fireball/vclip
-  helper randomness in `object.c` stays on the FX stream.
+      stays on the FX stream, while the collision-delay helper in `collide.c`
+      stays on the sim stream and the shared non-damaging small-fireball/vclip
+      helper randomness in `object.c` stays on the FX stream.
 - [x] D2 validation passed: `run-windows-build.ps1 -Target d2` and
-  `buildd2\maths\test_rng_seed_resume.exe`.
+      `buildd2\maths\test_rng_seed_resume.exe`.
 - [x] D1 validation passed: `run-windows-build.ps1 -Target d1` and
-  `buildd1\maths\test_rng_seed_resume.exe`.
+      `buildd1\maths\test_rng_seed_resume.exe`.
 
 ## New Notes
 

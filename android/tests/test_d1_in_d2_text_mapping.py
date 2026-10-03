@@ -25,10 +25,7 @@ class D1TextMappingTest(unittest.TestCase):
         d1 = text_symbols("d1")
         d2 = text_symbols("d2")
         source = (ROOT / "d2/main/d1_in_d2/d1_in_d2_presentation.c").read_text(encoding="utf-8")
-        ranges = [
-            tuple(map(int, match))
-            for match in re.findall(r"\{\s*(\d+),\s*(\d+),\s*(-?\d+)\s*\}", source)
-        ]
+        ranges = [tuple(map(int, match)) for match in re.findall(r"\{\s*(\d+),\s*(\d+),\s*(-?\d+)\s*\}", source)]
         self.assertGreater(len(d1), 500)
         self.assertGreater(len(d2), 600)
         for name, (index, _) in d2.items():

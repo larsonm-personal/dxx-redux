@@ -39,8 +39,7 @@ class FingerprintMatchingConfigTest {
         }
     }
 
-    private fun config(threshold: String): String =
-        """{"match_threshold":$threshold,"duration_tolerance":0.10}"""
+    private fun config(threshold: String): String = """{"match_threshold":$threshold,"duration_tolerance":0.10}"""
 
     private fun assetFile(): File {
         val candidates =

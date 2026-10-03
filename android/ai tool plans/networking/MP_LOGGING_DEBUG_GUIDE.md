@@ -1,7 +1,9 @@
 # Multiplayer Network Sync Logging Guide
 
 ## Problem Statement
+
 When starting a 2-player game on Android:
+
 - Both players visible in menus
 - Player 2 (client) briefly disappears from player list
 - Chime/error sound plays
@@ -9,7 +11,9 @@ When starting a 2-player game on Android:
 - Players return to main menu
 
 ## Root Cause Analysis
+
 The issue occurs during the `net_udp_level_sync()` process when the game transitions from menu to level start. The sync process can fail due to:
+
 1. Network timeout - client doesn't receive sync packet from host
 2. Socket issues - packets not being sent/received properly
 3. Synchronization failure - host and client states not aligned
@@ -18,6 +22,7 @@ The issue occurs during the `net_udp_level_sync()` process when the game transit
 ## Android-Specific Logging Added
 
 ### Logging Infrastructure
+
 - Uses existing `net_log_comment()` function in `d2/main/net_udp.c` and `d1/main/net_udp.c`
 - Controlled by `GameArg.LogNetTraffic` flag
 - Log output goes to network traffic log file (available via game download)
@@ -26,6 +31,7 @@ The issue occurs during the `net_udp_level_sync()` process when the game transit
 ### Functions with Added Logging
 
 #### 1. `net_udp_level_sync()` (Main Sync Entry Point)
+
 - **File**: `d2/main/net_udp.c` line ~5648, `d1/main/net_udp.c` line ~5554
 - **Logs**:
   - `[ANDROID] level_sync START: N_players=X master=Y Network_status=Z Player_num=P`
@@ -42,6 +48,7 @@ The issue occurs during the `net_udp_level_sync()` process when the game transit
     - Shows success/failure and final connection status
 
 #### 2. `net_udp_wait_for_sync()` (Client Sync Waiting)
+
 - **File**: `d2/main/net_udp.c` line ~5513, `d1/main/net_udp.c` line ~5424
 - **Role**: Called by clients waiting to receive sync from host
 - **Logs**:
@@ -59,6 +66,7 @@ The issue occurs during the `net_udp_level_sync()` process when the game transit
     - Success: sync completed and game starting
 
 #### 3. `net_udp_sync_poll()` (Client Polling Loop)
+
 - **File**: `d2/main/net_udp.c` line ~3764, `d1/main/net_udp.c` line ~3708
 - **Role**: Called every frame while waiting for sync, receives packets
 - **Logs**:
@@ -74,6 +82,7 @@ The issue occurs during the `net_udp_level_sync()` process when the game transit
     - Couldn't resend request - network may be down
 
 #### 4. `net_udp_wait_for_requests()` (Host Waiting for Clients)
+
 - **File**: `d2/main/net_udp.c` line ~5639, `d1/main/net_udp.c` (mirrors added)
 - **Role**: Host waits for all clients to load level before sending sync
 - **Logs**:
@@ -82,6 +91,7 @@ The issue occurs during the `net_udp_level_sync()` process when the game transit
     - Sets up proper connection state tracking
 
 #### 5. `net_udp_request_poll()` (Host Polling Loop)
+
 - **File**: `d2/main/net_udp.c` line ~5608, `d1/main/net_udp.c` line ~5467
 - **Role**: Called every frame on host while waiting for clients
 - **Logs** (every 1 second):
@@ -92,6 +102,7 @@ The issue occurs during the `net_udp_level_sync()` process when the game transit
     - All clients have responded, proceeding to sync send
 
 #### 6. `net_udp_send_sync()` (Host Sending Sync)
+
 - **File**: `d2/main/net_udp.c` line ~4968, `d1/main/net_udp.c` line ~4845
 - **Role**: Host sends level sync packet to all clients
 - **Logs**:
@@ -106,63 +117,78 @@ The issue occurs during the `net_udp_level_sync()` process when the game transit
 ## Interpreting Logs: Common Failure Scenarios
 
 ### Scenario 1: Client Never Gets Sync Packet
+
 **Logs show**:
+
 - Client: `[ANDROID] wait_for_sync: entering menu loop...`
 - Repeated: `[ANDROID] sync_poll: timeout waiting for sync, resending...` (attempts 1,2,3...)
 - Never: `[ANDROID] sync_poll: Network_status changed to PLAYING`
 - Client: `[ANDROID] wait_for_sync FAILED: not in PLAYING status`
 
 **Causes**:
+
 - Host sync send failed - check host logs for send errors
 - Network packet loss between host and client
 - Android firewall blocking UDP packets to client
 - Client socket not properly listening for packets
 
 ### Scenario 2: Host Never Gets Client Request
+
 **Logs show** (Host):
+
 - `[ANDROID] wait_for_requests START...`
 - Repeated: `[ANDROID] request_poll: 0/2 players ready...`
 - Never: `[ANDROID] request_poll: all players ready`
 - Eventually timeout
 
 **Causes**:
+
 - Client request packets not reaching host
 - Android firewall blocking UDP packets from client
 - Network interface change before sync starts
 - Client never entered wait_for_sync() state
 
 ### Scenario 3: Host Disconnects During Sync
+
 **Logs show** (Client):
+
 - `[ANDROID] sync_poll: host disconnected!`
 
 **Causes**:
+
 - Host process crashed
 - Host network connection lost
 - Host shut down abruptly
 - Network interface change on host
 
 ### Scenario 4: Insufficient Start Positions
+
 **Logs show** (Host):
+
 - `[ANDROID] send_sync FAILED: not enough start positions`
 
 **Causes**:
+
 - Level loaded with fewer player spawn points than players in game
 - Need level with at least N spawn positions for N players
 
 ## Enabling Logging
 
 ### Method 1: Command Line Flag
+
 ```bash
 # Start game with net traffic logging enabled
 ./game --LogNetTraffic
 ```
 
 ### Method 2: Configuration File
+
 Check `playsave.c` or game configuration for `LogNetTraffic` setting.
 
 ## Accessing Logs
 
 ### Android
+
 ```bash
 # Download net traffic log from emulator/device
 adb pull /data/data/com.dxxredux.app/files/net_traffic.log
@@ -172,12 +198,15 @@ adb pull /data/data/com.dxxredux.app/files/net_traffic.log
 ```
 
 ### Desktop
+
 Log files are written to game data directory, typically:
+
 - Linux: `~/.local/share/dxx-redux/`
 - Windows: `AppData\Local\dxx-redux\`
 - macOS: `~/Library/Application Support/dxx-redux/`
 
 ## Log File Format
+
 ```
 timestamp[ms] [ANDROID] message text
 1234.567890 [ANDROID] level_sync START: N_players=2 master=1 Network_status=1 Player_num=0

@@ -45,7 +45,7 @@ static int test_exists(void *opaque, const char *path)
 }
 
 static int test_rename(void *opaque, const char *old_path,
-	                   const char *new_path)
+                       const char *new_path)
 {
 	struct test_context *context = (struct test_context *) opaque;
 	int old_index = file_index(old_path);
@@ -102,7 +102,7 @@ static struct android_file_pair_ops ops(struct test_context *context)
 }
 
 static void reset_pair(struct test_context *context, int old_companion,
-	                   int new_companion)
+                       int new_companion)
 {
 	memset(context, 0, sizeof(*context));
 	context->present[FILE_PRIMARY_TEMP] = 1;
@@ -116,8 +116,8 @@ static void reset_pair(struct test_context *context, int old_companion,
 }
 
 static void expect_pair(const struct test_context *context, int primary,
-	                    int companion_present, int companion,
-	                    const char *message)
+                        int companion_present, int companion,
+                        const char *message)
 {
 	expect(context->present[FILE_PRIMARY] &&
 	           context->value[FILE_PRIMARY] == primary &&

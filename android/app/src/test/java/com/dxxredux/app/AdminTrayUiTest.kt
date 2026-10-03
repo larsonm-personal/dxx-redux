@@ -41,7 +41,12 @@ class AdminTrayUiTest {
 
     @Test
     fun touchModeKeepsAutomapOutWhenTouchButtonExists() {
-        assertFalse(adminTrayVisibleActions(gamepadOnlyMode = false, hasTouchAutomapButton = true).contains(TouchOverlayView.ADMIN_AUTOMAP))
+        assertFalse(
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+            ).contains(TouchOverlayView.ADMIN_AUTOMAP),
+        )
     }
 
     @Test

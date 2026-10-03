@@ -16,8 +16,7 @@ static int write_text_file(const char *path, const char *text)
 	FILE *f = fopen(path, "wb");
 	if (!f)
 		return 0;
-	if (fwrite(text, 1, strlen(text), f) != strlen(text))
-	{
+	if (fwrite(text, 1, strlen(text), f) != strlen(text)) {
 		fclose(f);
 		return 0;
 	}
@@ -56,32 +55,29 @@ int main(void)
 	if (input_demo_rng_mode_is_compatible(D_RAND_REPLAY_MODE_OUTPUT_LOG, engine_mode))
 		return report_failure("output_log rng_mode unexpectedly marked compatible");
 	matching_mode_name = input_demo_rng_mode_name(engine_mode);
-	mismatching_mode_name = engine_mode == D_RAND_REPLAY_MODE_LCG_STATE ?
-		"libc_reseed" : "lcg_state";
-	matching_demo = engine_mode == D_RAND_REPLAY_MODE_LCG_STATE ?
-		"{\"type\":\"header\",\"rng_mode\":\"lcg_state\"}\n" :
-		"{\"type\":\"header\",\"rng_mode\":\"libc_reseed\"}\n";
+	mismatching_mode_name = engine_mode == D_RAND_REPLAY_MODE_LCG_STATE ? "libc_reseed" : "lcg_state";
+	matching_demo = engine_mode == D_RAND_REPLAY_MODE_LCG_STATE ? "{\"type\":\"header\",\"rng_mode\":\"lcg_state\"}\n" : "{\"type\":\"header\",\"rng_mode\":\"libc_reseed\"}\n";
 	error = input_demo_rng_mode_parse_metadata_text(matching_demo, &parsed_mode);
 	if (error)
 		return report_failure(error);
 	if (parsed_mode != engine_mode)
 		return report_failure("demo text parsed the wrong rng_mode");
 	error = input_demo_rng_mode_validate_metadata_text(matching_demo, engine_mode,
-		&parsed_mode);
+	                                                   &parsed_mode);
 	if (error)
 		return report_failure(error);
 	error = input_demo_rng_mode_validate_metadata_text(missing_demo, engine_mode,
-		&parsed_mode);
+	                                                   &parsed_mode);
 	if (!error)
 		return report_failure("missing rng_mode demo unexpectedly validated");
 	error = input_demo_rng_mode_validate_metadata_text(legacy_demo, engine_mode,
-		&parsed_mode);
+	                                                   &parsed_mode);
 	if (!error)
 		return report_failure("legacy per_frame_seed demo unexpectedly validated");
 	if (!write_text_file(demo_path, matching_demo))
 		return report_failure("could not write demo probe file");
 	error = input_demo_rng_mode_validate_metadata_file(demo_path, engine_mode,
-		&parsed_mode);
+	                                                   &parsed_mode);
 	remove(demo_path);
 	if (error)
 		return report_failure(error);

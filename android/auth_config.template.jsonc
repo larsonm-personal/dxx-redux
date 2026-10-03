@@ -22,5 +22,5 @@
 
     // Play Games app ID (numeric, from Play Console > Play Games Services)
     // Used in AndroidManifest.xml as com.google.android.gms.games.APP_ID
-    "games_app_id": "000000000000"
+    "games_app_id": "000000000000",
 }

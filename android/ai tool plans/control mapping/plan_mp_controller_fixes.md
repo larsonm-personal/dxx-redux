@@ -53,6 +53,7 @@ Add a config version bump that forces re-patching of pilot files.
 ### Step 1.2: Support half-axis or full-axis for ALL analog axes
 
 Use InputDevice.MotionRange as UI hint:
+
 - min=0,max=1 -> suggest half-axis options first (triggers)
 - min=-1,max=1 -> suggest full-axis options first (sticks)
 - Offer BOTH options regardless
@@ -61,17 +62,20 @@ The buildJoyPairs logic already handles this generically (checks HALF_AXIS_MAP +
 No C changes needed.
 
 Files:
+
 - android/app/src/main/java/com/dxxredux/app/ControllerConfigPage.kt
 
 ## Phase 2: Back Button Navigation
 
 Add BackHandler to each nav state in MultiplayerScreen:
+
 - BROWSER: BackHandler(onBack = onBack) -> returns to launcher
 - LAN: BackHandler -> goes to BROWSER
 - FRIENDS: BackHandler -> goes to BROWSER
 - LOBBY: BackHandler -> calls leave lobby, goes to BROWSER
 
 Files:
+
 - android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerScreen.kt
 
 ## Phase 3: LAN Join Flow
@@ -97,6 +101,7 @@ In LanContent, observe joinedLobbyId. When set, show lobby view.
 When cleared, return to discovery.
 
 Files:
+
 - android/app/src/main/java/com/dxxredux/app/lobby/LobbyProtocol.kt
 - android/app/src/main/java/com/dxxredux/app/lobby/LobbyService.kt
 - android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt
@@ -120,6 +125,7 @@ Add nativeOnPauseMultiplayer() or flag check in nativeOnPause().
 Verify multiplayer network code runs without render surface.
 
 Files:
+
 - android/app/src/main/AndroidManifest.xml
 - NEW: android/app/src/main/java/com/dxxredux/app/MultiplayerForegroundService.kt
 - android/app/src/main/java/com/dxxredux/app/MainActivity.kt

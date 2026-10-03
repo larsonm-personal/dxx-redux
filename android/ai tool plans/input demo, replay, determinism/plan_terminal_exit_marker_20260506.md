@@ -1,9 +1,11 @@
 # Plan: terminal exit marker in recorded replay results
 
 ## Goal
+
 - add an explicit terminal-exit marker to input demo result records so replays can identify level-exit or mine-exit terminal comparisons without heuristics
 
 ## Steps
+
 - [completed] extend the shared input demo result schema with an optional terminal-exit field
 - [completed] wire the D2 quick-record level-exit stop path to set the recorded terminal-exit marker
 - [completed] wire D2 replay terminal result writes to emit the same marker in actual results
@@ -11,6 +13,7 @@
 - [completed] run a focused build and replay validation, then update this plan with the outcome
 
 ## Notes
+
 - the current wrapper pass relies on a fallback for quiet headless replays because older demos do not carry an explicit terminal-exit marker
 - the requested change is to make new recordings mark that terminal condition directly in the embedded result record
 - validated replay output now writes `"terminal_exit": "level_exit"` for `android/temp_game_logs/d2_descent2_level3_20260506_223956.dximdemo`

@@ -6,13 +6,13 @@ Goal: move the full guidebot checkpoint state needed for input demo replay out i
 
 ## Phases
 
-| phase | task | status |
-|---|---|---|
-| 1 | Enumerate the full escort and buddy AI state that replay currently reconstructs or suppresses after checkpoint load. | completed |
-| 2 | Expand the shared demo checkpoint fixture/JSON parsing so it can carry the full buddy checkpoint state. | completed |
-| 3 | Restore that full buddy checkpoint state in D2 after loading the embedded save and remove replay-only escort compensation that becomes obsolete. | completed |
-| 4 | Rebuild the touched host target and rerun the failing checkpoint replay to verify the first RNG mismatch is gone or moves. | completed |
-| 5 | Update notes with the new behavior and any remaining desync if the demo still diverges. | completed |
+| phase | task                                                                                                                                             | status    |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
+| 1     | Enumerate the full escort and buddy AI state that replay currently reconstructs or suppresses after checkpoint load.                             | completed |
+| 2     | Expand the shared demo checkpoint fixture/JSON parsing so it can carry the full buddy checkpoint state.                                          | completed |
+| 3     | Restore that full buddy checkpoint state in D2 after loading the embedded save and remove replay-only escort compensation that becomes obsolete. | completed |
+| 4     | Rebuild the touched host target and rerun the failing checkpoint replay to verify the first RNG mismatch is gone or moves.                       | completed |
+| 5     | Update notes with the new behavior and any remaining desync if the demo still diverges.                                                          | completed |
 
 ## Notes
 

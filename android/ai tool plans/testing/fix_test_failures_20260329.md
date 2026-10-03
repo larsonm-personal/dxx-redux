@@ -25,21 +25,25 @@ Test report shows 9 failures/timeouts across 2 runs (20260328 and 20260329). Cri
 ## Plan
 
 ### Phase 1: Fix run_test_menu.sh
+
 - [x] Add ps1 test discovery from `android/tests/test_*.ps1`
 - [x] Fix path construction for cross-platform use
 - [x] Call ps1 tests via `run_test.ps1` or `pwsh`, json5 tests via `run_automation.sh`
 
 ### Phase 2: Fix JSON5 test flakiness
+
 - [x] Add `wait_ms` delays after menu-dismissing select steps in all affected tests
 - [x] Increase timeouts for timing-sensitive assertions
 - [x] Increase test_death player_dead timeout
 
 ### Phase 3: Investigate ps1 failures
+
 - [x] Check test_saf_archiver re-push logic
 - [x] Check test_all_extracts spec discovery
 - [x] Check test_gog_installer_redbook_unified timeout
 
 ### Phase 4: Verify
+
 - [ ] Run linters
 - [ ] Build
 - [ ] Run tests

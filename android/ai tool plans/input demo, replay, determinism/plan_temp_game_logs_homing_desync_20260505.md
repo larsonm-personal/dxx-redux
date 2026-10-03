@@ -3,9 +3,11 @@
 Status: short-demo first replay-only extra RNG call isolated to a specific snipe robot; fresh version-4 recording `183034` is now under compare to confirm whether it diverges on the same awareness path or a different first mismatch
 
 Goal:
+
 - analyze the new fresh demo in `android/temp_game_logs`, with special focus on the apparent desync after a robot-fired homing missile hits the player
 
 Plan:
+
 - [x] identify the newest `.dximdemo` artifact and matching sidecars in `android/temp_game_logs`
 - [x] replay the demo with result, RNG trace, and debug/probe outputs captured under `temp/`
 - [x] inspect embedded recorder probe events around robot homing fire, homing path, player hit, and first replay mismatch
@@ -33,6 +35,7 @@ Plan:
 - [x] verify the Android emulator replay handoff for `183034` and capture the on-device failure mode
 
 Notes:
+
 - prefer embedded frame events from the new recorder instrumentation over screenshots or visual inspection
 - do not assume the visible homing hit is the first state divergence until the replay mismatch and event timeline agree
 - current artifact set: `d2_descent2_level4_20260505_075528.dximdemo`, `.dximdemo.rngtrace.jsonl`, and `.dem`

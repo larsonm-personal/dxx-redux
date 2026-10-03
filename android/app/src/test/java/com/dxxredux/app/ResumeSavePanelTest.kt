@@ -139,7 +139,8 @@ class ResumeSavePanelTest {
 
     @Test
     fun resumeLaunchPathIsRelativeToActiveGameRoot() {
-        val launchPath = resolveResumeSaveLaunchPath(File("/data/user/0/com.dxxredux.app/files"), candidate("auto_exit", 8))
+        val launchPath =
+            resolveResumeSaveLaunchPath(File("/data/user/0/com.dxxredux.app/files"), candidate("auto_exit", 8))
 
         assertEquals("Players/test.sg8", launchPath)
     }

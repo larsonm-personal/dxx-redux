@@ -52,8 +52,7 @@ were changed, and no runtime tests or builds were run for this document
   `75ba13c44259f1e40c0df70961c78abba898eafe`
 
 The [released-source README](https://github.com/videogamepreservation/descent2/blob/75ba13c44259f1e40c0df70961c78abba898eafe/README.TXT)
-identifies the source as version 1.2 and dates the release notice December 14,
-1999. It is evidence for the original implementation, not proof of the exact
+identifies the source as version 1.2 and dates the release notice December 14, 1999. It is evidence for the original implementation, not proof of the exact
 behavior of every 1996 retail executable
 
 Use [pinned Redux escort.c](https://github.com/dxx-redux/dxx-redux/blob/9fd90f03513663ce1372c8cfa723b7a73c4219fa/d2/main/escort.c)
@@ -91,18 +90,18 @@ estimates and should not be reverted wholesale
 
 ## Proposed behavior contract
 
-| Area | Original | Enhanced |
-| --- | --- | --- |
-| Default / Next | Original key ordering and boss/reactor/exit selection | Current compiled mission action selection |
-| Missing or unreachable target | Original search results, failure handling, return/scram behavior | Current prerequisite and reachable-frontier guidance |
-| Exit command | Direct classic exit search/path | Current prerequisite-aware, timer-safe exit guidance |
-| Hostages | Classic object search and path | Current hostage prerequisite planning |
-| Energy, shields, robots, dropped items, markers, scram | Classic command semantics | Preserve current behavior |
-| Doors and grates | Original companion doorway policy, including outbound/return distinctions | Current route passability and clearance rules |
-| Movement | Classic path construction, polishing, steering, return thresholds, and cadence | Current waypoint, precision, stall recovery, and smoothing behavior |
-| Find Secret / Unexplored | Initially unavailable; neither command has an original counterpart | Available as today |
-| Controls, recall/deploy, ownership, helper display | Retain as explicit modern conveniences | Retain |
-| Metadata analysis and automap features | Remain available independently of live Guidebot routing | Remain available |
+| Area                                                   | Original                                                                       | Enhanced                                                            |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Default / Next                                         | Original key ordering and boss/reactor/exit selection                          | Current compiled mission action selection                           |
+| Missing or unreachable target                          | Original search results, failure handling, return/scram behavior               | Current prerequisite and reachable-frontier guidance                |
+| Exit command                                           | Direct classic exit search/path                                                | Current prerequisite-aware, timer-safe exit guidance                |
+| Hostages                                               | Classic object search and path                                                 | Current hostage prerequisite planning                               |
+| Energy, shields, robots, dropped items, markers, scram | Classic command semantics                                                      | Preserve current behavior                                           |
+| Doors and grates                                       | Original companion doorway policy, including outbound/return distinctions      | Current route passability and clearance rules                       |
+| Movement                                               | Classic path construction, polishing, steering, return thresholds, and cadence | Current waypoint, precision, stall recovery, and smoothing behavior |
+| Find Secret / Unexplored                               | Initially unavailable; neither command has an original counterpart             | Available as today                                                  |
+| Controls, recall/deploy, ownership, helper display     | Retain as explicit modern conveniences                                         | Retain                                                              |
+| Metadata analysis and automap features                 | Remain available independently of live Guidebot routing                        | Remain available                                                    |
 
 Secret and Unexplored are a proposed product boundary, not a user-approved
 decision. Secret could later be retained as an explicitly modern command using
@@ -116,22 +115,22 @@ the sake of matching source text
 
 Source locations below refer to the examined workspace revision
 
-| Location | Finding and required work |
-| --- | --- |
-| `d2/main/escort.c:2261`, `escort_set_goal_object` | The fallback is already modified: owner player key flags, different missing-key ordering, reactor-existence checks, and exit fallback. Bypassing metadata does not restore the baseline selector |
-| `escort.c:1265`, `1892`, `1060` | Special commands, path creation, and goal completion contain enhanced Exit and Hostage handling. Original needs the original command/path/completion semantics, not merely a different Next goal |
-| `escort.c:1819`, `find_exit_segment` | Adds a TT_EXIT fallback for trigger-only community levels; baseline searches external child `-2` only |
-| `escort.c:2317`, `time_to_visit_player` | Suppresses return when the player is nearby and visibly following a route. Original must follow its original return rules |
-| `escort.c:2678`, `do_escort_frame` | Contains route monitoring and delayed recalculation. Its return-to-goal conditions also unconditionally require the path midpoint and use `MIN_ESCORT_DISTANCE - F1_0/4`; upstream uses the distance threshold without those additions |
-| `escort_goal_policy.h`, `escort.c:320` | Four-per-second path recalculation limiter belongs to Enhanced; preserve original cadence and random calls in Original |
-| `d2/main/ai2.c:1696`, `ai_door_is_openable` | The added closed-wall/non-flyable-illusion rejection is compile-time gated, not runtime gated. It affects the classic BFS too, including calls with a null object meaning companion |
-| `d2/main/aipath.c:489`, `1065` | General path machinery now supports route passability, two avoided edges, and clearance retries. Keep a verified ordinary path through it or restore a narrowly scoped reference path; do not duplicate the entire AI system |
-| `aipath.c:1349`, `1451`, `1550`, `1730`, `1755` | Enhanced waypoint arrival, adjustment, approach recovery, and steering affect actual navigation. Gate their application on the effective routing mode and extract cohesive helpers into new files |
-| `aipath.c:1942`, `d2/main/input_demo_hooks.c:2568` | Velocity averaging runs for companions on Android/live-test builds even without an active route goal. Clearing `Escort_route_goal.active` is insufficient; Original must use the reference velocity assignment |
-| `aipath.c:164`, `1576` | Dynamic temporary path storage, invalid-segment guards, and long-path cursor handling are safety/capacity changes. Audit and retain with documented fidelity exceptions |
-| `d2/main/guidebot_route.c:175`, `1855`, `1947` | Route-following predicate, metadata refresh, and completion monitor currently have no Original/Enhanced setting. Prevent enhanced publication and AI mutations in Original |
-| `d2/main/game.c:1740` | Android calls the enhanced completion monitor from the game loop, outside `do_escort_frame`; it needs the same boundary |
-| `escort.c:2415`, `4157` | Restore and owner-handoff paths rebuild navigation and may refresh enhanced metadata; make these mode-aware |
+| Location                                           | Finding and required work                                                                                                                                                                                                              |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `d2/main/escort.c:2261`, `escort_set_goal_object`  | The fallback is already modified: owner player key flags, different missing-key ordering, reactor-existence checks, and exit fallback. Bypassing metadata does not restore the baseline selector                                       |
+| `escort.c:1265`, `1892`, `1060`                    | Special commands, path creation, and goal completion contain enhanced Exit and Hostage handling. Original needs the original command/path/completion semantics, not merely a different Next goal                                       |
+| `escort.c:1819`, `find_exit_segment`               | Adds a TT_EXIT fallback for trigger-only community levels; baseline searches external child `-2` only                                                                                                                                  |
+| `escort.c:2317`, `time_to_visit_player`            | Suppresses return when the player is nearby and visibly following a route. Original must follow its original return rules                                                                                                              |
+| `escort.c:2678`, `do_escort_frame`                 | Contains route monitoring and delayed recalculation. Its return-to-goal conditions also unconditionally require the path midpoint and use `MIN_ESCORT_DISTANCE - F1_0/4`; upstream uses the distance threshold without those additions |
+| `escort_goal_policy.h`, `escort.c:320`             | Four-per-second path recalculation limiter belongs to Enhanced; preserve original cadence and random calls in Original                                                                                                                 |
+| `d2/main/ai2.c:1696`, `ai_door_is_openable`        | The added closed-wall/non-flyable-illusion rejection is compile-time gated, not runtime gated. It affects the classic BFS too, including calls with a null object meaning companion                                                    |
+| `d2/main/aipath.c:489`, `1065`                     | General path machinery now supports route passability, two avoided edges, and clearance retries. Keep a verified ordinary path through it or restore a narrowly scoped reference path; do not duplicate the entire AI system           |
+| `aipath.c:1349`, `1451`, `1550`, `1730`, `1755`    | Enhanced waypoint arrival, adjustment, approach recovery, and steering affect actual navigation. Gate their application on the effective routing mode and extract cohesive helpers into new files                                      |
+| `aipath.c:1942`, `d2/main/input_demo_hooks.c:2568` | Velocity averaging runs for companions on Android/live-test builds even without an active route goal. Clearing `Escort_route_goal.active` is insufficient; Original must use the reference velocity assignment                         |
+| `aipath.c:164`, `1576`                             | Dynamic temporary path storage, invalid-segment guards, and long-path cursor handling are safety/capacity changes. Audit and retain with documented fidelity exceptions                                                                |
+| `d2/main/guidebot_route.c:175`, `1855`, `1947`     | Route-following predicate, metadata refresh, and completion monitor currently have no Original/Enhanced setting. Prevent enhanced publication and AI mutations in Original                                                             |
+| `d2/main/game.c:1740`                              | Android calls the enhanced completion monitor from the game loop, outside `do_escort_frame`; it needs the same boundary                                                                                                                |
+| `escort.c:2415`, `4157`                            | Restore and owner-handoff paths rebuild navigation and may refresh enhanced metadata; make these mode-aware                                                                                                                            |
 
 Two additional fidelity traps deserve explicit fixtures:
 
@@ -312,13 +311,13 @@ planning. Do not require Original to pass Enhanced mission-completion targets
 
 ## Delivery stages
 
-| Stage | Deliverable | Exit condition |
-| --- | --- | --- |
-| 1. Freeze the contract | Pinned references, per-function difference ledger, minimal independent reference fixtures, decided exceptions | Goal, doorway, return cadence, and velocity differences are reproducible |
-| 2. Finish the separation | Native mode boundary and extracted enhanced hooks, still defaulting to Enhanced | Existing enhanced live fixtures retain behavior and RNG outcomes |
-| 3. Restore Original | Reference goal selection, classic commands, paths, movement, and cadence | Original reference cases pass, including no accidental enhanced work |
-| 4. Integrate selection | Settings, session authority, saves, replays, commands, and diagnostics | Selected mode survives all supported initialization/restore/ownership paths |
-| 5. Certify the feature | Live fidelity fixtures, Enhanced regressions, co-op/D1-in-D2 checks, cross-platform builds | Both modes meet their own acceptance contract with documented exceptions |
+| Stage                    | Deliverable                                                                                                   | Exit condition                                                              |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 1. Freeze the contract   | Pinned references, per-function difference ledger, minimal independent reference fixtures, decided exceptions | Goal, doorway, return cadence, and velocity differences are reproducible    |
+| 2. Finish the separation | Native mode boundary and extracted enhanced hooks, still defaulting to Enhanced                               | Existing enhanced live fixtures retain behavior and RNG outcomes            |
+| 3. Restore Original      | Reference goal selection, classic commands, paths, movement, and cadence                                      | Original reference cases pass, including no accidental enhanced work        |
+| 4. Integrate selection   | Settings, session authority, saves, replays, commands, and diagnostics                                        | Selected mode survives all supported initialization/restore/ownership paths |
+| 5. Certify the feature   | Live fidelity fixtures, Enhanced regressions, co-op/D1-in-D2 checks, cross-platform builds                    | Both modes meet their own acceptance contract with documented exceptions    |
 
 Stage 1 is the best next implementation task. It should settle the historical
 quirks and establish evidence before restructuring the large escort function

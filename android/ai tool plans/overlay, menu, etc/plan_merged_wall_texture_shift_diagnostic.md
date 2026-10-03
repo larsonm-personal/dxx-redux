@@ -208,7 +208,7 @@ unaffected. Rank them Strong / Medium / Weak after phase 1A:
 - D2 has the same call structure in `d2/main/render.c`. No D1-only offset
   or scale is applied before the draw call
 - Conclusion: the authored UVs and their orient bits (`(tmap2 & 0xC000) >>
-  14`) are identical between the merge-cached path and the two-pass path.
+14`) are identical between the merge-cached path and the two-pass path.
   Any observed mis-alignment must come from how those UVs are consumed
   downstream, not from the data itself
 
@@ -216,6 +216,7 @@ unaffected. Rank them Strong / Medium / Weak after phase 1A:
 
 Branch 1: `force_two_pass` (`d1/arch/ogl/ogl.c:2928..2953`, enabled by
 `g_merged_wall_force_two_pass`, which is what `m154 exp` cycles):
+
 - TU0 bound to `bmbot`, TU1 bound to `bmovl`, TU2 bound to
   `bmovl->gltexture_mask` when `super`
 - `texcoordbot_array` = face `uvl_list` straight:
@@ -230,20 +231,21 @@ Branch 1: `force_two_pass` (`d1/arch/ogl/ogl.c:2928..2953`, enabled by
 
 Branch 2: `merge_cached` (`d1/arch/ogl/ogl.c:2955..2972`, default when
 `!force_two_pass && (bmovl->bm_flags & BM_FLAG_TRANSPARENT)`):
+
 - `ogl_android_get_cached_plain_texmerge_bitmap()` at
   `d1/arch/ogl/ogl.c:1994..2210` pre-composites `bmbot` and `bmovl` into an
   FBO texture using a full-screen quad with fixed NDC corners
   `{(-1,+1), (+1,+1), (+1,-1), (-1,-1)}` and `base_u/base_v =
-  {(0,0),(1,0),(1,1),(0,1)}`
+{(0,0),(1,0),(1,1),(0,1)}`
 - Inside `ogl_android_texmerge_build_uvs()` at
   `d1/arch/ogl/ogl.c:1958..1992` the bot UVs are `base_u * bot_u_max,
-  base_v * bot_v_max`; the ovl UVs apply the same orient table as Branch 1
+base_v * bot_v_max`; the ovl UVs apply the same orient table as Branch 1
   but to the fixed `base_u/base_v` coords, not to the face UVs
 - Cached texture is written with `entry->texture->u = 1.0f; v = 1.0f`
   regardless of the source bitmaps' `u/v`
   (`d1/arch/ogl/ogl.c:2088..2089`)
 - Face is then drawn by `g3_draw_tmap(nv, pointlist, uvl_list, ...,
-  merged)` at `d1/arch/ogl/ogl.c:2972`. That helper at
+merged)` at `d1/arch/ogl/ogl.c:2972`. That helper at
   `d1/arch/ogl/ogl.c:2674` uses the face UV directly as the texcoord, no
   further scaling: `texcoord_array[i] = f2glf(uvl_list[c].u/v)`
   (`d1/arch/ogl/ogl.c:2780..2781`)
@@ -251,6 +253,7 @@ Branch 2: `merge_cached` (`d1/arch/ogl/ogl.c:2955..2972`, default when
 Branch 3: legacy CPU `texmerge_get_cached_bitmap` (reached earlier in
 `render_face()` when `DbgAltTexMerge == 0` and not the Android-default
 path, or when the "old texmerge" experiment is active):
+
 - `merge_textures_new()` at `d1/main/texmerge.c:302` walks
   `dest_data[wh*y + x]` and fills it from `top_data[...]` with an orient
   table:
@@ -492,7 +495,7 @@ in the exportable `debuglogs/debuglog_*.txt` under `DLOG_TEXTURE`
 - [ ] `android/run-code-quality.ps1 -Fix` passes
 - [ ] Both automation scripts pass on the emulator with
       `android\run_test.ps1 -ScriptName probe_merged_wall_level1_d1.json5
-      -Game d1` and the D2 equivalent
+-Game d1` and the D2 equivalent
 
 ## Phase 3: Collect evidence, classify the shift
 
@@ -516,6 +519,7 @@ Once the probe logs are available:
       evidence to the fix plan
 
 ## Phase 3a: create a failing test
+
 - [ ] create a json test for a single d1 level instance that navigates to a location (provided in logs) that is facing a misaligned face
 - [ ] using new introspection bits, test for the correct alignment
 - [ ] ensure the test fails because of the existing misalignment
@@ -569,15 +573,15 @@ Once the probe logs are available:
 - [x] Phase 2D: run both probe scripts on the emulator and confirm
       probe output appears in the exported debug log
 - [x] Phase 3: tabulate the current D2 and provisional D1 emulator probe
-  output, including route and shift fields
+      output, including route and shift fields
 - [x] Phase 3: rerun D2 with a fixed pose using
-  `probe_merged_wall_level1_d2_phase3_equal_pose.json5`
+      `probe_merged_wall_level1_d2_phase3_equal_pose.json5`
 - [x] Phase 3: extract the 2026-04-20 phone D1 tap poses from the exported
-  debug log and separate real probe taps from duplicate snapshot taps
+      debug log and separate real probe taps from duplicate snapshot taps
 - [ ] Phase 3: replace the provisional D1 `face_first_merged` probe target
-  with the known-bad phone pose list
+      with the known-bad phone pose list
 - [ ] Phase 3: unify the Video Info merged-wall tap UI to one end-user
-  action that sends the full probe request
+      action that sends the full probe request
 - [ ] Phase 3: collect emulator + phone logs, tabulate shift values,
       update hypothesis ranking
 
@@ -603,14 +607,14 @@ Once the probe logs are available:
 
 ### Phase 3 groundwork: current dataset
 
-| label | script | pose | route | merge_impl | orient | ovl path | flip axis | u_shift_hint | v_shift_hint | notes |
-| ----- | ------ | ---- | ----- | ---------- | ------ | -------- | --------- | ------------ | ------------ | ----- |
-| `d2_equal_default` | `probe_merged_wall_level1_d2_phase3_equal_pose.json5` | `seg=83 side=3 face=1 distance=12.0` | `old_texmerge` | `auto_old_texmerge` | `0` | `B3_orient0` | `none` | `0.170898` | `0.000000` | normalized D2 baseline |
-| `d2_equal_two_pass` | `probe_merged_wall_level1_d2_phase3_equal_pose.json5` | `seg=83 side=3 face=1 distance=12.0` | `force_two_pass` | `gpu_two_pass` | `0` | `B1_orient0` | `none` | `0.171310` | `0.003510` | same pose as the other D2 rows |
-| `d2_equal_forced_legacy` | `probe_merged_wall_level1_d2_phase3_equal_pose.json5` | `seg=83 side=3 face=1 distance=12.0` | `old_texmerge` | `auto_old_texmerge` | `0` | `B3_orient0` | `none` | `0.170898` | `0.000000` | matches `d2_equal_default` |
-| `d1_default` | `probe_merged_wall_level1_d1.json5` | `seg=0 side=1 face=0 distance=6.0` | `merge_cached` | `gpu_cached_single` | `0` | `B2_orient0` | `V` | `0.000000` | `0.000000` | provisional first-merged face, not the reported bad pose |
-| `d1_two_pass` | `probe_merged_wall_level1_d1.json5` | `seg=0 side=1 face=0 distance=6.0` | `merge_cached` | `gpu_cached_single` | `0` | `B2_orient0` | `V` | `0.000000` | `0.000000` | force-two-pass toggle did not change the route on this face |
-| `d1_forced_legacy` | `probe_merged_wall_level1_d1.json5` | `seg=0 side=1 face=0 distance=6.0` | `merge_cached` | `gpu_cached_single` | `0` | `B2_orient0` | `V` | `0.000000` | `0.000000` | old-legacy toggle also stayed on cached merge |
+| label                    | script                                                | pose                                 | route            | merge_impl          | orient | ovl path     | flip axis | u_shift_hint | v_shift_hint | notes                                                       |
+| ------------------------ | ----------------------------------------------------- | ------------------------------------ | ---------------- | ------------------- | ------ | ------------ | --------- | ------------ | ------------ | ----------------------------------------------------------- |
+| `d2_equal_default`       | `probe_merged_wall_level1_d2_phase3_equal_pose.json5` | `seg=83 side=3 face=1 distance=12.0` | `old_texmerge`   | `auto_old_texmerge` | `0`    | `B3_orient0` | `none`    | `0.170898`   | `0.000000`   | normalized D2 baseline                                      |
+| `d2_equal_two_pass`      | `probe_merged_wall_level1_d2_phase3_equal_pose.json5` | `seg=83 side=3 face=1 distance=12.0` | `force_two_pass` | `gpu_two_pass`      | `0`    | `B1_orient0` | `none`    | `0.171310`   | `0.003510`   | same pose as the other D2 rows                              |
+| `d2_equal_forced_legacy` | `probe_merged_wall_level1_d2_phase3_equal_pose.json5` | `seg=83 side=3 face=1 distance=12.0` | `old_texmerge`   | `auto_old_texmerge` | `0`    | `B3_orient0` | `none`    | `0.170898`   | `0.000000`   | matches `d2_equal_default`                                  |
+| `d1_default`             | `probe_merged_wall_level1_d1.json5`                   | `seg=0 side=1 face=0 distance=6.0`   | `merge_cached`   | `gpu_cached_single` | `0`    | `B2_orient0` | `V`       | `0.000000`   | `0.000000`   | provisional first-merged face, not the reported bad pose    |
+| `d1_two_pass`            | `probe_merged_wall_level1_d1.json5`                   | `seg=0 side=1 face=0 distance=6.0`   | `merge_cached`   | `gpu_cached_single` | `0`    | `B2_orient0` | `V`       | `0.000000`   | `0.000000`   | force-two-pass toggle did not change the route on this face |
+| `d1_forced_legacy`       | `probe_merged_wall_level1_d1.json5`                   | `seg=0 side=1 face=0 distance=6.0`   | `merge_cached`   | `gpu_cached_single` | `0`    | `B2_orient0` | `V`       | `0.000000`   | `0.000000`   | old-legacy toggle also stayed on cached merge               |
 
 - Current D2 data already weakens the hires-padding family H1/H2 for the
   probed metl154 face, because both the base and overlay textures logged
@@ -764,7 +768,7 @@ Source log: `android/temp_game_logs/debuglog_20260420_130009.txt`
   `hot_xy`. The room-focused automation script is now
   `android/game_scripts/probe_merged_wall_level1_d1_current_room.json5`
 - Validation run: `run_test.ps1 -ScriptName
-  probe_merged_wall_level1_d1_current_room.json5 -Game d1 -Install` passed in
+probe_merged_wall_level1_d1_current_room.json5 -Game d1 -Install` passed in
   the emulator. The authoritative evidence for this tranche came from
   `temp/probe_current_room_debuglog_161257.txt`, which was pulled from app file
   `files/debuglogs/debuglog_20260420_161257.txt`
@@ -840,11 +844,11 @@ Three facts must be explained at once:
 For every probed orient=1 face the derived anchors are related by an exact
 axis flip, cached vs legacy:
 
-| face     | cached_anchor_uv           | legacy_anchor_uv           |
-|----------|----------------------------|----------------------------|
-| `83/1/0` | `0.916504 / 0.880371`      | `0.083496 / 0.880371`      |
-| `83/4/0` | `0.000000 / -0.000000`     | `1.000000 / -0.000000`     |
-| `83/4/1` | `0.999512 / -0.000000`     | `0.000488 / -0.000000`     |
+| face     | cached_anchor_uv       | legacy_anchor_uv       |
+| -------- | ---------------------- | ---------------------- |
+| `83/1/0` | `0.916504 / 0.880371`  | `0.083496 / 0.880371`  |
+| `83/4/0` | `0.000000 / -0.000000` | `1.000000 / -0.000000` |
+| `83/4/1` | `0.999512 / -0.000000` | `0.000488 / -0.000000` |
 
 Cached_u + legacy_u is 1.0 exactly or one texel off, while the v anchors
 agree. The probe's `route_agree=0` is the boolean form of the same
@@ -888,12 +892,12 @@ pixel y=0 and v=1 reads pixel y=height-1. Therefore:
 Plugging that into each orient column and comparing to CPU
 `merge_textures_new`:
 
-| orient | CPU overlay read at | GPU cached overlay at | delta in face UV |
-|--------|---------------------|-----------------------|-------------------|
-| 0      | `(u, v)`            | `(u, 1-v)`            | overlay V-flipped |
-| 1      | `(1-v, u)`          | `(v, u)`              | overlay U-mirrored|
-| 2      | `(1-u, 1-v)`        | `(1-u, v)`            | overlay V-flipped |
-| 3      | `(v, 1-u)`          | `(1-v, 1-u)`          | overlay U-mirrored|
+| orient | CPU overlay read at | GPU cached overlay at | delta in face UV   |
+| ------ | ------------------- | --------------------- | ------------------ |
+| 0      | `(u, v)`            | `(u, 1-v)`            | overlay V-flipped  |
+| 1      | `(1-v, u)`          | `(v, u)`              | overlay U-mirrored |
+| 2      | `(1-u, 1-v)`        | `(1-u, v)`            | overlay V-flipped  |
+| 3      | `(v, 1-u)`          | `(1-v, 1-u)`          | overlay U-mirrored |
 
 The bot layer is also sampled at base `(u, 1-v)` instead of `(u, v)`, so
 the entire cached composite is the CPU-reference composite flipped

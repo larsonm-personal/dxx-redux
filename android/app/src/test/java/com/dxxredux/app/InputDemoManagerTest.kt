@@ -17,7 +17,10 @@ class InputDemoManagerTest {
         val filesDir = tmp.newFolder("filesDir")
         val older = writeDemo(filesDir, "d1x-redux", "older.dximdemo", "descent", 1, 12)
         val newer = writeDemo(filesDir, "d2x-redux", "newer.dximdemo", "descent2", 2, 34)
-        File(newer.parentFile, newer.name + InputDemoManager.INPUT_DEMO_RNG_TRACE_SUFFIX).writeText("{\"type\":\"meta\"}\n")
+        File(
+            newer.parentFile,
+            newer.name + InputDemoManager.INPUT_DEMO_RNG_TRACE_SUFFIX,
+        ).writeText("{\"type\":\"meta\"}\n")
         File(newer.parentFile, "newer${InputDemoManager.CLASSIC_DEMO_EXTENSION}").writeText("classic demo\n")
 
         older.setLastModified(1_000L)
@@ -75,7 +78,10 @@ class InputDemoManagerTest {
         val filesDir = tmp.newFolder("filesDir")
 
         writeDemo(filesDir, "d1x-redux", "first.dximdemo", "descent", 1, 4)
-        File(File(File(filesDir, "d1x-redux"), "input_demo_recordings/new"), "first${InputDemoManager.CLASSIC_DEMO_EXTENSION}").writeText("classic demo\n")
+        File(
+            File(File(filesDir, "d1x-redux"), "input_demo_recordings/new"),
+            "first${InputDemoManager.CLASSIC_DEMO_EXTENSION}",
+        ).writeText("classic demo\n")
         writeDemo(filesDir, "d2x-redux", "second.dximdemo", "descent2", 2, 5)
 
         val deleted = InputDemoManager.deleteAllStagedDemos(filesDir)
@@ -94,13 +100,17 @@ class InputDemoManagerTest {
     ): File {
         val dir = File(File(filesDir, prefDir), "input_demo_recordings/new").also { it.mkdirs() }
         val file = File(dir, name)
+        val game = if (prefDir.startsWith("d1")) "d1" else "d2"
         file.writeText(
-            "{\"type\":\"header\",\"version\":1,\"game\":\"${if (prefDir.startsWith("d1")) "d1" else "d2"}\",\"mission\":\"$mission\",\"level\":$level,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"lcg_state\",\"frame_count\":$frameCount}\n" +
+            "{\"type\":\"header\",\"version\":1,\"game\":\"$game\",\"mission\":\"$mission\",\"level\":$level," +
+                "\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"lcg_state\"," +
+                "\"frame_count\":$frameCount}\n" +
                 "{\"type\":\"frame\",\"f\":0,\"ft\":65536,\"input\":{},\"rng\":{\"s\":1}}\n" +
                 "{\"type\":\"frame\",\"f\":1,\"input\":{},\"rng\":{\"s\":2}}\n" +
                 "{\"type\":\"frame\",\"f\":2,\"ft\":32768,\"input\":{},\"rng\":{\"s\":3}}\n" +
                 "{\"type\":\"frame\",\"f\":3,\"input\":{},\"rng\":{\"s\":4}}\n" +
-                "{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"d2\",\"m\":\"$mission\",\"l\":$level,\"d\":2,\"fr\":$frameCount}}\n",
+                "{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"d2\",\"m\":\"$mission\",\"l\":$level," +
+                "\"d\":2,\"fr\":$frameCount}}\n",
         )
         return file
     }

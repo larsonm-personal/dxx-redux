@@ -16,8 +16,12 @@ class ControllerMenuAxesTest {
         axes.update(0f, 0f, 0f, -1f, 0f, 0f, send)
         axes.reset(send)
         assertEquals(
-            listOf(KeyEvent.KEYCODE_DPAD_DOWN to true, KeyEvent.KEYCODE_DPAD_DOWN to false,
-                KeyEvent.KEYCODE_DPAD_UP to true, KeyEvent.KEYCODE_DPAD_UP to false),
+            listOf(
+                KeyEvent.KEYCODE_DPAD_DOWN to true,
+                KeyEvent.KEYCODE_DPAD_DOWN to false,
+                KeyEvent.KEYCODE_DPAD_UP to true,
+                KeyEvent.KEYCODE_DPAD_UP to false,
+            ),
             edges,
         )
     }

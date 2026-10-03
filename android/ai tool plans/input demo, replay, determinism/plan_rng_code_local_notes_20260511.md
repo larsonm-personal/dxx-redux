@@ -1,11 +1,13 @@
 # RNG code-local notes 2026-05-11
 
 ## Goal
+
 - add short code-local notes at concrete `d_rand()` and `d_rand_fx()` sites that have already been classified
 - keep the note text brief and directly tied to why the call is SIM-owned or FX-owned
 - continue the single-player RNG audit from the next unresolved fireball/weapon path
 
 ## Steps
+
 - [completed] inspect which code-local RNG notes already landed in the current D1/D2 files
 - [completed] patch missing short notes at the already-confirmed SIM and FX sites in D1 and D2
 - [completed] run focused validation on the touched files after the first comment-only edits
@@ -17,6 +19,7 @@
 - [in-progress] continue from the remaining multiplayer-only and test-helper RNG sites after the single-player frontier closed
 
 ## Notes
+
 - user requested a very short justification note at each concrete RNG call location
 - keep comments minimal and avoid changing behavior
 - newly confirmed this tranche: `d1/main/cntrlcen.c` and `d2/main/cntrlcen.c` reactor follow-up shot rolls stay on SIM because they decide whether extra live shots are fired

@@ -1,9 +1,11 @@
 # Secret area auto-label study
 
 ## Goal
+
 - Study whether levels can be scanned at load time to identify optional secret areas, track which have been visited, and optionally reveal them in the automap.
 
 ## Plan
+
 - [x] Inspect level geometry, wall, trigger, object, and automap data structures in D1 and D2.
 - [x] Identify reliable signals for hidden doors, optional reachable regions, keys, hostages, robots, and ordinary progress.
 - [x] Sketch candidate algorithms, cache/state ownership, save-game behavior, and automap integration.
@@ -11,6 +13,7 @@
 - [x] Summarize risks, expected false positives/negatives, and a staged implementation plan.
 
 ## Implementation Progress
+
 - [x] Added shared scanner core in `android/app/src/main/cpp/shared/secret_area_scan.c` and `secret_area_scan.h`.
 - [x] Added D1/D2 adapters in `d1/main/secretarea.c` and `d2/main/secretarea.c`.
 - [x] Deduplicated the D1/D2 adapters into `android/app/src/main/cpp/shared/secret_area_game_adapter.c`.
@@ -40,6 +43,7 @@
 - [x] Make secret-area automap edges draw yellow only while the Reveal Secrets cheat is active; found-only secret edges keep normal automap coloring.
 
 ## Findings
+
 - The engine already has a strong hidden-door signal: `WallAnims[wall.clip_num].flags & WCF_HIDDEN`.
 - D1 and D2 automap already use this signal to make hidden doors look like normal walls, and mark the edge as `EF_SECRET`.
 - The editor segment `special` field is not a secret marker. D1 defines fuel, repair, control center, and robotmaker values; D2 adds blue/red goal values.
@@ -51,6 +55,7 @@
 - Secret entries now track aggregate powerup summaries with id, readable name, total count, direct count, and contained count. Names prefer the engine `Powerup_names` table where available, with a shared fallback table for narrow host tools.
 
 ## Candidate Algorithm
+
 1. After a level file is loaded and before save-game mutations are applied, build a topology graph over segments.
 2. Build this graph conservatively. Only add an edge when both segments are valid children of each other or can be confirmed with `find_connect_side()`.
 3. Treat no-wall child connections, unlocked normal doors, blastable walls, open sides, and already-passable illusion walls as ordinary traversable topology.
@@ -61,23 +66,28 @@
 8. Use `Player_init[Player_num].segnum` as the ordinary start component.
 9. For each hidden or switch-opened boundary from the ordinary component to another component, create a candidate secret area for the far component. Merge duplicate doors into the same component so two entrances to one room count once.
 10. Reject candidates containing:
-   - `OBJ_HOSTAGE`
-   - direct key powerups: `OBJ_POWERUP` with `POW_KEY_BLUE`, `POW_KEY_RED`, or `POW_KEY_GOLD`
-   - contained key drops in robots or other objects, using `contains_type == OBJ_POWERUP` and key `contains_id`
-   - reactor/control center segments or objects
-   - exit or secret-exit trigger surfaces
+
+- `OBJ_HOSTAGE`
+- direct key powerups: `OBJ_POWERUP` with `POW_KEY_BLUE`, `POW_KEY_RED`, or `POW_KEY_GOLD`
+- contained key drops in robots or other objects, using `contains_type == OBJ_POWERUP` and key `contains_id`
+- reactor/control center segments or objects
+- exit or secret-exit trigger surfaces
+
 11. Reject candidates that are not reachable from the start in a second "player-reachable with secret boundaries allowed" BFS. This pass should allow only the same conservative ordinary edges plus hidden-door and switch-opened crossings that meet the strict requirements above.
 12. Record robot counts and robotmaker segments as confidence metadata, not a hard rejection initially. Some real secrets may contain enemies.
 13. Compute ordering metadata for every accepted candidate:
-   - `entry_distance`: shortest graph distance from `Player_init[Player_num].segnum` to the ordinary-side segment of any hidden entrance into the candidate.
-   - `entry_seg` and `entry_side`: the lowest-segment, lowest-side hidden entrance among entrances at the best distance.
-   - `label_pos`: a stable label anchor, preferably the average of candidate segment centers, with a fallback to the center of the closest entry-side/secret-side pair.
+
+- `entry_distance`: shortest graph distance from `Player_init[Player_num].segnum` to the ordinary-side segment of any hidden entrance into the candidate.
+- `entry_seg` and `entry_side`: the lowest-segment, lowest-side hidden entrance among entrances at the best distance.
+- `label_pos`: a stable label anchor, preferably the average of candidate segment centers, with a fallback to the center of the closest entry-side/secret-side pair.
+
 14. Sort accepted candidates by `entry_distance`, then `entry_seg`, then `entry_side`, then lowest member segment. Assign the visible numbers after this sort, so `S1`, `S2`, etc. roughly follow distance from the start of the mine.
 15. Apply the sanity cutoff after filtering and before exposing the feature. If more than `MAX_GENERATED_SECRETS` candidates remain, disable generated secrets for this level.
 16. Create `secret_area_for_segment[MAX_SEGMENTS]`, using 0 for no area and 1..N for the sorted visible secret numbers.
 17. Once per gameplay frame, if `ConsoleObject->segnum` maps to an area, mark `secret_area_found[area] = 1`.
 
 ## Sanity Cutoff
+
 - Add a named constant such as `MAX_GENERATED_SECRETS`, defaulting to 30.
 - If the scanner produces more than this after all conservative filters, set a per-level state like `secret_generation_disabled = 1`.
 - When disabled:
@@ -89,6 +99,7 @@
 - Include both raw candidate count and final candidate count in the debug report so suspicious levels can be reviewed later.
 
 ## Conservative Reachability
+
 - The first implementation should prefer false negatives over false positives.
 - Use two reachability views:
   - `ordinary_reachable`: from the start segment without crossing hidden doors.
@@ -109,6 +120,7 @@
 - Trigger-driven and nested secrets can be added later as opt-in heuristic layers after bundled-level reports prove the base scanner is too conservative.
 
 ## Secret Ordering
+
 - d1 and d2 have existing path computation, leverage that
 - Use graph distance, not Euclidean distance, because mine layout is a winding segment graph.
 - The first implementation can use unweighted BFS over segment connections, counting each segment transition as 1.
@@ -118,6 +130,7 @@
 - The visible order should be saved only indirectly through deterministic recomputation. Save files should store found bits by visible number for the generated list that was active when saved, and older/different generated lists should rebuild from `Automap_visited` if counts do not match.
 
 ## Runtime Popup
+
 - When the player first enters a secret area's segment, show a HUD message once for that area.
 - Suggested text: `Found secret S%d` or `Found secret S%d (%d/%d)`.
 - Keep popup generation in the secret-area tracking module, but route display through existing HUD message functions, such as `HUD_init_message_literal()` or `HUD_init_message()`.
@@ -125,6 +138,7 @@
 - In multiplayer, initially make this local-only for the player who enters the area. Coop synchronization can be added later if desired.
 
 ## Cache And Save State
+
 - Keep generated data in memory. The scanner itself should live in shared Android native code, with only small D1/D2 adapters.
 - Do not persist the generated component list. It is deterministic, cheap, and should be regenerated from the original level data.
 - Persist found bits in save state after bumping the D1/D2 save versions.
@@ -132,6 +146,7 @@
 - For secret-level return saves in D2, the generated list should be rebuilt when `StartNewLevelSub()` reloads the level, then found bits restored from the save.
 
 ## Shared Ownership And Duplication Control
+
 - Put the actual scanner in `android/app/src/main/cpp/shared`, following the existing pattern used by shared input-demo and save helpers already compiled into both D1 and D2.
 - Keep the scanner C-compatible unless the JSON baseline writer has a strong reason to be C++. The game-side scanner needs to be cheap to compile into D1, D2, Android, and host test targets.
 - Suggested shared files:
@@ -220,6 +235,7 @@ typedef struct secret_area_state {
 - Use the same shared scanner for runtime, introspection, baseline generation, and automap queries. This is the main guard against four subtly different definitions of "secret".
 
 ## Existing Code To Reuse
+
 - Reuse `find_connect_side()` or the local equivalent through the adapter for reverse-side validation.
 - Reuse existing segment child links, wall structs, wall animation flags, key constants, object constants, segment special constants, and trigger inspection. Do not write an independent level parser for the scanner.
 - Reuse existing `LoadLevel(level_num, 0)` and mission arrays (`Level_names`, `Secret_level_names`, `Last_level`, `Last_secret_level`) in the regression dumper. This keeps the test aligned with runtime loading, including shareware, full-game, and mission-specific level lists.
@@ -230,6 +246,7 @@ typedef struct secret_area_state {
 - Avoid AI or robot path helpers unless they are genuinely shared and neutral. Robot path code often encodes robot-specific door permissions and D2-only assumptions.
 
 ## Regression Baseline Test
+
 - Add a committed JSON baseline for the bundled base games so scanner changes are visible in review.
 - Suggested committed file:
   - `android/test_fixtures/secret_area_base_game_baseline.json`
@@ -271,6 +288,7 @@ buildd2\main\dxx-redux-d2-headless-metadata.exe -hogdir C:\path\to\data -secreta
 - If normal `LoadLevel()` pulls in rendering or audio setup that is too heavy, keep the workaround in the headless runtime only. Do not add a separate HOG/RDL/RL2 parser for tests.
 
 ### Baseline JSON Shape
+
 - Use stable integers, sorted arrays, and fixed-point coordinates. Avoid floats and wall-clock/build-machine fields.
 - Suggested top-level shape:
 
@@ -345,6 +363,7 @@ buildd2\main\dxx-redux-d2-headless-metadata.exe -hogdir C:\path\to\data -secreta
 - Add a short README next to the fixture explaining that the file is generated from base game assets and should be updated only after reviewing scanner algorithm changes.
 
 ## Automap Integration
+
 - Normal automap can remain unchanged for the first counter implementation.
 - A reveal toggle should not mutate `Automap_visited`, found bits, or the normal cheat state.
 - The Android touch settings tray owns this reveal toggle while automap is open. It should remain active until tapped again, but `secret_area_rescan_current_level()` resets it on level load.
@@ -362,6 +381,7 @@ buildd2\main\dxx-redux-d2-headless-metadata.exe -hogdir C:\path\to\data -secreta
 - Rebuild the automap edge list when the reveal cheat toggles, since reveal changes which secret component edges are included.
 
 ## Expected Errors
+
 - False negatives:
   - illusion-wall secrets
   - blastable wall secrets that do not use `WCF_HIDDEN`
@@ -376,6 +396,7 @@ buildd2\main\dxx-redux-d2-headless-metadata.exe -hogdir C:\path\to\data -secreta
   - mission-specific gimmicks where the level designer used hidden door clips for non-secret mechanics
 
 ## Suggested Implementation Stages
+
 1. Add the scanner and introspection-only output: total, found, candidate segments, entry walls, and rejection reasons.
 2. Add strict reachability filtering and include raw candidates, rejected candidates, final candidates, and rejection reasons in introspection.
 3. Add `MAX_GENERATED_SECRETS` and disable generation for levels exceeding the cutoff.
@@ -390,33 +411,39 @@ buildd2\main\dxx-redux-d2-headless-metadata.exe -hogdir C:\path\to\data -secreta
 12. Add automap reveal cheat labels and secret component edge reveal, keeping reveal separate from found state.
 
 ## Follow-Up Automap Polish
+
 - [x] Hide all `S%d` automap labels unless the Reveal Secrets cheat is active.
 - [x] Use red labels for unfound secrets and green labels for found secrets while Reveal Secrets is active.
 - [x] Draw secret edges yellow only while Reveal Secrets is active, with found secret edges using a brighter yellow than unfound secret edges.
 
 ## Follow-Up Missed Secret Investigation
+
 - [x] Increase found-secret reveal edge yellow another halfway step toward white.
 - [x] Investigate why D2 level 1 `door45#0 (162/4/0)` is not generated as a secret candidate: segment 162 is behind ordinary progression/key-door reachability, so the current scanner never sees it as an ordinary-reachable entrance segment.
 - [x] Decide whether the missed D2 level 1 case represents a broader false-negative pattern: yes, secrets behind key-door progression are currently missed; a broad experiment allowing all key-door traversal found the target but increased D2 base-game secrets from 175 to 333, so this needs a narrower heuristic before landing.
 - [x] Re-run scanner/automap regression checks after changes.
 
 ## Follow-Up Progression-Gated Secrets
+
 - [x] Exclude generated secret areas with no powerup items. This removes thief-only and empty hidden pockets from the player-facing count.
 - [x] Treat key/progression doors as reachable for secret generation, while still keeping hidden-door and triggered-secret boundaries out of the normal traversal graph.
 - [x] Keep guidebot selection live-reachability-gated. The generated list may include later progression secrets, but `find secret` still chooses only an unfound secret entrance that the guidebot can currently reach via `create_bfs_list()` and later validates with `create_path_to_segment()`.
 - [x] Regenerate and review the base-game regression JSON after the scanner update. New base-game totals are D1 172 and D2 265, with no zero-item generated secrets. D2 level 1 now includes the `162/4` hidden-door room as `S9`.
 
 ## Follow-Up Guidebot Secret Cycling
+
 - [x] When `find secret` is run while the guidebot is already targeting a secret, skip the current target and choose the next nearest reachable unfound secret.
 - [x] If no other reachable unfound secret exists, keep the current reachable target instead of clearing the task.
 - [x] Verify with formatting, a focused D2 Windows build, and Android native build.
 
 ## Follow-Up Guide Wheel Reveal Gating
+
 - [x] Hide the Guide wheel `Secret` slice unless the Reveal Secrets cheat is active.
 - [x] Reflow the remaining Guide wheel slices when `Secret` is hidden, matching the old slice positions.
 - [x] Verify with scoped Kotlin quality checks and Android build.
 
 ## Follow-Up Marginal Trigger-Revealed Secrets Study
+
 - [x] Examine D2 level 3 current `S10` as the exemplar for hidden walls that are revealed by required progression. The current generated `S10` is the cloak pocket at `124:3 -> 118`, wall `61`, and no trigger links to either the entry side or reverse side. The blue-key-coincident trigger evidence points instead at current `S6`/`S7`: blue key segment `200` has trigger source walls `96` and `135`, which open candidate entries `89:4` and `199:4`.
 - [x] Compare with the D2 level 2 reactor-path cases where required triggers reveal the last generated secrets. Current D2 level 2 `S10` is a clean example: entry `57:1 -> 131` is opened by triggers `4`, `5`, and `6` sourced from ordinary illusion trigger walls on segments `54`, `53`, and `57`. `S8` is also trigger-opened from overlay wall `66` at `302:3`; `S9` has no direct trigger link.
 - [x] Propose a conservative filter that removes mandatory/revealed-by-progression pockets without dropping genuine optional switch secrets.
@@ -426,18 +453,21 @@ buildd2\main\dxx-redux-d2-headless-metadata.exe -hogdir C:\path\to\data -secreta
   - Keep the filter D2-only at first, because D1 trigger data is flag-based and the current added triggered-secret heuristic only applies to D2.
 
 ## Follow-Up Marginal Trigger Filtering Implementation
+
 - [x] Extend the shared scan view with D2-backed trigger source callbacks for opener segment, side, wall, and marginal-source classification.
 - [x] Filter candidates whose entrances are only accepted through marginal trigger sources. The landed heuristic treats key-segment trigger sources as marginal, and treats pass-through `WALL_OPEN` sources as marginal only when at least two reachable pass-through openers target the same entrance.
 - [x] Regenerate and inspect the base-game secret JSON. D1 remains 172 secrets; D2 drops from 265 to 252. D2 level 2 old `S10` is removed, D2 level 3 old `S6`/`S7` are removed, and the cloak pocket formerly `S10` remains as the new `S8`.
 - [x] Run scoped code quality and the secret-area regression command after updating the baseline.
 
 ## Follow-Up Required-Route Trigger Filtering Study
+
 - [x] Replace or augment the current marginal trigger heuristic with a deterministic required-route mask.
 - [x] Build route masks from spawn to each required key, each key to matching locked doors, and spawn to the reactor with locked doors passable.
 - [x] Mark a trigger source as progression pass-through only when the source side/edge is intersected by one of those route masks.
 - [x] Prefer a scanner-local deterministic segment path helper over calling live AI path APIs directly, because `create_path_points()` depends on object state, random side order, and global `Point_segs`.
 
 ### Study Notes
+
 - The live pathing helpers are useful references, but should not be called by secret generation at level load:
   - D1/D2 `create_path_points()` traverses with `WALL_IS_DOORWAY()` or `ai_door_is_openable()`, can randomize side order, consumes global path buffers, and uses object/player state.
   - D2 `create_bfs_list()` is also live-AI-oriented. It asks `segment_is_reachable()`, which delegates to `ai_door_is_openable(NULL, ...)`, so the answer can depend on current door/key/player state.
@@ -460,6 +490,7 @@ buildd2\main\dxx-redux-d2-headless-metadata.exe -hogdir C:\path\to\data -secreta
   - Door route marking should mark the wall side itself and, if the reverse side has a wall, the reverse wall side too. Otherwise a trigger mounted on either face can be recognized as route-intersected.
 
 ### Route Traversal Policy
+
 - Add a dedicated route traversal predicate instead of reusing live AI helpers:
   - Require a valid child and a valid reverse side.
   - Do not traverse a side that the scanner already considers a secret boundary. A required-route search that walks through secret doors would make optional secrets look mandatory.
@@ -475,6 +506,7 @@ buildd2\main\dxx-redux-d2-headless-metadata.exe -hogdir C:\path\to\data -secreta
   - Spawn to reactor: blue, red, and gold allowed.
 
 ### Implementation Detail
+
 - Add scanner-local arrays in `secret_area_scan.c`:
   - `required_route_side[SECRET_AREA_MAX_SEGMENTS][SECRET_AREA_MAX_SIDES]`
   - `route_parent_seg[SECRET_AREA_MAX_SEGMENTS]`
@@ -500,12 +532,14 @@ buildd2\main\dxx-redux-d2-headless-metadata.exe -hogdir C:\path\to\data -secreta
   - Keep the existing "all reachable trigger openers are marginal" candidate suppression shape. The difference is that a marginal opener now means "this exact trigger source side lies on a required route".
 
 ### Expected Effects
+
 - D2 level 2 reactor-path hidden walls should be filtered only when their opening triggers are on the spawn-to-reactor route.
 - D2 level 3 blue-key-adjacent cases should be filtered only if the trigger side is crossed by spawn-to-key or key-to-door routing, not simply because the source segment contains the blue key.
 - Optional shootable-switch secrets should survive when the switch is in a reachable but non-required side pocket.
 - Progression-gated secrets remain eligible as secrets. The route mask is only used to reject secret candidates opened by mandatory pass-through triggers; it does not require all generated secrets to be reachable before collecting every key.
 
 ### Validation Plan
+
 - Run the base-game secret regression with baseline output to a temp directory first:
   - `.\android\tests\test_secret_area_baseline.ps1 -Game both -BuildBeforeRun -RequireAssets -OutputDir temp\secret_area_required_route_probe`
 - Inspect D2 level deltas against the current baseline:
@@ -519,6 +553,7 @@ buildd2\main\dxx-redux-d2-headless-metadata.exe -hogdir C:\path\to\data -secreta
   - `.\android\run-code-quality.ps1 -Fix -Paths @('android/app/src/main/cpp/shared/secret_area_scan.c', 'android/app/src/main/cpp/shared/secret_area_scan.h', 'android/app/src/main/cpp/shared/secret_area_game_adapter.c', 'android/test_fixtures/secret_area_base_game_baseline.json', 'android/ai tool plans/mixed batch, umbrella/study_secret_area_autolabel_20260606.md')`
 
 ## Follow-Up Required-Route Trigger Filtering Implementation
+
 - [x] Add key-color constants and required-route side masks to the shared scanner.
 - [x] Replace broad key-segment marginal trigger checks with exact required-route source-side checks, while retaining the narrow multi-pass-through opener fallback for D2 level 2 style mandatory reveal chains.
 - [x] Wire D1/D2 adapters to the new scan view fields without moving logic into `d1/` or `d2/`.

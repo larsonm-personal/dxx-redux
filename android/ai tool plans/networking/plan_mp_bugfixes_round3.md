@@ -1,6 +1,7 @@
 # Multiplayer Bugfix Round 3
 
 ## Bug 1: MPDIAG in separate log file from Kotlin events -- DONE
+
 - Root cause: :game process has its own NetLog singleton, creates a new timestamped file
 - Fix: Pass log file path from SetupActivity to MainActivity via intent extra "netlog_path"
 - Added NetLog.initAppend(context, filePath) to open an existing file for appending
@@ -9,6 +10,7 @@
 - Files: NetLog.kt, SetupActivity.kt, MainActivity.kt
 
 ## Bug 2: Network overlay still shows "disconnected" -- DONE
+
 - Root cause: overlay reads MatchmakingStateHolder.state in :game process, which defaults to DISCONNECTED
 - The matchmaking service runs in the main process and never updates the :game process state
 - Fix: In MainActivity.onCreate(), when mp_mode is set, seed the game-process MatchmakingStateHolder
@@ -16,6 +18,7 @@
 - File: MainActivity.kt
 
 ## Bug 3: Stale games on matchmaking server (shows "3 games" with zero actual) -- DONE
+
 - Root cause 1: game_ended() never called when lobbies in Starting/InGame state are removed
   during disconnect cleanup, LeaveLobby, or D13 implicit-leave paths. Only called on
   MatchResult and relay-limit abort. This causes current_in_game counter to never decrement.

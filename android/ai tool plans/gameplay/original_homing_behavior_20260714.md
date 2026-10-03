@@ -33,14 +33,14 @@ Reconstruct the shipped Descent and Descent II homing guidance behavior from ori
 
 This comparison treats retail as though its render loop were locked to exactly 25 FPS. All angles are cone half-angles.
 
-| 25 Hz comparison | Initial acquisition | Continuous retention | Steering and orientation | Broad target scans |
-| --- | ---: | ---: | --- | --- |
-| Restored/retail D1 | 41.410 degrees | 20.364 degrees | 25 steering updates/second; orientation scale 8 | When retention fails, every fourth phased frame: up to 6.25/second |
-| Redux D1 single-player | 41.410 degrees | 20.364 degrees | 25 steering updates/second; orientation uses render time | Same 6.25/second maximum, phased from missile creation |
-| D1-in-D2, Original enabled | 41.410 degrees | 20.364 degrees | 25 steering updates/second; D1 orientation scale 8 | D1 retail scan rules at up to 6.25/second |
-| D1-in-D2, Redux | 28.955 degrees | 14.362 degrees | 25 steering updates/second; D1 orientation scale 8 using render time | Redux scan phasing at up to 6.25/second |
-| Restored/retail D2 | 28.955 degrees | 37.989 degrees | 25 steering updates/second; orientation scale 16 | Invalid target: up to 6.25/second; forced valid-target rescan: 3.125/second |
-| Redux D2 single-player | 28.955 degrees | 14.362 degrees | 25 steering updates/second; orientation uses render time | Invalid target: up to 6.25/second; no forced valid-target rescan |
+| 25 Hz comparison           | Initial acquisition | Continuous retention | Steering and orientation                                             | Broad target scans                                                          |
+| -------------------------- | ------------------: | -------------------: | -------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Restored/retail D1         |      41.410 degrees |       20.364 degrees | 25 steering updates/second; orientation scale 8                      | When retention fails, every fourth phased frame: up to 6.25/second          |
+| Redux D1 single-player     |      41.410 degrees |       20.364 degrees | 25 steering updates/second; orientation uses render time             | Same 6.25/second maximum, phased from missile creation                      |
+| D1-in-D2, Original enabled |      41.410 degrees |       20.364 degrees | 25 steering updates/second; D1 orientation scale 8                   | D1 retail scan rules at up to 6.25/second                                   |
+| D1-in-D2, Redux            |      28.955 degrees |       14.362 degrees | 25 steering updates/second; D1 orientation scale 8 using render time | Redux scan phasing at up to 6.25/second                                     |
+| Restored/retail D2         |      28.955 degrees |       37.989 degrees | 25 steering updates/second; orientation scale 16                     | Invalid target: up to 6.25/second; forced valid-target rescan: 3.125/second |
+| Redux D2 single-player     |      28.955 degrees |       14.362 degrees | 25 steering updates/second; orientation uses render time             | Invalid target: up to 6.25/second; no forced valid-target rescan            |
 
 The normalized steering blend is otherwise the same: ordinary homers add one target-direction vector per update, while blob-rendered smart children add it twice. Redux multiplayer can select 20-30 steering updates/second. At exactly 25 rendered FPS, standalone Redux D1 is close to retail D1; the strong difference seen in higher-FPS retail or source-port footage comes from retail steering and rescanning once per rendered-frame schedule. D1 hosted inside D2 retains its existing D2-based cones in Redux mode and now selects the D1 retail cones in Original mode.
 
@@ -82,14 +82,14 @@ These are the final official DOS source snapshots rather than the first 1995 D1 
 
 ### Fixed weapon parameters
 
-| Behavior | Descent | Descent II |
-| --- | ---: | ---: |
-| Initial target acquisition dot | `3/4` | `7/8` |
-| Initial acquisition cone half-angle | 41.4096 degrees | 28.9550 degrees |
-| Maximum acquisition distance | 250 units | 250 units |
-| Initial straight flight | 1/8 second | 1/8 second |
-| Visible missile orientation scale | 8 | 16 |
-| Omega acquisition dot | N/A | `15/16`, or 20.3641 degrees, with Omega range |
+| Behavior                            |         Descent |                                    Descent II |
+| ----------------------------------- | --------------: | --------------------------------------------: |
+| Initial target acquisition dot      |           `3/4` |                                         `7/8` |
+| Initial acquisition cone half-angle | 41.4096 degrees |                               28.9550 degrees |
+| Maximum acquisition distance        |       250 units |                                     250 units |
+| Initial straight flight             |      1/8 second |                                    1/8 second |
+| Visible missile orientation scale   |               8 |                                            16 |
+| Omega acquisition dot               |             N/A | `15/16`, or 20.3641 degrees, with Omega range |
 
 The weapon data still supplies each weapon's maximum speed by difficulty. There is no separate angular-rate constant. Retail steering normalizes current velocity, adds one normalized target-direction vector, normalizes the sum, and restores speed. Blob-rendered smart children add the target vector twice. This discrete vector blend is the effective turn rule.
 
@@ -99,10 +99,10 @@ On each guidance frame, speed increases by `max_speed * FrameTime / 2` until it 
 
 Retail recomputed `Min_trackable_dot` from render `FrameTime`. At the compatibility reference cadence of 25 Hz, the exact 16.16 fixed-point results are:
 
-| Model | Dot threshold | Cone half-angle |
-| --- | ---: | ---: |
-| Retail D1 formula with D1 base `3/4` | `61440 / 65536` | 20.3641 degrees |
-| Retail D2 formula with D2 base `7/8` | `51651 / 65536` | 37.9887 degrees |
+| Model                                             |   Dot threshold | Cone half-angle |
+| ------------------------------------------------- | --------------: | --------------: |
+| Retail D1 formula with D1 base `3/4`              | `61440 / 65536` | 20.3641 degrees |
+| Retail D2 formula with D2 base `7/8`              | `51651 / 65536` | 37.9887 degrees |
 | Current Redux D1-style formula with D2 base `7/8` | `63488 / 65536` | 14.3615 degrees |
 
 The current D2 code applies the D1 frame-scaling formula to D2's `7/8` base. At 25 Hz this narrows D2 target retention from about 38 degrees in retail to about 14.4 degrees. This confirms the reported weaker tracking, and the largest cause is the formula substitution rather than weapon data or an explicit PvP turn-rate nerf.
@@ -117,15 +117,15 @@ The 2016 thread reports that D2 homers did not turn sharply, rarely reacquired, 
 
 The thread nevertheless points to real historical changes:
 
-| Date | Change | Interpretation |
-| --- | --- | --- |
-| 2008 | Rebirth reduced homer turn rate after player feedback | Explicit balance change intended to make homers easier to dodge |
-| 2011 | Rebirth reduced aggressiveness on Hotshot and above | Explicit survival and dodgeability tuning |
-| 2012 | Rebirth prevented consecutive smart children from selecting the same target | Explicitly spread smart children and made homing projectiles easier to dodge |
-| 2013 | Rebirth mixed D1 tracking rules into D2, then widened acquisition after tester feedback and partly to counter the afterburner | The afterburner rationale supported stronger homing, not a nerf |
-| May to October 2016 | Rebirth restored D2's acquisition constant, D1/D2-specific tracking, forced D2 rescans, lifetime rules, and frame scaling | Independent confirmation that the earlier mixed implementation was historically inaccurate |
-| 2014 | Retro adopted fixed D1/D2 homing ticks and used D1 retention rules in D2 | Removed retail D2 retention and rescan semantics; D2 retention was about 20.4 degrees at 25 Hz |
-| 2023 | Redux passed D2's `7/8` base through the retained D1 formula while adding the update-rate option | Narrowed retention from about 20.4 to 14.4 degrees without a stated balance rationale |
+| Date                | Change                                                                                                                        | Interpretation                                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 2008                | Rebirth reduced homer turn rate after player feedback                                                                         | Explicit balance change intended to make homers easier to dodge                                |
+| 2011                | Rebirth reduced aggressiveness on Hotshot and above                                                                           | Explicit survival and dodgeability tuning                                                      |
+| 2012                | Rebirth prevented consecutive smart children from selecting the same target                                                   | Explicitly spread smart children and made homing projectiles easier to dodge                   |
+| 2013                | Rebirth mixed D1 tracking rules into D2, then widened acquisition after tester feedback and partly to counter the afterburner | The afterburner rationale supported stronger homing, not a nerf                                |
+| May to October 2016 | Rebirth restored D2's acquisition constant, D1/D2-specific tracking, forced D2 rescans, lifetime rules, and frame scaling     | Independent confirmation that the earlier mixed implementation was historically inaccurate     |
+| 2014                | Retro adopted fixed D1/D2 homing ticks and used D1 retention rules in D2                                                      | Removed retail D2 retention and rescan semantics; D2 retention was about 20.4 degrees at 25 Hz |
+| 2023                | Redux passed D2's `7/8` base through the retained D1 formula while adding the update-rate option                              | Narrowed retention from about 20.4 to 14.4 degrees without a stated balance rationale          |
 
 The thread's afterburner speculation is therefore only partly right. Rebirth history explicitly mentions the D2 afterburner when justifying a temporary wider acquisition cone in 2013. It does not explain the weaker current cone. Some older Rebirth steering and smart-child changes were deliberate balance nerfs, but the strongest current D2 cone nerf came from the later formula and parameter mismatch.
 

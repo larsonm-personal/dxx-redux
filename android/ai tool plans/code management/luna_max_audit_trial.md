@@ -16,12 +16,12 @@ The active ledger currently contains 410 completed source chunks and 160
 remaining source chunks with measurable assigned line counts.
 
 | Assigned lines | Completed chunks | Finding references | Chunks with findings | Finding references per 1,000 lines |
-|---|---:|---:|---:|---:|
-| 1-300 | 112 | 199 | 72 | 16.10 |
-| 301-600 | 131 | 493 | 125 | 7.48 |
-| 601-750 | 123 | 395 | 117 | 4.48 |
-| 751-900 | 24 | 164 | 24 | 8.18 |
-| 901+ | 20 | 38 | 18 | 0.86 |
+| -------------- | ---------------: | -----------------: | -------------------: | ---------------------------------: |
+| 1-300          |              112 |                199 |                   72 |                              16.10 |
+| 301-600        |              131 |                493 |                  125 |                               7.48 |
+| 601-750        |              123 |                395 |                  117 |                               4.48 |
+| 751-900        |               24 |                164 |                   24 |                               8.18 |
+| 901+           |               20 |                 38 |                   18 |                               0.86 |
 
 These are finding references, not unique new findings. A chunk can cite an
 existing finding, and smaller chunks are often risk-selected, so the table
@@ -35,14 +35,14 @@ assigned source itself.
 Start smaller than Sol-medium and use Luna's additional reasoning for wider
 evidence tracing, not for feeding it more assigned source.
 
-| Scope | Initial Luna-max budget |
-|---|---:|
-| Native, parser, filesystem, network, concurrency, or security boundary | 250-400 assigned lines |
-| High-fan-out stateful Kotlin, PowerShell, Rust, or build logic | 300-450 assigned lines |
-| Low-fan-out stateful application or build logic | 450-600 assigned lines |
-| Cohesive data model or low-branching helper code | 600-750 assigned lines |
-| Tests and ordinary documentation | 750-900 assigned lines |
-| Mechanical or generated-data batches | Keep current batch units and use format-specific validation |
+| Scope                                                                  |                                     Initial Luna-max budget |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------: |
+| Native, parser, filesystem, network, concurrency, or security boundary |                                      250-400 assigned lines |
+| High-fan-out stateful Kotlin, PowerShell, Rust, or build logic         |                                      300-450 assigned lines |
+| Low-fan-out stateful application or build logic                        |                                      450-600 assigned lines |
+| Cohesive data model or low-branching helper code                       |                                      600-750 assigned lines |
+| Tests and ordinary documentation                                       |                                      750-900 assigned lines |
+| Mechanical or generated-data batches                                   | Keep current batch units and use format-specific validation |
 
 Additional limits:
 
@@ -151,11 +151,11 @@ assuming that a larger model should receive larger chunks.
 
 ## Preliminary results
 
-| Experiment | Assigned scope | Approximate wall time | Baseline recall | Other candidates | Outcome |
-|---|---:|---:|---|---|---|
-| A | 385 lines, high fan-out | Over 20 minutes | No final report | Five incomplete hypotheses | Stopped after context compaction and repeated exploration |
-| B1 | 572 lines, one touch state machine | 16 minutes | Mutable action/pointer identity recalled | Held-gamepad repeat candidate | Completed |
-| B2 | 265 lines, four subsystems across three paths | 15 minutes | Store fallback recalled; Play Core task identity missed | Three P3/investigation candidates | Completed |
+| Experiment |                                Assigned scope | Approximate wall time | Baseline recall                                         | Other candidates                  | Outcome                                                   |
+| ---------- | --------------------------------------------: | --------------------: | ------------------------------------------------------- | --------------------------------- | --------------------------------------------------------- |
+| A          |                       385 lines, high fan-out |       Over 20 minutes | No final report                                         | Five incomplete hypotheses        | Stopped after context compaction and repeated exploration |
+| B1         |            572 lines, one touch state machine |            16 minutes | Mutable action/pointer identity recalled                | Held-gamepad repeat candidate     | Completed                                                 |
+| B2         | 265 lines, four subsystems across three paths |            15 minutes | Store fallback recalled; Play Core task identity missed | Three P3/investigation candidates | Completed                                                 |
 
 ### Experiment A
 
@@ -232,14 +232,14 @@ The scopes covered:
 There were seven independently known roots in the five positive scopes:
 BR-0448, BR-0454, BR-0455, BR-0261, BR-0262, BR-0301, and BR-0177.
 
-| Metric | Luna max | Sol medium |
-|---|---:|---:|
-| Known-root recall | 6 of 7 | 7 of 7 |
-| Completed paired scopes | 6 of 8 | 8 of 8 |
-| Runs stopped at 15-16 minute cap | 2 | 0 |
-| Approximate completed-run median | about 13 minutes | about 4.5 minutes |
-| Independently confirmed novel roots from the paired trial | 1 | 4 |
-| Clean native-header control | Correct no-finding result | Correct no-finding result |
+| Metric                                                    |                  Luna max |                Sol medium |
+| --------------------------------------------------------- | ------------------------: | ------------------------: |
+| Known-root recall                                         |                    6 of 7 |                    7 of 7 |
+| Completed paired scopes                                   |                    6 of 8 |                    8 of 8 |
+| Runs stopped at 15-16 minute cap                          |                         2 |                         0 |
+| Approximate completed-run median                          |          about 13 minutes |         about 4.5 minutes |
+| Independently confirmed novel roots from the paired trial |                         1 |                         4 |
+| Clean native-header control                               | Correct no-finding result | Correct no-finding result |
 
 The Luna completion count excludes the earlier unpaired 385-line setup trial,
 which was also stopped after more than 20 minutes and context compaction.

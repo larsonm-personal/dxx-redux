@@ -1,9 +1,11 @@
 # Metadata browser progress plan
 
 ## Goal
+
 Add visible progress feedback when opening slow mod metadata entries such as `kcxf2rm.mn2`, and improve existing metadata loading spinners with best-effort progress bars.
 
 ## Steps
+
 - [x] Create this plan.
 - [x] Trace the mod metadata browser detail-loading path and existing metadata analysis progress UI.
 - [x] Add minimally detailed progress state for descriptor/detail loading.
@@ -12,6 +14,7 @@ Add visible progress feedback when opening slow mod metadata entries such as `kc
 - [x] Run scoped code quality and relevant tests/builds.
 
 ## Notes
+
 - Existing unrelated local edits are present. Avoid touching them unless directly needed.
 - `MissionZipConstituentDialog` currently computes `GameFileMetadata.summarizeZipConstituent` in `remember`,
   which can block the first dialog frame. Move it to async state before adding the progress UI.

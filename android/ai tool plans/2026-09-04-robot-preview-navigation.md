@@ -5,6 +5,7 @@
 - [x] Add regression coverage, format changed files, and build/test both games
 
 Validation:
+
 - Android x86_64 debug APK assembled, compiling the shared preview for D1 and D2
 - All five RobotPreviewRequestStoreTest tests passed, including identical mission navigation from early/late entries and duplicate robot ID variants
 - Scoped code quality checks and diff whitespace checks passed

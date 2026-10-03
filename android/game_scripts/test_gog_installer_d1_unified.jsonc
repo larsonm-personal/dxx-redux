@@ -27,113 +27,122 @@
 //
 // Run via: android/tests/test_gog_installer_d1_unified.ps1
 [
-    {"_info": {
-        "games": ["d1"],
-        "_standalone": false,
-        "_owner": "test_gog_installer_d1_unified",
-        "params": {
-            "INSTALLER_VARIANT": {
-                "label": "D1 GOG installer variant",
-                "options": {
-                    "d1_windows_exe": {
-                        "INSTALLER_DEVICE_PATH": "/data/local/tmp/setup_descent_1.4a_(16596).exe",
-                        "INSTALLER_LABEL": "D1 Windows GOG .exe",
-                        "CONTENT_LABEL": "setup descent 1.4a (16596)"
+    {
+        "_info": {
+            "games": ["d1"],
+            "_standalone": false,
+            "_owner": "test_gog_installer_d1_unified",
+            "params": {
+                "INSTALLER_VARIANT": {
+                    "label": "D1 GOG installer variant",
+                    "options": {
+                        "d1_windows_exe": {
+                            "INSTALLER_DEVICE_PATH": "/data/local/tmp/setup_descent_1.4a_(16596).exe",
+                            "INSTALLER_LABEL": "D1 Windows GOG .exe",
+                            "CONTENT_LABEL": "setup descent 1.4a (16596)",
+                        },
+                        "d1_mac_pkg": {
+                            "INSTALLER_DEVICE_PATH": "/data/local/tmp/descent_enUS_1_0_35122.pkg",
+                            "INSTALLER_LABEL": "D1 Mac GOG .pkg",
+                            "CONTENT_LABEL": "descent enUS 1 0 35122",
+                        },
                     },
-                    "d1_mac_pkg": {
-                        "INSTALLER_DEVICE_PATH": "/data/local/tmp/descent_enUS_1_0_35122.pkg",
-                        "INSTALLER_LABEL": "D1 Mac GOG .pkg",
-                        "CONTENT_LABEL": "descent enUS 1 0 35122"
-                    }
-                }
-            }
-        }
-    }},
+                },
+            },
+        },
+    },
 
     // ── Phase 1: Launcher setup ─────────────────────────────────
 
-    {"action": "enter_launcher"},
-    {"action": "log", "message": "=== D1 GOG Installer: Launcher Phase ==="},
+    { "action": "enter_launcher" },
+    { "action": "log", "message": "=== D1 GOG Installer: Launcher Phase ===" },
 
-    {"action": "reset_state"},
+    { "action": "reset_state" },
 
     // Clear any existing game data set
-    {"action": "setup_command", "command": "clear_set",
-     "args": {"name": "default"}, "post_delay_ms": 1000},
+    { "action": "setup_command", "command": "clear_set", "args": { "name": "default" }, "post_delay_ms": 1000 },
 
-    {"action": "log", "message": "Importing ${INSTALLER_LABEL}"},
+    { "action": "log", "message": "Importing ${INSTALLER_LABEL}" },
 
     // Import selected D1 GOG installer. D1 GOG releases have no .gog/.inst
     // audio pair, so include_audio has no effect beyond keeping parity with D2.
-    {"action": "setup_command", "command": "import_gog",
-     "args": {
-         "path": "${INSTALLER_DEVICE_PATH}",
-         "include_audio": true
-     }},
+    {
+        "action": "setup_command",
+        "command": "import_gog",
+        "args": {
+            "path": "${INSTALLER_DEVICE_PATH}",
+            "include_audio": true,
+        },
+    },
 
     // D1 installers are much smaller than D2, but still run asynchronously.
-    {"action": "wait_for", "field": "can_launch", "value": "true", "timeout_ms": 120000},
-    {"action": "log", "message": "Import complete, can_launch=true"},
+    { "action": "wait_for", "field": "can_launch", "value": "true", "timeout_ms": 120000 },
+    { "action": "log", "message": "Import complete, can_launch=true" },
 
     // Verify D1 readiness, the root game files, and one managed extras bundle.
-    {"action": "assert", "expect": {
-        "d1.ready": "true",
-        "set_files[0]": "assets.json",
-        "set_files[1]": "content_state.json",
-        "set_files[2]": "descent.hog",
-        "set_files[3]": "descent.pig",
-        "content_entry_count": "1",
-        "content_entries[0].name": "${CONTENT_LABEL}",
-        "content_entries[0].kind": "mod",
-        "content_entries[0].managed": "true",
-        "content_entries[0].enabled": "true"
-    }},
+    {
+        "action": "assert",
+        "expect": {
+            "d1.ready": "true",
+            "set_files[0]": "assets.json",
+            "set_files[1]": "content_state.json",
+            "set_files[2]": "descent.hog",
+            "set_files[3]": "descent.pig",
+            "content_entry_count": "1",
+            "content_entries[0].name": "${CONTENT_LABEL}",
+            "content_entries[0].kind": "mod",
+            "content_entries[0].managed": "true",
+            "content_entries[0].enabled": "true",
+        },
+    },
 
     // The launcher should auto-switch to D1 when only D1 data is present.
-    {"action": "assert_button", "text": "Launch Descent 1", "enabled": true},
-    {"action": "log", "message": "D1 files verified -- switching to game"},
+    { "action": "assert_button", "text": "Launch Descent 1", "enabled": true },
+    { "action": "log", "message": "D1 files verified -- switching to game" },
 
     // Ensure default set is still active before launch.
-    {"action": "setup_command", "command": "switch_set",
-     "args": {"name": "default"}, "post_delay_ms": 500},
+    { "action": "setup_command", "command": "switch_set", "args": { "name": "default" }, "post_delay_ms": 500 },
 
-    {"action": "enter_game", "game": "d1"},
+    { "action": "enter_game", "game": "d1" },
 
     // ── Phase 2: In-game verification ──────────────────────────
 
-    {"action": "log", "message": "=== D1 GOG Installer: In-Game Phase ==="},
+    { "action": "log", "message": "=== D1 GOG Installer: In-Game Phase ===" },
 
     // Accept default pilot name. D1 uses the title-screen / default-name path,
     // so a plain Enter is more reliable than selecting an explicit menu item.
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
-    {"action": "key", "key": "enter", "post_delay_ms": 100},
+    { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000 },
+    { "action": "key", "key": "enter", "post_delay_ms": 100 },
 
     // Main menu -> New game.
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
-    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
+    { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000 },
+    { "action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000 },
 
     // Accept default mission and level 1.
-    {"action": "key", "key": "enter", "post_delay_ms": 100},
-    {"action": "key", "key": "enter", "post_delay_ms": 100},
+    { "action": "key", "key": "enter", "post_delay_ms": 100 },
+    { "action": "key", "key": "enter", "post_delay_ms": 100 },
 
     // Difficulty
-    {"action": "select", "text": "Rookie", "optional": true, "post_delay_ms": 100, "timeout_ms": 5000},
+    { "action": "select", "text": "Rookie", "optional": true, "post_delay_ms": 100, "timeout_ms": 5000 },
 
     // D1's post-difficulty transition responds more reliably to Escape here
     // than to skip_briefing's tap-based fallback.
-    {"action": "key", "key": "escape", "post_delay_ms": 100},
-    {"action": "key", "key": "escape", "post_delay_ms": 100},
+    { "action": "key", "key": "escape", "post_delay_ms": 100 },
+    { "action": "key", "key": "escape", "post_delay_ms": 100 },
 
     // Wait for game
-    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 20000},
-    {"action": "wait_ms", "ms": 2000},
+    { "action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 20000 },
+    { "action": "wait_ms", "ms": 2000 },
 
-    {"action": "introspect"},
-    {"action": "assert", "expect": {
-        "in_game": "true",
-        "screen_mode": "game",
-        "current_level_num": "1"
-    }},
+    { "action": "introspect" },
+    {
+        "action": "assert",
+        "expect": {
+            "in_game": "true",
+            "screen_mode": "game",
+            "current_level_num": "1",
+        },
+    },
 
-    {"action": "log", "message": "=== TEST: D1 GOG Installer -- ALL CHECKS PASS ==="}
+    { "action": "log", "message": "=== TEST: D1 GOG Installer -- ALL CHECKS PASS ===" },
 ]

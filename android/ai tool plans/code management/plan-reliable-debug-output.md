@@ -32,7 +32,7 @@ Files: game_automate.cpp only. All behind `#ifdef INTROSPECT_ON` (already presen
 
 4. **Primary result source: file, not logcat** -- in `Watch-AutomationResult`
    (test_helpers.ps1), every poll iteration: `adb shell run-as <pkg> cat
-   files/automation_result.json`. If it exists and parses, use it as authoritative.
+files/automation_result.json`. If it exists and parses, use it as authoritative.
    Fall back to logcat only if file not found.
 
 5. **Dump diagnostics on timeout/failure** -- on failure, cat
@@ -54,8 +54,8 @@ makes this output queryable through the existing introspection system.
    512 lines x 256 chars ring buffer with monotonic sequence counter. API:
    - `console_ringbuf_add(const char *line)` -- add line to ring buffer
    - `console_ringbuf_get_json(uint64_t since_seq)` -- return JSON with lines since seq
-   Thread-safe via mutex (game thread writes, JNI thread reads).
-   Entire file guarded by `#ifdef INTROSPECT_ON`.
+     Thread-safe via mutex (game thread writes, JNI thread reads).
+     Entire file guarded by `#ifdef INTROSPECT_ON`.
 
 8. **Hook `con_printf` in d1 and d2** -- in d2/main/console.c and d1/main/console.c,
    after the existing `printf(buffer)` call, add `#ifdef INTROSPECT_ON` block (~3
@@ -79,6 +79,7 @@ d2/main/console.c.
 
 All new C/C++ code is guarded by `#ifdef INTROSPECT_ON`, the same define used by
 the existing introspection and automation systems. This define is:
+
 - Set in android/app/src/main/cpp/CMakeLists.txt for debug Android builds
 - Not set for Windows/Linux/Mac desktop builds (those use d1/CMakeLists.txt and
   d2/CMakeLists.txt which do not define INTROSPECT_ON)
@@ -106,29 +107,31 @@ file.
 On test failure or timeout, the runner automatically dumps the last 30 lines of
 `automation_log.jsonl`. This shows exactly which step was executing and what it was
 waiting for. Example JSONL line:
-  `{"seq":5,"step":3,"total":12,"action":"wait_for","status":"timeout","elapsed_ms":20000,"detail":"screen_mode = game"}`
+`{"seq":5,"step":3,"total":12,"action":"wait_for","status":"timeout","elapsed_ms":20000,"detail":"screen_mode = game"}`
 
 For manual debugging, cat directly:
-  `adb shell run-as com.dxxredux.app cat files/automation_log.jsonl`
+`adb shell run-as com.dxxredux.app cat files/automation_log.jsonl`
 
 ### Console ring buffer (via introspect.json or direct JNI query)
 
 Every introspection dump now includes the last 50 con_printf lines in a `console`
 section. This means:
+
 - AI tools that call `introspect.sh` see recent engine output alongside game state
 - The `introspect` automation action captures console output at that moment
 - After a test, `introspect.sh console` shows just the console lines
 
 For polling during test execution:
-  `adb shell run-as com.dxxredux.app cat files/introspect.json | python3 -c "import json,sys; d=json.load(sys.stdin); [print(l['text']) for l in d.get('console',{}).get('lines',[])]"`
+`adb shell run-as com.dxxredux.app cat files/introspect.json | python3 -c "import json,sys; d=json.load(sys.stdin); [print(l['text']) for l in d.get('console',{}).get('lines',[])]"`
 
 For direct query without introspection dump (if JNI method is called from Kotlin):
-  Would be exposed through a broadcast or direct native call.
+Would be exposed through a broadcast or direct native call.
 
 ### Diagnostic dump pattern (for test scripts)
 
 Scripts can add an `introspect` step before risky operations to capture engine state
 including console output:
+
 ```json5
 // Before a tricky operation, snapshot state including console
 {"action": "introspect"},
@@ -136,6 +139,7 @@ including console output:
 ```
 
 After a test failure, the runner's diagnostic dump shows:
+
 1. Last 30 lines of automation_log.jsonl (what the script was doing)
 2. Last 30 lines of debug log files (what the engine was doing)
 3. These are files, not logcat, so they survive buffer overflow and emulator issues.

@@ -15,6 +15,7 @@ partial:
   new names
 
 Out of scope:
+
 - moving large OGL helper bodies to `android/app/src/main/cpp/shared/`
 - deleting broad OGL diagnostics wholesale
 - changing merged-wall route selection or cached-premerge behavior
@@ -29,14 +30,14 @@ Out of scope:
 ## Work items
 
 - [x] Remove the metl154-only render-list diagnostics from `d1/main/render.c`
-  and `d2/main/render.c`, and rename the surviving old-merge log tag to
-  generic merged-wall wording
+      and `d2/main/render.c`, and rename the surviving old-merge log tag to
+      generic merged-wall wording
 - [x] Rename remaining generic helpers in `d1/main/texmerge.c` and
-  `d2/main/texmerge.c`
+      `d2/main/texmerge.c`
 - [x] Rename shared name-gated helpers to neutral merged-wall wording where
-  the code is already generic
+      the code is already generic
 - [x] Remove or reduce the `g_metl154_*` / `METL154_*` alias bridge in
-  both `ogl.c` files where the replacement is mechanical and safe
+      both `ogl.c` files where the replacement is mechanical and safe
 - [x] Update this file with results and validation
 
 ## Notes

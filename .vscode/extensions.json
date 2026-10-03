@@ -13,6 +13,6 @@
         // ideally this one would be provided by a large company
         "mathiasfrohlich.Kotlin",
         // windows helper scripts
-        "ms-vscode.PowerShell",
+        "ms-vscode.PowerShell"
     ]
 }

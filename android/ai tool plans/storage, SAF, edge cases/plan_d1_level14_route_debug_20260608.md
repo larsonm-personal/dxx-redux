@@ -1,10 +1,12 @@
 # D1 level 14 route debug
 
 ## Goal
+
 - Fix the false `gold key unreachable` result for D1 level 14.
 - Prefer a graph/pathing correction over assuming key reachability.
 
 ## Plan
+
 - [x] Inspect scanner graph traversal and D1 wall/key adapter values around locked doors.
 - [x] Reproduce the level 14 route failure with focused diagnostics.
 - [x] Remove same-key detour fallback; it is still a special case, not the underlying route fix.
@@ -13,6 +15,7 @@
 - [x] Refresh metadata fixture and run focused verification.
 
 ## Notes
+
 - Walkthrough/playthrough evidence says D1 level 14 is ordinary progression: blue key, yellow key, red key, reactor, exit.
 - In code/UI naming this scanner currently calls the yellow key `gold`.
 - The failure was not a missing key object. D1 level 14 has blue, yellow/gold, and red key targets in the object list.

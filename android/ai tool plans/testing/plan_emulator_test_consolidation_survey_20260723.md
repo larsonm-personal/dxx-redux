@@ -194,11 +194,11 @@ Scope selected on 2026-07-23:
 
 - [x] Merge launcher button discovery into the OGL runtime owner
 - [x] Keep the Advanced debug-log refresh check standalone after isolated
-  reruns showed its off-screen assertion is not currently composable
+      reruns showed its off-screen assertion is not currently composable
 - [x] Merge launcher graphics debug preference checks into the OGL runtime owner
 - [x] Merge the D2 MSAA FBO smoke check into the OGL runtime owner
 - [x] Do not land the investigated launcher scroll-helper change; neither
-  accessibility action moved the Advanced Compose page
+      accessibility action moved the Advanced Compose page
 - [x] Remove the three absorbed standalone scripts
 - [x] Preserve the existing D1 owner path
 - [x] Run catalog, assertion-preservation, and scoped quality checks
@@ -249,11 +249,11 @@ Scope selected on 2026-07-23:
 - [x] Merge the D2 reticle scroll-box assertion into the Options phase
 - [x] Merge pause-menu return assertions into the owner's in-level pause phase
 - [x] Keep D2 readable tiny-help standalone because its direct-render assertion
-  conflicts with the owner's 3:4, 1280x960 config
+      conflicts with the owner's 3:4, 1280x960 config
 - [x] Remove the five absorbed standalone scripts
 - [x] Keep `test_pause_menu_viewport_d2` and
-  `test_controls_readability_d2` out of this owner because they deliberately
-  write a conflicting 9:16, 1280x720 config
+      `test_controls_readability_d2` out of this owner because they deliberately
+      write a conflicting 9:16, 1280x720 config
 - [x] Run structural, catalog, quality, and emulator validation
 - [x] Record final validation results
 
@@ -397,7 +397,7 @@ Validation results:
 Scope selected on 2026-07-23:
 
 - [x] Merge D2 pause-menu viewport coverage into
-  `test_controls_readability_d2`
+      `test_controls_readability_d2`
 - [x] Remove the absorbed pause-menu viewport script
 - [x] Run expectation-preservation, catalog, quality, and emulator validation
 - [x] Record final validation results
@@ -436,7 +436,7 @@ Validation results:
 Scope selected on 2026-07-23:
 
 - [x] Merge Guide-Bot cage-release coverage into
-  `test_guidebot_unexplored_goal`
+      `test_guidebot_unexplored_goal`
 - [x] Merge Guide-Bot HUD progress-layout coverage into the same owner
 - [x] Remove the two absorbed standalone scripts if the combined route passes
 - [x] Run expectation-preservation, catalog, quality, and emulator validation
@@ -527,7 +527,7 @@ Validation results:
 Scope selected on 2026-07-23:
 
 - [x] Reuse one Obsidian import, metadata analysis, and runner session for
-  levels 1, 2, 3, 10, and 7
+      levels 1, 2, 3, 10, and 7
 - [x] Keep `test_obsidian_level1_objective_markers` as the combined owner
 - [x] Use clean game-menu or launcher handoffs between level phases
 - [x] Put the terminal level 7 route phase last

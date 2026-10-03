@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <!-- Allow cleartext (non-TLS) WebSocket to emulator host loopback for dev testing.
      Production builds should use wss:// and remove this exception. -->
 <network-security-config>

@@ -35,7 +35,10 @@ class AndroidGameFileExtensionsTest {
     @Test
     fun nativeTablesMirrorAuthoritativeKotlinRoles() {
         val source = nativePolicySource()
-        assertEquals(GameFileFormats.discCompanionExtensions, nativeTable(source, "dxx_android_disc_companion_extensions"))
+        assertEquals(
+            GameFileFormats.discCompanionExtensions,
+            nativeTable(source, "dxx_android_disc_companion_extensions"),
+        )
         assertEquals(
             GameFileFormats.gameImportExtensions,
             nativeTable(source, "dxx_android_game_file_extensions"),
@@ -61,7 +64,29 @@ class AndroidGameFileExtensionsTest {
             GameFileFormats.macDiscExtractExtensions - GameFileFormats.discExtractExtensions,
         )
         assertEquals(
-            setOf("dtx", "hxm", "pog", "rdl", "rl2", "sdl", "sl2", "tex", "txb", "ctb", "sng", "pcx", "hmp", "hmq", "mid", "vham", "wav", "ogg", "mp3", "flac", "m3u"),
+            setOf(
+                "dtx",
+                "hxm",
+                "pog",
+                "rdl",
+                "rl2",
+                "sdl",
+                "sl2",
+                "tex",
+                "txb",
+                "ctb",
+                "sng",
+                "pcx",
+                "hmp",
+                "hmq",
+                "mid",
+                "vham",
+                "wav",
+                "ogg",
+                "mp3",
+                "flac",
+                "m3u",
+            ),
             GameFileFormats.discExtractExtensions - GameFileFormats.macDiscExtractExtensions,
         )
     }

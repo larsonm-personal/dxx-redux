@@ -10,7 +10,7 @@ expanding inherited D1/D2 diffs.
 
 - [x] Confirm the live ranking, clean worktree, finding, and remediation owner
 - [x] Trace the production loader, existing checked filename helpers, callers,
-  build ownership, and current tests
+      build ownership, and current tests
 - [x] Implement checked DXA mask-name construction in branch-added shared code
 - [x] Add exact-fit, one-byte-over, empty, and ordinary-name runtime coverage
 - [x] Run focused tests, scoped quality, Windows D1/D2 builds, and all Android ABIs

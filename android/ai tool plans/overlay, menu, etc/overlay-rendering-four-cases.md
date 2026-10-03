@@ -28,14 +28,17 @@ which is redundant since ogl_bindbmtex loads on-demand.
 ## Changes
 
 ### render.c (d1 + d2)
+
 - Remove the `#ifndef OGL_MERGE` super-transparent bypass block
 
 ### convert_d2xxl_textures.ps1
+
 - Use fuzz matching (5%) and zero out RGB for transparent pixels: prevents
   ETC2 color bleeding at block boundaries
 - Apply in strip splitting, post-processing, and Read-TGA fallback
 
 ## Status
+
 - [x] Remove bypass block (d1 + d2)
 - [x] Fix DXA conversion pipeline (3 locations: strip, post-process, Read-TGA)
 - [x] Rebuild DXA (d2-hires-128-textures-ktx2.dxa, 31MB)

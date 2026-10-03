@@ -51,8 +51,7 @@ def canonicalize_mission_metadata(value: object, parent_key: str = "") -> object
     if isinstance(value, list):
         normalized = [canonicalize_mission_metadata(item, parent_key) for item in value]
         if parent_key == "" and all(
-            isinstance(item, dict) and isinstance(item.get("mission_filename"), str)
-            for item in normalized
+            isinstance(item, dict) and isinstance(item.get("mission_filename"), str) for item in normalized
         ):
             normalized.sort(
                 key=lambda item: (
@@ -146,10 +145,7 @@ def validate_mission_intent(value: object) -> None:
     }
     missing_declarations = sorted(declaration_fields.difference(intent["declarations"]))
     if missing_declarations:
-        raise ValueError(
-            "mission_intent declarations are missing required fields: "
-            + ", ".join(missing_declarations)
-        )
+        raise ValueError("mission_intent declarations are missing required fields: " + ", ".join(missing_declarations))
 
 
 def format_json_text(text: str, sort_keys: bool, mission_metadata: bool = False) -> str:
@@ -233,9 +229,7 @@ def main() -> int:
                 # Windows PowerShell 5.1 writes a UTF-8 BOM, while Python can
                 # decode redirected stdin with the active Windows code page
                 text = text[3:]
-            sys.stdout.write(
-                format_json_text(text, args.sort_keys, args.mission_metadata)
-            )
+            sys.stdout.write(format_json_text(text, args.sort_keys, args.mission_metadata))
             return 0
         except (json.JSONDecodeError, ValueError) as error:
             print(f"stdin: JSON validation error: {error}", file=sys.stderr)

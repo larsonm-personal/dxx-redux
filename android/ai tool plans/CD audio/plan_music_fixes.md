@@ -1,6 +1,7 @@
 # Plan: Music picker fixes and launcher improvements
 
 ## Task 1: Show all audio tracks with decoded names -- DONE
+
 - MusicControlPanel.kt loadTracks() calls nativeGetNumAudioTracks/nativeGetTrackName
 - These already filter data tracks (type==1 only in RBAGetNumAudioTracks)
 - Track indices are 0-based in the loop, displayed as "1. Name"
@@ -12,6 +13,7 @@
 - Fix: in loadTracks(), skip the first 2 tracks (title/credits), start from index 2
 
 ## Task 2: Add scroll indicators -- DONE
+
 - MusicControlPanel already has scroll via touch drag (touchStartY, scrollOffset, maxScroll)
 - maxScroll() computes contentHeight - viewHeight correctly
 - The panel uses Canvas-based drawing, not Compose
@@ -26,7 +28,8 @@
 - Wait - the user said "track 9" exists but they can't scroll to it. So the tracks are loaded but scroll isn't working or isn't obvious. The panel uses touch dragging which requires long press and drag.
 - Add scroll indicator arrows at top/bottom of track list when more content exists.
 
-## Task 3: Recognize .gog/.inst in set directory -- DONE  
+## Task 3: Recognize .gog/.inst in set directory -- DONE
+
 - MusicInfoSection calls checkFiles(filesDir, MUSIC_FILES) -- checks app root
 - But .gog/.inst files live in sets/default/ (the setDir)
 - D2 game files use checkFiles(setDir, D2_FILES)
@@ -37,11 +40,13 @@
   search path, the engine finds them. The launcher just needs to report correctly.
 
 ## Task 4: Fix text gog/inst -- DONE
+
 - MusicPickerPage.kt CdAudioSection text says "bin/cue or gog"
 - Change to "bin/cue or gog/inst"
 - Also MusicInfoSection in SetupActivity.kt says the same
 
 ## Task 5: Split game_data_to_copy_to_emulator -- DONE
+
 - Create data/ and download/ subdirs
 - Update push_game_data.sh to handle both: data/ -> sets/default, download/ -> /sdcard/Download
 - Add README to game_data_to_copy_to_emulator/
@@ -52,6 +57,7 @@
 - Keep the README tracked
 
 ## Task 6: Move Music button to MusicInfoSection -- DONE
+
 - Remove "Music" OutlinedButton from ControllerSection
 - Remove onEditMusic param from ControllerSection
 - In MusicInfoSection, show music mode + [Edit] button

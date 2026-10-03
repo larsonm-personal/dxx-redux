@@ -7,6 +7,7 @@
 - [x] Validate with host builds for D1 and D2
 
 Validation notes:
+
 - `./run-windows-build.ps1 -Target d1` succeeded after replacing four legacy `fl2f(...)` static initializers with integer fixed-point expressions
 - `./run-windows-build.ps1 -Target d2` succeeded after the same initializer cleanup in D2
 - `./android/run-code-quality.ps1 --fix` completed with all checks passing

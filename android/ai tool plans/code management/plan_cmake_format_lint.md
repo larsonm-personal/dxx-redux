@@ -5,6 +5,7 @@ clang-format / ktlint / shfmt. Apply only to cmake files added on the cmake bran
 (android/, cmake/, tools/etc2tool/), never to files in d1/ or d2/.
 
 ## In-scope cmake files
+
 - android/app/src/main/cpp/CMakeLists.txt
 - android/app/src/main/cpp/extract/CMakeLists.txt
 - cmake/input-demo-build-metadata.cmake
@@ -14,6 +15,7 @@ clang-format / ktlint / shfmt. Apply only to cmake files added on the cmake bran
 - tools/etc2tool/CMakeLists.txt
 
 ## Phases
+
 1. [x] Plan file
 2. [x] tool_versions.conf entries (CMAKELANG_VERSION, PYTHON_EMBED_VERSION)
 3. [x] get_cmake_format.sh: download embeddable Python on Windows; pip install cmakelang into a per-version DEST

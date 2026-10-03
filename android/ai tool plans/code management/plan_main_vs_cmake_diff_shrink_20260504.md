@@ -3,9 +3,11 @@
 Status: active
 
 Goal:
+
 - shrink the `d1/` and `d2/` branch diff for `main..cmake` by moving Android-only helper bodies out of legacy game files and into the existing Android/shared or per-game hook surfaces
 
 Baseline survey:
+
 - `git merge-base main cmake` is `fb555eec75e1ed12c8348805ab335afb4c721b06`, matching local `main`
 - `origin/HEAD` points to `main`, so `main` is the correct parent baseline for this pass
 - `git diff --stat main..cmake -- d1 d2` shows the remaining largest legacy churn clusters in `arch/ogl/ogl.c`, `newdemo.c`, `net_udp.c`, `game.c`, `multi.c`, `state.c`, and the still-active input-demo instrumentation files
@@ -13,6 +15,7 @@ Baseline survey:
 - the nearest remaining shrink targets are now the larger `main..cmake` hotspots outside the extracted collision and escort helper surfaces, such as `game.c`, `state.c`, `newdemo.c`, `net_udp.c`, `multi.c`, and `arch/ogl/ogl.c`
 
 Plan:
+
 - [x] survey `main..cmake` branch topology and d1/d2 diff hotspots
 - [x] choose the next low-risk extractable cleanup slice from the branch diff
 - [x] move the remaining player-bump helper bodies out of `d1/main/collide.c` and `d2/main/collide.c`
@@ -33,6 +36,7 @@ Plan:
 - [x] choose the next dedicated shrink tranche from the ranked survey lanes below
 
 Completed tranche:
+
 - moved `input_demo_log_player_bump_probe(...)` into `d1/main/input_demo_hooks.c` and `d2/main/input_demo_hooks.c`
 - removed the now-redundant local player-bump helper bodies from both legacy `collide.c` files and dropped the stale D2-only bump gate
 - moved the cross-file collision logging declarations into `d1/main/input_demo_hooks.h` and `d2/main/input_demo_hooks.h`, keeping the public hook surface out of the legacy `collide.c` files
@@ -90,59 +94,59 @@ Added Removed Total Path
 Most important interpretation change versus the older shrink studies:
 
 - OGL is no longer the only dominant story. Earlier extraction tranches worked,
-	but the saved lines pooled into new per-game helper sinks, especially
-	`input_demo_hooks.c` and `input_demo_start.c`.
+  but the saved lines pooled into new per-game helper sinks, especially
+  `input_demo_hooks.c` and `input_demo_start.c`.
 - That is a real win for upstreamability of the original 1990s files, but it
-	means the next survey must distinguish between good churn in sink files and
-	bad churn still stranded in legacy files.
+  means the next survey must distinguish between good churn in sink files and
+  bad churn still stranded in legacy files.
 - The next phase should therefore be a mixed strategy: continue shrinking the
-	legacy files, but also start deduplicating the sink files themselves where the
-	D1/D2 copies are now near-identical.
+  legacy files, but also start deduplicating the sink files themselves where the
+  D1/D2 copies are now near-identical.
 
 ## Survey reading of the current diff
 
 The current D1/D2 shrink picture splits into four different kinds of churn:
 
 1. **Successful body extractions that now need second-stage deduplication**
-	 - `d1/main/input_demo_hooks.c`, `d2/main/input_demo_hooks.c`
-	 - `d1/main/input_demo_start.c`, `d2/main/input_demo_start.c`
-	 - These files are doing the right job structurally: they keep helper bodies
-		 out of upstream-like legacy files. The next question is whether the new D1
-		 and D2 sink files are themselves duplicating too much shared Android/demo
-		 logic.
+   - `d1/main/input_demo_hooks.c`, `d2/main/input_demo_hooks.c`
+   - `d1/main/input_demo_start.c`, `d2/main/input_demo_start.c`
+   - These files are doing the right job structurally: they keep helper bodies
+     out of upstream-like legacy files. The next question is whether the new D1
+     and D2 sink files are themselves duplicating too much shared Android/demo
+     logic.
 
 2. **Legacy upstream files that still carry Android-specific bodies**
-	 - `state.c`, `newdemo.c`, `net_udp.c`, `newmenu.c`, `playsave.c`,
-		 `multi.c`, `gamecntl.c`, `kconfig.c`
-	 - These are still the highest-value shrink targets because every line left in
-		 them directly increases future merge cost.
+   - `state.c`, `newdemo.c`, `net_udp.c`, `newmenu.c`, `playsave.c`,
+     `multi.c`, `gamecntl.c`, `kconfig.c`
+   - These are still the highest-value shrink targets because every line left in
+     them directly increases future merge cost.
 
 3. **Large but already-mostly-drained platform files**
-	 - `d1/arch/ogl/ogl.c`, `d2/arch/ogl/ogl.c`, plus `gr.c`
-	 - These still matter, but they are no longer the obvious first stop. The
-		 remaining wins here are narrower helper trims, not another broad campaign.
+   - `d1/arch/ogl/ogl.c`, `d2/arch/ogl/ogl.c`, plus `gr.c`
+   - These still matter, but they are no longer the obvious first stop. The
+     remaining wins here are narrower helper trims, not another broad campaign.
 
 4. **Files with high churn that are not really D1/D2 dedup targets**
-	 - `d2/main/dxa_metadata_patch.cpp`
-	 - D2-only AI/physics/object probe files such as `physics.c`, `ai.c`,
-		 `laser.c`, `collide.c`, `object.c`, `fireball.c`, `ai2.c`, `escort.c`
-	 - These may still deserve cleanup, but forcing cross-game sharing is the
-		 wrong goal. The right goal there is smaller D2-local helper surfaces, not
-		 artificial D1/D2 unification.
+   - `d2/main/dxa_metadata_patch.cpp`
+   - D2-only AI/physics/object probe files such as `physics.c`, `ai.c`,
+     `laser.c`, `collide.c`, `object.c`, `fireball.c`, `ai2.c`, `escort.c`
+   - These may still deserve cleanup, but forcing cross-game sharing is the
+     wrong goal. The right goal there is smaller D2-local helper surfaces, not
+     artificial D1/D2 unification.
 
 ## Ranked survey lanes for diff reduction and deduplication
 
 The ranges below are tranche-size estimates, not commitments. They are meant to
 rank opportunities, not promise exact line counts in advance.
 
-| Lane | Current hotspots | What the current diff is telling us | Best reduction move | Rough upside | Risk |
-|---|---|---|---|---|---|
-| A. Input-demo sink dedup | `d1/d2 main/input_demo_hooks.c`, `d1/d2 main/input_demo_start.c`, plus `newdemo.c` and `state.c` callers | helper extraction succeeded, but the sink files now duplicate shared hashing, diag capture, replay-start, and recorder/path logic | move truly shared demo helpers into `android/app/src/main/cpp/shared/input_demo/` or small per-game dedicated files; keep only thin wrappers in the sink files | very high | medium |
-| B. Persistence / save / restore | `d1/d2 main/state.c`, `d1/d2 main/coop_save.c`, `d1/d2 main/playsave.c`, parts of `multi.c` | Android save metadata, rewind, coop save, and launcher bridge logic are still spread across legacy files | centralize bridge bodies in shared save/coop files and leave only game-owned serialization boundaries local | high | medium |
-| C. Network / coop join flow | `d1/d2 main/net_udp.c`, `d1/d2 main/multi.c` | duplicated Android networking helpers remain in upstream-like files even after earlier shared extractions | continue the shared net helper path and keep local wrappers only for side effects, HUD, and game-specific types | high | medium |
-| D. Menu / control / touch UI | `d1/d2 main/newmenu.c`, `gamecntl.c`, `kconfig.c`, smaller `controls.c` / `titles.c` tails | many Android touch, keyboard, and controller affordances are still implemented twice in legacy menu files | move Android-only UI helper bodies to shared UI helpers; keep the original menu control flow in place | medium-high | low-medium |
-| E. OGL leftovers | `d1/d2 arch/ogl/ogl.c`, `gr.c` | still large, but much of the easy shared extraction work already landed | only pursue isolated helper moves with clean boundaries; do not reopen broad OGL restructuring | medium | medium |
-| F. D2-only cleanup, not dedup | `d2/main/dxa_metadata_patch.cpp`, D2-only input-demo probe files | some big files are high churn but not cross-game opportunities | keep these as separate cleanup tranches when needed; do not distort the D1/D2 dedup queue around them | situational | low |
+| Lane                            | Current hotspots                                                                                         | What the current diff is telling us                                                                                               | Best reduction move                                                                                                                                            | Rough upside | Risk       |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| A. Input-demo sink dedup        | `d1/d2 main/input_demo_hooks.c`, `d1/d2 main/input_demo_start.c`, plus `newdemo.c` and `state.c` callers | helper extraction succeeded, but the sink files now duplicate shared hashing, diag capture, replay-start, and recorder/path logic | move truly shared demo helpers into `android/app/src/main/cpp/shared/input_demo/` or small per-game dedicated files; keep only thin wrappers in the sink files | very high    | medium     |
+| B. Persistence / save / restore | `d1/d2 main/state.c`, `d1/d2 main/coop_save.c`, `d1/d2 main/playsave.c`, parts of `multi.c`              | Android save metadata, rewind, coop save, and launcher bridge logic are still spread across legacy files                          | centralize bridge bodies in shared save/coop files and leave only game-owned serialization boundaries local                                                    | high         | medium     |
+| C. Network / coop join flow     | `d1/d2 main/net_udp.c`, `d1/d2 main/multi.c`                                                             | duplicated Android networking helpers remain in upstream-like files even after earlier shared extractions                         | continue the shared net helper path and keep local wrappers only for side effects, HUD, and game-specific types                                                | high         | medium     |
+| D. Menu / control / touch UI    | `d1/d2 main/newmenu.c`, `gamecntl.c`, `kconfig.c`, smaller `controls.c` / `titles.c` tails               | many Android touch, keyboard, and controller affordances are still implemented twice in legacy menu files                         | move Android-only UI helper bodies to shared UI helpers; keep the original menu control flow in place                                                          | medium-high  | low-medium |
+| E. OGL leftovers                | `d1/d2 arch/ogl/ogl.c`, `gr.c`                                                                           | still large, but much of the easy shared extraction work already landed                                                           | only pursue isolated helper moves with clean boundaries; do not reopen broad OGL restructuring                                                                 | medium       | medium     |
+| F. D2-only cleanup, not dedup   | `d2/main/dxa_metadata_patch.cpp`, D2-only input-demo probe files                                         | some big files are high churn but not cross-game opportunities                                                                    | keep these as separate cleanup tranches when needed; do not distort the D1/D2 dedup queue around them                                                          | situational  | low        |
 
 ## Lane A -- Input-demo sink files are now the main dedup frontier
 
@@ -156,138 +160,138 @@ in their own right.
 Fresh local read highlights:
 
 - the tops of both files are visibly near-identical, including
-	`input_demo_state_trace_hash_update`,
-	`input_demo_state_trace_hash_i64`,
-	`input_demo_capture_runtime_state_diag`,
-	`input_demo_capture_player_weapon_diag`, and
-	`input_demo_state_trace_hash_object`
+  `input_demo_state_trace_hash_update`,
+  `input_demo_state_trace_hash_i64`,
+  `input_demo_capture_runtime_state_diag`,
+  `input_demo_capture_player_weapon_diag`, and
+  `input_demo_state_trace_hash_object`
 - the same pattern continues into object-state and runtime-state capture,
-	meaning the files contain a large shared diagnostic core before the truly
-	game-specific D2-only AI, escort, and probe families begin
+  meaning the files contain a large shared diagnostic core before the truly
+  game-specific D2-only AI, escort, and probe families begin
 - `d1/main/input_demo_start.c` and `d2/main/input_demo_start.c` also show a
-	strong overlap: command-line argument parsing, metadata validation,
-	replay-player-config application, and skip-level-intro state are the same or
-	differ only in narrow per-game details
+  strong overlap: command-line argument parsing, metadata validation,
+  replay-player-config application, and skip-level-intro state are the same or
+  differ only in narrow per-game details
 
 What to do next here:
 
 - split the sink-file contents into three classes instead of treating each file
-	as one monolith:
-	- **shared pure helpers**: hashing, diag accumulation, replay metadata checks,
-		small path/file helpers
-	- **shared with adapters**: replay start / result / recorder helpers that need
-		callbacks or game-owned accessors
-	- **leave per-game local**: D2 AI/object/escort/physics probes and any code
-		that directly traverses game-specific structs or control flow
+  as one monolith:
+  - **shared pure helpers**: hashing, diag accumulation, replay metadata checks,
+    small path/file helpers
+  - **shared with adapters**: replay start / result / recorder helpers that need
+    callbacks or game-owned accessors
+  - **leave per-game local**: D2 AI/object/escort/physics probes and any code
+    that directly traverses game-specific structs or control flow
 - prefer moving pure helpers into `android/app/src/main/cpp/shared/input_demo/`
-	because these are Android-branch-only systems already
+  because these are Android-branch-only systems already
 - if a helper is shared only between D1 and D2 but would be awkward in
-	`android/`, a second acceptable shape is dedicated D1/D2 files such as
-	`input_demo_state_diag.c` or `input_demo_recorder_paths.c` under each game,
-	so the original sink files still shrink
+  `android/`, a second acceptable shape is dedicated D1/D2 files such as
+  `input_demo_state_diag.c` or `input_demo_recorder_paths.c` under each game,
+  so the original sink files still shrink
 - for branch-only sink files such as `input_demo_hooks.c`, raw file-size shrink
-	is secondary to single-source dedup; shared helper bodies are still worth
-	doing even if the sink files remain substantial
+  is secondary to single-source dedup; shared helper bodies are still worth
+  doing even if the sink files remain substantial
 
 Best first sub-tranches inside Lane A:
 
 1. shared state-trace hashing and runtime/object/player-weapon diag helpers
 2. shared replay-start command-line parsing and metadata validation
 3. shared quick-record and sidecar path/file helpers now stranded in
-	 `newdemo.c`
+   `newdemo.c`
 4. only after that, a re-survey of the heavier replay/result printers inside the
-	 sink files
+   sink files
 
 Progress in this tranche (2026-05-18):
 
 - completed a first pass of sub-tranche 1 by centralizing the shared
-	state-trace hash, runtime diag, player-weapon diag, object hash, and
-	object-state scan helper bodies in
-	`android/app/src/main/cpp/shared/input_demo_hooks_shared.h`
+  state-trace hash, runtime diag, player-weapon diag, object hash, and
+  object-state scan helper bodies in
+  `android/app/src/main/cpp/shared/input_demo_hooks_shared.h`
 - kept the D1 and D2 robot-awake rule as a tiny local macro adapter in each
-	hook file, which preserves the per-game AI detail split while removing the
-	duplicated traversal body
+  hook file, which preserves the per-game AI detail split while removing the
+  duplicated traversal body
 - completed an initial pass of sub-tranche 2 by centralizing the shared
-	`input_demo_start.c` command-line helpers, metadata validation, replay-player
-	config application, skip-intro state, and replay load plus expected-game
-	check in `android/app/src/main/cpp/shared/input_demo_start_shared.h`
+  `input_demo_start.c` command-line helpers, metadata validation, replay-player
+  config application, skip-intro state, and replay load plus expected-game
+  check in `android/app/src/main/cpp/shared/input_demo_start_shared.h`
 - kept the remaining D1 and D2 differences local through tiny adapters for the
-	primary-order copy size and D2's optional headlight default restore, while the
-	heavier per-game new-level and checkpoint start flow stays in each file
+  primary-order copy size and D2's optional headlight default restore, while the
+  heavier per-game new-level and checkpoint start flow stays in each file
 - extended that same shared `input_demo_start.c` helper include to centralize
-	replay command-line option parsing, common actual-result plus rng-trace setup,
-	loaded-replay preflight, and the checkpoint temp-file write plus restore path
+  replay command-line option parsing, common actual-result plus rng-trace setup,
+  loaded-replay preflight, and the checkpoint temp-file write plus restore path
 - kept the remaining split local through tiny adapters for D1 mission-name
-	normalization, D2 replay-label enablement, and the differing
-	`state_restore_all_sub` call signatures
+  normalization, D2 replay-label enablement, and the differing
+  `state_restore_all_sub` call signatures
 - extended the shared replay-start helper include again to centralize the
-	post-checkpoint player-config reload, replay-player-config application,
-	order-hash capture, and player plus ship physics diagnostic collection,
-	while keeping only the per-game debug print shape local
+  post-checkpoint player-config reload, replay-player-config application,
+  order-hash capture, and player plus ship physics diagnostic collection,
+  while keeping only the per-game debug print shape local
 - tightened that same seam further by centralizing the restored-player debug
-	print itself behind a tiny per-game format adapter for D2's extra headlight
-	field, which leaves the checkpoint restore block in each game down to the
-	local control flow plus one shared diag capture/log call pair
+  print itself behind a tiny per-game format adapter for D2's extra headlight
+  field, which leaves the checkpoint restore block in each game down to the
+  local control flow plus one shared diag capture/log call pair
 - followed that with a larger `input_demo_start.c` shrink by centralizing the
-	remaining loaded-replay control flow itself in
-	`input_demo_start_shared.h`, including shared replay-path validation/load,
-	shared state-trace plus replay-artifact logging, and the full loaded-replay
-	start path for both new-level and checkpoint starts
+  remaining loaded-replay control flow itself in
+  `input_demo_start_shared.h`, including shared replay-path validation/load,
+  shared state-trace plus replay-artifact logging, and the full loaded-replay
+  start path for both new-level and checkpoint starts
 - reduced the remaining D1/D2 split in `input_demo_start.c` to tiny adapters
-	for expected game id plus the existing mission-name and player-config
-	differences, while D2's public `input_demo_load_replay_from_path` and
-	`input_demo_start_loaded_replay` now delegate directly to the same shared
-	body used by D1
+  for expected game id plus the existing mission-name and player-config
+  differences, while D2's public `input_demo_load_replay_from_path` and
+  `input_demo_start_loaded_replay` now delegate directly to the same shared
+  body used by D1
 - started sub-tranche 3 in `newdemo.c` by centralizing the duplicated
-	branch-only input-demo recording helper block in
-	`android/app/src/main/cpp/shared/input_demo_newdemo_shared.h`, including the
-	quick-record mission fallback, checkpoint capture, player-config fill,
-	recorder-settings preparation, slug plus path helpers, new-recording trim
-	logic, and the common start plus flush helpers
+  branch-only input-demo recording helper block in
+  `android/app/src/main/cpp/shared/input_demo_newdemo_shared.h`, including the
+  quick-record mission fallback, checkpoint capture, player-config fill,
+  recorder-settings preparation, slug plus path helpers, new-recording trim
+  logic, and the common start plus flush helpers
 - kept the remaining split in that `newdemo.c` tranche behind tiny macros for
-	D1 versus D2 mission identifiers, primary-order span, and D2-only
-	checkpoint escort state, headlight default, and terminal-exit reset hooks
+  D1 versus D2 mission identifiers, primary-order span, and D2-only
+  checkpoint escort state, headlight default, and terminal-exit reset hooks
 - followed that with another `input_demo_hooks.c` helper pass by extending
-	`android/app/src/main/cpp/shared/input_demo_hooks_shared.h` to centralize the
-	shared live-object counter, the bulk of `input_demo_capture_current_result`,
-	the collision frame and mode helpers, and the full player-bump probe body
+  `android/app/src/main/cpp/shared/input_demo_hooks_shared.h` to centralize the
+  shared live-object counter, the bulk of `input_demo_capture_current_result`,
+  the collision frame and mode helpers, and the full player-bump probe body
 - kept the remaining D1/D2 hooks split local through tiny adapters for D2's
-	debug gate on collision traces plus D2-only shield, terminal-exit, powerup,
-	and kill-baseline bookkeeping around the shared current-result body
+  debug gate on collision traces plus D2-only shield, terminal-exit, powerup,
+  and kill-baseline bookkeeping around the shared current-result body
 - extended the shared `newdemo.c` helper include again to centralize the full
-	quick-record stop and toggle control flow plus the shared
-	`newdemo_stop_recording` body, including the quick-record sidecar rename path
-	and the normal manual-versus-autorecord filename flow
+  quick-record stop and toggle control flow plus the shared
+  `newdemo_stop_recording` body, including the quick-record sidecar rename path
+  and the normal manual-versus-autorecord filename flow
 - kept the remaining D1/D2 `newdemo.c` split local through tiny adapters for
-	the `newdemo_record_oneframeevent_update` call signature and D2's
-	terminal-exit reset hook, while leaving
-	`newdemo_stop_quick_recording_for_level_exit()` as a minimal D2-local wrapper
+  the `newdemo_record_oneframeevent_update` call signature and D2's
+  terminal-exit reset hook, while leaving
+  `newdemo_stop_quick_recording_for_level_exit()` as a minimal D2-local wrapper
 - validated that follow-up `newdemo.c` shrink with `run-windows-build.ps1
-	-Target both` and a scoped `android/run-code-quality.ps1 -Fix -Paths ...`
-	pass on the touched files
+-Target both` and a scoped `android/run-code-quality.ps1 -Fix -Paths ...`
+  pass on the touched files
 - completed the architectural follow-up on the Lane A helper extractions by
-	converting `input_demo_start_shared`, `input_demo_hooks_shared`, and
-	`input_demo_newdemo_shared` from implementation-heavy headers into normal
-	declaration headers backed by compiled `.c` translation units under
-	`android/app/src/main/cpp/shared/`
+  converting `input_demo_start_shared`, `input_demo_hooks_shared`, and
+  `input_demo_newdemo_shared` from implementation-heavy headers into normal
+  declaration headers backed by compiled `.c` translation units under
+  `android/app/src/main/cpp/shared/`
 - replaced the old include-time macro seams with internal
-	`#ifdef DXX_BUILD_DESCENT_II` helpers plus the smallest necessary local
-	accessors for the remaining file-local state, leaving the D1 and D2
-	`input_demo_start.c`, `input_demo_hooks.c`, and `newdemo.c` files with normal
-	header includes only and no shared `.c` inclusion
+  `#ifdef DXX_BUILD_DESCENT_II` helpers plus the smallest necessary local
+  accessors for the remaining file-local state, leaving the D1 and D2
+  `input_demo_start.c`, `input_demo_hooks.c`, and `newdemo.c` files with normal
+  header includes only and no shared `.c` inclusion
 - added the three shared input-demo sources to both D1 and D2 CMake source
-	lists, ran `android/stop-stale-formatters.ps1`, a scoped
-	`android/run-code-quality.ps1 -Fix -Paths ...` pass, and Android native
-	Gradle validation via `:app:buildCMakeDebug[arm64-v8a]` plus
-	`:app:buildCMakeDebug[arm64-v8a]-2`; the final build stayed green with only
-	pre-existing D2 `input_demo_hooks.c` warnings outside the extraction seam
+  lists, ran `android/stop-stale-formatters.ps1`, a scoped
+  `android/run-code-quality.ps1 -Fix -Paths ...` pass, and Android native
+  Gradle validation via `:app:buildCMakeDebug[arm64-v8a]` plus
+  `:app:buildCMakeDebug[arm64-v8a]-2`; the final build stayed green with only
+  pre-existing D2 `input_demo_hooks.c` warnings outside the extraction seam
 
 What not to do here:
 
 - do not immediately move D2 AI/object/escort probe logic into Android shared
-	files just because it sits next to generic hash helpers today
+  files just because it sits next to generic hash helpers today
 - do not collapse all D1 and D2 hook logic into one giant shared file; that
-	would reduce file count but increase type coupling and future risk
+  would reduce file count but increase type coupling and future risk
 
 ## Lane B -- Persistence, checkpoint, and launcher bridge code remains too spread out
 
@@ -302,81 +306,81 @@ is both large and still living in legacy upstream-shaped files.
 Current file pattern:
 
 - `d1/d2 main/state.c`: Android save/rewind/resume glue layered onto save and
-	restore flow
+  restore flow
 - `d1/d2 main/coop_save.c`: branch-added duplicate files that should not stay in
-	`d1/` and `d2/` long term
+  `d1/` and `d2/` long term
 - `d1/d2 main/playsave.c`: launcher bridge and config/pilot helpers that must
-	stay source-of-truth but do not need to live inline in the legacy files
+  stay source-of-truth but do not need to live inline in the legacy files
 - `d1/d2 main/multi.c`: coop inventory or host-migration state flows that are
-	coupled to the same persistence story
+  coupled to the same persistence story
 
 Recommended survey conclusion:
 
 - treat save/restore and coop persistence as one lane, not separate tiny
-	tranches
+  tranches
 - keep the real file-format and game-struct source-of-truth in the D1/D2 files
-	where project rules require it, but move Android-owned orchestration,
-	metadata, memory-buffer helpers, and launcher bridge bodies into shared save
-	and coop files
+  where project rules require it, but move Android-owned orchestration,
+  metadata, memory-buffer helpers, and launcher bridge bodies into shared save
+  and coop files
 - use `state.c` as the call-site boundary, not as the implementation home for
-	Android rewind or metadata machinery
+  Android rewind or metadata machinery
 
 Good next tranche candidates inside Lane B:
 
 1. move Android rewind/memory-buffer helpers and save-metadata plumbing out of
-	 `state.c`
+   `state.c`
 2. finish relocating `coop_save.{c,h}` out of `d1/` and `d2/`
 3. isolate `playsave.c` launcher bridge bodies into a dedicated shared bridge
-	 file while leaving the authoritative serialization logic local
+   file while leaving the authoritative serialization logic local
 
 Progress in Lane B (2026-05-19):
 
 - completed a first `state.c` extraction pass by centralizing the shared
-	Android rewind file adapters, save-to-path and memory-buffer helpers,
-	autosave slot wrapper flow, save-metadata writer, and restore-flight-state
-	repair helper in `android/app/src/main/cpp/shared/state_android_shared.h`
+  Android rewind file adapters, save-to-path and memory-buffer helpers,
+  autosave slot wrapper flow, save-metadata writer, and restore-flight-state
+  repair helper in `android/app/src/main/cpp/shared/state_android_shared.h`
 - kept the remaining D1/D2 `state.c` split local through tiny adapters for the
-	memory rewind filename suffix, Android save-meta game id, restore-call
-	signature, and D2-only secret-slot plus final-boss autosave gating
+  memory rewind filename suffix, Android save-meta game id, restore-call
+  signature, and D2-only secret-slot plus final-boss autosave gating
 - validated the tranche with a scoped `android/run-code-quality.ps1 -Fix
-	-Paths ...` pass and Android native Gradle tasks
-	`:app:buildCMakeDebug[arm64-v8a]` plus `:app:buildCMakeDebug[arm64-v8a]-2`
+-Paths ...` pass and Android native Gradle tasks
+  `:app:buildCMakeDebug[arm64-v8a]` plus `:app:buildCMakeDebug[arm64-v8a]-2`
 - finished relocating `coop_save.{c,h}` out of `d1/` and `d2/` by moving the
-	shared declarations and implementation to
-	`android/app/src/main/cpp/shared/coop/coop_save.{h,c}` and leaving only thin
-	D1/D2 wrappers in the legacy trees
+  shared declarations and implementation to
+  `android/app/src/main/cpp/shared/coop/coop_save.{h,c}` and leaving only thin
+  D1/D2 wrappers in the legacy trees
 - kept the D1/D2 `coop_save` differences local through adapter macros for the
-	D2 guidebot metadata fields, durable powerup restore mask, and the more
-	verbose D2 auto-restore logging plus timeout behavior
+  D2 guidebot metadata fields, durable powerup restore mask, and the more
+  verbose D2 auto-restore logging plus timeout behavior
 - validated that coop-save tranche with `run-windows-build.ps1 -Target both`,
-	a scoped `android/run-code-quality.ps1 -Fix -Paths ...` pass, and Android
-	native Gradle tasks `:app:buildCMakeDebug[arm64-v8a]` plus
-	`:app:buildCMakeDebug[arm64-v8a]-2`; the host pass also caught and drove a
-	local non-Android fallback repair for `g_android_save_blank_thumbnail` in
-	`state.c`
+  a scoped `android/run-code-quality.ps1 -Fix -Paths ...` pass, and Android
+  native Gradle tasks `:app:buildCMakeDebug[arm64-v8a]` plus
+  `:app:buildCMakeDebug[arm64-v8a]-2`; the host pass also caught and drove a
+  local non-Android fallback repair for `g_android_save_blank_thumbnail` in
+  `state.c`
 - started the `playsave.c` launcher-bridge extraction by moving the duplicated
-	Android default-prefs and `.plx` visual-prefs helpers into the new shared
-	`android/app/src/main/cpp/shared/playsave_android_shared.h`
+  Android default-prefs and `.plx` visual-prefs helpers into the new shared
+  `android/app/src/main/cpp/shared/playsave_android_shared.h`
 - extended that same shared `playsave.c` bridge helper to absorb the duplicated
-	keysettings patch write path, while leaving only tiny D1 and D2 layout
-	calculators local so the authoritative per-game file layout still lives next
-	to each game's own serialization code
+  keysettings patch write path, while leaving only tiny D1 and D2 layout
+  calculators local so the authoritative per-game file layout still lives next
+  to each game's own serialization code
 - kept the remaining D1/D2 `playsave.c` differences local for now through the
-	game-specific binary pilot-field readers and writers plus D1-only `.plx`
-	cockpit and weapon-order helpers versus D2's binary weapon-order path
+  game-specific binary pilot-field readers and writers plus D1-only `.plx`
+  cockpit and weapon-order helpers versus D2's binary weapon-order path
 - validated that playsave follow-up with a scoped
-	`android/run-code-quality.ps1 -Fix -Paths ...` pass and Android native Gradle
-	tasks `:app:buildCMakeDebug[arm64-v8a]` plus
-	`:app:buildCMakeDebug[arm64-v8a]-2`; also removed the touched-file unused
-	`PHYSFS_file *file` locals in the netgame profile wrappers and then reran the
-	same scoped code-quality plus Android native validation after the shared
-	keysettings extraction
+  `android/run-code-quality.ps1 -Fix -Paths ...` pass and Android native Gradle
+  tasks `:app:buildCMakeDebug[arm64-v8a]` plus
+  `:app:buildCMakeDebug[arm64-v8a]-2`; also removed the touched-file unused
+  `PHYSFS_file *file` locals in the netgame profile wrappers and then reran the
+  same scoped code-quality plus Android native validation after the shared
+  keysettings extraction
 - completed the conventional-source follow-up for the earlier persistence
-	helper split by converting `state_android_shared` and
-	`playsave_android_shared` into declaration-only headers plus compiled shared
-	`.c` files, removing the forbidden shared `.c` includes from `d1/d2`
-	`state.c` and `playsave.c` and keeping the remaining D1/D2 differences behind
-	internal `#ifdef DXX_BUILD_DESCENT_II` helpers or tiny local adapters
+  helper split by converting `state_android_shared` and
+  `playsave_android_shared` into declaration-only headers plus compiled shared
+  `.c` files, removing the forbidden shared `.c` includes from `d1/d2`
+  `state.c` and `playsave.c` and keeping the remaining D1/D2 differences behind
+  internal `#ifdef DXX_BUILD_DESCENT_II` helpers or tiny local adapters
 
 ## Lane C -- Networking and coop join flow still offer high-value D1/D2 shrink
 
@@ -387,19 +391,19 @@ it is still worth doing before another OGL pass.
 Why this lane remains attractive:
 
 - the earlier `cleanup_net_udp_extract.md` work already proved the shared-helper
-	pattern here
+  pattern here
 - the remaining churn is still concentrated in Android or host-migration style
-	helpers rather than deep, inseparable game-loop code
+  helpers rather than deep, inseparable game-loop code
 - both games still carry similar logic for reconnect, rebind, address refresh,
-	rejoin, and coop state handoff
+  rejoin, and coop state handoff
 
 Recommended scope for the next networking survey tranche:
 
 - continue extracting helper bodies, not policy
 - keep game-specific side effects such as HUD updates, score/state mutation, and
-	packet-dispatch control flow in the local files
+  packet-dispatch control flow in the local files
 - move reusable address-selection, reconnect-reset, join-slot selection,
-	rebind, and identity/callsign dedupe helpers to shared code
+  rebind, and identity/callsign dedupe helpers to shared code
 
 This lane is still one of the highest payoffs for actual upstream merge cost,
 because every saved line comes out of old large engine files that upstream also
@@ -408,30 +412,30 @@ touches.
 Progress in Lane C (2026-05-19):
 
 - started a first shared `net_udp.c` autonet extraction by moving the
-	duplicated Android-only `net_udp_auto_join(...)` and
-	`net_udp_auto_host(...)` bodies into
-	`android/app/src/main/cpp/shared/net/net_udp_android_autonet_shared.h`
+  duplicated Android-only `net_udp_auto_join(...)` and
+  `net_udp_auto_host(...)` bodies into
+  `android/app/src/main/cpp/shared/net/net_udp_android_autonet_shared.h`
 - kept the remaining D1/D2 split local through a one-line per-game adapter
-	macro that selects which player slot gets the restored host address after a
-	`GAME_INFO` reply during auto-join
+  macro that selects which player slot gets the restored host address after a
+  `GAME_INFO` reply during auto-join
 - followed that with a second `net_udp.c` helper extraction by moving the
-	duplicated P2P and proxy helper block from `net_udp_send_p2p_pong(...)`
-	through `net_udp_process_ping(...)` into
-	`android/app/src/main/cpp/shared/net/net_udp_p2p_proxy_shared.h`
+  duplicated P2P and proxy helper block from `net_udp_send_p2p_pong(...)`
+  through `net_udp_process_ping(...)` into
+  `android/app/src/main/cpp/shared/net/net_udp_p2p_proxy_shared.h`
 - kept the only remaining D1/D2 split in that block local through a tiny
-	per-game host-player-index adapter for `net_udp_process_ping(...)`, which
-	lets D1 keep host slot `0` while D2 follows `multi_who_is_master()`
+  per-game host-player-index adapter for `net_udp_process_ping(...)`, which
+  lets D1 keep host slot `0` while D2 follows `multi_who_is_master()`
 - validated the tranche with a scoped `android/run-code-quality.ps1 -Fix
-	-Paths ...` pass and Android native Gradle tasks
-	`:app:buildCMakeDebug[arm64-v8a]` plus `:app:buildCMakeDebug[arm64-v8a]-2`;
-	the build still reports unrelated pre-existing `net_udp.c` warnings outside
-	the touched autonet and P2P/proxy blocks
+-Paths ...` pass and Android native Gradle tasks
+  `:app:buildCMakeDebug[arm64-v8a]` plus `:app:buildCMakeDebug[arm64-v8a]-2`;
+  the build still reports unrelated pre-existing `net_udp.c` warnings outside
+  the touched autonet and P2P/proxy blocks
 - completed the conventional-source follow-up for the earlier networking
-	helper split by converting `net_udp_android_autonet_shared` and
-	`net_udp_p2p_proxy_shared` into compiled shared `.c` files, removing the
-	forbidden shared `.c` includes from `d1/d2 main/net_udp.c`, and exposing only
-	the small socket/port/raw-send adapters needed to cross the file-local-state
-	boundary cleanly
+  helper split by converting `net_udp_android_autonet_shared` and
+  `net_udp_p2p_proxy_shared` into compiled shared `.c` files, removing the
+  forbidden shared `.c` includes from `d1/d2 main/net_udp.c`, and exposing only
+  the small socket/port/raw-send adapters needed to cross the file-local-state
+  boundary cleanly
 
 ## Lane D -- Menu, control, and touch UI work is now a better target than another random D2-only probe cleanup
 
@@ -442,12 +446,12 @@ enough that a shared helper surface should pay off quickly.
 Current reading:
 
 - `newmenu.c` still carries Android touch, drag-scroll, keyboard affordance,
-	and controller/TV-oriented adjustments in both games
+  and controller/TV-oriented adjustments in both games
 - `gamecntl.c`, `kconfig.c`, and smaller control files still carry Android-only
-	menu or binding helpers that are more about UI plumbing than core engine
-	policy
+  menu or binding helpers that are more about UI plumbing than core engine
+  policy
 - unlike the input-demo probe families, these helpers are usually small,
-	clearly Android-owned, and structurally similar across D1 and D2
+  clearly Android-owned, and structurally similar across D1 and D2
 
 Recommended sub-tranches:
 
@@ -469,7 +473,7 @@ The correct survey conclusion now is:
 - continue taking isolated OGL helper wins when they are obvious
 - keep using the existing shared runtime-state and helper pattern
 - do not reopen broad OGL refactors just because the total counts are still
-	high; many of the easy or medium-difficulty wins have already landed
+  high; many of the easy or medium-difficulty wins have already landed
 
 Good OGL work from here forward should look like a phase-32/33 style helper
 trim, not a new giant campaign.
@@ -481,12 +485,12 @@ The refreshed baseline also makes it easier to avoid false positives.
 These are not good front-line D1/D2 dedup targets right now:
 
 - `d2/main/dxa_metadata_patch.cpp`
-	- large D2-only file, but not a D1/D2 dedup problem
+  - large D2-only file, but not a D1/D2 dedup problem
 - D2-only probe-heavy files such as `physics.c`, `ai.c`, `laser.c`, `object.c`,
-	`fireball.c`, `ai2.c`, and `escort.c`
-	- these may still deserve cleanup or further extraction into D2 helper files,
-		but forcing a D1 mirror or Android-shared abstraction too early would add
-		complexity without reducing the real branch-maintenance cost
+  `fireball.c`, `ai2.c`, and `escort.c`
+  - these may still deserve cleanup or further extraction into D2 helper files,
+    but forcing a D1 mirror or Android-shared abstraction too early would add
+    complexity without reducing the real branch-maintenance cost
 
 The survey rule here is simple: if the churn is D2-only and heavily tied to
 game-specific AI or probe logic, treat it as a separate D2 cleanup lane, not as
@@ -495,16 +499,16 @@ part of the cross-game deduplication queue.
 ## Recommended next order from this survey
 
 1. **Lane A first**: second-stage dedup of `input_demo_hooks.c` and
-	 `input_demo_start.c`, starting with pure shared helpers
+   `input_demo_start.c`, starting with pure shared helpers
 2. **Lane B second**: state/coop/playsave persistence cluster, because it is
-	 large and still stranded in legacy files
+   large and still stranded in legacy files
 3. **Lane D third**: `newmenu`/control helper extraction, because it is likely
-	 lower-risk than another networking tranche and gives direct D1/D2 diff
-	 reduction in old files
+   lower-risk than another networking tranche and gives direct D1/D2 diff
+   reduction in old files
 4. **Lane C fourth**: continue `net_udp`/`multi` shared extraction using the
-	 already-proven shared-helper pattern
+   already-proven shared-helper pattern
 5. **Lane E last among the main lanes**: only isolated OGL helper trims, not a
-	 broad re-open of the earlier campaign
+   broad re-open of the earlier campaign
 
 If the next tranche needs the best ratio of line savings to conceptual risk,
 Lane A.1 plus Lane B.1 is the strongest combined target: dedup the new sink-file

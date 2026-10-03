@@ -7,7 +7,9 @@
 ## 1. DXA Size Reduction
 
 ### Problem
+
 Converted .dxa files are 1.7-1.9x larger than the source .7z archives:
+
 - D1: 190.8 MB dxa vs 114.4 MB 7z (1.67x)
 - D2: 358.7 MB dxa vs 192.5 MB 7z (1.86x)
 
@@ -20,12 +22,14 @@ Most game textures are opaque (RGB, no alpha). JPEG at quality 90-92 is 3-5x sma
 Files use their real extensions: `.jpg` for JPEG, `.png` for PNG. The engine's texture lookup in `ogl_loadbmtexture_f()` is extended to try multiple extensions (`.png`, `.jpg`, `.tga`) instead of only `.png`. `pngfile_stb.c` already uses stb_image which detects format by header magic bytes, so `read_png()` loads any of these formats despite the function name.
 
 Implementation in `convert_d2xxl_textures.ps1`:
+
 1. Check if TGA is 24-bit (RGB) or 32-bit (RGBA)
 2. RGB textures: save as JPEG quality 92 with `.jpg` extension
 3. RGBA textures: save as PNG with `.png` extension (JPEG doesn't support alpha)
 4. Use `CompressionLevel::NoCompression` for zip entries since JPEG/PNG are already compressed
 
 Engine change in `ogl.c` (both d1 and d2, guarded by `#ifdef ANDROID`):
+
 - Replace single `sprintf(filename, "%s.png", bitmapname)` + `read_png()` call
 - With a loop over `{".png", ".jpg", ".tga"}` trying each extension until one succeeds
 - About 5 lines of change, minimal impact
@@ -41,6 +45,7 @@ Desktop note: desktop builds continue to try only `.png` (the `#ifdef ANDROID` g
 ### User-facing concept
 
 A new collapsible section in SetupActivity below "Music" called **"Mods"**. Users can:
+
 - Import `.dxa` files via the existing SAF file picker ("Select Game Files or Archive to Import")
 - See a list of imported mods with on/off toggles
 - Enabled mods are made available to the game engine on next launch
@@ -59,6 +64,7 @@ filesDir/
 ```
 
 Mods are stored in `filesDir/mods/` (not per-set). This is appropriate because:
+
 - Mods are game-content overlays, not base-game-file alternatives
 - A user with multiple file sets (GOG vs retail) probably wants the same hires textures on both
 - Keeps the mod directory simple and avoids duplicating large files across sets
@@ -97,6 +103,7 @@ Mods are stored in `filesDir/mods/` (not per-set). This is appropriate because:
 ```
 
 Fields:
+
 - `filename`: the .dxa file in `filesDir/mods/`
 - `displayName`: shown in the UI; derived from filename on import (strip extension, replace hyphens/underscores with spaces, title-case)
 - `enabled`: whether the mod is active
@@ -107,6 +114,7 @@ Fields:
 ### Game detection
 
 When a .dxa is imported, try to auto-detect which game it's for:
+
 1. If filename contains "d1" (case-insensitive) -> "d1"
 2. If filename contains "d2" (case-insensitive) -> "d2"
 3. Otherwise -> "both" (applied to whichever game is launched)
@@ -127,6 +135,7 @@ lname.endsWith(".dxa") -> dxaImportUris.add(name to uri)
 ```
 
 After the picker returns, for each `.dxa` URI:
+
 1. Copy the file from the SAF URI to `filesDir/mods/{filename}`
    - Use streaming copy (not loading into memory -- these files can be 100+ MB)
    - Show a progress indicator during copy
@@ -138,6 +147,7 @@ After the picker returns, for each `.dxa` URI:
 The SAF archiver provides fd-based access for individual files. A .dxa is a ZIP archive that PhysFS needs to mount as a directory. PhysFS's ZIP archiver requires a filesystem path (not an fd) to open the archive. It uses `fopen()` internally.
 
 Options:
+
 1. **Copy to app storage** (recommended): simple, fast lookup. DXA files are self-contained. The user explicitly picked them for import.
 2. **SAF leave-in-place**: would require a custom PhysFS archiver that can open ZIPs from fds. Significant complexity for minimal benefit (the user is already choosing to import these files).
 3. **Symlink /proc/self/fd/N**: fragile, fd must stay open for the entire game session.
@@ -153,6 +163,7 @@ Copy is the right choice. Mod files are imported once and used many times.
 Similar to `.active_set_path`, the launcher writes a file listing all enabled mod paths before engine launch. The C engine reads this at init and adds each mod directory to the PhysFS search path.
 
 **Kotlin side** (`ModManager` class):
+
 ```kotlin
 fun writeEnabledModPaths(game: String) {
     val manifest = loadManifest()
@@ -172,6 +183,7 @@ fun writeEnabledModPaths(game: String) {
 Called from `onLaunchGame` alongside `writeActiveSetPath()` and `writeMusicConfigForLaunch()`.
 
 **C side** (in `physfsx.c`, `#ifdef ANDROID` block, after `.active_set_path` handling):
+
 ```c
 /* Mod support: mount enabled .dxa files from .active_mod_paths */
 {
@@ -225,7 +237,8 @@ This means mod textures/sounds override base game assets, which is exactly the d
 ```
 
 Components:
-- `GameSectionHeader` with title "Mods" and summary "(N of M enabled)" or "(none)" 
+
+- `GameSectionHeader` with title "Mods" and summary "(N of M enabled)" or "(none)"
 - Each mod is a row with:
   - Checkbox (toggle enabled/disabled)
   - Display name
@@ -247,20 +260,20 @@ private fun ModsSection(
     val modManager = remember { ModManager(filesDir) }
     var mods by remember { mutableStateOf(modManager.listMods()) }
     var expanded by remember { mutableStateOf(false) }
-    
+
     LaunchedEffect(refreshTrigger) { mods = modManager.listMods() }
-    
+
     val enabledCount = mods.count { it.enabled }
     val totalCount = mods.size
     val summary = if (totalCount == 0) "(none)" else "($enabledCount of $totalCount enabled)"
-    
+
     GameSectionHeader(
         title = "Mods",
         ready = true,  // mods are always optional
         expanded = expanded,
         onToggle = { expanded = !expanded },
     )
-    
+
     if (expanded) {
         if (mods.isEmpty()) {
             Text(
@@ -289,7 +302,7 @@ New file: `android/app/src/main/java/com/dxxredux/app/ModManager.kt`
 
 ```kotlin
 class ModManager(private val filesDir: File) {
-    
+
     data class ModInfo(
         val filename: String,
         val displayName: String,
@@ -298,19 +311,19 @@ class ModManager(private val filesDir: File) {
         val sizeBytes: Long,
         val game: String,  // "d1", "d2", or "both"
     )
-    
+
     private val modsDir get() = File(filesDir, "mods").also { it.mkdirs() }
     private val manifestFile get() = File(modsDir, "mod_manifest.json")
-    
+
     fun listMods(): List<ModInfo> { ... }
     fun setEnabled(filename: String, enabled: Boolean) { ... }
     fun deleteMod(filename: String) { ... }
     fun importMod(sourceUri: Uri, displayName: String, contentResolver: ContentResolver): ModInfo { ... }
     fun writeEnabledModPaths(game: String) { ... }
-    
+
     // Auto-detect game from filename
     private fun detectGame(filename: String): String { ... }
-    
+
     // Generate display name from filename
     private fun generateDisplayName(filename: String): String { ... }
 }
@@ -321,54 +334,62 @@ class ModManager(private val filesDir: File) {
 ## 7. Changes Summary
 
 ### New files
-| File | Purpose |
-|------|---------|
+
+| File            | Purpose                                             |
+| --------------- | --------------------------------------------------- |
 | `ModManager.kt` | Mod list management, manifest I/O, path file writer |
 
 ### Modified files
-| File | Change |
-|------|--------|
-| `d2/arch/ogl/ogl.c` | Try `.png`, `.jpg`, `.tga` extensions in texture lookup (Android only) |
-| `d1/arch/ogl/ogl.c` | Same as d2 |
-| `SetupActivity.kt` | Add .dxa handling to file picker, add ModsSection below MusicInfoSection, call writeEnabledModPaths before launch |
-| `d2/misc/physfsx.c` | Read `.active_mod_paths` and mount each listed .dxa |
-| `d1/misc/physfsx.c` | Same as d2 |
-| `convert_d2xxl_textures.ps1` | Use JPEG for RGB textures with .jpg extension, NoCompression zip entries |
+
+| File                         | Change                                                                                                            |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `d2/arch/ogl/ogl.c`          | Try `.png`, `.jpg`, `.tga` extensions in texture lookup (Android only)                                            |
+| `d1/arch/ogl/ogl.c`          | Same as d2                                                                                                        |
+| `SetupActivity.kt`           | Add .dxa handling to file picker, add ModsSection below MusicInfoSection, call writeEnabledModPaths before launch |
+| `d2/misc/physfsx.c`          | Read `.active_mod_paths` and mount each listed .dxa                                                               |
+| `d1/misc/physfsx.c`          | Same as d2                                                                                                        |
+| `convert_d2xxl_textures.ps1` | Use JPEG for RGB textures with .jpg extension, NoCompression zip entries                                          |
 
 ### No changes needed
-| Component | Why |
-|-----------|-----|
+
+| Component                     | Why                                                                     |
+| ----------------------------- | ----------------------------------------------------------------------- |
 | `PHYSFSX_addArchiveContent()` | Already mounts .dxa files from search path; mods are mounted separately |
-| `pngfile_stb.c` | Already handles JPG/TGA/PNG via stb_image |
-| `FileSetManager` | Mods are orthogonal to file sets |
-| `SafManifest` / SAF archiver | Mods are copied, not left in place |
+| `pngfile_stb.c`               | Already handles JPG/TGA/PNG via stb_image                               |
+| `FileSetManager`              | Mods are orthogonal to file sets                                        |
+| `SafManifest` / SAF archiver  | Mods are copied, not left in place                                      |
 
 ---
 
 ## 8. Implementation Phases
 
 ### Phase 1: DXA compression improvement + engine extension lookup
+
 1. Update `convert_d2xxl_textures.ps1` to use JPEG for RGB textures with `.jpg` extension
 2. Add multi-extension lookup (`.png`, `.jpg`, `.tga`) in `ogl_loadbmtexture_f()` in d1 and d2 ogl.c
 3. Test conversion, verify file sizes
 4. Verify engine loads `.jpg` textures from DXA on emulator
 
 ### Phase 2: ModManager + manifest
+
 1. Create `ModManager.kt` with manifest I/O
 2. Add `filesDir/mods/` directory creation
 3. Implement import, list, toggle, delete
 
 ### Phase 3: Launcher UI
+
 1. Add ModsSection composable below MusicInfoSection
 2. Add .dxa routing in file picker handler
 3. Wire up import progress, toggle, delete
 
 ### Phase 4: Engine integration
+
 1. Add `.active_mod_paths` reading to `d2/misc/physfsx.c` and `d1/misc/physfsx.c`
 2. Call `writeEnabledModPaths()` before game launch in SetupActivity
 3. Test with hires texture .dxa on emulator
 
 ### Phase 5: Testing
+
 1. Import a .dxa via the file picker, verify it appears in the mod list
 2. Toggle mod on/off, launch game, verify textures load/don't load
 3. Delete a mod, verify cleanup

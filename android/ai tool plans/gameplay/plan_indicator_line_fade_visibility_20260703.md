@@ -1,9 +1,11 @@
 # Indicator line fade visibility plan
 
 ## Goal
+
 Keep coop player and guidebot navigation helper lines visible deeper into the view cone, then fade them out and back in over about one second instead of snapping off/on.
 
 ## Steps
+
 - [x] Create this plan.
 - [x] Trace current helper-line target visibility checks and render alpha handling.
 - [x] Loosen the on-screen/view-cone suppression threshold.
@@ -12,6 +14,7 @@ Keep coop player and guidebot navigation helper lines visible deeper into the vi
 - [x] Run scoped code quality and relevant build/test commands.
 
 ## Notes
+
 - Existing unrelated launcher progress edits are present. Do not touch or revert them.
 - The old suppression hid lines as soon as the target projected anywhere inside
   the viewport. The new check waits until the target is in the inner viewport.

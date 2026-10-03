@@ -1,5 +1,8 @@
 #!/usr/bin/env pwsh
 
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Mock menu input for unattended replay tests')]
+param()
+
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $androidRoot = Split-Path $PSScriptRoot -Parent

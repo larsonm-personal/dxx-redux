@@ -10,13 +10,26 @@ class MissionLaunchCatalogTest {
     @Test
     fun identicalCaseVariantsWithTheSameOwnerPublishOnce() {
         val key = MissionLaunchKey("disc", "missions/first.mn2", "d2")
-        fun resource(path: String, hash: String) = MissionLaunchResource(File(path), path, hash, setOf(key))
+
+        fun resource(
+            path: String,
+            hash: String,
+        ) = MissionLaunchResource(File(path), path, hash, setOf(key))
         val descriptor = resource(key.descriptor, "descriptor")
         val readme = resource("missions/README.TXT", "abc")
-        val resources = listOf(descriptor, descriptor.copy(virtualPath = "missions/FIRST.MN2"), readme, resource("missions/readme.txt", "ABC"))
+        val resources =
+            listOf(
+                descriptor,
+                descriptor.copy(virtualPath = "missions/FIRST.MN2"),
+                readme,
+                resource("missions/readme.txt", "ABC"),
+            )
+
         fun select(files: List<MissionLaunchResource>) =
-            MissionLaunchCatalog(listOf(MissionLaunchPackage("disc", "revision", listOf(MissionLaunchEntry(key, "First")), files)))
-                .resourcesFor(key).sortedBy { it.virtualPath }
+            MissionLaunchCatalog(
+                listOf(MissionLaunchPackage("disc", "revision", listOf(MissionLaunchEntry(key, "First")), files)),
+            ).resourcesFor(key)
+                .sortedBy { it.virtualPath }
         assertEquals(listOf(readme, descriptor), select(resources))
         assertEquals(select(resources), select(resources.reversed()))
         assertThrows(IllegalArgumentException::class.java) {
@@ -28,7 +41,11 @@ class MissionLaunchCatalogTest {
     fun switchingSiblingsSelectsOnlyTheirResourcesAndPackageSharedData() {
         val first = MissionLaunchKey("collection", "missions/first.mn2", "d2")
         val second = MissionLaunchKey("collection", "missions/second.mn2", "d2")
-        fun resource(path: String, vararg keys: MissionLaunchKey) = MissionLaunchResource(File(path), path, "fixture", keys.toSet())
+
+        fun resource(
+            path: String,
+            vararg keys: MissionLaunchKey,
+        ) = MissionLaunchResource(File(path), path, "fixture", keys.toSet())
         val shared = resource("shared.dxa")
         val firstFiles = listOf(resource(first.descriptor, first), resource("missions/first.hog", first))
         val secondFiles = listOf(resource(second.descriptor, second), resource("missions/second.hog", second))
@@ -63,7 +80,13 @@ class MissionLaunchCatalogTest {
                 MissionLaunchResource(File("first-bank"), "descent2.s22", "c", setOf(first)),
                 MissionLaunchResource(File("second-bank"), "DESCENT2.S22", "d", setOf(second)),
             )
-        val pack = MissionLaunchPackage("pack", "revision", listOf(MissionLaunchEntry(first, "First"), MissionLaunchEntry(second, "Second")), resources)
+        val pack =
+            MissionLaunchPackage(
+                "pack",
+                "revision",
+                listOf(MissionLaunchEntry(first, "First"), MissionLaunchEntry(second, "Second")),
+                resources,
+            )
         val catalog = MissionLaunchCatalog(listOf(pack))
         assertEquals("c", catalog.resourcesFor(first).last().sha256)
         assertEquals("d", catalog.resourcesFor(second).last().sha256)
@@ -76,7 +99,15 @@ class MissionLaunchCatalogTest {
         assertTrue(diagnostic.contains("virtual='DESCENT2.S22' source='${File("second-bank").absolutePath}'"))
         assertTrue(diagnostic.contains("sha256=c scope=mission-owned"))
         assertTrue(diagnostic.contains("sha256=d scope=package-shared"))
-        val identical = MissionLaunchCatalog(listOf(pack.copy(resources = resources.dropLast(1) + conflict.copy(sha256 = "c"))))
+        val identical =
+            MissionLaunchCatalog(
+                listOf(
+                    pack.copy(
+                        resources =
+                            resources.dropLast(1) + conflict.copy(sha256 = "c"),
+                    ),
+                ),
+            )
         val duplicate = assertThrows(IllegalArgumentException::class.java) { identical.resourcesFor(first) }
         assertTrue(duplicate.message.orEmpty().contains("identical_sha256=true"))
     }

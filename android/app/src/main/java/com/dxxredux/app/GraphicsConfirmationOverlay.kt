@@ -27,6 +27,11 @@ internal class GraphicsConfirmationOverlay(
     private val releaseInput: () -> Unit,
     private val recoverProcess: (String) -> Unit,
 ) : FrameLayout(context) {
+    private companion object {
+        // EGL and shader recreation can exceed one second even when recovery succeeds
+        const val RESTORE_TIMEOUT_MS = 3000L
+    }
+
     private val handler = Handler(Looper.getMainLooper())
     private val title = TextView(context)
     private val details = TextView(context)
@@ -189,7 +194,7 @@ internal class GraphicsConfirmationOverlay(
                     cancel.text = "Cancel (${ceil(remaining.coerceAtLeast(0L) / 1000.0).toInt()})"
                     if (remaining <= 0L) choose(false, "timeout")
                 }
-                if (restoring && now - restoreStarted >= 1000L) {
+                if (restoring && now - restoreStarted >= RESTORE_TIMEOUT_MS) {
                     recoverProcess(
                         "Graphics settings could not be restored in time. The game was closed; return to the launcher to recover the last accepted settings",
                     )

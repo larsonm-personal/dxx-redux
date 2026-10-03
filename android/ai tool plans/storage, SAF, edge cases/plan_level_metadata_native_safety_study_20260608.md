@@ -1,10 +1,12 @@
 # Level metadata native safety study
 
 ## Goal
+
 - Study how the level metadata native bridge can analyze malformed files without crashing the Android launcher
 - Preserve useful failure details for the UI and exported diagnostics
 
 ## Plan
+
 - [x] Inspect existing launcher native bridge and crash logging patterns
 - [x] Inspect native crash handler and breadcrumb/report flow
 - [x] Identify isolation options for malformed level analysis
@@ -12,6 +14,7 @@
 - [x] Recommend tests for malformed files and crash containment
 
 ## Findings
+
 - An in-process JNI bridge is not safe enough for arbitrary third-party level files.
   - Kotlin `try/catch` can handle bad JSON or `UnsatisfiedLinkError`, but not SIGSEGV/SIGABRT/native memory corruption.
   - C++ `try/catch` does not catch signals.
@@ -26,6 +29,7 @@
 - Android builds both `dxx-redux-d1` and `dxx-redux-d2`, so the worker can load the correct library for the request.
 
 ## Recommended Safety Model
+
 - Add a `LevelMetadataAnalysisService` declared with `android:process=":levelmeta"` or similar.
 - Make the service one-shot:
   - launcher writes request JSON and a per-request status/result path under app-private cache or files
@@ -39,6 +43,7 @@
 - Do not use `siglongjmp` or signal handlers to keep the launcher process alive. Process isolation is the recovery boundary.
 
 ## Input Hardening Before Native Load
+
 - Stage all SAF and ZIP constituent inputs into an app-private analysis workspace.
 - Enforce ZIP staging rules:
   - normalize paths and reject zip-slip paths
@@ -53,6 +58,7 @@
 - Keep full paths out of UI-facing errors where possible; use display names, sizes, and request ids. Full paths can go to diagnostic logs.
 
 ## Native Result Contract
+
 - Native should return structured JSON for recoverable failures instead of calling `Error()` whenever it can detect the problem locally:
   - `status`: `ok`, `failed`, `partial`, `crashed`, or `timeout`
   - `request_id`
@@ -79,6 +85,7 @@
   - `levelmeta scan level=-1 objects=<n> segments=<n>`
 
 ## Launcher Failure Reporting
+
 - The dialog should keep the launcher alive and show:
   - a concise human message, such as "Analysis crashed while loading secret level -1"
   - completed rows if a partial result exists
@@ -88,6 +95,7 @@
 - On crash or timeout, do not cache the failure as a stable metadata result. Cache only successful results and maybe short-lived failed results for the open dialog session.
 
 ## Tests
+
 - Unit tests for Kotlin staging and preflight:
   - invalid HOG magic
   - truncated HOG entry header

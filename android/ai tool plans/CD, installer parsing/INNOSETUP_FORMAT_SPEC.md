@@ -2,7 +2,7 @@
 
 ## For versions 5.5.x / 5.6.x (Unicode builds)
 
-*Derived from innoextract 1.9 source code. Focused on what's needed to implement a minimal C reader for GOG installers.*
+_Derived from innoextract 1.9 source code. Focused on what's needed to implement a minimal C reader for GOG installers._
 
 ---
 
@@ -27,6 +27,7 @@ An InnoSetup installer `.exe` contains:
 ### 2.1 Locating the Offset Table
 
 **Method 1 (versions < 5.1.5):** Fixed offset at `0x30` in the EXE:
+
 ```
 Offset 0x30:  uint32_t magic = 0x6F6E6E49   ("Inno" LE)
 Offset 0x34:  uint32_t offset_table_offset
@@ -62,8 +63,8 @@ A CRC32 is computed over all bytes from `magic[0]` through `data_offset` (inclus
 
 For versions 5.1.5+, there are two known magic values (both map to version 5.1.5+):
 
-| Magic bytes (12) | Version |
-|---|---|
+| Magic bytes (12)                      | Version  |
+| ------------------------------------- | -------- |
 | `72 44 6C 50 74 53 CD E6 D7 7B 0B 2A` | >= 5.1.5 |
 | `6E 53 35 57 37 64 54 83 AA 1B 0F 6A` | >= 5.1.5 |
 
@@ -81,15 +82,15 @@ The `(u)` suffix indicates **Unicode** build.
 
 ### 3.1 Relevant Version Strings
 
-| String | Version Constant | Variant |
-|---|---|---|
-| `"Inno Setup Setup Data (5.5.0) (u)"` | 5.5.0.0 | Unicode |
-| `"Inno Setup Setup Data (5.5.6) (u)"` | 5.5.6.0 | Unicode |
-| `"Inno Setup Setup Data (5.5.7) (u)"` | 5.5.7.0 | Unicode |
-| `"Inno Setup Setup Data (5.5.7) (U)"` | 5.5.7.0 | Unicode |
-| `"Inno Setup Setup Data (5.5.8) (u)"` | 5.5.7.0 | Unicode (unofficial) |
-| `"Inno Setup Setup Data (5.6.0) (u)"` | 5.6.0.0 | Unicode |
-| `"Inno Setup Setup Data (5.6.2) (u)"` | 5.6.2.0 | Unicode (prerelease) |
+| String                                | Version Constant | Variant              |
+| ------------------------------------- | ---------------- | -------------------- |
+| `"Inno Setup Setup Data (5.5.0) (u)"` | 5.5.0.0          | Unicode              |
+| `"Inno Setup Setup Data (5.5.6) (u)"` | 5.5.6.0          | Unicode              |
+| `"Inno Setup Setup Data (5.5.7) (u)"` | 5.5.7.0          | Unicode              |
+| `"Inno Setup Setup Data (5.5.7) (U)"` | 5.5.7.0          | Unicode              |
+| `"Inno Setup Setup Data (5.5.8) (u)"` | 5.5.7.0          | Unicode (unofficial) |
+| `"Inno Setup Setup Data (5.6.0) (u)"` | 5.6.0.0          | Unicode              |
+| `"Inno Setup Setup Data (5.6.2) (u)"` | 5.6.2.0          | Unicode (prerelease) |
 
 **Ambiguity note:** Version 5.5.7 is ambiguous — it might actually be 5.5.7.1 or 5.6.0. innoextract tries all variants.
 
@@ -111,6 +112,7 @@ uint8_t  compressed;         // 0 = Stored, 1 = compressed
 ```
 
 If `compressed == 1`:
+
 - For versions >= 4.1.6: compression = **LZMA1**
 - For versions [4.0.9, 4.1.6): compression = **Zlib**
 
@@ -131,7 +133,7 @@ The sub-block CRC protects the raw data. The total byte count of all `(4 + N)` p
 ### 4.3 Decompression Pipeline
 
 ```
-Raw bytes (stored_size) 
+Raw bytes (stored_size)
   → Split into CRC32-prefixed 4096-byte sub-blocks, validate each CRC
   → Concatenate validated sub-block data
   → Decompress with LZMA1 (for 5.x)
@@ -141,6 +143,7 @@ Raw bytes (stored_size)
 ### 4.4 LZMA1 Header Format (Inno-specific)
 
 The LZMA1 stream used by Inno Setup is **NOT** standard LZMA Alone format. It differs:
+
 - **5 bytes header only** (no 8-byte uncompressed size field)
 - Byte layout:
 
@@ -168,6 +171,7 @@ uint8_t  data[length];    // String data
 For **Unicode** builds, strings are stored as UTF-16LE, so `length` is in bytes (2 bytes per character). They should be decoded from UTF-16LE.
 
 Two string types in the code:
+
 - **`binary_string`**: Raw length-prefixed, no encoding conversion
 - **`encoded_string`**: Length-prefixed, then converted from UTF-16LE to UTF-8 (for Unicode builds)
 - **`ansi_string`**: Length-prefixed, treated as Windows-1252
@@ -183,6 +187,7 @@ Enums are stored as a single `uint8_t` index into the enum values list.
 ### 6.2 Stored Flags (Bitfields)
 
 Flags are stored as packed bitfields: **1 byte per 8 flags**.
+
 - Exception: **exactly 3 bytes of flags are padded to 4 bytes** (for 32-bit builds, which all 5.x are).
 - Bit 0 of byte 0 = first flag, bit 1 = second flag, etc.
 
@@ -288,6 +293,7 @@ Header flags:
 ### 7.2 Windows Version
 
 Each `windows_version` is 12 bytes (for >= 1.3.19):
+
 ```c
 struct windows_version_data {
     uint16_t build;     // LE
@@ -467,7 +473,7 @@ From the data entry flags and the main header:
 - **Compression**: If `ChunkCompressed` flag is set, use `header.compression` (from §7.4). Otherwise `Stored`.
 - **Encryption**: If `ChunkEncrypted` flag is set, use `ARC4_SHA1` (for >= 5.3.9). Otherwise `Plaintext`.
 - **Filter** (exe instruction optimizer): If `CallInstructionOptimized` flag is set:
-  - >= 5.3.9: `InstructionFilter5309`
+  - > = 5.3.9: `InstructionFilter5309`
   - [5.2.0, 5.3.9): `InstructionFilter5200`
   - < 5.2.0: `InstructionFilter4108`
 
@@ -492,6 +498,7 @@ After this 4-byte magic, the compressed data follows.
 ### 11.2 Encryption Layer (if encrypted)
 
 If encryption is enabled, immediately after the magic:
+
 ```c
 uint8_t salt[8];   // Random salt for this chunk
 ```
@@ -502,13 +509,13 @@ The decryption key is derived: `hash = SHA1(salt + password)`, then RC4 with 100
 
 The data after magic (and after salt if encrypted) is the compression stream:
 
-| Method | Stream Format |
-|---|---|
-| Stored | Raw bytes |
-| Zlib | Standard zlib stream |
-| BZip2 | Standard bzip2 stream |
-| LZMA1 | 5-byte Inno header (see §4.4) + raw LZMA1 stream |
-| LZMA2 | 1-byte dict prop + raw LZMA2 stream |
+| Method | Stream Format                                    |
+| ------ | ------------------------------------------------ |
+| Stored | Raw bytes                                        |
+| Zlib   | Standard zlib stream                             |
+| BZip2  | Standard bzip2 stream                            |
+| LZMA1  | 5-byte Inno header (see §4.4) + raw LZMA1 stream |
+| LZMA2  | 1-byte dict prop + raw LZMA2 stream              |
 
 ### 11.4 LZMA2 Header (1 byte)
 
@@ -557,46 +564,52 @@ If the `CallInstructionOptimized` filter is set, an additional exe-call instruct
 ## 13. Version-Specific Differences (5.5.3 → 5.5.7 → 5.6.2)
 
 ### 5.5.0 (baseline for 5.5.x)
+
 - Added: `close_applications_filter` string in header
 - Added: `uninstall_display_size` as uint64_t (was uint32_t in 5.3.6)
 - Added flags: `CloseApplications`, `RestartApplications`, `AllowNetworkDrive`
 
 ### 5.5.6
+
 - Added: `setup_mutex` string in header
 
 ### 5.5.7
+
 - **Removed**: `image_back_color` uint32_t from header (no longer present!)
 - Added: `image_alpha_format` uint8_t enum in header
-- Added data entry flags: `Sign`, `SignOnce`  
+- Added data entry flags: `Sign`, `SignOnce`
 - Added header flag: `ForceCloseApplications`
 
 ### 5.6.0
+
 - Changed: architecture flags bitfield expanded from 4 entries to 5 (added ARM64)
 - Changed: wizard images count is now `uint32_t` before each image set (instead of always 1)
 
 ### 5.6.1
+
 - Added: `changes_environment` and `changes_associations` strings in header
 - Removed: `ChangesAssociations` and `ChangesEnvironment` from header flags
 
 ### 5.6.2
+
 - Same as 5.6.0 structurally (prerelease version, no format changes)
 
 ### Key Fields Present/Absent by Version
 
-| Field | 5.5.0 | 5.5.6 | 5.5.7 | 5.6.0 | 5.6.2 |
-|---|---|---|---|---|---|
-| `close_applications_filter` | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `setup_mutex` | ✗ | ✓ | ✓ | ✓ | ✓ |
-| `changes_environment` | ✗ | ✗ | ✗ | ✗ | ✗ |
-| `changes_associations` | ✗ | ✗ | ✗ | ✗ | ✗ |
-| `image_back_color` in header | ✓ | ✓ | ✗ | ✗ | ✗ |
-| `image_alpha_format` in header | ✗ | ✗ | ✓ | ✓ | ✓ |
-| `ForceCloseApplications` flag | ✗ | ✗ | ✓ | ✓ | ✓ |
-| `Sign`/`SignOnce` data flags | ✗ | ✗ | ✓ | ✓ | ✓ |
-| wizard image count uint32_t | ✗ | ✗ | ✗ | ✓ | ✓ |
-| architecture flags 5-bit | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Field                          | 5.5.0 | 5.5.6 | 5.5.7 | 5.6.0 | 5.6.2 |
+| ------------------------------ | ----- | ----- | ----- | ----- | ----- |
+| `close_applications_filter`    | ✓     | ✓     | ✓     | ✓     | ✓     |
+| `setup_mutex`                  | ✗     | ✓     | ✓     | ✓     | ✓     |
+| `changes_environment`          | ✗     | ✗     | ✗     | ✗     | ✗     |
+| `changes_associations`         | ✗     | ✗     | ✗     | ✗     | ✗     |
+| `image_back_color` in header   | ✓     | ✓     | ✗     | ✗     | ✗     |
+| `image_alpha_format` in header | ✗     | ✗     | ✓     | ✓     | ✓     |
+| `ForceCloseApplications` flag  | ✗     | ✗     | ✓     | ✓     | ✓     |
+| `Sign`/`SignOnce` data flags   | ✗     | ✗     | ✓     | ✓     | ✓     |
+| wizard image count uint32_t    | ✗     | ✗     | ✗     | ✓     | ✓     |
+| architecture flags 5-bit       | ✗     | ✗     | ✗     | ✓     | ✓     |
 
-*(Note: `changes_environment` and `changes_associations` are only in >= 5.6.1, not 5.6.0)*
+_(Note: `changes_environment` and `changes_associations` are only in >= 5.6.1, not 5.6.0)_
 
 ---
 
@@ -614,6 +627,7 @@ GOG Galaxy uses InnoSetup's scripting system to split large files into parts:
 - **`after_install`** script on each part: `after_install('md5hash', 'compressed_size', 'uncompressed_size')`
 
 The parts are individually zlib-compressed within the InnoSetup data. To reassemble:
+
 1. Find the `before_install` call to get the output filename and part count
 2. For each part, decompress the chunk data, then apply zlib decompression on the file data
 3. Concatenate all parts in order

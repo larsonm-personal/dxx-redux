@@ -1,36 +1,33 @@
 // Auto-generated regression spec for: Descent - Mac macplay
 // Generated: 2026-05-24 17:34:36
 {
-  "source_type": "cd",
-  "disc_image_type": "cue_bin",
-  "disc_id": "descent-mac-macplay",
-  "source_files": [
-    {
-      "name": "Descent - Mac macplay.cue",
-      "sha256": "b8127c0ce27a4573b596c5cfb78af0f0e7ce58e1dbe130e1424f3ede09d4446d"
+    "source_type": "cd",
+    "disc_image_type": "cue_bin",
+    "disc_id": "descent-mac-macplay",
+    "source_files": [
+        {
+            "name": "Descent - Mac macplay.cue",
+            "sha256": "b8127c0ce27a4573b596c5cfb78af0f0e7ce58e1dbe130e1424f3ede09d4446d",
+        },
+        {
+            "name": "Descent - Mac macplay.bin",
+            "sha256": "38393a12630bbdfdd2e2efac138da463c242586a42c889b91054fabf6ba7b925",
+        },
+    ],
+    "game": "d1",
+    "classification": "d1_full",
+    "expected_mission": "Descent: First Strike",
+    "expected_level1": "Lunar Outpost",
+    "expected_files": ["descent.hog", "descent.pig"],
+    "audio_tracks": 13,
+    "total_extracted": 7,
+    "import_mode": "setup_cd",
+    "last_test_result": {
+        "status": "pass",
+        "failure_step": "",
+        "level_reached": "Lunar Outpost",
+        "files_verified": 2,
+        "classification_confirmed": true,
+        "test_mode": "full",
     },
-    {
-      "name": "Descent - Mac macplay.bin",
-      "sha256": "38393a12630bbdfdd2e2efac138da463c242586a42c889b91054fabf6ba7b925"
-    }
-  ],
-  "game": "d1",
-  "classification": "d1_full",
-  "expected_mission": "Descent: First Strike",
-  "expected_level1": "Lunar Outpost",
-  "expected_files": [
-    "descent.hog",
-    "descent.pig"
-  ],
-  "audio_tracks": 13,
-  "total_extracted": 7,
-  "import_mode": "setup_cd",
-  "last_test_result": {
-    "status": "pass",
-    "failure_step": "",
-    "level_reached": "Lunar Outpost",
-    "files_verified": 2,
-    "classification_confirmed": true,
-    "test_mode": "full"
-  }
 }

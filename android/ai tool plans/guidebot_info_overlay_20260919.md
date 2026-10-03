@@ -7,6 +7,7 @@
 Keep history bounded and coalesce repeated events. Green means an active high-level objective route; red means base objective routing or an error. Idle, return-to-player, and remote ownership are neutral. Collect on the game thread even while hidden and reset on level/save lifecycle changes. No routing behavior changes.
 
 Validation:
+
 - Scoped code quality checks passed
 - Android debug APK built for all configured ABIs; 1,056 JVM tests passed
 - Windows D1 and D2 builds passed (existing weapon.c return-path warnings)

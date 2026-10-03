@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
-# run-shfmt.ps1 -- Run shfmt on bash scripts in android/.
+# run-shfmt.ps1 -- Run shfmt on eligible bash scripts.
 # Usage:
 #   .\run-shfmt.ps1          # format in-place (default)
-#   .\run-shfmt.ps1 --check  # dry-run, exit 1 if changes needed
+#   .\run-shfmt.ps1 -Check  # dry-run, exit 1 if changes needed
 #   .\run-shfmt.ps1 -Paths path\to\file path\to\dir
 
 param(
@@ -17,6 +17,16 @@ $platformHelper = Join-Path $androidRoot "get_deps/helpers/Get-DepPlatform.ps1"
 . $platformHelper
 
 . (Join-Path $PSScriptRoot "code-quality-files.ps1")
+$Paths = @(Get-CodeQualityScriptPaths -InputPaths $Paths -RemainingPaths @($args) -ExplicitScope ($PSBoundParameters.ContainsKey('Paths')))
+
+# --- Gather .sh files ---
+$files = Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $repoRoot -InputPaths $Paths -ValidExtensions @('.sh', '.bash') -ExcludePattern '[\\/](build|build-outputs|\.cxx)[\\/]'
+
+if ($files.Count -eq 0) {
+    Write-Host "No shell scripts found"
+    exit 0
+}
+
 
 # --- Locate shfmt ---
 $DEP_BASE = Get-DependencyBase -RepoRoot $repoRoot
@@ -48,13 +58,6 @@ if (-not $shfmt) {
 Write-Host "Using: $shfmt"
 & $shfmt --version
 
-# --- Gather .sh files ---
-$files = Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $androidRoot -InputPaths $Paths -ValidExtensions @('.sh') -ExcludePattern '[\\/](build|build-outputs|\.cxx)[\\/]'
-
-if ($files.Count -eq 0) {
-    Write-Host "No shell scripts found"
-    exit 0
-}
 
 Write-Host "Found $($files.Count) shell scripts"
 
@@ -86,6 +89,9 @@ if ($Check) {
 } else {
     foreach ($f in $files) {
         & $shfmt @shfmtArgs -w "$($f.FullName)"
+        if ($LASTEXITCODE -ne 0) { exit 1 }
     }
     Write-Host "shfmt format pass complete"
 }
+
+exit 0

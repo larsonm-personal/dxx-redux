@@ -14,6 +14,21 @@ int render_collect_view_objects(int32_t eye_offset, short *objects);
 /* Publish the current main-view candidates when the draw is omitted
  * Returns zero if the main viewport has not been initialized */
 int render_update_main_view_objects(void);
+#ifdef ANDROID
+/* Baseline FOV bookkeeping without starting a GPU frame or preparing lighting */
+void android_render_collect_fov_visibility(int32_t eye_offset, int window_num);
+struct object;
+void android_render_record_visible_object(struct object *obj);
+#ifdef INTROSPECT_ON
+void android_render_visibility_verify_set(int enabled);
+int android_render_visibility_verify_enabled(void);
+void android_render_visibility_verify_begin(void);
+void android_render_visibility_verify_reference(int window_num);
+void android_render_visibility_verify_compare(int window_num);
+unsigned int android_render_visibility_verify_checks(void);
+unsigned int android_render_visibility_verify_failures(void);
+#endif
+#endif
 #ifdef __cplusplus
 }
 #endif

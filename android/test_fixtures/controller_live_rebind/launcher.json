@@ -1,17 +1,20 @@
 [
-    {"action": "tap_button", "text": "Controller Mapping", "exact": true},
-    {"action": "controller_input", "key": "L2", "pressed": true, "post_delay_ms": 2300},
-    {"action": "assert", "expect": {"controller_mapping.selected_control": "L2"}},
-    {"action": "controller_input", "key": "L2", "pressed": false},
-    {"action": "tap_button", "text": "Fire Primary", "exact": true},
-    {"action": "controller_input", "key": "R2", "pressed": true, "post_delay_ms": 2300},
-    {"action": "assert", "expect": {"controller_mapping.selected_control": "R2"}},
-    {"action": "controller_input", "key": "R2", "pressed": false},
-    {"action": "tap_button", "text": "Fire Secondary", "exact": true},
-    {"action": "assert", "expect": {
-        "controller_mapping.bindings.L2": "Fire Primary",
-        "controller_mapping.bindings.R2": "Fire Secondary"
-    }},
-    {"action": "tap_button", "text": "Save"},
-    {"action": "tap_button", "text": "Return to Game", "exact": true}
+    { "action": "tap_button", "text": "Controller Mapping", "exact": true },
+    { "action": "controller_input", "key": "L2", "pressed": true, "post_delay_ms": 2300 },
+    { "action": "assert", "expect": { "controller_mapping.selected_control": "L2" } },
+    { "action": "controller_input", "key": "L2", "pressed": false },
+    { "action": "tap_button", "text": "Fire Primary", "exact": true },
+    { "action": "controller_input", "key": "R2", "pressed": true, "post_delay_ms": 2300 },
+    { "action": "assert", "expect": { "controller_mapping.selected_control": "R2" } },
+    { "action": "controller_input", "key": "R2", "pressed": false },
+    { "action": "tap_button", "text": "Fire Secondary", "exact": true },
+    {
+        "action": "assert",
+        "expect": {
+            "controller_mapping.bindings.L2": "Fire Primary",
+            "controller_mapping.bindings.R2": "Fire Secondary"
+        }
+    },
+    { "action": "tap_button", "text": "Save" },
+    { "action": "tap_button", "text": "Return to Game", "exact": true }
 ]

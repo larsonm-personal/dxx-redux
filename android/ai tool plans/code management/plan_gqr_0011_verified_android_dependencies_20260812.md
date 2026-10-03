@@ -9,19 +9,19 @@ branch-added verification owner and leave D1/D2 original files untouched.
 ## Plan
 
 - [x] Confirm the next live ranking item, finding, starting HEAD, and existing
-  worktree ownership
+      worktree ownership
 - [x] Inventory every production native fetch, pin, cache path, extraction
-  path, and current verification helper
+      path, and current verification helper
 - [x] Define one compact verified-download/cache contract with explicit hashes
-  for every downloaded byte sequence
+      for every downloaded byte sequence
 - [x] Apply the contract to the Android native build without changing desktop
-  or inherited game sources
+      or inherited game sources
 - [x] Add hostile-cache, changed-pin, disconnected-reuse, and ordinary clean
-  configure/build tests
+      configure/build tests
 - [x] Run focused tests, scoped quality, Android ABI builds, and relevant host
-  configuration/build validation
+      configuration/build validation
 - [x] Audit dependency provenance, final diff, and worktree scope; mark
-  GQR-0011/GQF-0024 terminal
+      GQR-0011/GQF-0024 terminal
 
 ## Starting state
 

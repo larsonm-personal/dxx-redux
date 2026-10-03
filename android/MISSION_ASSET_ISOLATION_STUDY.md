@@ -90,7 +90,7 @@ while newly discovered archives can change the effective precedence.
 
 Selecting an add-on normally prepends its HOG, and Android also mounts the loose
 directory beside its descriptor. These are useful mission-scoped mechanisms,
-but they sit above the still-mounted roots of *all* enabled packages. A missing
+but they sit above the still-mounted roots of _all_ enabled packages. A missing
 resource in the active mission can therefore fall through to an unrelated
 package. The mechanism is not limited to sound.
 
@@ -119,15 +119,15 @@ Source: `C:/Users/first last/Downloads/debuglog_20260915_111816.txt`, supplied
 by the user on 2026-09-15. The first run had all mods/levels enabled and the
 incorrect sound; the second had all unchecked and the correct sound.
 
-| Evidence | All enabled: incorrect | All unchecked: correct |
-| --- | --- | --- |
-| Counterstrike level 1 context starts | 11:18:38.917, line 546 | 11:19:20.374, line 1329 |
-| First logged sample 53 playback | 11:18:44.843, 5.926 seconds later, lines 921-923 | 11:19:24.698, 4.324 seconds later, lines 1676-1678 |
-| `descent2.s22` source | `mods/.extracted_mission_zips/ewithin-rebirth.zip/ewithin.dxa`, line 231 | Base file-set directory, line 1107 |
-| Sample name / bytes | `snipe_1.` / 16,367 | `snipe_1` / 24,098 |
-| Sample FNV-1a 64 hash | `446c95505b42af56` | `9a629f9713cdff17` |
-| Robot 37 see / attack mapping | `59:53` / `60:54`, line 636 | `59:53` / `60:54`, line 1412 |
-| Read and cache checks | `read_ok=1`, `bank_match=1`, `cache_input_match=1`, `cache_output_match=1` | Same |
+| Evidence                             | All enabled: incorrect                                                     | All unchecked: correct                             |
+| ------------------------------------ | -------------------------------------------------------------------------- | -------------------------------------------------- |
+| Counterstrike level 1 context starts | 11:18:38.917, line 546                                                     | 11:19:20.374, line 1329                            |
+| First logged sample 53 playback      | 11:18:44.843, 5.926 seconds later, lines 921-923                           | 11:19:24.698, 4.324 seconds later, lines 1676-1678 |
+| `descent2.s22` source                | `mods/.extracted_mission_zips/ewithin-rebirth.zip/ewithin.dxa`, line 231   | Base file-set directory, line 1107                 |
+| Sample name / bytes                  | `snipe_1.` / 16,367                                                        | `snipe_1` / 24,098                                 |
+| Sample FNV-1a 64 hash                | `446c95505b42af56`                                                         | `9a629f9713cdff17`                                 |
+| Robot 37 see / attack mapping        | `59:53` / `60:54`, line 636                                                | `59:53` / `60:54`, line 1412                       |
+| Read and cache checks                | `read_ok=1`, `bank_match=1`, `cache_input_match=1`, `cache_output_match=1` | Same                                               |
 
 The event timing matches the user's report. Robot 37's see-sound mapping is
 unchanged, but the selected bank supplies different sample bytes. The clean
@@ -152,14 +152,14 @@ is the mission-owned asset activation and cache lifecycle described below.
 I inspected archive member lists and parsed the inner HOG directories, including
 the small HXM files. This did not require launching or modifying the packages.
 
-| Local distribution | Relevant contents | Sound evidence |
-| --- | --- | --- |
-| `game_data/mission_files/descent_maximum_fixed.zip` | Two MN2 descriptors, two HOGs, one readme | No external sound bank, sound sample, HAM, or DXA |
-| Its `max_f.hog` | 30 RL2 levels, 16 PCX images, 2 TXB texts | No sound samples or robot replacements |
-| Its `maxlnk_f.hog` | 6 RL2 levels | No sound assets |
-| `game_data/mission_files/d2xxl_downloads/maximum.7z` | Campaign/anarchy descriptors and HOGs, readme, D2X-XL generated caches | No external sound bank, samples, HAM, or DXA |
-| Its `maximum.hog` | 30 RL2 levels, 16 PCX images, 2 TXB texts, 4 HXM files | Each HXM is 32 bytes with version 1 and zero replacement counts; no robot sound remapping |
-| Its `maxlink.hog` | 6 RL2 levels | No sound assets |
+| Local distribution                                   | Relevant contents                                                      | Sound evidence                                                                            |
+| ---------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `game_data/mission_files/descent_maximum_fixed.zip`  | Two MN2 descriptors, two HOGs, one readme                              | No external sound bank, sound sample, HAM, or DXA                                         |
+| Its `max_f.hog`                                      | 30 RL2 levels, 16 PCX images, 2 TXB texts                              | No sound samples or robot replacements                                                    |
+| Its `maxlnk_f.hog`                                   | 6 RL2 levels                                                           | No sound assets                                                                           |
+| `game_data/mission_files/d2xxl_downloads/maximum.7z` | Campaign/anarchy descriptors and HOGs, readme, D2X-XL generated caches | No external sound bank, samples, HAM, or DXA                                              |
+| Its `maximum.hog`                                    | 30 RL2 levels, 16 PCX images, 2 TXB texts, 4 HXM files                 | Each HXM is 32 bytes with version 1 and zero replacement counts; no robot sound remapping |
+| Its `maxlink.hog`                                    | 6 RL2 levels                                                           | No sound assets                                                                           |
 
 For identification, SHA-256 of the inspected campaign HOG bytes:
 
@@ -209,7 +209,7 @@ mission, and whether Maximum was previously played in the same process. Then:
 
 Add targeted `debug_log` diagnostics and introspection before speculative code
 changes. Existing robot preview sound information is a useful starting point,
-but the gameplay diagnostic needs *loaded* provenance: asking PhysicsFS where a
+but the gameplay diagnostic needs _loaded_ provenance: asking PhysicsFS where a
 file resolves now cannot prove where an older cached sample came from.
 
 ## 3. Define scope independently of packaging
@@ -218,15 +218,15 @@ The hard question is more manageable if archive format, content type, and
 activation scope are separate properties. ZIP, 7z, HOG, and DXA are containers;
 none inherently means "global mod".
 
-| Content | Default activation | Reason |
-| --- | --- | --- |
-| A package with playable mission descriptors | Its selected mission and declared shared resources | Installing campaigns should not alter other campaigns |
-| DXA explicitly categorized as levels | Mission-scoped | Existing user-facing classification should have runtime meaning |
-| A standalone replacement mod without missions | Global when enabled | This is the user's deliberate global modification |
-| Optional add-on for a particular campaign | Explicit target mission/package IDs | It should follow that campaign automatically |
-| Archive containing a campaign and optional global improvements | Separate components with separate enablement | An incidental bundled mod should not become global silently |
-| Collection containing several campaigns | Selected campaign plus explicitly shared assets | Selecting one campaign must not activate sibling HOGs or sibling-specific assets |
-| Jukebox/music collection | Explicit music preference | Selecting music is independent of granting gameplay asset overrides |
+| Content                                                        | Default activation                                 | Reason                                                                           |
+| -------------------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------- |
+| A package with playable mission descriptors                    | Its selected mission and declared shared resources | Installing campaigns should not alter other campaigns                            |
+| DXA explicitly categorized as levels                           | Mission-scoped                                     | Existing user-facing classification should have runtime meaning                  |
+| A standalone replacement mod without missions                  | Global when enabled                                | This is the user's deliberate global modification                                |
+| Optional add-on for a particular campaign                      | Explicit target mission/package IDs                | It should follow that campaign automatically                                     |
+| Archive containing a campaign and optional global improvements | Separate components with separate enablement       | An incidental bundled mod should not become global silently                      |
+| Collection containing several campaigns                        | Selected campaign plus explicitly shared assets    | Selecting one campaign must not activate sibling HOGs or sibling-specific assets |
+| Jukebox/music collection                                       | Explicit music preference                          | Selecting music is independent of granting gameplay asset overrides              |
 
 Use the existing importer/native mission inventory for detection. Do not build
 a second MN2/MSN/HOG parser in Kotlin. Folder names, titles, archive extensions,
@@ -298,13 +298,13 @@ see its [mount API contract](https://www.icculus.org/physfs/docs/html/physfs_8h.
 
 ### Alternatives and tradeoffs
 
-| Approach | Assessment |
-| --- | --- |
-| Filter launch paths to one mission | Small change, but insufficient for in-engine switching and complete mission discovery |
-| Rebuild global mounts whenever a mission is selected | Useful only when paired with ownership, cache reset, failure handling, and discovery separation |
-| Catalog plus scoped PhysicsFS mounts | Recommended: reuses engine readers and existing mission HOG behavior with bounded hooks |
-| Replace every resource lookup with a custom virtual filesystem | Maximum control, but broad D1/D2 churn and upstream maintenance cost |
-| Restart the engine for every mission | Stronger cleanup boundary, but changes the in-engine experience and complicates saves/networking; reserve for explicitly unsupported startup-only content |
+| Approach                                                       | Assessment                                                                                                                                                |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Filter launch paths to one mission                             | Small change, but insufficient for in-engine switching and complete mission discovery                                                                     |
+| Rebuild global mounts whenever a mission is selected           | Useful only when paired with ownership, cache reset, failure handling, and discovery separation                                                           |
+| Catalog plus scoped PhysicsFS mounts                           | Recommended: reuses engine readers and existing mission HOG behavior with bounded hooks                                                                   |
+| Replace every resource lookup with a custom virtual filesystem | Maximum control, but broad D1/D2 churn and upstream maintenance cost                                                                                      |
+| Restart the engine for every mission                           | Stronger cleanup boundary, but changes the in-engine experience and complicates saves/networking; reserve for explicitly unsupported startup-only content |
 
 ## 5. Precedence needs two rules
 
@@ -451,21 +451,21 @@ the effective asset set. Initially, invalidate all affected caches when it
 changes. Optimize by per-resource fingerprints only after correctness is proven.
 Include misses as well as successful lookups in invalidation.
 
-| Resource | Current behavior/evidence | Required transition behavior |
-| --- | --- | --- |
-| D2 robot/weapon/texture metadata | `load_mission` rereads HAM; `bm_read_all` applies DXA patches | Rebuild from the selected baseline, then only effective patches/dependencies; handle early-return paths |
-| D2 sound-bank bytes | `load_mission_ham` reloads only when `sndfile_dir_changed` detects a new `PHYSFS_getRealDir` value | Compare context/source identity, filename, content revision, and sample format; directory equality alone is insufficient |
-| Converted digital samples | `SoundChunks[]` is cached by sound index in SDL_mixer; D2 has `digi_free_cached_sounds` | Halt channels before freeing data; invalidate converted samples when bytes or mappings change |
-| D1 sound/custom data | `custom_remove` restores saved samples; `load_custom_data` reads PG1/DTX/HX1; D1 mixer also caches by index | Restore custom state before releasing backing banks; add an explicit D1 converted-sample reset equivalent |
-| D1-in-D2 assets | `d1_custom_remove` and `d1_in_d2_apply_*` run during level loading | Coordinate sound/bitmap/robot/effect restoration with bank teardown; test both directions independently |
-| D2 PIG bitmaps | `piggy_new_pigfile` can return early when the filename matches and no POG replacement is present | Invalidate filename-only reuse when the source context changes; close `Piggy_fp` before removing its owner |
-| POG/HXM replacements | Level loaders remove/reapply replacements; robot reset can reread mission HAM | Preserve reset ordering; do not reread the outgoing mission while establishing the incoming baseline |
-| Palette and remapped UI | `load_palette` tracks palette/PIG filenames and skips matching names | Invalidate names, reload palette data, refresh dependent remaps and menu backgrounds |
-| Hires textures and lookup caches | OGL has path/lookup caches and GPU texture cleanup | Invalidate native and JVM lookup caches, GPU resources, merged textures, and outstanding loads at context changes |
-| External models | `xmodel_load_all` fills only empty entries; `xmodel_free_gl_all` releases only GPU state | Release/reload model objects as well as GPU data when their sources change |
-| Music and movies | Song lists reread; playback/movie consumers can retain handles/state | Stop and close old streams, rebuild selected song names/list and scoped movie resources |
-| Startup text/fonts/UI | Loaded before mission selection in `inferno.c` | Keep these pinned to session base/global scope unless a deliberate reload contract exists |
-| Metadata/preview/route-derived caches | Work can outlive one file lookup | Key by effective asset fingerprint and reject results from an obsolete context |
+| Resource                              | Current behavior/evidence                                                                                   | Required transition behavior                                                                                             |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| D2 robot/weapon/texture metadata      | `load_mission` rereads HAM; `bm_read_all` applies DXA patches                                               | Rebuild from the selected baseline, then only effective patches/dependencies; handle early-return paths                  |
+| D2 sound-bank bytes                   | `load_mission_ham` reloads only when `sndfile_dir_changed` detects a new `PHYSFS_getRealDir` value          | Compare context/source identity, filename, content revision, and sample format; directory equality alone is insufficient |
+| Converted digital samples             | `SoundChunks[]` is cached by sound index in SDL_mixer; D2 has `digi_free_cached_sounds`                     | Halt channels before freeing data; invalidate converted samples when bytes or mappings change                            |
+| D1 sound/custom data                  | `custom_remove` restores saved samples; `load_custom_data` reads PG1/DTX/HX1; D1 mixer also caches by index | Restore custom state before releasing backing banks; add an explicit D1 converted-sample reset equivalent                |
+| D1-in-D2 assets                       | `d1_custom_remove` and `d1_in_d2_apply_*` run during level loading                                          | Coordinate sound/bitmap/robot/effect restoration with bank teardown; test both directions independently                  |
+| D2 PIG bitmaps                        | `piggy_new_pigfile` can return early when the filename matches and no POG replacement is present            | Invalidate filename-only reuse when the source context changes; close `Piggy_fp` before removing its owner               |
+| POG/HXM replacements                  | Level loaders remove/reapply replacements; robot reset can reread mission HAM                               | Preserve reset ordering; do not reread the outgoing mission while establishing the incoming baseline                     |
+| Palette and remapped UI               | `load_palette` tracks palette/PIG filenames and skips matching names                                        | Invalidate names, reload palette data, refresh dependent remaps and menu backgrounds                                     |
+| Hires textures and lookup caches      | OGL has path/lookup caches and GPU texture cleanup                                                          | Invalidate native and JVM lookup caches, GPU resources, merged textures, and outstanding loads at context changes        |
+| External models                       | `xmodel_load_all` fills only empty entries; `xmodel_free_gl_all` releases only GPU state                    | Release/reload model objects as well as GPU data when their sources change                                               |
+| Music and movies                      | Song lists reread; playback/movie consumers can retain handles/state                                        | Stop and close old streams, rebuild selected song names/list and scoped movie resources                                  |
+| Startup text/fonts/UI                 | Loaded before mission selection in `inferno.c`                                                              | Keep these pinned to session base/global scope unless a deliberate reload contract exists                                |
+| Metadata/preview/route-derived caches | Work can outlive one file lookup                                                                            | Key by effective asset fingerprint and reject results from an obsolete context                                           |
 
 Primary source locations:
 
@@ -535,13 +535,13 @@ Extracted DXAs and generated resources cannot escape their owning pack's scope.
 Use the phone example as the first end-to-end acceptance case, with the original
 collection left enabled throughout:
 
-| Step | Required result |
-| --- | --- |
-| Launch, browse missions, cancel selection | ewithin remains discoverable; its HAM/S22 never enter the base/menu context |
-| Start or restore Counterstrike level 1 | Base HAM/S22; robot 37 see maps `59:53`; stock sample 53 hash `9a629f9713cdff17`, 24,098 bytes |
-| Select ewithin in the same engine process | Its owner and nested DXA activate; authored HAM/S22 load successfully rather than being universally blocked |
-| Return to Counterstrike in that process | Base HAM identity, metadata and S22 samples restored; no ewithin-owned cache, mount, patch or generated override remains |
-| Switch ewithin -> Maximum -> ewithin | Maximum's missing HAM/S22 fall back to base/global assets, never the previously active ewithin pack; ewithin's resources return when selected again |
+| Step                                      | Required result                                                                                                                                     |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Launch, browse missions, cancel selection | ewithin remains discoverable; its HAM/S22 never enter the base/menu context                                                                         |
+| Start or restore Counterstrike level 1    | Base HAM/S22; robot 37 see maps `59:53`; stock sample 53 hash `9a629f9713cdff17`, 24,098 bytes                                                      |
+| Select ewithin in the same engine process | Its owner and nested DXA activate; authored HAM/S22 load successfully rather than being universally blocked                                         |
+| Return to Counterstrike in that process   | Base HAM identity, metadata and S22 samples restored; no ewithin-owned cache, mount, patch or generated override remains                            |
+| Switch ewithin -> Maximum -> ewithin      | Maximum's missing HAM/S22 fall back to base/global assets, never the previously active ewithin pack; ewithin's resources return when selected again |
 
 The bad Counterstrike sample is already known: `snipe_1.`, 16,367 bytes,
 FNV-1a 64 `446c95505b42af56`, from `ewithin.dxa`. Use it as a positive provenance
@@ -608,23 +608,23 @@ Only then retain caches selectively based on effective content fingerprints.
 
 ## 10. Acceptance matrix
 
-| Scenario | Required evidence |
-| --- | --- |
-| Fresh Counterstrike with A and B installed/enabled | Neither inactive package owns a loaded asset; enabling/disabling them changes mission availability only |
-| Counterstrike -> A -> Counterstrike, one engine process | Final sound bytes/mappings, palette, textures, models, and song-list sources match the initial effective baseline |
-| A -> B -> A with identical filenames | Each resolves its own content, including negative cache entries and same-named PIG/palette resources |
-| Several missions within A | Sibling HOGs and sibling-specific overrides remain inactive; declared shared assets work |
-| A containing a nested DXA and generated patch/song list | Generated and nested resources activate and deactivate with their owner |
-| Mission-authored POG plus global hires replacement | Authored resource wins unless explicitly overridden by a targeted mod |
-| Two inactive packages patch the same metadata field | They do not conflict until the effective dependency set actually combines them |
-| Mission selection canceled; pause menu opened | Browsing does not change owners; pause preserves the playable mission context |
-| Mission failure, missing dependency, failed unmount | No partially active context; verified previous state or reconstructed baseline, with a diagnostic |
-| Same path with changed content or sample rate | Source revision/format changes invalidate data and converted caches |
-| D1 native PG1/DTX/HX1 transitions | Original samples, converted samples, bitmaps, and metadata restored |
-| D2 -> D1-in-D2 -> D2; D1 shareware/Mac/OEM variants where available | Compatibility backups and built-in early returns do not retain foreign assets |
-| Save restore, classic demo, automation, multiplayer host/join | Correct owner activated before level state is consumed; ambiguous legacy names rejected |
-| Metadata/preview A -> base -> B | Request mounts released and derived output keyed to its effective context |
-| Repeated 20-cycle mission switching | Stable owned-mount counts, open-handle counts, and bounded memory; no stale asynchronous results |
+| Scenario                                                            | Required evidence                                                                                                 |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Fresh Counterstrike with A and B installed/enabled                  | Neither inactive package owns a loaded asset; enabling/disabling them changes mission availability only           |
+| Counterstrike -> A -> Counterstrike, one engine process             | Final sound bytes/mappings, palette, textures, models, and song-list sources match the initial effective baseline |
+| A -> B -> A with identical filenames                                | Each resolves its own content, including negative cache entries and same-named PIG/palette resources              |
+| Several missions within A                                           | Sibling HOGs and sibling-specific overrides remain inactive; declared shared assets work                          |
+| A containing a nested DXA and generated patch/song list             | Generated and nested resources activate and deactivate with their owner                                           |
+| Mission-authored POG plus global hires replacement                  | Authored resource wins unless explicitly overridden by a targeted mod                                             |
+| Two inactive packages patch the same metadata field                 | They do not conflict until the effective dependency set actually combines them                                    |
+| Mission selection canceled; pause menu opened                       | Browsing does not change owners; pause preserves the playable mission context                                     |
+| Mission failure, missing dependency, failed unmount                 | No partially active context; verified previous state or reconstructed baseline, with a diagnostic                 |
+| Same path with changed content or sample rate                       | Source revision/format changes invalidate data and converted caches                                               |
+| D1 native PG1/DTX/HX1 transitions                                   | Original samples, converted samples, bitmaps, and metadata restored                                               |
+| D2 -> D1-in-D2 -> D2; D1 shareware/Mac/OEM variants where available | Compatibility backups and built-in early returns do not retain foreign assets                                     |
+| Save restore, classic demo, automation, multiplayer host/join       | Correct owner activated before level state is consumed; ambiguous legacy names rejected                           |
+| Metadata/preview A -> base -> B                                     | Request mounts released and derived output keyed to its effective context                                         |
+| Repeated 20-cycle mission switching                                 | Stable owned-mount counts, open-handle counts, and bounded memory; no stale asynchronous results                  |
 
 Existing `test_mod_loading.jsonc` checks global hires texture loading; it does not
 prove sound isolation or mission switching. Existing

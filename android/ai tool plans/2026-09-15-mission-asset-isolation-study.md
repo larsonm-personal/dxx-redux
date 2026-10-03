@@ -63,69 +63,69 @@ are recorded below
 
 - [x] Record source, timing, mappings and sample hashes in the detailed study
 - [x] Locate/import the exact `ewithin-rebirth` package and record content hashes
-  for the ZIP, nested DXA, HAM and S22; do not assume another release is identical
+      for the ZIP, nested DXA, HAM and S22; do not assume another release is identical
 - [ ] Establish a clean Counterstrike baseline with a fixed base file set and
-  fixed global mods. Preserve sample 53 hash `9a629f9713cdff17` for the inspected
-  stock bank; measure baseline HAM identity and relevant metadata separately
+      fixed global mods. Preserve sample 53 hash `9a629f9713cdff17` for the inspected
+      stock bank; measure baseline HAM identity and relevant metadata separately
 - [ ] Add a reusable serial emulator runner and game script that enables both
-  packs, selects missions through the native picker, and records context/source
-  diagnostics. Assert that the same engine process survives mission switching
+      packs, selects missions through the native picker, and records context/source
+      diagnostics. Assert that the same engine process survives mission switching
 - [ ] Add tiny synthetic colliding packages for deterministic tests of sound,
-  metadata, images and music without redistributing the real campaign payload
+      metadata, images and music without redistributing the real campaign payload
 
 ### 2. Catalog and owner resolution
 
 - [ ] Reuse native/importer mission inventory to classify packs automatically
-  and associate each mission with an owner ID, descriptor path and content revision
+      and associate each mission with an owner ID, descriptor path and content revision
 - [ ] Replace the launch contract with base/global mounts and an immutable catalog
-  of enabled missions. Keep inactive payloads outside the root asset search path
+      of enabled missions. Keep inactive payloads outside the root asset search path
 - [ ] Carry owner identity through picker entries and all mission lookup paths;
-  reject ambiguous legacy short names instead of choosing search-path order
+      reject ambiguous legacy short names instead of choosing search-path order
 - [ ] Scope extracted nested DXAs and loose roots in `ModManager`, file-set
-  projections in `FileSetContentManager`, and native DXA autodiscovery together
+      projections in `FileSetContentManager`, and native DXA autodiscovery together
 - [ ] Generate patches/song lists for the effective owner set; retain ownership
-  through derived files so unmounting the original ZIP cannot leave overrides behind
+      through derived files so unmounting the original ZIP cannot leave overrides behind
 - [ ] Associate sibling HOGs/sidecars individually in multi-mission collections;
-  keep unresolvable conflicting components unavailable with a concrete diagnostic
+      keep unresolvable conflicting components unavailable with a concrete diagnostic
 
 ### 3. One engine-thread transition boundary
 
 - [ ] Add shared Android coordination with narrow D1/D2 `load_mission` and cleanup
-  hooks, covering built-in/shareware/OEM early returns as well as normal missions
+      hooks, covering built-in/shareware/OEM early returns as well as normal missions
 - [ ] Resolve and preflight the candidate before changing the current context
 - [ ] Stop channels/music, close streams, drain resource jobs and release caches
-  before unmounting their owners. Restore custom-data backups while still valid
+      before unmounting their owners. Restore custom-data backups while still valid
 - [ ] Detach exact owned paths, check unmount results, mount the selected owner,
-  rebuild HAM/banks/patches and presentation state, then publish a new generation
+      rebuild HAM/banks/patches and presentation state, then publish a new generation
 - [ ] Reset all affected caches initially, including filename-only reuse and
-  negative lookups; cover the complete asset audit in study section 7
+      negative lookups; cover the complete asset audit in study section 7
 - [ ] Preserve package state across ordinary level changes, but reset level-owned
-  POG/HXM/custom assets correctly
+      POG/HXM/custom assets correctly
 - [ ] On preflight failure retain the prior state; after teardown failure rebuild
-  a known base/global menu or stop safely if that cannot be verified
+      a known base/global menu or stop safely if that cannot be verified
 
 ### 4. Prove both absence and activation
 
 - [ ] All packs enabled -> fresh Counterstrike: base HAM/S22 selected; no inactive
-  pack-owned mounts, patches, generated files or loaded resources
+      pack-owned mounts, patches, generated files or loaded resources
 - [ ] Same setup -> load Counterstrike save: identical asset baseline before
-  restoring level state; the first robot still uses the correct sample
+      restoring level state; the first robot still uses the correct sample
 - [ ] Counterstrike -> ewithin -> Counterstrike in one process: the nested DXA
-  contributes while ewithin is active, and is fully absent on return
+      contributes while ewithin is active, and is fully absent on return
 - [ ] ewithin -> Maximum -> ewithin in one process: Maximum uses its own authored
-  resources plus baseline fallbacks, never ewithin's HAM/S22; ewithin reactivates
+      resources plus baseline fallbacks, never ewithin's HAM/S22; ewithin reactivates
 - [ ] Select/highlight/cancel without starting: active owner remains unchanged
 - [ ] Ordinary and secret levels, ending, main menu, save/demo and multiplayer
-  paths obey the same lifecycle; test D1 and D1-in-D2 restoration separately
+      paths obey the same lifecycle; test D1 and D1-in-D2 restoration separately
 - [ ] Missing dependency, failed activation and forced unmount failure leave no
-  mixed owner state; repeated 20-cycle switching has bounded memory/handle counts
+      mixed owner state; repeated 20-cycle switching has bounded memory/handle counts
 - [ ] Keep standalone global-mod coverage and authored-resource precedence tests
-  so isolation does not disable valid global enhancements or campaign replacements
+      so isolation does not disable valid global enhancements or campaign replacements
 
 ### 5. Release gate
 
 - [ ] Run scoped formatting, relevant JVM/native tests, complete serial Android
-  integration runs, Android builds and Windows D1/D2 builds
+      integration runs, Android builds and Windows D1/D2 builds
 - [ ] Record selected source identities and sample checks, not just audible results
 - [ ] Obtain a confirming phone run with the original collection still enabled
 
@@ -162,12 +162,12 @@ required before enabling the catalog as the gameplay launch contract
 The real-package test imports `game_data/mission_files/ewithin-versions.zip`
 through the existing variant selection. The chosen `ewithin-rebirth.zip` has:
 
-| File | SHA-256 |
-| --- | --- |
+| File                  | SHA-256                                                            |
+| --------------------- | ------------------------------------------------------------------ |
 | `ewithin-rebirth.zip` | `bf8e9f58ef6993f44df5b94f38efd0235bb407485267948a4d0eaaa0a6aa8c84` |
-| `ewithin.dxa` | `7602af078a17c4e419e61a857e6691b4099de622fd53643b68aaa8b7414a2ebb` |
-| Its `descent2.ham` | `912e5fa5520e29ae0f33ccbbd739bc0fff1b55cf5958cb4990792d8bfcfc8752` |
-| Its `descent2.s22` | `67444f8089b684c3a87f0165c9b170657f4ad96d26fed6694ede04cbd9b584bc` |
+| `ewithin.dxa`         | `7602af078a17c4e419e61a857e6691b4099de622fd53643b68aaa8b7414a2ebb` |
+| Its `descent2.ham`    | `912e5fa5520e29ae0f33ccbbd739bc0fff1b55cf5958cb4990792d8bfcfc8752` |
+| Its `descent2.s22`    | `67444f8089b684c3a87f0165c9b170657f4ad96d26fed6694ede04cbd9b584bc` |
 
 Directly inspected S22 sample 53: `snipe_1.`, 16,367 bytes, FNV-1a 64
 `446c95505b42af56`, exactly matching the affected phone playback. The phone log

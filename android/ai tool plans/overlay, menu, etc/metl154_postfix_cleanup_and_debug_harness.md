@@ -68,18 +68,18 @@ only metl154 and not only `counterstrike!` level 1.
 
 Proposed neutral naming scheme:
 
-| Old name | New name | Rationale |
-|---|---|---|
-| `is_metl154_plain` | `is_plain_overlay_wall` | describes the classification |
-| `ogl_is_metl154_bitmap()` | (delete) | never needed once the path is generic; callers should test texture properties, not the name |
-| `METL154_EXPERIMENT_*` enum | `MERGED_WALL_EXPERIMENT_*` | experiment machinery is generic |
-| `g_metl154_debug_mode` | `g_merged_wall_debug_mode` | alpha/RGB visualization mode |
-| `g_metl154_experiment_mode` | `g_merged_wall_experiment_mode` | |
-| `g_metl154_frame_id` / `g_metl154_draw_seq` / `g_metl154_render_pass` | `g_merged_wall_*` (same suffixes) | |
-| `metl154_snapshot_*` | `merged_wall_snapshot_*` | crosshair snapshot harness |
-| `[metl154clip]` / `[metl154upload]` / ... log tags | `[mwall_clip]` / `[mwall_upload]` / ... | `mwall` keeps tags short and greppable |
-| `render_set_android_draw_face_context` | keep name, move to shared | the context struct is generic already |
-| `METL154_TRACK_SIDE_COUNT` | (delete) | tracked sides array goes away entirely |
+| Old name                                                              | New name                                | Rationale                                                                                   |
+| --------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `is_metl154_plain`                                                    | `is_plain_overlay_wall`                 | describes the classification                                                                |
+| `ogl_is_metl154_bitmap()`                                             | (delete)                                | never needed once the path is generic; callers should test texture properties, not the name |
+| `METL154_EXPERIMENT_*` enum                                           | `MERGED_WALL_EXPERIMENT_*`              | experiment machinery is generic                                                             |
+| `g_metl154_debug_mode`                                                | `g_merged_wall_debug_mode`              | alpha/RGB visualization mode                                                                |
+| `g_metl154_experiment_mode`                                           | `g_merged_wall_experiment_mode`         |                                                                                             |
+| `g_metl154_frame_id` / `g_metl154_draw_seq` / `g_metl154_render_pass` | `g_merged_wall_*` (same suffixes)       |                                                                                             |
+| `metl154_snapshot_*`                                                  | `merged_wall_snapshot_*`                | crosshair snapshot harness                                                                  |
+| `[metl154clip]` / `[metl154upload]` / ... log tags                    | `[mwall_clip]` / `[mwall_upload]` / ... | `mwall` keeps tags short and greppable                                                      |
+| `render_set_android_draw_face_context`                                | keep name, move to shared               | the context struct is generic already                                                       |
+| `METL154_TRACK_SIDE_COUNT`                                            | (delete)                                | tracked sides array goes away entirely                                                      |
 
 Log tag namespace proposal: `[gfx_*]` for gated graphics-category diagnostics
 under `DLOG_GRAPHICS`, `[mwall_*]` for merged-wall specific events that
@@ -119,14 +119,14 @@ are no longer useful now that the fix is identified.
 
 Recommended disposition (to be finalized in Part B after a shader audit):
 
-| Mode | Recommend | Reason |
-|---|---|---|
-| DEFAULT | keep | normal path |
-| OLD_MERGE | keep, rename to `FORCE_LEGACY_TEXMERGE` | useful regression control: force the cross-platform CPU texmerge path for any merged wall |
-| CoverSkip / CoverSkip2 | delete | tied to hardcoded pair lists |
-| ClipAll | delete | post-hoc clipping diagnostic, superseded by the real fix |
-| KTX2 no-mip, decoded RGBA, decoded RGBA no-mip, stock fallback | delete | metl154-only texture reload experiments, no longer needed |
-| Alpha visualization / RGB visualization | keep as "overlay alpha" and "overlay RGB" debug modes in Part C's harness |
+| Mode                                                           | Recommend                                                                 | Reason                                                                                    |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| DEFAULT                                                        | keep                                                                      | normal path                                                                               |
+| OLD_MERGE                                                      | keep, rename to `FORCE_LEGACY_TEXMERGE`                                   | useful regression control: force the cross-platform CPU texmerge path for any merged wall |
+| CoverSkip / CoverSkip2                                         | delete                                                                    | tied to hardcoded pair lists                                                              |
+| ClipAll                                                        | delete                                                                    | post-hoc clipping diagnostic, superseded by the real fix                                  |
+| KTX2 no-mip, decoded RGBA, decoded RGBA no-mip, stock fallback | delete                                                                    | metl154-only texture reload experiments, no longer needed                                 |
+| Alpha visualization / RGB visualization                        | keep as "overlay alpha" and "overlay RGB" debug modes in Part C's harness |
 
 Open research item A.3.R1: confirm by grep that no automation script or
 regression test currently depends on any of the modes that we plan to
@@ -146,7 +146,7 @@ D1-vs-D2 private headers should move. Candidates (current names):
 - `ogl_is_metl154_bitmap()` -- delete, not move.
 - Experiment name / clamp / helper functions
   (`ogl_metl154_experiment_name`, `ogl_metl154_alpha_cutoff`,
-   `ogl_metl154_overlay_only`, `ogl_metl154_clip_all_tmap2`, etc.).
+  `ogl_metl154_overlay_only`, `ogl_metl154_clip_all_tmap2`, etc.).
 - Cached-premerge slot management helpers (currently in ogl.c near the
   cached-premerge path).
 - Tracked-face, focus-face, and snapshot-cover-event arrays and helpers
@@ -527,21 +527,21 @@ linked.
 
 Short list for quick reference while implementing:
 
-| Topic | Remove | Keep and generalize | Move to android/shared |
-|---|---|---|---|
-| metl154-named symbols | all, after rename | none | n/a |
-| Hardcoded seg/side lists | all | none | n/a |
-| Experiment modes | CoverSkip, CoverSkip2, ClipAll, 4 KTX2 variants, stock fallback | DEFAULT, OLD_MERGE -> rename to FORCE_LEGACY_TEXMERGE, overlay alpha, overlay RGB | yes |
-| Log tags `[metl154*]` | most | keep one `[mwall_*]` per event type, behind DLOG_GRAPHICS | yes |
-| Polygon offset in merged path | probably yes | re-verify with capture before final removal | n/a |
-| Cull disable / depth tweaks | most | only those the cached-premerge path actually needs | audit in shared helper |
-| Joined-label anchor fix | no | keep and generalize to any merged wall | yes |
-| render_set_android_draw_face_context | no | keep, it is already generic | yes, move impl |
-| DbgAltTexMerge Android default | no | keep, now accurate given cached-premerge path | n/a |
-| Video overlay metl154 buttons | in current form | rebuild as generic "Overlay alpha" / "Overlay RGB" / "Merged wall labels" / "Show draw route" / "Highlight supertransparency" | UI stays in Kotlin |
-| Launcher graphics page | no | add new "Debug options" section | UI stays in Kotlin |
-| Crosshair debug capture | n/a (new) | new generic capture of everything under the crosshair | yes, fully in shared |
-| Regression harness | n/a (new) | new generic harness exercising doors, grates, super-transparency, joined walls | test script in android/game_scripts |
+| Topic                                | Remove                                                          | Keep and generalize                                                                                                           | Move to android/shared              |
+| ------------------------------------ | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| metl154-named symbols                | all, after rename                                               | none                                                                                                                          | n/a                                 |
+| Hardcoded seg/side lists             | all                                                             | none                                                                                                                          | n/a                                 |
+| Experiment modes                     | CoverSkip, CoverSkip2, ClipAll, 4 KTX2 variants, stock fallback | DEFAULT, OLD_MERGE -> rename to FORCE_LEGACY_TEXMERGE, overlay alpha, overlay RGB                                             | yes                                 |
+| Log tags `[metl154*]`                | most                                                            | keep one `[mwall_*]` per event type, behind DLOG_GRAPHICS                                                                     | yes                                 |
+| Polygon offset in merged path        | probably yes                                                    | re-verify with capture before final removal                                                                                   | n/a                                 |
+| Cull disable / depth tweaks          | most                                                            | only those the cached-premerge path actually needs                                                                            | audit in shared helper              |
+| Joined-label anchor fix              | no                                                              | keep and generalize to any merged wall                                                                                        | yes                                 |
+| render_set_android_draw_face_context | no                                                              | keep, it is already generic                                                                                                   | yes, move impl                      |
+| DbgAltTexMerge Android default       | no                                                              | keep, now accurate given cached-premerge path                                                                                 | n/a                                 |
+| Video overlay metl154 buttons        | in current form                                                 | rebuild as generic "Overlay alpha" / "Overlay RGB" / "Merged wall labels" / "Show draw route" / "Highlight supertransparency" | UI stays in Kotlin                  |
+| Launcher graphics page               | no                                                              | add new "Debug options" section                                                                                               | UI stays in Kotlin                  |
+| Crosshair debug capture              | n/a (new)                                                       | new generic capture of everything under the crosshair                                                                         | yes, fully in shared                |
+| Regression harness                   | n/a (new)                                                       | new generic harness exercising doors, grates, super-transparency, joined walls                                                | test script in android/game_scripts |
 
 ---
 

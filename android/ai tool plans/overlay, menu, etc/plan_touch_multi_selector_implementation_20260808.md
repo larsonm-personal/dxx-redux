@@ -9,17 +9,17 @@ weapon rows, and exact game-thread weapon selection.
 ## Plan
 
 - [x] Add selector presentation/orientation/config fields and pure geometry and
-  weapon-row helpers with unit tests
+      weapon-row helpers with unit tests
 - [x] Add scroll-strip editor creation, preview, properties, placement clamping,
-  and non-interactive extent rails
+      and non-interactive extent rails
 - [x] Add scroll-strip runtime gesture state, rendering, magnification, haptics,
-  Guide-Bot filtering, and weapon row switching
+      Guide-Bot filtering, and weapon row switching
 - [x] Add exact parameterized weapon selection from Kotlin through JNI to the
-  game thread for both D1 and D2
+      game thread for both D1 and D2
 - [x] Add input-demo direct-command recording/replay for exact weapon selection
 - [x] Update a bundled touch preset to provide an immediately playable demo
 - [x] Run scoped formatting, unit tests, Android native build/tests, and an
-  emulator smoke test; fix failures
+      emulator smoke test; fix failures
 - [x] Mark completed work and record any deferred tuning items
 
 ## Deferred tuning
@@ -33,6 +33,6 @@ weapon rows, and exact game-thread weapon selection.
 
 - [x] Make the lift-off selection state the sole source of the strip highlight
 - [x] Render an active strip card with a green fill and retain the neutral fill
-  before a locked Guide-Bot Deploy drag is armed
+      before a locked Guide-Bot Deploy drag is armed
 - [x] Add a focused color/state unit test, run scoped formatting and unit tests,
-  rebuild the APK, and reinstall it on the emulator
+      rebuild the APK, and reinstall it on the emulator

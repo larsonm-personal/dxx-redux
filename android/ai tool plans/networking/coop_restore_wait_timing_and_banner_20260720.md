@@ -50,7 +50,7 @@ show a timed error banner if restoration fails.
   the final source changes.
 - `run-windows-build.ps1`: passed for D1 and D2 after the final source changes.
 - `android/tests/test_lan.ps1 -Game d2 -GuidebotSlotRemapRestore -SkipBuild
-  -TimeoutSeconds 120`: attempted, but the second AVD did not appear in adb after
+-TimeoutSeconds 120`: attempted, but the second AVD did not appear in adb after
   both the harness's hardware-rendered and software-rendered 90-second starts.
   A separate logged 55-second software-rendered boot also failed to register.
   The integration scenario did not reach game launch, so this is an emulator

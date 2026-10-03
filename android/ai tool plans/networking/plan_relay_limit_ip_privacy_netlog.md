@@ -30,6 +30,7 @@ requires them for P2P connections.
 ## 4. Android: Network Debug Logger -- DONE
 
 Created `NetLog.kt` (com.dxxredux.app.multiplayer):
+
 - Singleton with enable/disable via SharedPreferences ("dxx_prefs" / "net_logging_enabled")
 - Files in `filesDir/netlogs/netlog_YYYYMMDD_HHmmss.txt`
 - Max 10 files, oldest pruned on new file creation
@@ -41,6 +42,7 @@ Created `NetLog.kt` (com.dxxredux.app.multiplayer):
 
 Added "Network Logging" section to AdvancedSettingsPage.kt between Config Management
 and Danger Zone:
+
 - Toggle switch to enable/disable logging
 - List of existing log files with dates and sizes
 - "Export" button per file (share intent via FileProvider)
@@ -49,6 +51,7 @@ and Danger Zone:
 ## 6. Wiring: NetLog in MatchmakingService -- DONE
 
 Added `NetLog.log()` calls at all key network events:
+
 - CONNECT: connect, disconnect, WebSocket open/close/failure, reconnect, maintenance
 - AUTH: auth success, auth failure
 - LOBBY: lobby updates with player count and host status

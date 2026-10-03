@@ -42,22 +42,22 @@ after adding relocatable imported-file storage.
 - Any formatter run must use `android\run-code-quality.ps1 -Fix` and be
   allowed to finish.
 - Fixed this tranche: GOG `.exe` import reads through a native duplicated fd;
-   non-exe installer staging shows copy progress; stored Inno files report
-   chunked extraction progress; GOG Redbook playlist paths work with external
-   imported roots; MIDI HMP duration scanning frees with `d_free`; tmp cleanup
-   reports stale file removal on startup; Storage Inspector lists internal and
-   active external imported files with selectable rows and delete confirmation.
+  non-exe installer staging shows copy progress; stored Inno files report
+  chunked extraction progress; GOG Redbook playlist paths work with external
+  imported roots; MIDI HMP duration scanning frees with `d_free`; tmp cleanup
+  reports stale file removal on startup; Storage Inspector lists internal and
+  active external imported files with selectable rows and delete confirmation.
 - Copy-progress survey follow-up remains for SOW extraction, ZIP/7z extraction,
-   custom audio copy/staging, file-set import copy, crash log export, and any
-   export/share copies outside the GOG/imported-storage paths fixed here.
+  custom audio copy/staging, file-set import copy, crash log export, and any
+  export/share copies outside the GOG/imported-storage paths fixed here.
 - Validation completed: `:app:testDebugUnitTest --tests
-   com.dxxredux.app.ImportLocationMigrateTest assembleDebug --no-daemon` passed
-   with 8 tests, and `android\run-code-quality.ps1 -Fix` passed.
+ com.dxxredux.app.ImportLocationMigrateTest assembleDebug --no-daemon` passed
+  with 8 tests, and `android\run-code-quality.ps1 -Fix` passed.
 
 ## Copy Progress Follow-up Phase
 
 - [x] Re-survey current launcher copy/export/import paths after formatter and
-   user edits.
+      user edits.
 - [x] Add progress to SOW extraction if it performs long-running copies.
 - [x] Add progress to ZIP/7z extraction or staging where practical.
 - [x] Add progress to custom audio copy and staging paths.
@@ -68,30 +68,30 @@ after adding relocatable imported-file storage.
 Follow-up implementation notes:
 
 - Added `LauncherFileCopy` as the shared byte-copy progress helper and routed
-   launcher Kotlin copy paths through it.
+  launcher Kotlin copy paths through it.
 - Setup page now shows determinate progress for raw SAF game-file imports,
-   ZIP/7z staging and extraction, archive-result installs, demo package
-   installs, custom audio import, SOW staging/extraction, and native ISO/CD
-   extraction callbacks.
+  ZIP/7z staging and extraction, archive-result installs, demo package
+  installs, custom audio import, SOW staging/extraction, and native ISO/CD
+  extraction callbacks.
 - Music picker custom audio imports and audio archive extraction now report
-   progress; launch-time custom-audio staging uses the same copy helper.
+  progress; launch-time custom-audio staging uses the same copy helper.
 - Advanced debug/crash log open, save, and share actions now copy on a worker
-   thread and show a progress bar before opening the viewer or share sheet.
+  thread and show a progress bar before opening the viewer or share sheet.
 - Validation completed: `android\run-code-quality.ps1 -Fix` passed, and
-   `:app:testDebugUnitTest --tests com.dxxredux.app.ImportLocationMigrateTest
-   --tests com.dxxredux.app.LauncherFileCopyTest assembleDebug --no-daemon`
-   passed with 9 tests.
+  `:app:testDebugUnitTest --tests com.dxxredux.app.ImportLocationMigrateTest
+ --tests com.dxxredux.app.LauncherFileCopyTest assembleDebug --no-daemon`
+  passed with 9 tests.
 
 ## Installer, Storage Labels, and Pilot Defaults Follow-up
 
 - [x] Reproduce or trace why direct `.exe` InnoSetup reads can report no game
-   files for the previously working D2 installer.
+      files for the previously working D2 installer.
 - [x] Update Storage Inspector row order to filename, description, location,
-   and relative path with filename in green bold text.
+      and relative path with filename in green bold text.
 - [x] Centralize launcher file purpose labels where practical and add more
-   specific game file types such as demo files and DXA mods.
+      specific game file types such as demo files and DXA mods.
 - [x] Confirm how new pilot defaults are created and add any missing graphics
-   pilot defaults.
+      pilot defaults.
 - [x] Run targeted validation after the fixes.
 
 Validation completed: `android\run-code-quality.ps1 -Fix` passed, and
@@ -102,13 +102,13 @@ com.dxxredux.app.LauncherFileLabelsTest assembleDebug --no-daemon` passed.
 ## Exact GOG Installer Direct-Fd Follow-up
 
 - [x] Verify the two supported Windows GOG installers against the native Inno
-   reader by normal path and direct fd.
+      reader by normal path and direct fd.
 - [x] Replace `/proc/self/fd` filename use with a native fd-based Inno open
-   path for listing and extraction.
+      path for listing and extraction.
 - [x] Keep temp-copy fallback only for file providers whose fds cannot be
-   seeked/read directly, not for installer-specific behavior.
+      seeked/read directly, not for installer-specific behavior.
 - [x] Add targeted regression coverage for fd-based Inno opening when the local
-   GOG installer fixtures are available.
+      GOG installer fixtures are available.
 - [x] Run formatter, native probe/test, and Android build validation.
 
 Validation completed: `android\run-code-quality.ps1 -Fix` passed, native

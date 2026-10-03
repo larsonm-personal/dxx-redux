@@ -1,10 +1,12 @@
 # Plan: input demo replay analysis 20260507_210511
 
 ## Goal
+
 - determine whether `android/regression_demos/d2_descent2_level6_20260507_210511.dximdemo` reproduces the robot-behind agitation-path desync or a different divergence
 - find a deterministic replay-state fix for the level-6 projectile desync without adding non-input replay correction events
 
 ## Steps
+
 - [completed] rerun the demo with preserved sandbox output and inspect the recorded/replay agitation-path probes
 - [completed] identify the earliest meaningful replay divergence using the existing result, probe, and trace outputs
 - [completed] add a narrow replay shield-change probe so the next rerun can distinguish known shield mutations from unknown ones
@@ -18,6 +20,7 @@
 - [completed] build and validate the deterministic state fix
 
 ## Notes
+
 - the demo is a D2 level 6 save-checkpoint replay failing with broad player, position, and level-summary divergence by frame 3777
 - prior D2 level 3 investigation established a specific agitation-path gate probe for behind-behavior robots; this run may or may not hit the same path
 - direct headless replay shows pre-frame RNG mismatch lines before the first visible state mismatch, but `input_demo_sync_replay_rng_to_current_frame()` resets RNG at frame start, so the useful signal is that some intra-frame RNG use happened before frame 1044 rather than that replay stayed permanently off-state

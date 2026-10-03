@@ -21,22 +21,26 @@ where broadcast/multicast packets propagate between instances automatically.
 ## Results
 
 ### Phase 4-5: Network verification (PASSED)
+
 - EMU1 wlan0: 10.0.2.16/24, EMU2 wlan0: 10.0.2.17/24 (same subnet)
 - Ping: 0% packet loss both directions
 - UDP unicast: confirmed working
 - UDP broadcast: toybox nc lacks SO_BROADCAST, but game engine sets it explicitly
 
 ### Phase 6: Lobby discovery (PASSED)
+
 - Kotlin LobbyService broadcasts ANNOUNCE on port 42400 to 10.255.255.255 and 10.0.2.255
 - EMU2 discovered EMU1's lobby within 3 seconds (lobbies=1, rx=2)
 - Test MP_COMMANDs added: lan_host_lobby, lan_discover, lan_discover_status, lan_stop_lobby
 
 ### Phase 6b: Game engine connection (PASSED)
+
 - Host (EMU1) bound to 0.0.0.0:42424, joiner (EMU2) connected via host_addr=10.0.2.16
 - Auto-join succeeded in 1 request, N_players=2, SYNC sent
 - The Kotlin LAN proxy routes traffic through 127.0.0.1:42430 -> host wlan0 IP
 
 ### Phase 7: Test infrastructure updates
+
 - test_lan.ps1: Added -UseRelay switch (default is now direct LAN)
 - test_lan_lobby_discovery.ps1: New test for Kotlin lobby broadcast discovery
 - Previous errno 98 bind failure was caused by stale toybox nc process, not a code bug
@@ -89,6 +93,7 @@ where broadcast/multicast packets propagate between instances automatically.
 ## Phase 5: Test raw UDP broadcast
 
 Use `toybox nc` or equivalent inside emulators:
+
 - EMU1 listener: `adb -s emulator-5554 shell toybox nc -ul -p 9999`
 - EMU2 sender: `adb -s emulator-5556 shell toybox nc -u 255.255.255.255 9999`
 - If text typed in sender appears in listener, broadcast works
@@ -105,6 +110,7 @@ Alternative: write a small test using Python udp_relay.py or busybox
 ## Phase 7: Simplify test_lan.ps1
 
 If Phase 6 works without the relay:
+
 - Remove UDP relay setup from test_lan.ps1
 - Remove emulator redir setup
 - Change join command to not specify host_addr/host_port (let broadcast discover)

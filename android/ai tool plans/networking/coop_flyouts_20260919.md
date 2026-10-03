@@ -158,13 +158,13 @@ to represent presentation readiness
 
 Per-player presentation state should distinguish:
 
-| State | Meaning |
-| --- | --- |
-| In mine | Escape outcome unresolved; gameplay continues |
-| In fly-out | Escaped and viewing a movie or rendered sequence |
-| Ready | Local presentation closed normally |
-| Skipped | Local Skip closed the presentation |
-| Unavailable | Escaped, but no usable presentation exists |
+| State        | Meaning                                           |
+| ------------ | ------------------------------------------------- |
+| In mine      | Escape outcome unresolved; gameplay continues     |
+| In fly-out   | Escaped and viewing a movie or rendered sequence  |
+| Ready        | Local presentation closed normally                |
+| Skipped      | Local Skip closed the presentation                |
+| Unavailable  | Escaped, but no usable presentation exists        |
 | Died in mine | Outcome resolved; no escape presentation required |
 
 Keep outcome resolution and presentation completion as separate facts. The
@@ -304,11 +304,11 @@ This follows `d2/libmve/mveplay.c`: microseconds per frame are the 32-bit timer
 value times its 16-bit multiplier. Each sampled display chunk contained one
 display command
 
-| Asset set | Escape movies | Nominal duration range |
-| --- | --- | --- |
-| CD high resolution | 15 | 16.933-17.349 seconds |
-| CD low resolution | 15 | 16.933-17.283 seconds |
-| GOG high resolution | 15 | 16.933-17.349 seconds |
+| Asset set           | Escape movies | Nominal duration range |
+| ------------------- | ------------- | ---------------------- |
+| CD high resolution  | 15            | 16.933-17.349 seconds  |
+| CD low resolution   | 15            | 16.933-17.283 seconds  |
+| GOG high resolution | 15            | 16.933-17.349 seconds  |
 
 The longest was high-resolution ESL.MVE: 260 frames at 66,728 microseconds per
 frame. These are encoded playback durations, not device wall-clock timings;

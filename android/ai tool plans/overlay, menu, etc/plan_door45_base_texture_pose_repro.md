@@ -1,9 +1,11 @@
 # Plan: D2 L1 door45 Base-Texture Corruption Repro
 
 ## Goal
+
 Use the new phone log to determine whether the door45 corruption is already diagnosable, and if not, create a repeatable emulator repro anchored to the exact logged camera pose.
 
 ## Findings From debuglog_20260418_170054.txt
+
 - [x] The log contains an exact automation-ready pose at `[mwall_snap_pose]`: `segment=80 x=-107.764038 y=-72.492294 z=147.704697 pitch=661 bank=488 heading=15072`
 - [x] The early texture-log frames show the suspect cover door behind a transparent merged wall: `cover_bot=door45#9` on `cover_seg=80 cover_side=1 cover_face=0`, with `wall_type=2 wall_state=2 wall_clip=39`
 - [x] The request-time snapshot does not isolate the bad face. By frame 258/259 the tracker only has seg80 side0 and side3, and the front face logs `projected=2 bbox_valid=0`, so snapshot selection falls through to `no_projected_faces`
@@ -32,6 +34,7 @@ Use the new phone log to determine whether the door45 corruption is already diag
 - [x] The snapshot path now emits center-focused cover ranking lines that do not depend on the front-face selection winning. The validated emulator repro writes `mwall_snapshot_focus_cover` and `focus_cover_candidates` for `door45#0`, with `focus=center_cover`, `rank_source=partial`, and the matching `face_seg/side` identifiers on `mwall_cover_live` / `mwall_cover_lod`
 
 ## Work Items
+
 - [x] Add a D2 Counterstrike level 1 automation script that uses `pose_view` with the logged pose
 - [x] Run the pose script once on the emulator and capture the current blocker: stale APK rejects `pose_view`, and the script now asserts the target segment and coordinates so stale builds fail instead of silently passing
 - [x] Build a fresh debug APK with `assembleDebug`, reinstall it, and rerun the pose script against the rebuilt native library
@@ -52,6 +55,7 @@ Use the new phone log to determine whether the door45 corruption is already diag
 - [x] Rebuild and rerun the canonical door45 repro to confirm the new `mwall_mip_upload` / `mwall_cover_lod` markers appear in the exported debug log
 
 ## Validation Target
+
 - The new script should reliably launch D2 level 1 and fail unless it lands at segment 80 near the snapped replay coordinates without manual steering
 - The next diagnostic pass should make the level context explicit on the snapshot request path and emit the new partial/cover texture diagnostics into `files/debuglogs/debuglog_*.txt`
 - The next phone-side comparison should check whether `mwall_cover_live` and `mwall_cover_src` still match the emulator baseline, since the centered bad-face tap now already produces projected `mwall_coverbox`, `mwall_snapshot_partial_cover`, full `door45#0` texture-detail lines, and the raw 64x64 source dump

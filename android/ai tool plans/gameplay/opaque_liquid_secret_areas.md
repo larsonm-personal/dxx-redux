@@ -71,12 +71,12 @@ Current cause: `secret_area_scan.c:is_ordinary_edge()` treats active `WALL_ILLUS
 
 Read-only Obsidian 13 evidence from `game_data/mission_files/Obsidian.zip`, level `o3tdepot.rl2`:
 
-| Portal, engine numbering | Authored data | Proposed role |
-| --- | --- | --- |
-| Segment 144 side 3 -> 154, walls 18/19 | Active illusion pair, texture 403, one-room pocket with Mega missile and Phoenix cannon | Positive candidate |
-| Segment 203 side 3 -> 282, walls 25/26 | Active illusion pair, texture 403, one-room pocket with Cloak | Positive candidate |
-| Segment 58 side 4 -> 71, walls 10/11 | Active illusion pair, texture 401, robotmaker segment beyond it | Transparent negative case |
-| Texture 353 illusion pairs around segments 0/12/13 and 334/335/338 | Transparent panels in normal geometry | Transparent negative cases |
+| Portal, engine numbering                                           | Authored data                                                                           | Proposed role              |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | -------------------------- |
+| Segment 144 side 3 -> 154, walls 18/19                             | Active illusion pair, texture 403, one-room pocket with Mega missile and Phoenix cannon | Positive candidate         |
+| Segment 203 side 3 -> 282, walls 25/26                             | Active illusion pair, texture 403, one-room pocket with Cloak                           | Positive candidate         |
+| Segment 58 side 4 -> 71, walls 10/11                               | Active illusion pair, texture 401, robotmaker segment beyond it                         | Transparent negative case  |
+| Texture 353 illusion pairs around segments 0/12/13 and 334/335/338 | Transparent panels in normal geometry                                                   | Transparent negative cases |
 
 The survey used the locally available Vertigo `descent2.ham` and Mac `water.pig` headers to resolve texture names/flags. Texture 403 maps to opaque `water01` frames; texture 401 maps to transparent `water05` frames. None of those frames is replaced by this level's POG. These are static asset findings, not runtime verification against the exact gameplay installation. Which positive pocket matches the user's remembered entrance still needs visual confirmation later
 
@@ -84,16 +84,16 @@ The survey used the locally available Vertigo `descent2.ham` and Mac `water.pig`
 
 ### Confirmed source findings
 
-| Owner | Current behavior | Consequence for the proposed scanner |
-| --- | --- | --- |
-| `d2/main/gameseq.c:LoadLevel`, around lines 927-977 | Normally selects the level palette/PIG, applies D2 POG or D1-in-D2 assets, loads robot replacements, then scans | Correct general ordering for ordinary D2 gameplay, but PIG selection is currently skipped with presentation |
-| `d1/main/gameseq.c:LoadLevel`, around lines 706-757 | Scans immediately after `load_level()`, before `load_custom_data()` | D1 can classify using base or previous-level custom texture state |
-| `headless/headless_metadata_dump_main.cpp:dump_level` and `jni_level_metadata.cpp` level analysis | Initialize `groupa.pig`, then call `load_level()`, load D2 robot data, and scan without the corresponding per-level PIG/POG or D1 custom setup | Native metadata workers do not yet have the same effective surface inputs as gameplay |
-| `shared/android_level_preview.cpp`, around lines 1752-1769 | Selects the preview palette before scanning, but does not call the level bitmap replacement loader here | Preview has a separate partial setup path to cover |
-| `d1/main/wall.c:check_transparency` and `d2/main/wall.c:check_transparency` | Without an overlay, reads base `BM_FLAG_TRANSPARENT`; with an overlay, reads overlay `BM_FLAG_SUPER_TRANSPARENT` | An ordinary transparent overlay pixel is not itself proof that the room beyond is visible |
-| D1/D2 `piggy_bitmap_get_flags()` | Returns `GameBitmapFlags[]` for every `GameBitmaps[]` entry | Paged-out base textures retain inspectable flags, but some resident overrides are not represented correctly |
-| `d2/main/piggy.c:load_bitmap_replacements`, around lines 1789-1791 | Sets replacement `bm_flags` and clears its PIG offset, without updating `GameBitmapFlags[]` | The current transparency accessor can still report the base PIG flags after a POG replacement |
-| `d1/main/custom.c:load_pigpog`, around lines 322-325 | Similarly sets resident bitmap flags and clears the PIG offset without updating `GameBitmapFlags[]` | The flag-source issue also exists for native D1 custom textures |
+| Owner                                                                                             | Current behavior                                                                                                                               | Consequence for the proposed scanner                                                                        |
+| ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `d2/main/gameseq.c:LoadLevel`, around lines 927-977                                               | Normally selects the level palette/PIG, applies D2 POG or D1-in-D2 assets, loads robot replacements, then scans                                | Correct general ordering for ordinary D2 gameplay, but PIG selection is currently skipped with presentation |
+| `d1/main/gameseq.c:LoadLevel`, around lines 706-757                                               | Scans immediately after `load_level()`, before `load_custom_data()`                                                                            | D1 can classify using base or previous-level custom texture state                                           |
+| `headless/headless_metadata_dump_main.cpp:dump_level` and `jni_level_metadata.cpp` level analysis | Initialize `groupa.pig`, then call `load_level()`, load D2 robot data, and scan without the corresponding per-level PIG/POG or D1 custom setup | Native metadata workers do not yet have the same effective surface inputs as gameplay                       |
+| `shared/android_level_preview.cpp`, around lines 1752-1769                                        | Selects the preview palette before scanning, but does not call the level bitmap replacement loader here                                        | Preview has a separate partial setup path to cover                                                          |
+| `d1/main/wall.c:check_transparency` and `d2/main/wall.c:check_transparency`                       | Without an overlay, reads base `BM_FLAG_TRANSPARENT`; with an overlay, reads overlay `BM_FLAG_SUPER_TRANSPARENT`                               | An ordinary transparent overlay pixel is not itself proof that the room beyond is visible                   |
+| D1/D2 `piggy_bitmap_get_flags()`                                                                  | Returns `GameBitmapFlags[]` for every `GameBitmaps[]` entry                                                                                    | Paged-out base textures retain inspectable flags, but some resident overrides are not represented correctly |
+| `d2/main/piggy.c:load_bitmap_replacements`, around lines 1789-1791                                | Sets replacement `bm_flags` and clears its PIG offset, without updating `GameBitmapFlags[]`                                                    | The current transparency accessor can still report the base PIG flags after a POG replacement               |
+| `d1/main/custom.c:load_pigpog`, around lines 322-325                                              | Similarly sets resident bitmap flags and clears the PIG offset without updating `GameBitmapFlags[]`                                            | The flag-source issue also exists for native D1 custom textures                                             |
 
 The accessor mismatch is established by source inspection; no runtime manifestation was tested in this task
 
@@ -226,24 +226,24 @@ Implementation above is present; build/runtime checks in this section remain unp
 4. Inspect Obsidian 13 membership, entrances, rewards, and transparent negatives; run the D1/D2 baseline harness
 5. Extend unsupported mappings using validated native facts; review baseline changes before regenerating metadata
 
-| Future check | Required result |
-| --- | --- |
-| Base texture, paged out vs resident | Same effective visibility flags |
-| Opaque base -> transparent POG, and the reverse | Engine and scanner agree with the effective replacement |
-| Native D1 PG1/DTX and D1-in-D2 overrides | Correct precedence and restored base state |
-| POG level A -> no-POG level B -> A, same and different PIGs | No inherited flags, freed pointers, or prior-level classifications |
-| Same mission/level filename in different mounts | Correct source selection and dependency invalidation |
-| Gameplay, JNI worker, host dump, preview, and skipped presentation | Same canonical surface classification and inventory for identical assets |
-| Changed non-groupa PIG, changed/added/removed loose sidecar | Cache miss or validated reanalysis, never stale secret totals |
-| Every animation frame, different effect times, page-out, and reactor state | Identical initial inventory; uncertain dynamic concealment excluded |
-| Route confirmation/refresh after pickups or wall changes | Canonical secrets and found state preserved |
-| Insert earlier secret; reorder with equal count | Discovery follows unchanged region identity |
-| Region added, removed, split, merged, or level data changed | No discovery transferred by position or guessed overlap |
-| Legacy save with equal count but different candidates | No direct positional restore into the new list; new liquid pockets unfound |
-| Save after emptying a secret; restore and D2 secret-level return | Initial inventory survives and matched found state restores |
-| Native disk and rewind-memory round trips, swapped fields, truncated sections | Correct bounded parsing and atomic state application |
-| Obsidian 13 positive pockets and transparent negatives | Expected membership, contents, and one count per pocket |
-| Empty liquid scenery, ordinary underwater loot, required switches/exits, nested sheets | No false secret inflation or reward fragmentation |
+| Future check                                                                           | Required result                                                            |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Base texture, paged out vs resident                                                    | Same effective visibility flags                                            |
+| Opaque base -> transparent POG, and the reverse                                        | Engine and scanner agree with the effective replacement                    |
+| Native D1 PG1/DTX and D1-in-D2 overrides                                               | Correct precedence and restored base state                                 |
+| POG level A -> no-POG level B -> A, same and different PIGs                            | No inherited flags, freed pointers, or prior-level classifications         |
+| Same mission/level filename in different mounts                                        | Correct source selection and dependency invalidation                       |
+| Gameplay, JNI worker, host dump, preview, and skipped presentation                     | Same canonical surface classification and inventory for identical assets   |
+| Changed non-groupa PIG, changed/added/removed loose sidecar                            | Cache miss or validated reanalysis, never stale secret totals              |
+| Every animation frame, different effect times, page-out, and reactor state             | Identical initial inventory; uncertain dynamic concealment excluded        |
+| Route confirmation/refresh after pickups or wall changes                               | Canonical secrets and found state preserved                                |
+| Insert earlier secret; reorder with equal count                                        | Discovery follows unchanged region identity                                |
+| Region added, removed, split, merged, or level data changed                            | No discovery transferred by position or guessed overlap                    |
+| Legacy save with equal count but different candidates                                  | No direct positional restore into the new list; new liquid pockets unfound |
+| Save after emptying a secret; restore and D2 secret-level return                       | Initial inventory survives and matched found state restores                |
+| Native disk and rewind-memory round trips, swapped fields, truncated sections          | Correct bounded parsing and atomic state application                       |
+| Obsidian 13 positive pockets and transparent negatives                                 | Expected membership, contents, and one count per pocket                    |
+| Empty liquid scenery, ordinary underwater loot, required switches/exits, nested sheets | No false secret inflation or reward fragmentation                          |
 
 Extend meaningful native scanner/serialization coverage and the existing D1/D2 baseline harness. `test_secret_area_serialization_contracts.py` now checks explicit versioned layouts; native byte-level execution remains required. Review full region membership, entrances, and display ordering, not only totals
 

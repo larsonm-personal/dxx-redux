@@ -41,6 +41,22 @@ function Test-CompatibilityHelpers {
     Assert-Equal -Expected 2 -Actual $items.Count -Case 'root JSON array enumeration'
     Assert-Equal -Expected 2 -Actual $items[1].id -Case 'root JSON array item'
 
+    foreach ($case in @(
+            @{ Json = '[]'; Count = 0 }, @{ Json = '[1]'; Count = 1 },
+            @{ Json = '[1,2]'; Count = 2 }, @{ Json = '[[1,2],[3]]'; Count = 2 }
+        )) {
+        $value = $case.Json | ConvertFrom-CompatibleJsonValue
+        if ($value -isnot [array]) { throw "Root array shape was lost: $($case.Json)" }
+        Assert-Equal -Expected $case.Count -Actual $value.Count -Case 'non-enumerating JSON array count'
+        $emitted = @($case.Json | ConvertFrom-CompatibleJsonValue)
+        Assert-Equal -Expected 1 -Actual $emitted.Count -Case 'single emitted JSON array value'
+    }
+    $nested = '[[1,2],[3]]' | ConvertFrom-CompatibleJsonValue
+    Assert-Equal -Expected 2 -Actual $nested[0].Count -Case 'nested root array shape'
+    Assert-Equal -Expected 3 -Actual $nested[1][0] -Case 'nested root array value'
+    $value = '{"levels":[]}' | ConvertFrom-CompatibleJsonValue
+    Assert-Equal -Expected 0 -Actual $value.levels.Count -Case 'non-enumerating JSON object value'
+
     . (Join-Path $repoRoot 'android/helpers/test_execution_evidence.ps1')
     $context = New-TestExecutionEvidenceContext -RepositoryRoot $repoRoot -ReportDir (Join-Path $repoRoot 'temp') -ReportPath (Join-Path $repoRoot 'temp/report.md')
     if (-not $context.HostKey -or $context.Runtime -notmatch 'PowerShell') { throw 'Missing execution evidence host identity' }

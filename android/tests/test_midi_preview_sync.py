@@ -300,5 +300,6 @@ class MidiPreviewSynchronizationTest(unittest.TestCase):
             "s_midi_buf_len = 0",
         )
 
+
 if __name__ == "__main__":
     unittest.main()

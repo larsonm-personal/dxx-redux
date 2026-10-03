@@ -1,5 +1,6 @@
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $repoRoot 'android\helpers\powershell_compat.ps1')
 . (Join-Path $repoRoot 'android\helpers\guidebot_simulation_regression.ps1')
 
 function Assert-True {

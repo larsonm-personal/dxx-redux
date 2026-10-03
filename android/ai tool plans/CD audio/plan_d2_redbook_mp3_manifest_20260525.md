@@ -1,11 +1,13 @@
 # D2 Redbook MP3 Manifest Plan
 
 ## Goal
+
 - [x] Add D2 redbook MP3 files to the game data test manifest
 - [x] Update `game_data/manage_data.ps1` so list, verify, regenerate, and export include those files
 - [x] Validate the updated script and manifest against local files
 
 ## Notes
+
 - Kept the scope limited to the two fixture directories used by `test_fpcalc_and_acoustid.ps1`
   - `game_data/music/D2 infinite abyss redbook mp3/`
   - `game_data/music/D2 redbook mp3 rips/`

@@ -13,10 +13,12 @@ destroyed by another player's replicated projectile. State-sync messages use -1
 The D2 protocol is now 30070 on Android and 30020 on desktop
 
 Regression entry points:
+
 - android/tests/test_lan.ps1 -GuidebotClientRelease cage
 - android/tests/test_lan.ps1 -GuidebotClientRelease deploy
 
 Validation completed on 2026-09-16:
+
 - Scoped code quality passed
 - Windows D2 and Android debug builds passed
 - Native escort_owner, coop_gameplay_fence, and hud_counts tests passed

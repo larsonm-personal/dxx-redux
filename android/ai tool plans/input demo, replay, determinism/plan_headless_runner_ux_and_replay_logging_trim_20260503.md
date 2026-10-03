@@ -1,16 +1,19 @@
 # Plan: Headless Runner UX And Replay Logging Trim (2026-05-03)
 
 ## Goal
+
 - Make explicit `-Runner headless-console` runs skip irrelevant prompt paths and fall straight into the supported accelerated/default flow when the user left those choices at their defaults
 - Classify remaining replay logging into `keep`, `keep-but-gate`, and `discard` buckets before another cleanup pass
 
 ## Local Hypothesis
+
 - `android/tests/run_input_demo_replay.ps1` currently calls `Get-RenderProfile` and `Get-LaunchMode` before `Resolve-ReplayRunnerSelection`, so explicit headless runs still hit prompt-only code even though headless ignores render profile and only supports accelerated checkpoint replay
 - The remaining replay log noise is now concentrated in a small set of direct `con_printf()` families plus already-gated shared helper probes, so a file-level classification pass is enough to scope the next cleanup tranche
 
 ## Logging Buckets
 
 ### Keep
+
 - `d2/main/game.c` and `d1/main/game.c`
   - replay stop reasons
   - replay result write and compare outcome lines
@@ -21,6 +24,7 @@
 - recorder event append failures in gameplay files such as `d2/main/laser.c`, `d2/main/collide.c`, `d2/main/gauges.c`, and `d2/main/input_demo_energy_trace.h`
 
 ### Keep But Gate
+
 - `android/app/src/main/cpp/shared/input_demo_debug_logging.h/.cpp`
   - shared replay debug gate stays the single switch for investigation probes
   - keep it available on host and Android debug or internal builds, but compile it out of Android `NDEBUG` release-like native builds so investigation branches disappear there instead of only going runtime-idle
@@ -40,6 +44,7 @@
   - `d2/main/aipath.c`: path state, request, detail, points, follow probe
 
 ### Discard
+
 - one-off render and object-lifecycle probe families that were added only to chase the replay robot visibility investigation once they are no longer needed for current desync work
 - duplicate confirmation lines whose only purpose is proving local control flow when a richer gated probe already reports the same event with frame, object, or RNG state context
   - likely first discard candidates once the current replay-visibility investigation is closed:
@@ -48,6 +53,7 @@
     - `d2/main/render.c`: per-object `render target state` snapshots when the narrower boundary or skip probes already identify the same failure
 
 ## Execution Plan
+
 - Phase 1
   - normalize explicit headless runner defaults before prompt helpers run
   - validate that supported headless runs no longer prompt when the user leaves mode/profile at defaults
@@ -59,6 +65,7 @@
   - remove obsolete one-off probes after the current replay investigations no longer depend on them
 
 ## Status (2026-05-03)
+
 - Phase 1 completed
   - `android/tests/run_input_demo_replay.ps1` now forces explicit `-Runner headless-console` runs with defaulted prompt values onto accelerated mode plus default render profile before the prompt helpers run
   - validated with `android/tests/run_input_demo_replay.ps1 -DemoPath android/regression_demos/d2_descent2_level2_20260501_141150.dximdemo -Game d2 -Runner headless-console`, which completed with `RESULT: PASS` and no prompt lines
@@ -111,6 +118,7 @@
   - validation note: direct stdout redirection from host helper runs is not a trustworthy proof surface in this VS Code PowerShell session because redirected files can truncate mid-run; rely on helper PASS plus source inspection instead of redirected temp files when checking these host-only probe removals
 
 ## Validation
+
 - `android/tests/run_input_demo_replay.ps1 -Runner headless-console` on a supported D2 checkpoint replay should run without render-profile or replay-mode prompts when mode/profile were left at defaults
 - `android/tests/run_input_demo_replay.ps1 -Runner headless-console -Mode realtime` should fail immediately without prompting for render profile
 - After any logging trim pass, rerun a quiet default visual replay and an explicit debug-log-on replay to confirm the default stays quiet and the probes still come back on demand

@@ -1,11 +1,13 @@
 # Plan: Replay Helper Cleanup And Optional Logging (2026-05-03)
 
 ## Goal
+
 - Make the non-headless replay helper expose optional robot labels
 - Make helper-script numbered prompts choose option 1 when Enter is pressed
 - Make replay investigation logging optional and move shared pieces under `android/` where practical
 
 ## Completion Status (2026-05-04)
+
 - Phase 1 completed
   - `android/tests/run_input_demo_replay.ps1` now uses a shared numbered-choice helper and blank Enter selects option 1 for replay mode, render profile, and demo selection
   - The same option-1-on-Enter pattern was applied in `android/Run-TestMenu.ps1`, `android/1_build-aab.ps1`, `android/2_deploy-playstore.ps1`, and `android/tests/test_dual_emu.ps1`
@@ -27,6 +29,7 @@
 ## Survey Findings
 
 ### 1. Replay robot labels are a separate always-on overlay
+
 - `d2/main/render.c` accumulates `g_replay_robot_labels` for replay objects whenever `input_demo_replay_is_loaded()` is true
 - `d2/main/gamerend.c` always draws the robot object-number labels and the replay frame counter during replay
 - `d2/include/replay_debug_overlay.h` documents the overlay as active whenever replay is loaded
@@ -34,6 +37,7 @@
 - The older texture-label system under `debug_tex_overlay` is separate and should not be reused for the replay robot labels
 
 ### 2. Replay helper prompt defaults are inconsistent
+
 - `android/tests/run_input_demo_replay.ps1` has three interactive numbered prompts with no Enter default today:
   - replay mode
   - render profile
@@ -44,6 +48,7 @@
 - `android/1_build-aab.ps1` already has an explicit Enter default of `[3]`, so it does not match the requested option-1 convention and should be treated as a separate script-specific case
 
 ### 3. Existing extracted replay-debug helper is present but mostly unused
+
 - `android/app/src/main/cpp/shared/input_demo_debug_logging.h/.cpp` already exists as a shared seam for replay-debug logging
 - That file is compiled into both D1 and D2, but `ENABLE_INPUT_DEMO_DEBUG_LOGGING` is not defined anywhere in the current tree
 - Result: the active logging branch in `input_demo_debug_logging.cpp` is disabled, and all helper calls currently compile to no-op stubs
@@ -53,6 +58,7 @@
   - `d2/main/ai.c`
 
 ### 4. Android launcher-visible debug logging is a different system
+
 - `android/app/src/main/cpp/shared/android_log.h/.c` provides `debug_log(category, fmt, ...)`
 - That path is Android-only and is intended for launcher-exportable debug files
 - It is not a direct replacement for desktop replay-helper console logging
@@ -61,6 +67,7 @@
 ## Proposed Execution Plan
 
 ### Phase 1: Replay helper prompt cleanup
+
 - Add a small numbered-choice helper inside `android/tests/run_input_demo_replay.ps1`
 - The helper should:
   - display numbered options
@@ -71,6 +78,7 @@
 - Leave non-choice prompts such as `Press Enter to exit` unchanged
 
 ### Phase 2: Replay robot label toggle
+
 - Add a replay-specific overlay enable flag instead of reusing `g_debug_tex_overlay_active`
 - Preferred control surface:
   - a replay-specific command-line flag parsed beside the existing `-inputdemo-*` options
@@ -87,6 +95,7 @@
 - If D1 does not draw replay robot labels today, still accept and ignore the flag there so script behavior remains consistent across games
 
 ### Phase 3: Replay debug logging cleanup
+
 - Split current replay/debug logs into three buckets before deleting or moving anything:
   - keep: durable replay diagnostics that support regression testing
   - gate: investigation-only probes that are still occasionally useful
@@ -104,12 +113,14 @@
   - remaining direct always-on investigation blocks in `d2/main/object.c`, `d2/main/render.c`, and `d2/main/ai.c` should be converted or removed
 
 ### Phase 4: File placement cleanup
+
 - Keep cross-platform declarations in shared headers under `android/app/src/main/cpp/shared/` when both games can consume them
 - Move replay-investigation helper implementations out of gameplay files where practical
 - Only keep local probe-window selection code in `d2/main/*.c` when it depends directly on local engine state and would become awkward if moved
 - Do not move core replay or gameplay logic into PowerShell or Kotlin
 
 ### Phase 5: Validation
+
 - Windows host build via `run-windows-build.ps1 -Target d2 -ErrorLimit 10`
 - Replay smoke checks:
   - visual replay with labels off by default
@@ -121,6 +132,7 @@
 - After the actual cleanup implementation, run `android\run-code-quality.ps1 --fix`
 
 ## Proposed Implementation Order
+
 - Add the replay-helper numbered-choice helper and Enter-default behavior
 - Add the replay robot-label flag and non-headless helper prompt
 - Remove or gate the robot invisibility investigation logs
@@ -128,5 +140,6 @@
 - Build and replay-smoke the cleaned-up flow
 
 ## Open Decisions
+
 - Resolved: the replay frame counter is controlled by the same toggle as the robot labels
 - Resolved: `android/Run-TestMenu.ps1` was included in the first cleanup pass

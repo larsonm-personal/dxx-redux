@@ -3,6 +3,7 @@
 ## Task 1: Fix LY axis mapping for existing players
 
 ### Root cause
+
 `android_apply_gamepad_defaults()` is only called for NEW players (in
 `MakeNewPlayerFile()`). When loading an EXISTING .plr file via
 `read_player_file()`, the axis bindings stored in the file are used as-is.
@@ -13,6 +14,7 @@ Kotlin DEFAULT_BINDINGS fix, new players ALSO get wrong values because
 `android_apply_gamepad_defaults()` reads controller_config.json first.
 
 ### Fix
+
 1. d2/main/menu.c: After `read_player_file()` in `player_menu_handler()`,
    add `#ifdef ANDROID` block calling `android_apply_gamepad_defaults()` +
    `kc_set_controls()`
@@ -30,6 +32,7 @@ Steps can have a `"when": "d1"` or `"when": "d2"` field; non-matching steps
 are filtered out by the runner.
 
 Example:
+
 ```json5
 [
     {"_info": {
@@ -47,6 +50,7 @@ Example:
 ```
 
 ### Implementation
+
 1. Add `Resolve-TestScript` to test_helpers.ps1: reads .json5, resolves
    vars, filters `when` clauses, writes temp file, returns temp path
 2. Update run_test.ps1 to call Resolve-TestScript before pushing

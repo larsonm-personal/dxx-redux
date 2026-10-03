@@ -1,6 +1,7 @@
 # Plan: Config Export/Import and JSON-Based Defaults
 
 ## TL;DR
+
 Move hard-coded touch and controller defaults out of Kotlin/C source into human-readable JSON files bundled in `assets/configs/`. Add import/export of full and partial configs via SAF picker and filesystem scan. Touch preset JSON files are scanned at startup so new presets can be added by dropping in files. All JSON uses human-readable names (not raw integer constants) with a translation layer for import/export.
 
 Bundled presets are read-only templates: they're copied into `filesDir/` on first launch or reset. All editing happens on the user's copy.
@@ -26,6 +27,7 @@ Bundled presets are read-only templates: they're copied into `filesDir/` on firs
    - Error reporting: return a `ParseResult<T>` with the parsed value (or null) plus a list of warning/error strings
 
 3. **JSON format spec** (human-readable touch layout example):
+
    ```json
    {
      "type": "touch_layout",
@@ -64,6 +66,7 @@ Bundled presets are read-only templates: they're copied into `filesDir/` on firs
    Note: the controller config `bindings` field already uses human-readable strings. The main addition is the `"type"` field for distinguishing config types on import.
 
 **Relevant files**:
+
 - `android/app/src/main/java/com/dxxredux/app/TouchBindings.kt` -- add bidirectional name maps
 - NEW: `android/app/src/main/java/com/dxxredux/app/HumanReadableConfig.kt` -- translation utilities
 
@@ -100,6 +103,7 @@ Bundled presets are read-only templates: they're copied into `filesDir/` on firs
    - `android_gamepad_config.cpp` C-side defaults remain as ultimate fallback (when no JSON and no controller_config.json exist), but are no longer the primary source
 
 **Relevant files**:
+
 - `android/app/src/main/java/com/dxxredux/app/TouchLayoutRepository.kt` -- refactor preset loading
 - `android/app/src/main/java/com/dxxredux/app/ControllerConfigPage.kt` -- load defaults from JSON
 - NEW: `android/app/src/main/assets/configs/touch/simple.json`
@@ -121,6 +125,7 @@ Bundled presets are read-only templates: they're copied into `filesDir/` on firs
    - `exportFullConfig(context) -> File` -- combined JSON with both touch + controller
 
 10. **Combined export format**:
+
     ```json
     {
       "type": "full_config",
@@ -135,6 +140,7 @@ Bundled presets are read-only templates: they're copied into `filesDir/` on firs
     - "Export All Settings" accessible from both pages
 
 **Relevant files**:
+
 - NEW: `android/app/src/main/java/com/dxxredux/app/ConfigImportExport.kt` -- central import/export logic
 - Touch and controller config page Composables
 
@@ -177,6 +183,7 @@ Bundled presets are read-only templates: they're copied into `filesDir/` on firs
     - Type detection -> appropriate dialog
 
 **Relevant files**:
+
 - `android/app/src/main/java/com/dxxredux/app/ConfigImportExport.kt`
 - `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt` -- import dir scan on startup
 - `android/app/src/main/java/com/dxxredux/app/TouchLayoutRepository.kt` -- accept imported presets
@@ -205,7 +212,7 @@ Bundled presets are read-only templates: they're copied into `filesDir/` on firs
 
 ## Decisions
 
-- **Bundled presets are read-only templates**: `assets/` files are never the live config. On first launch (or reset), the selected bundled preset is *copied* into `filesDir/` as the active config. All edits happen on the `filesDir/` copy. "Reset to defaults" re-copies from the bundled template.
+- **Bundled presets are read-only templates**: `assets/` files are never the live config. On first launch (or reset), the selected bundled preset is _copied_ into `filesDir/` as the active config. All edits happen on the `filesDir/` copy. "Reset to defaults" re-copies from the bundled template.
 - **Preset selection copies, not references**: Choosing a preset from the picker copies its content into the active config file. The user then edits freely.
 - **Controller defaults stay in C as ultimate fallback**: `android_gamepad_config.cpp` keeps its hard-coded defaults for the case where no JSON exists and no controller_config.json has been written.
 - **The `"type"` field is added to all exported JSON** to enable automatic type detection on import.
@@ -226,6 +233,7 @@ Bundled presets are read-only templates: they're copied into `filesDir/` on firs
 - **Phase 5**: UI buttons added to all config pages, build passes, code quality checks pass
 
 ### Files Created
+
 - `android/app/src/main/java/com/dxxredux/app/HumanReadableConfig.kt`
 - `android/app/src/main/java/com/dxxredux/app/ConfigImportExport.kt`
 - `android/app/src/main/assets/configs/touch/simple.json`
@@ -235,6 +243,7 @@ Bundled presets are read-only templates: they're copied into `filesDir/` on firs
 - `android/app/src/main/res/xml/file_paths.xml`
 
 ### Files Modified
+
 - `TouchBindings.kt` -- added reverse lookup maps and bidirectional functions
 - `TouchLayoutRepository.kt` -- refactored from hard-coded presets to asset-based loading
 - `TouchEditorPage.kt` -- added Export/Import buttons, SAF picker launcher
@@ -243,6 +252,7 @@ Bundled presets are read-only templates: they're copied into `filesDir/` on firs
 - `AndroidManifest.xml` -- added FileProvider for sharing exported files
 
 ### Not Yet Done
+
 - Directory scan import on launcher startup (step 15)
 - Automated integration tests (step 20)
 - "Add as preset" flow on import (currently imports replace the active config directly)

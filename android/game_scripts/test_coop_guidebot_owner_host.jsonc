@@ -1,61 +1,84 @@
 // TEST HELPER: Host side of the two-peer Guide-Bot ownership scenario.
 // Run with test_lan.ps1 -GuidebotOwnership alongside the joiner helper.
 [
-    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_lan" } },
 
-    {"action": "log", "message": "=== COOP GUIDEBOT OWNER: host ==="},
-    {"action": "wait_for", "timeout_ms": 10000, "expect": {
-        "in_game": "true",
-        "is_network": "true",
-        "multiplayer.my_player_num": "0",
-        "multiplayer.num_connected": "2",
-        "level_metadata_route.background_request_generation": {"gte": 1},
-        "guidebot.released": "false",
-        "guidebot.owner_player": "-1",
-        "guidebot.buddy_objnum": {"gte": 0}
-    }},
+    { "action": "log", "message": "=== COOP GUIDEBOT OWNER: host ===" },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "in_game": "true",
+            "is_network": "true",
+            "multiplayer.my_player_num": "0",
+            "multiplayer.num_connected": "2",
+            "level_metadata_route.background_request_generation": { "gte": 1 },
+            "guidebot.released": "false",
+            "guidebot.owner_player": "-1",
+            "guidebot.buddy_objnum": { "gte": 0 },
+        },
+    },
 
-    {"action": "set_debug", "field": "player_keys", "value": "all", "post_delay_ms": 100},
-    {"action": "set_debug", "field": "release_guidebot_cage", "value": "true", "post_delay_ms": 500},
-    {"action": "wait_for", "timeout_ms": 10000, "expect": {
-        "guidebot.released": "true",
-        "guidebot.owner_player": "0",
-        "guidebot.owner_is_local": "true",
-        "guidebot.owner_generation": {"gte": 1},
-        "guidebot.remote_owner": "0",
-        "guidebot.local_control_slot_matches": "true"
-    }},
+    { "action": "set_debug", "field": "player_keys", "value": "all", "post_delay_ms": 100 },
+    { "action": "set_debug", "field": "release_guidebot_cage", "value": "true", "post_delay_ms": 500 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "guidebot.released": "true",
+            "guidebot.owner_player": "0",
+            "guidebot.owner_is_local": "true",
+            "guidebot.owner_generation": { "gte": 1 },
+            "guidebot.remote_owner": "0",
+            "guidebot.local_control_slot_matches": "true",
+        },
+    },
 
-    {"action": "wait_ms", "ms": 4000},
-    {"action": "meta_action", "id": 1032, "post_delay_ms": 500},
-    {"action": "wait_for", "timeout_ms": 10000, "expect": {
-        "guidebot.owner_player": "1",
-        "guidebot.owner_is_local": "false",
-        "guidebot.owner_generation": {"gte": 2},
-        "guidebot.remote_owner": "1",
-        "guidebot.local_control_slot_matches": "false"
-    }},
-    {"action": "set_debug", "field": "guidebot_route_reset_efficiency_counters", "value": "true"},
-    {"action": "set_debug", "field": "player_keys", "value": "none", "post_delay_ms": 100},
-    {"action": "wait_for", "timeout_ms": 10000, "expect": {
-        "guidebot.route_ignored_nonowner_key_change_count": {"gte": 1}
-    }},
+    { "action": "wait_ms", "ms": 4000 },
+    { "action": "meta_action", "id": 1032, "post_delay_ms": 500 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "guidebot.owner_player": "1",
+            "guidebot.owner_is_local": "false",
+            "guidebot.owner_generation": { "gte": 2 },
+            "guidebot.remote_owner": "1",
+            "guidebot.local_control_slot_matches": "false",
+        },
+    },
+    { "action": "set_debug", "field": "guidebot_route_reset_efficiency_counters", "value": "true" },
+    { "action": "set_debug", "field": "player_keys", "value": "none", "post_delay_ms": 100 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "guidebot.route_ignored_nonowner_key_change_count": { "gte": 1 },
+        },
+    },
 
-    {"action": "wait_for", "timeout_ms": 15000, "expect": {
-        "guidebot.owner_player": "1",
-        "guidebot.owner_generation": {"gte": 3},
-        "guidebot.route_target_mode_name": "unexplored"
-    }},
-    {"action": "wait_ms", "ms": 6000},
-    {"action": "assert", "expect": {
-        "guidebot.owner_player": "1",
-        "guidebot.owner_is_local": "false",
-        "guidebot.owner_generation": "3",
-        "guidebot.remote_owner": "1",
-        "guidebot.local_control_slot_matches": "false",
-        "guidebot.route_target_mode_name": "unexplored",
-        "guidebot.route_metadata_rescan_count": "0"
-    }},
-    {"action": "introspect"},
-    {"action": "log", "message": "=== COOP GUIDEBOT OWNER: host PASS ==="}
+    {
+        "action": "wait_for",
+        "timeout_ms": 15000,
+        "expect": {
+            "guidebot.owner_player": "1",
+            "guidebot.owner_generation": { "gte": 3 },
+            "guidebot.route_target_mode_name": "unexplored",
+        },
+    },
+    { "action": "wait_ms", "ms": 6000 },
+    {
+        "action": "assert",
+        "expect": {
+            "guidebot.owner_player": "1",
+            "guidebot.owner_is_local": "false",
+            "guidebot.owner_generation": "3",
+            "guidebot.remote_owner": "1",
+            "guidebot.local_control_slot_matches": "false",
+            "guidebot.route_target_mode_name": "unexplored",
+            "guidebot.route_metadata_rescan_count": "0",
+        },
+    },
+    { "action": "introspect" },
+    { "action": "log", "message": "=== COOP GUIDEBOT OWNER: host PASS ===" },
 ]

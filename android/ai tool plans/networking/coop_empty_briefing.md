@@ -1,9 +1,11 @@
 # Skip empty co-op briefings
 
 ## Intent
+
 Levels without authored intro pages or movies use ordinary level synchronization only, while keeping the session briefing preference enabled for later levels.
 
 ## Implementation
+
 - Count intro content before normal level loading, using the existing read-only briefing/movie planner
 - Carry the host decision in bit 1 of the existing Android CoopBriefings SYNC byte; bit 0 remains the preference
 - Apply the decision only on validated SYNC packets, not lobby metadata
@@ -12,7 +14,9 @@ Levels without authored intro pages or movies use ordinary level synchronization
 - Extend the two-device LAN runner with -EmptyBriefing and assert no briefing generation or presentation
 
 ## Validation
+
 Passed:
+
 - Scoped mixed-language formatting/lint
 - Android assembleDebug (both engines, all configured ABIs)
 - Windows build (D1 and D2)

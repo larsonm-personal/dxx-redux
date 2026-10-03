@@ -14,7 +14,7 @@ with the current production FM and SF2 playback, including the first lead entry.
 
 ## Confirmed cause
 
-Both devices select the same tracks *inside game08.hmp*, but DOS selects a
+Both devices select the same tracks _inside game08.hmp_, but DOS selects a
 different file for FM: **game08.hmq**. The original SNG selects rickmelo/rickdrum,
 whose programs belong to that HMQ arrangement. Combining HMP with those banks
 made its opening bass parts play WUMP.ins and DSnare.i, and several other parts

@@ -1,11 +1,13 @@
 # Plan: Android Keyboard Viewport Offset
 
 ## Problem
+
 When the Android soft keyboard appears for text input (e.g. new pilot name),
 it covers about 50% of the screen in landscape mode, often hiding the actual
 text input field. Users cannot see what they are typing.
 
 ## Approach
+
 When the keyboard is visible, shift the entire rendered game canvas upward
 in the blit function so the active text input field is centered in the
 non-occluded visible area. The top of the canvas slides off-screen above
@@ -29,7 +31,7 @@ offset alone handles centering.
 - Register `ViewCompat.setOnApplyWindowInsetsListener` on the root
   `decorView` to receive IME insets. When the keyboard's bottom inset
   changes, call a new JNI function `nativeSetKeyboardHeight(imeHeightPx,
-  screenHeightPx)`.
+screenHeightPx)`.
 - Fallback: if `adjustNothing` suppresses IME insets from the compat
   listener, use `ViewTreeObserver.OnGlobalLayoutListener` with
   `getWindowVisibleDisplayFrame()` to compute keyboard height.

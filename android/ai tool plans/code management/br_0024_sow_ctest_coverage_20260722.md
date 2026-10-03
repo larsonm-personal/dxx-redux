@@ -10,12 +10,12 @@ an unchecked smoke executable
 
 - [x] Read repository instructions and the complete BR-0024 finding
 - [x] Inventory existing synthetic SOW coverage, real-media fixtures, output
-  oracles, split-archive behavior, and the post-ISO scan boundary
+      oracles, split-archive behavior, and the post-ISO scan boundary
 - [x] Add assertion-based real and split SOW extraction coverage with explicit
-  fixture skip behavior and register it with CTest
+      fixture skip behavior and register it with CTest
 - [x] Add focused scan and failure-status coverage at the callable boundary
 - [x] Prove the assertions fail on a deliberately wrong oracle, then restore
-  the correct oracle
+      the correct oracle
 - [x] Run scoped code quality, the full native suite, and relevant build checks
 - [x] Finalize the finding disposition and validation record
 

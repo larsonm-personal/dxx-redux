@@ -25,7 +25,11 @@ class SetupLaunchReadinessTest {
             writeFile(root, "descent.pig")
             assertEquals(null, launchDataBlockers("d2", root, manifest, saf) { null })
             assertEquals(GameLaunchTarget.D1_IN_D2, resolveLauncherTarget("d2", root, manifest, saf))
-            assertTrue(launchDataBlockers("d2", root, manifest, saf) { "Unsupported edition" }!!.contains("descent.pig: Unsupported edition"))
+            assertTrue(
+                launchDataBlockers("d2", root, manifest, saf) {
+                    "Unsupported edition"
+                }!!.contains("descent.pig: Unsupported edition"),
+            )
             writeD2Files(root)
             assertEquals(null, launchDataBlockers("d2", root, manifest, saf) { "Unsupported edition" })
             assertEquals(GameLaunchTarget.D2, resolveLauncherTarget("d2", root, manifest, saf))
@@ -44,6 +48,7 @@ class SetupLaunchReadinessTest {
     @Test
     fun lanJoinChecksTheHostedEngineAgainstInstalledData() {
         val setDir = createTempDirectory("lan-engine-readiness").toFile()
+
         fun warning(game: String) =
             lanGameReadinessWarning(game, setDir, AssetManifest(setDir), SafManifest.forDir(setDir))
 
@@ -281,10 +286,12 @@ class SetupLaunchReadinessTest {
             val manifest = AssetManifest(setDir)
             val saf = SafManifest.forDir(setDir)
             if (useSaf) {
-                saf.write(listOf(
-                    SafManifest.SafFileEntry("DESCENT.HOG", "content://test/hog", 17),
-                    SafManifest.SafFileEntry("DESCENT.PIG", "content://test/pig", 23),
-                ))
+                saf.write(
+                    listOf(
+                        SafManifest.SafFileEntry("DESCENT.HOG", "content://test/hog", 17),
+                        SafManifest.SafFileEntry("DESCENT.PIG", "content://test/pig", 23),
+                    ),
+                )
             } else {
                 writeFile(setDir, "DESCENT.HOG", 17)
                 writeFile(setDir, "DESCENT.PIG", 23)
@@ -308,10 +315,12 @@ class SetupLaunchReadinessTest {
             assertTrue(d1InD2Readiness(filesDir, setDir, manifest, saf) { null }.ready)
             if (useSaf) {
                 writeFile(setDir, "descent.pig", 29)
-                assertTrue(launchDataReadyForGame("d1-in-d2", setDir, manifest, saf) { size ->
-                    assertEquals(29L, size)
-                    null
-                })
+                assertTrue(
+                    launchDataReadyForGame("d1-in-d2", setDir, manifest, saf) { size ->
+                        assertEquals(29L, size)
+                        null
+                    },
+                )
             }
         }
     }

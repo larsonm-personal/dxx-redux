@@ -5,6 +5,7 @@
 ## Summary
 
 Two deliverables implemented:
+
 1. A PowerShell script that launches two Android emulators with full
    multiplayer infrastructure (APK, game data, server, relay) ready for testing,
    including an interactive NAT configuration menu.
@@ -12,6 +13,7 @@ Two deliverables implemented:
    STUN/NAT type testing.
 
 ### Test reorganization (phase 2)
+
 - All .ps1 test scripts moved from `android/` to `android/tests/`
 - `android/Run-TestMenu.ps1` rewritten to discover both json5 and ps1 tests
 - `android/tests/test_dual_emu.ps1` is the new unified script that replaces
@@ -20,6 +22,7 @@ Two deliverables implemented:
 ## Files Created
 
 ### Primary: Dual Emulator + NAT Test
+
 - [x] `android/tests/test_dual_emu.ps1` -- all-in-one dual emulator + NAT menu
   - Flags: -NoBuild, -NoData, -KillOnExit
   - Launches Nexus5X_Light_1 (emulator-5554) and Nexus5X_Light_2 (emulator-5556)
@@ -28,9 +31,11 @@ Two deliverables implemented:
   - Cleanup tears down Docker containers + relay + server
 
 ### Legacy (kept but superseded by test_dual_emu.ps1)
+
 - [x] `android/tests/test_dual_emu_setup.ps1` -- moved from launch_dual_emulators.ps1
 
 ### Docker NAT Infrastructure
+
 - [x] `docker/nat-testbed/Dockerfile` -- Python 3.12 Alpine image
 - [x] `docker/nat-testbed/nat_proxy.py` -- transparent UDP NAT proxy
   - Supports: full-cone, port-restricted, symmetric, symmetric-seq
@@ -42,6 +47,7 @@ Two deliverables implemented:
 - [x] `android/teardown_docker_nat.ps1` -- standalone NAT teardown
 
 ### Moved Tests (from android/ to android/tests/)
+
 - run_mp_test.ps1 -> test_mp.ps1
 - run_lan_test.ps1 -> test_lan.ps1
 - run_extract_test.ps1 -> test_extract.ps1
@@ -53,6 +59,7 @@ Two deliverables implemented:
 - test_bot_client.ps1 -> test_bot_client.ps1 (same name)
 
 ### Files Modified
+
 - [x] `android/Run-TestMenu.ps1` -- rewritten to discover json5 + ps1 tests
 - [x] `android/push_game_data.sh` -- added ANDROID_SERIAL documentation
 - [x] `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`
@@ -76,6 +83,7 @@ Emulator A (SLIRP)        Windows Host / Docker            Emulator B (SLIRP)
 ## Testing
 
 ### Unified dual emulator + NAT test
+
 ```powershell
 cd android/tests
 .\test_dual_emu.ps1           # full build + launch + NAT menu
@@ -83,12 +91,14 @@ cd android/tests
 ```
 
 ### Test menu (discovers all tests)
+
 ```powershell
 cd android
 .\Run-TestMenu.ps1   # shows json5 + ps1 tests, run interactively
 ```
 
 ### Standalone Docker NAT (for advanced use)
+
 ```powershell
 cd android
 .\setup_docker_nat.ps1 -NatA full-cone -NatB symmetric
@@ -96,18 +106,20 @@ cd android
 ```
 
 ## NAT Presets (in test_dual_emu.ps1 menu)
-| # | Name | NAT A | NAT B |
-|---|------|-------|-------|
-| 1 | No NAT (direct STUN) | none | none |
-| 2 | Full-Cone / Full-Cone | full-cone | full-cone |
-| 3 | Full-Cone / Symmetric | full-cone | symmetric |
-| 4 | Port-Restricted / Symmetric | port-restricted | symmetric |
-| 5 | Symmetric / Symmetric | symmetric | symmetric |
-| 6 | Full-Cone / Port-Restricted | full-cone | port-restricted |
-| 7 | Port-Restricted / Port-Restricted | port-restricted | port-restricted |
-| 8 | Symmetric-Seq / Symmetric-Seq | symmetric-seq | symmetric-seq |
+
+| #   | Name                              | NAT A           | NAT B           |
+| --- | --------------------------------- | --------------- | --------------- |
+| 1   | No NAT (direct STUN)              | none            | none            |
+| 2   | Full-Cone / Full-Cone             | full-cone       | full-cone       |
+| 3   | Full-Cone / Symmetric             | full-cone       | symmetric       |
+| 4   | Port-Restricted / Symmetric       | port-restricted | symmetric       |
+| 5   | Symmetric / Symmetric             | symmetric       | symmetric       |
+| 6   | Full-Cone / Port-Restricted       | full-cone       | port-restricted |
+| 7   | Port-Restricted / Port-Restricted | port-restricted | port-restricted |
+| 8   | Symmetric-Seq / Symmetric-Seq     | symmetric-seq   | symmetric-seq   |
 
 ## Known Limitations
+
 - Holepunch between emulators NOT possible (SLIRP prevents routing to Docker bridge IPs)
 - STUN override is volatile per-process (must re-send after app restart)
 - Docker Desktop WSL2 adds small latency to container UDP traffic

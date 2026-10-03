@@ -1,16 +1,19 @@
 # Input demo level 9 fresh replay failures
 
 ## Goal
+
 - Use the fresh level 9 demos as determinism repros, not as narrative artifacts
 - Find the earliest state or RNG split in both demos
 - Patch the narrowest shared game-engine nondeterminism or missing replay capture path
 - Validate with focused tests/builds and the affected demos, or record exact next diagnostics
 
 ## Demos
+
 - `android/regression_demos/d2_descent2_level9_20260512_115624.dximdemo`
 - `android/regression_demos/d2_descent2_level9_20260512_115227.dximdemo`
 
 ## Steps
+
 1. Check current worktree and relevant input-demo notes before editing
 2. Re-run both demos with state and RNG traces, saving outputs under `temp`
 3. Compare expected/actual traces to locate the first shared divergence
@@ -19,6 +22,7 @@
 6. Validate focused tests/builds and rerun the affected demos
 
 ## Status
+
 - [x] Worktree and notes checked
 - [x] Fresh repro traces generated
 - [x] First divergence localized to robot wake/awareness diagnostics
@@ -26,6 +30,7 @@
 - [x] Validation run
 
 ## Notes
+
 - 2026-05-12: Both fresh demos reproduce with `headless-console`, accelerated mode, default render profile, state trace, and RNG trace
 - `d2_descent2_level9_20260512_115624`: first state split at frame 530, `robot_wake_transition`, expected `awareness_events=1`, actual `0`; actual also has one fewer player/weapon object and did not spend one homing missile by that frame
 - `d2_descent2_level9_20260512_115227`: first state split at frames 1253-1255, `robot_wake_transition`, expected `camera_awake_robots=1`, actual `0`; runtime/object/weapon hashes initially match, then robot state hash splits

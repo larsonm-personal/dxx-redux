@@ -13,6 +13,7 @@ volume, one-track-per-level behavior, and tracks live without relaunch.
 - [x] Run scoped code quality and focused build/test verification
 
 Verification:
+
 - `.\android\run-code-quality.ps1 -Fix -Paths @(...)`
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.AdminTrayUiTest --tests com.dxxredux.app.SettingsChildOverlayControllerTest`
 - `.\gradlew.bat :app:externalNativeBuildDebug`

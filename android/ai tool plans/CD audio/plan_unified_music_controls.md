@@ -1,6 +1,7 @@
 # Plan: Unified Music Controls & Info Category in Touch Editor
 
 ## TL;DR
+
 Extend in-game music controls to cover MIDI and Redbook (not just jukebox), make music controls layout-driven via the touch editor as an "Info" category alongside gyro diagnostics, and eliminate the current non-deterministic visibility behavior.
 
 ---
@@ -8,29 +9,30 @@ Extend in-game music controls to cover MIDI and Redbook (not just jukebox), make
 ## Phase 1: C Engine -- Unified Music Query/Control API (d1/ and d2/) [DONE]
 
 ### Problem
+
 - `jni_music_control.c` only calls RBA* functions (Redbook). MIDI mode has no next/prev/list API
 - BUILTIN mode's `songs_play_level_song()` rejects offset!=0 (`if (offset) return Song_playing`)
 - No API to query current music type at runtime from JNI
 
 ### Steps
 
-1. **Add `songs_next_track()` / `songs_prev_track()` to d2/main/songs.c and d1/main/songs.c** (*new functions, guarded with `#ifdef ANDROID`*)
+1. **Add `songs_next_track()` / `songs_prev_track()` to d2/main/songs.c and d1/main/songs.c** (_new functions, guarded with `#ifdef ANDROID`_)
    - For BUILTIN: advance `Song_playing` within the level-songs range (`SONG_FIRST_LEVEL_SONG` to `Num_bim_songs-1`), wrapping, call `songs_play_file()` + `track_overlay_notify()`
    - For REDBOOK: delegate to existing `RBANextTrack()` / `RBAPrevTrack()`
    - For CUSTOM: delegate to existing jukebox track advancement
 
-2. **Add `songs_play_specific_track(int track)` to d2/main/songs.c and d1/main/songs.c** (*`#ifdef ANDROID`*)
+2. **Add `songs_play_specific_track(int track)` to d2/main/songs.c and d1/main/songs.c** (_`#ifdef ANDROID`_)
    - BUILTIN: validate range, play `BIMSongs[track].filename`, update `Song_playing`
    - REDBOOK: delegate to `RBAPlaySpecificTrack(track)`
    - CUSTOM: set `GameCfg.CMLevelMusicTrack[0]` and call `jukebox_play()`
 
-3. **Add `songs_get_track_info()` to d2/main/songs.c and d1/main/songs.c** (*`#ifdef ANDROID`*)
+3. **Add `songs_get_track_info()` to d2/main/songs.c and d1/main/songs.c** (_`#ifdef ANDROID`_)
    - Returns: current music type, current track index, total track count, track name
    - BUILTIN: track=`Song_playing`, total=`Num_bim_songs - SONG_FIRST_LEVEL_SONG`, name=`BIMSongs[Song_playing].filename`
    - REDBOOK: delegates to `RBAGetCurrentTrackInfo()` etc
    - CUSTOM: track=`GameCfg.CMLevelMusicTrack[0]`, total=`CMLevelMusicTrack[1]`, name=`jukebox_current()`
 
-4. **Add `songs_get_track_list()` for track picker** (*`#ifdef ANDROID`*)
+4. **Add `songs_get_track_list()` for track picker** (_`#ifdef ANDROID`_)
    - BUILTIN: iterate `BIMSongs[SONG_FIRST_LEVEL_SONG..Num_bim_songs-1]`, return filenames
    - REDBOOK: iterate `RBAGetNumberOfTracks()`, filter audio, return names via `RBAGetTrackName()`
    - CUSTOM: iterate jukebox list
@@ -39,6 +41,7 @@ Extend in-game music controls to cover MIDI and Redbook (not just jukebox), make
 5. **Mirror all changes in d1/main/songs.c** (same hooks, same function signatures)
 
 ### Key files
+
 - `d2/main/songs.c` -- add functions (~80 lines)
 - `d1/main/songs.c` -- mirror additions
 - `d2/main/songs.h`, `d1/main/songs.h` -- declare new functions
@@ -62,6 +65,7 @@ Extend in-game music controls to cover MIDI and Redbook (not just jukebox), make
 8. **Add `nativeGetTrackList()` JNI function** -- returns JSON track list from `songs_get_track_list()`
 
 ### Key files
+
 - `android/app/src/main/cpp/jni_music_control.c` -- rewrite to unified API
 - `android/app/src/main/cpp/CMakeLists.txt` -- may need to add songs.h include path
 
@@ -84,6 +88,7 @@ Extend in-game music controls to cover MIDI and Redbook (not just jukebox), make
     - Allow changing type of existing info control via the bottom property panel
 
 ### Key files
+
 - `android/app/src/main/java/com/dxxredux/app/TouchControl.kt` -- DiagnosticType enum
 - `android/app/src/main/java/com/dxxredux/app/TouchEditorPage.kt` -- AddControlDialog, DiagnosticPropertiesPanel
 
@@ -116,6 +121,7 @@ Extend in-game music controls to cover MIDI and Redbook (not just jukebox), make
     - If no music is playing, show "No music" or similar instead of hiding
 
 ### Key files
+
 - `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt` -- major refactor of music rendering
 
 ---
@@ -134,6 +140,7 @@ Extend in-game music controls to cover MIDI and Redbook (not just jukebox), make
     - Capitalize/clean up filenames: "game01.hmp" -> "Game 01"
 
 ### Key files
+
 - `android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt`
 
 ---
@@ -176,6 +183,7 @@ Extend in-game music controls to cover MIDI and Redbook (not just jukebox), make
 - **Track name quality for MIDI**: strip extension and title-case for now ("game01.hmp" -> "Game 01"), no separate name database
 
 ## Status
+
 - [ ] Phase 1: C engine unified API
 - [ ] Phase 2: JNI bridge
 - [ ] Phase 3: Touch editor info category

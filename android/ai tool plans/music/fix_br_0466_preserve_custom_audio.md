@@ -8,13 +8,13 @@ custom-audio set, while preserving cleanup for a newly created empty set.
 ## Plan
 
 - [x] Trace the finding through destination selection, import cleanup, metadata
-  publication, and existing focused tests.
+      publication, and existing focused tests.
 - [x] Isolate import-attempt cleanup ownership from the selected set directory
-  and implement the smallest safe fix.
+      and implement the smallest safe fix.
 - [x] Add focused regression coverage for empty imports into new and existing
-  set destinations.
+      set destinations.
 - [x] Run scoped formatting, focused tests, and the relevant Android build
-  verification.
+      verification.
 - [x] Record validation results and mark the plan complete.
 
 ## Result

@@ -3,11 +3,13 @@
 ## Status: COMPLETE
 
 ## Problem
+
 After double host migration (A hosts -> B hosts -> A hosts again), the
 rejoining client sends pdata with `conntype=0` (CONNT_NONE) because
 `connection_statuses[host_slot]` is never set.
 
 ## Root cause
+
 `isyou` in SYNC packets is determined by address comparison:
 `memcmp(&sender_addr, &Netgame.players[i].protocol.udp.addr)` in
 `net_udp_send_game_info()`. After migration, the HOST's own address in
@@ -22,6 +24,7 @@ loop. Since `isyou=1` for all slots, the loop never fires, leaving
 because `connection_statuses[0].type != CONNT_DIRECT`.
 
 ## Why isyou exists (and why the original authors used it)
+
 `isyou` is a network-level identity: the host tells the recipient "you
 are at this address, which is slot X." In the original desktop game,
 every player has a unique IP:port, so this is reliable and provides a
@@ -32,13 +35,16 @@ peers map through 127.0.0.1:4243x ports. After migration, the new host's
 stale proxy address can match an incoming client's proxy address.
 
 ## Why zeroing the host address doesn't work
+
 The host's own address in the Netgame struct is read by:
+
 - is_master_ip() for packet validation (clients reject all host data)
 - send_sync() self-send (packet goes to 0.0.0.0:0)
 - find_player_by_identity() (reconnection matching fails)
-Zeroing it would break client-side packet validation.
+  Zeroing it would break client-side packet validation.
 
 ## Fix applied (ifdef'd, Android-only)
+
 On Android, replace the `!isyou` guard with `i != Player_num` in
 `read_sync_packet()`. `Player_num` is set by callsign match (gated by
 isyou) in the same loop iteration ABOVE the CONNTYPE block.
@@ -49,8 +55,10 @@ is TRUE for all valid i -- correctly treating them as other players.
 Desktop code retains the original `!isyou` check unchanged.
 
 ## Files changed
-- d2/main/net_udp.c: read_sync_packet CONNTYPE guard (#ifdef __ANDROID__)
-- d1/main/net_udp.c: read_sync_packet CONNTYPE guard (#ifdef __ANDROID__)
+
+- d2/main/net_udp.c: read_sync_packet CONNTYPE guard (#ifdef **ANDROID**)
+- d1/main/net_udp.c: read_sync_packet CONNTYPE guard (#ifdef **ANDROID**)
 
 ## Build verification
+
 - `gradlew.bat bundleDebug`: BUILD SUCCESSFUL

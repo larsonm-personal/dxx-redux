@@ -1,0 +1,32 @@
+// TEST: Use real controller dispatch to decide a running multiplayer trial
+[
+    {
+        "_info": {
+            "games": ["d1", "d2"],
+            "_standalone": false,
+            "_owner": "test_lan",
+            "params": { "DECISION": { "options": { "A": {}, "B": {} } } },
+        },
+    },
+    {
+        "action": "assert",
+        "expect": { "graphics_safety.phase": "challenge", "is_network": true, "time_paused": false },
+    },
+    { "action": "controller_input", "key": "DLEFT" },
+    { "action": "controller_input", "key": "${DECISION}" },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.phase": "idle",
+            "is_network": true,
+            "multiplayer.num_connected": 2,
+            "time_paused": false,
+        },
+        "timeout_ms": 5000,
+    },
+    { "action": "controller_input", "expect_ui": { "graphics_open": false } },
+    {
+        "action": "assert",
+        "expect": { "fire_primary_state": 0, "fire_primary_count": 0, "game_window_is_front": true },
+    },
+]

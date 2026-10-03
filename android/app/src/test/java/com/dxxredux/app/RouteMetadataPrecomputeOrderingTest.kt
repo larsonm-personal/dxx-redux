@@ -12,19 +12,18 @@ class RouteMetadataPrecomputeOrderingTest {
         mission: String,
         level: Int,
         enabled: Boolean = true,
-    ) =
-        RouteMetadataPrecomputeJob(
-            LevelMetadataTarget(
-                displayName = mission.ifBlank { game },
-                game = game,
-                sourceType = "hog",
-                missionName = mission,
-                levelFile = "level$level.rl2",
-                levelNum = level,
-            ),
-            sourceIdentity = "$game-$mission",
-            enabled = enabled,
-        )
+    ) = RouteMetadataPrecomputeJob(
+        LevelMetadataTarget(
+            displayName = mission.ifBlank { game },
+            game = game,
+            sourceType = "hog",
+            missionName = mission,
+            levelFile = "level$level.rl2",
+            levelNum = level,
+        ),
+        sourceIdentity = "$game-$mission",
+        enabled = enabled,
+    )
 
     @Test
     fun exactRecentSaveLevelWinsBeforeItsGame() {
@@ -207,29 +206,31 @@ class RouteMetadataPrecomputeOrderingTest {
             enabled = true,
         )
 
-    private fun recentSave(mission: String, level: Int) =
-        ResumeSaveBridge.ResumeSaveCandidate(
-            path = "save.sg0",
-            relativePath = "save.sg0",
-            game = "d2",
-            saveKind = "manual",
-            saveTimeUnixSeconds = 1,
-            callsign = "pilot",
-            description = "save",
-            missionName = mission,
-            levelNum = level,
-            levelName = "Level $level",
-            levelSeconds = 0,
-            totalSeconds = 0,
-            difficultyChanged = false,
-            difficultyMin = 2,
-            difficultyMax = 2,
-            musicType = 0,
-            slot = 0,
-            hasThumbnail = false,
-            thumbnailWidth = 0,
-            thumbnailHeight = 0,
-            metadataBacked = true,
-            thumbnailRgb6 = null,
-        )
+    private fun recentSave(
+        mission: String,
+        level: Int,
+    ) = ResumeSaveBridge.ResumeSaveCandidate(
+        path = "save.sg0",
+        relativePath = "save.sg0",
+        game = "d2",
+        saveKind = "manual",
+        saveTimeUnixSeconds = 1,
+        callsign = "pilot",
+        description = "save",
+        missionName = mission,
+        levelNum = level,
+        levelName = "Level $level",
+        levelSeconds = 0,
+        totalSeconds = 0,
+        difficultyChanged = false,
+        difficultyMin = 2,
+        difficultyMax = 2,
+        musicType = 0,
+        slot = 0,
+        hasThumbnail = false,
+        thumbnailWidth = 0,
+        thumbnailHeight = 0,
+        metadataBacked = true,
+        thumbnailRgb6 = null,
+    )
 }

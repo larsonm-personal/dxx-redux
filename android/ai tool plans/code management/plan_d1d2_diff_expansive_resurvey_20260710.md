@@ -1,19 +1,23 @@
 # Plan: D1/D2 Diff Expansive Resurvey 2026-07-10
 
 ## Goal
+
 - Refresh the cleanup backlog after recent feature work and continue with the highest-value behavior-preserving extraction from upstream-owned D1/D2 files
 
 ## Scope
+
 - Modified files inherited from `upstream/main`
 - Branch-owned or Android-owned helper bodies embedded in those files
 - Existing shared helper surfaces under `android/app/src/main/cpp/shared/`
 - Out of scope: branch-added D1/D2 files unless they reveal a natural shared boundary, substantive feature redesign, broad upstream formatting, and unrelated mission metadata edits
 
 ## Existing user changes
+
 - Preserve the pre-existing modifications to `game_data/mission_files/af-d2x.json`
 - Preserve the pre-existing modifications to `game_data/mission_files/anachron.json`
 
 ## Steps
+
 - [x] Re-read the prior diff-shrink studies, execution plans, and completed tranche notes
 - [x] Refresh modified-versus-added inventory and per-file churn against `upstream/main`
 - [x] Classify the leading modified files by feature ownership and extraction safety
@@ -23,6 +27,7 @@
 - [x] Record results, remaining candidates, and the next recommended tranche
 
 ## Baseline
+
 - Branch: `cmake`
 - `android/helpers/diff_vs_upstream.ps1`: 343 files, 154 D1 files, 189 D2 files, `+51363/-3909`
 - Direct helper inventory: 34 branch-added files and 309 inherited modified files under D1/D2
@@ -30,6 +35,7 @@
 - Previous completed newmenu tranche ended at the same `+51363/-3909` baseline
 
 ## Resurvey findings
+
 - The old phase-3 progress checklist is stale: `coop_save`, `coop_warp`, `auto_net`, major input-demo cores, many OGL helpers, playsave helpers, state rewind/save orchestration, and three newmenu slices have already moved to shared implementations
 - Branch-added sinks such as `input_demo_hooks.c` and the D1-in-D2 files remain excluded from the upstream-owned priority ranking even when their raw line counts are large
 - `d2/main/escort.c` is the largest modified file, but its current growth is mostly substantive D2 route/coop behavior and is not the safest diff-only extraction target
@@ -45,11 +51,13 @@
 - `gamecntl.c` has approximately 290 to 305 combined lines of duplicated save/load dispatch that fit a shared Android control helper but mutate menu and game state
 
 ## Selected implementation
+
 - Move `state_android_read_android_metadata_trailer` and `state_android_read_coop_metadata_trailer` from both `state.c` files into `state_android_shared.{c,h}`
 - Keep all call sites and trailer semantics unchanged
 - Validate both disk-backed saves and memory-backed rewind/checkpoint paths through builds plus focused save/replay tests
 
 ## Implementation outcome
+
 - Added the two reader declarations to `state_android_shared.h` and their single shared implementations to `state_android_shared.c`
 - Removed the exact duplicate reader bodies from both `d1/main/state.c` and `d2/main/state.c`
 - Kept existing call sites unchanged and used the underlying `rewind_file_*` API so disk-backed and memory-backed reads retain the same behavior
@@ -57,6 +65,7 @@
 - No build-system change was needed because `state_android_shared.c` was already linked into both Android game targets
 
 ## Validation
+
 - Scoped code quality passed for `state_android_shared.c` and `state_android_shared.h`
 - Android `:app:externalNativeBuildDebug` passed for D1 and D2 on arm64-v8a, armeabi-v7a, and x86_64
 - Windows `run-windows-build.ps1 -Target both` passed, including the normal and headless metadata targets
@@ -67,12 +76,14 @@
 - `git diff --check` passed
 
 ## Result
+
 - Aggregate D1/D2 churn changed from `+51363/-3909` to `+51207/-3909`
 - `d1/main/state.c` changed from `+1375/-170` to `+1296/-170`
 - `d2/main/state.c` changed from `+1879/-91` to `+1802/-91`
 - The extraction removed 156 additions from upstream-owned engine files without adding hooks or changing file count
 
 ## Ranked backlog after this slice
+
 1. Extract the nearly identical Android track-control block from both `songs.c` files, with focused next/previous/specific-track automation
 2. Extract duplicated Android initialization from both `physfsx.cpp` files into a shared helper with small game-specific directory adapters
 3. Extract the paired Android save/load dispatch from `gamecntl.c` after confirming the shared menu-state boundary
@@ -82,6 +93,7 @@
 7. Revisit `net_udp.c` only after identifying a fresh narrow boundary; the historical queued slot-selection recommendation is no longer current
 
 ## Deferred areas
+
 - Keep substantive escort route and coop behavior local
 - Keep deterministic runtime-state serialization local
 - Do not reopen the interleaved ETC2/KTX2 OGL upload path in a diff-only tranche

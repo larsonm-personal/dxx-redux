@@ -11,11 +11,13 @@ class ControllerKeyDispatchTest {
         val router = ControllerKeyDispatch()
         val edges = mutableListOf<String>()
         var destination = "game"
-        fun press(repeat: Int = 0) = router.press(1, repeat, false) {
-            val owner = destination
-            val send: (Boolean) -> Unit = { down -> edges.add("$owner:$down") }
-            send
-        }
+
+        fun press(repeat: Int = 0) =
+            router.press(1, repeat, false) {
+                val owner = destination
+                val send: (Boolean) -> Unit = { down -> edges.add("$owner:$down") }
+                send
+            }
         press()
         destination = "menu"
         press()
@@ -31,6 +33,7 @@ class ControllerKeyDispatchTest {
     fun directionsRepeatButDuplicateHardwareEdgesAndOrphanRepeatsDoNot() {
         val router = ControllerKeyDispatch()
         val edges = mutableListOf<Boolean>()
+
         fun press(repeat: Int) = router.press(22, repeat, true) { { edges.add(it) } }
         press(1)
         press(0)

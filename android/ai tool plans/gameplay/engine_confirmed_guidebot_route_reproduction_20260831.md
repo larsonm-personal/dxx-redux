@@ -64,16 +64,16 @@ wall state.
 
 The implemented initial controller now covers direct keys, key carriers,
 shootable switches, fly-through triggers, hidden and blastable walls, keyed and
-automatic door frontiers, reactors, bosses, and exact exit-side dispatch.  The
+automatic door frontiers, reactors, bosses, and exact exit-side dispatch. The
 canonical sandbox removes ordinary robots, freezes retained bosses and key
 carriers, kills a selected carrier after three fixed simulation seconds, and
-pauses the reactor countdown after proving reactor destruction.  Counterstrike
+pauses the reactor countdown after proving reactor destruction. Counterstrike
 level 2 exposed and now covers repeated restorer objectives and extension of a
 single semantic goal through temporarily opened physical frontiers.
 
 The two Android headed level 1 runs were exact within the platform: seed `1`,
 fixed Hz `60`, `3237` frames, and cumulative objective seconds `20.583328`,
-`49.166656`, and `53.949997`.  Windows headless level 1 follows the same three
+`49.166656`, and `53.949997`. Windows headless level 1 follows the same three
 semantic objectives and confirms at frame `2980`; platform-specific engine
 physics timing is therefore recorded, not treated as cross-platform RNG drift.
 
@@ -201,16 +201,16 @@ has live sight, but do not claim to simulate weapon damage rate or boss combat.
 
 ### Interaction policy summary
 
-| Objective | Required physical proof | Permitted activation | Certifying |
-|---|---|---|---|
-| Key | GuideBot contacts key object | Existing owner pickup path | Yes |
-| Fly-through trigger | GuideBot crosses exact side | Existing companion trigger path | Yes |
-| Shootable switch | GuideBot reaches accepted firing candidate | Presumed hit through normal trigger path | Yes |
-| Door or blastable wall | GuideBot reaches and contacts the blocking side | Rule-checked companion shot through wall path | Yes |
-| Key carrier | Carrier becomes reachable, dies after three seconds, GuideBot contacts dropped key | Timed owner damage, then normal drop and pickup | Yes |
-| Boss | GuideBot reaches firing point and has live sight | Immediate owner damage and normal boss death | Yes |
-| Reactor | GuideBot reaches firing point and has live sight | Immediate owner damage and normal reactor death | Yes |
-| Exit | GuideBot crosses exact exit side | Existing trigger and end-level path | Yes |
+| Objective              | Required physical proof                                                            | Permitted activation                            | Certifying |
+| ---------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------- | ---------- |
+| Key                    | GuideBot contacts key object                                                       | Existing owner pickup path                      | Yes        |
+| Fly-through trigger    | GuideBot crosses exact side                                                        | Existing companion trigger path                 | Yes        |
+| Shootable switch       | GuideBot reaches accepted firing candidate                                         | Presumed hit through normal trigger path        | Yes        |
+| Door or blastable wall | GuideBot reaches and contacts the blocking side                                    | Rule-checked companion shot through wall path   | Yes        |
+| Key carrier            | Carrier becomes reachable, dies after three seconds, GuideBot contacts dropped key | Timed owner damage, then normal drop and pickup | Yes        |
+| Boss                   | GuideBot reaches firing point and has live sight                                   | Immediate owner damage and normal boss death    | Yes        |
+| Reactor                | GuideBot reaches firing point and has live sight                                   | Immediate owner damage and normal reactor death | Yes        |
+| Exit                   | GuideBot crosses exact exit side                                                   | Existing trigger and end-level path             | Yes        |
 
 The optional physical-flare mode can strengthen switch and door proof, but its
 absence does not weaken the canonical contract above.
@@ -538,7 +538,8 @@ result. Both front ends call the same functions.
 9. `REFRESH_ROUTE`
    - Select the next objective from the newly mutated world.
 10. `DONE`, `PARTIAL`, `FAILED`, `TIMEOUT`, or `ENGINE_ERROR`
-   - Finalize normalized trace and world hash.
+
+- Finalize normalized trace and world hash.
 
 ### Progress and failure rules
 
@@ -953,8 +954,7 @@ mandatory failed leg.
 
 The phases below are ordered so every phase leaves a buildable, testable product
 and produces evidence needed by the following phase. The first useful vertical
-slice ends at Phase 7 with physical blue-key acquisition in Castaway Redux level
-2. Later phases expand the supported activation types without replacing the
+slice ends at Phase 7 with physical blue-key acquisition in Castaway Redux level 2. Later phases expand the supported activation types without replacing the
 controller.
 
 ### Phase 0: Freeze the contract and select fixtures
@@ -1506,10 +1506,10 @@ Implementation tasks:
    existing save system can represent the state safely.
 10. Emit a complete reproduction command in every result.
 11. Add hard caps for frames, events, path points, replans, settle time, and JSON
-   size.
+    size.
 12. Make timeout output preserve the last complete state and remain valid JSON.
 13. Add process exit codes for confirmed, partial, failed, timeout, unsupported,
-   and engine error without making scripts parse prose.
+    and engine error without making scripts parse prose.
 
 Tests and evidence:
 
@@ -1552,7 +1552,7 @@ Implementation tasks:
 9. Add comparison output for static success plus engine failure, static partial
    plus engine success, and objective-chain drift.
 10. Keep the emulator metadata path capable of producing or consuming the same
-   result schema so host and Android reporting do not diverge.
+    result schema so host and Android reporting do not diverge.
 
 Tests and evidence:
 

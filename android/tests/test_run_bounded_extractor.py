@@ -39,29 +39,24 @@ class RunBoundedExtractorTests(unittest.TestCase):
             root = pathlib.Path(temp)
             descendant_marker = root / "descendant-survived"
             sentinel_marker = root / "sentinel-survived"
-            sentinel_code = (
-                "import pathlib,sys,time; time.sleep(0.5); "
-                "pathlib.Path(sys.argv[1]).write_text('alive')")
-            sentinel = subprocess.Popen(
-                [sys.executable, "-B", "-c", sentinel_code, str(sentinel_marker)])
-            descendant_code = (
-                "import pathlib,sys,time; time.sleep(0.8); "
-                "pathlib.Path(sys.argv[1]).write_text('alive')")
+            sentinel_code = "import pathlib,sys,time; time.sleep(0.5); pathlib.Path(sys.argv[1]).write_text('alive')"
+            sentinel = subprocess.Popen([sys.executable, "-B", "-c", sentinel_code, str(sentinel_marker)])
+            descendant_code = "import pathlib,sys,time; time.sleep(0.8); pathlib.Path(sys.argv[1]).write_text('alive')"
             parent_code = (
                 "import pathlib,subprocess,sys,time; "
                 f"subprocess.Popen([sys.executable,'-B','-c',{descendant_code!r},"
                 "str(pathlib.Path(sys.argv[1])/'descendant-survived')]); "
                 "pathlib.Path(sys.argv[1],'parent-ready').write_text('ready'); "
-                + ({
-                    "success": "sys.exit(0)",
-                    "failure": "sys.exit(7)",
-                    "timeout": "time.sleep(5)",
-                }[mode])
+                + (
+                    {
+                        "success": "sys.exit(0)",
+                        "failure": "sys.exit(7)",
+                        "timeout": "time.sleep(5)",
+                    }[mode]
+                )
             )
             try:
-                result = self.run_child(
-                    parent_code, root,
-                    timeout_seconds=0.2 if mode == "timeout" else 2)
+                result = self.run_child(parent_code, root, timeout_seconds=0.2 if mode == "timeout" else 2)
                 self.assertEqual(result == 0, mode == "success")
                 sentinel.wait(timeout=2)
                 time.sleep(0.6)
@@ -119,8 +114,7 @@ class RunBoundedExtractorTests(unittest.TestCase):
             root = pathlib.Path(temp)
             (root / "nested").mkdir()
             (root / "nested" / "payload").write_bytes(b"payload")
-            files, total = MODULE.measure_tree(
-                root, 4, 16384, 16384, strict=True)
+            files, total = MODULE.measure_tree(root, 4, 16384, 16384, strict=True)
             self.assertEqual(files, 1)
             self.assertGreaterEqual(total, len(b"payload"))
 
@@ -143,12 +137,10 @@ class RunBoundedExtractorTests(unittest.TestCase):
             root.mkdir()
             sentinel = parent / "sentinel"
             sentinel.write_text("preserve")
-            code = (
-                "import os,pathlib,sys; "
-                "os.link(sys.argv[2],pathlib.Path(sys.argv[1])/'alias')")
+            code = "import os,pathlib,sys; os.link(sys.argv[2],pathlib.Path(sys.argv[1])/'alias')"
             result = MODULE.run_bounded(
-                [sys.executable, "-B", "-c", code, str(root), str(sentinel)],
-                str(root), 2, 4, 16384, 16384, 128)
+                [sys.executable, "-B", "-c", code, str(root), str(sentinel)], str(root), 2, 4, 16384, 16384, 128
+            )
             self.assertNotEqual(result, 0)
             self.assertEqual(sentinel.read_text(), "preserve")
 
@@ -183,9 +175,7 @@ class RunBoundedExtractorTests(unittest.TestCase):
                     raise FileNotFoundError(path)
                 return real_assert(path)
 
-            with mock.patch.object(
-                    MODULE, "_assert_no_windows_streams",
-                    side_effect=racing_stream_check):
+            with mock.patch.object(MODULE, "_assert_no_windows_streams", side_effect=racing_stream_check):
                 files, total = MODULE.measure_tree(root, 4, 16384, 16384)
 
             self.assertEqual(files, 1)
@@ -203,7 +193,10 @@ class RunBoundedExtractorTests(unittest.TestCase):
             sentinel.write_text("preserve")
             result = subprocess.run(
                 ["cmd", "/d", "/c", "mklink", "/J", str(root / "escape"), str(target)],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
             if result.returncode:
                 self.skipTest("junction creation is unavailable")
             with self.assertRaisesRegex(RuntimeError, "reparse"):
@@ -236,8 +229,7 @@ class RunBoundedExtractorTests(unittest.TestCase):
             root = pathlib.Path(temp)
             path = root / "device"
             try:
-                MODULE.os.mknod(
-                    path, MODULE.stat.S_IFCHR | 0o600, MODULE.os.makedev(1, 3))
+                MODULE.os.mknod(path, MODULE.stat.S_IFCHR | 0o600, MODULE.os.makedev(1, 3))
             except (AttributeError, OSError) as error:
                 self.skipTest(f"device creation is unavailable: {error}")
             with self.assertRaisesRegex(RuntimeError, "link or special file"):
@@ -261,12 +253,13 @@ class RunBoundedExtractorTests(unittest.TestCase):
             if MODULE.os.name == "nt":
                 path.write_bytes(b"")
                 import msvcrt
+
                 with path.open("r+b") as stream:
                     handle = msvcrt.get_osfhandle(stream.fileno())
                     returned = MODULE.wintypes.DWORD()
                     if not MODULE.kernel32.DeviceIoControl(
-                            handle, 0x000900C4, None, 0, None, 0,
-                            MODULE.ctypes.byref(returned), None):
+                        handle, 0x000900C4, None, 0, None, 0, MODULE.ctypes.byref(returned), None
+                    ):
                         self.skipTest("filesystem does not permit sparse files")
                 with path.open("r+b") as stream:
                     stream.truncate(1024 * 1024)
@@ -278,8 +271,7 @@ class RunBoundedExtractorTests(unittest.TestCase):
                 if info.st_blocks * 512 >= info.st_size:
                     self.skipTest("filesystem did not create a sparse file")
             with self.assertRaisesRegex(RuntimeError, "sparse"):
-                MODULE.measure_tree(root, 4, 2 * 1024 * 1024, 2 * 1024 * 1024,
-                                    strict=True)
+                MODULE.measure_tree(root, 4, 2 * 1024 * 1024, 2 * 1024 * 1024, strict=True)
 
     @unittest.skipUnless(MODULE.os.name == "nt", "Windows stream fixture")
     def test_rejects_alternate_data_stream_output(self):
@@ -310,9 +302,13 @@ class RunBoundedExtractorTests(unittest.TestCase):
         )
         for code in cases:
             with self.subTest(code=code), tempfile.TemporaryDirectory() as temp:
-                limits = ({"max_files": 4} if "range(5)" in code else {
-                    "max_total_bytes": 128,
-                })
+                limits = (
+                    {"max_files": 4}
+                    if "range(5)" in code
+                    else {
+                        "max_total_bytes": 128,
+                    }
+                )
                 self.assertNotEqual(self.run_child(code, temp, **limits), 0)
 
     def test_rejects_large_diagnostics(self):
@@ -341,27 +337,39 @@ class RunBoundedExtractorTests(unittest.TestCase):
             root = pathlib.Path(temp)
             descendant_marker = root / "descendant-survived"
             sentinel_marker = root / "sentinel-survived"
-            delayed_write = (
-                "import pathlib,sys,time; time.sleep(0.8); "
-                "pathlib.Path(sys.argv[1]).write_text('alive')")
-            sentinel = subprocess.Popen(
-                [sys.executable, "-B", "-c", delayed_write, str(sentinel_marker)])
+            delayed_write = "import pathlib,sys,time; time.sleep(0.8); pathlib.Path(sys.argv[1]).write_text('alive')"
+            sentinel = subprocess.Popen([sys.executable, "-B", "-c", delayed_write, str(sentinel_marker)])
             parent_code = (
                 "import pathlib,subprocess,sys,time; "
                 f"subprocess.Popen([sys.executable,'-B','-c',{delayed_write!r},"
                 "str(pathlib.Path(sys.argv[1])/'descendant-survived')]); "
                 "pathlib.Path(sys.argv[1],'parent-ready').write_text('ready'); "
-                "time.sleep(5)")
+                "time.sleep(5)"
+            )
             supervisor = subprocess.Popen(
                 [
-                    sys.executable, "-I", "-B", str(SCRIPT_PATH),
-                    "--output-dir", str(root),
-                    "--timeout-seconds", "4",
-                    "--max-files", "20",
-                    "--max-file-bytes", "1024",
-                    "--max-total-bytes", "4096",
-                    "--max-diagnostic-bytes", "1024",
-                    "--", sys.executable, "-B", "-c", parent_code, str(root),
+                    sys.executable,
+                    "-I",
+                    "-B",
+                    str(SCRIPT_PATH),
+                    "--output-dir",
+                    str(root),
+                    "--timeout-seconds",
+                    "4",
+                    "--max-files",
+                    "20",
+                    "--max-file-bytes",
+                    "1024",
+                    "--max-total-bytes",
+                    "4096",
+                    "--max-diagnostic-bytes",
+                    "1024",
+                    "--",
+                    sys.executable,
+                    "-B",
+                    "-c",
+                    parent_code,
+                    str(root),
                 ],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -389,9 +397,7 @@ class RunBoundedExtractorTests(unittest.TestCase):
             root = pathlib.Path(temp)
             marker = root / "started"
             code = "import pathlib,sys; pathlib.Path(sys.argv[1],'started').touch()"
-            with mock.patch.object(
-                    MODULE, "start_owned_process",
-                    side_effect=RuntimeError("ownership unavailable")):
+            with mock.patch.object(MODULE, "start_owned_process", side_effect=RuntimeError("ownership unavailable")):
                 with self.assertRaisesRegex(RuntimeError, "ownership unavailable"):
                     self.run_child(code, root)
             self.assertFalse(marker.exists())

@@ -11,6 +11,9 @@ on:
 
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   macos:
     name: macOS Apps
@@ -19,10 +22,10 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET: 10.14
     steps:
       - name: Clone repository
-        uses: actions/checkout@v3
-
-      - name: Fetch tags
-        run: git fetch --tags
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: Install build dependencies
         run: brew install --formula dylibbundler
@@ -34,19 +37,32 @@ jobs:
         run: cmake -S d1 -B buildd1 -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
       - name: Build D1
-        run: cmake --build buildd1
+        run: cmake --build buildd1 --parallel 4
+
+      - name: Test D1
+        env:
+          SDL_AUDIODRIVER: dummy
+          SDL_VIDEODRIVER: dummy
+        run: ctest --test-dir buildd1 --output-on-failure
 
       - name: Configure D2
         run: cmake -S d2 -B buildd2 -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
       - name: Build D2
-        run: cmake --build buildd2
+        run: cmake --build buildd2 --parallel 4
+
+      - name: Test D2
+        env:
+          SDL_AUDIODRIVER: dummy
+          SDL_VIDEODRIVER: dummy
+        run: ctest --test-dir buildd2 --output-on-failure
 
       - name: Package
         run: ./contrib/packaging/macos/build_package.sh
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: macos
           path: '*.zip'
+          if-no-files-found: error

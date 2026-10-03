@@ -27,20 +27,20 @@ game_data/mission_files/**/*.simulation.json with matching metadata JSON
 
 ## The twelve development-set failures
 
-| Mission/level | Published result | Evidence and likely next work |
-| --- | --- | --- |
-| Diehard 1 | Failed | Static planner exhausts its work budget after the gold-key carrier; live selector has no remaining action. Profile prerequisite/key-order search and repeated visibility work |
-| Diehard 9 | Timeout | After red key, native collision blocks the 314 -> 31 leg. Destination fits, but center and sampled connecting legs do not. Inspect portal topology and connected full-radius free space |
-| Diehard 10 | Timeout | Planned approach enters a two-unit-deep switch recess with a roughly 4.7-unit-radius ship. A broader firing search passed this obstruction experimentally but then trapped the actor elsewhere and regressed other missions. Develop occupancy-aware outside firing poses |
-| FFYL 4 | Failed | After blue key, modeled gold/red prerequisites cycle. Inspect switch 13's reachable outside firing positions and actual projectile visibility, preserving key restrictions |
-| TEW 9 | Timeout | Gold-key approach fails through segments 256/257; clearance masks, centers and native path generation disagree. Prior full-radius samples did not establish a connected route. Previously explicitly deferred |
-| Lostlvls secret -1 | Failed | Published planner budget failure also hides a multi-visit inventory/world-history requirement. Verify actual native entries, returns, carried keys and persisted walls/triggers |
-| EAF 5 | Failed | Authored level has no exit/reactor/triggers in the prior investigation; content applicability issue |
-| Bitesize -3 | Unsupported | Guided-missile equipment and physical flight verification missing |
-| EAF 2 | Unsupported | Same guided verification limitation |
-| Lostlvls 21 | Unsupported | Same classification, but authored documentation also describes Phoenix rebound shots; recheck the actual required action |
-| Plutonia 4 | Unsupported | Guided verification limitation |
-| Plutonia 22 | Unsupported | Guided verification limitation |
+| Mission/level      | Published result | Evidence and likely next work                                                                                                                                                                                                                                             |
+| ------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Diehard 1          | Failed           | Static planner exhausts its work budget after the gold-key carrier; live selector has no remaining action. Profile prerequisite/key-order search and repeated visibility work                                                                                             |
+| Diehard 9          | Timeout          | After red key, native collision blocks the 314 -> 31 leg. Destination fits, but center and sampled connecting legs do not. Inspect portal topology and connected full-radius free space                                                                                   |
+| Diehard 10         | Timeout          | Planned approach enters a two-unit-deep switch recess with a roughly 4.7-unit-radius ship. A broader firing search passed this obstruction experimentally but then trapped the actor elsewhere and regressed other missions. Develop occupancy-aware outside firing poses |
+| FFYL 4             | Failed           | After blue key, modeled gold/red prerequisites cycle. Inspect switch 13's reachable outside firing positions and actual projectile visibility, preserving key restrictions                                                                                                |
+| TEW 9              | Timeout          | Gold-key approach fails through segments 256/257; clearance masks, centers and native path generation disagree. Prior full-radius samples did not establish a connected route. Previously explicitly deferred                                                             |
+| Lostlvls secret -1 | Failed           | Published planner budget failure also hides a multi-visit inventory/world-history requirement. Verify actual native entries, returns, carried keys and persisted walls/triggers                                                                                           |
+| EAF 5              | Failed           | Authored level has no exit/reactor/triggers in the prior investigation; content applicability issue                                                                                                                                                                       |
+| Bitesize -3        | Unsupported      | Guided-missile equipment and physical flight verification missing                                                                                                                                                                                                         |
+| EAF 2              | Unsupported      | Same guided verification limitation                                                                                                                                                                                                                                       |
+| Lostlvls 21        | Unsupported      | Same classification, but authored documentation also describes Phoenix rebound shots; recheck the actual required action                                                                                                                                                  |
+| Plutonia 4         | Unsupported      | Guided verification limitation                                                                                                                                                                                                                                            |
+| Plutonia 22        | Unsupported      | Guided verification limitation                                                                                                                                                                                                                                            |
 
 Historical native diagnoses are in ../2026-09-09-routing-continuation.md and
 ../2026-09-08-tew-routing.md. They are investigation leads, not fresh reproductions

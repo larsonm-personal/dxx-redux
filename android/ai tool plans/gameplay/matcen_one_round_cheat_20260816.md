@@ -21,7 +21,7 @@ Status: complete
 ## Plan
 
 - [x] Trace the paired D1/D2 automap controls, matcen activation accounting, and
-  save-game extension points
+      save-game extension points
 - [x] Implement the runtime toggle and one-round activation cap in both engines
 - [x] Persist and restore the setting in D1/D2 save games
 - [x] Add focused regression coverage for toggle behavior and save/load state
@@ -30,13 +30,13 @@ Status: complete
 ## Tri-state and multiplayer extension
 
 - [x] Trace host authority, reliable multiplayer control messages, join/restore
-  synchronization, and the matcen active-cycle reset requirements
+      synchronization, and the matcen active-cycle reset requirements
 - [x] Replace the boolean runtime/save/UI state with the three-state cycle and
-  implement pause transition semantics
+      implement pause transition semantics
 - [x] Add authoritative D1/D2 multiplayer propagation and late-join state sync
 - [x] Extend focused policy, save metadata, and UI regressions
 - [x] Run scoped formatting, focused tests, Android assembly, and paired D1/D2
-  build validation
+      build validation
 
 ## Live tap regression
 

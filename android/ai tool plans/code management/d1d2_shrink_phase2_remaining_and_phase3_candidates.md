@@ -5,11 +5,13 @@ Status: phase 2 complete through phase 36; phase 3 started with validated `coop_
 `ogl_shared_helper_extraction_phase*.md` tranches.
 
 Anchor numbers after phase 31:
+
 - 199 files changed, `+17362 / -801`
 - `d1/arch/ogl/ogl.c`: `+1672 -50 total 1722`
 - `d2/arch/ogl/ogl.c`: `+1696 -49 total 1745`
 
 Update after phase 36:
+
 - phases 32 through 36 completed and validated
 - `d1/arch/ogl/ogl.c`: `+1508 -50 total 1558`
 - `d2/arch/ogl/ogl.c`: `+1590 -49 total 1639`
@@ -28,6 +30,7 @@ diagnostic) and 4.b (cached-texmerge plain-transparent cache). What is still
 inline in ogl.c now:
 
 ### 2.a `ogl_load_dxa_mask()` -- category 4.e
+
 - Scope: ~45 line self-contained PNG-mask loader, fully under `#ifdef ANDROID`
 - Dependencies: PNG reader, `ogl_loadtexture` -- both callable from a shared
   translation unit via existing headers
@@ -38,6 +41,7 @@ inline in ogl.c now:
 - Risk: low. No private macros, no pointer arithmetic into ogl.c globals
 
 ### 2.b `ogl_apply_texfilt_all()` (runtime texfilt reapply loop) -- 4.d
+
 - Scope: ~40 line loop over `ogl_texture_list` that rebinds + calls
   `glTexParameteri` when the launcher changes TexFilt live
 - Lives inline in `ogl_start_frame()` today; already has an obvious twin in the
@@ -50,6 +54,7 @@ inline in ogl.c now:
 - Risk: very low. Pattern already validated in phase 31
 
 ### 2.c GPU timer triple-buffer query rotation -- 4.d
+
 - Scope: ~50 lines split between `ogl_start_frame` (begin + read-back) and
   `gr_flip` (end query, rotate write pointer)
 - Currently reads/writes private `ogl_gpu_queries[]`, `gpu_query_write_idx`,
@@ -64,6 +69,7 @@ inline in ogl.c now:
   pointers
 
 ### 2.d Framebuffer introspection grid sampler in `gr_flip` -- 4.a
+
 - Scope: ~28 line `glReadPixels` center + 4x4 grid that already calls into
   shared `android_merged_wall_finish_snapshot`
 - d1/d2 identical
@@ -75,6 +81,7 @@ inline in ogl.c now:
   the shared header
 
 ### 2.e First-N bind-logging block + experiment-mode apply logging -- 4.a
+
 - Scope: two small runs of logging code that wrap `android_texture_debug_*`
   calls. Each ~10-15 lines
 - d1/d2 identical
@@ -84,6 +91,7 @@ inline in ogl.c now:
 - Risk: very low
 
 ### 2.f `ogl_android_texmerge_cache_clear` + cache-entry `static` table -- 4.b finisher
+
 - Scope: the cache-entry `ogl_android_texmerge_cache_entry` struct and the
   `ogl_android_texmerge_cache[32]` table still live in both ogl.c files.
   The clear+slot helpers already delegate to shared, but the storage itself
@@ -101,6 +109,7 @@ inline in ogl.c now:
 - This is the one phase-2 tranche big enough to justify a standalone phase file
 
 ### 2.g `ogl_loadtexture` ETC2/KTX2 upload inline block -- 4.e
+
 - Scope: the ~140 line KTX2 open/parse/upload block and ~100 line ETC2
   self-test FBO render, both inline in `ogl_loadbmtexture_f`
 - Previous study already flagged this as "stays inline; too invasive to
@@ -110,11 +119,13 @@ inline in ogl.c now:
 - Expected shrink: N/A (skip for now)
 
 ### Phase 2 remaining -- summary
+
 Combining 2.a through 2.f, realistic phase-2 shrink per file was **~220-240
 lines**, bringing ogl.c to roughly `+1450 / -50`. With phase 36 validated,
 phase 2 is complete and attention shifts to phase 3.
 
 Order of execution (best first):
+
 1. **phase 32** -- 2.a + 2.e (dxa mask + small logging blocks). Short, low risk.
    Target shrink: ~60 per file.
 2. **phase 33** -- 2.b (texfilt live-apply). Exact twin of the phase 31 aniso
@@ -135,6 +146,7 @@ item lists one proposed phase plan file name, the target files, the expected
 shrink per game, and the key concrete blocks to extract.
 
 ### P3.1 -- `coop_save.{c,h}` + `coop_warp.{c,h}` relocation
+
 - Plan file: `cleanup_coop_files_move.md`
 - Files: `d1/main/coop_save.c` (872), `d2/main/coop_save.c` (929),
   `d1/main/coop_save.h` (161), `d2/main/coop_save.h` (163),
@@ -157,6 +169,7 @@ shrink per game, and the key concrete blocks to extract.
 - Risk: medium. Lots of raw lines, but the code is self-contained
 
 ### P3.2 -- `net_udp.c` android helper extraction
+
 - Plan file: `cleanup_net_udp_extract.md` (new; supersedes
   `net_udp_cleanup_candidates.md` once work starts)
 - Files: `d1/main/net_udp.c` (+944 -58), `d2/main/net_udp.c` (+1045 -84)
@@ -178,6 +191,7 @@ shrink per game, and the key concrete blocks to extract.
   comment wrapper)
 
 ### P3.3 -- `multi.c` coop QoL + host-migration extraction
+
 - Plan file: `cleanup_multi_coop_extract.md`
 - Files: `d1/main/multi.c` (+422 -15), `d2/main/multi.c` (+455 -15)
 - Concrete blocks:
@@ -192,6 +206,7 @@ shrink per game, and the key concrete blocks to extract.
   games. Use accessor functions at the boundary
 
 ### P3.4 -- `playsave.c` native-pilot-prefs bridge isolation
+
 - Plan file: `cleanup_playsave_bridge_extract.md`
 - Files: `d1/main/playsave.c` (+430), `d2/main/playsave.c` (+279)
 - Target: move all launcher-callable bridge functions to
@@ -208,6 +223,7 @@ shrink per game, and the key concrete blocks to extract.
   keep the file I/O close to existing upstream code
 
 ### P3.5 -- `newmenu.c` touch / keyboard / drag-scroll extraction
+
 - Plan file: `cleanup_newmenu_touch_extract.md`
 - Files: `d1/main/newmenu.c` (+287 -1), `d2/main/newmenu.c` (+532 -4)
 - Concrete blocks:
@@ -222,6 +238,7 @@ shrink per game, and the key concrete blocks to extract.
   games, fall back to per-game copies
 
 ### P3.6 -- `songs.c` overlay / picker helpers
+
 - Plan file: `cleanup_songs_overlay_extract.md`
 - Files: `d1/main/songs.c` (+253), `d2/main/songs.c` (+276)
 - Concrete blocks (two isolated `#ifdef __ANDROID__` regions in each file):
@@ -234,6 +251,7 @@ shrink per game, and the key concrete blocks to extract.
   the two overlay helpers move; the rest of the rewrite stays
 
 ### P3.7 -- `state.c` coop save/restore glue
+
 - Plan file: `cleanup_state_coop_extract.md`
 - Files: `d1/main/state.c` (+180 -6), `d2/main/state.c` (+216 -14)
 - Concrete blocks:
@@ -244,6 +262,7 @@ shrink per game, and the key concrete blocks to extract.
 - Risk: medium. Depends on coop_save being relocated first (P3.1)
 
 ### P3.8 -- `gr.c` + `oglprog.c` GLES3 + runtime-control extraction
+
 - Plan file: `cleanup_gr_oglprog_extract.md`
 - Files: `d1/arch/ogl/gr.c` (+227 -1), `d2/arch/ogl/gr.c` (+228 -1),
   `d1/arch/ogl/oglprog.c` (+132 -21), `d2/arch/ogl/oglprog.c` (+132 -21)
@@ -262,6 +281,7 @@ shrink per game, and the key concrete blocks to extract.
   interactions with frame flip
 
 ### P3.9 -- `render.c` merged-wall tracking finisher
+
 - Plan file: `cleanup_render_merged_wall_extract.md`
 - Files: `d1/main/render.c` (+243 -16), `d2/main/render.c` (+244 -14)
 - Concrete blocks:
@@ -274,6 +294,7 @@ shrink per game, and the key concrete blocks to extract.
   before starting to avoid re-opening already-closed phases
 
 ### P3.10 -- `titles.c` intro-movie skip + resume-on-input
+
 - Plan file: `cleanup_titles_touch_extract.md`
 - Files: `d2/main/titles.c` (+159 -30), `d1/main/titles.c` (+76 -0)
 - Target: `shared/ui/titles_android.c`
@@ -281,6 +302,7 @@ shrink per game, and the key concrete blocks to extract.
 - Risk: low
 
 ### P3.11 -- `kconfig.c` + `gamecntl.c` touch binding / gamepad defaults
+
 - Plan file: `cleanup_kconfig_touch_extract.md`
 - Files: `d2/main/kconfig.c` (+167 -5), `d1/main/kconfig.c` (+100 -5),
   `d2/main/gamecntl.c` (+93 -2), `d1/main/gamecntl.c` (+74 -0)
@@ -289,6 +311,7 @@ shrink per game, and the key concrete blocks to extract.
 - Risk: low
 
 ### P3.12 -- `automap.c` + `escort.c` touch helpers
+
 - Plan file: `cleanup_automap_escort_extract.md`
 - Files: `d2/main/automap.c` (+130 -7), `d1/main/automap.c` (+33 -5),
   `d2/main/escort.c` (+129 -5)
@@ -298,6 +321,7 @@ shrink per game, and the key concrete blocks to extract.
 - Risk: low-medium
 
 ### P3.13 -- `hmp.c` + `physfsx.c` + minor misc files
+
 - Plan file: `cleanup_hmp_physfsx_extract.md`
 - Files: `d1/misc/hmp.c` (+126 -0), `d2/misc/hmp.c` (+125 -0),
   `d1/misc/physfsx.c` (+105 -0), `d2/misc/physfsx.c` (+114 -1)
@@ -307,6 +331,7 @@ shrink per game, and the key concrete blocks to extract.
 - Risk: low
 
 ### P3.14 -- `auto_net.{c,h}` relocation
+
 - Plan file: part of P3.1 `cleanup_coop_files_move.md`
 - Files: `d1/main/auto_net.c` (+97), `d2/main/auto_net.c` (+96),
   `d1/main/auto_net.h` (+62), `d2/main/auto_net.h` (+65)
@@ -320,22 +345,22 @@ shrink per game, and the key concrete blocks to extract.
 
 Current total: `+17362 / -801` across 199 files.
 
-| Tranche group | Est. shrink |
-|---|---|
-| Phase 2 remaining (2.a-2.f, across two ogl.c files) | ~500 |
-| P3.1 coop_save + coop_warp + auto_net | ~3200 |
-| P3.2 net_udp.c | ~1000 |
-| P3.3 multi.c | ~550 |
-| P3.4 playsave.c | ~500 |
-| P3.5 newmenu.c | ~350 |
-| P3.6 songs.c | ~200 |
-| P3.7 state.c | ~300 |
-| P3.8 gr.c + oglprog.c | ~400 |
-| P3.9 render.c | ~300 |
-| P3.10 titles.c | ~150 |
-| P3.11 kconfig + gamecntl | ~270 |
-| P3.12 automap + escort | ~220 |
-| P3.13 hmp + physfsx | ~450 |
+| Tranche group                                       | Est. shrink |
+| --------------------------------------------------- | ----------- |
+| Phase 2 remaining (2.a-2.f, across two ogl.c files) | ~500        |
+| P3.1 coop_save + coop_warp + auto_net               | ~3200       |
+| P3.2 net_udp.c                                      | ~1000       |
+| P3.3 multi.c                                        | ~550        |
+| P3.4 playsave.c                                     | ~500        |
+| P3.5 newmenu.c                                      | ~350        |
+| P3.6 songs.c                                        | ~200        |
+| P3.7 state.c                                        | ~300        |
+| P3.8 gr.c + oglprog.c                               | ~400        |
+| P3.9 render.c                                       | ~300        |
+| P3.10 titles.c                                      | ~150        |
+| P3.11 kconfig + gamecntl                            | ~270        |
+| P3.12 automap + escort                              | ~220        |
+| P3.13 hmp + physfsx                                 | ~450        |
 
 Grand-total potential shrink: **~8400 lines** if every tranche lands cleanly
 and the coop / songs / playsave upstreaming questions all come back "move to

@@ -44,7 +44,7 @@ int main(void)
 	matcen_mode_get_activation_counts(saved_counts, MATCEN_MODE_MAX_CENTERS);
 	matcen_mode_reset_game();
 	failures += expect(matcen_mode_restore(MATCEN_MODE_PAUSED, saved_counts,
-	                                      MATCEN_MODE_MAX_CENTERS),
+	                                       MATCEN_MODE_MAX_CENTERS),
 	                   "saved mode could not be restored");
 	failures += expect(matcen_mode_get() == MATCEN_MODE_PAUSED,
 	                   "saved paused mode was not restored");

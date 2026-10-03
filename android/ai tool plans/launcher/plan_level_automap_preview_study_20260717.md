@@ -109,12 +109,12 @@ Do not keep the native preview process warm in the first version. Warm reuse com
 
 ### Design options
 
-| Option | Startup and APK characteristics | Maintenance and correctness | Decision |
-| --- | --- | --- | --- |
-| Divert normal game startup into automap | Reuses the installed library but still initializes too much | Entangles preview with pilot, menu, gameplay, save, and `:game` lifecycle | Reject |
-| Preview-only runner in existing D1/D2 libraries | Loads the full library, then executes only the required native subset | Reuses the authoritative loader, renderer, overlays, and input with modest D1/D2 glue | Recommended first version |
-| New slim D1/D2 preview libraries | May reduce loading and relocation, but can duplicate code and increase APK size | Current global/source coupling makes source selection and stubbing fragile | Profile-gated follow-up |
-| Parse and draw the map in Kotlin | Could avoid native process startup | Duplicates engine behavior and violates the native automap requirement | Reject |
+| Option                                          | Startup and APK characteristics                                                 | Maintenance and correctness                                                           | Decision                  |
+| ----------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------- |
+| Divert normal game startup into automap         | Reuses the installed library but still initializes too much                     | Entangles preview with pilot, menu, gameplay, save, and `:game` lifecycle             | Reject                    |
+| Preview-only runner in existing D1/D2 libraries | Loads the full library, then executes only the required native subset           | Reuses the authoritative loader, renderer, overlays, and input with modest D1/D2 glue | Recommended first version |
+| New slim D1/D2 preview libraries                | May reduce loading and relocation, but can duplicate code and increase APK size | Current global/source coupling makes source selection and stubbing fragile            | Profile-gated follow-up   |
+| Parse and draw the map in Kotlin                | Could avoid native process startup                                              | Duplicates engine behavior and violates the native automap requirement                | Reject                    |
 
 ### Performance budget and measurements
 
@@ -222,6 +222,7 @@ Document review completed on 2026-07-17. The plan is ASCII-only, has no trailing
 - D1 built-in level 1 opens in the preview Activity and closes to the existing metadata dialog with the visible MAP touch button.
 - Clean close removes the request-specific preview directory. Emulator SHA-256 checks confirm that D1/D2 active-set files, the D2 active-mod file, and both games' configuration files are unchanged. Persistent route-cache file listings are also unchanged.
 - The first D2 device run found and fixed a flattened extracted-mission mount issue before final verification. No native crash appears in the final D1 or D2 runs.
+
 ## Introspection and randomized smoke-test tranche
 
 - [x] Add a preview-specific introspection snapshot written atomically outside game caches.

@@ -39,18 +39,14 @@ class AndroidMixerDiagnosticsContracts(unittest.TestCase):
             "void androidaud_log_mixer_init(int requested_rate, int mixer_buffer_frames);",
             header,
         )
-        self.assertIn(
-            "void androidaud_log_mixer_open_failed(const char *error);", header
-        )
+        self.assertIn("void androidaud_log_mixer_open_failed(const char *error);", header)
         self.assertEqual(init_body.count("Mix_QuerySpec("), 1)
         self.assertIn(
-            "Mix_OpenAudio ok: requested=%d actual=%d fmt=0x%04X ch=%d "
-            "buf=%d (native_rate=%d)",
+            "Mix_OpenAudio ok: requested=%d actual=%d fmt=0x%04X ch=%d buf=%d (native_rate=%d)",
             init_body,
         )
         self.assertIn(
-            "[audio] init: mixer_rate=%d actual_rate=%d fmt=0x%04X ch=%d "
-            "buf_frames=%d",
+            "[audio] init: mixer_rate=%d actual_rate=%d fmt=0x%04X ch=%d buf_frames=%d",
             init_body,
         )
         self.assertIn("ERROR: Couldn't open audio: %s", failure_body)

@@ -10,17 +10,17 @@ original files untouched.
 ## Plan
 
 - [x] Confirm the next ranked remediation, finding, starting HEAD, and worktree
-  ownership
+      ownership
 - [x] Trace every ISO output path, directory creation, final open, platform
-  abstraction, and transaction boundary
+      abstraction, and transaction boundary
 - [x] Define the smallest handle-relative physical-containment contract for
-  POSIX and Windows
+      POSIX and Windows
 - [x] Implement containment without changing valid ISO naming or extraction
-  behavior
+      behavior
 - [x] Add outside-sentinel tests for intermediate directory links/reparse
-  points and final file links/aliases
+      points and final file links/aliases
 - [x] Run focused tests, scoped quality, extraction-host build/tests, Android ABI
-  builds, and relevant Windows validation
+      builds, and relevant Windows validation
 - [x] Audit final diff and worktree scope; mark GQR-0034/GQF-0047 terminal
 
 ## Result

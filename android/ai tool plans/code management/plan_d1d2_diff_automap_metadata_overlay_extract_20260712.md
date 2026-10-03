@@ -34,13 +34,13 @@ automap structure, edge list, and D2 marker rendering local.
 - [x] Add the shared header and implementation using the existing game headers.
 - [x] Replace both pairs of draw calls with one four-counter shared call.
 - [x] Remove the two 146-line local bodies, label-only colors, and duplicate
-  prototypes.
+      prototypes.
 - [x] Wire the source into both unconditional main source lists.
 - [x] Run scoped static checks and compare final inherited-file metrics.
 - [x] Build and link D1 and D2 for all Android ABIs.
 - [x] Run the dual-game objective-overlay automap test and D2 secret-reveal
-  automap test; add D1 secret-label coverage only if the existing mission data
-  produces drawable labels.
+      automap test; add D1 secret-label coverage only if the existing mission data
+      produces drawable labels.
 - [x] Record the result in the campaign catalog and refresh the live queue.
 
 ## Guardrails

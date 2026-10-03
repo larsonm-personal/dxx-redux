@@ -101,9 +101,7 @@ class AndroidRendererContractsTest(unittest.TestCase):
             self.assertIn("android_ogl_active_texture(&ogl_bind_texture_state", macro)
 
     def test_texture_extension_lookup_has_one_shared_owner(self) -> None:
-        shared = (REPO / "android/app/src/main/cpp/shared/ogl_texture_android.c").read_text(
-            encoding="utf-8"
-        )
+        shared = (REPO / "android/app/src/main/cpp/shared/ogl_texture_android.c").read_text(encoding="utf-8")
         start = shared.index("int android_ogl_read_texture_with_extensions(")
         end = shared.index("static void apply_bound_min_mag_filter", start)
         body = shared[start:end]
@@ -117,9 +115,7 @@ class AndroidRendererContractsTest(unittest.TestCase):
         self.assertIn("(end->tv_sec - start->tv_sec) * 1000000", shared)
         self.assertIn("(end->tv_nsec - start->tv_nsec) / 1000", shared)
 
-        profile = (REPO / "android/app/src/main/cpp/shared/android_profile.c").read_text(
-            encoding="utf-8"
-        )
+        profile = (REPO / "android/app/src/main/cpp/shared/android_profile.c").read_text(encoding="utf-8")
         self.assertEqual(profile.count("void android_profile_texture_lookup_note_ktx2("), 1)
         for game in ("d1", "d2"):
             source = (REPO / game / "arch/ogl/ogl.c").read_text(encoding="utf-8")
@@ -132,9 +128,7 @@ class AndroidRendererContractsTest(unittest.TestCase):
             self.assertIn("(end->tv_nsec - start->tv_nsec) / 1000", source)
 
     def test_dxa_mask_name_is_checked_before_png_lookup(self) -> None:
-        shared = (REPO / "android/app/src/main/cpp/shared/ogl_texture_android.c").read_text(
-            encoding="utf-8"
-        )
+        shared = (REPO / "android/app/src/main/cpp/shared/ogl_texture_android.c").read_text(encoding="utf-8")
         start = shared.index("void android_ogl_load_dxa_mask(")
         body = shared[start : shared.index("\n#endif", start)]
         construction = body.index("android_ogl_texture_filename(")

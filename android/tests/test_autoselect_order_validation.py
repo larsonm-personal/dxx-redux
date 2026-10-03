@@ -7,9 +7,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 class AutoselectOrderValidationTest(unittest.TestCase):
     def test_jni_validates_before_scanning_pilots(self) -> None:
-        source = (
-            REPO_ROOT / "android/app/src/main/cpp/android_autoselect.cpp"
-        ).read_text(encoding="utf-8")
+        source = (REPO_ROOT / "android/app/src/main/cpp/android_autoselect.cpp").read_text(encoding="utf-8")
         writer = source.index("JNI_FUNC(nativeWriteAutoselect)")
         validation = source.index("read_valid_order", writer)
         scan = source.index("for_each_pilot", validation)
@@ -20,9 +18,7 @@ class AutoselectOrderValidationTest(unittest.TestCase):
 
     def test_paired_pilot_loaders_validate_both_orders(self) -> None:
         for game in ("d1", "d2"):
-            source = (REPO_ROOT / game / "main/playsave.c").read_text(
-                encoding="utf-8"
-            )
+            source = (REPO_ROOT / game / "main/playsave.c").read_text(encoding="utf-8")
             self.assertIn("weapon_order_is_valid(PlayerCfg.PrimaryOrder", source)
             self.assertIn("weapon_order_is_valid(PlayerCfg.SecondaryOrder", source)
 
@@ -34,18 +30,14 @@ class AutoselectOrderValidationTest(unittest.TestCase):
         self.assertIn("if (n == 6", helper)
 
     def test_summary_uses_nanoseconds_and_a_stable_exact_tie_breaker(self) -> None:
-        source = (
-            REPO_ROOT / "android/app/src/main/cpp/android_autoselect.cpp"
-        ).read_text(encoding="utf-8")
+        source = (REPO_ROOT / "android/app/src/main/cpp/android_autoselect.cpp").read_text(encoding="utf-8")
 
         self.assertIn("st.st_mtim.tv_nsec", source)
         self.assertIn("strcmp(path, rc->newest_path) < 0", source)
 
     def test_gameplay_stops_autoselect_at_separator(self) -> None:
         for game in ("d1", "d2"):
-            source = (REPO_ROOT / game / "main/weapon.c").read_text(
-                encoding="utf-8"
-            )
+            source = (REPO_ROOT / game / "main/weapon.c").read_text(encoding="utf-8")
             function = source[source.index("void auto_select_weapon") :]
 
             self.assertIn("if(next_weapon == 255) { break; }", function)

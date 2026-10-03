@@ -9,8 +9,7 @@ static const int LEVEL_STATISTICS_TEXTURE_LIMIT = 910;
 static const int LEVEL_STATISTICS_TEXTURE_LIMIT = 584;
 #endif
 
-struct level_statistics
-{
+struct level_statistics {
 	int segment_count;
 	int wall_count;
 	int trigger_count;
@@ -20,8 +19,8 @@ struct level_statistics
 
 template <typename Segment>
 level_statistics collect_level_statistics(const Segment *segments, int segment_count,
-                                           int wall_count, int trigger_count,
-                                           int object_count, int texture_limit)
+                                          int wall_count, int trigger_count,
+                                          int object_count, int texture_limit)
 {
 	level_statistics result = {
 		segment_count > 0 ? segment_count : 0,

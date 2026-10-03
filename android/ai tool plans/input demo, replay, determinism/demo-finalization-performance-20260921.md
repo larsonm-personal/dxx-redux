@@ -20,18 +20,18 @@
 
 Recorded effective FPS by ten-second interval:
 
-| Start (seconds) | FPS |
-| --- | --- |
-| 0 | 24.9 |
-| 40 | 16.9 |
-| 60 | 11.2 |
-| 70 | 13.2 |
-| 80 | 7.1 |
-| 90 | 9.8 |
-| 100 | 5.7 |
-| 110 | 12.7 |
-| 120 | 14.9 |
-| 130 | 24.5 |
+| Start (seconds) | FPS  |
+| --------------- | ---- |
+| 0               | 24.9 |
+| 40              | 16.9 |
+| 60              | 11.2 |
+| 70              | 13.2 |
+| 80              | 7.1  |
+| 90              | 9.8  |
+| 100             | 5.7  |
+| 110             | 12.7 |
+| 120             | 14.9 |
+| 130             | 24.5 |
 
 The median recorded frame is 41 ms; the maximum is 321.014 ms at frame 1349 (62.52 seconds). The long frame times are part of the inputs. Real-time replay deliberately waits for them in `input_demo_delay_replay_frame_shared`; changing them would change simulation behavior
 

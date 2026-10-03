@@ -1,6 +1,7 @@
 # Plan: Address Caching + Overlay Toggle Fixes
 
 ## Issues
+
 1. Matchmaking server connect screen needs address caching (last 5, most recent, deduplicated)
 2. Net events overlay briefly shows then disappears on toggle (should be persistent on/off)
 3. Net events overlay doesn't show during connecting/player select screens
@@ -10,6 +11,7 @@
 ## Changes
 
 ### 1. Generic RecentAddressPrefs + Matchmaking URL Caching
+
 - Refactor `RecentIpsPrefs` (LanDiscoveryTab.kt) into a generic `RecentAddressPrefs` class
   - Parameterized by SharedPreferences key
   - Same logic: last 5, newest first, deduplicated
@@ -26,10 +28,12 @@
 - Move `RecentIpSuggestions` composable to the shared file, generalized as `RecentSuggestions`
 
 ### 2. Fix Overlay Toggle Behavior (Issues 2 + 3)
+
 Root cause: polling loop (100ms) has `else if (inGame) { netEventsOverlay?.hide() }` which
 immediately overrides a manual toggle-on.
 
 Fix in MainActivity.kt:
+
 - Add field `private var netEventsManualToggle = false`
 - Toggle handler: flip flag, call show/hide accordingly
 - Polling loop: `if (mpConnecting || netEventsManualToggle) show() else hide()`
@@ -38,6 +42,7 @@ Fix in MainActivity.kt:
 - Reset `netEventsManualToggle = false` when `!gameStarted` (game exited entirely)
 
 ### 3. Clean Up net_log_comment Android Bridge (Issue 4)
+
 Background: `GameArg.LogNetTraffic` is ALWAYS 1 on Android (hardcoded in d1/d2 args.c).
 So the unconditional `android_net_log` call BEFORE the check is functionally redundant --
 the code never returns early on Android. But the bridge IS needed because PHYSFS file writes
@@ -48,11 +53,13 @@ Functionally identical on Android (LogNetTraffic is always 1), but cleaner struc
 Apply to both d1/main/net_udp.c and d2/main/net_udp.c.
 
 ### 4. Issue 5 Explanation
+
 C-side log entries (MPDIAG, NETLOG) not appearing in the NetLog file is most likely because
 the test was run with an APK built BEFORE the C-side bridge changes. Once the latest build
 is deployed to the phones, entries should appear.
 
 ## Files Modified
+
 - android/app/src/main/java/com/dxxredux/app/multiplayer/RecentAddressPrefs.kt (NEW)
 - android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt
 - android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerScreen.kt

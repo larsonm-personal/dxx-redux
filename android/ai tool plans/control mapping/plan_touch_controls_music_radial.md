@@ -19,6 +19,7 @@ Eight issues across music controls, popup overlays, and radial menus.
 **Problem:** Custom music track label shows full filesystem path like `data/user/0/com.dxxredux.app/files/custom_music/asdf.../track.mp3`. Should show chromaprint-decoded name if available, falling back to stripped filename.
 
 **Current state of chromaprint for jukebox:**
+
 - Launcher fingerprints jukebox files at import time (`MusicPickerPage.kt importAudioFiles()` calls `FingerprintBridge.fingerprintAndMatch()`)
 - Matched names stored in `custom_audio_sets.json` in `AudioSet.trackNames` map (filename -> decoded name)
 - But `writeM3U()` writes only bare paths -- names are NOT passed to the C engine
@@ -28,17 +29,22 @@ Eight issues across music controls, popup overlays, and radial menus.
 **Fix (end-to-end pipeline):**
 
 ### 2a. Kotlin: Write track names sidecar JSON
+
 In `CustomAudioSetManager.writeM3U()`, after writing the M3U file, also write `custom_music_names.json` containing a mapping from full absolute path to decoded track name:
+
 ```json
 {
   "/data/.../custom_music/set1/track01.mp3": "Crawl",
   "/data/.../custom_music/set1/track02.ogg": "Fire in the Hole"
 }
 ```
+
 Only include entries where a chromaprint match exists. This is a path -> name map (not index-based, since jukebox order can change).
 
 ### 2b. C: Load sidecar at jukebox init
+
 Add `jukebox_names.c` (or extend `track_names.c`) with:
+
 - A static table `s_jukebox_names[MAX_JUKEBOX][{path_hash, name}]` (or simple linear array)
 - `jukebox_names_load(filesDir)` -- parse `custom_music_names.json`, store entries
 - `jukebox_names_lookup(path)` -- return decoded name for a given path, or NULL
@@ -46,15 +52,19 @@ Add `jukebox_names.c` (or extend `track_names.c`) with:
 Call `jukebox_names_load()` during `jukebox_load()`.
 
 ### 2c. C: Use decoded names in songs_get_track_info
+
 In `songs_get_track_info()` CUSTOM case (d2/songs.c, d1/songs.c): after getting `jukebox_current()`, call `jukebox_names_lookup(cur)`. If found, use the decoded name. Otherwise, strip path/extension as fallback (same logic as `track_overlay_notify_jukebox`).
 
 ### 2d. C: Use decoded names in track_overlay_notify_jukebox
+
 Same lookup: try `jukebox_names_lookup(filename)` first, then fall back to basename stripping.
 
 ### 2e. Kotlin: Defensive basename extraction
+
 In `MainActivity.kt updateTrackLabel()`: strip path and extension from `parts[3]` as a fallback safety net, in case the C-side name still leaks a full path.
 
 **Files:**
+
 - `CustomAudioSetManager.kt` -- `writeM3U()`: write sidecar JSON
 - `track_names.c` -- add jukebox name table and lookup
 - `track_names.h` -- declare new functions
@@ -86,6 +96,7 @@ In `MainActivity.kt updateTrackLabel()`: strip path and extension from `parts[3]
 Also add notification after jukebox next/prev (CUSTOM case) -- currently those call `jukebox_play()` which may call `track_overlay_notify_jukebox`, need to verify. If not, add it.
 
 **Files:**
+
 - `d2/main/songs.c` -- REDBOOK case in next/prev (~L558, ~L597)
 - `d1/main/songs.c` -- same
 - Verify jukebox next/prev calls trigger overlay notification
@@ -97,6 +108,7 @@ Also add notification after jukebox next/prev (CUSTOM case) -- currently those c
 **Problem:** After "next track" in MIDI mode, the music controls vanish entirely.
 
 **Root cause:**
+
 1. `songs_next_track()` BUILTIN: sets `Song_playing` to new track
 2. Calls `songs_play_file()` -> `songs_stop_all()` -> `Song_playing = -1`
 3. `songs_get_track_info()` returns -1 because `Song_playing < SONG_FIRST_LEVEL_SONG`
@@ -105,6 +117,7 @@ Also add notification after jukebox next/prev (CUSTOM case) -- currently those c
 **Fix:** Save computed track index before `songs_play_file()`, restore `Song_playing` after success (same pattern as `songs_play_specific_track()`).
 
 In `songs_next_track()` and `songs_prev_track()` BUILTIN cases, change from:
+
 ```c
 Song_playing = <new_index>;
 if (songs_play_file(BIMSongs[Song_playing].filename, 1, NULL))
@@ -113,7 +126,9 @@ if (songs_play_file(BIMSongs[Song_playing].filename, 1, NULL))
     return 1;
 }
 ```
+
 to:
+
 ```c
 int track = <new_index>;
 if (songs_play_file(BIMSongs[track].filename, 1, NULL))
@@ -125,6 +140,7 @@ if (songs_play_file(BIMSongs[track].filename, 1, NULL))
 ```
 
 **Files:**
+
 - `d2/main/songs.c` -- BUILTIN case in next/prev
 - `d1/main/songs.c` -- same
 
@@ -137,6 +153,7 @@ if (songs_play_file(BIMSongs[track].filename, 1, NULL))
 **Additionally needed:** Two separate size sliders -- one for the inner trigger button, one for the outer wheel ring.
 
 **Fix:**
+
 1. Add `ringSizeMult: Float = 1f` to `RadialMenuControl` data class, with JSON serialization
 2. Overlap detection: use trigger radius `0.05f * sizeMult` for radial menus (not `0.14f`)
 3. Editor preview: use `ringSizeMult` for ghost wheel extent
@@ -144,6 +161,7 @@ if (songs_play_file(BIMSongs[track].filename, 1, NULL))
 5. `TouchOverlayView.kt`: use `ringSizeMult` for wheel radius in geometry and rendering; keep `sizeMult` for trigger button
 
 **Files:**
+
 - `TouchControl.kt` -- `RadialMenuControl` data class
 - `TouchEditorPage.kt` -- overlap bounds, preview, properties panel
 - `TouchOverlayView.kt` -- geometry and rendering
@@ -165,6 +183,7 @@ if (songs_play_file(BIMSongs[track].filename, 1, NULL))
 **Problem:** Closed radial buttons show 4-char ID ("PriW", "SecW", "Guid"). Should show current weapon name.
 
 **Fix:**
+
 1. Extend `nativeGetWeaponState()` (jni_main.c) to include `primary_weapon` and `secondary_weapon` indices (append to array as indices 43-44)
 2. Update `WeaponState.kt` to parse new fields
 3. In quiescent radial drawing: for PriWpn/SecWpn, find the segment whose weaponIndex matches the current weapon index and display its label. Scale text to fit trigger circle. Fall back to ID if no match
@@ -172,6 +191,7 @@ if (songs_play_file(BIMSongs[track].filename, 1, NULL))
 5. Guidebot: keep "Guide" or centerLabel (no persistent command state)
 
 **Files:**
+
 - `jni_main.c` -- extend array
 - `WeaponState.kt` -- new fields
 - `TouchOverlayView.kt` -- quiescent drawing, polling
@@ -192,6 +212,7 @@ Order: 1 -> 3 -> 5 -> 4 -> 7 -> 6 -> 8 -> 2
 ---
 
 ## Verification
+
 - Build APK, no new warnings
 - Touch editor: MUSIC diagnostic shows music preview, not gyro
 - Jukebox: track label shows decoded name or stripped basename

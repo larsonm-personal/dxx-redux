@@ -5,6 +5,7 @@
 ### Root cause: Art asset issue in d2x-xl texture pack
 
 Investigation findings:
+
 - Source TGA `door37#0.tga` is a 512x4096 strip (8 frames, 512x512 each), 32bpp with alpha_bits=8
 - Frame 7 (last frame, door fully open) contains: RGB mean ~252/255 (nearly white), alpha=255 (fully opaque)
 - In the original game, when a door is fully open, palette color 255 means "transparent" -- you see through the door
@@ -15,12 +16,14 @@ Investigation findings:
 ### Additional finding: ImageMagick strips alpha during strip splitting
 
 Even for frames that DO have meaningful alpha in the source strip:
+
 - IM reads the 32bpp TGA but interprets it as `TrueColor` (not `TrueColorAlpha`)
 - IM `identify` shows "Type: TrueColor, Channels: 4.0" -- it sees 4 channels but doesn't treat the 4th as alpha
 - When cropping and saving back to TGA, IM writes 24bpp (3 channels), dropping the alpha
 - This affects all 123 strip textures in the D2-512 pack (42 are doors)
 
 Fix (two-part):
+
 1. `-alpha set` on the IM input to force alpha interpretation before crop:
    ```
    & $MagickPath $safePath -alpha set -crop "..." +repage $safeFramePath
@@ -30,12 +33,14 @@ Fix (two-part):
    This is a d2x-xl art deficiency -- not all transparency in the original game was replicated in the hires art.
 
 ### Experiment to verify
+
 - Pick a strip texture where alpha IS meaningful (not all 0 or all 255 per frame)
 - Add `-alpha set` to the IM crop command in `Split-StripTextures`
 - Rebuild the DXA and verify the alpha-bearing frames render correctly
 - For door37 specifically: check in-game whether the original piggy texture (without hires) shows proper transparency at frame 7
 
 ### Scope
+
 - Low urgency for door37 specifically (art asset issue)
 - Higher urgency for the IM alpha-stripping bug (could affect any strip texture with alpha)
 - Count of strip textures with actual per-frame alpha variation: unknown (needs batch analysis)
@@ -47,6 +52,7 @@ Fix (two-part):
 ### Root cause: texmerge creates 64x64 merged bitmap, discarding hires data
 
 Investigation findings:
+
 - On Android (non-OGL_MERGE, GLES 1.1), when a tmap2 overlay has `BM_FLAG_SUPER_TRANSPARENT`:
   ```c
   // render_face(), d2/main/render.c line 251
@@ -72,8 +78,10 @@ Investigation findings:
 ### Possible fixes (ordered by complexity)
 
 #### Option A: Skip texmerge for hires overlays (render two-pass instead)
+
 When both textures have hires replacements, bypass the texmerge merge and render
 using the non-OGL_MERGE two-pass path in `g3_draw_tmap_2`:
+
 ```c
 // In render_face:
 #ifndef OGL_MERGE
@@ -91,24 +99,28 @@ if (bm2 && (bm2->bm_flags&BM_FLAG_SUPER_TRANSPARENT)){
 }
 #endif
 ```
+
 Complexity: Medium.
 Risk: The super-transparent merge exists for a reason -- the 2-pass rendering
 might not handle super-transparency correctly (color 254 = super-transparent needs
 special compositing). Would need to verify the visual output matches.
 
 #### Option B: Hires-aware texmerge
+
 Modify texmerge to work at hires resolution when both inputs have hires data.
 Instead of merging bm_data (64x64), merge the gltexture data (256x256 or 512x512).
 Complexity: High -- would need to read back GPU textures or cache the original PNG data.
 Not recommended. Would be a large change to the engine.
 
 #### Option C: OGL_MERGE on Android (shader-based)
+
 Use GL ES 2.0 multi-texturing to blend both textures on the GPU, same as desktop.
 Complexity: Very high -- the OGL_MERGE path uses GLSL shaders which require GL ES 2.0.
 The Android build currently uses GL ES 1.1 fixed-function pipeline.
 Not feasible without a major rendering rewrite.
 
 #### Option D: Pre-merge hires textures in the DXA conversion pipeline
+
 For texture pairs that are known to be merged (BM_FLAG_SUPER_TRANSPARENT overlays),
 pre-merge the hires textures at full resolution and store the merge in the DXA.
 This would require knowing the overlay combinations at build time.
@@ -116,15 +128,17 @@ Complexity: Medium-High. Would need to enumerate all possible overlay combinatio
 Not recommended -- too many combinations.
 
 ### Recommended approach: Option A
+
 Skip texmerge when hires replacements exist, and render the two textures in
 two passes. The BM_FLAG_SUPER_TRANSPARENT handling needs investigation in the
 two-pass path to ensure color 254 pixels are handled correctly.
 
 ### Experiment to verify Option A
+
 1. In render_face, add a check: if both bm and bm2 have `gltexture->is_png`, skip
    the texmerge and keep bm2 non-NULL
 2. The two-pass path in g3_draw_tmap_2 should handle alpha blending naturally
-   because the hires textures already have alpha channels where transparency 
+   because the hires textures already have alpha channels where transparency
    is needed
 3. Build and test in level 1: look at shootable lights on walls -- they should
    now appear at hires resolution
@@ -137,6 +151,7 @@ two-pass path to ensure color 254 pixels are handled correctly.
 ### Likely cause: ETC2 compression characteristics + lighting math interaction
 
 Investigation findings:
+
 - Ship/robot textures use the same hires replacement pipeline as wall textures
 - Ships use `compute_object_light()` for 3D scene lighting with RGB light values
 - The ETC2 encoder preserves colors faithfully but there's quantization inherent
@@ -146,6 +161,7 @@ Investigation findings:
   flare brightness (+F1_0*2)
 
 ### Possible causes
+
 1. **Gamma/color space mismatch**: The original palette-based textures are in sRGB
    gamma space. When converted to ETC2, the colors are preserved in sRGB but the
    lighting math operates in linear space. This can cause over-brightening of
@@ -156,12 +172,14 @@ Investigation findings:
    brighter than the originals (art choice by d2x-xl creator).
 
 ### Experiments
+
 1. Capture screenshots with hires and without (toggle tex_overlay to compare)
 2. Use the introspection API to check lighting values on the ship being viewed
 3. Try reducing global gamma or brightness to see if the effect lessens
 4. Compare a specific ship texture's average brightness between original and hires
 
 ### Low priority
+
 This may be inherent to the art pack and not fixable without per-texture correction.
 A global gamma correction tuning option could help.
 
@@ -172,6 +190,7 @@ A global gamma correction tuning option could help.
 ### Likely cause: Separate hires textures with brightness mismatch
 
 Investigation findings:
+
 - The cockpit HUD is a single background bitmap (cockpit.ktx2, cockpitb.ktx2)
 - Gauge elements (energy, shields, keys, targeting, lock indicator) are SEPARATE
   bitmaps drawn on top via 2D blit (hud_bitblt)
@@ -181,6 +200,7 @@ Investigation findings:
   than the cockpit background hires replacement, they'll look mismatched
 
 ### Possible causes
+
 1. **Different source artists**: The cockpit background and individual gauge overlays
    may have been created by different artists or at different times in d2x-xl
 2. **Alpha blending issues**: If gauge overlays lack proper alpha matching the cockpit
@@ -189,6 +209,7 @@ Investigation findings:
    different color profiles
 
 ### Experiments
+
 1. Extract the specific "lock" gauge bitmap from the DXA and compare its brightness
    with the corresponding area of the cockpit background
 2. Check if the original (non-hires) gauge textures match better
@@ -196,6 +217,7 @@ Investigation findings:
    but the ETC2 format lost the alpha (similar to issue 1)
 
 ### Fix options
+
 - Most likely fix: adjust the brightness/alpha of the specific mismatched gauge textures
   in the DXA conversion pipeline (brightness correction filter)
 - Or let the user tune cockpit brightness separately in settings
@@ -204,7 +226,7 @@ Investigation findings:
 
 ## Priority order
 
-1. **Issue 2** (shootable light resolution) - Code bug with clear fix path; affects many 
+1. **Issue 2** (shootable light resolution) - Code bug with clear fix path; affects many
    walls in every level. High visual impact.
 2. **Issue 1 IM alpha fix** (strip splitting drops alpha) - Code bug in conversion pipeline;
    may affect multiple textures beyond doors. Medium visual impact.

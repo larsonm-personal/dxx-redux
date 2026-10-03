@@ -6,6 +6,7 @@ Phase 8 of run_mp_test.ps1 fails: host stays on "select players" screen while jo
 enters level loading, then times out with "missing ACKs" or similar.
 
 Two observed failure modes:
+
 - Run 1: 300+ relay packets (all sampled ones after #5 were EMU2->EMU1 only), test timed out
 - Run 2: Only 5 relay packets (handshake only), communication died immediately
 
@@ -14,9 +15,10 @@ Two observed failure modes:
 ### Why the host stays on select_players
 
 The auto-start condition in net_udp_start_poll checks:
-  `auto_host_pending && N_players >= Netgame.max_numplayers`
+`auto_host_pending && N_players >= Netgame.max_numplayers`
 
 For this to fail, either:
+
 1. The joiner's UPID_REQUEST never reaches the host (relay issue)
 2. net_udp_add_player fails to increment N_players (duplicate address match?)
 3. UPID_REQUEST passes through relay but is dropped by pass_security_check
@@ -48,6 +50,7 @@ Need to verify: does net_udp_process_game_info overwrite players[0].addr?
 ### Possible game_info overwrite issue
 
 In the joiner's flow:
+
 1. auto_join sets Netgame.players[0].addr = relay address (10.0.2.2:42600)
 2. Joiner sends GAME_INFO_REQ to that address -> works
 3. Host replies with GAME_INFO
@@ -61,15 +64,18 @@ Must read net_udp_process_game_info to confirm.
 ## Plan
 
 ### Part 1: Emulator hints in copilot-instructions.md
+
 - Add notes about: fresh emulators lose app data, -no-snapshot-save flag,
   terminal buffer corruption with long adb sessions, killing zombie processes
 
 ### Part 2: Reliability improvements
+
 - Add health check helper to run_mp_test.ps1 for verifying emulators before test start
 - Add more diagnostic logging in the Phase 8 failure path
 - Always log relay packets with direction + size + port info for debugging
 
 ### Part 3: Fix Phase 8
+
 - Read net_udp_process_game_info to check if it overwrites players[0].addr
 - If so, fix: after calling do_join_game, re-set the host address to the relay address
 - OR: fix in net_udp_process_game_info to preserve the original connect address

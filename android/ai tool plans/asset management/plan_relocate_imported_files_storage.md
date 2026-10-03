@@ -128,7 +128,7 @@ Responsibilities:
 - `isOverrideActive(): Boolean`.
 - `listCandidateVolumes(ctx): List<VolumeOption>` -- map each non-null entry
   of `ctx.getExternalFilesDirs(null)` to `{label, path, freeBytes,
-  totalBytes, isPrimary}`. The first entry equals the internal app-private
+totalBytes, isPrimary}`. The first entry equals the internal app-private
   external dir -- excluded from candidates because using it would not
   alleviate internal-flash pressure (it lives on the same partition on
   Shield). Annotate volumes whose `Environment.isExternalStorageRemovable`
@@ -275,6 +275,7 @@ Clicking "Set new location":
 ## Phasing
 
 ### Phase 1: Plumbing without behavior change
+
 - [x] Add `ImportLocationManager` (default-only behavior, no override yet,
       no UI). Default root = `filesDir/imported`.
 - [x] Extend `FileSetManager` to take `importRoot: File`, default to
@@ -289,6 +290,7 @@ Clicking "Set new location":
       to confirm sets still resolve. (Optional emulator validation pending.)
 
 ### Phase 2: Override storage + volume listing
+
 - [x] `import_location.json` read/write in `ImportLocationManager`.
       (Switched to `import_location.txt` flat key=value to avoid Android-only
       org.json dependency in JVM unit tests.)
@@ -301,6 +303,7 @@ Clicking "Set new location":
       importRoot wiring, and progress reporting.
 
 ### Phase 3: Advanced page UI
+
 - [x] `ImportLocationSection` composable in
       `AdvancedSettingsPage.kt`, inserted under `StorageInspectorSection`.
 - [x] Volume picker `AlertDialog` + final confirmation + progress dialog.
@@ -309,6 +312,7 @@ Clicking "Set new location":
 - [x] Localize-friendly strings (no emoji, no emdashes).
 
 ### Phase 4: Robustness
+
 - [x] Missing-volume fallback path on launch (SetupActivity check) +
       `isOverrideUnreachable` toast.
 - [x] `.in-progress` marker handling on next launch via
@@ -317,6 +321,7 @@ Clicking "Set new location":
       that tolerate JVM unit tests.
 
 ### Phase 5: Tests + lint
+
 - [x] High-level integration test (`ImportLocationMigrateTest`) covering
       migrate, override round-trip, FileSetManager importRoot wiring,
       progress reporting, and stale-marker cleanup. 8/8 passing.

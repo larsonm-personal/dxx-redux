@@ -5,10 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CHECK(condition) do { if (!(condition)) { \
-	fprintf(stderr, "virtual gamepad contract failed at line %d: %s\n", __LINE__, #condition); \
-	return 1; \
-} } while (0)
+#define CHECK(condition)                                                                               \
+	do {                                                                                               \
+		if (!(condition)) {                                                                            \
+			fprintf(stderr, "virtual gamepad contract failed at line %d: %s\n", __LINE__, #condition); \
+			return 1;                                                                                  \
+		}                                                                                              \
+	} while (0)
 
 /* The engine allocator is independent of the fixed virtual-ID contract */
 char *d_strdup(char *text)
@@ -49,13 +52,15 @@ int main(void)
 	CHECK(ANDROID_VIRTUAL_GAMEPAD_AXES == 16);
 	CHECK(ANDROID_VIRTUAL_GAMEPAD_BUTTONS == 32);
 	android_virtual_gamepad_init(axis_map, button_map, axis_button_map,
-	                            axis_text, button_text);
+	                             axis_text, button_text);
 	for (i = 0; i < 17; i++) {
 		if (i < 16) {
 			CHECK(axis_map[i] == i);
 			CHECK(axis_text[i] && !strcmp(axis_text[i], expected_axes[i]));
 			/* Gyro/slide/combiners must never generate axis-button 0/1 */
-			CHECK(axis_button_map[i] == (i < 6 ? 10 + 2 * i : i == 11 ? 28 : i == 12 ? 30 : -1));
+			CHECK(axis_button_map[i] == (i < 6 ? 10 + 2 * i : i == 11 ? 28
+			                                              : i == 12   ? 30
+			                                                          : -1));
 			free(axis_text[i]);
 		} else {
 			CHECK(axis_map[i] == -99 && axis_button_map[i] == -99);

@@ -1,6 +1,9 @@
 #!/usr/bin/env pwsh
 # Exercise release orchestration with real Git and fake external services
 #Requires -Version 5.1
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '', Justification = 'Mock services share scenario state across script and module scopes')]
+param()
+
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $testRoot = Join-Path $repoRoot ('android/temp/github_release_tests/run_' + [guid]::NewGuid().ToString('N'))

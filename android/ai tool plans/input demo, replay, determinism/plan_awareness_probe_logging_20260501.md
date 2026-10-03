@@ -22,12 +22,12 @@ The first divergence is a missing awareness-trigger RNG draw at frame `435`. The
 ## Findings
 
 - Added replay-only awareness result logging in `d2/main/ai.c` that records:
-	- whether the call was skipped as observer
-	- whether multiplayer gating allowed awareness processing
-	- whether `add_awareness_event()` returned true
-	- awareness queue count before and after the call
-	- agitation before and after the call
-	- the post-`d_rand` gate value and pass/fail decision when the RNG path is reached
+  - whether the call was skipped as observer
+  - whether multiplayer gating allowed awareness processing
+  - whether `add_awareness_event()` returned true
+  - awareness queue count before and after the call
+  - agitation before and after the call
+  - the post-`d_rand` gate value and pass/fail decision when the RNG path is reached
 - Added a replay-only robot-fire probe in `d2/main/ai2.c` before `create_awareness_event(obj, PA_NEARBY_ROBOT_FIRED)`
 - Rebuilt D2 with `run-windows-build.ps1 -Target d2`
 - Replayed `d2_descent2_level2_20260501_103312.dximdemo` with the same wrapper command
@@ -38,10 +38,10 @@ The first divergence is a missing awareness-trigger RNG draw at frame `435`. The
 - Replay also does **not** log the new `kind=robot_fire` probe at frame `435`
 - The first replay awareness log in that window is still the weapon-wall awareness at frame `438`
 - However, the replay frame-state trace still matches the recorded frame-state trace exactly through frames `435` to `438`, including:
-	- `game_time64`
-	- player position, segment, and orientation
-	- `rng.s`
-	- `rng.c`
+  - `game_time64`
+  - player position, segment, and orientation
+  - `rng.s`
+  - `rng.c`
 - The replay RNG sidecar still skips the recorded frame-`435` draw and jumps from call count `11696` to `11698`
 - That means the frame-`435` issue is no longer best described as a confirmed gameplay RNG divergence
 

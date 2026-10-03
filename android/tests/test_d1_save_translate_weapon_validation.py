@@ -14,13 +14,9 @@ class D1SaveTranslateWeaponValidationTest(unittest.TestCase):
         pose_read = SOURCE.index("d1_save_translate_read_player_object_pose", start)
         block = SOURCE[validation:pose_read]
 
-        self.assertIn(
-            "start->primary_weapon >= D1_SAVE_TRANSLATE_PRIMARY_WEAPONS", block
-        )
+        self.assertIn("start->primary_weapon >= D1_SAVE_TRANSLATE_PRIMARY_WEAPONS", block)
         self.assertIn("start->secondary_weapon < 0", block)
-        self.assertIn(
-            "start->secondary_weapon >= D1_SAVE_TRANSLATE_SECONDARY_WEAPONS", block
-        )
+        self.assertIn("start->secondary_weapon >= D1_SAVE_TRANSLATE_SECONDARY_WEAPONS", block)
 
     def test_translated_difficulty_uses_engine_domain(self) -> None:
         marker = "!d1_save_translate_read_s32(&reader, &start->difficulty)"
