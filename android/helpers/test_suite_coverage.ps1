@@ -182,6 +182,7 @@ function Get-TestSuiteCoveragePolicy {
             # These probes require caller-supplied binaries or data directories
             'test_android_metadata_worker'
             'test_classic_trigger_demo'
+            'test_combined_package_identity'
             'test_d1_network_assets'
             'test_d1_wall_blast_save'
             'test_native_metadata_worker'
@@ -203,6 +204,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_merged_wall_two_pass_probe'
         )
         gameplay_scenarios = @(
+            'test_fov_demo_compatibility'
             'test_endgame_singleplayer_d1'
             'test_endgame_singleplayer_d2'
             'test_double_launch'
@@ -218,6 +220,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_quick_record_classic_sidecar'
         )
         graphics_scenarios = @(
+            'test_fov_cpu_visibility'
+            'test_mac_d2_demo_graphics'
             'test_msaa_render_and_menu'
             'test_graphics_black_output'
             'test_graphics_confirmation_input'
