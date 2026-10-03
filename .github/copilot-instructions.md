@@ -20,6 +20,7 @@ Cross-platform Descent 1/2 in C/C++ with SDL; current focus is the Android port
 - For significant multi-step work, write a plan in `android/ai tool plans/`; skip this for one-step fixes or questions
 - Verify code changes with the relevant CMake build and tests; fix new compiler warnings
 - For major changes, add or extend a high-level integration test and run it to completion, fixing failures. Prefer meaningful integration coverage over tests for every small function; provide reusable runners for new Android tests
+- When adding Android automation tests, register each top-level test in `android/helpers/test_suite_coverage.ps1`. JSON scripts invoked by a PowerShell integration runner must declare `_standalone: false` and `_owner` naming that runner. Add a master timeout in `android/run_all_tests.ps1` when the integration can exceed the default 120s. Before committing test additions, run `pwsh -NoProfile -File android/tests/test_validate_automation_catalog.ps1` and `pwsh -NoProfile -File android/tests/test_run_all_tests_catalog.ps1`
 - Format/lint changed code with one scoped, mixed-language invocation:
   `.\android\run-code-quality.ps1 -Fix -Paths path\to\changed-file path\to\changed-dir`
 - Reserve unscoped formatting for broad cleanup, formatter/config changes, or release validation. The formatter mutates files: wait for it to exit before editing or rerunning. After interruption or a stale lock, inspect `android/helpers/stop-stale-formatters.ps1` and use `-Kill` if needed

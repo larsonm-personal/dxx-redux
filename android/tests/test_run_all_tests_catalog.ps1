@@ -24,7 +24,9 @@ try {
             param($task, $result)
             $execution.Result = $result
         }
-        if ($execution.Result.TimedOut -or $execution.Result.ExitCode -ne 0) { throw "Catalog invocation failed: $($execution.Result.StandardError)" }
+        if ($execution.Result.TimedOut -or $execution.Result.ExitCode -ne 0) {
+            throw "Catalog invocation failed (exit=$($execution.Result.ExitCode), timed_out=$($execution.Result.TimedOut)):`n$($execution.Result.StandardOutput)`n$($execution.Result.StandardError)"
+        }
         if (Test-Path -LiteralPath $unusedReportDir) { throw 'Catalog mode created an execution report directory' }
         if (@(Get-ChildItem -LiteralPath $fixtureRoot -Filter 'report_*.md').Count -ne 6) { throw 'Catalog mode pruned prior reports' }
         $catalog = $execution.Result.StandardOutput | ConvertFrom-Json
@@ -38,6 +40,14 @@ try {
             if ($support.owner -notin @($catalog.tests.base_name)) { throw "Support owner absent from catalog: $($support.name)" }
         }
         $fovOwner = @($catalog.tests | Where-Object name -eq 'test_fov_demo_compatibility')
+        $controllerOwner = @($catalog.tests | Where-Object name -eq 'test_controller_response')
+        $controllerSupport = @($catalog.support | Where-Object { $_.type -eq 'jsonc' -and $_.name -eq 'test_controller_response' })
+        if ($controllerOwner.Count -ne 1 -or $controllerOwner[0].type -ne 'ps1' -or
+            $controllerOwner[0].requires -ne 'emulator' -or $controllerOwner[0].timeout_seconds -lt 360 -or
+            $controllerSupport.Count -ne 1 -or $controllerSupport[0].owner -ne $controllerOwner[0].base_name -or
+            'test_controller_response' -notin (Get-TestSuiteCoveragePolicy).input_preferences) {
+            throw 'Controller response support must run through its two-engine integration owner with input coverage'
+        }
         $fovSupport = @($catalog.support | Where-Object { $_.type -eq 'jsonc' -and $_.name -eq 'test_fov_demo_compatibility' })
         if ($fovOwner.Count -ne 1 -or $fovOwner[0].type -ne 'ps1' -or
             $fovOwner[0].requires -ne 'emulator' -or $fovOwner[0].timeout_seconds -lt 480 -or
