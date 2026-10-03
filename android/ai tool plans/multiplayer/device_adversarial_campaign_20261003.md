@@ -77,7 +77,132 @@ The earlier transition study reports emulator passes, including D1/D2 partial tr
 
 ## Results
 
+### Confirmed: retained checkpoint restore after a late join
+
+At 19:30 UTC, `saved-recovery-retroid/01-d2-saved-status-return` failed after
+successful saved-session admission and a further same-host return. Both peers
+had advancing PDATA, working controls, the expected recovered inventory, and
+no remaining recovery objects before the checkpoint restore.
+
+The normal waiting/complete status broadcast passed. The retained checkpoint
+then transferred and began loading on both peers. The host repeatedly retried
+SYNC, timed out the client, and displayed `Co-op restore interrupted`; the
+client remained waiting for the host in restore loading. The retained file
+was the prior level 5 checkpoint, so this also exercised a cross-level restore
+from the current level 1. Preserve this precondition in reproductions.
+
+The Samsung-host reproduction failed too, restoring level 1 back to level 1;
+cross-level travel is therefore not required. A third reproduction on the
+diagnostic build confirmed the cause: `join payload suppressed: type=10
+player=1 visit=2 current=3 committed=1 verify=-1`. The completed late join's
+`UDP_sync_player.join_attempt` survives, and `net_udp_send_sync_payload` applies
+its old world-visit check to later restore SYNC packets, returning without
+transmitting them.
+
+The fix retires the completed join context at the existing gameplay
+confirmation boundary, through a shared helper called by both engines. It
+preserves the join envelope while initial/retried admission is still pending.
+The ARM64 build passed. At 19:57 UTC the physical regression passed for D1,
+D2, and D1-in-D2 with the Retroid hosting; logs show transfer retirement and
+no suppressed SYNC. Samsung-host validation is running. The regression now
+also requires settled barriers, a common level, advancing PDATA, and working
+controls after the checkpoint restore.
+
+Build hashes are archived in the evidence root. The original diagnostic APK
+is `0f8bfb39c617e893c509e363e421abad6f270c1c671e2888a63a5b66c34ea922`,
+the logging-only APK is
+`741341bcacac799264a1a58b432c3bdd0ffa1dc13041d87319961d16288535dc`,
+and the fixed APK is
+`bc6b12d9468784b13173f287214a1c6a2d30f99b0d036910a835ac1cd670f394`.
+Samsung-host repeated return plus checkpoint restore passed at 20:01 UTC.
+The same-role partial-transfer cancellation and later return passed at 20:04.
+
+Two additional fixture assumptions surfaced during combined scenarios:
+
+- The first client-requested rewind after a late join cannot compare its old
+  local clock directly with the host's clock. Both peers restored target
+  `3964863`, but the client began about 12 seconds behind the host. Keep the
+  host's backwards-time check and both peers' second-round check, and require
+  identical, decreasing authoritative restore targets on both peers
+- `RestoreLossResume` selected shared slot 0 even though its manual file was
+  `lanhost.mg0`, while launcher slot selection resolves `coopsave.mg0`. Capture
+  the shared autosave slot at the save phase and verify its hash is unchanged
+  before selecting it for the cold resume
+
+Neither mismatch is counted as a second product defect. Their corrected cases
+use APK
+`e63d95e5f8987898d64e530a68e1e389255785993461dff8e06f75ae19867ece`,
+which adds only the revised automation clock assertion to the prior game fix.
+The combined saved-session/client-rewind case passed with Samsung hosting at
+20:31:58 UTC (`cold-recovery-v2-samsung`). Both authoritative targets matched
+across peers and decreased on the second rewind. An earlier successful pair
+of rewinds was reported as failed because Android's rotating log buffer no
+longer contained both targets; the runner now reads its continuous host-side
+capture instead. Cold recovery also incorrectly required the briefing-only
+suppression flag when briefings were disabled; presentation count must stay
+zero, while that flag is required only when the feature is enabled.
+
+Samsung-host cold recovery passed after client loss (20:34 UTC), host loss
+(20:37), a stalled SYNC (20:40), and client load failure (20:42). Each verifies
+the original shared autosave hash before relaunch, both players' inventory,
+reactor countdown and advancing simulation clocks, a settled restore barrier,
+and renewed bidirectional PDATA. The loader-failure fixture additionally starts
+a fresh game in the failed loader's existing process before the cold recovery.
+
+Reproduce the focused physical regression after provisioning the diagnostic
+package and owned data on two normally unlocked devices:
+
+```powershell
+.\android\tests\test_device_network_campaign.ps1 -HostSerial JYPR42510121028 -ClientSerial R3CR40Q4XPK -OutputDirectory android/temp/device-network-repro -CasePatterns '*saved-checkpoint-first-return' -StopOnFailure
+```
+
+The wrapper is registered as explicit-only in the master catalog; selecting
+ordinary automated suites does not take control of physical devices. Use
+`-List` to inspect selected cases without touching devices, and `-Reverse` to
+swap their roles. Cases stop on failures when `-StopOnFailure` is selected.
+
+Separate fixture issue: `test_coop_restore_status_host.jsonc` used
+`post_delay_ms` on `set_debug`, which does not support that delay. Both status
+changes occurred about 14 ms apart. An explicit `wait_ms` fixed this stage.
+The physical campaign selects `RestoreStatusFunctionalOnly` to omit the
+existing packet-authentication replay subtest from its functional scope.
+
+### Priority refinement: restore failure followed by admission failure
+
+The user requested nearby variants of the already-fixed October 2 incident,
+rather than spending the campaign repeating its exact regression. The incident
+is documented in `../networking/midlevel_join_regression_20261002.md`: a cancelled
+lobby join left a connected slot outside the live roster, and recovery waited
+for that nonexistent participant while later admission remained stuck.
+
+New physical variants use the existing saved-gear fixture and change:
+
+- Three cancelled lobby admissions before the solo restore, then two returns
+  to the same host process
+- A level 5 save followed by two returns, instead of the fixture's level 1
+- A returning saved client followed by restore-status completion and checkpoint
+  handling
+- A cancelled partial saved-world transfer, then another admission and a later
+  return without restarting the host (existing bounded transfer-delay fixture)
+- Client loss, host loss, sync deadline, client load failure, and host load
+  failure, each followed by a cold resume from the preserved save
+- Reverse physical host/client roles after the Retroid-host pass
+
+Require one approval at most per new return, a settled recovery/save barrier,
+two connected peers, advancing PDATA in both directions, and working controls.
+Archive fresh state after each return and verify the host PID did not change.
+These are app-level gameplay and lifecycle cases; no security settings change.
+
+The delayed first-join cases passed on all three content modes at 19:08 UTC
+using the explicit original-deadline oracle. The first new saved-session
+variant started at 19:13 UTC.
+
 ### Unlocked paired run
+
+Checkpoint at 18:56 UTC: 27 passed attempts covering 26 distinct paired cases.
+All planned D1 core cases passed. D2 briefing loss/release/rejoin and first-join
+loss/cancellation passed; remaining D2 and D1-in-D2 cases are still running.
+No confirmed product defect has been found at this checkpoint.
 
 At 17:59 UTC the user unlocked Samsung and the paired campaign resumed.
 All three content baselines passed, followed by seven D1 cases: host/client
@@ -91,8 +216,26 @@ subsequently reached its ordinary 120-second deadline, tripping the fixture's
 active-briefing assertion. This is environment/harness failure, not evidence
 of a game-protocol bug. The timed wait now sends ordinary wake input every
 15 seconds on a physical joiner; no lock or security settings are changed.
-The same 105-second scenario is being repeated twice in
-`late-arrival-retroid-host` before proceeding with remaining scenarios.
+The same 105-second scenario passed twice in `late-arrival-retroid-host`.
+
+A later Retroid precondition failure showed that WAKEUP does not refresh the
+idle timer when its display is already on. Verified through Android power
+state, ordinary Shift input does refresh it. Case preparation now wakes,
+refreshes user activity, and verifies the lock screen has dismissed; the
+long launcher wait uses Shift as well. The restore-stall scenario then passed.
+
+The D1 level-transition fixture reached level 2 but assumed touch controls were
+enabled. Retroid defaults to controller controls, so its attached overlay was
+correctly inactive. This touch-recovery fixture now explicitly enables touch
+controls before launch and also checks flight input after the transition.
+The full fixture passed afterward. UI introspection is now archived per case.
+
+D2's initial briefing-loss invocation was rejected before launch because the
+runner passed its base mission as a custom mission argument. The runner now
+omits redundant base-mission arguments. Suite validation accepts the bundled
+First Strike and Counterstrike campaigns, and restore evidence uses the
+selected campaign's save directory. These changes retain the existing failure
+and recovery assertions; the cross-engine cases still need execution proof.
 
 ### Earlier blocked attempt and supplemental checks
 
@@ -117,7 +260,8 @@ the engine started. The scratch runner now waits after waking.
 Retroid D1 passed all 62 launch/automap/background-resume steps on the first
 properly driven attempt (`solo-d1-retry`, 17:49 UTC). D2's 95-step pass finished
 at 17:47 UTC. No confirmed product defect has been established. The requested
-multi-hour paired execution phase remains incomplete pending Samsung unlock.
+multi-hour paired execution phase was incomplete at that checkpoint; the user
+unlocked Samsung at 17:59 UTC and execution resumed.
 
 Installed diagnostic APK SHA-256:
 `0f8bfb39c617e893c509e363e421abad6f270c1c671e2888a63a5b66c34ea922`.

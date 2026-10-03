@@ -4728,8 +4728,11 @@ extern "C" void game_automate_tick(void)
 					     Player_num, client_round, (unsigned long long) coop_world_visit_current(), (unsigned long long) request_visit,
 					     (long long) GameTime64, (long long) request_time, count, Players[Player_num].secondary_ammo[HOMING_INDEX], homing,
 					     Players[Player_num].score, score, coop_briefing_presentations_started(), presentations);
+					/* A late join starts with its own simulation clock. The first
+					 * authoritative rewind aligns it; later rounds must move it back */
+					const bool clock_aligned = multi_i_am_master() || client_round > 1;
 					if (!client_round || coop_world_visit_current() != request_visit + 1 || Current_level_num != level ||
-					    GameTime64 >= request_time - i2f(10) || (client_round > 1 && GameTime64 >= last_client_restored) ||
+					    (clock_aligned && GameTime64 >= request_time - i2f(10)) || (client_round > 1 && GameTime64 >= last_client_restored) ||
 					    Control_center_destroyed || game_is_time_paused() || Players[Player_num].secondary_ammo[HOMING_INDEX] != homing ||
 					    Players[Player_num].score != score || Netgame.CoopBriefings != briefings ||
 					    coop_briefing_presentations_started() != presentations || (multi_i_am_master() && count < 1) ||

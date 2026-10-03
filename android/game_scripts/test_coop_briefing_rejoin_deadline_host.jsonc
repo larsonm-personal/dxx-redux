@@ -1,0 +1,16 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    // A late reader must follow the original deadline even if it expires before this script is armed
+    {
+        "action": "wait_for",
+        "timeout_ms": 25000,
+        "expect": {
+            "coop_briefing.active": false,
+            "coop_briefing.phase": 0,
+            "coop_briefing.launch_reason": 3,
+            "coop_briefing.presentations_started": 1,
+            "in_game": true,
+            "time_paused": false,
+        },
+    },
+]

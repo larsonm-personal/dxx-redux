@@ -44,7 +44,7 @@ def write_json(path, value):
 def cases():
     result = []
     for content, game, mission in (("d1", "d1", ""), ("d2", "d2", "d2"), ("d1d2", "d2", "descent")):
-        base = ["-Game", game] + (["-MissionFile", mission] if mission else [])
+        base = ["-Game", game] + (["-MissionFile", mission] if content == "d1d2" else [])
         scenarios = {
             "baseline": [],
             "briefing-host-loss": ["-Briefings", "-BriefingFailure", "host"],
@@ -68,12 +68,38 @@ def cases():
             "restore-client-loss": ["-RestoreFailure", "client"],
             "restore-host-loss": ["-RestoreFailure", "host"],
             "restore-sync-stall": ["-RestoreFailure", "sync_stalled"],
+            "saved-cancel-churn": [
+                "-SavedLateJoin",
+                "-SavedLateJoinCancelCount",
+                "3",
+                "-SavedLateJoinRejoinCount",
+                "2",
+            ],
+            "saved-level5-return": ["-SavedLateJoin", "-InitialLevel", "5", "-SavedLateJoinRejoinCount", "2"],
+            "saved-status-return": [
+                "-SavedLateJoin",
+                "-SavedLateJoinRejoinCount",
+                "1",
+                "-RestoreStatus",
+                "-RestoreStatusFunctionalOnly",
+            ],
+            "saved-partial-cancel-return": [
+                "-SavedLateJoin",
+                "-SavedLateJoinAbortTransfer",
+                "-SavedLateJoinRejoinCount",
+                "1",
+            ],
+            "saved-checkpoint-first-return": ["-SavedLateJoin", "-RestoreStatus", "-RestoreStatusFunctionalOnly"],
+            "saved-client-rewind": ["-SavedLateJoin", "-ClientRewind"],
             "client-rewind": ["-ClientRewind"],
         }
+        for failure in ("client", "host", "sync_stalled", "load_client", "load_host"):
+            scenarios[f"restore-{failure}-resume"] = ["-RestoreFailure", failure, "-RestoreLossResume"]
         if content != "d1d2":
             scenarios["host-migration"] = ["-HostMigration"]
         if content != "d2":
             scenarios["level-transition"] = ["-D1LevelTransition"]
+            scenarios["saved-level-transition"] = ["-SavedLateJoin", "-D1LevelTransition"]
         for name, flags in scenarios.items():
             result.append({"id": f"{content}-{name}", "kind": "suite", "args": base + flags})
         result.append({"id": f"{content}-client-churn", "kind": "churn", "game": game, "mission": mission})
@@ -274,7 +300,23 @@ class Device:
         name = f"campaign-{self.serial}-{self.automation_number}.jsonc"
         path = self.output / name
         if isinstance(steps, Path):
-            shutil.copyfile(steps, path)
+            parsed = subprocess.run(
+                [
+                    "pwsh",
+                    "-NoProfile",
+                    "-Command",
+                    ". './android/helpers/jsonc.ps1'; "
+                    "ConvertTo-Json -InputObject (Read-JsoncFile -Path $env:DXX_CAMPAIGN_JSONC_FILE) -Depth 30",
+                ],
+                cwd=ROOT,
+                env=dict(os.environ, DXX_CAMPAIGN_JSONC_FILE=str(steps)),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                timeout=20,
+                check=True,
+            )
+            write_json(path, json.loads(parsed.stdout))
         else:
             write_json(path, steps)
         self.call("push", str(path), f"/data/local/tmp/{name}")
@@ -300,7 +342,7 @@ class Device:
                     raw + "\n", encoding="utf-8"
                 )
 
-    def launch(self, case, host=True, address=None):
+    def launch(self, case, host=True, address=None, callsign=None):
         args = {
             "game": case["game"],
             "mission": case["mission"],
@@ -309,7 +351,7 @@ class Device:
             "max_players": 2,
             "difficulty": 0,
             "level_num": 1,
-            "callsign": "ChaosRP" if host else "ChaosS21",
+            "callsign": callsign or ("ChaosRP" if host else "ChaosS21"),
             "coop_briefings": case.get("briefings", False),
         }
         if address:
@@ -520,8 +562,7 @@ def lifecycle(case, devices):
             )
             write_json(target.output / "surviving-host.json", survivor)
         target.start_setup()
-        target.mp("lan_discover", callsign="ChaosRP" if target is host else "ChaosS21")
-        target.mp("lan_join_ip", host_addr=peer.ip())
+        target.launch(case, host=False, address=peer.ip(), callsign="ChaosRP" if target is host else "ChaosS21")
     verify_traffic(devices)
     hold_and_observe(devices, 8)
     verify_traffic(devices)
@@ -533,10 +574,15 @@ def churn(case, devices):
     host, client = devices
     # Cross both sides of the 15-second timeout and exceed the eight native slots
     for cycle, duration in enumerate((0.25, 1, 3, 8, 16, 0.25, 8, 1, 16, 3), start=1):
-        print(f"{utc()} reconnect cycle {cycle}, outage={duration}s", flush=True)
+        join_path = "launcher IP discovery" if cycle % 2 else "direct game join"
+        print(f"{utc()} reconnect cycle {cycle}, outage={duration}s, path={join_path}", flush=True)
         timed_fault({"fault": "kill", "duration": duration}, client)
         client.start_setup()
-        client.launch(case, host=False, address=host.ip())
+        if cycle % 2:
+            client.mp("lan_discover", callsign="ChaosS21")
+            client.mp("lan_join_ip", host_addr=host.ip())
+        else:
+            client.launch(case, host=False, address=host.ip())
         verify_traffic(devices)
         states = pair_states(devices)
         for state in states:
@@ -671,7 +717,8 @@ def lobby_case(case, devices):
 
 
 def run_suite(case, devices, directory):
-    env = dict(os.environ, DXX_TEST_PACKAGE=PACKAGE)
+    started = time.time()
+    env = dict(os.environ, DXX_TEST_PACKAGE=PACKAGE, DXX_CAMPAIGN_EVIDENCE_DIR=str(directory))
     command = [
         "pwsh",
         "-NoProfile",
@@ -696,7 +743,19 @@ def run_suite(case, devices, directory):
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
         )
         try:
-            process.wait(timeout=900)
+            deadline = time.monotonic() + 900
+            while process.poll() is None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise subprocess.TimeoutExpired(command, 900)
+                try:
+                    process.wait(timeout=min(10, remaining))
+                except subprocess.TimeoutExpired:
+                    # Faulted peers can wait in the launcher for several minutes
+                    # Refresh ordinary user activity without changing lock settings
+                    for device in devices:
+                        if not device.shell("pidof", f"{PACKAGE}:game", check=False):
+                            device.shell("input", "keyevent", "KEYCODE_SHIFT_LEFT")
         finally:
             if process.poll() is None:
                 if os.name == "nt":
@@ -710,6 +769,9 @@ def run_suite(case, devices, directory):
         source = ROOT / "temp" / name
         if source.exists():
             shutil.copy2(source, directory / name)
+    for source in (ROOT / "temp").glob("coop-*.json"):
+        if source.stat().st_mtime >= started:
+            shutil.copy2(source, directory / source.name)
     if process.returncode:
         raise RuntimeError(f"LAN suite exited {process.returncode}; see runner.log")
 

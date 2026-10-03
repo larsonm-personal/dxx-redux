@@ -39,6 +39,21 @@ static void net_udp_join_cancel_transfer(void)
 	join_test_hold_until = 0;
 }
 
+static void net_udp_join_confirm_player(int player_num)
+{
+	if (!join_transfer_committed || !UDP_sync_player.join_attempt ||
+	    player_num != UDP_sync_player.player.connected ||
+	    UDP_sync_player.join_visit != coop_world_visit_current()) return;
+	/* Gameplay confirmation ends the join envelope's lifetime. Later level or
+	 * restore SYNC packets belong to the established session, not this attempt */
+	COOPLOG("join transfer retired: player=%d visit=%llu", player_num,
+	        (unsigned long long) UDP_sync_player.join_visit);
+	UDP_sync_player.join_attempt = 0;
+	UDP_sync_player.join_visit = 0;
+	join_transfer_committed = 0;
+	join_test_hold_until = 0;
+}
+
 static void net_udp_join_wait_reset(void)
 {
 	join_query_token = (uint32_t) generate_token();
