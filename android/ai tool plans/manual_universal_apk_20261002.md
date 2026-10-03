@@ -16,5 +16,8 @@
 - Fixed SDK package discovery for the new slash-separated Android CLI package listing and extended the SDK provisioning fixture
 - Scoped mixed-language formatting/lint, actionlint, ShellCheck and PowerShell parsing passed
 - Local Gradle configuration succeeded in CI mode with an intentionally unusable production keystore; production GitHub mode still rejected a missing keystore
-- Hosted Android tooling passed on both Windows and Ubuntu: run 37035774947
-- The first complete hosted APK build exposed an incorrect graphics-library filename in the verification step; corrected it and dispatched run 37035774982
+- Hosted Android tooling passed on both Windows and Ubuntu, including after integrating the current cmake branch: runs 37035774947 and 37037160155
+- The first complete hosted APK build exposed an incorrect graphics-library filename in the verification step; corrected it and run 37035774982 passed, uploaded the APK, and saved dependencies
+- Downloaded that artifact, verified its checksum and all ABI library payloads, and signed it with a private temporary key outside the repository; apksigner verification passed and the key was deleted
+- Final current-source APK validation: run 37037829265
+- Production signing secrets were not configured; the full four-distribution runner and on-device gameplay were outside this workflow test
