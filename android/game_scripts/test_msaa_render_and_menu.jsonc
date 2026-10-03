@@ -1,3 +1,4 @@
+// Accept graphics trials before slow GL probes; the real five-second deadline stays active
 [
     {
         "_info": {
@@ -238,6 +239,28 @@
         },
     },
     {
+        "action": "controller_input",
+        "controller_keys": ["DLEFT", "A"],
+        "post_delay_ms": 50,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 5000,
+        "expect": {
+            "graphics_safety.phase": "idle",
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "graphics_safety.accepted.MsaaLevel": "2",
+            "msaa.create_complete": "true",
+            "msaa.effective_samples": {
+                "gte": 2,
+            },
+        },
+    },
+    {
         "action": "set_debug",
         "field": "msaa_color_probe",
         "value": "2",
@@ -260,47 +283,6 @@
             "msaa_probe.stages.offscreen_resolve.passed": "true",
             "msaa_probe.stages.window_resolve.passed": "true",
             "msaa_probe.state_restored": "true",
-        },
-    },
-    {
-        "action": "controller_input",
-        "key": "DLEFT",
-        "pressed": true,
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "controller_input",
-        "key": "DLEFT",
-        "pressed": false,
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "controller_input",
-        "key": "A",
-        "pressed": true,
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "controller_input",
-        "key": "A",
-        "pressed": false,
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "wait_for",
-        "timeout_ms": 5000,
-        "expect": {
-            "graphics_safety.phase": "idle",
-        },
-    },
-    {
-        "action": "assert",
-        "expect": {
-            "graphics_safety.accepted.MsaaLevel": "2",
-            "msaa.create_complete": "true",
-            "msaa.effective_samples": {
-                "gte": 2,
-            },
         },
     },
     {
@@ -460,47 +442,8 @@
         },
     },
     {
-        "action": "set_debug",
-        "field": "msaa_color_probe",
-        "value": "4",
-    },
-    {
-        "action": "assert",
-        "expect": {
-            "msaa_probe.passed": "true",
-            "msaa_probe.first_failure": "",
-            "msaa_probe.effective_samples": {
-                "gte": 2,
-            },
-            "msaa_probe.stages.offscreen_control.passed": "true",
-            "msaa_probe.stages.window_control.passed": "true",
-            "msaa_probe.stages.offscreen_resolve.passed": "true",
-            "msaa_probe.stages.window_resolve.passed": "true",
-            "msaa_probe.state_restored": "true",
-        },
-    },
-    {
         "action": "controller_input",
-        "key": "DLEFT",
-        "pressed": true,
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "controller_input",
-        "key": "DLEFT",
-        "pressed": false,
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "controller_input",
-        "key": "A",
-        "pressed": true,
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "controller_input",
-        "key": "A",
-        "pressed": false,
+        "controller_keys": ["DLEFT", "A"],
         "post_delay_ms": 50,
     },
     {
@@ -518,6 +461,26 @@
             "msaa.effective_samples": {
                 "gte": 2,
             },
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "msaa_color_probe",
+        "value": "4",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "msaa_probe.passed": "true",
+            "msaa_probe.first_failure": "",
+            "msaa_probe.effective_samples": {
+                "gte": 2,
+            },
+            "msaa_probe.stages.offscreen_control.passed": "true",
+            "msaa_probe.stages.window_control.passed": "true",
+            "msaa_probe.stages.offscreen_resolve.passed": "true",
+            "msaa_probe.stages.window_resolve.passed": "true",
+            "msaa_probe.state_restored": "true",
         },
     },
     {
@@ -794,26 +757,7 @@
     },
     {
         "action": "controller_input",
-        "pressed": true,
-        "key": "DLEFT",
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "controller_input",
-        "pressed": false,
-        "key": "DLEFT",
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "controller_input",
-        "pressed": true,
-        "key": "A",
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "controller_input",
-        "pressed": false,
-        "key": "A",
+        "controller_keys": ["DLEFT", "A"],
         "post_delay_ms": 50,
     },
     {
@@ -858,7 +802,7 @@
     {
         "field": "graphics_option",
         "action": "set_debug",
-        "value": "main_view_fov:0",
+        "value": "main_view_fov:120",
     },
     {
         "action": "key",
@@ -938,26 +882,7 @@
     },
     {
         "action": "controller_input",
-        "pressed": true,
-        "key": "DLEFT",
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "controller_input",
-        "pressed": false,
-        "key": "DLEFT",
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "controller_input",
-        "pressed": true,
-        "key": "A",
-        "post_delay_ms": 50,
-    },
-    {
-        "action": "controller_input",
-        "pressed": false,
-        "key": "A",
+        "controller_keys": ["DLEFT", "A"],
         "post_delay_ms": 50,
     },
     {

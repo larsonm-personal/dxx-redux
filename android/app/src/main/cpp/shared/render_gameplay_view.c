@@ -155,9 +155,9 @@ void android_render_collect_fov_visibility(fix eye_offset, int window_num)
 		codes = rotate_list(8, Segments[segnum].verts);
 		if (!codes.uand && (Viewer->type != OBJ_ROBOT
 #ifndef DXX_BUILD_DESCENT_II
-		                   || GameCfg.ClassicDepth
+		                    || GameCfg.ClassicDepth
 #endif
-		                   )) {
+		                    )) {
 #ifdef DXX_BUILD_DESCENT_II
 			if (!Automap_visited[segnum])
 				escort_route_notify_automap_changed(segnum);
@@ -218,9 +218,18 @@ void android_render_visibility_verify_set(int enabled)
 	visibility_checks = visibility_failures = 0;
 }
 
-int android_render_visibility_verify_enabled(void) { return visibility_verify && Newdemo_state == ND_STATE_NORMAL; }
-unsigned int android_render_visibility_verify_checks(void) { return visibility_checks; }
-unsigned int android_render_visibility_verify_failures(void) { return visibility_failures; }
+int android_render_visibility_verify_enabled(void)
+{
+	return visibility_verify && Newdemo_state == ND_STATE_NORMAL;
+}
+unsigned int android_render_visibility_verify_checks(void)
+{
+	return visibility_checks;
+}
+unsigned int android_render_visibility_verify_failures(void)
+{
+	return visibility_failures;
+}
 
 void android_render_visibility_verify_begin(void)
 {

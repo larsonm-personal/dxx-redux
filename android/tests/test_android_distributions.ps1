@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-# Build and inspect the three complete APKs without contacting release services
+# Build and inspect the complete APK distributions without contacting release services
 param([switch]$NoBuild)
 
 $ErrorActionPreference = 'Stop'
@@ -26,7 +26,8 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $distributions = @(
     @{ Name = 'play'; Id = 'com.dxxredux.app'; Minimum = $versions.CURRENT_MIN_SDK; Target = $versions.CURRENT_TARGET_SDK; Properties = @('-PgithubRelease=false', '-PlegacyRelease=false') },
     @{ Name = 'github'; Id = 'com.dxxredux.app.github'; Minimum = $versions.CURRENT_MIN_SDK; Target = $versions.CURRENT_TARGET_SDK; Properties = @('-PgithubRelease=true', '-PlegacyRelease=false') },
-    @{ Name = 'legacy'; Id = 'com.dxxredux.app.github.legacy'; Minimum = $versions.LEGACY_MIN_SDK; Target = $versions.LEGACY_TARGET_SDK; Properties = @('-PgithubRelease=true', '-PlegacyRelease=true') }
+    @{ Name = 'legacy'; Id = 'com.dxxredux.app.github.legacy'; Minimum = $versions.LEGACY_MIN_SDK; Target = $versions.LEGACY_TARGET_SDK; Properties = @('-PgithubRelease=true', '-PlegacyRelease=true') },
+    @{ Name = 'ci'; Id = 'com.dxxredux.app.ci'; Minimum = $versions.CURRENT_MIN_SDK; Target = $versions.CURRENT_TARGET_SDK; Properties = @('-PciApk=true', '-PlegacyRelease=false') }
 )
 try {
     foreach ($distribution in $distributions) {
