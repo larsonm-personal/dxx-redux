@@ -4,6 +4,7 @@
     {
         "_info": {
             "_standalone": false,
+            "_owner": "test_fov_demo_compatibility",
             "games": ["d1", "d2"],
             "vars": {
                 "d1": {
