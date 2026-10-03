@@ -1907,15 +1907,23 @@ function Watch-AutomationResult {
                         $lockScreen = $true
                     }
                     Write-Status "Background marker $backgroundMarker detected -- cycling app to background" "Yellow"
-                    Start-Sleep -Seconds 1
                     $graphicsBefore = $null
                     if ($line -match 'require_graphics_challenge=(true|1)') {
-                        $graphicsBefore = (Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', 'files/graphics_safety.json')) -join "`n" | ConvertFrom-Json
+                        # The marker can precede the first Android popup draw
+                        # Do not spend the live five-second challenge on an unconditional delay
+                        $graphicsArmWait = [System.Diagnostics.Stopwatch]::StartNew()
+                        do {
+                            $graphicsBefore = (Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', 'files/graphics_safety.json')) -join "`n" | ConvertFrom-Json
+                            if ($graphicsBefore.attempt.phase -eq 3) { break }
+                            Start-Sleep -Milliseconds 100
+                        } while ($graphicsArmWait.ElapsedMilliseconds -lt 5000)
                         if ($graphicsBefore.attempt.phase -ne 3) {
                             Write-Status 'FAIL: Background marker did not reach a live graphics challenge' 'Red'
                             return $false
                         }
                         Write-Status "Graphics challenge active at background entry: $($graphicsBefore.attempt.trial_id)"
+                    } else {
+                        Start-Sleep -Seconds 1
                     }
                     # Press HOME to send app to background
                     Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_HOME") | Out-Null

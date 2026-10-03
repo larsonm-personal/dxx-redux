@@ -17,6 +17,21 @@ import android.widget.TextView
 import org.json.JSONObject
 import kotlin.math.ceil
 
+internal fun graphicsRestoreTimeoutMs(state: JSONObject): Long {
+    val accepted = state.optJSONObject("accepted") ?: return 3000L
+    val candidate = state.optJSONObject("candidate") ?: return 3000L
+    // Context/shader reconstruction needs more time than a live option rollback
+    // Keep mode keys synchronized with apply_snapshot in android_graphics_safety.cpp
+    return if (listOf("ResolutionX", "ResolutionY", "AspectX", "AspectY", "ColorDepth").any {
+            accepted.optInt(it) != candidate.optInt(it)
+        }
+    ) {
+        10000L
+    } else {
+        3000L
+    }
+}
+
 /** Uses Android's compositor and clock, independently of the game's EGL/event loop */
 internal class GraphicsConfirmationOverlay(
     context: Context,
@@ -27,11 +42,6 @@ internal class GraphicsConfirmationOverlay(
     private val releaseInput: () -> Unit,
     private val recoverProcess: (String) -> Unit,
 ) : FrameLayout(context) {
-    private companion object {
-        // EGL and shader recreation can exceed one second even when recovery succeeds
-        const val RESTORE_TIMEOUT_MS = 3000L
-    }
-
     private val handler = Handler(Looper.getMainLooper())
     private val title = TextView(context)
     private val details = TextView(context)
@@ -42,6 +52,7 @@ internal class GraphicsConfirmationOverlay(
     private var preparing = false
     private var restoring = false
     private var restoreStarted = 0L
+    private var restoreTimeoutMs = 3000L
     private var selectedOk = false
     private var axesReady = false
     private var axisX = 0
@@ -142,6 +153,7 @@ internal class GraphicsConfirmationOverlay(
             axisY = 0
             armPosted = false
             restoreStarted = 0L
+            restoreTimeoutMs = graphicsRestoreTimeoutMs(state)
             cancel.text = "Cancel (5)"
             firstDrawCancelText = ""
             visibility = View.VISIBLE
@@ -194,7 +206,7 @@ internal class GraphicsConfirmationOverlay(
                     cancel.text = "Cancel (${ceil(remaining.coerceAtLeast(0L) / 1000.0).toInt()})"
                     if (remaining <= 0L) choose(false, "timeout")
                 }
-                if (restoring && now - restoreStarted >= RESTORE_TIMEOUT_MS) {
+                if (restoring && now - restoreStarted >= restoreTimeoutMs) {
                     recoverProcess(
                         "Graphics settings could not be restored in time. The game was closed; return to the launcher to recover the last accepted settings",
                     )

@@ -49,6 +49,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var lobbyLatencyOnly = false
     private var lanQrOnly = false
     private var sliderNavigationOnly = false
+    private var graphicsCapabilitiesOnly = false
 
     override fun onCreate(arguments: Bundle?) {
         if (arguments?.getString("suite") == "engine_query") {
@@ -58,6 +59,7 @@ class RecoveryInstrumentation : Instrumentation() {
         lobbyLatencyOnly = arguments?.getString("suite") == "lobby_latency"
         lanQrOnly = arguments?.getString("suite") == "lan_qr"
         sliderNavigationOnly = arguments?.getString("suite") == "slider_navigation"
+        graphicsCapabilitiesOnly = arguments?.getString("suite") == "graphics_capabilities"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         coopSessionOnly = arguments?.getString("suite") == "coop_session"
         super.onCreate(arguments)
@@ -67,9 +69,16 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
-            if (sliderNavigationOnly) {
-                SliderNavigationChecks(this).run()
-                result.putString("stream", "PASS: controller slider navigation and adjustment\n")
+            if (sliderNavigationOnly || graphicsCapabilitiesOnly) {
+                SliderNavigationChecks(this).run(graphicsCapabilitiesOnly)
+                result.putString(
+                    "stream",
+                    if (graphicsCapabilitiesOnly) {
+                        "PASS: graphics capability controls and details\n"
+                    } else {
+                        "PASS: controller slider navigation and adjustment\n"
+                    },
+                )
                 finish(Activity.RESULT_OK, result)
                 return
             }

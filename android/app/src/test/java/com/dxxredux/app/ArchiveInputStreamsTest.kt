@@ -10,6 +10,8 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.SequenceInputStream
 import java.nio.file.Files
+import java.util.zip.CRC32
+import java.util.zip.ZipEntry
 import java.util.zip.ZipException
 import java.util.zip.ZipOutputStream
 
@@ -53,12 +55,89 @@ class ArchiveInputStreamsTest {
 
     @Test
     fun rejectsAnExcessiveSelfExtractorPreamble() {
-        val zeroStream =
-            object : InputStream() {
-                override fun read(): Int = 0
+        val archive = makeZip()
+        val source = sourceAtSize(ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES + 1 + archive.size, archive)
+        val stageDir = Files.createTempDirectory("dxx-zip-test-").toFile()
+        try {
+            val error =
+                assertThrows(ZipException::class.java) {
+                    openZipInputStreamSkippingPreamble(source, stageDir)
+                }
+            assertTrue(error.message.orEmpty().startsWith("ZIP preamble exceeds"))
+            assertTrue(stageDir.listFiles().orEmpty().isEmpty())
+        } finally {
+            stageDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun acceptsExactSelfExtractorPreambleLimit() {
+        val archive = makeZip()
+        val source = sourceAtSize(ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES + archive.size, archive)
+        openZipInputStreamSkippingPreamble(source).use { zip ->
+            assertEquals("DESCENT1.SOW", zip.nextEntry.name)
+            assertEquals("payload", zip.readBytes().toString(Charsets.US_ASCII))
+        }
+    }
+
+    @Test
+    fun extractsOrdinaryZipLargerThanPreambleLimitByDefault() {
+        val stageDir = Files.createTempDirectory("dxx-zip-test-").toFile()
+        val archive = stageDir.resolve("game-data.zip")
+        val payloadBytes = ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES + 1
+        val buffer = ByteArray(64 * 1024) { (it % 251).toByte() }
+        val crc = CRC32()
+        var remaining = payloadBytes
+        while (remaining > 0) {
+            val count = minOf(buffer.size.toLong(), remaining).toInt()
+            crc.update(buffer, 0, count)
+            remaining -= count
+        }
+        try {
+            ZipOutputStream(archive.outputStream()).use { zip ->
+                zip.putNextEntry(
+                    ZipEntry("descent.hog").apply {
+                        method = ZipEntry.STORED
+                        size = payloadBytes
+                        compressedSize = payloadBytes
+                        this.crc = crc.value
+                    },
+                )
+                remaining = payloadBytes
+                while (remaining > 0) {
+                    val count = minOf(buffer.size.toLong(), remaining).toInt()
+                    zip.write(buffer, 0, count)
+                    remaining -= count
+                }
+                zip.closeEntry()
+                zip.writeEntry("DESCENT1.SOW", "payload")
             }
-        assertThrows(ZipException::class.java) {
-            openZipInputStreamSkippingPreamble(zeroStream)
+            assertTrue(archive.length() > ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES)
+            archive.inputStream().use { input ->
+                openZipInputStreamSkippingPreamble(input, stageDir).use { zip ->
+                    val entry = zip.nextEntry
+                    assertEquals("descent.hog", entry.name)
+                    val budget = ExtractionBudget()
+                    budget.registerEntry(entry.size, entry.compressedSize, entry.name)
+                    val extractedCrc = CRC32()
+                    var extractedBytes = 0L
+                    while (true) {
+                        val count = zip.read(buffer)
+                        if (count < 0) break
+                        extractedBytes += count
+                        budget.accountActual(count, extractedBytes, entry.compressedSize, entry.name)
+                        extractedCrc.update(buffer, 0, count)
+                    }
+                    assertEquals(payloadBytes, extractedBytes)
+                    assertEquals(crc.value, extractedCrc.value)
+                    assertEquals("DESCENT1.SOW", zip.nextEntry.name)
+                    assertEquals("payload", zip.readBytes().toString(Charsets.US_ASCII))
+                    assertEquals(null, zip.nextEntry)
+                }
+            }
+            assertEquals(listOf(archive), stageDir.listFiles().orEmpty().toList())
+        } finally {
+            stageDir.deleteRecursively()
         }
     }
 
@@ -68,9 +147,9 @@ class ArchiveInputStreamsTest {
         val stageDir = Files.createTempDirectory("dxx-zip-test-").toFile()
         try {
             assertThrows(ZipException::class.java) {
-                openZipInputStreamSkippingPreamble(source, stageDir)
+                openZipInputStreamSkippingPreamble(source, stageDir, maxSourceBytes = 64 * 1024L)
             }
-            assertEquals(ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES + 1, source.bytesRead)
+            assertEquals(64 * 1024L + 1, source.bytesRead)
             assertTrue(source.closed)
             assertTrue(stageDir.listFiles().orEmpty().isEmpty())
         } finally {
@@ -81,10 +160,10 @@ class ArchiveInputStreamsTest {
     @Test
     fun acceptsExactStreamingLimitAndCleansStageOnClose() {
         val archive = makeZip()
-        val source = sourceAtSize(ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES, archive)
+        val source = sourceAtSize(64 * 1024L, archive)
         val stageDir = Files.createTempDirectory("dxx-zip-test-").toFile()
         try {
-            openZipInputStreamSkippingPreamble(source, stageDir).use { zip ->
+            openZipInputStreamSkippingPreamble(source, stageDir, maxSourceBytes = 64 * 1024L).use { zip ->
                 assertEquals("DESCENT1.SOW", zip.nextEntry.name)
                 assertEquals("payload", zip.readBytes().toString(Charsets.US_ASCII))
                 assertEquals(1, stageDir.listFiles().orEmpty().size)
@@ -98,12 +177,12 @@ class ArchiveInputStreamsTest {
     @Test
     fun rejectsOneByteOverStreamingLimitAndCleansStage() {
         val archive = makeZip()
-        val exact = sourceAtSize(ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES, archive)
+        val exact = sourceAtSize(64 * 1024L, archive)
         val source = SequenceInputStream(exact, ByteArrayInputStream(byteArrayOf(0)))
         val stageDir = Files.createTempDirectory("dxx-zip-test-").toFile()
         try {
             assertThrows(ZipException::class.java) {
-                openZipInputStreamSkippingPreamble(source, stageDir)
+                openZipInputStreamSkippingPreamble(source, stageDir, maxSourceBytes = 64 * 1024L)
             }
             assertTrue(stageDir.listFiles().orEmpty().isEmpty())
         } finally {

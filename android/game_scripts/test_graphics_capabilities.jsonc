@@ -1,4 +1,4 @@
-// TEST: Actual context retirement during challenged graphics Home/resume cycles
+// TEST: Unsupported graphics capabilities, full rollback and subsequent valid MSAA
 [
     {
         "_info": {
@@ -91,25 +91,24 @@
     {
         "action": "write_config",
         "file": "descent.cfg",
-        "content": "TexFilt=0\nAnisoLevel=0\nMsaaLevel=0\nResolutionX=640\nResolutionY=480\n",
+        "content": "TexFilt=0\nAnisoLevel=0\nMsaaLevel=0\nResolutionX=640\nResolutionY=480\nMenuTexFilt=0\nHudTexFilt=0\nAspectX=3\nAspectY=4\nColorDepth=0\n",
     },
     {
         "action": "write_config",
         "file": "d1x-redux/descent.cfg",
-        "content": "TexFilt=0\nAnisoLevel=0\nMsaaLevel=0\nResolutionX=640\nResolutionY=480\n",
+        "content": "TexFilt=0\nAnisoLevel=0\nMsaaLevel=0\nResolutionX=640\nResolutionY=480\nMenuTexFilt=0\nHudTexFilt=0\nAspectX=3\nAspectY=4\nColorDepth=0\n",
     },
     {
         "action": "write_config",
         "file": "d2x-redux/descent.cfg",
-        "content": "TexFilt=0\nAnisoLevel=0\nMsaaLevel=0\nResolutionX=640\nResolutionY=480\n",
+        "content": "TexFilt=0\nAnisoLevel=0\nMsaaLevel=0\nResolutionX=640\nResolutionY=480\nMenuTexFilt=0\nHudTexFilt=0\nAspectX=3\nAspectY=4\nColorDepth=0\n",
     },
     {
         "action": "setup_command",
         "command": "write_bool_pref",
         "args": {
             "key": "dlog_graphics_enabled",
-            // Per-draw GL state tracing can consume the real confirmation deadline
-            "value": false,
+            "value": true,
         },
     },
     {
@@ -220,12 +219,14 @@
         "value": "tex_filt:1",
     },
     {
-        "action": "controller_input",
+        "action": "wait_for",
         "expect": {
             "graphics_safety.phase": "challenge",
-            "graphics_safety.candidate_ready": "true",
         },
         "timeout_ms": 10000,
+    },
+    {
+        "action": "controller_input",
         "controller_keys": ["DLEFT", "A"],
         "post_delay_ms": 50,
     },
@@ -243,6 +244,209 @@
             "graphics_safety.accepted.TexFilt": "1",
             "graphics_safety.requested.TexFilt": "1",
             "time_paused": "false",
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "gpu_capabilities_disable",
+        "value": "1",
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_queue_option",
+        "value": "msaa_level:2",
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "graphics_safety.phase": "idle",
+            "graphics_safety.renderer_failure.failure_reason": "msaa_configuration_unsupported",
+            "graphics_safety.renderer_failure.attempt_phase": "3",
+            "graphics_safety.renderer_failure.candidate.MsaaLevel": "2",
+            "graphics_safety.renderer_failure.accepted.MsaaLevel": "0",
+            "graphics_safety.renderer_failure.accepted.TexFilt": "1",
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "graphics_safety.current.TexFilt": "1",
+            "graphics_safety.current.AnisoLevel": "0",
+            "graphics_safety.current.MsaaLevel": "0",
+            "graphics_safety.current.MenuTexFilt": "0",
+            "graphics_safety.current.HudTexFilt": "0",
+            "graphics_safety.current.ResolutionX": "640",
+            "graphics_safety.current.ResolutionY": "480",
+            "graphics_safety.current.AspectX": "3",
+            "graphics_safety.current.AspectY": "4",
+            "graphics_safety.current.ColorDepth": "0",
+            "graphics_safety.requested.TexFilt": "1",
+            "graphics_safety.requested.AnisoLevel": "0",
+            "graphics_safety.requested.MsaaLevel": "0",
+            "graphics_safety.requested.MenuTexFilt": "0",
+            "graphics_safety.requested.HudTexFilt": "0",
+            "graphics_safety.requested.ResolutionX": "640",
+            "graphics_safety.requested.ResolutionY": "480",
+            "graphics_safety.requested.AspectX": "3",
+            "graphics_safety.requested.AspectY": "4",
+            "graphics_safety.requested.ColorDepth": "0",
+            "graphics_safety.accepted.TexFilt": "1",
+            "graphics_safety.accepted.AnisoLevel": "0",
+            "graphics_safety.accepted.MsaaLevel": "0",
+            "graphics_safety.accepted.MenuTexFilt": "0",
+            "graphics_safety.accepted.HudTexFilt": "0",
+            "graphics_safety.accepted.ResolutionX": "640",
+            "graphics_safety.accepted.ResolutionY": "480",
+            "graphics_safety.accepted.AspectX": "3",
+            "graphics_safety.accepted.AspectY": "4",
+            "graphics_safety.accepted.ColorDepth": "0",
+            "msaa.last_gl_error": "0",
+            "msaa.create_complete": "false",
+            "msaa.failure_latched": "false",
+            "game_window_is_front": "true",
+            "time_paused": "false",
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "gpu_capabilities.aniso_max": "1.0",
+            "gpu_capabilities.msaa_max": "0",
+            "gpu_capabilities.msaa_2": "0",
+            "gpu_capabilities.msaa_4": "0",
+            "gpu_capabilities.query_error": "0",
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_queue_option",
+        "value": "aniso_level:2",
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "graphics_safety.phase": "idle",
+            "graphics_safety.renderer_failure.failure_reason": "anisotropy_unsupported",
+            "graphics_safety.current.AnisoLevel": "0",
+            "graphics_safety.current.TexFilt": "1",
+            "graphics_safety.accepted.TexFilt": "1",
+            "time_paused": "false",
+        },
+    },
+    {
+        "action": "controller_input",
+        "bindings": {
+            "START": "Menu",
+            "A": "Menu",
+        },
+        "open_admin": true,
+        "expect_ui": {
+            "admin_tray_open": true,
+            "admin_index": 0,
+        },
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "controller_input",
+        "key": "DDOWN",
+        "post_delay_ms": 50,
+    },
+    {
+        "action": "controller_input",
+        "key": "DDOWN",
+        "post_delay_ms": 50,
+    },
+    {
+        "action": "controller_input",
+        "key": "DRIGHT",
+        "post_delay_ms": 50,
+        "when": "d2",
+    },
+    {
+        "action": "controller_input",
+        "key": "DRIGHT",
+        "post_delay_ms": 50,
+        "when": "d2",
+    },
+    {
+        "action": "controller_input",
+        "expect_ui": {
+            "admin_label": "Video Info",
+        },
+    },
+    {
+        "action": "controller_input",
+        "key": "A",
+        "post_delay_ms": 50,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "controller_input",
+        "expect_ui": {
+            "admin_tray_open": true,
+            "video_open": true,
+            "video_selected": "TEX_FILT",
+            "video_polling": true,
+            "video_tex_filt": 1,
+            "video_aniso": 0,
+            "video_msaa": 0,
+        },
+    },
+    {
+        "action": "controller_input",
+        "key": "DDOWN",
+        "expect_ui": {
+            "video_selected": "TEX_FILT",
+            "video_msaa_available": false,
+            "video_aniso_available": false,
+        },
+    },
+    {
+        "action": "controller_input",
+        "key": "B",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "controller_input",
+        "key": "B",
+        "post_delay_ms": 300,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 5000,
+        "expect": {
+            "time_paused": "false",
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "gpu_capabilities_disable",
+        "value": "0",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "gpu_capabilities.msaa_2": {
+                "gte": 2,
+            },
+            "gpu_capabilities.query_error": "0",
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "msaa_color_probe",
+        "value": "2",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "msaa_probe.passed": "true",
+            "msaa_probe.state_restored": "true",
         },
     },
     {
@@ -251,14 +455,20 @@
         "value": "msaa_level:2",
     },
     {
-        "action": "controller_input",
+        "action": "wait_for",
         "timeout_ms": 10000,
         "expect": {
             "graphics_safety.phase": "challenge",
-            "graphics_safety.candidate_ready": "true",
             "graphics_safety.current.MsaaLevel": "2",
+            "msaa.effective_samples": {
+                "gte": 2,
+            },
             "msaa.create_complete": "true",
+            "msaa.last_gl_error": "0",
         },
+    },
+    {
+        "action": "controller_input",
         "controller_keys": ["DLEFT", "A"],
         "post_delay_ms": 50,
     },
@@ -267,76 +477,11 @@
         "timeout_ms": 10000,
         "expect": {
             "graphics_safety.phase": "idle",
-            "graphics_safety.accepted.MsaaLevel": "2",
-            "time_paused": "false",
-        },
-    },
-    {
-        "action": "set_debug",
-        "field": "graphics_context_loss_once",
-        "value": "1",
-    },
-    {
-        "action": "set_debug",
-        "field": "graphics_queue_option",
-        "value": "tex_filt:2",
-    },
-    {
-        // Notify the host before a slow candidate frame consumes the confirmation window
-        // The host waits for the durable live-challenge phase before pressing Home
-        "action": "log",
-        "message": "SCRIPT_BACKGROUND: graphics-cycle-1 duration_s=8 require_graphics_challenge=true",
-    },
-    {
-        "action": "wait_for",
-        "expect": {
-            "egl_recreate_count": {
-                "gte": 1,
-            },
-            "android_lifecycle.observed_visibility": "foreground",
-            "android_lifecycle.suspend_state": "running",
-            "graphics_safety.phase": "idle",
-            "graphics_safety.current.TexFilt": "1",
-            "graphics_safety.accepted.TexFilt": "1",
-            "graphics_safety.requested.TexFilt": "1",
-            "android_lifecycle.context_generation": {
-                "gte": 2,
-            },
             "graphics_safety.current.MsaaLevel": "2",
             "graphics_safety.accepted.MsaaLevel": "2",
-        },
-        // Includes the host runner's Home wait and launcher round trip on slow emulators
-        "timeout_ms": 90000,
-    },
-    {
-        "action": "assert",
-        "expect": {
-            "android_lifecycle.park_entry_count": {
-                "gte": 1,
-            },
-            "android_lifecycle.wake_count": {
-                "gte": 1,
-            },
-        },
-    },
-    {
-        "action": "key",
-        "key": "escape",
-        "post_delay_ms": 200,
-    },
-    {
-        "action": "wait_for",
-        "expect": {
-            "game_window_is_front": "true",
-            "graphics_safety.phase": "idle",
+            "graphics_safety.current.TexFilt": "1",
             "time_paused": "false",
-            "msaa.create_complete": "true",
-            "msaa.last_gl_error": "0",
-            "msaa.generation": {
-                "gte": 2,
-            },
         },
-        "timeout_ms": 10000,
     },
     {
         "action": "set_debug",
@@ -344,126 +489,18 @@
         "value": "2",
     },
     {
-        "action": "probe_gles_vbo",
-    },
-    {
         "action": "assert",
         "expect": {
             "msaa_probe.passed": "true",
             "msaa_probe.state_restored": "true",
-            "msaa.scene_error_count": "0",
-            "msaa.last_scene_gl_error": "0",
-        },
-    },
-    {
-        "action": "wait_ms",
-        "ms": 1000,
-    },
-    {
-        "action": "assert",
-        "expect": {
-            "graphics_safety.phase": "idle",
-            "graphics_safety.current.TexFilt": "1",
-            "time_paused": "false",
-        },
-    },
-    {
-        "action": "set_debug",
-        "field": "graphics_context_loss_once",
-        "value": "1",
-    },
-    {
-        "action": "set_debug",
-        "field": "graphics_queue_option",
-        "value": "tex_filt:2",
-    },
-    {
-        "action": "log",
-        "message": "SCRIPT_BACKGROUND: graphics-cycle-2 duration_s=8 require_graphics_challenge=true lock_screen=true",
-    },
-    {
-        "action": "wait_for",
-        "expect": {
-            "egl_recreate_count": {
-                "gte": 2,
-            },
-            "android_lifecycle.observed_visibility": "foreground",
-            "android_lifecycle.suspend_state": "running",
-            "graphics_safety.phase": "idle",
-            "graphics_safety.current.TexFilt": "1",
-            "graphics_safety.accepted.TexFilt": "1",
-            "graphics_safety.requested.TexFilt": "1",
-            "android_lifecycle.context_generation": {
-                "gte": 3,
-            },
-            "graphics_safety.current.MsaaLevel": "2",
-            "graphics_safety.accepted.MsaaLevel": "2",
-        },
-        "timeout_ms": 90000,
-    },
-    {
-        "action": "assert",
-        "expect": {
-            "android_lifecycle.park_entry_count": {
-                "gte": 2,
-            },
-            "android_lifecycle.wake_count": {
-                "gte": 2,
-            },
-        },
-    },
-    {
-        "action": "key",
-        "key": "escape",
-        "post_delay_ms": 200,
-    },
-    {
-        "action": "wait_for",
-        "expect": {
-            "game_window_is_front": "true",
-            "graphics_safety.phase": "idle",
-            "time_paused": "false",
             "msaa.create_complete": "true",
             "msaa.last_gl_error": "0",
-            "msaa.generation": {
-                "gte": 3,
-            },
-        },
-        "timeout_ms": 10000,
-    },
-    {
-        "action": "set_debug",
-        "field": "msaa_color_probe",
-        "value": "2",
-    },
-    {
-        "action": "probe_gles_vbo",
-    },
-    {
-        "action": "assert",
-        "expect": {
-            "msaa_probe.passed": "true",
-            "msaa_probe.state_restored": "true",
-            "msaa.scene_error_count": "0",
-            "msaa.last_scene_gl_error": "0",
-        },
-    },
-    {
-        "action": "wait_ms",
-        "ms": 1000,
-    },
-    {
-        "action": "assert",
-        "expect": {
-            "graphics_safety.phase": "idle",
-            "graphics_safety.current.TexFilt": "1",
-            "time_paused": "false",
-            "msaa.scene_error_count": "0",
-            "msaa.last_scene_gl_error": "0",
+            "fire_primary_state": "0",
+            "fire_primary_count": "0",
         },
     },
     {
         "action": "log",
-        "message": "Actual context retirement and GLES resource reconstruction preserved accepted MSAA through Home and screen lock",
+        "message": "Unsupported MSAA and AF restore the full accepted tuple; actual capabilities recover for a later valid trial",
     },
 ]

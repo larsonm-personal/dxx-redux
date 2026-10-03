@@ -33,6 +33,8 @@
 #include "android_lifecycle_actions.h"
 #include "jni_string.h"
 #include "android_graphics_safety.h"
+#include "android_gpu_capabilities.h"
+#include "ogl_msaa_android.h"
 
 #ifdef DXX_BUILD_DESCENT_II
 #include "d1_in_d2/d1_in_d2.h"
@@ -381,6 +383,7 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	{
 		char *root = android_consume_activity_string(env, thiz, "getGraphicsFilesRoot");
 		int ready = root && android_graphics_safety_initialize(root);
+		android_gpu_capabilities_set_root(root);
 		free(root);
 		if (!ready || (*env)->ExceptionCheck(env)) {
 			LOGE("Graphics safety storage initialization failed");
@@ -728,7 +731,7 @@ enum {
 	ANDROID_NETGAME_STATE_SIZE = 5,
 	ANDROID_COOP_ROBOT_STATE_SIZE = 5 + 2 * MAX_PLAYERS,
 	ANDROID_TEAMMATE_STATE_SIZE = 3 + 5 * MAX_PLAYERS,
-	ANDROID_VIDEO_STATE_SIZE = 39,
+	ANDROID_VIDEO_STATE_SIZE = 40,
 	ANDROID_WARP_STATE_SIZE = 2
 };
 
@@ -1549,6 +1552,10 @@ static void android_overlay_capture_video(jint *buf)
 	buf[36] = (jint) g_cache_png_read_ms;
 	buf[37] = (jint) g_cache_upload_ms;
 	buf[38] = (jint) g_cache_mask_ms;
+	/* Shared with VideoInfoOverlay: requested MSAA is [20], effective count is [39] */
+	struct android_ogl_msaa_diagnostics msaa_diagnostics = { 0 };
+	ogl_msaa_get_diagnostics(&msaa_diagnostics);
+	buf[39] = (jint) msaa_diagnostics.effective_samples;
 #else
 	buf[7] = (jint) grd_curscreen_w();
 	buf[8] = (jint) grd_curscreen_h();

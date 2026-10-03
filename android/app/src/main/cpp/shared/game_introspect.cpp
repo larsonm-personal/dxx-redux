@@ -31,6 +31,7 @@ extern "C" {
 #include "android_mission_assets.h"
 #include "android_log.h"
 #include "android_graphics_safety.h"
+#include "android_gpu_capabilities.h"
 #include "render_gameplay_view.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_level_preview.h"
@@ -2844,6 +2845,9 @@ extern "C" char *game_introspect_get_state(void)
 			json diagnostics;
 
 			ogl_msaa_get_diagnostics(&msaa);
+			char capabilities[8192];
+			android_gpu_capabilities_json(capabilities, sizeof(capabilities));
+			j["gpu_capabilities"] = json::parse(capabilities);
 			j["msaa_samples"] = ogl_msaa_samples;
 			j["msaa_max_samples"] = ogl_msaa_max_samples;
 			j["msaa_fbo_bound"] = (bool) g_msaa_fbo_bound;

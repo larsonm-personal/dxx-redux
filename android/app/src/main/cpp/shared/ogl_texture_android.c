@@ -204,7 +204,8 @@ void android_ogl_apply_anisotropy_all(struct android_ogl_texture_anisotropy_stat
 	GLfloat level = 1.0f;
 
 	if (!state || !state->texture_list_state.texture_list ||
-	    state->texture_list_state.texture_list_size <= 0 || !state->last_bound_tex)
+	    state->texture_list_state.texture_list_size <= 0 || !state->last_bound_tex ||
+	    state->maxanisotropy <= 1.0f)
 		return;
 
 	level = (state->aniso_level > 1 && state->maxanisotropy > 1.0f)

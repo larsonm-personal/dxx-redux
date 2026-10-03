@@ -24,6 +24,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.io.File
 import java.io.IOException
 import kotlin.math.roundToInt
@@ -59,6 +62,27 @@ fun GraphicsSettingsPage(
 
     val ctx = LocalContext.current
     val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
+    var requestedColorDepth by remember {
+        mutableIntStateOf((readConfigValue(filesDir, "ColorDepth") ?: "0").toIntOrNull() ?: 0)
+    }
+    var capabilities by remember { mutableStateOf<GraphicsCapabilities?>(null) }
+    var capabilityRefresh by remember { mutableIntStateOf(0) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) capabilityRefresh++
+            }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(requestedColorDepth, capabilityRefresh) {
+        capabilities = null
+        capabilities =
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                GraphicsCapabilities.read(filesDir, requestedColorDepth)
+            }
+    }
     val scrollState = rememberScrollState()
     val initialFocus = remember { FocusRequester() }
     val lastResolutionFocus = remember { FocusRequester() }
@@ -152,21 +176,25 @@ fun GraphicsSettingsPage(
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Color Depth --
-                        ColorDepthSection(filesDir = filesDir)
+                        ColorDepthSection(filesDir = filesDir, onColorDepthChanged = {
+                            capabilities = null
+                            requestedColorDepth =
+                                it
+                        })
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Anti-Aliasing (MSAA) --
-                        MsaaSection(filesDir = filesDir)
+                        MsaaSection(filesDir = filesDir, capabilities = capabilities)
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Anisotropic Filtering --
-                        AnisoSection(filesDir = filesDir)
+                        AnisoSection(filesDir = filesDir, capabilities = capabilities)
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
@@ -374,7 +402,10 @@ internal fun TextureFilterControl(
 }
 
 @Composable
-private fun ColorDepthSection(filesDir: File) {
+private fun ColorDepthSection(
+    filesDir: File,
+    onColorDepthChanged: (Int) -> Unit,
+) {
     val ctx = LocalContext.current
     val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
     val colorDepthOptions = listOf("16-bit (RGB565)" to "0", "24-bit (RGBA8888)" to "1")
@@ -395,6 +426,7 @@ private fun ColorDepthSection(filesDir: File) {
                 onClick = {
                     if (saveProtectedGraphicsSettings(ctx, filesDir, listOf("ColorDepth" to value))) {
                         colorDepth = value
+                        onColorDepthChanged(value.toInt())
                         bumpGraphicsSettingsGeneration(prefs)
                     }
                 },
@@ -414,7 +446,10 @@ private val MSAA_OPTIONS = listOf("Off" to 0, "2x" to 2, "4x" to 4)
 private val ANISO_OPTIONS = listOf("Off" to 0, "2x" to 2, "4x" to 4, "8x" to 8, "16x" to 16)
 
 @Composable
-private fun MsaaSection(filesDir: File) {
+internal fun MsaaSection(
+    filesDir: File,
+    capabilities: GraphicsCapabilities?,
+) {
     val ctx = LocalContext.current
     val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
     var msaaLevel by remember {
@@ -430,6 +465,7 @@ private fun MsaaSection(filesDir: File) {
         ) {
             RadioButton(
                 selected = msaaLevel == value,
+                enabled = capabilities?.supportsMsaa(value) != false,
                 onClick = {
                     if (saveProtectedGraphicsSettings(ctx, filesDir, listOf("MsaaLevel" to value.toString()))) {
                         msaaLevel = value
@@ -441,10 +477,18 @@ private fun MsaaSection(filesDir: File) {
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
     }
+    Text(
+        capabilities?.msaaDetail() ?: GraphicsCapabilities.UNKNOWN_DETAIL,
+        fontSize = 9.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable
-private fun AnisoSection(filesDir: File) {
+internal fun AnisoSection(
+    filesDir: File,
+    capabilities: GraphicsCapabilities?,
+) {
     val ctx = LocalContext.current
     val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
     var anisoLevel by remember {
@@ -460,6 +504,7 @@ private fun AnisoSection(filesDir: File) {
         ) {
             RadioButton(
                 selected = anisoLevel == value,
+                enabled = capabilities?.supportsAniso(value) != false,
                 onClick = {
                     if (saveProtectedGraphicsSettings(ctx, filesDir, listOf("AnisoLevel" to value.toString()))) {
                         anisoLevel = value
@@ -471,6 +516,11 @@ private fun AnisoSection(filesDir: File) {
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
     }
+    Text(
+        capabilities?.anisoDetail() ?: GraphicsCapabilities.UNKNOWN_DETAIL,
+        fontSize = 9.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 // Shared constant: selective filtering config keys

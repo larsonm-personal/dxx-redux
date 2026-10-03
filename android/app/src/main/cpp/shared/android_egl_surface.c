@@ -9,6 +9,7 @@
 #include "android_crash_handler.h"
 #include "android_egl_surface.h"
 #include "android_graphics_safety.h"
+#include "android_gpu_capabilities.h"
 #include "android_log.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_surface_lifecycle.h"
@@ -144,6 +145,10 @@ static int android_egl_recreate_surface(struct android_egl_surface_state *state,
 		con_printf(CON_DEBUG, "EGL: surface recreated, context preserved\n");
 	}
 	android_egl_trace_call(state, "resume_make_current", "end");
+	/* Capability limits belong to the new current context and window */
+	extern GLfloat ogl_maxanisotropy;
+	extern int ogl_msaa_max_samples, ogl_gpu_timer_available;
+	android_gpu_capabilities_query(&ogl_maxanisotropy, &ogl_msaa_max_samples, &ogl_gpu_timer_available);
 	if (debug_log_enabled[DLOG_GRAPHICS])
 		debug_log(DLOG_GRAPHICS, "EGL resumed context: requested_client=%d GL=%s renderer=%s",
 		          ANDROID_EGL_RECREATE_CLIENT_VERSION, glGetString(GL_VERSION), glGetString(GL_RENDERER));
@@ -300,6 +305,11 @@ int android_egl_surface_initialize(struct android_egl_surface_state *state,
 	}
 	android_egl_trace_call(state, operation, "end");
 
+	/* Resolution changes retire query/FBO/cache names just like context loss
+	 * Forget them before the shim allocates any names in the new context */
+	discarding_lost_context_resources = 1;
+	state->smash_textures();
+	discarding_lost_context_resources = 0;
 	gles3_shim_init();
 	{
 		const EGLint attributes[] = { EGL_CONFIG_ID, EGL_RED_SIZE, EGL_GREEN_SIZE, EGL_BLUE_SIZE,
@@ -407,23 +417,7 @@ void android_egl_surface_log_renderer(void)
 void android_egl_surface_query_capabilities(float *out_max_anisotropy,
                                             int *out_max_msaa_samples, int *out_gpu_timer_available)
 {
-	const char *extensions;
-	GLint max_samples = 0;
-
-	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, out_max_anisotropy);
-	__android_log_print(ANDROID_LOG_INFO, "DXX",
-	                    "anisotropy: max=%.0f", *out_max_anisotropy);
-	glGetIntegerv(0x8D57, &max_samples);
-	*out_max_msaa_samples = (int) max_samples;
-	__android_log_print(ANDROID_LOG_INFO, "DXX",
-	                    "msaa: max_samples=%d", *out_max_msaa_samples);
-	extensions = (const char *) glGetString(GL_EXTENSIONS);
-	*out_gpu_timer_available = extensions &&
-	                                   strstr(extensions, "GL_EXT_disjoint_timer_query")
-	                               ? 1
-	                               : 0;
-	__android_log_print(ANDROID_LOG_INFO, "DXX", "gpu_timer: %s",
-	                    *out_gpu_timer_available ? "available" : "not available");
+	android_gpu_capabilities_query(out_max_anisotropy, out_max_msaa_samples, out_gpu_timer_available);
 }
 
 #endif

@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-param([string]$Serial = 'emulator-5554')
+param([string]$Serial = 'emulator-5554', [switch]$CapabilitiesOnly)
 
 $ErrorActionPreference = 'Stop'
 if ($Serial -notmatch '^emulator-\d+$') { throw 'Run this fixture only on an emulator' }
@@ -10,10 +10,12 @@ try {
     if (-not (Test-DeviceOnline -Serial $Serial)) { throw 'Emulator is not online' }
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     Adb -AdbArgs @('logcat', '-c') | Out-Null
-    $result = Adb -Seconds 120 -AdbArgs @('shell', 'am', 'instrument', '-w', '-e', 'suite', 'slider_navigation',
+    $suite = if ($CapabilitiesOnly) { 'graphics_capabilities' } else { 'slider_navigation' }
+    $expected = if ($CapabilitiesOnly) { 'PASS: graphics capability controls and details' } else { 'PASS: controller slider navigation and adjustment' }
+    $result = Adb -Seconds 300 -AdbArgs @('shell', 'am', 'instrument', '-w', '-e', 'suite', $suite,
         'com.dxxredux.app.test/com.dxxredux.app.RecoveryInstrumentation')
     Write-Output $result
-    if ($result -notmatch 'PASS: controller slider navigation and adjustment' -or $result -match 'FAIL:|INSTRUMENTATION_FAILED|Process crashed') {
+    if ($result -notmatch [regex]::Escape($expected) -or $result -match 'FAIL:|INSTRUMENTATION_FAILED|Process crashed') {
         throw 'Controller slider navigation instrumentation failed'
     }
 } finally {

@@ -226,6 +226,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_graphics_lifecycle'
             'test_graphics_mode_restore'
             'test_graphics_msaa_allocation_failure'
+            'test_graphics_capabilities'
             'test_graphics_native_interruption'
             'test_graphics_settings_confirmation'
             'test_graphics_video_overlay'

@@ -51,6 +51,7 @@ extern "C" {
 #include "graphics_config_transaction.h"
 #ifdef ANDROID
 #include "android_graphics_safety.h"
+#include "android_gpu_capabilities.h"
 #include "render_gameplay_view.h"
 #include "android_egl_surface.h"
 #include "android_jni_overlay.h"
@@ -3082,6 +3083,15 @@ extern "C" void game_automate_tick(void)
 		case STEP_CONTROLLER_INPUT:
 #ifdef ANDROID
 			if (g_key_phase == 0) {
+				// Optional native preconditions and UI input run in the same frame
+				// A separate wait_for step can consume a short-lived popup's deadline
+				if (!s.expects.empty() && !run_assertions(s, false, false).empty()) {
+					if (s.timeout_ms > 0 && elapsed >= (Uint32) s.timeout_ms) {
+						const std::string reason = "Controller input precondition timed out: " + run_assertions(s, false, true);
+						stop_script_fail(reason.c_str());
+					}
+					break;
+				}
 				std::string failure = automation_controller_input(s.controller_input);
 				if (!failure.empty()) {
 					stop_script_fail(failure.c_str());
@@ -4010,6 +4020,12 @@ extern "C" void game_automate_tick(void)
 				android_egl_surface_debug_lose_context_on_resume_once();
 #else
 				stop_script_fail("graphics_context_loss_once: Android-only action");
+#endif
+			} else if (s.field == "gpu_capabilities_disable") {
+#if defined(ANDROID) && defined(OGL)
+				android_gpu_capabilities_debug_disable(s.value == "1");
+#else
+				stop_script_fail("gpu_capabilities_disable: Android OpenGL-only action");
 #endif
 			} else if (s.field == "msaa_color_alloc_fail_once") {
 #if defined(ANDROID) && defined(OGL)

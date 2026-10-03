@@ -32,6 +32,8 @@ extern "C" {
 namespace
 {
 using json = nlohmann::json;
+// Allow a busy Android compositor to draw before starting the separate confirmation deadline
+constexpr uint64_t overlay_prepare_timeout_ms = 5000;
 std::mutex mutex;
 std::string files_root;
 bool initialized = false;
@@ -143,6 +145,7 @@ std::string state_json_locked()
 	                                                              : "idle";
 	json state = { { "phase", phase }, { "trial_id", active_id }, { "deadline_ms", deadline }, { "accepted", snapshot_json(record.accepted) }, { "candidate", snapshot_json(pending_candidate) }, { "requested", snapshot_json(requested) }, { "current", current_known ? snapshot_json(observed_current) : json(nullptr) }, { "queued", queued_options }, { "staged_generation", staged_generation }, { "reason", record.reason }, { "renderer_failure", renderer_failure } };
 #ifdef INTROSPECT_ON
+	state["candidate_ready"] = candidate_ready;
 	state["debug_black_output"] = { { "active", debug_black_enabled && armed && candidate_ready && !restore_pending }, { "frames", debug_black_frames }, { "valid_frames", debug_black_valid_frames } };
 #endif
 	return state.dump();
@@ -424,7 +427,7 @@ extern "C" void android_graphics_safety_event_tick(void)
 			poll_staged = true;
 		}
 		if ((armed && (now_ms() >= deadline || !ui_foreground || !eligible())) ||
-		    (preparing && now_ms() - prepared_at >= 1000)) cancel_id = active_id;
+		    (preparing && now_ms() - prepared_at >= overlay_prepare_timeout_ms)) cancel_id = active_id;
 		restore = restore_pending;
 		accepted = accepted_pending;
 		if (restore) {
@@ -534,6 +537,11 @@ extern "C" int android_graphics_safety_before_main_view(void)
 			std::lock_guard<std::mutex> lock(mutex);
 			storage_failure = "apply_or_persist_failed";
 		}
+		return 0;
+	}
+	extern GLfloat ogl_maxanisotropy;
+	if (trial_active && GameCfg.AnisoLevel > 1 && ogl_maxanisotropy <= 1.0f) {
+		android_graphics_safety_renderer_failed("anisotropy_unsupported");
 		return 0;
 	}
 	if (apply || persist) {

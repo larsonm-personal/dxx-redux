@@ -502,7 +502,7 @@ class MissionZipTest {
     }
 
     @Test
-    fun importCandidateAcceptsArchiveLargerThanPreambleLimitWhenCallerSuppliesItsSize() {
+    fun importCandidateAcceptsArchiveLargerThanPreambleLimitByDefault() {
         val zipFile = File.createTempFile("large-candidate", ".zip")
         zipFile.deleteOnExit()
         val fillerBytes = ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES + 1L
@@ -540,7 +540,7 @@ class MissionZipTest {
 
         assertTrue(
             zipFile.inputStream().use {
-                MissionZip.isImportCandidate(it, zipFile.parentFile, zipFile.length())
+                MissionZip.isImportCandidate(it, zipFile.parentFile)
             },
         )
     }

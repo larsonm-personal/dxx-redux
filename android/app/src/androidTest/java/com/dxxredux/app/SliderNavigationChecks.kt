@@ -73,7 +73,7 @@ internal class SliderNavigationChecks(
         instrumentation.waitForIdleSync()
     }
 
-    fun run() {
+    fun run(capabilitiesOnly: Boolean = false) {
         val launcher =
             instrumentation.startActivitySync(
                 Intent(instrumentation.targetContext, SetupActivity::class.java).apply {
@@ -87,6 +87,10 @@ internal class SliderNavigationChecks(
         val backups = configs.associateWith { if (it.isFile) it.readBytes() else null }
         val originalOrientation = onMain { launcher.requestedOrientation }
         try {
+            if (capabilitiesOnly) {
+                graphicsCapabilityDetails(launcher)
+                return
+            }
             for (orientation in listOf(
                 ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
                 ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
@@ -99,12 +103,72 @@ internal class SliderNavigationChecks(
                     }
                 }
             }
+            graphicsCapabilityDetails(launcher)
             touchSliderNavigation(launcher)
         } finally {
             for ((file, bytes) in backups) {
                 if (bytes != null) file.writeBytes(bytes) else file.delete()
             }
             onMain { launcher.requestedOrientation = originalOrientation }
+        }
+    }
+
+    @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+    private fun graphicsCapabilityDetails(launcher: SetupActivity) {
+        // Render the production sections with isolated config files and real semantics
+        val directory = File(launcher.cacheDir, "graphics-capability-ui-test").apply { mkdirs() }
+        val unsupported =
+            GraphicsCapabilities(
+                1,
+                0,
+                0,
+                "AF is unavailable on this GPU",
+                "MSAA is unavailable for this display format",
+                "Test GPU",
+            )
+        val limited = GraphicsCapabilities(8, 4, 4, "", "", "Test GPU")
+        try {
+            for ((caps, enabledCount) in listOf(unsupported to 2, limited to 7, null to 8)) {
+                onMain {
+                    launcher.setContent {
+                        MaterialTheme {
+                            CompositionLocalProvider(
+                                androidx.compose.material3.LocalMinimumInteractiveComponentSize provides 0.dp,
+                            ) {
+                                Column {
+                                    MsaaSection(directory, caps)
+                                    AnisoSection(directory, caps)
+                                }
+                            }
+                        }
+                    }
+                }
+                Thread.sleep(350)
+                instrumentation.waitForIdleSync()
+                onMain {
+                    val provider = checkNotNull(composeView(launcher.window.decorView)?.accessibilityNodeProvider)
+                    val texts = mutableListOf<String>()
+                    var enabled = 0
+                    var options = 0
+                    for (id in -1..16383) {
+                        val node = provider.createAccessibilityNodeInfo(id) ?: continue
+                        node.text?.let { texts.add(it.toString()) }
+                        if (node.className == "android.widget.RadioButton") {
+                            options++
+                            if (node.isEnabled) enabled++
+                        }
+                    }
+                    check(options == 8 && enabled == enabledCount) { "Graphics options: $enabled enabled of $options" }
+                    check(
+                        texts.contains(caps?.msaaDetail() ?: GraphicsCapabilities.UNKNOWN_DETAIL),
+                    ) { "Missing MSAA details: $texts" }
+                    check(
+                        texts.contains(caps?.anisoDetail() ?: GraphicsCapabilities.UNKNOWN_DETAIL),
+                    ) { "Missing AF details: $texts" }
+                }
+            }
+        } finally {
+            directory.deleteRecursively()
         }
     }
 

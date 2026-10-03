@@ -256,7 +256,7 @@ object MissionZip {
     fun isImportCandidate(
         input: InputStream,
         stagingDirectory: File? = null,
-        maxSourceBytes: Long = ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES,
+        maxSourceBytes: Long = ExtractionLimits.MAX_ZIP_SOURCE_BYTES,
     ): Boolean {
         val budget = ExtractionBudget()
         val metadataBudget = descriptorBudget()
@@ -335,7 +335,7 @@ object MissionZip {
     fun containsUnsupportedD2xxlHog(
         input: InputStream,
         stagingDirectory: File? = null,
-        maxSourceBytes: Long = ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES,
+        maxSourceBytes: Long = ExtractionLimits.MAX_ZIP_SOURCE_BYTES,
     ): Boolean {
         val budget = ExtractionBudget()
         openZipInputStreamSkippingPreamble(input, stagingDirectory, maxSourceBytes).use { zip ->

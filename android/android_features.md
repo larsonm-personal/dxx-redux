@@ -117,6 +117,8 @@
 - ported/updted the xfing uud1tp/uud2tp/uud2sp to .dxa and set them up as patches rather than as redistributions of hog/pig/etc.
 - The game runs a gles 3.0 shim so it has access to etc2 and newer effects but the desktop code can stay the same
 - Texture filtering, anisotropic filtering, anti aliasing options (these existed in the base redux game, but are cleaned up and have more options)
+- Launcher graphics settings explain unavailable MSAA/AF options, GPU limits and effective MSAA sample counts below the controls. Support is checked when a game starts with each color mode; unavailable live overlay controls are skipped by controller navigation
+- MSAA matches the actual display format and uses a sample count shared by color and depth buffers. Unsupported trials restore the last accepted graphics settings
 - Graphics debugging overlay with texture name labels
 - Option to move score and other corner text away from rounded android screen corners based on the android API for corner dimensions
 - Automap drawing optimized (example: very large level “uneasy 4” needing ~8k lines rendered ran at 1 frame/second on my flagship phone, now ~60 fps)

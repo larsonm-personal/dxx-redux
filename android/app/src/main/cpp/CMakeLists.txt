@@ -604,6 +604,7 @@ if(OPENGL)
         dxx-redux-d1
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/merged_wall_debug.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_android.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_gpu_capabilities.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_probe_android.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_gpu_timer_android.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_texture_android.c
@@ -794,6 +795,7 @@ if(OPENGL)
         dxx-redux-d2
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/merged_wall_debug.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_android.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_gpu_capabilities.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_probe_android.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_gpu_timer_android.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_texture_android.c

@@ -98,7 +98,8 @@
         "command": "write_bool_pref",
         "args": {
             "key": "dlog_graphics_enabled",
-            "value": true,
+            // Keep functional timing realistic; owned pixel/error probes remain enabled
+            "value": false,
         },
     },
     {
@@ -232,14 +233,12 @@
         "value": "msaa_level:2",
     },
     {
-        "action": "wait_for",
+        "action": "controller_input",
         "timeout_ms": 10000,
         "expect": {
             "graphics_safety.phase": "challenge",
+            "graphics_safety.candidate_ready": "true",
         },
-    },
-    {
-        "action": "controller_input",
         "controller_keys": ["DLEFT", "A"],
         "post_delay_ms": 50,
     },
@@ -435,14 +434,12 @@
         "value": "msaa_level:4",
     },
     {
-        "action": "wait_for",
+        "action": "controller_input",
         "timeout_ms": 10000,
         "expect": {
             "graphics_safety.phase": "challenge",
+            "graphics_safety.candidate_ready": "true",
         },
-    },
-    {
-        "action": "controller_input",
         "controller_keys": ["DLEFT", "A"],
         "post_delay_ms": 50,
     },
@@ -749,14 +746,12 @@
         "field": "graphics_option",
     },
     {
+        "action": "controller_input",
+        "timeout_ms": 10000,
         "expect": {
             "graphics_safety.phase": "challenge",
+            "graphics_safety.candidate_ready": "true",
         },
-        "action": "wait_for",
-        "timeout_ms": 10000,
-    },
-    {
-        "action": "controller_input",
         "controller_keys": ["DLEFT", "A"],
         "post_delay_ms": 50,
     },
@@ -874,14 +869,12 @@
         "field": "graphics_option",
     },
     {
+        "action": "controller_input",
+        "timeout_ms": 10000,
         "expect": {
             "graphics_safety.phase": "challenge",
+            "graphics_safety.candidate_ready": "true",
         },
-        "action": "wait_for",
-        "timeout_ms": 10000,
-    },
-    {
-        "action": "controller_input",
         "controller_keys": ["DLEFT", "A"],
         "post_delay_ms": 50,
     },

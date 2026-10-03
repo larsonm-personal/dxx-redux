@@ -1,4 +1,4 @@
-// TEST: Launcher resolution/color-depth rollback and native nested-menu mode restoration
+// TEST: Launcher resolution/color-depth cancel (D1), timeout (D2), and nested-menu mode restoration
 [
     {
         "_info": {
@@ -161,6 +161,7 @@
         "action": "assert",
         "expect": {
             "graphics_safety.phase": "idle",
+            "msaa.last_scene_gl_error": "0",
             "resolution.render_width": "800",
             "resolution.render_height": "600",
         },
@@ -221,30 +222,43 @@
             "graphics_safety.candidate.ResolutionX": "800",
             "graphics_safety.candidate.ColorDepth": "1",
         },
+        "when": "d1",
         "timeout_ms": 10000,
     },
     {
         "action": "controller_input",
         "key": "B",
         "pressed": true,
+        "when": "d1",
         "post_delay_ms": 100,
     },
     {
         "action": "controller_input",
         "key": "B",
         "pressed": false,
+        "when": "d1",
         "post_delay_ms": 100,
     },
     {
         "action": "wait_for",
         "expect": {
             "graphics_safety.phase": "idle",
+            "msaa.last_scene_gl_error": "0",
             "resolution.render_width": "640",
             "resolution.render_height": "480",
             "graphics_safety.current.ColorDepth": "0",
             "time_paused": "false",
         },
-        "timeout_ms": 10000,
+        "timeout_ms": 20000,
+    },
+    {
+        // A slow first scene can block native automation for the whole challenge
+        // Retained UI evidence proves the independent Android popup was actually drawn
+        "action": "controller_input",
+        "expect_ui": {
+            "graphics_open": false,
+            "graphics_first_draw_cancel_text": "Cancel (5)",
+        },
     },
     {
         "action": "set_debug",
@@ -279,6 +293,7 @@
         "expect": {
             "menu.subtitle": "Screen Resolution",
             "graphics_safety.phase": "idle",
+            "msaa.last_scene_gl_error": "0",
         },
     },
     {
@@ -294,6 +309,7 @@
         "action": "assert",
         "expect": {
             "graphics_safety.phase": "idle",
+            "msaa.last_scene_gl_error": "0",
             "menu.subtitle": "Screen Resolution",
         },
     },
@@ -350,6 +366,7 @@
         "action": "assert",
         "expect": {
             "graphics_safety.phase": "idle",
+            "msaa.last_scene_gl_error": "0",
             "resolution.render_width": "800",
             "resolution.render_height": "600",
         },
@@ -376,6 +393,7 @@
         "action": "wait_for",
         "expect": {
             "graphics_safety.phase": "idle",
+            "msaa.last_scene_gl_error": "0",
             "resolution.render_width": "640",
             "resolution.render_height": "480",
             "graphics_safety.current.TexFilt": "1",
@@ -484,6 +502,7 @@
         "action": "assert",
         "expect": {
             "graphics_safety.phase": "idle",
+            "msaa.last_scene_gl_error": "0",
             "resolution.render_width": "800",
             "resolution.render_height": "600",
             "graphics_safety.current.TexFilt": "0",

@@ -22,11 +22,15 @@ internal enum class VideoInfoControllerAction {
     LABELS,
 }
 
-internal fun videoInfoControllerActions(showDebugControls: Boolean): List<VideoInfoControllerAction> =
+internal fun videoInfoControllerActions(
+    showDebugControls: Boolean,
+    anisoAvailable: Boolean = true,
+    msaaAvailable: Boolean = true,
+): List<VideoInfoControllerAction> =
     buildList {
         add(VideoInfoControllerAction.TEX_FILT)
-        add(VideoInfoControllerAction.ANISO)
-        add(VideoInfoControllerAction.MSAA)
+        if (anisoAvailable) add(VideoInfoControllerAction.ANISO)
+        if (msaaAvailable) add(VideoInfoControllerAction.MSAA)
         if (showDebugControls) {
             add(VideoInfoControllerAction.MERGED_WALL)
             add(VideoInfoControllerAction.MERGED_WALL_TAP)
@@ -190,6 +194,7 @@ class VideoInfoOverlay(
     private var anisoMax = 0
     private var msaaLevel = 0
     private var msaaMax = 0
+    private var msaaEffective = 0
     private var gpuTimeUs = 0
     private var gpuTimerAvailable = 0
     private var shaderSwitches = 0
@@ -260,6 +265,7 @@ class VideoInfoOverlay(
                     if (stats != null && stats.size >= 22) {
                         msaaLevel = stats[20]
                         msaaMax = stats[21]
+                        msaaEffective = if (stats.size > 39) stats[39] else msaaLevel
                     }
                     if (stats != null && stats.size >= 24) {
                         gpuTimeUs = stats[22]
@@ -307,6 +313,8 @@ class VideoInfoOverlay(
             "video_tex_filt" to texFiltLevel,
             "video_aniso" to anisoLevel,
             "video_msaa" to msaaLevel,
+            "video_msaa_available" to (msaaMax >= 2),
+            "video_aniso_available" to (anisoMax > 1),
         )
 
     fun show() {
@@ -451,7 +459,7 @@ class VideoInfoOverlay(
     }
 
     private fun activeControllerActions(): List<VideoInfoControllerAction> =
-        videoInfoControllerActions(showDebugControls)
+        videoInfoControllerActions(showDebugControls, anisoMax > 1, msaaMax >= 2)
 
     private fun ensureControllerSelection(): VideoInfoControllerAction? {
         val actions = activeControllerActions()
@@ -499,7 +507,13 @@ class VideoInfoOverlay(
         val density = resources.displayMetrics.density
         val viewWidth = width.toFloat()
         val baseTextSize = (11f * density).coerceAtMost(viewWidth * 0.014f)
-        val layout = computeVideoInfoOverlayLayout(height, density, baseTextSize, activeControllerActions().size)
+        val layout =
+            computeVideoInfoOverlayLayout(
+                height,
+                density,
+                baseTextSize,
+                videoInfoControllerActions(showDebugControls).size,
+            )
         applyTextSizes(layout.infoTextSize, layout.titleTextSize)
         btnFocusOutlinePaint.strokeWidth = layout.focusStrokeWidth
 
@@ -697,7 +711,16 @@ class VideoInfoOverlay(
         baselineY += layout.buttonLineHeight
 
         // Anisotropic filtering cycle button
-        val anisoText = if (anisoLevel > 0) "AF: ${anisoLevel}x" else "AF: OFF"
+        val anisoText =
+            if (anisoMax <=
+                1
+            ) {
+                "AF: Unavailable"
+            } else if (anisoLevel > 0) {
+                "AF: ${anisoLevel}x"
+            } else {
+                "AF: OFF"
+            }
         val anisoPaint = if (anisoLevel > 0) fpsGoodPaint else fpsWarnPaint
         setButtonBounds(anisoRect, panelLeft, panelWidth, baselineY, layout)
         val anisoBg =
@@ -713,12 +736,21 @@ class VideoInfoOverlay(
             layout.buttonCornerRadius,
             selectedControllerAction == VideoInfoControllerAction.ANISO,
         )
-        val maxText = if (anisoMax > 0) " (max ${anisoMax}x)" else ""
+        val maxText = if (anisoMax > 1) " (max ${anisoMax}x)" else ""
         canvas.drawText(anisoText + maxText, panelLeft + layout.panelPad, baselineY, anisoPaint)
         baselineY += layout.buttonLineHeight
 
         // MSAA cycle button
-        val msaaText = if (msaaLevel > 0) "MSAA: ${msaaLevel}x" else "MSAA: OFF"
+        val msaaText =
+            if (msaaMax <
+                2
+            ) {
+                "MSAA: Unavailable"
+            } else if (msaaLevel > 0) {
+                "MSAA: ${msaaLevel}x"
+            } else {
+                "MSAA: OFF"
+            }
         val msaaPaint = if (msaaLevel > 0) fpsGoodPaint else fpsWarnPaint
         setButtonBounds(msaaRect, panelLeft, panelWidth, baselineY, layout)
         val msaaBg =
@@ -734,7 +766,16 @@ class VideoInfoOverlay(
             layout.buttonCornerRadius,
             selectedControllerAction == VideoInfoControllerAction.MSAA,
         )
-        val msaaMaxText = if (msaaMax > 0) " (max ${msaaMax}x)" else ""
+        val msaaMaxText =
+            if (msaaLevel > 0 &&
+                msaaEffective > msaaLevel
+            ) {
+                " (uses ${msaaEffective}x)"
+            } else if (msaaMax > 0) {
+                " (max ${msaaMax}x)"
+            } else {
+                ""
+            }
         canvas.drawText(msaaText + msaaMaxText, panelLeft + layout.panelPad, baselineY, msaaPaint)
         baselineY += layout.buttonLineHeight
 
@@ -801,8 +842,8 @@ class VideoInfoOverlay(
         if (visibility != VISIBLE) return super.onTouchEvent(event)
         val inPanel = panelBounds.contains(event.x, event.y)
         val inButton = buttonRect.contains(event.x, event.y)
-        val inAniso = anisoRect.contains(event.x, event.y)
-        val inMsaa = msaaRect.contains(event.x, event.y)
+        val inAniso = anisoMax > 1 && anisoRect.contains(event.x, event.y)
+        val inMsaa = msaaMax >= 2 && msaaRect.contains(event.x, event.y)
         val inTexFilt = texFiltRect.contains(event.x, event.y)
         val inMergedWall = mergedWallRect.contains(event.x, event.y)
         val inMergedWallTap = mergedWallTapRect.contains(event.x, event.y)
@@ -972,6 +1013,7 @@ class VideoInfoOverlay(
     override fun performClick(): Boolean = super.performClick()
 
     private fun cycleAnisotropy() {
+        if (anisoMax <= 1) return
         // Cycle: 0 -> 2 -> 4 -> 8 -> 16 -> 0, capped by anisoMax
         val levels = intArrayOf(0, 2, 4, 8, 16).filter { it <= anisoMax || it == 0 }
         val idx = levels.indexOf(anisoLevel)
@@ -980,6 +1022,7 @@ class VideoInfoOverlay(
     }
 
     private fun cycleMsaa() {
+        if (msaaMax < 2) return
         // Cycle: 0 -> 2 -> 4 -> 0, capped by msaaMax
         val levels = intArrayOf(0, 2, 4).filter { it <= msaaMax || it == 0 }
         val idx = levels.indexOf(msaaLevel)

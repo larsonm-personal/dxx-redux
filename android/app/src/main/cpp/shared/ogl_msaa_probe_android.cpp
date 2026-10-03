@@ -2,6 +2,7 @@
 
 #include "ogl_msaa_probe_android.h"
 #include "android_graphics_safety.h"
+#include "android_gpu_capabilities.h"
 extern "C" {
 #include "android_log.h"
 #include "ogl_msaa_android.h"
@@ -507,6 +508,11 @@ extern "C" void android_ogl_msaa_probe(int requested_samples, int logical_width,
 	glGetIntegerv(GL_SAMPLES, &samples);
 	glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
 	GLenum format = android_ogl_msaa_color_format(rb, gb, bb, ab);
+	if (!format) {
+		report["first_failure"] = "unsupported_window_color_format";
+		finish();
+		return;
+	}
 	report["window_bits"] = { rb, gb, bb, ab };
 	report["window_samples"] = samples;
 	report["setup_errors"] = errors();
@@ -526,6 +532,13 @@ extern "C" void android_ogl_msaa_probe(int requested_samples, int logical_width,
 	report["color_supported_samples"] = supported_samples(format);
 	report["depth_supported_samples"] = supported_samples(GL_DEPTH_COMPONENT16);
 	report["format_query_errors"] = errors();
+	const int selected_samples = android_gpu_msaa_samples(requested_samples);
+	report["selected_samples"] = selected_samples;
+	if (!selected_samples) {
+		report["first_failure"] = "no_compatible_sample_count";
+		finish();
+		return;
+	}
 	if (samples != 0 || !report["setup_errors"].empty() || !report["format_query_errors"].empty()) {
 		report["first_failure"] = "window_not_single_sample_or_query_failed";
 		finish();
@@ -569,12 +582,12 @@ extern "C" void android_ogl_msaa_probe(int requested_samples, int logical_width,
 	glGenRenderbuffers(1, &color);
 	glGenRenderbuffers(1, &depth);
 	glBindRenderbuffer(GL_RENDERBUFFER, color);
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, std::min(requested_samples, max_samples), format, width, height);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, selected_samples, format, width, height);
 	GLint color_samples = 0, depth_samples = 0;
 	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_SAMPLES, &color_samples);
 	report["color_allocation_errors"] = errors();
 	glBindRenderbuffer(GL_RENDERBUFFER, depth);
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, std::min(requested_samples, max_samples), GL_DEPTH_COMPONENT16, width, height);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, selected_samples, GL_DEPTH_COMPONENT16, width, height);
 	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_SAMPLES, &depth_samples);
 	report["depth_allocation_errors"] = errors();
 	glBindFramebuffer(GL_FRAMEBUFFER, source);

@@ -9,6 +9,8 @@
 #include "ogl_msaa_android.h"
 #include "android_graphics_safety.h"
 #include "android_log.h"
+#include "android_gpu_capabilities.h"
+#include "android_gpu_policy.h"
 
 #ifdef INTROSPECT_ON
 static int debug_fail_color_allocation;
@@ -31,11 +33,7 @@ unsigned int android_ogl_msaa_color_format(int red, int green, int blue, int alp
 {
 	/* EGL minimum sizes can select RGB10_A2, including on the Retroid Pocket 4 Pro
 	 * ES multisample resolves cannot convert it from an RGBA8 source */
-	if (red == 10 && green == 10 && blue == 10 && alpha == 2)
-		return GL_RGB10_A2;
-	if (red <= 5 && green <= 6 && blue <= 5 && alpha == 0)
-		return GL_RGB565;
-	return alpha > 0 ? GL_RGBA8 : GL_RGB8;
+	return android_gpu_color_format(red, green, blue, alpha);
 }
 
 unsigned int android_ogl_msaa_capture_errors(const char *stage)
@@ -186,7 +184,8 @@ void android_ogl_msaa_forget_context(struct android_ogl_msaa_state *state, int *
 	state->last_create_status = 0;
 	state->last_gl_error = GL_NO_ERROR;
 	state->last_resolved_frame_serial = 0;
-	state->trace_remaining = 120;
+	/* A cold context without MSAA needs no expensive per-frame MSAA trace */
+	state->trace_remaining = state->generation ? 120 : 0;
 	if (frame_depth) *frame_depth = 0;
 }
 
@@ -214,11 +213,15 @@ int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
 	state->last_gl_error = GL_NO_ERROR;
 	state->trace_remaining = 120;
 
-	if (max_samples > 0 && samples > max_samples)
-		samples = max_samples;
-	if (samples < 2) {
-		snprintf(logbuf, sizeof(logbuf), "MSAA FBO create skipped: clamped_samples=%d", samples);
+	(void) max_samples; /* The global maximum does not describe attachment support */
+	const int requested_samples = samples;
+	samples = android_gpu_msaa_samples(samples);
+	const int limit = android_gpu_max_renderbuffer_size();
+	if (samples < 2 || w <= 0 || h <= 0 || w > limit || h > limit) {
+		snprintf(logbuf, sizeof(logbuf), "MSAA FBO unsupported: requested=%d effective=%d size=%dx%d limit=%d", requested_samples, samples, w, h, limit);
 		android_ogl_msaa_log(log_message, log_user_data, logbuf);
+		state->failure_latched = 1;
+		android_graphics_safety_renderer_failed("msaa_configuration_unsupported");
 		return 0;
 	}
 
@@ -236,6 +239,11 @@ int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
 		                    rb, gb, bb, ab, color_fmt);
 	}
 
+	if (!color_fmt || color_fmt != android_gpu_msaa_format()) {
+		state->failure_latched = 1;
+		android_graphics_safety_renderer_failed("msaa_window_format_changed");
+		return 0;
+	}
 	android_ogl_msaa_capture_errors("prior_operation");
 	android_ogl_msaa_log_window_target();
 	android_ogl_msaa_log_format_support(color_fmt);

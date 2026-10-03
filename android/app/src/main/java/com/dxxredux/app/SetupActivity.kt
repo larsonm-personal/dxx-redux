@@ -3738,8 +3738,8 @@ private fun SetupScreen(
                             val probeLimit =
                                 declaredSize
                                     ?.coerceAtLeast(ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES)
-                                    ?.coerceAtMost(ExtractionLimits.MAX_TOTAL_BYTES)
-                                    ?: ExtractionLimits.MAX_TOTAL_BYTES
+                                    ?.coerceAtMost(ExtractionLimits.MAX_ZIP_SOURCE_BYTES)
+                                    ?: ExtractionLimits.MAX_ZIP_SOURCE_BYTES
                             val missionZip =
                                 try {
                                     ImportStorageGuard.requireFreeSpace(

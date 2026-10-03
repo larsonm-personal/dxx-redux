@@ -21,7 +21,7 @@ private const val ZIP_SUPPORTED_FLAGS = 0x080e
 internal fun openZipInputStreamSkippingPreamble(
     input: InputStream,
     stagingDirectory: File? = null,
-    maxSourceBytes: Long = ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES,
+    maxSourceBytes: Long = ExtractionLimits.MAX_ZIP_SOURCE_BYTES,
 ): ZipInputStream {
     val staged = File.createTempFile("dxx-zip-", ".tmp", stagingDirectory)
     try {
