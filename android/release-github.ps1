@@ -7,7 +7,9 @@ Build, verify and publish a signed matching or legacy universal APK
 .DESCRIPTION
 Run from the repo root with PowerShell 5.1/7, Android tools/JDK 21 and keystore.properties
 Publishing needs clean, pushed app source and gh auth login; origin is the default (-Repository overrides)
-Reusing a version does a clean build, moves android-vVERSION and replaces APK/checksums/build metadata
+Reusing a version does a clean build, moves android-vVERSION and replaces the APK and generated notes
+Only the APK is uploaded; metadata/checksums stay local for recovery and obsolete uploads are removed
+GitHub automatically includes source ZIP/tarball links; these cannot be removed by the helper
 Use -UploadOnly to verify and upload saved release files without rebuilding; the saved source commit is used
 Output: android/build-outputs/github/android-vVERSION/; -BuildOnly stays local, -Draft stages new releases
 Use -Legacy for the API-23 edition (separate android-legacy-vVERSION tag and app ID)
@@ -121,6 +123,17 @@ function Set-ReleaseTag {
     }
     $tagCommit = Invoke-ReleaseTool gh @('api', '--hostname', 'github.com', "repos/$Repository/commits/$tag", '--jq', '.sha')
     if ($tagCommit -ne $commit) { throw "Remote tag $tag does not resolve to the built commit after updating" }
+}
+
+function Merge-ReleaseNotes {
+    param([string]$Generated, [string]$Existing)
+    # Replace only helper-owned notes, including notes from helpers predating the markers
+    $managedPattern = '(?s)<!-- dxx-redux-build:start -->.*?<!-- dxx-redux-build:end -->\s*'
+    $oldPattern = '(?s)\ADXX-Redux [^\r\n]+\r?\n\s*(?:minsdk:[^\r\n]+\r?\n\s*)?- universal APK:[^\r\n]+\r?\n\s*Source commit: [0-9a-f]+\r?\nAndroid versionCode: [0-9]+\r?\nSigning certificate SHA-256: [0-9a-f]+(?:\r?\nAPK SHA-256: [0-9a-f]+)?\s*'
+    $custom = [regex]::Replace($Existing, $managedPattern, '')
+    $custom = [regex]::Replace($custom, $oldPattern, '').Trim()
+    if ($custom -and -not $Generated.Contains($custom)) { return $Generated.TrimEnd() + "`n`n" + $custom + "`n" }
+    return $Generated
 }
 
 if ($BuildOnly -and $UploadOnly) { throw '-BuildOnly and -UploadOnly cannot be combined' }
@@ -309,46 +322,62 @@ if ($UploadOnly) {
         sourceVerified = $false
     }
     [IO.File]::WriteAllText($metadataPath, ($metadata | ConvertTo-Json) + "`n")
-    $notes = @"
+    # Keep this check: Gradle reads live app files, so source edits could produce a mixed-commit APK
+    if (-not $BuildOnly) { Assert-ReleaseSource }
+    $metadata.sourceVerified = $sourceCleanAtStart -and $metadata.sourceClean -and (Get-ReleaseGit @('rev-parse', 'HEAD')) -eq $commit
+    [IO.File]::WriteAllText($metadataPath, ($metadata | ConvertTo-Json) + "`n")
+}
+# Regenerate from the verified APK even when recovering an older saved build
+$notes = @"
+<!-- dxx-redux-build:start -->
 DXX-Redux $Version for Android ($distribution).
 
 $sdkLabel
 
 - universal APK: includes ARM32, ARM64 and x86_64
 
-Source commit: $commit
-Android versionCode: $VersionCode
-Signing certificate SHA-256: $certificate
+- Source commit: $commit
+- Android versionCode: $VersionCode
+- Signing certificate SHA-256: $certificate
+- APK SHA-256: $hash
+<!-- dxx-redux-build:end -->
 "@
-    # UTF-8 -NotesFile appends to local generated notes; existing GitHub notes are preserved
-    if ($NotesFile) { $notes += "`n`n" + (Get-Content -LiteralPath $NotesFile -Raw -Encoding UTF8) }
-    [IO.File]::WriteAllText($notesPath, $notes + "`n")
-    Write-Host "Verified APK and release files: $outDir"
-    # Keep this check: Gradle reads live app files, so source edits could produce a mixed-commit APK
-    if (-not $BuildOnly) { Assert-ReleaseSource }
-    $metadata.sourceVerified = $sourceCleanAtStart -and $metadata.sourceClean -and (Get-ReleaseGit @('rev-parse', 'HEAD')) -eq $commit
-    [IO.File]::WriteAllText($metadataPath, ($metadata | ConvertTo-Json) + "`n")
-    if ($BuildOnly) { return }
-}
+# UTF-8 -NotesFile appends custom notes outside the generated block
+if ($NotesFile) { $notes += "`n`n" + (Get-Content -LiteralPath $NotesFile -Raw -Encoding UTF8) }
+if ($UploadOnly) { $notes = Merge-ReleaseNotes -Generated $notes -Existing (Get-Content -LiteralPath $notesPath -Raw -Encoding UTF8) }
+[IO.File]::WriteAllText($notesPath, $notes.TrimEnd() + "`n")
+Write-Host "Verified APK and release files: $outDir"
+if ($BuildOnly) { return }
 $existingRelease = Get-ExistingRelease
 $ghRepository = "github.com/$Repository"
-$createArgs = @('release', 'create', $tag, $apk, $checksumPath, $metadataPath,
+$createArgs = @('release', 'create', $tag, $apk,
     '--repo', $ghRepository, '--target', $commit, '--title', $releaseTitle,
     '--notes-file', $notesPath, '--draft')
 if ($prerelease) { $createArgs += '--prerelease' }
+if ($Legacy) { $createArgs += '--latest=false' }
 try {
     # Only mutate the remote tag after APK verification and the final source/release checks
     # Tag/assets updates are not atomic; rerun the same command to repair a partial failure
     Set-ReleaseTag
     if ($existingRelease) {
-        # Preserve existing notes/status; build-info.json records the current commit/versionCode
         Invoke-ReleaseTool gh @('release', 'edit', $tag, '--repo', $ghRepository, '--target', $commit, '--title', $releaseTitle)
-        Write-Host "Replacing generated assets in $tag"
-        Invoke-ReleaseTool gh @('release', 'upload', $tag, $apk, $checksumPath, $metadataPath, '--repo', $ghRepository, '--clobber')
+        Write-Host "Replacing APK in $tag"
+        Invoke-ReleaseTool gh @('release', 'upload', $tag, $apk, '--repo', $ghRepository, '--clobber')
+        $notes = Merge-ReleaseNotes -Generated (Get-Content -LiteralPath $notesPath -Raw -Encoding UTF8) -Existing $existingRelease.body
+        [IO.File]::WriteAllText($notesPath, $notes)
+        Invoke-ReleaseTool gh @('release', 'edit', $tag, '--repo', $ghRepository, '--notes-file', $notesPath)
+        # Remove old helper uploads after the replacement succeeds; leave unrelated assets alone
+        foreach ($asset in $existingRelease.assets) {
+            if ($asset.name -in @('build-info.json', 'build.json', 'SHA256SUMS.txt')) {
+                Invoke-ReleaseTool gh @('release', 'delete-asset', $tag, $asset.name, '--repo', $ghRepository, '--yes')
+            }
+        }
     } else {
         Invoke-ReleaseTool gh $createArgs
         if (-not $Draft) {
-            Invoke-ReleaseTool gh @('release', 'edit', $tag, '--repo', $ghRepository, '--draft=false')
+            $publishArgs = @('release', 'edit', $tag, '--repo', $ghRepository, '--draft=false')
+            if ($Legacy) { $publishArgs += '--latest=false' }
+            Invoke-ReleaseTool gh $publishArgs
         }
     }
 } catch {

@@ -52,6 +52,13 @@ tag remains `android-vVERSION`. Release titles and generated notes include
 `minsdk: api M (android VERSION), targetsdk: api N (android VERSION)`, inspected
 from the APK. Upload recovery also requires `-Legacy` for a saved legacy build.
 
+Only the signed universal APK is uploaded. Build metadata and checksums stay
+in the local output directory for `-UploadOnly` verification. Reusing a version
+rebuilds the APK, moves its tag to the built commit, refreshes generated notes
+and removes obsolete metadata/checksum attachments. Custom notes and the
+release's draft/published status are preserved. GitHub automatically adds the
+source ZIP/tarball links; these cannot be disabled or deleted as release assets.
+
 Run `./android/tests/test_android_distributions.ps1` to build and inspect all
 three debug APKs, including both native engines for every supported ABI. To
 run existing device tests against a direct-install APK, set `DXX_TEST_PACKAGE`

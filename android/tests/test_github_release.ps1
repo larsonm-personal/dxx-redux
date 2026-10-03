@@ -70,24 +70,27 @@ function gh {
         }
         if ($endpoint -like '*/releases/tags/*') {
             if ($global:dxxReleaseTestScenario -eq 'release-api-failure') { $global:LASTEXITCODE = 1; return }
-            return (@{ draft = $global:dxxReleaseTestIsDraft; immutable = $global:dxxReleaseTestImmutable; target_commitish = $global:dxxReleaseTestTarget } | ConvertTo-Json)
+            return (@{ draft = $global:dxxReleaseTestIsDraft; immutable = $global:dxxReleaseTestImmutable; target_commitish = $global:dxxReleaseTestTarget
+                    body = $global:dxxReleaseTestBody; assets = @($global:dxxReleaseTestAssets.Keys | ForEach-Object { @{ name = $_ } })
+                } | ConvertTo-Json -Depth 4)
         }
         throw "Unexpected gh API request: $args"
     }
     if ($args[0] -eq 'release' -and $args[1] -eq 'create') {
         $title = $args[[Array]::IndexOf($args, '--title') + 1]
         Assert-Test ($title.Contains($global:dxxReleaseTestSdkLabel)) 'Release title lacks the inspected SDK label'
-        foreach ($index in 3..5) { Assert-Test (Test-Path -LiteralPath $args[$index]) 'Missing upload asset' }
+        Assert-Test (Test-Path -LiteralPath $args[3]) 'Missing upload APK'
+        Assert-Test ($args[4] -eq '--repo') 'Only the APK should be uploaded'
         Assert-Test ($args -contains '--draft') 'Upload must be staged as draft'
+        Assert-Test (($args -contains '--latest=false') -eq $global:dxxReleaseTestLegacy) 'Legacy releases must not replace the latest matching edition'
         Assert-Test ($args -contains $global:dxxReleaseTestCommit) 'Release must target the source commit'
         Assert-Test ((& git -C $global:dxxReleaseTestRemote rev-parse "refs/tags/$($args[2])^{commit}") -eq $global:dxxReleaseTestCommit) 'Release created before tag was updated'
         $global:dxxReleaseTestHasRelease = $true
         $global:dxxReleaseTestIsDraft = $true
         $global:dxxReleaseTestTarget = $global:dxxReleaseTestCommit
         if ($global:dxxReleaseTestScenario -in @('upload-failure', 'rerun-upload-failure')) { $global:LASTEXITCODE = 1 }
-        foreach ($index in 3..5) {
-            $global:dxxReleaseTestAssets[[IO.Path]::GetFileName($args[$index])] = [IO.File]::ReadAllText($args[$index])
-        }
+        $global:dxxReleaseTestAssets[[IO.Path]::GetFileName($args[3])] = [IO.File]::ReadAllText($args[3])
+        $global:dxxReleaseTestBody = [IO.File]::ReadAllText($args[[Array]::IndexOf($args, '--notes-file') + 1])
         return
     }
     if ($args[0] -eq 'release' -and $args[1] -eq 'upload') {
@@ -95,13 +98,29 @@ function gh {
         Assert-Test ((& git -C $global:dxxReleaseTestRemote rev-parse "refs/tags/$($args[2])^{commit}") -eq $global:dxxReleaseTestCommit) 'Assets uploaded before tag was updated'
         Assert-Test ($global:dxxReleaseTestTarget -eq $global:dxxReleaseTestCommit) 'Release target was not refreshed'
         if ($global:dxxReleaseTestScenario -eq 'replace-failure') { $global:LASTEXITCODE = 1; return }
-        foreach ($index in 3..5) {
-            $global:dxxReleaseTestAssets[[IO.Path]::GetFileName($args[$index])] = [IO.File]::ReadAllText($args[$index])
-        }
+        Assert-Test ($args[4] -eq '--repo') 'Replacement should upload only the APK'
+        $global:dxxReleaseTestAssets[[IO.Path]::GetFileName($args[3])] = [IO.File]::ReadAllText($args[3])
+        return
+    }
+    if ($args[0] -eq 'release' -and $args[1] -eq 'delete-asset') {
+        Assert-Test ($args[3] -in @('build-info.json', 'build.json', 'SHA256SUMS.txt')) 'Unexpected asset deletion'
+        Assert-Test ($global:dxxReleaseTestCalls[$global:dxxReleaseTestCalls.Count - 2] -like 'release edit *--notes-file *' -or
+            $global:dxxReleaseTestCalls[$global:dxxReleaseTestCalls.Count - 2] -like 'release delete-asset *') 'Cleanup must follow successful APK and notes replacement'
+        if ($global:dxxReleaseTestScenario -eq 'cleanup-failure') { $global:LASTEXITCODE = 1; return }
+        $global:dxxReleaseTestAssets.Remove($args[3])
         return
     }
     if ($args[0] -eq 'release' -and $args[1] -eq 'edit') {
-        if ($args -contains '--draft=false') { $global:dxxReleaseTestIsDraft = $false; return }
+        if ($args -contains '--draft=false') {
+            Assert-Test (($args -contains '--latest=false') -eq $global:dxxReleaseTestLegacy) 'Publishing legacy must not change the latest matching edition'
+            $global:dxxReleaseTestIsDraft = $false
+            return
+        }
+        if ($args -contains '--notes-file') {
+            if ($global:dxxReleaseTestScenario -eq 'notes-update-failure') { $global:LASTEXITCODE = 1; return }
+            $global:dxxReleaseTestBody = [IO.File]::ReadAllText($args[[Array]::IndexOf($args, '--notes-file') + 1])
+            return
+        }
         Assert-Test ($args -contains '--target' -and $args -contains $global:dxxReleaseTestCommit) 'Unexpected release edit'
         $title = $args[[Array]::IndexOf($args, '--title') + 1]
         Assert-Test ($title.Contains($global:dxxReleaseTestSdkLabel)) 'Existing release SDK title was not refreshed'
@@ -198,7 +217,7 @@ if ($global:dxxReleaseTestScenario -eq 'missing-abi') { "native-code: 'arm64-v8a
 '@
 
 $cases = @('native-warning', 'publish', 'draft', 'build-only', 'dirty', 'unpushed', 'orphan-tag', 'existing-release',
-    'existing-draft', 'immutable-release', 'older-draft-target', 'release-api-failure', 'replace-failure', 'became-immutable',
+    'existing-draft', 'immutable-release', 'older-draft-target', 'release-api-failure', 'replace-failure', 'notes-update-failure', 'cleanup-failure', 'became-immutable',
     'older-tag', 'older-annotated-tag', 'current-annotated-tag', 'prefix-tag', 'tag-update-failure', 'tag-create-failure', 'tag-verification-failure', 'retarget-failure',
     'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-build-only', 'rerun-build-failure', 'rerun-unsigned', 'rerun-upload-failure',
     'api-failure', 'clean-failure', 'build-failure', 'unsigned', 'wrong-package', 'wrong-version', 'debuggable', 'missing-abi', 'source-changed', 'upload-failure',
@@ -216,11 +235,17 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     $global:dxxReleaseTestCalls = [Collections.Generic.List[string]]::new()
     $global:dxxReleaseTestBuildNumber = 0
     $global:dxxReleaseTestHasRelease = $global:dxxReleaseTestScenario -in @('existing-release', 'existing-draft', 'immutable-release',
-        'older-draft-target', 'release-api-failure', 'replace-failure', 'became-immutable', 'older-tag', 'older-annotated-tag',
+        'older-draft-target', 'release-api-failure', 'replace-failure', 'notes-update-failure', 'cleanup-failure', 'became-immutable', 'older-tag', 'older-annotated-tag',
         'current-annotated-tag', 'tag-update-failure', 'tag-verification-failure', 'retarget-failure')
     $global:dxxReleaseTestIsDraft = $global:dxxReleaseTestScenario -in @('existing-draft', 'older-draft-target')
     $global:dxxReleaseTestImmutable = $global:dxxReleaseTestScenario -eq 'immutable-release'
     $global:dxxReleaseTestAssets = @{ 'unrelated.txt' = 'keep this asset' }
+    $customNotes = 'Handwritten release notes: keep these'
+    $global:dxxReleaseTestBody = "DXX-Redux 1.2.0 for Android (Android 7.0 or newer).`n`n- universal APK: includes ARM32, ARM64 and x86_64`n`nSource commit: $('0' * 40)`nAndroid versionCode: 1`nSigning certificate SHA-256: $('a' * 64)`n`n$customNotes"
+    if ($global:dxxReleaseTestScenario -eq 'existing-draft') {
+        $global:dxxReleaseTestBody = "<!-- dxx-redux-build:start -->`nOld generated details`n<!-- dxx-redux-build:end -->`n`n$customNotes"
+    }
+    if ($global:dxxReleaseTestScenario -eq 'older-tag') { $global:dxxReleaseTestBody = $customNotes }
     $fixture = Join-Path $testRoot $global:dxxReleaseTestScenario
     $androidDir = Join-Path $fixture 'android'
     foreach ($dir in @('helpers', 'get_deps', 'app/src/main/java/com/dxxredux/app')) {
@@ -283,7 +308,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     $global:dxxReleaseTestOutput = $out
     if ($global:dxxReleaseTestHasRelease) {
         New-Item -ItemType Directory -Path $out -Force | Out-Null
-        foreach ($name in @($global:dxxReleaseTestApkName, 'SHA256SUMS.txt', 'build-info.json', 'unrelated.txt')) {
+        foreach ($name in @($global:dxxReleaseTestApkName, 'SHA256SUMS.txt', 'build-info.json', 'build.json', 'unrelated.txt')) {
             [IO.File]::WriteAllText((Join-Path $out $name), 'old ' + $name)
             $global:dxxReleaseTestAssets[$name] = 'old ' + $name
         }
@@ -388,7 +413,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
             'sdk-missing' { 'minimum SDK is missing' }
             { $_ -in @('wrong-min-sdk', 'wrong-target-sdk') } { 'SDK versions do not match' }
             { $_ -in @('upload-only-sdk', 'upload-only-distribution') } { 'SDK/distribution metadata does not match' }
-            { $_ -in @('upload-failure', 'replace-failure', 'tag-update-failure', 'tag-create-failure', 'retarget-failure') } { 'Release tag/upload/publish failed' }
+            { $_ -in @('upload-failure', 'replace-failure', 'notes-update-failure', 'cleanup-failure', 'tag-update-failure', 'tag-create-failure', 'retarget-failure') } { 'Release tag/upload/publish failed' }
             'tag-verification-failure' { 'does not resolve to the built commit' }
         }
         Assert-Test ($failure.ToString().Contains($expectedFailure)) "Wrong failure for $global:dxxReleaseTestScenario`: $failure"
@@ -397,7 +422,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     $publishes = @($global:dxxReleaseTestCalls | Where-Object { $_ -like 'release edit *--draft=false*' })
     $replaces = @($global:dxxReleaseTestCalls | Where-Object { $_ -like 'release upload *' })
     if (-not $successExpected -and $global:dxxReleaseTestScenario -notlike 'rerun*' -and
-        $global:dxxReleaseTestScenario -notin @('upload-failure', 'replace-failure', 'tag-update-failure', 'tag-create-failure', 'tag-verification-failure', 'retarget-failure')) {
+        $global:dxxReleaseTestScenario -notin @('upload-failure', 'replace-failure', 'notes-update-failure', 'cleanup-failure', 'tag-update-failure', 'tag-create-failure', 'tag-verification-failure', 'retarget-failure')) {
         Assert-Test (@($global:dxxReleaseTestCalls | Where-Object { $_ -like 'api *--method *' }).Count -eq 0) 'Failed build or validation mutated a remote tag'
     }
     if ($global:dxxReleaseTestScenario -eq 'clean-failure') {
@@ -407,7 +432,10 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
                 'helper-dirty', 'helper-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy', 'legacy-edition', 'upload-only-legacy-edition'))) "Incorrect publication for $global:dxxReleaseTestScenario"
     Assert-Test ($creates.Count -eq [int]($global:dxxReleaseTestScenario -in @('native-warning', 'publish', 'draft', 'upload-failure', 'orphan-tag', 'prefix-tag', 'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-build-failure', 'rerun-unsigned', 'rerun-upload-failure',
                 'helper-dirty', 'helper-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy', 'legacy-edition', 'upload-only-legacy-edition'))) "Incorrect upload for $global:dxxReleaseTestScenario"
-    Assert-Test ($replaces.Count -eq [int]($global:dxxReleaseTestScenario -in @('existing-release', 'existing-draft', 'older-tag', 'older-annotated-tag', 'current-annotated-tag', 'older-draft-target', 'replace-failure', 'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-upload-failure', 'upload-only-replace'))) "Incorrect replacement for $global:dxxReleaseTestScenario"
+    Assert-Test ($replaces.Count -eq [int]($global:dxxReleaseTestScenario -in @('existing-release', 'existing-draft', 'older-tag', 'older-annotated-tag', 'current-annotated-tag', 'older-draft-target', 'replace-failure', 'notes-update-failure', 'cleanup-failure', 'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-upload-failure', 'upload-only-replace'))) "Incorrect replacement for $global:dxxReleaseTestScenario"
+    if ($global:dxxReleaseTestScenario -in @('replace-failure', 'notes-update-failure')) {
+        Assert-Test (@($global:dxxReleaseTestCalls | Where-Object { $_ -like 'release delete-asset *' }).Count -eq 0) 'Failed APK/notes replacement deleted old attachments'
+    }
     if ($global:dxxReleaseTestScenario -like 'upload-only*') {
         Assert-Test ($global:dxxReleaseTestBuildNumber -eq 1 -and @($global:dxxReleaseTestCalls | Where-Object { $_ -like 'gradle *' }).Count -eq 0) 'UploadOnly rebuilt the APK'
         if ($successExpected) {
@@ -460,11 +488,36 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
             Assert-Test ($global:dxxReleaseTestBuildNumber -eq 2 -and (Get-FileHash $apk.FullName).Hash -ne $previousHash) 'Same-version rerun did not produce a fresh APK'
         }
         if ($replaces.Count -gt 0) {
-            foreach ($name in @($apk.Name, 'SHA256SUMS.txt', 'build-info.json')) {
-                Assert-Test ($global:dxxReleaseTestAssets[$name] -eq [IO.File]::ReadAllText((Join-Path $out $name))) "Release asset was not replaced: $name"
+            Assert-Test ($global:dxxReleaseTestAssets[$apk.Name] -eq [IO.File]::ReadAllText($apk.FullName)) 'Release APK was not replaced'
+            foreach ($name in @('SHA256SUMS.txt', 'build-info.json', 'build.json')) {
+                Assert-Test (-not $global:dxxReleaseTestAssets.ContainsKey($name)) "Obsolete release asset remains: $name"
+            }
+            Assert-Test ($global:dxxReleaseTestBody.Contains($customNotes) -or $global:dxxReleaseTestScenario -like 'rerun*') 'Custom notes were lost'
+        }
+        if (-not $parameters.BuildOnly) {
+            Assert-Test ($global:dxxReleaseTestBody.Contains("Source commit: $($info.commit)")) 'Remote notes have a stale commit'
+            Assert-Test ($global:dxxReleaseTestBody.Contains("Android versionCode: $($info.versionCode)")) 'Remote notes have a stale versionCode'
+            Assert-Test ($global:dxxReleaseTestBody.Contains("APK SHA-256: $($info.apkSha256)")) 'Remote notes lack the verified APK hash'
+            Assert-Test (([regex]::Matches($global:dxxReleaseTestBody, 'Source commit:')).Count -eq 1) 'Remote notes duplicate build details'
+            foreach ($name in @('SHA256SUMS.txt', 'build-info.json', 'build.json')) {
+                Assert-Test (-not $global:dxxReleaseTestAssets.ContainsKey($name)) "Metadata/checksums were uploaded: $name"
             }
         }
         if ($global:dxxReleaseTestScenario -eq 'draft') { Assert-Test ($creates[0].Contains('--prerelease')) 'Missing prerelease flag' }
+    }
+    if ($global:dxxReleaseTestScenario -in @('notes-update-failure', 'cleanup-failure')) {
+        $failedScenario = $global:dxxReleaseTestScenario
+        $global:dxxReleaseTestScenario = 'upload-only-replace'
+        $parameters.Remove('NotesFile')
+        $parameters.UploadOnly = $true
+        $global:dxxReleaseTestCalls.Clear()
+        & (Join-Path $androidDir 'release-github.ps1') @parameters
+        Assert-Test (@($global:dxxReleaseTestCalls | Where-Object { $_ -like 'gradle *' }).Count -eq 0) 'Partial failure recovery rebuilt the APK'
+        Assert-Test ($global:dxxReleaseTestBody.Contains($customNotes)) 'Partial failure recovery lost custom notes'
+        foreach ($name in @('SHA256SUMS.txt', 'build-info.json', 'build.json')) {
+            Assert-Test (-not $global:dxxReleaseTestAssets.ContainsKey($name)) "Partial failure recovery left obsolete asset: $name"
+        }
+        $global:dxxReleaseTestScenario = $failedScenario
     }
     Write-Host "PASS $global:dxxReleaseTestScenario"
 }
