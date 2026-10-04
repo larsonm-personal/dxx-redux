@@ -384,7 +384,7 @@ Copy-Item -LiteralPath (Join-Path $legacyDir "dxx-redux-$Version-android-legacy-
 $legacySdkLabel = "minsdk: api $($legacyInfo.minSdk) (android $legacyAndroid), targetsdk: api $($legacyInfo.targetSdk) (android $(Get-AndroidVersionLabel $legacyInfo.targetSdk))"
 $combinedNotes = @"
 <!-- dxx-redux-build:start -->
-DXX-Redux $Version for Android. Both APKs include ARM32, ARM64 and x86_64.
+Both APKs include ARM32, ARM64 and x86_64
 
 ### Android $(Get-AndroidVersionLabel $minSdk) or newer (recommended)
 
