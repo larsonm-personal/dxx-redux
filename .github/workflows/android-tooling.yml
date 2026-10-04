@@ -1,23 +1,24 @@
-name: Android tooling
+name: Tooling checks
 
 on:
   workflow_dispatch:
   pull_request:
     paths:
-      - "android/**"
+      - "android/**/*.ps1"
+      - "android/**/*.psm1"
+      - "android/**/*.psd1"
+      - "android/**/*.py"
+      - "android/**/*.sh"
+      - "android/get_deps/**"
+      - "android/game_scripts/**"
+      - "android/tests/**"
+      - "android/test_fixtures/**"
+      - "android/tools/**"
+      - "android/app/src/main/cpp/extract/**"
       - "run-linux-build.sh"
       - "run-windows-build.ps1"
       - "cmake/**"
-      - "game_data/mods/d2x-xl/**"
-      - "d1/main/bmread.c"
-      - "d2/main/bmread.c"
-      - ".github/workflows/**"
-  push:
-    paths:
-      - "android/**"
-      - "run-linux-build.sh"
-      - "run-windows-build.ps1"
-      - "cmake/**"
+      - "game_data/**/*.ps1"
       - "game_data/mods/d2x-xl/**"
       - "d1/main/bmread.c"
       - "d2/main/bmread.c"

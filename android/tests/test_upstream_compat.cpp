@@ -3403,7 +3403,7 @@ static void test_world_camera_completion()
 			Robot_info[1].companion = 1;
 			N_robot_types = 2;
 			const int companion = obj_create(OBJ_ROBOT, 1, 0, &native.pos, &native.orient, F1_0, CT_AI, MT_NONE, RT_NONE);
-			const int camera = obj_create(OBJ_WEAPON, 0, 0, &native.pos, &native.orient, F1_0, CT_NONE, MT_NONE, RT_NONE);
+			const int camera = obj_create(OBJ_WEAPON, 0, 0, &native.pos, &native.orient, F1_0, CT_WEAPON, MT_NONE, RT_NONE);
 			require(companion > 0 && camera > 0, "create actors for the real world completion phase");
 			native.ctype.ai_info.flags[4] = -1;
 			Objects[companion].ctype.ai_info.SUB_FLAGS = -1;

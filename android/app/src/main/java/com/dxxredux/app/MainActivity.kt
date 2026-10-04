@@ -2479,10 +2479,11 @@ class MainActivity :
         backgroundPauseApplied = false
         isActivityResumed = true
         if (nativeMultiplayerActive) startMultiplayerRuntime(nativeMultiplayerHost)
+        // The runtime can bind during onCreate, before the native engine starts
+        RuntimeGameStateBridge.noteActivityVisibility(background = false)
         gyroManager?.resume()
         // Resume music that was paused when backgrounded
         if (gameStarted) {
-            RuntimeGameStateBridge.noteActivityVisibility(background = false)
             publishDormancyUiPollCounters()
             nativeOnResume()
         }

@@ -1,6 +1,6 @@
 # Physical co-op LAN adversarial campaign, round 2
 
-Status: fresh theory and fixture review started 2026-10-03 21:37 UTC
+Status: complete, 2026-10-04 02:20 UTC; approximately 4 h 27 min active work
 
 The user requested about four more hours, beginning with fresh theories about
 failed connections, incorrect drops and stuck cooperative LAN play. Work target:
@@ -381,19 +381,19 @@ must succeed; a clean error dialog alone is insufficient.
 
 | Priority / ID | Sequence and exact trigger                                                                                                                                   | Required result and evidence                                                                                                               | Current coverage / constraint                                                                                                                       |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P0 M1         | Open game menu, Home, wait real 20-minute expiry, foreground, host again                                                                                     | Child window closes before game exit; same native PID reaches usable main menu; old advert absent before resume; next hosting works        | D1 reproduced crash; fixed D1/D2 full regressions running after resume                                                                              |
+| P0 M1         | Open game menu, Home, wait real 20-minute expiry, foreground, host again                                                                                     | Child window closes before game exit; same native PID reaches usable main menu; old advert absent before resume; next hosting works        | D1 crash fixed; D1/D2 menu-exit regressions PASS (timing caveat and correction below)                                                               |
 | P0 M2         | Repeat forced exit with automap, Options submenu, save/load picker and an editable text field; vary one vs two nested menus                                  | No stale window, input capture or paused clock after exit; no crash on first draw or on later menu navigation                              | Planned; paired host loss is faster than a timeout once Samsung is unlocked                                                                         |
 | P0 J1         | Complete late join; at first confirmed gameplay immediately restore, travel normally, enter/return secret level, or rewind; repeat each after another rejoin | No old join attempt suppresses new-world SYNC; current visit/epoch accepted, barriers settle, actual controls and bidirectional PDATA work | Restore regression passed in prior round; immediate travel/secret variants remain unrun                                                             |
 | P0 J2         | Leave during approval, object transfer, commit-before-confirmation or extras; retry same pilot, then another pilot, without host restart                     | Old reservation expires or cancels; retry gets a fresh attempt; no stale slot or busy transfer; subsequent restore works                   | Prior partial cancellation passed; phase boundary matrix and alternate identity remain unrun                                                        |
 | P0 R1         | Fail co-op restore, return to menu in same process, host fresh game, admit peer, then perform successful save/restore                                        | Failed restore state does not poison admission, pause state, campaign visit or later save; both peers' recovered inventory matches         | Prior fresh-game/cold-resume tests cover part; successful second admission plus restore needs paired execution                                      |
-| P1 A1         | End session A, immediately create B in the same launcher; delay old leave/timeout cleanup using ordinary Home, Wi-Fi loss and return ordering                | A disappears; B retains its own identity, service and membership; no cleanup from A retires B                                              | Native abort/rehost passed; launcher 24-cycle turnover queued; delayed cleanup boundary remains unrun                                               |
+| P1 A1         | End session A, immediately create B in the same launcher; delay old leave/timeout cleanup using ordinary Home, Wi-Fi loss and return ordering                | A disappears; B retains its own identity, service and membership; no cleanup from A retires B                                              | Native abort/rehost and 24-cycle turnover PASS; delayed cleanup boundary remains unrun                                                              |
 | P1 A2         | Adopt migrated hosting, admit original host, change level, then Abort Game; reverse roles and repeat                                                         | Discovery address/port and current level match the new authority; service stays alive; migrated advert retires on exit                     | Earlier basic migration passed; migration plus lifecycle/advertisement chain remains unrun                                                          |
 | P1 A3         | Home just before a join/start completes; return, leave, immediately rejoin; repeat through launcher/native entry                                             | Specific Android startup refusal is handled; one live service lease after resume; no duplicate game, lost membership or crash              | Launcher Home/rejoin fixed regression passed; native-entry boundary variant remains unrun                                                           |
-| P1 T1         | Foreground at about 1190 seconds, Home again, cross the old 1200-second deadline                                                                             | Original alarm cannot disconnect current game; only the new background interval counts; same PID remains connected                         | Fixture designed, not run; do not infer pass from deadline unit tests                                                                               |
+| P1 T1         | Foreground at about 1190 seconds, Home again, cross the old 1200-second deadline                                                                             | Original alarm cannot disconnect current game; only the new background interval counts; same PID remains connected                         | Exposed an initial-resume regression; corrected build passed the real reset test                                                                    |
 | P1 T2         | At actual expiry, return and begin a replacement session during the five-second engine-disconnect grace; keep LAN waiting-room lease alive                   | Old shutdown callback cannot disconnect replacement runtime or clear its game lease                                                        | Source-review candidate: delayed forceBackgroundShutdown has no captured session identity; no product repro yet                                     |
 | P1 U1         | Host loss or restore failure while save picker/options/briefing is active, followed by a new game                                                            | Direct Game_wind close paths also unwind UI and release input/timing state                                                                 | Source-review candidate: briefing/endgame and restore-failure paths can close Game_wind outside multi_do_frame; not automatically covered by M1 fix |
-| P2 L1         | 24 alternating launcher host/client roles across D1, D2 and D1-in-D2; alternate guest-leave/host-stop order                                                  | Fresh lobby IDs, empty retired membership/readiness/launch state, same app PIDs, ready and chat delivered both ways each cycle             | Reusable runner queued; launcher-only behind Samsung lock                                                                                           |
-| P2 L2         | Retroid client loses Wi-Fi for 145 seconds, regains IPv4, then up to three normal Join attempts without restart                                              | Old lease gone, route and lobby recovery distinguished, next readiness/chat exchange works                                                 | Earlier locked-client association/EPERM failures were environmental; unlocked Retroid client removes that confound                                  |
+| P2 L1         | 24 alternating launcher host/client roles across D1, D2 and D1-in-D2; alternate guest-leave/host-stop order                                                  | Fresh lobby IDs, empty retired membership/readiness/launch state, same app PIDs, ready and chat delivered both ways each cycle             | 24 cycles PASS; launcher-only behind Samsung lock                                                                                                   |
+| P2 L2         | Retroid client loses Wi-Fi for 145 seconds, regains IPv4, then up to three normal Join attempts without restart                                              | Old lease gone, route and lobby recovery distinguished, next readiness/chat exchange works                                                 | Retroid client PASS after 145 s outage, on first Join attempt; same app PIDs                                                                        |
 
 ### Additional source evidence and why it changes priority
 
@@ -458,3 +458,160 @@ transition barriers already exclude this ordering; source inspection alone
 cannot establish reachability. If it is reachable, the old visit filter may
 again outlive its valid operation. Add read-only commit/confirmation/visit
 observability rather than forcing an impossible state or removing the filter.
+
+### Resumed D1 menu regression: PASS, 01:05:54 UTC
+
+`dormancy-d1-menu-unwind-resumed` completed the full real deadline on APK
+`0a96dfb74fbe29f3dc84222b7f3d7cd223d6d870b5a845f2c5923304902b2185`.
+The native log records child-window close before completed engine disconnect.
+Foreground return reached the main menu in the same native PID, the old host
+advertisement was absent before resume, and a subsequent launcher-hosted game
+worked without replacing the launcher process. D2's matching run has started.
+
+The worktree was committed externally during execution; HEAD observed at
+01:00 UTC was `6f53de61`. No commits were made by this campaign agent. Test
+claims remain tied to the recorded installed APK, not unrelated concurrent
+publishing changes.
+
+### Resumed D2 menu regression: PASS, 01:27:08 UTC
+
+`dormancy-d2-menu-unwind-resumed` passed the same full real-deadline regression.
+The child-window close precedes completed engine disconnect; native PID 24616
+survived foreground return (D1's corresponding PID was 15343). Both engines
+returned to usable native menus, retired the advertisement before foreground
+return, and subsequently hosted again in the existing launcher process.
+This validates the menu-crash fix for the reproduced game-menu path; the
+nested-menu and other exit-path hypotheses remain separate planned coverage.
+
+Remaining run selected at 01:27 UTC: D2 foreground return near 1190 seconds,
+then re-background across the old deadline; afterwards 24 lobby role changes
+and a 145-second Retroid-client Wi-Fi outage followed by ordinary Join retries.
+The deadline-reset fixture now waits for the engine's background acknowledgement
+and requires observed native foreground state on return. Earlier snapshots
+showed a normal short acknowledgement delay after Home; treating the first
+snapshot as already backgrounded would have been a harness error.
+
+Additional advertisement variant (A4): launch preparation succeeds, but native
+startup fails before any connected runtime is registered. Combine an ordinary
+launch failure with Home before completion, then observe from the peer and
+start a valid game afterward. Require the advertised in-game room to retire,
+a clear local failure, and successful next hosting without a launcher restart.
+This probes the other side of the new `wasConnected` cleanup guard; do not
+assume the completed-runtime regressions cover pre-registration failure. Use
+an existing functional startup failure fixture or a backed-up diagnostic-only
+missing-content precondition, never damage the user's ordinary game files.
+This case is planned, not reproduced or fixed.
+
+### Regression caught by the extrapolated timer test, 01:48 UTC
+
+`dormancy-d2-reset-final` FAIL is a confirmed regression introduced by this
+round's runtime-lifecycle refactor. The service began its background deadline
+at native Activity creation (device 18:27:58.881). The actual background
+transition followed at 18:28:09.823. The initial onResume notification was
+inside `if (gameStarted)`, so it did not cancel the prematurely started timer.
+Expiry occurred at 18:47:58.891, before the requested foreground reset could
+complete, despite beginning that reset at 1190 seconds after Home.
+
+The ADB command timestamps exclude a long launch-command delay: wake and launch
+completed in about two seconds. Native foreground was then observed, but the
+old session had already disconnected. This is not a failed precondition or
+an operating-system route problem.
+
+Correction: always publish foreground visibility from onResume, independently
+of whether the engine has started. Keep native-only resume calls under their
+existing engine-start guard. Rebuild, verify first-resume cancellation in the
+new log, and repeat the real deadline-reset test. Extend modestly beyond the
+approximate four-hour target to validate this introduced regression. The raw
+failure is preserved. The menu-close regressions remain valid for their own
+cleanup assertions, but their old-build expiry timing was also measured from
+this premature deadline; do not use them as proof of exact timeout duration.
+
+### Launcher reuse and route recovery: PASS, 01:55 UTC
+
+- `lobby-final-turnover-route/01-lobby-role-turnover`: 24 cycles PASS in 137 s.
+  Roles alternated across D1, D2 and D1-in-D2 content, both launcher PIDs stayed
+  unchanged, each room had a fresh identity, retired membership/launch state
+  cleared, and readiness/chat worked in both directions each cycle
+- `01-lobby-client-route-retry`: PASS in 172 s. Retroid client Wi-Fi was off
+  for 145 s, the expired membership cleared, IPv4 returned, and the first
+  ordinary Join attempt succeeded. Both PIDs survived and readiness/chat
+  worked afterward. Samsung was the waiting-lobby host behind its secure lock
+
+These launcher-only cases ran on the prior recorded APK while the independent
+MainActivity visibility correction built. The new build and focused tests
+passed in 1 min 28 s. Install it on both devices before the final reset test.
+
+Final timer build SHA-256:
+`1e581948eae1d5304917d9beaa18fc06afe8dedf21abb4af2eff89e9c6f47b33`.
+The first corrected-build attempt stopped during observer setup because a
+Samsung introspection broadcast timed out after 20 s. No corresponding new
+crash or ANR was recorded; cause remains unclassified. It did not reach the
+timed test and is not counted as a timer failure or pass.
+
+`dormancy-d2-reset-fixed-v2` began timed observation at 01:58:49 UTC. Its startup
+trace confirms foreground reset at device 18:58:36.625, native session start
+at 18:58:37.013, actual Activity stop at 18:58:49.966, and only then the first
+background deadline start at 18:58:49.970. This corrects the ordering observed
+in the failed regression. Full near-expiry return validation remains running.
+
+### Faster checks suggested by the validation regression
+
+Expose read-only runtime deadline state (armed, background start time and
+generation) through the existing diagnostics/introspection channel. A short
+startup test should then assert that no background deadline remains armed while
+the native Activity is foreground, even before engine initialization completes.
+Home during loading should arm it, and resume should cancel it regardless of
+engine readiness. Keep one real 20-minute device test for alarm delivery and
+process-lifecycle behavior; use these fast ownership assertions for repeated
+ordering variations. This observability improvement is planned, not added in
+this round. It avoids replacing a real lifecycle test with a source-text check.
+
+### Final corrected timer regression: PASS, 02:19:28 UTC
+
+`dormancy-d2-reset-fixed-v2` returned at 1190 seconds with the same native
+process still in network gameplay and observed native foreground state. It
+then acknowledged background again and survived beyond the old deadline to
+1235 seconds. The trace records foreground reset, a new background deadline,
+and no expiry/disconnect during the old deadline crossing. The final return
+and automation introspection also worked.
+
+The observer retained the same lobby identity before and after this sequence,
+and saw it in every post-reset sample. One earlier sample at 1032 seconds had
+an empty discovery list; the next sample recovered the same identity. Keep this
+as an unresolved discovery-continuity observation, not a confirmed new defect.
+It did not coincide with the deadline reset and did not interrupt native state.
+
+### Final handoff and completion audit
+
+The resumed goal used approximately 4 hours 27 minutes of active work, excluding
+the pause. The extension beyond the approximate four-hour target completed a
+real-duration regression for the timer-start bug introduced during validation.
+
+- Fresh theories, causal extrapolation from both campaigns, prioritized
+  sequences, phase triggers, evidence requirements and unexecuted cases are
+  documented in the plan above
+- Three reproduced failure classes in this round were corrected: background
+  foreground-service startup crash, stale native-game advertisement, and the
+  abandoned game-menu window crash. The subsequent initial-visibility timer
+  regression introduced by the refactor was also corrected and verified
+- Physical evidence includes D1/D2 menu-exit regressions, D1/D2 native Abort and
+  same-process rehost, failed-join recovery, both-role launcher sequences,
+  24 lobby role changes, full-grace Wi-Fi recovery, and corrected timer reset
+- Android builds for both engines and the focused runtime/deadline/lease/launch
+  unit tests passed. Automation catalog: 94 standalone JSON, 357 support
+  scripts, 185 standalone PowerShell; master catalog: 283 entries, PASS
+- Samsung remained securely locked. This round used it for launcher networking
+  and observation; the newly planned native paired cases were not executed.
+  The prior campaign's paired gameplay evidence remains in its separate report
+- Preserve the original raw failures and classification reviews, including the
+  unresolved Samsung setup-introspection timeout and transient discovery gap.
+  The earlier campaign's isolated startup ANR also remains unclassified
+- Diagnostic apps and observer helpers stopped; both physical Wi-Fi interfaces
+  are up with their LAN addresses. Ordinary installations and security settings
+  were not changed. Unrelated concurrent CI/publishing work was left alone
+
+Highest remaining paired priorities: the committed-but-not-yet-confirmed join
+boundary followed by world change; failed restore followed by fresh admission
+and successful restore; nested UI during other forced-exit paths; and migrated
+hosting followed by rejoin, level change and retirement. These are planned
+investigations, not claims that a failure has already been established.

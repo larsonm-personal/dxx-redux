@@ -1,0 +1,71 @@
+name: Engine smoke
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: engine-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engine:
+    name: Linux ${{ matrix.game }} build and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: [d1, d2]
+    env:
+      SDL_AUDIODRIVER: dummy
+      SDL_VIDEODRIVER: dummy
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Install native dependencies
+        timeout-minutes: 3
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build libphysfs-dev libsdl1.2-dev \
+            libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev
+
+      # Debug keeps assertions active; reduced debug info bounds disk/memory use
+      - name: Configure all desktop, headless and test targets
+        timeout-minutes: 3
+        run: |
+          cmake -S "${{ matrix.game }}" -B build-smoke -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            '-DCMAKE_C_FLAGS_DEBUG=-O0 -g1' '-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g1' \
+            -DBUILD_TESTING=ON -DOPENGL=ON -DSDLMIXER=ON -DUDP=ON \
+            -DOpenGL_GL_PREFERENCE=LEGACY
+
+      - name: Compile and link all targets
+        timeout-minutes: 14
+        run: cmake --build build-smoke --parallel 4
+
+      # Some tests share fixture filenames, so run serially within each game
+      - name: Run asset-free engine and demo tests
+        timeout-minutes: 3
+        run: |
+          ctest --test-dir build-smoke --output-on-failure --no-tests=error \
+            --parallel 1 --timeout 120 --output-junit ctest-results.xml
+
+      - name: Keep test and configure diagnostics
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: engine-smoke-${{ matrix.game }}
+          path: |
+            build-smoke/ctest-results.xml
+            build-smoke/Testing/Temporary/
+            build-smoke/CMakeFiles/CMakeConfigureLog.yaml
+            build-smoke/CMakeCache.txt
+          retention-days: 3
+          if-no-files-found: ignore

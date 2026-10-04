@@ -1443,6 +1443,15 @@ def dormancy_reset(case, devices):
     host_pid, _ = advertised_solo_host(case, devices)
     host.shell("input", "keyevent", "KEYCODE_HOME")
     started = time.monotonic()
+    wait_for(
+        "native Activity acknowledges background before reset test",
+        lambda: (
+            (s and s.get("android_lifecycle", {}).get("observed_visibility") == "background")
+            if (s := host.snapshot())
+            else False
+        ),
+        5,
+    )
     observations = []
     while time.monotonic() - started < case["duration"]:
         state = host.snapshot()
@@ -1457,16 +1466,34 @@ def dormancy_reset(case, devices):
         write_json(host.output / "deadline-reset-observations.json", observations)
         if not state or not state.get("is_network"):
             raise RuntimeError("Host disconnected before foreground reset")
+        if state.get("android_lifecycle", {}).get("observed_visibility") != "background":
+            raise RuntimeError("Deadline reset precondition lost: native Activity was not backgrounded")
         print(f"{utc()} waiting for foreground reset elapsed={time.monotonic() - started:.1f}s", flush=True)
         time.sleep(min(20, max(0, case["duration"] - (time.monotonic() - started))))
+    reset_began = time.monotonic() - started
     host.wake()
     host.shell("monkey", "-p", PACKAGE, "-c", "android.intent.category.LAUNCHER", "1")
     time.sleep(2)
     resumed = host.snapshot()
-    write_json(host.output / "deadline-reset-resumed.json", {"utc": utc(), "native": resumed})
+    write_json(
+        host.output / "deadline-reset-resumed.json",
+        {"utc": utc(), "reset_began_elapsed_seconds": reset_began, "native": resumed},
+    )
     if not resumed or not resumed.get("in_game") or not resumed.get("is_network"):
         raise RuntimeError("Return before timeout failed to preserve the session")
+    if resumed.get("android_lifecycle", {}).get("observed_visibility") != "foreground":
+        raise RuntimeError("Deadline reset precondition missed: native Activity did not reach foreground")
+    assert_process(host, host_pid)
     host.shell("input", "keyevent", "KEYCODE_HOME")
+    wait_for(
+        "native Activity backgrounds again after reset",
+        lambda: (
+            (s and s.get("android_lifecycle", {}).get("observed_visibility") == "background")
+            if (s := host.snapshot())
+            else False
+        ),
+        5,
+    )
     deadline = time.monotonic() + 40
     while time.monotonic() < deadline:
         state = host.snapshot()
