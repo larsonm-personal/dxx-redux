@@ -140,7 +140,7 @@ function gh {
     if ($args[0] -eq 'release' -and $args[1] -eq 'delete') {
         Assert-Test ($args[2] -eq "android-legacy-v$global:dxxReleaseTestVersion" -and $args -contains '--cleanup-tag') 'Only the obsolete separate legacy release/tag may be removed'
         Assert-Test ($global:dxxReleaseTestAssets.ContainsKey($global:dxxReleaseTestCombinedLegacyName)) 'Separate legacy release deleted before its APK was uploaded'
-        Assert-Test ($global:dxxReleaseTestBody.Contains('Only for Android 6.0')) 'Separate legacy release deleted before combined notes were published'
+        Assert-Test ($global:dxxReleaseTestBody.Contains('special apk with support for older android 6.0 - use the recommended apk for newer devices')) 'Separate legacy release deleted before combined notes were published'
         if ($global:dxxReleaseTestScenario -eq 'legacy-retirement-failure') { $global:LASTEXITCODE = 1; return }
         $global:dxxReleaseTestSeparateLegacy = $false
         return
