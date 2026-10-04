@@ -1,0 +1,5 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "key", "key": "escape", "post_delay_ms": 100 },
+    { "action": "introspect" },
+]

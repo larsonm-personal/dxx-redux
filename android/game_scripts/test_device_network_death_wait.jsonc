@@ -1,0 +1,6 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_device_network_campaign" } },
+    { "action": "set_debug", "field": "damage_player", "value": "500" },
+    { "action": "wait_for", "timeout_ms": 10000, "expect": { "player_dead": true } },
+    { "action": "introspect" },
+]

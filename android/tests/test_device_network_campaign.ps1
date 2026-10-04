@@ -4,6 +4,8 @@
 # test_device_network_menu_open.jsonc, test_device_network_automap_open.jsonc,
 # test_device_network_ui_close.jsonc, test_device_network_cancel_join.jsonc,
 # test_device_network_native_host.jsonc, test_device_network_abort_game.jsonc
+# test_device_network_death_wait.jsonc, test_device_network_respawn.jsonc
+# test_device_loading_background.jsonc
 param(
     [string]$HostSerial,
     [string]$ClientSerial,

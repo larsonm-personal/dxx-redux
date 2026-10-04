@@ -1,0 +1,26 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "select", "text": "New game", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "select_mission", "text": "First Strike", "when": "d1", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "select_mission", "text": "Counterstrike", "when": "d2", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "select", "text": "Ok", "when": "d2", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100 },
+    { "action": "select", "text": "Trainee", "timeout_ms": 10000, "post_delay_ms": 100 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 15000,
+        "expect": { "screen_advance_kind": "briefing", "screen_advance_can_activate": true },
+    },
+    { "action": "introspect" },
+    { "action": "request_screen_advance", "generation": "current" },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": { "in_game": true, "is_network": false, "time_paused": false },
+    },
+    { "action": "wait_ms", "ms": 3000 },
+    {
+        "action": "assert",
+        "expect": { "in_game": true, "is_network": false, "time_paused": false, "coop_restore.transfer_busy": false },
+    },
+]

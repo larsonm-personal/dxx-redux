@@ -151,6 +151,8 @@ param(
     [ValidateSet("client", "host", "stalled", "sync_stalled", "load_client", "load_host")]
     [string]$RestoreFailure,
     [switch]$RestoreLossResume,
+    [switch]$RestoreFailureRehost,
+    [switch]$RestoreFailureOptions,
     [switch]$LevelRestart,
     [switch]$CoopRewind,
     [switch]$ClientRewind,
@@ -240,6 +242,12 @@ if ($GuidebotRewind) {
     $CoopRewind = $true
 }
 if ($RestoreLossResume -and -not $RestoreFailure) { throw "RestoreLossResume requires RestoreFailure" }
+if ($RestoreFailureRehost -and ($RestoreFailure -notin @('load_client', 'load_host') -or $RestoreLossResume -or $MissionFile)) {
+    throw 'RestoreFailureRehost requires a base-game loader failure without cold resume'
+}
+if ($RestoreFailureOptions -and $RestoreFailure -notin @('load_client', 'load_host')) {
+    throw 'RestoreFailureOptions requires a loader failure'
+}
 $isStandardCampaign = -not $MissionFile -or ($Game -eq 'd2' -and $MissionFile -in @('d2', 'descent'))
 if ($RestoreFailure -and (-not $isStandardCampaign -or $InitialLevel -ne 1 -or $CountdownSave -or $CoopRewind -or
         $LevelRestart -or $SecretWorld -or $SecretPhysical -or $SecretSaveRestore -or $SecretRewind -or $SecretRestart)) {
@@ -1000,6 +1008,15 @@ function Invoke-RestoreFailureScenario {
     $save = "files/$gameDir/Players/save_sets/coop/$missionKey/$saveName.mg0"
     $saveHash = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'run-as', $PACKAGE, 'sha256sum', $save) -Seconds 10
     if (-not $saveHash -or $saveHash -notmatch '^[a-f0-9]{64} ') { throw 'Missing manual save before loss test' }
+    if ($RestoreFailureOptions) {
+        if (-not (Start-DeviceGameAutomation -Serial $failedLoader -ScriptName 'test_device_network_options_open.jsonc')) { throw 'Could not open nested options before restore' }
+        if (-not (Wait-ForCondition -Description 'Nested options is open before restore' -TimeoutSec 30 -PollMs 500 -Condition {
+                    $result = Get-DeviceAutomationResult -Serial $failedLoader
+                    if ($result -and $result.result -eq 'FAIL') { throw 'Nested options setup failed' }
+                    return $result -and $result.result -eq 'PASS'
+                })) { throw 'Nested options did not open' }
+        Get-GameIntrospection -Serial $failedLoader | ConvertTo-Json -Depth 30 | Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-restore-options-$Game-$RestoreFailure.json")
+    }
     if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_restore_loss_start.jsonc')) { throw 'Could not start restore' }
     if (-not (Wait-ForCondition -Description 'both peers frozen before failure' -TimeoutSec 180 -PollMs 500 -Condition {
                 $script:lossHost = Get-GameIntrospection -Serial $EMU1
@@ -1026,11 +1043,23 @@ function Invoke-RestoreFailureScenario {
         Adb-Dev-Timeout -Serial $lost -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
     }
     $script:lossFinals = @{}
+    $script:restoreOptionsBack = @{}
     if (-not (Wait-ForCondition -Description 'all survivors exit failed restore without resuming the mine' -TimeoutSec 90 -PollMs 1000 -Condition {
                 $ready = $true
                 foreach ($survivor in $survivors) {
                     $intro = Get-GameIntrospection -Serial $survivor
                     if (-not $intro) { $ready = $false; continue }
+                    if ($RestoreFailureOptions -and $survivor -eq $failedLoader -and -not $intro.in_game -and
+                        $intro.PSObject.Properties['menu'] -and $intro.menu.subtitle -in @('Options:', 'Game Menu') -and
+                        -not $script:restoreOptionsBack.ContainsKey($intro.menu.subtitle)) {
+                        $backIndex = $script:restoreOptionsBack.Count
+                        $intro | ConvertTo-Json -Depth 30 | Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-restore-options-back-$Game-$backIndex.json")
+                        Write-Status "Closing retained menu after restore failure: $($intro.menu.subtitle)"
+                        $script:restoreOptionsBack[$intro.menu.subtitle] = $true
+                        if (-not (Start-DeviceGameAutomation -Serial $survivor -ScriptName 'test_device_network_options_back.jsonc')) { throw 'Could not close retained menu' }
+                        $ready = $false
+                        continue
+                    }
                     if ($intro.in_game -and -not $intro.time_paused) { throw "Survivor resumed gameplay during failed restore: $survivor" }
                     if ($intro.in_game -or $intro.coop_restore.transfer_busy -or $intro.coop_restore.barrier_phase -ne 'idle' -or
                         -not $intro.PSObject.Properties['menu'] -or $intro.menu.title -ne 'Co-op restore interrupted') { $ready = $false; continue }
@@ -1096,7 +1125,8 @@ function Invoke-RestoreFailureScenario {
     }
     Write-Status "Restore failure verified: $RestoreFailure, all survivors left frozen visit 2, manual save unchanged" 'Green'
     if ($loaderFailure) {
-        if (-not (Start-DeviceGameAutomation -Serial $failedLoader -ScriptName 'test_coop_restore_load_error_new_game.jsonc')) { throw 'Could not start same-process recovery check' }
+        $newGameFixture = if ($RestoreFailureOptions) { 'test_device_network_recovery_new_game.jsonc' } else { 'test_coop_restore_load_error_new_game.jsonc' }
+        if (-not (Start-DeviceGameAutomation -Serial $failedLoader -ScriptName $newGameFixture)) { throw 'Could not start same-process recovery check' }
         if (-not (Wait-ForCondition -Description 'failed loader can start a game without restarting the app' -TimeoutSec 180 -PollMs 1000 -Condition {
                     $result = Get-DeviceAutomationResult -Serial $failedLoader
                     if ($result -and $result.result -eq 'FAIL') { Write-DeviceAutomationDiagnostics -Serial $failedLoader; throw 'Same-process recovery failed' }
@@ -1106,6 +1136,9 @@ function Invoke-RestoreFailureScenario {
         if ($retryPid -ne $gamePid) { throw 'New game unexpectedly replaced the failed loader process' }
         $retryIntro = Get-GameIntrospection -Serial $failedLoader
         $retryIntro | ConvertTo-Json -Depth 30 | Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-restore-$Game-$RestoreFailure-same-process.json")
+    }
+    if ($RestoreFailureRehost) {
+        Invoke-RestoreFailureRehost -HostSerial $failedLoader -ExpectedPid $gamePid
     }
     if ($RestoreLossResume) {
         foreach ($serial in @($EMU1, $EMU2)) {
@@ -1150,6 +1183,69 @@ function Invoke-RestoreFailureScenario {
         Write-Status 'Cold restore recovery verified on both peers' 'Green'
     }
     return $true
+}
+
+function Invoke-RestoreFailureRehost {
+    param([string]$HostSerial, [string]$ExpectedPid)
+
+    $peerSerial = if ($HostSerial -eq $EMU1) { $EMU2 } else { $EMU1 }
+    foreach ($fixture in @('test_device_network_abort_game.jsonc', 'test_device_network_native_host.jsonc')) {
+        if (-not (Start-DeviceGameAutomation -Serial $HostSerial -ScriptName $fixture)) { throw "Could not start $fixture" }
+        if (-not (Wait-ForCondition -Description "Same-process recovery: $fixture" -TimeoutSec 60 -PollMs 500 -Condition {
+                    $result = Get-DeviceAutomationResult -Serial $HostSerial
+                    if ($result -and $result.result -eq 'FAIL') { Write-DeviceAutomationDiagnostics -Serial $HostSerial; throw 'Native rehost failed' }
+                    return $result -and $result.result -eq 'PASS'
+                })) { throw 'Native rehost did not finish' }
+    }
+    foreach ($table in @('udp', 'udp6')) {
+        $sockets = Adb-Dev-Timeout -Serial $HostSerial -AdbArgs @('shell', 'run-as', $PACKAGE, 'cat', "/proc/self/net/$table") -Seconds 10
+        $sockets = ($sockets -split '\r?\n' | Where-Object { $_ -match 'local_address|:A5B8\b' }) -join "`n"
+        $sockets | Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-rehost-$Game-$RestoreFailure-$table.txt")
+        Write-Status "Native rehost socket table $table on ${HostSerial}: $sockets"
+    }
+    if (-not (Start-SetupActivity -Serial $peerSerial)) { throw 'Peer launcher did not return' }
+    $hostAddress = Get-DeviceWlanIp -Serial $HostSerial
+    if (-not $hostAddress) { throw 'Rehost has no LAN address' }
+    Send-MpCommand -Serial $peerSerial -Command 'lan_discover' -Extras @('--es', 'callsign', 'Recovery')
+    Send-MpCommand -Serial $peerSerial -Command 'lan_join_ip' -Extras @('--es', 'host_addr', $hostAddress)
+    $script:rehostAdmissionApproved = $false
+    if (-not (Wait-ForCondition -Description 'Failed loader admits a fresh peer without restarting' -TimeoutSec 90 -PollMs 1000 -Condition {
+                foreach ($serial in @($HostSerial, $peerSerial)) {
+                    $state = Get-GameIntrospection -Serial $serial
+                    if ($serial -eq $HostSerial -and $state -and $state.multiplayer.join_request_pending -and -not $script:rehostAdmissionApproved) {
+                        if (-not (Start-DeviceGameAutomation -Serial $HostSerial -ScriptName 'test_coop_late_join_accept.jsonc')) { throw 'Could not approve recovery peer' }
+                        $script:rehostAdmissionApproved = $true
+                    }
+                    if (-not $state -or -not $state.in_game -or -not $state.is_network -or
+                        (Get-IntroNumConnected -Intro $state) -ne 2) { return $false }
+                }
+                return $true
+            })) { throw 'Same-process rehost did not admit peer' }
+    if (-not (Wait-BidirectionalPdata -FirstSerial $HostSerial -FirstRemoteSlot 1 -SecondSerial $peerSerial -SecondRemoteSlot 0 `
+                -Description 'Network updates after failed-loader rehost')) { throw 'Rehost did not resume networking' }
+    foreach ($phase in @('seed', 'save', 'mutate', 'restore', 'verify')) {
+        $hostScript = "test_coop_countdown_save_$phase.jsonc"
+        $peerScript = if ($phase -eq 'save') { 'test_coop_countdown_save_idle.jsonc' } elseif ($phase -eq 'restore') { 'test_coop_countdown_save_wait.jsonc' } else { $hostScript }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $HostSerial -PrimaryScript $hostScript `
+                    -SecondarySerial $peerSerial -SecondaryScript $peerScript `
+                    -Description "Same-process rehost save cycle: $phase" -TimeoutSec 210)) { throw "Rehost save cycle failed at $phase" }
+    }
+    foreach ($serial in @($HostSerial, $peerSerial)) {
+        $state = Get-GameIntrospection -Serial $serial
+        if (-not $state -or $state.time_paused -or $state.coop_restore.transfer_busy -or
+            $state.coop_restore.status -ne 'idle' -or $state.coop_restore.barrier_phase -ne 'done') {
+            throw 'Rehost restore did not settle'
+        }
+        $state | ConvertTo-Json -Depth 30 | Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-rehost-$Game-$RestoreFailure-$serial.json")
+    }
+    if (-not (Wait-BidirectionalPdata -FirstSerial $HostSerial -FirstRemoteSlot 1 -SecondSerial $peerSerial -SecondRemoteSlot 0 `
+                -Description 'Network updates after rehost restore')) { throw 'Restored rehost lost networking' }
+    if (-not (Invoke-PairedGameAutomation -PrimarySerial $HostSerial -PrimaryScript 'test_device_network_controls.jsonc' `
+                -SecondarySerial $peerSerial -SecondaryScript 'test_device_network_controls.jsonc' `
+                -Description 'Controls after rehost restore' -TimeoutSec 30)) { throw 'Restored rehost lost controls' }
+    $actualPid = (Adb-Dev-Timeout -Serial $HostSerial -AdbArgs @('shell', 'pidof', "${PACKAGE}:game") -Seconds 5).Trim()
+    if ($actualPid -ne $ExpectedPid) { throw 'Failed loader process was replaced during co-op recovery' }
+    Write-Status 'Failed loader rehosted, admitted a peer and restored a new save in the same process' 'Green'
 }
 
 function Invoke-CoopLevelRestartScenario {

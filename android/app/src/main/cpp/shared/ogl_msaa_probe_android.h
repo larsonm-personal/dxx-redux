@@ -10,6 +10,10 @@ extern "C" {
 void android_ogl_msaa_probe(int requested_samples, int logical_width, int logical_height);
 const char *android_ogl_msaa_probe_result_json(void);
 #ifdef INTROSPECT_ON
+void android_ogl_loading_probe_phase(const char *phase);
+void android_ogl_loading_probe_frame(void);
+void android_ogl_loading_background_test_begin(void);
+const char *android_ogl_loading_background_test_result(void);
 void android_ogl_graphics_debug_black_frame(void);
 void android_ogl_menu_probe_request(void);
 int android_ogl_menu_probe_active(void);

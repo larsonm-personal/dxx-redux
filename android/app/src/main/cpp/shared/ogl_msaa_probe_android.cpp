@@ -6,6 +6,7 @@
 extern "C" {
 #include "android_log.h"
 #include "ogl_msaa_android.h"
+void ogl_prepare_framebuffer_readback(void);
 }
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
@@ -14,6 +15,7 @@ extern "C" {
 #include <array>
 #include <string>
 #include <vector>
+#include <physfs.h>
 
 using nlohmann::json;
 
@@ -419,6 +421,102 @@ extern "C" void android_ogl_menu_probe_before_swap(unsigned long long flip)
 extern "C" const char *android_ogl_menu_probe_result_json(void)
 {
 	return menu_probe_result.c_str();
+}
+
+static std::string loading_probe_phase = "startup";
+static int loading_probe_remaining = 12;
+static unsigned int loading_probe_serial;
+static bool loading_background_test_pending;
+static std::string loading_background_test_result = "null";
+
+extern "C" void android_ogl_loading_background_test_begin(void)
+{
+	ogl_prepare_framebuffer_readback();
+	SavedState saved;
+	EGLint width = 0, height = 0;
+	eglQuerySurface(eglGetCurrentDisplay(), eglGetCurrentSurface(EGL_DRAW), EGL_WIDTH, &width);
+	eglQuerySurface(eglGetCurrentDisplay(), eglGetCurrentSurface(EGL_DRAW), EGL_HEIGHT, &height);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	pattern(0, width, height);
+	saved.restore();
+	loading_background_test_result = "null";
+	loading_background_test_pending = true;
+}
+
+extern "C" const char *android_ogl_loading_background_test_result(void)
+{
+	return loading_background_test_result.c_str();
+}
+
+extern "C" void android_ogl_loading_probe_phase(const char *phase)
+{
+	loading_probe_phase = phase ? phase : "";
+	loading_probe_remaining = 12;
+}
+
+extern "C" void android_ogl_loading_probe_frame(void)
+{
+	if (loading_background_test_pending) {
+		EGLint width = 0, height = 0;
+		eglQuerySurface(eglGetCurrentDisplay(), eglGetCurrentSurface(EGL_DRAW), EGL_WIDTH, &width);
+		eglQuerySurface(eglGetCurrentDisplay(), eglGetCurrentSurface(EGL_DRAW), EGL_HEIGHT, &height);
+		std::vector<ProbePixel> points;
+		for (int i = 0; i < 4; ++i)
+			points.push_back({ (i & 1) ? width - 2 : 1, (i & 2) ? height - 2 : 1, { 0, 0, 0, 255 } });
+		const auto report = probe_pixels(points);
+		loading_background_test_result = report.dump();
+		debug_log_force(DLOG_GRAPHICS, "loading-background-test %s", loading_background_test_result.c_str());
+		loading_background_test_pending = false;
+	}
+	/* Private diagnostic marker enables numerical readback, never image output */
+	static const bool enabled = PHYSFS_exists("loading-frame-probe") != 0;
+	if (!enabled || loading_probe_remaining <= 0) return;
+	--loading_probe_remaining;
+	const auto prior_errors = errors();
+	SavedState saved;
+	EGLint width = 0, height = 0, behavior = 0;
+	const EGLDisplay display = eglGetCurrentDisplay();
+	const EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
+	eglQuerySurface(display, surface, EGL_WIDTH, &width);
+	eglQuerySurface(display, surface, EGL_HEIGHT, &height);
+	eglQuerySurface(display, surface, EGL_SWAP_BEHAVIOR, &behavior);
+	if (width < 64 || height < 64) return;
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+	glPixelStorei(GL_PACK_SKIP_ROWS, 0);
+	glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
+	std::vector<unsigned char> pixels((size_t) width * height * 4);
+	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+	const auto read_errors = errors();
+	json regions = json::array();
+	for (int region = 0; region < 5; ++region) {
+		const int x0 = region == 4 ? width / 2 - 32 : (region & 1) ? width - 64
+		                                                           : 0;
+		const int y0 = region == 4 ? height / 2 - 32 : (region & 2) ? height - 64
+		                                                            : 0;
+		unsigned int hash = 2166136261u;
+		int black = 0, white = 0, gray = 0, edges = 0;
+		for (int y = y0; y < y0 + 64 && y < height; ++y) {
+			int previous = -1;
+			for (int x = x0; x < x0 + 64 && x < width; ++x) {
+				const auto *p = &pixels[((size_t) y * width + x) * 4];
+				const int lo = std::min({ p[0], p[1], p[2] });
+				const int hi = std::max({ p[0], p[1], p[2] });
+				black += hi < 8;
+				white += lo > 247;
+				gray += hi - lo < 8;
+				if (previous >= 0 && std::abs(int(p[0]) - previous) > 128) ++edges;
+				previous = p[0];
+				for (int c = 0; c < 3; ++c) hash = (hash ^ p[c]) * 16777619u;
+			}
+		}
+		regions.push_back({ { "region", region }, { "black", black }, { "white", white }, { "gray", gray }, { "edges", edges }, { "hash", hash } });
+	}
+	saved.restore();
+	json report = { { "serial", ++loading_probe_serial }, { "phase", loading_probe_phase }, { "width", width }, { "height", height }, { "swap_behavior", behavior }, { "draw_fbo", saved.draw }, { "read_errors", read_errors }, { "prior_errors", prior_errors }, { "regions", regions }, { "restore_errors", errors() } };
+	debug_log_force(DLOG_GRAPHICS, "loading-frame-probe %s", report.dump().c_str());
 }
 
 extern "C" void android_ogl_graphics_debug_black_frame(void)

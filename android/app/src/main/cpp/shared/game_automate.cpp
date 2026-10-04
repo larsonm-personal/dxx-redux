@@ -4059,6 +4059,17 @@ extern "C" void game_automate_tick(void)
 #else
 				stop_script_fail("msaa_scene_probe: Android OpenGL-only action");
 #endif
+			} else if (s.field == "loading_frame_background") {
+#if defined(ANDROID) && defined(OGL)
+				android_ogl_loading_background_test_begin();
+				char message[] = "Prepare for Descent...";
+				show_boxed_message(message, 0);
+				const auto result = json::parse(android_ogl_loading_background_test_result());
+				if (!result.is_object() || !result.value("passed", false))
+					stop_script_fail("Loading message left stale pixels outside its rectangle");
+#else
+				stop_script_fail("loading_frame_background: Android OpenGL-only action");
+#endif
 			} else if (s.field == "msaa_menu_probe") {
 #if defined(ANDROID) && defined(OGL)
 				android_ogl_menu_probe_request();

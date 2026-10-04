@@ -1275,6 +1275,8 @@ int game_handler(window *wind, d_event *event, void *data)
 		case EVENT_WINDOW_CLOSE:
 			#ifdef __ANDROID__
 			android_profile_flush();
+			/* Closing this mine fulfills any pending restore-to-menu request */
+			state_restore_take_menu_request();
 			#endif
 			digi_stop_digi_sounds();
 			input_demo_replay_unload();

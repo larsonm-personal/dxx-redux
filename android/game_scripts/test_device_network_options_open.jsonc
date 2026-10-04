@@ -1,0 +1,12 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "set_debug", "field": "android_game_request", "value": "game_menu" },
+    { "action": "wait_for", "timeout_ms": 10000, "expect": { "menu.subtitle": "Game Menu" } },
+    { "action": "select", "text": "Options...", "timeout_ms": 10000, "post_delay_ms": 100 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": { "menu.subtitle": "Options:", "game_window_is_front": false, "is_network": true },
+    },
+    { "action": "introspect" },
+]

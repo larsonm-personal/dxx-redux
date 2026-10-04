@@ -2553,6 +2553,7 @@ void gr_flip(void)
 #ifdef INTROSPECT_ON
 	android_ogl_menu_probe_before_swap(ogl_msaa_state.flip_serial);
 	android_ogl_scene_probe_before_swap(ogl_msaa_state.flip_serial);
+	android_ogl_loading_probe_frame();
 #endif
 		android_perf_clock_now(&swap_start);
 		ogl_swap_buffers_internal();

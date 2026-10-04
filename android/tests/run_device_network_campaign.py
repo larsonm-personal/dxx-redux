@@ -98,11 +98,31 @@ def cases():
             scenarios[f"restore-{failure}-resume"] = ["-RestoreFailure", failure, "-RestoreLossResume"]
         if content != "d1d2":
             scenarios["host-migration"] = ["-HostMigration"]
+            for failure in ("load_client", "load_host"):
+                scenarios[f"restore-{failure}-rehost"] = ["-RestoreFailure", failure, "-RestoreFailureRehost"]
+            scenarios["restore-options-rehost"] = [
+                "-RestoreFailure",
+                "load_client",
+                "-RestoreFailureRehost",
+                "-RestoreFailureOptions",
+            ]
         if content != "d2":
             scenarios["level-transition"] = ["-D1LevelTransition"]
             scenarios["saved-level-transition"] = ["-SavedLateJoin", "-D1LevelTransition"]
         for name, flags in scenarios.items():
             result.append({"id": f"{content}-{name}", "kind": "suite", "args": base + flags})
+        if content != "d1d2":
+            result.append(
+                {"id": f"{content}-loading-background", "kind": "loading-background", "game": game, "mission": mission}
+            )
+            result.append(
+                {
+                    "id": f"{content}-client-native-rehost",
+                    "kind": "client-native-rehost",
+                    "game": game,
+                    "mission": mission,
+                }
+            )
         for action in ("cancel", "stop", "expire"):
             result.append(
                 {
@@ -173,6 +193,16 @@ def cases():
             }
         )
         for role in ("host", "client"):
+            if content != "d1d2":
+                result.append(
+                    {
+                        "id": f"{content}-{role}-death-autosave",
+                        "kind": "death-autosave",
+                        "game": game,
+                        "mission": mission,
+                        "role": role,
+                    }
+                )
             for ui in ("menu", "automap"):
                 for action in ("soak", "peer-loss"):
                     result.append(
@@ -901,20 +931,118 @@ def renamed_returns(case, devices):
                 raise RuntimeError("Renamed return displaced or duplicated the wrong pilot")
 
 
+def client_native_rehost(case, devices):
+    start_pair(case, devices)
+    original_host, former_client = devices
+    native_pid = former_client.shell("pidof", f"{PACKAGE}:game")
+    former_client.automate(ROOT / "android/game_scripts/test_device_network_abort_game.jsonc")
+    solo_host(original_host)
+    former_client.automate(ROOT / "android/game_scripts/test_device_network_native_host.jsonc", game=case["game"])
+    assert_process(former_client, native_pid)
+    join_from_launcher(original_host, former_client, "ReturnHost")
+    verify_traffic(devices)
+    verify_controls(devices)
+    assert_process(former_client, native_pid)
+    write_json(former_client.output / "ordinary-client-rehost.json", pair_states(devices))
+
+
+def loading_background(case, devices):
+    start_pair(case, devices)
+    failures = []
+    for device in devices:
+        try:
+            device.automate(ROOT / "android/game_scripts/test_device_loading_background.jsonc")
+        except RuntimeError as exc:
+            failures.append(f"{device.serial}: {exc}")
+    if failures:
+        raise RuntimeError("; ".join(failures))
+    verify_traffic(devices)
+    verify_controls(devices)
+
+
 def host_swaps(case, devices):
     start_pair(case, devices)
+    # Keep combat deaths from obscuring the migration and advertisement checks
+    for device in devices:
+        device.automate([{"action": "set_debug", "field": "clear_robots", "value": "true"}])
     host, client = devices
     names = {host.serial: "ChaosRP", client.serial: "ChaosS21"}
+    advertisements = []
     for cycle in range(case["cycles"]):
         print(f"{utc()} host swap {cycle + 1}, departing={host.serial}", flush=True)
         survivor_pid = client.shell("pidof", f"{PACKAGE}:game")
         host.shell("am", "force-stop", PACKAGE)
         solo_host(client)
-        join_from_launcher(host, client, names[host.serial])
+        host.start_setup()
+        host.mp("lan_discover", callsign=names[host.serial])
+        address = client.ip()
+
+        def migrated_advertisement():
+            return next(
+                (
+                    item
+                    for item in lobby_state(host)["discovered"]
+                    if item["host_address"] == address
+                    and item["status"] == "in_game"
+                    and item["host_port"] == 42425
+                    and item["game"] == case["game"]
+                ),
+                None,
+            )
+
+        advertisement = wait_for("migrated host advertises its current endpoint", migrated_advertisement, 30)
+        advertisements.append({"cycle": cycle + 1, "host": client.serial, "advertisement": advertisement})
+        write_json(host.output / "migration-advertisements.json", advertisements)
+        host.mp("lan_join_ip", host_addr=address)
         verify_traffic(devices)
         verify_controls(devices)
         assert_process(client, survivor_pid)
         host, client = client, host
+    client.shell("am", "force-stop", PACKAGE)
+    solo_host(host)
+    client.start_setup()
+    client.mp("lan_discover", callsign="Observer")
+    address = host.ip()
+    wait_for(
+        "final migrated host is visible before abort",
+        lambda: any(item["host_address"] == address for item in lobby_state(client)["discovered"]),
+        30,
+    )
+    host_pid = host.shell("pidof", f"{PACKAGE}:game")
+    host.automate(ROOT / "android/game_scripts/test_device_network_abort_game.jsonc")
+    wait_for(
+        "aborted migrated host advertisement retires",
+        lambda: not any(item["host_address"] == address for item in lobby_state(client)["discovered"]),
+        40,
+    )
+    assert_process(host, host_pid)
+    write_json(host.output / "migration-abort-observer.json", lobby_state(client))
+
+
+def death_autosave(case, devices):
+    start_pair(case, devices)
+    host, client = devices
+    for device in devices:
+        device.automate([{"action": "set_debug", "field": "clear_robots", "value": "true"}])
+    target = host if case["role"] == "host" else client
+    native_pid = target.shell("pidof", f"{PACKAGE}:game")
+    target.automate(ROOT / "android/game_scripts/test_device_network_death_wait.jsonc")
+    hold_and_observe(devices, 45)
+    states = pair_states(devices)
+    write_json(target.output / "death-after-autosave-interval.json", states)
+    if any(not state or state.get("time_paused") for state in states):
+        raise RuntimeError("Death through autosave interval left a paused or missing engine")
+    verify_traffic(devices)
+    peer = client if target is host else host
+    peer.shell("am", "force-stop", PACKAGE)
+    solo_host(target)
+    join_from_launcher(peer, target, "ChaosS21" if peer is client else "ChaosRP")
+    verify_traffic(devices)
+    write_json(target.output / "death-host-admitted-returning-peer.json", pair_states(devices))
+    target.automate(ROOT / "android/game_scripts/test_device_network_respawn.jsonc")
+    verify_traffic(devices)
+    verify_controls(devices)
+    assert_process(target, native_pid)
 
 
 def ui_session(case, devices):
@@ -1701,6 +1829,12 @@ def main():
                         renamed_returns(case, devices)
                     elif case["kind"] == "host-swaps":
                         host_swaps(case, devices)
+                    elif case["kind"] == "client-native-rehost":
+                        client_native_rehost(case, devices)
+                    elif case["kind"] == "loading-background":
+                        loading_background(case, devices)
+                    elif case["kind"] == "death-autosave":
+                        death_autosave(case, devices)
                     elif case["kind"] == "ui-session":
                         ui_session(case, devices)
                     elif case["kind"] == "lobby-sequence":

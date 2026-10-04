@@ -1,0 +1,14 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_device_network_campaign" } },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": { "screen_advance_kind": "death", "screen_advance_can_activate": true },
+    },
+    { "action": "request_screen_advance", "generation": "current" },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": { "player_dead": false, "time_paused": false, "in_game": true, "is_network": true },
+    },
+]

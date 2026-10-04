@@ -615,3 +615,296 @@ boundary followed by world change; failed restore followed by fresh admission
 and successful restore; nested UI during other forced-exit paths; and migrated
 hosting followed by rejoin, level change and retirement. These are planned
 investigations, not claims that a failure has already been established.
+
+## Unlocked paired follow-up, October 3 at 19:30 Pacific
+
+The owner unlocked Samsung and requested continuation. Both physical devices
+are now available for native gameplay. Evidence is separate under
+`android/temp/device-paired-followup-20261003-1930/`.
+
+Execution order:
+
+1. D1 and D2, host/client game menu and automap open during peer force-stop,
+   followed by reconnect, bidirectional traffic and consumed movement input
+2. Repeated host migration and return on both engines, then reverse hardware
+3. Saved late join followed by checkpoint restore and failed-restore recovery
+4. Investigate failures with phase/state traces; extend coverage at reachable
+   join/restore boundaries rather than forcing impossible protocol states
+
+Use the installed corrected diagnostic build. Refresh ordinary user activity
+with an inert Shift key while these foreground tests run; do not change lock
+settings. The helper must be stopped at the end. Existing secure-lock and
+deadline evidence above remains historically accurate for the completed round.
+
+### Paired menu interruption batch
+
+`menu-loss/results.json`: eight PASS cases, D1/D2 x host/client x game
+menu/automap, completed at 19:46 Pacific. Each case force-stopped the peer,
+waited for the surviving player to become sole host while keeping the UI open,
+closed the UI, rejoined, verified fresh bidirectional PDATA and ship rotation,
+and retained the survivor's native PID. Both installed APK hashes were checked
+again and match `1e581948eae1d5304917d9beaa18fc06afe8dedf21abb4af2eff89e9c6f47b33`.
+
+### Additional reusable coverage
+
+`test_lan.ps1 -RestoreFailure load_client|load_host -RestoreFailureRehost`
+extends loader-failure recovery beyond the existing single-player restart.
+It retains the failed loader process through native-menu hosting, fresh peer
+admission, a seeded save/mutation/restore cycle, inventory and clock checks,
+fresh PDATA and controls. Four explicit campaign cases cover both engines and
+both failed-loader roles. Their execution follows the menu batch.
+
+The repeated-host-swaps case now requires an actual discovered advertisement
+with the migrated host's address, game and port 42425 before each return.
+It also aborts the final migrated host and requires advertisement retirement
+without replacing that native process.
+
+Read-only source inspection keeps J1 open: recovery save readiness tracks
+unfinished inventory reclamation, while retained restore and travel have their
+own busy-state gates. None of those checks alone establishes first-PDATA join
+confirmation. Reachability of world change within that narrow committed join
+interval still needs phase evidence; this is not a newly confirmed defect.
+
+### New failure: native rehost after previously being a client
+
+The extended recovery test reproduced a join failure in both engines on the
+original client, Samsung. Native introspection reports a healthy solo co-op
+host after the controlled loader failure and same-process recovery, but the
+other device's normal `lan_join_ip` probe receives no engine response and no
+admission request reaches the host. Raw failures are preserved in
+`restore-rehost/` (D1) and `restore-rehost-diagnostics/` (D2).
+
+The original-host D1 comparison in `restore-rehost-diagnostics/` passes the
+entire new sequence, including admission, another save/restore, inventory,
+clock, PDATA, input and unchanged native PID. Its socket diagnostic shows
+`0.0.0.0:42424`. Samsung did not expose a socket table to the diagnostic read.
+The next run reverses hardware to inspect the failing client's new host socket
+on Retroid. Source inspection identifies a likely cause: auto-join records
+loopback binding for the Android proxy; auto-host clears it, but native-menu
+hosting calls `net_udp_start_game` without clearing that previous role's flag.
+
+The reverse D1 run confirmed the cause on Retroid: socket row
+`0100007F:A5B8` means `127.0.0.1:42424`, versus `00000000:A5B8` in the
+passing original-host comparison. Samsung's join-by-IP probe then timed out
+and the complete case failed at 20:01:30 Pacific. This is a confirmed product
+defect across both devices, with failing client-role traces in both engines.
+
+The correction clears the Android-only loopback bind flag at the start of
+`net_udp_start_game` in D1 and D2, before opening the host socket. It retains
+the configured port and logs the previous bind policy. Auto-join still sets
+loopback binding when using its local proxy.
+
+The corrected APK is
+`8e1b823c6e0fc004334e5834b6a1ae1e812a71264a95b722a9b9c6ea6eaf176f`,
+built successfully for both engines and verified from both installed APKs.
+`restore-rehost-fixed/` has now passed the previously failing D1 and D2 client
+cases on Samsung, including fresh admission and the complete same-process
+save/restore verification. The D1 original-host case also passes. Remaining
+role/hardware regressions and broader sequences are still running.
+
+The additional `restore-options-rehost` cases keep a nested Options window
+open on the failed loader before requesting restore. The fixture verifies
+the actual Options subtitle and obscured game window before injection.
+These cases target other window-unwind paths identified in the earlier plan.
+
+### Second confirmed defect: stale restore-close request cancels the next game
+
+The nested Options sequence first exposed a test assumption: the restore error
+can remain behind Options until normal back navigation. That first timeout is
+classified as a harness expectation failure. Its manual Escape probe arrived
+after cleanup and is not recovery evidence.
+
+The navigation-aware retry uncovered a real subsequent failure. After closing
+Options and acknowledging the correct restore-error dialog, starting a new
+single-player game did not reach gameplay. The generic briefing skipper then
+caused the engine to exit while dismissing non-game windows. A separate retry
+used a positively identified briefing and the normal generation-tagged screen
+advance action, with no generic taps; it still returned to the main menu.
+
+Targeted logging in the `restore-options-menu-trace` D1 run established the
+cause: the failed client armed `restore_requires_menu` in co-op mode `0x1c`
+at 20:39:04, then consumed it in single-player mode `0` during new-game startup
+at 20:39:19, after the original game window was gone. The original host consumed
+its own request immediately, providing a comparison within the same run.
+
+The correction consumes any pending restore-to-menu request in the Android
+game-window close handler in both engines. Closing the old mine fulfills that
+request; it must not apply to a later game. Narrow set/consume logging remains
+available for future lifecycle investigations. Validation is pending.
+
+The ordinary client Abort Game -> native Host Game -> original host returns
+sequence passed in both engines on the bind-corrected build. These runs do not
+use injected restore failures. All six bind-fix recovery regressions also
+passed, including reversed hardware in both engines.
+
+The D2 trace reproduced the same stale-request ordering: armed in co-op at
+20:41:02, consumed in single-player startup at 20:41:22. The corrected build
+is `445bc98faca3894c8927e794657683e3c400213965f7c68251cddf4cf4598b25`.
+Its D1 regression consumed the request immediately, at 20:45:26.616, while
+still closing the old co-op window, then passed the complete recovery/rehost
+sequence. D2 and reversed-hardware confirmation are in progress.
+
+One build attempt stopped in native-build retention before compilation while
+the trace test was running. Retrying with the device test idle succeeded for
+both engines. Keep the failed build log as tooling evidence, not a product
+failure or a failed compiler check.
+
+### Further deductions from this follow-up
+
+- Treat transport role changes as configuration boundaries. Native hosting
+  must select its bind policy explicitly. Next check normal native-menu join
+  after a previous proxy-backed client session; that path has not been tested
+  here, so the host fix does not establish its behavior
+- Deferred world-close requests must end with their owning game window.
+  Expand pending-action tests across Options, save-name editing, load dialogs,
+  automap, and repeated abort/new-game sequences. Verify the replacement game
+  actually runs, not merely that a main menu appears
+- Use recognized briefing state plus generation-tagged screen advance when
+  diagnosing startup recovery. A generic dismiss-any-window skipper can hide
+  the first failure by navigating or exiting the subsequent main menu
+- Keep the committed-before-first-PDATA join boundary and old runtime shutdown
+  callback/new-session overlap as separate unexecuted priorities. The recovery
+  tests here do not prove those narrow timing intervals are safe
+
+### Corrected Options regressions
+
+`restore-options-fixed/` and `restore-options-fixed-reverse/`: all four cases
+passed, D1/D2 on Samsung and Retroid, ending at 20:56:17 Pacific. Each retained
+the failed loader's native PID through error acknowledgement, explicit briefing
+advance into single-player gameplay, native co-op hosting, peer admission,
+another save/mutation/restore cycle, inventory and clock verification, fresh
+bidirectional PDATA and control input. Final installed APK hashes on both
+devices match `445bc98faca3894c8927e794657683e3c400213965f7c68251cddf4cf4598b25`.
+
+The corrected trace consumes the pending request while closing its old co-op
+window, rather than in the next game's startup. The first Options timeout is
+retained as a harness expectation failure; the four subsequent pre-fix Options
+failures are classified as reproductions of the stale close request.
+
+### Migration advertisement coverage and death/autosave follow-up
+
+The first four-handoff D1 run completed three reconnects. The fourth survivor
+advertised the correct migrated endpoint, but the returning client received no
+join-by-IP response. The final advertisement-retirement step was not reached.
+Retroid's snapshots show it became dead while still unpaused at 21:00:45, then
+paused at 21:00:57. Its game window continued drawing. This is retained as an
+unclassified death/admission failure pending targeted reproduction, not a
+successful fourth migration or a generic migration defect.
+
+The migration test now clears ordinary robots on both peers after initial
+admission so its long sequence is isolated from combat. D1 passed all four
+handoffs and reconnects, current endpoint advertisements, and final native
+Abort Game advertisement retirement at 21:13:06 Pacific. D2 is still running.
+
+Source inspection identified an unbalanced-pause hypothesis: co-op autosave
+calls `stop_time`, but the serializer's dead/flyout rejection returns without
+the `start_time` used on its other exit paths. Added narrow rejection logging
+before changing behavior. Separate host/client death cases hold for 45 seconds
+across the periodic autosave interval, require continuing PDATA, then respawn
+and rejoin. These cases are not yet counted as executed.
+
+Both combat-isolated migration runs passed: D1 in 320.05 seconds and D2 in
+329.91 seconds, with D2 finishing at 21:18:35 Pacific. Each completed four
+force-stop handoffs, fresh endpoint discovery, re-admission, bidirectional
+PDATA, controls, survivor PID checks, and final advertisement retirement.
+
+### Third confirmed defect: rejected dead-player save leaks a clock pause
+
+The trace APK `d873ddf33f9afe54523215e936d98c9490dcafb1bb0f20cc336de1748fc66564`
+reproduced the suspected pause leak in separate D1 host, D1 client and D2 host
+death cases. D1's dead host logged `save rejected: dead=1 flyout=0 paused=1
+mode=1c` at 21:19:41 and remained paused through the final snapshot; the live
+peer dropped it. The dead Samsung client reproduced the same rejection and
+pause at 21:20:56. D2 client confirmation is still running.
+
+Both serializers now release the caller's save pause before rejecting a dead
+player or active flyout, matching their other return paths. The correction
+does not permit an invalid save or forcibly unpause unrelated operations.
+The fixed build succeeded in 55 seconds. Regression cases additionally remove
+the live peer while the survivor remains dead, require the dead survivor to
+host and admit the returning peer, then respawn normally and verify controls.
+
+D2's client trace also failed with the same rejection at 21:23:33. The four
+targeted pre-fix failures took 76.72, 77.08, 79.27 and 78.72 seconds. Both
+installed APKs now match the corrected build
+`909ff4fddfa4b23a36b34d9dc56471b996ad03dcc5804c03f56e00b4b095b450`.
+
+The first fixed run passed death/autosave liveness, but used a changed returning
+pilot name (`DeathReturn`, truncated by the engine). Discovery succeeded, yet
+SYNC carried the old `ChaosS21` slot name and an empty client ID; the joiner
+logged `sync rejected local identity` and returned to pilot selection. Retained
+under `death-autosave-fixed/` as a separate identity/admission observation.
+It is not a recurrence of the pause leak. Short-name/alive-host isolation is
+still pending.
+
+Using each peer's original name, both D1 fixed regressions passed: host death
+in 117.97 seconds, client death in 145.58 seconds. The latter migrates hosting
+to the still-dead Samsung client, admits Retroid, then respawns. Both retain
+the survivor's engine process and verify PDATA and controls. D2 remains in
+progress.
+
+Both D2 death regressions subsequently passed: host in 128.95 seconds and
+client in 146.05 seconds, finishing at 21:37:37 Pacific. Together the four
+same-pilot regressions verify the pause fix on both devices and engines,
+including dead-client host migration, admission while the host remains dead,
+ordinary respawn, control response, bidirectional PDATA, and unchanged survivor
+PID. The earlier migration/death stall is attributed to this pause leak by
+inference from its snapshot sequence and the four targeted pre-fix traces.
+
+### Fourth confirmed defect, open: renamed pilot cannot reconnect
+
+`renamed-return-isolation/` reproduces the identity failure in both engines
+with the short name `R2Join1`, no injected death, and a living unpaused host.
+D1 failed in 129.34 seconds and D2 in 129.98 seconds, finishing at 21:42:12
+Pacific. Each failed on its first renamed return; the remaining five planned
+rename cycles were not reached.
+
+Reproduction: establish co-op as ChaosRP/ChaosS21, force-stop the client, wait
+for the host to become solo, return from the launcher as R2Join1, and join the
+same host by IP. Discovery succeeds and object transfer begins. The joiner's
+SYNC rejects its local identity because the roster still names ChaosS21 for
+the assigned slot and carries an empty client ID. The client returns to pilot
+selection instead of gameplay. D2 logs the rejection at 21:41:11.473; D1 at
+21:39:00.722. The original-name death/rejoin controls pass on this same APK.
+
+Source inspection points to reconnect publication: `net_udp_welcome_player`
+reuses the existing slot, while `net_udp_send_rejoin_sync` updates player data
+through `net_udp_new_player` only for a newly added player. The reconnect's
+roster name remains old. This is a source-level lead, not a completed fix.
+Resolve the returning pilot/roster naming contract and test recovery inventory
+ownership plus visibility to existing peers; do not just weaken local SYNC
+identity validation. No product change was made for this fourth finding.
+
+### Completed unlocked follow-up
+
+The additional physical-device work ran from approximately 19:30 through
+21:42 Pacific. `execution-index.json` records 43 attempts across 24 distinct
+case IDs: 27 passes and 16 failures. Fifteen failures reproduce four product
+defects; one was the documented Options-navigation harness expectation.
+
+| Finding                                              | Reproductions | Final status                                                            |
+| ---------------------------------------------------- | ------------: | ----------------------------------------------------------------------- |
+| Former client native host retains loopback binding   |             3 | Fixed; six restore/rehost and two ordinary rehost regressions pass      |
+| Stale restore-close request cancels replacement game |             4 | Fixed; D1/D2 Options recovery passes on both devices                    |
+| Dead-player save rejection leaks the save pause      |             5 | Fixed; four death/autosave, migration, admission and respawn cases pass |
+| Renamed return receives stale roster identity        |             3 | Open; independent short-name repro in both engines                      |
+
+Other passes include eight menu/automap peer-loss cases and two complete
+four-cycle migration/advertisement-retirement cases. Deliberate pre-fix
+reproductions remain failures in the raw results; they have not been relabeled
+as passing tests. The first migration's attribution to the pause leak is an
+inference, with its original snapshots and subsequent targeted traces retained.
+
+Final diagnostic APK SHA-256 on both phones is
+`909ff4fddfa4b23a36b34d9dc56471b996ad03dcc5804c03f56e00b4b095b450`.
+Both native engines built successfully. Scoped code quality, automation catalog
+(94 standalone JSON, 362 support scripts, 186 standalone PowerShell), master
+catalog (284 top-level entries), and whitespace validation passed. The four
+new death cases bring the selectable campaign catalog to 285 scenarios; only
+the recorded selections were executed.
+
+The ordinary app and its saves were not cleared. All evidence stays under
+`android/temp/device-paired-followup-20261003-1930/`. Outstanding timing
+priorities earlier in this report remain unexecuted unless explicitly listed
+above. The separate `android/outstanding_bugs.md` edit in the working tree was
+not made by this campaign.

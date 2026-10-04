@@ -66,6 +66,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
 #include "android_texture_debug.h"
+#include "ogl_msaa_probe_android.h"
 #endif
 
 extern int LinearSVGABuffer;
@@ -1135,6 +1136,9 @@ void game_render_frame()
 //show a message in a nice little box
 void show_boxed_message(char *msg, int RenderFlag)
 {
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (!RenderFlag) android_ogl_loading_probe_phase(msg);
+#endif
 	int w,h,aw;
 	int x,y;
 	#ifdef ANDROID
@@ -1151,6 +1155,10 @@ void show_boxed_message(char *msg, int RenderFlag)
 
 	#ifdef ANDROID
 	if (use_menu_palette) {
+		#ifdef OGL
+		/* Standalone loading frames cannot reuse a discarded EGL back buffer */
+		ogl_android_clear_window_backing();
+		#endif
 		android_boxed_message_save_palette(saved_palette, saved_fade_table,
 		                                   saved_current_palette, saved_last_palette);
 		last_palette_loaded[0] = 0;

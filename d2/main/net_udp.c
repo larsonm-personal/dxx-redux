@@ -6813,6 +6813,11 @@ int net_udp_start_game(void)
 {
 	int i;
 
+#ifdef __ANDROID__
+	/* Native-menu hosting can follow a proxy-backed client in this process */
+	MPDIAG("host socket: port=%s previous_loopback=%d", UDP_MyPort, udp_bind_loopback);
+	udp_bind_loopback = 0;
+#endif
 	i = udp_open_socket(0, atoi(UDP_MyPort));
 
 	if (i != 0)

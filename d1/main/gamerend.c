@@ -59,6 +59,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
 #include "android_texture_debug.h"
+#include "ogl_msaa_probe_android.h"
 #endif
 
 int netplayerinfo_on=0;
@@ -659,6 +660,9 @@ void game_render_frame()
 //show a message in a nice little box
 void show_boxed_message(char *msg, int RenderFlag)
 {
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (!RenderFlag) android_ogl_loading_probe_phase(msg);
+#endif
 	int w,h,aw;
 	int x,y;
 	#ifdef ANDROID
@@ -667,6 +671,10 @@ void show_boxed_message(char *msg, int RenderFlag)
 	#endif
 	
 	gr_set_current_canvas(NULL);
+	#if defined(ANDROID) && defined(OGL)
+	/* Standalone loading frames cannot reuse a discarded EGL back buffer */
+	if (!RenderFlag) ogl_android_clear_window_backing();
+	#endif
 	gr_set_curfont( MEDIUM1_FONT );
 	gr_set_fontcolor(BM_XRGB(31, 31, 31), -1);
 	gr_get_string_size(msg,&w,&h,&aw);
@@ -690,4 +698,3 @@ void show_boxed_message(char *msg, int RenderFlag)
 	if (!RenderFlag)
 		gr_flip();
 }
-

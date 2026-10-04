@@ -1911,7 +1911,14 @@ int state_save_all_sub(char *filename, char *desc)
 	fix tmptime32 = 0;
 
 	/* Active flyouts and deaths are not resumable gameplay checkpoints */
-	if (Endlevel_sequence || Player_is_dead) return 0;
+	if (Endlevel_sequence || Player_is_dead) {
+#ifdef __ANDROID__
+		debug_log_force(DLOG_COOP_DESYNC, "save rejected: dead=%d flyout=%d paused=%d mode=%x", Player_is_dead, Endlevel_sequence, game_is_time_paused(), Game_mode);
+#endif
+		/* Balance the caller's save pause on rejection, as on every other exit */
+		start_time();
+		return 0;
+	}
 
 	#ifndef NDEBUG
 	if (GameArg.SysUsePlayersDir && strncmp(filename, "Players/", 8))
@@ -2177,6 +2184,7 @@ int state_restore_take_menu_request(void)
 {
 	int requested = restore_requires_menu;
 	restore_requires_menu = 0;
+	if (requested) debug_log_force(DLOG_COOP_DESYNC, "restore menu request consumed: level=%d mode=%x window=%p", Current_level_num, Game_mode, (void *) Game_wind);
 	return requested;
 }
 
@@ -2189,7 +2197,10 @@ int state_restore_all_sub(char *filename)
 	                      Game_wind && window_is_visible(Game_wind));
 	int result = state_restore_all_sub_impl(filename, &world_changed);
 	if (Game_wind && !window_is_visible(Game_wind)) window_set_visible(Game_wind, 1);
-	if (!result && world_changed) restore_requires_menu = 1;
+	if (!result && world_changed) {
+		restore_requires_menu = 1;
+		debug_log_force(DLOG_COOP_DESYNC, "restore menu request armed: level=%d mode=%x window=%p", Current_level_num, Game_mode, (void *) Game_wind);
+	}
 	android_restore_finished(result, Game_wind && window_is_visible(Game_wind));
 	return result;
 }

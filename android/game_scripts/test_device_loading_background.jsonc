@@ -1,0 +1,8 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_device_network_campaign" } },
+    { "action": "assert", "expect": { "in_game": true, "time_paused": false } },
+    { "action": "set_debug", "field": "loading_frame_background", "value": "true" },
+    { "action": "wait_ms", "ms": 200 },
+    { "action": "set_debug", "field": "loading_frame_background", "value": "true" },
+    { "action": "assert", "expect": { "in_game": true, "time_paused": false } },
+]
