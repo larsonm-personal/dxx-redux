@@ -833,6 +833,9 @@ class MainActivity :
     }
 
     private var gameStarted = false
+    private var multiplayerRuntimeStarted = false
+    private var nativeMultiplayerActive = false
+    private var nativeMultiplayerHost = false
     private var pendingInputDemoReplayPath: String? = null
     private var pendingResumeSavePath: String? = null
     private var pendingResumeCallsign: String? = null
@@ -1149,14 +1152,7 @@ class MainActivity :
 
         // Start foreground service during multiplayer to prevent process kill
         if (mpMode != null) {
-            com.dxxredux.app.multiplayer.MultiplayerForegroundService
-                .start(this)
-            RuntimeGameStateBridge.connect(
-                context = this,
-                host = mpMode == "host",
-                stateProvider = { nativeGetNetgameState() },
-                onBackgroundTimeout = { nativeRequestMultiplayerDormancyTimeout() },
-            )
+            startMultiplayerRuntime(mpMode == "host")
         }
 
         loadMetaBindings()
@@ -2332,12 +2328,50 @@ class MainActivity :
         nativeUpdateDormancyUiPollCounters(counters[0], counters[1])
     }
 
-    fun onNativeMultiplayerDormancyDisconnected() {
-        runOnUiThread {
-            DebugLog.log(DebugLogCategory.DORMANCY, "multiplayer background engine disconnect completed")
-            RuntimeGameStateBridge.disconnect()
+    private fun startMultiplayerRuntime(host: Boolean) {
+        if (multiplayerRuntimeStarted) {
+            RuntimeGameStateBridge.updateHost(host)
+            return
+        }
+        try {
             com.dxxredux.app.multiplayer.MultiplayerForegroundService
-                .stop(this)
+                .start(this)
+        } catch (e: IllegalStateException) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                e !is android.app.ForegroundServiceStartNotAllowedException
+            ) {
+                throw e
+            }
+            Log.w("DXX-MP", "Native multiplayer service start deferred until app resumes", e)
+            return
+        }
+        RuntimeGameStateBridge.connect(
+            context = this,
+            host = host,
+            stateProvider = { nativeGetNetgameState() },
+            onBackgroundTimeout = { nativeRequestMultiplayerDormancyTimeout() },
+        )
+        RuntimeGameStateBridge.noteActivityVisibility(background = !isActivityResumed)
+        multiplayerRuntimeStarted = true
+    }
+
+    private fun stopMultiplayerRuntime() {
+        if (!multiplayerRuntimeStarted) return
+        RuntimeGameStateBridge.disconnect()
+        com.dxxredux.app.multiplayer.MultiplayerForegroundService
+            .stop(this)
+        multiplayerRuntimeStarted = false
+    }
+
+    fun onNativeMultiplayerStateChanged(
+        active: Boolean,
+        host: Boolean,
+    ) {
+        runOnUiThread {
+            DebugLog.log(DebugLogCategory.DORMANCY, "native multiplayer state: active=$active host=$host")
+            nativeMultiplayerActive = active
+            nativeMultiplayerHost = host
+            if (active) startMultiplayerRuntime(host) else stopMultiplayerRuntime()
         }
     }
 
@@ -2444,6 +2478,7 @@ class MainActivity :
         writeGameActivityState(this, gameVariantId)
         backgroundPauseApplied = false
         isActivityResumed = true
+        if (nativeMultiplayerActive) startMultiplayerRuntime(nativeMultiplayerHost)
         gyroManager?.resume()
         // Resume music that was paused when backgrounded
         if (gameStarted) {
@@ -3307,9 +3342,7 @@ class MainActivity :
         startupScope.cancel()
         clearGameActivityState(this)
         AudioSourceManager.closeActivePfds()
-        RuntimeGameStateBridge.disconnect()
-        com.dxxredux.app.multiplayer.MultiplayerForegroundService
-            .stop(this)
+        stopMultiplayerRuntime()
         if (BuildConfig.DEBUG) {
             try {
                 unregisterReceiver(introspectReceiver)

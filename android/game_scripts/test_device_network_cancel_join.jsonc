@@ -1,0 +1,6 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_device_network_campaign" } },
+    { "action": "set_debug", "field": "join_wait_test", "value": "cancel" },
+    { "action": "wait_for", "timeout_ms": 15000, "expect": { "join_wait.active": false, "in_game": false } },
+    { "action": "introspect" },
+]

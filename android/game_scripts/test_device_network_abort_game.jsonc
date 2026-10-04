@@ -1,0 +1,11 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_device_network_campaign" } },
+    { "action": "key", "key": "esc", "post_delay_ms": 100 },
+    { "action": "select", "text": "Abort Game", "post_delay_ms": 100, "timeout_ms": 5000 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": { "in_game": false, "is_network": false, "screen_mode": "menu" },
+    },
+    { "action": "introspect" },
+]

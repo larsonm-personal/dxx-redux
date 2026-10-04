@@ -1,0 +1,23 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_device_network_campaign" } },
+    { "action": "select", "text": "Multiplayer", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "select", "text": "HOST GAME", "timeout_ms": 10000, "post_delay_ms": 100 },
+    {
+        "action": "select_mission",
+        "text": "First Strike",
+        "when": "d1",
+        "optional": true,
+        "timeout_ms": 1000,
+        "post_delay_ms": 100,
+    },
+    { "action": "select_mission", "text": "Counterstrike", "when": "d2", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "select", "text": "Cooperative", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "select", "text": "Start Game", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "select", "text": "Ok", "timeout_ms": 10000, "post_delay_ms": 100 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 15000,
+        "expect": { "in_game": true, "is_network": true, "multiplayer.num_connected": 1 },
+    },
+    { "action": "introspect" },
+]

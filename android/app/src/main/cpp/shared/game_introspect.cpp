@@ -46,6 +46,7 @@ extern "C" {
 #include "gameseg.h"
 #include "inferno.h"
 #include "screens.h"
+#include "timer.h"
 #include "maths.h"
 #include "vecmat.h"
 #include "weapon.h"
@@ -2046,6 +2047,8 @@ extern "C" char *game_introspect_get_state(void)
 			mp["game_status"] = (int) Netgame.game_status;
 			mp["network_status"] = Network_status;
 			mp["join_request_pending"] = WaitForRefuseAnswer != 0;
+			mp["join_request_callsign"] = WaitForRefuseAnswer ? RefusePlayerName : "";
+			mp["join_request_age_ms"] = WaitForRefuseAnswer ? (long long) ((timer_query() - RefuseTimeLimit) * 1000 / F1_0) : 0;
 			mp["my_player_num"] = Player_num;
 			mp["master_player_num"] = multi_who_is_master();
 			mp["i_am_master"] = multi_i_am_master() != 0;

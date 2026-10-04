@@ -1066,11 +1066,12 @@ Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 
 static int g_android_multiplayer_dormancy_timeout_requested;
 static int g_android_multiplayer_dormancy_disconnect_pending;
+static int g_android_multiplayer_session_started;
 
 extern JavaVM *g_jvm;
 extern jobject g_activity;
 
-static void android_notify_multiplayer_dormancy_disconnected(void)
+static void android_notify_multiplayer_state(int active, int is_host)
 {
 	JNIEnv *env = NULL;
 	jclass cls;
@@ -1086,14 +1087,43 @@ static void android_notify_multiplayer_dormancy_disconnected(void)
 	}
 	cls = (*env)->GetObjectClass(env, g_activity);
 	method = cls ? (*env)->GetMethodID(
-	                   env, cls, "onNativeMultiplayerDormancyDisconnected", "()V")
+	                   env, cls, "onNativeMultiplayerStateChanged", "(ZZ)V")
 	             : NULL;
 	if (method)
-		(*env)->CallVoidMethod(env, g_activity, method);
+		(*env)->CallVoidMethod(env, g_activity, method, (jboolean) active, (jboolean) is_host);
 	if (cls)
 		(*env)->DeleteLocalRef(env, cls);
 	if (attached)
 		(*g_jvm)->DetachCurrentThread(g_jvm);
+}
+
+void android_lifecycle_actions_multiplayer_started(int is_host)
+{
+	g_android_multiplayer_session_started = 1;
+	android_notify_multiplayer_state(1, is_host);
+}
+
+void android_lifecycle_actions_multiplayer_stopped(void)
+{
+	if (!g_android_multiplayer_session_started) return;
+	g_android_multiplayer_session_started = 0;
+	android_notify_multiplayer_state(0, 0);
+}
+
+int android_lifecycle_actions_prepare_multiplayer_close(void)
+{
+	extern window *Game_wind;
+	window *child;
+
+	if (!Game_wind || !(child = window_get_next(Game_wind)))
+		return 1;
+	while (window_get_next(child))
+		child = window_get_next(child);
+	/* Closing Game_wind longjmps out of nested menu loops. Close one child
+	 * first and let its caller unwind before a later frame exits gameplay */
+	debug_log(DLOG_DORMANCY, "multiplayer disconnect: closing child window before game exit");
+	window_close(child);
+	return 0;
 }
 
 JNIEXPORT void JNICALL
@@ -1124,7 +1154,7 @@ void android_lifecycle_actions_game_tick(int screen_is_game, int has_game_window
 		g_android_multiplayer_dormancy_disconnect_pending = 0;
 		debug_log(DLOG_DORMANCY,
 		          "multiplayer background timeout: engine disconnected");
-		android_notify_multiplayer_dormancy_disconnected();
+		android_notify_multiplayer_state(0, 0);
 		if (android_lifecycle_diagnostics_requested_visibility() ==
 		    ANDROID_LIFECYCLE_VISIBILITY_BACKGROUND)
 			android_lifecycle_diagnostics_request_visibility(

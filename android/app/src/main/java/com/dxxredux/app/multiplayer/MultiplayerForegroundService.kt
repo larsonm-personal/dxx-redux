@@ -241,7 +241,12 @@ class MultiplayerForegroundService : Service() {
     }
 
     private fun disconnectGameProcess() {
+        val wasConnected = runtimeSession.isConnected()
         MatchmakingService.runtimeGameProcessDisconnected(runtimeSession.disconnect())
+        if (wasConnected) {
+            com.dxxredux.app.lobby.LobbyService
+                .onRuntimeGameDisconnected()
+        }
         runtimeClient = null
     }
 

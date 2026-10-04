@@ -1963,6 +1963,12 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-MP", "lan_stop_lobby: stopped")
                     }
 
+                    "lan_leave_lobby" -> {
+                        com.dxxredux.app.lobby.LobbyService
+                            .leaveLanLobby(mpCallsign)
+                        Log.i("DXX-MP", "lan_leave_lobby: left joined lobby")
+                    }
+
                     "lan_nsd_only" -> {
                         com.dxxredux.app.lobby.LobbyService
                             .setNsdOnlyForTest(

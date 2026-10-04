@@ -1,7 +1,9 @@
 package com.dxxredux.app.lobby
 
+import android.app.ForegroundServiceStartNotAllowedException
 import android.content.Context
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.util.Log
 import com.dxxredux.app.AssetManifest
 import com.dxxredux.app.FileSetManager
@@ -288,6 +290,9 @@ object LobbyService {
         lastTransportHealthLogMs = 0L
         if (!_isDiscovering.value) return
 
+        appContext = context.applicationContext
+        lanForegroundSessionDeferred = false
+        updateLanForegroundSession()
         hostCallsign = callsign
         resetTransientBroadcastFailure()
         val socketUnavailable = isSocketUnavailable()
@@ -344,6 +349,8 @@ object LobbyService {
     @Volatile private var lastTransportHealthLogMs = 0L
 
     @Volatile private var lanForegroundSessionStarted = false
+
+    @Volatile private var lanForegroundSessionDeferred = false
 
     // Keyed by lobbyId
     private val lobbies = ConcurrentHashMap<String, DiscoveredLobby>()
@@ -760,6 +767,16 @@ object LobbyService {
             fun stillCurrent() =
                 _isDiscovering.value && !appBackgrounded && manualIpAttempt.get() == attempt &&
                     _joinedLobby.value === joinedBefore && hostedLobbyId == hostingBefore
+
+            fun logProbeCancellation() {
+                Log.i(
+                    TAG,
+                    "Manual IP probe cancelled: attempt=$attempt current=${manualIpAttempt.get()} " +
+                        "discovering=${_isDiscovering.value} backgrounded=$appBackgrounded " +
+                        "joined_before=${joinedBefore?.lobbyId} joined_now=${_joinedLobby.value?.lobbyId} " +
+                        "host_before=$hostingBefore host_now=$hostedLobbyId",
+                )
+            }
             _diagnostics.value = ""
             val engine =
                 if (probeEngine) {
@@ -806,6 +823,7 @@ object LobbyService {
             }
             currentCoroutineContext().ensureActive()
             if (!stillCurrent()) {
+                logProbeCancellation()
                 engine?.cancel()
                 return@coroutineScope false
             }
@@ -830,7 +848,10 @@ object LobbyService {
                         engine.await()
                     }
                 currentCoroutineContext().ensureActive()
-                if (!stillCurrent()) return@coroutineScope false
+                if (!stillCurrent()) {
+                    logProbeCancellation()
+                    return@coroutineScope false
+                }
                 val verified = result.game
                 if (verified != null && acceptLobby(verified)) {
                     val target =
@@ -2240,6 +2261,14 @@ object LobbyService {
 
     /** Release a finished game's host session without discarding a waiting lobby */
     @Synchronized
+    fun onRuntimeGameDisconnected() {
+        // Runtime shutdown can happen while SetupActivity remains in the background
+        // A waiting lobby or a new launch preparation does not belong to that game
+        if (gameStarted && _isHosting.value) stopHosting()
+    }
+
+    /** Release launcher launch state after returning from the game */
+    @Synchronized
     fun onGameExited() {
         if (gameStarted && _isHosting.value) {
             stopHosting()
@@ -2933,10 +2962,22 @@ object LobbyService {
 
     @Synchronized
     private fun setLanForegroundSessionActive(active: Boolean) {
-        if (active == lanForegroundSessionStarted) return
+        if (!active) lanForegroundSessionDeferred = false
+        if (active == lanForegroundSessionStarted || (active && lanForegroundSessionDeferred)) return
         val context = appContext ?: return
         if (active) {
-            MultiplayerForegroundService.startLanSession(context)
+            try {
+                MultiplayerForegroundService.startLanSession(context)
+            } catch (e: IllegalStateException) {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || e !is ForegroundServiceStartNotAllowedException) {
+                    throw e
+                }
+                // A queued lobby action can finish after Android backgrounds the Activity
+                // Keep networking state usable and retry the service from the next resume
+                lanForegroundSessionDeferred = true
+                Log.w(TAG, "LAN foreground service start deferred until app resumes", e)
+                return
+            }
         } else {
             MultiplayerForegroundService.stopLanSession(context)
         }

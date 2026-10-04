@@ -268,6 +268,14 @@ object RuntimeGameStateBridge {
         if (host) handler.postDelayed(statePublisher, INITIAL_UPDATE_DELAY_MS)
     }
 
+    fun updateHost(host: Boolean) {
+        if (isHost == host) return
+        isHost = host
+        handler.removeCallbacks(statePublisher)
+        send(RUNTIME_IPC_REGISTER, Bundle().apply { putBoolean(RUNTIME_IPC_KEY_HOST, host) })
+        if (host) handler.postDelayed(statePublisher, INITIAL_UPDATE_DELAY_MS)
+    }
+
     fun disconnect() {
         handler.removeCallbacks(statePublisher)
         if (bound) {

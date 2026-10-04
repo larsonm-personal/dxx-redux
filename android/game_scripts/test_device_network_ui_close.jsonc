@@ -1,0 +1,10 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_device_network_campaign" } },
+    { "action": "key", "key": "escape", "post_delay_ms": 100 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": { "game_window_is_front": true, "automap_active": false, "is_network": true, "time_paused": false },
+    },
+    { "action": "introspect" },
+]

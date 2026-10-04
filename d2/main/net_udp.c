@@ -70,6 +70,7 @@
 #ifdef __ANDROID__
 #include "auto_net.h"
 #include "android_log.h"
+#include "android_lifecycle_actions.h"
 #include "android_profile.h"
 #include "android_crash_handler.h"
 #include "coop_indicator_lines.h"
@@ -2183,6 +2184,9 @@ void net_udp_init()
 
 void net_udp_close()
 {
+#ifdef __ANDROID__
+	android_lifecycle_actions_multiplayer_stopped();
+#endif
 #ifdef _WIN32
 	WSACleanup();
 #endif
@@ -6172,6 +6176,9 @@ net_udp_set_game_mode(int gamemode, ubyte join_as_obs)
 		Game_mode |= GM_OBSERVER;
 		change_playernum_to(OBSERVER_PLAYER_ID);
 	}
+#ifdef __ANDROID__
+	android_lifecycle_actions_multiplayer_started(multi_i_am_master());
+#endif
 }
 
 int net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sender_addr )

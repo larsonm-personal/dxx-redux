@@ -18,6 +18,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import shlex
 import signal
 import subprocess
 import time
@@ -102,6 +103,90 @@ def cases():
             scenarios["saved-level-transition"] = ["-SavedLateJoin", "-D1LevelTransition"]
         for name, flags in scenarios.items():
             result.append({"id": f"{content}-{name}", "kind": "suite", "args": base + flags})
+        for action in ("cancel", "stop", "expire"):
+            result.append(
+                {
+                    "id": f"{content}-approval-{action}-retry",
+                    "kind": "admission",
+                    "game": game,
+                    "mission": mission,
+                    "action": action,
+                    "cycles": 3,
+                }
+            )
+        for ui in ("menu", "automap"):
+            result.append(
+                {
+                    "id": f"{content}-approval-{ui}-expiry",
+                    "kind": "admission",
+                    "game": game,
+                    "mission": mission,
+                    "action": "expire",
+                    "ui": ui,
+                    "cycles": 3,
+                }
+            )
+        for action in ("launcher", "native") if content != "d1d2" else ("launcher",):
+            result.append(
+                {
+                    "id": f"{content}-unavailable-host-{action}-recovery",
+                    "kind": "offline-recovery",
+                    "game": game,
+                    "mission": mission,
+                    "action": action,
+                }
+            )
+        if content != "d1d2":
+            result.append(
+                {
+                    "id": f"{content}-native-abort-advertisement",
+                    "kind": "native-abort-advertisement",
+                    "game": game,
+                    "mission": mission,
+                }
+            )
+            result.append(
+                {
+                    "id": f"{content}-background-deadline",
+                    "kind": "dormancy-expiry",
+                    "game": game,
+                    "mission": mission,
+                    "duration": 1200,
+                }
+            )
+        result.append(
+            {
+                "id": f"{content}-renamed-returns",
+                "kind": "renamed-returns",
+                "game": game,
+                "mission": mission,
+                "cycles": 6,
+            }
+        )
+        result.append(
+            {
+                "id": f"{content}-repeated-host-swaps",
+                "kind": "host-swaps",
+                "game": game,
+                "mission": mission,
+                "cycles": 4,
+            }
+        )
+        for role in ("host", "client"):
+            for ui in ("menu", "automap"):
+                for action in ("soak", "peer-loss"):
+                    result.append(
+                        {
+                            "id": f"{content}-{role}-{ui}-{action}",
+                            "kind": "ui-session",
+                            "game": game,
+                            "mission": mission,
+                            "role": role,
+                            "ui": ui,
+                            "action": action,
+                            "duration": 90,
+                        }
+                    )
         result.append({"id": f"{content}-client-churn", "kind": "churn", "game": game, "mission": mission})
         for role, fault, duration in (
             ("host", "home", 35),
@@ -167,7 +252,6 @@ def cases():
                     "8",
                     "-AllowSecretWarps",
                     "-NoCoopQol",
-                    "-SecretWorld",
                     "-SecretDisconnectPhase",
                     phase,
                 ],
@@ -184,17 +268,61 @@ def cases():
                     "duration": duration,
                 }
             )
+    for action in ("replace", "rename", "rename-after-loss", "launch-cancel", "repeat-join"):
+        result.append({"id": f"lobby-sequence-{action}", "kind": "lobby-sequence", "action": action})
+    result.append({"id": "lobby-client-background-rejoin", "kind": "background-rejoin"})
+    result.append({"id": "lobby-role-turnover", "kind": "lobby-role-turnover", "cycles": 24})
+    result.append(
+        {
+            "id": "d2-background-menu-deadline",
+            "kind": "dormancy-expiry",
+            "game": "d2",
+            "mission": "d2",
+            "duration": 1200,
+            "ui": "menu",
+        }
+    )
+    result.append(
+        {
+            "id": "d1-background-menu-deadline",
+            "kind": "dormancy-expiry",
+            "game": "d1",
+            "mission": "",
+            "duration": 1200,
+            "ui": "menu",
+        }
+    )
+    result.append(
+        {
+            "id": "d2-background-deadline-reset",
+            "kind": "dormancy-reset",
+            "game": "d2",
+            "mission": "d2",
+            "duration": 1190,
+        }
+    )
+    for role in ("host", "client"):
+        result.append(
+            {
+                "id": f"lobby-{role}-route-retry",
+                "kind": "lobby-route-retry",
+                "role": role,
+                "fault": "wifi",
+                "duration": 145,
+            }
+        )
     return result
 
 
 class Device:
-    def __init__(self, adb, serial, output):
+    def __init__(self, adb, serial, output, background_lobby=False):
         self.adb = adb
         self.serial = serial
         self.output = output
         self.snapshot_number = 0
         self.automation_number = 0
         self.fault_number = 0
+        self.background_lobby = background_lobby
 
     def call(self, *args, timeout=20, check=True):
         started = time.monotonic()
@@ -231,19 +359,24 @@ class Device:
         args = ["am", "broadcast", "-a", f"com.dxxredux.{action}", "-p", PACKAGE]
         for key, value in extras.items():
             flag = "--ez" if isinstance(value, bool) else "--ei" if isinstance(value, int) else "--es"
-            args += [flag, key, str(value).lower() if isinstance(value, bool) else str(value)]
+            # adb shell joins arguments into a remote command; preserve empty strings and spaces
+            encoded = str(value).lower() if isinstance(value, bool) else shlex.quote(str(value))
+            args += [flag, key, encoded]
         return self.shell(*args)
 
     def mp(self, command, **extras):
         return self.broadcast("MP_COMMAND", command=command, **extras)
 
-    def snapshot(self, setup=False, lobby=False):
+    def snapshot(self, setup=False, lobby=False, full_setup=False):
         name = "mp_introspect.json" if lobby else "setup_introspect.json" if setup else "introspect.json"
         self.shell("run-as", PACKAGE, "rm", "-f", f"files/{name}")
         if lobby:
             self.mp("introspect")
         else:
-            self.broadcast("SETUP_INTROSPECT" if setup else "INTROSPECT", **({"lightweight": True} if setup else {}))
+            self.broadcast(
+                "SETUP_INTROSPECT" if setup else "INTROSPECT",
+                **({"lightweight": not full_setup} if setup else {}),
+            )
         deadline = time.monotonic() + 3
         while time.monotonic() < deadline:
             raw = self.shell("run-as", PACKAGE, "cat", f"files/{name}", check=False)
@@ -260,9 +393,19 @@ class Device:
         return None
 
     def start_setup(self):
-        self.wake()
+        if not self.background_lobby:
+            self.wake()
         self.shell("am", "force-stop", PACKAGE)
-        self.shell("am", "start", "-n", f"{PACKAGE}/{ACTIVITY}")
+        self.shell(
+            "am",
+            "start",
+            "-a",
+            "android.intent.action.MAIN",
+            "-c",
+            "android.intent.category.LAUNCHER",
+            "-n",
+            f"{PACKAGE}/{ACTIVITY}",
+        )
         wait_for("launcher ready", lambda: self.snapshot(setup=True), 40)
 
     def wake(self):
@@ -295,7 +438,7 @@ class Device:
             raise RuntimeError(f"No Wi-Fi IP for {self.serial}")
         return match.group(1)
 
-    def automate(self, steps, wait=True):
+    def automate(self, steps, wait=True, game=None):
         self.automation_number += 1
         name = f"campaign-{self.serial}-{self.automation_number}.jsonc"
         path = self.output / name
@@ -305,18 +448,27 @@ class Device:
                     "pwsh",
                     "-NoProfile",
                     "-Command",
-                    ". './android/helpers/jsonc.ps1'; "
-                    "ConvertTo-Json -InputObject (Read-JsoncFile -Path $env:DXX_CAMPAIGN_JSONC_FILE) -Depth 30",
+                    (
+                        ". './android/helpers/test_helpers.ps1'; "
+                        "Get-Content -Raw (Resolve-TestScript -ScriptPath $env:DXX_CAMPAIGN_JSONC_FILE "
+                        "-GameId $env:DXX_CAMPAIGN_GAME)"
+                        if game
+                        else ". './android/helpers/jsonc.ps1'; "
+                        "ConvertTo-Json -InputObject (Read-JsoncFile -Path $env:DXX_CAMPAIGN_JSONC_FILE) -Depth 30"
+                    ),
                 ],
                 cwd=ROOT,
-                env=dict(os.environ, DXX_CAMPAIGN_JSONC_FILE=str(steps)),
+                env=dict(os.environ, DXX_CAMPAIGN_JSONC_FILE=str(steps), DXX_CAMPAIGN_GAME=game or ""),
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
                 timeout=20,
                 check=True,
             )
-            write_json(path, json.loads(parsed.stdout))
+            resolved = json.loads(parsed.stdout)
+            if any("when" in step for step in resolved):
+                raise ValueError("Conditional fixture requires an explicit game for Resolve-TestScript")
+            write_json(path, resolved)
         else:
             write_json(path, steps)
         self.call("push", str(path), f"/data/local/tmp/{name}")
@@ -373,6 +525,7 @@ class Device:
             ("exit-info", ("dumpsys", "activity", "exit-info", PACKAGE)),
             ("battery", ("dumpsys", "battery")),
             ("processes", ("pidof", PACKAGE, f"{PACKAGE}:game")),
+            ("lock-policy", ("dumpsys", "window", "policy")),
         ):
             (self.output / f"{self.serial}-{name}.txt").write_text(
                 self.shell(*args, check=False) + "\n", encoding="utf-8"
@@ -451,6 +604,8 @@ def timed_fault(case, target, launcher=False):
     fault = case["fault"]
     started = time.monotonic()
     timeline = {"requested_seconds": case["duration"], "start_utc": utc(), "fault": fault}
+    keep_lobby_visible = launcher and fault == "wifi" and not target.background_lobby
+    timeline["screen_activity_during_outage"] = keep_lobby_visible
     stopped_pid = None
     target.fault_number += 1
     if fault == "wifi":
@@ -478,24 +633,36 @@ def timed_fault(case, target, launcher=False):
         deadline = time.monotonic() + case["duration"]
         timeline["injection_command_seconds"] = round(time.monotonic() - started, 3)
         while (remaining := deadline - time.monotonic()) > 0:
+            if keep_lobby_visible:
+                # Isolate route loss from a second, unintended screen-timeout fault
+                target.shell("input", "keyevent", "KEYCODE_SHIFT_LEFT")
             print(f"{utc()} holding {target.serial} {fault}, {remaining:.1f}s remaining", flush=True)
             time.sleep(min(20, remaining))
     finally:
         if fault == "wifi":
+            # Idle Samsung firmware can defer reassociation until the display wakes
+            # WAKEUP preserves the secure keyguard and does not return to an app
+            target.shell("input", "keyevent", "KEYCODE_WAKEUP")
             target.shell("svc", "wifi", "enable")
         if fault in ("home", "screen"):
             target.wake()
-            activity = ACTIVITY if launcher else "com.dxxredux.app.MainActivity"
-            target.shell("am", "start", "-n", f"{PACKAGE}/{activity}", "-f", "0x20000000")
+            target.shell("monkey", "-p", PACKAGE, "-c", "android.intent.category.LAUNCHER", "1")
+            if not launcher:
+                time.sleep(1)
+                target.shell("input", "keyevent", "KEYCODE_BACK")
+                time.sleep(2)
         if stopped_pid:
             target.shell("run-as", PACKAGE, "kill", "-CONT", stopped_pid, check=False)
         timeline["restore_command_utc"] = utc()
         timeline["actual_seconds"] = round(time.monotonic() - started, 3)
         write_json(target.output / f"{target.serial}-fault-{target.fault_number:03d}.json", timeline)
     if fault == "wifi":
-        wait_for(
-            "Wi-Fi reconnect", lambda: "inet " in target.shell("ip", "-4", "addr", "show", "wlan0", check=False), 40
-        )
+        try:
+            wait_for(
+                "Wi-Fi reconnect", lambda: "inet " in target.shell("ip", "-4", "addr", "show", "wlan0", check=False), 40
+            )
+        except TimeoutError as exc:
+            raise DeviceUnavailable(f"{target.serial}: Wi-Fi did not reconnect after being re-enabled") from exc
         timeline["ip_after"] = target.ip()
         timeline["reassociated_utc"] = utc()
         timeline["outage_through_reassociation_seconds"] = round(time.monotonic() - started, 3)
@@ -562,7 +729,8 @@ def lifecycle(case, devices):
             )
             write_json(target.output / "surviving-host.json", survivor)
         target.start_setup()
-        target.launch(case, host=False, address=peer.ip(), callsign="ChaosRP" if target is host else "ChaosS21")
+        target.mp("lan_discover", callsign="ChaosRP" if target is host else "ChaosS21")
+        target.mp("lan_join_ip", host_addr=peer.ip())
     verify_traffic(devices)
     hold_and_observe(devices, 8)
     verify_traffic(devices)
@@ -590,6 +758,202 @@ def churn(case, devices):
             if len(connected) != 2 or len({player["callsign"] for player in connected}) != 2:
                 raise RuntimeError("Reconnect left duplicate pilots or ghost slots")
         verify_controls(devices)
+
+
+def solo_host(device, timeout=45):
+    def ready():
+        state = device.snapshot()
+        mp = state.get("multiplayer", {}) if state else {}
+        return state if mp.get("num_connected") == 1 and mp.get("i_am_master") else None
+
+    return wait_for("survivor is the sole host", ready, timeout)
+
+
+def join_from_launcher(client, host, callsign):
+    client.start_setup()
+    client.mp("lan_discover", callsign=callsign)
+    client.mp("lan_join_ip", host_addr=host.ip())
+
+
+def exit_to_launcher(device):
+    device.automate([{"action": "enter_launcher"}], wait=False)
+    wait_for(
+        "native process exits to launcher",
+        lambda: not device.shell("pidof", f"{PACKAGE}:game", check=False),
+        25,
+    )
+    state = wait_for("launcher returns", lambda: device.snapshot(setup=True, full_setup=True), 25)
+    if state.get("game_running") is not False or state.get("has_returnable_game_activity") is not False:
+        raise RuntimeError("Exited game still marked as returnable")
+
+
+def offline_recovery(case, devices):
+    device, absent_host = devices
+    absent_host.shell("am", "force-stop", PACKAGE)
+    device.start_setup()
+    launcher_pid = device.shell("pidof", PACKAGE)
+    device.launch(case, host=False, address=absent_host.ip())
+    native_pid = wait_for("native join starts", lambda: device.shell("pidof", f"{PACKAGE}:game", check=False), 30)
+    # The initial host-info poll has a fixed 30-second deadline and blocks native introspection
+    time.sleep(35)
+    state = device.snapshot()
+    if not state or state.get("in_game") or state.get("menu", {}).get("type") != "newmenu":
+        raise RuntimeError("Unavailable host did not return to a usable menu")
+    if case["action"] == "native":
+        device.automate(ROOT / "android/game_scripts/test_device_network_native_host.jsonc", game=case["game"])
+        assert_process(device, native_pid)
+    else:
+        exit_to_launcher(device)
+        device.launch(case)
+        solo_host(device)
+        device.automate(ROOT / "android/game_scripts/test_coop_late_join_start.jsonc")
+        if device.shell("pidof", f"{PACKAGE}:game") == native_pid:
+            raise RuntimeError("A replacement game reused native globals")
+    state = solo_host(device)
+    if not state.get("in_game") or not state.get("is_network"):
+        raise RuntimeError("Fresh host did not enter network gameplay")
+    exit_to_launcher(device)
+    if device.shell("pidof", PACKAGE) != launcher_pid:
+        raise RuntimeError("Failed-join recovery restarted the launcher process")
+
+
+def assert_process(device, expected):
+    actual = device.shell("pidof", f"{PACKAGE}:game", check=False)
+    if actual != expected:
+        raise RuntimeError(f"Surviving engine was replaced: {device.serial} {expected} -> {actual}")
+
+
+def admission(case, devices):
+    host, client = devices
+    for device in devices:
+        device.start_setup()
+    host.launch(case)
+    solo_host(host)
+    host.automate(ROOT / "android/game_scripts/test_coop_late_join_start.jsonc")
+    host_pid = host.shell("pidof", f"{PACKAGE}:game")
+    if case.get("ui"):
+        host.automate(ROOT / f"android/game_scripts/test_device_network_{case['ui']}_open.jsonc")
+    rounds = []
+    for cycle in range(case["cycles"]):
+        callsign = f"Wait{cycle + 1}"
+        client.start_setup()
+        client.launch(case, host=False, address=host.ip(), callsign=callsign)
+
+        def requested():
+            state = host.snapshot()
+            mp = state.get("multiplayer", {}) if state else {}
+            return state if mp.get("join_request_pending") and mp.get("join_request_callsign") == callsign else None
+
+        requested_state = wait_for(f"fresh approval for {callsign}", requested, 35)
+        write_json(host.output / f"approval-{cycle + 1}-pending.json", requested_state)
+        started = time.monotonic()
+        if case["action"] == "cancel":
+            client.automate(ROOT / "android/game_scripts/test_device_network_cancel_join.jsonc")
+        elif case["action"] == "stop":
+            client.shell("am", "force-stop", PACKAGE)
+
+        def retired():
+            state = host.snapshot()
+            return state if state and not state["multiplayer"]["join_request_pending"] else None
+
+        retired_state = wait_for("abandoned approval retires", retired, 18)
+        if retired_state["multiplayer"]["num_connected"] != 1:
+            raise RuntimeError("Unapproved client occupied a live slot")
+        if case["action"] == "expire":
+            wait_for(
+                "ignored join returns from pending admission",
+                lambda: (s and not s.get("join_wait", {}).get("active")) if (s := client.snapshot()) else False,
+                20,
+            )
+        assert_process(host, host_pid)
+        rounds.append({"callsign": callsign, "action": case["action"], "retired_seconds": time.monotonic() - started})
+        write_json(host.output / "approval-rounds.json", rounds)
+    if case.get("ui"):
+        host.automate(ROOT / "android/game_scripts/test_device_network_ui_close.jsonc")
+    join_from_launcher(client, host, "ReturnOK")
+    verify_traffic(devices)
+    verify_controls(devices)
+    assert_process(host, host_pid)
+    states = pair_states(devices)
+    if any(len(state["multiplayer"]["players"]) > 2 for state in states):
+        raise RuntimeError("Cancelled admissions left extra native player slots")
+
+
+def renamed_returns(case, devices):
+    start_pair(case, devices)
+    host, client = devices
+    host_pid = host.shell("pidof", f"{PACKAGE}:game")
+    for cycle in range(case["cycles"]):
+        callsign = ("R2JOIN" if cycle % 2 else "R2Join") + str(cycle + 1)
+        print(f"{utc()} returning under pilot name {callsign}", flush=True)
+        client.shell("am", "force-stop", PACKAGE)
+        solo_host(host)
+        join_from_launcher(client, host, callsign)
+        verify_traffic(devices)
+        verify_controls(devices)
+        assert_process(host, host_pid)
+        for state in pair_states(devices):
+            active = [p for p in state["multiplayer"]["players"] if p["connected"]]
+            if sorted(p["callsign"].lower() for p in active) != sorted(("chaosrp", callsign.lower())):
+                raise RuntimeError("Renamed return displaced or duplicated the wrong pilot")
+
+
+def host_swaps(case, devices):
+    start_pair(case, devices)
+    host, client = devices
+    names = {host.serial: "ChaosRP", client.serial: "ChaosS21"}
+    for cycle in range(case["cycles"]):
+        print(f"{utc()} host swap {cycle + 1}, departing={host.serial}", flush=True)
+        survivor_pid = client.shell("pidof", f"{PACKAGE}:game")
+        host.shell("am", "force-stop", PACKAGE)
+        solo_host(client)
+        join_from_launcher(host, client, names[host.serial])
+        verify_traffic(devices)
+        verify_controls(devices)
+        assert_process(client, survivor_pid)
+        host, client = client, host
+
+
+def ui_session(case, devices):
+    start_pair(case, devices)
+    original_host, original_client = devices
+    owner = original_host if case["role"] == "host" else original_client
+    peer = original_client if owner is original_host else original_host
+    owner_pid = owner.shell("pidof", f"{PACKAGE}:game")
+    fixture = (
+        "test_device_network_menu_open.jsonc" if case["ui"] == "menu" else "test_device_network_automap_open.jsonc"
+    )
+    owner.automate(ROOT / "android/game_scripts" / fixture)
+    write_json(owner.output / "ui-open.json", pair_states(devices))
+    if case["action"] == "peer-loss":
+        peer.shell("am", "force-stop", PACKAGE)
+        write_json(owner.output / "ui-survivor.json", solo_host(owner))
+        deadline = time.monotonic() + 15
+    else:
+        deadline = time.monotonic() + case["duration"]
+    while time.monotonic() < deadline:
+        state = owner.snapshot()
+        if not state or not state.get("is_network"):
+            raise RuntimeError("Menu owner lost its network session")
+        if case["ui"] == "automap" and not state.get("automap_active"):
+            raise RuntimeError("Automap closed unexpectedly")
+        if case["ui"] == "menu" and state.get("game_window_is_front"):
+            raise RuntimeError("Game menu closed unexpectedly")
+        if case["action"] == "soak":
+            peer_state = peer.snapshot()
+            if (
+                state["multiplayer"]["num_connected"] != 2
+                or not peer_state
+                or peer_state.get("multiplayer", {}).get("num_connected") != 2
+            ):
+                raise RuntimeError("A healthy peer was dropped while a menu was open")
+        time.sleep(min(3, max(0, deadline - time.monotonic())))
+    owner.automate(ROOT / "android/game_scripts/test_device_network_ui_close.jsonc")
+    assert_process(owner, owner_pid)
+    if case["action"] == "peer-loss":
+        join_from_launcher(peer, owner, "ChaosS21" if peer is original_client else "ChaosRP")
+    verify_traffic(devices)
+    verify_controls(devices)
 
 
 def briefing_lifecycle(case, devices):
@@ -662,13 +1026,13 @@ def lobby_join(host, client):
     )
 
 
-def lobby_bidirectional(host, client, label):
+def lobby_bidirectional(host, client, label, callsign="ChaosS21"):
     for ready in (True, False, True):
         client.mp("lan_set_ready", ready=ready)
         wait_for(
             "host receives ready change",
             lambda: any(
-                player["callsign"] == "ChaosS21" and player["ready"] == ready for player in lobby_state(host)["players"]
+                player["callsign"] == callsign and player["ready"] == ready for player in lobby_state(host)["players"]
             ),
             15,
         )
@@ -714,6 +1078,406 @@ def lobby_case(case, devices):
         35,
     )
     lobby_bidirectional(host, client, "after")
+
+
+def lobby_role_turnover(case, devices):
+    for device in devices:
+        device.start_setup()
+    pids = {device.serial: device.shell("pidof", PACKAGE) for device in devices}
+    host, client = devices
+    seen_ids = set()
+    rounds = []
+    content = (("d1", ""), ("d2", "d2"), ("d2", "descent"))
+    for cycle in range(case["cycles"]):
+        game, mission = content[cycle % len(content)]
+        print(f"{utc()} lobby turnover={cycle + 1} host={host.serial} game={game}/{mission}", flush=True)
+        host.mp("lan_host_lobby", callsign="ChaosRP", game=game, mission=mission, mode="coop", max_players=2)
+        wait_for("turnover host exists", lambda: lobby_state(host)["hosting"], 15)
+        lobby_join(host, client)
+        lobby_id = lobby_state(client)["joined_lobby_id"]
+        if lobby_id in seen_ids:
+            raise RuntimeError("A fresh lobby reused a retired identity")
+        seen_ids.add(lobby_id)
+        lobby_bidirectional(host, client, f"turnover-{cycle + 1}")
+        # Vary whether the guest leaves before or after the host closes the room
+        if cycle % 2:
+            host.mp("lan_stop_lobby")
+            client.mp("lan_leave_lobby")
+        else:
+            client.mp("lan_leave_lobby")
+            host.mp("lan_stop_lobby")
+        client.mp("lan_stop_lobby")
+        for device in devices:
+            if device.shell("pidof", PACKAGE) != pids[device.serial]:
+                raise RuntimeError("Lobby turnover replaced an app process")
+            state = lobby_state(device)
+            if state["hosting"] or state["joined_lobby_id"] or state["launch_pending"] or state["players"]:
+                raise RuntimeError("Closed lobby retained membership or launch state")
+        rounds.append(
+            {
+                "utc": utc(),
+                "cycle": cycle + 1,
+                "host": host.serial,
+                "game": game,
+                "mission": mission,
+                "lobby_id": lobby_id,
+            }
+        )
+        write_json(host.output / "lobby-turnover-rounds.json", rounds)
+        host, client = client, host
+
+
+def lobby_route_retry(case, devices):
+    host, client = devices
+    for device in devices:
+        device.start_setup()
+    host.mp("lan_host_lobby", callsign="ChaosRP", game="d2", mission="d2", mode="coop", max_players=2)
+    wait_for("LAN host created", lambda: lobby_state(host)["hosting"], 15)
+    lobby_join(host, client)
+    lobby_bidirectional(host, client, "before-route-loss")
+    pids = [device.shell("pidof", PACKAGE) for device in devices]
+    timed_fault(case, host if case["role"] == "host" else client, launcher=True)
+    if lobby_state(client)["joined_lobby_id"]:
+        raise RuntimeError("Client retained lobby after full reconnect grace")
+    observations = []
+    joined = False
+    for attempt in range(1, 4):
+        client.mp("lan_discover", callsign="ChaosS21")
+        client.mp("lan_join_ip", host_addr=host.ip())
+        deadline = time.monotonic() + 40
+        while time.monotonic() < deadline:
+            state = lobby_state(client)
+            observation = {"utc": utc(), "attempt": attempt, "client_lobby": state}
+            for sender, receiver, label in ((host, client, "host_to_client"), (client, host, "client_to_host")):
+                observation[label] = sender.shell("ping", "-c", "1", "-W", "1", receiver.ip(), check=False)
+            observations.append(observation)
+            write_json(host.output / "route-retry-observations.json", observations)
+            print(f"{utc()} route retry={attempt} joined={bool(state['joined_lobby_id'])}", flush=True)
+            if state["joined_lobby_id"]:
+                joined = True
+                break
+            time.sleep(4)
+        if joined:
+            break
+        time.sleep(10)
+    if not joined:
+        raise RuntimeError("Three ordinary Join attempts failed after Wi-Fi restoration")
+    for device, pid in zip(devices, pids, strict=True):
+        if device.shell("pidof", PACKAGE) != pid:
+            raise RuntimeError("Launcher process changed during route recovery")
+    wait_for(
+        "host sees recovered client",
+        lambda: len(p := lobby_state(host)["players"]) == 2 and all(player["connected"] for player in p),
+        20,
+    )
+    lobby_bidirectional(host, client, "after-route-retry")
+
+
+def lobby_sequence(case, devices, launch=True):
+    host, client = devices
+    for device in devices:
+        device.start_setup()
+    host.mp("lan_host_lobby", callsign="ChaosRP", game="d2", mission="d2", mode="coop", max_players=2)
+    wait_for("host lobby exists", lambda: lobby_state(host)["hosting"], 15)
+    lobby_join(host, client)
+    lobby_bidirectional(host, client, "before")
+    old_id = lobby_state(client)["joined_lobby_id"]
+    client_pid = client.shell("pidof", PACKAGE)
+    callsign = "ChaosS21"
+    action = case["action"]
+    if action in ("replace", "launch-cancel"):
+        if action == "launch-cancel":
+            host.mp("lan_start_game", level_num=1, difficulty=0)
+            wait_for("client has pending lobby launch", lambda: lobby_state(client)["launch_pending"], 20)
+            client.mp("launch_game")
+            time.sleep(2)
+            if client.shell("pidof", f"{PACKAGE}:game", check=False):
+                raise RuntimeError("Client entered engine before host preparation confirmation")
+            client.mp("lan_stop_lobby")
+            client.mp("lan_discover", callsign=callsign)
+        host.mp("lan_stop_lobby")
+        host.mp("lan_host_lobby", callsign="ChaosRP", game="d2", mission="d2", mode="coop", max_players=2)
+        wait_for("replacement host is listening", lambda: lobby_state(host)["hosting"], 15)
+        # Preserve the client's process and, for replace, its old joined membership
+        client.mp("lan_join_ip", host_addr=host.ip())
+        wait_for(
+            "client joins replacement lobby identity",
+            lambda: (
+                (state["joined_lobby_id"] and state["joined_lobby_id"] != old_id)
+                if (state := lobby_state(client))
+                else False
+            ),
+            40,
+        )
+    elif action in ("rename", "rename-after-loss"):
+        client.mp("lan_leave_lobby" if action == "rename" else "lan_stop_lobby")
+        wait_for(
+            "old pilot is no longer connected",
+            lambda: sum(p["connected"] for p in lobby_state(host)["players"]) == 1,
+            20,
+        )
+        callsign = "R2New"
+        client.mp("lan_discover", callsign=callsign)
+        client.mp("lan_join_ip", host_addr=host.ip())
+    else:
+        for cycle in range(8):
+            client.mp("lan_join_ip", host_addr=host.ip())
+            time.sleep(0.25 if cycle % 2 else 1)
+            state = lobby_state(client)
+            if state["joined_lobby_id"] != old_id:
+                raise RuntimeError("Repeated join replaced a healthy lobby identity")
+    wait_for(
+        "lobby has exactly the expected pair",
+        lambda: (
+            sorted(p["callsign"] for p in lobby_state(host)["players"] if p["connected"])
+            == sorted(("ChaosRP", callsign))
+        ),
+        30,
+    )
+    if client.shell("pidof", PACKAGE) != client_pid:
+        raise RuntimeError("Lobby recovery unexpectedly restarted the client process")
+    lobby_bidirectional(host, client, "after", callsign)
+    if not launch:
+        if action == "launch-cancel":
+            state = client.snapshot(setup=True, full_setup=True)
+            if not state or state.get("launch_preparation", {}).get("active") or state.get("game_running"):
+                raise RuntimeError("Cancelled lobby preparation left a pending or running game")
+        return
+    host.mp("lan_start_game", level_num=1, difficulty=0)
+    wait_for("host has a launch event", lambda: lobby_state(host)["launch_pending"], 20)
+    wait_for("client has a launch event", lambda: lobby_state(client)["launch_pending"], 20)
+    client.mp("launch_game")
+    time.sleep(1)
+    host.mp("launch_game")
+    verify_traffic(devices)
+    verify_controls(devices)
+
+
+def lobby_background_rejoin(devices):
+    host, client = devices
+    for device in devices:
+        device.start_setup()
+    host.mp("lan_host_lobby", callsign="ChaosRP", game="d2", mission="d2", mode="coop", max_players=2)
+    wait_for("host lobby exists", lambda: lobby_state(host)["hosting"], 15)
+    lobby_join(host, client)
+    client_pid = client.shell("pidof", PACKAGE)
+    client.mp("lan_leave_lobby")
+    wait_for("client leaves old lobby", lambda: len(lobby_state(host)["players"]) == 1, 15)
+    client.shell("input", "keyevent", "KEYCODE_HOME")
+    # Let Android's foreground-start allowance expire before an artificial queued join
+    time.sleep(16)
+    client.mp("lan_discover", callsign="ChaosS21")
+    client.mp("lan_join_ip", host_addr=host.ip())
+    wait_for("background client rejoins", lambda: lobby_state(client).get("joined_lobby_id"), 35)
+    if client.shell("pidof", PACKAGE) != client_pid:
+        raise RuntimeError("Background lobby action crashed or restarted the launcher")
+    before = client.shell("dumpsys", "activity", "services", PACKAGE)
+    (client.output / "service-before-resume.txt").write_text(before, encoding="utf-8")
+    client.wake()
+    client.shell("monkey", "-p", PACKAGE, "-c", "android.intent.category.LAUNCHER", "1")
+    wait_for("launcher returns to foreground", lambda: client.snapshot(setup=True), 20)
+    client.mp("lan_notify_resumed")
+
+    def service_started():
+        state = client.shell("dumpsys", "activity", "services", PACKAGE)
+        (client.output / "service-after-resume.txt").write_text(state, encoding="utf-8")
+        return "MultiplayerForegroundService" in state and "isForeground=true" in state
+
+    wait_for("LAN foreground service resumes", service_started, 15)
+    lobby_bidirectional(host, client, "after-background-rejoin")
+
+
+def advertised_solo_host(case, devices, reset=True):
+    host, observer = devices
+    if reset:
+        host.start_setup()
+        host.broadcast("SETUP_COMMAND", command="write_bool_pref", key="dlog_dormancy_enabled", value=True)
+        host.start_setup()
+        observer.start_setup()
+    host.mp(
+        "lan_host_lobby", callsign="ChaosRP", game=case["game"], mission=case["mission"], mode="coop", max_players=2
+    )
+    wait_for("host lobby exists", lambda: lobby_state(host)["hosting"], 15)
+    lobby_join(host, observer)
+    lobby_bidirectional(host, observer, "before-native-lifecycle")
+    host.mp("lan_start_game", level_num=1, difficulty=0)
+    wait_for("host launch is prepared", lambda: lobby_state(host)["launch_pending"], 20)
+    # The second pilot leaves before entering the engine; the host continues alone
+    observer.mp("lan_leave_lobby")
+    observer.mp("lan_stop_lobby")
+    host.mp("launch_game")
+    solo_host(host)
+    host.automate(ROOT / "android/game_scripts/test_coop_late_join_start.jsonc")
+    host_pid = host.shell("pidof", f"{PACKAGE}:game")
+    # Keep the observer's normal LAN service active instead of relying on idle
+    # discovery, which Android may deny network access while the screen is locked
+    observer.start_setup()
+    observer.mp("lan_host_lobby", callsign="Observer", game="d2", mission="d2", mode="coop", max_players=2)
+    wait_for("observer waiting lobby exists", lambda: lobby_state(observer)["hosting"], 15)
+    service = observer.shell("dumpsys", "activity", "services", PACKAGE)
+    (observer.output / f"{observer.serial}-observer-service-{observer.snapshot_number:05d}.txt").write_text(
+        service, encoding="utf-8"
+    )
+    if "isForeground=true" not in service:
+        raise DeviceUnavailable("Observer's normal lobby foreground service did not start")
+    address = host.ip()
+    wait_for(
+        "running host is advertised",
+        lambda: any(
+            item["host_address"] == address and item["status"] == "in_game"
+            for item in lobby_state(observer)["discovered"]
+        ),
+        30,
+    )
+    return host_pid, address
+
+
+def native_abort_advertisement(case, devices):
+    host, observer = devices
+    host_pid, address = advertised_solo_host(case, devices)
+    host.automate(ROOT / "android/game_scripts/test_device_network_abort_game.jsonc")
+    observations = []
+    deadline = time.monotonic() + 40
+    while time.monotonic() < deadline:
+        hosted = lobby_state(host)
+        advertised = lobby_state(observer)
+        observations.append({"utc": utc(), "host": hosted, "observer": advertised, "native": host.snapshot()})
+        write_json(host.output / "native-abort-observations.json", observations)
+        if not hosted["hosting"] and not any(item["host_address"] == address for item in advertised["discovered"]):
+            assert_process(host, host_pid)
+            break
+        time.sleep(3)
+    else:
+        raise RuntimeError("Aborted native game remained advertised from its main menu")
+    # Rehosting in the surviving native process must acquire a fresh game lease
+    host.automate(ROOT / "android/game_scripts/test_device_network_native_host.jsonc", game=case["game"])
+    assert_process(host, host_pid)
+    service = host.shell("dumpsys", "activity", "services", PACKAGE)
+    (host.output / "native-rehost-service.txt").write_text(service, encoding="utf-8")
+    if "isForeground=true" not in service:
+        raise RuntimeError("Native menu rehosting did not reacquire the foreground service")
+    host.shell("input", "keyevent", "KEYCODE_HOME")
+    print(f"{utc()} native rehost background soak 90s", flush=True)
+    time.sleep(90)
+    service = host.shell("dumpsys", "activity", "services", PACKAGE)
+    (host.output / "native-rehost-service-background.txt").write_text(service, encoding="utf-8")
+    if "isForeground=true" not in service:
+        raise RuntimeError("Native menu rehost lost its service while backgrounded")
+    host.wake()
+    host.shell("monkey", "-p", PACKAGE, "-c", "android.intent.category.LAUNCHER", "1")
+    state = host.snapshot()
+    write_json(host.output / "native-rehost-after-background.json", state)
+    assert_process(host, host_pid)
+    if not state or not state.get("in_game") or not state.get("is_network"):
+        raise RuntimeError("Native menu rehost did not survive ordinary backgrounding")
+    host.automate(ROOT / "android/game_scripts/test_device_network_abort_game.jsonc")
+
+
+def dormancy_expiry(case, devices):
+    host, observer = devices
+    host_pid, address = advertised_solo_host(case, devices)
+    launcher_pid = host.shell("pidof", PACKAGE)
+    if case.get("ui"):
+        host.automate(ROOT / f"android/game_scripts/test_device_network_{case['ui']}_open.jsonc")
+    host.shell("input", "keyevent", "KEYCODE_HOME")
+    started = time.monotonic()
+    observations = []
+    while time.monotonic() - started < case["duration"] + 20:
+        elapsed = time.monotonic() - started
+        state = host.snapshot()
+        observations.append(
+            {
+                "utc": utc(),
+                "elapsed_seconds": elapsed,
+                "state": state,
+                "observer": lobby_state(observer),
+            }
+        )
+        write_json(host.output / "background-deadline-observations.json", observations)
+        if elapsed < case["duration"] - 10:
+            assert_process(host, host_pid)
+            if state and not state.get("is_network"):
+                raise RuntimeError("Host disconnected before the background deadline")
+        print(
+            f"{utc()} background deadline elapsed={elapsed:.1f}s network={state.get('is_network') if state else None}",
+            flush=True,
+        )
+        time.sleep(min(20, max(0, case["duration"] + 20 - (time.monotonic() - started))))
+    advertised = lobby_state(observer)
+    hosted = lobby_state(host)
+    write_json(host.output / "advertisement-after-deadline.json", advertised)
+    write_json(host.output / "host-lobby-after-deadline.json", hosted)
+    host.wake()
+    host.shell("monkey", "-p", PACKAGE, "-c", "android.intent.category.LAUNCHER", "1")
+    state = host.snapshot()
+    if not state:
+        host.mp("tap_button", text="Return to Game")
+        state = wait_for("native menu resumes after deadline", lambda: host.snapshot(), 20)
+    write_json(host.output / "native-after-deadline.json", state)
+    if state.get("is_network") or state.get("in_game"):
+        raise RuntimeError("Background deadline did not leave cooperative gameplay")
+    if not any(
+        item.get("text", "").lower().startswith("multiplayer") for item in state.get("menu", {}).get("items", [])
+    ):
+        raise RuntimeError("Background deadline did not return to the native main menu")
+    exit_to_launcher(host)
+    advertised_solo_host(case, devices, reset=False)
+    if not solo_host(host).get("in_game"):
+        raise RuntimeError("Could not host again after background expiry")
+    if host.shell("pidof", PACKAGE) != launcher_pid:
+        raise RuntimeError("Post-expiry hosting replaced the launcher process")
+    if hosted["hosting"] or any(item["host_address"] == address for item in advertised["discovered"]):
+        raise RuntimeError("Expired native host remained advertised before returning to the launcher")
+
+
+def dormancy_reset(case, devices):
+    host, observer = devices
+    host_pid, _ = advertised_solo_host(case, devices)
+    host.shell("input", "keyevent", "KEYCODE_HOME")
+    started = time.monotonic()
+    observations = []
+    while time.monotonic() - started < case["duration"]:
+        state = host.snapshot()
+        observations.append(
+            {
+                "utc": utc(),
+                "elapsed_seconds": time.monotonic() - started,
+                "native": state,
+                "observer": lobby_state(observer),
+            }
+        )
+        write_json(host.output / "deadline-reset-observations.json", observations)
+        if not state or not state.get("is_network"):
+            raise RuntimeError("Host disconnected before foreground reset")
+        print(f"{utc()} waiting for foreground reset elapsed={time.monotonic() - started:.1f}s", flush=True)
+        time.sleep(min(20, max(0, case["duration"] - (time.monotonic() - started))))
+    host.wake()
+    host.shell("monkey", "-p", PACKAGE, "-c", "android.intent.category.LAUNCHER", "1")
+    time.sleep(2)
+    resumed = host.snapshot()
+    write_json(host.output / "deadline-reset-resumed.json", {"utc": utc(), "native": resumed})
+    if not resumed or not resumed.get("in_game") or not resumed.get("is_network"):
+        raise RuntimeError("Return before timeout failed to preserve the session")
+    host.shell("input", "keyevent", "KEYCODE_HOME")
+    deadline = time.monotonic() + 40
+    while time.monotonic() < deadline:
+        state = host.snapshot()
+        observations.append(
+            {
+                "utc": utc(),
+                "elapsed_seconds": time.monotonic() - started,
+                "native": state,
+                "observer": lobby_state(observer),
+            }
+        )
+        write_json(host.output / "deadline-reset-observations.json", observations)
+        if not state or not state.get("in_game") or not state.get("is_network"):
+            raise RuntimeError("Old background deadline disconnected the resumed session")
+        assert_process(host, host_pid)
+        time.sleep(3)
+    host.wake()
+    host.shell("monkey", "-p", PACKAGE, "-c", "android.intent.category.LAUNCHER", "1")
+    host.automate([{"action": "introspect"}])
 
 
 def run_suite(case, devices, directory):
@@ -788,6 +1552,11 @@ def main():
     parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument("--not-before", help="ISO UTC design deadline; execution refuses to start earlier")
     parser.add_argument("--stop-on-failure", action="store_true")
+    parser.add_argument("--lobby-only", action="store_true", help="Verify lobby recovery without launching gameplay")
+    parser.add_argument(
+        "--background-lobby-serial",
+        help="Skip waking/keyguard dismissal during this device's launcher setup; requires --lobby-only",
+    )
     args = parser.parse_args()
     selected = [
         case
@@ -801,6 +1570,15 @@ def main():
         parser.error("distinct --host and --client plus --output are required")
     if not selected:
         parser.error("no cases selected")
+    if args.lobby_only and any(
+        case["kind"] not in ("lobby", "lobby-sequence", "background-rejoin", "lobby-route-retry", "lobby-role-turnover")
+        for case in selected
+    ):
+        parser.error("--lobby-only requires lobby cases")
+    if args.background_lobby_serial and (
+        not args.lobby_only or args.background_lobby_serial not in (args.host, args.client)
+    ):
+        parser.error("--background-lobby-serial must select one test device and requires --lobby-only")
     if args.not_before and dt.datetime.now(dt.timezone.utc) < dt.datetime.fromisoformat(args.not_before):
         parser.error("design interval has not ended")
     args.output = args.output.resolve()
@@ -822,16 +1600,31 @@ def main():
     serials = [args.host, args.client]
     if args.reverse:
         serials.reverse()
-    write_json(args.output / "manifest.json", {"utc": utc(), "serials": serials, "package": PACKAGE, "cases": selected})
+    if args.background_lobby_serial == serials[1] and any(case["kind"] == "background-rejoin" for case in selected):
+        parser.error("background-rejoin needs an unlocked client for its final foreground recovery check")
+    write_json(
+        args.output / "manifest.json",
+        {
+            "utc": utc(),
+            "serials": serials,
+            "package": PACKAGE,
+            "cases": selected,
+            "lobby_only": args.lobby_only,
+            "background_lobby_serial": args.background_lobby_serial,
+        },
+    )
     results = []
     for iteration in range(1, args.repeat + 1):
         for case in selected:
             directory = args.output / f"{iteration:02d}-{case['id']}"
             directory.mkdir(exist_ok=False)
-            devices = [Device(args.adb, serial, directory) for serial in serials]
+            devices = [
+                Device(args.adb, serial, directory, serial == args.background_lobby_serial) for serial in serials
+            ]
             print(f"{utc()} START {case['id']} iteration={iteration}", flush=True)
             started = time.monotonic()
             result = {"case": case, "iteration": iteration, "started_utc": utc(), "status": "FAIL"}
+            result["lobby_only"] = args.lobby_only
             loggers = []
             with contextlib.ExitStack() as stack:
                 try:
@@ -839,7 +1632,11 @@ def main():
                         if device.call("get-state") != "device":
                             raise RuntimeError(f"Device not online: {device.serial}")
                         device.shell("run-as", PACKAGE, "pwd")
-                        device.wake()
+                        if not device.background_lobby:
+                            device.wake()
+                        (directory / f"{device.serial}-lock-before.txt").write_text(
+                            device.shell("dumpsys", "window", "policy"), encoding="utf-8"
+                        )
                         log = stack.enter_context(
                             (directory / f"{device.serial}-logcat.txt").open("w", encoding="utf-8")
                         )
@@ -855,8 +1652,32 @@ def main():
                         run_suite(case, devices, directory)
                     elif case["kind"] == "lobby":
                         lobby_case(case, devices)
+                    elif case["kind"] == "lobby-route-retry":
+                        lobby_route_retry(case, devices)
+                    elif case["kind"] == "lobby-role-turnover":
+                        lobby_role_turnover(case, devices)
                     elif case["kind"] == "churn":
                         churn(case, devices)
+                    elif case["kind"] == "admission":
+                        admission(case, devices)
+                    elif case["kind"] == "offline-recovery":
+                        offline_recovery(case, devices)
+                    elif case["kind"] == "renamed-returns":
+                        renamed_returns(case, devices)
+                    elif case["kind"] == "host-swaps":
+                        host_swaps(case, devices)
+                    elif case["kind"] == "ui-session":
+                        ui_session(case, devices)
+                    elif case["kind"] == "lobby-sequence":
+                        lobby_sequence(case, devices, launch=not args.lobby_only)
+                    elif case["kind"] == "background-rejoin":
+                        lobby_background_rejoin(devices)
+                    elif case["kind"] == "dormancy-expiry":
+                        dormancy_expiry(case, devices)
+                    elif case["kind"] == "native-abort-advertisement":
+                        native_abort_advertisement(case, devices)
+                    elif case["kind"] == "dormancy-reset":
+                        dormancy_reset(case, devices)
                     elif case["kind"] == "briefing-lifecycle":
                         briefing_lifecycle(case, devices)
                     else:

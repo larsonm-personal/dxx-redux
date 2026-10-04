@@ -1,6 +1,55 @@
 # Physical-device adversarial multiplayer campaign
 
-Status: paired execution resumed at 17:59 UTC after user unlocked Samsung
+Status: selected physical campaign completed at 21:26 UTC; cleanup verified at 21:27 UTC
+
+## Final outcome
+
+The requested active design hour was completed. The unlocked paired campaign
+ran from 17:59:40 to 21:26:53 UTC, about 3 hours 27 minutes including diagnosis,
+fixing, rebuilding and reruns. Earlier setup, the blocked launch, and standalone
+Retroid checks are recorded separately below.
+
+| Result                                                            | Count |
+| ----------------------------------------------------------------- | ----: |
+| Completed paired attempts, including the earlier blocked baseline |    79 |
+| Passing attempts                                                  |    60 |
+| Distinct case identifiers with a pass                             |    57 |
+| Failed reproductions of the confirmed networking defect           |     4 |
+| Harness/environment failed attempts                               |    14 |
+| Unresolved startup ANR observation                                |     1 |
+
+One product defect was found and fixed: successful late admission left its
+completed join context alive, silently suppressing a later checkpoint
+restore's SYNC packets. The shared completion helper is used by D1 and D2.
+Physical verification covers all three content modes and both devices hosting.
+The detailed cause, before/after evidence and reproduction command follow.
+
+Coverage includes briefing departure/release, delayed admission, repeated
+lobby cancellation, partial-transfer cancellation, saved-player gear recovery,
+checkpoint restore after return, five interrupted-restore/cold-resume variants,
+consecutive client-requested rewinds, level progression after late admission,
+ten alternating-path reconnects, host migration and return, Home/resume,
+short/long Wi-Fi loss, lobby replacement/readiness/chat, and secret-travel
+release loss. The focused final secret-release case passed at 21:26:53 UTC.
+
+The Retroid startup focus ANR did not recur in the unchanged retry or later
+launches. Its origin remains unresolved; it is not counted as a confirmed
+second product defect. This campaign is two-player LAN coverage, not exhaustive
+coverage of the designed combinations, WAN/relay play, larger rosters, or
+movie assets. Secure-screen interruption and native-signal cases were not run.
+
+Both Android ARM64 engines built successfully. Scoped formatting, Python
+compilation, automation catalog validation (94 standalone JSON tests, 351
+support scripts, 185 standalone PowerShell tests), and master catalog validation
+(283 top-level entries) passed. The original app installations/data and security
+settings were preserved. Both devices ended with Wi-Fi connected at their
+original addresses and the diagnostic package stopped.
+
+Machine-readable counts, every attempted case, classifications, and cleanup
+state are in `android/temp/device-adversarial-20261003-0040/current-summary.json`,
+`triage.json`, and `final-device-state.json`. Each batch retains commands,
+continuous device logs, fresh state and native automation results. The reusable
+entry point is `android/tests/test_device_network_campaign.ps1`.
 
 Design work resumed at 15:30 UTC after revalidating the worktree and devices.
 The earlier active goal interval recorded about 20 minutes of work. Reserve
@@ -148,6 +197,53 @@ the original shared autosave hash before relaunch, both players' inventory,
 reactor countdown and advancing simulation clocks, a settled restore barrier,
 and renewed bidirectional PDATA. The loader-failure fixture additionally starts
 a fresh game in the failed loader's existing process before the cold recovery.
+Host load failure followed by cold recovery passed at 20:44 UTC as well.
+
+The D2 ten-reconnect case passed at 20:50 UTC with Retroid hosting. It alternates
+launcher IP discovery and direct engine joins, uses restart delays from 0.25
+to 16 seconds, and verifies traffic, distinct pilot membership and actual ship
+rotation after every return. These delays exclude activity startup latency;
+command timestamps and fresh state captures record the observed recovery.
+The first Home/resume case was a harness failure: ADB cannot directly launch
+the non-exported MainActivity. The corrected runner follows the existing
+repository helper's normal launcher intent and Back sequence. It does not
+change the manifest, permissions, or Android security configuration.
+The corrected host Home/resume passed at 20:54 UTC; short host Wi-Fi loss
+passed at 20:55 with a measured 6.469-second outage through reassociation.
+The first custom former-host return used the original engine port 42424,
+but the migrated host correctly advertised its proxy on 42425. The runner
+now resolves the migrated endpoint through normal launcher IP discovery,
+preserving the returning pilot's callsign. This is a harness correction,
+not evidence of a second product defect.
+The corrected former-host return passed at 21:00 UTC. Client Home/resume,
+a measured 50.563-second Wi-Fi outage followed by rejoin, and a 35-second
+force-stop/rejoin passed by 21:05. Lobby host replacement, client Home/resume,
+and client Wi-Fi recovery passed by 21:07, including readiness changes and
+chat delivery in both directions. All these cases used Retroid as the original
+host. The final transition batch reverses the physical roles again.
+
+### Unresolved observation: Retroid startup focus ANR
+
+At 21:08 UTC, the first `transitions-samsung/01-d1-saved-level-transition`
+attempt never launched its client engine. Android reported a no-focused-window
+ANR in its home launcher, then in diagnostic SetupActivity (PID 4431), which
+it killed at 21:08:36. The app still handled preference and launch broadcasts
+before that kill. This is not a demonstrated multiplayer failure or a confirmed
+second product defect. Continuous logs, process exit reason 6, and
+`retroid-lastanr.txt` preserve the observation. The exact unchanged retry
+started normally at 21:11 UTC. No speculative code or OS-setting change was
+made for this observation; retain it for follow-up if it recurs.
+The unchanged D1 saved-session/level-transition case passed at 21:14 UTC.
+Samsung-host briefing Home/resume and short Wi-Fi loss passed next, preserving
+the original generation, participant set and deadline before entering play.
+D1-in-D2 saved-session admission followed by two client-requested rewinds
+passed at 21:19 UTC with identical, successively earlier authoritative targets
+on both peers.
+D1-in-D2 saved-session/level-transition passed at 21:22 UTC, including Android
+Back/menu behavior and flight controls in level 2. The first secret-release
+disconnect host check passed, but the manifest's redundant `SecretWorld` flag
+then invoked a separate two-player traversal after the client was gone. Remove
+that flag from the disconnect family and rerun the focused scenario.
 
 Reproduce the focused physical regression after provisioning the diagnostic
 package and owned data on two normally unlocked devices:

@@ -1,0 +1,10 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_device_network_campaign" } },
+    { "action": "set_debug", "field": "android_game_request", "value": "game_menu" },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": { "menu.type": "newmenu", "game_window_is_front": false, "is_network": true },
+    },
+    { "action": "introspect" },
+]

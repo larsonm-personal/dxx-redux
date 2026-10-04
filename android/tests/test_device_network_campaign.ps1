@@ -1,5 +1,9 @@
 #!/usr/bin/env pwsh
 # Explicit physical-device campaign; requires provisioned diagnostic apps and owned data
+# Native fixture catalog delegated to run_device_network_campaign.py:
+# test_device_network_menu_open.jsonc, test_device_network_automap_open.jsonc,
+# test_device_network_ui_close.jsonc, test_device_network_cancel_join.jsonc,
+# test_device_network_native_host.jsonc, test_device_network_abort_game.jsonc
 param(
     [string]$HostSerial,
     [string]$ClientSerial,
@@ -8,6 +12,8 @@ param(
     [ValidateRange(1, 100)][int]$Repeat = 1,
     [switch]$Reverse,
     [switch]$StopOnFailure,
+    [switch]$LobbyOnly,
+    [string]$BackgroundLobbySerial,
     [switch]$List
 )
 $ErrorActionPreference = 'Stop'
@@ -26,6 +32,8 @@ if ($List) {
     $arguments += @('--host', $HostSerial, '--client', $ClientSerial, '--output', $OutputDirectory, '--repeat', $Repeat)
     if ($Reverse) { $arguments += '--reverse' }
     if ($StopOnFailure) { $arguments += '--stop-on-failure' }
+    if ($LobbyOnly) { $arguments += '--lobby-only' }
+    if ($BackgroundLobbySerial) { $arguments += @('--background-lobby-serial', $BackgroundLobbySerial) }
 }
 & python @arguments
 exit $LASTEXITCODE

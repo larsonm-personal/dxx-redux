@@ -79,6 +79,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop_warp.h"
 #include "coop_indicator_lines.h"
 #include "android_log.h"
+#include "android_lifecycle_actions.h"
 #include "state_android_shared.h"
 #include <android/log.h>
 #endif
@@ -1614,6 +1615,10 @@ void multi_do_frame(void)
 
 	if (multi_quit_game)
 	{
+#ifdef __ANDROID__
+		if (!android_lifecycle_actions_prepare_multiplayer_close())
+			return;
+#endif
 		multi_quit_game = 0;
 		if (Game_wind)
 			window_close(Game_wind);
