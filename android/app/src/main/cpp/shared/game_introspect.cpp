@@ -91,6 +91,7 @@ extern "C" {
 #include "secretarea.h"
 #include "android_menu_scale.h"
 #include "input_demo_recorder.h"
+#include "input_demo_replay.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "ai.h"
 #include "escort.h"
@@ -3023,11 +3024,14 @@ extern "C" char *game_introspect_get_state(void)
 		j["mission_asset_generation"] = android_mission_assets_generation();
 	}
 
-	/* -- Input demo recorder state ------------------------------------ */
+	/* -- Input demo recording/playback state for Android automation ---- */
 	{
 		json input_demo;
 		input_demo["recording"] = input_demo_recorder_is_active() != 0;
 		input_demo["frame_count"] = input_demo_recorder_is_active() ? input_demo_recorder_frame_count() : 0;
+		input_demo["replaying"] = input_demo_replay_is_loaded() != 0;
+		input_demo["replay_frame"] = input_demo_replay_is_loaded() ? input_demo_replay_next_frame_index() : 0;
+		input_demo["replay_frame_count"] = input_demo_replay_is_loaded() ? input_demo_replay_frame_count() : 0;
 		j["input_demo"] = input_demo;
 	}
 

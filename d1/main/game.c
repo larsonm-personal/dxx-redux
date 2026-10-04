@@ -119,6 +119,10 @@ extern int g_gpu_time_us;
 #include "input_demo_fp_env.h"
 #include "input_demo_debug_logging.h"
 
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+#include "game_automate.h"
+#endif
+
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -538,6 +542,10 @@ void calc_frame_time()
 
 void calc_game_time()
 {
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+	/* Android asset capture: allow real rendered frames during slow-motion exits */
+	FrameTime = game_automate_capture_frame_time(FrameTime);
+#endif
 	GameTime64 += FrameTime;
 
 	calc_d_tick();

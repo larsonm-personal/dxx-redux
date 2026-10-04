@@ -79,6 +79,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gamepal.h"
 #include "mission.h"
 #include "input_demo_debug_logging.h"
+
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+#include "game_automate.h"
+#endif
 #include "route_confirmation.h"
 #ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
 #include "route_confirmation_desktop.h"
@@ -573,6 +577,10 @@ void calc_frame_time()
 
 void calc_game_time()
 {
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+	/* Android asset capture: allow real rendered frames during slow-motion exits */
+	FrameTime = game_automate_capture_frame_time(FrameTime);
+#endif
 	GameTime64 += FrameTime;
 
 	// CED -- Something's busted with the D2 code.  Here's D1.

@@ -179,6 +179,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_xfing_asset_validation'
         )
         explicit = @(
+            'test_store_asset_pipeline'
             # Requires two caller-selected physical devices and diagnostic app data
             'test_device_network_campaign'
             # Requires caller-selected devices on a shared discovery network

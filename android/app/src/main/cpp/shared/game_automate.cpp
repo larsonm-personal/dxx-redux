@@ -43,6 +43,7 @@ extern "C" {
 #include "game_automate.h"
 #include "game_automate_weapon_art.h"
 #include "game_introspect.h"
+#include "input_demo_replay.h"
 #include "overlay_ringbuf.h"
 #include "android_save_meta.h"
 #include "android_axis_mailbox.h"
@@ -519,6 +520,7 @@ struct auto_step {
 	std::string key_name;               /* STEP_KEY: key name */
 	std::string modifier_name;          /* STEP_KEY: optional modifier (e.g. "lshift") */
 	int post_delay_ms = 300;            /* STEP_KEY / STEP_SELECT: post-action delay */
+	int capture_slowdown = 1;           /* STEP_TRIGGER_ENDLEVEL: capture clock divisor */
 	std::string field;                  /* STEP_WAIT_FOR: field name */
 	std::string value;                  /* STEP_WAIT_FOR: expected value */
 	int timeout_ms = 0;                 /* STEP_WAIT_FOR: timeout (0 = infinite) */
@@ -571,6 +573,18 @@ struct auto_step {
 static std::vector<auto_step> g_steps;
 static int g_current_step = 0;
 static int g_active = 0;
+static int g_capture_slowdown = 1;
+
+extern "C" int game_automate_capture_frame_time(int frame_time)
+{
+	if (!Endlevel_sequence || (Game_mode & GM_MULTI) || input_demo_replay_is_loaded()) {
+		g_capture_slowdown = 1;
+		return frame_time;
+	}
+	if (g_capture_slowdown <= 1) return frame_time;
+	const int scaled = frame_time / g_capture_slowdown;
+	return scaled > 0 ? scaled : 1;
+}
 static int g_failed = 0;        /* set to 1 on assert/timeout failure */
 static Uint32 g_step_start = 0; /* SDL_GetTicks() when step began */
 static int g_key_phase = 0;     /* 0=not sent, 1=sent */
@@ -2472,6 +2486,7 @@ static int parse_script(const char *json_text)
 			s.key_name = step_json.value("key", "");
 			s.modifier_name = step_json.value("modifier", "");
 			s.post_delay_ms = step_json.value("post_delay_ms", step_json.value("ms", 300));
+			s.capture_slowdown = step_json.value("capture_slowdown", 1);
 			s.field = step_json.value("field", "");
 			s.value = step_json.value("value", "");
 			if (s.type == STEP_REQUEST_SCREEN_ADVANCE)
@@ -3881,9 +3896,51 @@ extern "C" void game_automate_tick(void)
 				stop_script_fail("trigger_endlevel: game is not running");
 				break;
 			}
+			/* Android capture fixture: use authored exit geometry, not a copied pose */
+			if (s.value == "from_exit_tunnel") {
+				if (s.capture_slowdown < 1 || s.capture_slowdown > 16) {
+					stop_script_fail("exit capture slowdown must be between 1 and 16");
+					break;
+				}
+				if ((Game_mode & GM_MULTI) || input_demo_replay_is_loaded() || window_get_front() != Game_wind) {
+					stop_script_fail("exit capture requires foreground single player without replay");
+					break;
+				}
+				int seg = -1, side = -1;
+				for (int i = 0; i <= Highest_segment_index && seg < 0; ++i)
+					for (int j = 0; j < MAX_SIDES_PER_SEGMENT; ++j)
+						if (Segments[i].children[j] == -2) {
+							seg = i;
+							side = j;
+							break;
+						}
+				int depth = 0;
+				while (seg >= 0 && depth < 3) {
+					const int inner = Segments[seg].children[(int) Side_opposite[side]];
+					if (inner < 0 || inner > Highest_segment_index) break;
+					const int outward = find_connect_side(&Segments[seg], &Segments[inner]);
+					if (outward < 0) break;
+					seg = inner;
+					side = outward;
+					++depth;
+				}
+				if (!depth) {
+					stop_script_fail("exit capture requires an authored exit tunnel");
+					break;
+				}
+				vms_vector target, forward, up = ConsoleObject->orient.uvec;
+				compute_segment_center(&ConsoleObject->pos, &Segments[seg]);
+				compute_center_point_on_side(&target, &Segments[seg], side);
+				vm_vec_normalized_dir(&forward, &target, &ConsoleObject->pos);
+				vm_vector_2_matrix(&ConsoleObject->orient, &forward, &up, NULL);
+				obj_relink(ConsoleObject - Objects, seg);
+				vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+				vm_vec_zero(&ConsoleObject->mtype.phys_info.rotvel);
+				g_capture_slowdown = s.capture_slowdown;
+			}
 			advance_step();
 #ifdef ANDROID
-			if (s.value == "real") start_endlevel_sequence();
+			if (s.value == "real" || s.value == "from_exit_tunnel") start_endlevel_sequence();
 			else android_automation_start_endlevel_sequence();
 #else
 			start_endlevel_sequence();
