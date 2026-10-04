@@ -411,6 +411,9 @@ class Device:
     def wake(self):
         self.shell("input", "keyevent", "KEYCODE_WAKEUP")
         time.sleep(0.7)
+        policy = self.shell("dumpsys", "window", "policy")
+        if re.search(r"\bshowing=true\b", policy) and re.search(r"\bsecure=true\b", policy):
+            raise DeviceUnavailable(f"{self.serial}: unlock the device normally before continuing")
         self.shell("wm", "dismiss-keyguard")
         # WAKEUP alone does not refresh user activity when the display is already on
         self.shell("input", "keyevent", "KEYCODE_SHIFT_LEFT")
@@ -1414,6 +1417,11 @@ def dormancy_expiry(case, devices):
         host.mp("tap_button", text="Return to Game")
         state = wait_for("native menu resumes after deadline", lambda: host.snapshot(), 20)
     write_json(host.output / "native-after-deadline.json", state)
+    assert_process(host, host_pid)
+    write_json(
+        host.output / "native-process-after-deadline.json",
+        {"expected_pid": host_pid, "actual_pid": host.shell("pidof", f"{PACKAGE}:game")},
+    )
     if state.get("is_network") or state.get("in_game"):
         raise RuntimeError("Background deadline did not leave cooperative gameplay")
     if not any(

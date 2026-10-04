@@ -345,3 +345,116 @@ process replacement, retired advertisement before foreground return, usable
 main menu and subsequent hosting. Then repeated lobby role turnover and route
 recovery if time permits. Two-player native cases still require the Samsung
 to be unlocked normally by its owner; no secure lock was bypassed.
+
+## Extrapolation from both campaigns, resumed 00:43 UTC
+
+The preceding paused turn was progress: it isolated the native menu crash,
+implemented a shared fix, built both engines and preserved the incomplete
+regression honestly. The goal resumed with a request to reason from the bugs
+already found. Current source, installed APK hashes and device lock state were
+rechecked. The user has independently modified `outstanding_bugs.md`; leave
+that file untouched.
+
+### What the failures have in common
+
+There are four concrete failures across the two campaigns, grouped into three
+useful families rather than treating the count as important:
+
+1. **Operation state outlives its owner.** The completed join envelope blocked
+   a later restore's SYNC; an ended native game kept its LAN advertisement.
+   Both first operations appeared successful. Failure emerged during a later
+   operation that reused the process, slot, address or launcher
+2. **An asynchronous action outlives its valid Android context.** A queued lobby
+   action tried to acquire a foreground service after the Activity lost the
+   right to start one. The next resume must repair the service lease without
+   discarding valid membership or creating a duplicate runtime
+3. **UI lifetime differs from session lifetime.** Forced game exit longjmps
+   past synchronous menu callers, leaving stale windows with abandoned stack
+   data. This class can affect exits other than the one timer that exposed it
+
+The next campaign should therefore combine operations, retain processes, and
+assert the cleanup boundary. A cold launch after every test masks the common
+failure mechanism. Each case has a second, independent valid operation that
+must succeed; a clean error dialog alone is insufficient.
+
+### Prioritized experiments derived from those causes
+
+| Priority / ID | Sequence and exact trigger                                                                                                                                   | Required result and evidence                                                                                                               | Current coverage / constraint                                                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0 M1         | Open game menu, Home, wait real 20-minute expiry, foreground, host again                                                                                     | Child window closes before game exit; same native PID reaches usable main menu; old advert absent before resume; next hosting works        | D1 reproduced crash; fixed D1/D2 full regressions running after resume                                                                              |
+| P0 M2         | Repeat forced exit with automap, Options submenu, save/load picker and an editable text field; vary one vs two nested menus                                  | No stale window, input capture or paused clock after exit; no crash on first draw or on later menu navigation                              | Planned; paired host loss is faster than a timeout once Samsung is unlocked                                                                         |
+| P0 J1         | Complete late join; at first confirmed gameplay immediately restore, travel normally, enter/return secret level, or rewind; repeat each after another rejoin | No old join attempt suppresses new-world SYNC; current visit/epoch accepted, barriers settle, actual controls and bidirectional PDATA work | Restore regression passed in prior round; immediate travel/secret variants remain unrun                                                             |
+| P0 J2         | Leave during approval, object transfer, commit-before-confirmation or extras; retry same pilot, then another pilot, without host restart                     | Old reservation expires or cancels; retry gets a fresh attempt; no stale slot or busy transfer; subsequent restore works                   | Prior partial cancellation passed; phase boundary matrix and alternate identity remain unrun                                                        |
+| P0 R1         | Fail co-op restore, return to menu in same process, host fresh game, admit peer, then perform successful save/restore                                        | Failed restore state does not poison admission, pause state, campaign visit or later save; both peers' recovered inventory matches         | Prior fresh-game/cold-resume tests cover part; successful second admission plus restore needs paired execution                                      |
+| P1 A1         | End session A, immediately create B in the same launcher; delay old leave/timeout cleanup using ordinary Home, Wi-Fi loss and return ordering                | A disappears; B retains its own identity, service and membership; no cleanup from A retires B                                              | Native abort/rehost passed; launcher 24-cycle turnover queued; delayed cleanup boundary remains unrun                                               |
+| P1 A2         | Adopt migrated hosting, admit original host, change level, then Abort Game; reverse roles and repeat                                                         | Discovery address/port and current level match the new authority; service stays alive; migrated advert retires on exit                     | Earlier basic migration passed; migration plus lifecycle/advertisement chain remains unrun                                                          |
+| P1 A3         | Home just before a join/start completes; return, leave, immediately rejoin; repeat through launcher/native entry                                             | Specific Android startup refusal is handled; one live service lease after resume; no duplicate game, lost membership or crash              | Launcher Home/rejoin fixed regression passed; native-entry boundary variant remains unrun                                                           |
+| P1 T1         | Foreground at about 1190 seconds, Home again, cross the old 1200-second deadline                                                                             | Original alarm cannot disconnect current game; only the new background interval counts; same PID remains connected                         | Fixture designed, not run; do not infer pass from deadline unit tests                                                                               |
+| P1 T2         | At actual expiry, return and begin a replacement session during the five-second engine-disconnect grace; keep LAN waiting-room lease alive                   | Old shutdown callback cannot disconnect replacement runtime or clear its game lease                                                        | Source-review candidate: delayed forceBackgroundShutdown has no captured session identity; no product repro yet                                     |
+| P1 U1         | Host loss or restore failure while save picker/options/briefing is active, followed by a new game                                                            | Direct Game_wind close paths also unwind UI and release input/timing state                                                                 | Source-review candidate: briefing/endgame and restore-failure paths can close Game_wind outside multi_do_frame; not automatically covered by M1 fix |
+| P2 L1         | 24 alternating launcher host/client roles across D1, D2 and D1-in-D2; alternate guest-leave/host-stop order                                                  | Fresh lobby IDs, empty retired membership/readiness/launch state, same app PIDs, ready and chat delivered both ways each cycle             | Reusable runner queued; launcher-only behind Samsung lock                                                                                           |
+| P2 L2         | Retroid client loses Wi-Fi for 145 seconds, regains IPv4, then up to three normal Join attempts without restart                                              | Old lease gone, route and lobby recovery distinguished, next readiness/chat exchange works                                                 | Earlier locked-client association/EPERM failures were environmental; unlocked Retroid client removes that confound                                  |
+
+### Additional source evidence and why it changes priority
+
+- `net_udp_join_wait_transport.h` retires a committed join on confirmed player
+  traffic. The narrow interval after commit but before confirmation deserves
+  explicit testing, especially a world transition during that interval. Do not
+  weaken visit/attempt checks to make a test pass
+- `MultiplayerForegroundService` uses a generation for the 20-minute alarm,
+  but schedules a separate five-second shutdown callback. Foreground return
+  cancels deadline callbacks; the grace callback needs its own experiment with
+  a replacement session. Normal service destruction may already cancel it,
+  so a source suspicion alone is not evidence of a bug
+- Host migration takes a distinct Kotlin broadcast/advertisement path. The
+  original client/host role, current native authority and advertised authority
+  must agree after migration. A later Abort or timeout is a stronger probe than
+  observing only the initial migration notification
+- The menu-unwind fix covers multi_quit_game handling in multi_do_frame.
+  Briefing/endgame and failed-restore paths also directly close Game_wind.
+  Some already close their own waiting windows; that does not establish that
+  every nested child is gone. Test those paths rather than broad speculative
+  replacement of all close calls
+
+### Test construction and stopping rules
+
+Use observed phase transitions, not sleep duration alone. Capture lobby ID,
+join attempt, visit/epoch, authoritative host, process IDs, menu/front-window
+state, service foreground status and per-direction traffic before and after.
+When required state is not exposed, add narrow read-only introspection first.
+
+For boundary cases, start with before/during/after the observed transition;
+then jitter ordinary actions over several repetitions. Reuse the host process
+and test pilot unless a deliberate role/identity change is the variable. Keep
+normal valid game traffic; no packet mutation, authentication probing, native
+signals or security-setting changes. The endpoint check is playable recovery:
+matching level/authority, settled barriers, advancing traffic, working controls,
+and a successful later operation. Do not demand transparent reunion after a
+partition when an explicit rejoin is the intended behavior.
+
+Run deterministic reductions first. On a failure, preserve all evidence, repeat
+once under the same preconditions, then reverse hardware or content before
+broadening timing. Separate product failure, environment blockage, harness
+failure and unexecuted design. Never count a fresh process or app reset as
+same-process recovery.
+
+### Remaining execution allocation
+
+Resume time is 00:43 UTC with about 2 h 49 min charged before pause. Use the
+remaining roughly 70 minutes for two real menu-open deadlines (about 44 min),
+24-cycle launcher turnover and route retry (about 10-15 min), then evidence
+review, formatting and handoff. Source-based hypotheses above form the next
+paired campaign; this time-bound round cannot honestly claim their execution.
+Samsung still reports secure keyguard showing, so native paired tests remain
+pending normal owner unlock. Its current role is an active launcher observer,
+not a second native gameplay participant.
+
+A particularly narrow J1/J2 variant deserves the first paired slot: the current
+join-retirement helper requires confirmed gameplay traffic. Once transfer is
+committed, the obsolete-transfer cancellation predicate no longer applies.
+Advance the world after commit but before that first confirmation, then retry
+admission or restore. The experiment must determine whether the existing
+transition barriers already exclude this ordering; source inspection alone
+cannot establish reachability. If it is reachable, the old visit filter may
+again outlive its valid operation. Add read-only commit/confirmation/visit
+observability rather than forcing an impossible state or removing the filter.
