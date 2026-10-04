@@ -47,7 +47,10 @@ try {
 ]
 '@
     [IO.File]::WriteAllText($jsoncProbe, $plainProbe, [Text.UTF8Encoding]::new($false))
-    $probeResolved = Resolve-TestScript -ScriptPath $jsoncProbe -GameId 'd1'
+    $probeResolved = & {
+        Set-StrictMode -Version Latest
+        Resolve-TestScript -ScriptPath $jsoncProbe -GameId 'd1'
+    }
     $probeParsed = Read-StrictJsonFile -Path $probeResolved
     if ($probeResolved -eq $jsoncProbe -or @($probeParsed).Count -ne 1 -or
         $probeParsed[0].value -cne 'https://example.invalid/a//b' -or

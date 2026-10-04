@@ -2,7 +2,7 @@
 # Catalog owner for the isolated Android D1-only resource/gameplay scenario
 param(
     [string]$D1DataDirectory,
-    [string]$Serial = 'emulator-5554',
+    [string]$Serial,
     [string]$AdbPath = 'C:\local\android-sdk\platform-tools\adb.exe'
 )
 

@@ -97,6 +97,9 @@
 
 # Gamepad interfaces
 
+- customizable buttons, axes. customizable exponential throw, etc.
+- the exponential throw options are inspired by typical FPV drone software and work pretty well for me. there's an input/output graph to see what you're doing as you customize them
+- customization lives outside of the game engine in a new launcher page which is a little easier to use, supports presets, exporting/importing configs, etc.
 - Most (all?) menus are reachable with a gamepad in order to be usable on android TV.  Some menus might still lack support as the base game (rebirth/redux) doesn’t have this and it was a lot of work, please submit bug reports for any not working
 - Some touch menus get turned into gamepad-accessible menus when the APK detects no touch interface. Otherwise they’re unified interfaces
 

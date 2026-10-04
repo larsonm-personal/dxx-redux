@@ -17,6 +17,9 @@ data class ControllerAxisResponse(
     fun toJson(): JSONObject = JSONObject().put("center", center.toDouble()).put("expo", expo.toDouble())
 
     companion object {
+        val LINEAR = ControllerAxisResponse(1f, 0f)
+        val FINE = ControllerAxisResponse(0.25f, 0.5f)
+
         fun fromJson(json: JSONObject): ControllerAxisResponse =
             ControllerAxisResponse(
                 json.optDouble("center", 0.5).toFloat(),

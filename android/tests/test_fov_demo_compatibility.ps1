@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('d1', 'd2')][string]$Game,
-    [string]$Serial = 'emulator-5554',
+    [string]$Serial,
     [string]$OutputDirectory
 )
 

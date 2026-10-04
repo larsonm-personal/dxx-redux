@@ -28,11 +28,21 @@
         "R3": "Drop Bomb"
     },
     "inverts": [],
+    "axis_responses": {
+        "LS_X": { "center": 1.0, "expo": 0.0 },
+        "LS_Y": { "center": 1.0, "expo": 0.0 },
+        "RS_X": { "center": 0.25, "expo": 0.5 },
+        "RS_Y": { "center": 0.25, "expo": 0.5 },
+        "LT": { "center": 1.0, "expo": 0.0 },
+        "RT": { "center": 1.0, "expo": 0.0 },
+        "BRAKE": { "center": 1.0, "expo": 0.0 },
+        "GAS": { "center": 1.0, "expo": 0.0 }
+    },
     "thresholds": {
-        "LS_X": 10,
-        "LS_Y": 10,
-        "RS_X": 10,
-        "RS_Y": 10,
+        "LS_X": 5,
+        "LS_Y": 5,
+        "RS_X": 5,
+        "RS_Y": 5,
         "LT": 30,
         "RT": 30,
         "BRAKE": 30,

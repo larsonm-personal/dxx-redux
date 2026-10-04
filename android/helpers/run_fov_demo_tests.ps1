@@ -2,7 +2,7 @@
 # Record and play classic demos serially, exporting input/RNG/classic companions
 param(
     [ValidateSet('d1', 'd2')][string]$Game,
-    [string]$Serial = 'emulator-5554',
+    [string]$Serial,
     [string]$OutputDirectory
 )
 $ErrorActionPreference = 'Stop'
@@ -14,7 +14,7 @@ $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 & (Join-Path $PSScriptRoot 'retain-recent-artifacts.ps1') -Artifacts @($OutputDirectory)
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
 $priorSerial = $env:ANDROID_SERIAL
-$env:ANDROID_SERIAL = $Serial
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
 $games = if ($Game) { @($Game) } else { @('d1', 'd2') }
 try {
     foreach ($gameName in $games) {

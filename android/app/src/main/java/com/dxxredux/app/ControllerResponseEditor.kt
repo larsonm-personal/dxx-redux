@@ -53,9 +53,9 @@ internal fun ControllerResponseEditor(
         style = MaterialTheme.typography.bodySmall,
     )
     Row {
-        TextButton(onClick = { onChange(ControllerAxisResponse(1f, 0f)) }) { Text("Linear") }
+        TextButton(onClick = { onChange(ControllerAxisResponse.LINEAR) }) { Text("Linear") }
         TextButton(onClick = { onChange(ControllerAxisResponse(0.5f, 0f)) }) { Text("Gentle") }
-        TextButton(onClick = { onChange(ControllerAxisResponse(0.25f, 0.5f)) }) { Text("Fine") }
+        TextButton(onClick = { onChange(ControllerAxisResponse.FINE) }) { Text("Fine") }
     }
     if (response.center == 1f) {
         Text(

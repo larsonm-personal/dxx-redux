@@ -193,7 +193,7 @@ internal fun hasControllerMenuBinding(bindings: Map<String, String>): Boolean =
 
 // Default axis-to-button activation threshold (percentage, 5-95).
 const val DEFAULT_AXIS_THRESHOLD = 30
-const val DEFAULT_STICK_DEAD_ZONE = 10
+const val DEFAULT_STICK_DEAD_ZONE = 5
 
 // Axis IDs that support per-axis thresholds.
 private val THRESHOLD_AXES = AXIS_CONTROLS.keys.toList()
@@ -215,13 +215,33 @@ internal fun thresholdForDialog(
 // Build a default thresholds map with per-axis defaults.
 internal fun defaultThresholds(): Map<String, Int> = THRESHOLD_AXES.associateWith(::defaultThresholdForAxis)
 
-internal fun defaultControllerAxisResponses(): Map<String, ControllerAxisResponse> =
-    THRESHOLD_AXES.associateWith { ControllerAxisResponse() }
+internal fun defaultControllerAxisResponse(function: String?): ControllerAxisResponse =
+    when (HALF_AXIS_MAP[function]?.first ?: function) {
+        "Pitch U/D", "Turn L/R" -> ControllerAxisResponse.FINE
+        else -> ControllerAxisResponse.LINEAR
+    }
+
+// Call at selection time, so later curve edits win and reselecting the same action is harmless
+internal fun controllerResponseAfterMappingChange(
+    previous: String?,
+    selected: String?,
+    response: ControllerAxisResponse,
+): ControllerAxisResponse =
+    if (previous != selected && (selected in AXIS_KC_INDEX || selected in HALF_AXIS_MAP)) {
+        defaultControllerAxisResponse(selected)
+    } else {
+        response
+    }
+
+internal fun defaultControllerAxisResponses(
+    bindings: Map<String, String> = emptyMap(),
+): Map<String, ControllerAxisResponse> = THRESHOLD_AXES.associateWith { defaultControllerAxisResponse(bindings[it]) }
 
 internal fun clampedControllerAxisResponses(
     values: Map<String, ControllerAxisResponse>,
+    bindings: Map<String, String> = emptyMap(),
 ): Map<String, ControllerAxisResponse> {
-    val result = defaultControllerAxisResponses().toMutableMap()
+    val result = defaultControllerAxisResponses(bindings).toMutableMap()
     for ((axis, response) in values) {
         if (axis in result) result[axis] = response.clamped()
     }

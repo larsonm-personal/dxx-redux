@@ -7,8 +7,8 @@
     Discovers all jsonc and ps1 tests, automatically provisions required
     infrastructure (emulators, matchmaking server, Docker NAT containers),
     runs tests sequentially, and produces a summary report. Interactive runs
-    without parameters show a profile menu. Redirected or parameterized runs
-    remain unattended.
+    without parameters show a profile menu. Interactive Android runs offer a
+    target picker unless a serial is set. Redirected runs remain unattended.
 
         Infrastructure is brought up on demand and torn down at the end:
             1. No-infra tests (host-side comparisons, unit tests, server integration)
@@ -33,6 +33,15 @@
 .PARAMETER HostOnly
     Run tests catalogued as no-infrastructure host tests. Other infrastructure
     tiers are reported as skipped. Host tests may still need game fixtures or tools.
+
+.PARAMETER SingleDevice
+    Run the basic single-device tier on an emulator or physical ADB device.
+    Excludes host, extraction, server and two-device tiers.
+
+.PARAMETER Serial
+    ADB serial, or 'emulator'. Interactive runs offer connected targets when
+    neither Serial nor ANDROID_SERIAL is set. Physical targets imply SingleDevice
+    and use the isolated diagnostic app so installed games and saves stay intact.
 
 .PARAMETER ReplayDemo
     Open the interactive single-demo picker instead of running the suite.
@@ -99,6 +108,8 @@
 param(
     [string]$Filter,
     [switch]$HostOnly,
+    [switch]$SingleDevice,
+    [string]$Serial,
     [switch]$ListTests,
     [switch]$ReplayDemo,
     [switch]$IncludeManual,
@@ -139,6 +150,7 @@ if (Test-RunAllTestsProfileMenuEnabled -ExplicitParameterCount $explicitParamete
         -UserInteractive ([Environment]::UserInteractive) -InputRedirected $inputRedirected) {
     switch (Select-RunAllTestsProfile) {
         'Target45' { $Target45Minutes = $true }
+        'SingleDevice' { $SingleDevice = $true }
         'Exhaustive' { $FullSuite = $true }
         'LevelMetadataBenchmark' { $Filter = 'test_level_metadata_benchmark' }
         'ReplayDemo' { $ReplayDemo = $true }
@@ -150,6 +162,20 @@ if (Test-RunAllTestsProfileMenuEnabled -ExplicitParameterCount $explicitParamete
 }
 
 if ($ListTests -and $ReplayDemo) { throw '-ListTests cannot be combined with -ReplayDemo' }
+if ($HostOnly -and $SingleDevice) { throw '-HostOnly cannot be combined with -SingleDevice' }
+
+# Catalog and host-only requests never probe or prompt for devices
+$script:singleTestSerial = $script:PRIMARY_EMULATOR_SERIAL
+if (-not $ListTests -and -not $HostOnly -and -not $ReplayDemo) {
+    $script:singleTestSerial = Initialize-AndroidTestTarget -Serial $Serial
+    if (Test-PhysicalTestTarget) { $SingleDevice = $true }
+    elseif ($script:singleTestSerial -ne $script:PRIMARY_EMULATOR_SERIAL) {
+        # Non-default emulator serials must already be running; do not boot the wrong AVD
+        if (-not (Test-DeviceOnline -Serial $script:singleTestSerial)) { throw 'The selected non-default emulator must be online' }
+        $SingleDevice = $true
+        $script:PRIMARY_EMULATOR_SERIAL = $script:singleTestSerial
+    }
+}
 
 if ($ReplayDemo) {
     & (Join-Path $scriptDir 'tests/run_input_demo_replay.ps1') -Interactive
@@ -177,6 +203,7 @@ $reportFile = Join-Path $ReportDir "report_$timestamp.md"
 if (-not $ListTests) { & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $reportFile }
 $script:cancelRequested = $false
 $script:cancelCleanupStarted = $false
+$script:activePowerSession = $null
 
 function Stop-ChildProcessTree {
     param([int]$ParentProcessId)
@@ -199,6 +226,8 @@ function Request-TestSuiteCancel {
     Write-Host ""
     Write-Host "Ctrl-C received; stopping test runner children" -ForegroundColor Yellow
     Stop-ChildProcessTree -ParentProcessId $PID
+    Stop-AndroidTestPowerSession -Session $script:activePowerSession
+    $script:activePowerSession = $null
 }
 
 $script:cancelHandler =
@@ -365,7 +394,7 @@ $manualTests = @(
 )
 
 # Infrastructure requirement classification
-$twoEmuTests = @("test_mp", "test_lan", "test_lan_discovery", "test_lan_broadcast", "test_lan_lobby_discovery", "test_emulator_recovery")
+$twoEmuTests = @("test_mp", "test_lan", "test_lan_discovery", "test_lan_broadcast", "test_lan_lobby_discovery", "test_emulator_recovery", "test_dual_emu", "test_dual_emu_setup", "test_manual_lan_coop", "test_lan_launch_preparation", "test_lan_qr_join", "test_manual_ip_engine")
 $serverTests = @("test_bot_client")
 $tierServerManagedDualEmuTests = @()
 
@@ -466,6 +495,29 @@ $extractTests = @(
     "test_gog_installer_redbook_unified"
 )  # single emulator + game data, run before the dual-emulator tier
 $noInfraTests = @(
+    # These execute host tools or mocked transports, never the selected Android device
+    "test_acoustid_regeneration",
+    "test_active_game_data_reset",
+    "test_android_distributions",
+    "test_castaway_level2_restored_switch_route",
+    "test_cd_mission_hog_isolation",
+    "test_client_identity_backup",
+    "test_coop_start_fanout_mapset",
+    "test_guidebot_secret_transition",
+    "test_hash_assets_force_completeness",
+    "test_mission_level_names",
+    "test_mission_metadata_level_statistics",
+    "test_mission_metadata_travel_times",
+    "test_mission_metadata_trigger_cycles",
+    "test_mission_rar_archive",
+    "test_obsidian_level3_blastable_wall",
+    "test_obsidian_level4_closed_trigger_source",
+    "test_obsidian_level7_exit_route",
+    "test_regenerate_all_regression_data",
+    "test_secret_area_baseline",
+    "test_windows_mission_metadata_route_masks",
+    "test_xfing_asset_validation",
+    "test_android_test_target",
     "test_combined_package_identity",
     "test_github_release",
     "test_publish_menu",
@@ -877,6 +929,21 @@ if ($Filter) {
 
 $extendedGraphicsTests = @("test_graphics_recovery", "test_merged_wall_two_pass_probe")
 $profileSkipped = @()
+if (Test-PhysicalTestTarget) {
+    $emulatorOnlyTests = @('test_xcrash_native_report', 'test_coop_save_compatibility', 'test_lan_active_discovery')
+    $allTests = @($allTests | Where-Object {
+            if ($_.Name -notin $emulatorOnlyTests) { return $true }
+            $profileSkipped += @{ Name = $_.Name; Type = $_.Type; Reason = 'requires emulator crash injection or emulator console networking' }
+            return $false
+        })
+}
+if ($SingleDevice) {
+    $allTests = @($allTests | Where-Object {
+            if ($_.Requires -eq 'emulator') { return $true }
+            $profileSkipped += @{ Name = $_.Name; Type = $_.Type; Reason = "single-device profile excludes declared infrastructure: $($_.Requires)" }
+            return $false
+        })
+}
 if ($HostOnly) {
     $allTests = @($allTests | Where-Object {
             if ($_.Requires -eq 'none') { return $true }
@@ -954,6 +1021,7 @@ if (-not $Filter -and -not $Target45Minutes -and -not $IncludeManual) {
 }
 
 if ($HostOnly) { $suiteCoverageProfile = "host only; $suiteCoverageProfile" }
+if ($SingleDevice) { $suiteCoverageProfile = "single device $script:singleTestSerial; $suiteCoverageProfile" }
 
 function Sort-TestsForExecution {
     param([object[]]$Tests)
@@ -1146,6 +1214,7 @@ function Test-HostToolPrerequisites {
 }
 
 function Invoke-AutomaticStaleEmulatorCleanup {
+    if (Test-PhysicalTestTarget) { return }
     $cleanupScript = Join-Path $helpersDir "kill-stale-emulators.ps1"
     if (-not (Test-Path -LiteralPath $cleanupScript)) {
         return
@@ -1198,6 +1267,11 @@ function Test-SingleEmulatorFailureNeedsRecovery {
 
 function Recover-SingleEmulatorEnvironment {
     param([ref]$SerialRef)
+
+    if (Test-PhysicalTestTarget) {
+        $SerialRef.Value = $script:singleTestSerial
+        return Invoke-LauncherStartupRecovery -Reason 'Single-device suite recovery'
+    }
 
     Write-Status "Single-emulator recovery: restarting primary emulator and reprovisioning app/data" "Yellow"
     Invoke-AutomaticStaleEmulatorCleanup
@@ -1350,6 +1424,15 @@ function Invoke-SetupActivityPreflight {
 function Invoke-PrimaryEmulatorPreflight {
     param([switch]$RequireStandardGameData)
 
+    if (Test-PhysicalTestTarget) {
+        Ensure-EmulatorHealthy | Out-Null
+        if (-not (Install-AppAndData -Serial $script:singleTestSerial)) { return $null }
+        if (Invoke-SetupActivityPreflight -Serial $script:singleTestSerial -RequireStandardGameData:$RequireStandardGameData) {
+            return $script:singleTestSerial
+        }
+        return $null
+    }
+
     $healthScript = Join-Path $helpersDir "emu_health.ps1"
 
     for ($attempt = 1; $attempt -le 2; $attempt++) {
@@ -1437,15 +1520,20 @@ function Invoke-SuitePreflight {
     }
 
     if ($needsPrimaryEmulator) {
-        if (-not (Test-EmulatorAccelerationAvailable)) {
+        if (-not (Test-PhysicalTestTarget) -and -not (Test-EmulatorAccelerationAvailable)) {
             Write-Host "FAIL: Suite preflight cannot start an emulator without CPU acceleration" -ForegroundColor Red
             return $false
         }
         Invoke-AutomaticStaleEmulatorCleanup
         $preflightEmu1 = Invoke-PrimaryEmulatorPreflight -RequireStandardGameData:$needsStandardGameData
         if (-not $preflightEmu1) {
-            Write-Host "FAIL: Suite preflight could not prepare a healthy primary emulator" -ForegroundColor Red
+            Write-Host "FAIL: Suite preflight could not prepare Android test target $script:singleTestSerial" -ForegroundColor Red
             return $false
+        }
+        if ($script:needsInstrumentation) {
+            $instrumentApk = Join-Path $scriptDir 'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'
+            $installed = Adb-Dev -Serial $preflightEmu1 -AdbArgs @('install', '-r', $instrumentApk) -Seconds 180
+            if ($installed -notmatch 'Success') { throw "Instrumentation APK install failed: $installed" }
         }
     }
 
@@ -1609,8 +1697,9 @@ if ($runnableTests.Count -gt 0 -and -not (Test-HostToolPrerequisites)) {
 # -- Build APK if any emulator tests will run --
 
 $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
+$script:needsInstrumentation = @($tierSingleEmu | Where-Object Name -in @('test_controller_overlay', 'test_host_dialog_loading', 'test_coop_session', 'test_multiplayer_recovery', 'test_lan_qr')).Count -gt 0
 if ($runnableTests.Count -gt 0 -and $needsApk) {
-    if (-not (Test-EmulatorAccelerationAvailable)) {
+    if (-not (Test-PhysicalTestTarget) -and -not (Test-EmulatorAccelerationAvailable)) {
         Write-Host "FAIL: Selected tests require Android emulator CPU acceleration" -ForegroundColor Red
         exit 1
     }
@@ -1619,7 +1708,10 @@ if ($runnableTests.Count -gt 0 -and $needsApk) {
     $gradleWrapper = Resolve-RegressionGradleWrapper -AndroidDir $scriptDir
     $buildLog = Join-Path $ReportDir "apk_build_$timestamp.log"
     & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $buildLog | Out-Host
-    & $gradleWrapper -p $scriptDir assembleDebug --console=plain 2>&1 |
+    $testBuildArguments = @('-PciApk=false', '-PgithubRelease=false', '-PlegacyRelease=false')
+    $testBuildArguments += "-PnsdDiagnosticApp=$($script:PACKAGE -eq 'com.dxxredux.app.nsdtest')"
+    if ($script:needsInstrumentation) { $testBuildArguments += 'assembleDebugAndroidTest' }
+    & $gradleWrapper -p $scriptDir assembleDebug --console=plain @testBuildArguments 2>&1 |
         Tee-Object -FilePath $buildLog |
         Where-Object { $_ -match "^(> Task|BUILD |FAIL|error:|Execution failed|What went wrong|Exception)" } |
         ForEach-Object { Write-Host "  $_" }
@@ -1630,6 +1722,11 @@ if ($runnableTests.Count -gt 0 -and $needsApk) {
         exit 1
     }
     Write-Host "  Build OK" -ForegroundColor Green
+    # Retain the exact APK used by this run even if another build changes outputs
+    $suiteApk = Join-Path ([IO.Path]::GetFullPath($ReportDir)) "apk_$timestamp.apk"
+    & (Join-Path $helpersDir 'retain-recent-artifacts.ps1') -Artifacts $suiteApk | Out-Host
+    Copy-Item -LiteralPath (Join-Path $scriptDir 'app/build/outputs/apk/debug/app-debug.apk') -Destination $suiteApk
+    $env:DXX_TEST_APK = $suiteApk
     Write-Host ""
 }
 
@@ -1717,6 +1814,9 @@ function Invoke-SingleTest {
     if ($extraArguments) {
         $psArguments += $extraArguments
     }
+    if ($Test.Requires -eq 'emulator' -and (Get-Command $psScript).Parameters.ContainsKey('Serial') -and '-Serial' -notin $psArguments) {
+        $psArguments += @('-Serial', $script:singleTestSerial)
+    }
 
     $quotedScript = if ($psScript -match '[\s"]') {
         '"' + ($psScript -replace '"', '\"') + '"'
@@ -1732,7 +1832,12 @@ function Invoke-SingleTest {
     $exitCode = 1
     $stdout = ""
     $stderr = ""
+    $powerSession = $null
     try {
+        if ($Test.Requires -eq 'emulator') {
+            $powerSession = Start-AndroidTestPowerSession
+            $script:activePowerSession = $powerSession
+        }
         $startArguments = @{
             FilePath = "pwsh"
             ArgumentList = $processArguments
@@ -1777,6 +1882,9 @@ function Invoke-SingleTest {
         $exitCode = 1
         Add-SharedProcessOutput -Path $logFile -Text "EXCEPTION: $_" | Out-Null
         Write-Host "  EXCEPTION: $_" -ForegroundColor Red
+    } finally {
+        Stop-AndroidTestPowerSession -Session $powerSession
+        $script:activePowerSession = $null
     }
 
     $sw.Stop()
@@ -1932,13 +2040,15 @@ if ($tierServer.Count -gt 0 -and -not $stopEarly) {
 
 if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
     Write-Host ""
-    Write-Host "== Tier 2: Single-emulator tests ==" -ForegroundColor Cyan
+    Write-Host "== Tier 2: Single-device tests on $script:singleTestSerial ==" -ForegroundColor Cyan
 
     # Reconnect only the selected transport before this tier
-    Reconnect-AdbDevice
+    if (-not (Test-PhysicalTestTarget)) { Reconnect-AdbDevice }
 
-    # Ensure emulator is running
-    if (-not (Test-SingleEmulator)) {
+    # Ensure the selected target is ready
+    if (Test-PhysicalTestTarget) {
+        $emu1Ok = Test-DeviceOnline -Serial $script:singleTestSerial
+    } elseif (-not (Test-SingleEmulator)) {
         $emu1Ok = Start-SingleEmulator
         if ($emu1Ok) { $script:startedEmu1 = $true }
     } else {
@@ -1947,7 +2057,7 @@ if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
 
     if ($emu1Ok) {
         # Install APK and push game data via SHA256-indexed deps
-        $emu1Serial = $script:PRIMARY_EMULATOR_SERIAL
+        $emu1Serial = $script:singleTestSerial
         if ($emu1Serial) {
             Install-AppAndData -Serial $emu1Serial
         } else {

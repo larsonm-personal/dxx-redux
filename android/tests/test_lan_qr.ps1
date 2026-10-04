@@ -1,16 +1,17 @@
-param([string]$Serial = 'emulator-5556')
+param([string]$Serial)
 $ErrorActionPreference = 'Stop'
-if ($Serial -notmatch '^emulator-\d+$') { throw 'Run this fixture only on an emulator' }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
-$env:ANDROID_SERIAL = $Serial
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
+Assert-IsolatedPhysicalTestApp
+Ensure-EmulatorHealthy | Out-Null
 try {
     if (-not (Test-DeviceOnline -Serial $Serial)) { throw 'Emulator is not online' }
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     Adb -AdbArgs @('logcat', '-c') | Out-Null
     Adb -AdbArgs @('shell', 'pm', 'grant', $script:PACKAGE, 'android.permission.CAMERA') | Out-Null
     $result = Adb -Seconds 120 -AdbArgs @('shell', 'am', 'instrument', '-w', '-e', 'suite', 'lan_qr',
-        'com.dxxredux.app.test/com.dxxredux.app.RecoveryInstrumentation')
+        "$($script:PACKAGE).test/com.dxxredux.app.RecoveryInstrumentation")
     Write-Output $result
     if ($result -notmatch 'PASS: QR reveal' -or $result -match 'FAIL:|INSTRUMENTATION_FAILED|Process crashed') {
         throw 'LAN QR instrumentation failed'

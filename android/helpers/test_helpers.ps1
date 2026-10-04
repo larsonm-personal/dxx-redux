@@ -25,6 +25,7 @@
 . (Join-Path $PSScriptRoot "jsonc.ps1")
 . (Join-Path $PSScriptRoot "normalized_json_text.ps1")
 . (Join-Path $PSScriptRoot "powershell_compat.ps1")
+. (Join-Path $PSScriptRoot "test_target.ps1")
 
 $script:ANDROID_ROOT = Split-Path $PSScriptRoot
 $script:REPO_ROOT = Split-Path $script:ANDROID_ROOT
@@ -40,10 +41,6 @@ $script:ACTIVITY = "com.dxxredux.app.SetupActivity"
 $script:DEFAULT_SET_DIR = "files/imported/sets/default"
 $script:PRIMARY_EMULATOR_SERIAL = "emulator-5554"
 $script:SECONDARY_EMULATOR_SERIAL = "emulator-5556"
-if (-not $env:ANDROID_SERIAL) {
-    # Direct adb transfers and child helpers must select the same default device
-    $env:ANDROID_SERIAL = $script:PRIMARY_EMULATOR_SERIAL
-}
 $script:PRIMARY_AVD_NAME = "Nexus5X_Light_1"
 $script:SECONDARY_AVD_NAME = "Nexus5X_Light_2"
 
@@ -57,8 +54,9 @@ function Adb-Timeout {
     # Uses ProcessStartInfo instead of Start-Job because Start-Job with
     # adb.exe hangs on Windows PowerShell 5.1 (pipe/handle inheritance issue).
     param([string[]]$AdbArgs, [int]$Seconds = 8, [switch]$IncludeStandardError)
+    if (-not $env:ANDROID_SERIAL) { Initialize-AndroidTestTarget | Out-Null }
     $serial = if ($env:ANDROID_SERIAL) { $env:ANDROID_SERIAL } else { $script:PRIMARY_EMULATOR_SERIAL }
-    $allArgs = @('-s', $serial) + $AdbArgs
+    $allArgs = @('-s', $serial) + @(Get-TestPackageAdbArguments -Arguments $AdbArgs)
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $script:ADB
     $psi.Arguments = ($allArgs | ForEach-Object {
@@ -222,6 +220,19 @@ function Wait-EmulatorReadyForTests {
 function Ensure-EmulatorHealthy {
     # Check emulator health; restart via emu_health.ps1 if needed.
     # Returns $true on success, exits on unrecoverable failure.
+    if (-not $env:ANDROID_SERIAL -or ((Test-PhysicalTestTarget) -and -not $env:DXX_TEST_PACKAGE)) {
+        Initialize-AndroidTestTarget | Out-Null
+    }
+    if (Test-PhysicalTestTarget) {
+        if (-not (Confirm-EmulatorHealthWithAdbRecovery)) {
+            throw "Android test target $env:ANDROID_SERIAL is unavailable; reconnect/unlock the selected device"
+        }
+        Wake-AndroidTestTarget
+        if ((Test-AppPackageInstalled) -and -not (Test-AppPrivateStorageReady)) {
+            throw "Android test target needs a debuggable $($script:PACKAGE): $($script:LastAppPrivateStorageReason)"
+        }
+        return $true
+    }
     Write-Status "Checking emulator health..."
     if (Test-EmulatorReadyForTests) {
         Write-Status "Emulator healthy" "Green"
@@ -288,6 +299,13 @@ function Invoke-LauncherStartupRecovery {
         [int]$TimeoutSeconds = 180
     )
 
+    if (Test-PhysicalTestTarget) {
+        Write-Status "$Reason -- restarting the test app on $env:ANDROID_SERIAL" "Yellow"
+        Reconnect-AdbDevice
+        if (-not (Confirm-EmulatorHealthWithAdbRecovery)) { return $false }
+        Wake-AndroidTestTarget
+        return Start-PrimarySetupActivity -TimeoutSeconds $TimeoutSeconds
+    }
     Write-Status "$Reason -- restarting emulator for launcher recovery" "Yellow"
     Reconnect-AdbDevice
 
@@ -526,7 +544,7 @@ function Adb-Dev-Timeout {
     )
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $script:ADB
-    $allArgs = @("-s", $Serial) + $AdbArgs
+    $allArgs = @("-s", $Serial) + @(Get-TestPackageAdbArguments -Arguments $AdbArgs)
     $psi.Arguments = ($allArgs | ForEach-Object {
             if ($_ -match '\s') { "`"$_`"" } else { $_ }
         }) -join ' '
@@ -689,11 +707,7 @@ function Install-AppAndData {
     # Uses Resolve-GameDataDeps (SHA256 index) so it works even when
     # game_data_to_copy_to_emulator/data/ is empty.
     param([Parameter(Mandatory)][string]$Serial)
-    $apk = Join-RegressionPath $script:REPO_ROOT "android" "app" "build" "outputs" "apk" "debug" "app-debug.apk"
-    if (Test-Path $apk) {
-        Write-Status "  Installing APK on $Serial..."
-        Adb-Dev-Timeout -Serial $Serial -AdbArgs @("install", "-r", $apk) -Seconds 180 | Out-Null
-    }
+    if (-not (Install-ApkOnDevice -Serial $Serial)) { return $false }
     $ok = Ensure-StandardGameDataOnDevice -Serial $Serial
     if (-not $ok) {
         Write-Status "  WARN: Could not push game data to $Serial" "Yellow"
@@ -2184,6 +2198,8 @@ function Resolve-TestScript {
         [string]$GameId,
         [hashtable]$Params = @{}
     )
+    # Fixtures use optional JSON properties; do not inherit a caller's strict property checks
+    Set-StrictMode -Off
     if (-not (Test-Path $ScriptPath)) { return $ScriptPath }
 
     $raw = Get-Content $ScriptPath -Raw
@@ -2759,13 +2775,16 @@ function Stop-DockerNat {
 function Install-ApkOnDevice {
     # Install the debug APK on a specific emulator serial, or default.
     param([string]$Serial)
-    $apk = Join-RegressionPath $script:ANDROID_ROOT "app" "build" "outputs" "apk" "debug" "app-debug.apk"
+    $apk = if ($env:DXX_TEST_APK) { $env:DXX_TEST_APK } else {
+        Join-RegressionPath $script:ANDROID_ROOT "app" "build" "outputs" "apk" "debug" "app-debug.apk"
+    }
     if (-not (Test-Path $apk)) {
         Write-Status "WARN: No APK at $apk" "Yellow"
         return $false
     }
-    $args_ = if ($Serial) { @("-s", $Serial, "install", "-r", $apk) } else { @("install", "-r", $apk) }
-    $result = Adb-Timeout -AdbArgs $args_ -Seconds 180
+    if (-not $Serial) { $Serial = Initialize-AndroidTestTarget }
+    Write-Status "Installing test APK on $Serial..."
+    $result = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('install', '-r', $apk) -Seconds 180 -IncludeStandardError
     if (-not $result) {
         Write-Status "WARN: APK install timed out" "Yellow"
         return $false

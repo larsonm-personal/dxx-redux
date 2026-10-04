@@ -13,7 +13,7 @@ param(
     [string]$RewindSourceCase,
     [switch]$NativeD1,
     [string]$WeaponArtReference,
-    [string]$Serial = 'emulator-5554',
+    [string]$Serial,
     [string]$AdbPath = 'C:\local\android-sdk\platform-tools\adb.exe',
     [string]$ApkPath,
     [int]$LauncherTimeoutSeconds = 60,
@@ -21,6 +21,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test_helpers.ps1')
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
+Assert-IsolatedPhysicalTestApp
+Ensure-EmulatorHealthy | Out-Null
 if ($Metadata -and ($Guidebot -or $WeaponArt -or $SoundCheck -or $NativeD1 -or $RewindSourceCase -or $EditionAdmission)) { throw 'Metadata requires its own imported-D1 run' }
 if ($Metadata) { $GameLog = $true }
 if ($EditionAdmission -and ($Guidebot -or $WeaponArt -or $SoundCheck -or $NativeD1 -or $RewindSourceCase)) { throw 'EditionAdmission requires its own imported-D1 readiness run' }
@@ -40,7 +44,7 @@ $outputDirectory = Join-Path $repo ('temp/d1-launch-runtime-' + (Get-Date -Forma
 & (Join-Path $PSScriptRoot 'retain-recent-artifacts.ps1') -Artifacts $outputDirectory
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 Write-Output "Runtime evidence: $outputDirectory"
-$package = 'com.dxxredux.app'
+$package = if ($env:DXX_TEST_PACKAGE) { $env:DXX_TEST_PACKAGE } else { 'com.dxxredux.app' }
 $backup = '.d1-in-d2-check-backup'
 $moved = @()
 $created = @()
@@ -52,6 +56,7 @@ $script:sceneNumber = 0
 
 function Invoke-Device {
     param([string[]]$Arguments, [switch]$AllowFailure)
+    $Arguments = @(Get-TestPackageAdbArguments -Arguments $Arguments)
     $result = & $AdbPath -s $Serial @Arguments 2>&1
     if ($LASTEXITCODE -ne 0 -and -not $AllowFailure) { throw "adb failed: $($Arguments -join ' '): $result" }
     return ($result -join "`n")
@@ -360,7 +365,7 @@ try {
     }
     if ($IsWindows) { $logcatStart.WindowStyle = 'Hidden' } else { $logcatStart.NoNewWindow = $true }
     $logcatProcess = Start-Process @logcatStart
-    Invoke-Device -Arguments @('shell', 'am', 'start', '-n', "$package/.SetupActivity") | Out-Null
+    Invoke-Device -Arguments @('shell', 'am', 'start', '-n', "$package/com.dxxredux.app.SetupActivity") | Out-Null
     $deadline = [DateTime]::UtcNow.AddSeconds($LauncherTimeoutSeconds)
     $nextIntrospection = [DateTime]::MinValue
     do {
@@ -514,5 +519,5 @@ try {
         if ($moved -contains $name) { Invoke-Device -Arguments @('shell', 'run-as', $package, 'mv', "$backup/$name", $name) | Out-Null }
     }
     Invoke-Device -Arguments @('shell', 'run-as', $package, 'rmdir', $backup) | Out-Null
-    Invoke-Device -Arguments @('shell', 'am', 'start', '-n', "$package/.SetupActivity") | Out-Null
+    Invoke-Device -Arguments @('shell', 'am', 'start', '-n', "$package/com.dxxredux.app.SetupActivity") | Out-Null
 }

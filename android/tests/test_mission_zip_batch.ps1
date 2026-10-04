@@ -1,7 +1,8 @@
 #!/usr/bin/env pwsh
 
 param(
-    [int]$MaxZips = 3
+    [int]$MaxZips = 3,
+    [string]$Serial
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,5 +15,5 @@ if (-not (Test-Path -LiteralPath $batchScript)) {
 }
 
 Write-Host "Running mission ZIP batch sample with MaxZips=$MaxZips"
-& $batchScript -MaxZips $MaxZips -NoRegressionJson
+& $batchScript -MaxZips $MaxZips -NoRegressionJson -Serial $Serial
 exit $LASTEXITCODE

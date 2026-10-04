@@ -64,6 +64,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_saf_redbook'
         )
         core = @(
+            'test_android_test_target'
             'test_github_release'
             'test_publish_menu'
             'test_7zip_install'

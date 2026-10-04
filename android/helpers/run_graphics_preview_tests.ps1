@@ -3,23 +3,24 @@
 param(
     [ValidateSet('d1', 'd2')][string]$Game,
     [ValidateSet('level', 'robot')][string]$Preview,
-    [string]$Serial = 'emulator-5554'
+    [string]$Serial
 )
 
 $ErrorActionPreference = 'Stop'
-if ($Serial -notmatch '^emulator-[0-9]+$') { throw 'This reset-state fixture requires a provisioned emulator' }
 . (Join-Path $PSScriptRoot 'test_helpers.ps1')
+$previousSerial = $env:ANDROID_SERIAL
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
+Assert-IsolatedPhysicalTestApp
 $outputDirectory = Join-Path $script:REPO_ROOT ('android/temp/graphics-preview-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 & (Join-Path $PSScriptRoot 'retain-recent-artifacts.ps1') -Artifacts @($outputDirectory)
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
-$previousSerial = $env:ANDROID_SERIAL
-$env:ANDROID_SERIAL = $Serial
 $games = if ($Game) { @($Game) } else { @('d1', 'd2') }
 $previews = if ($Preview) { @($Preview) } else { @('robot', 'level') }
 $results = @()
 
 function Invoke-PreviewDevice {
     param([string[]]$Arguments)
+    $Arguments = @(Get-TestPackageAdbArguments -Arguments $Arguments)
     $output = & $script:ADB -s $Serial @Arguments 2>&1
     if ($LASTEXITCODE -ne 0) { throw "adb failed: $($Arguments -join ' '): $output" }
     return ($output -join "`n")

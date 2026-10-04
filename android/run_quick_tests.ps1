@@ -31,6 +31,7 @@
 #>
 
 param(
+    [string]$Serial,
     [string]$ReportDir,
     [switch]$StopOnFail,
     [int]$MaxTotalSeconds = 180,
@@ -42,6 +43,7 @@ $scriptDir = Split-Path -Parent $PSCommandPath
 $helpersDir = Join-Path $scriptDir "helpers"
 $repoRoot = Split-Path $scriptDir
 . (Join-Path $helpersDir "test_helpers.ps1")
+Initialize-AndroidTestTarget -Serial $Serial | Out-Null
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_host_build_guard.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_graphics_canary_helpers.ps1")
 

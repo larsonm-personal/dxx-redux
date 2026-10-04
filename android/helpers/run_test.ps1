@@ -17,6 +17,7 @@
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [string]$ScriptName,
+    [string]$Serial,
     [switch]$Install,
     [switch]$LeaveRunning,
     [int]$TimeoutSeconds = 300,
@@ -29,6 +30,7 @@ $ErrorActionPreference = "Stop"
 $helpersDir = Split-Path -Parent $PSCommandPath
 $scriptDir = Split-Path -Parent $helpersDir
 . (Join-Path $helpersDir "test_helpers.ps1")
+Initialize-AndroidTestTarget -Serial $Serial | Out-Null
 
 function Push-TestScriptToDevice {
     param(
@@ -152,279 +154,285 @@ if ($gameList.Count -gt 1) {
 
 $allPassed = $true
 $script:runTestCleanupDone = $false
+$script:runTestPowerSession = $null
 function Invoke-RunTestCleanup {
     if ($script:runTestCleanupDone) { return }
     $script:runTestCleanupDone = $true
+    Stop-AndroidTestPowerSession -Session $script:runTestPowerSession
     if ($LeaveRunning) { return }
     try { Stop-AppAndWait } catch {}
 }
 Register-EngineEvent PowerShell.Exiting -Action { Invoke-RunTestCleanup } | Out-Null
 
-foreach ($gameId in $gameList) {
-    if ($gameList.Count -gt 1) {
-        Write-Host ""
-        Write-Host "============================================================" -ForegroundColor White
-        Write-Host "  Running as $($gameId.ToUpper())" -ForegroundColor White
-        Write-Host "============================================================" -ForegroundColor White
-    }
+try {
+    $script:runTestPowerSession = Start-AndroidTestPowerSession
+    foreach ($gameId in $gameList) {
+        if ($gameList.Count -gt 1) {
+            Write-Host ""
+            Write-Host "============================================================" -ForegroundColor White
+            Write-Host "  Running as $($gameId.ToUpper())" -ForegroundColor White
+            Write-Host "============================================================" -ForegroundColor White
+        }
 
-    # -- Resolve params: prompt for missing required params --------
+        # -- Resolve params: prompt for missing required params --------
 
-    $scriptParams = Get-ScriptParams -ScriptPath $scriptPath
-    $resolvedParams = @{} + $Params
-    $isInteractive = [Environment]::UserInteractive -and
-    -not ([Environment]::GetCommandLineArgs() -match '-NonInteractive')
-    if ($scriptParams) {
-        foreach ($prop in $scriptParams.PSObject.Properties) {
-            $pName = $prop.Name
-            if (-not $resolvedParams.ContainsKey($pName)) {
-                $pDef = $prop.Value
-                $optKeys = @($pDef.options.PSObject.Properties.Name)
-                $label = if ($pDef.label) { $pDef.label } else { $pName }
-                if ($isInteractive) {
-                    Write-Host ""
-                    Write-Host "$label -- select a value:" -ForegroundColor White
-                    for ($pi = 0; $pi -lt $optKeys.Count; $pi++) {
-                        Write-Host "  $($pi + 1)) $($optKeys[$pi])"
-                    }
-                    $pc = Read-Host "Select (1-$($optKeys.Count))"
-                    $pci = 0
-                    if ([int]::TryParse($pc, [ref]$pci) -and $pci -ge 1 -and $pci -le $optKeys.Count) {
-                        $resolvedParams[$pName] = $optKeys[$pci - 1]
+        $scriptParams = Get-ScriptParams -ScriptPath $scriptPath
+        $resolvedParams = @{} + $Params
+        $isInteractive = [Environment]::UserInteractive -and
+        -not ([Environment]::GetCommandLineArgs() -match '-NonInteractive')
+        if ($scriptParams) {
+            foreach ($prop in $scriptParams.PSObject.Properties) {
+                $pName = $prop.Name
+                if (-not $resolvedParams.ContainsKey($pName)) {
+                    $pDef = $prop.Value
+                    $optKeys = @($pDef.options.PSObject.Properties.Name)
+                    $label = if ($pDef.label) { $pDef.label } else { $pName }
+                    if ($isInteractive) {
+                        Write-Host ""
+                        Write-Host "$label -- select a value:" -ForegroundColor White
+                        for ($pi = 0; $pi -lt $optKeys.Count; $pi++) {
+                            Write-Host "  $($pi + 1)) $($optKeys[$pi])"
+                        }
+                        $pc = Read-Host "Select (1-$($optKeys.Count))"
+                        $pci = 0
+                        if ([int]::TryParse($pc, [ref]$pci) -and $pci -ge 1 -and $pci -le $optKeys.Count) {
+                            $resolvedParams[$pName] = $optKeys[$pci - 1]
+                        } else {
+                            Write-Status "Invalid selection, defaulting to $($optKeys[0])" "Yellow"
+                            $resolvedParams[$pName] = $optKeys[0]
+                        }
                     } else {
-                        Write-Status "Invalid selection, defaulting to $($optKeys[0])" "Yellow"
+                        Write-Status "Non-interactive: defaulting $label to $($optKeys[0])" "Yellow"
                         $resolvedParams[$pName] = $optKeys[0]
                     }
-                } else {
-                    Write-Status "Non-interactive: defaulting $label to $($optKeys[0])" "Yellow"
-                    $resolvedParams[$pName] = $optKeys[0]
                 }
             }
         }
-    }
 
-    # -- Resolve script (variable substitution + conditional filtering) --
+        # -- Resolve script (variable substitution + conditional filtering) --
 
-    $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId -Params $resolvedParams
-    $runId = [guid]::NewGuid().ToString("N")
-    $scriptStem = [System.IO.Path]::GetFileNameWithoutExtension($scriptPath)
-    $pushName = "$scriptStem.run-$runId.jsonc"
-    if ($resolvedPath -ne $scriptPath) {
-        # Push the resolved file instead, but keep the original name on device
-        $pushSrc = $resolvedPath
-    } else {
-        $pushSrc = $scriptPath
-    }
-    $resolvedText = Get-Content -Path $pushSrc -Raw
-    $unresolved = @([regex]::Matches($resolvedText, '\$\{[A-Za-z0-9_]+\}') | ForEach-Object { $_.Value } | Select-Object -Unique)
-    if ($unresolved.Count -gt 0) {
-        $hint = if (-not $isStandaloneScript) {
-            " This support template should be run through its wrapper, not directly."
+        $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId -Params $resolvedParams
+        $runId = [guid]::NewGuid().ToString("N")
+        $scriptStem = [System.IO.Path]::GetFileNameWithoutExtension($scriptPath)
+        $pushName = "$scriptStem.run-$runId.jsonc"
+        if ($resolvedPath -ne $scriptPath) {
+            # Push the resolved file instead, but keep the original name on device
+            $pushSrc = $resolvedPath
         } else {
-            ""
+            $pushSrc = $scriptPath
         }
-        Write-Status "FAIL: unresolved script placeholders: $($unresolved -join ',').$hint" "Red"
-        $allPassed = $false
-        if ($gameList.Count -gt 1) { continue }
-        exit 1
-    }
-
-    # -- Resolve declarative game data deps (if present) ----------
-
-    # Build vars for dep substitution (game vars + param option vars)
-    $depVars = @{} + $resolvedParams
-    if ($scriptParams -and $resolvedParams.Count -gt 0) {
-        foreach ($pName in $resolvedParams.Keys) {
-            $pValue = $resolvedParams[$pName]
-            $paramDef = $scriptParams.$pName
-            if ($paramDef -and $paramDef.options -and $paramDef.options.$pValue) {
-                foreach ($prop in $paramDef.options.$pValue.PSObject.Properties) {
-                    $depVars[$prop.Name] = $prop.Value
-                }
+        $resolvedText = Get-Content -Path $pushSrc -Raw
+        $unresolved = @([regex]::Matches($resolvedText, '\$\{[A-Za-z0-9_]+\}') | ForEach-Object { $_.Value } | Select-Object -Unique)
+        if ($unresolved.Count -gt 0) {
+            $hint = if (-not $isStandaloneScript) {
+                " This support template should be run through its wrapper, not directly."
+            } else {
+                ""
             }
-        }
-    }
-    $skipGameData = $false
-    $deps = Get-ScriptDeps -ScriptPath $scriptPath -Vars $depVars
-    if ($deps) {
-        Write-Status "Resolving $($deps.Count) declared game data deps..."
-        if (-not (Resolve-GameDataDepsWithEmulatorRecovery -Deps $deps)) {
-            if (-not $isInteractive) {
-                Write-Status "SKIP: deps unavailable in non-interactive mode" "Yellow"
-                Write-Host "RESULT: SKIP (declared game-data dependencies unavailable)"
-                exit 2
-            }
+            Write-Status "FAIL: unresolved script placeholders: $($unresolved -join ',').$hint" "Red"
             $allPassed = $false
-            if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
+            if ($gameList.Count -gt 1) { continue }
             exit 1
         }
-        $skipGameData = $true
-    }
 
-    # -- Detect launcher vs game script ---------------------------
+        # -- Resolve declarative game data deps (if present) ----------
 
-    $isLauncherScript = Get-ScriptIsLauncher -ScriptPath $scriptPath
-
-    # Calculate timeout from script timing fields (or use explicit -TimeoutSeconds)
-    $scriptTimeout = $TimeoutSeconds
-    if ($TimeoutSeconds -eq 300) {
-        $srcForTimeout = if ($resolvedPath -ne $scriptPath) { $resolvedPath } else { $scriptPath }
-        $scriptEstimate = Get-ScriptTimeoutSeconds -ScriptPath $srcForTimeout
-        $scriptTimeout = [Math]::Max($TimeoutSeconds, $scriptEstimate)
-        if ($scriptEstimate -gt $TimeoutSeconds) {
-            Write-Status "Calculated timeout: ${scriptTimeout}s (from script timing fields)"
-        } else {
-            Write-Status "Using default timeout: ${scriptTimeout}s (script estimate: ${scriptEstimate}s)"
-        }
-    }
-    if ($isLauncherScript -and $TimeoutSeconds -eq 300 -and $scriptTimeout -lt 600) {
-        $scriptTimeout = 600
-        Write-Status "Using launcher minimum timeout: ${scriptTimeout}s"
-    }
-
-    if ($isLauncherScript) {
-        # -- Launcher script: launch SetupActivity + send SETUP_AUTOMATE -----
-
-        Write-Status "Launcher script detected -- using SetupActivity flow"
-        Stop-AppAndWait
-        Reset-GameState
-        Adb -AdbArgs @("logcat", "-c") | Out-Null
-        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json", "files/automation_result.json.tmp") | Out-Null
-        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
-
-        $launcherReady = $false
-        $launcherRecoveryFailed = $false
-        for ($launcherAttempt = 1; $launcherAttempt -le 2; $launcherAttempt++) {
-            Write-Status "Launching SetupActivity..."
-            Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
-            if (Wait-SetupActivityReady) {
-                $launcherReady = $true
-                break
-            }
-
-            Write-Status "SetupActivity not responding after 30s" "Yellow"
-            if ($launcherAttempt -ge 2) {
-                break
-            }
-
-            if (-not (Invoke-LauncherStartupRecovery -Reason "SetupActivity launch timed out for $ScriptName")) {
-                $launcherRecoveryFailed = $true
-                break
-            }
-
-            Install-ApkOnDevice | Out-Null
-            if ($deps) {
-                Write-Status "Re-provisioning declared game data deps after launcher recovery"
-                if (-not (Resolve-GameDataDepsWithEmulatorRecovery -Deps $deps)) {
-                    $launcherRecoveryFailed = $true
-                    break
+        # Build vars for dep substitution (game vars + param option vars)
+        $depVars = @{} + $resolvedParams
+        if ($scriptParams -and $resolvedParams.Count -gt 0) {
+            foreach ($pName in $resolvedParams.Keys) {
+                $pValue = $resolvedParams[$pName]
+                $paramDef = $scriptParams.$pName
+                if ($paramDef -and $paramDef.options -and $paramDef.options.$pValue) {
+                    foreach ($prop in $paramDef.options.$pValue.PSObject.Properties) {
+                        $depVars[$prop.Name] = $prop.Value
+                    }
                 }
-            } elseif (-not $skipGameData -and -not (Ensure-GameDataOnDevice -Game $gameId)) {
-                $launcherRecoveryFailed = $true
-                break
             }
+        }
+        $skipGameData = $false
+        $deps = Get-ScriptDeps -ScriptPath $scriptPath -Vars $depVars
+        if ($deps) {
+            Write-Status "Resolving $($deps.Count) declared game data deps..."
+            if (-not (Resolve-GameDataDepsWithEmulatorRecovery -Deps $deps)) {
+                if (-not $isInteractive) {
+                    Write-Status "SKIP: deps unavailable in non-interactive mode" "Yellow"
+                    Write-Host "RESULT: SKIP (declared game-data dependencies unavailable)"
+                    exit 2
+                }
+                $allPassed = $false
+                if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
+                exit 1
+            }
+            $skipGameData = $true
+        }
 
+        # -- Detect launcher vs game script ---------------------------
+
+        $isLauncherScript = Get-ScriptIsLauncher -ScriptPath $scriptPath
+
+        # Calculate timeout from script timing fields (or use explicit -TimeoutSeconds)
+        $scriptTimeout = $TimeoutSeconds
+        if ($TimeoutSeconds -eq 300) {
+            $srcForTimeout = if ($resolvedPath -ne $scriptPath) { $resolvedPath } else { $scriptPath }
+            $scriptEstimate = Get-ScriptTimeoutSeconds -ScriptPath $srcForTimeout
+            $scriptTimeout = [Math]::Max($TimeoutSeconds, $scriptEstimate)
+            if ($scriptEstimate -gt $TimeoutSeconds) {
+                Write-Status "Calculated timeout: ${scriptTimeout}s (from script timing fields)"
+            } else {
+                Write-Status "Using default timeout: ${scriptTimeout}s (script estimate: ${scriptEstimate}s)"
+            }
+        }
+        if ($isLauncherScript -and $TimeoutSeconds -eq 300 -and $scriptTimeout -lt 600) {
+            $scriptTimeout = 600
+            Write-Status "Using launcher minimum timeout: ${scriptTimeout}s"
+        }
+
+        if ($isLauncherScript) {
+            # -- Launcher script: launch SetupActivity + send SETUP_AUTOMATE -----
+
+            Write-Status "Launcher script detected -- using SetupActivity flow"
             Stop-AppAndWait
             Reset-GameState
             Adb -AdbArgs @("logcat", "-c") | Out-Null
             Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json", "files/automation_result.json.tmp") | Out-Null
             Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
-        }
 
-        if (-not $launcherReady) {
-            if ($launcherRecoveryFailed) {
-                Write-Status "FAIL: SetupActivity recovery could not restore launcher prerequisites" "Red"
-            } else {
-                Write-Status "FAIL: SetupActivity not responding" "Red"
+            $launcherReady = $false
+            $launcherRecoveryFailed = $false
+            for ($launcherAttempt = 1; $launcherAttempt -le 2; $launcherAttempt++) {
+                Write-Status "Launching SetupActivity..."
+                Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
+                if (Wait-SetupActivityReady) {
+                    $launcherReady = $true
+                    break
+                }
+
+                Write-Status "SetupActivity not responding after 30s" "Yellow"
+                if ($launcherAttempt -ge 2) {
+                    break
+                }
+
+                if (-not (Invoke-LauncherStartupRecovery -Reason "SetupActivity launch timed out for $ScriptName")) {
+                    $launcherRecoveryFailed = $true
+                    break
+                }
+
+                Install-ApkOnDevice | Out-Null
+                if ($deps) {
+                    Write-Status "Re-provisioning declared game data deps after launcher recovery"
+                    if (-not (Resolve-GameDataDepsWithEmulatorRecovery -Deps $deps)) {
+                        $launcherRecoveryFailed = $true
+                        break
+                    }
+                } elseif (-not $skipGameData -and -not (Ensure-GameDataOnDevice -Game $gameId)) {
+                    $launcherRecoveryFailed = $true
+                    break
+                }
+
+                Stop-AppAndWait
+                Reset-GameState
+                Adb -AdbArgs @("logcat", "-c") | Out-Null
+                Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json", "files/automation_result.json.tmp") | Out-Null
+                Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
             }
-            $allPassed = $false
-            if ($gameList.Count -gt 1) { continue }
-            exit 1
+
+            if (-not $launcherReady) {
+                if ($launcherRecoveryFailed) {
+                    Write-Status "FAIL: SetupActivity recovery could not restore launcher prerequisites" "Red"
+                } else {
+                    Write-Status "FAIL: SetupActivity not responding" "Red"
+                }
+                $allPassed = $false
+                if ($gameList.Count -gt 1) { continue }
+                exit 1
+            }
+
+            Write-Status "Clearing save files for clean launcher state"
+            Send-SetupCommand -Command "clear_save_files"
+            Start-Sleep -Milliseconds 250
+
+            if (-not (Push-TestScriptToDevice -SourcePath $pushSrc -DeviceName $pushName)) {
+                $allPassed = $false
+                if ($gameList.Count -gt 1) { continue }
+                exit 1
+            }
+
+            Write-Status "Sending SETUP_AUTOMATE broadcast for: $ScriptName"
+            Adb -AdbArgs @(
+                "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_AUTOMATE",
+                "--es", "script", $pushName, "--es", "run_id", $runId
+            ) | Out-Null
+
+            $passed = Watch-AutomationResult -TimeoutSeconds $scriptTimeout -IsLauncherScript -ExpectedRunId $runId
+        } else {
+            # -- Game script: launch game + send AUTOMATE broadcast -----------
+
+            $extraArgs = @()
+            if ($gameId -eq "d1") {
+                Write-Status "Launching as D1"
+                $extraArgs = @("--es", "game", "d1")
+            }
+
+            $preLaunch = {
+                Reset-GameState
+            }
+
+            $launchParams = @{
+                ExtraLaunchArgs = $extraArgs
+                PreLaunchScript = $preLaunch
+                Game = $gameId
+            }
+            if ($skipGameData) { $launchParams.SkipGameData = $true }
+
+            if (-not (Start-GameWithRetry @launchParams)) {
+                $allPassed = $false
+                if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
+                exit 1
+            }
+
+            if (-not (Push-TestScriptToDevice -SourcePath $pushSrc -DeviceName $pushName)) {
+                $allPassed = $false
+                if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
+                exit 1
+            }
+
+            Start-Sleep -Seconds 1
+            Adb -AdbArgs @("logcat", "-c") | Out-Null
+            Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json", "files/automation_result.json.tmp") | Out-Null
+            Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
+            Write-Status "Sending automation broadcast for: $ScriptName"
+            Adb -AdbArgs @(
+                "shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE",
+                "--es", "script", $pushName, "--es", "run_id", $runId
+            ) | Out-Null
+
+            $passed = Watch-AutomationResult -TimeoutSeconds $scriptTimeout -ExpectedRunId $runId
         }
 
-        Write-Status "Clearing save files for clean launcher state"
-        Send-SetupCommand -Command "clear_save_files"
-        Start-Sleep -Milliseconds 250
-
-        if (-not (Push-TestScriptToDevice -SourcePath $pushSrc -DeviceName $pushName)) {
-            $allPassed = $false
-            if ($gameList.Count -gt 1) { continue }
-            exit 1
-        }
-
-        Write-Status "Sending SETUP_AUTOMATE broadcast for: $ScriptName"
-        Adb -AdbArgs @(
-            "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_AUTOMATE",
-            "--es", "script", $pushName, "--es", "run_id", $runId
-        ) | Out-Null
-
-        $passed = Watch-AutomationResult -TimeoutSeconds $scriptTimeout -IsLauncherScript -ExpectedRunId $runId
-    } else {
-        # -- Game script: launch game + send AUTOMATE broadcast -----------
-
-        $extraArgs = @()
-        if ($gameId -eq "d1") {
-            Write-Status "Launching as D1"
-            $extraArgs = @("--es", "game", "d1")
-        }
-
-        $preLaunch = {
-            Reset-GameState
-        }
-
-        $launchParams = @{
-            ExtraLaunchArgs = $extraArgs
-            PreLaunchScript = $preLaunch
-            Game = $gameId
-        }
-        if ($skipGameData) { $launchParams.SkipGameData = $true }
-
-        if (-not (Start-GameWithRetry @launchParams)) {
+        if (-not $passed) {
             $allPassed = $false
             if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
             exit 1
         }
 
-        if (-not (Push-TestScriptToDevice -SourcePath $pushSrc -DeviceName $pushName)) {
-            $allPassed = $false
-            if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
-            exit 1
+        # -- Step 7: Dump introspection -------------------------------
+
+        Write-Status "Dumping final introspection state..."
+        $intro = Get-GameIntrospection
+        if ($intro) {
+            Write-Host ($intro | ConvertTo-Json -Depth 10 -Compress)
         }
 
-        Start-Sleep -Seconds 1
-        Adb -AdbArgs @("logcat", "-c") | Out-Null
-        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json", "files/automation_result.json.tmp") | Out-Null
-        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
-        Write-Status "Sending automation broadcast for: $ScriptName"
-        Adb -AdbArgs @(
-            "shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE",
-            "--es", "script", $pushName, "--es", "run_id", $runId
-        ) | Out-Null
-
-        $passed = Watch-AutomationResult -TimeoutSeconds $scriptTimeout -ExpectedRunId $runId
+        if ($gameList.Count -gt 1) {
+            Write-Status "PASS for $($gameId.ToUpper())" "Green"
+            # Force-stop between game runs
+            Stop-AppAndWait
+        }
     }
 
-    if (-not $passed) {
-        $allPassed = $false
-        if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
-        exit 1
-    }
-
-    # -- Step 7: Dump introspection -------------------------------
-
-    Write-Status "Dumping final introspection state..."
-    $intro = Get-GameIntrospection
-    if ($intro) {
-        Write-Host ($intro | ConvertTo-Json -Depth 10 -Compress)
-    }
-
-    if ($gameList.Count -gt 1) {
-        Write-Status "PASS for $($gameId.ToUpper())" "Green"
-        # Force-stop between game runs
-        Stop-AppAndWait
-    }
+} finally {
+    Invoke-RunTestCleanup
 }
-
-Invoke-RunTestCleanup
 if (-not $allPassed) { exit 1 }
 exit 0

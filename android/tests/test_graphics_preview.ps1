@@ -4,7 +4,7 @@
 param(
     [ValidateSet('d1', 'd2')][string]$Game,
     [ValidateSet('level', 'robot')][string]$Preview,
-    [string]$Serial = 'emulator-5554'
+    [string]$Serial
 )
 
 $ErrorActionPreference = 'Stop'

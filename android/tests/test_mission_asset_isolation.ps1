@@ -1,17 +1,15 @@
 #!/usr/bin/env pwsh
-# Real campaign isolation regression on the disposable repository emulator
+# Real campaign isolation regression on the selected test device
 param([switch]$Install)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '../helpers/test_helpers.ps1')
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-$devices = & $ADB devices
-if (@($devices | Where-Object { $_ -match '^emulator-\d+\s+device$' }).Count -ne 1 -or
-    @($devices | Where-Object { $_ -match '^\S+\s+device$' }).Count -ne 1) {
-    throw 'This test requires exactly one connected device, the disposable test emulator'
-}
+Initialize-AndroidTestTarget | Out-Null
+Assert-IsolatedPhysicalTestApp
+Ensure-EmulatorHealthy | Out-Null
 # Drop generated test projections before staging on the small test AVD
-& $ADB shell am force-stop com.dxxredux.app
-& $ADB shell run-as com.dxxredux.app rm -rf /data/user/0/com.dxxredux.app/files/d2x-redux/.mission_assets
+& $ADB shell am force-stop $script:PACKAGE
+& $ADB shell run-as $script:PACKAGE rm -rf files/d2x-redux/.mission_assets
 if ($Install) {
     & $ADB install -r (Join-Path $repoRoot 'android/app/build/outputs/apk/debug/app-debug.apk')
     if ($LASTEXITCODE -ne 0) { throw 'Could not install the test APK' }
@@ -35,12 +33,12 @@ if ((Get-FileHash -LiteralPath $enemy -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 $target = 'files/imported/sets/default/.content/mods'
 try {
-    & $ADB shell run-as com.dxxredux.app mkdir -p $target
+    & $ADB shell run-as $script:PACKAGE mkdir -p $target
     foreach ($source in @($enemy, (Join-Path $repoRoot 'game_data/mission_files/descent_maximum_fixed.zip'))) {
         $name = Split-Path -Leaf $source
         & $ADB push $source "/data/local/tmp/$name"
         if ($LASTEXITCODE -ne 0) { throw "Could not stage $name" }
-        & $ADB shell run-as com.dxxredux.app cp "/data/local/tmp/$name" "$target/$name"
+        & $ADB shell run-as $script:PACKAGE cp "/data/local/tmp/$name" "$target/$name"
         if ($LASTEXITCODE -ne 0) { throw "Could not publish $name" }
         & $ADB shell rm -f "/data/local/tmp/$name"
     }
@@ -78,12 +76,12 @@ try {
     Write-Host "Mission asset isolation passed in process $($processes[0]): $logPath"
 } finally {
     # The test replaces the default mod manifest; release its archives and generated mounts
-    & $ADB shell am force-stop com.dxxredux.app
+    & $ADB shell am force-stop $script:PACKAGE
     & $ADB shell rm -f /data/local/tmp/ewithin-rebirth.zip /data/local/tmp/descent_maximum_fixed.zip
-    & $ADB shell run-as com.dxxredux.app rm -f "$target/ewithin-rebirth.zip" "$target/descent_maximum_fixed.zip" "$target/mod_manifest.json"
+    & $ADB shell run-as $script:PACKAGE rm -f "$target/ewithin-rebirth.zip" "$target/descent_maximum_fixed.zip" "$target/mod_manifest.json"
     if ($LASTEXITCODE -ne 0) { throw 'Could not remove mission isolation test archives' }
-    & $ADB shell run-as com.dxxredux.app rm -rf /data/user/0/com.dxxredux.app/files/d2x-redux/.mission_assets
+    & $ADB shell run-as $script:PACKAGE rm -rf files/d2x-redux/.mission_assets
     if ($LASTEXITCODE -ne 0) { throw 'Could not release mission isolation publications' }
-    & $ADB shell run-as com.dxxredux.app rm -f files/d2x-redux/.active_mod_paths files/d2x-redux/.mission_assets.json
+    & $ADB shell run-as $script:PACKAGE rm -f files/d2x-redux/.active_mod_paths files/d2x-redux/.mission_assets.json
     if ($LASTEXITCODE -ne 0) { throw 'Could not clear mission isolation mounts' }
 }

@@ -15,7 +15,7 @@ internal data class ControllerConfigState(
     val bindings: Map<String, String> = emptyMap(),
     val inverts: Set<String> = emptySet(),
     val thresholds: Map<String, Int> = defaultThresholds(),
-    val axisResponses: Map<String, ControllerAxisResponse> = defaultControllerAxisResponses(),
+    val axisResponses: Map<String, ControllerAxisResponse> = defaultControllerAxisResponses(bindings),
 )
 
 internal fun controllerConfigStateFromHumanData(data: HumanReadableConfig.ControllerConfigData): ControllerConfigState {
@@ -23,7 +23,7 @@ internal fun controllerConfigStateFromHumanData(data: HumanReadableConfig.Contro
     for ((controlId, threshold) in data.thresholds) {
         if (controlId in thresholds) thresholds[controlId] = threshold.coerceIn(0, 95)
     }
-    val axisResponses = clampedControllerAxisResponses(data.axisResponses)
+    val axisResponses = clampedControllerAxisResponses(data.axisResponses, data.bindings)
     return ControllerConfigState(data.bindings, data.inverts, thresholds, axisResponses)
 }
 
@@ -410,7 +410,7 @@ internal fun saveConfig(
     inverts: Set<String>,
     gameVariant: String = "d2",
     thresholds: Map<String, Int> = defaultThresholds(),
-    axisResponses: Map<String, ControllerAxisResponse> = defaultControllerAxisResponses(),
+    axisResponses: Map<String, ControllerAxisResponse> = defaultControllerAxisResponses(bindings),
 ) {
     val d1Result = buildJoyPairs(bindings, inverts, "d1")
     val d2Result = buildJoyPairs(bindings, inverts, "d2")
@@ -494,7 +494,7 @@ internal fun saveConfig(
     json.put("thresholds", thresholdsObj)
 
     val responsesObj = JSONObject()
-    for ((axis, response) in clampedControllerAxisResponses(axisResponses)) {
+    for ((axis, response) in clampedControllerAxisResponses(axisResponses, bindings)) {
         responsesObj.put(axis, response.toJson())
     }
     json.put("axis_responses", responsesObj)

@@ -73,6 +73,13 @@ try {
             }
         }
         foreach ($name in @('test_download_verification', 'test_d2xxl_sound_format', 'test_d2xxl_tga_layout', 'test_d2xxl_tga_pixels', 'test_cd_regression_runner', 'test_extract_all_cds_batch', 'test_extract_all_gog_batch', 'test_generate_regression_specs', 'test_extract_suite_device_preflight', 'test_extract_regression_workflow', 'test_extraction_cache_provenance', 'test_extraction_publication',
+                'test_android_test_target', 'test_android_distributions', 'test_acoustid_regeneration', 'test_active_game_data_reset',
+                'test_castaway_level2_restored_switch_route', 'test_cd_mission_hog_isolation', 'test_client_identity_backup',
+                'test_coop_start_fanout_mapset', 'test_guidebot_secret_transition', 'test_hash_assets_force_completeness',
+                'test_mission_level_names', 'test_mission_metadata_level_statistics', 'test_mission_metadata_travel_times',
+                'test_mission_metadata_trigger_cycles', 'test_mission_rar_archive', 'test_obsidian_level3_blastable_wall',
+                'test_obsidian_level4_closed_trigger_source', 'test_obsidian_level7_exit_route', 'test_regenerate_all_regression_data',
+                'test_secret_area_baseline', 'test_windows_mission_metadata_route_masks', 'test_xfing_asset_validation',
                 'test_fingerprint_audio_enumeration', 'test_fingerprint_manifest_publication', 'test_fingerprint_mission_zip_budgets', 'test_fingerprint_music_pack_build_guard', 'test_fingerprint_source_identity', 'test_fingerprint_threshold',
                 'test_dos_midi_parity', 'test_run_all_tests_catalog',
                 'test_input_demo_explicit_path', 'test_input_demo_host_build_guard', 'test_repository_artifact_policy', 'test_mission_zip_batch_publication', 'test_mission_zip_batch_recovery', 'test_regression_process_lifetime', 'test_powershell_51_compatibility')) {

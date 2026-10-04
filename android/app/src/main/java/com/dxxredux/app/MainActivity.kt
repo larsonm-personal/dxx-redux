@@ -3645,19 +3645,20 @@ class MainActivity :
         if (!file.exists()) return
         try {
             val json = JSONObject(file.readText())
+            val bindings = mutableMapOf<String, String>()
             if (json.has("bindings")) {
                 val bindingsObj = json.getJSONObject("bindings")
-                val bindings = mutableMapOf<String, String>()
                 for (key in bindingsObj.keys()) bindings[key] = bindingsObj.getString(key)
                 controllerBoundActions = controllerConfigBoundActionBindings(bindings)
             }
+            controllerAxisResponses = defaultControllerAxisResponses(bindings)
             json.optJSONObject("axis_responses")?.let { responsesObj ->
                 val loaded = mutableMapOf<String, ControllerAxisResponse>()
                 for (key in responsesObj.keys()) {
                     loaded[key] =
                         ControllerAxisResponse.fromJson(responsesObj.getJSONObject(key))
                 }
-                controllerAxisResponses = clampedControllerAxisResponses(loaded)
+                controllerAxisResponses = clampedControllerAxisResponses(loaded, bindings)
             }
             json.optJSONObject("thresholds")?.let { thresholds ->
                 controllerAxisThresholds =

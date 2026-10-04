@@ -134,6 +134,8 @@ private fun refreshAxisIndicesForControl(controlId: String?): Pair<Set<Int>, Set
 private data class StickPickerResult(
     val xFunc: String? = null,
     val yFunc: String? = null,
+    val xResponse: ControllerAxisResponse,
+    val yResponse: ControllerAxisResponse,
     val xInvert: Boolean = false,
     val yInvert: Boolean = false,
     val xButtonMode: Boolean = false,
@@ -1856,13 +1858,21 @@ internal fun ControllerConfigPage(
             axisValue = axisVal,
             threshold = axisKey?.let { thresholdForDialog(it, buttonMode = true, thresholds) },
             onThresholdChange = axisKey?.let { key -> { v: Int -> thresholds[key] = v } },
-            axisResponse = axisKey?.let { axisResponses[it] ?: ControllerAxisResponse() },
+            axisResponse = axisKey?.let { axisResponses[it] ?: defaultControllerAxisResponse(bindings[it]) },
             onAxisResponseChange = axisKey?.let { key -> { v: ControllerAxisResponse -> axisResponses[key] = v } },
             axisFunctions = if (isTrigger) TRIGGER_HALF_AXIS_OPTIONS else emptyList(),
             onDialogGenericMotionEvent = onDialogGenericMotionEvent,
             onDialogViewChanged = onDialogViewChanged,
             onSelect = { funcLabel ->
                 val dismissedControl = selectedControl
+                axisKey?.let { key ->
+                    axisResponses[key] =
+                        controllerResponseAfterMappingChange(
+                            bindings[key],
+                            funcLabel,
+                            axisResponses[key] ?: defaultControllerAxisResponse(bindings[key]),
+                        )
+                }
                 assignButtonFunction(bindings, selectedControl!!, funcLabel)
                 showButtonPicker = false
                 selectedControl = null
@@ -1908,10 +1918,8 @@ internal fun ControllerConfigPage(
             yThreshold = thresholdForDialog(yKey, yIsButtonMode, thresholds),
             onXThresholdChange = { v -> thresholds[xKey] = v },
             onYThresholdChange = { v -> thresholds[yKey] = v },
-            xResponse = axisResponses[xKey] ?: ControllerAxisResponse(),
-            yResponse = axisResponses[yKey] ?: ControllerAxisResponse(),
-            onXResponseChange = { v -> axisResponses[xKey] = v },
-            onYResponseChange = { v -> axisResponses[yKey] = v },
+            xResponse = axisResponses[xKey] ?: defaultControllerAxisResponse(bindings[xKey]),
+            yResponse = axisResponses[yKey] ?: defaultControllerAxisResponse(bindings[yKey]),
             onDialogGenericMotionEvent = onDialogGenericMotionEvent,
             onDialogViewChanged = onDialogViewChanged,
             onConfirm = { result ->
@@ -1930,6 +1938,7 @@ internal fun ControllerConfigPage(
                     result.xPosFunc?.let { bindings[xPosKey] = it }
                 } else {
                     result.xFunc?.let { assignAxisFunction(bindings, xKey, it) }
+                    axisResponses[xKey] = result.xResponse
                     if (result.xInvert) inverts.add(xKey)
                 }
                 if (result.yButtonMode) {
@@ -1937,6 +1946,7 @@ internal fun ControllerConfigPage(
                     result.yPosFunc?.let { bindings[yPosKey] = it }
                 } else {
                     result.yFunc?.let { assignAxisFunction(bindings, yKey, it) }
+                    axisResponses[yKey] = result.yResponse
                     if (result.yInvert) inverts.add(yKey)
                 }
                 showStickPicker = false
@@ -2283,8 +2293,6 @@ private fun StickPickerDialog(
     onYThresholdChange: ((Int) -> Unit)? = null,
     xResponse: ControllerAxisResponse = ControllerAxisResponse(),
     yResponse: ControllerAxisResponse = ControllerAxisResponse(),
-    onXResponseChange: ((ControllerAxisResponse) -> Unit)? = null,
-    onYResponseChange: ((ControllerAxisResponse) -> Unit)? = null,
     onDialogGenericMotionEvent: ((View, MotionEvent) -> Boolean)? = null,
     onDialogViewChanged: (View?) -> Unit = {},
     onConfirm: (StickPickerResult) -> Unit,
@@ -2295,7 +2303,9 @@ private fun StickPickerDialog(
     val confirmFocus = remember { FocusRequester() }
     val dismissFocus = remember { FocusRequester() }
     var selectedX by remember { mutableStateOf(currentXFunc) }
+    var selectedXResponse by remember { mutableStateOf(xResponse) }
     var selectedY by remember { mutableStateOf(currentYFunc) }
+    var selectedYResponse by remember { mutableStateOf(yResponse) }
     var invertX by remember { mutableStateOf(currentXInvert) }
     var invertY by remember { mutableStateOf(currentYInvert) }
     var xButtonMode by remember { mutableStateOf(currentXButtonMode) }
@@ -2380,15 +2390,12 @@ private fun StickPickerDialog(
                     )
                     if (!xButtonMode) {
                         Spacer(Modifier.height(6.dp))
-                        onXResponseChange?.let {
-                            ControllerResponseEditor(
-                                xResponse,
-                                xThreshold,
-                                xAxisValue,
-                                false,
-                                it,
-                            )
-                        }
+                        ControllerResponseEditor(
+                            selectedXResponse,
+                            xThreshold,
+                            xAxisValue,
+                            false,
+                        ) { selectedXResponse = it }
                     }
                     Spacer(Modifier.height(6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2433,7 +2440,15 @@ private fun StickPickerDialog(
                         AxisFunctionRadioGroup(
                             selected = selectedX,
                             assignedFunctions = assignedFunctions,
-                            onSelect = { selectedX = it },
+                            onSelect = {
+                                selectedXResponse =
+                                    controllerResponseAfterMappingChange(
+                                        selectedX,
+                                        it,
+                                        selectedXResponse,
+                                    )
+                                selectedX = it
+                            },
                         )
                     }
                     Spacer(Modifier.height(8.dp))
@@ -2456,15 +2471,12 @@ private fun StickPickerDialog(
                     )
                     if (!yButtonMode) {
                         Spacer(Modifier.height(6.dp))
-                        onYResponseChange?.let {
-                            ControllerResponseEditor(
-                                yResponse,
-                                yThreshold,
-                                yAxisValue,
-                                false,
-                                it,
-                            )
-                        }
+                        ControllerResponseEditor(
+                            selectedYResponse,
+                            yThreshold,
+                            yAxisValue,
+                            false,
+                        ) { selectedYResponse = it }
                     }
                     Spacer(Modifier.height(6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2504,7 +2516,15 @@ private fun StickPickerDialog(
                         AxisFunctionRadioGroup(
                             selected = selectedY,
                             assignedFunctions = assignedFunctions,
-                            onSelect = { selectedY = it },
+                            onSelect = {
+                                selectedYResponse =
+                                    controllerResponseAfterMappingChange(
+                                        selectedY,
+                                        it,
+                                        selectedYResponse,
+                                    )
+                                selectedY = it
+                            },
                         )
                     }
                 }
@@ -2517,7 +2537,9 @@ private fun StickPickerDialog(
                     onConfirm(
                         StickPickerResult(
                             xFunc = if (xButtonMode) null else selectedX,
+                            xResponse = selectedXResponse,
                             yFunc = if (yButtonMode) null else selectedY,
+                            yResponse = selectedYResponse,
                             xInvert = invertX,
                             yInvert = invertY,
                             xButtonMode = xButtonMode,

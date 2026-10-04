@@ -55,11 +55,13 @@ function Write-Progress-Flush {
 
 # -- Shared env setup (JAVA_HOME, cmake, cargo) ----------------------------
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
+Initialize-AndroidTestTarget | Out-Null
 
 # -- Paths --------------------------------------------------------------
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $androidDir = Join-RegressionPath $repoRoot "android"
 $apkPath = Join-RegressionPath $androidDir "app" "build" "outputs" "apk" "debug" "app-debug.apk"
+if ($env:DXX_TEST_APK) { $apkPath = $env:DXX_TEST_APK }
 $scriptSource = Join-RegressionPath $androidDir "game_scripts" "test_saf_basic.jsonc"
 $_depBaseFile = Join-Path $repoRoot "dependency_base.txt"
 if (-not (Test-Path $_depBaseFile)) {
@@ -69,7 +71,7 @@ if (-not (Test-Path $_depBaseFile)) {
 $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
 $adb = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
 
-$PACKAGE = "com.dxxredux.app"
+$PACKAGE = $script:PACKAGE
 $TEST_FILE = "descent2.ham"
 $SAF_DIR = "/data/local/tmp/test_saf"
 $TIMEOUT_SEC = 60
@@ -167,38 +169,10 @@ function Write-AutomationLogTail {
 Write-Host "=== SAF Archiver Test ===" -ForegroundColor Cyan
 Write-Host ""
 
-# Check emulator -- auto-start if needed
-$script:Serial = $null
-$devices = (Adb devices) -join "`n"
-if ($devices -notmatch "emulator.*device") {
-    Write-Host "Emulator not found -- attempting start..." -ForegroundColor Yellow
-    $healthScript = Join-Path (Join-Path $androidDir "helpers") "emu_health.ps1"
-    & $healthScript -Restart -Wait -TimeoutSeconds 120
-    if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 2) {
-        Write-Host "FAIL: Could not start emulator (exit $LASTEXITCODE)" -ForegroundColor Red
-        exit 1
-    }
-    # Poll for emulator to come online (replaces fixed sleep)
-    $emSw = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($emSw.Elapsed.TotalSeconds -lt 30) {
-        $devices = (Adb devices) -join "`n"
-        if ($devices -match "emulator.*device") { break }
-        Start-Sleep -Seconds 1
-    }
-    $devices = (Adb devices) -join "`n"
-    if ($devices -notmatch "emulator.*device") {
-        Write-Host "FAIL: Emulator still not available after restart" -ForegroundColor Red
-        exit 1
-    }
-}
-Write-Host "[OK] Emulator connected" -ForegroundColor Green
-
-# Extract the first emulator serial for -s targeting
-$emuMatch = [regex]::Match($devices, "(emulator-\d+)\s+device")
-if ($emuMatch.Success) {
-    $script:Serial = $emuMatch.Groups[1].Value
-    Write-Host "  Target device: $($script:Serial)"
-}
+# Use the same selected target as the suite and automation runner
+$script:Serial = $env:ANDROID_SERIAL
+Ensure-EmulatorHealthy | Out-Null
+Write-Host "[OK] Android test target connected: $script:Serial" -ForegroundColor Green
 
 # Ensure game data is on device before running the SAF test
 if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
@@ -211,7 +185,8 @@ if (!$NoBuild) {
     Write-Host ""
     Write-Host "Step 1: Building debug APK..." -ForegroundColor Yellow
     $gradleWrapper = Resolve-RegressionGradleWrapper -AndroidDir $androidDir
-    & $gradleWrapper -p $androidDir assembleDebug --console=plain 2>&1 |
+    $buildProperties = @('-PciApk=false', '-PgithubRelease=false', '-PlegacyRelease=false', "-PnsdDiagnosticApp=$($PACKAGE -eq 'com.dxxredux.app.nsdtest')")
+    & $gradleWrapper -p $androidDir assembleDebug --console=plain @buildProperties 2>&1 |
         Where-Object { $_ -match "BUILD |FAIL|error:" } |
         ForEach-Object { Write-Host "  $_" }
     if ($LASTEXITCODE -ne 0) {
@@ -371,7 +346,7 @@ Write-Host "  Removed from app game data dir"
 # SetupActivity first and waiting for pruning to finish, we avoid the race.
 Write-Host ""
 Write-Progress-Flush "Step 5: Launching SetupActivity..." Yellow
-Adb shell "am start -n $PACKAGE/.SetupActivity" | Out-Null
+Adb shell "am start -n $PACKAGE/com.dxxredux.app.SetupActivity" | Out-Null
 Write-Host "  Waiting for SetupActivity..."
 
 # Poll until SetupActivity's broadcast receiver is alive
@@ -391,9 +366,9 @@ Write-Progress-Flush "Step 6: Creating .saf_manifest.json..." Yellow
 
 $manifestContentUri = "$SAF_DIR/$TEST_FILE"
 if ($ProviderPipeOnly) {
-    $manifestContentUri = "content://com.dxxredux.app.saf-test/pipe/$TEST_FILE"
+    $manifestContentUri = "content://$PACKAGE.saf-test/pipe/$TEST_FILE"
 } elseif ($ProviderStaleSizeOnly) {
-    $manifestContentUri = "content://com.dxxredux.app.saf-test/seekable/$TEST_FILE"
+    $manifestContentUri = "content://$PACKAGE.saf-test/seekable/$TEST_FILE"
 }
 $manifestDeclaredSize = if ($ProviderStaleSizeOnly) { $fileSize - 17 } else { $fileSize }
 
@@ -444,7 +419,7 @@ if ($RejectIncompleteOnly) {
     # Keep local readiness complete so startup reaches the native manifest mount.
     Adb shell "run-as $PACKAGE cp $SAF_DIR/$TEST_FILE $GAME_DATA_DIR/$TEST_FILE" | Out-Null
     Adb logcat -c | Out-Null
-    Adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch" | Out-Null
+    Adb shell "am broadcast -p $PACKAGE -a com.dxxredux.SETUP_COMMAND --es command launch" | Out-Null
 
     $nativeRejected = $false
     for ($attempt = 0; $attempt -lt 30; $attempt++) {
@@ -497,7 +472,7 @@ Write-Host ""
 Write-Progress-Flush "Step 7: Launching game..." Yellow
 Adb shell "run-as $PACKAGE rm -f files/introspect.json" | Out-Null
 if ($ProviderPipeOnly -or $ProviderStaleSizeOnly) { Adb logcat -c | Out-Null }
-Adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch" | Out-Null
+Adb shell "am broadcast -p $PACKAGE -a com.dxxredux.SETUP_COMMAND --es command launch" | Out-Null
 
 # Wait for the game process to be up and the native engine to start
 $retries = 0
@@ -506,7 +481,7 @@ while ($retries -lt 15) {
     $procId = (Adb shell "pidof $PACKAGE" 2>&1) -join ""
     if ($procId -match "\d+") {
         # Check if introspection works (means native engine is running)
-        Adb shell "am broadcast -a com.dxxredux.INTROSPECT" | Out-Null
+        Adb shell "am broadcast -p $PACKAGE -a com.dxxredux.INTROSPECT" | Out-Null
         Start-Sleep -Seconds 1
         $introState = (Adb shell "run-as $PACKAGE cat files/introspect.json" 2>&1) -join "`n"
         if ($introState -match "screen_mode") {
@@ -577,14 +552,15 @@ Write-Progress-Flush "Step 8: Running test_saf_basic automation..." Yellow
 $scriptBasename = "test_saf_basic.jsonc"
 $deviceTmp = "/data/local/tmp/$scriptBasename"
 
-Adb push $scriptSource $deviceTmp | Out-Null
+$resolvedScript = Resolve-TestScript -ScriptPath $scriptSource -GameId 'd2'
+Adb push $resolvedScript $deviceTmp | Out-Null
 Adb shell "run-as $PACKAGE cp $deviceTmp files/$scriptBasename" | Out-Null
 Adb shell "rm -f $deviceTmp" | Out-Null
 
 # Preserve the provider launch log so the full gameplay result can also prove staging
 if (-not $ProviderPipeOnly) { Adb logcat -c | Out-Null }
 Adb shell "run-as $PACKAGE rm -f files/automation_result.json files/automation_log.jsonl" | Out-Null
-Adb shell "am broadcast -a com.dxxredux.AUTOMATE --es script $scriptBasename" | Out-Null
+Adb shell "am broadcast -p $PACKAGE -a com.dxxredux.AUTOMATE --es script $scriptBasename" | Out-Null
 
 Write-Host "  Monitoring for result (timeout: ${TIMEOUT_SEC}s)..."
 

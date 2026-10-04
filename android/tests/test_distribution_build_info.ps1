@@ -2,7 +2,7 @@
 # Inspect actual About text and log headers from an installed distribution
 param(
     [string]$Serial = $env:ANDROID_SERIAL,
-    [string]$Apk = (Join-Path $PSScriptRoot '../app/build/outputs/apk/debug/app-debug.apk')
+    [string]$Apk = $(if ($env:DXX_TEST_APK) { $env:DXX_TEST_APK } else { Join-Path $PSScriptRoot '../app/build/outputs/apk/debug/app-debug.apk' })
 )
 
 $ErrorActionPreference = 'Stop'
@@ -21,6 +21,7 @@ $distribution = switch ($script:PACKAGE) {
     'com.dxxredux.app.github.legacy' { 'Sideload (GitHub, legacy)' }
     'com.dxxredux.app.github' { 'Sideload (GitHub)' }
     'com.dxxredux.app' { 'Play Store' }
+    'com.dxxredux.app.nsdtest' { 'Play Store' }
     default { throw 'Unexpected application ID' }
 }
 if ($badging -notmatch "(?m)^(?:sdkVersion|minSdkVersion):'([0-9]+)'") { throw 'Missing minimum SDK' }

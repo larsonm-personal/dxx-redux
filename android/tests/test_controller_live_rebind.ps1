@@ -2,12 +2,12 @@
 # Verify launcher edits reach the same running engine on return to the game
 param(
     [ValidateSet('d1', 'd2')][string]$Game = 'd2',
-    [string]$Serial = 'emulator-5554'
+    [string]$Serial
 )
 
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
-$env:ANDROID_SERIAL = $Serial
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
 $evidenceDir = Join-Path $script:REPO_ROOT 'temp'
 $baselineLog = Join-Path $evidenceDir "controller-live-rebind-$Game-baseline.log"
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts @($baselineLog)
@@ -48,7 +48,7 @@ function Wait-RebindResult([string]$RunId) {
 
 $launcherScript = Push-RebindFixture 'launcher'
 $gameScript = Push-RebindFixture 'game'
-Adb -AdbArgs @('shell', 'am', 'start', '-f', '0x20000', '-n', "$($script:PACKAGE)/.SetupActivity") | Out-Null
+Adb -AdbArgs @('shell', 'am', 'start', '-f', '0x20000', '-n', "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
 $launcherRunId = [guid]::NewGuid().ToString('N')
 Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_AUTOMATE', '--es', 'script', $launcherScript, '--es', 'run_id', $launcherRunId) | Out-Null
 Wait-RebindResult $launcherRunId

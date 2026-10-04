@@ -3,6 +3,33 @@
 From the repository root, run `pwsh -File android/run_all_tests.ps1` and choose
 `1`, or pass `-SampleSeed 254` for an unattended, reproducible selection.
 
+For the basic single-device tier, choose `S` or run:
+
+```powershell
+pwsh -File android/run_all_tests.ps1 -SingleDevice
+pwsh -File android/run_all_tests.ps1 -SingleDevice -Serial JYPR42510121028
+pwsh -File android/helpers/run_test.ps1 test_launch_to_automap.jsonc -Serial JYPR42510121028
+```
+
+Interactive suite, quick-suite and automation runs offer `1. emulator` followed
+by connected physical devices when neither `-Serial` nor `ANDROID_SERIAL` is
+set. Use `-Serial emulator` to select the usual AVD explicitly. Redirected and
+noninteractive runs keep the emulator default. Child tests inherit the chosen
+serial. `-ListTests` and `-HostOnly` never prompt for a device.
+
+Selecting a physical device runs only the basic single-device tier, excluding
+host, extraction, server and two-emulator tiers. It builds and installs the
+isolated `com.dxxredux.app.nsdtest` diagnostic app and stages the same game data
+as emulator tests. Its preferences and test saves are reset by the suite; normal
+Play and sideload app data are preserved. Recovery restarts the test app and
+checks the selected ADB transport. It never boots, reboots or replaces a phone
+with an emulator. Emulator crash injection and console-network fixtures are
+reported as skipped on physical devices.
+
+Physical runs keep the display awake while plugged in for each test and restore
+the prior setting afterward, including child timeouts. Explicit screen-lock
+lifecycle steps still work. Securely locked devices require normal user unlock.
+
 The default suite runs fixed integration owners, inexpensive host checks, the
 complete headless input-demo corpus with graphics canaries, and rotating
 scenario families. Physical routing has one owner with fixed canaries and one

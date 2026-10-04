@@ -1,10 +1,108 @@
 package com.dxxredux.app
 
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class ControllerAxisResponseTest {
+    @Test
+    fun mappingDefaultsCoverFullAndSingleDirectionAxes() {
+        val fine = ControllerAxisResponse(0.25f, 0.5f)
+        val linear = ControllerAxisResponse(1f, 0f)
+        for (function in listOf("Pitch U/D", "Turn L/R", "Pitch Up", "Pitch Down", "Turn Left", "Turn Right")) {
+            assertEquals(fine, defaultControllerAxisResponse(function))
+        }
+        for (function in listOf(
+            "Slide L/R",
+            "Slide U/D",
+            "Throttle",
+            "Bank L/R",
+            "Slide Left",
+            "Slide Right",
+            "Slide Up",
+            "Slide Down",
+            "Accelerate",
+            "Reverse",
+            "Bank Left",
+            "Bank Right",
+        )) {
+            assertEquals(linear, defaultControllerAxisResponse(function))
+        }
+    }
+
+    @Test
+    fun mappingChangesSetDefaultsWithoutResettingUnchangedCustomCurves() {
+        val custom = ControllerAxisResponse(0.7f, 0.8f)
+        for (function in listOf(
+            "Pitch U/D",
+            "Turn L/R",
+            "Slide U/D",
+            "Slide L/R",
+            "Throttle",
+            "Bank L/R",
+            "Pitch Up",
+            "Turn Left",
+            "Accelerate",
+            "Reverse",
+        )) {
+            assertEquals(
+                defaultControllerAxisResponse(function),
+                controllerResponseAfterMappingChange(null, function, custom),
+            )
+            assertEquals(custom, controllerResponseAfterMappingChange(function, function, custom))
+            assertEquals(custom, controllerResponseAfterMappingChange(function, null, custom))
+        }
+        assertEquals(
+            ControllerAxisResponse.LINEAR,
+            controllerResponseAfterMappingChange("Turn L/R", "Slide L/R", custom),
+        )
+        assertEquals(ControllerAxisResponse.FINE, controllerResponseAfterMappingChange("Throttle", "Pitch U/D", custom))
+        assertEquals(
+            ControllerAxisResponse.LINEAR,
+            controllerResponseAfterMappingChange("Fire Primary", "Accelerate", custom),
+        )
+        assertEquals(custom, controllerResponseAfterMappingChange("Pitch U/D", "Fire Primary", custom))
+    }
+
+    @Test
+    fun defaultsFillMissingCurvesWhileStoredCustomCurvesSurviveReload() {
+        val custom = ControllerAxisResponse(0.9f, 0.65f)
+        val config =
+            ControllerConfigState(
+                bindings = mapOf("LS_X" to "Turn L/R", "RS_X" to "Slide L/R", "LT" to "Pitch Up", "RT" to "Reverse"),
+                axisResponses = mapOf("LS_X" to custom, "RS_X" to ControllerAxisResponse.FINE),
+            )
+        val loaded = controllerConfigStateFromHumanJson(controllerConfigStateToHumanJson(config)).value!!
+        assertEquals(custom, loaded.axisResponses["LS_X"])
+        assertEquals(ControllerAxisResponse.FINE, loaded.axisResponses["RS_X"])
+        assertEquals(ControllerAxisResponse.FINE, loaded.axisResponses["LT"])
+        assertEquals(ControllerAxisResponse.LINEAR, loaded.axisResponses["RT"])
+        val fresh = ControllerConfigState(bindings = config.bindings)
+        assertEquals(ControllerAxisResponse.FINE, fresh.axisResponses["LS_X"])
+        assertEquals(ControllerAxisResponse.LINEAR, fresh.axisResponses["RS_X"])
+    }
+
+    @Test
+    fun shippedPresetExplicitlyUsesFineLookAndLinearMovement() {
+        val json = JSONObject(File("src/main/assets/configs/controller/default.json").readText())
+        val responses = json.getJSONObject("axis_responses")
+        val config = controllerConfigStateFromHumanJson(json).value!!
+        for (axis in AXIS_CONTROLS.keys) {
+            val expected =
+                if (axis == "RS_X" ||
+                    axis == "RS_Y"
+                ) {
+                    ControllerAxisResponse.FINE
+                } else {
+                    ControllerAxisResponse.LINEAR
+                }
+            assertEquals(expected, ControllerAxisResponse.fromJson(responses.getJSONObject(axis)))
+            assertEquals(expected, config.axisResponses[axis])
+        }
+    }
+
     @Test
     fun actualReferenceValuesAndPhysicalDeadzone() {
         val response = ControllerAxisResponse(0.25f, 0.5f)

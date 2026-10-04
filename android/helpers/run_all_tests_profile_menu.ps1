@@ -16,6 +16,7 @@ function Select-RunAllTestsProfile {
     Write-Host ''
     Write-Host 'DXX-Redux test suite' -ForegroundColor Cyan
     Write-Host '  1. Run the unattended suite (integration owners + rotating scenarios)'
+    Write-Host '  S. Run the basic single-device suite (emulator or connected phone)'
     Write-Host '  A. Run every retained unattended scenario and route case (long)'
     Write-Host '  T. Resumable hash-ring sample targeting 45 minutes'
     Write-Host '  B. Regenerate level metadata benchmark history'
@@ -24,6 +25,7 @@ function Select-RunAllTestsProfile {
     while ($true) {
         switch ((& $ReadChoice).Trim().ToLowerInvariant()) {
             '1' { return 'Full' }
+            's' { return 'SingleDevice' }
             'all' { return 'Exhaustive' }
             'full' { return 'Exhaustive' }
             'a' { return 'Exhaustive' }
@@ -36,7 +38,7 @@ function Select-RunAllTestsProfile {
             'replay' { return 'ReplayDemo' }
             'q' { return 'Cancel' }
             'quit' { return 'Cancel' }
-            default { Write-Host 'Enter 1, A, T, B, R, or Q' -ForegroundColor Yellow }
+            default { Write-Host 'Enter 1, S, A, T, B, R, or Q' -ForegroundColor Yellow }
         }
     }
 }

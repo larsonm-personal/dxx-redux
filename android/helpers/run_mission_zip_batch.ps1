@@ -15,7 +15,8 @@ param(
     [int]$MaxZips = 0,
     [int]$TimeoutSeconds = 900,
     [int]$SetupReadyTimeoutSeconds = 120,
-    [int]$MaxEmulatorRecoveries = 5
+    [int]$MaxEmulatorRecoveries = 5,
+    [string]$Serial
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,9 +27,8 @@ $androidRoot = Split-Path -Parent $helpersDir
 . (Join-Path $PSScriptRoot 'mission_rar_archive.ps1')
 . (Join-Path $helpersDir "mission_zip_batch_recovery.ps1")
 . (Join-Path $helpersDir "normalized_json_text.ps1")
-if (-not $env:ANDROID_SERIAL) {
-    $env:ANDROID_SERIAL = $script:PRIMARY_EMULATOR_SERIAL
-}
+Initialize-AndroidTestTarget -Serial $Serial | Out-Null
+Assert-IsolatedPhysicalTestApp
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -448,12 +448,6 @@ function Get-MissionZipLaunchButtonText {
     return "Launch Descent 2"
 }
 
-function Get-MissionZipGameSelectButtonText {
-    param([Parameter(Mandatory = $true)][ValidateSet("d1", "d2")][string]$GameId)
-    if ($GameId -eq "d1") { return "Descent 1" }
-    return "Descent 2"
-}
-
 function Get-MissionZipStartConfirmAction {
     param([Parameter(Mandatory = $true)][ValidateSet("d1", "d2")][string]$GameId)
     if ($GameId -eq "d1") { return "key" }
@@ -465,7 +459,6 @@ function Resolve-MissionZipTemplate {
         [Parameter(Mandatory = $true)][string]$DeviceZipName,
         [Parameter(Mandatory = $true)][string]$Label,
         [Parameter(Mandatory = $true)][ValidateSet("d1", "d2")][string]$GameId,
-        [Parameter(Mandatory = $true)][string]$GameSelectButtonText,
         [Parameter(Mandatory = $true)][string]$MissionStartConfirmAction,
         [Parameter(Mandatory = $true)][string]$LaunchButtonText,
         [Parameter(Mandatory = $true)][string]$OutputPath,
@@ -478,7 +471,6 @@ function Resolve-MissionZipTemplate {
     $text = $text.Replace('${ZIP_LABEL}', (ConvertTo-JsonStringContent $Label))
     $text = $text.Replace('${ZIP_DISPLAY_NAME}', (ConvertTo-JsonStringContent $DeviceZipName))
     $text = $text.Replace('${GAME_ID}', (ConvertTo-JsonStringContent $GameId))
-    $text = $text.Replace('${GAME_SELECT_BUTTON_TEXT}', (ConvertTo-JsonStringContent $GameSelectButtonText))
     $text = $text.Replace('${MISSION_START_CONFIRM_ACTION}', (ConvertTo-JsonStringContent $MissionStartConfirmAction))
     $text = $text.Replace('${LAUNCH_BUTTON_TEXT}', (ConvertTo-JsonStringContent $LaunchButtonText))
     [IO.File]::WriteAllText($OutputPath, $text + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
@@ -710,12 +702,12 @@ foreach ($zip in $zips) {
     }
 
     $launchButtonText = Get-MissionZipLaunchButtonText -GameId $gameHint.Game
-    $gameSelectButtonText = Get-MissionZipGameSelectButtonText -GameId $gameHint.Game
     $missionStartConfirmAction = Get-MissionZipStartConfirmAction -GameId $gameHint.Game
     Ensure-MissionZipBatchDeviceReady -Reason "preparing $($zip.Name)"
     $recoverAfterRun = $false
     try {
-        Resolve-MissionZipTemplate -DeviceZipName $deviceZipName -Label $label -GameId $gameHint.Game -GameSelectButtonText $gameSelectButtonText -MissionStartConfirmAction $missionStartConfirmAction -LaunchButtonText $launchButtonText -OutputPath $resolvedScript -MetadataOnly:$MetadataOnly
+        Resolve-MissionZipTemplate -DeviceZipName $deviceZipName -Label $label -GameId $gameHint.Game -MissionStartConfirmAction $missionStartConfirmAction -LaunchButtonText $launchButtonText -OutputPath $resolvedScript -MetadataOnly:$MetadataOnly
+        $resolvedScript = Resolve-TestScript -ScriptPath $resolvedScript -GameId $gameHint.Game
         for ($automationAttempt = 1; $automationAttempt -le 2; $automationAttempt++) {
             Invoke-MissionZipPreparationWithRetry -ZipName $zip.Name -Prepare {
                 Push-AppPrivateFile -LocalPath $zip.FullName -DeviceRelativePath "mission_zip_batch_cache/$deviceZipName"
@@ -846,7 +838,7 @@ $failedSummaryPath = Join-Path $OutDir "failed_zips.txt"
 if ($failed.Count -gt 0) {
     $failedLines = @()
     foreach ($item in $failed) {
-        $reason = if ($item.Contains("reason") -and $item["reason"]) { $item["reason"] } else { "automation failed" }
+        $reason = if ($item.PSObject.Properties['reason'] -and $item.reason) { $item.reason } else { "automation failed" }
         $failedLines += "$($item.name)`t$reason"
     }
     [IO.File]::WriteAllText($failedSummaryPath, ($failedLines -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
@@ -857,7 +849,7 @@ Write-Status "Mission ZIP batch complete: $($results.Count) total, $($passed.Cou
 if ($failed.Count -gt 0) {
     Write-Status "Failed ZIPs:" "Red"
     foreach ($item in $failed) {
-        $reason = if ($item.Contains("reason") -and $item["reason"]) { $item["reason"] } else { "automation failed" }
+        $reason = if ($item.PSObject.Properties['reason'] -and $item.reason) { $item.reason } else { "automation failed" }
         Write-Host "  $($item.name) -- $reason" -ForegroundColor Red
     }
     Write-Status "Failed ZIP summary: $failedSummaryPath" "Yellow"
