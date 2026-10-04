@@ -468,6 +468,7 @@ $extractTests = @(
 $noInfraTests = @(
     "test_combined_package_identity",
     "test_github_release",
+    "test_publish_menu",
     "test_download_verification",
     "test_d2xxl_sound_format",
     "test_d2xxl_tga_layout",

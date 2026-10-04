@@ -1,20 +1,25 @@
 #!/usr/bin/env pwsh
-# upload_to_test.ps1 -- Automated AAB build, sign, and Play Store upload
+# Menu for Play Store uploads, GitHub releases, or both
 #
 # Computes versionCode = commitCount*10 + rev, where rev auto-increments
 # if the target track already has a version from the same commit count.
 #
 # Usage:
-#   .\0_upload_to_test.ps1                     # Build (Internal) and upload to internal track
+#   .\0_upload_to_test.ps1                     # Menu; Enter selects Play Store
 #   .\0_upload_to_test.ps1 -BuildType "1"     # Build Debug instead
 #   .\0_upload_to_test.ps1 -BuildType "2"     # Build Release instead
 #   .\0_upload_to_test.ps1 -TrackName "alpha"  # Upload to alpha track instead
 #   .\0_upload_to_test.ps1 -BuildOnly          # Build through this wrapper without uploading
+#   .\0_upload_to_test.ps1 -Action 2 -ReleaseVersion 1.2.0  # GitHub release only
+#   .\0_upload_to_test.ps1 -Action 3 -ReleaseVersion 1.2.0  # Both, without prompts
+# Existing BuildType/TrackName/BuildOnly invocations keep the Play Store path unless Action is supplied
 
 param(
     [string]$BuildType = "3",        # Default: Internal (debug + release signing)
     [string]$TrackName = "internal",  # Default: internal track
-    [switch]$BuildOnly                # Skip Play Store auth/query/upload and only run the build step
+    [switch]$BuildOnly,               # Build selected destinations locally without publishing
+    [ValidateSet('1', '2', '3')][string]$Action,
+    [ValidatePattern('^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$')][string]$ReleaseVersion
 )
 
 $ErrorActionPreference = "Stop"
@@ -39,13 +44,7 @@ function Get-UploadedBuildStamp {
     return "$($dateMatch.Groups[1].Value) $($timeMatch.Groups[1].Value)"
 }
 
-try {
-    Write-Host ""
-    Write-Host "================================"
-    Write-Host "DXX-Redux Automated Build & Upload"
-    Write-Host "================================"
-    Write-Host ""
-
+function Invoke-PlayBuildAndUpload {
     # Load shared auth helpers
     . "$PSScriptRoot\helpers\playstore-auth.ps1"
 
@@ -53,7 +52,9 @@ try {
     #  Query the target track to determine version code with rev
     # ---------------------------------------------------------------
 
-    $commitCount = [int](git -C $repoRoot rev-list --count HEAD).Trim()
+    $commitCountText = git -C $repoRoot rev-list --count HEAD
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot read the Git commit count' }
+    $commitCount = [int]$commitCountText.Trim()
     Write-Host "Git commit count: $commitCount"
 
     $rev = 0
@@ -150,6 +151,58 @@ try {
     Write-Host "================================"
     Write-Host ""
 
+}
+
+try {
+    Write-Host ""
+    Write-Host "================================"
+    Write-Host "DXX-Redux Build & Publish"
+    Write-Host "================================"
+    Write-Host ""
+
+    if (-not $Action) {
+        if ($BuildOnly -or $PSBoundParameters.ContainsKey('BuildType') -or $PSBoundParameters.ContainsKey('TrackName')) {
+            $Action = '1'
+        } else {
+            Write-Host "  1) Build and upload to Play Store (default)"
+            Write-Host "  2) Build and release on GitHub"
+            Write-Host "  3) Do both"
+            Write-Host ""
+            while (-not $Action) {
+                $choice = (Read-Host 'Select action (1-3, default 1)').Trim()
+                if (-not $choice) { $choice = '1' }
+                if ($choice -in @('1', '2', '3')) {
+                    $Action = $choice
+                } else {
+                    Write-Host 'Enter a number between 1 and 3' -ForegroundColor Yellow
+                }
+            }
+        }
+    }
+
+    if ($Action -eq '1' -and $ReleaseVersion) { throw '-ReleaseVersion requires -Action 2 or 3' }
+    if ($Action -in @('2', '3')) {
+        # Collect and validate the version before authentication, building or publishing
+        while (-not $ReleaseVersion) {
+            $candidate = (Read-Host 'GitHub release version (for example 1.2.0)').Trim()
+            $versionValidation = (Get-Variable ReleaseVersion).Attributes | Where-Object { $_ -is [System.Management.Automation.ValidatePatternAttribute] }
+            if ($candidate -cmatch $versionValidation.RegexPattern) {
+                $ReleaseVersion = $candidate
+            } else {
+                Write-Host 'Enter a version like 1.2.0 or 1.2.0-rc.1' -ForegroundColor Yellow
+            }
+        }
+    }
+
+    if ($Action -in @('1', '3')) { Invoke-PlayBuildAndUpload }
+    if ($Action -in @('2', '3')) {
+        Write-Host "Building GitHub release $ReleaseVersion"
+        $releaseParameters = @{ Version = $ReleaseVersion }
+        if ($BuildOnly) { $releaseParameters.BuildOnly = $true }
+        & (Join-Path $PSScriptRoot 'release-github.ps1') @releaseParameters
+        if ($LASTEXITCODE -ne 0) { throw "GitHub release failed with exit code $LASTEXITCODE" }
+        Write-Host "GitHub release $ReleaseVersion completed successfully"
+    }
 } catch {
     Write-Host ""
     Write-Host "ERROR: $_"

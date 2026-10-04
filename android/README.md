@@ -14,6 +14,18 @@
 
 # google play console setup
 
+Run `./android/0_upload_to_test.ps1` for the publishing menu:
+
+1. Build and upload to Play Store (default; Internal build, internal track)
+2. Build and release both Android APKs on GitHub
+3. Do both, with Play Store first and GitHub second
+
+Options 2 and 3 ask for the GitHub release version before work starts. Use
+`-Action 3 -ReleaseVersion 1.2.0` to run both without prompts. `-BuildOnly` builds
+the selected destinations locally; existing `-BuildType`, `-TrackName` and
+`-BuildOnly` invocations keep the Play Store path unless `-Action` is supplied.
+GitHub publishing uses the release helper's clean, pushed source requirement.
+
 Run `./android/1_build_aab_apk.ps1 -BuildType 2` to build a release AAB and a
 signed universal direct-install APK together. Release/Internal build the Play
 AAB (`com.dxxredux.app`), then the GitHub APK (`com.dxxredux.app.github`), reusing

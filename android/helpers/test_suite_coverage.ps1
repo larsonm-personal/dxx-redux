@@ -65,6 +65,7 @@ function Get-TestSuiteCoveragePolicy {
         )
         core = @(
             'test_github_release'
+            'test_publish_menu'
             'test_7zip_install'
             'test_managed_dependencies'
             'test_sdk_package_inventory'
