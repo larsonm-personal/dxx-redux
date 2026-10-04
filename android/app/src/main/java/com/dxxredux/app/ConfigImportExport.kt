@@ -347,7 +347,7 @@ object ConfigImportExport {
 
         combined.put("host_defaults", exportHostDefaults(context))
 
-        return shareJson(context, combined, "dxx_redux_config.json", "Share Config")
+        return shareJson(context, combined, "dxx_revival_config.json", "Share Config")
     }
 
     // ── Import ──────────────────────────────────────────────────────────────

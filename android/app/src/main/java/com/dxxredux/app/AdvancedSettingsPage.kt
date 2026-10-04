@@ -1767,7 +1767,7 @@ private fun RecordedInputDemosSection(
     Text("Newly-Recorded Demos", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
     Text(
-        "Quick-recorded .dximdemo files from d1x-redux and d2x-redux. " +
+        "Quick-recorded .dximdemo files from Descent 1 and Descent 2. " +
             "Play launches the staged input demo directly, and paired .rngtrace.jsonl " +
             "and .dem sidecars still export with the demo and follow it into the " +
             "active set ($activeSetName)",

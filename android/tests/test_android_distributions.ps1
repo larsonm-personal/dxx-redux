@@ -24,10 +24,10 @@ if (-not $NoBuild -and (Test-Path -LiteralPath $canonicalApk)) {
 }
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $distributions = @(
-    @{ Name = 'play'; Id = 'com.dxxredux.app'; Minimum = $versions.CURRENT_MIN_SDK; Target = $versions.CURRENT_TARGET_SDK; Properties = @('-PgithubRelease=false', '-PlegacyRelease=false') },
-    @{ Name = 'github'; Id = 'com.dxxredux.app.github'; Minimum = $versions.CURRENT_MIN_SDK; Target = $versions.CURRENT_TARGET_SDK; Properties = @('-PgithubRelease=true', '-PlegacyRelease=false') },
-    @{ Name = 'legacy'; Id = 'com.dxxredux.app.github.legacy'; Minimum = $versions.LEGACY_MIN_SDK; Target = $versions.LEGACY_TARGET_SDK; Properties = @('-PgithubRelease=true', '-PlegacyRelease=true') },
-    @{ Name = 'ci'; Id = 'com.dxxredux.app.ci'; Minimum = $versions.CURRENT_MIN_SDK; Target = $versions.CURRENT_TARGET_SDK; Properties = @('-PciApk=true', '-PlegacyRelease=false') }
+    @{ Name = 'play'; Id = 'com.dxxredux.app'; Label = 'DXX-Revival'; Minimum = $versions.CURRENT_MIN_SDK; Target = $versions.CURRENT_TARGET_SDK; Properties = @('-PgithubRelease=false', '-PlegacyRelease=false') },
+    @{ Name = 'github'; Id = 'com.dxxredux.app.github'; Label = 'DXX-Revival (GitHub)'; Minimum = $versions.CURRENT_MIN_SDK; Target = $versions.CURRENT_TARGET_SDK; Properties = @('-PgithubRelease=true', '-PlegacyRelease=false') },
+    @{ Name = 'legacy'; Id = 'com.dxxredux.app.github.legacy'; Label = 'DXX-Revival (Legacy)'; Minimum = $versions.LEGACY_MIN_SDK; Target = $versions.LEGACY_TARGET_SDK; Properties = @('-PgithubRelease=true', '-PlegacyRelease=true') },
+    @{ Name = 'ci'; Id = 'com.dxxredux.app.ci'; Label = 'DXX-Revival (CI)'; Minimum = $versions.CURRENT_MIN_SDK; Target = $versions.CURRENT_TARGET_SDK; Properties = @('-PciApk=true', '-PlegacyRelease=false') }
 )
 try {
     foreach ($distribution in $distributions) {
@@ -43,6 +43,7 @@ try {
         if ($badging -notmatch "package: name='$([regex]::Escape($distribution.Id))'" -or
             $badging -notmatch "(?m)^(?:sdkVersion|minSdkVersion):'$($distribution.Minimum)'\s*$" -or
             $badging -notmatch "(?m)^targetSdkVersion:'$($distribution.Target)'\s*$") { throw "Incorrect package/SDK in $apk" }
+        if ($badging -notmatch "(?m)^application-label:'$([regex]::Escape($distribution.Label))'\s*$") { throw "Incorrect Android app label in $apk" }
         $archive = [IO.Compression.ZipFile]::OpenRead($apk)
         try {
             foreach ($abi in @('armeabi-v7a', 'arm64-v8a', 'x86_64')) {

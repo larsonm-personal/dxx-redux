@@ -219,7 +219,7 @@ object UpnpClient {
             |<NewInternalPort>$internalPort</NewInternalPort>
             |<NewInternalClient>$internalClient</NewInternalClient>
             |<NewEnabled>1</NewEnabled>
-            |<NewPortMappingDescription>dxx-redux</NewPortMappingDescription>
+            |<NewPortMappingDescription>dxx-revival</NewPortMappingDescription>
             |<NewLeaseDuration>$UPNP_LEASE_SECONDS</NewLeaseDuration>
             |</u:AddPortMapping>
             |</s:Body>

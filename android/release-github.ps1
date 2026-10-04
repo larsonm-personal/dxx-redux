@@ -280,7 +280,7 @@ if ($badging -notmatch "(?m)^targetSdkVersion:'([0-9]+)'\s*$") { throw 'APK targ
 $targetSdk = [int]$Matches[1]
 if ($targetSdk -lt $minSdk) { throw 'APK target SDK is lower than its minimum SDK' }
 $sdkLabel = "minsdk: api $minSdk (android $(Get-AndroidVersionLabel $minSdk)), targetsdk: api $targetSdk (android $(Get-AndroidVersionLabel $targetSdk))"
-$releaseTitle = "DXX-Redux $Version for Android"
+$releaseTitle = "DXX-Revival $Version for Android"
 if ($Legacy) { $releaseTitle += ' (Legacy)' }
 $releaseTitle += " - $sdkLabel"
 Write-Host $sdkLabel
@@ -337,7 +337,7 @@ if ($UploadOnly) {
 # Regenerate from the verified APK even when recovering an older saved build
 $notes = @"
 <!-- dxx-redux-build:start -->
-DXX-Redux $Version for Android ($distribution).
+DXX-Revival $Version for Android ($distribution).
 
 $sdkLabel
 
@@ -375,10 +375,10 @@ if (-not $BuildOnly) {
     if (-not $legacyInfo.sourceVerified) { throw 'Legacy APK source validation did not pass; rebuild both editions' }
 }
 $legacyAndroid = Get-AndroidVersionLabel $legacyInfo.minSdk
-$recommendedApkName = "dxx-redux-$Version-android-1-recommended-universal.apk"
+$recommendedApkName = "dxx-revival-$Version-android-1-recommended-universal.apk"
 $recommendedApk = Join-Path $outDir $recommendedApkName
 Copy-Item -LiteralPath $apk -Destination $recommendedApk -Force
-$legacyApkName = "dxx-redux-$Version-android-2-only-for-android-$legacyAndroid-universal.apk"
+$legacyApkName = "dxx-revival-$Version-android-2-only-for-android-$legacyAndroid-universal.apk"
 $legacyApk = Join-Path $outDir $legacyApkName
 Copy-Item -LiteralPath (Join-Path $legacyDir "dxx-redux-$Version-android-legacy-universal.apk") -Destination $legacyApk -Force
 $legacySdkLabel = "minsdk: api $($legacyInfo.minSdk) (android $legacyAndroid), targetsdk: api $($legacyInfo.targetSdk) (android $(Get-AndroidVersionLabel $legacyInfo.targetSdk))"
@@ -409,7 +409,7 @@ Both APKs include ARM32, ARM64 and x86_64
 $notes = Merge-ReleaseNotes -Generated $combinedNotes -Existing (Get-Content -LiteralPath $notesPath -Raw -Encoding UTF8)
 [IO.File]::WriteAllText($notesPath, $notes.TrimEnd() + "`n")
 if ($BuildOnly) { return }
-$releaseTitle = "DXX-Redux $Version for Android"
+$releaseTitle = "DXX-Revival $Version for Android"
 $existingRelease = Get-ExistingRelease
 $ghRepository = "github.com/$Repository"
 $createArgs = @('release', 'create', $tag, $recommendedApk, $legacyApk,
@@ -430,7 +430,8 @@ try {
         # Remove old helper uploads after the replacement succeeds; leave unrelated assets alone
         foreach ($asset in $existingRelease.assets) {
             if ($asset.name -in @('build-info.json', 'build.json', 'SHA256SUMS.txt', "dxx-redux-$Version-android-legacy-universal.apk",
-                    $apkName, "dxx-redux-$Version-android-only-for-android-$legacyAndroid-universal.apk")) {
+                    $apkName, "dxx-redux-$Version-android-only-for-android-$legacyAndroid-universal.apk",
+                    "dxx-redux-$Version-android-1-recommended-universal.apk", "dxx-redux-$Version-android-2-only-for-android-$legacyAndroid-universal.apk")) {
                 Invoke-ReleaseTool gh @('release', 'delete-asset', $tag, $asset.name, '--repo', $ghRepository, '--yes')
             }
         }

@@ -57,6 +57,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -4398,7 +4399,7 @@ private fun SetupScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "DXX-Redux Setup",
+                        text = "${stringResource(R.string.app_brand_name)} Setup",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -4423,7 +4424,7 @@ private fun SetupScreen(
                                 Text("Store page")
                             }
                         },
-                        title = { Text("DXX-Redux") },
+                        title = { Text(stringResource(R.string.app_brand_name)) },
                         text = {
                             val arch = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown"
                             val buildLine =

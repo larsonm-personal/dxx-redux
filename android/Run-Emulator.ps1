@@ -243,7 +243,7 @@ if ($LASTEXITCODE -eq 0) {
             if ($maxId) { $maxId = [int]$maxId.Trim() } else { $maxId = 0 }
             $nextId = $maxId + 1
 
-            & $ADB shell "echo `"INSERT INTO favorites (_id, title, intent, container, screen, cellX, cellY, spanX, spanY, itemType, profileId) VALUES ($nextId, 'DXX-Redux', '$ICON_INTENT', -100, 0, 0, 3, 1, 1, 0, 0);`" > $TMPSQL" 2>$null
+            & $ADB shell "echo `"INSERT INTO favorites (_id, title, intent, container, screen, cellX, cellY, spanX, spanY, itemType, profileId) VALUES ($nextId, 'DXX-Revival', '$ICON_INTENT', -100, 0, 0, 3, 1, 1, 0, 0);`" > $TMPSQL" 2>$null
             & $ADB shell "sqlite3 '$launcherDb' < $TMPSQL" 2>$null
             & $ADB shell "rm -f $TMPSQL" 2>$null
 

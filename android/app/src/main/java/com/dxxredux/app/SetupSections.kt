@@ -33,6 +33,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -935,7 +936,9 @@ private fun ModDetailsDialog(
                                 ModDetailSectionTitle("Mission variant")
                                 DetailRow(
                                     "Selected variant",
-                                    "${selection.selected.label} (recommended for DXX Redux)",
+                                    "${selection.selected.label} (recommended for ${stringResource(
+                                        R.string.app_brand_name,
+                                    )})",
                                 )
                                 ModDetailLine(selection.selected.missionPath)
                                 if (selection.excluded.isNotEmpty()) {

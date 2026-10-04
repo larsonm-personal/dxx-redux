@@ -22,7 +22,7 @@ object MissionZip {
     private const val MAX_DOCX_TOTAL_BYTES = 16L * 1024L * 1024L
 
     const val UNSUPPORTED_D2XXL_HOG_MESSAGE =
-        "This level pack uses the D2X-XL extended HOG format, which DXX Redux does not currently support"
+        "This level pack uses the D2X-XL extended HOG format, which DXX-Revival does not currently support"
 
     class UnsupportedD2xxlHogException : IllegalArgumentException(UNSUPPORTED_D2XXL_HOG_MESSAGE)
 

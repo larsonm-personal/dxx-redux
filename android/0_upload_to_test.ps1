@@ -156,7 +156,7 @@ function Invoke-PlayBuildAndUpload {
 try {
     Write-Host ""
     Write-Host "================================"
-    Write-Host "DXX-Redux Build & Publish"
+    Write-Host "DXX-Revival Build & Publish"
     Write-Host "================================"
     Write-Host ""
 

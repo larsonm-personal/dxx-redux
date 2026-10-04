@@ -18,7 +18,11 @@
 
 #define BASED_VERSION "Registered v1.5 Jan 5, 1996"
 #define VERSION DXX_VERSION_MAJOR "." DXX_VERSION_MINOR "." DXX_VERSION_MICRO
+#ifdef __ANDROID__
+#define DESCENT_VERSION "DXX-Revival (Descent 1) " RH_VERSION
+#else
 #define DESCENT_VERSION "D1X-Redux " RH_VERSION
+#endif
 
 extern const char g_descent_build_datetime[21];
 

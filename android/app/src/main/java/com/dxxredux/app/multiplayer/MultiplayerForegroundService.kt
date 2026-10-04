@@ -22,6 +22,7 @@ import android.os.SystemClock
 import android.util.Log
 import com.dxxredux.app.DebugLog
 import com.dxxredux.app.DebugLogCategory
+import com.dxxredux.app.R
 
 /**
  * Foreground service that keeps the main process alive during multiplayer.
@@ -118,7 +119,7 @@ class MultiplayerForegroundService : Service() {
             }
         val notification =
             builder
-                .setContentTitle("DXX-Redux Multiplayer")
+                .setContentTitle("${getString(R.string.app_brand_name)} Multiplayer")
                 .setContentText(if (serviceLeases.gameActive) "Multiplayer game in progress" else "LAN lobby active")
                 .setSmallIcon(android.R.drawable.ic_menu_compass)
                 .setOngoing(true)

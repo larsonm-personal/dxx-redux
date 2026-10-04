@@ -10,6 +10,7 @@ def legacyRelease = (project.findProperty('legacyRelease') ?: 'false').toBoolean
 // CI packages use direct-install sources and are signed separately by the workflow
 def ciApk = (project.findProperty('ciApk') ?: 'false').toBoolean()
 def githubRelease = ciApk || legacyRelease || (project.findProperty('githubRelease') ?: 'false').toBoolean()
+def appBrandName = 'DXX-Revival'
 
 // Load tool versions from central config
 def toolVersions = new Properties()
@@ -390,7 +391,7 @@ android {
         applicationId ciApk ? "com.dxxredux.app.ci" : legacyRelease ? "com.dxxredux.app.github.legacy" :
             (githubRelease ? "com.dxxredux.app.github" : "com.dxxredux.app")
         manifestPlaceholders = [
-            launcherLabel: ciApk ? 'DXX-Redux (CI)' : legacyRelease ? 'DXX-Redux (Legacy)' : (githubRelease ? 'DXX-Redux (GitHub)' : 'DXX-Redux'),
+            launcherLabel: ciApk ? "${appBrandName} (CI)" : legacyRelease ? "${appBrandName} (Legacy)" : (githubRelease ? "${appBrandName} (GitHub)" : appBrandName),
             playGamesEnabled: (!githubRelease).toString()
         ]
         minSdk distributionMinSdk
@@ -403,6 +404,7 @@ android {
         buildConfigField "int", "TARGET_SDK", distributionTargetSdk.toString()
         // Android 6 ART can miscompile large coroutine methods; native engines stay compiled
         resValue "bool", "legacy_vm_safe_mode", legacyRelease.toString()
+        resValue "string", "app_brand_name", appBrandName
 
         def opengl = (project.findProperty('useOpenGL') ?: 'true') == 'true'
         buildConfigField "String", "RENDERER", "\"${opengl ? 'OpenGL ES' : 'Software'}\""
@@ -434,7 +436,7 @@ android {
             // Keep the Play-signed installation and its saves intact during device experiments
             if ((project.findProperty('nsdDiagnosticApp') ?: 'false').toBoolean()) {
                 applicationIdSuffix '.nsdtest'
-                manifestPlaceholders = [launcherLabel: 'DXX-Redux NSD Test']
+                manifestPlaceholders = [launcherLabel: "${appBrandName} NSD Test"]
             }
         }
         release {

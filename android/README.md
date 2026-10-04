@@ -1,5 +1,8 @@
 # android build dependencies
 
+The Android app is branded **DXX-Revival**. Redux package IDs, namespaces, native
+library names and save directories are retained for updates and upstream merges.
+
 - see auto-download scripts in `android/get_deps/`
 - for a fresh Ubuntu VM, see `android/get_deps/README-ubuntu.md`
 - create `dependency_base.txt` in the repo root with the path to your dependency directory (e.g. `C:\local`)
@@ -75,7 +78,8 @@ Build/publish both APKs in one `android-vVERSION` release with
 `./android/release-github.ps1 -Version 1.2.0`. Add `-BuildOnly` to prepare both
 builds locally, or `-UploadOnly` to verify and publish both saved builds without
 rebuilding. `-Legacy -BuildOnly` prepares only the legacy APK locally.
-Public filenames use `android-1-recommended-universal.apk` for Android 7.0 or
+Public filenames start with `dxx-revival-VERSION-` and use
+`android-1-recommended-universal.apk` for Android 7.0 or
 newer and `android-2-only-for-android-6.0-universal.apk` for the legacy APK, after
 the shared product/version prefix. The numbers sort the recommended download
 first. Use the legacy APK only on devices unable to install the recommended APK.

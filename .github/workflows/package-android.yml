@@ -106,7 +106,7 @@ jobs:
         run: |
           mkdir -p android/build-outputs/ci-apk
           source_apk=android/app/build/outputs/apk/release/app-release-unsigned.apk
-          apk="android/build-outputs/ci-apk/dxx-redux-ci-${GITHUB_SHA:0:12}-universal-$SIGNING.apk"
+          apk="android/build-outputs/ci-apk/dxx-revival-ci-${GITHUB_SHA:0:12}-universal-$SIGNING.apk"
           if [[ "$SIGNING" == test ]]; then
             key_file="$RUNNER_TEMP/android-ci-test.jks"
             trap 'rm -f "$key_file"' EXIT

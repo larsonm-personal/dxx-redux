@@ -88,7 +88,7 @@ function gh {
     }
     if ($args[0] -eq 'release' -and $args[1] -eq 'create') {
         $title = $args[[Array]::IndexOf($args, '--title') + 1]
-        Assert-Test ($title -eq "DXX-Redux $global:dxxReleaseTestVersion for Android") 'Incorrect combined release title'
+        Assert-Test ($title -eq "DXX-Revival $global:dxxReleaseTestVersion for Android") 'Incorrect combined release title'
         foreach ($index in 3..4) { Assert-Test (Test-Path -LiteralPath $args[$index]) 'Missing upload APK' }
         Assert-Test ($args[5] -eq '--repo') 'Only the two APKs should be uploaded'
         Assert-Test ($args -contains '--draft') 'Upload must be staged as draft'
@@ -113,7 +113,8 @@ function gh {
     }
     if ($args[0] -eq 'release' -and $args[1] -eq 'delete-asset') {
         Assert-Test ($args[3] -in @('build-info.json', 'build.json', 'SHA256SUMS.txt',
-                $global:dxxReleaseTestApkName, $global:dxxReleaseTestOldCombinedLegacyName)) 'Unexpected asset deletion'
+                $global:dxxReleaseTestApkName, $global:dxxReleaseTestOldCombinedLegacyName,
+                "dxx-redux-$global:dxxReleaseTestVersion-android-1-recommended-universal.apk", "dxx-redux-$global:dxxReleaseTestVersion-android-2-only-for-android-6.0-universal.apk")) 'Unexpected asset deletion'
         Assert-Test ($global:dxxReleaseTestCalls[$global:dxxReleaseTestCalls.Count - 2] -like 'release edit *--notes-file *' -or
             $global:dxxReleaseTestCalls[$global:dxxReleaseTestCalls.Count - 2] -like 'release delete-asset *') 'Cleanup must follow successful APK and notes replacement'
         if ($global:dxxReleaseTestScenario -eq 'cleanup-failure') { $global:LASTEXITCODE = 1; return }
@@ -132,7 +133,7 @@ function gh {
         }
         Assert-Test ($args -contains '--target' -and $args -contains $global:dxxReleaseTestCommit) 'Unexpected release edit'
         $title = $args[[Array]::IndexOf($args, '--title') + 1]
-        Assert-Test ($title -eq "DXX-Redux $global:dxxReleaseTestVersion for Android") 'Existing release title was not refreshed'
+        Assert-Test ($title -eq "DXX-Revival $global:dxxReleaseTestVersion for Android") 'Existing release title was not refreshed'
         if ($global:dxxReleaseTestScenario -eq 'retarget-failure') { $global:LASTEXITCODE = 1; return }
         $global:dxxReleaseTestTarget = $global:dxxReleaseTestCommit
         return
@@ -314,8 +315,8 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     if ($global:dxxReleaseTestScenario -eq 'helper-dirty') { Add-Content (Join-Path $androidDir 'release-github.ps1') '# Local release helper edit' }
     $global:dxxReleaseTestVersion = if ($global:dxxReleaseTestScenario -eq 'draft') { '1.2.0-rc.1' } else { '1.2.0' }
     $global:dxxReleaseTestTag = "android-v$global:dxxReleaseTestVersion"
-    $global:dxxReleaseTestRecommendedName = "dxx-redux-$global:dxxReleaseTestVersion-android-1-recommended-universal.apk"
-    $global:dxxReleaseTestCombinedLegacyName = "dxx-redux-$global:dxxReleaseTestVersion-android-2-only-for-android-6.0-universal.apk"
+    $global:dxxReleaseTestRecommendedName = "dxx-revival-$global:dxxReleaseTestVersion-android-1-recommended-universal.apk"
+    $global:dxxReleaseTestCombinedLegacyName = "dxx-revival-$global:dxxReleaseTestVersion-android-2-only-for-android-6.0-universal.apk"
     $global:dxxReleaseTestOldCombinedLegacyName = "dxx-redux-$global:dxxReleaseTestVersion-android-only-for-android-6.0-universal.apk"
     $global:dxxReleaseTestApkName = if ($global:dxxReleaseTestLegacy) { "dxx-redux-$global:dxxReleaseTestVersion-android-legacy-universal.apk" } else { "dxx-redux-$global:dxxReleaseTestVersion-android-universal.apk" }
     $remoteTag = "refs/tags/$global:dxxReleaseTestTag"
@@ -338,7 +339,9 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     $global:dxxReleaseTestOutput = $out
     if ($global:dxxReleaseTestHasRelease) {
         New-Item -ItemType Directory -Path $out -Force | Out-Null
-        foreach ($name in @($global:dxxReleaseTestApkName, $global:dxxReleaseTestOldCombinedLegacyName, 'SHA256SUMS.txt', 'build-info.json', 'build.json', 'unrelated.txt')) {
+        foreach ($name in @($global:dxxReleaseTestApkName, $global:dxxReleaseTestOldCombinedLegacyName,
+                "dxx-redux-$global:dxxReleaseTestVersion-android-1-recommended-universal.apk", "dxx-redux-$global:dxxReleaseTestVersion-android-2-only-for-android-6.0-universal.apk",
+                'SHA256SUMS.txt', 'build-info.json', 'build.json', 'unrelated.txt')) {
             [IO.File]::WriteAllText((Join-Path $out $name), 'old ' + $name)
             $global:dxxReleaseTestAssets[$name] = 'old ' + $name
         }
@@ -546,7 +549,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
                 $sortedApks[1] -eq $global:dxxReleaseTestCombinedLegacyName) 'Recommended APK must sort first with no obsolete APK names'
             Assert-Test ($global:dxxReleaseTestBody.Contains("Download: $global:dxxReleaseTestRecommendedName") -and
                 $global:dxxReleaseTestBody.Contains("Download: $global:dxxReleaseTestCombinedLegacyName")) 'Release notes lack the public filenames'
-            Assert-Test ($global:dxxReleaseTestBody.Contains('Use this legacy APK only on devices that cannot install the recommended APK')) 'Legacy usage guidance is missing'
+            Assert-Test ($global:dxxReleaseTestBody.Contains('this is a special build to go one step lower on minimum android version (to 6.0). On Android 7.0 or newer, use the recommended APK instead')) 'Legacy usage guidance is missing'
             Assert-Test (([regex]::Matches($global:dxxReleaseTestBody, 'APK SHA-256:')).Count -eq 2) 'Expected one hash for each APK'
             Assert-Test ($global:dxxReleaseTestBody.Contains("Source commit: $($info.commit)")) 'Remote notes have a stale commit'
             Assert-Test ($global:dxxReleaseTestBody.Contains("Android versionCode: $($info.versionCode)")) 'Remote notes have a stale versionCode'

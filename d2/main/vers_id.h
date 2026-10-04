@@ -22,7 +22,11 @@
 
 #define BASED_VERSION "Full Version v1.2"
 #define VERSION D2XMAJOR "." D2XMINOR "." D2XMICRO
+#ifdef __ANDROID__
+#define DESCENT_VERSION "DXX-Revival (Descent 2) " RH_VERSION
+#else
 #define DESCENT_VERSION "D2X-Redux " RH_VERSION
+#endif
 
 extern const char g_descent_build_datetime[21];
 

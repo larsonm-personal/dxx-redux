@@ -101,7 +101,7 @@ if ($OutputPath) {
     if (-not (Test-Path $requestedDir)) { New-Item -ItemType Directory -Path $requestedDir | Out-Null }
 } else {
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $outName = "dxx-redux-$variantLower-$timestamp-v$versionCode.aab"
+    $outName = "dxx-revival-$variantLower-$timestamp-v$versionCode.aab"
     $outPath = Join-Path $outDir $outName
 }
 
