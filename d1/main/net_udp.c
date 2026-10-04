@@ -2795,7 +2795,13 @@ static void net_udp_send_sync_payload(ubyte *data, int len,
 	if (UDP_sync_player.join_attempt && (data[0] == UPID_OBJECT_DATA || data[0] == UPID_SYNC) &&
 	    player_num == UDP_sync_player.player.connected &&
 	    sockaddr_equal(&address, &UDP_sync_player.player.protocol.udp.addr)) {
-		if (len > UPID_MAX_SIZE || UDP_sync_player.join_visit != coop_world_visit_current()) return;
+		if (len > UPID_MAX_SIZE) return;
+		if (UDP_sync_player.join_visit != coop_world_visit_current()) {
+			COOPLOG("join payload suppressed: type=%d player=%d visit=%llu current=%llu committed=%d verify=%d",
+			        data[0], player_num, (unsigned long long) UDP_sync_player.join_visit,
+			        (unsigned long long) coop_world_visit_current(), join_transfer_committed, VerifyPlayerJoined);
+			return;
+		}
 		envelope[0] = UPID_JOIN_DATA;
 		PUT_INTEL_INT(envelope + 1, netgame_token);
 		PUT_INTEL_INT(envelope + 5, UDP_sync_player.join_attempt);
@@ -8581,7 +8587,10 @@ void net_udp_process_pdata ( ubyte *data, int data_len, struct _sockaddr sender_
 			Netgame.players[peer].LastPacketTime = timer_query();
 			if (multi_i_am_master()) {
 				android_net_udp_initial_sync_retry_confirm(&android_initial_sync_retry, peer);
-				if (VerifyPlayerJoined == peer) VerifyPlayerJoined = -1;
+				if (VerifyPlayerJoined == peer) {
+					net_udp_join_confirm_player(peer);
+					VerifyPlayerJoined = -1;
+				}
 			}
 		}
 #ifdef INTROSPECT_ON
@@ -8755,7 +8764,12 @@ void net_udp_read_pdata_packet(UDP_frame_info *pd)
 #endif
 		// latecoming player seems to successfully have synced
 		if ( VerifyPlayerJoined != -1 && TheirPlayernum == VerifyPlayerJoined )
+		{
+#ifdef __ANDROID__
+			net_udp_join_confirm_player(TheirPlayernum);
+#endif
 			VerifyPlayerJoined=-1;
+		}
 		// we say that guy is disconnected so we do not want him/her in game
 		if ( Players[TheirPlayernum].connected == CONNECT_DISCONNECTED )
 			return;

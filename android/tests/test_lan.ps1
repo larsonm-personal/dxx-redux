@@ -105,7 +105,13 @@ param(
     [switch]$GuidebotHostObserver,
     [switch]$GuidebotSlotRemapRestore,
     [switch]$SavedLateJoin,
+    [ValidateRange(1, 10)]
+    [int]$SavedLateJoinCancelCount = 1,
+    [ValidateRange(0, 10)]
+    [int]$SavedLateJoinRejoinCount = 0,
+    [switch]$SavedLateJoinAbortTransfer,
     [switch]$RestoreStatus,
+    [switch]$RestoreStatusFunctionalOnly,
     [switch]$RestoreResilience,
     [ValidateSet("unexpected_exit", "interrupted_restore", "normal_quit", "fail_after_hide")]
     [string]$RestoreReportCase,
@@ -234,7 +240,8 @@ if ($GuidebotRewind) {
     $CoopRewind = $true
 }
 if ($RestoreLossResume -and -not $RestoreFailure) { throw "RestoreLossResume requires RestoreFailure" }
-if ($RestoreFailure -and ($MissionFile -or $InitialLevel -ne 1 -or $CountdownSave -or $CoopRewind -or
+$isStandardCampaign = -not $MissionFile -or ($Game -eq 'd2' -and $MissionFile -in @('d2', 'descent'))
+if ($RestoreFailure -and (-not $isStandardCampaign -or $InitialLevel -ne 1 -or $CountdownSave -or $CoopRewind -or
         $LevelRestart -or $SecretWorld -or $SecretPhysical -or $SecretSaveRestore -or $SecretRewind -or $SecretRestart)) {
     throw "Restore participant loss requires the base mission at level 1; run other save/travel scenarios separately"
 }
@@ -247,7 +254,7 @@ if ($BriefingFailureRelease -and (-not $BriefingFailure -or $BriefingFailurePaus
     throw "BriefingFailureRelease requires BriefingFailure host or client; run paused-video loss separately"
 }
 if ($BriefingFailure) {
-    if ($InitialLevel -ne 1 -or $MissionFile -or $BriefingCase -ne 'force' -or $BriefingRestore -or $RestoreFailure) {
+    if ($InitialLevel -ne 1 -or -not $isStandardCampaign -or $BriefingCase -ne 'force' -or $BriefingRestore -or $RestoreFailure) {
         throw "BriefingFailure requires a fresh base-mission level 1 briefing; run other scenarios separately"
     }
     $Briefings = $true
@@ -326,8 +333,22 @@ if ($GraphicsConfirmation) { . "$PSScriptRoot\..\helpers\test_graphics_multiplay
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
 $ADB = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
-$PACKAGE = "com.dxxredux.app"
+$PACKAGE = if ($env:DXX_TEST_PACKAGE) { $env:DXX_TEST_PACKAGE } else { "com.dxxredux.app" }
 $ACTIVITY = "com.dxxredux.app.SetupActivity"
+
+# This runner resets preferences and save fixtures; physical devices require
+# the isolated diagnostic installation, never the user's normal application
+foreach ($serial in @($HostDevice, $JoinDevice)) {
+    if ($serial -notmatch '^emulator-\d+$') {
+        if ($PACKAGE -ne 'com.dxxredux.app.nsdtest') {
+            throw 'Physical-device LAN fixtures require DXX_TEST_PACKAGE=com.dxxredux.app.nsdtest'
+        }
+        if (-not (Test-DeviceOnline -Serial $serial)) {
+            throw "Physical device is not online: $serial"
+        }
+        $PSDefaultParameterValues['Get-GameIntrospection:Fresh'] = $true
+    }
+}
 
 $EMULATOR = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "emulator" -ToolName "emulator"
 $EMU1 = $HostDevice
@@ -639,6 +660,27 @@ function Invoke-CoopRewindScenario {
                         -Description 'Team rewind restores deployed companion and client ownership' -TimeoutSec 30)) { throw 'Companion rewind restore failed' }
         }
     }
+    if ($FromClient) {
+        $restoreTargets = @{}
+        foreach ($serial in @($EMU1, $EMU2)) {
+            if ($env:DXX_CAMPAIGN_EVIDENCE_DIR) {
+                $rewindLogPath = Join-Path $env:DXX_CAMPAIGN_EVIDENCE_DIR "$serial-logcat.txt"
+            } else {
+                $rewindLogPath = if ($serial -eq $EMU1) { $logcatFile1 } else { $logcatFile2 }
+            }
+            $log = Select-String -LiteralPath $rewindLogPath -SimpleMatch 'rewind authoritative restored:' | ForEach-Object { $_.Line }
+            $rewindMatches = [regex]::Matches(($log -join "`n"), 'rewind authoritative restored: seconds=\d+ gt=\d+ target_gt=(\d+)')
+            if ($rewindMatches.Count -lt 2) { throw "Missing authoritative rewind targets on $serial" }
+            $restoreTargets[$serial] = @($rewindMatches | Select-Object -Last 2 | ForEach-Object { [long]$_.Groups[1].Value })
+        }
+        if ($restoreTargets[$EMU1][0] -ne $restoreTargets[$EMU2][0] -or
+            $restoreTargets[$EMU1][1] -ne $restoreTargets[$EMU2][1] -or
+            $restoreTargets[$EMU1][1] -ge $restoreTargets[$EMU1][0]) {
+            throw 'Consecutive rewinds did not restore identical, successively earlier authoritative times'
+        }
+        $restoreTargets | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-rewind-targets-$Game.json")
+        Write-Status 'Both peers restored identical authoritative times in both rewind rounds' 'Green'
+    }
     return $true
 }
 
@@ -675,7 +717,14 @@ function Invoke-BriefingRejoinScenario {
     }
     if (-not $FirstJoin -and -not (Start-SetupActivity -Serial $EMU2)) { throw 'Could not restart the returning player' }
     if ($BriefingJoinDelaySeconds) {
+        $launcherWakeTimer = [System.Diagnostics.Stopwatch]::StartNew()
         if (-not (Wait-ForCondition -Description 'Original briefing countdown reaches requested late arrival' -TimeoutSec 125 -PollMs 1000 -Condition {
+                    # The physical joiner is still in the launcher during this deliberate wait
+                    # Shift refreshes user activity; WAKEUP alone does not when the screen is already on
+                    if ($EMU2 -notmatch '^emulator-\d+$' -and $launcherWakeTimer.Elapsed.TotalSeconds -ge 15) {
+                        Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'input', 'keyevent', 'KEYCODE_SHIFT_LEFT') -Seconds 5 | Out-Null
+                        $launcherWakeTimer.Restart()
+                    }
                     $state = Get-GameIntrospection -Serial $EMU1
                     return $state.coop_briefing.seconds_remaining -le 120 - $BriefingJoinDelaySeconds
                 })) { throw 'Host countdown did not reach the late-arrival point' }
@@ -735,11 +784,13 @@ function Invoke-BriefingRejoinScenario {
                     return $client.join_wait.active -and -not $client.coop_briefing.presenting
                 })) { throw 'Skip did not return to pending join' }
     }
+    $hostRejoinScript = if ($BriefingJoinDelaySeconds) { 'test_coop_briefing_rejoin_deadline_host.jsonc' } else { 'test_coop_briefing_rejoin_host.jsonc' }
+    $hostRejoinTimeout = if ($BriefingJoinDelaySeconds) { 35 } else { 15 }
     if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName 'test_coop_briefing_rejoin_client.jsonc') -or
-        -not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_briefing_rejoin_host.jsonc')) {
+        -not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName $hostRejoinScript)) {
         throw 'Could not arm briefing rejoin verification'
     }
-    if (-not (Wait-ForCondition -Description 'Host finishes the original briefing with the returning player still deferred' -TimeoutSec 15 -PollMs 500 -Condition {
+    if (-not (Wait-ForCondition -Description 'Host finishes the original briefing with the returning player still deferred' -TimeoutSec $hostRejoinTimeout -PollMs 500 -Condition {
                 $result = Get-DeviceAutomationResult -Serial $EMU1
                 if ($result -and $result.result -eq 'FAIL') { throw 'Host briefing completion failed' }
                 return $result -and $result.result -eq 'PASS'
@@ -915,6 +966,8 @@ function Invoke-BriefingFailureScenario {
 }
 
 function Invoke-RestoreFailureScenario {
+    $resumeSlot = -1
+    $resumeSave = $resumeHash = $null
     $loadError = $RestoreFailure -like 'load_*'
     $syncStalled = $RestoreFailure -eq 'sync_stalled'
     $loaderFailure = $loadError -or $syncStalled
@@ -931,9 +984,18 @@ function Invoke-RestoreFailureScenario {
         if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
                     -SecondarySerial $EMU2 -SecondaryScript $clientScript `
                     -Description "Restore failure: $phase" -TimeoutSec 60)) { throw "Restore failure $phase failed" }
+        if ($RestoreLossResume -and $phase -eq 'save') {
+            $resumeSlot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU1
+            if ($resumeSlot -lt 0) { throw 'Missing shared coop autosave before loss test' }
+            $resumeGameDir = if ($Game -eq 'd1') { 'd1x-redux' } else { 'd2x-redux' }
+            $resumeMission = if ($MISSION) { $MISSION } else { 'default' }
+            $resumeSave = "files/$resumeGameDir/Players/save_sets/coop/$resumeMission/coopsave.mg$resumeSlot"
+            $resumeHash = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'run-as', $PACKAGE, 'sha256sum', $resumeSave) -Seconds 10
+            if (-not $resumeHash -or $resumeHash -notmatch '^[a-f0-9]{64} ') { throw 'Missing shared resume file' }
+        }
     }
     $gameDir = if ($Game -eq 'd1') { 'd1x-redux' } else { 'd2x-redux' }
-    $missionKey = if ($Game -eq 'd1') { 'default' } else { 'd2' }
+    $missionKey = if ($MISSION) { $MISSION } else { 'default' }
     $saveName = $CALLSIGN1.ToLowerInvariant()
     $save = "files/$gameDir/Players/save_sets/coop/$missionKey/$saveName.mg0"
     $saveHash = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'run-as', $PACKAGE, 'sha256sum', $save) -Seconds 10
@@ -1050,7 +1112,9 @@ function Invoke-RestoreFailureScenario {
             if (-not (Start-SetupActivity -Serial $serial)) { throw 'Could not restart launcher after restore failure' }
             Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/introspect.json') -Seconds 5 | Out-Null
         }
-        if (-not (Set-DeviceCoopRestoreSlot -Serial $EMU1 -Slot 0)) { throw 'Could not select preserved manual save' }
+        $preservedHash = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'run-as', $PACKAGE, 'sha256sum', $resumeSave) -Seconds 10
+        if ($preservedHash -ne $resumeHash) { throw 'Shared coop autosave changed during the failed restore' }
+        if (-not (Set-DeviceCoopRestoreSlot -Serial $EMU1 -Slot $resumeSlot)) { throw 'Could not select preserved shared save' }
         Send-MpCommand -Serial $EMU1 -Command 'lan_launch' -Extras $hostExtras
         if (-not (Wait-ForCondition -Description 'recovery host lobby' -TimeoutSec 60 -PollMs 500 -Condition {
                     $intro = Get-GameIntrospection -Serial $EMU1
@@ -1068,7 +1132,7 @@ function Invoke-RestoreFailureScenario {
                             $intro.coop_restore.barrier_phase -ne 'done') { $ready = $false; continue }
                         $slot = if ($serial -eq $EMU1) { 0 } else { 1 }
                         if ($intro.current_level_num -ne 1 -or $intro.player.secondary_ammo[1] -ne 6 + $slot -or
-                            $intro.coop_briefing.enabled -ne [bool]$Briefings -or -not $intro.coop_briefing.suppressed_for_restore) {
+                            $intro.coop_briefing.enabled -ne [bool]$Briefings -or ($Briefings -and -not $intro.coop_briefing.suppressed_for_restore)) {
                             throw "Cold recovery lost inventory, world or presentation state on $serial"
                         }
                     }
@@ -1861,19 +1925,23 @@ function Invoke-SavedLateJoinScenario {
         $intro = Get-GameIntrospection -Serial $EMU1
         return $intro -and $intro.is_network -and (Get-IntroNumConnected -Intro $intro) -eq 1
     }
-    if (-not $lobby -or -not (Start-SetupActivity -Serial $EMU2)) { return $false }
-    Send-MpCommand -Serial $EMU2 -Command 'lan_launch' -Extras $joinExtras
-    if (-not (Wait-ForCondition -Description 'Client waits in the two-player lobby' -TimeoutSec 45 -PollMs 500 -Condition {
-                $hostState = Get-GameIntrospection -Serial $EMU1
-                $clientState = Get-GameIntrospection -Serial $EMU2
-                return $hostState -and $clientState -and $hostState.multiplayer.network_status -eq 4 -and
-                (Get-IntroNumConnected -Intro $hostState) -eq 2 -and $clientState.multiplayer.network_status -eq 3
-            })) { return $false }
-    if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName 'test_coop_late_join_regression.jsonc' -Params @{ drop = 'disabled'; cancel = $Game })) { return $false }
-    if (-not (Wait-ForCondition -Description 'Host removes cancelled lobby client' -TimeoutSec 15 -PollMs 500 -Condition {
-                return (Get-IntroNumConnected -Intro (Get-GameIntrospection -Serial $EMU1)) -eq 1
-            })) { return $false }
-    Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+    if (-not $lobby) { return $false }
+    for ($cancelAttempt = 1; $cancelAttempt -le $SavedLateJoinCancelCount; $cancelAttempt++) {
+        Write-Status "Saved lobby cancellation $cancelAttempt/$SavedLateJoinCancelCount"
+        if (-not (Start-SetupActivity -Serial $EMU2)) { return $false }
+        Send-MpCommand -Serial $EMU2 -Command 'lan_launch' -Extras $joinExtras
+        if (-not (Wait-ForCondition -Description 'Client waits in the two-player lobby' -TimeoutSec 45 -PollMs 500 -Condition {
+                    $hostState = Get-GameIntrospection -Serial $EMU1
+                    $clientState = Get-GameIntrospection -Serial $EMU2
+                    return $hostState -and $clientState -and $hostState.multiplayer.network_status -eq 4 -and
+                    (Get-IntroNumConnected -Intro $hostState) -eq 2 -and $clientState.multiplayer.network_status -eq 3
+                })) { return $false }
+        if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName 'test_coop_late_join_regression.jsonc' -Params @{ drop = 'disabled'; cancel = $Game })) { return $false }
+        if (-not (Wait-ForCondition -Description 'Host removes cancelled lobby client' -TimeoutSec 15 -PollMs 500 -Condition {
+                    return (Get-IntroNumConnected -Intro (Get-GameIntrospection -Serial $EMU1)) -eq 1
+                })) { return $false }
+        Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+    }
     if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_start.jsonc')) { return $false }
     $restored = Wait-ForCondition -Description "host restores save alone" -TimeoutSec 60 -PollMs 1000 -Condition {
         $intro = Get-GameIntrospection -Serial $EMU1
@@ -1881,12 +1949,42 @@ function Invoke-SavedLateJoinScenario {
         (Get-IntroNumConnected -Intro $intro) -eq 1 -and $intro.multiplayer.recovery.live -gt 0
     }
     if (-not $restored -or -not (Start-SetupActivity -Serial $EMU2)) { return $false }
+    if ($SavedLateJoinAbortTransfer) {
+        if (-not (Start-JoinPhaseAutomation -Serial $EMU1 -Phase 'transfer_hold')) { return $false }
+    }
     Send-MpCommand -Serial $EMU2 -Command "lan_launch" -Extras $joinExtras
     if (-not (Wait-ForCondition -Description 'Host receives one approval request' -TimeoutSec 45 -PollMs 500 -Condition {
                 $intro = Get-GameIntrospection -Serial $EMU1
                 return $intro -and $intro.multiplayer.join_request_pending
             })) { return $false }
     Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_accept.jsonc' | Out-Null
+    if ($SavedLateJoinAbortTransfer) {
+        if (-not (Wait-ForCondition -Description 'Saved client receives partial world before cancelling' -TimeoutSec 30 -PollMs 500 -Condition {
+                    $state = Get-GameIntrospection -Serial $EMU2
+                    return $state -and $state.join_wait.active -and $state.join_wait.object_packets -gt 0
+                })) { return $false }
+        foreach ($serial in @($EMU1, $EMU2)) {
+            Get-GameIntrospection -Serial $serial | ConvertTo-Json -Depth 30 |
+                Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-saved-partial-$Game-$serial.json")
+        }
+        if (-not (Start-JoinPhaseAutomation -Serial $EMU2 -Phase 'cancel')) { return $false }
+        if (-not (Wait-ForCondition -Description 'Partial saved join cancellation returns to menu' -TimeoutSec 15 -PollMs 500 -Condition {
+                    $state = Get-GameIntrospection -Serial $EMU2
+                    return $state -and -not $state.join_wait.active -and -not $state.in_game
+                })) { return $false }
+        if (-not (Start-SetupActivity -Serial $EMU2)) { return $false }
+        Send-MpCommand -Serial $EMU2 -Command 'lan_launch' -Extras $joinExtras
+        $script:savedReturnApproved = $false
+        if (-not (Wait-ForCondition -Description 'Retry after cancelled partial saved transfer enters play' -TimeoutSec 100 -PollMs 1000 -Condition {
+                    $hostState = Get-GameIntrospection -Serial $EMU1
+                    if ($hostState -and $hostState.multiplayer.join_request_pending -and -not $script:savedReturnApproved) {
+                        Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_accept.jsonc' | Out-Null
+                        $script:savedReturnApproved = $true
+                    }
+                    $clientState = Get-GameIntrospection -Serial $EMU2
+                    return $clientState -and $clientState.in_game -and (Get-IntroNumConnected -Intro $clientState) -eq 2
+                })) { return $false }
+    }
     $recovered = Wait-ForCondition -Description "late join restores saved plasma and six homing missiles" -TimeoutSec 60 -PollMs 1000 -Condition {
         $intro = Get-GameIntrospection -Serial $EMU2
         if ($intro -and $intro.in_game -and (Get-IntroNumConnected -Intro $intro) -eq 2) {
@@ -1901,8 +1999,54 @@ function Invoke-SavedLateJoinScenario {
     if (-not $recovered) {
         Write-DeviceAutomationDiagnostics -Serial $EMU1
         Write-DeviceAutomationDiagnostics -Serial $EMU2
+        return $false
     }
-    return $recovered
+    $hostPid = (Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'pidof', "${PACKAGE}:game") -Seconds 5).Trim()
+    for ($returnAttempt = 0; $returnAttempt -le $SavedLateJoinRejoinCount; $returnAttempt++) {
+        if ($returnAttempt -gt 0) {
+            Write-Status "Saved game same-host return $returnAttempt/$SavedLateJoinRejoinCount"
+            Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+            if (-not (Wait-ForCondition -Description 'Saved host notices departed client' -TimeoutSec 60 -PollMs 1000 -Condition {
+                        return (Get-IntroNumConnected -Intro (Get-GameIntrospection -Serial $EMU1)) -eq 1
+                    })) { return $false }
+            if (-not (Start-SetupActivity -Serial $EMU2)) { return $false }
+            Send-MpCommand -Serial $EMU2 -Command 'lan_launch' -Extras $joinExtras
+            $script:savedReturnApproved = $false
+            if (-not (Wait-ForCondition -Description 'Returning client completes saved-session admission' -TimeoutSec 60 -PollMs 1000 -Condition {
+                        $hostState = Get-GameIntrospection -Serial $EMU1
+                        if ($hostState -and $hostState.multiplayer.join_request_pending -and -not $script:savedReturnApproved) {
+                            Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_accept.jsonc' | Out-Null
+                            $script:savedReturnApproved = $true
+                        }
+                        $clientState = Get-GameIntrospection -Serial $EMU2
+                        return $hostState -and $clientState -and $clientState.in_game -and
+                        (Get-IntroNumConnected -Intro $hostState) -eq 2 -and (Get-IntroNumConnected -Intro $clientState) -eq 2 -and
+                        $hostState.multiplayer.recovery.ready_to_save -and -not $hostState.multiplayer.join_request_pending
+                    })) { return $false }
+        }
+        if ((Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'pidof', "${PACKAGE}:game") -Seconds 5).Trim() -ne $hostPid) {
+            throw 'Saved-session retry unexpectedly replaced the host process'
+        }
+        if (-not (Wait-BidirectionalPdata -FirstSerial $EMU1 -FirstRemoteSlot 1 -SecondSerial $EMU2 -SecondRemoteSlot 0 `
+                    -Description "Network updates after saved-session return $returnAttempt")) { return $false }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_device_network_controls.jsonc' `
+                    -SecondarySerial $EMU2 -SecondaryScript 'test_device_network_controls.jsonc' `
+                    -Description "Controls after saved-session return $returnAttempt" -TimeoutSec 25)) { return $false }
+        foreach ($serial in @($EMU1, $EMU2)) {
+            $returnState = Get-GameIntrospection -Serial $serial
+            $returnState | ConvertTo-Json -Depth 30 |
+                Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-saved-return-$Game-$returnAttempt-$serial.json")
+            if (-not $returnState.multiplayer.recovery.ready_to_save -or $returnState.multiplayer.recovery.live -ne 0 -or
+                $returnState.multiplayer.recovery.world_objects -ne 0) { throw 'Saved return left unreconciled recovery gear' }
+            if ($serial -eq $EMU2) {
+                $returnPlayer = @($returnState.multiplayer.players | Where-Object { $_.is_me })[0]
+                if ($returnPlayer.primary_flags -ne 9 -or $returnPlayer.homing_ammo -ne 6 -or $returnState.player.laser_level -ne 2) {
+                    throw 'Saved return lost or duplicated recovered inventory'
+                }
+            }
+        }
+    }
+    return $true
 }
 
 function Invoke-RestoreResilienceScenario {
@@ -2046,6 +2190,23 @@ function Invoke-RestoreReportScenario {
 function Invoke-RestoreStatusScenario {
     if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_restore_status_host.jsonc" -SecondarySerial $EMU2 -SecondaryScript "test_coop_restore_status_client.jsonc" -Description "restore completion broadcast")) { return $false }
     if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_restore_checkpoint_host.jsonc" -SecondarySerial $EMU2 -SecondaryScript "test_coop_restore_checkpoint_client.jsonc" -Description "retained checkpoint clears restore status")) { return $false }
+    if ($RestoreStatusFunctionalOnly) {
+        if (-not (Wait-ForCondition -Description 'Both checkpoint restore barriers settle on the same level' -TimeoutSec 30 -PollMs 1000 -Condition {
+                    $hostState = Get-GameIntrospection -Serial $EMU1
+                    $clientState = Get-GameIntrospection -Serial $EMU2
+                    if (-not $hostState -or -not $clientState -or $hostState.current_level_num -ne $clientState.current_level_num) { return $false }
+                    foreach ($state in @($hostState, $clientState)) {
+                        if ($state.time_paused -or $state.coop_restore.transfer_busy -or $state.coop_restore.status -ne 'idle' -or
+                            $state.coop_restore.barrier_phase -ne 'done' -or -not $state.game_window_is_front) { return $false }
+                    }
+                    return $true
+                })) { return $false }
+        if (-not (Wait-BidirectionalPdata -FirstSerial $EMU1 -FirstRemoteSlot 1 -SecondSerial $EMU2 -SecondRemoteSlot 0 `
+                    -Description 'Network updates after late-join checkpoint restore')) { return $false }
+        return Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_device_network_controls.jsonc' `
+            -SecondarySerial $EMU2 -SecondaryScript 'test_device_network_controls.jsonc' `
+            -Description 'Controls after late-join checkpoint restore' -TimeoutSec 25
+    }
     if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName "test_coop_restore_status_replay.jsonc")) { return $false }
     $finished = Wait-ForCondition -Description "delayed restore status packets" -TimeoutSec 30 -PollMs 500 -Condition {
         $result = Get-DeviceAutomationResult -Serial $EMU2
@@ -2355,6 +2516,15 @@ try {
     }
     Write-Status "SetupActivity ready on both emulators" "Green"
     if ($GraphicsConfirmation) { Initialize-MultiplayerGraphicsFixture }
+    if ($D1LevelTransition) {
+        # This fixture verifies touch recovery, including handhelds that default to controller-only controls
+        foreach ($serial in @($EMU1, $EMU2)) {
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @(
+                'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND', '-p', $PACKAGE,
+                '--es', 'command', 'write_bool_pref', '--es', 'key', 'touch_overlay_enabled', '--ez', 'value', 'true'
+            ) -Seconds 10 | Out-Null
+        }
+    }
 
     if ($Game -eq 'd2') {
         foreach ($serial in @($EMU1, $EMU2)) {
@@ -2861,7 +3031,7 @@ try {
             if ($hostInGame -and $hostNet -and $hostPlayers -ge 2 -and $joinInGame -and $joinNet -and $joinPlayers -ge 2) {
                 return $true
             }
-        } elseif (Test-Path $logcatFile1) {
+        } elseif ($EMU1 -match '^emulator-\d+$' -and $EMU2 -match '^emulator-\d+$' -and (Test-Path $logcatFile1)) {
             $lines = Get-Content $logcatFile1 -ErrorAction SilentlyContinue
             $hasSync = $lines | Where-Object { $_ -match 'send_sync.*sending SYNC to all' }
             $hasTwoPlayers = $lines | Where-Object { $_ -match 'N_players now 2' }
@@ -2911,6 +3081,14 @@ try {
 
     Write-Status "Multiplayer sync completed" "Green"
 
+    if ($EMU1 -notmatch '^emulator-\d+$' -or $EMU2 -notmatch '^emulator-\d+$') {
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_device_network_controls.jsonc' `
+                    -SecondarySerial $EMU2 -SecondaryScript 'test_device_network_controls.jsonc' `
+                    -Description 'Both physical devices consume flight controls after synchronization' -TimeoutSec 25)) {
+            throw 'Physical-device flight controls did not recover after synchronization'
+        }
+    }
+
     # -- Step 5: Verify results --
     Write-Status ""
     Write-Status "--- Phase 5: Verify networking ---" "White"
@@ -2953,7 +3131,7 @@ try {
         $testPassed = $true
     }
 
-    if ($CoopRewind) {
+    if ($CoopRewind -and -not $SavedLateJoin) {
         $testPassed = $false
         $testPassed = Invoke-CoopRewindScenario -FromClient:$ClientRewind
     }
@@ -3185,6 +3363,9 @@ try {
     }
     if ($testPassed -and $SavedLateJoin) {
         $testPassed = Invoke-SavedLateJoinScenario
+        if ($testPassed -and $CoopRewind) {
+            $testPassed = Invoke-CoopRewindScenario -FromClient:$ClientRewind
+        }
     }
     if ($testPassed -and $VerifyAutomationFailure) {
         if ($Game -ne "d2") { throw "Terminal automation failure fixture requires D2" }
@@ -3686,7 +3867,12 @@ try {
         $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
             -SecondarySerial $EMU2 -SecondaryScript $clientScript `
             -Description 'First Strike flyout, score, briefing and playable level 2' -TimeoutSec 180
-        if ($testPassed) { Assert-PostTransitionAndroidControls }
+        if ($testPassed) {
+            Assert-PostTransitionAndroidControls
+            $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_device_network_controls.jsonc' `
+                -SecondarySerial $EMU2 -SecondaryScript 'test_device_network_controls.jsonc' `
+                -Description 'Both peers consume flight controls after the level transition' -TimeoutSec 25
+        }
     }
 
     if ($testPassed -and $BriefingPalette) {

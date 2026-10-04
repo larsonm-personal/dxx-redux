@@ -417,6 +417,7 @@ $testTimeouts = @{
     "test_native_host_unit_tests"         = 1200
     "test_mp"                             = 240
     "test_lan"                            = 240
+    "test_device_network_campaign"        = 21600
     "test_server_integration"             = 600
     "test_secret_area_baseline_diff"      = 60
     "test_test_helpers_process_wait"      = 60

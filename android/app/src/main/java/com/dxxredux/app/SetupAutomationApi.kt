@@ -784,6 +784,55 @@ internal fun SetupActivity.writeMpIntrospectJson() {
         }
         root.put("chat", chatArr)
 
+        // Android diagnostic state for physical-device LAN lifecycle tests
+        val lanService = com.dxxredux.app.lobby.LobbyService
+        val lan = JSONObject()
+        lan.put("hosting", lanService.isHosting.value)
+        lan.put("discovering", lanService.isDiscovering.value)
+        lan.put("diagnostics", lanService.diagnostics.value)
+        lan.put("packets_sent", lanService.packetsSent.get())
+        lan.put("packets_received", lanService.packetsReceived.get())
+        lan.put("launch_pending", lanService.lanLaunchEvent.value != null)
+        val joined = lanService.joinedLobby.value
+        lan.put("joined_lobby_id", joined?.lobbyId ?: JSONObject.NULL)
+        lan.put("joined_host", joined?.hostAddr ?: JSONObject.NULL)
+        lan.put(
+            "players",
+            JSONArray(
+                lanService.hostedLobbyPlayers.value.map { player ->
+                    JSONObject()
+                        .put("callsign", player.callsign)
+                        .put("client_id", player.clientId ?: JSONObject.NULL)
+                        .put("ready", player.ready)
+                        .put("connected", player.connected)
+                        .put("last_seen_ms", player.lastSeenMs)
+                        .put("disconnected_at_ms", player.disconnectedAtMs ?: JSONObject.NULL)
+                },
+            ),
+        )
+        lan.put(
+            "discovered",
+            JSONArray(
+                lanService.discoveredLobbies.value.map { discovered ->
+                    JSONObject()
+                        .put("lobby_id", discovered.announce.lobbyId)
+                        .put("host_address", discovered.announce.hostAddress)
+                        .put("host_port", discovered.announce.hostPort)
+                        .put("status", discovered.announce.status)
+                        .put("game", discovered.announce.game)
+                },
+            ),
+        )
+        lan.put(
+            "chat",
+            JSONArray(
+                lanService.chatMessages.value.map { message ->
+                    JSONObject().put("from", message.fromCallsign).put("text", message.text)
+                },
+            ),
+        )
+        root.put("lan", lan)
+
         root.put("game_launch_pending", s.gameLaunchInfo != null)
         root.put("launch_error", launchPreflightFailure ?: JSONObject.NULL)
         root.put("displayed_launch_error", displayedLaunchFailure ?: JSONObject.NULL)
