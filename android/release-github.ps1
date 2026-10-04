@@ -395,7 +395,7 @@ Both APKs include ARM32, ARM64 and x86_64
 ### special apk with support for older android $legacyAndroid - use the recommended apk for newer devices
 
 - Download: $legacyApkName
-- Use this legacy APK only on devices that cannot install the recommended APK. On Android $(Get-AndroidVersionLabel $minSdk) or newer, use the recommended APK instead.
+- this is a special build to go one step lower on minimum android version (to $legacyAndroid). On Android $(Get-AndroidVersionLabel $minSdk) or newer, use the recommended APK instead
 - $legacySdkLabel
 - APK SHA-256: $($legacyInfo.apkSha256)
 
