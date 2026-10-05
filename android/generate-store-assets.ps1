@@ -13,18 +13,25 @@ param(
     [switch]$NoBuild,
     [switch]$AllDemos,
     [switch]$ComposeOnly,
+    [switch]$SelectStillsOnly,
+    [switch]$FeaturedOnly,
+    [switch]$CombineVideo,
+    [string]$PictureDirectory,
+    [string]$AudioDirectory,
+    [string]$FlyoutDirectory,
     [string]$Recipe
 )
 $ErrorActionPreference = 'Stop'
+if (([int]$ComposeOnly.IsPresent + [int]$SelectStillsOnly.IsPresent + [int]$FeaturedOnly.IsPresent + [int]$CombineVideo.IsPresent) -gt 1) { throw 'Choose only one generation mode' }
 $repoRoot = Split-Path $PSScriptRoot
 $toolsDir = Join-Path $PSScriptRoot 'temp/store-assets-tools'
 New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null
 if (!$OutputDirectory) {
-    if ($ComposeOnly) { throw '-ComposeOnly requires -OutputDirectory' }
+    if ($ComposeOnly -or $SelectStillsOnly -or $FeaturedOnly -or $CombineVideo) { throw 'Partial generation requires -OutputDirectory' }
     $OutputDirectory = Join-Path $PSScriptRoot ('temp/store-assets_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
 }
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
-if (!$ComposeOnly) {
+if (!$ComposeOnly -and !$SelectStillsOnly -and !$FeaturedOnly -and !$CombineVideo) {
     if (Test-Path (Join-Path $OutputDirectory 'build.json')) { throw 'Choose a new output directory for regeneration, or use -ComposeOnly' }
     & (Join-Path $PSScriptRoot 'helpers/retain-recent-artifacts.ps1') -Artifacts $OutputDirectory
     New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
@@ -39,11 +46,23 @@ if (!(Test-Path $venvPython)) {
 & $venvPython -m pip install --disable-pip-version-check 'imageio-ffmpeg==0.6.0' 'Pillow==11.3.0' *> (Join-Path $toolsDir 'python-install.log')
 if ($LASTEXITCODE) { throw 'Capture dependencies failed; see temp/store-assets-tools/python-install.log' }
 $generator = Join-Path $PSScriptRoot 'helpers/generate_store_assets.py'
-if ($ComposeOnly) {
-    $arguments = @($generator, 'compose', '--output', $OutputDirectory)
+if ($CombineVideo) {
+    if (!$PictureDirectory -or !$AudioDirectory) { throw '-CombineVideo requires -PictureDirectory and -AudioDirectory' }
+    & $venvPython -m pip install --disable-pip-version-check 'numpy==2.2.6' 'opencv-python-headless==4.12.0.88' *> (Join-Path $toolsDir 'video-audit-install.log')
+    if ($LASTEXITCODE) { throw 'Video audit dependencies failed' }
+    $arguments = @($generator, 'combine-video', '--output', $OutputDirectory, '--picture-run', [IO.Path]::GetFullPath($PictureDirectory), '--audio-run', [IO.Path]::GetFullPath($AudioDirectory))
+    if ($FlyoutDirectory) { $arguments += @('--flyout-run', [IO.Path]::GetFullPath($FlyoutDirectory)) }
+    & $venvPython @arguments
+    if ($LASTEXITCODE) { throw 'Combined video failed; inspect its validation report' }
+    Write-Output "Review: $(Join-Path $OutputDirectory 'index.html')"
+    return
+}
+if ($ComposeOnly -or $SelectStillsOnly) {
+    $action = if ($SelectStillsOnly) { 'select-stills' } else { 'compose' }
+    $arguments = @($generator, $action, '--output', $OutputDirectory)
     if ($Recipe) { $arguments += @('--recipe', [IO.Path]::GetFullPath($Recipe)) }
     & $venvPython @arguments
-    if ($LASTEXITCODE) { throw 'Video composition failed' }
+    if ($LASTEXITCODE) { throw 'Offline asset generation failed' }
     Write-Output "Review: $(Join-Path $OutputDirectory 'index.html')"
     return
 }
@@ -73,10 +92,19 @@ foreach ($key in $settings.Keys) {
     else { $config += "`n$key=$($settings[$key])" }
 }
 [IO.File]::WriteAllText($configPath, $config)
+$captureRunning = @(& $adb devices) -match '^emulator-5580\s+device$'
+if ($captureRunning) {
+    if (!(@(& $adb -s emulator-5580 emu avd name) -contains 'DxxStoreAssets')) { throw 'Port 5580 belongs to another emulator' }
+    if ((& $adb -s emulator-5580 shell getprop ro.hardware.egl).Trim() -ne 'angle') {
+        # The host GLES translator does not expose anisotropic filtering
+        & $adb -s emulator-5580 emu kill | Out-Null
+        Start-Sleep -Seconds 3
+    }
+}
 if (!(@(& $adb devices) -match '^emulator-5580\s+device$')) {
     $start = @{
         FilePath = $emulator
-        ArgumentList = @('-avd', 'DxxStoreAssets', '-port', '5580', '-no-window', '-no-snapshot', '-no-boot-anim', '-gpu', 'host')
+        ArgumentList = @('-avd', 'DxxStoreAssets', '-port', '5580', '-no-window', '-no-snapshot', '-no-boot-anim', '-gpu', 'host', '-feature', 'GuestAngle')
         RedirectStandardOutput = (Join-Path $toolsDir 'emulator.log')
         RedirectStandardError = (Join-Path $toolsDir 'emulator-error.log')
     }
@@ -100,8 +128,20 @@ $apk = Join-Path $PSScriptRoot 'app/build/intermediates/apk/debug/app-debug.apk'
 if (!(Test-Path $apk)) { $apk = Join-Path $PSScriptRoot 'app/build/outputs/apk/debug/app-debug.apk' }
 if (!(Test-Path $apk)) { throw 'Debug APK is missing' }
 $arguments = @($generator, 'all', '--output', $OutputDirectory, '--apk', $apk)
+if ($FeaturedOnly) {
+    & $adb -s emulator-5580 install -r -t $apk | Out-Null
+    if ($LASTEXITCODE) { throw 'Could not install capture APK' }
+    $arguments = @($generator, 'capture-featured', '--output', $OutputDirectory)
+}
 if ($AllDemos) { $arguments += '--all-demos' }
 if ($Recipe) { $arguments += @('--recipe', [IO.Path]::GetFullPath($Recipe)) }
-& $venvPython @arguments 2>&1 | Tee-Object -FilePath (Join-Path $OutputDirectory 'capture.log')
+$captureLog = if ($FeaturedOnly) { 'capture-featured.log' } else { 'capture.log' }
+& $venvPython @arguments 2>&1 | Tee-Object -FilePath (Join-Path $OutputDirectory $captureLog)
 if ($LASTEXITCODE) { throw "Capture failed; diagnostics remain in $OutputDirectory" }
+if ($AudioDirectory -and !$FeaturedOnly) {
+    & $venvPython -m pip install --disable-pip-version-check 'numpy==2.2.6' 'opencv-python-headless==4.12.0.88' *> (Join-Path $toolsDir 'video-audit-install.log')
+    if ($LASTEXITCODE) { throw 'Video audit dependencies failed' }
+    & $venvPython $generator combine-video --output $OutputDirectory --picture-run $OutputDirectory --audio-run ([IO.Path]::GetFullPath($AudioDirectory))
+    if ($LASTEXITCODE) { throw 'Combining regenerated visuals with reference audio failed' }
+}
 Write-Output "Review: $(Join-Path $OutputDirectory 'index.html')"

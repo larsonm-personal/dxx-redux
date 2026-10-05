@@ -295,6 +295,8 @@ class Capture:
         self.step("skip_intro", timeout_ms=20000, post_delay_ms=200)
         state = self.wait(lambda s: bool(s.get("menu")), timeout=30)
         menu = state["menu"]
+        # Configure before the edit's pilot landmark so setup work is omitted
+        self.configure_graphics()
         if mark:
             self.start_audio()
             mark("Pilot name")
@@ -305,6 +307,42 @@ class Capture:
             )
         elif "pilot" in (menu.get("title", "") + menu.get("subtitle", "")).lower():
             self.step("select", text="player", post_delay_ms=300)
+
+    def configure_graphics(self):
+        state = self.state()
+        caps = state["gpu_capabilities"]
+        if caps["aniso_max"] < 16 or caps["msaa_4"] != 4:
+            raise RuntimeError("Store capture requires 16x AF and 4x MSAA; restart the AVD with -feature GuestAngle")
+        field = "graphics_queue_option" if state.get("in_game") else "graphics_option"
+        self.automate(
+            [
+                {"action": "set_debug", "field": field, "value": value}
+                for value in ("tex_filt:2", "aniso_level:16", "msaa_level:4")
+            ]
+            + [{"action": "wait_ms", "ms": 1000}],
+            name="capture-graphics",
+        )
+
+    def verify_graphics(self, name):
+        from store_asset_media import validate_graphics
+
+        state = self.state()
+        if state["graphics_safety"]["phase"] in ("preparing", "challenge"):
+            # Accept the real safety overlay before recording any gameplay.
+            self.automate(
+                [{"action": "wait_for", "expect": {"graphics_safety.candidate_ready": "true"}, "timeout_ms": 5000}]
+                + [
+                    {"action": "controller_input", "key": key, "pressed": pressed, "post_delay_ms": 50}
+                    for key in ("DLEFT", "A")
+                    for pressed in (True, False)
+                ]
+                + [{"action": "wait_for", "expect": {"graphics_safety.phase": "idle"}, "timeout_ms": 5000}],
+                name="capture-graphics-confirm",
+            )
+            state = self.state()
+        write_json(self.output / "graphics" / (name + ".json"), state)
+        validate_graphics(state)
+        return state
 
     def campaign(self, game, briefing=False, mark=None):
         self.step("select", text="New game", post_delay_ms=300)
@@ -337,7 +375,8 @@ class Capture:
             self.step("key", key="escape", post_delay_ms=300)
         else:
             self.step("skip_briefing", timeout_ms=15000, post_delay_ms=300)
-        return self.wait(lambda s: s.get("in_game") and s.get("game_window_is_front"), timeout=20)
+        self.wait(lambda s: s.get("in_game") and s.get("game_window_is_front"), timeout=20)
+        return self.verify_graphics("campaign-" + game)
 
     def seed(self):
         for game in ("d1", "d2"):
@@ -419,8 +458,8 @@ class Capture:
             self.step("scroll", setup=True, direction="down", count=8)
             mark("Launcher bottom")
             time.sleep(0.4)
-            self.tap("Launch Descent 2")
             mark("Launch Descent 2")
+            self.tap("Launch Descent 2")
             self.pilot_menu("d2", mark=mark)
             mark("Created pilot")
             self.campaign("d2", briefing=True, mark=mark)
@@ -440,26 +479,34 @@ class Capture:
             self.shell("wm", "fixed-to-user-rotation", "default")
             self.shell("wm", "user-rotation", "lock", "0")
 
-    def flyout(self, audio_pass=False):
+    def flyout(self, audio_pass=False, visual_only=False):
         self.launcher()
         self.command("launch", game="d1")
         self.pilot_menu("d1")
         self.campaign("d1")
         name = "flyout-audio" if audio_pass else "flyout"
-        rate = 1 if audio_pass else 8
-        self.start_recording(name, host=not audio_pass, audio=audio_pass)
+        self.verify_graphics(name)
+        # Guest recording observes ANGLE's presented frames reliably; the host
+        # recorder can hold stale frames with this backend. Extra capture time
+        # keeps enough native updates for a smooth 30 fps exit after retiming
+        rate = 1
+        capture_fps = 0 if audio_pass else 60
+        self.start_recording(name, audio=audio_pass)
         samples = []
         try:
-            self.step("trigger_endlevel", value="from_exit_tunnel", capture_slowdown=rate)
+            self.step("trigger_endlevel", value="from_exit_tunnel", capture_fps=capture_fps)
             state = self.wait(lambda s: s.get("endlevel_sequence", 0) > 0, timeout=10)
-            deadline = time.monotonic() + 120
+            deadline = time.monotonic() + 175
             while time.monotonic() < deadline:
                 state = self.state()
+                if not samples or state.get("endlevel_sequence", 0) != samples[-1]["phase"]:
+                    write_json(self.output / f"{name}-phase-{state.get('endlevel_sequence', 0)}.json", state)
                 samples.append(
                     {
                         "wall": time.monotonic() - self.record_started,
                         "phase": state.get("endlevel_sequence", 0),
                         "screen": state.get("screen_advance_kind"),
+                        "frame": state.get("capture_clock", {}).get("frame", 0),
                     }
                 )
                 if not state.get("endlevel_sequence"):
@@ -475,13 +522,14 @@ class Capture:
                     "source": str(path.relative_to(self.output)),
                     "samples": samples,
                     "playback_rate": rate,
-                    "transpose": None if audio_pass else "cclock",
+                    "transpose": None,
+                    "capture_fps": capture_fps,
                 },
             )
-        if not audio_pass:
+        if not audio_pass and not visual_only:
             self.flyout(audio_pass=True)
 
-    def replay(self, source, video_only=False):
+    def replay(self, source, video_only=False, presentation=None):
         source = Path(source).resolve()
         name = source.stem
         previous = None
@@ -500,19 +548,40 @@ class Capture:
         self.stage(source, "files/store-demo.dximdemo")
         self.private("rm", "-f", "files/store-demo.dximdemo.actual.json")
         self.call("logcat", "-c")
-        self.command("launch", game=header["game"])
-        state = self.wait(lambda s: s.get("input_demo", {}).get("replaying"), timeout=45)
+        self.command("launch", game=presentation["launch_target"] if presentation else header["game"])
+        state = self.wait(lambda s: s.get("input_demo", {}).get("replaying"), timeout=120)
+        self.configure_graphics()
+        self.verify_graphics(name)
+        if presentation:
+            # D2 replay blocks live gameplay keys. Set the native presentation
+            # options through debug automation without changing the simulation
+            self.automate(
+                [
+                    {"action": "set_debug", "field": field, "value": str(value)}
+                    for field, value in (
+                        ("cockpit_mode", presentation["cockpit_mode"]),
+                        ("hud_mode", presentation["hud_mode"]),
+                        ("cockpit_view_left", presentation["cockpit_views"][0]),
+                        ("cockpit_view_right", presentation["cockpit_views"][1]),
+                    )
+                ],
+                name=name + "-featured-presentation",
+            )
         # Replay intentionally restores simulation options from its recording.
         # Apply only visual helpers which its pilot-less startup leaves disabled.
         self.automate(
             [
-                {"action": "set_debug", "field": "show_robot_hostage_counts", "value": "true"},
+                {
+                    "action": "set_debug",
+                    "field": "show_robot_hostage_counts",
+                    "value": "false" if presentation else "true",
+                },
                 {"action": "set_debug", "field": "show_boss_health_bar", "value": "true"},
             ],
             name=name + "-presentation",
         )
         state = self.state()
-        if not state["hud_layout"]["show_robot_hostage_counts"]:
+        if state["hud_layout"]["show_robot_hostage_counts"] != (not presentation):
             raise RuntimeError("Replay HUD counters were not enabled")
         write_json(self.output / "demos" / name / "start-state.json", state)
         manifest = {
@@ -527,6 +596,8 @@ class Capture:
             "simulation_fps": (len(frames) - 1) / frames[-1],
             "video_capture": "guest-vfr-no-screenshots" if video_only else "guest-vfr-with-screenshots",
         }
+        if presentation:
+            manifest["presentation"] = presentation
         if video_only:
             manifest["screenshots"] = previous["screenshots"]
         else:
@@ -538,7 +609,10 @@ class Capture:
         part = 0
         self.start_recording(name + f"-{part:02d}")
         next_sample = 10.0
-        deadline = time.monotonic() + frames[-1] * 2 + 60
+        # Guest ANGLE with MSAA/AF can render well below real time. Replays
+        # advance one recorded simulation frame per rendered frame; the editor
+        # restores their recorded cadence without accelerating the MIDI stem
+        deadline = time.monotonic() + frames[-1] * 12 + 120
         try:
             while time.monotonic() < deadline:
                 state = self.state()
@@ -548,6 +622,40 @@ class Capture:
                     break
                 frame = replay["replay_frame"]
                 elapsed = frames[min(frame, len(frames) - 1)]
+                if presentation and "featured_still" not in manifest and elapsed >= presentation["seconds"] - 5:
+                    # Native replay supports pause and single-frame advance. Stop
+                    # before the landmark, step to it, then capture the display
+                    # losslessly instead of extracting a lossy video frame
+                    self.step("key", key="space")
+                    state = self.state()
+                    frame = state["input_demo"]["replay_frame"]
+                    if frames[frame] > presentation["seconds"]:
+                        raise RuntimeError("Featured replay passed its landmark before pausing")
+                    target_frame = next(i for i, seconds in enumerate(frames) if seconds >= presentation["seconds"])
+                    if frame < target_frame:
+                        self.automate(
+                            [{"action": "key", "key": "right", "post_delay_ms": 0}] * (target_frame - frame),
+                            name=name + "-featured-frame-steps",
+                        )
+                        state = self.state()
+                        advanced = state["input_demo"]["replay_frame"]
+                        if advanced != target_frame:
+                            raise RuntimeError("Native replay did not advance to the exact featured frame")
+                        frame = advanced
+                    filename = f"demos/{name}/featured-lossless.png"
+                    self.screenshot(filename)
+                    after = self.state()
+                    if after["input_demo"]["replay_frame"] != frame:
+                        raise RuntimeError("Featured replay moved during the lossless screenshot")
+                    manifest["featured_state_seconds"] = frames[frame]
+                    manifest["featured_still"] = {
+                        "file": filename,
+                        "frame": frame,
+                        "method": "adb-screencap-png-paused-native-replay",
+                    }
+                    write_json(self.output / "demos" / name / "featured-state.json", after)
+                    self.step("key", key="space")
+                    continue
                 manifest["samples"].append(
                     {
                         "part": part,
@@ -566,7 +674,18 @@ class Capture:
                         )
                     print(f"{name}: {elapsed:.1f}/{frames[-1]:.1f}s", flush=True)
                     next_sample += 10
-                if wall > 165:
+                remaining_wall = float("inf")
+                if len(manifest["samples"]) > 1:
+                    previous_sample = manifest["samples"][-2]
+                    if previous_sample["part"] == part and elapsed > previous_sample["demo_seconds"]:
+                        remaining_wall = (
+                            (frames[-1] - elapsed)
+                            * (wall - previous_sample["wall"])
+                            / (elapsed - previous_sample["demo_seconds"])
+                        )
+                # Avoid a recorder restart swallowing the final few seconds
+                # when the remaining replay fits within the current part
+                if wall > 165 and remaining_wall > 175 - wall:
                     manifest["parts"].append(str(self.stop_recording().relative_to(self.output)))
                     part += 1
                     self.start_recording(name + f"-{part:02d}")
@@ -654,6 +773,34 @@ class Capture:
         state = self.wait(lambda s: s.get("d1", {}).get("ready") and s.get("d2", {}).get("ready"), setup=True)
         write_json(self.output / "prepared.json", state)
 
+    def capture_still_sources(self):
+        from store_asset_media import still_recipe
+
+        required = sorted(
+            {
+                (item["collection"], item["demo"])
+                for item in still_recipe()
+                if item["kind"] == "demo" and item["collection"] != "."
+            }
+        )
+        for collection, name in required:
+            print("Capturing supplementary still source " + name, flush=True)
+            Capture(self.output / collection, self.serial).replay(
+                ROOT / "android/regression_demos" / (name + ".dximdemo")
+            )
+
+    def capture_featured(self):
+        from store_asset_media import featured_recipe, select_featured, review
+
+        item = featured_recipe()
+        capture = Capture(self.output / item["collection"], self.serial)
+        # D1 has no rear camera window; the native D1-in-D2 launch translates
+        # the recorded checkpoint before replaying its original inputs
+        capture.replay(ROOT / "android/regression_demos" / (item["demo"] + ".dximdemo"), presentation=item)
+        select_featured(self.output)
+        review(self.output)
+        self.launcher()
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -672,6 +819,13 @@ def main():
             "compose",
             "review",
             "validate",
+            "validate-featured",
+            "select-stills",
+            "capture-still-sources",
+            "capture-featured",
+            "combine-video",
+            "compose-combined",
+            "validate-combined",
         ],
     )
     parser.add_argument("--output", required=True, type=Path)
@@ -686,14 +840,35 @@ def main():
         "--video-only", action="store_true", help="Recapture replay video using existing screenshot manifests"
     )
     parser.add_argument("--recipe", type=Path)
+    parser.add_argument("--visual-only", action="store_true", help="Capture only the fixed-cadence fly-out picture")
+    parser.add_argument("--picture-run", type=Path)
+    parser.add_argument("--audio-run", type=Path)
+    parser.add_argument("--flyout-run", type=Path)
     args = parser.parse_args()
-    if args.action in ("compose", "review", "validate"):
-        from store_asset_media import compose, review, validate
+    if args.action in ("combine-video", "compose-combined", "validate-combined"):
+        from store_asset_video import prepare_combination, compose_combination, validate_combination
+
+        if args.action == "combine-video":
+            if not args.picture_run or not args.audio_run:
+                parser.error("combine-video requires --picture-run and --audio-run")
+            print(prepare_combination(args.output, args.picture_run, args.audio_run, args.flyout_run or args.output))
+        elif args.action == "compose-combined":
+            print(compose_combination(args.output))
+        else:
+            print(json.dumps(validate_combination(args.output), indent=2))
+        return
+    if args.action in ("compose", "review", "validate", "select-stills", "validate-featured"):
+        from store_asset_media import compose, review, validate, select_stills, validate_featured
 
         if args.action == "compose":
             print(compose(args.output, args.recipe))
         elif args.action == "review":
             review(args.output)
+        elif args.action == "select-stills":
+            print(select_stills(args.output))
+            review(args.output)
+        elif args.action == "validate-featured":
+            print(json.dumps(validate_featured(args.output), indent=2))
         else:
             print(json.dumps(validate(args.output), indent=2))
         return
@@ -734,6 +909,8 @@ def main():
         for demo in demos:
             print("Capturing " + demo.name, flush=True)
             capture.replay(demo)
+        capture.capture_still_sources()
+        capture.capture_featured()
         compose(args.output, args.recipe)
         validate(args.output)
         capture.launcher()
@@ -747,8 +924,14 @@ def main():
         print(capture.screenshot(args.name))
     elif args.action == "replay":
         capture.replay(args.demo, video_only=args.video_only)
-    elif args.action in ("seed", "opening", "flyout"):
+    elif args.action == "flyout":
+        capture.flyout(visual_only=args.visual_only)
+    elif args.action in ("seed", "opening"):
         getattr(capture, args.action)()
+    elif args.action == "capture-still-sources":
+        capture.capture_still_sources()
+    elif args.action == "capture-featured":
+        capture.capture_featured()
     else:
         capture.automate(json.loads(args.script.read_text()), args.setup, args.script.stem)
 

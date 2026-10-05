@@ -1,0 +1,74 @@
+{
+    "featured": {
+        "file": "featured-d1-level7-boss.png",
+        "collection": "featured-lossless-source",
+        "demo": "d1_descent_level7_20260921_181652",
+        "launch_target": "d1-in-d2",
+        "seconds": 101.8,
+        "cockpit_mode": 3,
+        "hud_mode": 3,
+        "show_boss_health_bar": true,
+        "cockpit_views": [2, 0],
+        "reason": "Lossless native boss frame in full-screen immersion mode with boss health and the left rear-view camera"
+    },
+    "selections": [
+        {
+            "file": "01-launcher-top.png",
+            "kind": "image",
+            "source": "launcher/01-top.png",
+            "reason": "Launcher top with the populated last-save card"
+        },
+        {
+            "file": "02-launcher-bottom.png",
+            "kind": "image",
+            "source": "launcher/02-bottom.png",
+            "reason": "Launcher bottom with game launch and remaining controls"
+        },
+        {
+            "file": "03-d1-level5-explosion.png",
+            "kind": "demo",
+            "collection": ".",
+            "demo": "d1_descent_level5_20260616_202713",
+            "seconds": 30.5,
+            "reason": "Large orange explosion against multicolored tunnel walls"
+        },
+        {
+            "file": "04-d1-level5-crossfire.png",
+            "kind": "demo",
+            "collection": ".",
+            "demo": "d1_descent_level5_20260616_202713",
+            "seconds": 89.5,
+            "reason": "Close robot, red laser fire and purple rock walls"
+        },
+        {
+            "file": "05-d1-level18-lasers.png",
+            "kind": "demo",
+            "collection": ".",
+            "demo": "d1_descent_level18_20260618_202117",
+            "seconds": 26.0,
+            "reason": "Laser salvo beside vivid purple walls"
+        },
+        {
+            "file": "06-d2-level9-combat.png",
+            "kind": "demo",
+            "collection": ".",
+            "demo": "d2_descent2_level9_20260511_192804",
+            "seconds": 49.0,
+            "reason": "Doorway combat, explosion and bright hazard stripes"
+        },
+        {
+            "file": "07-d1-level7-boss.png",
+            "kind": "demo",
+            "collection": "still-sources",
+            "demo": "d1_descent_level7_20260921_181652",
+            "seconds": 101.8,
+            "reason": "Final boss fight with the boss visible against lava"
+        },
+        {
+            "file": "08-d1-flyout.png",
+            "kind": "flyout",
+            "clip_seconds": 0.0,
+            "reason": "In-engine ship and tunnel from the corrected fly-out"
+        }
+    ]
+}

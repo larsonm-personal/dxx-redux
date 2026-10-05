@@ -23,6 +23,10 @@ under `android/temp/store-assets-tools/venv` installs pinned `imageio-ffmpeg`
 ## Outputs
 
 - `index.html`: local review gallery with clickable full-resolution PNGs and video
+- `selected-stills/`: exactly eight numbered PNGs: launcher top/bottom, five
+  action stills including the level-7 boss, and the corrected D1 fly-out
+- `selected-stills-contact.jpg`, `selected-stills.json`: shortlist overview,
+  selection reasons, source times/hashes and replay status
 - `launcher/01-top.png`, `02-bottom.png`: 1080x2400 portrait launcher screenshots
 - `launcher/03-save-explorer.png`: bonus screenshot with real D1/D2 save entries
 - `demos/<recording>/*.png`: 2400x1080 gameplay candidates at the beginning and
@@ -38,25 +42,37 @@ under `android/temp/store-assets-tools/venv` installs pinned `imageio-ffmpeg`
   source identity, capture timing, replay results and verification evidence
 
 The default review pass captures D1 levels 5 and 18 and the longer D2 level 9
-recording. Use `-AllDemos` to sample the full checked-in corpus. The two-second
+recording, plus the short D1 level-7 boss recording under `still-sources/` for
+the screenshot shortlist. Use `-AllDemos` to sample the full checked-in corpus. The two-second
 D2 recording can produce a beginning shot but cannot supply a five-second clip.
 All-corpus capture takes substantially longer, particularly the eleven-minute
 D1 level 7 recording. Screen recordings are split before Android's three-minute
 limit; the editor rejects a clip that crosses a recording restart.
 
 The initial survey found an `endlevel_completed` result mismatch in
-`d1_descent_level7_20260921_181652.dximdemo`. It is not in the default selection.
-Full-corpus validation reports any such mismatch and retains the capture/logs.
+`d1_descent_level7_20260921_181652.dximdemo`. It supplies a boss still, with this
+completion-flag difference explicitly recorded in `selected-stills.json` and
+reported separately in validation. Its other final result fields match. It is
+not used for the preview video's action clips, which retain strict final-state
+comparison. Full-corpus validation still rejects mismatched primary recordings;
+no simulation settings or recorded expectations are changed for the shortlist.
+
+The curated choices live in `android/store-stills.json`. Demo selections use
+fixed simulation times mapped through each new capture's timing samples, so
+emulator speed changes do not move them to another point in the replay. The
+fly-out selection is relative to its edited clip's start. Full generation and
+video recomposition rebuild the shortlist automatically. PNGs retain their
+captured HUD/touch controls and resolution, with no color enhancement or crops.
 
 ## Presentation and video timing
 
 The runner creates actual pilots and saves through engine menus, applies the
 launcher's **Restore Defaults** preset, and keeps the default touch layout.
 Input replay deliberately bypasses pilot selection and restores its original
-simulation settings. The runner enables only the visual hostage/robot/secret
-counters and boss bar on replay startup; it does not alter recorded inputs,
+simulation settings. The runner enables the visual hostage/robot/secret
+counters, boss bar and capture graphics profile on replay startup; it does not alter recorded inputs,
 random-number state, physics or Guide-Bot routing to obtain a passing replay.
-Final replay state must match the recording for validation to pass.
+Primary video replay state must match the recording for validation to pass.
 
 The opening uses the real Android file picker to import a ZIP made from the
 verified local game data. It then scrolls the launcher, launches D2, creates a
@@ -71,14 +87,18 @@ The final six seconds show D1's real exit animation, ending at the video's
 30-second boundary before the score screen. A debug-only automation fixture
 locates the authored exit trigger in the engine and starts the existing fly-out
 with a consistent current/previous ship position and outward direction.
-It slows only that single-player sequence to one-eighth speed during capture,
+It advances only that single-player sequence by a fixed 1/60 second per rendered frame during capture,
 and refreshes the backing while that debug fixture is active so exposed exit
 pixels cannot retain previous frames. Production gameplay rendering is
 unchanged. After capture, the editor restores normal speed. This lets a slow emulator render enough
 real frames for 30 fps without synthesized motion frames. The clock hook is
 debug-only, resets after the exit, and is disabled during replays/multiplayer.
 
-The fly-out uses the emulator's host recorder at 60 fps. Gameplay retains the
+The fly-out uses the guest recorder and evenly spaces its captured engine frames
+over the final six seconds. ANGLE presentation timestamps can arrive in bursts;
+using their original timing would introduce holds despite sufficient real frames.
+The recipe records the native frame count and requires at least 180 frames.
+Gameplay retains the
 guest recorder's variable-frame-rate stream, then restores the input demo's
 recorded frame cadence instead of the emulator's uneven wall-clock timestamps.
 The input demos contain approximately 25 simulation updates per second; a
@@ -119,6 +139,19 @@ Actual status bars, HUD and touch UI are captured, not composited replacements.
 
 ## Rerun and revise
 
+Captures use native trilinear texture filtering, 4x MSAA and 16x anisotropic
+filtering. The dedicated emulator uses guest ANGLE over the host GPU because
+the host GLES translator does not expose AF. The runner restarts an existing
+capture AVD with that backend when needed; other devices are untouched.
+The generator applies the profile on every game launch, accepts the engine's
+graphics confirmation before gameplay capture, and validates the effective
+MSAA buffers and AF capability. Unsupported settings fail the capture instead
+of silently producing unfiltered footage. `graphics/` and demo `start-state.json`
+files retain the native evidence. Menu/HUD filtering retains its normal defaults.
+Filtered ANGLE replays can take several times their normal duration to capture.
+The editor restores the recorded simulation frame rate, while MIDI stays at
+native tempo; capture timeouts allow this slower rendering.
+
 ```powershell
 # Reuse an APK already built from the current sources
 .\android\generate-store-assets.ps1 -NoBuild
@@ -128,6 +161,9 @@ Actual status bars, HUD and touch UI are captured, not composited replacements.
 
 # After editing a run's edit.json, rebuild only the video and gallery
 .\android\generate-store-assets.ps1 -ComposeOnly -OutputDirectory android\temp\store-assets_YYYYMMDD_HHMMSS
+
+# Recreate the eight chosen PNGs from existing captures, without recapturing
+.\android\generate-store-assets.ps1 -SelectStillsOnly -OutputDirectory android\temp\store-assets_YYYYMMDD_HHMMSS
 
 # Revalidate a completed capture without touching the emulator
 .\android\tests\test_store_asset_pipeline.ps1 -OutputDirectory android\temp\store-assets_YYYYMMDD_HHMMSS
@@ -150,6 +186,15 @@ validation do not require a running emulator. The integration test is registered
 as explicit because a full capture provisions an emulator and takes several
 minutes. Failed runs retain their logs and partial media for diagnosis.
 
+For a run created before the shortlist existed, first add its supplementary boss
+capture, then select the stills (the dedicated capture emulator must be running
+and already provisioned):
+
+```powershell
+& android/temp/store-assets-tools/venv/Scripts/python.exe android/helpers/generate_store_assets.py capture-still-sources --output android/temp/store-assets_YYYYMMDD_HHMMSS
+.\android\generate-store-assets.ps1 -SelectStillsOnly -OutputDirectory android/temp/store-assets_YYYYMMDD_HHMMSS
+```
+
 For an existing run, `replay --video-only --demo <path> --output <folder>`
 refreshes its video while retaining the existing PNG candidates. Regenerate
 `edit.json` or update its source intervals when replacing raw recordings; old
@@ -157,3 +202,84 @@ timestamps refer to the old capture and must not be reused.
 
 Review the PNG candidates and motion before choosing store uploads. Nothing in
 this workflow publishes to Google Play or YouTube.
+
+Full regeneration also captures `featured/featured-d1-level7-boss.png`. Its
+separate `featured` recipe in `store-stills.json` uses the same 101.8-second
+boss moment as the shortlist, with the engine's full-screen cockpit mode,
+no-HUD immersion mode and live left rear-view camera, with native boss health
+explicitly enabled. Touch controls remain
+visible, as do the corner indicators retained by the engine's native No HUD
+mode. This additional capture uses native D1-in-D2 mode because the separate
+D1 engine has no rear-view subwindow. D1-in-D2 replay launches enable the
+engine's existing native checkpoint translator.
+Filtering, 4x MSAA and 16x AF are verified through native state.
+The eight-image shortlist remains separate. `featured.json` records the recipe,
+source timestamp, hashes and replay comparison, including any mismatch.
+The featured capture pauses the native replay just before the landmark, advances
+one simulation frame at a time to it, and captures a lossless Android PNG while
+paused. Export copies that PNG unchanged, without video compression. Validation
+requires the boss bar to have been drawn, the landmark within one frame, and
+identical source/export bytes. Sources live in `featured-lossless-source`.
+
+To capture only this additional image in an already provisioned run:
+
+```powershell
+.\android\generate-store-assets.ps1 -FeaturedOnly -OutputDirectory android/temp/store-assets_20261004_filtered
+.\android\tests\test_store_asset_pipeline.ps1 -FeaturedOnly -OutputDirectory android/temp/store-assets_20261004_filtered
+```
+
+Use `-NoBuild` when the capture APK already has HUD/camera automation and
+introspection plus D1-in-D2 replay startup support. `-SelectStillsOnly` also re-exports the featured PNG when its
+capture exists. Full media validation requires the featured image as well.
+
+## Combining filtered video with reviewed sound
+
+The recommended regeneration command preserves a reviewed soundtrack while
+regenerating the launcher, gameplay, stills and fixed-step filtered fly-out:
+
+```powershell
+.\android\generate-store-assets.ps1 -AudioDirectory android/temp/store-assets_20261004_combined
+```
+
+For already captured visuals and a new fly-out, combine them offline:
+
+```powershell
+.\android\generate-store-assets.ps1 -CombineVideo `
+    -PictureDirectory android/temp/store-assets_20261004_filtered `
+    -AudioDirectory android/temp/store-assets_20261004_tempo `
+    -OutputDirectory android/temp/store-assets_20261004_combined
+```
+
+The output folder must contain the new `flyout.json` and recording, or supply
+`-FlyoutDirectory`. To recapture only that section on the provisioned capture
+emulator with the current debug APK installed:
+
+```powershell
+& android/temp/store-assets-tools/venv/Scripts/python.exe android/helpers/generate_store_assets.py flyout --visual-only --output android/temp/store-assets_20261004_combined
+```
+
+Combination checks that picture/audio use the same clip order, durations and
+demo simulation intervals. It copies the reviewed AAC without remixing,
+retiming or re-encoding, and verifies identical decoded audio in the final MP4.
+The first 24 seconds reuse the filtered H.264 clips. Only the new fly-out is
+encoded. All inputs needed for an offline re-export are archived under `inputs/`
+and SHA-256 pinned by `combined-edit.json`. Re-export without older source folders:
+
+```powershell
+& android/temp/store-assets-tools/venv/Scripts/python.exe android/helpers/generate_store_assets.py compose-combined --output android/temp/store-assets_20261004_combined
+.\android\tests\test_store_asset_pipeline.ps1 -OutputDirectory android/temp/store-assets_20261004_combined
+```
+
+Combined validation tracks tunnel-wall geometry rather than counting explosion
+pixel changes. It reports displacement throughout all six seconds, while checking
+the initial moving tunnel for held camera frames and uneven jumps. The camera's
+later stationary view is part of the native sequence. These checks require pinned
+NumPy 2.2.6 and OpenCV headless 4.12.0.88, installed by `-CombineVideo`.
+
+The earlier audio subtraction used a negative `amix` weight with normalization
+disabled. FFmpeg uses the absolute weight in that mode, so it added music to
+the effects before acceleration. The editor now inverts the signal explicitly,
+and integration verifies that a non-silent track subtracted from itself produces
+digital silence. A separate reviewed audio pass is still preferred when the
+filtered emulator renders far below real time: compressing effects by fivefold
+can damage transients even after music cancellation is correct.

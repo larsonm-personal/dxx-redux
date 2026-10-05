@@ -7,6 +7,8 @@ import subprocess
 import wave
 from array import array
 import math
+import hashlib
+import shutil
 
 import imageio_ffmpeg
 from PIL import Image, ImageChops, ImageDraw, ImageStat
@@ -32,6 +34,33 @@ def video_info(path):
         return next(reader)
     finally:
         reader.close()
+
+
+def interval_frame_count(path, start, end):
+    """Count captured frames without converting a variable-rate stream to CFR."""
+    result = subprocess.run(
+        [
+            imageio_ffmpeg.get_ffmpeg_exe(),
+            "-v",
+            "error",
+            "-ss",
+            str(start),
+            "-t",
+            str(end - start),
+            "-i",
+            str(path),
+            "-vf",
+            "scale=16:16,format=gray",
+            "-fps_mode",
+            "passthrough",
+            "-f",
+            "rawvideo",
+            "pipe:1",
+        ],
+        capture_output=True,
+        check=True,
+    )
+    return len(result.stdout) // 256
 
 
 def motion_cadence(path, start, seconds):
@@ -86,25 +115,250 @@ def motion_cadence(path, start, seconds):
     }
 
 
+def demo_position(capture, value):
+    """Map a fixed simulation time to the corresponding capture part/time."""
+    samples = capture["samples"]
+    for left, right in zip(samples, samples[1:]):
+        if left["demo_seconds"] <= value <= right["demo_seconds"]:
+            if left["part"] != right["part"]:
+                raise ValueError("Selected time crosses a screenrecord restart; choose another interval")
+            span = right["demo_seconds"] - left["demo_seconds"]
+            fraction = (value - left["demo_seconds"]) / span if span else 0
+            return left["part"], left["wall"] + fraction * (right["wall"] - left["wall"])
+    raise ValueError(f"Demo time {value} is outside captured samples")
+
+
 def demo_interval(capture, start, end):
     """Map simulation time to captured wall time, interpolating nearby samples."""
-    samples = capture["samples"]
-
-    def locate(value):
-        for left, right in zip(samples, samples[1:]):
-            if left["demo_seconds"] <= value <= right["demo_seconds"]:
-                if left["part"] != right["part"]:
-                    raise ValueError("Selected clip crosses a screenrecord restart; choose another interval")
-                span = right["demo_seconds"] - left["demo_seconds"]
-                fraction = (value - left["demo_seconds"]) / span if span else 0
-                return left["part"], left["wall"] + fraction * (right["wall"] - left["wall"])
-        raise ValueError(f"Demo time {value} is outside captured samples")
-
-    part, first = locate(start)
-    last_part, last = locate(end)
+    part, first = demo_position(capture, start)
+    last_part, last = demo_position(capture, end)
     if part != last_part:
         raise ValueError("Selected clip crosses recording parts")
     return {"source": capture["parts"][part], "start": first, "end": last, "demo_start": start, "demo_end": end}
+
+
+def still_recipe():
+    return json.loads((Path(__file__).resolve().parents[1] / "store-stills.json").read_text())["selections"]
+
+
+def featured_recipe():
+    return json.loads((Path(__file__).resolve().parents[1] / "store-stills.json").read_text())["featured"]
+
+
+def validate_featured_source(output):
+    item = featured_recipe()
+    base = Path(output) / item["collection"]
+    directory = base / "demos" / item["demo"]
+    capture = json.loads((directory / "capture.json").read_text())
+    if capture.get("presentation") != item:
+        raise ValueError("Featured capture does not match the stable presentation recipe")
+    for filename in ("start-state.json", "featured-state.json"):
+        state = json.loads((directory / filename).read_text())
+        validate_graphics(state)
+        if any(
+            state.get(key) != item[target]
+            for key, target in (
+                ("current_cockpit_mode", "cockpit_mode"),
+                ("hud_mode", "hud_mode"),
+                ("cockpit_views", "cockpit_views"),
+            )
+        ):
+            raise ValueError("Featured image requires native full-screen/no-HUD mode and the left rear camera")
+        if state["hud_layout"]["show_robot_hostage_counts"] or not state["hud_layout"]["show_boss_health_bar"]:
+            raise ValueError("Featured capture must retain boss health and hide the count helpers")
+        if filename == "featured-state.json" and not state["hud_layout"]["boss_health"]["drawn"]:
+            raise ValueError("The native boss health bar was not drawn in the featured frame")
+    if abs(capture["featured_state_seconds"] - item["seconds"]) > 0.05:
+        raise ValueError("Missing native presentation evidence near the selected boss moment")
+    if capture.get("featured_still", {}).get("method") != "adb-screencap-png-paused-native-replay":
+        raise ValueError("Featured source must be a lossless screenshot of the paused native replay")
+    demo = Path(__file__).resolve().parents[2] / capture["source"]
+    if hashlib.sha256(demo.read_bytes()).hexdigest() != capture["sha256"]:
+        raise ValueError("Featured demo changed since capture")
+    expected = next(
+        json.loads(line)["result"] for line in demo.read_text().splitlines() if json.loads(line)["type"] == "result"
+    )
+    if not capture.get("replay_result"):
+        raise ValueError("Featured replay did not finish")
+    differences = result_differences(expected, capture["replay_result"])
+    return item, capture, differences
+
+
+def select_featured(output):
+    output = Path(output)
+    item, capture, differences = validate_featured_source(output)
+    destination = output / "featured" / item["file"]
+    destination.parent.mkdir(exist_ok=True)
+    source = output / item["collection"] / capture["featured_still"]["file"]
+    shutil.copyfile(source, destination)
+    evidence = dict(
+        item,
+        source=source.relative_to(output).as_posix(),
+        source_seconds=capture["featured_state_seconds"],
+        capture_method=capture["featured_still"]["method"],
+        demo_sha256=capture["sha256"],
+        sha256=hashlib.sha256(destination.read_bytes()).hexdigest(),
+        replay_result_match=not differences,
+        replay_differences=differences,
+    )
+    save_json(output / "featured.json", evidence)
+    validate_featured(output)
+    return destination
+
+
+def validate_featured(output):
+    output = Path(output)
+    item, capture, differences = validate_featured_source(output)
+    evidence = json.loads((output / "featured.json").read_text())
+    path = output / "featured" / item["file"]
+    if any(evidence.get(key) != value for key, value in item.items()):
+        raise ValueError("Featured export is stale; regenerate it from the current recipe")
+    if evidence["sha256"] != hashlib.sha256(path.read_bytes()).hexdigest():
+        raise ValueError("Featured PNG changed after export")
+    source = output / item["collection"] / capture["featured_still"]["file"]
+    if path.read_bytes() != source.read_bytes():
+        raise ValueError("Featured export must be an unchanged copy of the native lossless PNG")
+    with Image.open(path) as im:
+        im.verify()
+        if im.size != (2400, 1080):
+            raise ValueError("Featured PNG must preserve the native 2400x1080 display")
+    return {"image": str(path), "demo_seconds": item["seconds"], "replay_differences": differences}
+
+
+def result_differences(expected, actual, prefix=""):
+    if isinstance(expected, dict) and isinstance(actual, dict):
+        return [
+            path
+            for key in sorted(expected.keys() | actual.keys())
+            for path in result_differences(expected.get(key), actual.get(key), prefix + "/" + key)
+        ]
+    return [] if expected == actual else [prefix]
+
+
+def select_stills(output):
+    """Export the reviewed shortlist at fixed demo times, never auto-rank on rerun."""
+    output = Path(output)
+    destination = output / "selected-stills"
+    destination.mkdir(exist_ok=True)
+    root = Path(__file__).resolve().parents[2]
+    evidence = []
+    for item in still_recipe():
+        target = destination / item["file"]
+        entry = dict(item)
+        if item["kind"] == "image":
+            source = output / item["source"]
+            shutil.copyfile(source, target)
+        else:
+            if item["kind"] == "demo":
+                base = output / item["collection"]
+                manifest = base / "demos" / item["demo"] / "capture.json"
+                if not manifest.exists():
+                    raise ValueError(f"Missing {manifest}; run capture-still-sources before select-stills")
+                capture = json.loads(manifest.read_text())
+                demo = root / capture["source"]
+                digest = hashlib.sha256(demo.read_bytes()).hexdigest()
+                if digest != capture["sha256"]:
+                    raise ValueError(f"Demo changed since capture: {demo}")
+                expected = None
+                with demo.open() as stream:
+                    for line in stream:
+                        record = json.loads(line)
+                        if record["type"] == "result":
+                            expected = record["result"]
+                if expected is None or not capture.get("replay_result"):
+                    raise ValueError(f"Incomplete replay evidence: {manifest}")
+                differences = result_differences(expected, capture["replay_result"])
+                part, timestamp = demo_position(capture, item["seconds"])
+                source = base / capture["parts"][part]
+                entry.update(
+                    demo_sha256=digest,
+                    capture=manifest.relative_to(output).as_posix(),
+                    replay_result_match=not differences,
+                    replay_differences=differences,
+                )
+                if differences:
+                    print(f"Still source replay mismatch ({item['demo']}): {', '.join(differences)}", flush=True)
+            else:
+                timeline = json.loads((output / "video-validation.json").read_text())["timeline"]
+                flyout = next(clip for clip in timeline if clip["group"] == "flyout")
+                if not 0 <= item["clip_seconds"] < flyout["seconds"]:
+                    raise ValueError("Selected fly-out frame is outside its clip")
+                timestamp = flyout["timeline_start"] + item["clip_seconds"]
+                source = output / "store-preview-30s.mp4"
+            ffmpeg(["-ss", timestamp, "-i", source, "-frames:v", 1, target], output / "select-stills.log")
+            entry["source_seconds"] = timestamp
+        with Image.open(target) as im:
+            entry["size"] = list(im.size)
+        entry.update(
+            source=source.relative_to(output).as_posix(), sha256=hashlib.sha256(target.read_bytes()).hexdigest()
+        )
+        evidence.append(entry)
+    save_json(output / "selected-stills.json", evidence)
+    validate_selected_stills(output)
+    contact_sheet([destination / item["file"] for item in evidence], output / "selected-stills-contact.jpg")
+    if (output / featured_recipe()["collection"] / "demos" / featured_recipe()["demo"] / "capture.json").exists():
+        select_featured(output)
+    return destination
+
+
+def validate_selected_stills(output):
+    output = Path(output)
+    recipe = still_recipe()
+    evidence = json.loads((output / "selected-stills.json").read_text())
+    expected = {item["file"] for item in recipe}
+    files = {p.name for p in (output / "selected-stills").iterdir()}
+    if len(recipe) != 8 or len(expected) != 8 or files != expected or len(evidence) != 8:
+        raise ValueError("The shortlist directory must contain exactly the eight selected PNGs")
+    if [sum(item["kind"] == kind for item in recipe) for kind in ("image", "demo", "flyout")] != [2, 5, 1]:
+        raise ValueError("Shortlist must contain two launcher, five demo and one fly-out images")
+    for item, recorded in zip(recipe, evidence):
+        if any(recorded.get(key) != value for key, value in item.items()):
+            raise ValueError("Selection recipe changed; rerun select-stills")
+        path = output / "selected-stills" / item["file"]
+        if hashlib.sha256(path.read_bytes()).hexdigest() != recorded["sha256"]:
+            raise ValueError(f"Selected image changed: {path}")
+        with Image.open(path) as im:
+            im.verify()
+            required = (
+                (1080, 2400) if item["kind"] == "image" else (2400, 1080) if item["kind"] == "demo" else (2400, 1350)
+            )
+            if im.size != required:
+                raise ValueError(f"Unexpected selected image dimensions: {path}: {im.size}")
+    return {
+        "images": 8,
+        "replay_mismatches": [item["demo"] for item in evidence if item.get("replay_result_match") is False],
+    }
+
+
+def flyout_clip(output):
+    output = Path(output)
+    flyout = json.loads((output / "flyout.json").read_text())
+    active = [s for s in flyout["samples"] if s["phase"] > 0]
+    if len(active) < 2 or flyout["samples"][-1]["phase"] != 0:
+        raise ValueError("Fly-out capture is incomplete")
+    end = active[-2]["wall"]
+    if flyout.get("capture_fps"):
+        fps = flyout["capture_fps"]
+        end_frame = active[-2]["frame"]
+        samples = [{**s, "part": 0, "demo_seconds": s["frame"] / fps} for s in active]
+        _, start = demo_position({"samples": samples}, end_frame / fps - 6)
+    else:
+        start = max(active[0]["wall"], end - 6 * flyout.get("playback_rate", 1))
+    native_frames = interval_frame_count(output / flyout["source"], start, end)
+    if native_frames < 180:
+        raise ValueError("Fly-out needs at least 180 captured frames for the six-second clip")
+    return {
+        "label": "Descent 1 fly-out",
+        "group": "flyout",
+        "source": flyout["source"],
+        "start": start,
+        "end": end,
+        "seconds": 6,
+        "frame_rate": native_frames / 6,
+        "native_frames": native_frames,
+        "transpose": flyout.get("transpose"),
+        "capture_fps": flyout.get("capture_fps", 0),
+    }
 
 
 def default_recipe(output):
@@ -177,28 +431,60 @@ def default_recipe(output):
                 **demo_interval(capture, start, start + 5),
             }
         )
-    flyout = json.loads((output / "flyout.json").read_text())
-    active = [s for s in flyout["samples"] if s["phase"] > 0]
-    if len(active) < 2 or flyout["samples"][-1]["phase"] != 0:
-        raise ValueError("Fly-out capture is incomplete")
-    # Introspection timestamps follow the frame they observe, while the video
-    # encoder starts after its launch. Keep one observation interval of margin
-    # so the score-screen transition cannot flash at the end of the edit.
-    end = active[-2]["wall"]
-    rate = flyout.get("playback_rate", 1)
-    clips.append(
-        {
-            "label": "Descent 1 fly-out",
-            "group": "flyout",
-            "source": flyout["source"],
-            # Recorder startup can precede the warp; never include that view
-            "start": max(active[0]["wall"], end - 6 * rate),
-            "end": end,
-            "seconds": 6,
-            "transpose": flyout.get("transpose"),
-        }
-    )
+    clips.append(flyout_clip(output))
     return {"width": 2400, "height": 1350, "fps": 30, "audio": "engine-pcm", "clips": clips}
+
+
+def effects_subtraction_filter():
+    # amix takes absolute weights when normalize=0, so a negative weight adds
+    # music instead of subtracting it. Invert the actual signal before mixing
+    return "[1:a]volume=-1[inverted];[0:a][inverted]amix=inputs=2:normalize=0"
+
+
+def validate_music_cancellation(music, start=0):
+    reference = subprocess.check_output(
+        [
+            imageio_ffmpeg.get_ffmpeg_exe(),
+            "-v",
+            "error",
+            "-ss",
+            str(start),
+            "-i",
+            str(music),
+            "-t",
+            "1",
+            "-f",
+            "s16le",
+            "pipe:1",
+        ]
+    )
+    if not reference or not any(reference):
+        raise ValueError("Cancellation regression check requires a non-silent audio excerpt")
+    result = subprocess.check_output(
+        [
+            imageio_ffmpeg.get_ffmpeg_exe(),
+            "-v",
+            "error",
+            "-ss",
+            str(start),
+            "-i",
+            str(music),
+            "-ss",
+            str(start),
+            "-i",
+            str(music),
+            "-filter_complex",
+            effects_subtraction_filter(),
+            "-t",
+            "1",
+            "-f",
+            "s16le",
+            "pipe:1",
+        ]
+    )
+    if not result or any(result):
+        raise ValueError("Music subtraction failed: identical native stems must cancel to digital silence")
+    return {"identical_stems_cancel_to_silence": True, "non_silent_reference": True, "checked_pcm_bytes": len(result)}
 
 
 def render_audio(output, clips, encoded):
@@ -247,7 +533,7 @@ def render_audio(output, clips, encoded):
             # The tap is sample-aligned with the final mix. Subtract music
             # before accelerating SFX, then mix an unretimed native excerpt
             filters = (
-                "[0:a][1:a]amix=inputs=2:weights='1 -1':normalize=0,"
+                effects_subtraction_filter() + ","
                 f"atrim=start={audio_start:.6f}:end={audio_end:.6f},asetpts=PTS-STARTPTS,"
                 + ",".join(tempo)
                 + f",adelay={delay_frames}S:all=1,apad,atrim=duration={clip['seconds']}[effects];"
@@ -401,8 +687,8 @@ def compose(output, recipe_path=None):
         count = round(clip["seconds"] * recipe["fps"])
         ratio = clip["seconds"] / (clip["end"] - clip["start"])
         w, h, fps = recipe["width"], recipe["height"], recipe["fps"]
-        # Replays advance by recorded frames, not emulator wall time. The guest
-        # recorder retains their VFR frames; restore their original cadence.
+        # Replays use their recorded cadence; the fly-out uses its measured
+        # frame count to avoid bursts in emulator presentation timestamps
         timing = f"N/({clip['frame_rate']:.10f}*TB)" if "frame_rate" in clip else f"(PTS-STARTPTS)*{ratio:.10f}"
         filters = (
             (f"transpose={clip['transpose']}," if clip.get("transpose") else "") + f"setpts={timing},fps={fps},"
@@ -489,6 +775,7 @@ def compose(output, recipe_path=None):
     video_stills.mkdir(exist_ok=True)
     ffmpeg(["-i", final, "-vf", "fps=1", "-frames:v", "30", video_stills / "%02d.png"], output / "video-stills.log")
     contact_sheet(list(video_stills.glob("*.png")), output / "video-contact-sheet.jpg", columns=5)
+    select_stills(output)
     review(output)
     return final
 
@@ -529,7 +816,14 @@ def review(output):
     output = Path(output)
     sections = []
     launcher = list(sorted((output / "launcher").glob("*.png")))
-    groups = [("Launcher", launcher)]
+    groups = []
+    featured = sorted((output / "featured").glob("*.png"))
+    if featured:
+        groups.append(("Featured boss image / native full screen, no HUD, left rear camera", featured))
+    selected = sorted((output / "selected-stills").glob("*.png"))
+    if selected:
+        groups.append(("Selected eight images for the listing", selected))
+    groups.append(("Launcher", launcher))
     briefing = sorted((output / "briefing").glob("*.png"))
     if briefing:
         groups.append(("In-engine D2 briefing / paired animation frames", briefing))
@@ -571,6 +865,21 @@ def review(output):
     (output / "index.html").write_text(document, encoding="utf-8")
 
 
+def validate_graphics(state):
+    expected = {"TexFilt": 2, "AnisoLevel": 16, "MsaaLevel": 4}
+    safety = state["graphics_safety"]
+    if safety["phase"] != "idle" or any(safety["current"][key] != value for key, value in expected.items()):
+        raise ValueError("Capture graphics profile was not applied and accepted")
+    caps, msaa = state["gpu_capabilities"], state["msaa"]
+    if caps["aniso_max"] < 16 or msaa["effective_samples"] != 4 or not msaa["create_complete"]:
+        raise ValueError("Capture requires effective 16x AF and 4x MSAA")
+    if msaa["width"] < 2000 or msaa["height"] < 1000 or not msaa["resolve_count"]:
+        raise ValueError("Filtered capture did not render at the required resolution")
+    if msaa["failure_latched"] or msaa["resolve_failures"] or msaa["last_gl_error"] or msaa["scene_error_count"]:
+        raise ValueError("Capture renderer reported an MSAA error")
+    return {**expected, "renderer": caps["renderer"], "effective_samples": msaa["effective_samples"]}
+
+
 def validate(output):
     """End-to-end evidence check; no fabricated media or mocked app state."""
     output = Path(output)
@@ -579,6 +888,7 @@ def validate(output):
     if not state.get("resume_candidate", {}).get("has_thumbnail"):
         raise ValueError("Launcher capture has no populated save")
     checks = {"launcher_images": 0, "demo_images": 0, "demos": [], "video": None}
+    edit = json.loads((output / "edit.json").read_text())
     for name in ("01-top.png", "02-bottom.png", "03-save-explorer.png"):
         with Image.open(output / "launcher" / name) as im:
             im.verify()
@@ -598,6 +908,7 @@ def validate(output):
         if expected is None or capture.get("replay_result") != expected:
             raise ValueError(f"Replay did not match its recorded result: {source.name}")
         start_state = json.loads((path.parent / "start-state.json").read_text())
+        validate_graphics(start_state)
         if not start_state["hud_layout"]["show_robot_hostage_counts"]:
             raise ValueError("HUD counter defaults were not applied")
         for item in capture["screenshots"]:
@@ -612,8 +923,16 @@ def validate(output):
         actual_targets = [round(s["target_seconds"]) for s in capture["screenshots"] if s["target_seconds"]]
         if expected_targets != actual_targets:
             raise ValueError(f"Missing ten-second samples: {source.name}")
-        if not capture["samples"] or capture["samples"][-1]["demo_seconds"] < capture["duration"] - 1:
-            raise ValueError(f"Incomplete video source: {source.name}")
+        # Replay-result equality above proves the simulation completed. Require
+        # footage for every requested screenshot and selected clip; a recorder
+        # restart may omit an unused tail after the final requested interval
+        required_end = max(expected_targets, default=0)
+        for clip in edit["clips"]:
+            if clip["group"] == "demo" and clip["source"] in capture["parts"]:
+                demo_interval(capture, clip["demo_start"], clip["demo_end"])
+                required_end = max(required_end, clip["demo_end"])
+        if not capture["samples"] or capture["samples"][-1]["demo_seconds"] < required_end:
+            raise ValueError(f"Missing requested video interval: {source.name}")
         games.add(capture["game"])
         checks["demos"].append({"name": source.name, "result_match": True, "screenshots": len(capture["screenshots"])})
     if games != {"d1", "d2"} or len(checks["demos"]) < 3:
@@ -675,5 +994,10 @@ def validate(output):
         if item["visible_updates_per_second"] < minimum or item["longest_hold_seconds"] > 0.14:
             raise ValueError(f"Visible frame pacing failed: {item}; inspect motion-validation.json")
     checks["motion"] = cadence
+    checks["graphics"] = {}
+    for name in ("campaign-d2", "flyout", "flyout-audio"):
+        checks["graphics"][name] = validate_graphics(json.loads((output / "graphics" / (name + ".json")).read_text()))
+    checks["selected_stills"] = validate_selected_stills(output)
+    checks["featured"] = validate_featured(output)
     save_json(output / "validation.json", checks)
     return checks

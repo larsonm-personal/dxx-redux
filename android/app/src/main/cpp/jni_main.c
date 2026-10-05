@@ -351,6 +351,11 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 		LOGI("Launching input demo replay: %s", input_demo_replay_path);
 		argv_startup[argc++] = "-inputdemo-replay";
 		argv_startup[argc++] = input_demo_replay_path;
+#ifdef DXX_BUILD_DESCENT_II
+		/* A D1 launch profile needs the existing native checkpoint translator */
+		if (startup_profile && strcmp(startup_profile, "-d1") == 0)
+			argv_startup[argc++] = "-inputdemo-d1-in-d2";
+#endif
 	} else {
 		const char *startup_pilot = pilot_callsign;
 

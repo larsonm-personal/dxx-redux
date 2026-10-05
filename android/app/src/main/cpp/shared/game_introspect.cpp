@@ -2858,6 +2858,14 @@ extern "C" char *game_introspect_get_state(void)
 		j["control_type"] = (int) PlayerCfg.ControlType;
 		j["cockpit_mode"] = (int) PlayerCfg.PreferredCockpitMode;
 		j["current_cockpit_mode"] = (int) PlayerCfg.CurrentCockpitMode;
+		int capture_fps = 0, capture_frame = 0;
+		game_automate_capture_clock(&capture_fps, &capture_frame);
+		j["capture_clock"] = { { "fps", capture_fps }, { "frame", capture_frame } };
+		/* Android capture diagnostics for the native HUD and auxiliary cameras */
+		j["hud_mode"] = (int) PlayerCfg.HudMode;
+#ifdef DXX_BUILD_DESCENT_II
+		j["cockpit_views"] = { PlayerCfg.Cockpit3DView[0], PlayerCfg.Cockpit3DView[1] };
+#endif
 		j["auto_leveling"] = (bool) PlayerCfg.AutoLeveling;
 		j["original_homing"] = (bool) PlayerCfg.OriginalHoming;
 #ifdef DXX_BUILD_DESCENT_II

@@ -155,3 +155,211 @@ recipe and documentation in source control; keep game data and media out of git.
 4. Regenerate opening/replay audio and exit video into a new ignored review
    folder, inspect the entire tunnel and validate music tempo, motion and audio
 5. Build both engines, run scoped formatting and the store asset integration
+
+### Follow-up findings and implementation
+
+- User confirmed removal of the one-second shot after the briefing. Launcher,
+  picker and scrolling now occupy 4.6 seconds instead of 3.6; setup stays at
+  nine seconds with all three five-second action clips retained
+- The old pitch-preserving atempo edit accelerated D1 MIDI by about 17-21%.
+  A native pre-effects stem now allows SFX retiming with unchanged MIDI tempo;
+  rendered music samples are compared exactly against the native source
+- The arbitrary three-segment exit placement exposed the external opening
+  early. The real level-1 exit trigger is wall 6, from segment 69 into 106,
+  with a 12-segment route to exterior segment 284. The fixture now uses that
+  authored trigger and initializes last_pos to a consistent approach
+- Captured phases 1, 2, 3 and 4 through completion. Inspected the full native
+  sequence at five frames per simulated second: the approach and look-back
+  show mine geometry without the previous central stale patch
+- Fresh backing is scoped to the debug fixture. No production renderer or
+  normal gameplay clear behavior was changed
+- Rebuilt both engines, recaptured all three replay videos and their native
+  music stems, opening/menu/briefing audio and both exit passes. Existing
+  screenshot candidates remain available in the new ignored review folder
+
+### Final follow-up validation
+
+- Review: `android/temp/store-assets_20261004_tempo/index.html`; regenerated
+  `store-preview-30s.mp4` is 900 frames, 30.000 seconds, 2400x1350 with AAC
+- Both engine builds, scoped code quality and the store asset integration pass
+- All three replay results match; original 31 screenshot candidates and three
+  launcher screenshots pass validation; all briefing robot animation checks pass
+- All edited native music excerpts match their original PCM samples exactly
+  at tempo 1.0; decoded final audio has no clipped samples in checked sections
+- Visible updates/sec: 24.97 for all action clips and 30.00 for the moving
+  fly-out, with no held frames longer than 67 ms in the checked sections
+- Inspected full native exit and final-video frames, retained evidence in
+  `exit-review/` and refreshed `flyout-inspection/`. Capture emulator returned
+  to launcher; generated assets remain ignored by git
+
+## Stable eight-image listing shortlist
+
+1. Review existing action candidates and capture D1 level 7's final boss fight
+2. Check in explicit launcher/demo-time/fly-out selections with descriptive
+   filenames; retain source timing, hashes and replay status in a manifest
+3. Add shortlist generation to the full asset workflow and an offline rerun
+   command. Keep exactly eight PNGs in the review directory, with the gallery
+   and source manifest alongside it
+4. Inspect all eight images, check dimensions/source integrity, rerun the
+   selection for stability and run scoped quality plus media integration
+
+### Shortlist results
+
+- Delivered `android/temp/store-assets_20261004_tempo/selected-stills/` with
+  exactly eight numbered PNGs and an overview in `selected-stills-contact.jpg`
+- Fixed choices in `android/store-stills.json`: launcher top/bottom; D1 level 5
+  at 30.5 and 89.5 seconds; D1 level 18 at 26.0; D2 level 9 at 49.0; D1 level 7
+  at 101.8 (visible, uncloaked boss); first frame of the corrected fly-out clip
+- Full capture includes the supplementary boss source; compose exports the
+  shortlist automatically. `-SelectStillsOnly` rebuilds it from existing media
+- Fresh boss replay retains its known endlevel_completed-only mismatch. This
+  is reported in the selection manifest and separate validation status; other
+  final fields match. Primary video replay assertions remain strict
+- Inspected all eight images; verified dimensions, source demo identity and
+  exactly eight output files. Re-export produced identical SHA-256 hashes for
+  every PNG. Scoped formatting and the extended media integration both passed
+
+## Filtered video regeneration
+
+1. Enable native trilinear texture filtering, 4x MSAA and 16x anisotropic
+   filtering; select an emulator backend that exposes real AF support
+2. Apply and verify this presentation profile for each engine launch, preserving
+   replay simulation settings, native MIDI tempo and the approved edit timing
+3. Recapture opening, action and exit sources in a new ignored review folder;
+   regenerate the stable shortlist from the new recordings
+4. Check effective GPU settings, replay results, motion/audio and final images;
+   run scoped formatting and the existing asset pipeline integration
+
+### Filtered capture findings
+
+- Host GLES translation reports AF unavailable; guest ANGLE over the NVIDIA
+  Vulkan driver exposes 16x AF and working 4x MSAA at 2400x1080
+- Added explicit per-launch graphics configuration, real safety confirmation
+  and native state validation. The runner selects guest ANGLE automatically
+- Filtered replay rendering is slower than real time. Capture timeout now
+  permits 12x duration plus setup margin; the integration allowance is two
+  hours. Recorded simulation cadence and unchanged native MIDI remain intact
+- The first D1 action clip measured 24.97 visible updates/sec and a 67 ms
+  maximum hold after export, matching the demo's original 25 Hz cadence
+- ANGLE's host fly-out recording failed the motion check despite correct
+  native graphics settings. Switched this capture to guest recording and a
+  16x debug capture clock divisor, without changing production rendering
+- Guest capture retained 527 frames for the chosen fly-out interval, but its
+  presentation timestamps also arrived in bursts. Evenly pacing those real
+  frames over six seconds restores 30 distinct updates/sec without synthetic
+  frames. The recipe records and validates the available native frame count
+- A part restart omitted an unused 1.24-second tail of level 18. Its final
+  simulation result matches and every selected clip/ten-second screenshot is
+  present. Validation now checks requested intervals explicitly, and the
+  recorder avoids a restart when the remaining replay fits in its current part
+
+### Filtered delivery and validation
+
+- Delivered `android/temp/store-assets_20261004_filtered/index.html` and
+  `store-preview-30s.mp4`, with refreshed candidates and the eight-image shortlist
+- Final video: 2400x1350, 900 frames, exactly 30 seconds with native engine audio
+- All three primary replay results match. Supplementary boss capture retains
+  only the previously reported endlevel_completed mismatch
+- Action clips: 24.77-24.97 visible updates/sec, longest hold 100 ms. Moving
+  fly-out: 30 visible updates/sec, no repeated frames, longest hold 33 ms
+- MIDI remains at tempo 1.0 with exact native sample comparison; final decoded
+  audio has no clipped samples in checked sections
+- Moved graphics setup before the pilot capture landmark and recaptured the
+  opening, preserving its nine-second edit while showing pilot creation clearly
+- Inspected final opening, action stills and the entire edited fly-out. Scoped
+  formatting, test-catalog integration and the complete media integration pass
+- Generated media remains ignored by git; capture emulator returned to launcher
+
+### Featured boss image
+
+- Add an additional stable recipe at the same D1 level 7 boss moment, 101.8s
+- Use native full-screen cockpit mode, immersion/no-HUD mode and the left rear
+  camera, configured through debug automation; retain touch controls
+- Expose native HUD/camera settings through introspection to verify the capture
+- Keep trilinear filtering, 4x MSAA and 16x AF; preserve the eight-image shortlist
+- Add isolated featured regeneration and include it in full generation, export
+  a separate featured PNG and provenance, and show it in the review gallery
+- Build both engines, capture and inspect the new image, and run media validation
+- Native D1 lacks auxiliary camera windows. Use the existing D1-in-D2 launch
+  and checkpoint translator for this additional capture; compare and report the
+  translated replay. Wire the Android D1-in-D2 replay startup to the translator
+  flag already used by the host replay runner (Android intentionally ignores ini)
+- D2 replay blocks live keyboard controls. Add validated debug setters for native
+  cockpit/HUD modes and rear camera selection, with no renderer changes
+
+### Featured image delivery
+
+- Delivered `android/temp/store-assets_20261004_filtered/featured/featured-d1-level7-boss.png`
+  at 2400x1080, with the boss visible and native left rear camera; gallery updated
+- Full-screen mode 3, native No HUD mode 3, camera views [2, 0], trilinear filtering,
+  4x MSAA and 16x AF verified at startup and near the selected 101.8-second frame
+- Native No HUD mode retains corner indicators, weapon text, reticle and touch
+  controls; the cockpit art, gauges and optional count/boss HUD helpers are hidden
+- Both Android engines built successfully; scoped quality and automation catalog
+  checks passed, followed by the complete store media integration validation
+- Imported replay differs only in its expected D2 game/mission identities and
+  the previously observed endlevel_completed flag; raw differences remain in
+  `featured.json`. Existing eight-image shortlist remains separate
+- `-FeaturedOnly` regenerates this capture; full generation includes it, and
+  `-SelectStillsOnly` re-exports the same selection from its existing recording
+
+### Repair filtered video audio and motion
+
+- Treat the user's perceptual regression report as a failed capture despite the
+  earlier sample-equality and pixel-change checks; compare tempo/filtered sources
+- Preserve existing review videos and identify the accepted audio and fly-out
+- Diagnose audio timing/mix subtraction and measure geometric motion through the
+  entire fly-out, including the transition outside, rather than only pixel changes
+- Combine the filtered picture with proven audio; repair or recapture filtered
+  fly-out motion and retain an explicit reproducible source recipe with hashes
+- Deliver a new ignored review video, validate it and document remaining limits
+
+### Combined video delivery
+
+- Delivered `android/temp/store-assets_20261004_combined/store-preview-30s.mp4`
+  with a review gallery and self-contained, hash-pinned combination recipe
+- First 24 seconds have identical decoded picture frames to the filtered version
+  and the complete decoded soundtrack exactly matches the accepted tempo version
+- Found that amix takes absolute weights: the old negative mix weight added the
+  music stem instead of subtracting it before time compression. Replaced it with
+  explicit signal inversion and verified identical non-silent stems cancel to zero
+- Recaptured the native filtered fly-out with a debug-only 60 Hz simulation clock
+  per rendered frame, then paced its native frames into six seconds at 30 fps
+- Geometric tunnel-wall motion checks accept the tempo and new captures and reject
+  the filtered regression. New p90/median movement ratio is 1.31 versus 16.04 in
+  the failed capture; no initial tunnel stalls. Inspected final fly-out contact sheet
+- Both Android engines build, scoped mixed-language quality checks pass, and the
+  actual PowerShell combination command and media integration test pass
+- Documented full regeneration with the accepted soundtrack and offline rebuilding
+  from archived inputs. Existing soundtrack imperfections remain unchanged;
+  extreme action compression can still impair newly retimed sound effects
+- No production renderer changes; previous review assets remain intact
+
+### Repair featured image quality and boss health
+
+- Replace video-frame extraction with lossless Android PNG capture. Use native
+  replay pause and single-frame controls to reach the stable 101.8-second landmark
+- Enable native boss health in the featured presentation and require drawn-state
+  evidence at the captured frame; retain full-screen mode and the left rear camera
+- Capture into a separate source collection, replace the requested featured PNG,
+  and verify exact source/export equality, frame timing, graphics and presentation
+- Run scoped quality checks and the featured media integration validation
+
+### Featured repair delivery
+
+- Replaced the requested featured PNG in the filtered review directory with an
+  unchanged 2400x1080 Android screenshot; old export backed up under
+  `featured-source/previous-featured.png`
+- Captured native replay frame 2542 at 101.809005737 seconds, 9 ms after the
+  recipe landmark. Boss health is enabled, active and drawn; full-screen mode 3,
+  HUD mode 3, left rear camera and filtered graphics all verified
+- The initial one-second pause margin was insufficient for automation transport;
+  its timing guard rejected that attempt. The successful generator pauses five
+  seconds early and batches native single-frame advances to the exact frame
+- Inspected the new PNG. Source/export bytes match exactly, with no video
+  compression, resizing or compositing; the visible boss bar is native
+- Scoped mixed-language quality and the existing media integration runner's new
+  `-FeaturedOnly` mode pass. Replay differences remain the previously documented
+  game/mission identities and endlevel_completed; no new replay differences
+- Generator updated for repeat runs, gallery refreshed, and capture emulator
+  returned to the launcher. No native code or production renderer changes

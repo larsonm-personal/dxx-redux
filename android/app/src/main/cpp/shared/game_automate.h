@@ -67,6 +67,7 @@ void game_automate_tick(void);
 
 /* Debug-only slow-motion clock for the single-player exit capture fixture */
 int game_automate_capture_frame_time(int frame_time);
+void game_automate_capture_clock(int *fps, int *frame);
 
 /* Copies the latest source-correlated axis probe. Returns nonzero when valid. */
 int game_automate_get_axis_probe(game_automate_axis_probe *out_probe);

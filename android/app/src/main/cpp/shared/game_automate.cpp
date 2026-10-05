@@ -120,6 +120,7 @@ void net_udp_show_game_rules(netgame_info *netgame);
 #include "secretarea.h"
 #include "switch.h"
 #include "wall.h"
+#include "endlevel_validation.h"
 #include "cntrlcen.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
@@ -527,6 +528,7 @@ struct auto_step {
 	std::string modifier_name;          /* STEP_KEY: optional modifier (e.g. "lshift") */
 	int post_delay_ms = 300;            /* STEP_KEY / STEP_SELECT: post-action delay */
 	int capture_slowdown = 1;           /* STEP_TRIGGER_ENDLEVEL: capture clock divisor */
+	int capture_fps = 0;                /* Optional fixed simulation cadence for rendered exit frames */
 	std::string field;                  /* STEP_WAIT_FOR: field name */
 	std::string value;                  /* STEP_WAIT_FOR: expected value */
 	int timeout_ms = 0;                 /* STEP_WAIT_FOR: timeout (0 = infinite) */
@@ -580,17 +582,32 @@ static std::vector<auto_step> g_steps;
 static int g_current_step = 0;
 static int g_active = 0;
 static int g_capture_slowdown = 1;
+static int g_capture_fps = 0;
+static int g_capture_frame = 0;
 static bool g_capture_exit_backing = false;
 
 extern "C" int game_automate_capture_frame_time(int frame_time)
 {
 	if (!Endlevel_sequence || (Game_mode & GM_MULTI) || input_demo_replay_is_loaded()) {
 		g_capture_slowdown = 1;
+		g_capture_fps = 0;
 		return frame_time;
+	}
+	if (g_capture_fps) {
+		/* Integer differences preserve exact simulated seconds without drift */
+		const int previous = g_capture_frame++;
+		return (int) ((long long) g_capture_frame * F1_0 / g_capture_fps -
+		              (long long) previous * F1_0 / g_capture_fps);
 	}
 	if (g_capture_slowdown <= 1) return frame_time;
 	const int scaled = frame_time / g_capture_slowdown;
 	return scaled > 0 ? scaled : 1;
+}
+
+extern "C" void game_automate_capture_clock(int *fps, int *frame)
+{
+	*fps = g_capture_fps;
+	*frame = g_capture_frame;
 }
 static int g_failed = 0;        /* set to 1 on assert/timeout failure */
 static Uint32 g_step_start = 0; /* SDL_GetTicks() when step began */
@@ -2578,6 +2595,7 @@ static int parse_script(const char *json_text)
 			s.modifier_name = step_json.value("modifier", "");
 			s.post_delay_ms = step_json.value("post_delay_ms", step_json.value("ms", 300));
 			s.capture_slowdown = step_json.value("capture_slowdown", 1);
+			s.capture_fps = step_json.value("capture_fps", 0);
 			s.field = step_json.value("field", "");
 			s.value = step_json.value("value", "");
 			if (s.type == STEP_REQUEST_SCREEN_ADVANCE)
@@ -3999,6 +4017,10 @@ extern "C" void game_automate_tick(void)
 			}
 			/* Android capture fixture: use authored exit geometry, not a copied pose */
 			if (s.value == "from_exit_tunnel") {
+				if (s.capture_fps != 0 && s.capture_fps != 30 && s.capture_fps != 60) {
+					stop_script_fail("exit capture_fps requires 0, 30 or 60");
+					break;
+				}
 				if (s.capture_slowdown < 1 || s.capture_slowdown > 16) {
 					stop_script_fail("exit capture slowdown must be between 1 and 16");
 					break;
@@ -4007,43 +4029,38 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail("exit capture requires foreground single player without replay");
 					break;
 				}
-				int seg = -1, side = -1;
-				for (int i = 0; i <= Highest_segment_index && seg < 0; ++i)
-					for (int j = 0; j < MAX_SIDES_PER_SEGMENT; ++j)
-						if (Segments[i].children[j] == -2) {
-							seg = i;
-							side = j;
-							break;
-						}
-				int depth = 0, exit_trigger = -1;
-				/* Walk back to the authored exit trigger rather than choosing an
-				 * arbitrary depth which shortens or changes the camera path */
-				while (seg >= 0 && depth <= Highest_segment_index) {
-					const int entry = (int) Side_opposite[side];
-					const int wall_num = Segments[seg].sides[entry].wall_num;
-					if (wall_num >= 0 && wall_num < Num_walls) {
-						const int trigger = Walls[wall_num].trigger;
-						if (trigger >= 0 && trigger < Num_triggers && (trigger_exit_flags(trigger) & TRIGGER_EXIT)) {
-							exit_trigger = trigger;
-							break;
-						}
-					}
-					const int inner = Segments[seg].children[entry];
-					if (inner < 0 || inner > Highest_segment_index) break;
-					const int outward = find_connect_side(&Segments[seg], &Segments[inner]);
-					if (outward < 0) break;
-					seg = inner;
+				int seg = -1, side = -1, entry = -1, exit_trigger = -1;
+				endlevel_route route = {};
+				/* Start just across a real exit trigger, following the same
+				 * route validation as the cinematic, not an arbitrary depth */
+				for (int w = 0; w < Num_walls; ++w) {
+					const int trigger = Walls[w].trigger;
+					if (trigger < 0 || trigger >= Num_triggers || !(trigger_exit_flags(trigger) & TRIGGER_EXIT)) continue;
+					const int origin = Walls[w].segnum, face = Walls[w].sidenum;
+					if (origin < 0 || origin > Highest_segment_index || face < 0 || face >= MAX_SIDES_PER_SEGMENT) continue;
+					const int child = Segments[origin].children[face];
+					if (child < 0 || child > Highest_segment_index) continue;
+					const int back = find_connect_side(&Segments[origin], &Segments[child]);
+					if (back < 0) continue;
+					const int outward = (int) Side_opposite[back];
+					const char *reason = endlevel_validate_route(child, outward, &route);
+					LOGI("Exit capture candidate: trigger=%d wall=%d origin=%d child=%d outward=%d route=%s", trigger, w, origin, child, outward, reason ? reason : "valid");
+					if (reason) continue;
+					seg = child;
 					side = outward;
-					++depth;
+					entry = back;
+					exit_trigger = trigger;
+					break;
 				}
 				if (exit_trigger < 0) {
 					stop_script_fail("exit capture requires an authored exit trigger and tunnel");
 					break;
 				}
 				vms_vector target, forward, up = ConsoleObject->orient.uvec;
-				compute_segment_center(&ConsoleObject->pos, &Segments[seg]);
+				compute_center_point_on_side(&ConsoleObject->pos, &Segments[seg], entry);
 				compute_center_point_on_side(&target, &Segments[seg], side);
 				vm_vec_normalized_dir(&forward, &target, &ConsoleObject->pos);
+				vm_vec_scale_add2(&ConsoleObject->pos, &forward, F1_0);
 				vm_vector_2_matrix(&ConsoleObject->orient, &forward, &up, NULL);
 				/* find_exit_side uses displacement, not the ship's orientation */
 				vm_vec_sub(&ConsoleObject->last_pos, &ConsoleObject->pos, &forward);
@@ -4054,8 +4071,10 @@ extern "C" void game_automate_tick(void)
 				ogl_android_clear_window_backing();
 				g_capture_exit_backing = true;
 #endif
-				LOGI("Exit capture: trigger=%d segment=%d outward=%d depth=%d fresh backing enabled", exit_trigger, seg, side, depth);
+				LOGI("Exit capture: trigger=%d segment=%d outward=%d exit=%d depth=%d fresh backing enabled", exit_trigger, seg, side, route.exit_segment, route.segments);
 				g_capture_slowdown = s.capture_slowdown;
+				g_capture_fps = s.capture_fps;
+				g_capture_frame = 0;
 			}
 			advance_step();
 #ifdef ANDROID
@@ -4318,6 +4337,30 @@ extern "C" void game_automate_tick(void)
 			} else if (s.field == "persist_guidebot_goal_message") {
 #ifdef DXX_BUILD_DESCENT_II
 				escort_set_goal_message_persistent(s.value == "true" || s.value == "1");
+#endif
+			} else if (s.field == "cockpit_mode") {
+				const int mode = atoi(s.value.c_str());
+				if (s.value != "0" && s.value != "2" && s.value != "3") {
+					stop_script_fail("cockpit_mode requires 0, 2 or 3");
+					break;
+				}
+				select_cockpit(mode);
+				PlayerCfg.PreferredCockpitMode = mode;
+			} else if (s.field == "hud_mode") {
+				if (s.value != "0" && s.value != "1" && s.value != "2" && s.value != "3") {
+					stop_script_fail("hud_mode requires 0 through 3");
+					break;
+				}
+				PlayerCfg.HudMode = atoi(s.value.c_str());
+			} else if (s.field == "cockpit_view_left" || s.field == "cockpit_view_right") {
+#ifdef DXX_BUILD_DESCENT_II
+				if (s.value != "0" && s.value != "2") {
+					stop_script_fail("cockpit view requires 0 (none) or 2 (rear)");
+					break;
+				}
+				PlayerCfg.Cockpit3DView[s.field == "cockpit_view_left" ? 0 : 1] = atoi(s.value.c_str());
+#else
+				stop_script_fail("cockpit camera windows require the D2 engine");
 #endif
 			} else if (s.field == "show_boss_health_bar") {
 				PlayerCfg.ShowBossHealthBar =
