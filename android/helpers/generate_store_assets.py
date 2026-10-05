@@ -155,12 +155,36 @@ class Capture:
         path.write_bytes(self.call("exec-out", "screencap", "-p", binary=True))
         return path
 
-    def start_recording(self, name, host=False):
+    def start_audio(self):
+        before = time.monotonic()
+        device = float(self.shell("cat", "/proc/uptime").split()[0])
+        self.audio_clock_offset = (before + time.monotonic()) / 2 - device
+        self.step("set_debug", field="capture_audio", value="start")
+        self.audio_active = True
+        state = self.state()
+        self.audio_state = {key: state.get(key, {}) for key in ("audio", "music")}
+
+    def stop_audio(self, video):
+        if not getattr(self, "audio_active", False):
+            return
+        self.step("set_debug", field="capture_audio", value="stop")
+        self.audio_active = False
+        metadata = json.loads(self.private("cat", "files/store-audio.json"))
+        path = video.with_suffix(".wav")
+        path.write_bytes(self.call("exec-out", "run-as", PACKAGE, "cat", "files/store-audio.wav", binary=True))
+        metadata["source"] = str(path.relative_to(self.output))
+        metadata["video_offset"] = metadata["start_monotonic_seconds"] + self.audio_clock_offset - self.record_started
+        metadata["engine_audio"] = self.audio_state
+        write_json(video.with_suffix(".audio.json"), metadata)
+
+    def start_recording(self, name, host=False, audio=True):
+        if audio:
+            self.start_audio()
         self.record_host = host
         if not host:
             remote = "/sdcard/store-assets.mp4"
             self.shell("rm", "-f", remote, remote + ".pid")
-            command = f"echo $$ > {remote}.pid; exec screenrecord --size 2400x1080 --bit-rate 16000000 --time-limit 180 {remote}"
+            command = f"echo $$ > {remote}.pid; exec screenrecord --verbose --size 2400x1080 --bit-rate 16000000 --time-limit 180 {remote}"
             self.record_log = (self.output / (name + "-screenrecord.log")).open("wb")
             self.record_process = subprocess.Popen(
                 [str(self.adb), "-s", self.serial, "shell", command],
@@ -169,9 +193,28 @@ class Capture:
             )
             self.record_started = time.monotonic()
             self.record_name = name
-            time.sleep(0.4)
-            if self.record_process.poll() is not None:
-                raise RuntimeError("screenrecord failed; see capture log")
+            previous = self.record_started
+            deadline = previous + 20
+            while time.monotonic() < deadline:
+                size = self.shell("stat", "-c", "%s", remote, check=False)
+                now = time.monotonic()
+                if size.isdigit() and int(size) > 64:
+                    # Bound the first encoded frame between file-size polls,
+                    # rather than counting potentially slow codec startup
+                    self.record_started = (previous + now) / 2
+                    break
+                if self.record_process.poll() is not None:
+                    self.record_log.close()
+                    raise RuntimeError("screenrecord failed during codec startup; see capture log")
+                previous = now
+                time.sleep(0.1)
+            else:
+                pid = self.shell("cat", remote + ".pid")
+                if pid.isdigit():
+                    self.shell("kill", "-2", pid, check=False)
+                self.record_process.wait(timeout=20)
+                self.record_log.close()
+                raise RuntimeError("screenrecord produced no frames in 20 seconds")
             return self.record_started
         # Host recording uses the physical portrait framebuffer. Rotate it in
         # the editor; requesting landscape here stretches the rotated pixels.
@@ -208,6 +251,9 @@ class Capture:
             path = self.output / "raw" / (self.record_name + ".mp4")
             path.parent.mkdir(parents=True, exist_ok=True)
             self.call("pull", "/sdcard/store-assets.mp4", path)
+            self.stop_audio(path)
+            if path.stat().st_size < 1024:
+                raise RuntimeError("screenrecord produced empty media; see capture log")
             return path
         result = self.call("emu", "screenrecord", "stop")
         if "KO" in result:
@@ -215,6 +261,7 @@ class Capture:
         time.sleep(0.5)
         if not self.record_path.exists() or not self.record_path.stat().st_size:
             raise RuntimeError("Host recording produced no media")
+        self.stop_audio(self.record_path)
         return self.record_path
 
     def step(self, action, setup=False, **fields):
@@ -244,6 +291,7 @@ class Capture:
         state = self.wait(lambda s: bool(s.get("menu")), timeout=30)
         menu = state["menu"]
         if mark:
+            self.start_audio()
             mark("Pilot name")
             time.sleep(0.5)
         if "Enter your pilot" in menu.get("subtitle", ""):
@@ -261,16 +309,23 @@ class Capture:
         self.step("select", text="Ok", post_delay_ms=300) if game == "d2" else self.step(
             "key", key="enter", post_delay_ms=300
         )
+        if mark:
+            mark("Choose difficulty")
         self.step("select", text="Rookie", post_delay_ms=300)
         if mark:
             mark("Difficulty selected")
         if briefing:
             self.wait(lambda s: s.get("screen_advance_kind") == "briefing", timeout=20)
+            # Retail D2 normally chooses ambient hum here. For this requested
+            # MIDI-backed preview, ask the engine to play its own briefing song
+            self.step("music_control", operation="briefing")
             for page in range(1, 4):
                 self.step("key", key="space", post_delay_ms=300)
                 if mark:
                     mark(f"Briefing page {page}")
                 time.sleep(0.4)
+                if mark:
+                    self.screenshot(f"briefing/page-{page}-later.png")
                 if page < 3:
                     self.step("key", key="space", post_delay_ms=300)
         if game == "d1":
@@ -290,6 +345,9 @@ class Capture:
         self.tap("Restore defaults")
         self.tap("Confirm")
         self.tap("< Back")
+        self.launcher_stills()
+
+    def launcher_stills(self):
         self.launcher()
         self.step("scroll", setup=True, direction="up", count=8)
         state = self.state(True)
@@ -328,11 +386,15 @@ class Capture:
         self.shell("wm", "fixed-to-user-rotation", "enabled")
         self.launcher()
         self.step("scroll", setup=True, direction="up", count=8)
-        self.start_recording("opening")
+        self.start_recording("opening", audio=False)
         beats = []
 
         def mark(label):
             beats.append({"label": label, "wall": time.monotonic() - self.record_started})
+            if label.startswith("Briefing page"):
+                page = label.rsplit(" ", 1)[1]
+                write_json(self.output / f"briefing/page-{page}-state.json", self.state())
+                self.screenshot(f"briefing/page-{page}.png")
 
         try:
             mark("Launcher")
@@ -373,15 +435,17 @@ class Capture:
             self.shell("wm", "fixed-to-user-rotation", "default")
             self.shell("wm", "user-rotation", "lock", "0")
 
-    def flyout(self):
+    def flyout(self, audio_pass=False):
         self.launcher()
         self.command("launch", game="d1")
         self.pilot_menu("d1")
         self.campaign("d1")
-        self.start_recording("flyout", host=True)
+        name = "flyout-audio" if audio_pass else "flyout"
+        rate = 1 if audio_pass else 8
+        self.start_recording(name, host=not audio_pass, audio=audio_pass)
         samples = []
         try:
-            self.step("trigger_endlevel", value="from_exit_tunnel", capture_slowdown=8)
+            self.step("trigger_endlevel", value="from_exit_tunnel", capture_slowdown=rate)
             state = self.wait(lambda s: s.get("endlevel_sequence", 0) > 0, timeout=10)
             deadline = time.monotonic() + 120
             while time.monotonic() < deadline:
@@ -401,14 +465,16 @@ class Capture:
         finally:
             path = self.stop_recording()
             write_json(
-                self.output / "flyout.json",
+                self.output / (name + ".json"),
                 {
                     "source": str(path.relative_to(self.output)),
                     "samples": samples,
-                    "playback_rate": 8,
-                    "transpose": "cclock",
+                    "playback_rate": rate,
+                    "transpose": None if audio_pass else "cclock",
                 },
             )
+        if not audio_pass:
+            self.flyout(audio_pass=True)
 
     def replay(self, source, video_only=False):
         source = Path(source).resolve()
@@ -516,6 +582,10 @@ class Capture:
         if not apk.exists():
             apk = ROOT / "android/app/build/intermediates/apk/debug/app-debug.apk"
         self.call("install", "-r", "-t", apk)
+        self.shell("wm", "size", "1080x2400")
+        self.shell("wm", "density", "420")
+        self.shell("wm", "fixed-to-user-rotation", "default")
+        self.shell("wm", "user-rotation", "lock", "0")
         self.shell("settings", "put", "system", "screen_off_timeout", "2147483647")
         self.shell("settings", "put", "system", "accelerometer_rotation", "0")
         self.shell("settings", "put", "system", "user_rotation", "0")
@@ -554,7 +624,18 @@ class Capture:
             "fire.pig",
             "ice.pig",
             "water.pig",
+            "robots-h.mvl",
         ]
+        # Robot movies are not in older repository indexes. Discover the owned
+        # full-game library locally and verify its known retail content hash
+        if "robots-h.mvl" not in entries:
+            digest = "f491f078308a310b53bb46477b916f9de4cce9358a77b733e31b1bce86135b0a"
+            for source in (ROOT / "game_data").rglob("*"):
+                if source.name.lower() == "robots-h.mvl" and hashlib.sha256(source.read_bytes()).hexdigest() == digest:
+                    entries["robots-h.mvl"] = (digest, source)
+                    break
+            else:
+                raise RuntimeError("Full D2 ROBOTS-H.MVL required under game_data for animated briefings")
         assets = []
         for name in names:
             digest, source = entries[name]

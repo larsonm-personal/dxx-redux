@@ -11,6 +11,20 @@ class RouteMetadataPrecomputeMonitorTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
 
     @Test
+    fun pauseReplacesStaleDiscoveryStatusAndResumeClearsReason() {
+        val monitor = RouteMetadataPrecomputeMonitor(temporaryFolder.newFolder("paused"))
+        monitor.discoveryStarted()
+        monitor.paused("Paused while the device cools down")
+        monitor.paused("Paused while the device cools down")
+        assertEquals("paused", monitor.readSnapshot().phase)
+        assertEquals("Paused while the device cools down", monitor.readSnapshot().statusMessage)
+        assertEquals(1, monitor.readRecentLines().count { it.contains("status=paused") })
+        monitor.discoveryStarted()
+        assertEquals("discovering", monitor.readSnapshot().phase)
+        assertEquals("Scanning installed game data and missions", monitor.readSnapshot().statusMessage)
+    }
+
+    @Test
     fun unavailableDiagnosticStorageDoesNotAbortLauncherRecovery() {
         val unavailableDirectory = temporaryFolder.newFile("unavailable-directory")
         val monitor = RouteMetadataPrecomputeMonitor(unavailableDirectory)

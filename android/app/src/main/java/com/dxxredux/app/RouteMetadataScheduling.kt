@@ -33,6 +33,16 @@ internal object RouteMetadataCpuPolicy {
 
     fun launcherDutyPercent(computeFaster: Boolean): Int =
         if (computeFaster) COMPUTE_FASTER_DUTY_PERCENT else LAUNCHER_VISIBLE_DUTY_PERCENT
+
+    fun pauseReason(
+        gameRunning: Boolean,
+        thermalPressure: Boolean,
+    ): String? =
+        when {
+            gameRunning -> "Paused while a game is running"
+            thermalPressure -> "Paused while the device cools down"
+            else -> null
+        }
 }
 
 internal object RouteMetadataInGameCpuPolicy {

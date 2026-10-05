@@ -1592,6 +1592,19 @@ void load_endlevel_data(int level_num)
 	endlevel_multi_reset();
 	endlevel_data_loaded = 0;		//not loaded yet
 
+	// Custom levels may end through triggers without an exterior exit
+	for (segnum=0,exit_segnum=-1;exit_segnum==-1 && segnum<=Highest_segment_index;segnum++)
+		for (sidenum=0;sidenum<6;sidenum++)
+			if (Segments[segnum].children[sidenum] == -2) {
+				exit_segnum = segnum;
+				exit_side = sidenum;
+				break;
+			}
+	if (exit_segnum == -1) {
+		con_printf(CON_DEBUG, "Skipping exit animation: level %d has no exterior exit\n", level_num);
+		return;
+	}
+
 try_again:
 	;
 
@@ -1745,19 +1758,6 @@ try_again:
 
 
 	// OK, now the data is loaded.  Initialize everything
-
-	//find the exit sequence by searching all segments for a side with
-	//children == -2
-
-	for (segnum=0,exit_segnum=-1;exit_segnum==-1 && segnum<=Highest_segment_index;segnum++)
-		for (sidenum=0;sidenum<6;sidenum++)
-			if (Segments[segnum].children[sidenum] == -2) {
-				exit_segnum = segnum;
-				exit_side = sidenum;
-				break;
-			}
-
-	Assert(exit_segnum!=-1);
 
 	compute_segment_center(&mine_exit_point,&Segments[exit_segnum]);
 	extract_orient_from_segment(&mine_exit_orient,&Segments[exit_segnum]);

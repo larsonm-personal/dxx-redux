@@ -282,11 +282,20 @@ internal class RouteMetadataPrecomputeCoordinator(
                         FingerprintBridge.databaseIdentity(appContext)
                     }
                 var discoveryFinished = false
+                var wasPaused = false
                 monitor.discoveryStarted()
                 while (isActive) {
-                    if (shouldPause()) {
+                    val pauseReason = pauseReason()
+                    if (pauseReason != null) {
+                        monitor.paused(pauseReason)
+                        wasPaused = true
                         awaitWake(2_000L)
                         continue
+                    }
+                    if (wasPaused) {
+                        monitor.discoveryStarted()
+                        discoveryFinished = false
+                        wasPaused = false
                     }
                     val discovered =
                         try {
@@ -650,14 +659,17 @@ internal class RouteMetadataPrecomputeCoordinator(
         if (!computeFaster) awaitWake(750L)
     }
 
-    private fun shouldPause(): Boolean {
+    private fun pauseReason(): String? {
         val power = appContext.getSystemService(Context.POWER_SERVICE) as? PowerManager
         val gameRunning = runCatching { MainActivity.nativeIsGameRunning() }.getOrDefault(false)
         val thermalPressure =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
                 power != null &&
                 power.currentThermalStatus >= PowerManager.THERMAL_STATUS_SEVERE
-        return gameRunning || power?.isPowerSaveMode == true || thermalPressure
+        return RouteMetadataCpuPolicy.pauseReason(
+            gameRunning,
+            thermalPressure,
+        )
     }
 
     private fun discoverJobs(): DiscoveredPrecomputeJobs {

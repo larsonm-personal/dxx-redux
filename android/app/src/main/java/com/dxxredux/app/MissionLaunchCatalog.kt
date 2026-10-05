@@ -185,7 +185,7 @@ internal fun missionLaunchPackage(
     )
 }
 
-private fun missionResourceOwners(
+internal fun missionResourceOwners(
     scan: MissionZip.ScanResult,
     sourcePath: String,
 ): List<MissionZip.MissionSet> {

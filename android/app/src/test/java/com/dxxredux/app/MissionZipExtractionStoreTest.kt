@@ -16,6 +16,45 @@ import java.util.zip.ZipOutputStream
 
 class MissionZipExtractionStoreTest {
     @Test
+    fun metadataTargetsIncludeOwnedDxaOutsideMissionDirectory() {
+        val filesDir = File("build/test-mission-zip-extraction/metadata-dxa").absoluteFile
+        filesDir.deleteRecursively()
+        val archive = File(filesDir, "mods/preview.zip")
+        requireNotNull(archive.parentFile).mkdirs()
+        val dxa =
+            java.io.ByteArrayOutputStream().use { bytes ->
+                ZipOutputStream(bytes).use { it.writeEntry("descent2.ham", "custom weapons") }
+                bytes.toByteArray()
+            }
+        ZipOutputStream(archive.outputStream()).use { zip ->
+            zip.writeEntry("missions/preview.mn2", missionDescriptor("Preview"))
+            zip.writeEntry("missions/preview.hog", missionHog())
+            zip.writeEntry("preview.dxa", dxa)
+            zip.writeEntry("other/other.mn2", missionDescriptor("Other"))
+            zip.writeEntry("other/other.hog", missionHog())
+            zip.writeEntry("other/other.dxa", dxa)
+        }
+        val scan = requireNotNull(MissionZip.inspect(archive))
+        val mission = scan.missionSets.single { it.mission.displayName == "Preview" }
+        val setDir = File(filesDir, "set")
+        val staged =
+            LevelMetadataTargets
+                .missionZipTargets(archive.absolutePath, setDir, scan)
+                .single { it.displayName == "Preview" }
+        assertEquals(listOf("preview.dxa"), staged.assetArchives)
+        assertTrue("preview.dxa" in staged.archiveEntries)
+        assertFalse("other/other.dxa" in staged.archiveEntries)
+        val store = MissionZipExtractionStore(filesDir)
+        val record = store.ensureExtracted(archive.name, archive, scan)
+        val extracted = requireNotNull(store.extractedTarget(archive.absolutePath, setDir, scan, mission))
+        assertEquals(record.rootDir, File(requireNotNull(extracted.sourcePath)))
+        assertEquals(listOf("preview.dxa"), extracted.assetArchives)
+        assertEquals(listOf("missions/preview.hog"), extracted.hogFiles)
+        assertEquals("missions/preview.mn2", extracted.missionFilename)
+        assertTrue(File(extracted.sourcePath, extracted.assetArchives.single()).isFile)
+    }
+
+    @Test
     fun concurrentManagersDoNotReplaceEachOthersStagingDirectory() {
         val filesDir = File("build/test-mission-zip-extraction/concurrent-publication").absoluteFile
         filesDir.deleteRecursively()

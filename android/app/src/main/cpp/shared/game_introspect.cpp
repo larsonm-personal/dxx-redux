@@ -37,6 +37,7 @@ extern "C" {
 #include "android_level_preview.h"
 #include "android_route_metadata.h"
 #include "android_screen_advance.h"
+#include "android_briefing_text.h"
 #include "window.h"
 #include "newmenu.h"
 #include "object.h"
@@ -1684,6 +1685,13 @@ extern "C" char *game_introspect_get_state(void)
 
 	/* -- General state -------------------------------------------- */
 	j["screen_mode"] = screen_mode_name(Screen_mode);
+	{
+		android_briefing_text_state text;
+		android_briefing_text_snapshot(&text);
+		j["briefing_text"] = {
+			{ "active", text.active != 0 }, { "page_ready", text.page_ready != 0 }, { "overlaps", text.overlaps }, { "background", text.background }, { "text", text.text }
+		};
+	}
 	j["game_mode"] = Game_mode;
 	j["time_paused"] = game_is_time_paused() != 0;
 	{

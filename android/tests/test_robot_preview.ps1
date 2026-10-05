@@ -8,6 +8,9 @@ param(
     [int]$RobotNumber = 0,
     [string]$ExpectedAttackRole = "",
     [int]$ExpectedWeapon = -1,
+    [int]$ExpectedWeaponModel = -1,
+    [string]$ExpectedAssetArchive = "",
+    [hashtable]$ExpectedBossWeaponModels = @{},
     [ValidateSet("", "normal", "large")]
     [string]$ExpectedCameraTier = "",
     [double]$ExpectedMinProjectileRenderScale = 0,
@@ -56,6 +59,7 @@ function Assert-Near {
 
 try {
     if (-not (Test-DeviceOnline -Serial $Serial)) { throw "Android device $Serial is not online" }
+    if (Test-PhysicalTestTarget -Serial $Serial) { Wake-AndroidTestTarget }
     Reset-DeviceGameState -Serial $Serial
     if (-not $BaseGame) {
         $temporaryZip = "/data/local/tmp/$deviceZip"
@@ -146,6 +150,9 @@ try {
     }
 
     $navigationNumbers = @($initial.level_preview.navigation_numbers)
+    if ($ExpectedAssetArchive -and -not (@($initial.physfs.search_path) | Where-Object { $_.EndsWith($ExpectedAssetArchive) })) {
+        throw "Robot preview did not mount mission asset archive $ExpectedAssetArchive"
+    }
     if ($navigationNumbers.Count -ne [int]$initial.level_preview.robot_count -or
         [int]$initial.level_preview.robot_number -notin $navigationNumbers) {
         throw "Robot preview did not report a valid navigation list"
@@ -242,6 +249,10 @@ try {
     if (-not $attackMode) { throw "Robot preview did not model AI movement and weapon flight" }
 
     $preview = $script:attackState.level_preview
+    if ($ExpectedWeaponModel -ge 0 -and [int]$preview.weapon.model_number -ne $ExpectedWeaponModel) {
+        throw "Expected projectile model $ExpectedWeaponModel, got $($preview.weapon.model_number)"
+    }
+    Write-Status "Attack weapon=$($preview.weapon.number) model=$($preview.weapon.model_number)"
     if ($null -eq $preview.dps -or $null -eq $preview.dps.total -or
         $preview.dps.assumption -ne "all direct damaging attacks connect") {
         throw "Robot preview did not report sustained direct-hit DPS"
@@ -460,6 +471,7 @@ try {
     }
 
     # Walk the full mission chain, including source-level changes and wraparound
+    $verifiedBossWeapons = [Collections.Generic.HashSet[int]]::new()
     if (-not $BaseGame) {
         foreach ($direction in @("next", "previous")) {
             for ($step = 1; $step -le $robotCount; $step++) {
@@ -474,6 +486,7 @@ try {
                     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_INTROSPECT", "-p", $script:PACKAGE) | Out-Null
                     Start-Sleep -Milliseconds 200
                     $state = Read-AppJson -Path $introspectionFile
+                    $script:navigationState = $state
                     return $state -and [int]$state.level_preview.navigation_index -eq $expectedIndex -and
                     [int]$state.level_preview.robot_number -eq [int]$expectedEntry.robot_number -and
                     $state.level_preview.level_file -eq $expectedEntry.level_file -and
@@ -481,12 +494,41 @@ try {
                     (@($state.level_preview.navigation_numbers) -join ",") -eq ($navigationNumbers -join ",")
                 }
                 if (-not $entryReady) { throw "Robot navigation failed at $direction entry $expectedIndex" }
+                $bossPreview = $script:navigationState.level_preview
+                if ($bossPreview.boss -and $ExpectedBossWeaponModels.Count -gt 0 -and $direction -eq 'next') {
+                    Write-Status "Boss robot=$($bossPreview.robot_number) primary=$($bossPreview.configured_weapon) secondary=$($bossPreview.configured_weapon2)"
+                }
+                foreach ($bossWeapon in @([int]$bossPreview.configured_weapon, [int]$bossPreview.configured_weapon2)) {
+                    if (-not $bossPreview.boss -or -not $ExpectedBossWeaponModels.ContainsKey($bossWeapon) -or
+                        $verifiedBossWeapons.Contains($bossWeapon)) { continue }
+                    $renderCount = [long]$bossPreview.actual_weapon_renders
+                    Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.ROBOT_PREVIEW_COMMAND',
+                        '-p', $script:PACKAGE, '--es', 'command', 'attack', '--ez', 'enabled', 'true') | Out-Null
+                    $bossFired = Wait-ForCondition -Description "boss missile $bossWeapon rendering" -TimeoutSec 15 -PollMs 300 -Condition {
+                        Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.ROBOT_PREVIEW_INTROSPECT', '-p', $script:PACKAGE) | Out-Null
+                        Start-Sleep -Milliseconds 200
+                        $script:bossState = Read-AppJson -Path $introspectionFile
+                        return $script:bossState -and [long]$script:bossState.level_preview.actual_weapon_renders -gt $renderCount -and
+                        [int]$script:bossState.level_preview.weapon.number -eq $bossWeapon
+                    }
+                    if (-not $bossFired -or [int]$script:bossState.level_preview.weapon.model_number -ne [int]$ExpectedBossWeaponModels[$bossWeapon]) {
+                        throw "Boss missile $bossWeapon did not render expected model $($ExpectedBossWeaponModels[$bossWeapon])"
+                    }
+                    Write-Status "Boss robot=$($bossPreview.robot_number) weapon=$bossWeapon model=$($script:bossState.level_preview.weapon.model_number) rendered"
+                    [void]$verifiedBossWeapons.Add($bossWeapon)
+                    Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.ROBOT_PREVIEW_COMMAND',
+                        '-p', $script:PACKAGE, '--es', 'command', 'attack', '--ez', 'enabled', 'false') | Out-Null
+                }
             }
         }
+    }
+    foreach ($weapon in $ExpectedBossWeaponModels.Keys) {
+        if (-not $verifiedBossWeapons.Contains([int]$weapon)) { throw "No boss rendered expected missile $weapon" }
     }
 
     # Exercise Android Back dispatch and native cleanup, including target SDK 36
     Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
+    $script:previewBackAttempts = 1
     $closed = Wait-ForCondition -Description "robot preview closes" -TimeoutSec 30 -PollMs 500 -Condition {
         $activities = Adb-Timeout -AdbArgs @("shell", "dumpsys", "activity", "activities") -Seconds 8
         $requestState = Adb-Timeout -AdbArgs @(
@@ -494,6 +536,13 @@ try {
             "-name", ([string]$selection.request_id), "-print"
         ) -Seconds 8
         $setupResumed = $activities -match "(?m)^\s*(?:topResumedActivity|mResumedActivity|ResumedActivity)[=:].*SetupActivity"
+        # A physical device's system dialog can consume Back before the preview receives it
+        $previewResumed = $activities -match "(?m)^\s*(?:topResumedActivity|mResumedActivity|ResumedActivity)[=:].*RobotPreviewD[12]Activity"
+        if ($previewResumed -and (Test-PhysicalTestTarget -Serial $Serial) -and $script:previewBackAttempts -lt 3) {
+            Start-Sleep -Milliseconds 500
+            Adb -AdbArgs @('shell', 'input', 'keyevent', 'KEYCODE_BACK') | Out-Null
+            $script:previewBackAttempts++
+        }
         return $setupResumed -and $requestState -notmatch [regex]::Escape([string]$selection.request_id)
     }
     if (-not $closed) { throw "Robot preview did not close cleanly" }

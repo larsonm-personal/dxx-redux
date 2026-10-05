@@ -438,6 +438,7 @@ $testTimeouts = @{
     "test_mission_zip_batch"              = 3600
     # Includes the 600s child scenario, large archive staging, and cleanup
     "test_mission_asset_isolation"        = 900
+    "test_enemy_within_level2"            = 420
     "test_mod_loading"                    = 360
     "test_saf_archiver"                   = 360
     "test_xcrash_native_report"           = 300

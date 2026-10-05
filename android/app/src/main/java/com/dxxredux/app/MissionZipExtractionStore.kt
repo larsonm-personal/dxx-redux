@@ -334,7 +334,17 @@ internal class MissionZipExtractionStore(
                 .filter { GameFileFormats.extensionOf(it.name) == "hog" }
                 .map { stagedRelativePath(scan, it.path) }
         if (hogFiles.isEmpty()) return null
-        val sourceLayout = missionFileSourceLayout(record.rootDir, hogFiles + stagedRelativePath(scan, mission.path))
+        val assetArchives =
+            scan.constituents
+                .filter {
+                    GameFileFormats.isDxa(it.name) &&
+                        missionResourceOwners(scan, it.path).let { owners -> owners.isEmpty() || missionSet in owners }
+                }.map { stagedRelativePath(scan, it.path) }
+        val sourceLayout =
+            missionFileSourceLayout(
+                record.rootDir,
+                hogFiles + assetArchives + stagedRelativePath(scan, mission.path),
+            )
         return LevelMetadataTarget(
             displayName = mission.displayName,
             game =
@@ -355,6 +365,7 @@ internal class MissionZipExtractionStore(
             missionType = mission.type,
             missionModeFlags = mission.modeFlags,
             hogFiles = hogFiles.map(sourceLayout::relativeToRoot),
+            assetArchives = assetArchives.map(sourceLayout::relativeToRoot),
             normalLevelFiles = mission.levelNames,
             secretLevelFiles = mission.secretLevelNames,
         )
@@ -555,9 +566,8 @@ private fun missionFileSourceLayout(
     val dirs =
         relativePaths
             .map { it.replace('\\', '/').trim('/').substringBeforeLast('/', "") }
-            .filter { it.isNotBlank() }
             .distinctBy { it.lowercase(Locale.US) }
-    if (dirs.size != 1) return MissionFileSourceLayout(extractedRoot, "")
+    if (dirs.size != 1 || dirs.single().isBlank()) return MissionFileSourceLayout(extractedRoot, "")
     val prefix = "${dirs.single().trim('/')}/"
     val root = File(extractedRoot, prefix.replace('/', File.separatorChar))
     return if (root.isDirectory) MissionFileSourceLayout(root, prefix) else MissionFileSourceLayout(extractedRoot, "")

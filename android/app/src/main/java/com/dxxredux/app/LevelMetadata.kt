@@ -59,6 +59,7 @@ internal data class LevelMetadataTarget(
     val levelNum: Int = 1,
     val hogFile: String? = null,
     val hogFiles: List<String> = emptyList(),
+    val assetArchives: List<String> = emptyList(),
     val normalLevelFiles: List<String> = emptyList(),
     val secretLevelFiles: List<String> = emptyList(),
     val archivePath: String? = null,
@@ -818,7 +819,12 @@ internal object LevelMetadataTargets {
         missionZipExtractedStoreForArchivePath(archivePath)
             ?.extractedTarget(archivePath, setDir, scan, missionSet)
             ?.let { return it }
-        val entries = missionSet.constituents.map { it.path }
+        val supportArchives =
+            scan.constituents.filter {
+                GameFileFormats.isDxa(it.name) &&
+                    missionResourceOwners(scan, it.path).let { owners -> owners.isEmpty() || missionSet in owners }
+            }
+        val entries = (missionSet.constituents + supportArchives).map { it.path }.distinct()
         val mission = missionSet.mission
         return LevelMetadataTarget(
             displayName = mission.displayName,
@@ -830,6 +836,7 @@ internal object LevelMetadataTargets {
             dataDir = setDir.absolutePath,
             archivePath = archivePath,
             archiveEntries = entries,
+            assetArchives = supportArchives.map { it.name },
             missionName =
                 mission.path
                     .substringAfterLast('/')
@@ -1829,6 +1836,8 @@ internal object LevelMetadataAnalyzer {
             .put("level_num", prepared.levelNum)
             .put("hog_path", prepared.hogPath)
             .put("hog_paths", JSONArray(prepared.hogPaths))
+            // Shared native request field: mounted before reading mission HAM/robot/weapon data
+            .put("asset_archive_paths", JSONArray(prepared.assetArchivePaths))
             .put("normal_level_files", JSONArray(prepared.normalLevelFiles))
             .put("secret_level_files", JSONArray(prepared.secretLevelFiles))
             .put("provenance_file_dates", provenanceDatesJson(prepared.provenanceDates))
@@ -1847,6 +1856,7 @@ internal object LevelMetadataAnalyzer {
         val hogPaths: List<String>,
         val normalLevelFiles: List<String>,
         val secretLevelFiles: List<String>,
+        val assetArchivePaths: List<String> = emptyList(),
         val provenanceDates: List<ArchiveProvenanceDate> = emptyList(),
     )
 
@@ -1878,6 +1888,7 @@ internal object LevelMetadataAnalyzer {
                 hogPath = stagedHog,
                 provenanceDates = dates,
                 hogPaths = stagedHogs,
+                assetArchivePaths = target.assetArchives.map { File(stageDir, it).absolutePath },
                 normalLevelFiles = target.normalLevelFiles,
                 secretLevelFiles = target.secretLevelFiles,
             )
@@ -1900,6 +1911,7 @@ internal object LevelMetadataAnalyzer {
                 levelNum = target.levelNum,
                 hogPath = "",
                 hogPaths = hogPaths,
+                assetArchivePaths = target.assetArchives.map { File(source, it).absolutePath },
                 normalLevelFiles = target.normalLevelFiles,
                 secretLevelFiles = target.secretLevelFiles,
             )

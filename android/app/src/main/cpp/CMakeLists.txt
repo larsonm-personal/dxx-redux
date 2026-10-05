@@ -220,6 +220,7 @@ target_include_directories(
             ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(SDL12 PRIVATE dl OpenSLES log)
+target_compile_definitions(SDL12 PRIVATE INTROSPECT_ON)
 target_compile_options(SDL12 PRIVATE -w) # suppress all warnings for third-party code
 
 # ──────────────────────────────────────────────────────────────

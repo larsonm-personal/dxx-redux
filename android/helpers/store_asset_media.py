@@ -4,6 +4,9 @@ import html
 import json
 from pathlib import Path
 import subprocess
+import wave
+from array import array
+import math
 
 import imageio_ffmpeg
 from PIL import Image, ImageChops, ImageDraw, ImageStat
@@ -119,10 +122,15 @@ def default_recipe(output):
             ("Scroll launcher", beats["Imported game data"], beats["Launcher bottom"] + 0.3, 0.8),
             ("Launch D2", beats["Launcher bottom"], beats["Launch Descent 2"] + 0.3, 0.6),
             ("Create pilot", beats["Pilot name"], beats["Created pilot"], 1),
-            ("Counterstrike campaign", beats["Created pilot"], beats["Difficulty selected"], 1),
-            ("Briefing page 1", beats["Briefing page 1"], beats["Briefing page 2"], 0.8),
-            ("Briefing page 2", beats["Briefing page 2"], beats["Briefing page 3"], 0.8),
-            ("Briefing page 3", beats["Briefing page 3"], beats["Briefing page 3"] + 0.6, 0.8),
+            (
+                "Counterstrike campaign",
+                beats["Created pilot"],
+                beats.get("Choose difficulty", beats["Difficulty selected"] - 1.5) + 0.3,
+                1,
+            ),
+            ("Briefing page 1", beats["Briefing page 1"], beats["Briefing page 1"] + 0.8, 0.8),
+            ("Briefing page 2", beats["Briefing page 2"], beats["Briefing page 2"] + 0.8, 0.8),
+            ("Briefing page 3", beats["Briefing page 3"], beats["Briefing page 3"] + 0.8, 0.8),
             ("Enter level", beats["End"] - 1, beats["End"], 1),
         ]
         clips = [
@@ -190,7 +198,139 @@ def default_recipe(output):
             "transpose": flyout.get("transpose"),
         }
     )
-    return {"width": 2400, "height": 1350, "fps": 30, "audio": "silent", "clips": clips}
+    return {"width": 2400, "height": 1350, "fps": 30, "audio": "engine-pcm", "clips": clips}
+
+
+def render_audio(output, clips, encoded):
+    """Cut the engine's mixed MIDI/SFX; time compression preserves pitch."""
+    waves = []
+    evidence = []
+    for index, clip in enumerate(clips):
+        source = output / clip["source"]
+        start, end = clip["start"], clip["end"]
+        if clip["group"] == "flyout":
+            normal = json.loads((output / "flyout-audio.json").read_text())
+            source = output / normal["source"]
+            active = [sample for sample in normal["samples"] if sample["phase"] > 0]
+            end = active[-2]["wall"]
+            start = max(0, end - clip["seconds"])
+        meta = json.loads(source.with_suffix(".audio.json").read_text())
+        if meta["overflow"] or meta["sample_rate"] != 48000 or meta["channels"] != 2:
+            raise ValueError(f"Invalid engine PCM capture: {source}")
+        if not meta["engine_audio"]["music"].get("active") or meta["engine_audio"]["music"].get("type") != 1:
+            raise ValueError(f"Engine MIDI was not playing: {source}")
+        audio_start = max(0, start - meta["video_offset"])
+        audio_end = max(0, end - meta["video_offset"])
+        speed = (end - start) / clip["seconds"]
+        delay = max(0, meta["video_offset"] - start) / speed
+        target = encoded / f"{index:02d}.wav"
+        if delay >= clip["seconds"]:
+            with wave.open(str(target), "wb") as stream:
+                stream.setparams((2, 2, 48000, 0, "NONE", "not compressed"))
+                stream.writeframes(bytes(round(clip["seconds"] * 48000) * 4))
+        else:
+            tempo = []
+            while speed > 2:
+                tempo.append("atempo=2")
+                speed /= 2
+            while speed < 0.5:
+                tempo.append("atempo=0.5")
+                speed *= 2
+            tempo.append(f"atempo={speed:.10f}")
+            filters = (
+                f"atrim=start={audio_start:.6f}:end={audio_end:.6f},asetpts=PTS-STARTPTS,"
+                + ",".join(tempo)
+                + f",adelay={round(delay * 48000)}S:all=1,apad,atrim=duration={clip['seconds']}"
+            )
+            ffmpeg(
+                ["-i", output / meta["source"], "-af", filters, "-ar", 48000, "-ac", 2, "-c:a", "pcm_s16le", target],
+                encoded / f"{index:02d}-audio.log",
+            )
+        with wave.open(str(target), "rb") as stream:
+            pcm = array("h", stream.readframes(stream.getnframes()))
+        rms = math.sqrt(sum(value * value for value in pcm) / max(1, len(pcm)))
+        peak = max(map(abs, pcm), default=0)
+        gain = (
+            min(10 ** (12 / 20), 32768 * 10 ** (-22 / 20) / max(1, rms), 32768 * 10 ** (-2 / 20) / max(1, peak))
+            if peak
+            else 1
+        )
+        # Preserve the engine's music/effects balance within each excerpt while
+        # avoiding a large volume jump from quiet menus into combat
+        frames = len(pcm) // 2
+        fade_out = round(48000 * (0.15 if clip["group"] == "flyout" else 0.015))
+        for frame in range(frames):
+            factor = gain * min(1, frame / 720, (frames - 1 - frame) / fade_out)
+            pcm[frame * 2] = round(pcm[frame * 2] * factor)
+            pcm[frame * 2 + 1] = round(pcm[frame * 2 + 1] * factor)
+        with wave.open(str(target), "wb") as stream:
+            stream.setparams((2, 2, 48000, 0, "NONE", "not compressed"))
+            stream.writeframes(pcm.tobytes())
+        waves.append(target)
+        evidence.append(
+            {
+                "label": clip["label"],
+                "source": meta["source"],
+                "start": audio_start,
+                "end": audio_end,
+                "leading_silence": delay,
+                "engine_audio": meta["engine_audio"],
+                "gain_db": round(20 * math.log10(gain), 2),
+            }
+        )
+    soundtrack = encoded / "soundtrack.wav"
+    with wave.open(str(soundtrack), "wb") as destination:
+        destination.setparams((2, 2, 48000, 0, "NONE", "not compressed"))
+        for path in waves:
+            with wave.open(str(path), "rb") as source:
+                destination.writeframes(source.readframes(source.getnframes()))
+    save_json(output / "audio-sources.json", evidence)
+    return soundtrack
+
+
+def audit_audio(output, timeline):
+    # Decode the final AAC, not an intermediate WAV, and inspect each section
+    raw = subprocess.run(
+        [
+            imageio_ffmpeg.get_ffmpeg_exe(),
+            "-v",
+            "error",
+            "-i",
+            str(output / "store-preview-30s.mp4"),
+            "-map",
+            "0:a:0",
+            "-f",
+            "s16le",
+            "-ar",
+            "48000",
+            "-ac",
+            "2",
+            "pipe:1",
+        ],
+        capture_output=True,
+        check=True,
+    ).stdout
+    samples = array("h", raw)
+    if abs(len(samples) / 96000 - 30) > 0.05:
+        raise ValueError("Final audio must span 30 seconds")
+    checks = []
+    for clip in timeline:
+        if clip["group"] == "opening" and clip["timeline_start"] < 3.6:
+            continue  # Android launcher/file picker have no music
+        segment = samples[round(clip["timeline_start"] * 96000) : round(clip["timeline_end"] * 96000)]
+        rms = math.sqrt(sum(value * value for value in segment) / max(1, len(segment)))
+        if rms < 10:
+            raise ValueError(f"Missing game audio: {clip['label']}")
+        checks.append(
+            {
+                "label": clip["label"],
+                "rms_dbfs": round(20 * math.log10(rms / 32768), 2),
+                "peak": max(map(abs, segment)),
+                "clipped_fraction": sum(abs(value) >= 32767 for value in segment) / len(segment),
+            }
+        )
+    save_json(output / "audio-validation.json", checks)
+    return checks
 
 
 def compose(output, recipe_path=None):
@@ -257,8 +397,33 @@ def compose(output, recipe_path=None):
     listing = encoded / "concat.txt"
     listing.write_text("".join(f"file '{p.name}'\n" for p in paths), encoding="utf-8")
     final = output / "store-preview-30s.mp4"
+    soundtrack = render_audio(output, recipe["clips"], encoded)
     ffmpeg(
-        ["-f", "concat", "-safe", "0", "-i", listing, "-c", "copy", "-movflags", "+faststart", final],
+        [
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            listing,
+            "-i",
+            soundtrack,
+            "-map",
+            "0:v:0",
+            "-map",
+            "1:a:0",
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            "-t",
+            "30",
+            "-movflags",
+            "+faststart",
+            final,
+        ],
         output / "encode.log",
     )
     info = video_info(final)
@@ -271,6 +436,7 @@ def compose(output, recipe_path=None):
     # The fly-out camera settles later, so audit its moving first two seconds.
     # Gameplay clips are audited in full, including their original 25 Hz cadence.
     audit_motion(output, timeline)
+    audit_audio(output, timeline)
     # One thumbnail per final second makes all five sections easy to inspect
     video_stills = output / "video-stills"
     video_stills.mkdir(exist_ok=True)
@@ -317,6 +483,9 @@ def review(output):
     sections = []
     launcher = list(sorted((output / "launcher").glob("*.png")))
     groups = [("Launcher", launcher)]
+    briefing = sorted((output / "briefing").glob("*.png"))
+    if briefing:
+        groups.append(("In-engine D2 briefing / paired animation frames", briefing))
     for directory in sorted((output / "demos").glob("*")):
         if directory.is_dir():
             paths = list(sorted(directory.glob("*.png")))
@@ -346,7 +515,7 @@ def review(output):
         "a{color:#ddd;text-decoration:none;background:#242232;border-radius:8px;overflow:hidden}img{width:100%;height:220px;object-fit:contain}"
         "span{display:block;padding:12px}video{width:100%;max-height:760px}p{color:#bbb;line-height:1.6}</style>"
         "<h1>DXX-Revival / store asset review</h1><p>Real Android captures. Click any image for the original PNG. "
-        "The 30-second video is a silent review edit: 9 seconds of setup, three 5-second demo excerpts, then 6 seconds of D1 fly-out. "
+        "The 30-second video includes engine MIDI and sound effects: 9 seconds of setup, three 5-second demo excerpts, then 6 seconds of D1 fly-out. "
         "The game display is preserved in full with padding for a 16:9 video.</p>"
         + video
         + "".join(sections)
@@ -419,8 +588,29 @@ def validate(output):
     frames, seconds = imageio_ffmpeg.count_frames_and_secs(str(video))
     if frames != 900 or abs(seconds - 30) > 0.04 or tuple(info["size"]) != (2400, 1350):
         raise ValueError("Final video must decode to 900 frames at 2400x1350 in 30 seconds")
-    checks["video"] = {"frames": frames, "seconds": seconds, "width": 2400, "height": 1350, "audio": "silent"}
+    checks["video"] = {"frames": frames, "seconds": seconds, "width": 2400, "height": 1350, "audio": "engine-pcm"}
     timeline = json.loads((output / "video-validation.json").read_text())["timeline"]
+    checks["audio"] = audit_audio(output, timeline)
+    assets = json.loads((output / "game-data.json").read_text())
+    if not any(asset["name"] == "robots-h.mvl" for asset in assets):
+        raise ValueError("D2 robot briefing movies were not supplied")
+    checks["briefing"] = []
+    for page in range(1, 4):
+        state = json.loads((output / f"briefing/page-{page}-state.json").read_text())
+        if not state["music"].get("active") or state["music"].get("song_playing") != 1:
+            raise ValueError(f"Engine briefing MIDI not playing on page {page}")
+        with (
+            Image.open(output / f"briefing/page-{page}.png") as first,
+            Image.open(output / f"briefing/page-{page}-later.png") as later,
+        ):
+            # Fixed capture geometry: movie region excludes the text and buttons
+            w, h = first.size
+            region = (int(w * 0.52), int(h * 0.35), int(w * 0.8), int(h * 0.9))
+            difference = ImageStat.Stat(ImageChops.difference(first.convert("RGB"), later.convert("RGB")).crop(region))
+            motion = sum(difference.mean) / 3
+            if motion < 0.05:
+                raise ValueError(f"No robot animation visible on briefing page {page}")
+        checks["briefing"].append({"page": page, "midi_song": "briefing.hmp", "movie_region_difference": motion})
     cadence = audit_motion(output, timeline)
     if len(cadence) != 4:
         raise ValueError("Expected three gameplay motion checks and one fly-out check")

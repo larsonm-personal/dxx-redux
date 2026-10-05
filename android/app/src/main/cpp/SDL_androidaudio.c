@@ -25,6 +25,17 @@
 #include "SDL_audiodev_c.h"
 #include "SDL_androidaudio.h"
 #include "shared/android_audio_format.h"
+#ifdef INTROSPECT_ON
+#include "shared/android_audio_capture.h"
+static android_audio_capture_callback g_capture_callback;
+
+void androidaud_set_capture_callback(android_audio_capture_callback callback)
+{
+    SDL_LockAudio();
+    g_capture_callback = callback;
+    SDL_UnlockAudio();
+}
+#endif
 
 #define LOG_TAG "DXX-Audio"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOG_TAG, __VA_ARGS__)
@@ -179,6 +190,10 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     if (!audio->paused && audio->spec.callback) {
         SDL_mutexP(audio->mixer_lock);
         audio->spec.callback(audio->spec.userdata, buf, h->playlen);
+#ifdef INTROSPECT_ON
+        if (g_capture_callback)
+            g_capture_callback(&audio->spec, buf, h->playlen, androidaud_now_us());
+#endif
         SDL_mutexV(audio->mixer_lock);
     }
 

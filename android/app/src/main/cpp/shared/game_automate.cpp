@@ -26,6 +26,9 @@ using json = nlohmann::json;
 /* Engine headers are pure C -- wrap them for C++ linkage. */
 extern "C" {
 #include <SDL.h>
+#ifdef ANDROID
+#include "android_audio_capture.h"
+#endif
 }
 
 #ifdef ANDROID
@@ -608,6 +611,80 @@ struct automation_load_request {
 };
 
 static char g_automate_dir[512] = "";
+
+#ifdef ANDROID
+/* Bounded PCM capture for asset generation; no allocations or I/O on the
+ * OpenSL callback thread, and no interference with movie post-mix hooks */
+static std::vector<Uint8> g_capture_pcm;
+static size_t g_capture_used;
+static long long g_capture_started_us;
+static SDL_AudioSpec g_capture_spec;
+static bool g_capture_invalid;
+
+static void capture_audio_buffer(const SDL_AudioSpec *spec, const Uint8 *data, int length, long long timestamp)
+{
+	if (!g_capture_started_us) {
+		g_capture_started_us = timestamp;
+		g_capture_spec = *spec;
+	}
+	if (spec->format != AUDIO_S16LSB || spec->freq != g_capture_spec.freq ||
+	    spec->channels != g_capture_spec.channels || length < 0 ||
+	    static_cast<size_t>(length) > g_capture_pcm.size() - g_capture_used) {
+		g_capture_invalid = true;
+		return;
+	}
+	memcpy(g_capture_pcm.data() + g_capture_used, data, length);
+	g_capture_used += length;
+}
+
+static bool capture_audio_control(const std::string &value)
+{
+	androidaud_set_capture_callback(nullptr);
+	if (value == "start") {
+		g_capture_pcm.resize(180 * 48000 * 2 * 2);
+		g_capture_used = 0;
+		g_capture_started_us = 0;
+		g_capture_invalid = false;
+		androidaud_set_capture_callback(capture_audio_buffer);
+		return true;
+	}
+	if (value != "stop" || !g_capture_used || g_capture_invalid) return false;
+	char path[640];
+	snprintf(path, sizeof(path), "%s/store-audio.wav", g_automate_dir);
+	SDL_RWops *file = SDL_RWFromFile(path, "wb");
+	if (!file) return false;
+	const Uint32 size = static_cast<Uint32>(g_capture_used);
+	const Uint16 channels = g_capture_spec.channels;
+	SDL_RWwrite(file, "RIFF", 1, 4);
+	SDL_WriteLE32(file, 36 + size);
+	SDL_RWwrite(file, "WAVEfmt ", 1, 8);
+	SDL_WriteLE32(file, 16);
+	SDL_WriteLE16(file, 1);
+	SDL_WriteLE16(file, channels);
+	SDL_WriteLE32(file, g_capture_spec.freq);
+	SDL_WriteLE32(file, g_capture_spec.freq * channels * 2);
+	SDL_WriteLE16(file, channels * 2);
+	SDL_WriteLE16(file, 16);
+	SDL_RWwrite(file, "data", 1, 4);
+	SDL_WriteLE32(file, size);
+	const bool written = SDL_RWwrite(file, g_capture_pcm.data(), 1, size) == static_cast<int>(size);
+	SDL_RWclose(file);
+	json metadata = { { "start_monotonic_seconds", g_capture_started_us / 1000000.0 },
+		              { "sample_rate", g_capture_spec.freq },
+		              { "channels", channels },
+		              { "frames", size / (channels * 2) },
+		              { "overflow", g_capture_invalid } };
+	snprintf(path, sizeof(path), "%s/store-audio.json", g_automate_dir);
+	FILE *info = fopen(path, "w");
+	if (!info) return false;
+	const std::string text = metadata.dump(2) + "\n";
+	const bool saved = fwrite(text.data(), 1, text.size(), info) == text.size();
+	fclose(info);
+	std::vector<Uint8>().swap(g_capture_pcm);
+	g_capture_used = 0;
+	return written && saved;
+}
+#endif
 static char g_active_script[512] = "";
 static char g_active_run_id[80] = "";
 static automation_load_request g_pending_load;
@@ -3988,6 +4065,8 @@ extern "C" void game_automate_tick(void)
 				result = android_music_set_source(s.music_source.c_str());
 			else if (s.music_operation == "play")
 				result = songs_play_specific_track(s.music_track);
+			else if (s.music_operation == "briefing")
+				result = songs_play_song(SONG_BRIEFING, 1) == SONG_BRIEFING;
 			else if (s.music_operation == "play_range")
 				result = RBAPlayTracks(s.music_track, s.music_last_track, NULL);
 			else if (s.music_operation == "pause") {
@@ -4026,7 +4105,17 @@ extern "C" void game_automate_tick(void)
 			break;
 
 		case STEP_SET_DEBUG:
-			if (s.field == "tex_overlay")
+			if (s.field == "capture_audio") {
+#ifdef ANDROID
+				if (!capture_audio_control(s.value)) {
+					stop_script_fail("capture_audio: invalid operation, PCM format, overflow or output failure");
+					break;
+				}
+#else
+				stop_script_fail("capture_audio: Android-only action");
+				break;
+#endif
+			} else if (s.field == "tex_overlay")
 				g_debug_tex_overlay_active = (int) std::stod(s.value);
 			else if (s.field == "texture_target")
 				android_texture_debug_set_target(s.value.c_str());

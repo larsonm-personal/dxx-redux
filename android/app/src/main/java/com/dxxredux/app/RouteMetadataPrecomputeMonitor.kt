@@ -63,6 +63,22 @@ internal class RouteMetadataPrecomputeMonitor(
     val logFile = File(filesDir, "route_metadata_precompute.log")
     private val stateFile = File(filesDir, "route_metadata_precompute_status.json")
 
+    fun paused(reason: String) =
+        synchronized(FILE_LOCK) {
+            val state = readState()
+            if (state.first.phase == "paused" && state.first.statusMessage == reason) return@synchronized
+            writeState(
+                state.first.copy(
+                    cacheGeneration = ROUTE_METADATA_CACHE_GENERATION,
+                    phase = "paused",
+                    statusMessage = reason,
+                    updatedAtMs = System.currentTimeMillis(),
+                ),
+                state.second,
+            )
+            append("STATE status=paused reason=${singleLine(reason)}")
+        }
+
     fun discoveryStarted() =
         synchronized(FILE_LOCK) {
             val state = readState()

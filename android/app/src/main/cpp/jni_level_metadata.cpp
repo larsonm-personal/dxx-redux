@@ -1455,6 +1455,13 @@ static json analyze_request(levelmeta_env env, levelmeta_context context, const 
 		                                failed_result(request, "could not mount fly-out movie library"), error, sizeof(error));
 	if (!mount_request_extra_dir(request, mounts, error, sizeof(error)))
 		return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
+	const auto asset_archives = json_string_array(request, "asset_archive_paths");
+	for (const std::string &path : asset_archives)
+		if (!mounts.mount(path))
+			return finish_levelmeta_request(mounts, request,
+			                                failed_result(request, "could not mount mission asset archive"), error, sizeof(error));
+	if (!asset_archives.empty())
+		mounts.activate_assets();
 	if (source_type == "hog") {
 		if (!mount_requested_hogs(request, mounts, 1, error, sizeof(error)))
 			return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));

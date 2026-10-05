@@ -1188,7 +1188,7 @@ private fun RouteMetadataPrecomputeProgress(snapshot: RouteMetadataPrecomputeSna
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    if (snapshot.currentMission.isNotBlank()) {
+    if (snapshot.currentMission.isNotBlank() && snapshot.phase != "paused") {
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             "Analyzing ${snapshot.currentMission} ${snapshot.currentLevel} (${snapshot.currentPriority})",
@@ -1215,7 +1215,7 @@ private fun RouteMetadataPrecomputeProgress(snapshot: RouteMetadataPrecomputeSna
                 color = MaterialTheme.colorScheme.error,
             )
         }
-    } else if (total > 0 && finished == total) {
+    } else if (total > 0 && finished == total && snapshot.phase != "paused") {
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             "All discovered levels have been analyzed" +

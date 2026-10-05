@@ -332,6 +332,10 @@ static int mount_preview_content(const json &request)
 		if (!mounted)
 			return preview_fail(std::string("Could not mount preview mission files: ") + physfs_error());
 	}
+	// Same support-archive scope as the metadata worker and selected mission
+	for (const std::string &path : json_strings(request, "asset_archive_paths"))
+		if (!PHYSFS_mount(path.c_str(), NULL, 0))
+			return preview_fail(std::string("Could not mount preview mission assets: ") + physfs_error());
 	for (const std::string &hog_path : hog_paths)
 		if (!PHYSFS_mount(hog_path.c_str(), NULL, 0))
 			return preview_fail(std::string("Could not mount preview HOG: ") + physfs_error());

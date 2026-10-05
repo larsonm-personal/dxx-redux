@@ -15,6 +15,13 @@ class RouteMetadataSchedulingTest {
     val temporaryFolder = TemporaryFolder()
 
     @Test
+    fun precomputeOnlyPausesForGameOrThermalPressure() {
+        assertEquals("Paused while the device cools down", RouteMetadataCpuPolicy.pauseReason(false, true))
+        assertEquals("Paused while a game is running", RouteMetadataCpuPolicy.pauseReason(true, false))
+        assertEquals(null, RouteMetadataCpuPolicy.pauseReason(false, false))
+    }
+
+    @Test
     fun explicitGameLaunchDoesNotUseMetadataPollAsArtificialGrace() {
         assertEquals(100L, LEVEL_METADATA_POLL_MS)
         assertEquals(0L, ROUTE_METADATA_GAME_LAUNCH_GRACE_MS)

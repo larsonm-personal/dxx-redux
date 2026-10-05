@@ -57,6 +57,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "android_crash_handler.h"
 #include "android_screen_advance.h"
+#include "android_briefing_text.h"
 #include "coop/coop_briefing.h"
 #endif
 
@@ -653,7 +654,7 @@ int check_text_pos(briefing *br)
 	if (br->text_x > br->screen->text_ulx + br->screen->text_width)
 	{
 		br->text_x = br->screen->text_ulx;
-		br->text_y += br->screen->text_uly;
+		br->text_y += FSPACY(5)+FSPACY(5)*3/5;
 	}
 
 	if (br->text_y > br->screen->text_uly + br->screen->text_height)
@@ -875,11 +876,7 @@ int briefing_process_char(briefing *br)
 			else
 				br->dumb_adjust--;
 			br->text_x = br->screen->text_ulx;
-			if (br->text_y > br->screen->text_uly + br->screen->text_height) {
-				load_briefing_screen(br, Briefing_screens[br->cur_screen].bs_name);
-				br->text_x = br->screen->text_ulx;
-				br->text_y = br->screen->text_uly;
-			}
+			// Let check_text_pos paginate overflow instead of overwriting this page
 		} else {
 			if (ch == 13)		//Can this happen? Above says ch==10
 				Int3();
@@ -1415,6 +1412,30 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 
 	return 0;
 }
+
+#ifdef __ANDROID__
+void android_briefing_text_snapshot(android_briefing_text_state *state)
+{
+	window *front = window_get_front();
+	briefing *br;
+	memset(state, 0, sizeof(*state));
+	if (!front || window_get_callback(front) != (int (*)(window *, d_event *, void *))briefing_handler)
+		return;
+	br = (briefing *)window_get_data(front);
+	state->active = 1;
+	state->page_ready = br->new_page || br->new_screen;
+	snprintf(state->background, sizeof(state->background), "%s", br->background_name);
+	for (int i = 0; i < br->streamcount && i < 2048; ++i) {
+		state->text[i] = br->messagestream[i].ch;
+		if (br->messagestream[i].ch == ' ') continue;
+		for (int j = 0; j < i; ++j)
+			if (br->messagestream[j].ch != ' ' &&
+			    br->messagestream[i].x == br->messagestream[j].x &&
+			    br->messagestream[i].y == br->messagestream[j].y)
+				++state->overlaps;
+	}
+}
+#endif
 
 void do_briefing_screens(char *filename, int level_num)
 {

@@ -83,8 +83,29 @@ addition to nominal FPS. Validation requires at least 23 visible updates/sec in
 each gameplay clip, 27 in the fly-out's moving first two seconds, and no holds
 longer than 140 ms. Its camera deliberately settles later in the sequence.
 
-The video is **silent**: these recorders capture display frames without game
-audio. Its 16:9 canvas pads the original wide phone display without cropping
+The video includes the engine's MIDI music and sound effects, recorded directly
+after SDL mixing into bounded PCM buffers. No external MIDI arrangement or
+replacement briefing is used. Raw WAV files and audio timing/source metadata sit
+beside each screen recording. Edits compress audio with pitch preserved; the
+launcher and system picker remain naturally silent. The smooth fly-out visuals
+use a separate normal-speed engine pass for their audio. `audio-sources.json`
+records each source and the engine-selected music; `audio-validation.json`
+checks the decoded final AAC for audible menu, briefing, gameplay and fly-out.
+The editor balances excerpt loudness toward -22 dBFS RMS with at most 12 dB of
+boost and 2 dB of peak headroom, preserving each excerpt's music/effects mix.
+Short fades prevent clicks at cuts; the last 150 ms fade out at the ending.
+Retail D2 normally uses ambient hum in its built-in campaign briefings. The
+capture script explicitly requests the engine's original `SONG_BRIEFING`
+(`briefing.hmp`) for this MIDI-backed preview; normal app behavior is unchanged.
+
+The D2 opening requires the full game's `ROBOTS-H.MVL`. The generator searches
+locally under `game_data` and verifies the retail library's SHA-256 when absent
+from the content index. It imports this through the app together with the other
+game files, so the engine plays its original robot videos. The original silent
+review omitted this optional library; its briefing was real but lacked robots.
+`briefing/` retains engine state and paired screenshots for inspection.
+
+The 16:9 canvas pads the original wide phone display without cropping
 the touch controls. The launcher is portrait for stills and landscape for video.
 Actual status bars, HUD and touch UI are captured, not composited replacements.
 

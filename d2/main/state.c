@@ -2928,7 +2928,9 @@ int state_restore_take_menu_request(void)
 {
 	int requested = restore_requires_menu;
 	restore_requires_menu = 0;
+#ifdef __ANDROID__
 	if (requested) debug_log_force(DLOG_COOP_DESYNC, "restore menu request consumed: level=%d mode=%x window=%p", Current_level_num, Game_mode, (void *) Game_wind);
+#endif
 	return requested;
 }
 

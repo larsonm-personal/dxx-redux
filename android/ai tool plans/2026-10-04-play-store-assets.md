@@ -83,3 +83,39 @@ recipe and documentation in source control; keep game data and media out of git.
   suffices; no motion interpolation is used
 - Both Android engines built successfully; updated APK's D2 replay result
   matched its recording; the revised asset integration test and formatting pass
+
+## Audio and complete in-engine briefings
+
+1. Import the locally owned, hash-verified D2 robot movie library and recapture
+   the real briefing; retain evidence of animated robot rendering
+2. Record the engine's mixed PCM output using a bounded diagnostic tap after
+   mixing, without replacing SDL_mixer's movie or music callbacks
+3. Synchronize menu, briefing and replay audio with the captured video and
+   preserve pitch when shortening footage. Record fly-out sound in a separate
+   normal-speed engine pass so the slow visual capture does not stretch music
+4. Regenerate into an ignored audio review folder, preserving previous output
+5. Build both engines, run asset integration and scoped formatting, verify
+   audio presence and motion cadence, and document reproducible commands
+
+### Audio implementation and capture evidence
+
+- Output: `android/temp/store-assets_20261004_audio`, ignored by git
+- Briefings were always captured in-engine. The old input set omitted
+  `ROBOTS-H.MVL`; the verified retail library now renders animated robots
+- Retail D2 deliberately stops music for its built-in campaign briefing. The
+  capture-only `music_control` briefing operation asks the existing song API to
+  play `briefing.hmp`; all three captured pages report that song active
+- PCM capture uses a bounded buffer after SDL mixing, preserving MIDI, effects
+  and movie audio without replacing the movie player's post-mix callback
+- Source WAVs carry native monotonic timestamps and engine music state. The
+  editor preserves pitch, encodes one continuous AAC stream, and checks the
+  decoded final audio in each menu, briefing, gameplay and fly-out section
+- Added display override reset and encoder startup/output checks after a stale
+  emulator configuration produced a wrong-sized still and an empty recording
+- Both native engines built successfully; scoped formatting and the asset
+  integration test passed. All three replay results match their recordings
+- Final video: 900 frames, 30.000 seconds, 2400x1350, stereo AAC; zero decoded
+  clipped samples in the checked sections after balancing excerpt loudness
+- Visible updates/sec: 24.97 for all three gameplay excerpts and 30.00 for the
+  moving fly-out. All three briefing pages pass the robot animation and MIDI
+  checks; paired briefing frames are included in the gallery
