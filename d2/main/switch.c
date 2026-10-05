@@ -554,14 +554,8 @@ int check_trigger_sub(int trigger_num, int pnum,int shot)
 			} else if (Current_level_num < 0) {
 				if ((Players[Player_num].shields < 0) || Player_is_dead)
 					break;
-				// NMN 04/09/07 Do endlevel movie if we are
-				//             playing a D1 secret level
-				if (EMULATING_D1)
-				{
-					start_endlevel_sequence();
-				} else {
-					ExitSecretLevel();
-				}
+				// Authored secret exits can also have a rendered escape tunnel
+				start_endlevel_sequence();
 				return 1;
 			} else {
 				#ifdef EDITOR

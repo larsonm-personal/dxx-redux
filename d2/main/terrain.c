@@ -34,8 +34,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "endlevel.h"
 #include "fireball.h"
 #include "render.h"
+#include "console.h"
+#include "endlevel_validation.h"
+#include "endlevel_bitmap.h"
 
-#define GRID_MAX_SIZE   64
+#define GRID_MAX_SIZE   ENDLEVEL_GRID_MAX_SIZE
 #define GRID_SCALE      i2f(2*20)
 #define HEIGHT_SCALE    f1_0
 
@@ -335,16 +338,31 @@ void free_height_array()
 		d_free(height_array);
 }
 
-void load_terrain(char *filename)
+int load_terrain(char *filename, int exit_x, int exit_y)
 {
-	grs_bitmap height_bitmap;
+	grs_bitmap height_bitmap = {0};
 	int iff_error;
 	int i,j;
 	ubyte h,min_h,max_h;
 
+	if (!endlevel_bitmap_valid(filename, GRID_MAX_SIZE, exit_x, exit_y)) {
+		con_printf(CON_DEBUG, "Skipping exit animation: invalid or missing height map %s\n", filename);
+		return 0;
+	}
 	iff_error = iff_read_bitmap(filename,&height_bitmap,BM_LINEAR,NULL);
 	if (iff_error != IFF_NO_ERROR) {
-		Error("File %s - IFF error: %s",filename,iff_errormsg(iff_error));
+		con_printf(CON_DEBUG, "Skipping exit animation: height map %s: %s\n", filename, iff_errormsg(iff_error));
+		gr_free_bitmap_data(&height_bitmap);
+		return 0;
+	}
+
+	/* The terrain renderer indexes a square grid and keeps fixed-size rows */
+	if (!height_bitmap.bm_data || height_bitmap.bm_w < 2 ||
+	    height_bitmap.bm_w > GRID_MAX_SIZE || height_bitmap.bm_h != height_bitmap.bm_w ||
+	    exit_x < 0 || exit_y < 0 || exit_x >= height_bitmap.bm_w || exit_y >= height_bitmap.bm_h) {
+		con_printf(CON_DEBUG, "Skipping exit animation: invalid height map dimensions or exit coordinates in %s\n", filename);
+		gr_free_bitmap_data(&height_bitmap);
+		return 0;
 	}
 
 	if (height_array)
@@ -352,9 +370,6 @@ void load_terrain(char *filename)
 
 	grid_w = height_bitmap.bm_w;
 	grid_h = height_bitmap.bm_h;
-
-	Assert(grid_w <= GRID_MAX_SIZE);
-	Assert(grid_h <= GRID_MAX_SIZE);
 
 	height_array = height_bitmap.bm_data;
 
@@ -381,6 +396,7 @@ void load_terrain(char *filename)
 	terrain_bm = terrain_bitmap;
 
 	build_light_table();
+	return 1;
 }
 
 

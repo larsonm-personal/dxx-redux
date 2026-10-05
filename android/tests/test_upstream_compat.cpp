@@ -8605,10 +8605,123 @@ static void finish_campaign_game(int death)
 	}
 }
 
+static void test_incomplete_endlevel_data()
+{
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(1);
+	const auto presentation = flyout_metadata::presentation(Level_names[0], 1);
+	const std::string source = presentation["file"];
+	PHYSFS_file *file = PHYSFSX_openReadBuffered(source.c_str());
+	endlevel_description data;
+	require(file && endlevel_read_description(file, source.substr(source.size() - 3) == "txb", &data), "read real exterior fixture");
+	PHYSFS_close(file);
+	const std::string filename = flyout_metadata::with_extension(Level_names[0], "end");
+	const auto text = [&] {
+		return std::string(data.terrain) + "\n" + data.heightmap + "\n" + std::to_string(data.exit_x) + "," + std::to_string(data.exit_y) +
+		       "\n" + std::to_string(data.heading) + "\n" + data.satellite + "\n" + std::to_string(data.satellite_heading) + "," +
+		       std::to_string(data.satellite_pitch) + "\n" + std::to_string(data.satellite_size) + "\n" + std::to_string(data.station_heading) + "," + std::to_string(data.station_pitch) + "\n";
+	};
+	// A valid final mask row must be consumed before the next IFF chunk is parsed
+	bytes masked = { 'F', 'O', 'R', 'M', 0, 0, 1, 40, 'P', 'B', 'M', ' ',
+		             'B', 'M', 'H', 'D', 0, 0, 0, 20, 0, 64, 0, 64, 0, 0, 0, 0,
+		             8, 1, 1, 0, 0, 0, 1, 1, 0, 64, 0, 64, 'B', 'O', 'D', 'Y', 0, 0, 1, 0 };
+	for (int row = 0; row < 64; ++row) masked.insert(masked.end(), { 193, 3, 193, 255 });
+	write_fixture("masked.bbm", masked);
+	const auto original = data;
+	std::strcpy(data.heightmap, "masked.bbm");
+	const auto masked_text = text();
+	write_fixture(filename.c_str(), bytes(masked_text.begin(), masked_text.end()));
+	load_endlevel_data(1);
+	require(input_demo_endlevel_trace_snapshot()["data_loaded"] == 1, "valid masked height map retains its fly-out");
+	require(PHYSFS_delete(filename.c_str()) && PHYSFS_delete("masked.bbm"), "remove masked height fixture");
+	data = original;
+	const std::string valid = text();
+	std::vector<std::pair<std::string, std::string>> cases = {
+		{ "empty", "" }, { "truncated", "moon01.bbm\n" }, { "extra_field", valid + "extra\n" }, { "invalid_number", std::string(data.terrain) + "\n" + data.heightmap + "\n1,nope\n0\nsky.bbm\n0,0\n200\n0,0\n" }, { "overflow", std::string(data.terrain) + "\n" + data.heightmap + "\n1,1\n9999999999999999999999999999\nsky.bbm\n0,0\n200\n0,0\n" }
+	};
+	const auto saved = data;
+	for (char *asset : { data.terrain, data.heightmap, data.satellite }) {
+		std::strcpy(asset, "absent.bbm");
+		cases.emplace_back("missing_asset", text());
+		data = saved;
+	}
+	const auto height_bytes = read_save_fixture(saved.heightmap);
+	write_fixture("trunc.bbm", bytes(height_bytes.begin(), height_bytes.begin() + height_bytes.size() / 2));
+	std::strcpy(data.heightmap, "trunc.bbm");
+	cases.emplace_back("truncated_iff", text());
+	auto bad_run = height_bytes;
+	bool mutated = false;
+	for (size_t offset = 12; offset + 8 < bad_run.size();) {
+		const auto size = endlevel_be32(bad_run.data() + offset + 4);
+		if (!std::memcmp(bad_run.data() + offset, "BMHD", 4)) bad_run[offset + 18] = 1;
+		if (!std::memcmp(bad_run.data() + offset, "BODY", 4) && size >= 2) {
+			bad_run[offset + 8] = 129; // A 128-pixel repeat cannot fit in any supported terrain row
+			mutated = true;
+		}
+		offset += 8 + size + (size & 1);
+	}
+	require(mutated, "corrupt a real height-map compression run");
+	write_fixture("bad-run.bbm", bad_run);
+	std::strcpy(data.heightmap, "bad-run.bbm");
+	cases.emplace_back("invalid_bitmap_run", text());
+	std::strcpy(data.heightmap, "broken.bbm");
+	write_fixture("broken.bbm", { 'b', 'a', 'd' });
+	cases.emplace_back("corrupt_heightmap", text());
+	std::strcpy(data.heightmap, "shape.bbm");
+	for (const auto shape : { std::make_pair(65, 65), std::make_pair(16, 32), std::make_pair(1, 1), std::make_pair(2, 2) }) {
+		grs_bitmap bitmap = {};
+		std::vector<ubyte> pixels(shape.first * shape.second, 3);
+		gr_init_bitmap(&bitmap, BM_LINEAR, 0, 0, shape.first, shape.second, shape.first, pixels.data());
+		char name[] = "shape.bbm";
+		require(iff_write_bitmap(name, &bitmap, gr_palette) == IFF_NO_ERROR, "write height-map shape fixture");
+		const auto fixture = text();
+		write_fixture(filename.c_str(), bytes(fixture.begin(), fixture.end()));
+		load_endlevel_data(1);
+		require(input_demo_endlevel_trace_snapshot()["data_loaded"] == 0, "unsupported terrain shape/coordinates skip flyout");
+	}
+	for (const auto &entry : cases) {
+		write_fixture(filename.c_str(), bytes(entry.second.begin(), entry.second.end()));
+		load_endlevel_data(1);
+		require(input_demo_endlevel_trace_snapshot()["data_loaded"] == 0, "incomplete optional exterior skips flyout");
+		std::fprintf(stderr, "PASS exterior: %s\n", entry.first.c_str());
+	}
+	require(PHYSFS_delete(filename.c_str()) && PHYSFS_delete("shape.bbm") && PHYSFS_delete("broken.bbm") && PHYSFS_delete("trunc.bbm") && PHYSFS_delete("bad-run.bbm"), "remove malformed exterior fixtures");
+	load_endlevel_data(1);
+	require(input_demo_endlevel_trace_snapshot()["data_loaded"] == 1, "valid scenery recovers after malformed files");
+	for (const char *kind : { "solid", "out_of_range", "disconnected", "cycle" }) {
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+		for (int segment = 0; segment < 3; ++segment)
+			for (auto &child : Segments[segment].children) child = -1;
+		if (std::strcmp(kind, "solid")) Segments[0].children[0] = 1;
+		if (!std::strcmp(kind, "out_of_range")) Segments[0].children[0] = Highest_segment_index + 1;
+		if (!std::strcmp(kind, "cycle")) {
+			for (int segment = 0; segment < 3; ++segment) {
+				Segments[segment].children[0] = (segment + 1) % 3;
+				Segments[segment].children[Side_opposite[0]] = (segment + 2) % 3;
+			}
+		}
+		obj_relink(ConsoleObject - Objects, 0);
+		compute_segment_center(&ConsoleObject->pos, &Segments[0]);
+		vms_vector destination, heading;
+		compute_center_point_on_side(&destination, &Segments[0], 0);
+		vm_vec_normalized_dir(&heading, &destination, &ConsoleObject->pos);
+		vm_vec_sub(&ConsoleObject->last_pos, &ConsoleObject->pos, &heading);
+		endlevel_route route;
+		require(endlevel_validate_route(0, 0, &route) != nullptr, "malformed tunnel is rejected");
+		Control_center_destroyed = 1;
+		input_demo_set_skip_level_intro(1);
+		start_endlevel_sequence();
+		require(!Endlevel_sequence && Current_level_num == 2, "invalid tunnel still completes the actual level");
+		std::fprintf(stderr, "PASS tunnel completion: %s\n", kind);
+	}
+}
+
 static void write_endlevel_lifetime_trace()
 {
 	using nlohmann::json;
 	json trace = json::array();
+	test_incomplete_endlevel_data();
 	int run_number = 0;
 	for (const int level : { 1, 2, 1 }) {
 		input_demo_set_skip_level_intro(1);
@@ -8621,6 +8734,11 @@ static void write_endlevel_lifetime_trace()
 		for (const auto child : Segments[exit].children)
 			if (child >= 0) approach = child;
 		require(approach >= 0, "actual mine exit has an approach cell");
+		if (run_number == 2) {
+			Segments[0].children[0] = -2;
+			load_endlevel_data(level);
+			require(input_demo_endlevel_trace_snapshot()["exit_segment"] == 0, "multiple-opening fixture selects the decoy while loading");
+		}
 		object &ship = *ConsoleObject;
 		obj_relink(&ship - Objects, approach);
 		compute_segment_center(&ship.pos, &Segments[approach]);
@@ -8648,6 +8766,7 @@ static void write_endlevel_lifetime_trace()
 		start_endlevel_sequence();
 		std::fprintf(stderr, "Rendered exit entered phase %d\n", Endlevel_sequence);
 		require(Endlevel_sequence == 1, "actual exit enters the rendered flythrough");
+		require(input_demo_endlevel_trace_snapshot()["exit_segment"] == exit, "flyout uses its own reachable exterior");
 		require(d_rand_get_state(&observed_sim_state) && observed_sim_state == sim_state && d_rand_get_call_count() == sim, "starting the exit animation leaves SIM RNG untouched");
 		char active[] = "active-flyout.sav", description[21] = "Active flyout";
 		require(!state_save_all_sub(active, description), "active flyouts cannot create incomplete gameplay checkpoints");
@@ -8819,7 +8938,73 @@ static void write_death_sequence_trace(const char *filename = "death.json")
 	write_fixture(filename, bytes(output.begin(), output.end()));
 }
 
-static void write_campaign_trace(const char *directory, const char *d2_directory, bool endlevel_only = false, bool death_only = false)
+#ifdef DXX_BUILD_DESCENT_II
+extern "C" void EnterSecretLevel(void);
+static void advance_secret_flyout_frame()
+{
+	// Campaign completion closes the game through its ordinary event-loop jump
+	if (!setjmp(LeaveEvents)) do_endlevel_frame();
+}
+
+static void write_fan_flyout_trace(const char *d2_directory, const char *mission_directory)
+{
+	const std::string hog = std::string(d2_directory) + "/descent2.hog";
+	const std::string dxa = std::string(mission_directory) + "/ewithin.dxa";
+	require(PHYSFS_mount(d2_directory, nullptr, 0) && PHYSFS_mount(hog.c_str(), nullptr, 0) &&
+	            PHYSFS_mount(mission_directory, nullptr, 0) && PHYSFS_mount(dxa.c_str(), nullptr, 0),
+	        "mount actual fan campaign and custom assets");
+	char mission[] = "ewithin";
+	require(load_mission_by_name(mission) && !EMULATING_D1 && Last_level == 26 && Last_secret_level == -6, "load anniversary Enemy Within");
+	nlohmann::json results = nlohmann::json::array();
+	for (const bool final_exit : { false, true }) {
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(26);
+		Control_center_destroyed = final_exit;
+		EnterSecretLevel();
+		require(Current_level_num == -6, "normal final-level secret travel enters The Grand Finale");
+		int wall = -1;
+		for (int i = 0; i < Num_walls; ++i)
+			if (Walls[i].trigger < Num_triggers && Triggers[Walls[i].trigger].type == TT_EXIT) {
+				wall = i;
+				break;
+			}
+		require(wall >= 0, "Grand Finale has a normal exit trigger");
+		const auto exit = Walls[wall];
+		obj_relink(ConsoleObject - Objects, exit.segnum);
+		compute_segment_center(&ConsoleObject->pos, &Segments[exit.segnum]);
+		vms_vector target, heading;
+		compute_center_point_on_side(&target, &Segments[exit.segnum], exit.sidenum);
+		vm_vec_normalized_dir(&heading, &target, &ConsoleObject->pos);
+		vm_vector_2_matrix(&ConsoleObject->orient, &heading, nullptr, nullptr);
+		vm_vec_sub(&ConsoleObject->last_pos, &ConsoleObject->pos, &heading);
+		Control_center_destroyed = final_exit;
+		check_trigger_sub(exit.trigger, Player_num, 0);
+		require(Endlevel_sequence == 1 && Current_level_num == -6, "actual secret exit trigger starts a rendered fly-out");
+		const auto checkpoint = final_exit ? bytes{} : read_save_fixture(SECRETC_FILENAME);
+		unsigned phases = 0;
+		for (int frame = 0; frame < 2400 && Endlevel_sequence; ++frame) {
+			FrameTime = F1_0 / 60;
+			GameTime64 += FrameTime;
+			phases |= 1u << Endlevel_sequence;
+			advance_secret_flyout_frame();
+			if (Endlevel_sequence) game_render_frame();
+		}
+		require(!Endlevel_sequence && phases == 30, "Grand Finale plays every fly-out phase and finishes");
+		if (final_exit) require(!Game_wind, "destroyed final parent leads to the campaign ending after fly-out");
+		else {
+			require(Current_level_num == 26 && Game_wind && ConsoleObject->control_type == CT_FLYING && ConsoleObject->movement_type == MT_PHYSICS,
+			        "fly-out returns to surviving parent with gameplay controls restored");
+			require(checkpoint == read_save_fixture(SECRETC_FILENAME), "cinematic movement never overwrites revisitable secret checkpoint");
+		}
+		results.push_back({ { "case", final_exit ? "campaign_ending" : "secret_return" }, { "phases", phases }, { "level", Current_level_num }, { "game_window", Game_wind != nullptr } });
+		std::fprintf(stderr, "PASS Grand Finale: %s\n", final_exit ? "campaign ending" : "secret return and checkpoint");
+	}
+	const std::string output = results.dump(2) + "\n";
+	write_fixture("fan-flyouts.json", bytes(output.begin(), output.end()));
+}
+#endif
+
+static void write_campaign_trace(const char *directory, const char *d2_directory, bool endlevel_only = false, bool death_only = false, const char *fan_mission = nullptr)
 {
 	using nlohmann::json;
 	const std::string hog = std::string(directory) + "/DESCENT.HOG";
@@ -8868,7 +9053,15 @@ static void write_campaign_trace(const char *directory, const char *d2_directory
 	require(timer != 0, "start presentation dismissal timer");
 	if (endlevel_only || death_only) {
 		if (death_only) write_death_sequence_trace();
-		else write_endlevel_lifetime_trace();
+		else {
+#ifdef DXX_BUILD_DESCENT_II
+			if (fan_mission) write_fan_flyout_trace(d2_directory, fan_mission);
+			else
+#else
+			(void) fan_mission;
+#endif
+				write_endlevel_lifetime_trace();
+		}
 		SDL_RemoveTimer(timer);
 		return;
 	}
@@ -10780,6 +10973,12 @@ int main(int argc, char **argv)
 		write_campaign_trace(argv[2], nullptr, false, true);
 		return 0;
 	}
+#ifdef DXX_BUILD_DESCENT_II
+	if (argc == 5 && std::strcmp(argv[1], "--fan-flyout-trace") == 0) {
+		write_campaign_trace(argv[2], argv[3], true, false, argv[4]);
+		return 0;
+	}
+#endif
 	if (argc == 3 && std::strcmp(argv[1], "--endlevel-trace") == 0) {
 		write_campaign_trace(argv[2], nullptr, true);
 		return 0;

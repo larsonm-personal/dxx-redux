@@ -30,6 +30,9 @@
 #include "android_crash_handler.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_log.h"
+#ifdef INTROSPECT_ON
+#include "android_audio_capture.h"
+#endif
 #include <sys/system_properties.h>
 #define TSFMUSIC_LOG(...) __android_log_print(ANDROID_LOG_INFO, "TSF-Music", __VA_ARGS__)
 #else
@@ -773,6 +776,11 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 		for (i = 0; i < got; i++)
 			out[i] = (short) (out[i] * volume);
 	}
+
+#ifdef INTROSPECT_ON
+	/* Diagnostic stem tap before SDL_mixer adds effects, at output volume */
+	androidaud_capture_music(stream, len);
+#endif
 
 	/* Producer EOF is not audible completion.  Publish completion only
 	 * after this callback consumes the final queued sample. */

@@ -117,10 +117,10 @@ def default_recipe(output):
     beats["End"] = min(beats["End"], video_info(output / opening["source"])["duration"])
     if "File picker ready" in beats:
         shots = [
-            ("Launcher and import", beats["Launcher"], beats["Pick game data"], 1),
-            ("Pick game data", beats["File picker ready"], beats["Imported game data"], 1.2),
-            ("Scroll launcher", beats["Imported game data"], beats["Launcher bottom"] + 0.3, 0.8),
-            ("Launch D2", beats["Launcher bottom"], beats["Launch Descent 2"] + 0.3, 0.6),
+            ("Launcher and import", beats["Launcher"], beats["Pick game data"], 1.3),
+            ("Pick game data", beats["File picker ready"], beats["Imported game data"], 1.5),
+            ("Scroll launcher", beats["Imported game data"], beats["Launcher bottom"] + 0.3, 1.0),
+            ("Launch D2", beats["Launcher bottom"], beats["Launch Descent 2"] + 0.3, 0.8),
             ("Create pilot", beats["Pilot name"], beats["Created pilot"], 1),
             (
                 "Counterstrike campaign",
@@ -131,7 +131,6 @@ def default_recipe(output):
             ("Briefing page 1", beats["Briefing page 1"], beats["Briefing page 1"] + 0.8, 0.8),
             ("Briefing page 2", beats["Briefing page 2"], beats["Briefing page 2"] + 0.8, 0.8),
             ("Briefing page 3", beats["Briefing page 3"], beats["Briefing page 3"] + 0.8, 0.8),
-            ("Enter level", beats["End"] - 1, beats["End"], 1),
         ]
         clips = [
             {
@@ -192,7 +191,8 @@ def default_recipe(output):
             "label": "Descent 1 fly-out",
             "group": "flyout",
             "source": flyout["source"],
-            "start": max(0, end - 6 * rate),
+            # Recorder startup can precede the warp; never include that view
+            "start": max(active[0]["wall"], end - 6 * rate),
             "end": end,
             "seconds": 6,
             "transpose": flyout.get("transpose"),
@@ -202,7 +202,7 @@ def default_recipe(output):
 
 
 def render_audio(output, clips, encoded):
-    """Cut the engine's mixed MIDI/SFX; time compression preserves pitch."""
+    """Retime effects to the picture while retaining native MIDI tempo."""
     waves = []
     evidence = []
     for index, clip in enumerate(clips):
@@ -217,11 +217,14 @@ def render_audio(output, clips, encoded):
         meta = json.loads(source.with_suffix(".audio.json").read_text())
         if meta["overflow"] or meta["sample_rate"] != 48000 or meta["channels"] != 2:
             raise ValueError(f"Invalid engine PCM capture: {source}")
+        if not meta.get("music_source"):
+            raise ValueError(f"Recapture with isolated engine music before composing: {source}")
         if not meta["engine_audio"]["music"].get("active") or meta["engine_audio"]["music"].get("type") != 1:
             raise ValueError(f"Engine MIDI was not playing: {source}")
         audio_start = max(0, start - meta["video_offset"])
         audio_end = max(0, end - meta["video_offset"])
         speed = (end - start) / clip["seconds"]
+        effects_tempo = speed
         delay = max(0, meta["video_offset"] - start) / speed
         target = encoded / f"{index:02d}.wav"
         if delay >= clip["seconds"]:
@@ -237,15 +240,55 @@ def render_audio(output, clips, encoded):
                 tempo.append("atempo=0.5")
                 speed *= 2
             tempo.append(f"atempo={speed:.10f}")
+            delay_frames = round(delay * 48000)
+            music_start_frame = round(audio_start * 48000)
+            music_frames = round(clip["seconds"] * 48000) - delay_frames
+            music_proof = encoded / f"{index:02d}-music.wav"
+            # The tap is sample-aligned with the final mix. Subtract music
+            # before accelerating SFX, then mix an unretimed native excerpt
             filters = (
+                "[0:a][1:a]amix=inputs=2:weights='1 -1':normalize=0,"
                 f"atrim=start={audio_start:.6f}:end={audio_end:.6f},asetpts=PTS-STARTPTS,"
                 + ",".join(tempo)
-                + f",adelay={round(delay * 48000)}S:all=1,apad,atrim=duration={clip['seconds']}"
+                + f",adelay={delay_frames}S:all=1,apad,atrim=duration={clip['seconds']}[effects];"
+                f"[1:a]atrim=start_sample={music_start_frame}:end_sample={music_start_frame + music_frames},"
+                f"asetpts=PTS-STARTPTS,adelay={delay_frames}S:all=1,apad,atrim=duration={clip['seconds']},"
+                "asplit[score][proof];[effects][score]amix=inputs=2:normalize=0[mixed]"
             )
             ffmpeg(
-                ["-i", output / meta["source"], "-af", filters, "-ar", 48000, "-ac", 2, "-c:a", "pcm_s16le", target],
+                [
+                    "-i",
+                    output / meta["source"],
+                    "-i",
+                    output / meta["music_source"],
+                    "-filter_complex",
+                    filters,
+                    "-map",
+                    "[mixed]",
+                    "-ar",
+                    48000,
+                    "-ac",
+                    2,
+                    "-c:a",
+                    "pcm_s16le",
+                    target,
+                    "-map",
+                    "[proof]",
+                    "-c:a",
+                    "pcm_s16le",
+                    music_proof,
+                ],
                 encoded / f"{index:02d}-audio.log",
             )
+            # Compare actual rendered samples, not just a claimed tempo flag
+            with wave.open(str(output / meta["music_source"]), "rb") as stream:
+                stream.setpos(music_start_frame)
+                reference = bytes(delay_frames * 4) + stream.readframes(music_frames)
+            reference = reference.ljust(round(clip["seconds"] * 48000) * 4, b"\0")
+            with wave.open(str(music_proof), "rb") as stream:
+                proof = stream.readframes(stream.getnframes())
+            if reference != proof:
+                raise ValueError(f"Edited MIDI differs from the native samples at original tempo: {clip['label']}")
         with wave.open(str(target), "rb") as stream:
             pcm = array("h", stream.readframes(stream.getnframes()))
         rms = math.sqrt(sum(value * value for value in pcm) / max(1, len(pcm)))
@@ -274,6 +317,10 @@ def render_audio(output, clips, encoded):
                 "start": audio_start,
                 "end": audio_end,
                 "leading_silence": delay,
+                "music_source": meta["music_source"],
+                "music_tempo": 1,
+                "music_samples_match": delay < clip["seconds"],
+                "effects_tempo": effects_tempo,
                 "engine_audio": meta["engine_audio"],
                 "gain_db": round(20 * math.log10(gain), 2),
             }
@@ -315,7 +362,7 @@ def audit_audio(output, timeline):
         raise ValueError("Final audio must span 30 seconds")
     checks = []
     for clip in timeline:
-        if clip["group"] == "opening" and clip["timeline_start"] < 3.6:
+        if clip["label"] in ("Launcher and import", "Pick game data", "Scroll launcher", "Launch D2"):
             continue  # Android launcher/file picker have no music
         segment = samples[round(clip["timeline_start"] * 96000) : round(clip["timeline_end"] * 96000)]
         rms = math.sqrt(sum(value * value for value in segment) / max(1, len(segment)))
@@ -591,6 +638,15 @@ def validate(output):
     checks["video"] = {"frames": frames, "seconds": seconds, "width": 2400, "height": 1350, "audio": "engine-pcm"}
     timeline = json.loads((output / "video-validation.json").read_text())["timeline"]
     checks["audio"] = audit_audio(output, timeline)
+    music_evidence = json.loads((output / "audio-sources.json").read_text())
+    if len(music_evidence) != len(timeline):
+        raise ValueError("Audio evidence does not cover the complete edit")
+    for clip, evidence in zip(timeline, music_evidence):
+        if evidence.get("music_tempo") != 1 or not evidence.get("music_source"):
+            raise ValueError(f"MIDI was not kept at native tempo: {clip['label']}")
+        if clip["group"] != "opening" and not evidence.get("music_samples_match"):
+            raise ValueError(f"Native MIDI sample comparison failed: {clip['label']}")
+    checks["music_tempo"] = "1.0; rendered music samples match native capture"
     assets = json.loads((output / "game-data.json").read_text())
     if not any(asset["name"] == "robots-h.mvl" for asset in assets):
         raise ValueError("D2 robot briefing movies were not supplied")

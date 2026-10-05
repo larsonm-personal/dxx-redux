@@ -13,7 +13,13 @@ static void coop_present_flyout(int level)
 
 static void finish_endlevel(void)
 {
-	if (!coop_flyout_active()) PlayerFinishedLevel(0);
+	if (!coop_flyout_active()) {
+#ifdef DXX_BUILD_DESCENT_II
+		complete_endlevel();
+#else
+		PlayerFinishedLevel(0);
+#endif
+	}
 }
 
 static unsigned coop_flyout_tunnel_ms(void)

@@ -75,6 +75,8 @@ void init_player_stats_game(ubyte pnum);      //clear all stats
 // called when the player has finished a level
 // if secret flag is true, advance to secret level, else next normal level
 void PlayerFinishedLevel(int secret_flag);
+void ExitSecretLevel(void);
+void ExitSecretLevelAfterFlyout(void);
 
 // called when the player has died
 void DoPlayerDead(void);

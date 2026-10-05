@@ -28,6 +28,13 @@
 #ifdef INTROSPECT_ON
 #include "shared/android_audio_capture.h"
 static android_audio_capture_callback g_capture_callback;
+static Uint8 g_capture_music[65536];
+
+void androidaud_capture_music(const Uint8 *stream, int length)
+{
+    if (g_capture_callback && length >= 0 && length <= (int)sizeof(g_capture_music))
+        memcpy(g_capture_music, stream, length);
+}
 
 void androidaud_set_capture_callback(android_audio_capture_callback callback)
 {
@@ -189,10 +196,16 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     /* Mix audio directly from SDL_mixer */
     if (!audio->paused && audio->spec.callback) {
         SDL_mutexP(audio->mixer_lock);
+#ifdef INTROSPECT_ON
+        if (g_capture_callback)
+            memset(g_capture_music, 0, sizeof(g_capture_music));
+#endif
         audio->spec.callback(audio->spec.userdata, buf, h->playlen);
 #ifdef INTROSPECT_ON
         if (g_capture_callback)
-            g_capture_callback(&audio->spec, buf, h->playlen, androidaud_now_us());
+            g_capture_callback(&audio->spec, buf,
+                h->playlen <= (int)sizeof(g_capture_music) ? g_capture_music : NULL,
+                h->playlen, androidaud_now_us());
 #endif
         SDL_mutexV(audio->mixer_lock);
     }

@@ -58,3 +58,20 @@ $env:DXX_TEST_PACKAGE='com.dxxredux.app.nsdtest'
 ```
 
 The existing Play installation still requires a Play-signed update to receive the fixes. No user saves were removed and no store release was published
+
+## Follow-up: campaign fly-out coverage
+
+Audited the same Rebirth 15th Anniversary archive, the phone's 32-level native metadata result, and compiled segment connectivity. Scratch evidence is in `android/temp/enemy_within_20261004/flyout-audit/`
+
+- The supplied readme explicitly says exit sequences were added for most levels, for Rebirth only; credits Parabolicus
+- Level 1 has two valid routes, 25 and 12 tunnel segments, ending at the exterior opening in segment 337
+- Level 2 has the exact same TXB scenery definition as Level 1, but its two exit routes end at solid sides after 1 and 2 segments. There is no exterior opening anywhere in the level. The files do not establish whether the scenery definition is leftover or the tunnel was deliberately omitted
+- Regular levels 1, 3-14, 16-22, and 24-26 have valid tunnel routes and present scenery assets: 23 of 26 regular levels
+- Level 15 likewise has scenery data but no exterior opening; its exit route ends after 2 segments
+- Level 23 has no dedicated TXB, so uses Level 1's fallback. Its 5-segment route reaches segment 815, where the autopilot follows side 5 (solid), while the exterior is on side 2. This is an incompatible tunnel layout rather than missing exterior assets
+- The five ordinary secret levels have no exterior openings
+- The challenge/secret level `secretx.rl2` (The Grand Finale) has a valid 10-segment tunnel and uses Level 1's scenery fallback. However, D2 negative-numbered levels dispatch normal exits through `ExitSecretLevel`, bypassing `start_endlevel_sequence`, so geometric availability does not imply normal gameplay plays a fly-out. The metadata currently describes that geometry without this control-flow distinction
+
+This follow-up is a structural audit, not a visual replay of every exit; no mission files or engine behavior were changed
+
+Subsequent implementation: [fan mission fly-out hardening](2026-10-04-flyout-hardening.md) adds the remaining safety guards and enables valid secret-level fly-outs. The Grand Finale now passes actual-engine tests for both secret return and campaign completion after its animation

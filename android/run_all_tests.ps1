@@ -439,6 +439,7 @@ $testTimeouts = @{
     # Includes the 600s child scenario, large archive staging, and cleanup
     "test_mission_asset_isolation"        = 900
     "test_enemy_within_level2"            = 420
+    "test_flyout_safety"                  = 1800
     "test_mod_loading"                    = 360
     "test_saf_archiver"                   = 360
     "test_xcrash_native_report"           = 300
@@ -596,6 +597,7 @@ $noInfraTests = @(
     "test_vertigo_metadata",
     "test_metadata_level_headers",
     "test_mission_metadata_flyouts",
+    "test_flyout_safety",
     "test_mission_provenance",
     "test_test_runner_result",
     "test_cue_iso",

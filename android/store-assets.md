@@ -62,14 +62,19 @@ The opening uses the real Android file picker to import a ZIP made from the
 verified local game data. It then scrolls the launcher, launches D2, creates a
 pilot, selects Counterstrike, shows three briefing pages and enters level 1.
 The edit removes loading waits and compresses this sequence into nine seconds.
+It omits the one-second level-entry shot and gives that time to the launcher
+and file picker, allowing their interactions to remain on screen longer.
 The two D1 excerpts start at 90 percent of their demo durations. The D2 excerpt
 uses seconds 48-53, a review-selected combat sequence; its late exit approach
 was discarded for low action.
 The final six seconds show D1's real exit animation, ending at the video's
 30-second boundary before the score screen. A debug-only automation fixture
-locates the authored exit tunnel in the engine and starts the existing fly-out.
+locates the authored exit trigger in the engine and starts the existing fly-out
+with a consistent current/previous ship position and outward direction.
 It slows only that single-player sequence to one-eighth speed during capture,
-then the editor restores normal speed. This lets a slow emulator render enough
+and refreshes the backing while that debug fixture is active so exposed exit
+pixels cannot retain previous frames. Production gameplay rendering is
+unchanged. After capture, the editor restores normal speed. This lets a slow emulator render enough
 real frames for 30 fps without synthesized motion frames. The clock hook is
 debug-only, resets after the exit, and is disabled during replays/multiplayer.
 
@@ -84,12 +89,15 @@ each gameplay clip, 27 in the fly-out's moving first two seconds, and no holds
 longer than 140 ms. Its camera deliberately settles later in the sequence.
 
 The video includes the engine's MIDI music and sound effects, recorded directly
-after SDL mixing into bounded PCM buffers. No external MIDI arrangement or
+after SDL mixing into bounded PCM buffers, with a sample-aligned music stem
+tapped before effects are added. No external MIDI arrangement or
 replacement briefing is used. Raw WAV files and audio timing/source metadata sit
-beside each screen recording. Edits compress audio with pitch preserved; the
+beside each screen recording. The editor subtracts the music stem before
+retiming effects to match the picture, then mixes music at its original tempo.
+It compares the rendered music samples with the native capture exactly; the
 launcher and system picker remain naturally silent. The smooth fly-out visuals
 use a separate normal-speed engine pass for their audio. `audio-sources.json`
-records each source and the engine-selected music; `audio-validation.json`
+records each source, effects speed, unchanged music tempo and the engine-selected music; `audio-validation.json`
 checks the decoded final AAC for audible menu, briefing, gameplay and fly-out.
 The editor balances excerpt loudness toward -22 dBFS RMS with at most 12 dB of
 boost and 2 dB of peak headroom, preserving each excerpt's music/effects mix.

@@ -69,6 +69,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "editor/editor.h"
 #endif
 
+#include "endlevel_validation.h"
+#include "endlevel_bitmap.h"
 #include "endlevel_runtime.h"
 #include "endlevel_multi.h"
 
@@ -115,6 +117,7 @@ fix cur_fly_speed,desired_fly_speed;
 
 extern int matt_find_connect_side(int seg0,int seg1);
 void generate_starfield();
+static void position_endlevel_exterior(int segment, int side);
 void draw_stars();
 int find_exit_side(object *obj);
 void do_endlevel_frame();
@@ -211,6 +214,8 @@ vms_angvec exit_angles={-0xa00,0,0};
 vms_matrix surface_orient;
 
 int endlevel_data_loaded=0;
+static vms_vector satellite_direction, station_direction;
+static int flyout_path_failed;
 
 #ifdef __ANDROID__
 #include "coop/coop_flyout_engine.h"
@@ -220,10 +225,6 @@ int endlevel_data_loaded=0;
 
 void start_endlevel_sequence()
 {
-#ifndef NDEBUG
-	int last_segnum;
-#endif
-	int exit_side,tunnel_length;
 
 	if (Player_is_dead || ConsoleObject->flags&OF_SHOULD_BE_DEAD)
 		return;				//don't start if dead!
@@ -265,47 +266,17 @@ void start_endlevel_sequence()
 	}
 
 	{
-		int segnum,old_segnum,entry_side,i;
-
-		//count segments in exit tunnel
-
-		old_segnum = ConsoleObject->segnum;
-		exit_side = find_exit_side(ConsoleObject);
-		segnum = Segments[old_segnum].children[exit_side];
-		tunnel_length = 0;
-		do {
-			entry_side = matt_find_connect_side(segnum,old_segnum);
-			exit_side = Side_opposite[entry_side];
-			old_segnum = segnum;
-			segnum = Segments[segnum].children[exit_side];
-			tunnel_length++;
-		} while (segnum >= 0);
-
-		if (segnum != -2) {
-			finish_endlevel();		//don't do special sequence
+		endlevel_route route;
+		const char *reason = endlevel_validate_route(ConsoleObject->segnum, find_exit_side(ConsoleObject), &route);
+		if (reason) {
+			con_printf(CON_DEBUG, "Skipping exit animation: %s\n", reason);
+			finish_endlevel();
 			return;
 		}
-#ifndef NDEBUG
-		last_segnum = old_segnum;
-#endif
-		//now pick transition segnum 1/3 of the way in
-
-		old_segnum = ConsoleObject->segnum;
-		exit_side = find_exit_side(ConsoleObject);
-		segnum = Segments[old_segnum].children[exit_side];
-		i=tunnel_length/3;
-		while (i--) {
-			entry_side = matt_find_connect_side(segnum,old_segnum);
-			exit_side = Side_opposite[entry_side];
-			old_segnum = segnum;
-			segnum = Segments[segnum].children[exit_side];
-		}
-		transition_segnum = segnum;
-
+		transition_segnum = route.transition_segment;
+		position_endlevel_exterior(route.exit_segment, route.exit_side);
 	}
-#ifndef NDEBUG
-	Assert(last_segnum == exit_segnum);
-#endif
+
 	#ifdef NETWORK
 	if (Game_mode & GM_MULTI) {
 		multi_send_endlevel_start(0);
@@ -320,6 +291,7 @@ void start_endlevel_sequence()
 #ifdef __ANDROID__
 	if (coop_flyout_active()) coop_flyout_remaining(coop_flyout_tunnel_ms());
 #endif
+	flyout_path_failed = 0;
 	memset(&Endlevel_frame, 0, sizeof(Endlevel_frame));
 	endlevel_camera = NULL;
 	Endlevel_sequence = EL_FLYTHROUGH;
@@ -458,6 +430,11 @@ void get_angs_to_object(vms_angvec *av,vms_vector *targ_pos,vms_vector *cur_pos)
 
 void do_endlevel_frame()
 {
+	if (flyout_path_failed) {
+		con_printf(CON_DEBUG, "Stopping exit animation: actor left the validated tunnel\n");
+		stop_endlevel_sequence();
+		return;
+	}
 #if defined(ANDROID) && defined(INTROSPECT_ON)
 	if (Android_automation_endlevel_frozen)
 		return;
@@ -600,6 +577,7 @@ void do_endlevel_frame()
 		case EL_FLYTHROUGH: {
 
 			do_endlevel_flythrough(0);
+			if (flyout_path_failed) { stop_endlevel_sequence(); return; }
 
 			if (fly_objects[0].transition_reached) {
 					int objnum;
@@ -637,7 +615,9 @@ void do_endlevel_frame()
 		case EL_LOOKBACK: {
 
 			do_endlevel_flythrough(0);
+			if (flyout_path_failed) { stop_endlevel_sequence(); return; }
 			do_endlevel_flythrough(1);
+			if (flyout_path_failed) { stop_endlevel_sequence(); return; }
 
 			if (Endlevel_frame.timer>0) {
 
@@ -838,7 +818,9 @@ int find_exit_side(object *obj)
 	vms_vector prefvec,segcenter,sidevec;
 	fix best_val=-f2_0;
 	int best_side;
-	segment *pseg = &Segments[obj->segnum];
+	segment *pseg;
+	if (obj->segnum < 0 || obj->segnum > Highest_segment_index) return -1;
+	pseg = &Segments[obj->segnum];
 
 	//find exit side
 
@@ -863,7 +845,7 @@ int find_exit_side(object *obj)
 		}
 	}
 
-	Assert(best_side!=-1);
+	// No opening is a valid reason to skip an optional animation
 
 	return best_side;
 }
@@ -1158,6 +1140,10 @@ static void do_endlevel_flythrough_step(int n, fix frame_time)
 
 	flydata = &fly_objects[n];
 	obj = flydata->obj;
+	if (!obj || obj->segnum < 0 || obj->segnum > Highest_segment_index) {
+		if (n < 2) flyout_path_failed = 1;
+		return;
+	}
 	
 	old_player_seg = obj->segnum;
 
@@ -1193,6 +1179,10 @@ static void do_endlevel_flythrough_step(int n, fix frame_time)
 		(void)located;
 #endif
 	}
+	if (obj->segnum < 0 || obj->segnum > Highest_segment_index) {
+		if (n < 2) flyout_path_failed = 1;
+		return;
+	}
 	pseg = &Segments[obj->segnum];
 	if (obj->segnum == transition_segnum)
 		flydata->transition_reached = 1;
@@ -1219,6 +1209,12 @@ static void do_endlevel_flythrough_step(int n, fix frame_time)
 
 		if (flydata->first_time || entry_side==-1 || pseg->children[exit_side]==-1)
 			exit_side = find_exit_side(obj);
+
+		if (exit_side < 0 || exit_side >= 6 || pseg->children[exit_side] < -2 ||
+		    pseg->children[exit_side] == -1 || pseg->children[exit_side] > Highest_segment_index) {
+			if (n < 2) flyout_path_failed = 1;
+			return;
+		}
 
 		{										//find closest side to align to
 			fix d,largest_d=-f1_0;
@@ -1324,7 +1320,7 @@ void do_endlevel_flythrough(int n)
 	}
 	/* Consume the whole frame while visiting the bends and exit in between
 	 * This changes only cinematic movement, not world updates or RNG */
-	while (remaining > 0) {
+	while (remaining > 0 && !flyout_path_failed) {
 		const fix step = min(remaining, max_step);
 		do_endlevel_flythrough_step(n, step);
 		remaining -= step;
@@ -1393,9 +1389,6 @@ int _do_slew_movement(object *obj, int check_keys )
 }
 #endif
 
-#define LINE_LEN	80
-#define NUM_VARS	8
-
 #define STATION_DIST	i2f(1024)
 
 int convert_ext( char *dest, char *ext )
@@ -1418,9 +1411,11 @@ int convert_ext( char *dest, char *ext )
 void load_endlevel_data(int level_num)
 {
 	char filename[13];
-	char line[LINE_LEN],*p;
+	endlevel_description data;
+	int iff_error;
+	ubyte pal[768];
 	PHYSFS_file *ifile;
-	int var,segnum,sidenum;
+	int segnum,sidenum;
 	int exit_side = 0;
 	int have_binary = 0;
 
@@ -1480,120 +1475,60 @@ try_again:
 		have_binary = 1;
 	}
 
-	//ok...this parser is pretty simple.  It ignores comments, but
-	//everything else must be in the right place
-
-	var = 0;
-
-	while (PHYSFSX_fgets(line,LINE_LEN,ifile)) {
-
-		if (have_binary)
-			decode_text_line (line);
-
-		if ((p=strchr(line,';'))!=NULL)
-			*p = 0;		//cut off comment
-
-		for (p=line+strlen(line)-1;p>line && isspace(*p);*p--=0);
-		for (p=line;isspace(*p);p++);
-
-		if (!*p)		//empty line
-			continue;
-
-		switch (var) {
-
-			case 0: {						//ground terrain
-				int iff_error;
-				ubyte pal[768];
-
-				gr_free_bitmap_data (&terrain_bm_instance);
-
-				iff_error = iff_read_bitmap(p,&terrain_bm_instance,BM_LINEAR,pal);
-				if (iff_error != IFF_NO_ERROR) {
-					con_printf(CON_DEBUG, "Can't load exit terrain from file %s: IFF error: %s\n",
-                                                p, iff_errormsg(iff_error));
-					endlevel_data_loaded = 0; // won't be able to play endlevel sequence
-					PHYSFS_close(ifile);
-					return;
-				}
-
-				terrain_bitmap = &terrain_bm_instance;
-				gr_remap_bitmap_good( terrain_bitmap, pal, iff_transparent_color, -1);
-
-				break;
-			}
-
-			case 1:							//height map
-
-				load_terrain(p);
-				break;
-
-
-			case 2:
-
-				sscanf(p,"%d,%d",&exit_point_bmx,&exit_point_bmy);
-				break;
-
-			case 3:							//exit heading
-
-				exit_angles.h = i2f(atoi(p))/360;
-				break;
-
-			case 4: {						//planet bitmap
-				int iff_error;
-				ubyte pal[768];
-
-				gr_free_bitmap_data (&satellite_bm_instance);
-
-				iff_error = iff_read_bitmap(p,&satellite_bm_instance,BM_LINEAR,pal);
-				if (iff_error != IFF_NO_ERROR) {
-					con_printf(CON_DEBUG, "Can't load exit satellite from file %s: IFF error: %s\n",
-                                                p, iff_errormsg(iff_error));
-					endlevel_data_loaded = 0; // won't be able to play endlevel sequence
-					PHYSFS_close(ifile);
-					return;
-				}
-
-				satellite_bitmap = &satellite_bm_instance;
-				gr_remap_bitmap_good( satellite_bitmap, pal, iff_transparent_color, -1);
-
-				break;
-			}
-
-			case 5:							//earth pos
-			case 7: {						//station pos
-				vms_matrix tm;
-				vms_angvec ta;
-				int pitch,head;
-
-				sscanf(p,"%d,%d",&head,&pitch);
-
-				ta.h = i2f(head)/360;
-				ta.p = -i2f(pitch)/360;
-				ta.b = 0;
-
-				vm_angles_2_matrix(&tm,&ta);
-
-				if (var==5)
-					satellite_pos = tm.fvec;
-					//vm_vec_copy_scale(&satellite_pos,&tm.fvec,SATELLITE_DIST);
-				else
-					station_pos = tm.fvec;
-
-				break;
-			}
-
-			case 6:						//planet size
-				satellite_size = i2f(atoi(p));
-				break;
-		}
-
-		var++;
-
+	if (!endlevel_read_description(ifile, have_binary, &data)) {
+		con_printf(CON_DEBUG, "Skipping exit animation: invalid scenery data %s\n", filename);
+		PHYSFS_close(ifile);
+		return;
 	}
+	PHYSFS_close(ifile);
 
-	Assert(var == NUM_VARS);
+	if (!endlevel_bitmap_valid(data.terrain, 4096, -1, -1) ||
+	    !endlevel_bitmap_valid(data.satellite, 4096, -1, -1)) {
+		con_printf(CON_DEBUG, "Skipping exit animation: invalid or missing scenery bitmap\n");
+		return;
+	}
+	gr_free_bitmap_data(&terrain_bm_instance);
+	iff_error = iff_read_bitmap(data.terrain, &terrain_bm_instance, BM_LINEAR, pal);
+	if (iff_error != IFF_NO_ERROR) {
+		con_printf(CON_DEBUG, "Skipping exit animation: terrain %s: %s\n", data.terrain, iff_errormsg(iff_error));
+		return;
+	}
+	terrain_bitmap = &terrain_bm_instance;
+	gr_remap_bitmap_good(terrain_bitmap, pal, iff_transparent_color, -1);
+	if (!load_terrain(data.heightmap, data.exit_x, data.exit_y)) return;
 
+	gr_free_bitmap_data(&satellite_bm_instance);
+	iff_error = iff_read_bitmap(data.satellite, &satellite_bm_instance, BM_LINEAR, pal);
+	if (iff_error != IFF_NO_ERROR) {
+		con_printf(CON_DEBUG, "Skipping exit animation: satellite %s: %s\n", data.satellite, iff_errormsg(iff_error));
+		return;
+	}
+	satellite_bitmap = &satellite_bm_instance;
+	gr_remap_bitmap_good(satellite_bitmap, pal, iff_transparent_color, -1);
+	exit_point_bmx = data.exit_x;
+	exit_point_bmy = data.exit_y;
+	exit_angles.h = (data.heading % 360) * F1_0 / 360;
+	satellite_size = data.satellite_size * F1_0;
+	{
+		vms_matrix orientation;
+		vms_angvec angles = {0, 0, 0};
+		angles.h = (data.satellite_heading % 360) * F1_0 / 360;
+		angles.p = -(data.satellite_pitch % 360) * F1_0 / 360;
+		vm_angles_2_matrix(&orientation, &angles);
+		satellite_direction = orientation.fvec;
+		angles.h = (data.station_heading % 360) * F1_0 / 360;
+		angles.p = -(data.station_pitch % 360) * F1_0 / 360;
+		vm_angles_2_matrix(&orientation, &angles);
+		station_direction = orientation.fvec;
+	}
+	position_endlevel_exterior(exit_segnum, exit_side);
+	endlevel_data_loaded = 1;
+}
 
+/* Bind scenery to the opening actually reached, including missions with multiple exits */
+static void position_endlevel_exterior(int segment, int exit_side)
+{
+	exit_segnum = segment;
 	// OK, now the data is loaded.  Initialize everything
 
 	compute_segment_center(&mine_exit_point,&Segments[exit_segnum]);
@@ -1612,10 +1547,10 @@ try_again:
 		vm_matrix_x_matrix(&surface_orient,&mine_exit_orient,&exit_orient);
 
 		vm_copy_transpose_matrix(&tm,&surface_orient);
-		vm_vec_rotate(&tv,&station_pos,&tm);
+		vm_vec_rotate(&tv,&station_direction,&tm);
 		vm_vec_scale_add(&station_pos,&mine_exit_point,&tv,STATION_DIST);
 
-		vm_vec_rotate(&tv,&satellite_pos,&tm);
+		vm_vec_rotate(&tv,&satellite_direction,&tm);
 		vm_vec_scale_add(&satellite_pos,&mine_exit_point,&tv,SATELLITE_DIST);
 
 		vm_vector_2_matrix(&tm,&tv,&surface_orient.uvec,NULL);
@@ -1623,10 +1558,6 @@ try_again:
 
 
 	}
-
-	PHYSFS_close(ifile);
-
-	endlevel_data_loaded = 1;
 
 }
 

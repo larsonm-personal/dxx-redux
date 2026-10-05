@@ -1476,7 +1476,7 @@ int	Entered_from_level;
 
 // ---------------------------------------------------------------------------------------------------------------
 //	Called from switch.c when player is on a secret level and hits exit to return to base level.
-void ExitSecretLevel(void)
+static void exit_secret_level(int save_secret)
 {
 	if (d1_in_d2_finish_level(0))
 		return;
@@ -1487,7 +1487,7 @@ void ExitSecretLevel(void)
 	if (Game_wind)
 		window_set_visible(Game_wind, 0);
 
-	if (!Control_center_destroyed) {
+	if (save_secret && !Control_center_destroyed) {
 		state_save_all(2, SECRETC_FILENAME, 0);
 	}
 
@@ -1514,6 +1514,17 @@ void ExitSecretLevel(void)
 	if (Game_wind)
 		window_set_visible(Game_wind, 1);
 	reset_time();
+}
+
+void ExitSecretLevel(void)
+{
+	exit_secret_level(1);
+}
+
+/* A fly-out saved the secret before changing player pose and control state */
+void ExitSecretLevelAfterFlyout(void)
+{
+	exit_secret_level(0);
 }
 
 // ---------------------------------------------------------------------------------------------------------------

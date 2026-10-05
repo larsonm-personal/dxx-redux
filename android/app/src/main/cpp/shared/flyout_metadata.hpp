@@ -11,6 +11,8 @@
 
 extern "C" {
 #include "gameseg.h"
+#include "endlevel_validation.h"
+#include "endlevel_bitmap.h"
 #include "mission.h"
 #include "physfsx.h"
 #include "segment.h"
@@ -132,24 +134,16 @@ inline json presentation(const char *level_file, int level_num)
 		if (file) result["file"] = name;
 	}
 	if (!file) return result;
-	std::vector<std::string> values;
-	char line[256];
-	while (values.size() <= 8 && PHYSFSX_fgets(line, sizeof(line), file)) {
-		if (binary) decode_text_line(line);
-		std::string value(line);
-		value = value.substr(0, value.find(';'));
-		const auto first = value.find_first_not_of(" \t\r\n");
-		if (first != std::string::npos)
-			values.push_back(value.substr(first, value.find_last_not_of(" \t\r\n") - first + 1));
-	}
+	endlevel_description description;
+	const bool valid = endlevel_read_description(file, binary, &description);
 	PHYSFS_close(file);
-	if (values.size() != 8) {
+	if (!valid) {
 		result["status"] = "invalid_endlevel_data";
 		return result;
 	}
 	json missing = json::array();
-	for (int index : { 0, 1, 4 })
-		if (!PHYSFSX_exists(values[index].c_str(), 1)) missing.push_back(values[index]);
+	for (const char *asset : { description.terrain, description.heightmap, description.satellite })
+		if (!PHYSFSX_exists(asset, 1)) missing.push_back(asset);
 #ifdef DXX_BUILD_DESCENT_II
 	if (Piggy_hamfile_version >= 3) {
 		PHYSFS_file *pig = PHYSFSX_openReadBuffered("descent.pig");
@@ -164,8 +158,13 @@ inline json presentation(const char *level_file, int level_num)
 			missing.push_back("exit models");
 	}
 #endif
-	result["status"] = missing.empty() ? "present" : "missing_assets";
-	result["asset_check"] = "presence_only";
+	const bool valid_bitmaps = !missing.empty() ||
+	                           (endlevel_bitmap_valid(description.terrain, 4096, -1, -1) &&
+	                            endlevel_bitmap_valid(description.satellite, 4096, -1, -1) &&
+	                            endlevel_bitmap_valid(description.heightmap, ENDLEVEL_GRID_MAX_SIZE, description.exit_x, description.exit_y));
+	result["status"] = !missing.empty() ? "missing_assets" : valid_bitmaps ? "present"
+	                                                                       : "invalid_assets";
+	result["asset_check"] = "bitmap_validation_model_presence";
 	if (!missing.empty()) result["missing_assets"] = missing;
 	return result;
 }
@@ -184,6 +183,18 @@ inline json route(int wall_num)
 	const auto &wall = Walls[wall_num];
 	json result = { { "trigger", wall.trigger }, { "segment", wall.segnum }, { "side", wall.sidenum }, { "seconds", nullptr }, { "status", "invalid_exit" } };
 	if (wall.segnum < 0 || wall.segnum > Highest_segment_index || wall.sidenum < 0 || wall.sidenum >= 6) return result;
+	endlevel_route checked;
+	if (const char *reason = endlevel_validate_route(wall.segnum, wall.sidenum, &checked)) {
+		result["status"] = reason;
+		return result;
+	}
+	if (!checked.segments) {
+		result["seconds"] = 5.0;
+		result["status"] = "estimated";
+		result["tunnel_units"] = 0;
+		result["tunnel_segments"] = 0;
+		return result;
+	}
 	vms_vector position, target;
 	compute_center_point_on_side(&position, &Segments[wall.segnum], wall.sidenum);
 	int previous = wall.segnum, segment = Segments[previous].children[wall.sidenum];

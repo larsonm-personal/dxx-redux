@@ -48,6 +48,7 @@ function Get-TestSuiteCoveragePolicy {
         content_browser = @(
             'test_mission_asset_isolation'
             'test_enemy_within_level2'
+            'test_flyout_safety'
             'test_mission_zip_batch'
             'test_unified_file_set_content'
             'test_disc_content_import'

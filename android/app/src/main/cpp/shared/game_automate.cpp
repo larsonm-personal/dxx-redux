@@ -61,6 +61,9 @@ extern "C" {
 #include "android_jni_overlay.h"
 #include "ogl_msaa_android.h"
 #include "ogl_msaa_probe_android.h"
+#ifdef OGL
+#include "ogl_init.h"
+#endif
 #endif
 #include "android_log.h"
 #include "android_crash_handler.h"
@@ -577,6 +580,7 @@ static std::vector<auto_step> g_steps;
 static int g_current_step = 0;
 static int g_active = 0;
 static int g_capture_slowdown = 1;
+static bool g_capture_exit_backing = false;
 
 extern "C" int game_automate_capture_frame_time(int frame_time)
 {
@@ -616,24 +620,26 @@ static char g_automate_dir[512] = "";
 /* Bounded PCM capture for asset generation; no allocations or I/O on the
  * OpenSL callback thread, and no interference with movie post-mix hooks */
 static std::vector<Uint8> g_capture_pcm;
+static std::vector<Uint8> g_capture_music_pcm;
 static size_t g_capture_used;
 static long long g_capture_started_us;
 static SDL_AudioSpec g_capture_spec;
 static bool g_capture_invalid;
 
-static void capture_audio_buffer(const SDL_AudioSpec *spec, const Uint8 *data, int length, long long timestamp)
+static void capture_audio_buffer(const SDL_AudioSpec *spec, const Uint8 *data, const Uint8 *music, int length, long long timestamp)
 {
 	if (!g_capture_started_us) {
 		g_capture_started_us = timestamp;
 		g_capture_spec = *spec;
 	}
-	if (spec->format != AUDIO_S16LSB || spec->freq != g_capture_spec.freq ||
+	if (!music || spec->format != AUDIO_S16LSB || spec->freq != g_capture_spec.freq ||
 	    spec->channels != g_capture_spec.channels || length < 0 ||
 	    static_cast<size_t>(length) > g_capture_pcm.size() - g_capture_used) {
 		g_capture_invalid = true;
 		return;
 	}
 	memcpy(g_capture_pcm.data() + g_capture_used, data, length);
+	memcpy(g_capture_music_pcm.data() + g_capture_used, music, length);
 	g_capture_used += length;
 }
 
@@ -642,6 +648,7 @@ static bool capture_audio_control(const std::string &value)
 	androidaud_set_capture_callback(nullptr);
 	if (value == "start") {
 		g_capture_pcm.resize(180 * 48000 * 2 * 2);
+		g_capture_music_pcm.resize(g_capture_pcm.size());
 		g_capture_used = 0;
 		g_capture_started_us = 0;
 		g_capture_invalid = false;
@@ -650,29 +657,35 @@ static bool capture_audio_control(const std::string &value)
 	}
 	if (value != "stop" || !g_capture_used || g_capture_invalid) return false;
 	char path[640];
-	snprintf(path, sizeof(path), "%s/store-audio.wav", g_automate_dir);
-	SDL_RWops *file = SDL_RWFromFile(path, "wb");
-	if (!file) return false;
-	const Uint32 size = static_cast<Uint32>(g_capture_used);
-	const Uint16 channels = g_capture_spec.channels;
-	SDL_RWwrite(file, "RIFF", 1, 4);
-	SDL_WriteLE32(file, 36 + size);
-	SDL_RWwrite(file, "WAVEfmt ", 1, 8);
-	SDL_WriteLE32(file, 16);
-	SDL_WriteLE16(file, 1);
-	SDL_WriteLE16(file, channels);
-	SDL_WriteLE32(file, g_capture_spec.freq);
-	SDL_WriteLE32(file, g_capture_spec.freq * channels * 2);
-	SDL_WriteLE16(file, channels * 2);
-	SDL_WriteLE16(file, 16);
-	SDL_RWwrite(file, "data", 1, 4);
-	SDL_WriteLE32(file, size);
-	const bool written = SDL_RWwrite(file, g_capture_pcm.data(), 1, size) == static_cast<int>(size);
-	SDL_RWclose(file);
+	const auto write_wave = [&](const char *name, const std::vector<Uint8> &pcm) {
+		snprintf(path, sizeof(path), "%s/%s", g_automate_dir, name);
+		SDL_RWops *file = SDL_RWFromFile(path, "wb");
+		if (!file) return false;
+		const Uint32 size = static_cast<Uint32>(g_capture_used);
+		const Uint16 channels = g_capture_spec.channels;
+		SDL_RWwrite(file, "RIFF", 1, 4);
+		SDL_WriteLE32(file, 36 + size);
+		SDL_RWwrite(file, "WAVEfmt ", 1, 8);
+		SDL_WriteLE32(file, 16);
+		SDL_WriteLE16(file, 1);
+		SDL_WriteLE16(file, channels);
+		SDL_WriteLE32(file, g_capture_spec.freq);
+		SDL_WriteLE32(file, g_capture_spec.freq * channels * 2);
+		SDL_WriteLE16(file, channels * 2);
+		SDL_WriteLE16(file, 16);
+		SDL_RWwrite(file, "data", 1, 4);
+		SDL_WriteLE32(file, size);
+		const bool written = SDL_RWwrite(file, pcm.data(), 1, size) == static_cast<int>(size);
+		SDL_RWclose(file);
+		return written;
+	};
+	const bool written = write_wave("store-audio.wav", g_capture_pcm) &&
+	                     write_wave("store-music.wav", g_capture_music_pcm);
 	json metadata = { { "start_monotonic_seconds", g_capture_started_us / 1000000.0 },
 		              { "sample_rate", g_capture_spec.freq },
-		              { "channels", channels },
-		              { "frames", size / (channels * 2) },
+		              { "channels", g_capture_spec.channels },
+		              { "frames", g_capture_used / (g_capture_spec.channels * 2) },
+		              { "music_stem", true },
 		              { "overflow", g_capture_invalid } };
 	snprintf(path, sizeof(path), "%s/store-audio.json", g_automate_dir);
 	FILE *info = fopen(path, "w");
@@ -681,6 +694,7 @@ static bool capture_audio_control(const std::string &value)
 	const bool saved = fwrite(text.data(), 1, text.size(), info) == text.size();
 	fclose(info);
 	std::vector<Uint8>().swap(g_capture_pcm);
+	std::vector<Uint8>().swap(g_capture_music_pcm);
 	g_capture_used = 0;
 	return written && saved;
 }
@@ -3124,6 +3138,16 @@ extern "C" void game_automate_observe_axis_controls(
 
 extern "C" void game_automate_tick(void)
 {
+#if defined(ANDROID) && defined(OGL)
+	/* Only the diagnostic exit fixture paints an exposed portal after a warp
+	 * Match desktop's fresh backing for every captured frame, not normal play */
+	if (g_capture_exit_backing) {
+		if (!Endlevel_sequence || (Game_mode & GM_MULTI) || input_demo_replay_is_loaded())
+			g_capture_exit_backing = false;
+		else if (window_get_front() == Game_wind)
+			ogl_android_clear_window_backing();
+	}
+#endif
 	/* Handle pending load request (from JNI thread) */
 	if (g_load_requested.load(std::memory_order_acquire)) {
 		automation_load_request request;
@@ -3991,9 +4015,20 @@ extern "C" void game_automate_tick(void)
 							side = j;
 							break;
 						}
-				int depth = 0;
-				while (seg >= 0 && depth < 3) {
-					const int inner = Segments[seg].children[(int) Side_opposite[side]];
+				int depth = 0, exit_trigger = -1;
+				/* Walk back to the authored exit trigger rather than choosing an
+				 * arbitrary depth which shortens or changes the camera path */
+				while (seg >= 0 && depth <= Highest_segment_index) {
+					const int entry = (int) Side_opposite[side];
+					const int wall_num = Segments[seg].sides[entry].wall_num;
+					if (wall_num >= 0 && wall_num < Num_walls) {
+						const int trigger = Walls[wall_num].trigger;
+						if (trigger >= 0 && trigger < Num_triggers && (trigger_exit_flags(trigger) & TRIGGER_EXIT)) {
+							exit_trigger = trigger;
+							break;
+						}
+					}
+					const int inner = Segments[seg].children[entry];
 					if (inner < 0 || inner > Highest_segment_index) break;
 					const int outward = find_connect_side(&Segments[seg], &Segments[inner]);
 					if (outward < 0) break;
@@ -4001,8 +4036,8 @@ extern "C" void game_automate_tick(void)
 					side = outward;
 					++depth;
 				}
-				if (!depth) {
-					stop_script_fail("exit capture requires an authored exit tunnel");
+				if (exit_trigger < 0) {
+					stop_script_fail("exit capture requires an authored exit trigger and tunnel");
 					break;
 				}
 				vms_vector target, forward, up = ConsoleObject->orient.uvec;
@@ -4010,9 +4045,16 @@ extern "C" void game_automate_tick(void)
 				compute_center_point_on_side(&target, &Segments[seg], side);
 				vm_vec_normalized_dir(&forward, &target, &ConsoleObject->pos);
 				vm_vector_2_matrix(&ConsoleObject->orient, &forward, &up, NULL);
+				/* find_exit_side uses displacement, not the ship's orientation */
+				vm_vec_sub(&ConsoleObject->last_pos, &ConsoleObject->pos, &forward);
 				obj_relink(ConsoleObject - Objects, seg);
 				vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
 				vm_vec_zero(&ConsoleObject->mtype.phys_info.rotvel);
+#if defined(ANDROID) && defined(OGL)
+				ogl_android_clear_window_backing();
+				g_capture_exit_backing = true;
+#endif
+				LOGI("Exit capture: trigger=%d segment=%d outward=%d depth=%d fresh backing enabled", exit_trigger, seg, side, depth);
 				g_capture_slowdown = s.capture_slowdown;
 			}
 			advance_step();

@@ -173,6 +173,11 @@ class Capture:
         path = video.with_suffix(".wav")
         path.write_bytes(self.call("exec-out", "run-as", PACKAGE, "cat", "files/store-audio.wav", binary=True))
         metadata["source"] = str(path.relative_to(self.output))
+        if not metadata.get("music_stem"):
+            raise RuntimeError("Capture APK must support isolated engine music")
+        music = video.with_suffix(".music.wav")
+        music.write_bytes(self.call("exec-out", "run-as", PACKAGE, "cat", "files/store-music.wav", binary=True))
+        metadata["music_source"] = str(music.relative_to(self.output))
         metadata["video_offset"] = metadata["start_monotonic_seconds"] + self.audio_clock_offset - self.record_started
         metadata["engine_audio"] = self.audio_state
         write_json(video.with_suffix(".audio.json"), metadata)

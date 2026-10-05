@@ -234,7 +234,7 @@ int parse_body(PHYSFS_file *ifile,long len,iff_bitmap_header *bmheader)
 	//or whatever and it's not important, because we check to make sure
 	//we got the while bitmap, and that's what really counts.
 
-	return IFF_NO_ERROR;
+	return PHYSFS_seek(ifile, end_pos) ? IFF_NO_ERROR : IFF_CORRUPT;
 }
 
 //modify passed bitmap

@@ -119,3 +119,39 @@ recipe and documentation in source control; keep game data and media out of git.
 - Visible updates/sec: 24.97 for all three gameplay excerpts and 30.00 for the
   moving fly-out. All three briefing pages pass the robot animation and MIDI
   checks; paired briefing frames are included in the gallery
+
+## Capture warp cleanup
+
+1. Clear the old window backing once inside `from_exit_tunnel`, immediately
+   after repositioning the player. Reuse the existing clear helper; add no
+   work to normal gameplay or the per-frame renderer
+2. Build both engines and recapture the fly-out and normal-speed audio into
+   `android/temp/store-assets_20261004_flyout`, preserving the audio review
+3. Inspect early tunnel frames for the old room/crosshair, rebuild the edit,
+   and rerun the existing media integration and motion/audio checks
+
+### Capture warp results
+
+- Reused the existing backing-clear helper only in the capture warp action;
+  logs confirm one clear in each of the two capture passes
+- Trimmed the fly-out to begin no earlier than its first active observation,
+  excluding recorder startup and the pre-warp view
+- Inspected final frames at 24.0-25.0 seconds: the starting-room image is gone;
+  the live first-person reticle remains until the normal camera transition
+- Both engines built; scoped formatting and the media integration test passed
+- Final output remains 900 frames / 30 seconds with audio, no decoded clipping,
+  and 30 distinct updates/sec in the moving fly-out section
+
+## Preview timing, MIDI tempo and authentic exit follow-up
+
+1. Clarify which opening gameplay shot to remove; give its duration to the
+   launcher/file-picker shots while preserving the 30-second total
+2. Capture a sample-aligned native MIDI stem before effects mixing, alongside
+   the existing mixed output. Retiming applies to effects only; engine music
+   stays at its original tempo in every edited section
+3. Correct the debug exit fixture's stale last_pos and locate the actual exit
+   trigger instead of starting at an arbitrary tunnel depth. Clear backing
+   only while that debug fixture is active; no production renderer changes
+4. Regenerate opening/replay audio and exit video into a new ignored review
+   folder, inspect the entire tunnel and validate music tempo, motion and audio
+5. Build both engines, run scoped formatting and the store asset integration
