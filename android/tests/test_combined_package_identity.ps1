@@ -22,7 +22,7 @@ $java = (Get-Command java -CommandType Application -ErrorAction Stop | Select-Ob
 $manifestText = (& $java -jar $bundletool dump manifest "--bundle=$Aab" --module=base) -join "`n"
 if ($LASTEXITCODE -ne 0) { throw 'Cannot read AAB manifest' }
 $manifest = [xml]$manifestText
-if ($manifest.manifest.package -ne 'com.dxxredux.app') { throw 'AAB must retain the Google Play application ID' }
+if ($manifest.manifest.package -ne 'com.dxxrevival.app') { throw 'AAB must use the Google Play application ID' }
 $androidNamespace = 'http://schemas.android.com/apk/res/android'
 $versionCode = $manifest.manifest.GetAttribute('versionCode', $androidNamespace)
 $versionName = $manifest.manifest.GetAttribute('versionName', $androidNamespace)

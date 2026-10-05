@@ -1,7 +1,8 @@
 # android build dependencies
 
-The Android app is branded **DXX-Revival**. Redux package IDs, namespaces, native
-library names and save directories are retained for updates and upstream merges.
+The Android app is branded **DXX-Revival**. Play publishing uses `com.dxxrevival.app`;
+Redux development/GitHub package IDs, namespaces, native library names and save
+directories are retained for upstream merges.
 
 - see auto-download scripts in `android/get_deps/`
 - for a fresh Ubuntu VM, see `android/get_deps/README-ubuntu.md`
@@ -31,7 +32,7 @@ GitHub publishing uses the release helper's clean, pushed source requirement.
 
 Run `./android/1_build_aab_apk.ps1 -BuildType 2` to build a release AAB and a
 signed universal direct-install APK together. Release/Internal build the Play
-AAB (`com.dxxredux.app`), then the GitHub APK (`com.dxxredux.app.github`), reusing
+AAB (`com.dxxrevival.app`), then the GitHub APK (`com.dxxredux.app.github`), reusing
 native compilation. Both files appear in `android/build-outputs/` with a
 matching timestamp/version name; the APK ends in `-universal.apk` and contains
 all three supported ABIs. Release and Internal (`-BuildType 3`) require
@@ -45,8 +46,10 @@ signing certificate; Play's app signing key differs from the local upload key.
 Older combined release APKs used the Play package ID and could conflict for this
 reason. Install the new direct APK alongside the old app; export/import your
 configuration if needed, and keep the older installation to retain its saves. Debug
-keeps the development package ID (`com.dxxredux.app`) and debug key, so use an
-emulator or dedicated test device for those APKs.
+uses the Play package ID (`com.dxxrevival.app`) and debug key, so use an emulator
+or dedicated test device for those APKs. Direct Gradle development builds retain
+`com.dxxredux.app` unless `-PplayApplicationId=com.dxxrevival.app` is supplied;
+the publishing scripts always supply it.
 
 Check a Release/Internal pair without installing it:
 `./android/tests/test_combined_package_identity.ps1 -Aab PATH -Apk PATH`.
@@ -55,11 +58,11 @@ For direct APK downloads without Play Store installation, see the usage and setu
 
 Three distributions share the same launcher UI and native engines:
 
-| Distribution    | Minimum Android | Gradle selection       | Application ID                   |
-| --------------- | --------------- | ---------------------- | -------------------------------- |
-| Google Play     | API 24 (7.0)    | Default                | `com.dxxredux.app`               |
-| GitHub matching | API 24 (7.0)    | `-PgithubRelease=true` | `com.dxxredux.app.github`        |
-| GitHub legacy   | API 23 (6.0)    | `-PlegacyRelease=true` | `com.dxxredux.app.github.legacy` |
+| Distribution    | Minimum Android | Gradle selection                         | Application ID                   |
+| --------------- | --------------- | ---------------------------------------- | -------------------------------- |
+| Google Play     | API 24 (7.0)    | `-PplayApplicationId=com.dxxrevival.app` | `com.dxxrevival.app`             |
+| GitHub matching | API 24 (7.0)    | `-PgithubRelease=true`                   | `com.dxxredux.app.github`        |
+| GitHub legacy   | API 23 (6.0)    | `-PlegacyRelease=true`                   | `com.dxxredux.app.github.legacy` |
 
 All three target API 36 (Android 16). Both GitHub distributions exclude Google
 Play Games and Play update runtime SDKs. Separate application IDs allow them to

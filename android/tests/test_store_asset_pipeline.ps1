@@ -16,7 +16,7 @@ $action = if ($FeaturedOnly) { 'validate-featured' } elseif (Test-Path (Join-Pat
 & $python (Join-Path $androidDir 'helpers/generate_store_assets.py') $action --output $OutputDirectory
 if ($LASTEXITCODE) { throw 'Store asset integration validation failed' }
 if ($FeaturedOnly) {
-    Write-Output 'PASS: lossless native featured PNG, exact frame landmark, boss/progress rows drawn, configured cockpit/cameras and filtered graphics'
+    Write-Output 'PASS: native 2048x1000 capture, ready-to-use 1024x500 RGB PNG with exact 2x Lanczos downsample, pinned frame, boss/progress rows, configured cameras and filtered graphics'
     return
 }
 if ($action -eq 'validate-combined') {

@@ -71,7 +71,7 @@ function Invoke-PlayBuildAndUpload {
         $token = Get-PlayStoreAccessToken $creds
         if (-not $token) { Write-Error "Authentication failed" }
 
-        $PACKAGE = "com.dxxredux.app"
+        $PACKAGE = "com.dxxrevival.app"
         $headers = @{ Authorization = "Bearer $token" }
         $baseUrl = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE"
 

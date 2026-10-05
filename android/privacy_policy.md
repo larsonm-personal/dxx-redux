@@ -1,4 +1,4 @@
-Privacy Policy for DXX-Revival (com.dxxredux.app)
+Privacy Policy for DXX-Revival (com.dxxrevival.app)
 
 ## On-device
 

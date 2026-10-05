@@ -13,6 +13,7 @@ import re
 import xml.etree.ElementTree as ET
 import zipfile
 import uuid
+import math
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = "com.dxxredux.app"
@@ -550,6 +551,8 @@ class Capture:
         self.call("logcat", "-c")
         self.command("launch", game=presentation["launch_target"] if presentation else header["game"])
         state = self.wait(lambda s: s.get("input_demo", {}).get("replaying"), timeout=120)
+        if state["graphics_safety"]["phase"] in ("preparing", "challenge"):
+            self.verify_graphics(name + "-startup")
         self.configure_graphics()
         self.verify_graphics(name)
         if presentation:
@@ -584,6 +587,12 @@ class Capture:
             name=name + "-presentation",
         )
         state = self.state()
+        if (
+            presentation
+            and [state["resolution"]["render_width"], state["resolution"]["render_height"]]
+            != presentation["capture_size"]
+        ):
+            raise RuntimeError("Native featured render resolution does not match the recipe")
         if state["hud_layout"]["show_robot_hostage_counts"] != (
             presentation.get("show_robot_hostage_counts", True) if presentation else True
         ):
@@ -825,16 +834,49 @@ class Capture:
 
         item = featured_recipe()
         capture = Capture(self.output / item["collection"], self.serial)
-        # D1-in-D2 remains available in the alternate recipe for camera variants
-        capture.replay(
-            ROOT / "android/regression_demos" / (item["demo"] + ".dximdemo"),
-            presentation=item,
-            review_frames=review_frames,
-        )
-        if not review_frames:
-            select_featured(self.output)
-            review(self.output)
-        self.launcher()
+        previous = re.search(r"Override size: (\d+x\d+)", self.shell("wm", "size"))
+        width, height = item["capture_size"]
+        game_directory = "d1x-redux" if item["launch_target"] == "d1" else "d2x-redux"
+        config = self.private("cat", f"files/{game_directory}/descent.cfg")
+        saved_resolution = {
+            key: int(re.search(rf"(?m)^{key}=(\d+)", config).group(1))
+            for key in ("ResolutionX", "ResolutionY", "AspectX", "AspectY")
+        }
+        divisor = math.gcd(width, height)
+        self.shell("am", "force-stop", PACKAGE)
+        try:
+            # Android's display override uses portrait dimensions. The game
+            # rotates to landscape and renders natively at the recipe size
+            self.shell("wm", "size", f"{height}x{width}")
+            self.launcher()
+            self.command(
+                "write_graphics_settings",
+                settings=json.dumps(
+                    {
+                        "ResolutionX": width,
+                        "ResolutionY": height,
+                        "AspectX": height // divisor,
+                        "AspectY": width // divisor,
+                        "TexFilt": 2,
+                        "AnisoLevel": 16,
+                        "MsaaLevel": 4,
+                    }
+                ),
+            )
+            # D1-in-D2 remains available in the alternate recipe for camera variants
+            capture.replay(
+                ROOT / "android/regression_demos" / (item["demo"] + ".dximdemo"),
+                presentation=item,
+                review_frames=review_frames,
+            )
+            if not review_frames:
+                select_featured(self.output)
+                review(self.output)
+        finally:
+            self.shell("am", "force-stop", PACKAGE)
+            self.shell("wm", "size", previous.group(1) if previous else "reset")
+            self.launcher()
+            self.command("write_graphics_settings", settings=json.dumps(saved_resolution))
 
 
 def main():
@@ -855,6 +897,7 @@ def main():
             "review",
             "validate",
             "validate-featured",
+            "select-featured",
             "select-stills",
             "capture-still-sources",
             "capture-featured",
@@ -898,8 +941,8 @@ def main():
         else:
             print(json.dumps(validate_combination(args.output), indent=2))
         return
-    if args.action in ("compose", "review", "validate", "select-stills", "validate-featured"):
-        from store_asset_media import compose, review, validate, select_stills, validate_featured
+    if args.action in ("compose", "review", "validate", "select-stills", "validate-featured", "select-featured"):
+        from store_asset_media import compose, review, validate, select_stills, validate_featured, select_featured
 
         if args.action == "compose":
             print(compose(args.output, args.recipe))
@@ -910,6 +953,9 @@ def main():
             review(args.output)
         elif args.action == "validate-featured":
             print(json.dumps(validate_featured(args.output), indent=2))
+        elif args.action == "select-featured":
+            print(select_featured(args.output))
+            review(args.output)
         else:
             print(json.dumps(validate(args.output), indent=2))
         return

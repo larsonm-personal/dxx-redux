@@ -149,7 +149,7 @@ Write-Host ""
 Write-Host "Building Play AAB ($variant) for armeabi-v7a, arm64-v8a, x86_64..."
 Write-Host ""
 $gradle = Resolve-RegressionGradleWrapper -AndroidDir $PSScriptRoot
-$commonProperties = @('-PskipBuildInfo', "-PversionCodeOverride=$versionCode", '-PlegacyRelease=false', '-PciApk=false')
+$commonProperties = @('-PskipBuildInfo', "-PversionCodeOverride=$versionCode", '-PlegacyRelease=false', '-PciApk=false', '-PplayApplicationId=com.dxxrevival.app')
 # Play signs installed apps with its app key; the local upload key cannot update them
 # Select each distribution explicitly, even if gradle.properties has local defaults
 & $gradle -p $PSScriptRoot "bundle$variant" @commonProperties '-PgithubRelease=false'
@@ -162,7 +162,7 @@ $aab = Get-ChildItem "$aabDir\*.aab" -ErrorAction SilentlyContinue | Select-Obje
 if (-not $aab) { throw "AAB not found in $aabDir" }
 
 $directInstall = $variant -ne 'Debug'
-$apkPackage = if ($directInstall) { 'com.dxxredux.app.github' } else { 'com.dxxredux.app' }
+$apkPackage = if ($directInstall) { 'com.dxxredux.app.github' } else { 'com.dxxrevival.app' }
 Write-Host "Building universal APK ($variant, $apkPackage)..."
 # Native compilation is reused; JVM sources and the manifest differ between distributions
 & $gradle -p $PSScriptRoot "assemble$variant" @commonProperties "-PgithubRelease=$($directInstall.ToString().ToLowerInvariant())"

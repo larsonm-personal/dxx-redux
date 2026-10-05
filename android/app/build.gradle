@@ -389,7 +389,7 @@ android {
     defaultConfig {
         testInstrumentationRunner "com.dxxredux.app.RecoveryInstrumentation"
         applicationId ciApk ? "com.dxxredux.app.ci" : legacyRelease ? "com.dxxredux.app.github.legacy" :
-            (githubRelease ? "com.dxxredux.app.github" : "com.dxxredux.app")
+            (githubRelease ? "com.dxxredux.app.github" : (project.findProperty('playApplicationId') ?: "com.dxxredux.app"))
         manifestPlaceholders = [
             launcherLabel: ciApk ? "${appBrandName} (CI)" : legacyRelease ? "${appBrandName} (Legacy)" : (githubRelease ? "${appBrandName} (GitHub)" : appBrandName),
             playGamesEnabled: (!githubRelease).toString()

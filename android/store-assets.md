@@ -218,9 +218,15 @@ The eight-image shortlist remains separate. `featured.json` records the recipe,
 source timestamp, hashes and replay comparison, including any mismatch.
 The featured capture pauses the native replay just before the landmark, advances
 one simulation frame at a time to it, and captures a lossless Android PNG while
-paused. Export copies that PNG unchanged, without video compression. Validation
-requires boss/progress rows to have been drawn, the exact pinned frame, and
-identical source/export bytes. Final sources live in `featured-progress-source`.
+paused. The recipe captures at **2048x1000** and exports an opaque RGB PNG at
+exactly **1024x500** using a 2x Lanczos downsample, without cropping, padding or
+stretching. The generator temporarily adjusts the dedicated emulator's display
+and the engine's resolution/aspect ratio through the launcher settings API,
+accepts the native resolution trial, and restores the prior settings even if
+capture fails. Full-resolution sources
+live in `featured-1024-source`; `featured.json` records source/output hashes and
+the resize filter. Validation checks the native render size, final dimensions,
+downsampled pixels, drawn boss/progress rows and the exact pinned frame.
 The optional Python `capture-featured --review-frames N` captures nearby paired
 cockpit/reference and full-screen images for manual calibration without replacing
 the exported featured image. After review,
@@ -237,6 +243,13 @@ To capture only this additional image in an already provisioned run:
 Use `-NoBuild` when the capture APK already has HUD/camera automation and
 introspection plus native replay pause/frame-step support. `-SelectStillsOnly` also re-exports the featured PNG when its
 capture exists. Full media validation requires the featured image as well.
+
+To repeat only the downsample/export from the preserved native source, without
+an emulator replay:
+
+```powershell
+.\android\temp\store-assets-tools\venv\Scripts\python.exe android/helpers/generate_store_assets.py select-featured --output android/temp/store-assets_20261004_filtered
+```
 
 ## Combining filtered video with reviewed sound
 

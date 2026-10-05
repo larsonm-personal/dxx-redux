@@ -1,7 +1,9 @@
 {
     "featured": {
         "file": "featured-d1-level7-boss.png",
-        "collection": "featured-progress-source",
+        "collection": "featured-1024-source",
+        "capture_size": [2048, 1000],
+        "export_size": [1024, 500],
         "demo": "d1_descent_level7_20260921_181652",
         "launch_target": "d1-in-d2",
         "seconds": 102.08900451660156,
@@ -77,6 +79,8 @@
         "d1-in-d2-rear-camera": {
             "file": "featured-d1-level7-boss.png",
             "collection": "featured-lossless-source",
+            "capture_size": [2048, 1000],
+            "export_size": [1024, 500],
             "demo": "d1_descent_level7_20260921_181652",
             "launch_target": "d1-in-d2",
             "seconds": 101.8,

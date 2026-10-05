@@ -74,6 +74,9 @@ function git {
 }
 function Invoke-RestMethod {
     param($Uri, $Method, $Headers, $ContentType, $Body, $TimeoutSec)
+    if ($Uri -notlike 'https://androidpublisher.googleapis.com/androidpublisher/v3/applications/com.dxxrevival.app/edits*') {
+        throw "Unexpected Play Store application URL: $Uri"
+    }
     Record-PublishEvent @{ event = 'rest'; method = $Method }
     if ($Method -eq 'POST') { return @{ id = 'fixture-edit' } }
     if ($Method -ne 'DELETE') { throw 'Unexpected remote operation' }

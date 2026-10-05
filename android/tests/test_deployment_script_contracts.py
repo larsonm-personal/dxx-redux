@@ -21,6 +21,12 @@ class DeploymentScriptContractsTest(unittest.TestCase):
         wrapper = (ANDROID / "0_upload_to_test.ps1").read_text(encoding="utf-8")
         builder = (ANDROID / "1_build_aab_apk.ps1").read_text(encoding="utf-8")
         deploy = (ANDROID / "2_deploy-playstore.ps1").read_text(encoding="utf-8")
+        gradle = (ANDROID / "app/build.gradle").read_text(encoding="utf-8")
+        for script in (wrapper, deploy):
+            self.assertIn('$PACKAGE = "com.dxxrevival.app"', script)
+        self.assertIn("-PplayApplicationId=com.dxxrevival.app", builder)
+        self.assertIn("project.findProperty('playApplicationId')", gradle)
+        self.assertIn("namespace 'com.dxxredux.app'", gradle)
         self.assertIn("-OutputPath $artifactPath", wrapper)
         self.assertIn("-AabPath $artifactPath", wrapper)
         self.assertIn("[string]$OutputPath", builder)

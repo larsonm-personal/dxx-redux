@@ -19,7 +19,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$PACKAGE = "com.dxxredux.app"
+$PACKAGE = "com.dxxrevival.app"
 
 function Read-NumberedChoice {
     param(

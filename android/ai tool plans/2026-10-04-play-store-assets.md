@@ -402,3 +402,30 @@ recipe and documentation in source control; keep game data and media out of git.
   existing endlevel_completed flag. Earlier rear-camera image and recipe retained
 - Native D1 pause/frame stepping is available for future exact-frame calibration;
   normal HUD and renderer behavior remain unchanged
+
+### Ready-to-use 1024x500 featured image
+
+- Keep frame 2549 and its presentation; render a fresh native 2048x1000 source
+- Encode capture/export dimensions in the stable recipe and temporarily resize
+  only the dedicated capture emulator, restoring its prior display override
+- Export an opaque RGB PNG at exactly 1024x500 using a 2x Lanczos downsample,
+  with no cropping, padding or stretching; preserve the full-resolution source
+- Verify native render/source dimensions, final pixels, HUD/cameras and graphics;
+  inspect the final image and run the focused integration and scoped quality checks
+
+### 1024x500 delivery
+
+- Delivered the existing featured filename as an opaque RGB PNG, exactly
+  1024x500, from a fresh 2048x1000 native capture of frame 2549
+- A display override alone retained the old engine render size. The generator
+  now stages native ResolutionX/Y and AspectX/Y through write_graphics_settings,
+  confirms the native resolution trial, and checks render dimensions before capture
+- Source, display, main canvas and MSAA buffer all verified at 2048x1000, with
+  square pixels. Native boss/progress rows and cameras [0, 0] verified unchanged
+- Inspected the final PNG: outgoing lasers, boss and all HUD lines remain visible
+  without stretching, cropping or padding. Full-resolution native source retained
+- Focused media integration and scoped code quality pass. The new select-featured
+  offline command regenerates byte-identical output from the preserved source
+- Display override reset and engine resolution/aspect restored to 2400x1080,
+  AspectX=9, AspectY=20; emulator returned to the launcher
+- Previous 2400x1080 featured export remains backed up in featured-progress-source

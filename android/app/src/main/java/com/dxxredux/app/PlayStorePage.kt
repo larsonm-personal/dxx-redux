@@ -6,7 +6,7 @@ import android.net.Uri
 
 /** All distributions link to the published Play Store package */
 fun openPlayStorePage(context: Context) {
-    val pkg = "com.dxxredux.app"
+    val pkg = "com.dxxrevival.app"
     try {
         context.startActivity(
             Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg")),

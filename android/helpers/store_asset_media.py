@@ -155,6 +155,8 @@ def validate_featured_source(output):
     for filename in ("start-state.json", "featured-state.json"):
         state = json.loads((directory / filename).read_text())
         validate_graphics(state)
+        if [state["resolution"]["render_width"], state["resolution"]["render_height"]] != item["capture_size"]:
+            raise ValueError("Featured scene was not rendered at the recipe capture size")
         if any(
             state.get(key, [0, 0] if key == "cockpit_views" else None) != item[target]
             for key, target in (
@@ -200,13 +202,23 @@ def select_featured(output):
     destination = output / "featured" / item["file"]
     destination.parent.mkdir(exist_ok=True)
     source = output / item["collection"] / capture["featured_still"]["file"]
-    shutil.copyfile(source, destination)
+    with Image.open(source) as native:
+        if list(native.size) != item["capture_size"] or native.format != "PNG":
+            raise ValueError("Featured source must be a native PNG at the recipe capture size")
+        if item["capture_size"] != [2 * dimension for dimension in item["export_size"]]:
+            raise ValueError("Featured export requires an exact 2x downsample without cropping or padding")
+        ready = native.convert("RGB").resize(tuple(item["export_size"]), Image.Resampling.LANCZOS)
+        temporary = destination.with_suffix(".tmp.png")
+        ready.save(temporary, format="PNG")
+        temporary.replace(destination)
     evidence = dict(
         item,
         source=source.relative_to(output).as_posix(),
         source_seconds=capture["featured_state_seconds"],
         capture_method=capture["featured_still"]["method"],
         demo_sha256=capture["sha256"],
+        source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
+        resize_filter="LANCZOS",
         sha256=hashlib.sha256(destination.read_bytes()).hexdigest(),
         replay_result_match=not differences,
         replay_differences=differences,
@@ -226,13 +238,28 @@ def validate_featured(output):
     if evidence["sha256"] != hashlib.sha256(path.read_bytes()).hexdigest():
         raise ValueError("Featured PNG changed after export")
     source = output / item["collection"] / capture["featured_still"]["file"]
-    if path.read_bytes() != source.read_bytes():
-        raise ValueError("Featured export must be an unchanged copy of the native lossless PNG")
-    with Image.open(path) as im:
-        im.verify()
-        if im.size != (2400, 1080):
-            raise ValueError("Featured PNG must preserve the native 2400x1080 display")
-    return {"image": str(path), "demo_seconds": item["seconds"], "replay_differences": differences}
+    if evidence["source_sha256"] != hashlib.sha256(source.read_bytes()).hexdigest():
+        raise ValueError("Featured native source changed after export")
+    with Image.open(source) as native, Image.open(path) as im:
+        if im.size != (1024, 500):
+            raise ValueError("Ready-to-use featured PNG must be exactly 1024x500")
+        if list(native.size) != item["capture_size"] or list(im.size) != item["export_size"]:
+            raise ValueError("Featured source/export dimensions do not match the recipe")
+        if item["capture_size"] != [2 * dimension for dimension in item["export_size"]]:
+            raise ValueError("Featured source must be exactly twice the output dimensions")
+        if im.format != "PNG" or im.mode != "RGB" or "transparency" in im.info:
+            raise ValueError("Featured output must be an opaque RGB PNG")
+        expected = native.convert("RGB").resize(tuple(item["export_size"]), Image.Resampling.LANCZOS)
+        if evidence["resize_filter"] != "LANCZOS" or im.tobytes() != expected.tobytes():
+            raise ValueError("Featured PNG does not match the native source's 2x Lanczos downsample")
+    return {
+        "image": str(path),
+        "capture_size": item["capture_size"],
+        "export_size": item["export_size"],
+        "resize_filter": "LANCZOS",
+        "demo_seconds": item["seconds"],
+        "replay_differences": differences,
+    }
 
 
 def result_differences(expected, actual, prefix=""):
