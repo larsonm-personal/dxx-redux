@@ -204,22 +204,28 @@ Review the PNG candidates and motion before choosing store uploads. Nothing in
 this workflow publishes to Google Play or YouTube.
 
 Full regeneration also captures `featured/featured-d1-level7-boss.png`. Its
-separate `featured` recipe in `store-stills.json` uses the same 101.8-second
-boss moment as the shortlist, with the engine's full-screen cockpit mode,
-no-HUD immersion mode and live left rear-view camera, with native boss health
-explicitly enabled. Touch controls remain
-visible, as do the corner indicators retained by the engine's native No HUD
-mode. This additional capture uses native D1-in-D2 mode because the separate
-D1 engine has no rear-view subwindow. D1-in-D2 replay launches enable the
-engine's existing native checkpoint translator.
+separate `featured` recipe in `store-stills.json` pins a native replay frame
+matching the reviewed boss/large-laser moment. It uses full-screen cockpit mode
+and immersion mode, with native boss health and robot/hostage/secret progress
+explicitly enabled and no rear camera. Touch controls and corner indicators
+remain visible. D1-in-D2 supplies this presentation because native D1's immersion
+mode suppresses all HUD rows. Native D1 is used to calibrate the reference frame.
+The previous D1-in-D2 rear-camera recipe is preserved under
+`featured_alternates.d1-in-d2-rear-camera`; copy that object into `featured` to
+regenerate that variant. Its native checkpoint translation support is retained.
 Filtering, 4x MSAA and 16x AF are verified through native state.
 The eight-image shortlist remains separate. `featured.json` records the recipe,
 source timestamp, hashes and replay comparison, including any mismatch.
 The featured capture pauses the native replay just before the landmark, advances
 one simulation frame at a time to it, and captures a lossless Android PNG while
 paused. Export copies that PNG unchanged, without video compression. Validation
-requires the boss bar to have been drawn, the landmark within one frame, and
-identical source/export bytes. Sources live in `featured-lossless-source`.
+requires boss/progress rows to have been drawn, the exact pinned frame, and
+identical source/export bytes. Final sources live in `featured-progress-source`.
+The optional Python `capture-featured --review-frames N` captures nearby paired
+cockpit/reference and full-screen images for manual calibration without replacing
+the exported featured image. After review,
+pin `frame` and its corresponding `seconds` in the recipe; ordinary reruns then
+capture that single moment without ranking or selecting different frames.
 
 To capture only this additional image in an already provisioned run:
 
@@ -229,7 +235,7 @@ To capture only this additional image in an already provisioned run:
 ```
 
 Use `-NoBuild` when the capture APK already has HUD/camera automation and
-introspection plus D1-in-D2 replay startup support. `-SelectStillsOnly` also re-exports the featured PNG when its
+introspection plus native replay pause/frame-step support. `-SelectStillsOnly` also re-exports the featured PNG when its
 capture exists. Full media validation requires the featured image as well.
 
 ## Combining filtered video with reviewed sound

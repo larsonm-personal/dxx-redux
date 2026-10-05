@@ -529,7 +529,7 @@ class Capture:
         if not audio_pass and not visual_only:
             self.flyout(audio_pass=True)
 
-    def replay(self, source, video_only=False, presentation=None):
+    def replay(self, source, video_only=False, presentation=None, review_frames=0):
         source = Path(source).resolve()
         name = source.stem
         previous = None
@@ -564,6 +564,7 @@ class Capture:
                         ("cockpit_view_left", presentation["cockpit_views"][0]),
                         ("cockpit_view_right", presentation["cockpit_views"][1]),
                     )
+                    if not (presentation["launch_target"] == "d1" and field.startswith("cockpit_view_"))
                 ],
                 name=name + "-featured-presentation",
             )
@@ -574,14 +575,18 @@ class Capture:
                 {
                     "action": "set_debug",
                     "field": "show_robot_hostage_counts",
-                    "value": "false" if presentation else "true",
+                    "value": str(presentation.get("show_robot_hostage_counts", True)).lower()
+                    if presentation
+                    else "true",
                 },
                 {"action": "set_debug", "field": "show_boss_health_bar", "value": "true"},
             ],
             name=name + "-presentation",
         )
         state = self.state()
-        if state["hud_layout"]["show_robot_hostage_counts"] != (not presentation):
+        if state["hud_layout"]["show_robot_hostage_counts"] != (
+            presentation.get("show_robot_hostage_counts", True) if presentation else True
+        ):
             raise RuntimeError("Replay HUD counters were not enabled")
         write_json(self.output / "demos" / name / "start-state.json", state)
         manifest = {
@@ -598,6 +603,7 @@ class Capture:
         }
         if presentation:
             manifest["presentation"] = presentation
+            manifest["video_capture"] = "lossless-featured-still"
         if video_only:
             manifest["screenshots"] = previous["screenshots"]
         else:
@@ -607,7 +613,10 @@ class Capture:
                 {"file": filename, "demo_seconds": frames[state["input_demo"]["replay_frame"]], "target_seconds": 0}
             )
         part = 0
-        self.start_recording(name + f"-{part:02d}")
+        if presentation:
+            self.record_started = time.monotonic()
+        else:
+            self.start_recording(name + f"-{part:02d}")
         next_sample = 10.0
         # Guest ANGLE with MSAA/AF can render well below real time. Replays
         # advance one recorded simulation frame per rendered frame; the editor
@@ -631,7 +640,9 @@ class Capture:
                     frame = state["input_demo"]["replay_frame"]
                     if frames[frame] > presentation["seconds"]:
                         raise RuntimeError("Featured replay passed its landmark before pausing")
-                    target_frame = next(i for i, seconds in enumerate(frames) if seconds >= presentation["seconds"])
+                    target_frame = presentation.get("frame") or next(
+                        i for i, seconds in enumerate(frames) if seconds >= presentation["seconds"]
+                    )
                     if frame < target_frame:
                         self.automate(
                             [{"action": "key", "key": "right", "post_delay_ms": 0}] * (target_frame - frame),
@@ -654,6 +665,25 @@ class Capture:
                         "method": "adb-screencap-png-paused-native-replay",
                     }
                     write_json(self.output / "demos" / name / "featured-state.json", after)
+                    # Optional calibration keeps both native cockpit and featured
+                    # views at nearby exact frames for comparison with an older
+                    # video-derived reference. The final recipe pins one frame
+                    for offset in range(review_frames):
+                        if offset:
+                            self.step("key", key="right", post_delay_ms=0)
+                        candidate = self.state()
+                        candidate_frame = candidate["input_demo"]["replay_frame"]
+                        if candidate_frame != frame + offset:
+                            raise RuntimeError("Featured review frame advance failed")
+                        prefix = f"demos/{name}/review-{candidate_frame}"
+                        self.step("set_debug", field="cockpit_mode", value="0")
+                        self.screenshot(prefix + "-reference.png")
+                        self.step("set_debug", field="cockpit_mode", value=str(presentation["cockpit_mode"]))
+                        self.screenshot(prefix + ".png")
+                        write_json(self.output / (prefix + ".json"), self.state())
+                        manifest.setdefault("review_stills", []).append(
+                            {"frame": candidate_frame, "seconds": frames[candidate_frame], "file": prefix + ".png"}
+                        )
                     self.step("key", key="space")
                     continue
                 manifest["samples"].append(
@@ -685,7 +715,7 @@ class Capture:
                         )
                 # Avoid a recorder restart swallowing the final few seconds
                 # when the remaining replay fits within the current part
-                if wall > 165 and remaining_wall > 175 - wall:
+                if not presentation and wall > 165 and remaining_wall > 175 - wall:
                     manifest["parts"].append(str(self.stop_recording().relative_to(self.output)))
                     part += 1
                     self.start_recording(name + f"-{part:02d}")
@@ -693,7 +723,8 @@ class Capture:
             else:
                 raise RuntimeError("Demo capture exceeded its timeout")
         finally:
-            manifest["parts"].append(str(self.stop_recording().relative_to(self.output)))
+            if not presentation:
+                manifest["parts"].append(str(self.stop_recording().relative_to(self.output)))
             log = self.call("logcat", "-d")
             (self.output / "demos" / name / "logcat.txt").write_text(log, encoding="utf-8")
             result = self.private("cat", "files/store-demo.dximdemo.actual.json", check=False)
@@ -789,16 +820,20 @@ class Capture:
                 ROOT / "android/regression_demos" / (name + ".dximdemo")
             )
 
-    def capture_featured(self):
+    def capture_featured(self, review_frames=0):
         from store_asset_media import featured_recipe, select_featured, review
 
         item = featured_recipe()
         capture = Capture(self.output / item["collection"], self.serial)
-        # D1 has no rear camera window; the native D1-in-D2 launch translates
-        # the recorded checkpoint before replaying its original inputs
-        capture.replay(ROOT / "android/regression_demos" / (item["demo"] + ".dximdemo"), presentation=item)
-        select_featured(self.output)
-        review(self.output)
+        # D1-in-D2 remains available in the alternate recipe for camera variants
+        capture.replay(
+            ROOT / "android/regression_demos" / (item["demo"] + ".dximdemo"),
+            presentation=item,
+            review_frames=review_frames,
+        )
+        if not review_frames:
+            select_featured(self.output)
+            review(self.output)
         self.launcher()
 
 
@@ -840,6 +875,12 @@ def main():
         "--video-only", action="store_true", help="Recapture replay video using existing screenshot manifests"
     )
     parser.add_argument("--recipe", type=Path)
+    parser.add_argument(
+        "--review-frames",
+        type=int,
+        default=0,
+        help="Capture nearby native featured/reference frames for manual selection",
+    )
     parser.add_argument("--visual-only", action="store_true", help="Capture only the fixed-cadence fly-out picture")
     parser.add_argument("--picture-run", type=Path)
     parser.add_argument("--audio-run", type=Path)
@@ -931,7 +972,7 @@ def main():
     elif args.action == "capture-still-sources":
         capture.capture_still_sources()
     elif args.action == "capture-featured":
-        capture.capture_featured()
+        capture.capture_featured(args.review_frames)
     else:
         capture.automate(json.loads(args.script.read_text()), args.setup, args.script.stem)
 

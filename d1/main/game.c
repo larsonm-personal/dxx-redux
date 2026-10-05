@@ -140,6 +140,9 @@ int	Mark_count = 0;                 // number of debugging marks set
 static fix64 last_timer_value=0;
 fix ThisLevelTime=0;
 static int time_paused=0;
+/* Match D2's native input-replay inspection controls */
+static int input_demo_replay_manual_paused = 0;
+static int input_demo_replay_manual_step = 0;
 
 grs_canvas	Screen_3d_window;							// The rectangle for rendering the mine to
 
@@ -1192,6 +1195,19 @@ int game_handler(window *wind, d_event *event, void *data)
 #endif
 			if (event->type == EVENT_IDLE && input_demo_replay_is_loaded())
 				return 1;
+			if (event->type == EVENT_KEY_COMMAND && input_demo_replay_is_loaded()) {
+				const int replay_key = event_key_get(event) & 0xFF;
+				if (replay_key == KEY_SPACEBAR) {
+					input_demo_replay_manual_paused = !input_demo_replay_manual_paused;
+					input_demo_replay_manual_step = 0;
+					return 1;
+				}
+				if (replay_key == KEY_RIGHT) {
+					input_demo_replay_manual_paused = 1;
+					input_demo_replay_manual_step = 1;
+					return 1;
+				}
+			}
 			return ReadControls(event);
 
 		case EVENT_WINDOW_DRAW:
@@ -1216,17 +1232,20 @@ int game_handler(window *wind, d_event *event, void *data)
 				#ifdef __ANDROID__
 				android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_REPLAY);
 				#endif
-				if (!input_demo_step_replay_frame()) {
+				if ((!input_demo_replay_manual_paused || input_demo_replay_manual_step) && !input_demo_step_replay_frame()) {
 					#ifdef __ANDROID__
 					android_profile_bucket_end(ANDROID_PROFILE_BUCKET_REPLAY);
 					android_profile_frame_end();
 					#endif
 					return 1;
 				}
+				input_demo_replay_manual_step = 0;
 				#ifdef __ANDROID__
 				android_profile_bucket_end(ANDROID_PROFILE_BUCKET_REPLAY);
 				#endif
 			} else {
+				input_demo_replay_manual_paused = 0;
+				input_demo_replay_manual_step = 0;
 				#ifdef __ANDROID__
 				android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_WAIT);
 				#endif

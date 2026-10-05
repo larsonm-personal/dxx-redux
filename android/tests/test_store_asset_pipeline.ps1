@@ -16,11 +16,11 @@ $action = if ($FeaturedOnly) { 'validate-featured' } elseif (Test-Path (Join-Pat
 & $python (Join-Path $androidDir 'helpers/generate_store_assets.py') $action --output $OutputDirectory
 if ($LASTEXITCODE) { throw 'Store asset integration validation failed' }
 if ($FeaturedOnly) {
-    Write-Output 'PASS: lossless native featured PNG, exact frame landmark, boss health drawn, full-screen/rear-camera presentation and filtered graphics'
+    Write-Output 'PASS: lossless native featured PNG, exact frame landmark, boss/progress rows drawn, configured cockpit/cameras and filtered graphics'
     return
 }
 if ($action -eq 'validate-combined') {
     Write-Output 'PASS: combined video is 30 seconds/900 frames, delivered audio exactly matches the reviewed reference, and native camera motion passes geometric checks'
     return
 }
-Write-Output 'PASS: launcher saves, default HUD, trilinear/4x MSAA/16x AF, primary D1/D2 replay results, screenshot cadence, frame pacing, engine audio, robot movies, 30-second video, eight selected images and native no-HUD/rear-camera featured image (supplementary replay status is reported separately)'
+Write-Output 'PASS: launcher saves, default HUD, trilinear/4x MSAA/16x AF, primary D1/D2 replay results, screenshot cadence, frame pacing, engine audio, robot movies, 30-second video, eight selected images and native featured image (supplementary replay status is reported separately)'

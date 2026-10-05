@@ -156,18 +156,28 @@ def validate_featured_source(output):
         state = json.loads((directory / filename).read_text())
         validate_graphics(state)
         if any(
-            state.get(key) != item[target]
+            state.get(key, [0, 0] if key == "cockpit_views" else None) != item[target]
             for key, target in (
                 ("current_cockpit_mode", "cockpit_mode"),
                 ("hud_mode", "hud_mode"),
                 ("cockpit_views", "cockpit_views"),
             )
         ):
-            raise ValueError("Featured image requires native full-screen/no-HUD mode and the left rear camera")
-        if state["hud_layout"]["show_robot_hostage_counts"] or not state["hud_layout"]["show_boss_health_bar"]:
-            raise ValueError("Featured capture must retain boss health and hide the count helpers")
+            raise ValueError("Featured native cockpit/HUD/cameras do not match the recipe")
+        if (
+            state["hud_layout"]["show_robot_hostage_counts"] != item["show_robot_hostage_counts"]
+            or not state["hud_layout"]["show_boss_health_bar"]
+        ):
+            raise ValueError("Featured boss health/progress settings do not match the recipe")
         if filename == "featured-state.json" and not state["hud_layout"]["boss_health"]["drawn"]:
             raise ValueError("The native boss health bar was not drawn in the featured frame")
+        if filename == "featured-state.json":
+            if item.get("frame") and state["input_demo"]["replay_frame"] != item["frame"]:
+                raise ValueError("Featured screenshot is not the pinned native replay frame")
+            if item["show_robot_hostage_counts"] and not all(
+                state["hud_layout"]["progress"][kind]["drawn"] for kind in ("robots", "hostages", "secrets")
+            ):
+                raise ValueError("Featured native progress lines were not drawn")
     if abs(capture["featured_state_seconds"] - item["seconds"]) > 0.05:
         raise ValueError("Missing native presentation evidence near the selected boss moment")
     if capture.get("featured_still", {}).get("method") != "adb-screencap-png-paused-native-replay":
@@ -819,7 +829,7 @@ def review(output):
     groups = []
     featured = sorted((output / "featured").glob("*.png"))
     if featured:
-        groups.append(("Featured boss image / native full screen, no HUD, left rear camera", featured))
+        groups.append(("Featured boss image / native full screen with boss health and progress", featured))
     selected = sorted((output / "selected-stills").glob("*.png"))
     if selected:
         groups.append(("Selected eight images for the listing", selected))

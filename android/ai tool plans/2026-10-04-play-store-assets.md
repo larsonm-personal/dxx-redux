@@ -363,3 +363,42 @@ recipe and documentation in source control; keep game data and media out of git.
   game/mission identities and endlevel_completed; no new replay differences
 - Generator updated for repeat runs, gallery refreshed, and capture emulator
   returned to the launcher. No native code or production renderer changes
+
+### Match the preferred D1 boss moment
+
+- Restore native D1 rendering, remove auxiliary cameras, and retain full-screen
+  immersion mode with native boss health and robot/hostage/secret progress lines
+- Preserve the D1-in-D2 rear-camera recipe as a selectable alternate
+- The original still used interpolated video timing. Compare nearby native frames
+  against the supplied reference and pin the actual outgoing-laser frame
+- Add D1 replay pause/single-frame controls matching D2's existing controls so
+  native D1 can produce exact lossless captures; no renderer changes
+- Build, regenerate, inspect, and validate the featured image and stable recipe
+
+- Native D1 calibration identified frame 2549 (102.089004517 seconds) as the
+  original selected image: scene-region RGB error 5.55 versus 38.05 for the next
+  closest candidate. Inspected the cockpit match and full-screen laser framing
+- Native D1 immersion mode suppresses all HUD rows regardless of helper settings.
+  Keep normal HUD behavior unchanged: use D1-in-D2 for the final presentation,
+  with both auxiliary windows off and all three progress rows explicitly enabled
+- D1 pause/frame stepping successfully captured 20 adjacent native frames and
+  completed the replay with only the existing endlevel_completed difference
+- Retain the earlier rear-camera configuration under `featured_alternates`; the
+  primary recipe now pins frame 2549, not the original interpolated video time
+
+### Matched featured image delivery
+
+- Replaced `featured/featured-d1-level7-boss.png` in the filtered review folder
+  with a lossless 2400x1080 capture at frame 2549. Visually confirmed the large
+  outgoing lasers, boss, native boss bar and all three upper-right progress rows
+- Native evidence confirms full-screen/immersion modes 3/3, cameras [0, 0],
+  progress rows drawn, boss bar drawn, and trilinear/4x MSAA/16x AF
+- Both engines build successfully without warnings; scoped quality checks and
+  the featured media integration pass. Reference shortlist PNG hash is unchanged
+- Export hit a transient Windows file-write error; rerunning the offline export
+  succeeded, with source/export byte equality verified. Gallery refreshed and
+  emulator returned to the launcher
+- D1-in-D2 replay differences remain the expected game/mission identities and
+  existing endlevel_completed flag. Earlier rear-camera image and recipe retained
+- Native D1 pause/frame stepping is available for future exact-frame calibration;
+  normal HUD and renderer behavior remain unchanged
