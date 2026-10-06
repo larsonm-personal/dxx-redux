@@ -22,6 +22,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import org.json.JSONObject
 import kotlin.math.log10
+import com.dxxredux.app.NavigationAlertDialog as AlertDialog
+import com.dxxredux.app.NavigationDropdownMenu as DropdownMenu
 
 @Composable
 internal fun MusicEqDialog(

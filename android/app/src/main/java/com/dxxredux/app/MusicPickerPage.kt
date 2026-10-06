@@ -39,6 +39,8 @@ import java.io.IOException
 import java.util.Locale
 import java.util.UUID
 import java.util.zip.ZipInputStream
+import com.dxxredux.app.NavigationAlertDialog as AlertDialog
+import com.dxxredux.app.NavigationDropdownMenu as DropdownMenu
 
 // Native numeric music types are centralized in SaveMetadataLabels.kt
 private const val MUSIC_MODE_MIDI = "midi"

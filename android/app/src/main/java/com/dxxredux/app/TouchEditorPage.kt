@@ -64,6 +64,8 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 import androidx.compose.ui.geometry.Size as ComposeSize
+import com.dxxredux.app.NavigationAlertDialog as AlertDialog
+import com.dxxredux.app.NavigationDropdownMenu as DropdownMenu
 
 // ── Colors ──────────────────────────────────────────────────────────────────
 private val cStickRing = Color(0xCC888888.toInt())

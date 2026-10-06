@@ -33,3 +33,29 @@ internal interface NavigationRepeatScheduler {
 
     fun removeCallbacks(action: Runnable)
 }
+
+/** Repeat state for input surfaces which already poll controller state */
+internal class NavigationDirectionRepeat(
+    private val timing: NavigationRepeatTiming = navigationRepeatTiming,
+) {
+    private var heldDirection = 0
+    private var nextRepeatMs = 0L
+
+    fun update(
+        direction: Int,
+        nowMs: Long,
+    ): Boolean {
+        if (direction == 0) {
+            heldDirection = 0
+            return false
+        }
+        if (direction != heldDirection) {
+            heldDirection = direction
+            nextRepeatMs = nowMs + timing.initialDelayMs
+            return true
+        }
+        if (nowMs < nextRepeatMs) return false
+        nextRepeatMs = nowMs + timing.repeatIntervalMs
+        return true
+    }
+}

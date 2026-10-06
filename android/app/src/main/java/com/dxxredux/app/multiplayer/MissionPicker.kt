@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -37,6 +36,7 @@ import com.dxxredux.app.dpadTextFieldNavigation
 import com.dxxredux.app.launchDataReadyForGame
 import java.io.File
 import java.util.Locale
+import com.dxxredux.app.NavigationAlertDialog as AlertDialog
 
 /**
  * Scans game data directories for available missions.

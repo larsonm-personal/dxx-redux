@@ -12,6 +12,12 @@ if (!$OutputDirectory) {
 }
 $python = Join-Path $androidDir $(if ($IsWindows) { 'temp/store-assets-tools/venv/Scripts/python.exe' } else { 'temp/store-assets-tools/venv/bin/python' })
 if (!(Test-Path $python)) { $python = (Get-Command python -ErrorAction Stop).Source }
+if (!$FeaturedOnly -and (Test-Path (Join-Path $OutputDirectory 'boss-edit.json'))) {
+    & $python (Join-Path $androidDir 'helpers/store_asset_boss_video.py') validate --output $OutputDirectory
+    if ($LASTEXITCODE) { throw 'Boss preview integration validation failed' }
+    Write-Output 'PASS: reordered 30-second preview, muted launcher, original-tempo boss MIDI, preserved reviewed audio and smooth native fly-out'
+    return
+}
 $action = if ($FeaturedOnly) { 'validate-featured' } elseif (Test-Path (Join-Path $OutputDirectory 'combined-edit.json')) { 'validate-combined' } else { 'validate' }
 & $python (Join-Path $androidDir 'helpers/generate_store_assets.py') $action --output $OutputDirectory
 if ($LASTEXITCODE) { throw 'Store asset integration validation failed' }

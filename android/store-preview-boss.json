@@ -1,0 +1,16 @@
+{
+    "demo": "d1_descent_level7_20260921_181652",
+    "demo_start": 97.0,
+    "demo_end": 107.0,
+    "opening_end": 7.4,
+    "opening_seconds": 4.0,
+    "presentation": {
+        "launch_target": "d1-in-d2",
+        "cockpit_mode": 3,
+        "hud_mode": 3,
+        "cockpit_views": [0, 0],
+        "show_robot_hostage_counts": true,
+        "main_view_fov": 110,
+        "capture_size": [2400, 1080]
+    }
+}

@@ -33,6 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dxxredux.app.NavigationAlertDialog as AlertDialog
+import com.dxxredux.app.NavigationDropdownMenu as DropdownMenu
 
 private val slotButtonTextSize = 9.sp
 private val slotDialogTextSize = 12.sp

@@ -52,6 +52,7 @@ import java.util.Locale
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
+import com.dxxredux.app.NavigationAlertDialog as AlertDialog
 
 @Composable
 internal fun BoxScope.SetupScrollArrows(scrollState: ScrollState) {

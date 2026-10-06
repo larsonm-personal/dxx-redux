@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +34,7 @@ import com.dxxredux.app.TextButton
 import com.dxxredux.app.dpadTextFieldNavigation
 import java.io.File
 import java.util.Locale
+import com.dxxredux.app.NavigationAlertDialog as AlertDialog
 
 internal object MultiplayerCallsigns {
     private const val COOP_AUTOSAVE_CALLSIGN = "coopsave"

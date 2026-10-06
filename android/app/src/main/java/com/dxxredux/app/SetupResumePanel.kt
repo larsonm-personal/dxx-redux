@@ -50,12 +50,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.dxxredux.app.NavigationDialog as Dialog
 
 internal fun resumeGameDisplayName(game: String): String = if (game == "d1") "Descent 1" else "Descent 2"
 

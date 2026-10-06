@@ -139,6 +139,7 @@ fun Modifier.repeatVerticalDpadFocus(
         val focusManager = LocalFocusManager.current
         val coroutineScope = rememberCoroutineScope()
         val currentOnMove by rememberUpdatedState(onMove)
+        val windowOwnsRepeat = LocalNavigationRepeatRoot.current
         var heldDirection by remember { mutableIntStateOf(0) }
         var repeatJob by remember { mutableStateOf<Job?>(null) }
 
@@ -175,6 +176,13 @@ fun Modifier.repeatVerticalDpadFocus(
                 }
             if (direction == 0) {
                 return@onPreviewKeyEvent false
+            }
+
+            // A launcher/dialog root repeats raw keys for all four directions. Keep
+            // this page's traversal rules without starting a second timer
+            if (windowOwnsRepeat) {
+                if (event.type == KeyEventType.KeyDown) moveFocus(direction)
+                return@onPreviewKeyEvent true
             }
 
             when (event.type) {

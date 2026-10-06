@@ -530,7 +530,7 @@ class Capture:
         if not audio_pass and not visual_only:
             self.flyout(audio_pass=True)
 
-    def replay(self, source, video_only=False, presentation=None, review_frames=0):
+    def replay(self, source, video_only=False, presentation=None, review_frames=0, presentation_video=False):
         source = Path(source).resolve()
         name = source.stem
         previous = None
@@ -571,6 +571,14 @@ class Capture:
                 ],
                 name=name + "-featured-presentation",
             )
+            if "main_view_fov" in presentation:
+                self.automate(
+                    [
+                        {"action": "set_debug", "field": "graphics_option", "value": value}
+                        for value in (f"main_view_fov:{presentation['main_view_fov']}", "main_view_fov_locked:0")
+                    ],
+                    name=name + "-fov",
+                )
         # Replay intentionally restores simulation options from its recording.
         # Apply only visual helpers which its pilot-less startup leaves disabled.
         self.automate(
@@ -612,20 +620,20 @@ class Capture:
         }
         if presentation:
             manifest["presentation"] = presentation
-            manifest["video_capture"] = "lossless-featured-still"
+            manifest["video_capture"] = "guest-vfr-no-screenshots" if presentation_video else "lossless-featured-still"
         if video_only:
             manifest["screenshots"] = previous["screenshots"]
-        else:
+        elif not presentation_video:
             filename = f"demos/{name}/0000.0s.png"
             self.screenshot(filename)
             manifest["screenshots"].append(
                 {"file": filename, "demo_seconds": frames[state["input_demo"]["replay_frame"]], "target_seconds": 0}
             )
         part = 0
-        if presentation:
+        if presentation and not presentation_video:
             self.record_started = time.monotonic()
         else:
-            self.start_recording(name + f"-{part:02d}")
+            self.start_recording(name + f"-{part:02d}", audio=not presentation_video)
         next_sample = 10.0
         # Guest ANGLE with MSAA/AF can render well below real time. Replays
         # advance one recorded simulation frame per rendered frame; the editor
@@ -640,7 +648,12 @@ class Capture:
                     break
                 frame = replay["replay_frame"]
                 elapsed = frames[min(frame, len(frames) - 1)]
-                if presentation and "featured_still" not in manifest and elapsed >= presentation["seconds"] - 5:
+                if (
+                    presentation
+                    and not presentation_video
+                    and "featured_still" not in manifest
+                    and elapsed >= presentation["seconds"] - 5
+                ):
                     # Native replay supports pause and single-frame advance. Stop
                     # before the landmark, step to it, then capture the display
                     # losslessly instead of extracting a lossy video frame
@@ -705,7 +718,7 @@ class Capture:
                     }
                 )
                 if elapsed >= next_sample:
-                    if not video_only:
+                    if not video_only and not presentation_video:
                         filename = f"demos/{name}/{next_sample:06.1f}s.png"
                         self.screenshot(filename)
                         manifest["screenshots"].append(
@@ -724,15 +737,15 @@ class Capture:
                         )
                 # Avoid a recorder restart swallowing the final few seconds
                 # when the remaining replay fits within the current part
-                if not presentation and wall > 165 and remaining_wall > 175 - wall:
+                if (not presentation or presentation_video) and wall > 165 and remaining_wall > 175 - wall:
                     manifest["parts"].append(str(self.stop_recording().relative_to(self.output)))
                     part += 1
-                    self.start_recording(name + f"-{part:02d}")
+                    self.start_recording(name + f"-{part:02d}", audio=not presentation_video)
                 time.sleep(0.15)
             else:
                 raise RuntimeError("Demo capture exceeded its timeout")
         finally:
-            if not presentation:
+            if not presentation or presentation_video:
                 manifest["parts"].append(str(self.stop_recording().relative_to(self.output)))
             log = self.call("logcat", "-d")
             (self.output / "demos" / name / "logcat.txt").write_text(log, encoding="utf-8")

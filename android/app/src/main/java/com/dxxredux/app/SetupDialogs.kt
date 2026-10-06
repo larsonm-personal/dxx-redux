@@ -30,6 +30,7 @@ import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
+import com.dxxredux.app.NavigationAlertDialog as AlertDialog
 
 /** Format byte size as human-readable (KB, MB, GB). */
 private fun formatSize(bytes: Long): String = formatBinarySize(bytes)

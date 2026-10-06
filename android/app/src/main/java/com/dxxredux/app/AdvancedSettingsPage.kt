@@ -48,6 +48,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import com.dxxredux.app.NavigationAlertDialog as AlertDialog
 
 private data class StorageFileEntry(
     val file: File,

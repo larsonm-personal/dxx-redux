@@ -438,6 +438,7 @@ $testTimeouts = @{
     "test_dos_midi_parity"                = 1500
     "test_level_metadata_benchmark"       = 300
     "test_launcher_dpad"                  = 180
+    "test_slider_navigation"              = 300
     "test_mission_zip_batch"              = 3600
     # Includes the 600s child scenario, large archive staging, and cleanup
     "test_mission_asset_isolation"        = 900

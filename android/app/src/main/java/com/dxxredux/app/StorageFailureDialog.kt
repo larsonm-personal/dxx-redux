@@ -1,11 +1,11 @@
 package com.dxxredux.app
 
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.sp
+import com.dxxredux.app.NavigationAlertDialog as AlertDialog
 
 @Composable
 internal fun StorageFailureDialog(

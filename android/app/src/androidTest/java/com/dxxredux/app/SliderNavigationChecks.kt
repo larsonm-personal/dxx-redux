@@ -105,6 +105,7 @@ internal class SliderNavigationChecks(
             }
             graphicsCapabilityDetails(launcher)
             touchSliderNavigation(launcher)
+            NavigationRepeatChecks(instrumentation).run(launcher)
         } finally {
             for ((file, bytes) in backups) {
                 if (bytes != null) file.writeBytes(bytes) else file.delete()

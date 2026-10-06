@@ -253,6 +253,43 @@ an emulator replay:
 
 ## Combining filtered video with reviewed sound
 
+### Boss fight and reordered opening
+
+`store-preview-boss.json` pins the D1 level 7 fight at simulation seconds 97-107,
+with the featured full-screen presentation, progress rows, boss health, no rear
+camera and 110-degree FoV. The order is D2 level 9 (5s), boss (10s), launcher
+through the first guidebot briefing page (4s, silent), D1 level 5 (5s), fly-out (6s).
+The guidebot page ends at 7.4s in the reviewed source; this whole opening is
+accelerated to 4s. All gameplay retains trilinear filtering, 4x MSAA and 16x AF.
+
+With the DxxStoreAssets emulator and full game data already provisioned:
+
+```powershell
+.\android\generate-store-boss-preview.ps1 `
+    -OutputDirectory android/temp/store-assets_20261005_boss_video `
+    -ReferenceDirectory android/temp/store-assets_20261004_combined `
+    -BossAudioDirectory android/temp/store-assets_20261004_tempo/still-sources `
+    -Serial emulator-5582
+```
+
+The generator starts DxxStoreAssets if needed and rejects other AVDs.
+The separate default serial above leaves the development emulator on port 5580 alone.
+Use `-ReuseCapture` to rebuild the edit after capture, or `-ComposeOnly` with just
+`-OutputDirectory` to re-export entirely offline. The source video, native boss
+picture/audio, MIDI stem and hashes are archived in the output folder. The
+unchanged gameplay/fly-out pictures are stream-copied; their reviewed PCM is
+copied sample-for-sample into the audio master before one 320 kb/s AAC encode.
+Boss effects follow simulation time; its MIDI stem retains the native tempo.
+
+```powershell
+.\android\tests\test_store_asset_pipeline.ps1 -OutputDirectory android/temp/store-assets_20261005_boss_video
+```
+
+Validation checks source hashes, 900 frames/30 seconds, launcher silence,
+unchanged reviewed PCM, delivered audio correlation, original-tempo native MIDI
+and geometric fly-out motion. Native presentation and graphics are checked when
+preparing the edit. Media remain in the ignored output directory.
+
 The recommended regeneration command preserves a reviewed soundtrack while
 regenerating the launcher, gameplay, stills and fixed-step filtered fly-out:
 

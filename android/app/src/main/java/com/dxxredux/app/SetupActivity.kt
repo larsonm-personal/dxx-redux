@@ -91,6 +91,7 @@ import org.json.JSONObject
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
+import com.dxxredux.app.NavigationAlertDialog as AlertDialog
 
 internal enum class LauncherPreparationPhase(
     val wireName: String,
@@ -2428,7 +2429,7 @@ class SetupActivity : ComponentActivity() {
                     else -> newRightStickY
                 }
             if (newNavX != 0 || newNavY != 0) launcherControllerNavigationActive.value = true
-            val navTarget = if (controllerConfigDialogOpen) controllerConfigDialogView else null
+            val navTarget = if (controllerConfigDialogOpen) controllerConfigDialogView else targetView?.rootView
             synthesizeDpadTransition(
                 navTarget,
                 navXState,
@@ -2849,165 +2850,172 @@ class SetupActivity : ComponentActivity() {
         val filesDir = filesDir
 
         setContent {
-            var launchPreflightMessage by launchFailureMessage
-            LauncherTheme {
-                launchPreflightMessage?.let { message ->
-                    AlertDialog(
-                        onDismissRequest = { launchPreflightMessage = null },
-                        title = { Text("Launch Blocked") },
-                        text = {
-                            SelectionContainer {
-                                Text(message, fontSize = 12.sp)
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(onClick = { launchPreflightMessage = null }) {
-                                Text("OK")
-                            }
-                        },
-                    )
-                }
-                launchPreparation.value?.takeIf(::launcherPreparationShowsDialog)?.let { preparation ->
-                    LauncherPreparationDialog(preparation)
-                }
-            }
-            SetupScreen(
-                filesDir = filesDir,
-                gameRunning = gameRunningFlag,
-                refreshTrigger = refreshTrigger.intValue,
-                focusResumeTrigger = focusResumeTrigger.intValue,
-                controllerNavigationActive = launcherControllerNavigationActive.value,
-                controllerAxes = controllerAxes,
-                dpadAxes = dpadAxes,
-                axisGeneration = axisGeneration.intValue,
-                pressedButtons = pressedButtons,
-                rawControllerInputs = controllerInputDiagnostics.snapshot,
-                pickedImportUris = pendingPickedImportUris.value,
-                lanJoinRequest = pendingLanJoin.value,
-                onLanJoinConsumed = ::consumeLanJoin,
-                onInvitationScanned = { address ->
-                    pendingLanJoin.value =
-                        LanJoinRequest(
-                            java.util.UUID
-                                .randomUUID()
-                                .toString(),
-                            address,
-                        )
-                },
-                onLeaveGameForLanJoin = {
-                    if (hasReturnableGameActivity()) {
-                        startActivity(
-                            Intent(this, MainActivity::class.java).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                                putExtra("leave_for_lan_join", true)
+            NavigationRepeatRoot {
+                var launchPreflightMessage by launchFailureMessage
+                LauncherTheme {
+                    launchPreflightMessage?.let { message ->
+                        AlertDialog(
+                            onDismissRequest = { launchPreflightMessage = null },
+                            title = { Text("Launch Blocked") },
+                            text = {
+                                SelectionContainer {
+                                    Text(message, fontSize = 12.sp)
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(onClick = { launchPreflightMessage = null }) {
+                                    Text("OK")
+                                }
                             },
                         )
                     }
-                },
-                onPickedImportConsumed = { pendingPickedImportUris.value = emptyList() },
-                onLaunchGame = onLaunch@{ game, resumeCandidate ->
-                    val pending = launcherExecutor?.consumePendingLaunch()
-                    if (pending != null) {
-                        launchGameForAutomation(
-                            game,
-                            pending.scriptPath,
-                            pending.nextStep,
-                            resumeCandidate,
-                            pending.runId,
-                        )
-                    } else if (resumeCandidate == null && returnToGame()) {
-                        gameRunningFlag = true
-                    } else if (resumeCandidate != null && hasReturnableGameActivity()) {
-                        Toast
-                            .makeText(
-                                this,
-                                "Return to the running game before loading a save",
-                                Toast.LENGTH_SHORT,
-                            ).show()
-                    } else {
-                        val launchGame = resumeCandidate?.game ?: game
-                        val resolvedResumeSavePath =
-                            resumeCandidate?.let { candidate ->
-                                resolveResumeSaveLaunchPath(filesDir, candidate)
-                            }
-                        val resolvedResumeCallsign =
-                            resumeCandidate?.let { candidate ->
-                                resolveResumeSaveLaunchCallsign(candidate)
-                            }
-                        if (resumeCandidate != null && resolvedResumeSavePath.isNullOrBlank()) {
-                            Log.w(
-                                "DXX-Setup",
-                                "Resume candidate has no launch path: path=${resumeCandidate.path} " +
-                                    "relative=${resumeCandidate.relativePath} callsign=${resumeCandidate.callsign}",
+                    launchPreparation.value?.takeIf(::launcherPreparationShowsDialog)?.let { preparation ->
+                        LauncherPreparationDialog(preparation)
+                    }
+                }
+                SetupScreen(
+                    filesDir = filesDir,
+                    gameRunning = gameRunningFlag,
+                    refreshTrigger = refreshTrigger.intValue,
+                    focusResumeTrigger = focusResumeTrigger.intValue,
+                    controllerNavigationActive = launcherControllerNavigationActive.value,
+                    controllerAxes = controllerAxes,
+                    dpadAxes = dpadAxes,
+                    axisGeneration = axisGeneration.intValue,
+                    pressedButtons = pressedButtons,
+                    rawControllerInputs = controllerInputDiagnostics.snapshot,
+                    pickedImportUris = pendingPickedImportUris.value,
+                    lanJoinRequest = pendingLanJoin.value,
+                    onLanJoinConsumed = ::consumeLanJoin,
+                    onInvitationScanned = { address ->
+                        pendingLanJoin.value =
+                            LanJoinRequest(
+                                java.util.UUID
+                                    .randomUUID()
+                                    .toString(),
+                                address,
                             )
-                            logResumeCandidateLaunch(
-                                "setup-resume-candidate-invalid",
+                    },
+                    onLeaveGameForLanJoin = {
+                        if (hasReturnableGameActivity()) {
+                            startActivity(
+                                Intent(this, MainActivity::class.java).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                                    putExtra("leave_for_lan_join", true)
+                                },
+                            )
+                        }
+                    },
+                    onPickedImportConsumed = { pendingPickedImportUris.value = emptyList() },
+                    onLaunchGame = onLaunch@{ game, resumeCandidate ->
+                        val pending = launcherExecutor?.consumePendingLaunch()
+                        if (pending != null) {
+                            launchGameForAutomation(
+                                game,
+                                pending.scriptPath,
+                                pending.nextStep,
                                 resumeCandidate,
-                                null,
-                                resolvedResumeCallsign,
+                                pending.runId,
                             )
-                            Toast.makeText(this, "Could not read the save launch details", Toast.LENGTH_SHORT).show()
+                        } else if (resumeCandidate == null && returnToGame()) {
+                            gameRunningFlag = true
+                        } else if (resumeCandidate != null && hasReturnableGameActivity()) {
+                            Toast
+                                .makeText(
+                                    this,
+                                    "Return to the running game before loading a save",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
                         } else {
-                            val launchKind = if (resumeCandidate != null) "resume" else "game"
-                            if (!beginLaunchPreparation(launchGame, launchKind)) {
-                                return@onLaunch
-                            }
-                            val owner = launchOwner
-                            lifecycleScope.launch {
-                                val preflightMessage = prepareGameLaunchFiles(launchGame)
-                                if (!ownsLaunch(owner)) return@launch
-                                if (preflightMessage != null) {
-                                    launchPreflightMessage = preflightMessage
-                                    finishLaunchPreparation("preflight_failed")
-                                    return@launch
+                            val launchGame = resumeCandidate?.game ?: game
+                            val resolvedResumeSavePath =
+                                resumeCandidate?.let { candidate ->
+                                    resolveResumeSaveLaunchPath(filesDir, candidate)
                                 }
-                                if (resumeCandidate != null) {
-                                    logResumeCandidateLaunch(
-                                        "setup-resume-candidate-selected",
-                                        resumeCandidate,
-                                        resolvedResumeSavePath,
-                                        resolvedResumeCallsign,
-                                    )
+                            val resolvedResumeCallsign =
+                                resumeCandidate?.let { candidate ->
+                                    resolveResumeSaveLaunchCallsign(candidate)
                                 }
-                                val intent =
-                                    createGameLaunchIntent(
-                                        game = launchGame,
-                                        inputDemoReplayPath = null,
-                                        resumeSavePath = resolvedResumeSavePath,
-                                        resumeCallsign = resolvedResumeCallsign,
-                                    )
-                                startGameAfterRouteMetadataHandoff(intent)
-                                // Don't finish() -- stay in back stack so quitting
-                                // the game returns here instead of the launcher.
+                            if (resumeCandidate != null && resolvedResumeSavePath.isNullOrBlank()) {
+                                Log.w(
+                                    "DXX-Setup",
+                                    "Resume candidate has no launch path: path=${resumeCandidate.path} " +
+                                        "relative=${resumeCandidate.relativePath} callsign=${resumeCandidate.callsign}",
+                                )
+                                logResumeCandidateLaunch(
+                                    "setup-resume-candidate-invalid",
+                                    resumeCandidate,
+                                    null,
+                                    resolvedResumeCallsign,
+                                )
+                                Toast
+                                    .makeText(
+                                        this,
+                                        "Could not read the save launch details",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                            } else {
+                                val launchKind = if (resumeCandidate != null) "resume" else "game"
+                                if (!beginLaunchPreparation(launchGame, launchKind)) {
+                                    return@onLaunch
+                                }
+                                val owner = launchOwner
+                                lifecycleScope.launch {
+                                    val preflightMessage = prepareGameLaunchFiles(launchGame)
+                                    if (!ownsLaunch(owner)) return@launch
+                                    if (preflightMessage != null) {
+                                        launchPreflightMessage = preflightMessage
+                                        finishLaunchPreparation("preflight_failed")
+                                        return@launch
+                                    }
+                                    if (resumeCandidate != null) {
+                                        logResumeCandidateLaunch(
+                                            "setup-resume-candidate-selected",
+                                            resumeCandidate,
+                                            resolvedResumeSavePath,
+                                            resolvedResumeCallsign,
+                                        )
+                                    }
+                                    val intent =
+                                        createGameLaunchIntent(
+                                            game = launchGame,
+                                            inputDemoReplayPath = null,
+                                            resumeSavePath = resolvedResumeSavePath,
+                                            resumeCallsign = resolvedResumeCallsign,
+                                        )
+                                    startGameAfterRouteMetadataHandoff(intent)
+                                    // Don't finish() -- stay in back stack so quitting
+                                    // the game returns here instead of the launcher.
+                                }
                             }
                         }
-                    }
-                },
-                onPlayInputDemo = { demo ->
-                    launchInputDemoReplay(demo)
-                },
-                onMultiplayerLaunch = { info ->
-                    launchMultiplayerGame(info)
-                },
-                onMultiplayerLaunchRequested = ::beginMultiplayerLaunchRequest,
-                onContentImported = { routeMetadataCoordinator.notifyContentImported() },
-                onClearRouteMetadataCache = {
-                    val result = routeMetadataCoordinator.clearCache()
-                    result.removedFiles
-                },
-                onSetRouteMetadataComputeFaster = routeMetadataCoordinator::setComputeFaster,
-                onRefresh = {
-                    routeMetadataCoordinator.wake()
-                    refreshTrigger.intValue++
-                },
-                onDownloadStateChanged = { name, progress ->
-                    if (progress == -2) {
-                        downloadStates.remove(name)
-                    } else {
-                        downloadStates[name] = progress
-                    }
-                },
-            )
+                    },
+                    onPlayInputDemo = { demo ->
+                        launchInputDemoReplay(demo)
+                    },
+                    onMultiplayerLaunch = { info ->
+                        launchMultiplayerGame(info)
+                    },
+                    onMultiplayerLaunchRequested = ::beginMultiplayerLaunchRequest,
+                    onContentImported = { routeMetadataCoordinator.notifyContentImported() },
+                    onClearRouteMetadataCache = {
+                        val result = routeMetadataCoordinator.clearCache()
+                        result.removedFiles
+                    },
+                    onSetRouteMetadataComputeFaster = routeMetadataCoordinator::setComputeFaster,
+                    onRefresh = {
+                        routeMetadataCoordinator.wake()
+                        refreshTrigger.intValue++
+                    },
+                    onDownloadStateChanged = { name, progress ->
+                        if (progress == -2) {
+                            downloadStates.remove(name)
+                        } else {
+                            downloadStates[name] = progress
+                        }
+                    },
+                )
+            }
         }
     }
 

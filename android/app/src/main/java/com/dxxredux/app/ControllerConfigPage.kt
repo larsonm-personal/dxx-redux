@@ -47,6 +47,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontStyle
@@ -64,6 +65,7 @@ import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
+import com.dxxredux.app.NavigationAlertDialog as AlertDialog
 
 // ── Colors ──────────────────────────────────────────────────────────────────
 private val cOutline = Color(0xFF9E9E9E)
@@ -455,6 +457,7 @@ internal fun ControllerConfigPage(
     val axesState by rememberUpdatedState(effectiveAxes)
     val dpadAxesState by rememberUpdatedState(effectiveDpadAxes)
     val pressedButtonsState by rememberUpdatedState(pressedButtons)
+    val windowFocused by rememberUpdatedState(LocalWindowInfo.current.isWindowFocused)
 
     val pickerOpen = showButtonPicker || showStickPicker || showDpadPicker || showRawInputs
 
@@ -513,8 +516,8 @@ internal fun ControllerConfigPage(
     )
 
     LaunchedEffect(Unit) {
-        var previousNavX = 0
-        var previousNavY = 0
+        val horizontalRepeat = NavigationDirectionRepeat()
+        val verticalRepeat = NavigationDirectionRepeat()
         var wasADown = false
         var wasBDown = false
         while (true) {
@@ -529,7 +532,7 @@ internal fun ControllerConfigPage(
                     axes = axesState,
                     dpadAxes = dpadAxesState,
                     pressedButtons = currentButtons,
-                    gated = pickerOpen,
+                    gated = pickerOpen || !windowFocused,
                 )
             val openedControl =
                 when (trigger) {
@@ -546,7 +549,8 @@ internal fun ControllerConfigPage(
                 openControlPicker(openedControl)
             }
 
-            if (!pickerOpen) {
+            val nowMs = SystemClock.elapsedRealtime()
+            if (windowFocused && !pickerOpen && openedControl == null) {
                 val dpadPressedX =
                     when {
                         "D-Left" in currentButtons -> -1
@@ -595,21 +599,15 @@ internal fun ControllerConfigPage(
                         hatDirY != 0 -> hatDirY
                         else -> stickDirY
                     }
-                if (navX != previousNavX) {
-                    if (navX != 0) {
-                        selectedActionButtonIndex = moveActionButtonSelection(selectedActionButtonIndex, navX, 0)
-                    }
-                    previousNavX = navX
+                if (horizontalRepeat.update(navX, nowMs)) {
+                    selectedActionButtonIndex = moveActionButtonSelection(selectedActionButtonIndex, navX, 0)
                 }
-                if (navY != previousNavY) {
-                    if (navY != 0) {
-                        selectedActionButtonIndex = moveActionButtonSelection(selectedActionButtonIndex, 0, navY)
-                    }
-                    previousNavY = navY
+                if (verticalRepeat.update(navY, nowMs)) {
+                    selectedActionButtonIndex = moveActionButtonSelection(selectedActionButtonIndex, 0, navY)
                 }
             } else {
-                previousNavX = 0
-                previousNavY = 0
+                horizontalRepeat.update(0, nowMs)
+                verticalRepeat.update(0, nowMs)
             }
 
             val aDown = "A" in currentButtons
