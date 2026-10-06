@@ -31,6 +31,7 @@ object HumanReadableConfig {
         j.put("version", layout.version)
         j.put("name", layout.name)
         j.put("globalOpacity", layout.globalOpacity.toDouble())
+        j.put("hideControllerBoundControls", layout.hideControllerBoundControls)
         j.put("sticks", JSONArray(layout.sticks.map { stickToHuman(it) }))
         j.put("buttons", JSONArray(layout.buttons.map { buttonToHuman(it) }))
         j.put("sliders", JSONArray(layout.sliders.map { sliderToHuman(it) }))
@@ -202,6 +203,7 @@ object HumanReadableConfig {
                 TouchLayout(
                     version = version,
                     name = json.optString("name", "Imported"),
+                    hideControllerBoundControls = json.optBoolean("hideControllerBoundControls", true),
                     globalOpacity =
                         json
                             .optDouble(

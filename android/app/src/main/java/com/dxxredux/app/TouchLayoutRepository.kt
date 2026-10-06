@@ -20,8 +20,16 @@ internal fun effectiveTouchOverlayLayout(
     controllerMenuLayout: TouchLayout,
     touchOverlayEnabled: Boolean,
     hasController: Boolean,
+    coverage: ControllerTouchCoverage = ControllerTouchCoverage(),
+    gameVariant: String = "d2",
 ): TouchLayout =
-    if (!touchOverlayEnabled && hasController) controllerMenuLayout.copy(gyro = savedLayout.gyro) else savedLayout
+    if (!touchOverlayEnabled && hasController) {
+        controllerMenuLayout.copy(gyro = savedLayout.gyro)
+    } else if (touchOverlayEnabled && hasController) {
+        controllerFilteredTouchLayout(savedLayout, coverage, gameVariant)
+    } else {
+        savedLayout
+    }
 
 /**
  * Loads, saves, and provides preset TouchLayouts.

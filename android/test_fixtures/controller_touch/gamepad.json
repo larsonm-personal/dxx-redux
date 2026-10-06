@@ -1,0 +1,23 @@
+{
+    "id": 1,
+    "command": "register",
+    "name": "DXX Touch Coverage Test",
+    "vid": 8226,
+    "pid": 12290,
+    "bus": "usb",
+    "configuration": [
+        { "type": 100, "data": [1, 3] },
+        { "type": 101, "data": [304, 305, 307, 308, 310, 311, 312, 313, 314, 315, 317, 318] },
+        { "type": 103, "data": [0, 1, 2, 5, 9, 10, 16, 17] }
+    ],
+    "abs_info": [
+        { "code": 0, "info": { "minimum": -32767, "maximum": 32767 } },
+        { "code": 1, "info": { "minimum": -32767, "maximum": 32767 } },
+        { "code": 2, "info": { "minimum": -32767, "maximum": 32767 } },
+        { "code": 5, "info": { "minimum": -32767, "maximum": 32767 } },
+        { "code": 9, "info": { "minimum": 0, "maximum": 32767 } },
+        { "code": 10, "info": { "minimum": 0, "maximum": 32767 } },
+        { "code": 16, "info": { "minimum": -1, "maximum": 1 } },
+        { "code": 17, "info": { "minimum": -1, "maximum": 1 } }
+    ]
+}

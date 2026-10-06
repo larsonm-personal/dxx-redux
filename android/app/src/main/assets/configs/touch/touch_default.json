@@ -2,6 +2,7 @@
     "type": "touch_layout",
     "version": 11,
     "name": "Touch Default",
+    "hideControllerBoundControls": true,
     "globalOpacity": 0.699999988079071,
     "sticks": [
         {

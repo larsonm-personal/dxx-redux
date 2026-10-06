@@ -403,6 +403,7 @@ $testTimeouts = @{
     "test_store_asset_pipeline" = 7200
     # Run controller response checks in both engines with a 180s child timeout each
     "test_controller_response" = 600
+    "test_controller_touch_hotplug" = 600
     # Record and play classic demos in both engines with a 240s child timeout each
     "test_fov_demo_compatibility" = 900
     "test_graphics_recovery" = 7200

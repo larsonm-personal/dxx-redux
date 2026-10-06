@@ -6104,14 +6104,8 @@ private fun ControllerSection(
     )
 
     // -- Touch overlay toggle --
-    val hasTouchscreen = remember(context) { context.hasTouchscreen() }
-    val defaultOverlay =
-        defaultTouchOverlayEnabled(
-            hasTouchscreen = hasTouchscreen,
-            hasController = hasController,
-        )
     var touchOverlay by remember {
-        mutableStateOf(prefs.getBoolean("touch_overlay_enabled", defaultOverlay))
+        mutableStateOf(prefs.getBoolean("touch_overlay_enabled", DEFAULT_TOUCH_OVERLAY_ENABLED))
     }
     Row(
         modifier =

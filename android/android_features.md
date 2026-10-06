@@ -88,6 +88,7 @@
 # Touch interfaces
 
 - Optional touch controls overlay
+- Touch controls default on for controller handhelds. Touch Editor > Global can hide gameplay controls covered by a connected controller while retaining Guide, weapon selectors, and other menus. Controls return on disconnect; saved controller mappings alone do not hide anything
 - Customizable button locations, joysticks, mouse mode joysticks, sensitivity, exponential throw. Wheel menus for weapons and guidebot. vertical/horizontal slide menu for guidebot. Optional double tap to shoot, latching shoot buttons, etc.
 - After a lot of testing my preferred touch look control is a “mouse-mode” region (drag distance->look distance), with stick-type continuous movement regions at the edges
 - Joystick touch controls have a flexible center point - the stick starts at 0 throw when you first touch (this is a common strategy in other games)

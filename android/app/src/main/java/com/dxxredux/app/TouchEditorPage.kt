@@ -4051,6 +4051,7 @@ private fun GlobalSettingsDialog(
 ) {
     val focusManager = LocalFocusManager.current
     val sliderFocus = remember { FocusRequester() }
+    val controllerFilterFocus = remember { FocusRequester() }
     val okFocus = remember { FocusRequester() }
     RequestLauncherControllerFocus(sliderFocus, true, layout.globalOpacity)
     AlertDialog(
@@ -4077,13 +4078,27 @@ private fun GlobalSettingsDialog(
                                 if (!isVertical) return@onPreviewKeyEvent false
                                 if (event.type == KeyEventType.KeyDown) {
                                     if (event.key == Key.DirectionDown) {
-                                        okFocus.requestFocusSafely()
+                                        controllerFilterFocus.requestFocusSafely()
                                     } else {
                                         focusManager.moveFocus(FocusDirection.Up)
                                     }
                                 }
                                 true
                             }.tvFocusBorder(),
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = layout.hideControllerBoundControls,
+                        onCheckedChange = { onUpdate(layout.copy(hideControllerBoundControls = it)) },
+                        modifier = Modifier.focusRequester(controllerFilterFocus).tvFocusBorder(),
+                    )
+                    Text("Hide controls that are assigned to an active controller", fontSize = 13.sp)
+                }
+                Text(
+                    "Menus stay available. Controls return when the controller disconnects. " +
+                        "The editor always shows the full layout.",
+                    fontSize = 12.sp,
+                    color = Color.Gray,
                 )
             }
         },

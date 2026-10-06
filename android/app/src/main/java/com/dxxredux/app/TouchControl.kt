@@ -1228,6 +1228,7 @@ data class TouchLayout(
     val version: Int = CURRENT_TOUCH_LAYOUT_VERSION,
     val name: String = "Default",
     val globalOpacity: Float = TouchBindings.DEFAULT_GLOBAL_OPACITY,
+    val hideControllerBoundControls: Boolean = true,
     val sticks: List<AnalogStickControl> = emptyList(),
     val buttons: List<ButtonControl> = emptyList(),
     val sliders: List<SliderControl> = emptyList(),
@@ -1243,6 +1244,7 @@ data class TouchLayout(
             put("version", version)
             put("name", name)
             put("globalOpacity", globalOpacity.toDouble())
+            put("hideControllerBoundControls", hideControllerBoundControls)
             put("sticks", JSONArray(sticks.map { it.toJson() }))
             put("buttons", JSONArray(buttons.map { it.toJson() }))
             put("sliders", JSONArray(sliders.map { it.toJson() }))
@@ -1273,6 +1275,7 @@ data class TouchLayout(
                 TouchLayout(
                     version = version,
                     name = j.optString("name", "Default"),
+                    hideControllerBoundControls = j.optBoolean("hideControllerBoundControls", true),
                     globalOpacity =
                         j
                             .optDouble(

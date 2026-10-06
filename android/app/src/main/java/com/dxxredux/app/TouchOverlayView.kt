@@ -1001,14 +1001,43 @@ class TouchOverlayView
         }
 
         /** Replace the current layout and recompute all control geometry. */
-        fun setLayout(newLayout: TouchLayout) {
+        fun setLayout(
+            newLayout: TouchLayout,
+            preserveMenus: Boolean = false,
+        ) {
             resetAllSticks()
-            releaseAllButtons()
-            closeRemainingActions()
+            // Latched inputs outlive pointer-up, but must not outlive their control state
+            for ((index, stick) in stickStates.withIndex()) {
+                if (stick.dtLatched) {
+                    setDoubleTapLatch(stick.control.doubleTapBinding, false, "touch:dtap$index")
+                    stick.dtLatched = false
+                }
+            }
+            for (button in buttonStates) {
+                if (button.toggled) {
+                    dispatchTouchButton(button.control.binding, false, buttonSourceTag(button))
+                    button.toggled = false
+                }
+            }
+            for (slider in sliderStates) axisCallback?.invoke(slider.control.axis, 0f)
+            val keepMenus =
+                preserveMenus && layout.radialMenus == newLayout.radialMenus &&
+                    layout.diagnostics == newLayout.diagnostics && layout.moreActions == newLayout.moreActions
+            if (keepMenus) {
+                releaseAllLayoutButtons(false)
+                releaseAllSliders()
+                releaseAllAxisRegions()
+                releaseRemainingHeldActionIfNeeded()
+                remainingActionPointerId = -1
+                remainingActionPressedIndex = -1
+            } else {
+                releaseAllButtons()
+                closeRemainingActions()
+            }
             layout = newLayout
             gyroConfigured = newLayout.gyro.enabled
             if (!gyroConfigured) gyroActiveInGame = false
-            rebuildStates()
+            rebuildStates(keepMenus)
             if (width > 0 && height > 0) computeGeometry(width, height)
             invalidate()
         }
@@ -1027,19 +1056,21 @@ class TouchOverlayView
         /** Get a copy of the current layout (for saving, etc.). */
         fun getLayout(): TouchLayout = layout
 
-        private fun rebuildStates() {
+        private fun rebuildStates(preserveMenus: Boolean = false) {
             stickStates.clear()
             buttonStates.clear()
-            radialStates.clear()
             sliderStates.clear()
-            diagnosticStates.clear()
             axisRegionStates.clear()
             layout.sticks.forEach { stickStates.add(StickState(it)) }
             layout.buttons.forEach { buttonStates.add(ButtonState(it)) }
-            layout.radialMenus.forEach { radialStates.add(RadialMenuState(it)) }
             layout.sliders.forEach { sliderStates.add(SliderState(it)) }
-            layout.diagnostics.forEach { diagnosticStates.add(DiagnosticState(it)) }
             layout.axisRegions.forEach { axisRegionStates.add(AxisRegionState(it)) }
+            if (!preserveMenus) {
+                radialStates.clear()
+                diagnosticStates.clear()
+                layout.radialMenus.forEach { radialStates.add(RadialMenuState(it)) }
+                layout.diagnostics.forEach { diagnosticStates.add(DiagnosticState(it)) }
+            }
         }
 
         override fun onSizeChanged(
@@ -1305,6 +1336,10 @@ class TouchOverlayView
                 "difficulty_open" to adminTrayDifficultyMenuOpen,
                 "difficulty_index" to adminTrayDifficultySelectedIndex,
                 "cheats_open" to adminTrayCheatsMenuOpen,
+                "touch_sticks" to org.json.JSONArray(layout.sticks.map { it.id }),
+                "touch_buttons" to org.json.JSONArray(layout.buttons.map { it.id }),
+                "touch_selectors" to org.json.JSONArray(layout.radialMenus.map { it.id }),
+                "hide_controller_bound_controls" to layout.hideControllerBoundControls,
             )
 
         fun isControllerMenuOpen(): Boolean = currentControllerMenuSurface() != ControllerMenuSurface.NONE

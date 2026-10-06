@@ -260,5 +260,163 @@ internal class ControllerOverlayChecks(
                 },
             ) { "Saved layout changed: ${file.name}" }
         }
+        checkControllerAwareTouch()
+    }
+
+    private fun checkControllerAwareTouch() {
+        val context = instrumentation.targetContext
+        val presets = TouchLayoutRepository.loadBundledPresets(context)
+        val full = presets.first { it.name == DEFAULT_TOUCH_PRESET_NAME }
+        val menus = presets.first { isControllerMenuOnlyTouchLayout(it) }
+        val bindings = loadDefaultBindings(context)
+        val available =
+            ControllerInputAvailability(
+                connected = true,
+                buttons = (0..31).toSet(),
+                axes = AXIS_CONTROLS.values.associateWith { setOf(false, true) },
+            )
+        for (game in listOf("d1", "d2")) {
+            val covered = controllerTouchCoverage(bindings, emptySet(), available, game)
+            val filtered = effectiveTouchOverlayLayout(full, menus, true, true, covered, game)
+            check(filtered.sticks.isEmpty()) { "$game: default sticks not covered" }
+            check(
+                filtered.buttons.map { it.binding }.toSet() ==
+                    setOf(
+                        TouchBindings.BTN_AUTOMAP,
+                        TouchBindings.META_REWIND,
+                        TouchBindings.META_QUICK_SAVE,
+                        TouchBindings.META_QUICK_LOAD,
+                    ),
+            ) { "$game: unexpected default buttons ${filtered.buttons}" }
+            check(filtered.radialMenus == full.radialMenus && filtered.diagnostics == full.diagnostics)
+            check(filtered.moreActions == full.moreActions)
+            check(effectiveTouchOverlayLayout(full, menus, true, false, ControllerTouchCoverage(), game) == full)
+
+            val edges = mutableListOf<Pair<Int, Int>>()
+            val axes = mutableMapOf<Int, Float>()
+            val meta = mutableListOf<Pair<Int, Boolean>>()
+            val saved =
+                TouchLayout(
+                    sticks =
+                        listOf(
+                            AnalogStickControl(
+                                "move",
+                                20f,
+                                50f,
+                                axisX = TouchBindings.AXIS_LEFT_X,
+                                axisY = TouchBindings.AXIS_LEFT_Y,
+                            ),
+                        ),
+                    buttons = listOf(ButtonControl("fire", 75f, 50f, binding = TouchBindings.BTN_FIRE_PRIMARY)),
+                    radialMenus =
+                        listOf(
+                            RadialMenuControl(
+                                "Guide",
+                                45f,
+                                25f,
+                                segments =
+                                    listOf(
+                                        RadialSegment(
+                                            "Energy",
+                                            TouchBindings.META_GUIDE_FIND_ENERGY,
+                                            bindingType = "action",
+                                        ),
+                                    ),
+                                centerBinding = TouchBindings.META_GUIDE_FIND_ENERGY,
+                            ),
+                        ),
+                )
+            var currentCoverage = ControllerTouchCoverage()
+            onMain {
+                val view =
+                    TouchOverlayView(context).apply {
+                        gameVariant = game
+                        inputMixer =
+                            InputMixer(
+                                { binding, pressed -> edges.add(binding to pressed) },
+                                { axis, value, _ -> axes[axis] = value },
+                            )
+                        axisCallback = { axis, value -> inputMixer?.setAxis(axis, "touch", value) }
+                        metaActionCallback = { binding, pressed -> meta.add(binding to pressed) }
+                        controllerBoundActionBindingsProvider = { currentCoverage.actions }
+                        workingControllerInUseProvider = { currentCoverage.connected }
+                        setLayout(saved)
+                        isActive = true
+                        measure(
+                            View.MeasureSpec.makeMeasureSpec(1000, View.MeasureSpec.EXACTLY),
+                            View.MeasureSpec.makeMeasureSpec(600, View.MeasureSpec.EXACTLY),
+                        )
+                        layout(0, 0, 1000, 600)
+                    }
+
+                fun connect(coverage: ControllerTouchCoverage) {
+                    currentCoverage = coverage
+                    view.setLayout(controllerFilteredTouchLayout(saved, coverage, game), preserveMenus = true)
+                    render(view)
+                }
+                render(view)
+                touch(view, MotionEvent.ACTION_DOWN, 750f, 300f)
+                check(edges.last() == (TouchBindings.BTN_FIRE_PRIMARY to 1))
+                connect(covered)
+                check(edges.last() == (TouchBindings.BTN_FIRE_PRIMARY to 0)) { "Connect left touch fire held" }
+                touch(view, MotionEvent.ACTION_UP, 750f, 300f)
+                val count = edges.size
+                tap(view, RectF(745f, 295f, 755f, 305f))
+                check(edges.size == count) { "Hidden button captured touch" }
+                connect(ControllerTouchCoverage())
+                touch(view, MotionEvent.ACTION_DOWN, 220f, 300f)
+                check(axes.values.any { it != 0f }) { "Restored stick did not respond" }
+                connect(covered)
+                check(axes.values.all { it == 0f }) { "Connect left touch axis held" }
+                touch(view, MotionEvent.ACTION_UP, 220f, 300f)
+                view.setLayout(saved.copy(buttons = saved.buttons.map { it.copy(toggle = true) }))
+                tap(view, RectF(745f, 295f, 755f, 305f))
+                check(edges.last() == (TouchBindings.BTN_FIRE_PRIMARY to 1))
+                connect(covered)
+                check(edges.last() == (TouchBindings.BTN_FIRE_PRIMARY to 0)) { "Hidden toggle remained latched" }
+                view.setLayout(
+                    saved.copy(
+                        sticks =
+                            saved.sticks.map {
+                                it.copy(
+                                    doubleTapBinding = TouchBindings.BTN_FIRE_PRIMARY,
+                                    doubleTapMode = DoubleTapMode.LATCH_SINGLE,
+                                )
+                            },
+                    ),
+                )
+                repeat(2) { tap(view, RectF(195f, 295f, 205f, 305f)) }
+                check(edges.last() == (TouchBindings.BTN_FIRE_PRIMARY to 1))
+                connect(covered)
+                check(edges.last() == (TouchBindings.BTN_FIRE_PRIMARY to 0)) { "Hidden double-tap remained latched" }
+                if (game == "d2") {
+                    touch(view, MotionEvent.ACTION_DOWN, 450f, 150f)
+                    val radial = (field(view, "radialStates") as List<*>).single()!!
+                    val open = radial.javaClass.getDeclaredField("isOpen").apply { isAccessible = true }
+                    check(open.getBoolean(radial)) { "Guide menu did not open by touch" }
+                    connect(ControllerTouchCoverage())
+                    check((field(view, "radialStates") as List<*>).single() === radial && open.getBoolean(radial)) {
+                        "Disconnect closed Guide menu"
+                    }
+                    touch(view, MotionEvent.ACTION_MOVE, 450f, 150f)
+                    touch(view, MotionEvent.ACTION_UP, 450f, 150f)
+                    check(
+                        meta.any { it == (TouchBindings.META_GUIDE_FIND_ENERGY to true) },
+                    ) { "Guide action did not fire" }
+                }
+                connect(covered)
+                view.cycleControllerMenu()
+                check(view.isControllerMenuOpen())
+                connect(ControllerTouchCoverage())
+                check(view.isControllerMenuOpen()) { "Disconnect closed More menu" }
+                key(view, KeyEvent.KEYCODE_BUTTON_B)
+                tap(view, RectF(745f, 295f, 755f, 305f))
+                check(
+                    edges.takeLast(2) ==
+                        listOf(TouchBindings.BTN_FIRE_PRIMARY to 1, TouchBindings.BTN_FIRE_PRIMARY to 0),
+                )
+                view.isActive = false
+            }
+        }
     }
 }

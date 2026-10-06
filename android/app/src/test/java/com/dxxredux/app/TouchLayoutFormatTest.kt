@@ -5,6 +5,12 @@ import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class TouchLayoutFormatTest {
+    @Test
+    fun controllerVisibilitySettingRoundTripsInLayoutsAndSlots() {
+        assertRoundTrips(TouchLayout(hideControllerBoundControls = true))
+        assertRoundTrips(TouchLayout(hideControllerBoundControls = false))
+    }
+
     private fun assertRoundTrips(layout: TouchLayout) {
         assertEquals(CURRENT_TOUCH_LAYOUT_VERSION, layout.version)
         assertEquals(layout, TouchLayout.fromJson(layout.toJson()))

@@ -36,15 +36,8 @@ class ControllerMenuTouchOverlayDefaultTest {
     }
 
     @Test
-    fun touchOverlayPreferenceDefaultsOnForTouchlessDevices() {
-        assertTrue(defaultTouchOverlayEnabled(hasTouchscreen = false, hasController = true))
-        assertTrue(defaultTouchOverlayEnabled(hasTouchscreen = false, hasController = false))
-    }
-
-    @Test
-    fun touchOverlayPreferenceKeepsPhoneControllerDefaultOff() {
-        assertFalse(defaultTouchOverlayEnabled(hasTouchscreen = true, hasController = true))
-        assertTrue(defaultTouchOverlayEnabled(hasTouchscreen = true, hasController = false))
+    fun touchOverlayPreferenceDefaultsOnRegardlessOfControllerOrTouchscreen() {
+        assertTrue(DEFAULT_TOUCH_OVERLAY_ENABLED)
     }
 
     @Test

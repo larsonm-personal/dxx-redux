@@ -78,10 +78,7 @@ internal fun shouldShowTouchOverlay(
     return gameplayOverlay || automap || gamePaused
 }
 
-internal fun defaultTouchOverlayEnabled(
-    hasTouchscreen: Boolean,
-    hasController: Boolean,
-): Boolean = !hasTouchscreen || !hasController
+internal const val DEFAULT_TOUCH_OVERLAY_ENABLED = true
 
 internal fun settingsTrayVisibleForOverlay(
     adminTrayOpen: Boolean,
@@ -411,6 +408,8 @@ class MainActivity :
                             mapOf(
                                 "music_open" to (musicPanel != null),
                                 "video_open" to (videoInfoOverlay?.visibility == View.VISIBLE),
+                                "controller_connected" to controllerCoverage.connected,
+                                "controller_covered_actions" to org.json.JSONArray(controllerCoverage.actions.sorted()),
                             )
                     for (name in expected.keys()) {
                         check(actual[name]?.toString() == expected.get(name).toString()) {
@@ -924,6 +923,30 @@ class MainActivity :
     private var buttonMetaBindings = mapOf<Int, Int>()
 
     private var controllerBoundActions = emptySet<Int>()
+    private var controllerBindings = emptyMap<String, String>()
+    private var controllerInverts = emptySet<String>()
+    private var controllerCoverage = ControllerTouchCoverage()
+    private val controllerDeviceListener =
+        object : android.hardware.input.InputManager.InputDeviceListener {
+            override fun onInputDeviceAdded(deviceId: Int) = refreshControllerDevices()
+
+            override fun onInputDeviceChanged(deviceId: Int) = refreshControllerDevices()
+
+            override fun onInputDeviceRemoved(deviceId: Int) = refreshControllerDevices()
+        }
+
+    private fun refreshControllerDevices() {
+        if (!::touchOverlay.isInitialized || !::inputMixer.isInitialized) return
+        controllerKeys.releaseAll()
+        controllerAxisMetaKeys.releaseAll()
+        controllerMenuAxes.reset { key, pressed -> dispatchDpad(key, if (pressed) 0 else 1) }
+        controllerMenuAxesActive = false
+        hatXState = 0
+        hatYState = 0
+        rawAxisValues.fill(0f)
+        inputMixer.clearSources("ctrl")
+        updateTouchOverlayLayout()
+    }
 
     // D-pad meta-action bindings: DPAD keycode â†’ meta action ID
     private var dpadMetaBindings = mapOf<Int, Int>()
@@ -1247,7 +1270,9 @@ class MainActivity :
         activeTouchLayout = TouchLayoutRepository.load(this)
         gyroRuntimeState = gyroRuntimeStateFromConfig(activeTouchLayout.gyro)
         touchOverlay.setLayout(activeTouchLayout)
-        touchOverlay.remainingActionsLayoutProvider = { activeTouchLayout }
+        touchOverlay.remainingActionsLayoutProvider = {
+            if (overlayEnabled) touchOverlay.getLayout() else activeTouchLayout
+        }
 
         // Input mixer: combines button/axis inputs from touch, controller, gyro
         inputMixer =
@@ -1281,7 +1306,7 @@ class MainActivity :
             com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value.gameLaunchInfo != null
         }
         touchOverlay.controllerBoundActionBindingsProvider = { controllerBoundActions }
-        touchOverlay.workingControllerInUseProvider = { hasWorkingControllerDevice() }
+        touchOverlay.workingControllerInUseProvider = { controllerCoverage.connected }
         touchOverlay.gamepadOnlyMode = gamepadOnlyMode
         touchOverlay.isEscortOwnerProvider = {
             try {
@@ -2415,6 +2440,9 @@ class MainActivity :
     }
 
     override fun onPause() {
+        getSystemService(
+            android.hardware.input.InputManager::class.java,
+        ).unregisterInputDeviceListener(controllerDeviceListener)
         // Retain this across rollback acknowledgement until resume or Activity replacement
         graphicsTrialInterrupted = graphicsTrialInterrupted || hasPendingGraphicsConfirmation()
         graphicsConfirmationOverlay?.cancelForLifecycle()
@@ -2472,6 +2500,8 @@ class MainActivity :
 
     override fun onResume() {
         super.onResume()
+        getSystemService(android.hardware.input.InputManager::class.java)
+            .registerInputDeviceListener(controllerDeviceListener, overlayPoller)
         graphicsTrialInterrupted = false
         nativeGraphicsSafetyUiState(true, false)
         qrActivityResumed = true
@@ -2501,14 +2531,18 @@ class MainActivity :
                 null
             }
         loadMetaBindings()
-        // Default to enabled when touch controls are needed or when the no-touch menu layout is active.
-        val hasController = hasWorkingControllerDevice()
+        val reloadedLayout = TouchLayoutRepository.load(this)
+        if (reloadedLayout != activeTouchLayout) {
+            activeTouchLayout = reloadedLayout
+            gyroRuntimeState = gyroRuntimeStateFromConfig(activeTouchLayout.gyro)
+            applyGyroConfig(activeTouchLayout.gyro)
+        }
         overlayEnabled =
             prefs.getBoolean(
                 "touch_overlay_enabled",
-                defaultTouchOverlayEnabled(hasTouchscreen = !gamepadOnlyMode, hasController = hasController),
+                DEFAULT_TOUCH_OVERLAY_ENABLED,
             )
-        updateTouchOverlayLayout(hasController)
+        refreshControllerDevices()
         syncDebugLogPrefs()
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
@@ -3635,6 +3669,8 @@ class MainActivity :
         controllerAxisMetaKeys.releaseAll()
         buttonMetaBindings = emptyMap()
         controllerBoundActions = emptySet()
+        controllerBindings = emptyMap()
+        controllerInverts = emptySet()
         dpadMetaBindings = emptyMap()
         halfAxisCombiners = emptyList()
         controllerAxisResponses = defaultControllerAxisResponses()
@@ -3642,14 +3678,20 @@ class MainActivity :
         mixerButtonMap = emptyMap()
 
         val file = File(filesDir, "controller_config.json")
-        if (!file.exists()) return
+        if (!file.exists()) {
+            if (::touchOverlay.isInitialized) updateTouchOverlayLayout()
+            return
+        }
         try {
             val json = JSONObject(file.readText())
             val bindings = mutableMapOf<String, String>()
             if (json.has("bindings")) {
                 val bindingsObj = json.getJSONObject("bindings")
                 for (key in bindingsObj.keys()) bindings[key] = bindingsObj.getString(key)
-                controllerBoundActions = controllerConfigBoundActionBindings(bindings)
+                controllerBindings = bindings.toMap()
+            }
+            json.optJSONArray("inverts")?.let { array ->
+                controllerInverts = (0 until array.length()).map { array.getString(it) }.toSet()
             }
             controllerAxisResponses = defaultControllerAxisResponses(bindings)
             json.optJSONObject("axis_responses")?.let { responsesObj ->
@@ -3710,6 +3752,7 @@ class MainActivity :
         } catch (e: Exception) {
             Log.w("MainActivity", "Failed to load meta bindings", e)
         }
+        if (::touchOverlay.isInitialized) updateTouchOverlayLayout()
     }
 
     private fun ensureGyroManager(): GyroInputManager {
@@ -3750,14 +3793,30 @@ class MainActivity :
         applyGyroConfig(activeTouchLayout.gyro)
     }
 
-    private fun updateTouchOverlayLayout(hasController: Boolean = hasWorkingControllerDevice()) {
+    private fun updateTouchOverlayLayout() {
+        controllerCoverage =
+            controllerTouchCoverage(
+                controllerBindings,
+                controllerInverts,
+                controllerInputAvailability(connectedControllerDevices()),
+                gameVariantId,
+            )
+        controllerBoundActions = controllerCoverage.actions
         touchOverlay.touchControlsEnabled = overlayEnabled
         val effectiveLayout =
-            effectiveTouchOverlayLayout(activeTouchLayout, controllerMenuTouchLayout, overlayEnabled, hasController)
+            effectiveTouchOverlayLayout(
+                activeTouchLayout,
+                controllerMenuTouchLayout,
+                overlayEnabled,
+                controllerCoverage.connected,
+                controllerCoverage,
+                gameVariantId,
+            )
         if (touchOverlay.getLayout() != effectiveLayout) {
-            touchOverlay.setLayout(effectiveLayout)
+            touchOverlay.setLayout(effectiveLayout, preserveMenus = true)
             touchOverlay.updateGyroState(gyroRuntimeState.configured, gyroRuntimeState.activeInGame)
         }
+        touchOverlay.invalidate()
     }
 
     private fun dispatchMetaAction(
@@ -3802,14 +3861,7 @@ class MainActivity :
     }
 
     /** Map d-pad control ID from config to Android KeyEvent keycode. */
-    private fun dpadControlToKeyCode(controlId: String): Int =
-        when (controlId) {
-            "DUp" -> KeyEvent.KEYCODE_DPAD_UP
-            "DDown" -> KeyEvent.KEYCODE_DPAD_DOWN
-            "DLeft" -> KeyEvent.KEYCODE_DPAD_LEFT
-            "DRight" -> KeyEvent.KEYCODE_DPAD_RIGHT
-            else -> -1
-        }
+    private fun dpadControlToKeyCode(controlId: String): Int = CONTROLLER_KEY_CODES[controlId] ?: -1
 
     private fun dispatchDpad(
         keyCode: Int,
@@ -3909,44 +3961,22 @@ class MainActivity :
 
     /** Map d-pad keycode to virtual joystick button index (22-25). */
     private fun dpadKeyCodeToJoyButton(keyCode: Int): Int =
-        when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_UP -> DPAD_JOY_BUTTON_BASE
-            KeyEvent.KEYCODE_DPAD_DOWN -> DPAD_JOY_BUTTON_BASE + 1
-            KeyEvent.KEYCODE_DPAD_LEFT -> DPAD_JOY_BUTTON_BASE + 2
-            KeyEvent.KEYCODE_DPAD_RIGHT -> DPAD_JOY_BUTTON_BASE + 3
-            else -> -1
-        }
+        CONTROLLER_KEY_CODES.entries
+            .firstOrNull { it.value == keyCode }
+            ?.key
+            ?.let { DPAD_CONTROLS[it] } ?: -1
 
-    /** Map Android gamepad KEYCODE_BUTTON_* to virtual joystick button index (0-9). */
+    /** Map Android gamepad keys using the same inputs as capability detection */
     private fun gamepadButtonIndex(keyCode: Int): Int =
-        when (keyCode) {
-            KeyEvent.KEYCODE_BUTTON_A -> 0
-            KeyEvent.KEYCODE_BUTTON_B -> 1
-            KeyEvent.KEYCODE_BUTTON_X -> 2
-            KeyEvent.KEYCODE_BUTTON_Y -> 3
-            KeyEvent.KEYCODE_BUTTON_L1 -> 4
-            KeyEvent.KEYCODE_BUTTON_R1 -> 5
-            KeyEvent.KEYCODE_BUTTON_SELECT -> 6
-            KeyEvent.KEYCODE_BUTTON_START -> 7
-            KeyEvent.KEYCODE_BUTTON_THUMBL -> 8
-            KeyEvent.KEYCODE_BUTTON_THUMBR -> 9
-            KeyEvent.KEYCODE_BUTTON_L2 -> BUTTON_CONTROLS.getValue("L2")
-            KeyEvent.KEYCODE_BUTTON_R2 -> BUTTON_CONTROLS.getValue("R2")
-            else -> -1
-        }
+        CONTROLLER_KEY_CODES.entries
+            .firstOrNull { it.value == keyCode }
+            ?.key
+            ?.let { BUTTON_CONTROLS[it] } ?: -1
 
     private fun isControllerSource(source: Int): Boolean =
         source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
             source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK ||
             source and InputDevice.SOURCE_DPAD == InputDevice.SOURCE_DPAD
-
-    private fun hasWorkingControllerDevice(): Boolean =
-        InputDevice.getDeviceIds().any { id ->
-            val device = InputDevice.getDevice(id) ?: return@any false
-            val source = device.sources
-            source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
-                source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
-        }
 
     private fun isImeReroutedEvent(): Boolean = imeNavigationDispatchDepth > 0
 
