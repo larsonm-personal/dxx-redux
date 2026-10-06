@@ -28,6 +28,7 @@ class MusicControlPanel(
     context: Context,
     private val onDismiss: () -> Unit,
     private val onStateChanged: () -> Unit,
+    private val onVolumeChange: (Int) -> Int = { (context as? MainActivity)?.nativeSetMusicVolume(it) ?: -1 },
 ) : View(context) {
     data class TrackEntry(
         val index: Int,
@@ -58,6 +59,7 @@ class MusicControlPanel(
     private val sourceOptionRects = mutableListOf<RectF>()
     private var volumeLaneRect = RectF()
     private var volumeRect = RectF()
+    private val volumeTrackRect = RectF()
     private var trackListRect = RectF()
     private val trackRects = mutableListOf<RectF>()
     private var rowHeight = 0f
@@ -237,6 +239,12 @@ class MusicControlPanel(
             volumeLaneRect.top + headerHeight * 0.28f,
             volumeLaneRect.right - volumeLaneRect.width() * 0.22f,
             volumeLaneRect.bottom - rowHeight * 0.35f,
+        )
+        volumeTrackRect.set(
+            volumeRect.centerX() - 5f,
+            volumeRect.top + 8f,
+            volumeRect.centerX() + 5f,
+            volumeRect.bottom - 8f,
         )
         trackListRect.set(
             panelRect.left + pad,
@@ -426,13 +434,7 @@ class MusicControlPanel(
             smallTextPaint,
         )
         canvas.drawRoundRect(volumeRect, 5f, 5f, volumeOutlinePaint)
-        val track =
-            RectF(
-                volumeRect.centerX() - 5f,
-                volumeRect.top + 8f,
-                volumeRect.centerX() + 5f,
-                volumeRect.bottom - 8f,
-            )
+        val track = volumeTrackRect
         canvas.drawRoundRect(track, 5f, 5f, cellPaint)
         val fraction = state.volume / 8f
         val thumbY = track.bottom - track.height() * fraction
@@ -807,11 +809,23 @@ class MusicControlPanel(
     }
 
     private fun setVolume(volume: Int) {
-        afterNativeChange((activity?.nativeSetMusicVolume(volume.coerceIn(0, 8)) ?: -1) >= 0)
+        val clamped = volume.coerceIn(0, 8)
+        if (clamped == state.volume) return
+        val result = onVolumeChange(clamped)
+        DebugLog.log(
+            DebugLogCategory.GAME,
+            "[music-panel] volume old=${state.volume} requested=$clamped queued=$result",
+        )
+        if (result < 0) return
+        // Native commands apply asynchronously; the thumb must follow the finger immediately
+        state = state.copy(volume = clamped)
+        invalidate()
+        onStateChanged()
     }
 
     private fun setVolumeFromTouch(py: Float) {
-        val fraction = ((volumeRect.bottom - py) / volumeRect.height()).coerceIn(0f, 1f)
+        if (volumeTrackRect.height() <= 0f) return
+        val fraction = ((volumeTrackRect.bottom - py) / volumeTrackRect.height()).coerceIn(0f, 1f)
         setVolume((fraction * 8f).roundToInt())
     }
 

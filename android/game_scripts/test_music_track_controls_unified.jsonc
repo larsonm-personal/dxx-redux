@@ -116,6 +116,9 @@
         },
         "post_delay_ms": 500,
     },
+    { "action": "setup_command", "command": "music_renderer_select", "args": { "renderer": "sf2" } },
+    { "action": "setup_command", "command": "music_soundfont_select" },
+    { "action": "setup_command", "command": "music_eq_select", "args": { "preset": "measured-sc55-balanced" } },
     { "action": "enter_game", "game": "${GAME}" },
 
     { "action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000 },
@@ -143,8 +146,11 @@
             "music.track": "5",
             "music.total": { "gte": 2 },
             "music.tracks[0].index": "5",
+            "audio.tsf_equalizer": 2,
         },
     },
+    { "action": "assert", "when": "d1", "expect": { "audio.tsf_source_gain_db": "0.0" } },
+    { "action": "assert", "when": "d2", "expect": { "audio.tsf_source_gain_db": "0.0" } },
 
     { "action": "music_control", "operation": "next" },
     { "action": "wait_ms", "ms": 250 },

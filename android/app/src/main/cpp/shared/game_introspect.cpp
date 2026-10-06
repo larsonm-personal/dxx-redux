@@ -279,6 +279,7 @@ int tsf_music_get_eq(void);
 int tsf_music_get_rb_fill(void);
 int tsf_music_get_rb_capacity(void);
 float tsf_music_get_gain_db(void);
+float tsf_music_get_source_gain_db(void);
 void tsf_music_set_gain_db(float db);
 void tsf_music_set_max_voices(int n);
 int androidaud_get_play_count(void);
@@ -2486,6 +2487,7 @@ extern "C" char *game_introspect_get_state(void)
 			{ "tsf_max_voices", tsf_music_get_max_voices() },
 			{ "tsf_equalizer", tsf_music_get_eq() },
 			{ "tsf_gain_db", tsf_music_get_gain_db() },
+			{ "tsf_source_gain_db", tsf_music_get_source_gain_db() },
 			{ "osl_play_count", androidaud_get_play_count() },
 			{ "osl_enqueue_fail", androidaud_get_enqueue_fail() },
 			{ "osl_freq", androidaud_get_audio_freq() },

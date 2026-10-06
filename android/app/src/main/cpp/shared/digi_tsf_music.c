@@ -48,6 +48,10 @@
 #include "tml.h"
 
 #include "args.h"
+#include "music_playback_levels.h"
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+#include "mission.h"
+#endif
 #include "hmp.h"
 #include "hmp_android_shared.h"
 #include "midi_seek_timeline.h"
@@ -104,11 +108,13 @@ static int g_pcm_rate;     /* source sample rate (e.g. 44100)     */
 /* ── Configurable gain (dB) ──────────────────────────────────────────────── */
 #ifdef ANDROID
 /* Raise in-game MIDI by 3 dB on the shared 0..8 music slider */
-static float g_gain_db = -7.0f;
+static float g_gain_db = MUSIC_GAMEPLAY_GAIN_DB;
 #else
 static float g_gain_db = -10.0f;
 #endif
 static int g_max_voices = 128; /* voice limit (runtime-tunable) */
+/* Set on the game thread with the render worker stopped, before starting a song */
+static float g_source_gain_db;
 
 #ifdef ANDROID
 static int tsf_atomic_load_int(const int *value)
@@ -180,6 +186,11 @@ extern int g_music_equalizer;
 
 /* ── Soundfont loading ───────────────────────────────────────────────── */
 
+static float tsf_output_gain_db(void)
+{
+	return tsf_atomic_load_float(&g_gain_db) + tsf_atomic_load_float(&g_source_gain_db);
+}
+
 static int tsf_music_load_soundfont(void)
 {
 	if (g_tsf) return 1; /* already loaded */
@@ -221,12 +232,12 @@ static int tsf_music_load_soundfont(void)
 
 	/* Configure output: stereo interleaved, match SDL mixer rate */
 	music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-	                       tsf_atomic_load_float(&g_gain_db));
+	                       tsf_output_gain_db());
 	music_synth_set_max_voices(g_tsf, tsf_atomic_load_int(&g_max_voices));
 
 	TSFMUSIC_LOG("TSF configured: rate=%d, max_voices=%d, gain=%.1fdB",
 	             g_output_rate, tsf_atomic_load_int(&g_max_voices),
-	             tsf_atomic_load_float(&g_gain_db));
+	             tsf_output_gain_db());
 
 	return 1;
 }
@@ -399,12 +410,12 @@ static int render_frames(short *out, int frames)
 			g_playback_msec = 0.0;
 			music_synth_reset(g_tsf);
 			music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-			                       tsf_atomic_load_float(&g_gain_db));
+			                       tsf_output_gain_db());
 		} else {
 			tsf_atomic_store_int(&g_source_finished, 1);
 			music_synth_reset(g_tsf);
 			music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-			                       tsf_atomic_load_float(&g_gain_db));
+			                       tsf_output_gain_db());
 		}
 	}
 
@@ -511,7 +522,7 @@ static void tsf_apply_tuning_command(const struct tsf_tuning_command *command,
 			tsf_atomic_store_float(&g_gain_db, command->value.real_value);
 			if (mutate_synth && g_tsf)
 				music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-				                       command->value.real_value);
+				                       tsf_output_gain_db());
 			tsf_reset_render_diagnostics();
 			break;
 		case TSF_TUNING_VOICES:
@@ -612,7 +623,7 @@ static int render_thread_func(void *data)
 
 	if (g_tsf) {
 		music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-		                       tsf_atomic_load_float(&g_gain_db));
+		                       tsf_output_gain_db());
 		music_synth_set_max_voices(g_tsf, tsf_atomic_load_int(&g_max_voices));
 	}
 
@@ -1133,10 +1144,21 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	crash_breadcrumb_v("tsf_music parsed cur=%p first=%u", (void *) g_midi,
 	                   g_midi ? g_midi->time : 0u);
 
+	/* Calibrate the measured D2 bundled profile without changing D1 or FM peaks */
+	tsf_atomic_store_float(&g_source_gain_db, 0.0f);
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+	if ((!Current_mission || !EMULATING_D1) && music_synth_get_eq(g_tsf) == 2)
+		tsf_atomic_store_float(&g_source_gain_db, MUSIC_D2_SF2_BOOST_DB);
+#endif
+#ifdef ANDROID
+	debug_log(DLOG_GAME, "Music playback calibration: source_boost=%.1fdB output_gain=%.1fdB",
+	          tsf_atomic_load_float(&g_source_gain_db), tsf_output_gain_db());
+#endif
+
 	/* Reset synth state for new song */
 	music_synth_reset(g_tsf);
 	music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-	                       tsf_atomic_load_float(&g_gain_db));
+	                       tsf_output_gain_db());
 	if (g_is_hmp) {
 		tml_message *repeat_event = NULL;
 		music_synth_hmp_begin(g_tsf, &g_hmp_saved_state);
@@ -1209,6 +1231,7 @@ void mix_free_music(void)
 	tsf_atomic_store_int(&g_source_finished, 0);
 
 	/* Clean up PCM state */
+	tsf_atomic_store_float(&g_source_gain_db, 0.0f);
 	if (g_pcm_buf) {
 		free(g_pcm_buf);
 		g_pcm_buf = NULL;
@@ -1241,7 +1264,7 @@ void mix_free_music(void)
 	if (g_tsf) {
 		music_synth_reset(g_tsf);
 		music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
-		                       tsf_atomic_load_float(&g_gain_db));
+		                       tsf_output_gain_db());
 	}
 }
 
@@ -1384,6 +1407,10 @@ int tsf_music_get_rb_capacity(void)
 float tsf_music_get_gain_db(void)
 {
 	return tsf_atomic_load_float(&g_gain_db);
+}
+float tsf_music_get_source_gain_db(void)
+{
+	return tsf_atomic_load_float(&g_source_gain_db);
 }
 void tsf_music_set_gain_db(float db)
 {

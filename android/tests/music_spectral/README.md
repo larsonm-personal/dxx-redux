@@ -120,3 +120,41 @@ python android/tests/music_realtime/probe.py --adb C:/local/android-sdk/platform
 Native `music_synth_tests` checks the EQ against independently computed responses,
 exact Flat PCM, stereo isolation, reset, sample-rate and chunk-size behavior. The
 corpus validator checks Flat parity with pre-EQ D1/D2 renders and corrected peaks
+
+## MIDI / CD playback loudness
+
+`compare_music_loudness.py` uses the same Python environment and production host
+renderer. It measures seven D2 MIDI selections (title, briefing, credits and
+game01-game04), four D1 controls, and all eight audio tracks on Definitive
+Collection Europe Disc 2. The default window is the first 120 seconds, or the
+whole CD track if shorter. It honors the CUE's INDEX 01 pregap offsets
+
+```powershell
+# Rebuild test_music_synth using the CMake command above first
+temp/music-spectral-venv/Scripts/python.exe android/tests/compare_music_loudness.py --uncalibrated --output temp/music-loudness/before
+temp/music-spectral-venv/Scripts/python.exe android/tests/compare_music_loudness.py --baseline temp/music-loudness/before/report.json --output temp/music-loudness/after
+```
+
+Open `temp/music-loudness/after/report.html` for the table and before/after audio.
+JSON includes source hashes, settings, LUFS, RMS, true peaks and PCM boundary
+sample counts. Listening clips retain playback levels; they are not normalized.
+CD reference decoding uses FFmpeg resampling, while the game uses linear
+resampling. This is a source-level comparison, not a speaker recording or an
+assertion that MIDI and CD contain identical arrangements. Per-song differences
+remain even when the overall median matches
+
+Calibration lives in `shared/music_playback_levels.h`: MIDI receives no boost;
+CD playback and CD previews get -14 dB. All MIDI gameplay and preview profiles
+retain their existing synth gains. Removing the earlier +2 dB D2 adjustment
+adds headroom while lowering CD by the same amount preserves the measured match.
+The Android effects default is 2/8 (-12 dB); saved volume choices take precedence
+
+The same header collects the gameplay synth gain, D2 profile adjustment, CD
+attenuation, effects default, and separate launcher preview gains/multipliers.
+Each setting documents its units and purpose. The comparison reads its default
+`--gain-db` from that header and checks the renderer's compiled calibration
+
+The comparison fails on MIDI clipping or, with a baseline, a median D2/CD gap
+that does not improve or remains at least 1 dB. The existing registered
+`test_music_track_controls_unified.jsonc` also verifies the actual D1/D2 engine
+calibration through introspection

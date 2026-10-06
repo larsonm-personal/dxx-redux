@@ -15,6 +15,7 @@
 #include "hog_midi_catalog.h"
 #include "midi_seek_timeline.h"
 #include "music_decode_limits.h"
+#include "music_playback_levels.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,8 +78,8 @@ static double s_hmp_end_ms;
 static struct hmp_tsf_state s_hmp_saved_state;
 static struct hmp_tsf_state s_hmp_initial_state;
 static int s_output_rate = 48000;
-static float s_volume = 0.7f;
-static float s_gain_db = -10.0f;
+static float s_volume = MUSIC_MIDI_PREVIEW_VOLUME_SCALE;
+static float s_gain_db = MUSIC_MIDI_PREVIEW_GAIN_DB;
 static int s_max_voices = 128;
 static pthread_mutex_t s_control_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t s_playback_mutex = PTHREAD_MUTEX_INITIALIZER;

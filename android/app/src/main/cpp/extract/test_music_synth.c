@@ -3,6 +3,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include "music_synth_hmp.h"
+#include "music_playback_levels.h"
 #include "hmp.h"
 #include "hmp_android_shared.h"
 #include "hog_midi_catalog.h"
@@ -262,10 +263,13 @@ static int render_comparison(int argc, char **argv)
 	music_synth_reset(s);
 	struct hmp_tsf_state initial = { 0 };
 	music_synth_hmp_begin(s, &initial);
-	music_synth_set_output(s, TSF_STEREO_INTERLEAVED, 48000, -10);
+	/* Optional final gain models the Android gameplay level as well as previews */
+	const float gain_db = argc == 10 ? (float) atof(argv[9]) : -10.0f;
+	CHECK(gain_db >= -60 && gain_db <= 20);
+	music_synth_set_output(s, TSF_STEREO_INTERLEAVED, 48000, gain_db);
 	music_synth_set_max_voices(s, 128);
 	if (!strcmp(argv[1], "--render-eq")) {
-		CHECK(argc == 9);
+		CHECK(argc == 9 || argc == 10);
 		music_synth_set_eq(s, atoi(argv[8]));
 	}
 	int seconds = argc >= 8 ? atoi(argv[7]) : 20;
@@ -300,6 +304,10 @@ static int render_comparison(int argc, char **argv)
 	CHECK(!fclose(file));
 	printf("selected=%s actual=%s song=%s pcm_fnv=%016llx\n", argv[6], music_synth_is_fm(s) ? "ymfm" : "sf2", argv[4], checksum(pcm, frames * 2));
 	printf("equalizer=%d\n", music_synth_get_eq(s));
+	printf("gain_db=%.2f\n", gain_db);
+	printf("gameplay_gain_db=%.2f\n", (double) MUSIC_GAMEPLAY_GAIN_DB);
+	printf("cd_volume_scale=%.10g\n", (double) MUSIC_CD_VOLUME_SCALE);
+	printf("d2_sf2_boost_db=%.2f\n", (double) MUSIC_D2_SF2_BOOST_DB);
 	free(pcm);
 	tml_free(messages);
 	free(midi);
@@ -310,7 +318,8 @@ static int render_comparison(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	if (argc >= 7 && argc <= 9 && (!strcmp(argv[1], "--render") || !strcmp(argv[1], "--render-repeat") || !strcmp(argv[1], "--render-eq"))) return render_comparison(argc, argv);
+	if ((argc >= 7 && argc <= 9 && (!strcmp(argv[1], "--render") || !strcmp(argv[1], "--render-repeat") || !strcmp(argv[1], "--render-eq"))) ||
+	    (argc == 10 && !strcmp(argv[1], "--render-eq"))) return render_comparison(argc, argv);
 	CHECK(argc == 2 || argc == 5 || (argc == 6 && !strcmp(argv[5], "--expect-sf2")));
 	test_music_fluid_interpolation(argv[1]);
 	music_synth *s = music_synth_load(NULL, argv[1], 1);

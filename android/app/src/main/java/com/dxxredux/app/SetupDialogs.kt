@@ -393,13 +393,24 @@ internal fun GogImportDialog(
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var includeAudio by remember { mutableStateOf(true) }
     var storageFailureMessage by remember { mutableStateOf<String?>(null) }
+    val importFocus = remember { FocusRequester() }
     val extractFocus = remember { FocusRequester() }
     val doneFocus = remember { FocusRequester() }
+    val inputModeManager = LocalInputModeManager.current
 
     LaunchedEffect(fileList, processing, extractedCount) {
-        when {
-            extractedCount > 0 -> doneFocus.requestFocus()
-            fileList != null && fileList!!.isNotEmpty() && !processing -> extractFocus.requestFocus()
+        if (!processing) {
+            val nextFocus =
+                when {
+                    extractedCount > 0 -> doneFocus
+                    !fileList.isNullOrEmpty() -> importFocus
+                    else -> null
+                }
+            if (nextFocus != null) {
+                inputModeManager.requestInputMode(InputMode.Keyboard)
+                withFrameNanos { }
+                nextFocus.requestFocus()
+            }
         }
     }
 
@@ -513,6 +524,256 @@ internal fun GogImportDialog(
         }
     }
 
+    fun extractInstaller(includeAudio: Boolean) {
+        if (processing) return
+        processing = true
+        scope.launch {
+            try {
+                val totalNeeded =
+                    fileList!!.sumOf { f ->
+                        if (!includeAudio && GogImportBridge.isAudioFile(f.name)) 0L else f.size
+                    }
+                try {
+                    ImportStorageGuard.requireFreeSpace(setDir, totalNeeded, "extract $installerName")
+                } catch (e: InsufficientStorageException) {
+                    storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                    status = "Not enough free space"
+                    return@launch
+                }
+                status = "Extracting game files\u2026"
+                progressFile = ""
+                progressPct = 0f
+                val filesBefore =
+                    withContext(Dispatchers.IO) {
+                        setDir.list()?.toSet() ?: emptySet()
+                    }
+                withContext(Dispatchers.IO) {
+                    val stagingDir =
+                        File(
+                            setDir.parentFile ?: filesDir,
+                            ".gog-import-${System.nanoTime()}",
+                        )
+                    val sourceKind = if (tempPath != null) "staged" else "fd"
+                    val analyzedAudioEntries =
+                        fileList!!
+                            .asSequence()
+                            .filter { GogImportBridge.isAudioFile(it.name) }
+                            .toList()
+                    val analyzedAudioNames = analyzedAudioEntries.map { File(it.name).name }
+                    val analyzedAudioSummary = summarizeGogAudioFiles(analyzedAudioNames)
+                    val analyzedAudioSizes = summarizeGogAudioEntrySizes(analyzedAudioEntries)
+                    val analyzedPairState = describeGogPairState(analyzedAudioNames)
+                    val freeBeforeBytes = stagingDir.usableSpace
+                    val audioOutputBuckets = mutableMapOf<String, Long>()
+                    val audioProgressStarts = mutableSetOf<String>()
+                    try {
+                        check(stagingDir.mkdirs()) {
+                            "Could not create extraction staging directory"
+                        }
+                        val progress =
+                            object : GogImportBridge.ExtractProgress {
+                                override fun onProgress(
+                                    currentFile: String,
+                                    bytesDone: Long,
+                                    bytesTotal: Long,
+                                ): Int {
+                                    val currentName = discLeafName(currentFile)
+                                    if (includeAudio && GogImportBridge.isAudioFile(currentName)) {
+                                        val outputFile = File(stagingDir, currentName)
+                                        val outputBytes =
+                                            if (outputFile.exists()) {
+                                                outputFile.length()
+                                            } else {
+                                                -1L
+                                            }
+                                        val outputBucket =
+                                            if (outputBytes >= 0L) {
+                                                outputBytes / (64L * 1024L * 1024L)
+                                            } else {
+                                                -1L
+                                            }
+                                        val previousBucket = audioOutputBuckets[currentName]
+                                        val shouldLog =
+                                            audioProgressStarts.add(currentName) ||
+                                                previousBucket == null ||
+                                                outputBucket > previousBucket
+                                        if (shouldLog) {
+                                            audioOutputBuckets[currentName] = outputBucket
+                                            LauncherDebugLog.log(
+                                                "launcher-gog-audio-progress " +
+                                                    "installer=$installerName " +
+                                                    "source=$sourceKind file=$currentName " +
+                                                    "done=$bytesDone total=$bytesTotal " +
+                                                    "exists=${outputFile.exists()} " +
+                                                    "out_bytes=$outputBytes free_bytes=${stagingDir.usableSpace}",
+                                            )
+                                        }
+                                    }
+                                    val pct =
+                                        if (bytesTotal > 0) {
+                                            bytesDone.toFloat() / bytesTotal
+                                        } else {
+                                            0f
+                                        }
+                                    mainHandler.post {
+                                        progressFile = currentFile
+                                        progressPct = pct
+                                    }
+                                    return 0
+                                }
+                            }
+                        LauncherDebugLog.log(
+                            "launcher-gog-extract-start " +
+                                "installer=$installerName source=$sourceKind " +
+                                "include_audio=$includeAudio total_entries=${fileList!!.size}",
+                        )
+                        LauncherDebugLog.log(
+                            "launcher-gog-extract-start-path " +
+                                "installer=$installerName source=$sourceKind " +
+                                "set_dir=${stagingDir.absolutePath} free_before_bytes=$freeBeforeBytes",
+                        )
+                        LauncherDebugLog.log(
+                            "launcher-gog-extract-start-audio " +
+                                "installer=$installerName source=$sourceKind " +
+                                "audio_names=$analyzedAudioSummary audio_sizes=$analyzedAudioSizes " +
+                                "audio_pair_state=$analyzedPairState",
+                        )
+                        var count =
+                            if (tempPath != null) {
+                                GogImportBridge.extractFiles(
+                                    tempPath!!,
+                                    stagingDir.absolutePath,
+                                    progress,
+                                    includeAudio = includeAudio,
+                                    expectedFiles = fileList,
+                                )
+                            } else {
+                                context.contentResolver
+                                    .openFileDescriptor(installerUri, "r")
+                                    ?.use { pfd ->
+                                        GogImportBridge.extractFilesFromFd(
+                                            pfd.fd,
+                                            stagingDir.absolutePath,
+                                            progress,
+                                            includeAudio = includeAudio,
+                                        )
+                                    } ?: -1
+                            }
+                        val requestedCount =
+                            fileList!!.count {
+                                includeAudio || !GogImportBridge.isAudioFile(it.name)
+                            }
+                        if (count != requestedCount) {
+                            LauncherDebugLog.log(
+                                "launcher-gog-extract-incomplete " +
+                                    "installer=$installerName requested=$requestedCount extracted=$count",
+                            )
+                            count = -1
+                        } else if (count > 0) {
+                            FileSetContentManager(setDir).publishDiscImport(stagingDir, installerName)
+                        }
+                        val srcManager = AudioSourceManager.forActiveSet(filesDir)
+                        val hasGog =
+                            if (includeAudio && count > 0) {
+                                registerGogAudioSource(
+                                    srcManager,
+                                    filesDir,
+                                    setDir,
+                                    context,
+                                )
+                            } else {
+                                false
+                            }
+                        if (hasGog) {
+                            enableRedbookInConfig(filesDir, context)
+                        }
+                        val filesAfter = setDir.list()?.toSet() ?: emptySet()
+                        val newFiles = (filesAfter - filesBefore).sorted()
+                        val setAudioNames =
+                            filesAfter
+                                .asSequence()
+                                .filter { GogImportBridge.isAudioFile(it) }
+                                .sortedBy { it.lowercase(Locale.US) }
+                                .toList()
+                        val newAudioNames =
+                            newFiles
+                                .asSequence()
+                                .filter { GogImportBridge.isAudioFile(it) }
+                                .toList()
+                        val missingExpectedAudio =
+                            analyzedAudioNames.filter { expected ->
+                                setAudioNames.none {
+                                    it.equals(expected, ignoreCase = true)
+                                }
+                            }
+                        val newAudioSummary = summarizeGogAudioFiles(newAudioNames)
+                        val setAudioSummary = summarizeGogAudioFiles(setAudioNames)
+                        val expectedAudioState =
+                            describeNamedFileStates(setDir, analyzedAudioNames)
+                        val setPairState = describeGogPairState(setAudioNames)
+                        val freeAfterBytes = stagingDir.usableSpace
+                        LauncherDebugLog.log(
+                            "launcher-gog-extract-result " +
+                                "installer=$installerName source=$sourceKind " +
+                                "include_audio=$includeAudio extracted=$count has_gog_pair=$hasGog " +
+                                "new_files=${newFiles.size} new_audio=$newAudioSummary",
+                        )
+                        LauncherDebugLog.log(
+                            "launcher-gog-extract-result-audio " +
+                                "installer=$installerName source=$sourceKind " +
+                                "set_audio=$setAudioSummary set_pair_state=$setPairState " +
+                                "missing_expected_audio=${summarizeGogAudioFiles(
+                                    missingExpectedAudio,
+                                )}",
+                        )
+                        LauncherDebugLog.log(
+                            "launcher-gog-extract-result-files " +
+                                "installer=$installerName source=$sourceKind " +
+                                "expected_audio_state=$expectedAudioState " +
+                                "free_after_bytes=$freeAfterBytes",
+                        )
+                        withContext(Dispatchers.Main) {
+                            extractedCount = count
+                            extractedFileNames = newFiles
+                            status =
+                                if (count > 0) {
+                                    val msg = "Extracted $count file(s)"
+                                    if (hasGog) {
+                                        "$msg. CD audio source registered and music mode set to Redbook"
+                                    } else {
+                                        msg
+                                    }
+                                } else {
+                                    "No files extracted"
+                                }
+                        }
+                    } catch (e: InsufficientStorageException) {
+                        Log.e("DXX-GogImport", "Extraction stopped for storage", e)
+                        withContext(Dispatchers.Main) {
+                            storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                            status = "Not enough free space"
+                            errorMsg = e.message
+                        }
+                    } catch (e: Exception) {
+                        Log.e("DXX-GogImport", "Extraction failed", e)
+                        LauncherDebugLog.log(
+                            "launcher-gog-extract-error installer=$installerName source=$sourceKind " +
+                                "include_audio=$includeAudio message=${e.message ?: e.javaClass.simpleName}",
+                        )
+                        withContext(Dispatchers.Main) {
+                            status = "Extract error: ${e.message}"
+                            errorMsg = e.message
+                        }
+                    } finally {
+                        stagingDir.deleteRecursively()
+                    }
+                }
+            } finally {
+                processing = false
+            }
+        }
+    }
+
     storageFailureMessage?.let { message ->
         StorageFailureDialog(message = message, onDismiss = { storageFailureMessage = null })
     }
@@ -608,6 +869,20 @@ internal fun GogImportDialog(
                     }
                 }
 
+                val hasAudio = fileList?.any { GogImportBridge.isAudioFile(it.name) } == true
+                if (!fileList.isNullOrEmpty() && !processing && extractedCount == 0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { extractInstaller(includeAudio = hasAudio) },
+                        modifier = Modifier.fillMaxWidth().focusRequester(importFocus),
+                    ) {
+                        Text(
+                            if (hasAudio) "Extract Game Files + Add Audio" else "Extract to \u201c${setDir.name}\u201d",
+                            fontSize = 13.sp,
+                        )
+                    }
+                }
+
                 // -- Fixed area: checkbox, buttons, progress --
                 fileList?.let { files ->
                     val audioFiles = files.filter { GogImportBridge.isAudioFile(it.name) }
@@ -648,260 +923,24 @@ internal fun GogImportDialog(
                 }
 
                 // Extract button with explanatory text
-                if (fileList != null && fileList!!.isNotEmpty() && !processing && extractedCount == 0) {
+                if (hasAudio && !processing && extractedCount == 0) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         "Game files will be extracted to \"${setDir.name}\"" +
-                            if (includeAudio) ". CD audio will be configured as the active music source" else "",
+                            if (includeAudio &&
+                                hasAudio
+                            ) {
+                                ". CD audio will be configured as the active music source"
+                            } else {
+                                ""
+                            },
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(
+                    TextButton(
                         onClick = {
-                            scope.launch {
-                                val totalNeeded =
-                                    fileList!!.sumOf { f ->
-                                        if (!includeAudio && GogImportBridge.isAudioFile(f.name)) 0L else f.size
-                                    }
-                                try {
-                                    ImportStorageGuard.requireFreeSpace(setDir, totalNeeded, "extract $installerName")
-                                } catch (e: InsufficientStorageException) {
-                                    storageFailureMessage = ImportStorageGuard.messageForFailure(e)
-                                    status = "Not enough free space"
-                                    return@launch
-                                }
-                                processing = true
-                                status = "Extracting game files\u2026"
-                                progressFile = ""
-                                progressPct = 0f
-                                val filesBefore =
-                                    withContext(Dispatchers.IO) {
-                                        setDir.list()?.toSet() ?: emptySet()
-                                    }
-                                withContext(Dispatchers.IO) {
-                                    val stagingDir =
-                                        File(
-                                            setDir.parentFile ?: filesDir,
-                                            ".gog-import-${System.nanoTime()}",
-                                        )
-                                    val sourceKind = if (tempPath != null) "staged" else "fd"
-                                    val analyzedAudioEntries =
-                                        fileList!!
-                                            .asSequence()
-                                            .filter { GogImportBridge.isAudioFile(it.name) }
-                                            .toList()
-                                    val analyzedAudioNames = analyzedAudioEntries.map { File(it.name).name }
-                                    val analyzedAudioSummary = summarizeGogAudioFiles(analyzedAudioNames)
-                                    val analyzedAudioSizes = summarizeGogAudioEntrySizes(analyzedAudioEntries)
-                                    val analyzedPairState = describeGogPairState(analyzedAudioNames)
-                                    val freeBeforeBytes = stagingDir.usableSpace
-                                    val audioOutputBuckets = mutableMapOf<String, Long>()
-                                    val audioProgressStarts = mutableSetOf<String>()
-                                    try {
-                                        check(stagingDir.mkdirs()) {
-                                            "Could not create extraction staging directory"
-                                        }
-                                        val progress =
-                                            object : GogImportBridge.ExtractProgress {
-                                                override fun onProgress(
-                                                    currentFile: String,
-                                                    bytesDone: Long,
-                                                    bytesTotal: Long,
-                                                ): Int {
-                                                    val currentName = discLeafName(currentFile)
-                                                    if (includeAudio && GogImportBridge.isAudioFile(currentName)) {
-                                                        val outputFile = File(stagingDir, currentName)
-                                                        val outputBytes =
-                                                            if (outputFile.exists()) {
-                                                                outputFile.length()
-                                                            } else {
-                                                                -1L
-                                                            }
-                                                        val outputBucket =
-                                                            if (outputBytes >= 0L) {
-                                                                outputBytes / (64L * 1024L * 1024L)
-                                                            } else {
-                                                                -1L
-                                                            }
-                                                        val previousBucket = audioOutputBuckets[currentName]
-                                                        val shouldLog =
-                                                            audioProgressStarts.add(currentName) ||
-                                                                previousBucket == null ||
-                                                                outputBucket > previousBucket
-                                                        if (shouldLog) {
-                                                            audioOutputBuckets[currentName] = outputBucket
-                                                            LauncherDebugLog.log(
-                                                                "launcher-gog-audio-progress " +
-                                                                    "installer=$installerName " +
-                                                                    "source=$sourceKind file=$currentName " +
-                                                                    "done=$bytesDone total=$bytesTotal " +
-                                                                    "exists=${outputFile.exists()} " +
-                                                                    "out_bytes=$outputBytes free_bytes=${stagingDir.usableSpace}",
-                                                            )
-                                                        }
-                                                    }
-                                                    val pct =
-                                                        if (bytesTotal > 0) {
-                                                            bytesDone.toFloat() / bytesTotal
-                                                        } else {
-                                                            0f
-                                                        }
-                                                    mainHandler.post {
-                                                        progressFile = currentFile
-                                                        progressPct = pct
-                                                    }
-                                                    return 0
-                                                }
-                                            }
-                                        LauncherDebugLog.log(
-                                            "launcher-gog-extract-start " +
-                                                "installer=$installerName source=$sourceKind " +
-                                                "include_audio=$includeAudio total_entries=${fileList!!.size}",
-                                        )
-                                        LauncherDebugLog.log(
-                                            "launcher-gog-extract-start-path " +
-                                                "installer=$installerName source=$sourceKind " +
-                                                "set_dir=${stagingDir.absolutePath} free_before_bytes=$freeBeforeBytes",
-                                        )
-                                        LauncherDebugLog.log(
-                                            "launcher-gog-extract-start-audio " +
-                                                "installer=$installerName source=$sourceKind " +
-                                                "audio_names=$analyzedAudioSummary audio_sizes=$analyzedAudioSizes " +
-                                                "audio_pair_state=$analyzedPairState",
-                                        )
-                                        var count =
-                                            if (tempPath != null) {
-                                                GogImportBridge.extractFiles(
-                                                    tempPath!!,
-                                                    stagingDir.absolutePath,
-                                                    progress,
-                                                    includeAudio = includeAudio,
-                                                    expectedFiles = fileList,
-                                                )
-                                            } else {
-                                                context.contentResolver
-                                                    .openFileDescriptor(installerUri, "r")
-                                                    ?.use { pfd ->
-                                                        GogImportBridge.extractFilesFromFd(
-                                                            pfd.fd,
-                                                            stagingDir.absolutePath,
-                                                            progress,
-                                                            includeAudio = includeAudio,
-                                                        )
-                                                    } ?: -1
-                                            }
-                                        val requestedCount =
-                                            fileList!!.count {
-                                                includeAudio || !GogImportBridge.isAudioFile(it.name)
-                                            }
-                                        if (count != requestedCount) {
-                                            LauncherDebugLog.log(
-                                                "launcher-gog-extract-incomplete " +
-                                                    "installer=$installerName requested=$requestedCount extracted=$count",
-                                            )
-                                            count = -1
-                                        } else if (count > 0) {
-                                            FileSetContentManager(setDir).publishDiscImport(stagingDir, installerName)
-                                        }
-                                        val srcManager = AudioSourceManager.forActiveSet(filesDir)
-                                        val hasGog =
-                                            if (includeAudio && count > 0) {
-                                                registerGogAudioSource(
-                                                    srcManager,
-                                                    filesDir,
-                                                    setDir,
-                                                    context,
-                                                )
-                                            } else {
-                                                false
-                                            }
-                                        if (hasGog) {
-                                            enableRedbookInConfig(filesDir, context)
-                                        }
-                                        val filesAfter = setDir.list()?.toSet() ?: emptySet()
-                                        val newFiles = (filesAfter - filesBefore).sorted()
-                                        val setAudioNames =
-                                            filesAfter
-                                                .asSequence()
-                                                .filter { GogImportBridge.isAudioFile(it) }
-                                                .sortedBy { it.lowercase(Locale.US) }
-                                                .toList()
-                                        val newAudioNames =
-                                            newFiles
-                                                .asSequence()
-                                                .filter { GogImportBridge.isAudioFile(it) }
-                                                .toList()
-                                        val missingExpectedAudio =
-                                            analyzedAudioNames.filter { expected ->
-                                                setAudioNames.none {
-                                                    it.equals(expected, ignoreCase = true)
-                                                }
-                                            }
-                                        val newAudioSummary = summarizeGogAudioFiles(newAudioNames)
-                                        val setAudioSummary = summarizeGogAudioFiles(setAudioNames)
-                                        val expectedAudioState =
-                                            describeNamedFileStates(setDir, analyzedAudioNames)
-                                        val setPairState = describeGogPairState(setAudioNames)
-                                        val freeAfterBytes = stagingDir.usableSpace
-                                        LauncherDebugLog.log(
-                                            "launcher-gog-extract-result " +
-                                                "installer=$installerName source=$sourceKind " +
-                                                "include_audio=$includeAudio extracted=$count has_gog_pair=$hasGog " +
-                                                "new_files=${newFiles.size} new_audio=$newAudioSummary",
-                                        )
-                                        LauncherDebugLog.log(
-                                            "launcher-gog-extract-result-audio " +
-                                                "installer=$installerName source=$sourceKind " +
-                                                "set_audio=$setAudioSummary set_pair_state=$setPairState " +
-                                                "missing_expected_audio=${summarizeGogAudioFiles(
-                                                    missingExpectedAudio,
-                                                )}",
-                                        )
-                                        LauncherDebugLog.log(
-                                            "launcher-gog-extract-result-files " +
-                                                "installer=$installerName source=$sourceKind " +
-                                                "expected_audio_state=$expectedAudioState " +
-                                                "free_after_bytes=$freeAfterBytes",
-                                        )
-                                        withContext(Dispatchers.Main) {
-                                            extractedCount = count
-                                            extractedFileNames = newFiles
-                                            status =
-                                                if (count > 0) {
-                                                    val msg = "Extracted $count file(s)"
-                                                    if (hasGog) {
-                                                        "$msg. CD audio source registered and music mode set to Redbook"
-                                                    } else {
-                                                        msg
-                                                    }
-                                                } else {
-                                                    "No files extracted"
-                                                }
-                                        }
-                                    } catch (e: InsufficientStorageException) {
-                                        Log.e("DXX-GogImport", "Extraction stopped for storage", e)
-                                        withContext(Dispatchers.Main) {
-                                            storageFailureMessage = ImportStorageGuard.messageForFailure(e)
-                                            status = "Not enough free space"
-                                            errorMsg = e.message
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.e("DXX-GogImport", "Extraction failed", e)
-                                        LauncherDebugLog.log(
-                                            "launcher-gog-extract-error installer=$installerName source=$sourceKind " +
-                                                "include_audio=$includeAudio message=${e.message ?: e.javaClass.simpleName}",
-                                        )
-                                        withContext(Dispatchers.Main) {
-                                            status = "Extract error: ${e.message}"
-                                            errorMsg = e.message
-                                        }
-                                    } finally {
-                                        stagingDir.deleteRecursively()
-                                    }
-                                }
-                                processing = false
-                            }
+                            extractInstaller(includeAudio)
                         },
                         modifier = Modifier.fillMaxWidth().focusRequester(extractFocus),
                     ) {
@@ -912,7 +951,7 @@ internal fun GogImportDialog(
                 // Done button
                 if (extractedCount > 0) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(
+                    TextButton(
                         onClick = {
                             tempPath?.let { File(it).delete() }
                             cleanupTmpDir(filesDir)
@@ -1221,6 +1260,7 @@ internal fun DiscImportDialog(
     // Temp CUE path for native parsing
     var tempCuePath by remember { mutableStateOf<String?>(null) }
     var orderedBinUris by remember { mutableStateOf(binUris) }
+    val importFocus = remember { FocusRequester() }
     val extractFocus = remember { FocusRequester() }
     val addAudioFocus = remember { FocusRequester() }
     val doneFocus = remember { FocusRequester() }
@@ -1232,6 +1272,7 @@ internal fun DiscImportDialog(
         val hasPendingAudio = !processing && tracks?.any { it.isAudio } == true && !audioRegistered
         val nextFocusRequester =
             when {
+                hasPendingData && hasPendingAudio -> importFocus
                 hasPendingData -> extractFocus
                 hasPendingAudio -> addAudioFocus
                 !processing && tracks != null -> doneFocus
@@ -1328,6 +1369,266 @@ internal fun DiscImportDialog(
         }
     }
 
+    suspend fun extractGameFiles() {
+        try {
+            val preparedImages =
+                withContext(Dispatchers.IO) {
+                    prepareDiscImages(
+                        context = context,
+                        tracks = tracks!!,
+                        imageUris = orderedBinUris,
+                        imageSizes = binSizes,
+                    )
+                }
+            try {
+                ImportStorageGuard.requireFreeSpace(
+                    setDir,
+                    cueDataTrackPeakStorageBytes(
+                        tracks!!,
+                        preparedImages.stagedImageBytes,
+                    ),
+                    "extract disc game files",
+                )
+            } catch (failure: Exception) {
+                preparedImages.close()
+                throw failure
+            }
+            status = "Extracting game files..."
+            progressBytes = 0L
+            progressTotal = 0L
+            withContext(Dispatchers.IO) {
+                preparedImages.use { prepared ->
+                    extractPickedCueDataTracks(
+                        context = context,
+                        setDir = setDir,
+                        sourceName = cueName,
+                        tracks = tracks!!,
+                        orderedBinUris = orderedBinUris,
+                        preparedImages = prepared,
+                        postUpdate = { mainHandler.post(it) },
+                        onStatus = { status = it },
+                        onProgress = { current, total ->
+                            progressBytes = current
+                            progressTotal = total
+                        },
+                    )
+                }
+            }.also { result ->
+                dataExtracted = if (result.succeeded) result.totalExtracted else 0
+                status =
+                    when {
+                        !result.succeeded -> {
+                            "Data track ${result.failedTrackNumber} failed; no files imported"
+                        }
+
+                        result.primaryExtracted > 0 -> {
+                            buildDiscExtractSummary(
+                                result.primaryExtracted,
+                                "disc file(s) from ${result.processedTracks} data track(s)",
+                                result.sowExtracted,
+                            )
+                        }
+
+                        else -> {
+                            "No supported game files found on data tracks"
+                        }
+                    }
+                if (dataExtracted > 0) onChanged()
+            }
+        } catch (e: InsufficientStorageException) {
+            Log.w("DXX-DiscImport", "Disc image extraction stopped for storage", e)
+            storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+            status = "Not enough free space"
+        } catch (e: Exception) {
+            Log.e("DXX-DiscImport", "Disc image extraction failed", e)
+            status = "Cannot extract disc image: ${e.message}"
+        }
+    }
+
+    suspend fun addAudioSource() {
+        progressBytes = 0L
+        progressTotal = 0L
+        status = "Registering audio source\u2026"
+        withContext(Dispatchers.IO) {
+            try {
+                val parsedTracks = tracks!!
+                val audioCount = parsedTracks.count { it.isAudio }
+
+                val binNames = mutableListOf<String>()
+                for ((name, uri) in orderedBinUris) {
+                    if (!persistReadPermissionForUri(context, uri)) {
+                        Log.w("DXX-DiscImport", "Could not persist URI for $name")
+                    }
+                    binNames.add(name.lowercase())
+                }
+
+                // Try to identify the disc via SAF fd
+                try {
+                    val identifier = DiscIdentifier(context)
+                    val firstAudio = parsedTracks.first { it.isAudio }
+                    val binUri = orderedBinUris[firstAudio.fileIndex].second
+                    val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
+                    if (pfd != null) {
+                        val trackBytes = firstAudio.numSectors.toLong() * 2352
+                        val trackOffset = firstAudio.startSector.toLong() * 2352
+                        val hash =
+                            pfd.use {
+                                java.io.FileInputStream(it.fileDescriptor).use { fis ->
+                                    DiscIdentifier.sha1Hash(
+                                        fis,
+                                        trackOffset,
+                                        trackBytes,
+                                    )
+                                }
+                            }
+                        when (hash) {
+                            is DiscIdentifier.Sha1HashResult.Complete -> {
+                                val match =
+                                    identifier.identify(
+                                        mapOf(firstAudio.trackNum to hash.sha1),
+                                    )
+                                if (match.matched) {
+                                    discLabel = match.label
+                                    discId = match.disc?.id
+                                    match.disc?.legacyDiscId?.let {
+                                        legacyDiscId = java.lang.Long.decode(it)
+                                    }
+                                }
+                            }
+
+                            is DiscIdentifier.Sha1HashResult.Failed -> {
+                                Log.w(
+                                    "DXX-DiscImport",
+                                    "Disc track hash failed: ${hash.problem}",
+                                )
+                            }
+
+                            DiscIdentifier.Sha1HashResult.Canceled -> {
+                                Log.w("DXX-DiscImport", "Disc track hash canceled")
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w("DXX-DiscImport", "Disc identification failed", e)
+                }
+
+                val srcManager = AudioSourceManager.forActiveSet(filesDir)
+                val id = discId ?: "custom-${System.currentTimeMillis()}"
+                val existingAudioFileNames = filesDir.list()?.toSet() ?: emptySet()
+                val sourceFileStem =
+                    chooseUniqueCdAudioImportStem(
+                        preferredStem = File(cueName).nameWithoutExtension,
+                        existingFileNames = existingAudioFileNames,
+                    )
+                LauncherDebugLog.log(
+                    "launcher-cd-import cue=$cueName bins=${orderedBinUris.size} mode=saf-in-place file_stem=$sourceFileStem",
+                )
+                val destCue = File(filesDir, "$sourceFileStem.cue")
+                tempCuePath?.let {
+                    LauncherFileCopy.copyFileToFile(
+                        File(it),
+                        destCue,
+                        maxBytes = CD_CUE_MAX_BYTES,
+                    )
+                }
+                var trackNames = emptyMap<Int, String>()
+                try {
+                    discId?.let { resolvedDiscId ->
+                        trackNames =
+                            FingerprintBridge.lookupTrackNames(
+                                context,
+                                resolvedDiscId,
+                            )
+                        Log.i(
+                            "DXX-DiscImport",
+                            "Looked up ${trackNames.size} track names for $resolvedDiscId",
+                        )
+                    }
+                    if (trackNames.isEmpty()) {
+                        withContext(Dispatchers.Main) {
+                            status = "Identifying audio tracks..."
+                            progressBytes = 0L
+                            progressTotal = audioCount.toLong()
+                        }
+                        trackNames =
+                            FingerprintBridge.fingerprintAndMatchDisc(
+                                context,
+                                context.contentResolver,
+                                orderedBinUris.map { it.second },
+                                parsedTracks,
+                            ) { current, total ->
+                                val update =
+                                    audioTrackIdentificationProgress(current, total)
+                                mainHandler.post {
+                                    status = update.status
+                                    progressBytes = update.current.toLong()
+                                    progressTotal = update.total.toLong()
+                                }
+                            }
+                        Log.i(
+                            "DXX-DiscImport",
+                            "Fingerprinted ${trackNames.size} track names via SAF descriptors",
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.w("DXX-DiscImport", "Track name identification failed", e)
+                }
+
+                srcManager.addSource(
+                    AudioSourceManager.AudioSource(
+                        id = id,
+                        cuePath = destCue.name,
+                        binPaths = binNames,
+                        discLabel = discLabel ?: cueName,
+                        discId = discId ?: "unknown",
+                        trackCount = parsedTracks.size,
+                        audioTrackCount = audioCount,
+                        audioTrackNumbers =
+                            parsedTracks.filter { it.isAudio }.map { it.trackNum },
+                        legacyDiscId = legacyDiscId,
+                        trackNames = trackNames,
+                        binContentUris = orderedBinUris.map { it.second.toString() },
+                        cueContentUri = cueUri.toString(),
+                    ),
+                )
+                enableRedbookInConfig(filesDir, context)
+
+                withContext(Dispatchers.Main) {
+                    audioRegistered = true
+                    status = "Audio source registered" +
+                        if (discLabel != null) " ($discLabel)" else ""
+                    onChanged()
+                }
+            } catch (e: Exception) {
+                Log.e("DXX-DiscImport", "Audio registration failed", e)
+                withContext(Dispatchers.Main) {
+                    status = "Error: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun importDisc(
+        extractData: Boolean,
+        addAudio: Boolean,
+    ) {
+        if (processing) return
+        processing = true
+        scope.launch {
+            try {
+                if (extractData) extractGameFiles()
+                if (addAudio && (!extractData || dataExtracted > 0)) {
+                    addAudioSource()
+                    if (extractData && audioRegistered) {
+                        status = "Extracted $dataExtracted file(s) and added CD audio source"
+                    }
+                }
+            } finally {
+                processing = false
+            }
+        }
+    }
+
     storageFailureMessage?.let { message ->
         StorageFailureDialog(message = message, onDismiss = { storageFailureMessage = null })
     }
@@ -1346,274 +1647,20 @@ internal fun DiscImportDialog(
                 Column(modifier = Modifier.verticalScroll(scrollState)) {
                     // Action buttons
                     if (tracks != null && !processing) {
-                        // Extract game files from data track
-                        val hasDataTrack = tracks?.any { it.isData } == true
-                        if (hasDataTrack && dataExtracted == 0) {
+                        val hasPendingData = tracks?.any { it.isData } == true && dataExtracted == 0
+                        val hasPendingAudio = tracks?.any { it.isAudio } == true && !audioRegistered
+                        if (hasPendingData && hasPendingAudio) {
                             Button(
-                                onClick = {
-                                    scope.launch {
-                                        try {
-                                            val preparedImages =
-                                                withContext(Dispatchers.IO) {
-                                                    prepareDiscImages(
-                                                        context = context,
-                                                        tracks = tracks!!,
-                                                        imageUris = orderedBinUris,
-                                                        imageSizes = binSizes,
-                                                    )
-                                                }
-                                            try {
-                                                ImportStorageGuard.requireFreeSpace(
-                                                    setDir,
-                                                    cueDataTrackPeakStorageBytes(
-                                                        tracks!!,
-                                                        preparedImages.stagedImageBytes,
-                                                    ),
-                                                    "extract disc game files",
-                                                )
-                                            } catch (failure: Exception) {
-                                                preparedImages.close()
-                                                throw failure
-                                            }
-                                            processing = true
-                                            status = "Extracting game files..."
-                                            progressBytes = 0L
-                                            progressTotal = 0L
-                                            withContext(Dispatchers.IO) {
-                                                preparedImages.use { prepared ->
-                                                    extractPickedCueDataTracks(
-                                                        context = context,
-                                                        setDir = setDir,
-                                                        sourceName = cueName,
-                                                        tracks = tracks!!,
-                                                        orderedBinUris = orderedBinUris,
-                                                        preparedImages = prepared,
-                                                        postUpdate = { mainHandler.post(it) },
-                                                        onStatus = { status = it },
-                                                        onProgress = { current, total ->
-                                                            progressBytes = current
-                                                            progressTotal = total
-                                                        },
-                                                    )
-                                                }
-                                            }.also { result ->
-                                                dataExtracted = if (result.succeeded) result.totalExtracted else 0
-                                                status =
-                                                    when {
-                                                        !result.succeeded -> {
-                                                            "Data track ${result.failedTrackNumber} failed; no files imported"
-                                                        }
-
-                                                        result.primaryExtracted > 0 -> {
-                                                            buildDiscExtractSummary(
-                                                                result.primaryExtracted,
-                                                                "disc file(s) from ${result.processedTracks} data track(s)",
-                                                                result.sowExtracted,
-                                                            )
-                                                        }
-
-                                                        else -> {
-                                                            "No supported game files found on data tracks"
-                                                        }
-                                                    }
-                                                if (dataExtracted > 0) onChanged()
-                                            }
-                                        } catch (e: InsufficientStorageException) {
-                                            Log.w("DXX-DiscImport", "Disc image extraction stopped for storage", e)
-                                            storageFailureMessage = ImportStorageGuard.messageForFailure(e)
-                                            status = "Not enough free space"
-                                        } catch (e: Exception) {
-                                            Log.e("DXX-DiscImport", "Disc image extraction failed", e)
-                                            status = "Cannot extract disc image: ${e.message}"
-                                        }
-                                        processing = false
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth().focusRequester(extractFocus),
+                                onClick = { importDisc(extractData = true, addAudio = true) },
+                                modifier = Modifier.fillMaxWidth().focusRequester(importFocus),
                             ) {
-                                Text("Extract Game Files", fontSize = 13.sp)
-                            }
-                        }
-
-                        // Register as audio source
-                        val hasAudioTracks = tracks?.any { it.isAudio } == true
-                        if (hasAudioTracks && !audioRegistered) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Button(
-                                onClick = {
-                                    scope.launch {
-                                        processing = true
-                                        status = "Registering audio source\u2026"
-                                        withContext(Dispatchers.IO) {
-                                            try {
-                                                val parsedTracks = tracks!!
-                                                val audioCount = parsedTracks.count { it.isAudio }
-
-                                                val binNames = mutableListOf<String>()
-                                                for ((name, uri) in orderedBinUris) {
-                                                    if (!persistReadPermissionForUri(context, uri)) {
-                                                        Log.w("DXX-DiscImport", "Could not persist URI for $name")
-                                                    }
-                                                    binNames.add(name.lowercase())
-                                                }
-
-                                                // Try to identify the disc via SAF fd
-                                                try {
-                                                    val identifier = DiscIdentifier(context)
-                                                    val firstAudio = parsedTracks.first { it.isAudio }
-                                                    val binUri = orderedBinUris[firstAudio.fileIndex].second
-                                                    val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
-                                                    if (pfd != null) {
-                                                        val trackBytes = firstAudio.numSectors.toLong() * 2352
-                                                        val trackOffset = firstAudio.startSector.toLong() * 2352
-                                                        val hash =
-                                                            pfd.use {
-                                                                java.io.FileInputStream(it.fileDescriptor).use { fis ->
-                                                                    DiscIdentifier.sha1Hash(
-                                                                        fis,
-                                                                        trackOffset,
-                                                                        trackBytes,
-                                                                    )
-                                                                }
-                                                            }
-                                                        when (hash) {
-                                                            is DiscIdentifier.Sha1HashResult.Complete -> {
-                                                                val match =
-                                                                    identifier.identify(
-                                                                        mapOf(firstAudio.trackNum to hash.sha1),
-                                                                    )
-                                                                if (match.matched) {
-                                                                    discLabel = match.label
-                                                                    discId = match.disc?.id
-                                                                    match.disc?.legacyDiscId?.let {
-                                                                        legacyDiscId = java.lang.Long.decode(it)
-                                                                    }
-                                                                }
-                                                            }
-
-                                                            is DiscIdentifier.Sha1HashResult.Failed -> {
-                                                                Log.w(
-                                                                    "DXX-DiscImport",
-                                                                    "Disc track hash failed: ${hash.problem}",
-                                                                )
-                                                            }
-
-                                                            DiscIdentifier.Sha1HashResult.Canceled -> {
-                                                                Log.w("DXX-DiscImport", "Disc track hash canceled")
-                                                            }
-                                                        }
-                                                    }
-                                                } catch (e: Exception) {
-                                                    Log.w("DXX-DiscImport", "Disc identification failed", e)
-                                                }
-
-                                                val srcManager = AudioSourceManager.forActiveSet(filesDir)
-                                                val id = discId ?: "custom-${System.currentTimeMillis()}"
-                                                val existingAudioFileNames = filesDir.list()?.toSet() ?: emptySet()
-                                                val sourceFileStem =
-                                                    chooseUniqueCdAudioImportStem(
-                                                        preferredStem = File(cueName).nameWithoutExtension,
-                                                        existingFileNames = existingAudioFileNames,
-                                                    )
-                                                LauncherDebugLog.log(
-                                                    "launcher-cd-import cue=$cueName bins=${orderedBinUris.size} mode=saf-in-place file_stem=$sourceFileStem",
-                                                )
-                                                val destCue = File(filesDir, "$sourceFileStem.cue")
-                                                tempCuePath?.let {
-                                                    LauncherFileCopy.copyFileToFile(
-                                                        File(it),
-                                                        destCue,
-                                                        maxBytes = CD_CUE_MAX_BYTES,
-                                                    )
-                                                }
-                                                var trackNames = emptyMap<Int, String>()
-                                                try {
-                                                    discId?.let { resolvedDiscId ->
-                                                        trackNames =
-                                                            FingerprintBridge.lookupTrackNames(
-                                                                context,
-                                                                resolvedDiscId,
-                                                            )
-                                                        Log.i(
-                                                            "DXX-DiscImport",
-                                                            "Looked up ${trackNames.size} track names for $resolvedDiscId",
-                                                        )
-                                                    }
-                                                    if (trackNames.isEmpty()) {
-                                                        withContext(Dispatchers.Main) {
-                                                            status = "Identifying audio tracks..."
-                                                            progressBytes = 0L
-                                                            progressTotal = audioCount.toLong()
-                                                        }
-                                                        trackNames =
-                                                            FingerprintBridge.fingerprintAndMatchDisc(
-                                                                context,
-                                                                context.contentResolver,
-                                                                orderedBinUris.map { it.second },
-                                                                parsedTracks,
-                                                            ) { current, total ->
-                                                                val update =
-                                                                    audioTrackIdentificationProgress(current, total)
-                                                                mainHandler.post {
-                                                                    status = update.status
-                                                                    progressBytes = update.current.toLong()
-                                                                    progressTotal = update.total.toLong()
-                                                                }
-                                                            }
-                                                        Log.i(
-                                                            "DXX-DiscImport",
-                                                            "Fingerprinted ${trackNames.size} track names via SAF descriptors",
-                                                        )
-                                                    }
-                                                } catch (e: Exception) {
-                                                    Log.w("DXX-DiscImport", "Track name identification failed", e)
-                                                }
-
-                                                srcManager.addSource(
-                                                    AudioSourceManager.AudioSource(
-                                                        id = id,
-                                                        cuePath = destCue.name,
-                                                        binPaths = binNames,
-                                                        discLabel = discLabel ?: cueName,
-                                                        discId = discId ?: "unknown",
-                                                        trackCount = parsedTracks.size,
-                                                        audioTrackCount = audioCount,
-                                                        audioTrackNumbers =
-                                                            parsedTracks.filter { it.isAudio }.map { it.trackNum },
-                                                        legacyDiscId = legacyDiscId,
-                                                        trackNames = trackNames,
-                                                        binContentUris = orderedBinUris.map { it.second.toString() },
-                                                        cueContentUri = cueUri.toString(),
-                                                    ),
-                                                )
-                                                enableRedbookInConfig(filesDir, context)
-
-                                                withContext(Dispatchers.Main) {
-                                                    audioRegistered = true
-                                                    status = "Audio source registered" +
-                                                        if (discLabel != null) " ($discLabel)" else ""
-                                                    onChanged()
-                                                }
-                                            } catch (e: Exception) {
-                                                Log.e("DXX-DiscImport", "Audio registration failed", e)
-                                                withContext(Dispatchers.Main) {
-                                                    status = "Error: ${e.message}"
-                                                }
-                                            }
-                                        }
-                                        processing = false
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth().focusRequester(addAudioFocus),
-                            ) {
-                                Text("Add as Audio Source", fontSize = 13.sp)
+                                Text("Extract Game Files + Add Audio", fontSize = 13.sp)
                             }
                         }
 
                         // Done state
                         if (dataExtracted > 0 || audioRegistered) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(
+                            TextButton(
                                 onClick = {
                                     tempCuePath?.let { File(it).delete() }
                                     onImported()
@@ -1621,6 +1668,24 @@ internal fun DiscImportDialog(
                                 modifier = Modifier.fillMaxWidth().focusRequester(doneFocus),
                             ) {
                                 Text("Done", fontSize = 13.sp)
+                            }
+                        }
+
+                        // Keep the individual workflows available below the combined action
+                        if (hasPendingData) {
+                            TextButton(
+                                onClick = { importDisc(extractData = true, addAudio = false) },
+                                modifier = Modifier.fillMaxWidth().focusRequester(extractFocus),
+                            ) {
+                                Text("Extract Game Files", fontSize = 13.sp)
+                            }
+                        }
+                        if (hasPendingAudio) {
+                            TextButton(
+                                onClick = { importDisc(extractData = false, addAudio = true) },
+                                modifier = Modifier.fillMaxWidth().focusRequester(addAudioFocus),
+                            ) {
+                                Text("Add as Audio Source", fontSize = 13.sp)
                             }
                         }
                     }

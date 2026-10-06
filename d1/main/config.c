@@ -35,6 +35,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "mission.h"
 #include "physfsx.h"
 #ifdef ANDROID
+#include "music_playback_levels.h"
 #include "android_render_resolution.h"
 #include "android_graphics_safety.h"
 #define GRAPHICS_CONFIG_VALUE(key, value) android_graphics_safety_config_write_value(key, value)
@@ -129,7 +130,11 @@ int ReadConfigFile()
 	char *line, *token, *value, *ptr;
 
 	// set defaults
+#ifdef ANDROID
+	GameCfg.DigiVolume = AUDIO_DEFAULT_EFFECTS_VOLUME;
+#else
 	GameCfg.DigiVolume = 8;
+#endif
 	GameCfg.MusicVolume = 8;
 	GameCfg.ReverseStereo = 0;
 	GameCfg.OrigTrackOrder = 0;

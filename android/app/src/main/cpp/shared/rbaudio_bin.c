@@ -40,6 +40,7 @@
 #include "args.h"
 #include "config.h"
 #include "rbaudio_bin.h"
+#include "music_playback_levels.h"
 #include "pcm_ring.h"
 #include "rbaudio.h"
 #include "console.h"
@@ -249,7 +250,7 @@ static int s_play_first = 0;
 static int s_play_last = 0;
 static int s_read_sector = 0; /* next sector to read */
 static int s_track_end = 0;   /* sector past end of current track */
-static float s_volume = 1.0f;
+static float s_volume = MUSIC_CD_VOLUME_SCALE;
 static int s_rb_underruns = 0; /* callback found buffer empty */
 static int s_rb_cb_count = 0;  /* total callbacks */
 static int s_render_thread_nice = 0;
@@ -1823,7 +1824,8 @@ void RBAGetPerformanceDiagnostics(int *producer_nice,
 void RBASetVolume(int volume)
 {
 	/* volume: 0–8 from the game */
-	s_volume = (volume > 0) ? (float) volume / 8.0f : 0.0f;
+	s_volume = (volume > 0) ? (float) volume / 8.0f * MUSIC_CD_VOLUME_SCALE : 0.0f;
+	RBA_DIAG("Volume: slider=%d calibrated_scale=%.4f", volume, s_volume);
 }
 
 void RBAPause(void)

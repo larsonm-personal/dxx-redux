@@ -85,6 +85,7 @@ internal class ControllerOverlayChecks(
 
     fun run() {
         val context = instrumentation.targetContext
+        onMain { checkMusicVolumeTouches(context) }
         val files = listOf("touch_layout.json", "touch_layout_slots.json").map { File(context.filesDir, it) }
         val snapshots = files.associateWith { if (it.exists()) it.readBytes() else null }
         val controllerLayout =

@@ -16,6 +16,7 @@
 
 #include "cd_preview.h"
 #include "pcm_ring.h"
+#include "music_playback_levels.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,7 +70,7 @@ static int s_track_end = 0;        /* sector past end */
 static int s_num_sectors = 0;      /* total sectors in track */
 static int s_track_file_index = 0; /* BIN file that owns the current track */
 static int s_output_rate = 48000;
-static float s_volume = 0.8f;
+static float s_volume = MUSIC_CD_PREVIEW_VOLUME_SCALE * MUSIC_CD_VOLUME_SCALE;
 
 /* PCM input buffer (same pattern as rbaudio_bin.c) */
 #define PCM_BUF_FRAMES (FRAMES_PER_SECTOR * 16) /* 9408 frames */
