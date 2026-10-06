@@ -34,6 +34,8 @@ namespace
 using json = nlohmann::json;
 // Allow a busy Android compositor to draw before starting the separate confirmation deadline
 constexpr uint64_t overlay_prepare_timeout_ms = 5000;
+// Wait for all queued graphics options to stay unchanged before showing confirmation
+constexpr uint64_t option_debounce_ms = 2500;
 std::mutex mutex;
 std::string files_root;
 bool initialized = false;
@@ -278,7 +280,7 @@ extern "C" int android_graphics_safety_queue_option(const char *name, int value,
 	queued[index] = true;
 	queued_values[index] = value;
 	queued_persist |= persist != 0;
-	if (!unchanged) quiet_until = now_ms() + (debounce ? 750 : 0);
+	if (!unchanged) quiet_until = now_ms() + (debounce ? option_debounce_ms : 0);
 	return ANDROID_GRAPHICS_OPTION_OK;
 }
 

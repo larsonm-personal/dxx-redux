@@ -335,7 +335,23 @@
     },
     {
         "action": "controller_input",
-        "controller_keys": ["A", "DDOWN", "A"],
+        "key": "A",
+        "post_delay_ms": 50,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "graphics_safety.phase": "idle",
+            "graphics_safety.queued.TexFilt": "2",
+        },
+    },
+    {
+        "action": "controller_input",
+        "controller_keys": ["DDOWN", "A"],
         "post_delay_ms": 50,
         "expect_ui": {
             "admin_tray_open": true,
@@ -345,6 +361,26 @@
             "video_tex_filt": 2,
             "video_aniso": 2,
             "video_msaa": 0,
+        },
+    },
+    // More than 2.5 seconds since TexFilt changed, but AF restarted the shared cooldown
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "graphics_safety.phase": "idle",
+            "graphics_safety.queued.TexFilt": "2",
+            "graphics_safety.queued.AnisoLevel": "2",
+        },
+    },
+    {
+        "action": "controller_input",
+        "expect_ui": {
+            "graphics_open": false,
+            "video_polling": true,
         },
     },
     {
@@ -595,7 +631,7 @@
     },
     {
         "action": "wait_ms",
-        "ms": 1600,
+        "ms": 3000,
     },
     {
         "action": "assert",
