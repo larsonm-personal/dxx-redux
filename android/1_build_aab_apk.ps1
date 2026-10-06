@@ -106,7 +106,9 @@ if ($OutputPath) {
 }
 
 $apkOutPath = Join-Path (Split-Path -Parent $outPath) "$([IO.Path]::GetFileNameWithoutExtension($outPath))-universal.apk"
-& (Join-Path $PSScriptRoot "helpers\retain-recent-artifacts.ps1") -Artifacts @($outPath, $apkOutPath)
+$bundleLogPath = [IO.Path]::ChangeExtension($outPath, 'bundle.log')
+$apkLogPath = [IO.Path]::ChangeExtension($outPath, 'apk.log')
+& (Join-Path $PSScriptRoot "helpers\retain-recent-artifacts.ps1") -Artifacts @($outPath, $apkOutPath, $bundleLogPath, $apkLogPath)
 
 # Generate BuildInfo.kt with real build metadata
 $buildInfoPath = Join-Path $PSScriptRoot "app\src\main\java\com\dxxredux\app\BuildInfo.kt"
@@ -152,8 +154,10 @@ $gradle = Resolve-RegressionGradleWrapper -AndroidDir $PSScriptRoot
 $commonProperties = @('-PskipBuildInfo', "-PversionCodeOverride=$versionCode", '-PlegacyRelease=false', '-PciApk=false', '-PplayApplicationId=com.dxxrevival.app')
 # Play signs installed apps with its app key; the local upload key cannot update them
 # Select each distribution explicitly, even if gradle.properties has local defaults
-& $gradle -p $PSScriptRoot "bundle$variant" @commonProperties '-PgithubRelease=false'
-if ($LASTEXITCODE -ne 0) { throw "Gradle build failed with exit code $LASTEXITCODE" }
+Write-Host "Gradle AAB log: $bundleLogPath"
+& $gradle -p $PSScriptRoot "bundle$variant" @commonProperties '-PgithubRelease=false' --stacktrace --console=plain 2>&1 |
+    ForEach-Object { "$_" } | Tee-Object -FilePath $bundleLogPath
+if ($LASTEXITCODE -ne 0) { throw "Gradle build failed with exit code $LASTEXITCODE. Full log: $bundleLogPath" }
 
 # Find the AAB
 $variantLower = $variant.ToLower()
@@ -165,8 +169,10 @@ $directInstall = $variant -ne 'Debug'
 $apkPackage = if ($directInstall) { 'com.dxxredux.app.github' } else { 'com.dxxrevival.app' }
 Write-Host "Building universal APK ($variant, $apkPackage)..."
 # Native compilation is reused; JVM sources and the manifest differ between distributions
-& $gradle -p $PSScriptRoot "assemble$variant" @commonProperties "-PgithubRelease=$($directInstall.ToString().ToLowerInvariant())"
-if ($LASTEXITCODE -ne 0) { throw "Gradle APK build failed with exit code $LASTEXITCODE" }
+Write-Host "Gradle APK log: $apkLogPath"
+& $gradle -p $PSScriptRoot "assemble$variant" @commonProperties "-PgithubRelease=$($directInstall.ToString().ToLowerInvariant())" --stacktrace --console=plain 2>&1 |
+    ForEach-Object { "$_" } | Tee-Object -FilePath $apkLogPath
+if ($LASTEXITCODE -ne 0) { throw "Gradle APK build failed with exit code $LASTEXITCODE. Full log: $apkLogPath" }
 
 $apkPath = Join-Path $PSScriptRoot "app/build/outputs/apk/$variantLower/app-$variantLower.apk"
 if (-not (Test-Path -LiteralPath $apkPath -PathType Leaf)) { throw "Signed APK not found: $apkPath" }
