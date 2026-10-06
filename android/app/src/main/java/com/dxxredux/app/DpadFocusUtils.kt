@@ -33,31 +33,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private const val NAV_REPEAT_INITIAL_DELAY_FALLBACK_MS = 500L
-private const val NAV_REPEAT_INTERVAL_FALLBACK_MS = 125L
-
-private data class PickerNavRepeatTiming(
-    val initialDelayMs: Long,
-    val repeatIntervalMs: Long,
-)
-
-private fun androidStaticRepeatTiming(methodName: String): Long? =
-    runCatching {
-        when (val value = android.view.ViewConfiguration::class.java.getMethod(methodName).invoke(null)) {
-            is Int -> value.toLong()
-            is Number -> value.toLong()
-            null -> null
-            else -> null
-        }
-    }.getOrNull()
-
-private val pickerNavRepeatTiming: PickerNavRepeatTiming by lazy {
-    PickerNavRepeatTiming(
-        initialDelayMs = androidStaticRepeatTiming("getKeyRepeatTimeout") ?: NAV_REPEAT_INITIAL_DELAY_FALLBACK_MS,
-        repeatIntervalMs = androidStaticRepeatTiming("getKeyRepeatDelay") ?: NAV_REPEAT_INTERVAL_FALLBACK_MS,
-    )
-}
-
 /** Bright border shown on focused elements for TV/controller navigation. */
 val tvFocusBorderColor = Color(0xFF00E676)
 private val tvFocusBorderShape = RoundedCornerShape(6.dp)
@@ -208,7 +183,7 @@ fun Modifier.repeatVerticalDpadFocus(
                         stopRepeat()
                         heldDirection = direction
                         moveFocus(direction)
-                        val repeatTiming = pickerNavRepeatTiming
+                        val repeatTiming = navigationRepeatTiming
                         repeatJob =
                             coroutineScope.launch {
                                 delay(repeatTiming.initialDelayMs)

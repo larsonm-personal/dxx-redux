@@ -28,6 +28,33 @@ function Invoke-MenuSteps {
 
 function Assert-GuideMenu {
     param([bool]$Enhanced, [bool]$SecretRevealed = $true)
+    $count = if (-not $Enhanced) { 12 } elseif ($SecretRevealed) { 15 } else { 14 }
+    $expect = @{
+        'menu.type' = 'guidebot'
+        'menu.num_items' = $count
+        "menu.items[$($count - 2)].text" = 'R.  Recall to Ship'
+        "menu.items[$($count - 1)].text" = 'T.  Suppress Messages'
+    }
+    if ($Enhanced) {
+        $expect['menu.items[10].text'] = 'U.  Find Unexplored'
+        $warpIndex = if ($SecretRevealed) { 12 } else { 11 }
+        $expect["menu.items[$warpIndex].text"] = 'W.  Warp to Me'
+        if ($SecretRevealed) { $expect['menu.items[11].text'] = 'S.  Find Secret' }
+    }
+    Invoke-MenuSteps @(
+        @{action = 'controller_input'; key = 'Y'; post_delay_ms = 200 },
+        @{action = 'introspect' },
+        @{action = 'assert'; expect = @{'menu.type' = 'guidebot' } },
+        @{action = 'assert'; expect = $expect },
+        # Check upward wrap uses the visible count, then reverse and hold without OS repeats
+        @{action = 'controller_input'; key = 'DUp'; post_delay_ms = 150 },
+        @{action = 'assert'; expect = @{'menu.selected_index' = ($count - 1) } },
+        @{action = 'controller_input'; key = 'DDown'; post_delay_ms = 150 },
+        @{action = 'controller_input'; key = 'DDown'; pressed = $true; post_delay_ms = 800 },
+        @{action = 'controller_input'; key = 'DDown'; pressed = $false; post_delay_ms = 200 },
+        @{action = 'assert'; expect = @{'menu.selected_index' = @{range = @(2, ($count - 1)) } } },
+        @{action = 'controller_input'; key = 'B'; post_delay_ms = 200 }
+    )
     if (-not (Wait-ForCondition -Description "Guide menu Enhanced=$Enhanced SecretRevealed=$SecretRevealed" -TimeoutSec 15 -PollMs 500 -Condition {
                 $requestId = [guid]::NewGuid().ToString('N')
                 Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.INTROSPECT', '--es', 'request_id', $requestId) | Out-Null
@@ -81,6 +108,22 @@ try {
     Assert-GuideMenu -Enhanced $true
     Invoke-MenuSteps @(@{action = 'set_secret_reveal'; enabled = $false })
     Assert-GuideMenu -Enhanced $true -SecretRevealed $false
+    Invoke-MenuSteps @(
+        @{action = 'controller_input'; key = 'Y'; post_delay_ms = 200 },
+        @{action = 'key'; key = 's'; post_delay_ms = 150 },
+        @{action = 'assert'; expect = @{'menu.type' = 'guidebot'; 'menu.selected_index' = 0 } },
+        # With Secret hidden, four upward steps select Unexplored; activate with A
+        @{action = 'controller_input'; key = 'DUp'; post_delay_ms = 100 },
+        @{action = 'controller_input'; key = 'DUp'; post_delay_ms = 100 },
+        @{action = 'controller_input'; key = 'DUp'; post_delay_ms = 100 },
+        @{action = 'controller_input'; key = 'DUp'; post_delay_ms = 100 },
+        @{action = 'assert'; expect = @{'menu.selected_index' = 10 } },
+        @{action = 'controller_input'; key = 'A'; post_delay_ms = 250 },
+        @{action = 'assert'; expect = @{'game_window_is_front' = $true; 'guidebot.route_target_mode_name' = 'unexplored' } },
+        @{action = 'controller_input'; key = 'Y'; post_delay_ms = 200 },
+        @{action = 'controller_input'; key = 'A'; post_delay_ms = 250 },
+        @{action = 'assert'; expect = @{'game_window_is_front' = $true; 'guidebot.route_target_mode_name' = 'end_of_level' } }
+    )
     Invoke-MenuSteps @(
         @{action = 'set_debug'; field = 'android_game_request'; value = 'quick_load' },
         @{action = 'wait_for'; timeout_ms = 30000; expect = @{game_window_is_front = $true; 'guidebot.routing_mode_name' = 'Enhanced' } },

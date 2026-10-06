@@ -421,6 +421,7 @@ $testTimeouts = @{
     "test_android_distributions"          = 1800
     # Includes 360s in-game metadata, 300s preview, staging, and cleanup
     "test_guidebot_mission_metadata"      = 900
+    "test_guidebot_routing_menus"         = 600
     "test_guidebot_simulation_headed_headless_parity" = 1800
     "test_guided_shot_annotations"        = 600
     "test_primary_target_grates"         = 600

@@ -3924,7 +3924,9 @@ class MainActivity :
                             joyButton
                         }
                     val destination: (Boolean) -> Unit = { pressed ->
-                        if (isBack) {
+                        if (pressed && dpadButton >= 0 && !nativeControllerMenuFront()) {
+                            controllerKeys.release(keyCode)
+                        } else if (isBack) {
                             nativeKeyEvent(if (pressed) 0 else 1, KeyEvent.KEYCODE_BACK, 0)
                         } else {
                             nativeJoystickButton(button, if (pressed) 1 else 0)
@@ -4234,7 +4236,22 @@ class MainActivity :
     }
 
     // â”€â”€ Gamepad analog axes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    private val controllerKeys = ControllerKeyDispatch()
+    private val controllerKeys =
+        ControllerKeyDispatch(
+            repeatScheduler =
+                object : NavigationRepeatScheduler {
+                    override fun postDelayed(
+                        action: Runnable,
+                        delayMs: Long,
+                    ) {
+                        overlayPoller.postDelayed(action, delayMs)
+                    }
+
+                    override fun removeCallbacks(action: Runnable) {
+                        overlayPoller.removeCallbacks(action)
+                    }
+                },
+        )
     private val controllerAxisMetaKeys = ControllerKeyDispatch()
     private var controllerAxisThresholds = defaultThresholds()
     private val controllerMenuAxes = ControllerMenuAxes()

@@ -3443,72 +3443,93 @@ void drop_stolen_items(object *objp, int remote)
 }
 
 // --------------------------------------------------------------------------------------------------------------
-#define ESCORT_MENU_ITEM_COUNT 12
+#define ESCORT_MENU_ITEM_COUNT 15
 
 typedef struct escort_menu
 {
 	char	goal_str[32];
 	char	message_action[16];
 	int	selected_item;
+	int	item_count;
+	int	keys[ESCORT_MENU_ITEM_COUNT];
 	int	multiplayer_passthrough;
 } escort_menu;
 
-static int escort_menu_key_for_item(int item)
+/* Match the Guide touch wheel: added commands require Enhanced routing,
+ * and Find Secret additionally requires the reveal-unfound cheat */
+static int escort_menu_key_available(int key)
 {
-	switch (item) {
-		case 0: return KEY_0;
-		case 1: return KEY_1;
-		case 2: return KEY_2;
-		case 3: return KEY_3;
-		case 4: return KEY_4;
-		case 5: return KEY_5;
-		case 6: return KEY_6;
-		case 7: return KEY_7;
-		case 8: return KEY_8;
-		case 9: return KEY_9;
-		case 10: return KEY_R;
-		case 11: return KEY_T;
-		default: return KEY_ESC;
+	if (key == KEY_U || key == KEY_W || key == KEY_S)
+		return guidebot_routing_is_enhanced() &&
+		       (key != KEY_S || secret_area_get_reveal_unfound());
+	return 1;
+}
+
+static void escort_menu_update_items(escort_menu *menu)
+{
+	static const int keys[] = {
+		KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9,
+		KEY_U, KEY_S, KEY_W, KEY_R, KEY_T
+	};
+	int i;
+	int selected_key = menu->item_count ? menu->keys[menu->selected_item] : KEY_0;
+	menu->item_count = 0;
+	menu->selected_item = 0;
+	for (i = 0; i < ESCORT_MENU_ITEM_COUNT; ++i) {
+		if (!escort_menu_key_available(keys[i]))
+			continue;
+		if (keys[i] == selected_key)
+			menu->selected_item = menu->item_count;
+		menu->keys[menu->item_count++] = keys[i];
 	}
 }
 
 static void escort_menu_item_text(escort_menu *menu, int item, char *buf, size_t bufsz)
 {
-	switch (item) {
-		case 0:
+	switch (menu->keys[item]) {
+		case KEY_0:
 			snprintf(buf, bufsz, "0.  Next Goal: %s", menu->goal_str);
 			break;
-		case 1:
+		case KEY_1:
 			snprintf(buf, bufsz, "1.  Find Energy Powerup");
 			break;
-		case 2:
+		case KEY_2:
 			snprintf(buf, bufsz, "2.  Find Energy Center");
 			break;
-		case 3:
+		case KEY_3:
 			snprintf(buf, bufsz, "3.  Find Shield Powerup");
 			break;
-		case 4:
+		case KEY_4:
 			snprintf(buf, bufsz, "4.  Find Any Powerup");
 			break;
-		case 5:
+		case KEY_5:
 			snprintf(buf, bufsz, "5.  Find a Robot");
 			break;
-		case 6:
+		case KEY_6:
 			snprintf(buf, bufsz, "6.  Find a Hostage");
 			break;
-		case 7:
+		case KEY_7:
 			snprintf(buf, bufsz, "7.  Stay Away From Me");
 			break;
-		case 8:
+		case KEY_8:
 			snprintf(buf, bufsz, "8.  Find My Powerups");
 			break;
-		case 9:
+		case KEY_9:
 			snprintf(buf, bufsz, "9.  Find the exit");
 			break;
-		case 10:
+		case KEY_U:
+			snprintf(buf, bufsz, "U.  Find Unexplored");
+			break;
+		case KEY_S:
+			snprintf(buf, bufsz, "S.  Find Secret");
+			break;
+		case KEY_W:
+			snprintf(buf, bufsz, "W.  Warp to Me");
+			break;
+		case KEY_R:
 			snprintf(buf, bufsz, "R.  Recall to Ship");
 			break;
-		case 11:
+		case KEY_T:
 			snprintf(buf, bufsz, "T.  %s Messages", menu->message_action);
 			break;
 		default:
@@ -3519,12 +3540,15 @@ static void escort_menu_item_text(escort_menu *menu, int item, char *buf, size_t
 
 static void escort_menu_move_selection(escort_menu *menu, int delta)
 {
-	menu->selected_item = (menu->selected_item + delta + ESCORT_MENU_ITEM_COUNT) % ESCORT_MENU_ITEM_COUNT;
+	menu->selected_item = (menu->selected_item + delta + menu->item_count) % menu->item_count;
 }
 
 static int escort_menu_activate_key(window *wind, int key)
 {
 	char error[256] = "";
+
+	if (!escort_menu_key_available(key))
+		return 1;
 
 	switch (key) {
 		case KEY_0:
@@ -3541,10 +3565,25 @@ static int escort_menu_activate_key(window *wind, int key)
 			    !input_demo_recorder_stage_direct_command_guidebot_goal(key, 1, error, sizeof(error)) &&
 			    error[0])
 				con_printf(CON_NORMAL, "Input demo recorder guidebot goal event failed: %s\n", error);
-			Looking_for_marker = -1;
-			Last_buddy_key = -1;
-			set_escort_special_goal(key);
-			Last_buddy_key = -1;
+			input_demo_apply_recorded_guidebot_goal(key, 1);
+			window_close(wind);
+			return 1;
+
+		case KEY_U:
+			input_demo_record_direct_command_guidebot_find_unexplored();
+			escort_find_unexplored_goal();
+			window_close(wind);
+			return 1;
+
+		case KEY_S:
+			input_demo_record_direct_command_guidebot_find_secret();
+			escort_find_secret_goal();
+			window_close(wind);
+			return 1;
+
+		case KEY_W:
+			input_demo_record_direct_command_guidebot_warp_to_me();
+			escort_warp_to_player();
 			window_close(wind);
 			return 1;
 
@@ -3601,6 +3640,9 @@ int escort_menu_keycommand(window *wind, d_event *event, escort_menu *menu)
 		case KEY_7:
 		case KEY_8:
 		case KEY_9:
+		case KEY_U:
+		case KEY_S:
+		case KEY_W:
 		case KEY_R:
 		case KEY_T:
 			return escort_menu_activate_key(wind, key);
@@ -3614,7 +3656,7 @@ int escort_menu_keycommand(window *wind, d_event *event, escort_menu *menu)
 			return 1;
 
 		case KEY_ENTER:
-			return escort_menu_activate_key(wind, escort_menu_key_for_item(menu->selected_item));
+			return escort_menu_activate_key(wind, menu->keys[menu->selected_item]);
 
 		case KEY_ESC:
 		case KEY_F4 + KEY_SHIFTED:
@@ -3645,7 +3687,7 @@ static int escort_menu_joystick_button_down(window *wind, d_event *event, escort
 			return 1;
 
 		case ANDROID_JOY_BUTTON_A:
-			return escort_menu_activate_key(wind, escort_menu_key_for_item(menu->selected_item));
+			return escort_menu_activate_key(wind, menu->keys[menu->selected_item]);
 
 		case ANDROID_JOY_BUTTON_B:
 		case 3: /* Y: toggle the Guide Bot menu closed */
@@ -3662,6 +3704,8 @@ static int escort_menu_joystick_button_down(window *wind, d_event *event, escort
 
 int escort_menu_handler(window *wind, d_event *event, escort_menu *menu)
 {
+	if (menu)
+		escort_menu_update_items(menu);
 	switch (event->type)
 	{
 		case EVENT_WINDOW_ACTIVATED:
@@ -3751,6 +3795,8 @@ void do_escort_menu(void)
 	if (!menu)
 		return;
 	menu->selected_item = 0;
+	menu->item_count = 0;
+	escort_menu_update_items(menu);
 	menu->multiplayer_passthrough = (Game_mode & GM_MULTI) != 0;
 	sprintf(menu->goal_str, "ERROR");
 	sprintf(menu->message_action, "Suppress");
@@ -3843,7 +3889,7 @@ static void escort_menu_draw_contents(escort_menu *menu, const char *title,
 	gr_set_fontcolor(BM_XRGB(0, 28, 0), -1);
 	gr_ustring(x, y, title);
 	item_y = y + title_h + LINE_SPACING;
-	for (i = 0; i < ESCORT_MENU_ITEM_COUNT; i++) {
+	for (i = 0; i < menu->item_count; i++) {
 		if (i == menu->selected_item) {
 			gr_setcolor(BM_XRGB(0, 28, 0));
 			gr_rect(x - FSPACX(2), item_y - FSPACY(1), x + content_w + FSPACX(2), item_y + LINE_SPACING - FSPACY(1));
@@ -3897,13 +3943,13 @@ static void show_escort_menu(escort_menu *menu)
 
 	gr_get_string_size(title, &title_w, &title_h, &aw);
 	content_w = title_w;
-	for (i = 0; i < ESCORT_MENU_ITEM_COUNT; i++) {
+	for (i = 0; i < menu->item_count; i++) {
 		escort_menu_item_text(menu, i, rows[i], sizeof(rows[i]));
 		gr_get_string_size(rows[i], &w, &h, &aw);
 		if (w > content_w)
 			content_w = w;
 	}
-	content_h = title_h + LINE_SPACING * (ESCORT_MENU_ITEM_COUNT + 2);
+	content_h = title_h + LINE_SPACING * (menu->item_count + 2);
 	box_w = content_w + BORDERX * 2;
 	box_h = content_h + BORDERY * 2;
 
@@ -4432,5 +4478,15 @@ void escort_reset_routing(void)
 int escort_menu_get_selection(void *data)
 {
 	return ((escort_menu *)data)->selected_item;
+}
+
+int escort_menu_get_item_count(void *data)
+{
+	return ((escort_menu *)data)->item_count;
+}
+
+void escort_menu_get_item_text(void *data, int item, char *buf, size_t bufsz)
+{
+	escort_menu_item_text((escort_menu *)data, item, buf, bufsz);
 }
 #endif

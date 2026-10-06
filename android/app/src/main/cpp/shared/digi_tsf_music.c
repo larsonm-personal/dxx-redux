@@ -102,8 +102,13 @@ static int g_pcm_channels; /* 1 or 2                              */
 static int g_pcm_rate;     /* source sample rate (e.g. 44100)     */
 
 /* ── Configurable gain (dB) ──────────────────────────────────────────────── */
-static float g_gain_db = -10.0f; /* TSF global gain in dB      */
-static int g_max_voices = 128;   /* voice limit (runtime-tunable) */
+#ifdef ANDROID
+/* Raise in-game MIDI by 3 dB on the shared 0..8 music slider */
+static float g_gain_db = -7.0f;
+#else
+static float g_gain_db = -10.0f;
+#endif
+static int g_max_voices = 128; /* voice limit (runtime-tunable) */
 
 #ifdef ANDROID
 static int tsf_atomic_load_int(const int *value)

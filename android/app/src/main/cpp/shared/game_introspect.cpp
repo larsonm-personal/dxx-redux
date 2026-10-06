@@ -324,6 +324,8 @@ extern "C" void kconfig_get_menu_state(void *data, int *selected, int *changing)
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" int escort_menu_handler(window *wind, d_event *event, void *data);
 extern "C" int escort_menu_get_selection(void *data);
+extern "C" int escort_menu_get_item_count(void *data);
+extern "C" void escort_menu_get_item_text(void *data, int item, char *buf, size_t bufsz);
 #endif
 extern "C" int scores_handler(window *wind, d_event *event, void *data);
 extern "C" int credits_handler(window *wind, d_event *event, void *data);
@@ -2302,6 +2304,13 @@ extern "C" char *game_introspect_get_state(void)
 #ifdef DXX_BUILD_DESCENT_II
 			} else if (cb == escort_menu_handler) {
 				j["menu"] = { { "type", "guidebot" }, { "selected_index", escort_menu_get_selection(data) } };
+				j["menu"]["num_items"] = escort_menu_get_item_count(data);
+				j["menu"]["items"] = json::array();
+				for (int i = 0; i < escort_menu_get_item_count(data); ++i) {
+					char text[80];
+					escort_menu_get_item_text(data, i, text, sizeof(text));
+					j["menu"]["items"].push_back({ { "text", text } });
+				}
 #endif
 			} else if (cb == scores_handler) {
 				j["menu"] = { { "type", "scores" } };
